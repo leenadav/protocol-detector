@@ -1,7 +1,7 @@
-# Protocol detector v0.19
+# Protocol detector v0.20
 
 A standalone Python 3.9+ protocol classification engine and passive observation
-tool. **38 protocol families**, with explicit profiles rather than claims of full
+tool. **39 protocol families**, with explicit profiles rather than claims of full
 protocol/session validation. No Python runtime dependencies. Live capture uses
 an installed `tcpdump`; ordinary demos and tests require no capture privileges.
 We are staying in Python. This release does not integrate with or modify an SWG.
@@ -35,7 +35,7 @@ python3 -B live_capture.py -i en0 --filter 'tcp port 443' --duration 30 --json
 ```
 
 `live_smoke.py` deliberately creates only local test traffic and verifies HTTP,
-TLS client/server hellos and retry, BGP, SMB2/3, DNS, SNMP, TFTP, STOMP, NATS, IMAP, RDP, FastCGI, rsync, Git, GIOP and DCE/RPC detections,
+TLS client/server hellos and retry, BGP, SMB2/3, DNS, SNMP, TFTP, STOMP, NATS, IMAP, RDP, FastCGI, rsync, Git, GIOP DCE/RPC and DTLS detections,
 including server-direction handshakes. Separate modes also check MySQL, MongoDB
 and RADIUS with explicit candidates. It is opt-in, outside
 `make test`. `sample-expanded.pcap` is generated synthetic data with reordered
@@ -44,6 +44,22 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.20 — DTLS over UDP
+
+DTLS1.2 ClientHello now has automatic recognition with exact record, epoch,
+handshake, cookie and vector framing. The profile accepts one complete hello per
+record/datagram, checks extension counts and reuses SNI/ALPN syntax validation.
+It emits `encryption="dtls"`, with no inferred inner application protocol.
+Client version, hostname and ALPN remain unauthenticated offers/assertions.
+
+Coverage is **39 families,35 automatic**;294 tests pass. Fragmented handshakes,
+coalesced records/messages, encrypted epochs and supported_versions negotiation
+are explicitly unsupported. The UDP inspector retains no association state.
+`python3 -B dtls_interop.py` verifies an installed TLS client's initial hello and
+cookie retry against a synthetic IPv4 loopback responder. It never completes or
+authenticates the handshake. Exact profile and CPU results are in PROTOCOLS.md
+and BENCHMARK-V020.md. Offline and live readable output both identify the layer.
 
 ## New in v0.19 — TLS server hello and retry profiles
 

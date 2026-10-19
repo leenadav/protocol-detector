@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.12 — engine and observation contracts
+# Stream/datagram engine v0.20 — engine and observation contracts
 
 ## Ownership
 
@@ -407,3 +407,21 @@ and selected ALPN is never promoted to an inner application protocol or placed
 in client offers. Retry is a distinct scope. There is no cross-direction client
 correlation or full TLS session validation. New module constraints are explicit
 in PROTOCOLS.md rather than treating arbitrary extension payloads as validated.
+
+
+## Layered UDP results (v0.20)
+
+Validators may return an internal immutable DatagramMatch carrying encryption,
+optional application protocol and asserted metadata. Existing plaintext validators
+retain their lightweight protocol/reason tuple. The inspector normalizes only the
+single winning result, after the same ambiguity/budget rules. Public Observation
+is unchanged. DTLS populates encryption and client assertions, never an inner
+protocol or application mapping. Offline text now falls back to encryption like
+live text already did; JSON keeps the existing Observation schema.
+
+DTLS prefix dispatch is constant-size and disjoint from existing complete UDP
+profiles. It precedes deeper DHCP-cookie probing, so opaque cookie contents cannot
+steal the route. A single record/hello must fill the complete datagram; fragment
+and coalescing support is intentionally excluded. Extension count is checked
+before reuse of the TLS ClientHello field validator, with at most128 entries and
+16KiB plaintext record size. No input survives inspect(), even on a rejection.

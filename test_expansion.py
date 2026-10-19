@@ -113,7 +113,7 @@ class ExpansionTests(unittest.TestCase):
         for data, protocol in DATAGRAM_CASES:
             result = inspector.inspect(data)
             self.assertEqual(result.status, "identified", (protocol, result))
-            self.assertEqual(result.application_protocol, protocol)
+            self.assertEqual(result.application_protocol or result.encryption, protocol)
             self.assertEqual(result.transport, "udp")
             self.assertEqual(result.scope, "datagram")
             self.assertIsNone(result.application)
@@ -167,7 +167,8 @@ class ExpansionTests(unittest.TestCase):
                 name = result.application_protocol or result.encryption
                 observed.add("http2" if name == "http/2" else name.split("/", 1)[0])
         for data, _ in DATAGRAM_CASES:
-            observed.add(DatagramInspector().inspect(data).application_protocol.split("/", 1)[0])
+            result = DatagramInspector().inspect(data)
+            observed.add((result.application_protocol or result.encryption).split("/", 1)[0])
         for data, _, hint in HINTED_DATAGRAM_CASES:
             observed.add(DatagramInspector().inspect(data, hint).application_protocol.split("/", 1)[0])
         for data, _, hint in HINTED_STREAM_CASES:
@@ -367,7 +368,7 @@ class ExpansionTests(unittest.TestCase):
             analyzer.process(timestamp, decode_packet(frame))
             for event in analyzer.last_events:
                 if event.observation.status == "identified":
-                    identified.append((event.observation.transport, event.observation.application_protocol))
+                    identified.append((event.observation.transport, event.observation.application_protocol or event.observation.encryption))
         expected = [("tcp", name) for _, name in STREAM_CASES] + [("udp", name) for _, name in DATAGRAM_CASES]
         self.assertEqual(identified, expected)
         with tempfile.TemporaryDirectory() as directory:

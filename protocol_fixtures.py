@@ -123,3 +123,10 @@ TLS_SERVER12 = _server_fixture(bytes.fromhex('001000050003026832'), 0xc02f)
 TLS_SERVER13 = _server_fixture(bytes.fromhex('002b0002030400330024001d0020') + bytes(32), 0x1301)
 TLS_RETRY = _server_fixture(bytes.fromhex('002b0002030400330002001d'), 0x1301, True)
 del _server_fixture
+
+# DTLS1.2, one complete epoch-zero ClientHello, no cookie or extensions.
+_dtls_body = b'\xfe\xfd' + bytes(range(32)) + b'\0\0\0\x02\xc0\x2f\x01\0'
+_dtls_handshake = b'\x01' + len(_dtls_body).to_bytes(3,'big') + bytes(5) + len(_dtls_body).to_bytes(3,'big') + _dtls_body
+DTLS = b'\x16\xfe\xff' + bytes(8) + len(_dtls_handshake).to_bytes(2,'big') + _dtls_handshake
+DATAGRAM_CASES += ((DTLS, 'dtls'),)
+del _dtls_body, _dtls_handshake

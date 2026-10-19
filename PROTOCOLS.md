@@ -1,11 +1,12 @@
-# Protocol coverage — v0.19
+# Protocol coverage — v0.20
 
-The engine implements 38 families with the profiles below. This is a complete
+The engine implements 39 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.
 All input must start at the supported message/stream boundary; no port-only match.
 
 | Family | Transport | Selection | Observation scope | Implemented profile |
 |---|---|---|---|---|
+| dtls | udp | Automatic profiles | datagram | DTLS1.2 complete epoch-zero ClientHello in one record/datagram; client assertions only, no fragments or decryption |
 | dcerpc | tcp | Automatic profiles | bind_request | Connection-oriented 5.0 Bind, NDR 2.0/NDR64 1.0 offers; no authentication, replies, stub decoding or product identity |
 | giop | tcp | Automatic profiles | request_header/locate_request | GIOP 1.2 unfragmented KeyAddr Request/LocateRequest; bounded CDR; opaque arguments and service contexts |
 | git | tcp | Automatic profiles | service_request | Native Git pkt-line request; bounded path, optional DNS/IPv4 host and extras; no packfile/server/version-negotiation validation |
@@ -199,7 +200,7 @@ These are remaining engineering work, not implicitly identified protocols:
 | Area | Required work |
 |---|---|
 | QUIC / HTTP/3 | Version-aware protected packet parsing, Initial crypto processing, CRYPTO/stream assembly and HTTP/3 validation |
-| DTLS | Record/epoch handling and bounded datagram handshake-fragment assembly |
+| Further DTLS profiles | Handshake-fragment assembly, coalesced records/messages, server evidence and DTLS1.3 |
 | WebSocket / gRPC | Trusted HTTP upgrade/transaction boundaries or HTTP/2 headers/streams and application framing |
 | FTP / POP3 / additional IMAP commands | Additional validators and bidirectional evidence for ambiguous greetings/commands |
 | Additional database/RDP phases | MySQL client/auth/query phases, MongoDB compressed/legacy/telemetry sections, RDP later phases and independent traffic corpora |
@@ -453,3 +454,38 @@ section7.4.1.3; [RFC5289](https://www.rfc-editor.org/rfc/rfc5289.html);
 [RFC5746](https://www.rfc-editor.org/rfc/rfc5746.html),
 [RFC4492](https://www.rfc-editor.org/rfc/rfc4492.html),
 [RFC5077](https://www.rfc-editor.org/rfc/rfc5077.html).
+
+
+## DTLS ClientHello profile (v0.20)
+
+- Automatic fixed three-byte route: handshake record22, record versionFEFF orFEFD.
+  Epoch must be zero. Exactly one record, plaintext length12..16384, must occupy
+  the whole UDP payload. Exactly one complete type1 handshake must occupy that
+  record. Offset zero and fragment length equal total length are required.
+- ClientHello versionFEFD, session ID<=32, opaque cookie<=255, nonempty even
+  cipher vector and a sole null-compression offer. Cipher values are offers,
+  not a negotiated or cryptographically validated selection.
+- Optional extension vector must end exactly; at most min(max_headers,128)
+  entries, with duplicate types rejected. Shared TLS validation checks SNI names
+  and ALPN list syntax (max64 offers); other extension values stay opaque.
+  supported_versions (type43) is outside this deliberately narrow profile.
+- Result: encryption=dtls, application_protocol/application unset. SNI and ALPN
+  have dtls_sni/dtls_alpn asserted provenance. offered_dtls_version=1.2 is a
+  client assertion. Random, session ID, cookie and opaque extensions are omitted.
+- Record/message sequence numbers are accepted as opaque counters, without
+  replay protection or association correlation. Cookie echo, reachability,
+  renegotiation, authentication, Finished and inner content are not validated.
+  Encrypted epochs, other handshake types, fragments, multiple records/messages
+  and DTLS1.0/1.3 negotiation return non-identification. Datagrams are never joined.
+- The configured byte budget applies before parsing and to declared hello size.
+  A bounded extension-count pass precedes shared TLS syntax decoding; maximum
+  record size bounds copying/scanning. No port lookup or registry scan is used.
+
+Primary format: [RFC6347 sections4.1/4.2.1/4.2.2](https://www.rfc-editor.org/rfc/rfc6347.html).
+The inherited ClientHello/SNI/ALPN checks use the TLS specifications listed above.
+
+Validation includes every truncation and fragment split, length/count boundaries,
+metadata privacy, 2,500 seeded mutations, existing-family ambiguity checks and a
+DHCP-cookie collision inside a valid DTLS cookie. `dtls_interop.py` additionally
+checks actual LibreSSL3.3.6 ClientHello and cookie retry against a synthetic local
+responder; this is not a complete DTLS interoperability or security certification.

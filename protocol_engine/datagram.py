@@ -4,6 +4,8 @@ No automatic lifetime bypass: UDP associations may carry different message types
 Candidate hints restrict validation; they never cause an identification themselves.
 """
 from types import MappingProxyType
+from .datagram_result import DatagramMatch
+from .dtls import dtls
 from .model import Config, Evidence, Metrics, Observation
 from .parsers import BudgetError, ParseError
 from .extended import TextParser, UnsupportedPrefix
@@ -32,7 +34,7 @@ def sip(data, config):
     return "sip/2.0", "SIP required header framing and datagram body length validated; body/dialogue semantics unverified"
 
 
-VALIDATORS = MappingProxyType({"radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
+VALIDATORS = MappingProxyType({"dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
 
 
 class DatagramInspector:
@@ -54,6 +56,8 @@ class DatagramInspector:
             return Observation(status="budget_exhausted", reason="Datagram exceeds byte budget", **base)
         if protocol_hint:
             candidates = (protocol_hint,)
+        elif data[:3] in (b"\x16\xfe\xff", b"\x16\xfe\xfd"):
+            candidates = ("dtls",)
         elif len(data) >= 8 and data[4:8] == b"\x21\x12\xa4\x42":
             candidates = ("stun",)
         elif len(data) >= 240 and data[236:240] == b"\x63\x82\x53\x63":
@@ -93,7 +97,14 @@ class DatagramInspector:
         if matches and any(status == "budget_exhausted" for status, _ in errors):
             return Observation(status="budget_exhausted", reason="A competing datagram candidate exhausted its budget", **base)
         if matches:
-            protocol, reason = matches[0]
+            match = matches[0]
+            if isinstance(match, DatagramMatch):
+                return Observation(status="identified", encryption=match.encryption,
+                                   application_protocol=match.application_protocol,
+                                   hostname=match.hostname, offered_alpn=match.offered_alpn,
+                                   evidence=match.evidence + ((Evidence("candidate_hint", protocol_hint, "caller", "context"),) if protocol_hint else ()),
+                                   reason=match.reason, **base)
+            protocol, reason = match
             return Observation(status="identified", application_protocol=protocol, reason=reason,
                                evidence=(Evidence("application_protocol", protocol, "wire", "structural"),)
                                + ((Evidence("candidate_hint", protocol_hint, "caller", "context"),) if protocol_hint else ()), **base)

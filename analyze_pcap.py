@@ -90,7 +90,7 @@ class Analyzer:
             result = self.last_classification
             return "UDP {}:{} -> {}:{} | {} | {} | {}".format(
                 *packet.source, *packet.destination, result.status.upper(),
-                result.application_protocol or "unidentified", result.reason)
+                result.application_protocol or result.encryption or "unidentified", result.reason)
         source, destination = packet.source, packet.destination
         key = self.manager.key(source, destination)
         state = self.tracked.get(key)

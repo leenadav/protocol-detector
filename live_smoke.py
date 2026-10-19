@@ -12,7 +12,7 @@ import sys
 import threading
 import time
 from live_capture import capture_command, run_capture
-from protocol_fixtures import TLS_SERVER12, TLS_SERVER13, TLS_RETRY, DCERPC, GIOP, GIT, RADIUS, FASTCGI, RSYNC, BGP, SMB311, DNS, SNMP, TFTP, STOMP, STOMP_SERVER, NATS_CONNECT, NATS_INFO, IMAP, RDP, MYSQL, MONGODB, MONGODB_CHECKSUM
+from protocol_fixtures import DTLS, TLS_SERVER12, TLS_SERVER13, TLS_RETRY, DCERPC, GIOP, GIT, RADIUS, FASTCGI, RSYNC, BGP, SMB311, DNS, SNMP, TFTP, STOMP, STOMP_SERVER, NATS_CONNECT, NATS_INFO, IMAP, RDP, MYSQL, MONGODB, MONGODB_CHECKSUM
 from proxy_demo import client_hello
 
 
@@ -85,7 +85,7 @@ def main():
                             if bytes(received) != payload:
                                 raise RuntimeError('Loopback payload mismatch')
                 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sender:
-                    for payload in (() if args.database else (RADIUS,) if args.radius else (DNS, SNMP, TFTP)):
+                    for payload in (() if args.database else (RADIUS,) if args.radius else (DNS, SNMP, TFTP, DTLS)):
                         sender.sendto(payload, udp.getsockname())
                         if udp.recv(4096) != payload:
                             raise RuntimeError('Loopback UDP payload mismatch')
@@ -99,7 +99,7 @@ def main():
         if worker.is_alive() or failures:
             raise RuntimeError('Traffic generation failed: ' + repr(failures))
         found = {event['protocol'] for event in events if event['type'] == 'classification' and event['status'] == 'identified'}
-        expected = {'http/1.1', 'bgp/4', 'smb2', 'tls', 'dns', 'snmp/2c', 'tftp', 'stomp', 'nats', 'imap', 'rdp', 'fastcgi/1', 'rsync', 'git', 'giop/1.2', 'dcerpc/5.0'}
+        expected = {'dtls', 'http/1.1', 'bgp/4', 'smb2', 'tls', 'dns', 'snmp/2c', 'tftp', 'stomp', 'nats', 'imap', 'rdp', 'fastcgi/1', 'rsync', 'git', 'giop/1.2', 'dcerpc/5.0'}
         if args.database:
             expected = {args.database}
         if args.radius:

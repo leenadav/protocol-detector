@@ -82,7 +82,7 @@ def main():
         if args.json:
             print(json.dumps({"example": "UDP " + protocol, "candidate_hint": hint, "observation": asdict(result)}))
         else:
-            print("UDP {} -> {} | {}".format(protocol, result.status.upper(), result.application_protocol or "not identified"))
+            print("UDP {} -> {} | {}".format(protocol, result.status.upper(), result.application_protocol or result.encryption or "not identified"))
             print("  " + result.reason + "\n")
 
 
