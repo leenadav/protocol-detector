@@ -143,8 +143,13 @@ class Analyzer:
         stream = self.manager.connections[key]["directions"][source]
         offset = (packet.sequence - stream.first_sequence) % MODULUS
         end = offset + len(packet.payload)
-        if self.compact and offset >= MODULUS // 2 and end >= MODULUS:
-            end -= MODULUS  # Payload tail / FIN crosses the retained origin.
+        if self.compact and offset >= MODULUS // 2:
+            if end >= MODULUS:
+                end -= MODULUS  # Payload tail / FIN crosses the retained origin.
+            elif flags & FIN:
+                # A wholly pre-origin FIN cannot be a huge future boundary.
+                # Multiple sequence epochs are outside this prefix observer.
+                return self.reject(key, source, "FIN outside unambiguous retained-origin range")
         previous_fin = state["fin"].get(source)
         if packet.payload and previous_fin is not None and end > previous_fin:
             return self.reject(key, source, "data beyond observed FIN")

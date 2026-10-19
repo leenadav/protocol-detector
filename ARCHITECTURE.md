@@ -318,3 +318,22 @@ The reject helper is only called on exceptional control paths and retains no
 queue. Its allocation/work is bounded by one inspector retraction plus the
 existing two-direction drop. Tests cover eight concrete rejection sequences in
 compact/strict Analyzer and default/all-events live/offline outputs.
+
+
+## v0.14: FIN before the retained origin
+
+For compact mode, a segment offset in the upper half of the 32-bit sequence
+space is treated as a possible leading segment. If its payload reaches the
+origin, end is normalized by subtracting 2**32 as in v0.12. If it does not reach
+the origin and carries FIN, Analyzer rejects it with a directional event rather
+than storing a huge positive FIN boundary. This also conservatively rejects
+ambiguous FIN positions at or above the half-range boundary; tracking multiple
+sequence epochs or endpoint receive windows remains unsupported. Payload wholly
+before the origin without FIN is still ignored. A FIN normalized to zero ends
+an empty direction; later data is rejected against that zero boundary.
+
+The extra FIN test executes only in the already exceptional upper-half-offset
+branch. No additional scan or retained data is introduced. Strict mode keeps
+its existing bounded-window rejection. Reference: RFC9293 section 3.4 sequence
+arithmetic; this observer's conservative ambiguity policy is not an endpoint TCP
+implementation.

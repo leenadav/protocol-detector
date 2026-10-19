@@ -1,4 +1,4 @@
-# Review scope: protocol detector v0.13
+# Review scope: protocol detector v0.14
 
 Review the complete implementation, especially protocol_engine/, sessions.py,
 analyze_pcap.py, capture_stream.py and live_capture.py. The implementation
@@ -15,7 +15,7 @@ Focus on false positives, malformed/truncated inputs, ambiguous prefixes,
 reassembly conflicts and lifecycle, bounded CPU/memory, and missing independent
 tests. Provide concrete reproduction inputs where possible.
 
-Verification: 234 unit tests passed on local Python 3.9.6, including overlap-oracle, capture-path and directional control-retraction regressions.
+Verification: 239 unit tests passed on local Python 3.9.6, including overlap-oracle, capture-path and directional control-retraction regressions.
 Synthetic IPv4 loopback smoke testing identified 15 sessions across 13 families
 with zero reported kernel drops. No customer traffic is included.
 
@@ -29,3 +29,11 @@ Earlier reports are historical and retain their own source fingerprints.
 
 Synthetic PCAP files are generated examples. Local backups, development handoff
 notes, old source copies and replay logs are excluded from this review snapshot.
+
+
+v0.14 rejects compact FINs ending wholly before the retained origin instead of
+interpreting them as future boundaries. It preserves zero-boundary and
+origin-crossing cases. Multiple sequence epochs remain unsupported; half-range
+FIN ambiguity is rejected conservatively. Five regression tests expose 17 failing
+baseline subcases. BENCHMARK-V014.md has current source fingerprints and paired
+measurements; earlier reports refer to their historical versions.

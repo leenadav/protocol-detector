@@ -1,4 +1,4 @@
-# Protocol detector v0.13
+# Protocol detector v0.14
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **35 protocol families**, with explicit profiles rather than claims of full
@@ -44,6 +44,16 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.14 — pre-origin FIN boundaries
+
+A compact-mode FIN ending before the retained stream origin is now rejected,
+with an explicit directional retraction. It cannot become a huge future boundary
+that permits later data. A FIN ending exactly at the origin closes an empty
+direction; a payload crossing the origin still validates its retained tail.
+Five regression tests cover wraparound, prior identifications and boundaries;
+239 tests pass. BENCHMARK-V014.md records verification and synthetic CPU costs.
+Multiple TCP sequence epochs remain outside this initial-prefix observer.
 
 ## New in v0.13 — visible TCP control retractions
 
