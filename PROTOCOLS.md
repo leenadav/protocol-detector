@@ -1,11 +1,12 @@
-# Protocol coverage — v0.20
+# Protocol coverage — v0.21
 
-The engine implements 39 families with the profiles below. This is a complete
+The engine implements 40 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.
 All input must start at the supported message/stream boundary; no port-only match.
 
 | Family | Transport | Selection | Observation scope | Implemented profile |
 |---|---|---|---|---|
+| ikev2 | udp | Automatic profiles | datagram | IKE_SA_INIT initiator, bounded AES-CBC/GCM and MODP14..18 offers, KE/nonce, optional non-ESP marker; no authentication or established tunnel claim |
 | dtls | udp | Automatic profiles | datagram | DTLS1.2 complete epoch-zero ClientHello in one record/datagram; client assertions only, no fragments or decryption |
 | dcerpc | tcp | Automatic profiles | bind_request | Connection-oriented 5.0 Bind, NDR 2.0/NDR64 1.0 offers; no authentication, replies, stub decoding or product identity |
 | giop | tcp | Automatic profiles | request_header/locate_request | GIOP 1.2 unfragmented KeyAddr Request/LocateRequest; bounded CDR; opaque arguments and service contexts |
@@ -489,3 +490,64 @@ metadata privacy, 2,500 seeded mutations, existing-family ambiguity checks and a
 DHCP-cookie collision inside a valid DTLS cookie. `dtls_interop.py` additionally
 checks actual LibreSSL3.3.6 ClientHello and cookie retry against a synthetic local
 responder; this is not a complete DTLS interoperability or security certification.
+
+
+## IKEv2 initial request profile (v0.21)
+
+This profile recognizes plaintext IKE_SA_INIT negotiation, not ESP traffic or an
+established VPN. Output is application_protocol=ikev2 with encryption/application
+unset; offered_dh_group is an initiator assertion. SPI, key, nonce, cookie, vendor
+and NAT hash bytes are never emitted.
+
+- Header version2.0, exchange34, flags0x08, message ID0, nonzero initiator SPI and
+  zero responder SPI. Optional four-zero-byte non-ESP marker is excluded from
+  IKE length. Exactly one full message fills the datagram; no port dependency.
+- Required singleton SA, KE and nonce payloads may occur in any order. Chaining
+  and all nested lengths must end exactly. Reserved header/payload/proposal/KE/
+  transform fields must be zero; known-payload critical bit is accepted.
+- Proposals start at1, increase consecutively, specify IKE protocol and zero
+  inner SPI length. Transform counts and continuation markers must agree.
+  Supported IDs: ENCR12(AES-CBC) or18/19/20(AES-GCM), PRF2/5/6/7(HMAC-SHA1/2),
+  INTEG2/12/13/14(HMAC-SHA1/2), DH14..18(MODP2048..8192).
+- AES needs exactly one TV key-length attribute14,128/192/256 bits. Other
+  transforms carry no attributes. CBC proposals require integrity; AEAD-only
+  proposals must omit integrity. Mixing CBC/AEAD within one proposal is outside
+  this profile; separate proposals are accepted. No algorithm security policy.
+- KE public-value width must match its MODP group, which must be offered by an
+  SA proposal. Nonce16..256 bytes and at least half the largest offered PRF key
+  size. Public-number validity, entropy and cryptographic relationships are not
+  checked. No key computation is performed.
+- Optional NAT source/destination notifications16388/16389 require20-byte data
+  and no SPI/protocol ID. Cookie16390 requires1..64 bytes and must be the first
+  payload. Vendor IDs are nonempty opaque fields bounded by max_line. Other
+  payload/transform/notification variants, ECC/PQ groups, IKEv1, responses,
+  encrypted messages, later exchanges and IKE fragmentation are unsupported.
+- One aggregate budget min(max_headers,128) counts payloads, proposals and
+  transforms together. max_bytes applies to input and advertised message size.
+  No input is retained across calls. Requests shorter than352 bytes cannot fit
+  this profile and bypass the automatic IKE probe (explicit hints still validate).
+
+The probe checks only fixed header positions0/4. It adds one competing candidate
+to the existing UDP route rather than overriding random SPI collisions. Maximum
+three validators; dual supported structures return unknown, competing exhausted
+work budgets prevent identification. Two actual dual encodings (CoAP/IKE and
+DHCP/IKE) and the three-candidate ceiling are regression-tested.
+
+Primary specifications:
+[RFC7296](https://www.rfc-editor.org/rfc/rfc7296.html),
+[RFC5282 AES-GCM proposal rules](https://www.rfc-editor.org/rfc/rfc5282.html),
+[RFC4868 HMAC-SHA2](https://www.rfc-editor.org/rfc/rfc4868.html),
+[IANA IKEv2 identifiers](https://www.iana.org/assignments/ikev2-parameters).
+Spec-derived tests include all supported algorithm combinations, truncations,
+length/count limits, cookie/marker handling and3,000 mutations. Independent
+tcpdump dissection agrees on both basic fixtures; no real IKE endpoint tested.
+
+## TLS EC context correction (v0.21)
+
+Review4319051025 was reproduced onv0.20: TLS1.2 cipher0x002f plus extension11
+incorrectly identified. Extension11 now requires one of the supported ECC suites
+0xc023..0xc032. RSA-only0x002f without that extension remains valid. All TCP and
+TLS-record splits reject the invalid combination; all supported ECC suites retain
+positive coverage. This is a structural context check, not client-offer matching.
+Source: [RFC8422 section5.2](https://www.rfc-editor.org/rfc/rfc8422.html#section-5.2).
+Legacy point-format values0..2 remain in the documented compatibility profile.

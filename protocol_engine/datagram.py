@@ -6,6 +6,7 @@ Candidate hints restrict validation; they never cause an identification themselv
 from types import MappingProxyType
 from .datagram_result import DatagramMatch
 from .dtls import dtls
+from .ikev2 import ikev2, ike_probe
 from .model import Config, Evidence, Metrics, Observation
 from .parsers import BudgetError, ParseError
 from .extended import TextParser, UnsupportedPrefix
@@ -34,7 +35,7 @@ def sip(data, config):
     return "sip/2.0", "SIP required header framing and datagram body length validated; body/dialogue semantics unverified"
 
 
-VALIDATORS = MappingProxyType({"dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
+VALIDATORS = MappingProxyType({"ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
 
 
 class DatagramInspector:
@@ -77,11 +78,15 @@ class DatagramInspector:
             # Tiny empty CoAP messages are too weak for automatic selection.
             if len(data) >= 4 and len(data) > 4 + (data[0] & 15) and data[0] >> 6 == 1 and data[0] & 15 <= 8:
                 candidates.append("coap")
+        # SPI bytes are arbitrary and may also satisfy a different protocol's
+        # probe. Keep that competitor; at most one extra fixed-position route.
+        if not protocol_hint and ike_probe(data):
+            candidates = (*candidates, "ikev2")
         if not candidates:
             return Observation(status="unknown", reason="No supported datagram structure selected", **base)
         self.metrics.bytes_inspected += len(data)
         matches, errors = [], []
-        for candidate in candidates:  # bounded by two preselected families, not registry size
+        for candidate in candidates:  # bounded by three preselected families, not registry size
             self.metrics.candidates_selected += 1
             self.metrics.parser_calls += 1
             try:

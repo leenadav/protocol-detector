@@ -100,6 +100,21 @@ class TLSServerTests(unittest.TestCase):
                            ((16,b'\0\x03\x02h2x'),),((23,b''),(23,b'')),((51,b'\0\x1d'),),((1234,b''),)):
             self.assertNotEqual(inspect(record(hello(extensions))).observation.status,'identified',extensions)
 
+    def test_ec_formats_require_ecc_cipher_in_server_hello(self):
+        # RFC8422 section5.2; review4319051025. The supported RSA-only
+        # cipher must reject this extension at every transport/record split.
+        h=hello(((11,b'\x01\x00'),),cipher=0x002f)
+        data=record(h)
+        for cut in range(len(data)+1):
+            e=Inspector();e.feed(data[:cut]);e.feed(data[cut:])
+            self.assertEqual(e.observation.status,'malformed',cut)
+            self.assertIsNone(e.observation.encryption)
+        for cut in range(1,len(h)):
+            self.assertEqual(inspect(record(h[:cut])+record(h[cut:])).observation.status,'malformed',cut)
+        self.assertEqual(inspect(record(hello(cipher=0x002f))).observation.status,'identified')
+        for cipher in range(0xc023,0xc033):
+            self.assertEqual(inspect(record(hello(((11,b'\1\0'),),cipher=cipher))).observation.status,'identified',cipher)
+
     def test_bad_server13_extension_dependencies_and_shapes(self):
         for extra in ((),((41,b'\0'),),((51,b'\0\x1d'),),((51,b'\0\x1d\0\x1f'+bytes(31)),),
                       ((51,b'\0\x17\0\x41'+bytes(65)),),((51,b'\xff\xff\0\x01x'),),

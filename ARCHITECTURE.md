@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.20 — engine and observation contracts
+# Stream/datagram engine v0.21 — engine and observation contracts
 
 ## Ownership
 
@@ -99,7 +99,7 @@ between messages and has no permanent session bypass. There is no stream EOF or
 fragmentation concept in this API. A host must reject incomplete packet captures
 or reassemble IP fragments before invoking it.
 
-Header probes preselect at most two candidates. Full validators must pass within
+Header probes preselect at most three candidates (two existing routes plus IKE). Full validators must pass within
 the datagram boundary; lengths cannot silently consume another datagram. If both
 DNS and CoAP structures validate, return unknown. If a competing candidate exhausts
 its budget, do not identify the surviving interpretation as unique. A candidate
@@ -425,3 +425,19 @@ steal the route. A single record/hello must fill the complete datagram; fragment
 and coalescing support is intentionally excluded. Extension count is checked
 before reuse of the TLS ClientHello field validator, with at most128 entries and
 16KiB plaintext record size. No input survives inspect(), even on a rejection.
+
+
+## Fixed-position IKE ambiguity route (v0.21)
+
+Unlike a fixed prefix signature, the initial IKE SPI may contain arbitrary bytes.
+After existing UDP probing, a bounded IKE header probe adds one candidate; it does
+not override a possible CoAP/DHCP interpretation. It checks native position0 or
+position4 after the non-ESP marker and first gates on the smallest supported
+message size352. At most three validators run, independent of registry size.
+Single/dual matches and competing budget failures use existing uncertainty rules.
+The IKE parser has one aggregate128-capped structural work budget and never
+materializes algorithm combinations. No cryptography or association cache.
+
+TLS1.2 server extension11 now checks its ECC-cipher context before reading point
+formats. This adds no work when that extension is absent, preserving the existing
+ClientHello path and server-extension bounds.

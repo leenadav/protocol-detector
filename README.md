@@ -1,7 +1,7 @@
-# Protocol detector v0.20
+# Protocol detector v0.21
 
 A standalone Python 3.9+ protocol classification engine and passive observation
-tool. **39 protocol families**, with explicit profiles rather than claims of full
+tool. **40 protocol families**, with explicit profiles rather than claims of full
 protocol/session validation. No Python runtime dependencies. Live capture uses
 an installed `tcpdump`; ordinary demos and tests require no capture privileges.
 We are staying in Python. This release does not integrate with or modify an SWG.
@@ -35,7 +35,7 @@ python3 -B live_capture.py -i en0 --filter 'tcp port 443' --duration 30 --json
 ```
 
 `live_smoke.py` deliberately creates only local test traffic and verifies HTTP,
-TLS client/server hellos and retry, BGP, SMB2/3, DNS, SNMP, TFTP, STOMP, NATS, IMAP, RDP, FastCGI, rsync, Git, GIOP DCE/RPC and DTLS detections,
+TLS client/server hellos and retry, BGP, SMB2/3, DNS, SNMP, TFTP, STOMP, NATS, IMAP, RDP, FastCGI, rsync, Git, GIOP DCE/RPC, DTLS and IKEv2 detections,
 including server-direction handshakes. Separate modes also check MySQL, MongoDB
 and RADIUS with explicit candidates. It is opt-in, outside
 `make test`. `sample-expanded.pcap` is generated synthetic data with reordered
@@ -44,6 +44,25 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.21 — IKEv2 negotiation and bounded UDP ambiguity
+
+IKEv2 IKE_SA_INIT requests now have structural recognition, including optional
+non-ESP framing. The validator checks proposal/transform nesting, supported
+AES-CBC/GCM and HMAC-SHA offers, MODP key widths, nonce size and consistency with
+the offers. It identifies the plaintext negotiation protocol; it does not claim
+an established IPsec tunnel, encryption, authentication or application identity.
+
+Arbitrary initiator SPI bytes can resemble another UDP protocol. One fixed-position
+IKE probe supplements existing candidates, bounded to three validators. Dual
+CoAP/IKE or DHCP/IKE interpretations return unknown; a competing work-budget
+failure prevents a positive result. There is no registry scan.
+
+Coverage is **40 families,36 automatic**;309 tests pass. A delayed TLS review
+finding was independently reproduced and fixed: EC point formats now require an
+ECC cipher suite in TLS1.2 ServerHello. `ike_decoder_check.py` optionally verifies
+synthetic framing with tcpdump offline. No real IKE peer interoperability claim.
+See PROTOCOLS.md and BENCHMARK-V021.md for exact coverage, exclusions and CPU costs.
 
 ## New in v0.20 — DTLS over UDP
 

@@ -130,3 +130,13 @@ _dtls_handshake = b'\x01' + len(_dtls_body).to_bytes(3,'big') + bytes(5) + len(_
 DTLS = b'\x16\xfe\xff' + bytes(8) + len(_dtls_handshake).to_bytes(2,'big') + _dtls_handshake
 DATAGRAM_CASES += ((DTLS, 'dtls'),)
 del _dtls_body, _dtls_handshake
+
+# IKEv2 SA_INIT: AES-CBC128/HMAC-SHA256/MODP2048 offers; key/nonce placeholders.
+_ike_sa=bytes.fromhex('220000300000002c010100040300000c0100000c800e00800300000802000005030000080300000c000000080400000e')
+_ike_ke=bytes.fromhex('28000108000e0000')+bytes(256)
+_ike_nonce=bytes.fromhex('00000024')+bytes(32)
+_ike_body=_ike_sa+_ike_ke+_ike_nonce
+IKEV2=bytes.fromhex('1112131415161718')+bytes(8)+bytes.fromhex('2120220800000000')+(28+len(_ike_body)).to_bytes(4,'big')+_ike_body
+IKEV2_MARKER=bytes(4)+IKEV2
+DATAGRAM_CASES+=((IKEV2,'ikev2'),(IKEV2_MARKER,'ikev2'))
+del _ike_sa,_ike_ke,_ike_nonce,_ike_body

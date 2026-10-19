@@ -13,6 +13,7 @@ class ProtocolSupport:
 
 
 _SUPPORTED = (
+    ProtocolSupport("ikev2", ("udp",), "datagram", "IKE_SA_INIT initiator: bounded SA/KE/nonce, AES-CBC/GCM and MODP14..18 offers, optional non-ESP marker; no authentication or established IPsec claim"),
     ProtocolSupport("dtls", ("udp",), "datagram", "DTLS1.2 complete epoch-zero ClientHello in one record/datagram; bounded extensions, client assertions only; no fragments, negotiation or decryption"),
     ProtocolSupport("dcerpc", ("tcp",), "bind_request", "Connection-oriented v5.0 unfragmented Bind, NDR 2.0/NDR64 1.0 offers; no authentication, replies, stub decoding or product identity"),
     ProtocolSupport("giop", ("tcp",), "request_header/locate_request", "GIOP 1.2 unfragmented KeyAddr Request/LocateRequest; bounded CDR, opaque arguments and service contexts; no replies or object identity"),

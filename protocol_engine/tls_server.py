@@ -3,7 +3,8 @@ from .parsers import Reader, ParseError, BudgetError
 from .extended import UnsupportedPrefix
 
 HRR_RANDOM = bytes.fromhex('cf21ad74e59a6111be1d8c021e65b891c2a211167abb8c5e079e09e2c8a8339c')
-_TLS12_CIPHERS = frozenset((0x002f,)) | frozenset(range(0xc023, 0xc033))
+_TLS12_ECC_CIPHERS = frozenset(range(0xc023, 0xc033))
+_TLS12_CIPHERS = frozenset((0x002f,)) | _TLS12_ECC_CIPHERS
 _KEY_SIZES = {23:65, 24:97, 25:133, 29:32, 30:56,
               256:256, 257:384, 258:512, 259:768, 260:1024}
 
@@ -88,6 +89,8 @@ def parse_server_hello(body, config, record_versions, record_remaining):
                 if value != b'\0':
                     raise UnsupportedPrefix('Only initial-handshake renegotiation_info supported')
             elif kind == 11:
+                if cipher not in _TLS12_ECC_CIPHERS:
+                    raise ParseError('EC point formats require an ECC cipher suite')
                 formats = Reader(value)
                 values = formats.vector(1)
                 formats.end()
