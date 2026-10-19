@@ -1,32 +1,28 @@
-# Review scope: protocol detector v0.16
+# Review scope: protocol detector v0.17
 
-Python3.9-compatible IPv4-only bounded protocol classification. Coverage is
-36 families,32 automatic, with narrow profiles documented in PROTOCOLS.md.
-Review protocol_engine/, sessions.py and both capture adapters for false positives,
-ambiguity, malformed lengths, reassembly/lifecycle and CPU/memory bounds.
+Python 3.9-compatible IPv4-only bounded protocol classification: 37 families,
+33 automatic, narrow profiles documented in PROTOCOLS.md. Review protocol_engine/,
+sessions.py and both capture adapters for correctness and CPU/memory bounds.
 
-New focus: native Git service framing and internal Git/text ambiguity routing.
-Four lowercase hex bytes plus git- select a private route, not an identity.
-The first bounded NUL/LF field chooses strict Git or text parsing; it is replayed
-once into one parser. Explicit git hints remain strict; internal git_text cannot
-be requested as a hint. Review fragmentation/consumption accounting and valid HTTP
-extension methods sharing the prefix. Git paths/hosts/opaque extras are not output
-as identity; offered_version is not negotiated version. No packfile, server or
-Git-over-SSH/HTTPS recognition is claimed.
+New focus: GIOP 1.2 unfragmented KeyAddr Request/LocateRequest in either byte order.
+CDR alignment is relative to the whole message, padding values are arbitrary,
+and lengths/counts are bounded before slicing/iteration. Request arguments and
+service contexts are opaque. No object keys/operation names/opaque payload output.
+Check empty bodies versus alignment, unsupported variants, strict hints and HTTP
+extension-method prefixes. No full CORBA/IDL decoding or ORB interoperability claim.
 
-Earlier fixes validate leading overlaps, preserve PCAP truncation metadata with
-retractions, reject reserved IPv4 flags and publish directional invalidation on
-control rejection. FIN/payload ends share origin-relative coordinates. Multiple
-sequence epochs and endpoint receive-window validation remain unsupported.
+Native Git framing and its bounded private Git/text route remain part of review.
+Earlier fixes validate leading overlaps, preserve PCAP truncation with retractions,
+reject reserved IPv4 flags and emit directional control invalidation. FIN/payload
+ends share coordinates. No multiple-epoch or endpoint receive-window validation.
 
-252 tests passed on the installed Python3.9.6 copy. Native Git interoperability
-was checked with installed Git2.50.1 and a synthetic IPv4 loopback server, with
-user/system Git configs disabled. The actual loopback smoke capture identified
-16 streams/datagrams across14 families, including Git, with zero reported kernel
-drops. Verification scripts and JSON reports have matching source fingerprints.
-BENCHMARK-V016.md includes the ~10.7% cost for the deliberately ambiguous HTTP
-method path; normal HTTP/TLS/SSH medians remained close in this single-host run.
-None of these results establish production latency, throughput or accuracy.
+261 installed tests pass, with all cuts/bytewise input, independent endian fixtures,
+1,800 mutation fragmentation comparisons, negative fields, budgets and hint checks.
+Actual local synthetic IPv4 capture: 145 packets,17 identifications,15 families,
+zero reported kernel drops. BENCHMARK-V017.md and JSON report paired CPU costs;
+ordinary existing p50 paths range approximately -1.4% to +1.9% in this run.
+New GIOP work is compared to a baseline which did not identify it. No production
+latency, throughput or accuracy claim. Existing Git interop report remains v0.16.
 
-Only synthetic fixtures are uploaded. Backups, development notes, credentials,
-old source copies and replay logs are excluded. Provide concrete reproductions.
+Only synthetic fixtures uploaded. Backups, development notes, credentials, old
+source copies and replay logs excluded. Provide concrete reproductions.

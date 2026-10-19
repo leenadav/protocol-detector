@@ -1,7 +1,7 @@
-# Protocol detector v0.16
+# Protocol detector v0.17
 
 A standalone Python 3.9+ protocol classification engine and passive observation
-tool. **36 protocol families**, with explicit profiles rather than claims of full
+tool. **37 protocol families**, with explicit profiles rather than claims of full
 protocol/session validation. No Python runtime dependencies. Live capture uses
 an installed `tcpdump`; ordinary demos and tests require no capture privileges.
 We are staying in Python. This release does not integrate with or modify an SWG.
@@ -44,6 +44,16 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.17 — GIOP and bounded CDR parsing
+
+GIOP 1.2 Request/LocateRequest now have automatic structural recognition for
+unfragmented KeyAddr messages in either byte order. A bounded CDR cursor checks
+alignment, string/sequence lengths and service-context framing. Argument values,
+object keys and context payloads remain opaque and are never exposed as identity.
+Coverage is **37 families, 33 automatic**; 261 tests pass. HTTP methods starting
+with GIOP remain HTTP. See PROTOCOLS.md for exact exclusions and BENCHMARK-V017.md
+for measured CPU costs. No production latency or complete CORBA coverage claim.
 
 ## New in v0.16 — native Git and bounded ambiguity routing
 

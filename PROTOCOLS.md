@@ -1,11 +1,12 @@
-# Protocol coverage — v0.16
+# Protocol coverage — v0.17
 
-The engine implements 36 families with the profiles below. This is a complete
+The engine implements 37 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.
 All input must start at the supported message/stream boundary; no port-only match.
 
 | Family | Transport | Selection | Observation scope | Implemented profile |
 |---|---|---|---|---|
+| giop | tcp | Automatic profiles | request_header/locate_request | GIOP 1.2 unfragmented KeyAddr Request/LocateRequest; bounded CDR; opaque arguments and service contexts |
 | git | tcp | Automatic profiles | service_request | Native Git pkt-line request; bounded path, optional DNS/IPv4 host and extras; no packfile/server/version-negotiation validation |
 | radius | udp | Hint required | datagram | Hint required: Access-Request PAP/CHAP/State with supported attributes; no authenticator verification or EAP |
 | fastcgi | tcp | Automatic profiles | initial_params | v1 BEGIN_REQUEST plus complete PARAMS stream; one request, zero reserved fields, no response/body semantics |
@@ -353,3 +354,28 @@ Consulted 2026-10-19. The profile is not a claim of full modern RADIUS coverage.
 
 Primary specifications: [Git pack protocol](https://git-scm.com/docs/pack-protocol)
 and [Git common protocol framing](https://git-scm.com/docs/protocol-common).
+
+## GIOP profile (v0.17)
+
+- Version 1.2, unfragmented Request (type 0) or LocateRequest (type 3), both
+  endian orders. Header reserved flag bits must be zero. Complete advertised
+  frame required; bounded by max_bytes, rejected at the header when oversized.
+- KeyAddr target only; object key <=max_line bytes, including empty keys.
+  Request flags 0,1,3; reserved request octets zero in this conservative profile.
+  Operation is a nonempty ASCII identifier [A-Za-z_][A-Za-z0-9_]*, stored as a
+  bounded CDR string including exactly one terminal NUL, total <=max_line.
+- At most min(max_headers,128) contexts; IDs and bounded octet sequence lengths
+  checked, context payloads opaque. Arbitrary CDR alignment padding accepted.
+  Nonempty request arguments must follow 8-byte alignment; their IDL-dependent
+  encoding is unverified. Empty bodies must not have alignment-only padding.
+- LocateRequest must end exactly after its object key. No replies, cancel,
+  fragmentation, ProfileAddr/ReferenceAddr, older/newer GIOP versions, application
+  identity, request correlation or authentication. TCP segmentation is supported;
+  GIOP application-level fragmentation is not.
+- Automatic prefix dispatch waits at most five bytes for GIOP + binary major
+  version 1. Text extensions such as GIOP / HTTP/1.1 stay on the text path.
+  One parser per direction; no registry scan. Explicit giop hint remains strict.
+
+Primary specification: [OMG CORBA interoperability](https://www.omg.org/spec/CORBA/3.4/Interoperability/PDF),
+sections 9.3 CDR and 9.4.1/9.4.2/9.4.5 (normative file formal/12-11-14,
+PDF labeled Part 2 v3.3), and [OMG GIOP IDL](https://www.omg.org/spec/CORBA/20120301/GIOP.idl).

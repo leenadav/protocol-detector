@@ -13,6 +13,7 @@ class ProtocolSupport:
 
 
 _SUPPORTED = (
+    ProtocolSupport("giop", ("tcp",), "request_header/locate_request", "GIOP 1.2 unfragmented KeyAddr Request/LocateRequest; bounded CDR, opaque arguments and service contexts; no replies or object identity"),
     ProtocolSupport("git", ("tcp",), "service_request", "Native Git pkt-line service request; bounded pathname, optional DNS/IPv4 host and extra parameters; no packfile, server or negotiated-version validation"),
     ProtocolSupport("radius", ("udp",), "datagram", "Hint required: Access-Request PAP/CHAP/State with supported attributes; no authenticator verification or EAP", True),
     ProtocolSupport("fastcgi", ("tcp",), "initial_params", "v1 BEGIN_REQUEST plus complete PARAMS stream; one request, zero reserved fields, no response/body semantics"),

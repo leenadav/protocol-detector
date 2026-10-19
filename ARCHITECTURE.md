@@ -374,3 +374,12 @@ limits are checked before unbounded allocations; the largest frame is capped by
 both protocol and configured budgets. Version evidence is an offer. No Git path,
 virtual host or opaque extra is promoted to application identity. Single-message
 terminal bypass and retained TCP overlap checking remain unchanged.
+
+## v0.17: bounded CDR and GIOP
+
+CDRCursor works against a complete bounded frame and absolute message offsets,
+so alignment includes the 12-byte common header. Lengths are checked before
+slicing; count preflight and a 128-context cap bound iteration. No recursive
+CDR/TypeCode or context decoding. GIOP shares FrameParser and releases retained
+bytes on terminal outcomes. A G-prefix discriminator waits at most five bytes;
+ordinary GET diverges at byte two and HTTP extension-method compatibility remains.

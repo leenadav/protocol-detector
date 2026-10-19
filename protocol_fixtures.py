@@ -101,3 +101,7 @@ _git_request = b'git-upload-pack /project.git\0host=example.com\0\0version=2\0'
 GIT = ('%04x' % (len(_git_request)+4)).encode('ascii') + _git_request
 STREAM_CASES += ((GIT, 'git'),)
 del _git_request
+
+# GIOP 1.2, big-endian LocateRequest: request ID, KeyAddr + padding, octet key.
+GIOP = bytes.fromhex('47494f500102000300000010000000010000000000000004') + b'demo'
+STREAM_CASES += ((GIOP, 'giop/1.2'),)

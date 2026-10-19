@@ -12,7 +12,7 @@ import sys
 import threading
 import time
 from live_capture import capture_command, run_capture
-from protocol_fixtures import GIT, RADIUS, FASTCGI, RSYNC, BGP, SMB311, DNS, SNMP, TFTP, STOMP, STOMP_SERVER, NATS_CONNECT, NATS_INFO, IMAP, RDP, MYSQL, MONGODB, MONGODB_CHECKSUM
+from protocol_fixtures import GIOP, GIT, RADIUS, FASTCGI, RSYNC, BGP, SMB311, DNS, SNMP, TFTP, STOMP, STOMP_SERVER, NATS_CONNECT, NATS_INFO, IMAP, RDP, MYSQL, MONGODB, MONGODB_CHECKSUM
 from proxy_demo import client_hello
 
 
@@ -62,7 +62,7 @@ def main():
                 listener = tcp4
                 profiles = ((request, False), (BGP, False), (SMB311, False),
                                              (client_hello(), False), (STOMP, False), (NATS_CONNECT, False),
-                                             (IMAP, True), (RDP, False), (STOMP_SERVER, True), (NATS_INFO, True), (FASTCGI, False), (RSYNC, True), (GIT, False))
+                                             (IMAP, True), (RDP, False), (STOMP_SERVER, True), (NATS_INFO, True), (FASTCGI, False), (RSYNC, True), (GIT, False), (GIOP, False))
                 if args.database:
                     profiles = ((MYSQL, True),) if args.database == 'mysql' else ((MONGODB, False), (MONGODB_CHECKSUM, False))
                 if args.radius:
@@ -99,7 +99,7 @@ def main():
         if worker.is_alive() or failures:
             raise RuntimeError('Traffic generation failed: ' + repr(failures))
         found = {event['protocol'] for event in events if event['type'] == 'classification' and event['status'] == 'identified'}
-        expected = {'http/1.1', 'bgp/4', 'smb2', 'tls', 'dns', 'snmp/2c', 'tftp', 'stomp', 'nats', 'imap', 'rdp', 'fastcgi/1', 'rsync', 'git'}
+        expected = {'http/1.1', 'bgp/4', 'smb2', 'tls', 'dns', 'snmp/2c', 'tftp', 'stomp', 'nats', 'imap', 'rdp', 'fastcgi/1', 'rsync', 'git', 'giop/1.2'}
         if args.database:
             expected = {args.database}
         if args.radius:

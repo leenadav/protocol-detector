@@ -22,6 +22,12 @@ _STOMP_STARTS = (b'CONNECT\n', b'CONNECT\r\n', b'CONNECTED\n', b'CONNECTED\r\n',
 def select(prefix):
     """Return a family or None; prefix contains 1..LOOKAHEAD bytes."""
     first = prefix[0]
+    if first == 71:  # GIOP is also a legal HTTP extension-method prefix.
+        magic = b'GIOP'
+        if len(prefix) <= 4 and magic.startswith(prefix):
+            return None
+        if prefix[:4] == magic and prefix[4] == 1:
+            return 'giop'
     if first in GIT_HEX and all(byte in GIT_HEX for byte in prefix[:4]):
         if len(prefix) < 4:
             return None
