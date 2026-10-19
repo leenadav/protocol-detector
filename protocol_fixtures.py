@@ -105,3 +105,7 @@ del _git_request
 # GIOP 1.2, big-endian LocateRequest: request ID, KeyAddr + padding, octet key.
 GIOP = bytes.fromhex('47494f500102000300000010000000010000000000000004') + b'demo'
 STREAM_CASES += ((GIOP, 'giop/1.2'),)
+
+# Synthetic DCE/RPC Bind, one context and NDR 2.0 offer; opaque interface UUID.
+DCERPC = bytes.fromhex('05000b03100000004800000001000000b810b810000000000100000000000100') + bytes(range(1,17)) + bytes.fromhex('01000000045d888aeb1cc9119fe808002b10486002000000')
+STREAM_CASES += ((DCERPC, 'dcerpc/5.0'),)

@@ -11,11 +11,12 @@ from .remote import RDPParser
 from .fastcgi import FastCGIParser
 from .rsync import RsyncParser
 from .git_transport import GitParser, GitTextParser
+from .dcerpc import DCERPCParser
 from .giop import GIOPParser
 from .database import MySQLParser, MongoDBParser
 
 PARSERS = MappingProxyType({
-    "giop": GIOPParser, "git": GitParser, "fastcgi": FastCGIParser, "rsync": RsyncParser,
+    "dcerpc": DCERPCParser, "giop": GIOPParser, "git": GitParser, "fastcgi": FastCGIParser, "rsync": RsyncParser,
     "mysql": MySQLParser, "mongodb": MongoDBParser,
     "stomp": STOMPParser, "rdp": RDPParser,
     "bgp": BGPParser, "smb2": SMB2Parser, "tls": TLSParser, "text": TextParser, "http2": HTTP2Parser, "socks5": Socks5Parser,

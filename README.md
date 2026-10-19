@@ -1,7 +1,7 @@
-# Protocol detector v0.17
+# Protocol detector v0.18
 
 A standalone Python 3.9+ protocol classification engine and passive observation
-tool. **37 protocol families**, with explicit profiles rather than claims of full
+tool. **38 protocol families**, with explicit profiles rather than claims of full
 protocol/session validation. No Python runtime dependencies. Live capture uses
 an installed `tcpdump`; ordinary demos and tests require no capture privileges.
 We are staying in Python. This release does not integrate with or modify an SWG.
@@ -44,6 +44,17 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.18 — DCE/RPC bind validation
+
+Connection-oriented DCE/RPC 5.0 Bind now has a bounded automatic profile for
+unfragmented, unauthenticated presentation offers. Both byte orders are supported,
+with NDR 2.0 and NDR64 1.0 transfer identifiers; no RPC interface/product identity
+or successful negotiation is inferred. Two-byte dispatch distinguishes RPC from
+SOCKS5 without parser fan-out. The 05 00 prefix now waits for an RPC header;
+explicit socks5 hints still reject a zero-method greeting immediately.
+Coverage is **38 families, 34 automatic**; 270 tests pass. See PROTOCOLS.md and
+BENCHMARK-V018.md for profile limits, validation and CPU measurements.
 
 ## New in v0.17 — GIOP and bounded CDR parsing
 

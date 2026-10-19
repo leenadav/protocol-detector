@@ -1,11 +1,12 @@
-# Protocol coverage — v0.17
+# Protocol coverage — v0.18
 
-The engine implements 37 families with the profiles below. This is a complete
+The engine implements 38 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.
 All input must start at the supported message/stream boundary; no port-only match.
 
 | Family | Transport | Selection | Observation scope | Implemented profile |
 |---|---|---|---|---|
+| dcerpc | tcp | Automatic profiles | bind_request | Connection-oriented 5.0 Bind, NDR 2.0/NDR64 1.0 offers; no authentication, replies, stub decoding or product identity |
 | giop | tcp | Automatic profiles | request_header/locate_request | GIOP 1.2 unfragmented KeyAddr Request/LocateRequest; bounded CDR; opaque arguments and service contexts |
 | git | tcp | Automatic profiles | service_request | Native Git pkt-line request; bounded path, optional DNS/IPv4 host and extras; no packfile/server/version-negotiation validation |
 | radius | udp | Hint required | datagram | Hint required: Access-Request PAP/CHAP/State with supported attributes; no authenticator verification or EAP |
@@ -379,3 +380,30 @@ and [Git common protocol framing](https://git-scm.com/docs/protocol-common).
 Primary specification: [OMG CORBA interoperability](https://www.omg.org/spec/CORBA/3.4/Interoperability/PDF),
 sections 9.3 CDR and 9.4.1/9.4.2/9.4.5 (normative file formal/12-11-14,
 PDF labeled Part 2 v3.3), and [OMG GIOP IDL](https://www.omg.org/spec/CORBA/20120301/GIOP.idl).
+
+## DCE/RPC profile (v0.18)
+
+- Connection-oriented version 5.0, type 11 (Bind), complete unfragmented PDU.
+  FIRST/LAST required; optional CONC_MPX and SUPPORT_HEADER_SIGN flags are offers
+  only. Other flags, minor 1 and nonzero auth_length are outside this profile.
+- ASCII/IEEE packed representation, big- or little-endian integers. Whole frame
+  >=72 bytes and <=max_bytes. Advertised fragment-size preferences, call ID and
+  association group are opaque: no endpoint negotiation/transport-limit claim.
+  Zero size preferences retain C706's default encoding.
+- Nonempty context list, <=min(max_headers,128), unique context IDs, zero reserved
+  fields, nonnil abstract UUID; interface version is opaque. Each context offers
+  one or two distinct standard transfer syntaxes, with exact UUID/version matches
+  for NDR 2.0 and NDR64 1.0. Their wire UUID byte order follows packed_drep.
+  Offers do not imply that subsequent stub arguments use either encoding.
+- Entire list length checked, no trailing bytes. Unknown transfer syntaxes,
+  Microsoft bind-time feature contexts, authentication verifiers, replies,
+  application fragmentation, stub decoding, named-pipe/SMB encapsulation and
+  interface-to-product mapping are unsupported. TCP segmentation is supported.
+- Auto-dispatch uses 05 00; SOCKS5 requires a nonzero method count, so there is no
+  valid supported overlap. A partial 05 00 is now detecting/incomplete instead
+  of immediately malformed; explicit socks5 hints retain strict SOCKS validation.
+
+Primary specifications: [Open Group C706 chapter 12](https://pubs.opengroup.org/onlinepubs/9629399/chap12.htm),
+sections 12.6.3 and 12.6.4.3; Microsoft [NDR identifier](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpce/b6090c2b-f44a-47a1-a13b-b82ade0137b2),
+[NDR64 identifier](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpce/dca648a5-42d3-432c-9927-2f22e50fa266),
+and [header-sign flag](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpce/4886f349-2a73-4f9e-9262-a8404462c7e9).

@@ -383,3 +383,12 @@ slicing; count preflight and a 128-context cap bound iteration. No recursive
 CDR/TypeCode or context decoding. GIOP shares FrameParser and releases retained
 bytes on terminal outcomes. A G-prefix discriminator waits at most five bytes;
 ordinary GET diverges at byte two and HTTP extension-method compatibility remains.
+
+## v0.18: DCE/RPC versus SOCKS5
+
+Byte 05 waits for one further byte. A zero selects RPC (minor version 0), while
+nonzero selects SOCKS5 (method count). No speculative parallel parsing. RPC reuses
+FrameParser, bounds a complete frame before allocation, and preflights list lengths
+before traversal. At most128 contexts each offer at most2 transfer syntaxes.
+UUID wire constants are built at import, not per packet. Only known transfer
+names are emitted as offers; no opaque interface or connection identifiers leak.

@@ -34,6 +34,11 @@ def select(prefix):
         discriminator = prefix[4:8]
         if b'git-'.startswith(discriminator):
             return 'git_text' if len(discriminator) == 4 else None
+    if first == 5:
+        if len(prefix) < 2:
+            return None
+        # RPC minor version zero cannot be a valid SOCKS5 method count.
+        return 'dcerpc' if prefix[1] == 0 else 'socks5'
     family = FIRST_BYTE[first]
     if family != "ambiguous":
         return family

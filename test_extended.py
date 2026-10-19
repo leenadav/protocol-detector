@@ -93,7 +93,7 @@ class ExtendedTests(unittest.TestCase):
         self.assertTrue(any(e.field == "socks_target" and e.value == "example.com" for e in inspector.observation.evidence))
 
     def test_socks_invalid_or_unsupported(self):
-        for data in (b"\x05\x00", b"\x05\x01\xff", b"\x05\x01\x00\x05\x04\x00\x01",
+        for data in (b"\x05\x01\xff", b"\x05\x01\x00\x05\x04\x00\x01",
                      b"\x05\x01\x00\x05\x01\x01\x01", b"\x05\x01\x00\x05\x01\x00\x08",
                      b"\x05\x01\x00\x05\x01\x00\x03\x00"):
             self.assertEqual(self.inspect(data).observation.status, "malformed")
