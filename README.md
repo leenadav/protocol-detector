@@ -1,7 +1,7 @@
-# Protocol detector v0.15
+# Protocol detector v0.16
 
 A standalone Python 3.9+ protocol classification engine and passive observation
-tool. **35 protocol families**, with explicit profiles rather than claims of full
+tool. **36 protocol families**, with explicit profiles rather than claims of full
 protocol/session validation. No Python runtime dependencies. Live capture uses
 an installed `tcpdump`; ordinary demos and tests require no capture privileges.
 We are staying in Python. This release does not integrate with or modify an SWG.
@@ -44,6 +44,23 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.16 — native Git and bounded ambiguity routing
+
+The engine now validates native Git service requests, including optional virtual
+host and version offers, without using ports or publishing repository paths.
+Coverage is **36 families, 32 automatic**. Git-over-SSH/HTTPS and packfiles are not
+inferred from this initial request. The version offer does not prove negotiation.
+
+A private Git/text route distinguishes NUL-framed Git requests from HTTP extension
+methods with the same ASCII prefix. It buffers one bounded field, selects one
+parser, replays that field once and delegates; there is no registry scan or
+parallel parser fan-out. Explicit `git` hints still run strict Git validation.
+
+252 unit tests pass. `python3 -B git_interop.py` is an opt-in local-only check using
+an installed Git client with user/system configuration disabled. The updated
+loopback smoke check includes Git. See BENCHMARK-V016.md for measured costs,
+including the added cost for an intentionally ambiguous HTTP method.
 
 ## New in v0.15 — consistent leading-payload coordinates
 

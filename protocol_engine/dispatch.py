@@ -4,6 +4,7 @@ This is a small fixed classifier, not a general multi-pattern matching engine.
 Ambiguous HTTP method prefixes stay undecided until a distinguishing byte.
 """
 from .extended import H2_PREFACE
+from .git_transport import HEX as GIT_HEX
 
 LOOKAHEAD = 24
 _table = ["unknown"] * 256
@@ -21,6 +22,12 @@ _STOMP_STARTS = (b'CONNECT\n', b'CONNECT\r\n', b'CONNECTED\n', b'CONNECTED\r\n',
 def select(prefix):
     """Return a family or None; prefix contains 1..LOOKAHEAD bytes."""
     first = prefix[0]
+    if first in GIT_HEX and all(byte in GIT_HEX for byte in prefix[:4]):
+        if len(prefix) < 4:
+            return None
+        discriminator = prefix[4:8]
+        if b'git-'.startswith(discriminator):
+            return 'git_text' if len(discriminator) == 4 else None
     family = FIRST_BYTE[first]
     if family != "ambiguous":
         return family

@@ -1,31 +1,32 @@
-# Review scope: protocol detector v0.15
+# Review scope: protocol detector v0.16
 
-Review the complete implementation, especially protocol_engine/, sessions.py,
-analyze_pcap.py, capture_stream.py and live_capture.py. It supports 35 families,
-31 with automatic profiles; PROTOCOLS.md specifies the narrow supported messages
-and candidate requirements. Python 3.9 and IPv4 only.
+Python3.9-compatible IPv4-only bounded protocol classification. Coverage is
+36 families,32 automatic, with narrow profiles documented in PROTOCOLS.md.
+Review protocol_engine/, sessions.py and both capture adapters for false positives,
+ambiguity, malformed lengths, reassembly/lifecycle and CPU/memory bounds.
 
-Prioritize false positives, malformed/truncated input, ambiguous prefixes,
-reassembly conflicts and lifecycle, bounded CPU/memory and missing independent
-tests. Provide concrete reproductions where possible.
+New focus: native Git service framing and internal Git/text ambiguity routing.
+Four lowercase hex bytes plus git- select a private route, not an identity.
+The first bounded NUL/LF field chooses strict Git or text parsing; it is replayed
+once into one parser. Explicit git hints remain strict; internal git_text cannot
+be requested as a hint. Review fragmentation/consumption accounting and valid HTTP
+extension methods sharing the prefix. Git paths/hosts/opaque extras are not output
+as identity; offered_version is not negotiated version. No packfile, server or
+Git-over-SSH/HTTPS recognition is claimed.
 
-Capture corrections validate leading overlaps, preserve offline PCAP original
-length/truncation metadata with explicit retractions, reject reserved IPv4 flags,
-and publish structured directional events on TCP control rejection. FIN and
-payload ends use consistent origin-relative coordinates: pre-origin FINs are
-rejected, harmless wholly pre-origin payload is ignored even after FIN, and
-crossing payload beyond FIN is rejected. Multiple sequence epochs/endpoint
-receive windows remain unsupported. The legacy read_pcap API rejects truncation;
-read_pcap_records exposes metadata.
+Earlier fixes validate leading overlaps, preserve PCAP truncation metadata with
+retractions, reject reserved IPv4 flags and publish directional invalidation on
+control rejection. FIN/payload ends share origin-relative coordinates. Multiple
+sequence epochs and endpoint receive-window validation remain unsupported.
 
-Verification: 241 tests passed on the installed Python 3.9.6 copy. These include
-independent overlap and absolute FIN-coordinate oracles, wraparound, capture-gap,
-malformed capture and live/offline output regressions. BENCHMARK-V015.md and its
-JSON report contain current paired synthetic CPU measurements and fingerprints.
-Ordinary-path p50 differences were about -1% to +3%; no statistical significance
-or production latency/accuracy is established. Earlier reports are historical.
-The v0.12 physical loopback smoke report covers only that earlier source version;
-later changes use synthetic frame tests through the actual capture adapter.
+252 tests passed on the installed Python3.9.6 copy. Native Git interoperability
+was checked with installed Git2.50.1 and a synthetic IPv4 loopback server, with
+user/system Git configs disabled. The actual loopback smoke capture identified
+16 streams/datagrams across14 families, including Git, with zero reported kernel
+drops. Verification scripts and JSON reports have matching source fingerprints.
+BENCHMARK-V016.md includes the ~10.7% cost for the deliberately ambiguous HTTP
+method path; normal HTTP/TLS/SSH medians remained close in this single-host run.
+None of these results establish production latency, throughput or accuracy.
 
-Synthetic PCAP fixtures only; no customer traffic. Backups, development handoff
-notes, old source copies, credentials and replay logs are excluded.
+Only synthetic fixtures are uploaded. Backups, development notes, credentials,
+old source copies and replay logs are excluded. Provide concrete reproductions.

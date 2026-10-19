@@ -1,11 +1,12 @@
-# Protocol coverage — v0.15
+# Protocol coverage — v0.16
 
-The engine implements 35 families with the profiles below. This is a complete
+The engine implements 36 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.
 All input must start at the supported message/stream boundary; no port-only match.
 
 | Family | Transport | Selection | Observation scope | Implemented profile |
 |---|---|---|---|---|
+| git | tcp | Automatic profiles | service_request | Native Git pkt-line request; bounded path, optional DNS/IPv4 host and extras; no packfile/server/version-negotiation validation |
 | radius | udp | Hint required | datagram | Hint required: Access-Request PAP/CHAP/State with supported attributes; no authenticator verification or EAP |
 | fastcgi | tcp | Automatic profiles | initial_params | v1 BEGIN_REQUEST plus complete PARAMS stream; one request, zero reserved fields, no response/body semantics |
 | rsync | tcp | Automatic profiles | protocol_header | Daemon greeting, final protocols 27..32; version/digest offers, no authentication or transfer |
@@ -325,3 +326,30 @@ Primary sources: [RFC2865](https://www.rfc-editor.org/rfc/rfc2865.html), section
 4.1, 5 and 7.1/7.2 (independent PAP/CHAP test vectors), and
 [RFC2869 Message-Authenticator](https://www.rfc-editor.org/rfc/rfc2869.html#section-5.14).
 Consulted 2026-10-19. The profile is not a claim of full modern RADIUS coverage.
+
+
+## Native Git profile (v0.16)
+
+- Client service requests for upload-pack, receive-pack and upload-archive. Full
+  lowercase-hex pkt-line length and complete NUL-terminated request are required;
+  maximum wire frame is 65520 bytes and Config.max_bytes can lower that budget.
+- Path must be nonempty, without ASCII controls/DEL, and the initial field fits
+  Config.max_line (including four length bytes and its NUL). Other path bytes
+  are opaque. No filesystem/repository existence or authorization is inferred.
+- Optional host is an ASCII DNS name or IPv4 literal with optional port 1..65535;
+  authority length is at most260. IPv6 authorities are outside this profile.
+- Optional extras require their separate NUL delimiter. At most min(max_headers,16)
+  extras, each at most min(max_line,512) bytes, key at most64 bytes. The supported
+  profile uses ASCII alphanumeric/hyphen/underscore keys and printable non-space
+  values; duplicates and unsupported version offers are unknown, never matches.
+- Version1/2 is recorded only as offered_version evidence. No host, repository
+  path, opaque extra value or credentials are emitted as identity or telemetry.
+- Automatic prefix routing does not confuse a Git-shaped HTTP extension method
+  with Git. The first NUL/LF chooses strict Git/text parsing within max_line;
+  the dispatch prefix itself remains bounded to24 bytes. Internal git_text is
+  not a caller hint. The public git hint restricts validation to Git alone.
+- No response/ref discovery, packfile, Git-over-SSH/HTTP, authentication or later
+  session validation. Flush/control pkt-lines alone never identify this profile.
+
+Primary specifications: [Git pack protocol](https://git-scm.com/docs/pack-protocol)
+and [Git common protocol framing](https://git-scm.com/docs/protocol-common).

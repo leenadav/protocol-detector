@@ -4,7 +4,7 @@ from .model import Config, Evidence, Event, Metrics, Observation, RuleIndex
 from .parsers import BudgetError, ParseError
 from .extended import UnsupportedPrefix
 from .dispatch import LOOKAHEAD, select
-from .registry import PARSERS
+from .registry import PARSERS, FACTORIES
 
 
 class Inspector:
@@ -81,7 +81,7 @@ class Inspector:
         parser = self._parser
         encryption = "tls" if self._candidate == "tls" else None
         protocol = None if encryption else parser.protocol_name
-        if self._candidate == "text":
+        if self._candidate in ("text", "git_text"):
             self._candidate = parser.family
         hostname = parser.host if hasattr(parser, "host") else None
         alpn = parser.alpn if encryption else ()
@@ -133,7 +133,7 @@ class Inspector:
                     return ()
                 self._candidate = candidate
                 self.metrics.candidates_selected += 1
-                self._parser = PARSERS[candidate](self.config)
+                self._parser = FACTORIES[candidate](self.config)
                 if previous:
                     # Replay the bounded routing prefix once, not the accumulated stream.
                     chunk = bytes(self._prefix) + chunk

@@ -95,3 +95,9 @@ STREAM_CASES += GATEWAY_STREAM_CASES
 # No real password or shared secret; only structural validation is claimed.
 RADIUS = bytes.fromhex('017b0038') + bytes(range(16)) + bytes.fromhex('0406c00002010106') + b'demo' + bytes.fromhex('0212') + b'x' * 16 + bytes.fromhex('050600000001')
 HINTED_DATAGRAM_CASES += ((RADIUS, 'radius', 'radius'),)
+
+# Native Git request: the version field is an offer, not a negotiated result.
+_git_request = b'git-upload-pack /project.git\0host=example.com\0\0version=2\0'
+GIT = ('%04x' % (len(_git_request)+4)).encode('ascii') + _git_request
+STREAM_CASES += ((GIT, 'git'),)
+del _git_request

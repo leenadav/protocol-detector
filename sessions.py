@@ -48,6 +48,8 @@ class Stream:
             return []
         observation = self.inspector.observation
         candidate = self.inspector.candidate
+        if candidate == "git_text":
+            candidate = "text"  # Shared routing scope before a structural discriminator.
         matched = "tls" if observation.encryption == "tls" else observation.application_protocol
         if matched == "http/2":
             matched = "http2"
@@ -60,7 +62,7 @@ class Stream:
             matched = "amqp"
         if matched and "/" in matched:
             matched = matched.split("/", 1)[0]
-        candidates = {candidate} if candidate != "text" else {"http", "ssh", "smtp", "sip", "rtsp", "nats", "imap"}
+        candidates = {candidate} if candidate != "text" else {"http", "ssh", "smtp", "sip", "rtsp", "nats", "imap", "git"}
         for name in TCP_FAMILIES:
             status = "NO_MATCH"
             if observation.status == "identified" and matched == name:

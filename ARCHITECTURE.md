@@ -352,3 +352,25 @@ The regression oracle uses absolute integer offsets and independently computes
 FIN consistency, retained byte positions and highest retained end before wire
 sequence encoding. It checks 1,680 combinations over three origins, five FIN
 boundaries, payload lengths/positions and FIN/non-FIN flags.
+
+
+## v0.16: bounded structural ambiguity routes
+
+Dispatch detects a lowercase four-hex length followed by git- using at most8
+bytes, then chooses the private git_text factory. Other families still resolve
+within the existing24-byte lookahead. PARSERS remains the immutable public hint
+registry; FACTORIES adds private automatic routes without exposing them as hints.
+GitTextParser scans only new bytes up to max_line for the earliest NUL/LF,
+buffers at most that one field, then replays it once into one chosen parser.
+After selection it delegates directly. No competing parsers run concurrently.
+This preserves HTTP extension methods such as0033git-upload-pack; a git hint
+always uses GitParser and cannot identify HTTP. The final family comes from the
+selected parser, as with existing shared text routing. Metrics charge new bytes
+once across both prefix and field replay, and stop at the initial message boundary.
+
+GitParser reuses FrameParser for bounded advertised length, validates the complete
+service-request profile and releases its buffer. Parameter count/width and path
+limits are checked before unbounded allocations; the largest frame is capped by
+both protocol and configured budgets. Version evidence is an offer. No Git path,
+virtual host or opaque extra is promoted to application identity. Single-message
+terminal bypass and retained TCP overlap checking remain unchanged.
