@@ -299,3 +299,22 @@ Physical record/header errors emit all_observations_this_capture invalidation an
 raise CaptureError without a clean EOF finalization. Consumers must apply these
 retractions to prior labels. Offline/live IPv4 decoders reject reserved bit 0x8000
 as well as fragmentation, allowing only an optional DF bit.
+
+
+## v0.13: control rejection events
+
+Analyzer.reject publishes Inspector.invalidate for the rejected packet's direction
+before drop releases both directions. The triggering packet's last_events and
+last_classification therefore carry the retraction, just as retained-overlap
+errors already do. Offline events-only output cannot suppress that event; live
+monitoring counts and emits it once through the ordinary event path. The reverse
+direction uses normal retirement: an unfinished observation ends incomplete,
+while a completed independent initial observation remains historical evidence.
+No endpoint receive-window validation or connection-wide application inference
+is implied. RST, timeout and capture EOF are observation retirement, not protocol
+contradictions; they keep their existing completed-observation semantics.
+
+The reject helper is only called on exceptional control paths and retains no
+queue. Its allocation/work is bounded by one inspector retraction plus the
+existing two-direction drop. Tests cover eight concrete rejection sequences in
+compact/strict Analyzer and default/all-events live/offline outputs.

@@ -1,4 +1,4 @@
-# Protocol detector v0.12
+# Protocol detector v0.13
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **35 protocol families**, with explicit profiles rather than claims of full
@@ -45,6 +45,16 @@ If capture permission is denied, grant permission to the capture helper accordin
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
 
+## New in v0.13 — visible TCP control retractions
+
+Rejected FIN/SYN-ACK/URG/ACK state now publishes a directional `invalidated`
+event before releasing tracking. Offline `--events-only` consumers therefore
+receive the retraction of a previously identified stream. Live output uses the
+same structured event and counts it once. Normal RST/timeout/EOF retirement still
+preserves completed initial-message observations. Four new parameterized tests
+exercise eight rejection sequences, both directions and offline/live output;
+234 tests pass. See BENCHMARK-V013.md for paired CPU measurements and limitations.
+
 ## New in v0.12 — review corrections
 
 All three initial GitHub review findings were reproduced and corrected. Prefix
@@ -58,7 +68,7 @@ rejected consistently by offline and live decoders.
 The legacy `read_pcap` tuple API now raises on captured/original length mismatch;
 use `read_pcap_records` for explicit metadata. CaptureRecord remains importable
 from capture_stream and is defined in packets. Coverage stays 35 families, 31
-automatic; 230 tests pass. See BENCHMARK-V012.md for verification and CPU costs.
+automatic; its verification passed 230 tests. See BENCHMARK-V012.md for verification and CPU costs.
 
 ## New in v0.11
 

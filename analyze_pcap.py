@@ -51,6 +51,16 @@ class Analyzer:
                     for event in events:
                         self.on_retire(source, destination, event)
 
+    def reject(self, key, source, reason):
+        """Publish a directional retraction before releasing rejected TCP state."""
+        connection = self.manager.connections.get(key)
+        if connection is not None:
+            stream = connection['directions'][source]
+            self.last_events = stream.inspector.invalidate(reason)
+            self.last_classification = stream.inspector.observation
+        self.drop(key, reason)
+        return "INVALIDATED: " + reason
+
     def finish(self, reason="Capture ended before initial message completed"):
         """Release all tracking; ending observation is not proof of TCP EOF."""
         if not isinstance(reason, str) or not reason or len(reason) > 256:
@@ -111,12 +121,10 @@ class Analyzer:
         if flags & SYN:
             if (source == state["client"] or not flags & ACK or flags & FIN
                     or packet.acknowledgement != (state["isn"] + 1) % MODULUS or packet.payload):
-                self.drop(key)
-                return "INVALIDATED: inconsistent or unsupported SYN-ACK"
+                return self.reject(key, source, "inconsistent or unsupported SYN-ACK")
             if state["ready"]:
                 if packet.sequence != state["server_isn"]:
-                    self.drop(key)
-                    return "INVALIDATED: changed server sequence"
+                    return self.reject(key, source, "changed server sequence")
                 return "SYN-ACK retransmission"
             try:
                 self.manager.open_connection(destination, source,
@@ -130,8 +138,7 @@ class Analyzer:
         if not state["ready"]:
             return "SKIP: SYN-ACK not observed"
         if flags & URG or not flags & ACK:
-            self.drop(key)
-            return "INVALIDATED: urgent data or missing ACK unsupported"
+            return self.reject(key, source, "urgent data or missing ACK unsupported")
         # FIN marks the end of one direction; retain state while any gap remains.
         stream = self.manager.connections[key]["directions"][source]
         offset = (packet.sequence - stream.first_sequence) % MODULUS
@@ -140,15 +147,12 @@ class Analyzer:
             end -= MODULUS  # Payload tail / FIN crosses the retained origin.
         previous_fin = state["fin"].get(source)
         if packet.payload and previous_fin is not None and end > previous_fin:
-            self.drop(key)
-            return "INVALIDATED: data beyond observed FIN"
+            return self.reject(key, source, "data beyond observed FIN")
         if flags & FIN:
             if (end > stream.limit and not self.compact) or (previous_fin is not None and previous_fin != end):
-                self.drop(key)
-                return "INVALIDATED: inconsistent FIN or stream limit"
+                return self.reject(key, source, "inconsistent FIN or stream limit")
             if stream.highest_end > end:
-                self.drop(key)
-                return "INVALIDATED: stored data beyond FIN"
+                return self.reject(key, source, "stored data beyond FIN")
             state["fin"][source] = end
         try:
             snapshot = self.manager.feed(source, destination, packet.sequence, packet.payload)

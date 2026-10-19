@@ -1,4 +1,4 @@
-# Review scope: protocol detector v0.12
+# Review scope: protocol detector v0.13
 
 Review the complete implementation, especially protocol_engine/, sessions.py,
 analyze_pcap.py, capture_stream.py and live_capture.py. The implementation
@@ -15,15 +15,16 @@ Focus on false positives, malformed/truncated inputs, ambiguous prefixes,
 reassembly conflicts and lifecycle, bounded CPU/memory, and missing independent
 tests. Provide concrete reproduction inputs where possible.
 
-Verification: 230 unit tests passed on local Python 3.9.6, including twelve new
-regression tests with independent overlap-oracle and capture-path checks.
+Verification: 234 unit tests passed on local Python 3.9.6, including overlap-oracle, capture-path and directional control-retraction regressions.
 Synthetic IPv4 loopback smoke testing identified 15 sessions across 13 families
 with zero reported kernel drops. No customer traffic is included.
 
-BENCHMARK-V012.md documents paired synthetic CPU measurements and limitations.
-Ordinary-path changes were approximately 1–2% in this single-host run; the new
-conflicting-overlap path intentionally does more validation than the incorrect
-baseline. These measurements do not establish production latency or accuracy.
+v0.13 also fixes missing structured retractions on rejected FIN/SYN-ACK/URG/ACK
+state. Offline events-only now receives the same directional invalidation as
+live capture, and live event counters include it exactly once.
+BENCHMARK-V013.md documents paired synthetic CPU measurements and limitations.
+Ordinary cases changed by about 1% or less; the corrected control rejection
+path costs about 4.8% more to publish the missing structured event. These measurements do not establish production latency or accuracy.
 Earlier reports are historical and retain their own source fingerprints.
 
 Synthetic PCAP files are generated examples. Local backups, development handoff
