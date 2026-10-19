@@ -337,3 +337,18 @@ branch. No additional scan or retained data is introduced. Strict mode keeps
 its existing bounded-window rejection. Reference: RFC9293 section 3.4 sequence
 arithmetic; this observer's conservative ambiguity policy is not an endpoint TCP
 implementation.
+
+
+## v0.15: one coordinate system for leading payload and FIN
+
+Compact upper-half offsets now normalize end by subtracting 2**32 regardless
+of whether payload reaches zero. This aligns the FIN comparison with Stream's
+existing prefix clipping: wholly pre-origin non-FIN payload has a negative/zero
+end and cannot be mistaken for data beyond a previously observed positive FIN.
+A negative FIN remains rejected; a crossing end beyond FIN remains rejected.
+No extra loops, allocations or retained state are added. Sequence epochs beyond
+the unambiguous origin-relative range remain unsupported as documented in v0.14.
+The regression oracle uses absolute integer offsets and independently computes
+FIN consistency, retained byte positions and highest retained end before wire
+sequence encoding. It checks 1,680 combinations over three origins, five FIN
+boundaries, payload lengths/positions and FIN/non-FIN flags.

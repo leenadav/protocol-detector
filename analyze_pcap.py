@@ -144,9 +144,10 @@ class Analyzer:
         offset = (packet.sequence - stream.first_sequence) % MODULUS
         end = offset + len(packet.payload)
         if self.compact and offset >= MODULUS // 2:
-            if end >= MODULUS:
-                end -= MODULUS  # Payload tail / FIN crosses the retained origin.
-            elif flags & FIN:
+            # Compare all leading segments in the same signed coordinate
+            # system, including payload wholly before the retained origin.
+            end -= MODULUS
+            if end < 0 and flags & FIN:
                 # A wholly pre-origin FIN cannot be a huge future boundary.
                 # Multiple sequence epochs are outside this prefix observer.
                 return self.reject(key, source, "FIN outside unambiguous retained-origin range")
