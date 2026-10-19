@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.11 — engine and observation contracts
+# Stream/datagram engine v0.12 — engine and observation contracts
 
 ## Ownership
 
@@ -281,3 +281,21 @@ bytes ignored beyond the prefix window do not move it. A FIN before retained dat
 is rejected by one integer comparison instead of scanning present[end:] across
 up to 65536 bytes. The metadata is checked against the presence bitmap in tests,
 including gaps, retransmissions, clipping and ignored later data.
+
+## v0.12 review corrections
+
+Compact prefix mode trims bytes preceding the known stream origin before checking
+retained overlaps; strict mode continues to reject out-of-window payloads. FIN
+positions crossing the origin are normalized consistently. This protects retained
+bytes, not arbitrary multiple wraps of a long-lived TCP sequence epoch.
+
+Offline read_pcap_records retains timestamp, captured bytes, original wire length
+and Ethernet link type in CaptureRecord. The old read_pcap tuple interface rejects
+truncated captures rather than silently losing metadata. The live decoder imports
+the same record class. On captured length < original length, offline output emits
+a capture_gap with active_connections scope, discards every active connection and
+requires fresh handshakes; this conservatively includes truncation of link padding.
+Physical record/header errors emit all_observations_this_capture invalidation and
+raise CaptureError without a clean EOF finalization. Consumers must apply these
+retractions to prior labels. Offline/live IPv4 decoders reject reserved bit 0x8000
+as well as fragmentation, allowing only an optional DF bit.

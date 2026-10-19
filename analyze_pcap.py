@@ -5,7 +5,7 @@ import weakref
 from dataclasses import asdict, replace
 from collections import Counter
 from functools import partial
-from packets import CaptureError, PacketError, UDPPacket, decode_packet, read_pcap
+from packets import CaptureError, PacketError, UDPPacket, decode_packet, read_pcap_records
 from protocol_engine import Config, DatagramInspector, Event, Inspector
 from protocol_engine.registry import PARSERS
 from protocol_engine.datagram import VALIDATORS
@@ -136,6 +136,8 @@ class Analyzer:
         stream = self.manager.connections[key]["directions"][source]
         offset = (packet.sequence - stream.first_sequence) % MODULUS
         end = offset + len(packet.payload)
+        if self.compact and offset >= MODULUS // 2 and end >= MODULUS:
+            end -= MODULUS  # Payload tail / FIN crosses the retained origin.
         previous_fin = state["fin"].get(source)
         if packet.payload and previous_fin is not None and end > previous_fin:
             self.drop(key)
@@ -189,27 +191,53 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
                   event.observation.status.upper(), event.observation.reason))
     analyzer = Analyzer(tcp_hint=tcp_hint, crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, udp_hint=udp_hint)
     counts = Counter()
-    for number, (timestamp, frame) in enumerate(read_pcap(path), 1):
-        counts["frames"] += 1
-        try:
-            packet = decode_packet(frame)
-        except PacketError as error:
-            counts["skipped"] += 1
-            if not events_only:
-                print(json.dumps({"frame": number, "status": "skipped", "reason": str(error)})
-                      if json_output else "#{} SKIP: {}".format(number, error))
-            continue
-        counts["udp" if isinstance(packet, UDPPacket) else "tcp"] += 1
-        message = analyzer.process(timestamp, packet)
-        if not events_only or analyzer.last_events:
-            if json_output:
-                print(json.dumps({"frame": number, "source": packet.source,
-                                  "destination": packet.destination, "message": message,
-                                  "classification": asdict(analyzer.last_classification)
-                                  if analyzer.last_classification is not None else None,
-                                  "events": [asdict(event) for event in analyzer.last_events]}))
-            else:
-                print("#{} {}".format(number, message))
+    def capture_gap(reason, scope="active_connections", number=None):
+        active = len(analyzer.tracked)
+        counts["connections_discarded_after_gap"] += active
+        # A partial link/IP header cannot safely identify the affected flow.
+        # Retract active labels explicitly, discard both directions, and require
+        # a new observed handshake. Do not turn capture loss into clean EOF.
+        event = {"type": "capture_gap", "scope": scope,
+                 "active_connections": active, "reason": reason}
+        if number is not None:
+            event["frame"] = number
+        print(json.dumps(event) if json_output else "CAPTURE_GAP: " + reason)
+        analyzer.tracked.clear()
+        analyzer.manager.connections.clear()
+        analyzer.last_events = ()
+        analyzer.last_classification = None
+
+    try:
+        for number, record in enumerate(read_pcap_records(path), 1):
+            timestamp, frame = record.timestamp, record.data
+            counts["frames"] += 1
+            if record.truncated:
+                counts["truncated"] += 1
+                counts["skipped"] += 1
+                capture_gap("Capture truncation; active stream observations invalidated", number=number)
+                continue
+            try:
+                packet = decode_packet(frame)
+            except PacketError as error:
+                counts["skipped"] += 1
+                if not events_only:
+                    print(json.dumps({"frame": number, "status": "skipped", "reason": str(error)})
+                          if json_output else "#{} SKIP: {}".format(number, error))
+                continue
+            counts["udp" if isinstance(packet, UDPPacket) else "tcp"] += 1
+            message = analyzer.process(timestamp, packet)
+            if not events_only or analyzer.last_events:
+                if json_output:
+                    print(json.dumps({"frame": number, "source": packet.source,
+                                      "destination": packet.destination, "message": message,
+                                      "classification": asdict(analyzer.last_classification)
+                                      if analyzer.last_classification is not None else None,
+                                      "events": [asdict(event) for event in analyzer.last_events]}))
+                else:
+                    print("#{} {}".format(number, message))
+    except (CaptureError, OSError):
+        capture_gap("Capture failed; observations may be incomplete", "all_observations_this_capture")
+        raise
     analyzer.finish("Capture input EOF before initial message completed")
     print(json.dumps({"summary": dict(counts)}) if json_output else
           "\nFrames: {frames}; TCP: {tcp}; UDP: {udp}; skipped: {skipped}".format(

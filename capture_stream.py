@@ -1,23 +1,10 @@
 """Incremental classic PCAP framing for pipes and files. No blocking reads here."""
 import struct
-from dataclasses import dataclass
-from packets import CaptureError
+from packets import CaptureError, CaptureRecord
 
 LINK_TYPES = frozenset((0, 1, 101, 108, 113, 228, 276))
 FORMATS = {b"\xd4\xc3\xb2\xa1": ("<", 1000000), b"\xa1\xb2\xc3\xd4": (">", 1000000),
            b"\x4d\x3c\xb2\xa1": ("<", 1000000000), b"\xa1\xb2\x3c\x4d": (">", 1000000000)}
-
-
-@dataclass(frozen=True)
-class CaptureRecord:
-    timestamp: float
-    data: bytes
-    original_length: int
-    linktype: int
-
-    @property
-    def truncated(self):
-        return len(self.data) < self.original_length
 
 
 class PcapStreamDecoder:

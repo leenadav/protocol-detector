@@ -1,4 +1,4 @@
-# Protocol coverage — v0.11
+# Protocol coverage — v0.12
 
 The engine implements 35 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.

@@ -29,7 +29,31 @@ class UDPPacket:
     payload: bytes
 
 
+@dataclass(frozen=True)
+class CaptureRecord:
+    timestamp: float
+    data: bytes
+    original_length: int
+    linktype: int
+
+    @property
+    def truncated(self):
+        return len(self.data) < self.original_length
+
+
 def read_pcap(path):
+    """Legacy (timestamp, frame) API; reject records that would hide truncation.
+
+    Use read_pcap_records to handle captured/original lengths explicitly.
+    """
+    for record in read_pcap_records(path):
+        if record.truncated:
+            raise CaptureError("Capture truncation; use read_pcap_records for metadata")
+        yield record.timestamp, record.data
+
+
+def read_pcap_records(path):
+    """Yield Ethernet CaptureRecord objects, retaining original wire length."""
     formats = {
         b"\xd4\xc3\xb2\xa1": ("<", 1000000),
         b"\xa1\xb2\xc3\xd4": (">", 1000000),
@@ -61,7 +85,7 @@ def read_pcap(path):
             if len(frame) != included:
                 raise CaptureError("Truncated PCAP record data")
             # A captured frame may be shorter than its original wire length.
-            yield seconds + fraction / resolution, frame
+            yield CaptureRecord(seconds + fraction / resolution, frame, original, linktype)
 
 
 def _ipv4(frame):
@@ -85,8 +109,8 @@ def _ipv4(frame):
     total = int.from_bytes(ip[2:4], "big")
     if ip_length < 20 or total < ip_length or total > len(ip):
         raise PacketError("Invalid or truncated IPv4 length")
-    if int.from_bytes(ip[6:8], "big") & 0x3fff:
-        raise PacketError("IPv4 fragments unsupported")
+    if int.from_bytes(ip[6:8], "big") & 0xbfff:
+        raise PacketError("IPv4 fragments/reserved flag unsupported")
     return ip[:total]
 
 

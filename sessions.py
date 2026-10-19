@@ -85,6 +85,15 @@ class Stream:
             return
         # Modulo subtraction handles a sequence counter wrapping past 2**32.
         offset = (sequence - self.first_sequence) % MODULUS
+        # A segment can start before offset zero and still cover retained
+        # bytes. In prefix mode clip that leading portion before the ordinary
+        # upper-bound check; modulo subtraction alone would ignore its tail.
+        if self.prefix_only and offset >= MODULUS // 2:
+            leading = MODULUS - offset
+            if leading >= len(payload):
+                return
+            payload = payload[leading:]
+            offset = 0
         if offset + len(payload) > self.limit:
             if self.prefix_only:
                 # Live observation covers the bounded initial prefix only.
