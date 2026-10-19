@@ -1,0 +1,612 @@
+{
+  "environment": {
+    "python": "3.9.6",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "iterations_per_round": 500,
+    "rounds": 5,
+    "warmup_flows_per_case_version": 50,
+    "order_seed": 402,
+    "gc": "enabled",
+    "engine_sha256": {
+      "current": "193373d12e403006078a41c523d0de894fd03df63f65e9e46a52a8861a2c2916",
+      "baseline": "3464e9ee5eaee342f4eeb985e46dcadd3d3656d477498f394ac96dd202472621"
+    }
+  },
+  "scope": "Feed loop including events; excludes Inspector construction, import, capture, TCP, TLS decryption, logging and concurrency",
+  "cases": {
+    "http_small": {
+      "baseline": {
+        "flow": {
+          "p50_us": 12.583,
+          "p95_us": 15.417,
+          "p99_us": 21.042
+        },
+        "round_p50_us": [
+          13.0,
+          12.625,
+          12.416,
+          12.625,
+          12.417
+        ],
+        "metrics": {
+          "bytes_received": 37,
+          "bytes_inspected": 37,
+          "updates": 1,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 11.875,
+          "p95_us": 14.917,
+          "p99_us": 18.875
+        },
+        "round_p50_us": [
+          12.375,
+          11.916,
+          12.0,
+          11.75,
+          11.709
+        ],
+        "metrics": {
+          "bytes_received": 37,
+          "bytes_inspected": 37,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 37,
+      "chunks": 1,
+      "p50_change_percent": -5.6
+    },
+    "http_fragmented": {
+      "current": {
+        "flow": {
+          "p50_us": 301.541,
+          "p95_us": 337.0,
+          "p99_us": 351.167
+        },
+        "round_p50_us": [
+          299.979,
+          298.125,
+          300.854,
+          301.208,
+          311.959
+        ],
+        "metrics": {
+          "bytes_received": 6050,
+          "bytes_inspected": 6050,
+          "updates": 190,
+          "parser_calls": 190,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 307.354,
+          "p95_us": 341.083,
+          "p99_us": 357.5
+        },
+        "round_p50_us": [
+          303.646,
+          305.708,
+          306.291,
+          308.854,
+          314.625
+        ],
+        "metrics": {
+          "bytes_received": 6050,
+          "bytes_inspected": 6050,
+          "updates": 190,
+          "parser_calls": 191,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 6050,
+      "chunks": 190,
+      "p50_change_percent": -1.9
+    },
+    "tls_whole": {
+      "current": {
+        "flow": {
+          "p50_us": 19.25,
+          "p95_us": 20.584,
+          "p99_us": 25.75
+        },
+        "round_p50_us": [
+          19.625,
+          19.417,
+          18.791,
+          18.625,
+          19.27
+        ],
+        "metrics": {
+          "bytes_received": 218,
+          "bytes_inspected": 218,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 19.666,
+          "p95_us": 21.292,
+          "p99_us": 26.375
+        },
+        "round_p50_us": [
+          19.875,
+          19.958,
+          19.167,
+          19.375,
+          19.834
+        ],
+        "metrics": {
+          "bytes_received": 218,
+          "bytes_inspected": 218,
+          "updates": 1,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 218,
+      "chunks": 1,
+      "p50_change_percent": -2.1
+    },
+    "tls_fragmented": {
+      "baseline": {
+        "flow": {
+          "p50_us": 25.583,
+          "p95_us": 27.833,
+          "p99_us": 34.75
+        },
+        "round_p50_us": [
+          25.458,
+          25.667,
+          24.917,
+          25.083,
+          25.98
+        ],
+        "metrics": {
+          "bytes_received": 218,
+          "bytes_inspected": 218,
+          "updates": 7,
+          "parser_calls": 8,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 24.833,
+          "p95_us": 27.375,
+          "p99_us": 33.708
+        },
+        "round_p50_us": [
+          25.375,
+          24.791,
+          25.208,
+          24.542,
+          24.791
+        ],
+        "metrics": {
+          "bytes_received": 218,
+          "bytes_inspected": 218,
+          "updates": 7,
+          "parser_calls": 7,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 218,
+      "chunks": 7,
+      "p50_change_percent": -2.9
+    },
+    "http2_whole": {
+      "baseline": {
+        "flow": {
+          "p50_us": 12.166,
+          "p95_us": 13.0,
+          "p99_us": 16.458
+        },
+        "round_p50_us": [
+          12.333,
+          12.083,
+          12.0,
+          12.125,
+          12.125
+        ],
+        "metrics": {
+          "bytes_received": 33,
+          "bytes_inspected": 33,
+          "updates": 1,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 4.666,
+          "p95_us": 4.958,
+          "p99_us": 6.25
+        },
+        "round_p50_us": [
+          4.729,
+          4.833,
+          4.5,
+          4.625,
+          4.5
+        ],
+        "metrics": {
+          "bytes_received": 33,
+          "bytes_inspected": 33,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 33,
+      "chunks": 1,
+      "p50_change_percent": -61.6
+    },
+    "http2_fragmented": {
+      "current": {
+        "flow": {
+          "p50_us": 7.666,
+          "p95_us": 8.25,
+          "p99_us": 10.334
+        },
+        "round_p50_us": [
+          7.75,
+          7.709,
+          7.625,
+          7.542,
+          7.584
+        ],
+        "metrics": {
+          "bytes_received": 33,
+          "bytes_inspected": 33,
+          "updates": 5,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 14.083,
+          "p95_us": 15.083,
+          "p99_us": 18.958
+        },
+        "round_p50_us": [
+          14.208,
+          14.084,
+          13.875,
+          14.125,
+          14.0
+        ],
+        "metrics": {
+          "bytes_received": 33,
+          "bytes_inspected": 33,
+          "updates": 5,
+          "parser_calls": 3,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 33,
+      "chunks": 5,
+      "p50_change_percent": -45.6
+    },
+    "socks5": {
+      "baseline": {
+        "flow": {
+          "p50_us": 10.5,
+          "p95_us": 11.25,
+          "p99_us": 12.709
+        },
+        "round_p50_us": [
+          10.833,
+          10.375,
+          10.5,
+          10.375,
+          10.5
+        ],
+        "metrics": {
+          "bytes_received": 21,
+          "bytes_inspected": 21,
+          "updates": 1,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 10.083,
+          "p95_us": 10.75,
+          "p99_us": 11.875
+        },
+        "round_p50_us": [
+          10.125,
+          10.375,
+          10.042,
+          9.792,
+          9.792
+        ],
+        "metrics": {
+          "bytes_received": 21,
+          "bytes_inspected": 21,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 21,
+      "chunks": 1,
+      "p50_change_percent": -4.0
+    },
+    "smtp": {
+      "baseline": {
+        "flow": {
+          "p50_us": 8.667,
+          "p95_us": 9.166,
+          "p99_us": 9.958
+        },
+        "round_p50_us": [
+          8.708,
+          8.5,
+          8.667,
+          8.625,
+          8.708
+        ],
+        "metrics": {
+          "bytes_received": 25,
+          "bytes_inspected": 25,
+          "updates": 1,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 8.0,
+          "p95_us": 8.459,
+          "p99_us": 10.583
+        },
+        "round_p50_us": [
+          8.125,
+          7.875,
+          7.917,
+          7.959,
+          8.083
+        ],
+        "metrics": {
+          "bytes_received": 25,
+          "bytes_inspected": 25,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 25,
+      "chunks": 1,
+      "p50_change_percent": -7.7
+    },
+    "ssh": {
+      "current": {
+        "flow": {
+          "p50_us": 5.166,
+          "p95_us": 5.5,
+          "p99_us": 6.792
+        },
+        "round_p50_us": [
+          5.084,
+          5.042,
+          5.292,
+          5.188,
+          5.208
+        ],
+        "metrics": {
+          "bytes_received": 18,
+          "bytes_inspected": 18,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 5.75,
+          "p95_us": 6.208,
+          "p99_us": 6.5
+        },
+        "round_p50_us": [
+          5.709,
+          5.667,
+          5.875,
+          5.75,
+          5.916
+        ],
+        "metrics": {
+          "bytes_received": 18,
+          "bytes_inspected": 18,
+          "updates": 1,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 18,
+      "chunks": 1,
+      "p50_change_percent": -10.2
+    },
+    "http_after_identification": {
+      "current": {
+        "flow": {
+          "p50_us": 18.542,
+          "p95_us": 19.75,
+          "p99_us": 24.792
+        },
+        "round_p50_us": [
+          18.542,
+          18.541,
+          18.584,
+          18.458,
+          18.542
+        ],
+        "metrics": {
+          "bytes_received": 65573,
+          "bytes_inspected": 37,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 19.25,
+          "p95_us": 20.75,
+          "p99_us": 24.709
+        },
+        "round_p50_us": [
+          19.292,
+          19.084,
+          20.459,
+          18.709,
+          19.291
+        ],
+        "metrics": {
+          "bytes_received": 65573,
+          "bytes_inspected": 37,
+          "updates": 1,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 65573,
+      "chunks": 65,
+      "p50_change_percent": -3.7
+    },
+    "mqtt": {
+      "current": {
+        "flow": {
+          "p50_us": 7.209,
+          "p95_us": 7.708,
+          "p99_us": 8.584
+        },
+        "round_p50_us": [
+          7.333,
+          7.25,
+          7.25,
+          7.125,
+          7.125
+        ],
+        "metrics": {
+          "bytes_received": 18,
+          "bytes_inspected": 18,
+          "updates": 3,
+          "parser_calls": 3,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 18,
+      "chunks": 3
+    },
+    "resp": {
+      "current": {
+        "flow": {
+          "p50_us": 10.083,
+          "p95_us": 10.917,
+          "p99_us": 13.333
+        },
+        "round_p50_us": [
+          10.375,
+          10.0,
+          10.083,
+          10.0,
+          10.042
+        ],
+        "metrics": {
+          "bytes_received": 25,
+          "bytes_inspected": 25,
+          "updates": 4,
+          "parser_calls": 4,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 25,
+      "chunks": 4
+    },
+    "amqp_091": {
+      "current": {
+        "flow": {
+          "p50_us": 4.459,
+          "p95_us": 4.75,
+          "p99_us": 4.916
+        },
+        "round_p50_us": [
+          4.542,
+          4.562,
+          4.5,
+          4.458,
+          4.458
+        ],
+        "metrics": {
+          "bytes_received": 8,
+          "bytes_inspected": 8,
+          "updates": 2,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 8,
+      "chunks": 2
+    },
+    "amqp_10": {
+      "current": {
+        "flow": {
+          "p50_us": 4.292,
+          "p95_us": 4.584,
+          "p99_us": 5.791
+        },
+        "round_p50_us": [
+          4.333,
+          4.25,
+          4.25,
+          4.292,
+          4.292
+        ],
+        "metrics": {
+          "bytes_received": 8,
+          "bytes_inspected": 8,
+          "updates": 2,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 8,
+      "chunks": 2
+    }
+  }
+}

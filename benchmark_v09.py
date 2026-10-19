@@ -1,0 +1,218 @@
+"""Compare v0.9 against a v0.8 engine snapshot on identical fixtures and validation outcomes.
+
+No network traffic. Reports local Python feed-loop cost, not SWG latency.
+Use --baseline /path/to/old/project (must contain protocol_engine).
+"""
+import argparse
+import hashlib
+import importlib.util
+import json
+import platform
+import random
+import statistics
+import struct
+import sys
+import time
+from dataclasses import asdict
+from pathlib import Path
+from protocol_demo import AMQP_091, AMQP_10, HTTP2, MQTT, RESP, SOCKS5
+from proxy_demo import client_hello
+from protocol_fixtures import STREAM_CASES, DATAGRAM_CASES, HINTED_DATAGRAM_CASES, SERVICE_STREAM_CASES, MYSQL, MONGODB, FASTCGI, RSYNC
+
+
+def load_engine(root, name):
+    package = root / "protocol_engine"
+    spec = importlib.util.spec_from_file_location(name, package / "__init__.py",
+                                                submodule_search_locations=[str(package)])
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    digest = hashlib.sha256()
+    for path in sorted(package.glob("*.py")):
+        digest.update(path.name.encode() + b"\x00" + path.read_bytes())
+    return module, digest.hexdigest()
+
+
+def distribution(samples):
+    ordered = sorted(samples)
+    return {"p50_us": round(statistics.median(ordered) / 1000, 3),
+            "p95_us": round(ordered[int((len(ordered) - 1) * .95)] / 1000, 3),
+            "p99_us": round(ordered[int((len(ordered) - 1) * .99)] / 1000, 3)}
+
+
+def run(engine, chunks, expected, count, hint=None, crc_limit=None, expected_status="identified"):
+    samples = []
+    config = engine.Config() if crc_limit is None else engine.Config(max_crc32c_bytes=crc_limit)
+    rules = engine.RuleIndex()
+    for _ in range(count):
+        inspector = engine.Inspector(config, rules, protocol_hint=hint)
+        start = time.perf_counter_ns()
+        for chunk in chunks:
+            inspector.feed(chunk)
+        samples.append(time.perf_counter_ns() - start)
+        result = inspector.observation
+        if result.status != expected_status or (expected_status == "identified" and (result.application_protocol or result.encryption) != expected):
+            raise RuntimeError("Benchmark correctness assertion failed: " + repr(result))
+    return samples, asdict(inspector.metrics)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--baseline", type=Path)
+    parser.add_argument("--iterations", type=int, default=500, help="Samples per round")
+    parser.add_argument("--rounds", type=int, default=5)
+    args = parser.parse_args()
+    if not 10 <= args.iterations <= 10000 or not 1 <= args.rounds <= 20:
+        parser.error("Use 10..10000 iterations and 1..20 rounds")
+    engines, hashes = {}, {}
+    roots = {"current": Path(__file__).resolve().parent}
+    if args.baseline:
+        roots["baseline"] = args.baseline.resolve()
+    for label, root in roots.items():
+        engines[label], hashes[label] = load_engine(root, "bench_" + label)
+    http = b"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"
+    long_http = http[:-2] + b"X-Padding: " + b"a" * 6000 + b"\r\n\r\n"
+    hello = client_hello()
+    split = lambda data, size: [data[i:i + size] for i in range(0, len(data), size)]
+    cases = {"http_small": ([http], "http/1.1"),
+             "http_fragmented": (split(long_http, 32), "http/1.1"),
+             "tls_whole": ([hello], "tls"),
+             "tls_fragmented": (split(hello, 32), "tls"),
+             "http2_whole": ([HTTP2], "http/2"),
+             "http2_fragmented": (split(HTTP2, 7), "http/2"),
+             "socks5": ([SOCKS5], "socks5"),
+             "smtp": ([b"EHLO client.example.com\r\n"], "smtp"),
+             "ssh": ([b"SSH-2.0-Demo_1.0\r\n"], "ssh"),
+             "http_after_identification": ([http] + [b"x" * 1024] * 64, "http/1.1")}
+    new = {"mqtt": (split(MQTT, 7), "mqtt/3.1.1"), "resp": (split(RESP, 7), "resp"),
+           "amqp_091": (split(AMQP_091, 7), "amqp/0-9-1"),
+           "amqp_10": (split(AMQP_10, 7), "amqp/1.0")}
+    cases.update(new)
+    names = ("mqtt5", "dns_tcp", "stun_tcp", "postgresql_startup", "postgresql_ssl", "rfb", "bittorrent", "memcached", "ldap", "sip_tcp", "rtsp", "bgp_open", "smb2_negotiate", "smb311_negotiate")
+    new = {name: (split(data, 7), protocol) for name, (data, protocol) in zip(names, STREAM_CASES)}
+    cases.update(new)
+    service_names = ("stomp_connect", "stomp_connected", "nats_info", "nats_connect", "imap_capability", "rdp_negotiate")
+    new = {name: (split(data, 7), protocol) for name, (data, protocol) in zip(service_names, SERVICE_STREAM_CASES)}
+    cases.update(new)
+    from protocol_engine.database import crc32c
+
+    def mongodb_blob(size, checksum):
+        elements = (b'\x10ping\0\x01\0\0\0\x02$db\0\x06\0\0\0admin\0'
+                    + b'\x05blob\0' + struct.pack('<iB', size, 0) + bytes(size))
+        document = struct.pack('<i', len(elements) + 5) + elements + b'\0'
+        data = struct.pack('<iiiiI', 21 + len(document) + (4 if checksum else 0), 123, 0, 2013, int(checksum)) + b'\0' + document
+        return data + struct.pack('<I', crc32c(data)) if checksum else data
+
+    new = {'mysql_hint_whole': ([MYSQL], 'mysql'), 'mysql_hint_fragmented': (split(MYSQL, 7), 'mysql'),
+           'mongodb_hint_whole': ([MONGODB], 'mongodb'), 'mongodb_hint_fragmented': (split(MONGODB, 7), 'mongodb'),
+           'mongodb_crc_3k': ([mongodb_blob(3072, True)], 'mongodb'),
+           'mongodb_crc_60k_default_budget': ([mongodb_blob(61440, True)], 'mongodb'),
+           'mongodb_crc_60k_raised_budget': ([mongodb_blob(61440, True)], 'mongodb'),
+           'mongodb_binary_60k': ([mongodb_blob(61440, False)], 'mongodb')}
+    hints = {name: expected for name, (_, expected) in new.items()}
+    crc_limits = {"mongodb_crc_60k_raised_budget": 65536}
+    statuses = {"mongodb_crc_60k_default_budget": "budget_exhausted"}
+
+    cases.update(new)  # Database paths are now part of the compared baseline.
+    # Literal framing here is independent of the parser implementation.
+    def fcgi_record(kind, content=b'', padding=b''):
+        return struct.pack('!BBHHBB', 1, kind, 1, len(content), len(padding), 0) + content + padding
+    begin = bytes.fromhex('01010001000800000001010000000000')
+    large_params = b'\x01\x80\x00\xf0\x00x' + bytes(61440)
+    many_params = (b'\x01\x01xy' * 128)
+    many_records = begin + b''.join(fcgi_record(4, b'\x00') for _ in range(126)) + fcgi_record(4)
+    new = {'fastcgi_whole': ([FASTCGI], 'fastcgi/1'),
+           'fastcgi_fragmented': (split(FASTCGI, 7), 'fastcgi/1'),
+           'fastcgi_binary_60k': ([begin + fcgi_record(4, large_params) + fcgi_record(4)], 'fastcgi/1'),
+           'fastcgi_128_params': ([begin + fcgi_record(4, many_params) + fcgi_record(4)], 'fastcgi/1'),
+           'fastcgi_128_records': ([many_records], 'fastcgi/1'),
+           'rsync_whole': ([RSYNC], 'rsync'), 'rsync_fragmented': (split(RSYNC, 7), 'rsync')}
+
+    result = {"environment": {"python": platform.python_version(), "platform": platform.platform(),
+                               "iterations_per_round": args.iterations, "rounds": args.rounds,
+                               "warmup_flows_per_case_version": 50, "order_seed": 402,
+                               "gc": "enabled", "engine_sha256": hashes},
+              "scope": "Feed loop including events; excludes Inspector construction, import, capture, TCP, TLS decryption, logging and concurrency",
+              "cases": {}}
+    rng = random.Random(402)
+    for name, (chunks, expected) in {**cases, **new}.items():
+        versions = ["current"] if name in new else list(engines)
+        samples = {version: [] for version in versions}
+        metrics = {}
+        rounds = {version: [] for version in versions}
+        for version in versions:
+            run(engines[version], chunks, expected, 50, hints.get(name), crc_limits.get(name), statuses.get(name, "identified"))
+        for _ in range(args.rounds):
+            rng.shuffle(versions)
+            for version in versions:
+                times, metrics[version] = run(engines[version], chunks, expected, args.iterations, hints.get(name), crc_limits.get(name), statuses.get(name, "identified"))
+                samples[version].extend(times)
+                rounds[version].append(distribution(times)["p50_us"])
+        row = {version: {"flow": distribution(samples[version]), "round_p50_us": rounds[version],
+                         "metrics": metrics[version]} for version in versions}
+        row["input_bytes"] = sum(map(len, chunks))
+        row["chunks"] = len(chunks)
+        row["candidate_hint"] = hints.get(name)
+        row["expected_status"] = statuses.get(name, "identified")
+        row["crc32c_byte_limit"] = crc_limits.get(name, 4096) if name in hints else None
+        if "baseline" in row:
+            row["p50_change_percent"] = round((row["current"]["flow"]["p50_us"] /
+                                              row["baseline"]["flow"]["p50_us"] - 1) * 100, 1)
+        result["cases"][name] = row
+    result["datagrams"] = {}
+    for data, protocol, hint in tuple((data, protocol, None) for data, protocol in DATAGRAM_CASES) + HINTED_DATAGRAM_CASES:
+        versions = list(engines)
+        row = {}
+        samples = {version: [] for version in versions}
+        for round_index in range(args.rounds):
+            rng.shuffle(versions)
+            for version in versions:
+                inspector = engines[version].DatagramInspector()
+                for index in range(50 + args.iterations):
+                    start = time.perf_counter_ns()
+                    observation = inspector.inspect(data, hint)
+                    elapsed = time.perf_counter_ns() - start
+                    if observation.status != "identified" or observation.application_protocol != protocol:
+                        raise RuntimeError("UDP benchmark correctness assertion failed")
+                    if index >= 50:
+                        samples[version].append(elapsed)
+        for version in versions:
+            row[version] = {"message": distribution(samples[version]), "input_bytes": len(data)}
+        result["datagrams"][protocol] = row
+    # Separate packet-to-event cost. No capture syscall or output I/O; includes
+    # link/IP/TCP decoding, bounded reassembly, dispatch, validation and event dict.
+    from live_capture import CaptureMonitor
+    from capture_stream import CaptureRecord
+    from make_sample_pcap import frame, udp_frame, A, B
+    from protocol_fixtures import DNS
+    packet_cases = {
+        "tcp_http_flow": [frame(A, B, 999, 0, 2), frame(B, A, 8999, 1000, 18),
+                          frame(A, B, 1000, 9000, 24, http)],
+        "udp_dns": [udp_frame(A, B, DNS)],
+    }
+    result["capture_adapter"] = {}
+    for name, frames in packet_cases.items():
+        records = [CaptureRecord(i, data, len(data), 1) for i, data in enumerate(frames)]
+        samples = []
+        for index in range(50 + args.iterations * args.rounds):
+            monitor = CaptureMonitor(lambda event: None)
+            start = time.perf_counter_ns()
+            for record in records:
+                monitor.accept(record, record.timestamp)
+            elapsed = time.perf_counter_ns() - start
+            if monitor.counts['identified'] != 1:
+                raise RuntimeError('Capture benchmark correctness assertion failed')
+            if index >= 50:
+                samples.append(elapsed)
+        result["capture_adapter"][name] = {"flow": distribution(samples), "packets": len(frames)}
+    adapter_digest = hashlib.sha256()
+    for filename in ('live_capture.py', 'capture_stream.py', 'link_packets.py', 'analyze_pcap.py', 'sessions.py'):
+        adapter_digest.update(filename.encode() + b'\0' + (Path(__file__).parent / filename).read_bytes())
+    result['environment']['capture_adapter_sha256'] = adapter_digest.hexdigest()
+    result['environment']['fixture_sha256'] = hashlib.sha256((Path(__file__).parent / 'protocol_fixtures.py').read_bytes()).hexdigest()
+    result['environment']['benchmark_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    print(json.dumps(result, indent=2))
+
+
+if __name__ == "__main__":
+    main()

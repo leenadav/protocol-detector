@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+.backups/
+.env
+.env.*
+*.pem
+*.key
+*.jsonl
+# Captures may contain private traffic. Keep only explicit synthetic fixtures.
+*.pcap
+*.pcapng
+!sample.pcap
+!sample-expanded.pcap
+!sample-mysql.pcap
+!sample-mongodb.pcap
+!sample-radius.pcap
