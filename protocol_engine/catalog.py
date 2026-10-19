@@ -32,7 +32,7 @@ _SUPPORTED = (
     ProtocolSupport("ntp", ("udp",), "datagram", "Hint required: v3/v4 base client/server header, no extensions/authentication", True),
     ProtocolSupport("http", ("tcp",), "initial_message", "HTTP/1.0 and 1.1 start-line/headers"),
     ProtocolSupport("http2", ("tcp",), "initial_message", "Client preface plus initial SETTINGS; no HPACK"),
-    ProtocolSupport("tls", ("tcp",), "initial_message", "ClientHello only; no decryption or handshake authentication"),
+    ProtocolSupport("tls", ("tcp",), "initial_message/server_hello/hello_retry_request", "ClientHello plus bounded TLS1.2/1.3 server hello/retry profiles; selections unauthenticated, no decryption"),
     ProtocolSupport("ssh", ("tcp",), "initial_message", "Leading SSH-2.0/1.99 identification"),
     ProtocolSupport("socks5", ("tcp",), "initial_message", "No-auth offer plus client request; server unverified"),
     ProtocolSupport("smtp", ("tcp",), "initial_message", "EHLO/HELO only; ambiguous 220 banners unknown"),

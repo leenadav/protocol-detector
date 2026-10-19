@@ -1,4 +1,4 @@
-# Protocol detector v0.18
+# Protocol detector v0.19
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **38 protocol families**, with explicit profiles rather than claims of full
@@ -35,7 +35,7 @@ python3 -B live_capture.py -i en0 --filter 'tcp port 443' --duration 30 --json
 ```
 
 `live_smoke.py` deliberately creates only local test traffic and verifies HTTP,
-TLS ClientHello, BGP, SMB2/3, DNS, SNMP, TFTP, STOMP, NATS, IMAP, RDP, FastCGI and rsync detections,
+TLS client/server hellos and retry, BGP, SMB2/3, DNS, SNMP, TFTP, STOMP, NATS, IMAP, RDP, FastCGI, rsync, Git, GIOP and DCE/RPC detections,
 including server-direction handshakes. Separate modes also check MySQL, MongoDB
 and RADIUS with explicit candidates. It is opt-in, outside
 `make test`. `sample-expanded.pcap` is generated synthetic data with reordered
@@ -44,6 +44,21 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.19 — TLS server hello and retry profiles
+
+TLS recognition now includes ServerHello for TLS 1.2/1.3 and TLS 1.3
+HelloRetryRequest. Server-selected version/cipher/group and TLS1.2 ALPN are
+reported as unauthenticated assertions. They never set the inner application
+protocol, hostname or product mapping. TLS1.3 ALPN is encrypted and is not inferred.
+Cross-record assembly, byte budgets and terminal parser release remain shared
+with ClientHello. Exact cipher/group/extension limits are in PROTOCOLS.md.
+
+283 tests pass. Optional `python3 -B tls_server_interop.py` checks locally generated
+MemoryBIO handshakes without network sockets. Reports cover LibreSSL TLS1.2 and
+OpenSSL TLS1.2/1.3 plus retry, validated by the Python3.9 engine; secp256r1 is
+explicitly configured. Hybrid/post-quantum groups remain unsupported. Coverage
+remains **38 families,34 automatic**: this expands an existing protocol family.
 
 ## New in v0.18 — DCE/RPC bind validation
 

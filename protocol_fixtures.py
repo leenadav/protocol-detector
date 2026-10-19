@@ -109,3 +109,17 @@ STREAM_CASES += ((GIOP, 'giop/1.2'),)
 # Synthetic DCE/RPC Bind, one context and NDR 2.0 offer; opaque interface UUID.
 DCERPC = bytes.fromhex('05000b03100000004800000001000000b810b810000000000100000000000100') + bytes(range(1,17)) + bytes.fromhex('01000000045d888aeb1cc9119fe808002b10486002000000')
 STREAM_CASES += ((DCERPC, 'dcerpc/5.0'),)
+
+# Synthetic ServerHello fixtures. Key bytes are structural placeholders, not keys.
+def _server_fixture(extension_bytes, cipher, retry=False):
+    random = (bytes.fromhex('cf21ad74e59a6111be1d8c021e65b891c2a211167abb8c5e079e09e2c8a8339c')
+              if retry else bytes(range(32)))
+    body = b'\x03\x03' + random + b'\0' + cipher.to_bytes(2, 'big') + b'\0'
+    body += len(extension_bytes).to_bytes(2, 'big') + extension_bytes
+    handshake = b'\x02' + len(body).to_bytes(3, 'big') + body
+    return b'\x16\x03\x03' + len(handshake).to_bytes(2, 'big') + handshake
+
+TLS_SERVER12 = _server_fixture(bytes.fromhex('001000050003026832'), 0xc02f)
+TLS_SERVER13 = _server_fixture(bytes.fromhex('002b0002030400330024001d0020') + bytes(32), 0x1301)
+TLS_RETRY = _server_fixture(bytes.fromhex('002b0002030400330002001d'), 0x1301, True)
+del _server_fixture

@@ -210,12 +210,13 @@ class TLSParser:
         self.config = config
         self.record_header = bytearray()
         self.record_remaining = 0
+        self.record_versions = 0
         self.handshake = bytearray()
         self.hello_size = None
         self.done = False
         self.host = None
         self.alpn = ()
-        self.reason = "Waiting for complete ClientHello"
+        self.reason = "Waiting for complete TLS hello"
 
     def feed(self, data):
         pos = 0
@@ -229,6 +230,7 @@ class TLSParser:
                 header = self.record_header
                 if header[0] != 22 or header[1] != 3 or header[2] not in (1, 2, 3):
                     raise ParseError("Expected plaintext TLS handshake record")
+                self.record_versions |= 1 << header[2]
                 self.record_remaining = int.from_bytes(header[3:5], "big")
                 self.record_header.clear()
                 if not 1 <= self.record_remaining <= 16384:
@@ -239,16 +241,21 @@ class TLSParser:
             pos += amount
             self.record_remaining -= amount
             if self.hello_size is None and len(self.handshake) == 4:
-                if self.handshake[0] != 1:
-                    raise ParseError("Initial handshake is not ClientHello")
+                if self.handshake[0] not in (1, 2):
+                    raise ParseError("Initial handshake is not ClientHello or ServerHello")
                 self.hello_size = int.from_bytes(self.handshake[1:4], "big")
-                if self.hello_size < 41:
-                    raise ParseError("ClientHello length invalid")
+                if self.hello_size < (41 if self.handshake[0] == 1 else 38):
+                    raise ParseError("TLS hello length invalid")
                 if self.hello_size > self.config.max_bytes - 9:
-                    raise BudgetError("ClientHello exceeds configured byte budget")
+                    raise BudgetError("TLS hello exceeds configured byte budget")
             if self.hello_size is not None and len(self.handshake) == self.hello_size + 4:
-                self.host, self.alpn = parse_hello(bytes(self.handshake[4:]))
+                if self.handshake[0] == 1:
+                    self.host, self.alpn = parse_hello(bytes(self.handshake[4:]))
+                    self.reason = "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content"
+                else:
+                    from .tls_server import parse_server_hello
+                    self.extra_evidence, self.scope, self.reason = parse_server_hello(
+                        bytes(self.handshake[4:]), self.config, self.record_versions, self.record_remaining)
                 self.handshake.clear()
                 self.done = True
-                self.reason = "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content"
         return pos

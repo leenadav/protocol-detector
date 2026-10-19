@@ -392,3 +392,18 @@ FrameParser, bounds a complete frame before allocation, and preflights list leng
 before traversal. At most128 contexts each offer at most2 transfer syntaxes.
 UUID wire constants are built at import, not per packet. Only known transfer
 names are emitted as offers; no opaque interface or connection identifiers leak.
+
+## v0.19: directional TLS server hello evidence
+
+TLSParser shares record/handshake assembly for type1 and type2. A record-version
+bitmask costs constant space. Server-only semantic parsing is loaded on demand,
+so ordinary dispatch does not change. Server extension count is capped before
+reading another entry. The complete message is byte-bounded; buffers are released
+on terminal outcomes. ClientHello output semantics are unchanged.
+
+Server evidence is returned through the existing extra_evidence mechanism with
+explicit asserted provenance. No server name is invented from an acknowledgement,
+and selected ALPN is never promoted to an inner application protocol or placed
+in client offers. Retry is a distinct scope. There is no cross-direction client
+correlation or full TLS session validation. New module constraints are explicit
+in PROTOCOLS.md rather than treating arbitrary extension payloads as validated.

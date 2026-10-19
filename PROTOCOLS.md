@@ -1,4 +1,4 @@
-# Protocol coverage — v0.18
+# Protocol coverage — v0.19
 
 The engine implements 38 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.
@@ -25,7 +25,7 @@ All input must start at the supported message/stream boundary; no port-only matc
 | ntp | udp | Hint required | datagram | Hint required: v3/v4 base client/server header, no extensions/authentication |
 | http | tcp | Automatic profiles | initial_message | HTTP/1.0 and 1.1 start-line/headers |
 | http2 | tcp | Automatic profiles | initial_message | Client preface plus initial SETTINGS; no HPACK |
-| tls | tcp | Automatic profiles | initial_message | ClientHello only; no decryption or handshake authentication |
+| tls | tcp | Automatic profiles | initial_message/server_hello/hello_retry_request | ClientHello plus TLS1.2/1.3 ServerHello and TLS1.3 retry profiles; no decryption/authentication |
 | ssh | tcp | Automatic profiles | initial_message | Leading SSH-2.0/1.99 identification |
 | socks5 | tcp | Automatic profiles | initial_message | No-auth offer plus client request; server unverified |
 | smtp | tcp | Automatic profiles | initial_message | EHLO/HELO only; ambiguous 220 banners unknown |
@@ -53,7 +53,8 @@ All input must start at the supported message/stream boundary; no port-only matc
 - HTTP/2: client preface and complete first non-ACK SETTINGS only. No server-only
   detection, HPACK, headers or stream inspection. ALPN h2 is only an offer.
 - TLS: ClientHello structural checks, SNI/ALPN extraction and cross-record assembly.
-  No ServerHello, certificate authentication, encryption/decryption or ECH recovery.
+  ServerHello/HelloRetryRequest profiles below; no certificate authentication,
+  encryption/decryption or ECH recovery.
 - SSH: leading SSH-2.0/1.99 line only; no server pre-banner text or key exchange.
 - SOCKS5: client no-auth offer plus request; no server selection/reply/authentication.
 - SMTP: valid EHLO/HELO only; 220 alone is ambiguous. No DATA/AUTH/STARTTLS.
@@ -407,3 +408,48 @@ Primary specifications: [Open Group C706 chapter 12](https://pubs.opengroup.org/
 sections 12.6.3 and 12.6.4.3; Microsoft [NDR identifier](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpce/b6090c2b-f44a-47a1-a13b-b82ade0137b2),
 [NDR64 identifier](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpce/dca648a5-42d3-432c-9927-2f22e50fa266),
 and [header-sign flag](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rpce/4886f349-2a73-4f9e-9262-a8404462c7e9).
+
+## TLS server profiles (v0.19)
+
+- Initial handshake type2, legacy_version0303, session-ID vector<=32, null
+  compression. Optional extension vector must end exactly; duplicate extensions
+  rejected, at most min(max_headers,128). One complete hello required; shared
+  plaintext record framing permits TCP and TLS-record fragmentation. Other initial
+  handshake types remain unsupported. No preceding compatibility CCS or alerts.
+- TLS1.2: cipher002f or c023..c032 (RFC5246/RFC5289); no general cipher registry.
+  Supported extensions: empty SNI/status_request/extended_master_secret/session_ticket
+  acknowledgements (0,5,23,35), initial renegotiation_info65281 with empty vector,
+  EC point formats11 with list containing uncompressed0 and only values0..2,
+  ALPN16 containing exactly one nonempty name. Unknown extensions/ciphers excluded.
+  Later coalesced handshake bytes remain uninspected; this is hello scope only.
+- TLS1.3: supported_versions43 must select0304; cipher1301..1305. Common record
+  versions must be0303 and hello must end at record boundary. Normal ServerHello
+  allows only43,41,51 and requires PSK selection41 (two-byte index), key_share51,
+  or both. No PSK authenticity/offer correlation. Key shares have exact lengths
+  for secp256r1/384r1/521r1 (65/97/133, uncompressed point prefix04), x25519/x448
+  (32/56), ffdhe2048/3072/4096/6144/8192 (256/384/512/768/1024). Key values, curve
+  membership and cryptographic validity are NOT checked. Other/hybrid/PQ groups
+  are unsupported, even when used by current TLS library defaults.
+- The RFC8446 special random identifies HelloRetryRequest. It permits only43,44,51
+  and requires a cookie or requested group. Cookie is a nonempty two-byte-length
+  vector; key_share contains only the supported group code. Scope is
+  hello_retry_request, not a completed handshake. Subsequent retry/hello sequences
+  and correspondence with the client's offers are not correlated.
+- Server version/cipher/group and TLS1.2 selected_alpn evidence are asserted with
+  server_hello/hello_retry_request provenance. They are not offered_alpn, inner
+  application_protocol, hostname or authenticated identity. No certificate,
+  Finished, downgrade protection, session acceptance or application verification.
+  TLS1.3 ALPN is in EncryptedExtensions and is not readable here. Existing trusted
+  plaintext refinement remains separate; no proxy integration was added.
+- Legacy detectors.py remains an educational ClientHello-only demonstration;
+  the engine and capture adapters use the broader profile described above.
+
+Primary specifications: [RFC8446](https://www.rfc-editor.org/rfc/rfc8446.html),
+sections4.1.3/4.1.4/4.2/5.1; [RFC5246](https://www.rfc-editor.org/rfc/rfc5246.html),
+section7.4.1.3; [RFC5289](https://www.rfc-editor.org/rfc/rfc5289.html);
+[ALPN RFC7301](https://www.rfc-editor.org/rfc/rfc7301.html);
+[RFC6066](https://www.rfc-editor.org/rfc/rfc6066.html),
+[RFC7627](https://www.rfc-editor.org/rfc/rfc7627.html),
+[RFC5746](https://www.rfc-editor.org/rfc/rfc5746.html),
+[RFC4492](https://www.rfc-editor.org/rfc/rfc4492.html),
+[RFC5077](https://www.rfc-editor.org/rfc/rfc5077.html).

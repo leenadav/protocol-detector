@@ -12,7 +12,7 @@ import sys
 import threading
 import time
 from live_capture import capture_command, run_capture
-from protocol_fixtures import DCERPC, GIOP, GIT, RADIUS, FASTCGI, RSYNC, BGP, SMB311, DNS, SNMP, TFTP, STOMP, STOMP_SERVER, NATS_CONNECT, NATS_INFO, IMAP, RDP, MYSQL, MONGODB, MONGODB_CHECKSUM
+from protocol_fixtures import TLS_SERVER12, TLS_SERVER13, TLS_RETRY, DCERPC, GIOP, GIT, RADIUS, FASTCGI, RSYNC, BGP, SMB311, DNS, SNMP, TFTP, STOMP, STOMP_SERVER, NATS_CONNECT, NATS_INFO, IMAP, RDP, MYSQL, MONGODB, MONGODB_CHECKSUM
 from proxy_demo import client_hello
 
 
@@ -62,7 +62,7 @@ def main():
                 listener = tcp4
                 profiles = ((request, False), (BGP, False), (SMB311, False),
                                              (client_hello(), False), (STOMP, False), (NATS_CONNECT, False),
-                                             (IMAP, True), (RDP, False), (STOMP_SERVER, True), (NATS_INFO, True), (FASTCGI, False), (RSYNC, True), (GIT, False), (GIOP, False), (DCERPC, False))
+                                             (IMAP, True), (RDP, False), (STOMP_SERVER, True), (NATS_INFO, True), (FASTCGI, False), (RSYNC, True), (GIT, False), (GIOP, False), (DCERPC, False), (TLS_SERVER12, True), (TLS_SERVER13, True), (TLS_RETRY, True))
                 if args.database:
                     profiles = ((MYSQL, True),) if args.database == 'mysql' else ((MONGODB, False), (MONGODB_CHECKSUM, False))
                 if args.radius:
@@ -104,13 +104,18 @@ def main():
             expected = {args.database}
         if args.radius:
             expected = {'radius'}
+        tls_scopes = [event['scope'] for event in events if event['type'] == 'classification'
+                      and event['status'] == 'identified' and event['protocol'] == 'tls']
+        if not args.database and not args.radius:
+            if tls_scopes.count('server_hello') != 2 or tls_scopes.count('hello_retry_request') != 1:
+                raise RuntimeError('TLS server/retry scope verification failed: ' + repr(tls_scopes))
         ipv4_only = all(event['source'][0] == '127.0.0.1' and event['destination'][0] == '127.0.0.1'
                         for event in events if event['type'] == 'classification')
         if status or not expected <= found or not ipv4_only:
             raise RuntimeError('Capture verification failed: ' + repr({'status': status, 'missing': sorted(expected - found), 'ipv4_only': ipv4_only, 'events': events}))
         print(json.dumps({'status': 'passed', 'traffic': 'local synthetic TCP/UDP over real loopback capture',
                           'protocols': sorted(found), 'candidate_hint': args.database or ('radius' if args.radius else None),
-                          'ipv4_only': ipv4_only, 'summary': events[-1]}, indent=2))
+                          'ipv4_only': ipv4_only, 'tls_scopes': tls_scopes, 'summary': events[-1]}, indent=2))
         return 0
     finally:
         if process is not None and process.poll() is None:
