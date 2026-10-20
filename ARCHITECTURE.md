@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.24 — engine and observation contracts
+# Stream/datagram engine v0.25 — engine and observation contracts
 
 ## Ownership
 
@@ -520,3 +520,29 @@ structural fields; GREASE values are removed where the definition requires.
 interpreter runs with the constructor subtracted; it exists because percentile
 comparisons across shuffled subprocess rounds were shown to swing by ±30% on
 unchanged code on the shared development host (BENCHMARK-V023.md).
+
+
+## QUIC Initial processing (v0.25)
+
+`quic_probe` is a constant-size first check in DatagramInspector (long header,
+fixed bit, supported version, Initial type), placed before DTLS so that no
+other validator runs on a QUIC datagram; the IKE fixed-position probe can still
+add a competing candidate and the usual ambiguity rules apply. `quic()` parses
+the long header with bounds on every length, then removes protection with keys
+derived from public values. `aes.py` is a table-driven AES-128 encryption core
+(T-tables), a GCM with byte-windowed GHASH tables built per key in about 0.5 ms,
+and HKDF-SHA256; none of it handles secret material or needs constant time,
+because every input is attacker-visible and the output is data the client sent
+in the clear by design. GCM tag failure or a frame outside the Initial set
+never produces an error status: the structural identification stands and the
+evidence says `initial_protection=unverified`, so a damaged datagram cannot be
+turned into a false negative or a different protocol.
+
+`QuicAssembler` is host-owned, bounded (LRU over Destination Connection IDs,
+8 fragments and 16 KiB per entry) and cleared on capture gaps; DatagramInspector
+itself still retains no input. Analyzer sizes it from the UDP flow limit.
+`DatagramMatch` carries optional signature contexts with a family so that the
+tls-family `ssl-req-*` signatures apply to QUIC ClientHellos; contexts remain
+internal. Per-Initial cost is about 2 ms (AES-CTR of 75 blocks dominates);
+`Config.quic_decrypt=False` keeps structural recognition only. Rate limiting
+of Initial floods remains the host's responsibility (THREAT-MODEL T14).

@@ -11,7 +11,7 @@ parity with a commercial signature corpus.
 |---|---|---|
 | Policy pre-check on IP/port | Not implemented; detection never uses ports | — |
 | Application signatures | Bounded structural profiles per family (40 families, PROTOCOLS.md); configured exact-host mappings (`RuleIndex`) | `protocol_engine/` |
-| Decryption + re-identification | Not performed; `feed_decrypted()` accepts plaintext from a host TLS stack | `engine.py` |
+| Decryption + re-identification | TLS: not performed; `feed_decrypted()` accepts plaintext from a host TLS stack. QUIC: Initial protection (public keys) is removed to read the ClientHello | `engine.py`, `quic.py` |
 | Protocol decoders / tunneled apps | Decoders exist per family; tunnel transitions are the host's phase boundaries (v0.28 planned) | `engine.py` |
 | Heuristics for evasive traffic | Planned (v0.29) | — |
 | Client/server implementation fingerprints (not an App-ID feature; nDPI-style) | **Implemented**: JA3/JA4/JA3S/JA4S/HASSH/HTTP2 (FINGERPRINTS.md) | `protocol_engine/fingerprints.py` |
@@ -29,6 +29,7 @@ A verdict names either a catalog application or a session outcome.
 |---|---|---|
 | `web-browsing` | HTTP/1.x or HTTP/2 initial message validated, no configured mapping | web-browsing |
 | `ssl` | TLS ClientHello/ServerHello validated; SNI/ALPN are offers | ssl |
+| `quic` | QUIC Initial validated; ClientHello recovered from Initial protection when possible, `h3` ALPN is an offer | quic |
 | `<configured name>` | `RuleIndex` exact-host mapping on `tls_sni`/`http_host`; `base_app` names the carrier (`ssl`/`web-browsing`), `implicitly_uses` lists it | specific app implicitly using ssl/web-browsing |
 | `<signature name>` | Custom signature matched (SIGNATURES.md); category/risk come from the signature, `base_app` is its `parent` or the family that exposed the contexts, including `unknown-tcp`/`unknown-udp` | custom App-ID |
 | `ssh`, `dns`, `smb`, `rdp`, … | The family's structural profile passed (see catalog aliases for vendor names) | same |

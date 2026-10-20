@@ -1,10 +1,21 @@
-# Review scope: protocol detector v0.24
+# Review scope: protocol detector v0.25
 
-Python3.9-compatible IPv4 passive classification: 40 families, 36 automatic.
+Python3.9-compatible IPv4 passive classification: 41 families, 37 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the new verdict vocabulary and the application catalog.
 
-New focus (v0.24): fingerprints (protocol_engine/fingerprints.py) and the
+New focus (v0.25): QUIC (protocol_engine/quic.py, aes.py). Trace: long-header
+bounds (CID lengths, token, Length varint vs datagram, coalesced trailing bytes),
+probe placement ahead of DTLS and IKE competition, key derivation against the
+RFC 9001/9369 vectors, header protection sample offset and reserved-bit check,
+GCM tag failure and frame-type violations mapping to unverified (never
+malformed/unknown), frame budgets, CRYPTO assembly (gaps, overlaps, offset
+budget), QuicAssembler LRU and per-entry bounds, capture-gap clearing, no
+connection-ID or token emission, signature contexts under the tls family,
+CPU cost per Initial and the host's rate-limiting responsibility.
+359 tests pass. BENCHMARK-V025.md.
+
+Previous focus (v0.24): fingerprints (protocol_engine/fingerprints.py) and the
 post-identification continuation in engine.py. Trace: GREASE filtering and
 JA4 field rules (version from supported_versions, SNI flag, counts capped at
 99, ALPN two-character code including non-alphanumeric cases, sorted vs

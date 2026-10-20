@@ -100,6 +100,9 @@ _ENTRIES = (
     _app("dtls", "networking", "encrypted-tunnel", "client-server", 3,
          "DTLS 1.2 ClientHello over UDP; inner application not inferred",
          ("tunnels-other-applications",), ("udp/443", "udp/4433")),
+    _app("quic", "networking", "encrypted-tunnel", "browser-based", 3,
+         "QUIC v1/v2 Initial packet; ClientHello recovered from Initial protection when possible; HTTP/3 is an ALPN offer",
+         ("tunnels-other-applications", "widely-used", "evasive"), ("udp/443",), aliases=("http3", "quic-base")),
     _app("unknown-tcp", "unknown", "unknown", "unknown", 5,
          "TCP payload outside every supported structural profile", ("evasive",)),
     _app("unknown-udp", "unknown", "unknown", "unknown", 5,
@@ -186,7 +189,7 @@ _ENTRIES = (
 
 # Engine protocol/encryption labels to catalog names. Versions after '/' never matter.
 _PROTOCOL_NAMES = MappingProxyType({
-    "http": "web-browsing", "http2": "web-browsing", "tls": "ssl", "dtls": "dtls", "rfb": "vnc", "socks5": "socks", "smb2": "smb",
+    "http": "web-browsing", "http2": "web-browsing", "tls": "ssl", "dtls": "dtls", "quic": "quic", "rfb": "vnc", "socks5": "socks", "smb2": "smb",
     "dcerpc": "dce-rpc", "ikev2": "ike",
 })
 

@@ -139,6 +139,7 @@ class CaptureMonitor:
         self.counts["connections_discarded_after_gap"] += active
         self.analyzer.tracked.clear()
         self.analyzer.udp_flows.clear()
+        self.analyzer.quic_assembler.clear()
         self.analyzer.manager.connections.clear()
 
     def summary(self, elapsed, final=False, capture_stats=None):

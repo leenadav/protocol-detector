@@ -1,0 +1,19 @@
+{
+  "method": "min over alternations x repeat of mean per-flow time, constructor subtracted; microseconds",
+  "alternations": 3,
+  "flows": 400,
+  "repeat": 7,
+  "fingerprints": true,
+  "results": {
+    "current": {
+      "http_flow": 102.6,
+      "tls_flow": 172.0,
+      "tls_server13": 111.6,
+      "ssh_flow": 81.8,
+      "dns_datagram": 38.3,
+      "dtls_datagram": 54.5,
+      "udp_unknown": 18.8,
+      "quic_initial": 2203.1
+    }
+  }
+}

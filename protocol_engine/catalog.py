@@ -13,6 +13,7 @@ class ProtocolSupport:
 
 
 _SUPPORTED = (
+    ProtocolSupport("quic", ("udp",), "datagram", "QUIC v1/v2 Initial (client protection removed with public Initial keys; ClientHello SNI/ALPN as offers) and Version Negotiation; no handshake completion, server packets or 0-RTT"),
     ProtocolSupport("ikev2", ("udp",), "datagram", "IKE_SA_INIT initiator: bounded SA/KE/nonce, AES-CBC/GCM and MODP14..18 offers, optional non-ESP marker; no authentication or established IPsec claim"),
     ProtocolSupport("dtls", ("udp",), "datagram", "DTLS1.2 complete epoch-zero ClientHello in one record/datagram; bounded extensions, client assertions only; no fragments, negotiation or decryption"),
     ProtocolSupport("dcerpc", ("tcp",), "bind_request", "Connection-oriented v5.0 unfragmented Bind, NDR 2.0/NDR64 1.0 offers; no authentication, replies, stub decoding or product identity"),

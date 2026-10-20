@@ -70,7 +70,7 @@ class DTLSTests(unittest.TestCase):
         empty=inspector.inspect(b'')
         self.assertEqual(empty.status,'unknown')
         self.assertIsNone(empty.encryption)
-        self.assertEqual(vars(inspector).keys(),{'config','metrics','signatures'})
+        self.assertEqual(vars(inspector).keys(),{'config','metrics','signatures','quic_assembler'})
 
     def test_record_and_handshake_lengths(self):
         for size in (0,11,16385,65535,len(DTLS)-14,len(DTLS)-12):

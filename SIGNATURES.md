@@ -51,7 +51,7 @@ even with `negate`; a signature needs at least one non-negated condition.
 | `http-req-headers` | raw | http | `name: value\r\n` lines, lowercase names, 4096 bytes |
 | `http-req-content-length`, `http-rsp-status` | integer | http | |
 | `http-rsp-reason` | text | http | Response reason phrase |
-| `ssl-req-chello-sni` | text | tls | Normalized SNI |
+| `ssl-req-chello-sni` | text | tls | Normalized SNI (TLS ClientHello, and QUIC Initial ClientHello since v0.25) |
 | `ssl-req-alpn` | text | tls | Comma-joined ALPN offers in order |
 | `ssl-req-client-hello` | raw | tls | ClientHello body (random included; never emitted) |
 | `ssl-req-client-hello-ext-type`, `ssl-req-cipher-suite` | set | tls | Extension types / cipher values; `equal-to` means present |

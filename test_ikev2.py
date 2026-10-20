@@ -98,7 +98,7 @@ class IKETests(unittest.TestCase):
                 else: self.assertNotEqual(suffix.status,'identified',(marker,cut))
             for suffix in (b'\0',data):self.assertNotEqual(self.inspect(data+suffix).status,'identified')
             self.assertEqual(engine.inspect(data,'ikev2').status,'identified')
-            self.assertEqual(set(vars(engine)),{'metrics','config','signatures'})
+            self.assertEqual(set(vars(engine)),{'metrics','config','signatures','quic_assembler'})
             start=4 if marker else 0
             for length in (0,27,len(data)-start-1,len(data)-start+1,2**32-1):
                 changed=data[:start+24]+length.to_bytes(4,'big')+data[start+28:]

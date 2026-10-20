@@ -9,7 +9,7 @@ bytes, session identifiers, key shares or cookies enter any digest.
 
 | Evidence field | Where | Definition |
 |---|---|---|
-| `ja4` | TLS ClientHello (`t`), DTLS ClientHello (`d`), QUIC Initial (`q`, v0.25) | FoxIO JA4: `<proto><version><sni d/i><cipher count><ext count><alpn>_<sha256(sorted ciphers)[:12]>_<sha256(sorted ext without SNI/ALPN + "_" + sigalgs)[:12]>`, GREASE removed; version from `supported_versions` when present |
+| `ja4` | TLS ClientHello (`t`), DTLS ClientHello (`d`), QUIC Initial ClientHello (`q`) | FoxIO JA4: `<proto><version><sni d/i><cipher count><ext count><alpn>_<sha256(sorted ciphers)[:12]>_<sha256(sorted ext without SNI/ALPN + "_" + sigalgs)[:12]>`, GREASE removed; version from `supported_versions` when present |
 | `ja3` | TLS ClientHello | Salesforce JA3: md5 of `version,ciphers,extensions,groups,point_formats` (decimal, `-` joined), GREASE removed |
 | `ja4s` | TLS ServerHello (not HelloRetryRequest) | `<proto><version><ext count><alpn>_<cipher hex>_<sha256(extensions in order)[:12]>`; the specification example `t130200_1301_a56c5b993250` is reproduced by the TLS 1.3 fixture |
 | `ja3s` | TLS ServerHello | md5 of `version,cipher,extensions` |

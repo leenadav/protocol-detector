@@ -1,4 +1,4 @@
-# Protocol detector v0.24
+# Protocol detector v0.25
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **40 protocol families**, with explicit profiles rather than claims of full
@@ -44,6 +44,21 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.25 — QUIC Initial recognition with ClientHello recovery
+
+QUIC v1 and v2 client Initial packets are recognized structurally, and their
+protection is removed with the public Initial keys (version salt plus
+Destination Connection ID; pure-Python AES-128-GCM, HKDF-SHA256 and header
+protection, all verified against FIPS-197, NIST GCM and RFC 9001/9369 vectors).
+The CRYPTO stream is assembled, within one datagram or across Initials through
+a bounded host-owned assembler, and validated as a TLS ClientHello, giving SNI,
+ALPN (`h3` stays an offer) and JA4 with protocol `q`. Version Negotiation is
+recognized too. Server Initials, later packets and HTTP/3 framing stay opaque;
+decryption is about 2 ms per Initial and can be turned off with
+`Config(quic_decrypt=False)`. The RFC 9001 Appendix A client Initial is the
+fixture and decrypts to `example.com`. Coverage is **41 families, 37 automatic**;
+359 tests pass. See PROTOCOLS.md (QUIC profile) and BENCHMARK-V025.md.
 
 ## New in v0.24 — handshake fingerprints and post-identification refinement
 
@@ -477,6 +492,7 @@ output I/O, concurrent load and end-to-end network latency are not in those timi
 | protocol_engine/appid.py, applications.py | Session verdicts and the application catalog ([APPID.md](APPID.md)) |
 | protocol_engine/signatures.py | Custom signature compilation and evaluation ([SIGNATURES.md](SIGNATURES.md)) |
 | protocol_engine/fingerprints.py | JA3/JA4/JA3S/JA4S/HASSH/HTTP2 digests ([FINGERPRINTS.md](FINGERPRINTS.md)) |
+| protocol_engine/quic.py, aes.py | QUIC Initial parsing, protection removal, CRYPTO assembly; AES-GCM/HKDF primitives |
 | live_capture.py | Bounded live loop, readable/JSON events and capture diagnostics |
 | capture_stream.py | Incremental PCAP framing |
 | link_packets.py | Link/IPv4 decoding |
@@ -488,7 +504,7 @@ output I/O, concurrent load and end-to-end network latency are not in those timi
 ## Current limits
 
 Live TCP needs SYN and SYN-ACK. No attaching midway through a connection, complete
-TCP endpoint validation, IP fragment reassembly, TLS decryption, QUIC/HTTP3, PCAPNG
+TCP endpoint validation, IP fragment reassembly, TLS decryption, HTTP/3 framing, PCAPNG
 or Apple PKTAP. IPv6 traffic is unsupported and rejected. Checksums are not verified. Initial classification does not inspect
 later requests, tunnel transitions or all payloads.
 

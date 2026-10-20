@@ -32,6 +32,11 @@ cases = {'http_flow': hs + [frame(A, B, 1000, 9000, 24, REQUEST)],
          'ssh_flow': hs + [frame(A, B, 1000, 9000, 24, b'SSH-2.0-demo\r\n')],
          'dns_datagram': [udp_frame(A, B, DNS)], 'dtls_datagram': [udp_frame(A, B, DTLS)],
          'udp_unknown': [udp_frame(A, B, b'\xff' * 32)]}
+try:
+    from protocol_fixtures import QUIC_INITIAL
+    cases['quic_initial'] = [udp_frame(A, B, QUIC_INITIAL)]
+except ImportError:
+    pass
 kwargs = {}
 try:
     from protocol_engine import Config

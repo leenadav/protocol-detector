@@ -7,6 +7,7 @@ from types import MappingProxyType
 from .datagram_result import DatagramMatch
 from .dtls import dtls
 from .ikev2 import ikev2, ike_probe
+from .quic import QuicAssembler, quic, quic_probe
 from .model import Config, Evidence, Metrics, Observation
 from .parsers import BudgetError, ParseError
 from .signatures import SignatureSet
@@ -44,11 +45,11 @@ def dns_with_contexts(data, config):
     return protocol, reason, {"dns-req-query-name": qname, "dns-req-query-type": qtype}
 
 
-VALIDATORS = MappingProxyType({"ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
+VALIDATORS = MappingProxyType({"quic": quic, "ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
 
 
 class DatagramInspector:
-    def __init__(self, config=None, signatures=None):
+    def __init__(self, config=None, signatures=None, quic_assembler=None):
         self.config = config if config is not None else Config()
         if not isinstance(self.config, Config):
             raise TypeError("Expected Config")
@@ -56,7 +57,10 @@ class DatagramInspector:
             raise TypeError("Expected a SignatureSet")
         if signatures is not None and len(signatures) and not self.config.retain_contexts:
             raise ValueError("Signatures require Config(retain_contexts=True)")
+        if quic_assembler is not None and not isinstance(quic_assembler, QuicAssembler):
+            raise TypeError("Expected a QuicAssembler")
         self.signatures = signatures
+        self.quic_assembler = quic_assembler  # optional bounded cross-datagram CRYPTO store owned by the host
         self.metrics = Metrics()
 
     def _unknown(self, data, base, reason, protocol_hint):
@@ -94,6 +98,8 @@ class DatagramInspector:
             return Observation(status="budget_exhausted", reason="Datagram exceeds byte budget", **base)
         if protocol_hint:
             candidates = (protocol_hint,)
+        elif quic_probe(data):
+            candidates = ("quic",)
         elif data[:3] in (b"\x16\xfe\xff", b"\x16\xfe\xfd"):
             candidates = ("dtls",)
         elif len(data) >= 8 and data[4:8] == b"\x21\x12\xa4\x42":
@@ -127,7 +133,10 @@ class DatagramInspector:
             self.metrics.candidates_selected += 1
             self.metrics.parser_calls += 1
             try:
-                matches.append(VALIDATORS[candidate](data, self.config))
+                if candidate == "quic":
+                    matches.append(quic(data, self.config, self.quic_assembler))
+                else:
+                    matches.append(VALIDATORS[candidate](data, self.config))
             except BudgetError as error:
                 errors.append(("budget_exhausted", str(error)))
             except UnsupportedPrefix as error:
@@ -141,10 +150,16 @@ class DatagramInspector:
         if matches:
             match = matches[0]
             if isinstance(match, DatagramMatch):
+                application, extra = None, ()
+                if match.contexts is not None and match.signature_family and self.signatures is not None:
+                    found = self.signatures.match(match.signature_family, match.contexts)
+                    if found is not None:
+                        application = found.name
+                        extra = (Evidence("application", found.name, "signature:" + match.signature_family, "configured_signature"),)
                 return Observation(status="identified", encryption=match.encryption,
-                                   application_protocol=match.application_protocol,
+                                   application_protocol=match.application_protocol, application=application,
                                    hostname=match.hostname, offered_alpn=match.offered_alpn,
-                                   evidence=match.evidence + ((Evidence("candidate_hint", protocol_hint, "caller", "context"),) if protocol_hint else ()),
+                                   evidence=match.evidence + extra + ((Evidence("candidate_hint", protocol_hint, "caller", "context"),) if protocol_hint else ()),
                                    reason=match.reason, **base)
             protocol, reason = match[0], match[1]
             application, extra = None, ()

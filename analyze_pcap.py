@@ -10,6 +10,7 @@ from protocol_engine import Config, DatagramInspector, Event, Inspector, Signatu
 from protocol_engine.appid import classify, session_verdict, verdict_fields
 from protocol_engine.registry import PARSERS
 from protocol_engine.datagram import VALIDATORS
+from protocol_engine.quic import QuicAssembler
 from sessions import MODULUS, SessionManager, StreamError
 
 SYN, ACK, FIN, RST, URG = 2, 16, 1, 4, 32
@@ -42,7 +43,8 @@ class Analyzer:
         self.signatures = signatures if signatures is not None and len(signatures) else None
         self.inspection_config = Config(max_bytes=byte_limit, max_crc32c_bytes=crc32c_byte_limit,
                                         retain_contexts=self.signatures is not None, fingerprints=bool(fingerprints))
-        self.udp = DatagramInspector(self.inspection_config, self.signatures)
+        self.quic_assembler = QuicAssembler()
+        self.udp = DatagramInspector(self.inspection_config, self.signatures, self.quic_assembler)
         self.udp_revision = 0
         self.now = 0
         if tcp_hint is not None:
@@ -61,6 +63,7 @@ class Analyzer:
         self.max_udp_flows = max_connections if max_udp_flows is None else max_udp_flows
         if not 0 <= self.max_udp_flows <= 65536:
             raise ValueError("Invalid UDP flow table limit")
+        self.quic_assembler.max_connections = max(1, min(self.max_udp_flows, 1024))
         self.udp_flows = {}
         self.counts = Counter()
 
@@ -336,6 +339,7 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
         print(json.dumps(event) if json_output else "CAPTURE_GAP: " + reason)
         analyzer.tracked.clear()
         analyzer.udp_flows.clear()
+        analyzer.quic_assembler.clear()
         analyzer.manager.connections.clear()
         analyzer.last_events = ()
         analyzer.last_classification = None

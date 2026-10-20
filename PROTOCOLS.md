@@ -1,11 +1,12 @@
-# Protocol coverage — v0.24
+# Protocol coverage — v0.25
 
-The engine implements 40 families with the profiles below. This is a complete
+The engine implements 41 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.
 All input must start at the supported message/stream boundary; no port-only match.
 
 | Family | Transport | Selection | Observation scope | Implemented profile |
 |---|---|---|---|---|
+| quic | udp | Automatic profiles | datagram | QUIC v1/v2 client Initial with protection removed (public Initial keys), ClientHello SNI/ALPN as offers, Version Negotiation; no handshake completion, server Initials, 0-RTT or later packets |
 | ikev2 | udp | Automatic profiles | datagram | IKE_SA_INIT initiator, bounded AES-CBC/GCM and MODP14..18 offers, KE/nonce, optional non-ESP marker; no authentication or established tunnel claim |
 | dtls | udp | Automatic profiles | datagram | DTLS1.2 complete epoch-zero ClientHello in one record/datagram; client assertions only, no fragments or decryption |
 | dcerpc | tcp | Automatic profiles | bind_request | Connection-oriented 5.0 Bind, NDR 2.0/NDR64 1.0 offers; no authentication, replies, stub decoding or product identity |
@@ -200,7 +201,7 @@ These are remaining engineering work, not implicitly identified protocols:
 
 | Area | Required work |
 |---|---|
-| QUIC / HTTP/3 | Version-aware protected packet parsing, Initial crypto processing, CRYPTO/stream assembly and HTTP/3 validation |
+| HTTP/3 | HTTP/3 itself (QPACK, SETTINGS, streams) is not validated; QUIC Initial recognition and ClientHello recovery exist since v0.25 and h3 remains an ALPN offer |
 | Further DTLS profiles | Handshake-fragment assembly, coalesced records/messages, server evidence and DTLS1.3 |
 | WebSocket / gRPC | Trusted HTTP upgrade/transaction boundaries or HTTP/2 headers/streams and application framing |
 | FTP / POP3 / additional IMAP commands | Additional validators and bidirectional evidence for ambiguous greetings/commands |
@@ -605,3 +606,49 @@ the packet. Only the four client-to-server name-lists needed for HASSH are kept
 until the digest is computed. Any deviation, the byte budget or EOF ends the
 refinement and the identification made at the banner stands unchanged. Bytes
 after the KEXINIT are not consumed. See FINGERPRINTS.md.
+
+
+## QUIC Initial profile (v0.25)
+
+- Long header with the fixed bit set, version 0x00000001 (v1, Initial type 0b00)
+  or 0x6b3343cf (v2, Initial type 0b01). Connection ID lengths <= 20 and inside
+  the datagram; token length varint and token inside the datagram; Length
+  varint >= 17 and ending inside the datagram (bytes after it are tolerated as
+  coalesced packets or padding, RFC 9000 12.2). Version 0 with a nonempty list
+  of 32-bit versions (<= min(max_headers,128)) is Version Negotiation.
+- With `Config.quic_decrypt` (default on) and datagram <= max_bytes, the client
+  Initial keys are derived from the version salt and Destination Connection ID
+  (RFC 9001 5.2, RFC 9369 3.3) with HKDF-SHA256, header protection is removed
+  with AES-128-ECB on the 16-byte sample at pn_offset+4, reserved bits must be
+  zero, and the payload is opened with AES-128-GCM over the unprotected header.
+  Failure (server packet, retry-token flow, damaged datagram, non-zero reserved
+  bits) keeps the structural identification with `initial_protection=unverified`.
+- Opened frames must be PADDING, PING, ACK/ACK_ECN, CRYPTO or CONNECTION_CLOSE
+  (RFC 9000 12.4); at most min(max_headers,128) non-padding frames and ACK
+  ranges; CRYPTO offsets+lengths <= 16384. Any other frame type leaves the
+  identification with `initial_protection=unverified`.
+- CRYPTO fragments are assembled from offset zero; a complete type-1 handshake
+  message is validated with the TLS ClientHello profile (SNI/ALPN syntax). With
+  a host-owned `QuicAssembler` (Analyzer creates one, bounded by the UDP flow
+  limit, LRU, <= 8 fragments and 16384 bytes per Destination Connection ID,
+  cleared on capture gaps), a hello split across Initials completes on the
+  later datagram. Otherwise `crypto_assembly=partial`.
+- Output: encryption=quic, application_protocol unset, hostname/offered_alpn as
+  client offers (`quic_sni`/`quic_alpn` provenance), evidence quic_version,
+  packet_type, initial_protection, crypto_assembly, optional initial_token
+  presence; JA4 with protocol `q` when fingerprints are enabled; `ssl-req-*`
+  signature contexts under the tls family when contexts are retained.
+  Connection IDs, tokens, packet numbers and random bytes are never emitted.
+- Excluded: server Initials (keys depend on the client's original DCID),
+  Handshake/0-RTT/1-RTT packets, Retry packets, key updates, ChaCha20 (Initial
+  packets always use AES-128-GCM), HTTP/3 framing, connection tracking by CID,
+  spoofing resistance. Decryption is a CPU cost of about 2 ms per 1200-byte
+  Initial in pure Python; the host owns rate limiting (THREAT-MODEL T14).
+
+Primary specifications: [RFC 9000](https://www.rfc-editor.org/rfc/rfc9000.html)
+sections 12.2, 12.4, 17.2.2, 17.2.1; [RFC 9001](https://www.rfc-editor.org/rfc/rfc9001.html)
+sections 5.1, 5.2, 5.3, 5.4 and Appendix A (client Initial vector reproduced
+byte for byte by the test helper); [RFC 9369](https://www.rfc-editor.org/rfc/rfc9369.html)
+sections 3.1-3.3 and Appendix A.2 (first 32 protected bytes reproduced);
+[RFC 5869](https://www.rfc-editor.org/rfc/rfc5869.html), [FIPS 197](https://csrc.nist.gov/pubs/fips/197/final),
+[NIST SP 800-38D](https://csrc.nist.gov/pubs/sp/800/38/d/final) (AES/GCM test vectors).

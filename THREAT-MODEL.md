@@ -66,6 +66,7 @@ file (lengths, link types, IPv6). A8 compromises a CI dependency or action.
 | T10 | Reference cycles delaying buffer release under load | DoS | Unbound callbacks, weak owner references; GC-disabled release tests | SR-14 |
 | T11 | Compromised CI action or dev dependency (A8) | Tampering | SHA-pinned actions, hash-pinned dev requirements, read-only token, SBOM, provenance attestation | CI gates |
 | T12 | Session verdict overstates evidence | Spoofing | Verdict precedence preserves engine status; custom mappings keep base_app; no risk inference from traffic | SR-15 |
+| T14 | Flood of 1200-byte QUIC Initials forces about 2 ms of pure-Python AES-GCM each (A1) | DoS | Only Initial-type long headers with supported versions are opened; datagram bounded by max_bytes; `Config.quic_decrypt=False` disables; per-packet cost documented; host owns rate limiting | SR-23, BENCHMARK-V025.md |
 | T13 | Operator-authored signature causes regex backtracking blow-up or retains payload (A1 drives input, operator error supplies the pattern) | DoS / Information disclosure | Parse-tree checks, literal anchor, substring prefilter, bounded buffers; contexts internal only | SR-18, SR-19 |
 
 Residual risks: Python regex engines are backtracking; built-in patterns are
