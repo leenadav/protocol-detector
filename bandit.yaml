@@ -1,6 +1,11 @@
-# Bandit configuration. subprocess use in live_capture.py is reviewed: argv only,
-# no shell, fixed executable lookup; B404/B603 are therefore accepted there.
-skips: []
+# Bandit configuration (SSDLC static analysis gate).
+#
+# Accepted findings, reviewed against THREAT-MODEL.md T8 and SR-12:
+#   B404 import subprocess, B603 subprocess call without shell — live_capture.py
+#   starts tcpdump with an argv list only (no shell), a resolved executable path,
+#   a validated interface name and a filter that is passed as one argument.
+#   test_live.test_command_arguments_are_not_shell_code verifies this.
+skips: ["B404", "B603"]
 exclude_dirs:
   - tests
   - .git
