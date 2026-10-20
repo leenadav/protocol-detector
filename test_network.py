@@ -3,7 +3,7 @@ import struct
 import unittest
 from protocol_engine import Config, DatagramInspector, Inspector
 from protocol_engine.datagram import VALIDATORS
-from protocol_fixtures import BGP, SMB2, SMB311, SNMP, TFTP, NTP, NETWORK_STREAM_CASES
+from protocol_fixtures import BGP, SMB311, SNMP, TFTP, NTP, NETWORK_STREAM_CASES
 
 
 class NetworkProtocolTests(unittest.TestCase):

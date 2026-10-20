@@ -1,0 +1,8 @@
+# Bandit configuration. subprocess use in live_capture.py is reviewed: argv only,
+# no shell, fixed executable lookup; B404/B603 are therefore accepted there.
+skips: []
+exclude_dirs:
+  - tests
+  - .git
+assert_used:
+  skips: ["*test_*.py"]

@@ -6,7 +6,7 @@ import subprocess
 import sys
 import unittest
 from protocol_engine import Config, DatagramInspector
-from protocol_fixtures import RADIUS, DATAGRAM_CASES, HINTED_DATAGRAM_CASES
+from protocol_fixtures import RADIUS, DATAGRAM_CASES
 
 
 def attr(kind, value):

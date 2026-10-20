@@ -4,13 +4,12 @@ import struct
 import tempfile
 import unittest
 import zlib
-from dataclasses import asdict
 from pathlib import Path
 from protocol_engine import Config, DatagramInspector, Inspector
 from protocol_engine.datagram import VALIDATORS
-from protocol_engine.parsers import BudgetError, ParseError
 from protocol_engine.wire import dns
-from protocol_fixtures import *
+from protocol_fixtures import (BITTORRENT, COAP, DATAGRAM_CASES, DHCP, DNS, HINTED_DATAGRAM_CASES, HINTED_STREAM_CASES, LDAP, MEMCACHED,
+                               POSTGRESQL, POSTGRESQL_SSL, RTSP, SIP, STREAM_CASES, STUN, SYSLOG)
 from proxy_demo import client_hello
 
 

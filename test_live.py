@@ -1,4 +1,3 @@
-import io
 import json
 import os
 import random
@@ -15,7 +14,7 @@ from live_capture import CaptureDiagnostics, CaptureMonitor, capture_command, ru
 from link_packets import decode_frame
 from packets import CaptureError, PacketError
 from make_sample_pcap import A, B, REQUEST, frame, pcap_bytes, sample_frames, udp_frame
-from protocol_fixtures import DNS, STREAM_CASES, DATAGRAM_CASES
+from protocol_fixtures import DNS
 
 
 def ip6(payload, protocol=17, extension=b''):
