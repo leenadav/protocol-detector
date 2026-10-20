@@ -1,4 +1,4 @@
-# Protocol detector v0.23
+# Protocol detector v0.24
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **40 protocol families**, with explicit profiles rather than claims of full
@@ -44,6 +44,25 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.24 — handshake fingerprints and post-identification refinement
+
+`--fingerprints` (`Config(fingerprints=True)`) derives **JA4** and **JA3** from
+TLS ClientHello, **JA4** (`d`) from DTLS ClientHello, **JA4S**/**JA3S** from TLS
+ServerHello, **HASSH** from the SSH client KEXINIT and an Akamai-style
+**HTTP/2 SETTINGS** string. They are `derived` evidence: implementation-family
+indicators, never identities. The TLS 1.3 server fixture reproduces the JA4S
+specification example `t130200_1301_a56c5b993250`.
+
+SSH shows a new engine mechanism: the banner identifies immediately
+(`updated`), then the parser stays attached for exactly one bounded KEXINIT
+packet and publishes a `refined` event with `hassh`. A malformed packet, the
+budget or EOF ends the continuation without touching the identification.
+Session records carry `fingerprints`; live events carry `fingerprints` and
+`event` (`updated`/`refined`). `benchmark_ab.py` is a new stable A/B harness
+(min over alternating runs) replacing the noise-prone paired percentiles on
+shared hosts. 349 tests pass. See [FINGERPRINTS.md](FINGERPRINTS.md) and
+BENCHMARK-V024.md.
 
 ## New in v0.23 — custom application signatures
 
@@ -457,6 +476,7 @@ output I/O, concurrent load and end-to-end network latency are not in those timi
 | protocol_engine/ | Pure incremental TCP and complete UDP recognition |
 | protocol_engine/appid.py, applications.py | Session verdicts and the application catalog ([APPID.md](APPID.md)) |
 | protocol_engine/signatures.py | Custom signature compilation and evaluation ([SIGNATURES.md](SIGNATURES.md)) |
+| protocol_engine/fingerprints.py | JA3/JA4/JA3S/JA4S/HASSH/HTTP2 digests ([FINGERPRINTS.md](FINGERPRINTS.md)) |
 | live_capture.py | Bounded live loop, readable/JSON events and capture diagnostics |
 | capture_stream.py | Incremental PCAP framing |
 | link_packets.py | Link/IPv4 decoding |

@@ -82,3 +82,13 @@ hostname opt-in, live and offline output). Offline replay of
 sample-expanded.pcap produces 30 TCP/UDP session records with the expected
 applications; the live smoke test could not be executed in this container
 (no tcpdump installed) and remains an operator check.
+
+
+## Erratum (recorded in v0.24)
+
+The paired table above compared a byte-compiled development tree against a
+fresh baseline checkout without `__pycache__`. CPython executes code compiled
+from source at import time about 50% slower than code loaded from `.pyc` on
+this interpreter, so the baseline column is pessimistic. See BENCHMARK-V024.md
+for the corrected v0.21 -> v0.24 chain measured with `benchmark_ab.py`, which
+byte-compiles both trees first.

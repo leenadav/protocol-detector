@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.23 — engine and observation contracts
+# Stream/datagram engine v0.24 — engine and observation contracts
 
 ## Ownership
 
@@ -493,3 +493,30 @@ Verdicts: `appid._application` resolves a signature name through the supplied
 `SignatureSet` to use its own category/risk/characteristics and `parent`
 carrier; without the set the name inherits its carrier like a configured
 mapping. Unknown-payload matches are carried by `unknown-tcp`/`unknown-udp`.
+
+
+## Post-identification continuation and fingerprints (v0.24)
+
+`Inspector.feed` gains a continuation state. When a parser completes with
+`continues = True`, the Inspector publishes the identification (`updated`),
+keeps the parser, and feeds it the remainder of the current chunk and later
+chunks, charging only consumed bytes. When the parser clears `continues`, the
+Inspector finishes with a `refined` event whose evidence appends the parser's
+`fingerprints` tuples (field, value, provenance) at strength `derived`. A
+ParseError during continuation, reaching `max_bytes`, `end()` or `invalidate()`
+finish or retract without changing status; a continuation can only add
+evidence. Terminal release semantics are unchanged once the continuation ends.
+
+TLSParser fills `ClientHelloInfo` when contexts or fingerprints are configured
+and computes JA4/JA3 at completion; `tls_server.parse_server_hello` appends
+JA4S/JA3S for completed ServerHello profiles (not for retries); `dtls()` passes
+the DTLS legacy version so JA4 reports `d2`; `HTTP2Parser` keeps the ordered
+SETTINGS pairs for the Akamai-style string; `LineParser` delegates to a bounded
+`KexInit` reader after an SSH banner. All digests are over already validated
+structural fields; GREASE values are removed where the definition requires.
+`fingerprints.py` has no parsing of its own.
+
+`benchmark_ab.py` compares two trees by minimum per-flow time over alternating
+interpreter runs with the constructor subtracted; it exists because percentile
+comparisons across shuffled subprocess rounds were shown to swing by ±30% on
+unchanged code on the shared development host (BENCHMARK-V023.md).

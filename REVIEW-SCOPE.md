@@ -1,10 +1,21 @@
-# Review scope: protocol detector v0.23
+# Review scope: protocol detector v0.24
 
 Python3.9-compatible IPv4 passive classification: 40 families, 36 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the new verdict vocabulary and the application catalog.
 
-New focus (v0.23): custom signatures (protocol_engine/signatures.py), context
+New focus (v0.24): fingerprints (protocol_engine/fingerprints.py) and the
+post-identification continuation in engine.py. Trace: GREASE filtering and
+JA4 field rules (version from supported_versions, SNI flag, counts capped at
+99, ALPN two-character code including non-alphanumeric cases, sorted vs
+original order, SNI/ALPN exclusion in JA4_c, signature-algorithm suffix),
+JA4S example vector, JA3/JA3S/HASSH definitions, DTLS version, HTTP/2
+SETTINGS order; continuation accounting of consumed bytes, failure/budget/EOF
+behaviour never downgrading an identification, KexInit bounds (35000, padding,
+name-list ASCII and size, trailer), parser release after refinement, event
+kinds updated/refined and live counters. 349 tests pass. BENCHMARK-V024.md.
+
+Previous focus (v0.23): custom signatures (protocol_engine/signatures.py), context
 retention in parsers.py/extended.py/binary.py/wire.py, the unknown-payload
 buffering state in engine.py and unknown-udp evaluation in datagram.py. Trace:
 pattern safety (nested quantifiers, backreferences, lookaround, repeat counts,

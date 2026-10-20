@@ -1,4 +1,4 @@
-# הפעלת Protocol Detector — גרסה 0.23
+# הפעלת Protocol Detector — גרסה 0.24
 
 הכול נשאר בפייתון. יש עכשיו גם ניתוח חי, בנוסף לדוגמאות ולקבצי PCAP.
 הכלי צופה בעותק של התעבורה, ואינו משנה חיבורים או מפענח TLS.
@@ -216,3 +216,11 @@ python3 -B analyze_pcap.py capture.pcap --sessions --signatures signatures-examp
 ```
 
 פירוט הפורמט, כל ההקשרים וכללי התבניות ב־SIGNATURES.md. 339 בדיקות עוברות.
+
+
+עדכון 0.24 מוסיף טביעות אצבע של לחיצת יד (`--fingerprints`): JA4 ו־JA3 מ־ClientHello של TLS,
+JA4 מ־DTLS, JA4S ו־JA3S מ־ServerHello, HASSH מהודעת KEXINIT של לקוח SSH ומחרוזת SETTINGS של HTTP/2.
+אלה ראיות מסוג `derived`: הן מאפיינות משפחת יישום (ספריית TLS, לקוח SSH) ולא זהות משתמש או מוצר.
+ב־SSH הזיהוי מתפרסם מיד לפי הבאנר, ואירוע `refined` נוסף מגיע עם HASSH אחרי חבילת KEXINIT אחת
+ותחומה; חבילה פגומה, מיצוי התקציב או סיום הזרם אינם משנים את הזיהוי. 349 בדיקות עוברות.
+פירוט ב־FINGERPRINTS.md.

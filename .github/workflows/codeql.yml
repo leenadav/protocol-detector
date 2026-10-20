@@ -27,6 +27,24 @@ jobs:
         with:
           languages: python
           queries: security-extended,security-and-quality
+      # Analysis always runs and fails the job on real errors. Results are kept as an
+      # artifact; the upload to the Security tab needs "Code scanning" enabled in the
+      # repository settings (Settings -> Code security), so it may not fail the gate.
       - uses: github/codeql-action/analyze@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
         with:
+          category: "/language:python"
+          upload: never
+          output: codeql-results
+      - name: Fail on error-level CodeQL findings
+        run: python3 -B tools/codeql_gate.py codeql-results
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: codeql-sarif-${{ github.sha }}
+          path: codeql-results
+          retention-days: 30
+      - name: Upload to code scanning (requires the feature to be enabled)
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
+        with:
+          sarif_file: codeql-results
           category: "/language:python"

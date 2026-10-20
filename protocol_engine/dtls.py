@@ -6,7 +6,7 @@ The TLS-shaped ClientHello tail shares SNI/ALPN syntax validation, not TLS state
 from .datagram_result import DatagramMatch
 from .extended import UnsupportedPrefix
 from .model import Evidence
-from .parsers import BudgetError, ParseError, Reader, parse_hello
+from .parsers import BudgetError, ClientHelloInfo, ParseError, Reader, parse_hello
 
 
 def dtls(data, config):
@@ -67,7 +67,8 @@ def dtls(data, config):
                 raise UnsupportedPrefix("DTLS supported_versions negotiation is outside this 1.2 profile")
     # Translate only the wire layout for the existing structural decoder. This
     # does not make DTLS a TLS stream, select a version or authenticate metadata.
-    host, alpn = parse_hello(b'\x03\x03' + body[2:cookie_start] + body[cookie_end:])
+    info = ClientHelloInfo() if config.fingerprints else None
+    host, alpn = parse_hello(b'\x03\x03' + body[2:cookie_start] + body[cookie_end:], info)
     evidence = [Evidence('encryption', 'dtls', 'wire', 'structural'),
                 Evidence('handshake', 'client_hello', 'wire', 'structural'),
                 Evidence('offered_dtls_version', '1.2', 'dtls_client_hello', 'asserted')]
@@ -75,5 +76,9 @@ def dtls(data, config):
         evidence.append(Evidence('hostname', host, 'dtls_sni', 'asserted'))
     if alpn:
         evidence.append(Evidence('offered_alpn', ','.join(alpn), 'dtls_alpn', 'asserted'))
+    if info is not None:
+        from .fingerprints import ja4
+        info.version = 0xfefd  # the DTLS 1.2 legacy version, not the translated TLS wire layout
+        evidence.append(Evidence('ja4', ja4(info, 'd'), 'wire:dtls_client_hello', 'derived'))
     return DatagramMatch(encryption='dtls', hostname=host, offered_alpn=alpn,
                          evidence=tuple(evidence), reason='DTLS ClientHello structure validated; client offers and cookie unverified; no inner application identification')

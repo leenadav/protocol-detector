@@ -32,8 +32,20 @@ class LineParser:
         self.reason = "Waiting for complete line"
         # Bounded signature contexts, only when configured; never emitted as evidence.
         self.contexts = {} if config.retain_contexts else None
+        self.continues = False
+        self.kexinit = None
+        self.fingerprints = ()
 
     def feed(self, data):
+        if self.continues:
+            consumed = self.kexinit.feed(data)
+            if self.kexinit.done:
+                from .fingerprints import hassh
+                kex, enc, mac, comp = self.kexinit.lists[0], self.kexinit.lists[2], self.kexinit.lists[4], self.kexinit.lists[6]
+                self.fingerprints = (("hassh", hassh(kex, enc, mac, comp), "kexinit"),)
+                self.kexinit = None
+                self.continues = False
+            return consumed
         pos = 0
         while pos < len(data) and not self.done:
             newline = data.find(b"\n", pos)
@@ -63,6 +75,10 @@ class LineParser:
             self.protocol_name = "ssh"
             self.done = True
             self.reason = "SSH identification validated; key exchange not inspected"
+            if self.config.fingerprints:
+                # Keep reading one KEXINIT packet for the HASSH fingerprint; identification stands either way.
+                self.kexinit = KexInit(self.config)
+                self.continues = True
             return
         if self.first:
             self.first = False
@@ -150,6 +166,69 @@ class LineParser:
             if self.transfer_encoding or value.lower() != b"chunked":
                 raise ParseError("Unsupported or duplicate Transfer-Encoding")
             self.transfer_encoding = True
+
+
+class KexInit:
+    """One SSH_MSG_KEXINIT binary packet after the identification line (RFC 4253 7.1).
+
+    Bounded by the 35000-byte packet limit and max_bytes. Name-lists are
+    validated as comma-separated printable ASCII; only their HASSH digest and the
+    lists needed for it are kept, never cookie bytes.
+    """
+    MAX_PACKET = 35000
+
+    def __init__(self, config):
+        self.config = config
+        self.buffer = bytearray()
+        self.needed = 4
+        self.length = None
+        self.done = False
+        self.lists = None
+
+    def feed(self, data):
+        pos = 0
+        while pos < len(data) and not self.done:
+            amount = min(self.needed - len(self.buffer), len(data) - pos)
+            self.buffer.extend(data[pos:pos + amount])
+            pos += amount
+            if len(self.buffer) < self.needed:
+                break
+            if self.length is None:
+                self.length = int.from_bytes(self.buffer[:4], "big")
+                if not 17 <= self.length <= min(self.MAX_PACKET, self.config.max_bytes - 4):
+                    raise ParseError("SSH packet length outside KEXINIT profile")
+                self.needed = 4 + self.length
+                continue
+            self._validate(bytes(self.buffer[4:]))
+            self.done = True
+            self.buffer.clear()
+        return pos
+
+    def _validate(self, packet):
+        padding = packet[0]
+        if packet[1] != 20:
+            raise ParseError("First SSH packet is not KEXINIT")
+        if padding < 4 or 1 + padding + 1 + 16 > len(packet):
+            raise ParseError("Invalid SSH KEXINIT padding or cookie framing")
+        pos, lists = 18, []
+        payload_end = len(packet) - padding
+        for _ in range(10):
+            if pos + 4 > payload_end:
+                raise ParseError("Truncated SSH KEXINIT name-list")
+            size = int.from_bytes(packet[pos:pos + 4], "big")
+            pos += 4
+            if pos + size > payload_end or size > 4096:
+                raise ParseError("SSH KEXINIT name-list exceeds packet or profile")
+            value = packet[pos:pos + size]
+            if any(byte < 0x21 or byte > 0x7e for byte in value):
+                raise ParseError("SSH KEXINIT name-list must be printable ASCII")
+            lists.append(value)
+            pos += size
+        if pos + 5 > payload_end or packet[pos] > 1 or packet[pos + 1:pos + 5] != bytes(4):
+            raise ParseError("Invalid SSH KEXINIT trailer")
+        if pos + 5 != payload_end:
+            raise ParseError("Unexpected bytes after SSH KEXINIT")
+        self.lists = tuple(lists)
 
 
 class Reader:
@@ -290,6 +369,7 @@ class TLSParser:
         self.alpn = ()
         self.contexts = None
         self.hello = None
+        self.fingerprints = ()
         self.reason = "Waiting for complete TLS hello"
 
     def feed(self, data):
@@ -325,9 +405,12 @@ class TLSParser:
             if self.hello_size is not None and len(self.handshake) == self.hello_size + 4:
                 if self.handshake[0] == 1:
                     body = bytes(self.handshake[4:])
-                    info = ClientHelloInfo() if self.config.retain_contexts else None
+                    info = ClientHelloInfo() if (self.config.retain_contexts or self.config.fingerprints) else None
                     self.host, self.alpn = parse_hello(body, info)
-                    if info is not None:
+                    if info is not None and self.config.fingerprints:
+                        from .fingerprints import ja3, ja4
+                        self.fingerprints = (("ja4", ja4(info), "client_hello"), ("ja3", ja3(info), "client_hello"))
+                    if info is not None and self.config.retain_contexts:
                         info.body = body
                         self.contexts = {"ssl-req-client-hello": body, "ssl-req-version": info.version,
                                          "ssl-req-cipher-suite": frozenset(info.ciphers),

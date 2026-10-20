@@ -26,6 +26,11 @@ class TextParser(LineParser):
         self.extra_evidence = ()
         self.control = None
 
+    def feed(self, data):
+        if self.continues:
+            return LineParser.feed(self, data)
+        return super().feed(data)
+
     def consume_line(self, line):
         if self.first and not line.endswith((b"HTTP/1.0", b"HTTP/1.1")) and START.fullmatch(line):
             self.control = ControlHeaders(line, self.config)
@@ -116,6 +121,7 @@ class HTTP2Parser:
         self.payload = bytearray()
         self.length = None
         self.done = False
+        self.fingerprints = ()
         self.reason = "Waiting for complete HTTP/2 client preface and initial SETTINGS"
 
     def feed(self, data):
@@ -146,9 +152,11 @@ class HTTP2Parser:
         self.payload.extend(data[pos:pos + amount])
         pos += amount
         if len(self.payload) == self.length:
+            settings = []
             for offset in range(0, self.length, 6):
                 setting = int.from_bytes(self.payload[offset:offset + 2], "big")
                 value = int.from_bytes(self.payload[offset + 2:offset + 6], "big")
+                settings.append((setting, value))
                 if setting == 2 and value not in (0, 1):
                     raise ParseError("Invalid SETTINGS_ENABLE_PUSH")
                 if setting == 4 and value > 0x7fffffff:
@@ -156,6 +164,9 @@ class HTTP2Parser:
                 if setting == 5 and not 16384 <= value <= 0xffffff:
                     raise ParseError("Invalid SETTINGS_MAX_FRAME_SIZE")
                 # Unknown setting identifiers and repeated settings are allowed.
+            if self.config.fingerprints:
+                from .fingerprints import h2_settings_fingerprint
+                self.fingerprints = (("h2_settings", h2_settings_fingerprint(settings), "settings_frame"),)
             self.done = True
             self.reason = "HTTP/2 client preface and initial SETTINGS validated; headers, HPACK and later frames not inspected"
         return pos

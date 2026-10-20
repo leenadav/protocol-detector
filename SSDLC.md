@@ -8,7 +8,7 @@ artifact in the repository and every security claim has an executable check.
 | Requirements | Security requirements written as testable statements (SR-n) | SECURITY-REQUIREMENTS.md; CI job `security-requirements` fails when a row has no existing test |
 | Design | Threat model per trust boundary, STRIDE table, explicit contracts for budgets and evidence | THREAT-MODEL.md, ARCHITECTURE.md, PROTOCOLS.md profile per family |
 | Implementation | Bounded parsing patterns (length before allocation, one parser per stream, immutable registries), no runtime dependencies, Python 3.9 syntax | Code review via PR template checklist; CODEOWNERS |
-| Verification | Unit tests (every split point, single bytes, truncations), seeded mutation fuzzing, GC-release tests, work-bound assertions, static analysis | `make check`, CI `verify` matrix (3.9/3.11/3.13), ruff, bandit, CodeQL, nightly fuzz |
+| Verification | Unit tests (every split point, single bytes, truncations), seeded mutation fuzzing, GC-release tests, work-bound assertions, static analysis | `make check`, CI `verify` matrix (3.9/3.11/3.13), ruff, bandit, CodeQL (error-level findings fail via `tools/codeql_gate.py`; SARIF kept as an artifact, uploaded to the Security tab once code scanning is enabled in repository settings), nightly fuzz |
 | Supply chain | SHA-pinned actions, hash-pinned dev tools, SBOM, read-only tokens, Dependabot | CI `supply-chain`, dependabot.yml, `tools/check_action_pins.py` |
 | Release | Tests on the tagged commit, sdist/wheel, SBOM, build provenance attestation, checksums | `.github/workflows/release.yml` |
 | Response | Private vulnerability reporting, SLAs, regression test with every fix, benchmark when the hot path changes | SECURITY.md, BENCHMARK-Vnnn.md |

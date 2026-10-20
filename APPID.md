@@ -14,6 +14,7 @@ parity with a commercial signature corpus.
 | Decryption + re-identification | Not performed; `feed_decrypted()` accepts plaintext from a host TLS stack | `engine.py` |
 | Protocol decoders / tunneled apps | Decoders exist per family; tunnel transitions are the host's phase boundaries (v0.28 planned) | `engine.py` |
 | Heuristics for evasive traffic | Planned (v0.29) | — |
+| Client/server implementation fingerprints (not an App-ID feature; nDPI-style) | **Implemented**: JA3/JA4/JA3S/JA4S/HASSH/HTTP2 (FINGERPRINTS.md) | `protocol_engine/fingerprints.py` |
 | Session verdict (`web-browsing`, `ssl`, `unknown-tcp`, …) | **Implemented** | `protocol_engine/appid.py` |
 | Application catalog (category, risk, characteristics, dependencies) | **Implemented**, 44 entries | `protocol_engine/applications.py` |
 | application-default (standard port check) | **Implemented** as `port_usage` | `appid.py` |

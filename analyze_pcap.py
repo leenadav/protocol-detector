@@ -25,7 +25,7 @@ class Analyzer:
     """
     def __init__(self, max_connections=32, byte_limit=65536, idle_timeout=60, compact=False, udp_hint=None, tcp_hint=None,
                  crc32c_byte_limit=4096, on_retire=None, on_session=None, max_udp_flows=None, include_hostnames=False,
-                 signatures=None):
+                 signatures=None, fingerprints=False):
         for callback in (on_retire, on_session):
             if callback is not None and not callable(callback):
                 raise TypeError("Analyzer callbacks must be callable")
@@ -41,7 +41,7 @@ class Analyzer:
             raise TypeError("signatures must be a SignatureSet")
         self.signatures = signatures if signatures is not None and len(signatures) else None
         self.inspection_config = Config(max_bytes=byte_limit, max_crc32c_bytes=crc32c_byte_limit,
-                                        retain_contexts=self.signatures is not None)
+                                        retain_contexts=self.signatures is not None, fingerprints=bool(fingerprints))
         self.udp = DatagramInspector(self.inspection_config, self.signatures)
         self.udp_revision = 0
         self.now = 0
@@ -71,6 +71,10 @@ class Analyzer:
                   "client_bytes": state["bytes"].get(client, 0), "server_bytes": state["bytes"].get(server, 0),
                   "end_reason": reason}
         record.update(verdict_fields(verdict))
+        fingerprints = {evidence.field: evidence.value for obs in observations if obs is not None
+                        for evidence in obs.evidence if evidence.strength == "derived"}
+        if fingerprints:
+            record["fingerprints"] = fingerprints
         if self.include_hostnames:
             record["hostname"] = next((obs.hostname for obs in observations if obs is not None and obs.hostname), None)
         self.counts["sessions"] += 1
@@ -303,7 +307,7 @@ def readable_session(record):
 
 
 def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_byte_limit=4096, udp_hint=None,
-            sessions=False, include_hostnames=False, signatures=None):
+            sessions=False, include_hostnames=False, signatures=None, fingerprints=False):
     def retired(source, destination, event):
         if json_output:
             print(json.dumps({'type': 'stream_end', 'source': source, 'destination': destination,
@@ -316,7 +320,8 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
         print(json.dumps(record) if json_output else readable_session(record))
 
     analyzer = Analyzer(tcp_hint=tcp_hint, crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, udp_hint=udp_hint,
-                        on_session=session if sessions else None, include_hostnames=include_hostnames, signatures=signatures)
+                        on_session=session if sessions else None, include_hostnames=include_hostnames, signatures=signatures,
+                        fingerprints=fingerprints)
     counts = Counter()
     def capture_gap(reason, scope="active_connections", number=None):
         active = len(analyzer.tracked)
@@ -387,6 +392,7 @@ def main():
     parser.add_argument("--sessions", action="store_true", help="Emit one App-ID verdict record per TCP connection / UDP flow")
     parser.add_argument("--hostnames", action="store_true", help="Include asserted SNI/Host names in session records")
     parser.add_argument("--signatures", help="JSON file of custom application signatures (see SIGNATURES.md)")
+    parser.add_argument("--fingerprints", action="store_true", help="Derive JA3/JA4/JA3S/JA4S/HASSH/HTTP2 fingerprints (FINGERPRINTS.md)")
     parser.add_argument("--udp-hint", choices=sorted(VALIDATORS), help="Restrict UDP validation to one candidate")
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to one validated candidate")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
@@ -395,7 +401,7 @@ def main():
         signatures = SignatureSet.from_path(args.signatures) if args.signatures else None
         analyze(args.capture, json_output=args.json, events_only=args.events_only, tcp_hint=args.tcp_hint,
                 crc32c_byte_limit=args.crc32c_byte_limit, udp_hint=args.udp_hint, sessions=args.sessions,
-                include_hostnames=args.hostnames, signatures=signatures)
+                include_hostnames=args.hostnames, signatures=signatures, fingerprints=args.fingerprints)
     except (OSError, CaptureError, ValueError) as error:
         parser.exit(1, "Capture error: {}\n".format(error))
 

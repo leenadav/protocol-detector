@@ -32,6 +32,7 @@ class Inspector:
             raise ValueError("Signatures require Config(retain_contexts=True)")
         self.signatures = signatures
         self._unknown = None  # bounded unknown-payload buffer while signatures may still match
+        self._continuing = False  # identified; parser still deriving optional evidence (fingerprints)
         if protocol_hint is not None and protocol_hint not in PARSERS:
             raise ValueError("Unsupported TCP candidate hint")
         self._hint = protocol_hint
@@ -87,11 +88,12 @@ class Inspector:
         self.metrics.events_emitted += 1
         return (Event(self.revision, kind, observation),)
 
-    def _finish(self, observation):
+    def _finish(self, observation, kind="updated"):
         self._terminal = True
+        self._continuing = False
         self._parser = None
         self._prefix.clear()
-        return self._publish(observation)
+        return self._publish(observation, kind)
 
     def invalidate(self, reason: str) -> Tuple[Event, ...]:
         """Call when upstream reassembly/provenance is no longer trustworthy."""
@@ -110,6 +112,8 @@ class Inspector:
         if not isinstance(reason, str) or not reason or len(reason) > 256:
             raise ValueError("End reason must contain 1..256 characters")
         if not self._terminal:
+            if self._continuing:
+                return self._finish(self._identified(), "refined")  # keep the identification; no further evidence
             if self._unknown is not None:
                 return self._unknown_observation("Prefix outside supported protocol families")
             if self._candidate is None and self._prefix and self.signatures is not None and self.signatures.wants(_UNKNOWN_FAMILY):
@@ -152,6 +156,8 @@ class Inspector:
             evidence.append(Evidence("offered_alpn", offered, self.source + ":client_hello", "offered"))
         for field, value, provenance, strength in getattr(parser, "extra_evidence", ()):
             evidence.append(Evidence(field, value, self.source + ":" + provenance, strength))
+        for field, value, provenance in getattr(parser, "fingerprints", ()):
+            evidence.append(Evidence(field, value, self.source + ":" + provenance, "derived"))
         return Observation(status="identified", encryption=encryption, application_protocol=protocol,
                            application=application, hostname=hostname, offered_alpn=alpn,
                            evidence=tuple(evidence), reason=parser.reason,
@@ -208,6 +214,19 @@ class Inspector:
                     chunk = bytes(self._prefix) + chunk
                     self._prefix.clear()
             self.metrics.parser_calls += 1
+            if self._continuing:
+                # Already identified: the parser only derives optional evidence now.
+                # Any failure or budget end keeps the identification and stops quietly.
+                try:
+                    self.metrics.bytes_inspected += self._parser.feed(chunk)
+                except ParseError:
+                    self.metrics.bytes_inspected += len(chunk)
+                    return self._finish(self._identified(), "refined")
+                if not self._parser.continues:
+                    return self._finish(self._identified(), "refined")
+                if self.metrics.bytes_inspected >= self.config.max_bytes:
+                    return self._finish(self._identified(), "refined")
+                return ()
             # Charge submitted new bytes conservatively on errors. Prefix bytes
             # were already charged while dispatch waited for a discriminator.
             new_bytes = len(chunk) - previous
@@ -215,6 +234,22 @@ class Inspector:
             consumed = self._parser.feed(chunk)
             self.metrics.bytes_inspected -= new_bytes - max(0, consumed - previous)
             if self._parser is not None and self._parser.done:
+                if getattr(self._parser, "continues", False):
+                    # Publish the identification now; keep the parser for derived evidence
+                    # (for example SSH KEXINIT after the banner). Remaining bytes of this
+                    # chunk belong to the continuation.
+                    self._continuing = True
+                    events = self._publish(self._identified())
+                    rest = chunk[consumed:]
+                    if rest:
+                        try:
+                            self.metrics.bytes_inspected += self._parser.feed(rest)
+                        except ParseError:
+                            self.metrics.bytes_inspected += len(rest)
+                            return events + self._finish(self._identified(), "refined")
+                        if not self._parser.continues:
+                            return events + self._finish(self._identified(), "refined")
+                    return events
                 return self._finish(self._identified())
         except BudgetError as error:
             return self._finish(Observation(status="budget_exhausted", reason=str(error)))

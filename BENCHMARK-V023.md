@@ -119,3 +119,13 @@ isolation, negate/or/absent semantics, bounded evaluation with 2000 signatures,
 decrypted plaintext, verdict metadata and carriers, Analyzer/live/offline
 integration without payload leakage. `tools/fuzz_fixtures.py` passes with
 retention off; the nightly workflow runs it with 20,000 mutations per fixture.
+
+
+## Erratum (recorded in v0.24)
+
+The paired table above compared a byte-compiled development tree against a
+fresh baseline checkout without `__pycache__`. CPython executes code compiled
+from source at import time about 50% slower than code loaded from `.pyc` on
+this interpreter, so the baseline column is pessimistic. See BENCHMARK-V024.md
+for the corrected v0.21 -> v0.24 chain measured with `benchmark_ab.py`, which
+byte-compiles both trees first.

@@ -111,6 +111,12 @@ def parse_server_hello(body, config, record_versions, record_remaining):
         version = '1.2'
     evidence.extend((('selected_tls_version', version, source, 'asserted'),
                      ('selected_cipher', '0x%04x' % cipher, source, 'asserted')))
+    if config.fingerprints and not retry:
+        from .fingerprints import ja3s, ja4s
+        selected = tuple(value for field, value, _, _ in evidence if field == 'selected_alpn')
+        negotiated = 0x0304 if tls13 else 0x0303
+        evidence.extend((('ja4s', ja4s(negotiated, cipher, tuple(extensions), selected), source, 'derived'),
+                         ('ja3s', ja3s(negotiated, cipher, tuple(extensions)), source, 'derived')))
     reason = ('HelloRetryRequest structure validated; requested changes unverified' if retry else
               'ServerHello structure validated; server selections unauthenticated, handshake completion unverified')
     return tuple(evidence), source, reason

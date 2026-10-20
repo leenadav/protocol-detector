@@ -1,4 +1,4 @@
-# Protocol coverage — v0.23
+# Protocol coverage — v0.24
 
 The engine implements 40 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.
@@ -28,7 +28,7 @@ All input must start at the supported message/stream boundary; no port-only matc
 | http | tcp | Automatic profiles | initial_message | HTTP/1.0 and 1.1 start-line/headers |
 | http2 | tcp | Automatic profiles | initial_message | Client preface plus initial SETTINGS; no HPACK |
 | tls | tcp | Automatic profiles | initial_message/server_hello/hello_retry_request | ClientHello plus TLS1.2/1.3 ServerHello and TLS1.3 retry profiles; no decryption/authentication |
-| ssh | tcp | Automatic profiles | initial_message | Leading SSH-2.0/1.99 identification |
+| ssh | tcp | Automatic profiles | initial_message | Leading SSH-2.0/1.99 identification; with fingerprints, one bounded KEXINIT refinement (HASSH) |
 | socks5 | tcp | Automatic profiles | initial_message | No-auth offer plus client request; server unverified |
 | smtp | tcp | Automatic profiles | initial_message | EHLO/HELO only; ambiguous 220 banners unknown |
 | mqtt | tcp | Automatic profiles | initial_message | 3.1.1/5.0 CONNECT; MQTT5 CONNECT/Will property validation |
@@ -590,3 +590,18 @@ question name and QTYPE. Unknown TCP prefixes are buffered up to
 `signature_bytes` only when the set has unknown-tcp conditions; unknown UDP
 datagrams are evaluated in place. Hints restrict validation and never open
 unknown-payload signatures. Full context table and pattern rules: SIGNATURES.md.
+
+
+## Fingerprints and the SSH KEXINIT refinement (v0.24)
+
+Fingerprints add no family and never influence identification. TLS/DTLS
+ClientHello and TLS ServerHello digests reuse fields already validated by the
+profiles. The SSH profile gains an optional second stage: with
+`Config.fingerprints`, exactly one SSH_MSG_KEXINIT packet (RFC 4253 7.1) is
+read after the banner: packet length 17..35000 and <= max_bytes-4, padding >= 4,
+16-byte cookie, ten name-lists of printable ASCII (<= 4096 bytes each),
+first_kex_packet_follows in {0,1}, zero reserved word, no trailing bytes within
+the packet. Only the four client-to-server name-lists needed for HASSH are kept
+until the digest is computed. Any deviation, the byte budget or EOF ends the
+refinement and the identification made at the banner stands unchanged. Bytes
+after the KEXINIT are not consumed. See FINGERPRINTS.md.
