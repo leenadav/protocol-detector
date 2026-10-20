@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.22 — engine and observation contracts
+# Stream/datagram engine v0.23 — engine and observation contracts
 
 ## Ownership
 
@@ -463,3 +463,33 @@ end events, then the session verdict. `retiring` exposes the dropping state to
 amortized sweep; the first identified datagram labels the flow, otherwise the
 latest outcome. Capture gaps clear both tables without fabricating records.
 Session records contain counts and verdict metadata only; hostnames are opt-in.
+
+
+## Custom signatures (v0.23)
+
+`SignatureSet` is compiled once and immutable; signatures are indexed by the
+parser family whose contexts they reference, so evaluation touches only that
+family's list (`wants(family)` is one dictionary lookup in the hot path).
+Pattern compilation walks the regex parse tree: it rejects nested quantifiers,
+backreferences, lookaround and repeat counts above 4096, extracts the longest
+literal run and requires 7 bytes (raw contexts) or 3 bytes (fields). At runtime
+the anchor is searched with `bytes.find` before `re.search`, so a signature set
+costs one substring scan per signature on a miss. Inputs are bounded by the
+parser budgets (header block 4096, User-Agent 1024, ClientHello 16 KiB) or by
+`Config.signature_bytes`.
+
+Inspector evaluates signatures in `_identified()` before the `RuleIndex` lookup;
+contexts live on the parser and are released with it. For an unknown prefix the
+Inspector enters a buffering state instead of finishing: bytes are charged to
+the byte budget, signatures are evaluated after each update (a match is
+terminal with `scope=signature_match`), and the stream becomes `unknown` when
+the buffer is full or at `end()`. An unresolved dispatch prefix is evaluated once
+at `end()`. `invalidate()` drops the buffer. DatagramInspector evaluates
+unknown-udp signatures when no candidate exists or every candidate reported
+`unknown`, never when a hint was given. Contexts are never copied into
+Observation, events or adapter output; only the signature name is.
+
+Verdicts: `appid._application` resolves a signature name through the supplied
+`SignatureSet` to use its own category/risk/characteristics and `parent`
+carrier; without the set the name inherits its carrier like a configured
+mapping. Unknown-payload matches are carried by `unknown-tcp`/`unknown-udp`.

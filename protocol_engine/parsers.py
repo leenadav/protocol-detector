@@ -30,6 +30,8 @@ class LineParser:
         self.done = False
         self.protocol_name = None
         self.reason = "Waiting for complete line"
+        # Bounded signature contexts, only when configured; never emitted as evidence.
+        self.contexts = {} if config.retain_contexts else None
 
     def feed(self, data):
         pos = 0
@@ -72,6 +74,17 @@ class LineParser:
             version = line.rsplit(b" ", 1)[-1] if request else line.split(b" ", 1)[0]
             self.protocol_name = "http/1.1" if version == b"HTTP/1.1" else "http/1.0"
             self.reason = "Start-line validated; waiting for headers"
+            if self.contexts is not None:
+                parts = line.split(b" ", 2)
+                self.contexts["http-req-version"] = version
+                if request:
+                    self.contexts["http-req-method"] = parts[0]
+                    target = parts[1]
+                    self.contexts["http-req-uri-path"] = target.split(b"?", 1)[0]
+                else:
+                    self.contexts["http-rsp-status"] = int(parts[1])
+                    self.contexts["http-rsp-reason"] = parts[2] if len(parts) > 2 else b""
+                self.contexts["http-req-headers"] = bytearray()
             return
         if not line:
             if self.http11_request and self.host_count != 1:
@@ -80,6 +93,12 @@ class LineParser:
                 raise ParseError("Ambiguous Transfer-Encoding and Content-Length")
             self.done = True
             self.reason = "HTTP start-line and headers validated; body and later requests not inspected"
+            if self.contexts is not None:
+                self.contexts["http-req-headers"] = bytes(self.contexts["http-req-headers"])
+                if self.host is not None:
+                    self.contexts["http-req-host-header"] = self.host.encode("ascii")
+                if self.content_length is not None:
+                    self.contexts["http-req-content-length"] = self.content_length
             return
         self.headers += 1
         if self.headers > self.config.max_headers:
@@ -90,6 +109,12 @@ class LineParser:
         if any(c < 32 and c != 9 or c == 127 for c in value):
             raise ParseError("Control byte in header")
         name, value = name.lower(), value.strip(b" \t")
+        if self.contexts is not None:
+            block = self.contexts["http-req-headers"]
+            if len(block) < 4096:  # bounded header block for raw-context signatures
+                block.extend((name + b": " + value + b"\r\n")[:4096 - len(block)])
+            if name == b"user-agent" and "http-req-user-agent-header" not in self.contexts:
+                self.contexts["http-req-user-agent-header"] = value[:1024]
         if name == b"host":
             self.host_count += 1
             if self.host_count > 1 or not value:
@@ -146,9 +171,35 @@ class Reader:
             raise ParseError("Trailing bytes in TLS structure")
 
 
-def parse_hello(body):
+class ClientHelloInfo:
+    """Structural ClientHello fields kept for signatures and fingerprints; no key material."""
+    __slots__ = ("version", "ciphers", "extensions", "hostname", "alpn", "groups", "signature_algorithms",
+                 "point_formats", "supported_versions", "body")
+
+    def __init__(self):
+        self.version = 0
+        self.ciphers = ()
+        self.extensions = ()
+        self.hostname = None
+        self.alpn = ()
+        self.groups = ()
+        self.signature_algorithms = ()
+        self.point_formats = ()
+        self.supported_versions = ()
+        self.body = None
+
+
+def _u16_list(data, width=2):
+    if len(data) % width:
+        raise ParseError("TLS list length is not a multiple of its element width")
+    return tuple(int.from_bytes(data[i:i + width], "big") for i in range(0, len(data), width))
+
+
+def parse_hello(body, info=None):
+    """Validate a ClientHello body; return (hostname, alpn) and fill info when supplied."""
     reader = Reader(body)
-    if reader.take(2) not in (b"\x03\x01", b"\x03\x02", b"\x03\x03"):
+    version = reader.take(2)
+    if version not in (b"\x03\x01", b"\x03\x02", b"\x03\x03"):
         raise ParseError("Unsupported ClientHello version")
     reader.take(32)
     if len(reader.vector(1)) > 32:
@@ -157,18 +208,36 @@ def parse_hello(body):
     compression = reader.vector(1)
     if len(ciphers) < 2 or len(ciphers) % 2 or not compression or 0 not in compression:
         raise ParseError("Invalid cipher or compression vector")
+    if info is not None:
+        info.version = int.from_bytes(version, "big")
+        info.ciphers = _u16_list(ciphers)
     hostname, alpn = None, ()
     if reader.pos == len(body):
         return hostname, alpn
     extensions = Reader(reader.vector(2))
     reader.end()
     seen = set()
+    order = []
     while extensions.pos < len(extensions.data):
         kind = int.from_bytes(extensions.take(2), "big")
         value = extensions.vector(2)
         if kind in seen:
             raise ParseError("Duplicate TLS extension")
         seen.add(kind)
+        order.append(kind)
+        if info is not None and len(order) > 128:
+            raise BudgetError("ClientHello extension count exceeds inspection limit")
+        if info is not None and kind in (10, 11, 13, 43):
+            lists = Reader(value)
+            if kind == 10:
+                info.groups = _u16_list(lists.vector(2))
+            elif kind == 11:
+                info.point_formats = tuple(lists.vector(1))
+            elif kind == 13:
+                info.signature_algorithms = _u16_list(lists.vector(2))
+            else:
+                info.supported_versions = _u16_list(lists.vector(1))
+            lists.end()
         if kind == 0:  # server_name
             envelope = Reader(value)
             names = Reader(envelope.vector(2))
@@ -202,6 +271,9 @@ def parse_hello(body):
                 protocols.append(protocol.decode("ascii") if all(32 <= c < 127 for c in protocol)
                                  else "hex:" + protocol.hex())
             alpn = tuple(protocols)
+    if info is not None:
+        info.extensions = tuple(order)
+        info.hostname, info.alpn = hostname, alpn
     return hostname, alpn
 
 
@@ -216,6 +288,8 @@ class TLSParser:
         self.done = False
         self.host = None
         self.alpn = ()
+        self.contexts = None
+        self.hello = None
         self.reason = "Waiting for complete TLS hello"
 
     def feed(self, data):
@@ -250,7 +324,19 @@ class TLSParser:
                     raise BudgetError("TLS hello exceeds configured byte budget")
             if self.hello_size is not None and len(self.handshake) == self.hello_size + 4:
                 if self.handshake[0] == 1:
-                    self.host, self.alpn = parse_hello(bytes(self.handshake[4:]))
+                    body = bytes(self.handshake[4:])
+                    info = ClientHelloInfo() if self.config.retain_contexts else None
+                    self.host, self.alpn = parse_hello(body, info)
+                    if info is not None:
+                        info.body = body
+                        self.contexts = {"ssl-req-client-hello": body, "ssl-req-version": info.version,
+                                         "ssl-req-cipher-suite": frozenset(info.ciphers),
+                                         "ssl-req-client-hello-ext-type": frozenset(info.extensions)}
+                        if self.host:
+                            self.contexts["ssl-req-chello-sni"] = self.host.encode("ascii")
+                        if self.alpn:
+                            self.contexts["ssl-req-alpn"] = ",".join(self.alpn).encode("latin-1", "replace")
+                        self.hello = info
                     self.reason = "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content"
                 else:
                     from .tls_server import parse_server_hello

@@ -7,5 +7,6 @@ from .catalog import ProtocolSupport, supported_protocols
 from .engine import Inspector
 from .datagram import DatagramInspector
 from .model import ApplicationRule, Config, Evidence, Event, Observation, RuleIndex
+from .signatures import SignatureError, SignatureSet
 
-__all__ = ["ProtocolSupport", "supported_protocols", "Inspector", "DatagramInspector", "ApplicationRule", "Config", "Evidence", "Event", "Observation", "RuleIndex"]
+__all__ = ["ProtocolSupport", "supported_protocols", "Inspector", "DatagramInspector", "ApplicationRule", "Config", "Evidence", "Event", "Observation", "RuleIndex", "SignatureError", "SignatureSet"]

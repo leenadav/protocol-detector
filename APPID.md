@@ -18,7 +18,7 @@ parity with a commercial signature corpus.
 | Application catalog (category, risk, characteristics, dependencies) | **Implemented**, 44 entries | `protocol_engine/applications.py` |
 | application-default (standard port check) | **Implemented** as `port_usage` | `appid.py` |
 | Traffic log / session record | **Implemented** as `{"type": "session"}` events | `analyze_pcap.py`, `live_capture.py` |
-| Custom App-ID signatures with contexts | Planned (v0.23) | — |
+| Custom App-ID signatures with contexts | **Implemented** (SIGNATURES.md) | `protocol_engine/signatures.py` |
 
 ## Verdict vocabulary
 
@@ -29,6 +29,7 @@ A verdict names either a catalog application or a session outcome.
 | `web-browsing` | HTTP/1.x or HTTP/2 initial message validated, no configured mapping | web-browsing |
 | `ssl` | TLS ClientHello/ServerHello validated; SNI/ALPN are offers | ssl |
 | `<configured name>` | `RuleIndex` exact-host mapping on `tls_sni`/`http_host`; `base_app` names the carrier (`ssl`/`web-browsing`), `implicitly_uses` lists it | specific app implicitly using ssl/web-browsing |
+| `<signature name>` | Custom signature matched (SIGNATURES.md); category/risk come from the signature, `base_app` is its `parent` or the family that exposed the contexts, including `unknown-tcp`/`unknown-udp` | custom App-ID |
 | `ssh`, `dns`, `smb`, `rdp`, … | The family's structural profile passed (see catalog aliases for vendor names) | same |
 | `unknown-tcp` / `unknown-udp` | Payload existed and every supported profile rejected it, or a budget ran out before a profile completed | unknown-tcp / unknown-udp |
 | `insufficient-data` | Payload existed, inspection ended (FIN, RST, idle, EOF) while still detecting | insufficient-data |
@@ -95,7 +96,7 @@ make apps
   shifts and tunnel contents are not inspected (v0.28 planned).
 - No proprietary signature corpus, cloud lookup, machine-learned classifier or
   URL category database is included. Specific web applications require
-  configured host mappings or (v0.23) custom signatures.
+  configured host mappings or custom signatures (SIGNATURES.md).
 - Risk and characteristics are catalog metadata; they are not derived from traffic.
 - UDP flows are keyed by endpoint pair only; there is no transaction matching
   or spoofing resistance.

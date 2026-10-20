@@ -1,4 +1,4 @@
-# Protocol detector v0.22
+# Protocol detector v0.23
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **40 protocol families**, with explicit profiles rather than claims of full
@@ -44,6 +44,35 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.23 — custom application signatures
+
+Operators can now name applications with **custom signatures**: JSON rules
+whose conditions apply to named contexts that a completed structural profile
+exposed (`http-req-host-header`, `http-req-user-agent-header`, `http-req-uri-path`,
+`ssl-req-chello-sni`, `ssl-req-alpn`, `ssl-req-client-hello-ext-type`,
+`ssh-req-banner`, `dns-req-query-name`, `socks-req-target`, …) or to the first
+bytes of a stream/datagram that no profile accepted (`unknown-req-tcp-payload`,
+`unknown-req-udp-payload`, with length contexts). Operators: `pattern-match`,
+`equal-to`, `less-than`, `greater-than`, `negate`, nested `and`/`or`.
+
+Patterns are compiled once and must carry a literal run (7 bytes for raw
+payload contexts, 3 for parsed fields), may not nest quantifiers or use
+backreferences/lookaround, and run only after a plain substring prefilter; the
+unknown-payload buffer is bounded by `Config.signature_bytes` (2000). Contexts
+are retained only with `Config(retain_contexts=True)` and never leave the
+engine. A match reports the signature name as `application` with evidence
+strength `configured_signature`; verdicts use the signature's own category and
+risk and name the carrier in `base_app`.
+
+```bash
+python3 -B analyze_pcap.py capture.pcap --sessions --signatures signatures-example.json
+python3 -B live_capture.py -i eth0 --signatures signatures-example.json
+```
+
+See [SIGNATURES.md](SIGNATURES.md) for the file format, every context, the
+pattern rules and the evaluation semantics. 339 tests pass; BENCHMARK-V023.md
+records context-retention and signature-evaluation costs.
 
 ## New in v0.22 — App-ID style verdicts, application catalog and session records
 
@@ -427,6 +456,7 @@ output I/O, concurrent load and end-to-end network latency are not in those timi
 |---|---|
 | protocol_engine/ | Pure incremental TCP and complete UDP recognition |
 | protocol_engine/appid.py, applications.py | Session verdicts and the application catalog ([APPID.md](APPID.md)) |
+| protocol_engine/signatures.py | Custom signature compilation and evaluation ([SIGNATURES.md](SIGNATURES.md)) |
 | live_capture.py | Bounded live loop, readable/JSON events and capture diagnostics |
 | capture_stream.py | Incremental PCAP framing |
 | link_packets.py | Link/IPv4 decoding |

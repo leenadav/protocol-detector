@@ -12,13 +12,17 @@ class Config:
     max_line: int = 8192
     max_headers: int = 128
     max_crc32c_bytes: int = 4096
+    retain_contexts: bool = False   # keep bounded parser fields for signature evaluation
+    signature_bytes: int = 2000     # unknown-payload prefix retained for custom signatures
 
     def __post_init__(self):
         limits = ((self.max_bytes, 64, 1048576), (self.max_updates, 1, 1000000),
                   (self.max_line, 16, 65536), (self.max_headers, 1, 4096),
-                  (self.max_crc32c_bytes, 0, 1048576))
+                  (self.max_crc32c_bytes, 0, 1048576), (self.signature_bytes, 16, 65536))
         if any(type(value) is not int or not low <= value <= high for value, low, high in limits):
             raise ValueError("Invalid inspection resource limits")
+        if type(self.retain_contexts) is not bool:
+            raise ValueError("retain_contexts must be a boolean")
 
 
 @dataclass(frozen=True)

@@ -9,6 +9,7 @@ from .dtls import dtls
 from .ikev2 import ikev2, ike_probe
 from .model import Config, Evidence, Metrics, Observation
 from .parsers import BudgetError, ParseError
+from .signatures import SignatureSet
 from .extended import TextParser, UnsupportedPrefix
 from .syslog import syslog
 from .network import ntp, snmp, tftp
@@ -35,15 +36,51 @@ def sip(data, config):
     return "sip/2.0", "SIP required header framing and datagram body length validated; body/dialogue semantics unverified"
 
 
-VALIDATORS = MappingProxyType({"ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
+def dns_with_contexts(data, config):
+    if not config.retain_contexts:
+        return dns(data, config)
+    from .wire import dns_details
+    protocol, reason, qname, qtype = dns_details(data, config)
+    return protocol, reason, {"dns-req-query-name": qname, "dns-req-query-type": qtype}
+
+
+VALIDATORS = MappingProxyType({"ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
 
 
 class DatagramInspector:
-    def __init__(self, config=None):
+    def __init__(self, config=None, signatures=None):
         self.config = config if config is not None else Config()
         if not isinstance(self.config, Config):
             raise TypeError("Expected Config")
+        if signatures is not None and not isinstance(signatures, SignatureSet):
+            raise TypeError("Expected a SignatureSet")
+        if signatures is not None and len(signatures) and not self.config.retain_contexts:
+            raise ValueError("Signatures require Config(retain_contexts=True)")
+        self.signatures = signatures
         self.metrics = Metrics()
+
+    def _unknown(self, data, base, reason, protocol_hint):
+        """Unknown datagram: custom unknown-udp signatures may still name an application."""
+        if self.signatures is not None and self.signatures.wants("unknown-udp"):
+            match = self.signatures.match("unknown-udp", {"unknown-req-udp-payload": data[:self.config.signature_bytes],
+                                                          "unknown-req-udp-payload-length": len(data)})
+            if match is not None:
+                evidence = (Evidence("application", match.name, "signature:unknown-udp", "configured_signature"),)
+                if protocol_hint:
+                    evidence += (Evidence("candidate_hint", protocol_hint, "caller", "context"),)
+                return Observation(status="identified", application=match.name, evidence=evidence, scope="signature_match",
+                                   reason="Custom signature matched an unknown datagram; no protocol profile validated",
+                                   transport="udp")
+        return Observation(status="unknown", reason=reason, **base)
+
+    def _signature_evidence(self, protocol, contexts):
+        if self.signatures is None or contexts is None:
+            return None
+        family = protocol.split("/", 1)[0]
+        match = self.signatures.match(family, contexts)
+        if match is None:
+            return None
+        return match.name, (Evidence("application", match.name, "signature:" + family, "configured_signature"),)
 
     def inspect(self, data, protocol_hint=None):
         if not isinstance(data, bytes):
@@ -83,7 +120,7 @@ class DatagramInspector:
         if not protocol_hint and ike_probe(data):
             candidates = (*candidates, "ikev2")
         if not candidates:
-            return Observation(status="unknown", reason="No supported datagram structure selected", **base)
+            return self._unknown(data, base, "No supported datagram structure selected", protocol_hint)
         self.metrics.bytes_inspected += len(data)
         matches, errors = [], []
         for candidate in candidates:  # bounded by three preselected families, not registry size
@@ -109,9 +146,17 @@ class DatagramInspector:
                                    hostname=match.hostname, offered_alpn=match.offered_alpn,
                                    evidence=match.evidence + ((Evidence("candidate_hint", protocol_hint, "caller", "context"),) if protocol_hint else ()),
                                    reason=match.reason, **base)
-            protocol, reason = match
-            return Observation(status="identified", application_protocol=protocol, reason=reason,
-                               evidence=(Evidence("application_protocol", protocol, "wire", "structural"),)
+            protocol, reason = match[0], match[1]
+            application, extra = None, ()
+            if len(match) > 2 and match[2] is not None:
+                found = self._signature_evidence(protocol, match[2])
+                if found is not None:
+                    application, extra = found
+            return Observation(status="identified", application_protocol=protocol, application=application, reason=reason,
+                               evidence=(Evidence("application_protocol", protocol, "wire", "structural"),) + extra
                                + ((Evidence("candidate_hint", protocol_hint, "caller", "context"),) if protocol_hint else ()), **base)
         status, reason = next((item for item in errors if item[0] == "budget_exhausted"), errors[0])
+        if status == "unknown" and not protocol_hint and len(errors) == len(candidates):
+            # A hint restricts validation to its candidate; it never opens unknown-payload signatures.
+            return self._unknown(data, base, reason, protocol_hint)
         return Observation(status=status, reason=reason, **base)

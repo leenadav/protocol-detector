@@ -14,6 +14,11 @@ def dns_probe(data):
 
 
 def dns(data, config):
+    return dns_details(data, config)[:2]
+
+
+def dns_details(data, config):
+    """Validate; return (protocol, reason, qname bytes, qtype) for signature contexts."""
     if not dns_probe(data):
         raise UnsupportedPrefix("DNS profile requires QUERY opcode and one question")
     if data[2] & 2:
@@ -60,6 +65,7 @@ def dns(data, config):
     pos = name(12)
     if pos + 4 > len(data):
         raise ParseError("Truncated DNS question")
+    qname = _expand_name(data, 12, pos)
     qtype, qclass = struct.unpack("!HH", data[pos:pos + 4])
     if not qtype or qclass & 0x7fff not in (1, 255):
         raise UnsupportedPrefix("Unsupported DNS question type/class profile")
@@ -98,7 +104,22 @@ def dns(data, config):
         pos = end
     if pos != len(data):
         raise ParseError("Trailing bytes after DNS sections")
-    return "dns", "DNS question and record framing validated; unknown RDATA semantics and DNSSEC unverified"
+    return "dns", "DNS question and record framing validated; unknown RDATA semantics and DNSSEC unverified", qname, qtype
+
+
+def _expand_name(data, start, end):
+    """Lowercase dotted question name from already validated labels (no pointers in a question start)."""
+    labels, pos = [], start
+    while pos < end:
+        length = data[pos]
+        if length & 0xc0:
+            break  # compressed question names are validated but not expanded for contexts
+        pos += 1
+        if not length:
+            break
+        labels.append(data[pos:pos + length].lower())
+        pos += length
+    return b".".join(labels)
 
 
 def stun(data, config):

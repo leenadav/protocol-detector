@@ -11,7 +11,7 @@ A verdict is as strong as the evidence beneath it: an identified structural
 profile, never an authenticated product identity.
 """
 from typing import NamedTuple, Optional, Tuple
-from .applications import APPLICATIONS, OUTCOMES, application_name, custom_application
+from .applications import APPLICATIONS, OUTCOMES, Application, application_name, custom_application
 from .model import Observation
 
 # Statuses that mean payload existed but no supported profile matched it.
@@ -45,13 +45,29 @@ def _label(observation):
     return observation.application_protocol or observation.encryption
 
 
-def _application(observation):
-    """Catalog entry for an identified observation; configured mappings become custom applications."""
+def _application(observation, transport, signatures=None):
+    """Catalog entry for an identified observation.
+
+    Configured mappings and custom signatures become applications of their own:
+    a signature supplies its own category/risk metadata, a RuleIndex mapping
+    inherits its carrier. A signature on an unknown payload is carried by
+    unknown-tcp/unknown-udp.
+    """
     base = application_name(observation.application_protocol, observation.encryption)
+    if observation.application:
+        if base is None:
+            base = "unknown-" + transport
+        signature = signatures.get(observation.application) if signatures is not None else None
+        if signature is not None:
+            carrier = APPLICATIONS[base]
+            return Application(signature.name, signature.category, signature.subcategory, signature.technology,
+                               signature.risk, signature.description or ("Custom signature carried over " + base),
+                               signature.characteristics, carrier.standard_ports, carrier.secure_ports,
+                               (signature.parent or base,) if (signature.parent or base) in APPLICATIONS else (base,),
+                               (), signature.parent if signature.parent in APPLICATIONS else base, ())
+        return custom_application(observation.application, base)
     if base is None:
         return None
-    if observation.application:
-        return custom_application(observation.application, base)
     return APPLICATIONS[base]
 
 
@@ -77,7 +93,7 @@ def _outcome(name, transport, status, reasons, client=None, server=None):
                    application.characteristics, None, (), "unknown", status, None, None, None, tuple(reasons))
 
 
-def classify(observation, transport=None, server_port=None, payload_bytes=None):
+def classify(observation, transport=None, server_port=None, payload_bytes=None, signatures=None):
     """Verdict for one direction or one datagram.
 
     transport defaults to the observation's own transport. payload_bytes
@@ -87,11 +103,11 @@ def classify(observation, transport=None, server_port=None, payload_bytes=None):
     """
     if not isinstance(observation, Observation):
         raise TypeError("classify expects an Observation")
-    return session_verdict(observation, None, transport or observation.transport, server_port, payload_bytes, None, True)
+    return session_verdict(observation, None, transport or observation.transport, server_port, payload_bytes, None, True, signatures)
 
 
 def session_verdict(client, server, transport="tcp", server_port=None, client_bytes=None, server_bytes=None,
-                    handshake_complete=True):
+                    handshake_complete=True, signatures=None):
     """Combine both directions of one session into a single verdict.
 
     Rules, in order: an identified direction wins (client preferred; a differing
@@ -109,12 +125,12 @@ def session_verdict(client, server, transport="tcp", server_port=None, client_by
     identified = [obs for obs in (client, server) if obs is not None and obs.status == "identified"]
     if identified:
         chosen = identified[0]
-        application = _application(chosen)
+        application = _application(chosen, transport, signatures)
         if application is None:
             reasons.append("Identified protocol has no catalog entry: " + str(_label(chosen)))
             return _outcome(unknown_name, transport, chosen.status, reasons, client, server)
         if len(identified) == 2:
-            other = _application(identified[1])
+            other = _application(identified[1], transport, signatures)
             if other is not None and other.name != application.name:
                 reasons.append("Server direction identified as " + other.name)
         reasons.append(chosen.reason)

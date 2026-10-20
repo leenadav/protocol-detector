@@ -6,7 +6,7 @@ from dataclasses import asdict, replace
 from collections import Counter
 from functools import partial
 from packets import CaptureError, PacketError, UDPPacket, decode_packet, read_pcap_records
-from protocol_engine import Config, DatagramInspector, Event, Inspector
+from protocol_engine import Config, DatagramInspector, Event, Inspector, SignatureSet
 from protocol_engine.appid import classify, session_verdict, verdict_fields
 from protocol_engine.registry import PARSERS
 from protocol_engine.datagram import VALIDATORS
@@ -24,7 +24,8 @@ class Analyzer:
     synchronous and bounded by the connection/flow tables; no queue is kept.
     """
     def __init__(self, max_connections=32, byte_limit=65536, idle_timeout=60, compact=False, udp_hint=None, tcp_hint=None,
-                 crc32c_byte_limit=4096, on_retire=None, on_session=None, max_udp_flows=None, include_hostnames=False):
+                 crc32c_byte_limit=4096, on_retire=None, on_session=None, max_udp_flows=None, include_hostnames=False,
+                 signatures=None):
         for callback in (on_retire, on_session):
             if callback is not None and not callable(callback):
                 raise TypeError("Analyzer callbacks must be callable")
@@ -36,13 +37,17 @@ class Analyzer:
             raise ValueError("Unsupported UDP candidate hint")
         self.udp_hint = udp_hint
         self.next_expiry = float("-inf")
-        self.udp = DatagramInspector()
+        if signatures is not None and not isinstance(signatures, SignatureSet):
+            raise TypeError("signatures must be a SignatureSet")
+        self.signatures = signatures if signatures is not None and len(signatures) else None
+        self.inspection_config = Config(max_bytes=byte_limit, max_crc32c_bytes=crc32c_byte_limit,
+                                        retain_contexts=self.signatures is not None)
+        self.udp = DatagramInspector(self.inspection_config, self.signatures)
         self.udp_revision = 0
         self.now = 0
         if tcp_hint is not None:
             Inspector(protocol_hint=tcp_hint)  # Validate before processing packets.
-        self.inspection_config = Config(max_bytes=byte_limit, max_crc32c_bytes=crc32c_byte_limit)
-        factory = partial(Inspector, config=self.inspection_config, protocol_hint=tcp_hint)
+        factory = partial(Inspector, config=self.inspection_config, protocol_hint=tcp_hint, signatures=self.signatures)
         clock_owner = weakref.proxy(self)
         self.manager = SessionManager(clock=lambda: clock_owner.now, max_connections=max_connections,
                                       byte_limit=byte_limit, idle_timeout=idle_timeout,
@@ -80,13 +85,13 @@ class Analyzer:
             client_obs = connection["directions"][client].inspector.observation
             server_obs = connection["directions"][server].inspector.observation
         verdict = session_verdict(client_obs, server_obs, "tcp", server[1], state["bytes"].get(client, 0),
-                                  state["bytes"].get(server, 0), handshake_complete=state["ready"])
+                                  state["bytes"].get(server, 0), handshake_complete=state["ready"], signatures=self.signatures)
         self._record("tcp", client, server, state, verdict, reason, (client_obs, server_obs))
 
     def _udp_session(self, key, flow, reason):
         if self.on_session is None:
             return
-        verdict = classify(flow["observation"], "udp", flow["server"][1], flow["bytes"].get(flow["client"], 0))
+        verdict = classify(flow["observation"], "udp", flow["server"][1], flow["bytes"].get(flow["client"], 0), self.signatures)
         self._record("udp", flow["client"], flow["server"], flow, verdict, reason, (flow["observation"],))
 
     def server_endpoint(self, packet):
@@ -298,7 +303,7 @@ def readable_session(record):
 
 
 def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_byte_limit=4096, udp_hint=None,
-            sessions=False, include_hostnames=False):
+            sessions=False, include_hostnames=False, signatures=None):
     def retired(source, destination, event):
         if json_output:
             print(json.dumps({'type': 'stream_end', 'source': source, 'destination': destination,
@@ -311,7 +316,7 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
         print(json.dumps(record) if json_output else readable_session(record))
 
     analyzer = Analyzer(tcp_hint=tcp_hint, crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, udp_hint=udp_hint,
-                        on_session=session if sessions else None, include_hostnames=include_hostnames)
+                        on_session=session if sessions else None, include_hostnames=include_hostnames, signatures=signatures)
     counts = Counter()
     def capture_gap(reason, scope="active_connections", number=None):
         active = len(analyzer.tracked)
@@ -359,7 +364,7 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
                     if analyzer.last_classification is not None:
                         server = analyzer.last_server
                         row["app"] = classify(analyzer.last_classification, "udp" if isinstance(packet, UDPPacket) else "tcp",
-                                              server[1] if server else None).app
+                                              server[1] if server else None, None, analyzer.signatures).app
                     print(json.dumps(row))
                 else:
                     print("#{} {}".format(number, message))
@@ -381,14 +386,16 @@ def main():
     parser.add_argument("--events-only", action="store_true", help="Only classification changes and final summary")
     parser.add_argument("--sessions", action="store_true", help="Emit one App-ID verdict record per TCP connection / UDP flow")
     parser.add_argument("--hostnames", action="store_true", help="Include asserted SNI/Host names in session records")
+    parser.add_argument("--signatures", help="JSON file of custom application signatures (see SIGNATURES.md)")
     parser.add_argument("--udp-hint", choices=sorted(VALIDATORS), help="Restrict UDP validation to one candidate")
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to one validated candidate")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
     args = parser.parse_args()
     try:
+        signatures = SignatureSet.from_path(args.signatures) if args.signatures else None
         analyze(args.capture, json_output=args.json, events_only=args.events_only, tcp_hint=args.tcp_hint,
                 crc32c_byte_limit=args.crc32c_byte_limit, udp_hint=args.udp_hint, sessions=args.sessions,
-                include_hostnames=args.hostnames)
+                include_hostnames=args.hostnames, signatures=signatures)
     except (OSError, CaptureError, ValueError) as error:
         parser.exit(1, "Capture error: {}\n".format(error))
 

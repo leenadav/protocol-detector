@@ -1,4 +1,4 @@
-# Protocol coverage — v0.22
+# Protocol coverage — v0.23
 
 The engine implements 40 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.
@@ -574,3 +574,19 @@ Session records are an adapter feature (analyze_pcap/live_capture). They are
 bounded by the existing connection table and a UDP flow table of the same size;
 excess UDP flows are counted and not tracked. Records expose counts and verdict
 fields only; `--hostnames` adds the asserted SNI/Host name. See APPID.md.
+
+
+## Custom signature contexts (v0.23)
+
+Signatures add no protocol family and never bypass a profile. Parsers retain
+bounded contexts only when `Config.retain_contexts` is set: HTTP keeps method,
+path (without query), version, normalized host, the first User-Agent (1024
+bytes), Content-Length and a 4096-byte lowercase-name header block; TLS keeps
+the ClientHello body, legacy version, cipher and extension type sets, SNI and
+ALPN (plus groups, signature algorithms, point formats and supported versions in
+`ClientHelloInfo` for fingerprints); SSH keeps the identification line; SMTP the
+EHLO/HELO argument; SOCKS5 the target and port; DNS (TCP and UDP) the lowercase
+question name and QTYPE. Unknown TCP prefixes are buffered up to
+`signature_bytes` only when the set has unknown-tcp conditions; unknown UDP
+datagrams are evaluated in place. Hints restrict validation and never open
+unknown-payload signatures. Full context table and pattern rules: SIGNATURES.md.

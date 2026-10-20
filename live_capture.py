@@ -21,6 +21,7 @@ from analyze_pcap import Analyzer
 from capture_stream import PcapStreamDecoder
 from link_packets import decode_frame
 from packets import CaptureError, PacketError, UDPPacket
+from protocol_engine import SignatureSet
 from protocol_engine.appid import classify
 from protocol_engine.datagram import VALIDATORS
 from protocol_engine.registry import PARSERS
@@ -40,7 +41,8 @@ def capture_command(interface, bpf, executable=None):
 
 class CaptureMonitor:
     def __init__(self, emit, max_connections=128, byte_limit=65536, idle_timeout=60,
-                 all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096, include_hostnames=False):
+                 all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096, include_hostnames=False,
+                 signatures=None):
         self.emit = emit
         reference = weakref.ref(self)
         def retired(source, destination, event):
@@ -54,7 +56,7 @@ class CaptureMonitor:
                 owner._session(record)
         self.analyzer = Analyzer(max_connections, byte_limit, idle_timeout, compact=True, udp_hint=udp_hint, tcp_hint=tcp_hint,
                                  crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, on_session=session,
-                                 include_hostnames=include_hostnames)
+                                 include_hostnames=include_hostnames, signatures=signatures)
         self.tcp_hint, self.udp_hint = tcp_hint, udp_hint
         self.counts = Counter()
         self.protocols = Counter()
@@ -79,7 +81,7 @@ class CaptureMonitor:
                        'source': source, 'destination': destination, 'transport': 'tcp',
                        'status': observation.status,
                        'protocol': observation.application_protocol or observation.encryption,
-                       'app': classify(observation, 'tcp', None, self._retiring_bytes(source)).app,
+                       'app': classify(observation, 'tcp', None, self._retiring_bytes(source), self.analyzer.signatures).app,
                        'scope': observation.scope, 'candidate_hint': self.tcp_hint,
                        'reason': observation.reason, 'boundary': 'observation_retired'})
 
@@ -123,7 +125,7 @@ class CaptureMonitor:
                 self.emit({"type": "classification", "timestamp": record.timestamp,
                            "source": packet.source, "destination": packet.destination,
                            "transport": transport, "status": observation.status,
-                           "protocol": protocol, "app": classify(observation, transport, server[1] if server else None).app,
+                           "protocol": protocol, "app": classify(observation, transport, server[1] if server else None, None, self.analyzer.signatures).app,
                            "scope": observation.scope,
                            "candidate_hint": self.udp_hint if transport == 'udp' else self.tcp_hint,
                            "reason": observation.reason})
@@ -202,10 +204,10 @@ def readable(event):
 
 def run_capture(stream, emit, duration=60, max_packets=0, stats_interval=10, process=None,
                 max_connections=128, byte_limit=65536, idle_timeout=60, all_events=False, udp_hint=None, tcp_hint=None,
-                crc32c_byte_limit=4096, include_hostnames=False):
+                crc32c_byte_limit=4096, include_hostnames=False, signatures=None):
     decoder = PcapStreamDecoder()
     monitor = CaptureMonitor(emit, max_connections, byte_limit, idle_timeout, all_events, udp_hint, tcp_hint, crc32c_byte_limit,
-                             include_hostnames)
+                             include_hostnames, signatures)
     diagnostics = CaptureDiagnostics()
     selector = selectors.DefaultSelector()
     start = time.monotonic()
@@ -339,6 +341,7 @@ def main():
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
     parser.add_argument("--all-events", action="store_true", help="Also show unknown/malformed/budget outcomes")
     parser.add_argument("--hostnames", action="store_true", help="Include asserted SNI/Host names in session records")
+    parser.add_argument("--signatures", help="JSON file of custom application signatures (see SIGNATURES.md)")
     parser.add_argument("--json", action="store_true", help="JSON Lines metadata; no payload output")
     args = parser.parse_args()
     if (not math.isfinite(args.duration) or args.duration < 0 or args.max_packets < 0
@@ -350,6 +353,7 @@ def main():
     emit = (lambda event: print(json.dumps(event), flush=True)) if args.json else readable
     process = None
     try:
+        signatures = SignatureSet.from_path(args.signatures) if args.signatures else None
         if args.interfaces:
             executable = shutil.which("tcpdump")
             if not executable:
@@ -363,12 +367,12 @@ def main():
             stream = process.stdout
         emit({"type": "started", "reason": "Passive initial-message inspection; no payload storage or TLS decryption",
               "interface": args.interface, "filter": command[-1] if args.interface else None,
-              "tcp_hint": args.tcp_hint, "udp_hint": args.udp_hint,
+              "tcp_hint": args.tcp_hint, "udp_hint": args.udp_hint, "signatures": len(signatures) if signatures else 0,
               "crc32c_byte_limit": args.crc32c_byte_limit,
               "max_reassembly_buffer_bytes": 4 * args.byte_limit * args.max_connections})
         return run_capture(stream, emit, args.duration, args.max_packets, args.stats_interval, process,
                            args.max_connections, args.byte_limit, args.idle_timeout, args.all_events, args.udp_hint, args.tcp_hint,
-                           args.crc32c_byte_limit, args.hostnames)
+                           args.crc32c_byte_limit, args.hostnames, signatures)
     except BrokenPipeError:
         return 0
     except (OSError, ValueError, subprocess.SubprocessError) as exc:

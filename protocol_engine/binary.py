@@ -3,7 +3,7 @@ import re
 from .framing import FrameParser, ber_field, ber_length
 from .parsers import ParseError
 from .extended import UnsupportedPrefix
-from .wire import dns, stun
+from .wire import stun
 
 
 class PostgreSQLParser(FrameParser):
@@ -169,7 +169,10 @@ class DNSParser(FrameParser):
         return size + 2
 
     def validate(self, data):
-        self.protocol_name, self.reason = dns(data[2:], self.config)
+        from .wire import dns_details
+        self.protocol_name, self.reason, qname, qtype = dns_details(data[2:], self.config)
+        if self.config.retain_contexts:
+            self.contexts = {"dns-req-query-name": qname, "dns-req-query-type": qtype}
 
 
 class STUNParser(FrameParser):

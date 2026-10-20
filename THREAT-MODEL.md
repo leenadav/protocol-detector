@@ -66,9 +66,12 @@ file (lengths, link types, IPv6). A8 compromises a CI dependency or action.
 | T10 | Reference cycles delaying buffer release under load | DoS | Unbound callbacks, weak owner references; GC-disabled release tests | SR-14 |
 | T11 | Compromised CI action or dev dependency (A8) | Tampering | SHA-pinned actions, hash-pinned dev requirements, read-only token, SBOM, provenance attestation | CI gates |
 | T12 | Session verdict overstates evidence | Spoofing | Verdict precedence preserves engine status; custom mappings keep base_app; no risk inference from traffic | SR-15 |
+| T13 | Operator-authored signature causes regex backtracking blow-up or retains payload (A1 drives input, operator error supplies the pattern) | DoS / Information disclosure | Parse-tree checks, literal anchor, substring prefilter, bounded buffers; contexts internal only | SR-18, SR-19 |
 
-Residual risks: Python regex engines are backtracking; patterns in this code
-base are anchored and linear, and the custom signature feature (v0.23) will
-require a literal anchor and bounded input. CPU cost is bounded but not
+Residual risks: Python regex engines are backtracking; built-in patterns are
+anchored and linear, and custom signatures (v0.23) are restricted to a safe
+subset with a literal anchor and bounded input, which rules out nested
+quantifiers but not every slow pattern (a 4096-wide bounded repeat over a
+2000-byte buffer is still linear work per attempt). CPU cost is bounded but not
 constant-time; a flood of connections is handled by the connection cap, not by
 rate limiting, which belongs to the host.

@@ -47,6 +47,8 @@ class TextParser(LineParser):
             self.family = self.protocol = "ssh"
             if len(line) + 2 > 255:
                 raise ParseError("SSH identification exceeds 255 bytes")
+            if self.contexts is not None:
+                self.contexts["ssh-req-banner"] = line
             return super().consume_line(line)
         if command.upper() in (b"EHLO", b"HELO"):
             self.family = "smtp"
@@ -70,6 +72,8 @@ class TextParser(LineParser):
             self.done = True
             self.reason = "SMTP client EHLO/HELO syntax validated; server exchange and message body not inspected"
             self.extra_evidence = (("smtp_client_identity", text, "smtp_greeting", "asserted"),)
+            if self.contexts is not None:
+                self.contexts["smtp-req-argument"] = identity
             return
         if line[:1] in (b'I', b'i', b'C', b'c'):
             match = _NATS_START.fullmatch(line)
@@ -175,6 +179,7 @@ class Socks5Parser:
         self.atyp = None
         self.address = None
         self.extra_evidence = ()
+        self.contexts = None
         self.done = False
         self.reason = "Waiting for SOCKS5 client greeting and request"
 
@@ -224,4 +229,6 @@ class Socks5Parser:
                     ("socks_target", self.address, "socks_request", "asserted"),
                     ("socks_port", str(port), "socks_request", "asserted"),
                 )
+                if self.config.retain_contexts:
+                    self.contexts = {"socks-req-target": self.address.encode("ascii"), "socks-req-port": port}
         return pos
