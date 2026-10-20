@@ -21,6 +21,7 @@ from analyze_pcap import Analyzer
 from capture_stream import PcapStreamDecoder
 from link_packets import decode_frame
 from packets import CaptureError, PacketError, UDPPacket
+from protocol_engine.appid import classify
 from protocol_engine.datagram import VALIDATORS
 from protocol_engine.registry import PARSERS
 
@@ -39,7 +40,7 @@ def capture_command(interface, bpf, executable=None):
 
 class CaptureMonitor:
     def __init__(self, emit, max_connections=128, byte_limit=65536, idle_timeout=60,
-                 all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096):
+                 all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096, include_hostnames=False):
         self.emit = emit
         reference = weakref.ref(self)
         def retired(source, destination, event):
@@ -47,11 +48,28 @@ class CaptureMonitor:
             owner = reference()
             if owner is not None:
                 owner._retired(source, destination, event)
-        self.analyzer = Analyzer(max_connections, byte_limit, idle_timeout, compact=True, udp_hint=udp_hint, tcp_hint=tcp_hint, crc32c_byte_limit=crc32c_byte_limit, on_retire=retired)
+        def session(record):
+            owner = reference()
+            if owner is not None:
+                owner._session(record)
+        self.analyzer = Analyzer(max_connections, byte_limit, idle_timeout, compact=True, udp_hint=udp_hint, tcp_hint=tcp_hint,
+                                 crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, on_session=session,
+                                 include_hostnames=include_hostnames)
         self.tcp_hint, self.udp_hint = tcp_hint, udp_hint
         self.counts = Counter()
         self.protocols = Counter()
+        self.apps = Counter()
         self.all_events = all_events
+
+    def _session(self, record):
+        # One App-ID verdict per connection/flow; no payload-derived values.
+        self.counts['sessions'] += 1
+        self.apps[record['app']] += 1
+        self.emit(record)
+
+    def _retiring_bytes(self, source):
+        state = self.analyzer.retiring
+        return state['bytes'].get(source, 0) if state is not None else None
 
     def _retired(self, source, destination, event):
         observation = event.observation
@@ -61,6 +79,7 @@ class CaptureMonitor:
                        'source': source, 'destination': destination, 'transport': 'tcp',
                        'status': observation.status,
                        'protocol': observation.application_protocol or observation.encryption,
+                       'app': classify(observation, 'tcp', None, self._retiring_bytes(source)).app,
                        'scope': observation.scope, 'candidate_hint': self.tcp_hint,
                        'reason': observation.reason, 'boundary': 'observation_retired'})
 
@@ -92,6 +111,7 @@ class CaptureMonitor:
                        "source": packet.source, "destination": packet.destination,
                        "transport": transport, "status": "invalidated", "protocol": None,
                        "scope": "initial_message", "reason": message})
+        server = self.analyzer.last_server
         for event in self.analyzer.last_events:
             observation = event.observation
             self.counts[observation.status] += 1
@@ -103,7 +123,8 @@ class CaptureMonitor:
                 self.emit({"type": "classification", "timestamp": record.timestamp,
                            "source": packet.source, "destination": packet.destination,
                            "transport": transport, "status": observation.status,
-                           "protocol": protocol, "scope": observation.scope,
+                           "protocol": protocol, "app": classify(observation, transport, server[1] if server else None).app,
+                           "scope": observation.scope,
                            "candidate_hint": self.udp_hint if transport == 'udp' else self.tcp_hint,
                            "reason": observation.reason})
 
@@ -113,12 +134,13 @@ class CaptureMonitor:
             self.emit({"type": "capture_gap", "active_connections": active, "scope": scope, "reason": reason})
         self.counts["connections_discarded_after_gap"] += active
         self.analyzer.tracked.clear()
+        self.analyzer.udp_flows.clear()
         self.analyzer.manager.connections.clear()
 
     def summary(self, elapsed, final=False, capture_stats=None):
         return {"type": "summary" if final else "progress", "elapsed_seconds": round(elapsed, 3),
-                "counts": dict(self.counts), "protocols": dict(self.protocols),
-                "active_connections": len(self.analyzer.tracked),
+                "counts": dict(self.counts), "protocols": dict(self.protocols), "apps": dict(self.apps),
+                "active_connections": len(self.analyzer.tracked), "active_udp_flows": len(self.analyzer.udp_flows),
                 "capture_stats": capture_stats,
                 "scope": "Initial messages only; capture loss may be reported at shutdown"}
 
@@ -157,8 +179,11 @@ def readable(event):
         suffix = ' [candidate: {}]'.format(event['candidate_hint']) if event.get('candidate_hint') else ''
         if event['status'] == 'incomplete':
             suffix += ' | ' + event['reason']
-        print("{:<12} {:<13} {} -> {}{}".format(event["status"].upper(), event["protocol"] or "unknown",
-                                             endpoint(event["source"]), endpoint(event["destination"]), suffix), flush=True)
+        print("{:<12} {:<13} {:<17} {} -> {}{}".format(event["status"].upper(), event["protocol"] or "unknown",
+                                                   event.get("app") or "-", endpoint(event["source"]), endpoint(event["destination"]), suffix), flush=True)
+    elif kind == "session":
+        from analyze_pcap import readable_session
+        print(readable_session(event), flush=True)
     elif kind in ("summary", "progress"):
         counts = event["counts"]
         print("{} {:.1f}s | packets={} identified={} skipped={} truncated={} limits={} invalidated={} incomplete={} | {}".format(
@@ -166,6 +191,8 @@ def readable(event):
             counts.get("unsupported_or_malformed_packets", 0) + counts.get("tcp_without_start", 0),
             counts.get("truncated", 0), counts.get("connection_limit", 0) + counts.get("budget_exhausted", 0),
             counts.get("stream_invalidations", 0), counts.get("incomplete", 0), ", ".join("{}={}".format(k, v) for k, v in event["protocols"].items()) or "no identifications"), flush=True)
+        if event.get("apps"):
+            print("Applications: " + ", ".join("{}={}".format(k, v) for k, v in sorted(event["apps"].items())), flush=True)
         if kind == "summary":
             print("Capture statistics: " + (json.dumps(event["capture_stats"]) if event["capture_stats"] else
                   "unavailable; absence of capture loss is not established"), flush=True)
@@ -174,9 +201,11 @@ def readable(event):
 
 
 def run_capture(stream, emit, duration=60, max_packets=0, stats_interval=10, process=None,
-                max_connections=128, byte_limit=65536, idle_timeout=60, all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096):
+                max_connections=128, byte_limit=65536, idle_timeout=60, all_events=False, udp_hint=None, tcp_hint=None,
+                crc32c_byte_limit=4096, include_hostnames=False):
     decoder = PcapStreamDecoder()
-    monitor = CaptureMonitor(emit, max_connections, byte_limit, idle_timeout, all_events, udp_hint, tcp_hint, crc32c_byte_limit)
+    monitor = CaptureMonitor(emit, max_connections, byte_limit, idle_timeout, all_events, udp_hint, tcp_hint, crc32c_byte_limit,
+                             include_hostnames)
     diagnostics = CaptureDiagnostics()
     selector = selectors.DefaultSelector()
     start = time.monotonic()
@@ -309,6 +338,7 @@ def main():
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to this candidate (use a narrow filter)")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
     parser.add_argument("--all-events", action="store_true", help="Also show unknown/malformed/budget outcomes")
+    parser.add_argument("--hostnames", action="store_true", help="Include asserted SNI/Host names in session records")
     parser.add_argument("--json", action="store_true", help="JSON Lines metadata; no payload output")
     args = parser.parse_args()
     if (not math.isfinite(args.duration) or args.duration < 0 or args.max_packets < 0
@@ -337,7 +367,8 @@ def main():
               "crc32c_byte_limit": args.crc32c_byte_limit,
               "max_reassembly_buffer_bytes": 4 * args.byte_limit * args.max_connections})
         return run_capture(stream, emit, args.duration, args.max_packets, args.stats_interval, process,
-                           args.max_connections, args.byte_limit, args.idle_timeout, args.all_events, args.udp_hint, args.tcp_hint, args.crc32c_byte_limit)
+                           args.max_connections, args.byte_limit, args.idle_timeout, args.all_events, args.udp_hint, args.tcp_hint,
+                           args.crc32c_byte_limit, args.hostnames)
     except BrokenPipeError:
         return 0
     except (OSError, ValueError, subprocess.SubprocessError) as exc:

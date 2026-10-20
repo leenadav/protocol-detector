@@ -1,4 +1,4 @@
-# Protocol coverage — v0.21
+# Protocol coverage — v0.22
 
 The engine implements 40 families with the profiles below. This is a complete
 inventory of this release, not a claim to recognize every protocol or application.
@@ -551,3 +551,26 @@ TLS-record splits reject the invalid combination; all supported ECC suites retai
 positive coverage. This is a structural context check, not client-offer matching.
 Source: [RFC8422 section5.2](https://www.rfc-editor.org/rfc/rfc8422.html#section-5.2).
 Legacy point-format values0..2 remain in the documented compatibility profile.
+
+
+## App-ID verdict layer (v0.22)
+
+The verdict layer adds no parsing and no new protocol family. It maps completed
+observations to catalog names (`protocol_engine/applications.py`) and merges the
+two directions of a session (`protocol_engine/appid.py`). Mapping is by family:
+`http/*` and `http2` → `web-browsing`; encryption `tls` → `ssl`; `rfb` → `vnc`;
+`socks5` → `socks`; `smb2` → `smb`; `dcerpc/*` → `dce-rpc`; `ikev2` → `ike`; all
+other families keep their name without the version suffix. A `RuleIndex`
+application replaces the name and keeps the carrier in `base_app`.
+
+Outcomes: `unknown-tcp`/`unknown-udp` for statuses unknown, malformed and
+budget_exhausted; `not-applicable` for invalidated; `insufficient-data` for
+incomplete/detecting with payload; `incomplete` for a session without payload or
+without a completed handshake. `port_usage` is `standard` when the server port is
+listed in the catalog's standard or secure ports (ranges and `dynamic` allowed),
+`nonstandard` otherwise, `unknown` when no port or no ports are known.
+
+Session records are an adapter feature (analyze_pcap/live_capture). They are
+bounded by the existing connection table and a UDP flow table of the same size;
+excess UDP flows are counted and not tracked. Records expose counts and verdict
+fields only; `--hostnames` adds the asserted SNI/Host name. See APPID.md.

@@ -40,7 +40,7 @@ class FinOriginTests(unittest.TestCase):
             monitor = CaptureMonitor(events.append)
             for i, data in enumerate(packets(first, -2, b'X', identified=True)):
                 monitor.accept(CaptureRecord(i, data, len(data), 1), i)
-            self.assertEqual([e['status'] for e in events], ['identified', 'invalidated'])
+            self.assertEqual([e['status'] for e in events if e['type'] == 'classification'], ['identified', 'invalidated'])
             self.assertEqual(monitor.counts['invalidated'], 1)
             self.assertFalse(monitor.analyzer.tracked)
 

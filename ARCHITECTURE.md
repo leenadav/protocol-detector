@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.21 — engine and observation contracts
+# Stream/datagram engine v0.22 — engine and observation contracts
 
 ## Ownership
 
@@ -441,3 +441,25 @@ materializes algorithm combinations. No cryptography or association cache.
 TLS1.2 server extension11 now checks its ECC-cipher context before reading point
 formats. This adds no work when that extension is absent, preserving the existing
 ClientHello path and server-extension bounds.
+
+
+## App-ID verdict layer and session ledger (v0.22)
+
+`appid.classify`/`session_verdict` read at most two Observations and perform a
+constant number of dictionary lookups into an immutable catalog validated once at
+import; they never scan the catalog, touch bytes or run parsers. Precedence:
+identified (client first, server disagreement recorded) > unmatched payload
+(`unknown-*`) > invalidated (`not-applicable`) > payload without completion
+(`insufficient-data`) > `incomplete`. Configured mappings become custom
+applications that inherit their carrier's attributes and implicitly use it.
+
+Analyzer keeps per-connection counters (packets, payload bytes per endpoint,
+start) in the existing `tracked` state and emits one session record from
+`drop()`, after directional retirement events, so ordering is: retraction or
+end events, then the session verdict. `retiring` exposes the dropping state to
+`on_retire` consumers for byte-aware direction verdicts. SYN-only states produce
+`incomplete` with `no_handshake`. UDP flows live in a separate table bounded by
+`max_udp_flows` (default: connection limit) with the same idle timeout and
+amortized sweep; the first identified datagram labels the flow, otherwise the
+latest outcome. Capture gaps clear both tables without fabricating records.
+Session records contain counts and verdict metadata only; hostnames are opt-in.

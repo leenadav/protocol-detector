@@ -58,11 +58,11 @@ class FinCoordinateTests(unittest.TestCase):
                        frame(A,B,first,9000,25,REQUEST), frame(A,B,(first-3)%MOD,9000,24,b'XX')]
             for i, packet in enumerate(packets):
                 monitor.accept(CaptureRecord(i, packet, len(packet), 1), i)
-            self.assertEqual([e['status'] for e in events], ['identified'])
+            self.assertEqual([e['status'] for e in events if e['type'] == 'classification'], ['identified'])
             self.assertEqual(monitor.counts['invalidated'], 0)
             self.assertTrue(monitor.analyzer.tracked)
             # A crossing segment whose retained end really exceeds FIN still
             # retracts; ignoring the entire leading segment would be unsafe.
             bad = frame(A,B,(first-3)%MOD,9000,24,b'old'+REQUEST+b'X')
             monitor.accept(CaptureRecord(5, bad, len(bad), 1), 5)
-            self.assertEqual([e['status'] for e in events], ['identified', 'invalidated'])
+            self.assertEqual([e['status'] for e in events if e['type'] == 'classification'], ['identified', 'invalidated'])

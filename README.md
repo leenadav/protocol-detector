@@ -1,4 +1,4 @@
-# Protocol detector v0.21
+# Protocol detector v0.22
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **40 protocol families**, with explicit profiles rather than claims of full
@@ -44,6 +44,40 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.22 — App-ID style verdicts, application catalog and session records
+
+Every connection and UDP flow now receives one **session verdict** in the
+vocabulary of application-aware firewalls: a catalog application
+(`web-browsing`, `ssl`, `ssh`, `dns`, `smb`, …, or a configured mapping) or a
+session outcome (`unknown-tcp`, `unknown-udp`, `insufficient-data`,
+`incomplete`, `not-applicable`). The verdict merges both directions, prefers the
+client, records a disagreeing server identification, and never upgrades the
+structural evidence beneath it. A 44-entry **application catalog** supplies
+category, subcategory, technology, risk 1..5, characteristics, standard/secure
+ports, implicit-use/dependency links and vendor aliases; `port_usage` reports
+application-default violations (`nonstandard`). Session records
+(`{"type": "session"}`) carry packets, per-direction payload bytes, start/end,
+end reason and the verdict fields; hostnames stay out unless `--hostnames`.
+Classification events gain `app`; live summaries gain `apps`.
+
+```bash
+python3 -B analyze_pcap.py sample-expanded.pcap --events-only --sessions
+python3 -B live_capture.py --stdin --duration 0 < sample.pcap   # SESSION lines appear live
+make apps                                                       # print the catalog
+```
+
+See [APPID.md](APPID.md) for the exact vocabulary, merge rules and limits.
+
+The repository now also carries an SSDLC pipeline: [SSDLC.md](SSDLC.md) (phases
+and gates), [THREAT-MODEL.md](THREAT-MODEL.md) (STRIDE table tied to tests),
+[SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md) (each requirement names
+its test; CI fails on a dangling reference), [SECURITY.md](SECURITY.md)
+(reporting policy) and `.github/workflows` (test matrix 3.9/3.11/3.13, ruff,
+bandit, CodeQL, gitleaks, SBOM, SHA-pinned actions, hash-pinned dev tools,
+nightly fuzzing, attested releases). `make check` runs the local gates.
+324 tests pass; BENCHMARK-V022.md records the per-event cost of the verdict layer.
+Risk scores and characteristics are editorial policy defaults, not measurements.
 
 ## New in v0.21 — IKEv2 negotiation and bounded UDP ambiguity
 
@@ -392,6 +426,7 @@ output I/O, concurrent load and end-to-end network latency are not in those timi
 | File | Responsibility |
 |---|---|
 | protocol_engine/ | Pure incremental TCP and complete UDP recognition |
+| protocol_engine/appid.py, applications.py | Session verdicts and the application catalog ([APPID.md](APPID.md)) |
 | live_capture.py | Bounded live loop, readable/JSON events and capture diagnostics |
 | capture_stream.py | Incremental PCAP framing |
 | link_packets.py | Link/IPv4 decoding |

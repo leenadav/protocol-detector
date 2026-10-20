@@ -1,4 +1,20 @@
-# Review scope: protocol detector v0.21
+# Review scope: protocol detector v0.22
+
+Python3.9-compatible IPv4 passive classification: 40 families, 36 automatic.
+PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
+defines the new verdict vocabulary and the application catalog.
+
+New focus: the App-ID verdict layer (protocol_engine/appid.py, applications.py)
+and the session ledger in analyze_pcap.Analyzer. Trace: verdict precedence
+(identified > unknown/malformed/budget > invalidated > insufficient-data >
+incomplete), client preference and server disagreement reporting, custom
+mappings inheriting their carrier, port_usage with ranges/dynamic/secure ports,
+per-direction byte accounting including retransmissions, SYN-only sessions,
+record emission ordering relative to retirement/retraction events, UDP flow
+table bounds and expiry, capture-gap clearing, hostname opt-in. Catalog risk
+and characteristics are editorial defaults; review them as policy metadata,
+not as detection claims. 324 tests pass. Benchmarks: BENCHMARK-V022.md.
+
 
 Python3.9-compatible IPv4 passive classification:40 families,36 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions.

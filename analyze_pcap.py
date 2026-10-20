@@ -7,6 +7,7 @@ from collections import Counter
 from functools import partial
 from packets import CaptureError, PacketError, UDPPacket, decode_packet, read_pcap_records
 from protocol_engine import Config, DatagramInspector, Event, Inspector
+from protocol_engine.appid import classify, session_verdict, verdict_fields
 from protocol_engine.registry import PARSERS
 from protocol_engine.datagram import VALIDATORS
 from sessions import MODULUS, SessionManager, StreamError
@@ -15,10 +16,21 @@ SYN, ACK, FIN, RST, URG = 2, 16, 1, 4, 32
 
 
 class Analyzer:
-    def __init__(self, max_connections=32, byte_limit=65536, idle_timeout=60, compact=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096, on_retire=None):
-        if on_retire is not None and not callable(on_retire):
-            raise TypeError("on_retire must be callable")
+    """Bounded connection tracking plus per-session application verdicts.
+
+    on_retire receives directional terminal events. on_session receives one
+    JSON-friendly record per TCP connection or UDP flow when tracking ends,
+    carrying the App-ID style verdict for the whole session. Both callbacks are
+    synchronous and bounded by the connection/flow tables; no queue is kept.
+    """
+    def __init__(self, max_connections=32, byte_limit=65536, idle_timeout=60, compact=False, udp_hint=None, tcp_hint=None,
+                 crc32c_byte_limit=4096, on_retire=None, on_session=None, max_udp_flows=None, include_hostnames=False):
+        for callback in (on_retire, on_session):
+            if callback is not None and not callable(callback):
+                raise TypeError("Analyzer callbacks must be callable")
         self.on_retire = on_retire
+        self.on_session = on_session
+        self.include_hostnames = bool(include_hostnames)
         self.compact = compact
         if udp_hint is not None and udp_hint not in VALIDATORS:
             raise ValueError("Unsupported UDP candidate hint")
@@ -39,17 +51,69 @@ class Analyzer:
         self.tracked = {}
         self.last_events = ()
         self.last_classification = None
+        self.last_server = None
+        self.retiring = None
+        self.max_udp_flows = max_connections if max_udp_flows is None else max_udp_flows
+        if not 0 <= self.max_udp_flows <= 65536:
+            raise ValueError("Invalid UDP flow table limit")
+        self.udp_flows = {}
+        self.counts = Counter()
 
+    # ----- session records -------------------------------------------------
+    def _record(self, transport, client, server, state, verdict, reason, observations):
+        record = {"type": "session", "transport": transport, "client": client, "server": server,
+                  "start": state["start"], "end": self.now, "packets": state["packets"],
+                  "client_bytes": state["bytes"].get(client, 0), "server_bytes": state["bytes"].get(server, 0),
+                  "end_reason": reason}
+        record.update(verdict_fields(verdict))
+        if self.include_hostnames:
+            record["hostname"] = next((obs.hostname for obs in observations if obs is not None and obs.hostname), None)
+        self.counts["sessions"] += 1
+        self.on_session(record)
+
+    def _tcp_session(self, key, state, connection, reason):
+        if self.on_session is None:
+            return
+        client, server = state["client"], state["server"]
+        client_obs = server_obs = None
+        if connection is not None:
+            client_obs = connection["directions"][client].inspector.observation
+            server_obs = connection["directions"][server].inspector.observation
+        verdict = session_verdict(client_obs, server_obs, "tcp", server[1], state["bytes"].get(client, 0),
+                                  state["bytes"].get(server, 0), handshake_complete=state["ready"])
+        self._record("tcp", client, server, state, verdict, reason, (client_obs, server_obs))
+
+    def _udp_session(self, key, flow, reason):
+        if self.on_session is None:
+            return
+        verdict = classify(flow["observation"], "udp", flow["server"][1], flow["bytes"].get(flow["client"], 0))
+        self._record("udp", flow["client"], flow["server"], flow, verdict, reason, (flow["observation"],))
+
+    def server_endpoint(self, packet):
+        """Server endpoint for an event about this packet, when tracking knows it."""
+        if isinstance(packet, UDPPacket):
+            flow = self.udp_flows.get(self.manager.key(packet.source, packet.destination))
+            return flow["server"] if flow is not None else packet.destination
+        state = self.tracked.get(self.manager.key(packet.source, packet.destination))
+        return state["server"] if state is not None else None
+
+    # ----- lifecycle --------------------------------------------------------
     def drop(self, key, reason="Tracking ended before initial message completed"):
         connection = self.manager.connections.pop(key, None)
-        self.tracked.pop(key, None)
-        if connection is not None:
-            for source, stream in connection['directions'].items():
-                events = stream.inspector.end(reason)
-                if self.on_retire is not None:
-                    destination = key[1] if source == key[0] else key[0]
-                    for event in events:
-                        self.on_retire(source, destination, event)
+        state = self.tracked.pop(key, None)
+        self.retiring = state  # Lets on_retire consumers read per-direction byte counts.
+        try:
+            if connection is not None:
+                for source, stream in connection['directions'].items():
+                    events = stream.inspector.end(reason)
+                    if self.on_retire is not None:
+                        destination = key[1] if source == key[0] else key[0]
+                        for event in events:
+                            self.on_retire(source, destination, event)
+            if state is not None:
+                self._tcp_session(key, state, connection, reason)
+        finally:
+            self.retiring = None
 
     def reject(self, key, source, reason):
         """Publish a directional retraction before releasing rejected TCP state."""
@@ -67,6 +131,8 @@ class Analyzer:
             raise ValueError("End reason must contain 1..256 characters")
         for key in tuple(self.tracked):
             self.drop(key, reason)
+        for key in tuple(self.udp_flows):
+            self._udp_session(key, self.udp_flows.pop(key), reason)
 
     def expire(self, timestamp):
         self.now = max(self.now, timestamp)
@@ -76,24 +142,53 @@ class Analyzer:
         for key, state in list(self.tracked.items()):
             if self.now - state["time"] >= self.manager.idle_timeout:
                 self.drop(key, "Idle timeout before initial message completed")
+        for key, flow in list(self.udp_flows.items()):
+            if self.now - flow["time"] >= self.manager.idle_timeout:
+                self._udp_session(key, self.udp_flows.pop(key), "Idle timeout")
         self.manager.expire()
+
+    def _udp(self, packet):
+        self.last_classification = self.udp.inspect(packet.payload, self.udp_hint)
+        self.udp_revision += 1
+        self.last_events = (Event(self.udp_revision, "datagram", self.last_classification),)
+        key = self.manager.key(packet.source, packet.destination)
+        flow = self.udp_flows.get(key)
+        if flow is None:
+            if len(self.udp_flows) >= self.max_udp_flows:
+                self.counts["udp_flow_limit"] += 1
+            else:
+                flow = self.udp_flows[key] = {"client": packet.source, "server": packet.destination, "start": self.now,
+                                              "time": self.now, "packets": 0, "bytes": {}, "ready": True,
+                                              "observation": self.last_classification}
+        if flow is not None:
+            flow["time"] = self.now
+            flow["packets"] += 1
+            flow["bytes"][packet.source] = flow["bytes"].get(packet.source, 0) + len(packet.payload)
+            # Keep the first identification; otherwise the latest outcome describes the flow.
+            if flow["observation"].status != "identified":
+                flow["observation"] = self.last_classification
+        self.last_server = flow["server"] if flow is not None else packet.destination
+        result = self.last_classification
+        return "UDP {}:{} -> {}:{} | {} | {} | {}".format(
+            *packet.source, *packet.destination, result.status.upper(),
+            result.application_protocol or result.encryption or "unidentified", result.reason)
 
     def process(self, timestamp, packet):
         self.last_events = ()
         self.last_classification = None
+        self.last_server = None
         self.now = max(self.now, timestamp)
         self.expire(self.now)
         if isinstance(packet, UDPPacket):
-            self.last_classification = self.udp.inspect(packet.payload, self.udp_hint)
-            self.udp_revision += 1
-            self.last_events = (Event(self.udp_revision, "datagram", self.last_classification),)
-            result = self.last_classification
-            return "UDP {}:{} -> {}:{} | {} | {} | {}".format(
-                *packet.source, *packet.destination, result.status.upper(),
-                result.application_protocol or result.encryption or "unidentified", result.reason)
+            return self._udp(packet)
         source, destination = packet.source, packet.destination
         key = self.manager.key(source, destination)
         state = self.tracked.get(key)
+        if state is not None:
+            self.last_server = state["server"]
+            state["packets"] += 1
+            if packet.payload:
+                state["bytes"][source] = state["bytes"].get(source, 0) + len(packet.payload)
         flags = packet.flags
         if flags & RST:
             self.drop(key, "Observed RST before initial message completed; reset not endpoint-validated")
@@ -110,8 +205,10 @@ class Analyzer:
             self.drop(key)
             if len(self.tracked) >= self.manager.max_connections:
                 return "LIMIT: too many tracked connections"
-            self.tracked[key] = {"client": source, "isn": packet.sequence,
-                                 "time": self.now, "ready": False, "fin": {}, "reported": {}}
+            self.tracked[key] = {"client": source, "server": destination, "isn": packet.sequence,
+                                 "time": self.now, "start": self.now, "packets": 1, "bytes": {},
+                                 "ready": False, "fin": {}, "reported": {}}
+            self.last_server = destination
             return "SYN: waiting for SYN-ACK"
         if state is None:
             return "SKIP: connection beginning not observed"
@@ -186,12 +283,22 @@ class Analyzer:
         if len(state["fin"]) == 2 and all(
                 self.manager.connections[key]["directions"][endpoint].contiguous == (min(final, stream.limit) if self.compact else final)
                 for endpoint, final in state["fin"].items()):
-            self.drop(key)
+            self.drop(key, "Both TCP directions closed with FIN")
             message += " | CLOSED: both FIN boundaries reached"
         return message
 
 
-def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_byte_limit=4096, udp_hint=None):
+def readable_session(record):
+    endpoint = lambda value: "{}:{}".format(*value)
+    return ("SESSION {:<16} {} -> {} | {}/{} risk={} port={} | client={} server={} | {} pkts {}+{} B | {}".format(
+        record["app"], endpoint(record["client"]), endpoint(record["server"]), record["category"],
+        record["subcategory"], record["risk"], record["port_usage"], record["client_protocol"] or "-",
+        record["server_protocol"] or "-", record["packets"], record["client_bytes"], record["server_bytes"],
+        record["end_reason"]))
+
+
+def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_byte_limit=4096, udp_hint=None,
+            sessions=False, include_hostnames=False):
     def retired(source, destination, event):
         if json_output:
             print(json.dumps({'type': 'stream_end', 'source': source, 'destination': destination,
@@ -199,7 +306,12 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
         else:
             print('END {}:{} -> {}:{} | {} | {}'.format(*source, *destination,
                   event.observation.status.upper(), event.observation.reason))
-    analyzer = Analyzer(tcp_hint=tcp_hint, crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, udp_hint=udp_hint)
+
+    def session(record):
+        print(json.dumps(record) if json_output else readable_session(record))
+
+    analyzer = Analyzer(tcp_hint=tcp_hint, crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, udp_hint=udp_hint,
+                        on_session=session if sessions else None, include_hostnames=include_hostnames)
     counts = Counter()
     def capture_gap(reason, scope="active_connections", number=None):
         active = len(analyzer.tracked)
@@ -213,6 +325,7 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
             event["frame"] = number
         print(json.dumps(event) if json_output else "CAPTURE_GAP: " + reason)
         analyzer.tracked.clear()
+        analyzer.udp_flows.clear()
         analyzer.manager.connections.clear()
         analyzer.last_events = ()
         analyzer.last_classification = None
@@ -238,20 +351,26 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
             message = analyzer.process(timestamp, packet)
             if not events_only or analyzer.last_events:
                 if json_output:
-                    print(json.dumps({"frame": number, "source": packet.source,
-                                      "destination": packet.destination, "message": message,
-                                      "classification": asdict(analyzer.last_classification)
-                                      if analyzer.last_classification is not None else None,
-                                      "events": [asdict(event) for event in analyzer.last_events]}))
+                    row = {"frame": number, "source": packet.source,
+                           "destination": packet.destination, "message": message,
+                           "classification": asdict(analyzer.last_classification)
+                           if analyzer.last_classification is not None else None,
+                           "events": [asdict(event) for event in analyzer.last_events]}
+                    if analyzer.last_classification is not None:
+                        server = analyzer.last_server
+                        row["app"] = classify(analyzer.last_classification, "udp" if isinstance(packet, UDPPacket) else "tcp",
+                                              server[1] if server else None).app
+                    print(json.dumps(row))
                 else:
                     print("#{} {}".format(number, message))
     except (CaptureError, OSError):
         capture_gap("Capture failed; observations may be incomplete", "all_observations_this_capture")
         raise
     analyzer.finish("Capture input EOF before initial message completed")
+    counts["sessions"] = analyzer.counts["sessions"]
     print(json.dumps({"summary": dict(counts)}) if json_output else
-          "\nFrames: {frames}; TCP: {tcp}; UDP: {udp}; skipped: {skipped}".format(
-              frames=counts["frames"], tcp=counts["tcp"], udp=counts["udp"], skipped=counts["skipped"]))
+          "\nFrames: {frames}; TCP: {tcp}; UDP: {udp}; skipped: {skipped}; sessions: {sessions}".format(
+              frames=counts["frames"], tcp=counts["tcp"], udp=counts["udp"], skipped=counts["skipped"], sessions=counts["sessions"]))
     return counts
 
 
@@ -260,12 +379,16 @@ def main():
     parser.add_argument("capture", help="Path to a classic .pcap file")
     parser.add_argument("--json", action="store_true", help="Write structured JSON Lines")
     parser.add_argument("--events-only", action="store_true", help="Only classification changes and final summary")
+    parser.add_argument("--sessions", action="store_true", help="Emit one App-ID verdict record per TCP connection / UDP flow")
+    parser.add_argument("--hostnames", action="store_true", help="Include asserted SNI/Host names in session records")
     parser.add_argument("--udp-hint", choices=sorted(VALIDATORS), help="Restrict UDP validation to one candidate")
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to one validated candidate")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
     args = parser.parse_args()
     try:
-        analyze(args.capture, json_output=args.json, events_only=args.events_only, tcp_hint=args.tcp_hint, crc32c_byte_limit=args.crc32c_byte_limit, udp_hint=args.udp_hint)
+        analyze(args.capture, json_output=args.json, events_only=args.events_only, tcp_hint=args.tcp_hint,
+                crc32c_byte_limit=args.crc32c_byte_limit, udp_hint=args.udp_hint, sessions=args.sessions,
+                include_hostnames=args.hostnames)
     except (OSError, CaptureError, ValueError) as error:
         parser.exit(1, "Capture error: {}\n".format(error))
 

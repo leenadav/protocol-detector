@@ -1,4 +1,4 @@
-.PHONY: test demo protocols proxy-demo benchmark live live-smoke interfaces replay-live
+.PHONY: test demo protocols apps sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -12,11 +12,17 @@ demo:
 protocols:
 	$(PYTHON) -B protocol_demo.py --list
 
+apps:
+	$(PYTHON) -B appid_catalog.py
+
+sessions:
+	$(PYTHON) -B analyze_pcap.py sample-expanded.pcap --events-only --sessions
+
 proxy-demo:
 	$(PYTHON) -B proxy_demo.py
 
 benchmark:
-	$(PYTHON) -B benchmark_v010.py --iterations 500 --rounds 5
+	$(PYTHON) -B benchmark_capture_v022.py --iterations 300 --rounds 5
 
 live:
 	$(PYTHON) -B live_capture.py --interface $(INTERFACE) --duration $(DURATION)
@@ -32,3 +38,22 @@ live-smoke:
 
 replay-live:
 	cat sample-expanded.pcap | $(PYTHON) -B live_capture.py --stdin --duration 0
+
+check: lint test pins requirements
+	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
+
+lint:
+	ruff check .
+
+pins:
+	$(PYTHON) -B tools/check_action_pins.py .github/workflows
+
+requirements:
+	$(PYTHON) -B tools/check_security_requirements.py
+
+fuzz:
+	$(PYTHON) -B tools/fuzz_fixtures.py --iterations 2000
+
+sbom:
+	cyclonedx-py environment --output-format json --output-file sbom.cdx.json
+	$(PYTHON) -B tools/sbom_summary.py sbom.cdx.json
