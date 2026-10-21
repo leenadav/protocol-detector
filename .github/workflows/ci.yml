@@ -43,7 +43,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Compile every module (syntax gate, no runtime dependencies allowed)
         run: |
-          python -m compileall -q protocol_engine tools *.py
+          python -m compileall -q protocol_engine tools ./*.py
           grep -q '^dependencies = \[\]' pyproject.toml || (echo "runtime dependencies are not allowed" && exit 1)
       - name: Unit, fuzz and property tests
         run: |
