@@ -51,10 +51,11 @@ review items (a moved tag, a vanished release, a changed index artifact)
 to be handled on the next working day, never by re-pinning blindly.
 
 Scheduled workflows (the weekly `ci` and `codeql` re-runs, the nightly fuzz,
-`supply-chain-drift`) fire from the default branch only. Until the engine
-and its workflows land on `main`, no schedule runs anywhere; the
-`workflow_dispatch` triggers and the push/pull-request paths of
-`supply-chain-drift` are the only way to exercise them before then.
+`supply-chain-drift`) and Dependabot read their configuration from the
+default branch only, so a schedule or `dependabot.yml` change takes effect
+once it is merged to `main`. On a feature branch, `workflow_dispatch` and
+the push/pull-request paths of `supply-chain-drift` are the only way to
+exercise them.
 
 ## Recommended repository settings
 
