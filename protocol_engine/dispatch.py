@@ -15,9 +15,9 @@ _table = ["unknown"] * 256
 for _byte in b"!#$%&'*+.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-":
     _table[_byte] = "text"
 for _byte, _family in ((64, "rsync"), (3, "tpkt"), (22, "tls"), (5, "socks5"), (16, "mqtt"), (19, "bittorrent"), (128, "memcached"),
-                       (0x81, "netbios-ss"), (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus"), (0x12, "tds"), (0x84, "cql")):
+                       (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus"), (0x12, "tds"), (0x84, "cql")):
     _table[_byte] = _family
-for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68, 69, 118):
+for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68, 69, 118, 0x81):
     _table[_byte] = "ambiguous"
 FIRST_BYTE = tuple(_table)
 del _table, _byte, _family
@@ -53,6 +53,11 @@ def select(prefix):
         discriminator = prefix[4:8]
         if b'git-'.startswith(discriminator):
             return 'git_text' if len(discriminator) == 4 else None
+        # Server side (v0.49): an object id after the pkt-line length, or the protocol v2 banner.
+        if all(byte in GIT_HEX for byte in prefix[4:min(len(prefix), 24)]):
+            return 'git' if len(prefix) >= 24 else None
+        if b'version 2\n'.startswith(prefix[4:14]):
+            return 'git' if len(prefix) >= 14 else None
     if first == 5:
         if len(prefix) < 2:
             return None
@@ -71,6 +76,11 @@ def select(prefix):
         return family
     if first in (69, 118):
         return "text"
+    if first == 0x81:
+        # NetBIOS session request is exactly 68 bytes (flags 0, length 0x44); anything else is a memcached response.
+        if len(prefix) < 4:
+            return None
+        return 'netbios-ss' if prefix[1:4] == b"\x00\x00\x44" else 'memcached'
     if first == 255:
         if len(prefix) < 2:
             return None
@@ -125,6 +135,8 @@ def select(prefix):
         # DNS QDCOUNT would be padding<<8, never one when reserved is zero.
         if first == 1 and prefix[1] == 1 and prefix[2:4] != b"\x00\x00" and prefix[4:6] == b"\x00\x08" and prefix[7] == 0:
             return "fastcgi"
+        if first == 1 and prefix[1] in (3, 6, 7) and prefix[2:4] != b"\x00\x00" and prefix[7] == 0 and (prefix[1] != 3 or prefix[4:6] == b"\x00\x08"):
+            return "fastcgi"   # application-server record for a nonzero request id (v0.49)
         if first == 1 and prefix[1:3] == b"\x00\x00":
             # AMQP 0-9-1 method frame on channel zero: Connection.Start (class 10, method 10) from the broker.
             if len(prefix) < 11:

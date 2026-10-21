@@ -1,11 +1,19 @@
-# Review scope: protocol detector v0.48
+# Review scope: protocol detector v0.49
 
 Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.48): tools/coverage_matrix.py and the generated table in
+New focus (v0.49): `_tftp_server` (network.py), the L2TP/PPTP reply rules
+(vpn.py), `MemcachedParser._response_size` with the 0x81 netbios/memcached
+split, `GitParser._advertisement` with `_git_first_ref` and the 24-byte hex
+wait in dispatch, the FastCGI application-record path, and the new direction
+evidence on DHCP, NTP and MongoDB. Trace: every size rule against the
+specification, no value, key, refname, capability or record content in
+evidence; the netbios fixed-length discriminator; the mutation and split tests.
+
+Previous focus (v0.48): tools/coverage_matrix.py and the generated table in
 PROTOCOLS.md. Trace: the side attribution rules (scopes, evidence predicates,
 declared server fixtures, symmetric and one-way sets) against the fixtures
 they describe, the `--check` gate in CI and `make check`, and that the

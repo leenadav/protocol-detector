@@ -32,6 +32,16 @@ DIRECTION_RULES = (
     ("exchange", lambda value: value == "ike_sa_init_response"),
     ("kerberos_message", lambda value: value in ("as-rep", "tgs-rep", "error")),
     ("tls_handshake", lambda value: value in ("server_hello", "hello_retry_request")),
+    ("dhcp_operation", lambda value: value == "reply"),
+    ("ntp_mode", lambda value: value == "server"),
+    ("mongodb_message", lambda value: value == "reply"),
+    ("message_type", lambda value: value in ("handshake_response", "cookie_reply")),
+    ("tftp_packet", lambda value: value in ("oack", "error")),
+    ("l2tp_message", lambda value: value == "sccrp"),
+    ("pptp_message", lambda value: value == "sccrp"),
+    ("git_message", lambda value: value in ("ref-advertisement", "version-2")),
+    ("fastcgi_record", lambda value: value in ("stdout", "stderr", "end-request")),
+    ("memcached_message", lambda value: value == "response"),
 )
 HIDDEN_FIELDS = frozenset(("application_protocol", "encryption", "candidate_hint"))
 # Fixtures that live outside the generic case lists (name, hint, transport).
@@ -48,7 +58,7 @@ SERVER_FIXTURE_NAMES = ("TLS_SERVER12", "TLS_SERVER13", "TLS_RETRY", "TLS_SERVER
                         "STOMP_SERVER", "NATS_INFO", "POP3_SERVER", "MYSQL", "IMAP", "HTTP_RESPONSE")
 # Families whose initial message has the same shape in both directions (one fixture proves both),
 # and families that only ever flow one way (exporter to collector, client to broker).
-SYMMETRIC = frozenset(("bgp", "ssh", "telnet", "dnp3", "iec-104", "bacnet", "ethernet-ip", "stun", "sip", "rtsp", "ssdp", "rtp", "bittorrent", "coap"))
+SYMMETRIC = frozenset(("bgp", "ssh", "telnet", "dnp3", "iec-104", "bacnet", "ethernet-ip", "stun", "sip", "rtsp", "ssdp", "rtp", "bittorrent", "coap", "rfb"))
 ONE_WAY = frozenset(("netflow", "ipfix", "sflow", "syslog"))
 
 

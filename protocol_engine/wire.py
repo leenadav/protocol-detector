@@ -183,6 +183,9 @@ def stun(data, config):
     return "stun", "STUN Binding framing validated; optional fingerprint checked, HMAC and peer identity unverified"
 
 
+_DHCP_MESSAGES = {1: "discover", 2: "offer", 3: "request", 4: "decline", 5: "ack", 6: "nak", 7: "release", 8: "inform"}
+
+
 def dhcp(data, config):
     if len(data) < 241 or data[236:240] != b"\x63\x82\x53\x63":
         raise ParseError("Invalid DHCPv4 fixed header/cookie")
@@ -202,7 +205,11 @@ def dhcp(data, config):
             expected = 1 if message_type in (1, 3, 4, 7, 8) else 2
             if data[0] != expected:
                 raise ParseError("DHCP message type conflicts with operation")
-            return "dhcp/4", "DHCPv4 header and option framing validated; lease state and option semantics unverified"
+            return DatagramMatch("DHCPv4 header and option framing validated; lease state and option semantics unverified",
+                                 application_protocol="dhcp/4",
+                                 evidence=(Evidence("application_protocol", "dhcp/4", "wire", "structural"),
+                                           Evidence("dhcp_operation", "request" if expected == 1 else "reply", "wire", "structural"),
+                                           Evidence("dhcp_message", _DHCP_MESSAGES[message_type], "wire", "structural")))
         count += 1
         if count > 128:
             raise BudgetError("DHCP option count exceeds inspection limit")

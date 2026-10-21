@@ -717,3 +717,27 @@ STREAM_CASES += ((AMQP_START, 'amqp/0-9-1'),)
 
 # v0.48: an HTTP response for the direction coverage matrix.
 HTTP_RESPONSE = b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"
+
+
+# v0.49: direction evidence and remaining server replies. Names and values are placeholders.
+DHCP_OFFER = b"\x02" + DHCP[1:-2] + b"\x02\xff"
+NTP_SERVER = bytes([0x24]) + b"\x02" + NTP[2:40] + bytes(range(1, 9))
+MONGODB_REPLY = MONGODB[:8] + struct.pack('<i', 123) + MONGODB[12:]
+WIREGUARD_RESPONSE = b"\x02\x00\x00\x00" + b"\x11\x22\x33\x44" + b"\x55\x66\x77\x88" + bytes(32) + bytes(16) + bytes(16) + bytes(16)
+TFTP_OACK = b"\x00\x06" + b"blksize\x001428\x00tsize\x00204800\x00"
+TFTP_ERROR = b"\x00\x05\x00\x01" + b"File not found\x00"
+L2TP_SCCRP = L2TP[:4] + b"\x00\x05\x00\x00" + L2TP[8:19] + b"\x02" + L2TP[20:]
+PPTP_SCCRP = (_struct.pack('!HHIHHHBBIIHH', 156, 1, 0x1a2b3c4d, 2, 0, 0x0100, 1, 0, 3, 3, 65535, 1)
+              + b'server-host'.ljust(64, b'\x00') + b'vendor-x'.ljust(64, b'\x00'))
+MEMCACHED_RESPONSE = b"\x81\x00\x00\x00\x04\x00\x00\x00" + (11).to_bytes(4, 'big') + bytes(4) + bytes(8) + bytes(4) + b"plchldr"
+MEMCACHED_ERROR = b"\x81\x00\x00\x00\x00\x00\x00\x01" + (9).to_bytes(4, 'big') + bytes(4) + bytes(8) + b"Not found"
+_git_line = b"a" * 40 + b" HEAD\x00multi_ack thin-pack side-band side-band-64k ofs-delta shallow symref=HEAD:refs/heads/main agent=git/2.4\n"
+GIT_REFS = "{:04x}".format(len(_git_line) + 4).encode() + _git_line
+GIT_VERSION2 = b"000eversion 2\n"
+FASTCGI_STDOUT = b"\x01\x06\x00\x01\x00\x0c\x04\x00" + b"Status: 200\n" + bytes(4)
+FASTCGI_END = b"\x01\x03\x00\x01\x00\x08\x00\x00" + bytes(4) + b"\x00" + bytes(3)
+DATAGRAM_CASES += ((DHCP_OFFER, 'dhcp/4'), (WIREGUARD_RESPONSE, 'wireguard'), (TFTP_OACK, 'tftp'), (L2TP_SCCRP, 'l2tp/2'))
+HINTED_DATAGRAM_CASES += ((NTP_SERVER, 'ntp/4', 'ntp'), (TFTP_ERROR, 'tftp', 'tftp'))
+HINTED_STREAM_CASES += ((MONGODB_REPLY, 'mongodb', 'mongodb'),)
+STREAM_CASES += ((MEMCACHED_RESPONSE, 'memcached/binary'), (MEMCACHED_ERROR, 'memcached/binary'), (GIT_REFS, 'git'), (GIT_VERSION2, 'git'),
+                 (FASTCGI_STDOUT, 'fastcgi/1'), (FASTCGI_END, 'fastcgi/1'), (PPTP_SCCRP, 'pptp'))

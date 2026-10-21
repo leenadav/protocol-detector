@@ -159,8 +159,8 @@ class DatagramInspector:
             candidates = []
             if data.startswith(b"\x30"):
                 candidates.append("snmp")
-            elif data[:2] in (b"\x00\x01", b"\x00\x02"):
-                candidates.append("tftp")
+            elif data[:2] in (b"\x00\x01", b"\x00\x02", b"\x00\x06"):
+                candidates.append("tftp")   # ERROR (00 05) is too weak for automatic selection: NetFlow v5 shares its first bytes
             if dns_probe(data):
                 candidates.append("dns")
             # Tiny empty CoAP messages are too weak for automatic selection.

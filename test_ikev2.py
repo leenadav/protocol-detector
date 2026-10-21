@@ -184,7 +184,7 @@ class IKETests(unittest.TestCase):
         data[236:243]=bytes.fromhex('63825363350101')
         data[-1]=255
         dhcp_data=bytes(data)
-        self.assertEqual(dhcp(dhcp_data,Config())[0],'dhcp/4')
+        self.assertEqual(dhcp(dhcp_data,Config()).application_protocol,'dhcp/4')
         self.assertEqual(self.inspect(dhcp_data).application_protocol,'ikev2')
         self.assertEqual(self.inspect(dhcp_data,hint=None).status,'unknown')
         self.assertEqual(self.inspect(dhcp_data,Config(max_headers=2),hint=None).status,'budget_exhausted')

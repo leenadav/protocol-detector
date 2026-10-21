@@ -29,6 +29,9 @@ class GitParser(FrameParser):
 
     def validate(self, data):
         body = data[4:]
+        if body == b'version 2\n' or (len(body) > 41 and body[40:41] == b' ' and all(byte in HEX for byte in body[:40])) \
+                or (len(body) > 65 and body[64:65] == b' ' and all(byte in HEX for byte in body[:64])):
+            return self._advertisement(body)
         if not body.endswith(b'\0'):
             raise ParseError('Git service request must end with NUL')
         if body.count(b'\0') > min(self.config.max_headers, 16) + 3:
@@ -80,7 +83,39 @@ class GitParser(FrameParser):
                     version = value.decode('ascii')
         self.extra_evidence = (() if version is None else
                                (('offered_version', version, 'service_request', 'offered'),))
+        self.extra_evidence = (('git_message', 'service-request', 'pkt_line', 'structural'),) + tuple(getattr(self, 'extra_evidence', ()))
         self.reason = 'Native Git service request framing validated; repository, server, version negotiation and packfile unverified'
+
+
+def _git_first_ref(body):
+    """First ref-advertisement pkt-line: object id, space, refname, NUL, capabilities, LF (v0.49)."""
+    digest = 40 if body[40:41] == b' ' else 64
+    rest = body[digest + 1:]
+    if not rest.endswith(b'\n'):
+        raise ParseError('Git ref advertisement line must end with LF')
+    refname, separator, capabilities = rest[:-1].partition(b'\0')
+    if not separator or not refname or len(refname) > 1024:
+        raise ParseError('Git ref advertisement requires a refname and a capability list')
+    if refname != b'HEAD' and not refname.startswith(b'refs/'):
+        raise UnsupportedPrefix('Git ref advertisement refname outside HEAD/refs/ profile')
+    if any(byte <= 32 or byte == 127 for byte in refname) or any(byte < 32 or byte == 127 for byte in capabilities):
+        raise ParseError('Git ref advertisement contains control characters')
+    if b'\0' in capabilities:
+        raise ParseError('Git ref advertisement has more than one NUL')
+
+
+def _advertisement(self, body):
+    if body == b'version 2\n':
+        name = 'version-2'
+    else:
+        _git_first_ref(body)
+        name = 'ref-advertisement'
+    self.scope = 'negotiation_response'
+    self.extra_evidence = (('git_message', name, 'pkt_line', 'structural'),)
+    self.reason = 'Git server {} pkt-line validated; object ids, refnames and capabilities not emitted'.format(name.replace('-', ' '))
+
+
+GitParser._advertisement = _advertisement
 
 
 class GitTextParser:

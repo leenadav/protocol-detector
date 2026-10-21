@@ -25,6 +25,7 @@ class FastCGIParser:
         self.content_size = 0
         self.wire_size = 0
         self.records = 0
+        self.response_kind = None
         self.done = False
         self.reason = 'Waiting for FastCGI BEGIN_REQUEST and complete PARAMS stream'
 
@@ -35,7 +36,14 @@ class FastCGIParser:
             raise UnsupportedPrefix('FastCGI profile requires version 1 and zero reserved header')
         if not request_id:
             raise UnsupportedPrefix('FastCGI management records are outside this profile')
-        if self.request_id is None:
+        if self.request_id is None and kind in (3, 6, 7) and not self.records:
+            # Application-server side (v0.49): one STDOUT/STDERR data record or END_REQUEST completes the identification.
+            if kind == 3 and size != 8:
+                raise ParseError('FastCGI END_REQUEST body must contain eight bytes')
+            if kind != 3 and size == 0:
+                raise UnsupportedPrefix('An empty FastCGI stream terminator alone is outside the profile')
+            self.response_kind = kind
+        elif self.request_id is None:
             if kind != 1:
                 raise UnsupportedPrefix('FastCGI stream must begin with BEGIN_REQUEST')
             if size != 8:
@@ -55,14 +63,26 @@ class FastCGIParser:
         self.active = True
 
     def _complete(self):
+        if self.response_kind is not None:
+            if self.response_kind == 3:
+                if self.begin[4] > 3 or any(self.begin[5:8]):
+                    raise ParseError('FastCGI END_REQUEST protocol status or reserved bytes invalid')
+            name = {3: 'end-request', 6: 'stdout', 7: 'stderr'}[self.response_kind]
+            self.begin.clear()
+            self.scope = 'response_record'
+            self.extra_evidence = (('fastcgi_record', name, 'record', 'structural'),)
+            self.done = True
+            self.active = False
+            self.reason = 'FastCGI application-server record validated; content and exit status not emitted'
+            return
         if self.request_id is None:
             role = int.from_bytes(self.begin[:2], 'big')
             if role not in (1, 2, 3) or self.begin[2] & ~1 or any(self.begin[3:]):
                 raise UnsupportedPrefix('FastCGI role, flags or reserved body outside supported profile')
             self.request_id = self.current_id
             self.begin.clear()
-            self.extra_evidence = (('fastcgi_role', ('responder', 'authorizer', 'filter')[role - 1],
-                                    'begin_request', 'offered'),)
+            self.extra_evidence = (('fastcgi_record', 'begin-request', 'record', 'structural'),
+                                   ('fastcgi_role', ('responder', 'authorizer', 'filter')[role - 1], 'begin_request', 'offered'))
         elif self.content_size == 0:
             self._validate_params()
             self.params.clear()

@@ -144,11 +144,19 @@ class BitTorrentParser(FrameParser):
         self.reason = "BitTorrent peer handshake framing validated; info-hash and peer identity unverified"
 
 
+_MEMCACHED_STATUS = {0: "no-error", 1: "key-not-found", 2: "key-exists", 3: "value-too-large", 4: "invalid-arguments", 5: "item-not-stored",
+                     6: "non-numeric-value", 7: "vbucket-other-server", 8: "authentication-error", 9: "authentication-continue",
+                     0x20: "authentication-error", 0x21: "authentication-continue", 0x81: "unknown-command", 0x82: "out-of-memory",
+                     0x83: "not-supported", 0x84: "internal-error", 0x85: "busy", 0x86: "temporary-failure"}
+
+
 class MemcachedParser(FrameParser):
     header_size = 24
     protocol_name = "memcached/binary"
 
     def frame_size(self, header):
+        if header[0] == 0x81:
+            return self._response_size(header)
         if header[0] != 0x80 or header[5:8] != b"\x00\x00\x00":
             raise ParseError("Invalid Memcached binary request header")
         body = int.from_bytes(header[8:12], "big")
@@ -156,6 +164,7 @@ class MemcachedParser(FrameParser):
         if key > 250 or body < key + extras:
             raise ParseError("Invalid Memcached key/extras/body sizes")
         value = body - key - extras
+        self.response = None
         if command in (0, 4, 9, 12, 13):
             valid = key > 0 and extras == 0 and value == 0
         elif command in (1, 2, 3):
@@ -176,7 +185,46 @@ class MemcachedParser(FrameParser):
             raise ParseError("Memcached command contradicts field sizes")
         return 24 + body
 
+    def _response_size(self, header):
+        """Response header (magic 0x81): opcode, key/extras/body sizes and status consistent with the command (v0.49)."""
+        if header[5] != 0:
+            raise ParseError("Memcached response data type must be raw bytes")
+        status = int.from_bytes(header[6:8], "big")
+        if status not in _MEMCACHED_STATUS:
+            raise UnsupportedPrefix("Memcached response status outside the known set")
+        body = int.from_bytes(header[8:12], "big")
+        key, extras, command = int.from_bytes(header[2:4], "big"), header[4], header[1]
+        if key > 250 or body < key + extras:
+            raise ParseError("Invalid Memcached key/extras/body sizes")
+        value = body - key - extras
+        if status:
+            valid = key == 0 and extras == 0 and command <= 0x1f
+        elif command in (0, 9):
+            valid = key == 0 and extras == 4
+        elif command in (12, 13):
+            valid = key > 0 and extras == 4
+        elif command in (1, 2, 3, 4, 7, 8, 10, 14, 15):
+            valid = body == 0
+        elif command in (5, 6):
+            valid = key == 0 and extras == 0 and value == 8
+        elif command == 11:
+            valid = key == 0 and extras == 0 and value > 0
+        elif command == 16:
+            valid = extras == 0
+        else:
+            raise UnsupportedPrefix("Unsupported Memcached binary command")
+        if not valid:
+            raise ParseError("Memcached response contradicts field sizes")
+        self.response = _MEMCACHED_STATUS[status]
+        return 24 + body
+
     def validate(self, data):
+        if self.response is not None:
+            self.scope = "response_header"
+            self.extra_evidence = (("memcached_message", "response", "header", "structural"), ("memcached_status", self.response, "header", "asserted"))
+            self.reason = "Memcached binary response framing validated; keys and values not emitted, request unverified"
+            return
+        self.extra_evidence = (("memcached_message", "request", "header", "structural"),)
         self.reason = "Memcached binary request framing validated; values and server reply unverified"
 
 

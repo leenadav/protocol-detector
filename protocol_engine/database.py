@@ -233,6 +233,9 @@ class MongoDBParser(FrameParser):
             raise ParseError('MongoDB OP_MSG has no body section')
         if sequences.intersection(body):
             raise ParseError('MongoDB sequence also exists in body')
+        self.extra_evidence = (('mongodb_message', 'reply' if response else 'request', 'header', 'structural'),)
+        if response:
+            self.scope = 'response_header'
         if not response:
             first = next(iter(body), '')
             if not first or first.startswith('$') or '$db' not in body:

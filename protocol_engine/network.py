@@ -170,8 +170,10 @@ class SMB2Parser(FrameParser):
 
 
 def tftp(data, config):
+    if data[:2] in (b"\x00\x05", b"\x00\x06"):
+        return _tftp_server(data, config)
     if data[:2] not in (b"\x00\x01", b"\x00\x02"):
-        raise UnsupportedPrefix("Only TFTP RRQ/WRQ supported")
+        raise UnsupportedPrefix("Only TFTP RRQ/WRQ/OACK/ERROR supported")
     if len(data) > 512 or not data.endswith(b"\x00"):
         raise ParseError("Invalid TFTP request length or terminator")
     parts = data[2:-1].split(b"\x00")
@@ -198,7 +200,35 @@ def tftp(data, config):
                     or (name == b"windowsize" and not 1 <= number <= 65535)
                     or (name == b"tsize" and data[1] == 1 and number != 0)):
                 raise ParseError("TFTP option outside permitted range")
-    return "tftp", "TFTP initial read/write request and option framing validated; transfer unverified"
+    return DatagramMatch("TFTP initial read/write request and option framing validated; transfer unverified", application_protocol="tftp",
+                         evidence=(Evidence("application_protocol", "tftp", "wire", "structural"), Evidence("tftp_packet", "request", "wire", "structural")))
+
+
+def _tftp_server(data, config):
+    """OACK (RFC 2347) option pairs or ERROR (RFC 1350) code and message; DATA/ACK are too weak to identify (v0.49)."""
+    if len(data) > 512 or not data.endswith(b"\x00"):
+        raise ParseError("Invalid TFTP packet length or terminator")
+    if data[1] == 5:
+        if len(data) < 6 or int.from_bytes(data[2:4], "big") > 8:
+            raise ParseError("TFTP error code outside RFC 1350/2347 or empty message")
+        message = data[4:-1]
+        if b"\x00" in message or any(c < 32 or c > 126 for c in message):
+            raise ParseError("TFTP error message must be one printable string")
+        return DatagramMatch("TFTP error packet validated; code and message not emitted", application_protocol="tftp",
+                             evidence=(Evidence("application_protocol", "tftp", "wire", "structural"), Evidence("tftp_packet", "error", "wire", "structural")))
+    parts = data[2:-1].split(b"\x00")
+    if len(parts) < 2 or len(parts) % 2 or len(parts) > 32:
+        raise ParseError("TFTP OACK requires 1..16 option/value pairs")
+    seen = set()
+    for index in range(0, len(parts), 2):
+        name, value = parts[index].lower(), parts[index + 1]
+        if name not in (b"blksize", b"timeout", b"tsize", b"windowsize") or name in seen:
+            raise UnsupportedPrefix("TFTP OACK option outside the RFC 2348/2349/7440 set or repeated")
+        if not value.isdigit() or len(value) > 20:
+            raise ParseError("Invalid numeric TFTP option")
+        seen.add(name)
+    return DatagramMatch("TFTP option acknowledgement validated; option values not emitted, transfer unverified", application_protocol="tftp",
+                         evidence=(Evidence("application_protocol", "tftp", "wire", "structural"), Evidence("tftp_packet", "oack", "wire", "structural")))
 
 
 def _integer(data, pos):
@@ -406,4 +436,8 @@ def ntp(data, config):
         raise ParseError("Invalid NTP stratum")
     if mode == 4 and not any(data[40:48]):
         raise ParseError("NTP server transmit timestamp is zero")
-    return "ntp/" + str(version), "NTP base header validated with caller hint; timestamps, peer, extensions and authentication unverified"
+    protocol = "ntp/" + str(version)
+    return DatagramMatch("NTP base header validated with caller hint; timestamps, peer, extensions and authentication unverified",
+                         application_protocol=protocol,
+                         evidence=(Evidence("application_protocol", protocol, "wire", "structural"),
+                                   Evidence("ntp_mode", "client" if mode == 3 else "server", "wire", "structural")))

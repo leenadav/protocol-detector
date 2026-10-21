@@ -87,6 +87,9 @@ class OpenVPNParser(FrameParser):
         self.reason = "OpenVPN TCP {} hard-reset control packet validated; no key exchange or tunnel claim".format(role)
 
 
+_PPTP_RESULTS = {1: "ok", 2: "general-error", 3: "already-connected", 4: "not-authorized", 5: "bad-version"}
+
+
 class PPTPParser(FrameParser):
     """PPTP Start-Control-Connection-Request (RFC 2637 2.1), 156 bytes."""
     header_size = 12
@@ -97,16 +100,22 @@ class PPTPParser(FrameParser):
         length, kind, cookie, control = struct.unpack("!HHIH", header[:10])
         if cookie != 0x1a2b3c4d or kind != 1:
             raise ParseError("PPTP control header magic or message type invalid")
-        if control != 1:
-            raise UnsupportedPrefix("PPTP profile covers Start-Control-Connection-Request")
+        if control not in (1, 2):
+            raise UnsupportedPrefix("PPTP profile covers Start-Control-Connection-Request and -Reply")
         if length != 156:
-            raise ParseError("PPTP SCCRQ must be 156 bytes")
+            raise ParseError("PPTP SCCRQ/SCCRP must be 156 bytes")
         return 156
 
     def validate(self, data):
-        reserved0, version, reserved1, framing, bearer, channels, firmware = struct.unpack("!HHHIIHH", data[10:28])
-        if reserved0 or reserved1 or version != 0x0100:
-            raise ParseError("PPTP SCCRQ reserved fields or protocol version invalid")
+        control = int.from_bytes(data[8:10], "big")
+        if control == 2:
+            reserved0, version, result, error, framing, bearer, channels, firmware = struct.unpack("!HHBBIIHH", data[10:28])
+            if reserved0 or version != 0x0100 or not 1 <= result <= 5 or error > 6 or (result != 2 and error):
+                raise ParseError("PPTP SCCRP reserved field, version, result or error code invalid")
+        else:
+            reserved0, version, reserved1, framing, bearer, channels, firmware = struct.unpack("!HHHIIHH", data[10:28])
+            if reserved0 or reserved1 or version != 0x0100:
+                raise ParseError("PPTP SCCRQ reserved fields or protocol version invalid")
         if framing & ~3 or bearer & ~3:
             raise ParseError("PPTP capability bits outside RFC 2637")
         for field in (data[28:92], data[92:156]):
@@ -114,6 +123,13 @@ class PPTPParser(FrameParser):
             text = field if end < 0 else field[:end]
             if any(byte < 32 or byte > 126 for byte in text):
                 raise ParseError("PPTP host/vendor name outside printable ASCII")
+        if control == 2:
+            self.scope = "negotiation_response"
+            self.extra_evidence = (("pptp_message", "sccrp", "control", "structural"),
+                                   ("pptp_result", _PPTP_RESULTS[result], "control", "asserted"))
+            self.reason = "PPTP start-control-connection reply validated; names are not emitted, no call or tunnel claim"
+            return
+        self.extra_evidence = (("pptp_message", "sccrq", "control", "structural"),)
         self.reason = "PPTP start-control-connection request validated; names are not emitted, no call or tunnel claim"
 
 
@@ -152,11 +168,14 @@ def l2tp(data, config):
             if vendor or attribute != 0 or avp_length != 8 or not avp_flags_length & 0x8000:
                 raise ParseError("L2TP first AVP must be the mandatory Message Type")
             first = int.from_bytes(data[pos + 6:pos + 8], "big")
-            if first != 1:
-                raise UnsupportedPrefix("L2TP profile covers SCCRQ as the first control message")
-            if tunnel or session:
-                raise ParseError("L2TP SCCRQ requires zero tunnel and session identifiers")
+            if first not in (1, 2):
+                raise UnsupportedPrefix("L2TP profile covers SCCRQ and SCCRP as the first control messages")
+            if session or (first == 1 and tunnel) or (first == 2 and not tunnel):
+                raise ParseError("L2TP SCCRQ requires zero identifiers; SCCRP carries the peer's assigned tunnel id")
         pos += avp_length
     if first is None:
         raise ParseError("L2TP control message without AVPs")
-    return "l2tp/2", "L2TPv2 SCCRQ control framing and AVP boundaries validated; tunnel establishment unverified"
+    name = "sccrq" if first == 1 else "sccrp"
+    return DatagramMatch("L2TPv2 {} control framing and AVP boundaries validated; tunnel establishment unverified".format(name.upper()),
+                         application_protocol="l2tp/2",
+                         evidence=(Evidence("application_protocol", "l2tp/2", "wire", "structural"), Evidence("l2tp_message", name, "wire", "structural")))
