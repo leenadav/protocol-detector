@@ -474,8 +474,11 @@ and gates), [THREAT-MODEL.md](THREAT-MODEL.md) (STRIDE table tied to tests),
 [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md) (each requirement names
 its test; CI fails on a dangling reference), [SECURITY.md](SECURITY.md)
 (reporting policy) and `.github/workflows` (test matrix 3.9/3.11/3.13, ruff,
-bandit, CodeQL, gitleaks, SBOM, SHA-pinned actions, hash-pinned dev tools,
-nightly fuzzing, attested releases). `make check` runs the local gates.
+bandit, CodeQL, gitleaks, SBOM, SHA-pinned actions re-verified weekly against
+their tags, hash-pinned dev tools, per-commit behaviour diff and mutation
+smoke, wheel installed and exercised under 3.9 and 3.13, nightly fuzzing,
+attested releases; SSDLC.md lists the checks to require on `main`).
+`make check` runs the local gates.
 324 tests pass; BENCHMARK-V022.md records the per-event cost of the verdict layer.
 Risk scores and characteristics are editorial policy defaults, not measurements.
 
