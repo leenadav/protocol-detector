@@ -23,6 +23,10 @@ evidence strength is `heuristic` and their thresholds are listed here.
 | `dns-suspicious-query-name` | medium | DNS query with `dns_query_shape=suspicious` (heuristic, requires heuristics on) |
 | `http-proxy-tunnel` | low | `http-proxy` verdict (CONNECT) or an application shifted from it |
 | `desktop-or-file-sharing-session` | low | Application in rdp, vnc, smb, ftp, bittorrent, rsync, tftp |
+| `tls-self-issued-certificate` | medium | With `--certificates` (v0.39): the leaf certificate after a TLS 1.2 ServerHello has an issuer equal to its subject (`tls_certificate_self_issued=yes`). Self-signed in practice; the signature itself is not verified |
+| `tls-weak-certificate-key` | high | Leaf public key below RSA 2048 bits or a named curve below 256 bits (`tls_certificate_key`, e.g. `rsa-1024`). `ec-other` and `other` never flag |
+| `tls-weak-certificate-signature` | high | Leaf signed with `md5-rsa`, `sha1-rsa` or `ecdsa-sha1` (`tls_certificate_signature`) |
+| `tls-certificate-lifetime-excessive` | low | Leaf validity longer than 398 days (`tls_certificate_lifetime_days`), the CA/Browser Forum baseline since September 2020 |
 
 Severities are editorial defaults for policy authoring (`protocol_engine.risks.RISKS`).
 `protocol_engine.risks.flow_risks(verdict, client, server)` is one pass over
@@ -63,6 +67,8 @@ names and legitimate content-hash labels all trigger it; it is a triage hint.
 
 ## Not implemented
 
-Certificate validation, TLS cipher-strength assessment, HTTP header anomaly
+Certificate validation (signature, chain, name match, revocation, expiry
+against a clock: the engine has no clock and emits only the lifetime), TLS 1.3
+certificates (encrypted), TLS cipher-strength assessment, HTTP header anomaly
 scoring, port scan or probing detection, periodicity/beaconing analysis, byte
 distribution learning, and any risk that needs more than the initial message.

@@ -1,6 +1,7 @@
 """Bounded ServerHello/HelloRetryRequest profiles; no handshake authentication."""
 from .parsers import Reader, ParseError, BudgetError
 from .extended import UnsupportedPrefix
+from .x509 import MAX_LEAF, leaf_profile
 
 HRR_RANDOM = bytes.fromhex('cf21ad74e59a6111be1d8c021e65b891c2a211167abb8c5e079e09e2c8a8339c')
 _TLS12_ECC_CIPHERS = frozenset(range(0xc023, 0xc033))
@@ -120,3 +121,78 @@ def parse_server_hello(body, config, record_versions, record_remaining):
     reason = ('HelloRetryRequest structure validated; requested changes unverified' if retry else
               'ServerHello structure validated; server selections unauthenticated, handshake completion unverified')
     return tuple(evidence), source, reason
+
+
+class CertificateWatch:
+    """Read the records after a TLS 1.2 ServerHello until the leaf certificate is complete.
+
+    Only the Certificate handshake message (type 11) may follow; a
+    ChangeCipherSpec record (abbreviated handshake), an alert or any other
+    message ends the watch without evidence. The leaf is the first list entry;
+    later chain entries are never read. Any error keeps the ServerHello
+    identification (SR-21): the Inspector treats a ParseError in a continuation
+    as the end of optional evidence.
+    """
+    def __init__(self, config, record_remaining, budget):
+        self.config = config
+        self.budget = budget                         # bytes this watch may consume (shared max_bytes budget)
+        self.consumed = 0
+        self.record_header = bytearray()
+        self.record_remaining = record_remaining     # bytes left in the record that carried the ServerHello
+        self.handshake = bytearray()
+        self.needed = 4                              # handshake header first
+        self.message_length = None
+        self.chain = None
+        self.done = False
+        self.evidence = ()
+
+    def feed(self, data):
+        pos = 0
+        while pos < len(data) and not self.done:
+            if self.consumed + pos >= self.budget:
+                raise BudgetError('Certificate inspection exceeds the configured byte budget')
+            if self.record_remaining == 0:
+                amount = min(5 - len(self.record_header), len(data) - pos, self.budget - self.consumed - pos)
+                self.record_header.extend(data[pos:pos + amount])
+                pos += amount
+                if len(self.record_header) < 5:
+                    break
+                header = self.record_header
+                if header[0] != 22:
+                    raise ParseError('Certificate message must follow the ServerHello in a handshake record')
+                if header[1] != 3 or header[2] not in (1, 2, 3):
+                    raise ParseError('Expected plaintext TLS handshake record')
+                self.record_remaining = int.from_bytes(header[3:5], 'big')
+                self.record_header.clear()
+                if not 1 <= self.record_remaining <= 16384:
+                    raise ParseError('Invalid TLS record length')
+            amount = min(self.needed - len(self.handshake), self.record_remaining, len(data) - pos, self.budget - self.consumed - pos)
+            self.handshake.extend(data[pos:pos + amount])
+            pos += amount
+            self.record_remaining -= amount
+            if len(self.handshake) < self.needed:
+                continue
+            if self.needed == 4:
+                if self.handshake[0] != 11:
+                    raise ParseError('Handshake message after the ServerHello is not Certificate')
+                self.message_length = int.from_bytes(self.handshake[1:4], 'big')
+                if self.message_length < 6:
+                    raise ParseError('Certificate message too short for one certificate')
+                self.needed = 10
+            elif self.needed == 10:
+                list_length = int.from_bytes(self.handshake[4:7], 'big')
+                leaf_length = int.from_bytes(self.handshake[7:10], 'big')
+                if list_length != self.message_length - 3 or leaf_length == 0 or leaf_length + 3 > list_length:
+                    raise ParseError('Certificate list lengths disagree with the message')
+                if leaf_length > min(MAX_LEAF, self.budget - self.consumed - pos):
+                    raise BudgetError('Leaf certificate exceeds the inspection budget')
+                self.chain = 'single' if list_length == leaf_length + 3 else 'chain'
+                self.needed = 10 + leaf_length
+            else:
+                profile = leaf_profile(bytes(self.handshake[10:]))
+                self.evidence = (('tls_certificate_chain', self.chain, 'certificate', 'structural'),) + tuple(
+                    (field, value, 'certificate', 'asserted') for field, value in profile)
+                self.handshake.clear()
+                self.done = True
+        self.consumed += pos
+        return pos

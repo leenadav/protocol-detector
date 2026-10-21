@@ -530,9 +530,21 @@ class TLSParser:
         self.hello = None
         self.fingerprints = ()
         self.extra_evidence = ()
+        self.continues = False
+        self.watch = None          # CertificateWatch after a TLS 1.2 ServerHello when configured
+        self.consumed = 0          # bytes accepted so far; the watch inherits the remaining byte budget
         self.reason = "Waiting for complete TLS hello"
 
     def feed(self, data):
+        if self.watch is not None:
+            # Post-identification continuation: the leaf certificate adds asserted evidence
+            # or the watch ends quietly; the ServerHello identification stands either way.
+            consumed = self.watch.feed(data)
+            if self.watch.done:
+                self.extra_evidence += self.watch.evidence
+                self.watch = None
+                self.continues = False
+            return consumed
         pos = 0
         while pos < len(data) and not self.done:
             if self.record_remaining == 0:
@@ -584,9 +596,15 @@ class TLSParser:
                         self.hello = info
                     self.reason = "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content"
                 else:
-                    from .tls_server import parse_server_hello
+                    from .tls_server import parse_server_hello, CertificateWatch
                     self.extra_evidence, self.scope, self.reason = parse_server_hello(
                         bytes(self.handshake[4:]), self.config, self.record_versions, self.record_remaining)
+                    if self.config.certificates and self.scope == "server_hello" and \
+                            ("selected_tls_version", "1.2", "server_hello", "asserted") in self.extra_evidence:
+                        # TLS 1.3 encrypts its Certificate message; only a 1.2 flight can be read.
+                        self.watch = CertificateWatch(self.config, self.record_remaining, self.config.max_bytes - self.consumed - pos)
+                        self.continues = True
                 self.handshake.clear()
                 self.done = True
+        self.consumed += pos
         return pos

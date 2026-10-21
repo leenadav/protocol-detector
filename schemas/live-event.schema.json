@@ -340,6 +340,30 @@
             "type": "string"
           }
         },
+        "certificate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "chain": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "self_issued": {
+              "type": "string"
+            },
+            "key": {
+              "type": "string"
+            },
+            "signature": {
+              "type": "string"
+            },
+            "lifetime_days": {
+              "type": "string"
+            }
+          }
+        },
         "hostname": {
           "type": [
             "string",
@@ -521,6 +545,33 @@
           ],
           "additionalProperties": {
             "type": "string"
+          }
+        },
+        "certificate": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "chain": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "self_issued": {
+              "type": "string"
+            },
+            "key": {
+              "type": "string"
+            },
+            "signature": {
+              "type": "string"
+            },
+            "lifetime_days": {
+              "type": "string"
+            }
           }
         },
         "event": {

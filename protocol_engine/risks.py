@@ -7,6 +7,8 @@ beyond what the parsers already validated. RISKS.md documents every entry.
 """
 from types import MappingProxyType
 
+from .x509 import WEAK_SIGNATURES, weak_key
+
 RISKS = MappingProxyType({
     "nonstandard-port": ("medium", "Identified application on a port outside its catalog ports (application-default violation)"),
     "cleartext-credential-protocol": ("medium", "Protocol that carries credentials in cleartext was observed without encryption"),
@@ -18,14 +20,20 @@ RISKS = MappingProxyType({
     "dns-suspicious-query-name": ("medium", "DNS query name with very long or high-entropy labels (tunnelling or algorithmically generated names)"),
     "http-proxy-tunnel": ("low", "HTTP CONNECT tunnel; the carried application is only visible through the shifted phase"),
     "desktop-or-file-sharing-session": ("low", "Remote desktop or file-sharing application"),
+    "tls-self-issued-certificate": ("medium", "TLS 1.2 server leaf certificate whose issuer equals its subject (self-signed or a root presented as the leaf); unauthenticated"),
+    "tls-weak-certificate-key": ("high", "TLS 1.2 server leaf certificate public key below RSA 2048 or a named curve below 256 bits"),
+    "tls-weak-certificate-signature": ("high", "TLS 1.2 server leaf certificate signed with MD5 or SHA-1"),
+    "tls-certificate-lifetime-excessive": ("low", "TLS 1.2 server leaf certificate valid for more than 398 days"),
 })
+MAX_CERTIFICATE_LIFETIME_DAYS = 398   # CA/Browser Forum baseline since September 2020
 
 _SHARING = frozenset(("rdp", "vnc", "smb", "ftp", "bittorrent", "rsync", "tftp"))
 _LEGACY_TLS = frozenset(("1.0", "1.1", "SSL 3.0"))
 
 
 _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags", "rdp_selected_protocol",
-                     "tls_offered_max_version", "dns_query_shape", "payload_class"))
+                     "tls_offered_max_version", "dns_query_shape", "payload_class", "tls_certificate_self_issued",
+                     "tls_certificate_key", "tls_certificate_signature", "tls_certificate_lifetime_days"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -96,6 +104,18 @@ def flow_risks(verdict, client, server):
             elif field == "dns_query_shape":
                 if value == "suspicious":
                     found.append("dns-suspicious-query-name")
+            elif field == "tls_certificate_self_issued":
+                if value == "yes":
+                    found.append("tls-self-issued-certificate")
+            elif field == "tls_certificate_key":
+                if weak_key(value):
+                    found.append("tls-weak-certificate-key")
+            elif field == "tls_certificate_signature":
+                if value in WEAK_SIGNATURES:
+                    found.append("tls-weak-certificate-signature")
+            elif field == "tls_certificate_lifetime_days":
+                if value.isdigit() and int(value) > MAX_CERTIFICATE_LIFETIME_DAYS:
+                    found.append("tls-certificate-lifetime-excessive")
             elif (field == "ssh_version" and value == "1.99") or (field == "selected_tls_version" and value in _LEGACY_TLS) \
                     or (field in ("rdp_security_flags", "rdp_selected_protocol") and value == "0"):
                 if "obsolete-protocol" not in found:

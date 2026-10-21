@@ -1,14 +1,26 @@
-# Review scope: protocol detector v0.38
+# Review scope: protocol detector v0.39
 
 Python3.9-compatible IPv4 passive classification: 67 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.38): `_snmpv3` and the shared `_snmp_pdu` in network.py.
+New focus (v0.39): `CertificateWatch` in tls_server.py and the DER walk in
+x509.py behind `Config(certificates=True)`. Trace: the watch starts only after
+a TLS 1.2 ServerHello (never 1.3 or a retry); record/handshake framing and the
+shared `max_bytes` budget (the watch may never consume past it, also when the
+leaf arrives in one chunk); every `_element` bound before every slice; name,
+extension and serial budgets; time parsing; the issuer/subject comparison on
+DER bytes; closed value sets for key and signature labels; no name, serial,
+key or signature byte in evidence, reasons, records or events; every rejection
+leaving the ServerHello identification intact; the four risks in risks.py and
+RISKS.md; the `certificate` object in the three schemas. 436 tests pass.
+BENCHMARK-V039.md.
+
+Previous focus (v0.38): `_snmpv3` and the shared `_snmp_pdu` in network.py.
 Trace: every BER field bounded by its enclosing length, flag combinations,
 USM length limits, the privacy/plaintext choice, Report bindings accepting one
-value TLV, binding budget, no secret in evidence or reason. 427 tests pass.
+value TLV, binding budget, no secret in evidence or reason. 429 tests pass.
 
 Previous focus (v0.36-v0.37): HTTP2ServerParser behind the 101 h2c shift
 (no preface, no fingerprint, shift-only registration) and

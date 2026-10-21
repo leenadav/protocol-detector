@@ -318,3 +318,60 @@ SNMPV3_DISCOVERY = _snmpv3(0x04, b'', b'', b'', b'', _ber(0x30, _ber(4, b'') + _
 SNMPV3_ENCRYPTED = _snmpv3(0x07, b'\x80\x00\x1f\x88\x80\x01\x02\x03\x04', b'operator', bytes(12), bytes(8), _ber(4, bytes(range(48))))
 del _discovery_pdu
 DATAGRAM_CASES += ((SNMPV3_DISCOVERY, 'snmp/3'), (SNMPV3_ENCRYPTED, 'snmp/3'))
+
+
+# v0.39: synthetic X.509 leaf certificates for the TLS 1.2 Certificate watch. Key and
+# signature bytes are structural placeholders (zeros), not keys; names are placeholders.
+SHA256_RSA = bytes.fromhex('2a864886f70d01010b')
+SHA1_RSA = bytes.fromhex('2a864886f70d010105')
+ECDSA_SHA256 = bytes.fromhex('2a8648ce3d040302')
+ED25519_OID = bytes.fromhex('2b6570')
+
+
+def _x509_name(common_name):
+    return _ber(0x30, _ber(0x31, _ber(0x30, _ber(6, b'\x55\x04\x03') + _ber(0x0c, common_name))))
+
+
+def _x509_key(kind):
+    if kind.startswith('rsa-'):
+        size = int(kind[4:]) // 8
+        modulus = b'\x00\xc5' + b'\x11' * (size - 1)           # top bit set: exactly `size` bytes
+        return _ber(0x30, _ber(0x30, _ber(6, bytes.fromhex('2a864886f70d010101')) + _ber(5, b''))
+                    + _ber(3, b'\x00' + _ber(0x30, _ber(2, modulus) + _ber(2, b'\x01\x00\x01'))))
+    if kind.startswith('ec-'):
+        curve, size = {'ec-256': (bytes.fromhex('2a8648ce3d030107'), 32), 'ec-384': (bytes.fromhex('2b81040022'), 48),
+                       'ec-other': (bytes.fromhex('2b8104000a'), 32)}[kind]          # secp256k1 is outside the table
+        return _ber(0x30, _ber(0x30, _ber(6, bytes.fromhex('2a8648ce3d0201')) + _ber(6, curve))
+                    + _ber(3, b'\x00\x04' + b'\x22' * (2 * size)))
+    if kind == 'ed25519':
+        return _ber(0x30, _ber(0x30, _ber(6, ED25519_OID)) + _ber(3, b'\x00' + b'\x33' * 32))
+    raise ValueError(kind)
+
+
+def x509(issuer=b'Placeholder CA', subject=b'placeholder', key='rsa-2048', signature=SHA256_RSA,
+         not_before=b'240101000000Z', not_after=b'241231235959Z', version=3, extensions=True, serial=b'\x01\x02\x03'):
+    """Build one DER certificate with placeholder bytes; `extensions` adds basicConstraints."""
+    algorithm = _ber(0x30, _ber(6, signature) + (_ber(5, b'') if signature != ED25519_OID else b''))
+    tbs = (_ber(0xa0, _ber(2, bytes([version - 1]))) if version > 1 else b'') + _ber(2, serial) + algorithm
+    tbs += _x509_name(issuer)
+    tbs += _ber(0x30, _ber(0x17 if len(not_before) == 13 else 0x18, not_before) + _ber(0x17 if len(not_after) == 13 else 0x18, not_after))
+    tbs += _x509_name(subject) + _x509_key(key)
+    if extensions:
+        tbs += _ber(0xa3, _ber(0x30, _ber(0x30, _ber(6, b'\x55\x1d\x13') + _ber(1, b'\xff') + _ber(4, _ber(0x30, b'')))))
+    return _ber(0x30, _ber(0x30, tbs) + algorithm + _ber(3, b'\x00' + b'\x44' * 64))
+
+
+def certificate_message(*certificates):
+    """TLS Certificate handshake message (type 11) carrying the given DER entries."""
+    entries = b''.join(len(der).to_bytes(3, 'big') + der for der in certificates)
+    body = len(entries).to_bytes(3, 'big') + entries
+    return b'\x0b' + len(body).to_bytes(3, 'big') + body
+
+
+def tls_record(payload, kind=22):
+    return bytes([kind, 3, 3]) + len(payload).to_bytes(2, 'big') + payload
+
+
+LEAF_CERTIFICATE = x509()
+CA_CERTIFICATE = x509(subject=b'Placeholder CA', key='rsa-4096', not_after=b'20491231235959Z')
+TLS_SERVER12_CERTIFICATE = TLS_SERVER12 + tls_record(certificate_message(LEAF_CERTIFICATE, CA_CERTIFICATE))

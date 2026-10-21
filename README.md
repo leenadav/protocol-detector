@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 429 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 436 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -69,6 +69,18 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.39 — TLS 1.2 certificate structure
+
+`--certificates` (`Config(certificates=True)`) keeps the TLS parser after a
+TLS 1.2 ServerHello and walks the first certificate of the Certificate message
+as bounded DER: chain shape, X.509 version, issuer-equals-subject, public key
+family and size, signature algorithm family and validity lifetime. Session
+records carry a `certificate` object with those labels; names, serials, keys
+and signature bytes are never emitted, and nothing is verified. Four flow
+risks follow (self-issued, weak key, weak signature, lifetime over 398 days).
+Any deviation ends the watch and keeps the ServerHello identification. About
+80 µs per TLS 1.2 server flight (BENCHMARK-V039.md). 436 tests pass.
 
 ## New in v0.38 — SNMPv3
 

@@ -18,6 +18,7 @@ class Config:
     quic_decrypt: bool = True       # remove QUIC Initial protection (public keys) to read the ClientHello
     heuristics: bool = False        # profile unknown payload prefixes (entropy/printable) and DNS name shape
     heuristic_bytes: int = 512      # unknown-payload prefix profiled when heuristics are on
+    certificates: bool = False      # read the leaf certificate structure after a TLS 1.2 ServerHello (no names)
 
     def __post_init__(self):
         limits = ((self.max_bytes, 64, 1048576), (self.max_updates, 1, 1000000),
@@ -27,8 +28,8 @@ class Config:
         if any(type(value) is not int or not low <= value <= high for value, low, high in limits):
             raise ValueError("Invalid inspection resource limits")
         if (type(self.retain_contexts) is not bool or type(self.fingerprints) is not bool or type(self.quic_decrypt) is not bool
-                or type(self.heuristics) is not bool):
-            raise ValueError("retain_contexts, fingerprints, quic_decrypt and heuristics must be booleans")
+                or type(self.heuristics) is not bool or type(self.certificates) is not bool):
+            raise ValueError("retain_contexts, fingerprints, quic_decrypt, heuristics and certificates must be booleans")
 
 
 @dataclass(frozen=True)

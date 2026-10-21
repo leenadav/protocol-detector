@@ -54,7 +54,7 @@ class OutputConformanceTests(unittest.TestCase):
         return [json.loads(line) for line in lines if line.strip()]
 
     def test_offline_rows_under_every_option(self):
-        for options in ((), ("--events-only",), ("--sessions",), ("--events-only", "--sessions", "--hostnames", "--fingerprints"),
+        for options in ((), ("--events-only",), ("--sessions",), ("--events-only", "--sessions", "--hostnames", "--fingerprints", "--certificates"),
                         ("--sessions", "--policy", "policy-example.json", "--heuristics")):
             code, lines = run_json("analyze_pcap.py", str(SAMPLE), "--json", *options)
             self.assertEqual(code, 0, options)
@@ -68,7 +68,7 @@ class OutputConformanceTests(unittest.TestCase):
 
     def test_live_events_under_every_option(self):
         data = SAMPLE.read_bytes()
-        for options in ((), ("--all-events",), ("--heuristics", "--fingerprints", "--hostnames"), ("--policy", "policy-example.json", "--stats-interval", "0")):
+        for options in ((), ("--all-events",), ("--heuristics", "--fingerprints", "--hostnames", "--certificates"), ("--policy", "policy-example.json", "--stats-interval", "0")):
             code, lines = run_json("live_capture.py", "--stdin", "--duration", "0", "--json", *options, stdin=data)
             self.assertEqual(code, 0, options)
             events = self.check("live-event", lines, 10)

@@ -507,6 +507,16 @@ ParseError during continuation, reaching `max_bytes`, `end()` or `invalidate()`
 finish or retract without changing status; a continuation can only add
 evidence. Terminal release semantics are unchanged once the continuation ends.
 
+The same continuation carries the v0.39 certificate watch: with
+`Config(certificates=True)` a TLS 1.2 ServerHello sets `continues` and hands
+`tls_server.CertificateWatch` the bytes left in its record plus the remaining
+`max_bytes` budget. The watch reads handshake records until the first entry of
+the Certificate message is complete, calls `x509.leaf_profile` (a bounded DER
+walk that returns closed-set labels only) and appends the result to
+`extra_evidence`, so the `refined` observation carries `tls_certificate_*`
+rows at strength `asserted` (chain shape `structural`). Any ParseError or
+BudgetError ends the watch with the identification intact.
+
 TLSParser fills `ClientHelloInfo` when contexts or fingerprints are configured
 and computes JA4/JA3 at completion; `tls_server.parse_server_hello` appends
 JA4S/JA3S for completed ServerHello profiles (not for retries); `dtls()` passes

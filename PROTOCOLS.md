@@ -76,7 +76,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | tacacs-plus | tcp | Automatic profiles | protocol_header | TACACS+ header for the first packet of a session; START body lengths when unencrypted |
 | telnet | tcp | Automatic profiles | negotiation_request | Two complete IAC option negotiation commands; terminal data not inspected |
 | tftp | udp | Automatic profiles | datagram | RRQ/WRQ with bounded options; no transfer state |
-| tls | tcp | Automatic profiles | initial_message/server_hello/hello_retry_request | ClientHello plus bounded TLS1.2/1.3 server hello/retry profiles; selections unauthenticated, no decryption |
+| tls | tcp | Automatic profiles | initial_message/server_hello/hello_retry_request | ClientHello plus bounded TLS1.2/1.3 server hello/retry profiles; optional leaf-certificate structure after a TLS 1.2 ServerHello (`certificates`); selections unauthenticated, no decryption |
 | websocket | tcp | Hint required | frame_header | One frame header after an HTTP Upgrade boundary (reached by the websocket-upgrade shift or an explicit candidate); payload not decoded |
 | wireguard | udp | Automatic profiles | datagram | Handshake initiation/response/cookie message sizes and reserved bytes; no key or tunnel claim |
 
@@ -1008,3 +1008,47 @@ walk).
 
 Primary specifications: [RFC 3412 6](https://www.rfc-editor.org/rfc/rfc3412.html#section-6),
 [RFC 3414 2.4](https://www.rfc-editor.org/rfc/rfc3414.html#section-2.4), [RFC 3416](https://www.rfc-editor.org/rfc/rfc3416.html).
+
+## TLS 1.2 server certificate structure (v0.39)
+
+With `Config(certificates=True)` (`--certificates`), a direction identified by
+a TLS 1.2 ServerHello keeps its parser as a continuation and reads the
+handshake records that follow until the first entry of the Certificate message
+(type 11) is complete. The leaf is walked as DER (RFC 5280 section 4.1): every
+element length is checked against its container before any byte is read,
+definite minimal lengths only, version `[0]` v2/v3 when present, serial 1-32
+octets, AlgorithmIdentifier, issuer and subject Names as SEQUENCE OF SET OF
+SEQUENCE { OID, value } with at most 32 components each, Validity as UTCTime or
+GeneralizedTime with seconds in UTC and `notAfter >= notBefore`,
+SubjectPublicKeyInfo (RSA modulus/exponent framing, named-curve EC point
+length, Ed25519/Ed448 sizes), optional unique identifiers (v2+) and extensions
+(v3 only, at most 64, each OID + optional BOOLEAN + OCTET STRING), then an
+outer signature AlgorithmIdentifier identical to the inner one and a signature
+BIT STRING with no unused bits. The leaf is at most 16 KiB; the watch shares
+the direction's `max_bytes` budget and never reads past it, and later chain
+entries are not read at all.
+
+Evidence (source `wire:certificate`): `tls_certificate_chain` (`single`/`chain`
+from the list lengths, structural) and, asserted by the server,
+`tls_certificate_version` (1-3), `tls_certificate_self_issued` (`yes` when the
+issuer DER equals the subject DER), `tls_certificate_key` (`rsa-N`, `ec-256`,
+`ec-384`, `ec-521`, `ec-other`, `ed25519`, `ed448`, `other`),
+`tls_certificate_signature` (`md5-rsa`, `sha1-rsa`, `sha256-rsa`, `sha384-rsa`,
+`sha512-rsa`, `rsa-pss`, `ecdsa-sha1`, `ecdsa-sha256/384/512`, `ed25519`,
+`ed448`, `other`) and `tls_certificate_lifetime_days`. Issuer, subject, serial,
+alternative names, key bytes and signature bytes are never emitted. RISKS.md
+derives `tls-self-issued-certificate`, `tls-weak-certificate-key`,
+`tls-weak-certificate-signature` and `tls-certificate-lifetime-excessive`.
+
+Anything else after the ServerHello (a ChangeCipherSpec record of an
+abbreviated handshake, an alert, ServerHelloDone first, an empty list, length
+disagreements, any DER violation, a leaf beyond the budget) ends the
+continuation quietly: the ServerHello identification and its evidence stand
+(SR-21) and no certificate field appears. TLS 1.3 encrypts its Certificate
+message and HelloRetryRequest precedes a second ClientHello, so neither starts
+the watch. Nothing is verified: no signature, chain, name match, revocation or
+expiry check (the engine has no clock; the lifetime is reported for policy).
+
+Primary specifications: [RFC 5246 7.4.2](https://www.rfc-editor.org/rfc/rfc5246.html#section-7.4.2),
+[RFC 5280 4.1](https://www.rfc-editor.org/rfc/rfc5280.html#section-4.1), [RFC 5480](https://www.rfc-editor.org/rfc/rfc5480.html),
+[RFC 8410](https://www.rfc-editor.org/rfc/rfc8410.html).
