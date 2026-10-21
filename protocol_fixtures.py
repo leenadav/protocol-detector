@@ -419,3 +419,23 @@ TNS_REFUSE_TEXT = b'(DESCRIPTION=(TMP=)(VSNNUM=318767104)(ERR=12514)(ERROR_STACK
 TNS_REFUSE = tns_packet(4, b'\x22\x00' + len(TNS_REFUSE_TEXT).to_bytes(2, 'big') + TNS_REFUSE_TEXT)
 STREAM_CASES += ((TDS_PRELOGIN, 'tds'), (TDS_PRELOGIN_RESPONSE, 'tds'), (TNS_CONNECT, 'tns'), (TNS_CONNECT_DEFERRED, 'tns'),
                  (TNS_ACCEPT, 'tns'), (TNS_RESEND, 'tns'), (TNS_REFUSE, 'tns'))
+
+
+# v0.41: OPC UA connection messages and the SOCKS5 server direction. URLs are placeholders.
+def opcua_message(kind, body):
+    return kind + b'F' + (8 + len(body)).to_bytes(4, 'little') + body
+
+
+def opcua_string(text):
+    return len(text).to_bytes(4, 'little', signed=True) + text if text is not None else b'\xff\xff\xff\xff'
+
+
+OPCUA_URL = b'opc.tcp://placeholder:4840/UA/Server'
+OPCUA_HELLO = opcua_message(b'HEL', struct.pack('<IIIII', 0, 65536, 65536, 0, 0) + opcua_string(OPCUA_URL))
+OPCUA_ACK = opcua_message(b'ACK', struct.pack('<IIIII', 0, 65536, 65536, 16777216, 5000))
+OPCUA_ERROR = opcua_message(b'ERR', struct.pack('<I', 0x80130000) + opcua_string(b'placeholder reason'))
+OPCUA_REVERSE_HELLO = opcua_message(b'RHE', opcua_string(b'urn:placeholder:server') + opcua_string(OPCUA_URL))
+SOCKS5_SERVER = b'\x05\x00' + b'\x05\x00\x00\x01' + bytes([10, 0, 0, 1]) + b'\x04\x38'
+SOCKS5_SERVER_AUTH = b'\x05\x02' + b'\x05\x00\x00\x03\x0bplaceholder' + b'\x00\x50'
+STREAM_CASES += ((OPCUA_HELLO, 'opcua'), (OPCUA_ACK, 'opcua'), (OPCUA_ERROR, 'opcua'), (OPCUA_REVERSE_HELLO, 'opcua'),
+                 (SOCKS5_SERVER, 'socks5'), (SOCKS5_SERVER_AUTH, 'socks5'))

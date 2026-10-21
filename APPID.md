@@ -16,7 +16,7 @@ parity with a commercial signature corpus.
 | Heuristics for evasive traffic | **Implemented** as advisory evidence: unknown-payload entropy/printable profile and DNS name shape (`Config(heuristics=True)`); never an identification. Flow risks (RISKS.md) on every verdict | `protocol_engine/heuristics.py`, `risks.py` |
 | Client/server implementation fingerprints (not an App-ID feature; nDPI-style) | **Implemented**: JA3/JA4/JA3S/JA4S/HASSH/HTTP2 (FINGERPRINTS.md) | `protocol_engine/fingerprints.py` |
 | Session verdict (`web-browsing`, `ssl`, `unknown-tcp`, …) | **Implemented** | `protocol_engine/appid.py` |
-| Application catalog (category, risk, characteristics, dependencies) | **Implemented**, 73 entries | `protocol_engine/applications.py` |
+| Application catalog (category, risk, characteristics, dependencies) | **Implemented**, 74 entries | `protocol_engine/applications.py` |
 | application-default (standard port check) | **Implemented** as `port_usage` | `appid.py` |
 | Traffic log / session record | **Implemented** as `{"type": "session"}` events | `analyze_pcap.py`, `live_capture.py` |
 | Custom App-ID signatures with contexts | **Implemented** (SIGNATURES.md) | `protocol_engine/signatures.py` |

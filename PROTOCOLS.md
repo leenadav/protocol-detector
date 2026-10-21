@@ -1,6 +1,6 @@
 # Protocol coverage — v0.32
 
-The engine implements 69 families (62 selected automatically from the first
+The engine implements 70 families (63 selected automatically from the first
 bytes, 7 only with an explicit candidate hint or a structural shift) with the
 profiles below. This table is generated from
 `protocol_engine.catalog.supported_protocols()` (`python3 -B protodetect.py
@@ -49,6 +49,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | netflow | udp | Automatic profiles | datagram | NetFlow v5 record framing and NetFlow v9 flowsets (reported as netflow/5, netflow/9) |
 | ntp | udp | Hint required | datagram | Hint required: v3/v4 base client/server header, no extensions/authentication |
 | openvpn | tcp/udp | Automatic profiles | initial_message/datagram | Client hard-reset control packet (plain or tls-auth layout); no key exchange claim |
+| opcua | tcp | Automatic profiles | negotiation_request/negotiation_response | OPC UA TCP connection messages Hello, Acknowledge, Error and ReverseHello: little-endian size, buffer minimums, bounded printable opc.tcp URLs and reasons (not emitted); no secure channel |
 | pop3 | tcp | Automatic profiles | protocol_header/initial_message | Server +OK/-ERR status line or POP3-only client command; shared verbs resolved by correlation |
 | postgresql | tcp | Automatic profiles | initial_message/negotiation_request | v3.0..3.2 startup or SSL/GSS request; no authentication |
 | pptp | tcp | Automatic profiles | negotiation_request | Start-Control-Connection-Request (156 bytes); names not emitted |
@@ -67,7 +68,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | smb2 | tcp | Automatic profiles | negotiation_request | Direct TCP SMB2/3 NEGOTIATE including 3.1.1 context framing; offers only |
 | smtp | tcp | Automatic profiles | initial_message | EHLO/HELO only; ambiguous 220 banners unknown |
 | snmp | udp | Automatic profiles | datagram | v1/v2c Get/GetNext/GetBulk read requests; v3 messages (USM header, plaintext read/report or encrypted scoped PDU); no responses or traps |
-| socks5 | tcp | Automatic profiles | initial_message | No-auth offer plus client request; server unverified |
+| socks5 | tcp | Automatic profiles | initial_message/negotiation_response | Client no-auth offer plus request, or server method selection plus reply; subnegotiation and tunnel unverified |
 | ssdp | udp | Automatic profiles | datagram | M-SEARCH/NOTIFY/response HTTPU header block with SSDP headers |
 | ssh | tcp | Automatic profiles | initial_message | Leading SSH-2.0/1.99 identification |
 | stomp | tcp | Automatic profiles | protocol_header | 1.1/1.2 CONNECT/STOMP/CONNECTED, complete empty-body NUL-terminated frame |
@@ -1097,3 +1098,40 @@ byte; DNS over TCP (question count 1), Modbus (length 2..254) and PostgreSQL
 
 Primary specifications: [MS-TDS 2.2.6.5](https://learn.microsoft.com/openspecs/windows_protocols/ms-tds/60f56408-0188-4cd5-8b90-25c6f2423868);
 Oracle Net has no public specification, the framing follows the Wireshark TNS dissector and observed clients.
+
+## OPC UA connection messages and the SOCKS5 server direction (v0.41)
+
+`opcua` (OPC 10000-6 section 7.1) accepts one connection-protocol message:
+three-letter type `HEL`, `ACK`, `ERR` or `RHE`, chunk type `F`, a
+little-endian message size of 8..8208 bytes covering the whole message. Hello
+and Acknowledge carry ProtocolVersion, receive and send buffer sizes of at
+least 8192, MaxMessageSize and MaxChunkCount; Hello adds an EndpointUrl, a
+non-null printable string of at most 4096 bytes with the `opc.tcp://` scheme.
+Error carries a status code whose severity bit says Bad and a reason string
+(null or printable, at most 4096 bytes). ReverseHello carries a ServerUri
+(null or printable) and an `opc.tcp://` EndpointUrl. Each message must end
+exactly where its last field ends. Evidence: `opcua_message` (`hello`,
+`acknowledge`, `error`, `reverse-hello`) and `opcua_protocol_version` for
+Hello/Acknowledge. URLs, URIs, reasons and status codes are never emitted.
+Secure-channel messages (`OPN`, `MSG`, `CLO`), chunking and security policies
+are outside the profile. Prefix: `HELF`/`ACKF`/`ERRF`/`RHEF` followed by a size
+whose two high bytes are zero routes to `opcua`; the same four letters followed
+by a space remain HTTP extension methods or SMTP (`HELO`) text, and the
+decision waits for the fourth byte only for prefixes of those magics.
+
+`socks5` now also accepts the server direction: the method selection
+(`05 00` no authentication or `05 02` username/password) immediately followed
+by the complete reply (`05 REP 00 ATYP BND.ADDR BND.PORT`, REP 0..8, IPv4,
+domain or IPv6 bound address). Evidence: `socks_method` and `socks_reply`
+(`succeeded`, `general-failure`, `not-allowed`, `network-unreachable`,
+`host-unreachable`, `connection-refused`, `ttl-expired`,
+`command-not-supported`, `address-type-not-supported`); the bound address is
+never emitted. A client greeting offering two methods is told apart from a
+username/password selection by byte 4 (request version 5 versus the reply's
+reserved zero); `05 ff` alone (no acceptable methods) never identifies, and
+subnegotiation bytes stay outside the profile. Prefix: `05 00` now waits for
+six bytes and routes to `socks5` when they read as a reply header, otherwise to
+`dcerpc` (minor version zero) as before.
+
+Primary specifications: [OPC 10000-6 7.1](https://reference.opcfoundation.org/Core/Part6/v105/docs/7.1),
+[RFC 1928](https://www.rfc-editor.org/rfc/rfc1928.html).

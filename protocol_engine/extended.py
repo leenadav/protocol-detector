@@ -255,73 +255,116 @@ class HTTP2ServerParser(HTTP2Parser):
 
 
 class Socks5Parser:
-    """Client greeting offering no-auth, followed by a complete client request.
+    """SOCKS5 initial exchange of one direction.
 
-    Client-direction bytes only. The intervening server method-selection is not
-    observed here; no claim is made that authentication or the tunnel succeeded.
-    Authentication subnegotiation and server-only streams are unsupported.
+    Client: greeting offering no-auth followed by the complete request (CONNECT,
+    BIND or UDP ASSOCIATE with an IPv4, IPv6 or domain destination). Server
+    (v0.41): method selection (no-auth or username/password) followed by the
+    complete reply. Neither direction claims that authentication or the tunnel
+    succeeded; subnegotiation bytes are outside the profile.
     """
     protocol_name = "socks5"
+    MAX_BYTES = 2 + 255 + 4 + 1 + 255 + 2      # longest client exchange
+    _REPLIES = ("succeeded", "general-failure", "not-allowed", "network-unreachable", "host-unreachable",
+                "connection-refused", "ttl-expired", "command-not-supported", "address-type-not-supported")
 
     def __init__(self, config):
         self.config = config
         self.buffer = bytearray()
-        self.stage = "greeting"
-        self.needed = 2
-        self.command = None
-        self.atyp = None
-        self.address = None
+        self.scope = "initial_message"
         self.extra_evidence = ()
         self.contexts = None
         self.done = False
-        self.reason = "Waiting for SOCKS5 client greeting and request"
+        self.reason = "Waiting for SOCKS5 greeting and request"
 
     def feed(self, data):
-        pos = 0
-        while pos < len(data) and not self.done:
-            amount = min(self.needed - len(self.buffer), len(data) - pos)
-            self.buffer.extend(data[pos:pos + amount])
-            pos += amount
-            if len(self.buffer) < self.needed:
-                break
-            field = bytes(self.buffer)
-            self.buffer.clear()
-            if self.stage == "greeting":
-                if field[0] != 5 or field[1] == 0:
-                    raise ParseError("Invalid SOCKS5 client greeting version/method count")
-                self.stage, self.needed = "methods", field[1]
-            elif self.stage == "methods":
-                if 255 in field:
-                    raise ParseError("No-acceptable-methods is a server response, not a client method")
-                if 0 not in field:
-                    raise UnsupportedPrefix("SOCKS5 authentication subnegotiation is not supported")
-                self.stage, self.needed = "request", 4
-            elif self.stage == "request":
-                if field[0] != 5 or field[1] not in (1, 2, 3) or field[2] != 0 or field[3] not in (1, 3, 4):
-                    raise ParseError("Invalid SOCKS5 request header")
-                self.command, self.atyp = field[1], field[3]
-                self.stage = "domain_length" if self.atyp == 3 else "address"
-                self.needed = {1: 4, 3: 1, 4: 16}[self.atyp]
-            elif self.stage == "domain_length":
-                if field[0] == 0:
-                    raise ParseError("Empty SOCKS5 destination name")
-                self.stage, self.needed = "address", field[0]
-            elif self.stage == "address":
-                try:
-                    self.address = (normalize_hostname(field.decode("ascii")) if self.atyp == 3
-                                    else str(ipaddress.ip_address(field)))
-                except (ValueError, UnicodeError):
-                    raise ParseError("Invalid or unsupported SOCKS5 destination") from None
-                self.stage, self.needed = "port", 2
-            else:
-                port = int.from_bytes(field, "big")
-                self.done = True
-                self.reason = "SOCKS5 client greeting and request validated; method selection, server reply and tunneled protocol unverified"
-                self.extra_evidence = (
-                    ("socks_command", {1: "CONNECT", 2: "BIND", 3: "UDP_ASSOCIATE"}[self.command], "socks_request", "asserted"),
-                    ("socks_target", self.address, "socks_request", "asserted"),
-                    ("socks_port", str(port), "socks_request", "asserted"),
-                )
-                if self.config.retain_contexts:
-                    self.contexts = {"socks-req-target": self.address.encode("ascii"), "socks-req-port": port}
-        return pos
+        if self.done:
+            return 0
+        before = len(self.buffer)
+        self.buffer.extend(data[:self.MAX_BYTES - before])
+        end = self._parse(self.buffer)
+        if end is None:
+            if len(self.buffer) >= self.MAX_BYTES:
+                raise ParseError("SOCKS5 exchange exceeds its maximum size")
+            return len(self.buffer) - before
+        self.done = True
+        self.buffer = bytearray()
+        return end - before
+
+    def _parse(self, buf):
+        """Return the exchange length once complete, None while bytes are missing."""
+        if len(buf) < 2:
+            return None
+        if buf[0] != 5:
+            raise ParseError("Invalid SOCKS5 version")
+        second = buf[1]
+        if second == 0 or (second == 2 and len(buf) >= 5 and buf[2] == 5 and buf[4] == 0):
+            return self._server(buf)
+        if second == 2 and len(buf) < 5:
+            return None          # a client offering two methods or a server selecting username/password
+        return self._client(buf)
+
+    def _address(self, buf, pos, what):
+        """Return (atyp, address text or None, position after the port) or None when incomplete."""
+        if pos + 1 > len(buf):
+            return None
+        atyp = buf[pos - 1]
+        if atyp == 3:
+            length = buf[pos]
+            if length == 0:
+                raise ParseError("Empty SOCKS5 " + what)
+            pos += 1
+        else:
+            length = 4 if atyp == 1 else 16
+        if pos + length + 2 > len(buf):
+            return None
+        field = bytes(buf[pos:pos + length])
+        try:
+            address = normalize_hostname(field.decode("ascii")) if atyp == 3 else str(ipaddress.ip_address(field))
+        except (ValueError, UnicodeError):
+            raise ParseError("Invalid or unsupported SOCKS5 " + what) from None
+        return atyp, address, pos + length + 2
+
+    def _client(self, buf):
+        count = buf[1]
+        if len(buf) < 2 + count:
+            return None
+        methods = buf[2:2 + count]
+        if 255 in methods:
+            raise ParseError("No-acceptable-methods is a server response, not a client method")
+        if 0 not in methods:
+            raise UnsupportedPrefix("SOCKS5 authentication subnegotiation is not supported")
+        request = 2 + count
+        if len(buf) < request + 4:
+            return None
+        if buf[request] != 5 or buf[request + 1] not in (1, 2, 3) or buf[request + 2] != 0 or buf[request + 3] not in (1, 3, 4):
+            raise ParseError("Invalid SOCKS5 request header")
+        parsed = self._address(buf, request + 4, "destination")
+        if parsed is None:
+            return None
+        _, address, end = parsed
+        port = int.from_bytes(buf[end - 2:end], "big")
+        self.reason = "SOCKS5 client greeting and request validated; method selection, server reply and tunneled protocol unverified"
+        self.extra_evidence = (
+            ("socks_command", {1: "CONNECT", 2: "BIND", 3: "UDP_ASSOCIATE"}[buf[request + 1]], "socks_request", "asserted"),
+            ("socks_target", address, "socks_request", "asserted"),
+            ("socks_port", str(port), "socks_request", "asserted"),
+        )
+        if self.config.retain_contexts:
+            self.contexts = {"socks-req-target": address.encode("ascii"), "socks-req-port": port}
+        return end
+
+    def _server(self, buf):
+        if len(buf) < 6:
+            return None
+        if buf[2] != 5 or buf[3] > 8 or buf[4] != 0 or buf[5] not in (1, 3, 4):
+            raise ParseError("Invalid SOCKS5 server reply header")
+        parsed = self._address(buf, 6, "bound address")
+        if parsed is None:
+            return None
+        _, _, end = parsed
+        self.scope = "negotiation_response"
+        self.reason = "SOCKS5 server method selection and reply validated; bound address not emitted, tunneled protocol unverified"
+        self.extra_evidence = (("socks_method", "no-authentication" if buf[1] == 0 else "username-password", "socks_reply", "structural"),
+                               ("socks_reply", self._REPLIES[buf[3]], "socks_reply", "asserted"))
+        return end

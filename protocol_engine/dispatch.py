@@ -8,6 +8,7 @@ from .git_transport import HEX as GIT_HEX
 from .ics import enip_probe, modbus_probe
 from .datainfra import kafka_probe
 from .enterprise_db import tns_probe
+from .opcua import OPCUA_MAGICS, opcua_probe
 
 LOOKAHEAD = 24
 _table = ["unknown"] * 256
@@ -26,6 +27,12 @@ _STOMP_STARTS = (b'CONNECT\n', b'CONNECT\r\n', b'CONNECTED\n', b'CONNECTED\r\n',
 def select(prefix):
     """Return a family or None; prefix contains 1..LOOKAHEAD bytes."""
     first = prefix[0]
+    if first in (72, 65, 69, 82):  # OPC UA HELF/ACKF/ERRF/RHEF before the text and AMQP/RFB routes
+        if len(prefix) < 8:
+            if any(magic.startswith(prefix[:4]) for magic in OPCUA_MAGICS):
+                return None
+        elif opcua_probe(prefix):
+            return 'opcua'
     if first == 71:  # GIOP is also a legal HTTP extension-method prefix.
         magic = b'GIOP'
         if len(prefix) <= 4 and magic.startswith(prefix):
@@ -43,8 +50,14 @@ def select(prefix):
             return None
         if prefix[1] == 0x64:
             return 'dnp3'  # 0x0564 start bytes; SOCKS5 would announce 100 methods, DCE/RPC needs minor 0
-        # RPC minor version zero cannot be a valid SOCKS5 method count.
-        return 'dcerpc' if prefix[1] == 0 else 'socks5'
+        if prefix[1] == 0:
+            # RPC minor version zero, or a SOCKS5 server selecting no authentication and replying
+            # (05 REP 00 ATYP): a DCE/RPC packet would need type 5 (fault) with flags zero and a
+            # big-endian data representation whose second byte is an address type, never first.
+            if len(prefix) < 6:
+                return None
+            return 'socks5' if prefix[2] == 5 and prefix[3] <= 8 and prefix[4] == 0 and prefix[5] in (1, 3, 4) else 'dcerpc'
+        return 'socks5'
     family = FIRST_BYTE[first]
     if family != "ambiguous":
         return family

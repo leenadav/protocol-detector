@@ -1,11 +1,21 @@
-# Review scope: protocol detector v0.40
+# Review scope: protocol detector v0.41
 
-Python3.9-compatible IPv4 passive classification: 69 families, 62 automatic.
+Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.40): enterprise_db.py (`TDSParser`, `TNSParser`, `tns_probe`)
+New focus (v0.41): opcua.py and the rewritten buffer-based `Socks5Parser` in
+extended.py with its two roles. Trace: the OPC UA route ahead of the text,
+AMQP and RFB prefixes (prefixes of the four magics now wait for byte 4 or 8;
+anything else falls through unchanged), every string length against the
+message and the 4096 bound, exact message coverage, no URL/URI/reason in
+evidence; for SOCKS5 the role decision (`05 00` server, `05 02` by byte 4,
+everything else client), the 519-byte buffer cap, the six-byte `05 00`
+dispatch rule versus DCE/RPC, identical client evidence and contexts to the
+previous parser, and the bound address never emitted. 447 tests pass.
+
+Previous focus (v0.40): enterprise_db.py (`TDSParser`, `TNSParser`, `tns_probe`)
 and the two dispatch changes. Trace: the type-4 TDS response versus a
 compressed CQL request (bytes 7 and 8 zero), the TNS header test placed ahead
 of Modbus/PostgreSQL/Kafka/DNS in the leading-0x00 block, every option data

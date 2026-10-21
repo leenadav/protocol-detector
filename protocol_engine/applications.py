@@ -163,7 +163,7 @@ _ENTRIES = (
     _app("rdp", "networking", "remote-access", "client-server", 4, "RDP X.224 connection request with negotiation",
          ("prone-to-misuse", "has-known-vulnerabilities", "tunnels-other-applications", "transfers-files", "widely-used"),
          ("tcp/3389", "udp/3389"), aliases=("ms-rdp",)),
-    _app("socks", "networking", "proxy", "client-server", 4, "SOCKS5 client greeting and request",
+    _app("socks", "networking", "proxy", "client-server", 4, "SOCKS5 client greeting and request or server selection and reply",
          ("evasive", "tunnels-other-applications", "used-by-malware", "prone-to-misuse"), ("tcp/1080",), aliases=("socks5",)),
     _app("bittorrent", "general-internet", "file-sharing", "peer-to-peer", 5, "BitTorrent peer handshake",
          ("evasive", "excessive-bandwidth", "transfers-files", "used-by-malware", "widely-used", "prone-to-misuse"),
@@ -225,6 +225,8 @@ _ENTRIES = (
          ("has-known-vulnerabilities", "prone-to-misuse"), ("tcp/502",)),
     _app("s7comm", "business-systems", "ics-protocol", "client-server", 3, "Siemens S7 PDU after the ISO-TSAP connection",
          ("has-known-vulnerabilities", "cleartext-credentials"), ("tcp/102",), (), implicitly_uses=("iso-tsap",), aliases=("s7", "siemens-s7")),
+    _app("opc-ua", "business-systems", "ics-protocol", "client-server", 3, "OPC UA TCP connection messages",
+         ("has-known-vulnerabilities", "transfers-files"), ("tcp/4840",), aliases=("opcua", "opc-ua-tcp", "opc")),
     _app("dnp3", "business-systems", "ics-protocol", "client-server", 3, "DNP3 link frame", ("has-known-vulnerabilities",), ("tcp/20000",)),
     _app("bacnet", "business-systems", "ics-protocol", "client-server", 3, "BACnet/IP BVLC/NPDU", ("has-known-vulnerabilities",), ("udp/47808",)),
     _app("iso-tsap", "business-systems", "ics-protocol", "client-server", 3, "ISO transport over TCP connection request (carries S7comm among others)",
@@ -242,7 +244,7 @@ _ENTRIES = (
 # Engine protocol/encryption labels to catalog names. Versions after '/' never matter.
 _PROTOCOL_NAMES = MappingProxyType({
     "http": "web-browsing", "http2": "web-browsing", "tls": "ssl", "dtls": "dtls", "quic": "quic", "smb1": "smb", "rfb": "vnc", "socks5": "socks", "smb2": "smb",
-    "dcerpc": "dce-rpc", "ikev2": "ike", "tds": "mssql-db", "tns": "oracle",
+    "dcerpc": "dce-rpc", "ikev2": "ike", "tds": "mssql-db", "tns": "oracle", "opcua": "opc-ua",
 })
 
 

@@ -22,6 +22,7 @@ from .datainfra import CQLParser, KafkaParser
 from .upgrade import WebSocketParser
 from .s7 import S7Parser
 from .enterprise_db import TDSParser, TNSParser
+from .opcua import OPCUAParser
 
 PARSERS = MappingProxyType({
     "dcerpc": DCERPCParser, "giop": GIOPParser, "git": GitParser, "fastcgi": FastCGIParser, "rsync": RsyncParser,
@@ -35,7 +36,7 @@ PARSERS = MappingProxyType({
     "tacacs-plus": TACACSParser, "openvpn": OpenVPNParser, "pptp": PPTPParser, "modbus": ModbusParser, "dnp3": DNP3Parser,
     "iso-tsap": COTPParser, "ethernet-ip": ENIPParser, "iec-104": IEC104Parser, "kafka": KafkaParser, "cql": CQLParser,
     "websocket": WebSocketParser, "s7comm": S7Parser, "http2-server": HTTP2ServerParser,
-    "tds": TDSParser, "tns": TNSParser,
+    "tds": TDSParser, "tns": TNSParser, "opcua": OPCUAParser,
 })
 
 # Automatic ambiguity routes are not public candidate hints.

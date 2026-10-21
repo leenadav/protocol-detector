@@ -1,7 +1,7 @@
 # Protocol detector v0.38
 
 A standalone Python 3.9+ protocol classification engine and passive observation
-tool. **69 protocol families**, with explicit profiles rather than claims of full
+tool. **70 protocol families**, with explicit profiles rather than claims of full
 protocol/session validation. No Python runtime dependencies. Live capture uses
 an installed `tcpdump`; ordinary demos and tests require no capture privileges.
 We are staying in Python. This release does not integrate with or modify an SWG.
@@ -12,8 +12,8 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 
 | Area | What exists | Where to read |
 |---|---|---|
-| Protocol profiles | 69 families (62 automatic, 7 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
-| Application verdicts | App-ID style vocabulary: 73 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
+| Protocol profiles | 70 families (63 automatic, 7 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
+| Application verdicts | App-ID style vocabulary: 74 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
 | Application shift | CONNECT, WebSocket/h2c upgrade, STARTTLS/STLS/AUTH TLS, PostgreSQL/MySQL SSLRequest, RDP negotiation: the phase after the boundary is inspected and the carrier is kept as `shifted_from` | PROTOCOLS.md (v0.28) |
 | Custom signatures | JSON rules over bounded parser contexts (host, SNI, ALPN, banner, query name, payload prefix) with a safe regex subset | [SIGNATURES.md](SIGNATURES.md) |
 | Fingerprints | JA3/JA4/JA3S/JA4S/HASSH/HTTP2 SETTINGS, opt-in, derived evidence only | [FINGERPRINTS.md](FINGERPRINTS.md) |
@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 442 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 447 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -69,6 +69,17 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.41 — OPC UA and the SOCKS5 server side
+
+`opcua` validates the OPC UA TCP connection messages Hello, Acknowledge,
+Error and ReverseHello (size, buffer minimums, bounded printable `opc.tcp://`
+URLs and reasons, exact field coverage) and reports the message kind and
+protocol version; URLs and reasons are never emitted. The SOCKS5 family now
+identifies the server direction too: method selection plus the complete
+reply, reported as `socks_method` and `socks_reply`, so both sides of a SOCKS
+session carry the `socks` verdict. 70 families, 63 automatic, 74
+applications, 447 tests.
 
 ## New in v0.40 — MSSQL and Oracle negotiation packets
 
@@ -159,7 +170,7 @@ ROSCTR, public function codes, setup-communication fields; addresses and values
 never decoded). The TPKT route tells RDP confirms (RDP_NEG_RSP/FAILURE) from
 ISO-TSAP confirms structurally. Verdicts name `s7comm` (business-systems/
 ics-protocol, tcp/102) with `shifted_from=iso-tsap`. Coverage: 67 families,
-73 catalog applications; 418 tests pass. BENCHMARK-V032.md.
+74 catalog applications; 418 tests pass. BENCHMARK-V032.md.
 
 ## New in v0.31 — pcapng input
 
