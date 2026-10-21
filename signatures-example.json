@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "signatures": [
+    {
+      "name": "corp-intranet",
+      "description": "Internal portal reached over plain HTTP",
+      "category": "business-systems", "subcategory": "general-business", "technology": "browser-based", "risk": 2,
+      "parent": "web-browsing",
+      "conditions": {"and": [
+        {"context": "http-req-host-header", "operator": "pattern-match", "pattern": "^intranet\\.example\\.com$"},
+        {"context": "http-req-method", "operator": "equal-to", "value": "CONNECT", "negate": true}
+      ]}
+    },
+    {
+      "name": "corp-portal-tls",
+      "description": "Internal portal over TLS, identified from the ClientHello SNI and ALPN offer",
+      "category": "business-systems", "subcategory": "general-business", "technology": "browser-based", "risk": 2,
+      "parent": "ssl",
+      "conditions": [
+        {"context": "ssl-req-chello-sni", "operator": "equal-to", "value": "portal.example.com"},
+        {"context": "ssl-req-client-hello-ext-type", "operator": "equal-to", "value": 16}
+      ]
+    },
+    {
+      "name": "legacy-agent-protocol",
+      "description": "Proprietary agent heartbeat on an otherwise unknown TCP stream",
+      "category": "networking", "subcategory": "infrastructure", "technology": "client-server", "risk": 4,
+      "characteristics": ["evasive"],
+      "conditions": {"or": [
+        {"context": "unknown-req-tcp-payload", "operator": "pattern-match", "pattern": "^\\x01\\x02AGENT-HB\\x00"},
+        {"context": "unknown-req-tcp-payload", "operator": "pattern-match", "pattern": "AGENT-HELLO/[0-9]{1,3}", "case_insensitive": true}
+      ]}
+    },
+    {
+      "name": "udp-beacon",
+      "description": "Fixed-layout UDP beacon (0xfa 0x01 marker) shorter than 100 bytes",
+      "category": "networking", "subcategory": "infrastructure", "technology": "client-server", "risk": 5,
+      "characteristics": ["used-by-malware", "evasive"],
+      "conditions": [
+        {"context": "unknown-req-udp-payload", "operator": "pattern-match", "pattern": "^\\xfa\\x01BEACONv1"},
+        {"context": "unknown-req-udp-payload-length", "operator": "less-than", "value": 100}
+      ]
+    },
+    {
+      "name": "corp-dns-zone",
+      "description": "Queries for the corporate zone",
+      "category": "networking", "subcategory": "infrastructure", "technology": "network-protocol", "risk": 1,
+      "parent": "dns",
+      "conditions": [{"context": "dns-req-query-name", "operator": "pattern-match", "pattern": "(^|\\.)corp\\.example\\.com$"}]
+    },
+    {
+      "name": "automation-ssh-client",
+      "description": "SSH client banner of the deployment tooling",
+      "category": "business-systems", "subcategory": "software-development", "technology": "client-server", "risk": 3,
+      "parent": "ssh",
+      "conditions": [{"context": "ssh-req-banner", "operator": "pattern-match", "pattern": "^SSH-2\\.0-DeployBot_"}]
+    }
+  ]
+}

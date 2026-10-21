@@ -1,0 +1,2590 @@
+{
+  "environment": {
+    "python": "3.9.6",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "iterations_per_round": 500,
+    "rounds": 5,
+    "warmup_flows_per_case_version": 50,
+    "order_seed": 402,
+    "gc": "enabled",
+    "engine_sha256": {
+      "current": "7fb72a3d9c8299acd7ae080c6c8a51cbbb5334217729e45ec5a0e10bb365e6f4",
+      "baseline": "63c08bcf9d4a4b1a5d066e30bf1e1e1ab47fa40df51732f34a5618ea2656efd3"
+    },
+    "capture_adapter_sha256": "e6d04d6f5d07e26dd5cb551dfacaee3f70de1c41d839c130906d961ebe178fa5",
+    "fixture_sha256": "3f05eeb47eb541fde09b43963738fa27140d66a7e812e245402980ab9938adb4",
+    "benchmark_sha256": "95137ab0217d3c0d2d6dc90e8ca80908e7f5269a22af14e97462b62595db5d67"
+  },
+  "scope": "Feed loop including events; excludes Inspector construction, import, capture, TCP, TLS decryption, logging and concurrency",
+  "cases": {
+    "http_small": {
+      "baseline": {
+        "flow": {
+          "p50_us": 24.708,
+          "p95_us": 25.833,
+          "p99_us": 29.417
+        },
+        "round_p50_us": [
+          25.083,
+          25.0,
+          24.583,
+          24.542,
+          24.5
+        ],
+        "metrics": {
+          "bytes_received": 37,
+          "bytes_inspected": 37,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 24.625,
+          "p95_us": 26.166,
+          "p99_us": 29.792
+        },
+        "round_p50_us": [
+          25.542,
+          25.083,
+          24.417,
+          24.459,
+          23.917
+        ],
+        "metrics": {
+          "bytes_received": 37,
+          "bytes_inspected": 37,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 37,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.3
+    },
+    "http_fragmented": {
+      "current": {
+        "flow": {
+          "p50_us": 616.48,
+          "p95_us": 666.792,
+          "p99_us": 693.375
+        },
+        "round_p50_us": [
+          633.542,
+          619.917,
+          613.896,
+          614.896,
+          599.042
+        ],
+        "metrics": {
+          "bytes_received": 6050,
+          "bytes_inspected": 6050,
+          "updates": 190,
+          "parser_calls": 190,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 603.958,
+          "p95_us": 661.542,
+          "p99_us": 694.458
+        },
+        "round_p50_us": [
+          606.583,
+          607.625,
+          608.458,
+          610.833,
+          590.771
+        ],
+        "metrics": {
+          "bytes_received": 6050,
+          "bytes_inspected": 6050,
+          "updates": 190,
+          "parser_calls": 190,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 6050,
+      "chunks": 190,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 2.1
+    },
+    "tls_whole": {
+      "current": {
+        "flow": {
+          "p50_us": 39.291,
+          "p95_us": 40.375,
+          "p99_us": 43.791
+        },
+        "round_p50_us": [
+          39.75,
+          39.855,
+          39.041,
+          39.0,
+          38.875
+        ],
+        "metrics": {
+          "bytes_received": 218,
+          "bytes_inspected": 218,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 39.333,
+          "p95_us": 40.708,
+          "p99_us": 44.083
+        },
+        "round_p50_us": [
+          39.875,
+          39.666,
+          39.083,
+          38.98,
+          39.083
+        ],
+        "metrics": {
+          "bytes_received": 218,
+          "bytes_inspected": 218,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 218,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.1
+    },
+    "tls_fragmented": {
+      "baseline": {
+        "flow": {
+          "p50_us": 50.542,
+          "p95_us": 51.625,
+          "p99_us": 56.125
+        },
+        "round_p50_us": [
+          50.875,
+          50.75,
+          50.625,
+          50.167,
+          50.042
+        ],
+        "metrics": {
+          "bytes_received": 218,
+          "bytes_inspected": 218,
+          "updates": 7,
+          "parser_calls": 7,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 50.709,
+          "p95_us": 52.375,
+          "p99_us": 57.125
+        },
+        "round_p50_us": [
+          51.0,
+          50.833,
+          50.708,
+          50.542,
+          50.459
+        ],
+        "metrics": {
+          "bytes_received": 218,
+          "bytes_inspected": 218,
+          "updates": 7,
+          "parser_calls": 7,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 218,
+      "chunks": 7,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.3
+    },
+    "http2_whole": {
+      "baseline": {
+        "flow": {
+          "p50_us": 9.583,
+          "p95_us": 10.041,
+          "p99_us": 10.333
+        },
+        "round_p50_us": [
+          9.917,
+          9.834,
+          9.5,
+          9.459,
+          9.5
+        ],
+        "metrics": {
+          "bytes_received": 33,
+          "bytes_inspected": 33,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 9.583,
+          "p95_us": 10.0,
+          "p99_us": 10.25
+        },
+        "round_p50_us": [
+          9.917,
+          9.875,
+          9.5,
+          9.459,
+          9.5
+        ],
+        "metrics": {
+          "bytes_received": 33,
+          "bytes_inspected": 33,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 33,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.0
+    },
+    "http2_fragmented": {
+      "current": {
+        "flow": {
+          "p50_us": 16.083,
+          "p95_us": 16.375,
+          "p99_us": 16.708
+        },
+        "round_p50_us": [
+          16.083,
+          16.042,
+          16.125,
+          16.084,
+          16.041
+        ],
+        "metrics": {
+          "bytes_received": 33,
+          "bytes_inspected": 33,
+          "updates": 5,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 16.125,
+          "p95_us": 16.5,
+          "p99_us": 16.833
+        },
+        "round_p50_us": [
+          16.25,
+          16.125,
+          16.166,
+          16.208,
+          16.042
+        ],
+        "metrics": {
+          "bytes_received": 33,
+          "bytes_inspected": 33,
+          "updates": 5,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 33,
+      "chunks": 5,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.3
+    },
+    "socks5": {
+      "baseline": {
+        "flow": {
+          "p50_us": 20.75,
+          "p95_us": 21.583,
+          "p99_us": 22.25
+        },
+        "round_p50_us": [
+          21.375,
+          21.291,
+          20.625,
+          20.625,
+          20.584
+        ],
+        "metrics": {
+          "bytes_received": 21,
+          "bytes_inspected": 21,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 20.75,
+          "p95_us": 21.416,
+          "p99_us": 22.459
+        },
+        "round_p50_us": [
+          21.209,
+          21.166,
+          20.542,
+          20.625,
+          20.583
+        ],
+        "metrics": {
+          "bytes_received": 21,
+          "bytes_inspected": 21,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 21,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.0
+    },
+    "smtp": {
+      "baseline": {
+        "flow": {
+          "p50_us": 17.125,
+          "p95_us": 17.416,
+          "p99_us": 17.833
+        },
+        "round_p50_us": [
+          17.167,
+          17.083,
+          17.167,
+          17.125,
+          17.125
+        ],
+        "metrics": {
+          "bytes_received": 25,
+          "bytes_inspected": 25,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 17.209,
+          "p95_us": 17.5,
+          "p99_us": 19.083
+        },
+        "round_p50_us": [
+          17.167,
+          17.291,
+          17.291,
+          17.25,
+          17.167
+        ],
+        "metrics": {
+          "bytes_received": 25,
+          "bytes_inspected": 25,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 25,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.5
+    },
+    "ssh": {
+      "current": {
+        "flow": {
+          "p50_us": 11.167,
+          "p95_us": 11.375,
+          "p99_us": 11.625
+        },
+        "round_p50_us": [
+          11.208,
+          11.167,
+          11.125,
+          11.167,
+          11.167
+        ],
+        "metrics": {
+          "bytes_received": 18,
+          "bytes_inspected": 18,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 11.167,
+          "p95_us": 11.5,
+          "p99_us": 11.958
+        },
+        "round_p50_us": [
+          11.25,
+          11.125,
+          11.208,
+          11.166,
+          11.125
+        ],
+        "metrics": {
+          "bytes_received": 18,
+          "bytes_inspected": 18,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 18,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.0
+    },
+    "http_after_identification": {
+      "current": {
+        "flow": {
+          "p50_us": 37.209,
+          "p95_us": 38.0,
+          "p99_us": 43.041
+        },
+        "round_p50_us": [
+          37.25,
+          37.292,
+          37.25,
+          37.167,
+          37.166
+        ],
+        "metrics": {
+          "bytes_received": 65573,
+          "bytes_inspected": 37,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 37.458,
+          "p95_us": 38.25,
+          "p99_us": 42.125
+        },
+        "round_p50_us": [
+          37.5,
+          37.459,
+          37.375,
+          37.375,
+          37.541
+        ],
+        "metrics": {
+          "bytes_received": 65573,
+          "bytes_inspected": 37,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 65573,
+      "chunks": 65,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.7
+    },
+    "mqtt": {
+      "baseline": {
+        "flow": {
+          "p50_us": 15.125,
+          "p95_us": 15.5,
+          "p99_us": 16.167
+        },
+        "round_p50_us": [
+          15.333,
+          15.125,
+          15.125,
+          15.083,
+          15.083
+        ],
+        "metrics": {
+          "bytes_received": 18,
+          "bytes_inspected": 18,
+          "updates": 3,
+          "parser_calls": 3,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 15.125,
+          "p95_us": 15.583,
+          "p99_us": 16.541
+        },
+        "round_p50_us": [
+          15.375,
+          15.167,
+          15.042,
+          15.041,
+          15.167
+        ],
+        "metrics": {
+          "bytes_received": 18,
+          "bytes_inspected": 18,
+          "updates": 3,
+          "parser_calls": 3,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 18,
+      "chunks": 3,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.0
+    },
+    "resp": {
+      "current": {
+        "flow": {
+          "p50_us": 21.208,
+          "p95_us": 21.792,
+          "p99_us": 25.416
+        },
+        "round_p50_us": [
+          21.458,
+          21.333,
+          21.208,
+          21.042,
+          21.0
+        ],
+        "metrics": {
+          "bytes_received": 25,
+          "bytes_inspected": 25,
+          "updates": 4,
+          "parser_calls": 4,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 21.333,
+          "p95_us": 22.0,
+          "p99_us": 27.667
+        },
+        "round_p50_us": [
+          21.542,
+          21.375,
+          21.48,
+          21.25,
+          21.042
+        ],
+        "metrics": {
+          "bytes_received": 25,
+          "bytes_inspected": 25,
+          "updates": 4,
+          "parser_calls": 4,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 25,
+      "chunks": 4,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.6
+    },
+    "amqp_091": {
+      "baseline": {
+        "flow": {
+          "p50_us": 9.25,
+          "p95_us": 9.5,
+          "p99_us": 10.042
+        },
+        "round_p50_us": [
+          9.375,
+          9.209,
+          9.208,
+          9.208,
+          9.334
+        ],
+        "metrics": {
+          "bytes_received": 8,
+          "bytes_inspected": 8,
+          "updates": 2,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 9.292,
+          "p95_us": 9.459,
+          "p99_us": 9.625
+        },
+        "round_p50_us": [
+          9.375,
+          9.25,
+          9.25,
+          9.292,
+          9.312
+        ],
+        "metrics": {
+          "bytes_received": 8,
+          "bytes_inspected": 8,
+          "updates": 2,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 8,
+      "chunks": 2,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.5
+    },
+    "amqp_10": {
+      "baseline": {
+        "flow": {
+          "p50_us": 9.25,
+          "p95_us": 9.459,
+          "p99_us": 9.708
+        },
+        "round_p50_us": [
+          9.333,
+          9.333,
+          9.209,
+          9.167,
+          9.25
+        ],
+        "metrics": {
+          "bytes_received": 8,
+          "bytes_inspected": 8,
+          "updates": 2,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 9.292,
+          "p95_us": 9.459,
+          "p99_us": 9.75
+        },
+        "round_p50_us": [
+          9.333,
+          9.292,
+          9.25,
+          9.291,
+          9.25
+        ],
+        "metrics": {
+          "bytes_received": 8,
+          "bytes_inspected": 8,
+          "updates": 2,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 8,
+      "chunks": 2,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.5
+    },
+    "mqtt5": {
+      "current": {
+        "flow": {
+          "p50_us": 16.541,
+          "p95_us": 16.917,
+          "p99_us": 18.375
+        },
+        "round_p50_us": [
+          16.5,
+          16.542,
+          16.5,
+          16.459,
+          16.667
+        ],
+        "metrics": {
+          "bytes_received": 19,
+          "bytes_inspected": 19,
+          "updates": 3,
+          "parser_calls": 3,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 16.541,
+          "p95_us": 16.875,
+          "p99_us": 18.541
+        },
+        "round_p50_us": [
+          16.583,
+          16.5,
+          16.459,
+          16.459,
+          16.625
+        ],
+        "metrics": {
+          "bytes_received": 19,
+          "bytes_inspected": 19,
+          "updates": 3,
+          "parser_calls": 3,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 19,
+      "chunks": 3,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.0
+    },
+    "dns_tcp": {
+      "current": {
+        "flow": {
+          "p50_us": 21.458,
+          "p95_us": 22.125,
+          "p99_us": 24.875
+        },
+        "round_p50_us": [
+          21.875,
+          21.625,
+          21.291,
+          21.291,
+          21.375
+        ],
+        "metrics": {
+          "bytes_received": 35,
+          "bytes_inspected": 35,
+          "updates": 5,
+          "parser_calls": 4,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 21.417,
+          "p95_us": 21.959,
+          "p99_us": 26.667
+        },
+        "round_p50_us": [
+          21.667,
+          21.583,
+          21.25,
+          21.333,
+          21.375
+        ],
+        "metrics": {
+          "bytes_received": 35,
+          "bytes_inspected": 35,
+          "updates": 5,
+          "parser_calls": 4,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 35,
+      "chunks": 5,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.2
+    },
+    "stun_tcp": {
+      "baseline": {
+        "flow": {
+          "p50_us": 13.167,
+          "p95_us": 13.5,
+          "p99_us": 14.167
+        },
+        "round_p50_us": [
+          13.375,
+          13.209,
+          13.125,
+          13.084,
+          13.125
+        ],
+        "metrics": {
+          "bytes_received": 20,
+          "bytes_inspected": 20,
+          "updates": 3,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 13.208,
+          "p95_us": 13.5,
+          "p99_us": 14.667
+        },
+        "round_p50_us": [
+          13.292,
+          13.209,
+          13.084,
+          13.167,
+          13.167
+        ],
+        "metrics": {
+          "bytes_received": 20,
+          "bytes_inspected": 20,
+          "updates": 3,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 20,
+      "chunks": 3,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.3
+    },
+    "postgresql_startup": {
+      "current": {
+        "flow": {
+          "p50_us": 20.459,
+          "p95_us": 20.833,
+          "p99_us": 22.041
+        },
+        "round_p50_us": [
+          20.541,
+          20.458,
+          20.292,
+          20.541,
+          20.5
+        ],
+        "metrics": {
+          "bytes_received": 36,
+          "bytes_inspected": 36,
+          "updates": 6,
+          "parser_calls": 5,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 20.375,
+          "p95_us": 20.792,
+          "p99_us": 22.708
+        },
+        "round_p50_us": [
+          20.5,
+          20.333,
+          20.25,
+          20.583,
+          20.167
+        ],
+        "metrics": {
+          "bytes_received": 36,
+          "bytes_inspected": 36,
+          "updates": 6,
+          "parser_calls": 5,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 36,
+      "chunks": 6,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.4
+    },
+    "postgresql_ssl": {
+      "baseline": {
+        "flow": {
+          "p50_us": 10.542,
+          "p95_us": 10.75,
+          "p99_us": 11.125
+        },
+        "round_p50_us": [
+          10.583,
+          10.542,
+          10.583,
+          10.542,
+          10.541
+        ],
+        "metrics": {
+          "bytes_received": 8,
+          "bytes_inspected": 8,
+          "updates": 2,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 10.541,
+          "p95_us": 10.708,
+          "p99_us": 10.916
+        },
+        "round_p50_us": [
+          10.5,
+          10.542,
+          10.542,
+          10.542,
+          10.5
+        ],
+        "metrics": {
+          "bytes_received": 8,
+          "bytes_inspected": 8,
+          "updates": 2,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 8,
+      "chunks": 2,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.0
+    },
+    "rfb": {
+      "current": {
+        "flow": {
+          "p50_us": 10.542,
+          "p95_us": 10.75,
+          "p99_us": 10.916
+        },
+        "round_p50_us": [
+          10.5,
+          10.541,
+          10.541,
+          10.583,
+          10.583
+        ],
+        "metrics": {
+          "bytes_received": 12,
+          "bytes_inspected": 12,
+          "updates": 2,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 10.583,
+          "p95_us": 10.75,
+          "p99_us": 10.959
+        },
+        "round_p50_us": [
+          10.584,
+          10.542,
+          10.583,
+          10.583,
+          10.583
+        ],
+        "metrics": {
+          "bytes_received": 12,
+          "bytes_inspected": 12,
+          "updates": 2,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 12,
+      "chunks": 2,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.4
+    },
+    "bittorrent": {
+      "baseline": {
+        "flow": {
+          "p50_us": 22.958,
+          "p95_us": 23.291,
+          "p99_us": 26.25
+        },
+        "round_p50_us": [
+          23.0,
+          22.875,
+          22.917,
+          22.959,
+          23.0
+        ],
+        "metrics": {
+          "bytes_received": 68,
+          "bytes_inspected": 68,
+          "updates": 10,
+          "parser_calls": 10,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 22.917,
+          "p95_us": 23.25,
+          "p99_us": 25.875
+        },
+        "round_p50_us": [
+          22.958,
+          22.916,
+          22.75,
+          23.0,
+          23.0
+        ],
+        "metrics": {
+          "bytes_received": 68,
+          "bytes_inspected": 68,
+          "updates": 10,
+          "parser_calls": 10,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 68,
+      "chunks": 10,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.2
+    },
+    "memcached": {
+      "baseline": {
+        "flow": {
+          "p50_us": 14.333,
+          "p95_us": 14.583,
+          "p99_us": 14.833
+        },
+        "round_p50_us": [
+          14.375,
+          14.416,
+          14.334,
+          14.333,
+          14.208
+        ],
+        "metrics": {
+          "bytes_received": 27,
+          "bytes_inspected": 27,
+          "updates": 4,
+          "parser_calls": 4,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 14.334,
+          "p95_us": 14.583,
+          "p99_us": 15.0
+        },
+        "round_p50_us": [
+          14.375,
+          14.334,
+          14.375,
+          14.334,
+          14.291
+        ],
+        "metrics": {
+          "bytes_received": 27,
+          "bytes_inspected": 27,
+          "updates": 4,
+          "parser_calls": 4,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 27,
+      "chunks": 4,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.0
+    },
+    "ldap": {
+      "current": {
+        "flow": {
+          "p50_us": 14.334,
+          "p95_us": 14.75,
+          "p99_us": 15.166
+        },
+        "round_p50_us": [
+          14.5,
+          14.584,
+          14.292,
+          14.209,
+          14.125
+        ],
+        "metrics": {
+          "bytes_received": 14,
+          "bytes_inspected": 14,
+          "updates": 2,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 14.292,
+          "p95_us": 14.709,
+          "p99_us": 15.125
+        },
+        "round_p50_us": [
+          14.542,
+          14.583,
+          14.25,
+          14.084,
+          14.166
+        ],
+        "metrics": {
+          "bytes_received": 14,
+          "bytes_inspected": 14,
+          "updates": 2,
+          "parser_calls": 2,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 14,
+      "chunks": 2,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.3
+    },
+    "sip_tcp": {
+      "baseline": {
+        "flow": {
+          "p50_us": 102.458,
+          "p95_us": 104.042,
+          "p99_us": 109.75
+        },
+        "round_p50_us": [
+          102.333,
+          102.417,
+          102.584,
+          102.458,
+          102.417
+        ],
+        "metrics": {
+          "bytes_received": 247,
+          "bytes_inspected": 247,
+          "updates": 36,
+          "parser_calls": 36,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 102.209,
+          "p95_us": 103.875,
+          "p99_us": 109.875
+        },
+        "round_p50_us": [
+          102.292,
+          102.355,
+          102.125,
+          102.0,
+          102.395
+        ],
+        "metrics": {
+          "bytes_received": 247,
+          "bytes_inspected": 247,
+          "updates": 36,
+          "parser_calls": 36,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 247,
+      "chunks": 36,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.2
+    },
+    "rtsp": {
+      "current": {
+        "flow": {
+          "p50_us": 29.708,
+          "p95_us": 30.125,
+          "p99_us": 31.708
+        },
+        "round_p50_us": [
+          29.708,
+          29.75,
+          29.792,
+          29.708,
+          29.625
+        ],
+        "metrics": {
+          "bytes_received": 57,
+          "bytes_inspected": 57,
+          "updates": 9,
+          "parser_calls": 9,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 29.75,
+          "p95_us": 30.208,
+          "p99_us": 31.084
+        },
+        "round_p50_us": [
+          29.708,
+          29.792,
+          29.834,
+          29.75,
+          29.708
+        ],
+        "metrics": {
+          "bytes_received": 57,
+          "bytes_inspected": 57,
+          "updates": 9,
+          "parser_calls": 9,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 57,
+      "chunks": 9,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.1
+    },
+    "bgp_open": {
+      "baseline": {
+        "flow": {
+          "p50_us": 16.833,
+          "p95_us": 17.125,
+          "p99_us": 17.5
+        },
+        "round_p50_us": [
+          16.958,
+          16.875,
+          16.75,
+          16.75,
+          16.709
+        ],
+        "metrics": {
+          "bytes_received": 33,
+          "bytes_inspected": 33,
+          "updates": 5,
+          "parser_calls": 5,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 16.791,
+          "p95_us": 17.042,
+          "p99_us": 17.375
+        },
+        "round_p50_us": [
+          16.875,
+          16.792,
+          16.666,
+          16.792,
+          16.709
+        ],
+        "metrics": {
+          "bytes_received": 33,
+          "bytes_inspected": 33,
+          "updates": 5,
+          "parser_calls": 5,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 33,
+      "chunks": 5,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.2
+    },
+    "smb2_negotiate": {
+      "baseline": {
+        "flow": {
+          "p50_us": 36.917,
+          "p95_us": 37.458,
+          "p99_us": 41.375
+        },
+        "round_p50_us": [
+          36.834,
+          36.958,
+          37.041,
+          37.0,
+          36.75
+        ],
+        "metrics": {
+          "bytes_received": 108,
+          "bytes_inspected": 108,
+          "updates": 16,
+          "parser_calls": 15,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 36.917,
+          "p95_us": 37.459,
+          "p99_us": 40.375
+        },
+        "round_p50_us": [
+          36.938,
+          36.792,
+          37.167,
+          36.875,
+          36.917
+        ],
+        "metrics": {
+          "bytes_received": 108,
+          "bytes_inspected": 108,
+          "updates": 16,
+          "parser_calls": 15,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 108,
+      "chunks": 16,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.0
+    },
+    "smb311_negotiate": {
+      "baseline": {
+        "flow": {
+          "p50_us": 42.75,
+          "p95_us": 43.458,
+          "p99_us": 47.5
+        },
+        "round_p50_us": [
+          42.75,
+          42.958,
+          42.625,
+          42.709,
+          42.792
+        ],
+        "metrics": {
+          "bytes_received": 122,
+          "bytes_inspected": 122,
+          "updates": 18,
+          "parser_calls": 17,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 42.875,
+          "p95_us": 43.541,
+          "p99_us": 46.084
+        },
+        "round_p50_us": [
+          42.792,
+          42.791,
+          43.125,
+          42.875,
+          42.792
+        ],
+        "metrics": {
+          "bytes_received": 122,
+          "bytes_inspected": 122,
+          "updates": 18,
+          "parser_calls": 17,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 122,
+      "chunks": 18,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.3
+    },
+    "stomp_connect": {
+      "baseline": {
+        "flow": {
+          "p50_us": 34.0,
+          "p95_us": 34.583,
+          "p99_us": 37.25
+        },
+        "round_p50_us": [
+          33.958,
+          34.083,
+          34.041,
+          33.958,
+          34.042
+        ],
+        "metrics": {
+          "bytes_received": 69,
+          "bytes_inspected": 69,
+          "updates": 10,
+          "parser_calls": 9,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 34.041,
+          "p95_us": 35.209,
+          "p99_us": 38.458
+        },
+        "round_p50_us": [
+          34.0,
+          34.042,
+          33.834,
+          34.0,
+          34.958
+        ],
+        "metrics": {
+          "bytes_received": 69,
+          "bytes_inspected": 69,
+          "updates": 10,
+          "parser_calls": 9,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 69,
+      "chunks": 10,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.1
+    },
+    "stomp_connected": {
+      "current": {
+        "flow": {
+          "p50_us": 19.542,
+          "p95_us": 19.875,
+          "p99_us": 20.834
+        },
+        "round_p50_us": [
+          19.708,
+          19.605,
+          19.5,
+          19.5,
+          19.458
+        ],
+        "metrics": {
+          "bytes_received": 27,
+          "bytes_inspected": 27,
+          "updates": 4,
+          "parser_calls": 3,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 19.667,
+          "p95_us": 20.209,
+          "p99_us": 20.75
+        },
+        "round_p50_us": [
+          20.042,
+          19.667,
+          19.708,
+          19.542,
+          19.5
+        ],
+        "metrics": {
+          "bytes_received": 27,
+          "bytes_inspected": 27,
+          "updates": 4,
+          "parser_calls": 3,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 27,
+      "chunks": 4,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.6
+    },
+    "nats_info": {
+      "current": {
+        "flow": {
+          "p50_us": 64.542,
+          "p95_us": 66.583,
+          "p99_us": 70.542
+        },
+        "round_p50_us": [
+          65.834,
+          65.917,
+          64.375,
+          64.083,
+          63.959
+        ],
+        "metrics": {
+          "bytes_received": 123,
+          "bytes_inspected": 123,
+          "updates": 18,
+          "parser_calls": 18,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 64.75,
+          "p95_us": 67.5,
+          "p99_us": 73.0
+        },
+        "round_p50_us": [
+          66.208,
+          66.333,
+          64.292,
+          64.208,
+          64.458
+        ],
+        "metrics": {
+          "bytes_received": 123,
+          "bytes_inspected": 123,
+          "updates": 18,
+          "parser_calls": 18,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 123,
+      "chunks": 18,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.3
+    },
+    "nats_connect": {
+      "current": {
+        "flow": {
+          "p50_us": 54.5,
+          "p95_us": 55.792,
+          "p99_us": 64.75
+        },
+        "round_p50_us": [
+          54.833,
+          54.333,
+          54.459,
+          54.583,
+          54.5
+        ],
+        "metrics": {
+          "bytes_received": 97,
+          "bytes_inspected": 97,
+          "updates": 14,
+          "parser_calls": 13,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 54.542,
+          "p95_us": 55.5,
+          "p99_us": 59.708
+        },
+        "round_p50_us": [
+          54.417,
+          54.417,
+          54.459,
+          54.75,
+          54.625
+        ],
+        "metrics": {
+          "bytes_received": 97,
+          "bytes_inspected": 97,
+          "updates": 14,
+          "parser_calls": 13,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 97,
+      "chunks": 14,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.1
+    },
+    "imap_capability": {
+      "current": {
+        "flow": {
+          "p50_us": 34.083,
+          "p95_us": 34.625,
+          "p99_us": 36.791
+        },
+        "round_p50_us": [
+          34.167,
+          34.145,
+          34.042,
+          34.0,
+          34.042
+        ],
+        "metrics": {
+          "bytes_received": 80,
+          "bytes_inspected": 80,
+          "updates": 12,
+          "parser_calls": 12,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 34.042,
+          "p95_us": 34.666,
+          "p99_us": 37.708
+        },
+        "round_p50_us": [
+          34.166,
+          34.125,
+          34.0,
+          34.0,
+          34.042
+        ],
+        "metrics": {
+          "bytes_received": 80,
+          "bytes_inspected": 80,
+          "updates": 12,
+          "parser_calls": 12,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 80,
+      "chunks": 12,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": 0.1
+    },
+    "rdp_negotiate": {
+      "baseline": {
+        "flow": {
+          "p50_us": 14.416,
+          "p95_us": 15.0,
+          "p99_us": 15.541
+        },
+        "round_p50_us": [
+          14.458,
+          14.75,
+          14.375,
+          14.25,
+          14.125
+        ],
+        "metrics": {
+          "bytes_received": 19,
+          "bytes_inspected": 19,
+          "updates": 3,
+          "parser_calls": 3,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 14.375,
+          "p95_us": 16.167,
+          "p99_us": 16.458
+        },
+        "round_p50_us": [
+          14.542,
+          14.833,
+          14.417,
+          14.084,
+          14.125
+        ],
+        "metrics": {
+          "bytes_received": 19,
+          "bytes_inspected": 19,
+          "updates": 3,
+          "parser_calls": 3,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 19,
+      "chunks": 3,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null,
+      "p50_change_percent": -0.3
+    },
+    "mysql_hint_whole": {
+      "baseline": {
+        "flow": {
+          "p50_us": 13.5,
+          "p95_us": 14.5,
+          "p99_us": 15.041
+        },
+        "round_p50_us": [
+          13.5,
+          13.791,
+          13.416,
+          13.688,
+          13.375
+        ],
+        "metrics": {
+          "bytes_received": 83,
+          "bytes_inspected": 83,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 13.417,
+          "p95_us": 13.833,
+          "p99_us": 14.042
+        },
+        "round_p50_us": [
+          13.292,
+          13.75,
+          13.542,
+          13.375,
+          13.208
+        ],
+        "metrics": {
+          "bytes_received": 83,
+          "bytes_inspected": 83,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 83,
+      "chunks": 1,
+      "candidate_hint": "mysql",
+      "expected_status": "identified",
+      "crc32c_byte_limit": 4096,
+      "p50_change_percent": -0.6
+    },
+    "mysql_hint_fragmented": {
+      "baseline": {
+        "flow": {
+          "p50_us": 30.708,
+          "p95_us": 31.459,
+          "p99_us": 33.959
+        },
+        "round_p50_us": [
+          30.666,
+          30.459,
+          30.541,
+          30.855,
+          31.083
+        ],
+        "metrics": {
+          "bytes_received": 83,
+          "bytes_inspected": 83,
+          "updates": 12,
+          "parser_calls": 12,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 30.833,
+          "p95_us": 31.417,
+          "p99_us": 36.917
+        },
+        "round_p50_us": [
+          30.75,
+          30.666,
+          30.792,
+          30.833,
+          31.083
+        ],
+        "metrics": {
+          "bytes_received": 83,
+          "bytes_inspected": 83,
+          "updates": 12,
+          "parser_calls": 12,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 83,
+      "chunks": 12,
+      "candidate_hint": "mysql",
+      "expected_status": "identified",
+      "crc32c_byte_limit": 4096,
+      "p50_change_percent": 0.4
+    },
+    "mongodb_hint_whole": {
+      "current": {
+        "flow": {
+          "p50_us": 15.333,
+          "p95_us": 15.709,
+          "p99_us": 17.209
+        },
+        "round_p50_us": [
+          15.459,
+          15.375,
+          15.25,
+          15.25,
+          15.166
+        ],
+        "metrics": {
+          "bytes_received": 52,
+          "bytes_inspected": 52,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 15.375,
+          "p95_us": 15.708,
+          "p99_us": 17.125
+        },
+        "round_p50_us": [
+          15.375,
+          15.416,
+          15.209,
+          15.25,
+          15.458
+        ],
+        "metrics": {
+          "bytes_received": 52,
+          "bytes_inspected": 52,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 52,
+      "chunks": 1,
+      "candidate_hint": "mongodb",
+      "expected_status": "identified",
+      "crc32c_byte_limit": 4096,
+      "p50_change_percent": -0.3
+    },
+    "mongodb_hint_fragmented": {
+      "baseline": {
+        "flow": {
+          "p50_us": 27.0,
+          "p95_us": 27.375,
+          "p99_us": 28.75
+        },
+        "round_p50_us": [
+          26.916,
+          26.958,
+          27.0,
+          27.041,
+          27.042
+        ],
+        "metrics": {
+          "bytes_received": 52,
+          "bytes_inspected": 52,
+          "updates": 8,
+          "parser_calls": 8,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 26.959,
+          "p95_us": 27.458,
+          "p99_us": 31.75
+        },
+        "round_p50_us": [
+          26.917,
+          27.083,
+          26.917,
+          26.958,
+          26.958
+        ],
+        "metrics": {
+          "bytes_received": 52,
+          "bytes_inspected": 52,
+          "updates": 8,
+          "parser_calls": 8,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 52,
+      "chunks": 8,
+      "candidate_hint": "mongodb",
+      "expected_status": "identified",
+      "crc32c_byte_limit": 4096,
+      "p50_change_percent": -0.2
+    },
+    "mongodb_crc_3k": {
+      "baseline": {
+        "flow": {
+          "p50_us": 252.917,
+          "p95_us": 261.583,
+          "p99_us": 282.125
+        },
+        "round_p50_us": [
+          256.25,
+          252.125,
+          251.667,
+          252.395,
+          252.062
+        ],
+        "metrics": {
+          "bytes_received": 3138,
+          "bytes_inspected": 3138,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 251.875,
+          "p95_us": 262.125,
+          "p99_us": 275.292
+        },
+        "round_p50_us": [
+          253.667,
+          253.542,
+          251.5,
+          251.667,
+          248.667
+        ],
+        "metrics": {
+          "bytes_received": 3138,
+          "bytes_inspected": 3138,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 3138,
+      "chunks": 1,
+      "candidate_hint": "mongodb",
+      "expected_status": "identified",
+      "crc32c_byte_limit": 4096,
+      "p50_change_percent": -0.4
+    },
+    "mongodb_crc_60k_default_budget": {
+      "current": {
+        "flow": {
+          "p50_us": 6.166,
+          "p95_us": 6.292,
+          "p99_us": 6.458
+        },
+        "round_p50_us": [
+          6.167,
+          6.166,
+          6.125,
+          6.166,
+          6.167
+        ],
+        "metrics": {
+          "bytes_received": 61506,
+          "bytes_inspected": 61506,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "baseline": {
+        "flow": {
+          "p50_us": 6.208,
+          "p95_us": 6.416,
+          "p99_us": 6.584
+        },
+        "round_p50_us": [
+          6.25,
+          6.209,
+          6.167,
+          6.167,
+          6.125
+        ],
+        "metrics": {
+          "bytes_received": 61506,
+          "bytes_inspected": 61506,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 61506,
+      "chunks": 1,
+      "candidate_hint": "mongodb",
+      "expected_status": "budget_exhausted",
+      "crc32c_byte_limit": 4096,
+      "p50_change_percent": -0.7
+    },
+    "mongodb_crc_60k_raised_budget": {
+      "baseline": {
+        "flow": {
+          "p50_us": 4472.146,
+          "p95_us": 4640.166,
+          "p99_us": 4728.791
+        },
+        "round_p50_us": [
+          4520.812,
+          4504.979,
+          4409.98,
+          4429.312,
+          4464.625
+        ],
+        "metrics": {
+          "bytes_received": 61506,
+          "bytes_inspected": 61506,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 4474.833,
+          "p95_us": 4624.125,
+          "p99_us": 4721.416
+        },
+        "round_p50_us": [
+          4515.042,
+          4516.833,
+          4389.125,
+          4455.167,
+          4459.854
+        ],
+        "metrics": {
+          "bytes_received": 61506,
+          "bytes_inspected": 61506,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 61506,
+      "chunks": 1,
+      "candidate_hint": "mongodb",
+      "expected_status": "identified",
+      "crc32c_byte_limit": 65536,
+      "p50_change_percent": 0.1
+    },
+    "mongodb_binary_60k": {
+      "baseline": {
+        "flow": {
+          "p50_us": 23.833,
+          "p95_us": 24.5,
+          "p99_us": 29.958
+        },
+        "round_p50_us": [
+          23.417,
+          23.75,
+          23.875,
+          23.958,
+          23.917
+        ],
+        "metrics": {
+          "bytes_received": 61502,
+          "bytes_inspected": 61502,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "current": {
+        "flow": {
+          "p50_us": 23.959,
+          "p95_us": 24.583,
+          "p99_us": 26.583
+        },
+        "round_p50_us": [
+          23.417,
+          24.0,
+          24.125,
+          24.0,
+          24.083
+        ],
+        "metrics": {
+          "bytes_received": 61502,
+          "bytes_inspected": 61502,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 61502,
+      "chunks": 1,
+      "candidate_hint": "mongodb",
+      "expected_status": "identified",
+      "crc32c_byte_limit": 4096,
+      "p50_change_percent": 0.5
+    },
+    "fastcgi_whole": {
+      "current": {
+        "flow": {
+          "p50_us": 16.375,
+          "p95_us": 16.792,
+          "p99_us": 19.875
+        },
+        "round_p50_us": [
+          16.583,
+          16.5,
+          16.125,
+          16.084,
+          16.375
+        ],
+        "metrics": {
+          "bytes_received": 49,
+          "bytes_inspected": 49,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 49,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null
+    },
+    "fastcgi_fragmented": {
+      "current": {
+        "flow": {
+          "p50_us": 27.458,
+          "p95_us": 28.166,
+          "p99_us": 33.833
+        },
+        "round_p50_us": [
+          27.459,
+          27.375,
+          27.5,
+          27.334,
+          27.541
+        ],
+        "metrics": {
+          "bytes_received": 49,
+          "bytes_inspected": 49,
+          "updates": 7,
+          "parser_calls": 6,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 49,
+      "chunks": 7,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null
+    },
+    "fastcgi_binary_60k": {
+      "current": {
+        "flow": {
+          "p50_us": 22.0,
+          "p95_us": 22.5,
+          "p99_us": 27.625
+        },
+        "round_p50_us": [
+          22.0,
+          21.875,
+          22.0,
+          21.958,
+          22.125
+        ],
+        "metrics": {
+          "bytes_received": 61478,
+          "bytes_inspected": 61478,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 61478,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null
+    },
+    "fastcgi_128_params": {
+      "current": {
+        "flow": {
+          "p50_us": 101.542,
+          "p95_us": 104.875,
+          "p99_us": 108.792
+        },
+        "round_p50_us": [
+          102.208,
+          101.855,
+          101.958,
+          100.834,
+          100.708
+        ],
+        "metrics": {
+          "bytes_received": 544,
+          "bytes_inspected": 544,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 544,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null
+    },
+    "fastcgi_128_records": {
+      "current": {
+        "flow": {
+          "p50_us": 297.375,
+          "p95_us": 306.583,
+          "p99_us": 316.667
+        },
+        "round_p50_us": [
+          296.146,
+          295.75,
+          296.209,
+          302.146,
+          298.896
+        ],
+        "metrics": {
+          "bytes_received": 1158,
+          "bytes_inspected": 1158,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 1158,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null
+    },
+    "rsync_whole": {
+      "current": {
+        "flow": {
+          "p50_us": 10.959,
+          "p95_us": 11.25,
+          "p99_us": 11.458
+        },
+        "round_p50_us": [
+          11.125,
+          11.042,
+          10.875,
+          10.917,
+          10.916
+        ],
+        "metrics": {
+          "bytes_received": 41,
+          "bytes_inspected": 41,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 41,
+      "chunks": 1,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null
+    },
+    "rsync_fragmented": {
+      "current": {
+        "flow": {
+          "p50_us": 19.25,
+          "p95_us": 19.583,
+          "p99_us": 20.459
+        },
+        "round_p50_us": [
+          19.291,
+          19.25,
+          19.167,
+          19.333,
+          19.25
+        ],
+        "metrics": {
+          "bytes_received": 41,
+          "bytes_inspected": 41,
+          "updates": 6,
+          "parser_calls": 6,
+          "candidates_selected": 1,
+          "events_emitted": 1
+        }
+      },
+      "input_bytes": 41,
+      "chunks": 6,
+      "candidate_hint": null,
+      "expected_status": "identified",
+      "crc32c_byte_limit": null
+    }
+  },
+  "datagrams": {
+    "dns": {
+      "baseline": {
+        "message": {
+          "p50_us": 8.083,
+          "p95_us": 8.417,
+          "p99_us": 9.833
+        },
+        "input_bytes": 33
+      },
+      "current": {
+        "message": {
+          "p50_us": 8.042,
+          "p95_us": 8.375,
+          "p99_us": 9.792
+        },
+        "input_bytes": 33
+      }
+    },
+    "stun": {
+      "baseline": {
+        "message": {
+          "p50_us": 4.584,
+          "p95_us": 4.708,
+          "p99_us": 4.792
+        },
+        "input_bytes": 20
+      },
+      "current": {
+        "message": {
+          "p50_us": 4.584,
+          "p95_us": 4.75,
+          "p99_us": 4.792
+        },
+        "input_bytes": 20
+      }
+    },
+    "dhcp/4": {
+      "baseline": {
+        "message": {
+          "p50_us": 5.166,
+          "p95_us": 5.292,
+          "p99_us": 5.416
+        },
+        "input_bytes": 244
+      },
+      "current": {
+        "message": {
+          "p50_us": 5.125,
+          "p95_us": 5.291,
+          "p99_us": 5.375
+        },
+        "input_bytes": 244
+      }
+    },
+    "coap": {
+      "current": {
+        "message": {
+          "p50_us": 6.167,
+          "p95_us": 6.416,
+          "p99_us": 6.5
+        },
+        "input_bytes": 13
+      },
+      "baseline": {
+        "message": {
+          "p50_us": 6.166,
+          "p95_us": 6.375,
+          "p99_us": 6.5
+        },
+        "input_bytes": 13
+      }
+    },
+    "syslog/5424": {
+      "current": {
+        "message": {
+          "p50_us": 13.416,
+          "p95_us": 14.0,
+          "p99_us": 14.166
+        },
+        "input_bytes": 93
+      },
+      "baseline": {
+        "message": {
+          "p50_us": 13.458,
+          "p95_us": 14.042,
+          "p99_us": 14.375
+        },
+        "input_bytes": 93
+      }
+    },
+    "sip/2.0": {
+      "baseline": {
+        "message": {
+          "p50_us": 41.25,
+          "p95_us": 42.0,
+          "p99_us": 43.875
+        },
+        "input_bytes": 247
+      },
+      "current": {
+        "message": {
+          "p50_us": 41.167,
+          "p95_us": 42.0,
+          "p99_us": 42.542
+        },
+        "input_bytes": 247
+      }
+    },
+    "snmp/2c": {
+      "current": {
+        "message": {
+          "p50_us": 13.375,
+          "p95_us": 14.292,
+          "p99_us": 14.625
+        },
+        "input_bytes": 40
+      },
+      "baseline": {
+        "message": {
+          "p50_us": 13.375,
+          "p95_us": 14.375,
+          "p99_us": 14.75
+        },
+        "input_bytes": 40
+      }
+    },
+    "tftp": {
+      "baseline": {
+        "message": {
+          "p50_us": 8.625,
+          "p95_us": 9.0,
+          "p99_us": 9.125
+        },
+        "input_bytes": 33
+      },
+      "current": {
+        "message": {
+          "p50_us": 8.625,
+          "p95_us": 8.917,
+          "p99_us": 9.083
+        },
+        "input_bytes": 33
+      }
+    },
+    "ntp/4": {
+      "current": {
+        "message": {
+          "p50_us": 5.0,
+          "p95_us": 5.125,
+          "p99_us": 5.208
+        },
+        "input_bytes": 48
+      },
+      "baseline": {
+        "message": {
+          "p50_us": 5.0,
+          "p95_us": 5.166,
+          "p99_us": 5.25
+        },
+        "input_bytes": 48
+      }
+    }
+  },
+  "capture_adapter": {
+    "tcp_http_flow": {
+      "flow": {
+        "p50_us": 77.917,
+        "p95_us": 130.917,
+        "p99_us": 154.541
+      },
+      "packets": 3
+    },
+    "udp_dns": {
+      "flow": {
+        "p50_us": 18.084,
+        "p95_us": 18.958,
+        "p99_us": 65.708
+      },
+      "packets": 1
+    }
+  }
+}

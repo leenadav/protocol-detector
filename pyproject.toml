@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "protocol-stream-engine"
+version = "0.54.0"
+description = "Bounded incremental protocol classification for TCP streams and UDP datagrams"
+requires-python = ">=3.9"
+dependencies = []
+
+[tool.setuptools]
+packages = ["protocol_engine"]
+
+[tool.ruff]
+line-length = 160
+target-version = "py39"
+
+[tool.ruff.lint]
+# Correctness and security rules only; style is not a CI gate.
+select = ["E9", "F", "B", "S", "PLE", "W605"]
+ignore = [
+  "B011",  # assert False in tests is deliberate
+  "S101",  # asserts are test code
+  "S311",  # random is used for seeded fuzzing, never for secrets
+  "B904",  # explicit `raise ... from None` is used where chaining would leak
+  "B905",  # zip(strict=) is Python 3.10+
+  "B007",  # historical benchmark scripts keep their loop variables
+]
+
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = ["S", "B"]
+"live_capture.py" = ["S603", "S404", "S607"]   # argv-only subprocess with resolved executable, reviewed
+"tools/compare_engine.py" = ["S603"]        # sys.executable with argv-only arguments, reviewed
+"live_smoke.py" = ["S603", "S404", "S607", "S104"]
+"*interop*.py" = ["S603", "S404", "S607"]
+"benchmark*.py" = ["S603", "S404", "S607"]
+"ike_decoder_check.py" = ["S603", "S404", "S607"]

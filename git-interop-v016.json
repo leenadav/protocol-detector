@@ -1,0 +1,36 @@
+{
+  "git_version": "git version 2.50.1 (Apple Git-155)",
+  "scope": "Canonical Git client to synthetic IPv4 loopback server only; no repository or external traffic",
+  "cases": [
+    {
+      "requested_version": 0,
+      "request_bytes": 56,
+      "status": "identified",
+      "version_offers": [],
+      "live_adapter_bytewise_identifications": 1,
+      "git_exit_code": 0
+    },
+    {
+      "requested_version": 1,
+      "request_bytes": 67,
+      "status": "identified",
+      "version_offers": [
+        "1"
+      ],
+      "live_adapter_bytewise_identifications": 1,
+      "git_exit_code": 0
+    },
+    {
+      "requested_version": 2,
+      "request_bytes": 67,
+      "status": "identified",
+      "version_offers": [
+        "2"
+      ],
+      "live_adapter_bytewise_identifications": 1,
+      "git_exit_code": 0
+    }
+  ],
+  "source_sha256": "72a0b547515098db3d581ebfb03b89c5e073bc7916840020e88b2acb03a8a2d8",
+  "verification_script_sha256": "0a4dfa52bd5c311d226f0fc38b17462d9d06cf492163fea95b760a2f7bd39610"
+}

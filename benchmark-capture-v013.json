@@ -1,0 +1,166 @@
+{
+  "cases": {
+    "http_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 41.167,
+          "p95_us": 45.375,
+          "p99_us": 62.542
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 41.291,
+          "p95_us": 45.916,
+          "p99_us": 68.333
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "partial_fin": {
+      "baseline": {
+        "flow": {
+          "p50_us": 30.333,
+          "p95_us": 33.0,
+          "p99_us": 35.125
+        },
+        "status": "incomplete",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 30.042,
+          "p95_us": 32.5,
+          "p99_us": 34.667
+        },
+        "status": "incomplete",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "dns_datagram": {
+      "baseline": {
+        "flow": {
+          "p50_us": 9.625,
+          "p95_us": 10.167,
+          "p99_us": 11.375
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 9.542,
+          "p95_us": 9.917,
+          "p99_us": 11.125
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "reordered_http": {
+      "baseline": {
+        "flow": {
+          "p50_us": 49.625,
+          "p95_us": 53.709,
+          "p99_us": 58.541
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 49.583,
+          "p95_us": 53.084,
+          "p99_us": 59.667
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      }
+    },
+    "leading_duplicate": {
+      "baseline": {
+        "flow": {
+          "p50_us": 48.667,
+          "p95_us": 52.792,
+          "p99_us": 55.667
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 48.791,
+          "p95_us": 52.792,
+          "p99_us": 56.417
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      }
+    },
+    "control_rejection": {
+      "baseline": {
+        "flow": {
+          "p50_us": 54.209,
+          "p95_us": 58.125,
+          "p99_us": 62.333
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 56.833,
+          "p95_us": 60.292,
+          "p99_us": 65.667
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      }
+    },
+    "leading_conflict": {
+      "baseline": {
+        "flow": {
+          "p50_us": 55.0,
+          "p95_us": 58.959,
+          "p99_us": 63.833
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      },
+      "current": {
+        "flow": {
+          "p50_us": 55.0,
+          "p95_us": 58.792,
+          "p99_us": 62.458
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      }
+    }
+  },
+  "source_sha256": {
+    "baseline": "3cad5f07f21a2ae4efa084ed689e42e5bf8f8930452638e7a97f3d5517295e43",
+    "current": "79fc83d2a5009e17c26e9521d94d4ba0e9280d41d702afc2956fb93d0417d449"
+  },
+  "iterations": 1000,
+  "rounds": 5,
+  "scope": "Decoded synthetic packets to events, excludes construction/capture/output; control-rejection baseline omits structured Analyzer event and invalidated counter",
+  "benchmark_sha256": "cd4a252e473b09736aa64871187da75f83dfdfb81e0224fca08582fb5878d181"
+}

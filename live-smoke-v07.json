@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "traffic": "local synthetic TCP/UDP over real loopback capture",
+  "protocols": [
+    "bgp/4",
+    "dns",
+    "http/1.1",
+    "imap",
+    "nats",
+    "rdp",
+    "smb2",
+    "snmp/2c",
+    "stomp",
+    "tftp",
+    "tls"
+  ],
+  "ipv4_only": true,
+  "summary": {
+    "type": "summary",
+    "elapsed_seconds": 2.003,
+    "counts": {
+      "packets": 105,
+      "captured_bytes": 6977,
+      "tcp": 102,
+      "identified": 13,
+      "tcp_control_without_state": 13,
+      "udp": 3
+    },
+    "protocols": {
+      "http/1.1": 1,
+      "bgp/4": 1,
+      "smb2": 1,
+      "tls": 1,
+      "stomp": 2,
+      "nats": 2,
+      "imap": 1,
+      "rdp": 1,
+      "dns": 1,
+      "snmp/2c": 1,
+      "tftp": 1
+    },
+    "active_connections": 0,
+    "capture_stats": {
+      "captured": 105,
+      "received_by_filter": 107,
+      "dropped_by_kernel": 0
+    },
+    "scope": "Initial messages only; capture loss may be reported at shutdown",
+    "capture_quality": "no_kernel_drops_reported",
+    "stop_reason": "limit_or_interrupt"
+  }
+}

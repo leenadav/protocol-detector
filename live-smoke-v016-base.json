@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "traffic": "local synthetic TCP/UDP over real loopback capture",
+  "protocols": [
+    "bgp/4",
+    "dns",
+    "fastcgi/1",
+    "git",
+    "http/1.1",
+    "imap",
+    "nats",
+    "rdp",
+    "rsync",
+    "smb2",
+    "snmp/2c",
+    "stomp",
+    "tftp",
+    "tls"
+  ],
+  "candidate_hint": null,
+  "ipv4_only": true,
+  "summary": {
+    "type": "summary",
+    "elapsed_seconds": 2.004,
+    "counts": {
+      "packets": 139,
+      "captured_bytes": 9104,
+      "tcp": 136,
+      "identified": 16,
+      "incomplete": 13,
+      "tcp_control_without_state": 22,
+      "udp": 3
+    },
+    "protocols": {
+      "http/1.1": 1,
+      "bgp/4": 1,
+      "smb2": 1,
+      "tls": 1,
+      "stomp": 2,
+      "nats": 2,
+      "imap": 1,
+      "rdp": 1,
+      "fastcgi/1": 1,
+      "rsync": 1,
+      "git": 1,
+      "dns": 1,
+      "snmp/2c": 1,
+      "tftp": 1
+    },
+    "active_connections": 0,
+    "capture_stats": {
+      "captured": 139,
+      "received_by_filter": 141,
+      "dropped_by_kernel": 0
+    },
+    "scope": "Initial messages only; capture loss may be reported at shutdown",
+    "capture_quality": "no_kernel_drops_reported",
+    "stop_reason": "limit_or_interrupt"
+  },
+  "source_sha256": "72a0b547515098db3d581ebfb03b89c5e073bc7916840020e88b2acb03a8a2d8",
+  "verification_script_sha256": "9e5f72507632e766f85cd2c01552c34820124b7eef27475a50371fc4680e04df"
+}
