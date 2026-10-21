@@ -13,8 +13,25 @@ def dns_probe(data):
             and data[4:6] == b"\x00\x01")
 
 
+_DNS_RCODES = ("noerror", "formerr", "servfail", "nxdomain", "notimp", "refused", "yxdomain", "yxrrset", "nxrrset", "notauth", "notzone")
+
+
+def dns_message_evidence(header):
+    """(dns_message, dns_rcode) evidence rows for a validated header; query or response, no names."""
+    from .model import Evidence
+    if not header[2] & 0x80:
+        return (Evidence("dns_message", "query", "wire", "structural"),)
+    rcode = header[3] & 0x0f
+    return (Evidence("dns_message", "response", "wire", "structural"),
+            Evidence("dns_rcode", _DNS_RCODES[rcode] if rcode < len(_DNS_RCODES) else "other", "wire", "structural"))
+
+
 def dns(data, config):
-    return dns_details(data, config)[:2]
+    from .datagram_result import DatagramMatch
+    from .model import Evidence
+    protocol, reason, _, _ = dns_details(data, config)
+    return DatagramMatch(reason, application_protocol=protocol,
+                         evidence=(Evidence("application_protocol", protocol, "wire", "structural"),) + dns_message_evidence(data))
 
 
 def dns_details(data, config):
@@ -26,6 +43,8 @@ def dns_details(data, config):
     counts = struct.unpack("!4H", data[4:12])
     if sum(counts) > 128:
         raise BudgetError("DNS record count exceeds inspection limit")
+    if not data[2] & 0x80 and (data[2] & 0x04 or data[3] & 0x0f or counts[1] or counts[2]):
+        raise ParseError("DNS query must not carry the AA bit, answers, authority records or a response code")
     steps = 0
     boundaries = set()
 

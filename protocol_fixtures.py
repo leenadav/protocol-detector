@@ -456,3 +456,29 @@ def ech_outer(kdf=0x0001, aead=0x0001, config_id=0x2a, enc=bytes(32), payload=by
 
 SNI_PUBLIC = b'\x00\x15\x00\x00\x12public.example.net'
 TLS_ECH_HELLO = client_hello_with(((0, SNI_PUBLIC), (43, b'\x02\x03\x04'), (16, b'\x00\x03\x02h2'), (0xfe0d, ech_outer())))
+
+
+# v0.43: response-direction messages. Addresses and values are placeholders.
+DNS_RESPONSE = (bytes.fromhex("123481800001000100000000") + b"\x03www\x07example\x03com\x00\x00\x01\x00\x01"
+                + b"\xc0\x0c" + struct.pack("!HHIH", 1, 1, 300, 4) + bytes([192, 0, 2, 1]))
+DNS_NXDOMAIN = DNS_RESPONSE[:2] + b"\x81\x83" + DNS_RESPONSE[4:6] + b"\x00\x00" + DNS_RESPONSE[8:-16]
+_SYS_DESCR = _ber(6, b"\x2b\x06\x01\x02\x01\x01\x01\x00")
+
+
+def snmp_message(kind, pdu_body, version=1, community=b"public"):
+    return _ber(0x30, _ber(2, bytes([version])) + _ber(4, community) + _ber(kind, pdu_body))
+
+
+def snmp_fields(status=0, index=0, bindings=b""):
+    return _ber(2, b"\x2a") + _ber(2, bytes([status])) + _ber(2, bytes([index])) + _ber(0x30, bindings)
+
+
+SNMP_RESPONSE = snmp_message(0xa2, snmp_fields(bindings=_ber(0x30, _SYS_DESCR + _ber(4, b"placeholder"))))
+SNMP_SET = snmp_message(0xa3, snmp_fields(bindings=_ber(0x30, _SYS_DESCR + _ber(2, b"\x05"))))
+SNMP_INFORM = snmp_message(0xa6, snmp_fields(bindings=_ber(0x30, _SYS_DESCR + _ber(0x43, b"\x01\x00"))))
+SNMP_TRAP_V2 = snmp_message(0xa7, snmp_fields(bindings=_ber(0x30, _ber(6, b"\x2b\x06\x01\x02\x01\x01\x03\x00") + _ber(0x43, b"\x10"))
+                                                       + _ber(0x30, _ber(6, b"\x2b\x06\x01\x06\x03\x01\x01\x04\x01\x00") + _ber(6, b"\x2b\x06\x01\x06\x03\x01\x01\x05\x01"))))
+SNMP_TRAP_V1 = snmp_message(0xa4, _ber(6, b"\x2b\x06\x01\x04\x01\x81\x7f") + _ber(0x40, bytes([192, 0, 2, 9])) + _ber(2, b"\x06") + _ber(2, b"\x01")
+                            + _ber(0x43, b"\x00\xff") + _ber(0x30, _ber(0x30, _SYS_DESCR + _ber(0x80, b""))), version=0)
+DATAGRAM_CASES += ((DNS_RESPONSE, "dns"), (DNS_NXDOMAIN, "dns"), (SNMP_RESPONSE, "snmp/2c"), (SNMP_SET, "snmp/2c"), (SNMP_INFORM, "snmp/2c"),
+                   (SNMP_TRAP_V2, "snmp/2c"), (SNMP_TRAP_V1, "snmp/1"))

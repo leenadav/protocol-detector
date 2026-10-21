@@ -21,7 +21,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | dcerpc | tcp | Automatic profiles | bind_request | Connection-oriented v5.0 unfragmented Bind, NDR 2.0/NDR64 1.0 offers; no authentication, replies, stub decoding or product identity |
 | dhcp | udp | Automatic profiles | datagram | DHCPv4 types 1..8, no overloaded options |
 | dnp3 | tcp | Automatic profiles | protocol_header | Data link frame with header and block CRCs verified |
-| dns | tcp/udp | Automatic profiles | initial_message/datagram | QUERY opcode, one question; TCP length prefixes >=512 require dns hint |
+| dns | tcp/udp | Automatic profiles | initial_message/datagram | Query or response with QUERY opcode and one question, bounded record walk; message kind and rcode reported; TCP length prefixes >=512 require dns hint |
 | dtls | udp | Automatic profiles | datagram | DTLS1.2 complete epoch-zero ClientHello in one record/datagram; bounded extensions, client assertions only; no fragments, negotiation or decryption |
 | ethernet-ip | tcp/udp | Automatic profiles | protocol_header/datagram | Encapsulation header with RegisterSession/list/data commands; CIP not decoded |
 | fastcgi | tcp | Automatic profiles | initial_params | v1 BEGIN_REQUEST plus complete PARAMS stream; one request, zero reserved fields, no response/body semantics |
@@ -67,7 +67,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | smb1 | tcp | Automatic profiles | negotiation_request | NetBIOS session header plus SMB_COM_NEGOTIATE request with dialect strings; maps to the smb application |
 | smb2 | tcp | Automatic profiles | negotiation_request | Direct TCP SMB2/3 NEGOTIATE including 3.1.1 context framing; offers only |
 | smtp | tcp | Automatic profiles | initial_message | EHLO/HELO only; ambiguous 220 banners unknown |
-| snmp | udp | Automatic profiles | datagram | v1/v2c Get/GetNext/GetBulk read requests; v3 messages (USM header, plaintext read/report or encrypted scoped PDU); no responses or traps |
+| snmp | udp | Automatic profiles | datagram | v1/v2c and v3 messages with every standard PDU kind (Get, GetNext, GetBulk, Set, Response, Trap, Inform, Report; v3 USM header and plaintext or encrypted scoped PDU); PDU kind reported, values never emitted |
 | socks5 | tcp | Automatic profiles | initial_message/negotiation_response | Client no-auth offer plus request, or server method selection plus reply; subnegotiation and tunnel unverified |
 | ssdp | udp | Automatic profiles | datagram | M-SEARCH/NOTIFY/response HTTPU header block with SSDP headers |
 | ssh | tcp | Automatic profiles | initial_message | Leading SSH-2.0/1.99 identification |
@@ -1156,3 +1156,40 @@ encrypted inner name. RISKS.md derives `tls-encrypted-client-hello` (low) from
 it), and DTLS is unchanged.
 
 Primary specification: [draft-ietf-tls-esni section 5](https://datatracker.ietf.org/doc/html/draft-ietf-tls-esni#section-5).
+
+## Response direction for SNMP and DNS (v0.43)
+
+`snmp` accepts every standard PDU kind. SNMPv1 (version 0): Get, GetNext,
+Response, Set and the v1 Trap-PDU (enterprise OID, four-byte agent address,
+generic trap 0..6, specific trap >= 0, TimeTicks time stamp, bindings). SNMPv2c
+and the SNMPv3 plaintext scoped PDU: Get, GetNext, GetBulk, Set, Response,
+Inform, SNMPv2-Trap and Report. Read requests keep NULL values; Response, Set,
+Inform, Trap and Report bindings carry exactly one value TLV whose tag is an
+SMI type (INTEGER, OCTET STRING, NULL, OID, IpAddress of four bytes, Counter32,
+Gauge32, TimeTicks, Opaque, Counter64, or an empty noSuchObject /
+noSuchInstance / endOfMibView exception) with integer lengths within their
+types; a Response error-status is 0..18 and requests carry zero status and
+index; <= 128 bindings. Evidence `snmp_pdu` (`get`, `get-next`, `get-bulk`,
+`set`, `response`, `trap`, `inform`, `report`, or `encrypted` for a v3 privacy
+message). Communities, OIDs, values, agent addresses and engine data are never
+emitted; the SNMPv3 header, USM and encryption rules of v0.38 are unchanged.
+
+`dns` reports `dns_message` (`query`/`response`) and, for responses, `dns_rcode`
+(`noerror`, `formerr`, `servfail`, `nxdomain`, `notimp`, `refused`,
+`yxdomain`, `yxrrset`, `nxrrset`, `notauth`, `notzone`, else `other`; the
+four-bit header code, EDNS extended codes are not combined) on UDP and TCP. A
+query now must not carry answers, authority records, the AA bit or a response
+code; the response record walk (compression pointers to earlier boundaries,
+RDATA shapes for A/AAAA/NS/CNAME/PTR/MX/SOA/TXT/OPT, <= 128 records, trailing
+bytes rejected) is the one introduced earlier. RISKS.md derives
+`dns-error-response` from `servfail`, `nxdomain` and `refused`. Names and
+addresses are never emitted.
+
+The offline and live analyzers now keep the first identified datagram of each
+UDP direction and build the flow's session verdict from both (the client side
+decides as before; the server side adds its protocol, evidence and risks), so
+a response-only capture or an NXDOMAIN answer is visible in the session
+record.
+
+Primary specifications: [RFC 3416](https://www.rfc-editor.org/rfc/rfc3416.html), [RFC 1157 4.1.6](https://www.rfc-editor.org/rfc/rfc1157.html#section-4.1.6),
+[RFC 2578](https://www.rfc-editor.org/rfc/rfc2578.html), [RFC 1035 4.1.1](https://www.rfc-editor.org/rfc/rfc1035.html#section-4.1.1).

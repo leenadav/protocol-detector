@@ -54,12 +54,13 @@ def dns_with_contexts(data, config):
     if not config.retain_contexts and not config.heuristics:
         return dns(data, config)
     from .wire import dns_details
+    from .wire import dns_message_evidence
     protocol, reason, qname, qtype = dns_details(data, config)
     contexts = {"dns-req-query-name": qname, "dns-req-query-type": qtype} if config.retain_contexts else None
-    if not config.heuristics:
-        return protocol, reason, contexts
-    return DatagramMatch(reason, application_protocol=protocol, contexts=contexts, signature_family="dns",
-                         evidence=(Evidence("application_protocol", protocol, "wire", "structural"),) + dns_name_shape(qname))
+    evidence = (Evidence("application_protocol", protocol, "wire", "structural"),) + dns_message_evidence(data)
+    if config.heuristics:
+        evidence += dns_name_shape(qname)
+    return DatagramMatch(reason, application_protocol=protocol, contexts=contexts, signature_family="dns", evidence=evidence)
 
 
 def dns_name_shape(qname):

@@ -53,7 +53,8 @@ class SNMPv3Tests(unittest.TestCase):
             _snmpv3(0x03, b"\x80\x00\x00\x01", b"u", bytes(12), bytes(8), scoped()),       # plaintext PDU under privacy
             _snmpv3(0x04, b"x" * 33, b"", b"", b"", scoped()),                             # engine id too long
             _snmpv3(0x04, b"", b"u" * 33, b"", b"", scoped()),                             # user too long
-            _snmpv3(0x04, b"", b"", b"", b"", scoped(0xa3, binding)),                      # Set request outside the profile
+            _snmpv3(0x04, b"", b"", b"", b"", scoped(0xa9, binding)),                      # PDU kind outside the SNMPv2 set
+            _snmpv3(0x04, b"", b"", b"", b"", scoped(0xa3, binding, b"\x01")),             # Set with an error status
             _snmpv3(0x04, b"", b"", b"", b"", scoped(0xa0, binding, b"\x01")),             # error status on a request
             _snmpv3(0x04, b"", b"", b"", b"", scoped(0xa0, _ber(0x30, _ber(6, b"\x2b\x06") + _ber(4, b"v")))),  # value instead of NULL
             _snmpv3(0x04, b"", b"", b"", b"", scoped(0xa0, binding * 129)),                # binding budget
@@ -65,6 +66,8 @@ class SNMPv3Tests(unittest.TestCase):
             result = inspect(data)
             self.assertNotEqual(result.status, "identified", data.hex())
         self.assertEqual(inspect(_snmpv3(0x04, b"", b"", b"", b"", scoped(0xa0, binding * 129))).status, "budget_exhausted")
+        set_request = inspect(_snmpv3(0x04, b"", b"", b"", b"", scoped(0xa3, _ber(0x30, _ber(6, b"\x2b\x06\x01\x02\x01\x01\x05\x00") + _ber(4, b"n")))))
+        self.assertEqual((set_request.application_protocol, fields(set_request, "snmp_pdu")), ("snmp/3", {"snmp_pdu": "set"}))   # v0.43
         other_model = _ber(0x30, _ber(2, b"\x03") + _ber(0x30, _ber(2, b"\x01") + _ber(2, b"\x00\xff\xe3") + _ber(4, b"\x04") + _ber(2, b"\x04")) + _ber(4, b"") + scoped())
         self.assertEqual(fields(inspect(other_model), "snmp_security"), {"snmp_security": "model-4"})
         self.assertEqual(inspect(_ber(0x30, _ber(2, b"\x02") + _ber(4, b"c") + scoped())).status, "unknown")  # version 2 (not 2c) stays outside

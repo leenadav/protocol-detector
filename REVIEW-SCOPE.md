@@ -1,11 +1,20 @@
-# Review scope: protocol detector v0.42
+# Review scope: protocol detector v0.43
 
 Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.42): `ech_type` in parsers.py and its two callers (TLSParser
+New focus (v0.43): `_snmp_pdu`/`_snmp_bindings` in network.py (per-kind
+status rules, the v1 Trap-PDU layout, the SMI value tag and length table,
+version-specific PDU sets for v1, v2c and v3), `dns_message_evidence` and the
+stricter query rule in wire.py, and the DatagramMatch returns that now carry
+evidence for every SNMP and DNS result. Trace: no value, OID, community,
+agent address or name in evidence or reasons; the 128-binding budget on every
+kind; test_network and test_snmpv3 expectations changed only where response
+and Set PDUs became accepted. 454 tests pass.
+
+Previous focus (v0.42): `ech_type` in parsers.py and its two callers (TLSParser
 through the `offered` list, quic.py). Trace: every ECH field bound against the
 extension, exact fill, the inner type carrying no fields, the malformed path
 (the whole ClientHello becomes malformed exactly as for other extensions), the

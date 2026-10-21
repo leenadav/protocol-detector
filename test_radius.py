@@ -127,11 +127,12 @@ class RadiusTests(unittest.TestCase):
         authenticator = b'\0\x01' + bytes(6) + b'\x0c' + b'a' * 7
         data = request(attr(4, bytes.fromhex('c0000200')) + attr(24, b'\0\x01'), authenticator)
         self.assert_identified(data)
+        # Until v0.43 this encoding also read as a DNS query; the RADIUS length byte lands on the
+        # DNS response code, which a query may not carry, so the overlap now resolves to RADIUS
+        # only with its hint. RADIUS stays out of automatic competition: its header is too weak.
         dns = DatagramInspector().inspect(data, 'dns')
-        self.assertEqual(dns.application_protocol, 'dns', dns)
-        # RADIUS is deliberately not part of automatic competition yet. Existing
-        # DNS coverage remains available; neither encoding proves sender intent.
-        self.assertEqual(DatagramInspector().inspect(data).application_protocol, 'dns')
+        self.assertEqual(dns.status, 'malformed', dns)
+        self.assertNotEqual(DatagramInspector().inspect(data).application_protocol, 'radius')
 
     def test_mutations_bounded_candidate_work(self):
         rng = random.Random(1010)

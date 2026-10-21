@@ -53,7 +53,7 @@ class NetworkProtocolTests(unittest.TestCase):
                 result = DatagramInspector().inspect(bytes(data))
                 self.assertEqual(result.application_protocol, 'snmp/' + ('1' if version == 0 else '2c'))
                 self.assertNotIn('public', repr(result))
-        for offset, value in ((1, 37), (4, 3), (13, 0xa2), (20, 1), (28, 0x30), (30, 0x80), (38, 4)):
+        for offset, value in ((1, 37), (4, 3), (13, 0xa9), (20, 1), (28, 0x30), (30, 0x80), (38, 4)):   # 0xa2 (response) is accepted since v0.43
             data = bytearray(SNMP)
             data[offset] = value
             self.assertNotEqual(DatagramInspector().inspect(bytes(data)).status, 'identified', offset)

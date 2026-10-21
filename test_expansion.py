@@ -142,7 +142,7 @@ class ExpansionTests(unittest.TestCase):
         ambiguous[6:8] = b"\x00\x01"
         ambiguous += b"\x00" + struct.pack("!HHIH", 1, 1, 0, 4) + bytes(4)
         data = bytes(ambiguous)
-        self.assertEqual(dns(data, Config())[0], "dns")
+        self.assertEqual(dns(data, Config()).application_protocol, "dns")
         self.assertEqual(coap(data, Config())[0], "coap")
         inspector = DatagramInspector()
         result = inspector.inspect(data)

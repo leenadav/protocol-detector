@@ -113,7 +113,7 @@ class HeuristicEngineTests(unittest.TestCase):
         self.assertEqual(DatagramInspector(HEURISTICS).inspect(b"\xfa\xfbhello").status, "unknown")
         ordinary = DatagramInspector(HEURISTICS).inspect(DNS)
         self.assertEqual((ordinary.application_protocol, fields(ordinary, "dns_query_shape")), ("dns", {"dns_query_shape": "ordinary"}))
-        self.assertEqual(DatagramInspector().inspect(DNS).evidence, (__import__("protocol_engine.model", fromlist=["Evidence"]).Evidence("application_protocol", "dns", "wire", "structural"),))
+        self.assertEqual([e.field for e in DatagramInspector().inspect(DNS).evidence], ["application_protocol", "dns_message"])
         long_label = DatagramInspector(HEURISTICS).inspect(dns_query([b"a" * 40, b"example", b"com"]))
         self.assertEqual(fields(long_label, "dns_query_shape", "dns_query_longest_label"), {"dns_query_shape": "suspicious", "dns_query_longest_label": "40"})
         random_label = b"x7q2k9m4z1p8w3j6v5"  # 18 distinct characters: 4.17 bits per byte

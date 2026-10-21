@@ -122,7 +122,7 @@ class GatewayTests(unittest.TestCase):
             self.assertFalse(dns_probe(data[2:14]))
         # Valid 257-byte DNS body deliberately overlaps FCGI version/type,
         # request ID and content length, but DNS QDCOUNT has low byte one.
-        dns = bytes.fromhex('000100080001000000000001') + bytes.fromhex('0000010001')
+        dns = bytes.fromhex('000180080001000000000001') + bytes.fromhex('0000010001')   # a response: queries carry rcode zero (v0.43)
         dns += b'\0' + struct.pack('!HHIH', 65000, 1, 0, 229) + bytes(229)
         self.assertEqual(len(dns), 257)
         data = b'\x01\x01' + dns

@@ -134,8 +134,16 @@ class Analyzer:
     def _udp_session(self, key, flow, reason):
         if self.on_session is None:
             return
-        verdict = classify(flow["observation"], "udp", flow["server"][1], flow["bytes"].get(flow["client"], 0), self.signatures)
-        self._record("udp", flow["client"], flow["server"], flow, verdict, reason, (flow["observation"],))
+        # v0.43: both directions contribute. The client datagram decides as before; a server
+        # datagram (DNS response, SNMP response or trap) adds its evidence and risks.
+        client_obs = flow["observation"]
+        server_obs = flow["observations"].get(flow["server"])
+        if server_obs is None:
+            verdict = classify(client_obs, "udp", flow["server"][1], flow["bytes"].get(flow["client"], 0), self.signatures)
+        else:
+            verdict = session_verdict(client_obs, server_obs, "udp", flow["server"][1], flow["bytes"].get(flow["client"], 0),
+                                      flow["bytes"].get(flow["server"], 0), True, self.signatures)
+        self._record("udp", flow["client"], flow["server"], flow, verdict, reason, (client_obs, server_obs))
 
     def server_endpoint(self, packet):
         """Server endpoint for an event about this packet, when tracking knows it."""
@@ -207,7 +215,7 @@ class Analyzer:
             else:
                 flow = self.udp_flows[key] = {"client": packet.source, "server": packet.destination, "start": self.now,
                                               "time": self.now, "packets": 0, "bytes": {}, "ready": True,
-                                              "observation": self.last_classification}
+                                              "observation": self.last_classification, "observations": {}}
         if flow is not None:
             flow["time"] = self.now
             flow["packets"] += 1
@@ -215,6 +223,10 @@ class Analyzer:
             # Keep the first identification; otherwise the latest outcome describes the flow.
             if flow["observation"].status != "identified":
                 flow["observation"] = self.last_classification
+            # Per direction, the same rule: the first identified datagram of each side is kept.
+            previous = flow["observations"].get(packet.source)
+            if previous is None or previous.status != "identified":
+                flow["observations"][packet.source] = self.last_classification
         self.last_server = flow["server"] if flow is not None else packet.destination
         result = self.last_classification
         return "UDP {}:{} -> {}:{} | {} | {} | {}".format(

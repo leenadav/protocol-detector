@@ -26,6 +26,7 @@ evidence strength is `heuristic` and their thresholds are listed here.
 | `tls-self-issued-certificate` | medium | With `--certificates` (v0.39): the leaf certificate after a TLS 1.2 ServerHello has an issuer equal to its subject (`tls_certificate_self_issued=yes`). Self-signed in practice; the signature itself is not verified |
 | `tls-weak-certificate-key` | high | Leaf public key below RSA 2048 bits or a named curve below 256 bits (`tls_certificate_key`, e.g. `rsa-1024`). `ec-other` and `other` never flag |
 | `tls-weak-certificate-signature` | high | Leaf signed with `md5-rsa`, `sha1-rsa` or `ecdsa-sha1` (`tls_certificate_signature`) |
+| `dns-error-response` | low | DNS response (UDP or TCP, evidence `dns_rcode`, v0.43) with rcode `servfail`, `nxdomain` or `refused`; a single flow signal for resolution failures, not a judgement about the name |
 | `tls-encrypted-client-hello` | low | ClientHello (TLS or QUIC) with an outer `encrypted_client_hello` extension (`tls_ech=outer`, v0.42): the `server_name` and any hostname mapping refer to the client-facing public name; the real server name is encrypted and the inner offer is not visible. An inner-type extension or a GREASE-shaped one that fails structure never flags |
 | `tls-certificate-lifetime-excessive` | low | Leaf validity longer than 398 days (`tls_certificate_lifetime_days`), the CA/Browser Forum baseline since September 2020 |
 

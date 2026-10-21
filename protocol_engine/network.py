@@ -193,16 +193,17 @@ def _oid(value):
         raise ParseError("Truncated SNMP OID subidentifier")
 
 
-def _snmp_pdu(pdu, kind):
-    """Request-id, error/bulk integers and variable bindings of a Get/GetNext/GetBulk/Report PDU."""
-    _, pos = _integer(pdu, 0)
-    first, pos = _integer(pdu, pos)
-    second, pos = _integer(pdu, pos)
-    if first < 0 or second < 0 or (kind in (0xa0, 0xa1) and (first or second)):
-        raise ParseError("Invalid SNMP request status/index or bulk counts")
-    bindings, pos = ber_field(pdu, pos, len(pdu), 0x30)
-    if pos != len(pdu):
-        raise ParseError("Trailing SNMP request fields")
+_SNMP_PDU_NAMES = {0xa0: "get", 0xa1: "get-next", 0xa2: "response", 0xa3: "set", 0xa4: "trap", 0xa5: "get-bulk",
+                   0xa6: "inform", 0xa7: "trap", 0xa8: "report"}
+_SNMP_V1_KINDS = (0xa0, 0xa1, 0xa2, 0xa3, 0xa4)
+_SNMP_V2_KINDS = (0xa0, 0xa1, 0xa2, 0xa3, 0xa5, 0xa6, 0xa7, 0xa8)
+# Value tags a binding may carry outside read requests: ASN.1 INTEGER, OCTET STRING, NULL, OID,
+# SMI IpAddress, Counter32, Gauge32, TimeTicks, Opaque, Counter64 and the three v2 exceptions.
+_SNMP_VALUE_TAGS = frozenset((0x02, 0x04, 0x05, 0x06, 0x40, 0x41, 0x42, 0x43, 0x44, 0x46, 0x80, 0x81, 0x82))
+
+
+def _snmp_bindings(bindings, read_only):
+    """Variable bindings: OID plus NULL (read requests) or one value TLV; values are never emitted."""
     pos, count = 0, 0
     while pos < len(bindings):
         count += 1
@@ -211,16 +212,59 @@ def _snmp_pdu(pdu, kind):
         binding, pos = ber_field(bindings, pos, len(bindings), 0x30)
         oid, cursor = ber_field(binding, 0, len(binding), 6)
         _oid(oid)
-        if kind == 0xa8:
-            if cursor >= len(binding):
-                raise ParseError("SNMP report binding without a value")
-            _, cursor = ber_field(binding, cursor, len(binding), binding[cursor])  # counter or exception value, not emitted
-        else:
+        if cursor >= len(binding):
+            raise ParseError("SNMP binding without a value")
+        tag = binding[cursor]
+        if read_only:
             null, cursor = ber_field(binding, cursor, len(binding), 5)
             if null:
                 raise ParseError("SNMP read binding must contain NULL value")
+        else:
+            if tag not in _SNMP_VALUE_TAGS:
+                raise ParseError("SNMP binding value tag outside the SMI profile")
+            value, cursor = ber_field(binding, cursor, len(binding), tag)
+            if (tag == 0x40 and len(value) != 4) or (tag in (0x80, 0x81, 0x82) and value) or (tag == 0x05 and value) \
+                    or (tag in (0x02, 0x41, 0x42, 0x43) and not 1 <= len(value) <= 5) or (tag == 0x46 and not 1 <= len(value) <= 9):
+                raise ParseError("SNMP binding value length outside its type")
         if cursor != len(binding):
-            raise ParseError("SNMP read binding must contain NULL value")
+            raise ParseError("Trailing SNMP binding data")
+
+
+def _snmp_pdu(pdu, kind):
+    """Validate one PDU body by kind and return its name for evidence."""
+    if kind == 0xa4:
+        # SNMPv1 Trap-PDU: enterprise, agent address, generic and specific trap, time stamp, bindings.
+        enterprise, pos = ber_field(pdu, 0, len(pdu), 6)
+        _oid(enterprise)
+        agent, pos = ber_field(pdu, pos, len(pdu), 0x40)
+        if len(agent) != 4:
+            raise ParseError("SNMPv1 trap agent address must be four bytes")
+        generic, pos = _integer(pdu, pos)
+        specific, pos = _integer(pdu, pos)
+        if not 0 <= generic <= 6 or specific < 0:
+            raise ParseError("SNMPv1 trap codes outside their ranges")
+        ticks, pos = ber_field(pdu, pos, len(pdu), 0x43)
+        if not 1 <= len(ticks) <= 5:
+            raise ParseError("SNMPv1 trap time stamp length invalid")
+        bindings, pos = ber_field(pdu, pos, len(pdu), 0x30)
+        if pos != len(pdu):
+            raise ParseError("Trailing SNMPv1 trap fields")
+        _snmp_bindings(bindings, False)
+        return "trap"
+    _, pos = _integer(pdu, 0)
+    first, pos = _integer(pdu, pos)
+    second, pos = _integer(pdu, pos)
+    if first < 0 or second < 0:
+        raise ParseError("Invalid SNMP request status/index or bulk counts")
+    if kind in (0xa0, 0xa1, 0xa3, 0xa6, 0xa7) and (first or second):
+        raise ParseError("SNMP request error-status and error-index must be zero")
+    if kind == 0xa2 and first > 18:
+        raise ParseError("SNMP response error-status outside RFC 3416")
+    bindings, pos = ber_field(pdu, pos, len(pdu), 0x30)
+    if pos != len(pdu):
+        raise ParseError("Trailing SNMP request fields")
+    _snmp_bindings(bindings, kind in (0xa0, 0xa1, 0xa5))
+    return _SNMP_PDU_NAMES[kind]
 
 
 def _snmpv3(message, pos):
@@ -277,14 +321,15 @@ def _snmpv3(message, pos):
         if len(context_engine) > 32 or len(context_name) > 32 or cursor >= len(scoped):
             raise ParseError("SNMPv3 scoped PDU context outside profile")
         kind = scoped[cursor]
-        if kind not in (0xa0, 0xa1, 0xa5, 0xa8):
-            raise UnsupportedPrefix("SNMPv3 profile covers Get/GetNext/GetBulk requests and Report PDUs")
+        if kind not in _SNMP_V2_KINDS:
+            raise UnsupportedPrefix("SNMPv3 scoped PDU kind outside the SNMPv2 PDU set")
         pdu, cursor = ber_field(scoped, cursor, len(scoped), kind)
         if cursor != len(scoped):
             raise ParseError("Trailing SNMPv3 scoped PDU data")
-        _snmp_pdu(pdu, kind)
+        name = _snmp_pdu(pdu, kind)
         scope = "plaintext"
     evidence = (Evidence("application_protocol", "snmp/3", "wire", "structural"),
+                Evidence("snmp_pdu", "encrypted" if priv else name, "wire", "structural"),
                 Evidence("snmp_security", security, "wire", "structural"),
                 Evidence("snmp_scoped_pdu", scope, "wire", "structural"),
                 Evidence("snmp_flags", "".join(name for bit, name in ((auth, "auth"), (priv, "priv"), (reportable, "reportable")) if bit) or "none", "wire", "structural"))
@@ -300,16 +345,19 @@ def snmp(data, config):
     if version == 3:
         return _snmpv3(message, pos)
     if version not in (0, 1):
-        raise UnsupportedPrefix("Only SNMPv1/v2c read requests and SNMPv3 messages supported")
+        raise UnsupportedPrefix("Only SNMPv1, v2c and v3 messages are supported")
     _, pos = ber_field(message, pos, len(message), 4)  # never expose community
-    if pos >= len(message) or message[pos] not in ((0xa0, 0xa1) if version == 0 else (0xa0, 0xa1, 0xa5)):
-        raise UnsupportedPrefix("Only SNMP Get/GetNext/GetBulk supported")
+    if pos >= len(message) or message[pos] not in (_SNMP_V1_KINDS if version == 0 else _SNMP_V2_KINDS):
+        raise UnsupportedPrefix("SNMP PDU kind outside the version's PDU set")
     kind = message[pos]
     pdu, pos = ber_field(message, pos, len(message), kind)
     if pos != len(message):
         raise ParseError("Trailing SNMP PDU data")
-    _snmp_pdu(pdu, kind)
-    return "snmp/" + ("1" if version == 0 else "2c"), "SNMP read request BER/PDU/OID framing validated; community and response unverified"
+    name = _snmp_pdu(pdu, kind)
+    protocol = "snmp/" + ("1" if version == 0 else "2c")
+    return DatagramMatch("SNMP {} BER/PDU/OID framing validated; community and values unverified and never emitted".format(name),
+                         application_protocol=protocol,
+                         evidence=(Evidence("application_protocol", protocol, "wire", "structural"), Evidence("snmp_pdu", name, "wire", "structural")))
 
 
 def ntp(data, config):

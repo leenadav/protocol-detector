@@ -171,8 +171,9 @@ class DNSParser(FrameParser):
         return size + 2
 
     def validate(self, data):
-        from .wire import dns_details
+        from .wire import dns_details, dns_message_evidence
         self.protocol_name, self.reason, qname, qtype = dns_details(data[2:], self.config)
+        self.extra_evidence = tuple((e.field, e.value, "message", e.strength) for e in dns_message_evidence(data[2:]))
         if self.config.retain_contexts:
             self.contexts = {"dns-req-query-name": qname, "dns-req-query-type": qtype}
 
