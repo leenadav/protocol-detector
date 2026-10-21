@@ -1,4 +1,4 @@
-.PHONY: test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix
+.PHONY: test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -48,8 +48,20 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix
+check: lint test pins requirements policy-lint coverage-matrix docs-counts
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
+
+docs-counts:
+	$(PYTHON) -B tools/check_docs_counts.py
+
+# Same checks the CI workflow runs, in one command, plus the extended fuzz pass.
+ci-local: check fuzz
+	$(PYTHON) -B analyze_pcap.py sample-expanded.pcap --events-only --sessions > /dev/null
+	$(PYTHON) -B protodetect.py analyze sample-expanded.pcap --json --sessions | $(PYTHON) -B protodetect.py schema offline-row --validate /dev/stdin
+
+# Workflow lint with a locally installed actionlint (CI fetches a checksum-verified release).
+workflow-lint:
+	actionlint -no-color .github/workflows/*.yml
 
 lint:
 	ruff check .

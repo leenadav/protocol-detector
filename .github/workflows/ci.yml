@@ -45,7 +45,18 @@ jobs:
           python -m compileall -q protocol_engine tools *.py
           grep -q '^dependencies = \[\]' pyproject.toml || (echo "runtime dependencies are not allowed" && exit 1)
       - name: Unit, fuzz and property tests
-        run: python -B -m unittest discover -q
+        run: |
+          python -B -m unittest discover -q 2> test-output.txt || (cat test-output.txt && exit 1)
+          tail -n 3 test-output.txt
+          {
+            echo "### Tests (python ${{ matrix.python }})"
+            echo
+            echo '```'
+            tail -n 3 test-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Documentation numbers must match the tree (families, applications, tests, version)
+        run: python -B tools/check_docs_counts.py | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Offline replay of synthetic captures
         run: |
           python -B analyze_pcap.py sample-expanded.pcap --events-only --sessions > /dev/null
@@ -73,18 +84,28 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 2
+          # On a pull request the default checkout is the synthetic merge commit, whose parent is the
+          # base branch; the diff must compare the pushed head with its own parent instead.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
       - name: Compare every fixture, truncation and seeded mutation with the parent commit
+        env:
+          SEED: ${{ github.run_id }}
         run: |
-          if git rev-parse --verify -q HEAD~1 >/dev/null; then
+          if git rev-parse --verify -q HEAD~1 >/dev/null && git cat-file -e HEAD~1:protocol_engine/engine.py 2>/dev/null; then
             git worktree add --detach ../baseline HEAD~1
-            python -B tools/compare_engine.py ../baseline --iterations 300 --seed ${{ github.run_id }} --report behaviour-diff.md --report-only
+            python -B tools/compare_engine.py ../baseline --iterations 300 --seed "$SEED" --report behaviour-diff.md --report-only
           else
-            printf '# Engine behaviour diff\n\nNo parent commit available.\n' > behaviour-diff.md
+            printf '# Engine behaviour diff\n\nNo comparable parent commit (first commit or a parent without the engine).\n' > behaviour-diff.md
           fi
-          cat behaviour-diff.md | head -60
+          head -60 behaviour-diff.md
+          {
+            echo "### Behaviour diff against the parent commit"
+            echo
+            head -40 behaviour-diff.md
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload the behaviour diff report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -96,6 +117,9 @@ jobs:
     name: static analysis (ruff, bandit, secrets)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read   # gitleaks-action lists the pull request's commits on pull_request events
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
@@ -146,11 +170,38 @@ jobs:
           path: sbom.cdx.json
           retention-days: 30
 
+  workflow-lint:
+    name: workflow lint (actionlint)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Fetch actionlint 1.7.7 and verify its published checksum
+        env:
+          VERSION: "1.7.7"
+          SHA256: "023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757"
+        run: |
+          curl -sSfL -o actionlint.tar.gz "https://github.com/rhysd/actionlint/releases/download/v${VERSION}/actionlint_${VERSION}_linux_amd64.tar.gz"
+          echo "${SHA256}  actionlint.tar.gz" | sha256sum -c -
+          tar xzf actionlint.tar.gz actionlint
+      - name: Lint every workflow (syntax, expressions, shellcheck-style script checks)
+        run: ./actionlint -no-color .github/workflows/*.yml
+
   security-requirements:
     name: security requirements gate
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
