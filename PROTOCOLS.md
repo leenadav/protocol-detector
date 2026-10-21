@@ -181,8 +181,9 @@ Emitted evidence is a closed vocabulary: `http2_message` (`request`/
 `other`, asserted), `http2_status` (the code), `http2_content_type`
 (asserted class: `grpc`, `grpc-web`, `json`, `xml`, `form`, `multipart`,
 `protobuf`, `binary`, `text`, `other`) and `hostname` from `:authority`
-(port removed, DNS names only; IP literals give no hostname; userinfo or a
-bad port rejects the block). Paths, user agents, cookies and every other
+(port removed, DNS names only; IPv4 literals and bracketed IPv6 literals,
+validated with the standard library, give no hostname; userinfo, an invalid
+bracket content or a port outside 1..65535 rejects the block). Paths, user agents, cookies and every other
 value are never emitted; with `retain_contexts` they feed the `http2-req-*`
 and `http2-rsp-status` signature contexts (SIGNATURES.md). With
 `fingerprints`, `h2_pseudo_order` records the pseudo-header order
@@ -267,8 +268,10 @@ web-browsing) over HTTP/1.x and HTTP/2. Header values are never emitted.
 header in either direction. An optional XML declaration (`version="1.x"`,
 optional UTF-8 encoding and standalone) may precede the `<stream:stream` open
 tag, which must be followed by whitespace or `>`; the tag is read up to 4096
-bytes (bounded by `max_line`) and at most 16 attributes, each quoted and free
-of `<`, `&` and control bytes, at most 1023 bytes, no duplicates. Required:
+bytes (bounded by `max_line`) to the first `>` outside a quoted attribute
+value (`>` is legal inside quotes and the quote state survives feed
+boundaries) and holds at most 16 attributes, each quoted and free of `<`, `&`
+and control bytes, at most 1023 bytes, no duplicates. Required:
 `xmlns` in {jabber:client, jabber:server, jabber:component:accept} and
 `xmlns:stream` equal to the streams namespace; `version`, when present, is
 numeric. A header carrying a non-empty `id` is the receiving entity's response
@@ -325,7 +328,11 @@ only with the `x11-server` hint because its first byte is 0, 1 or 2
 followed by the client SpiceLinkMess (channel type, capability counts at most
 32 each, caps offset 18, exact size; secondary channels need a connection id)
 or the server SpiceLinkReply (error 0..9, 162-byte public key, caps offset
-178, exact size). Evidence: `spice_message` (`link-message`/`link-reply`),
+178, exact size). The client layout is tested first: a reply can never
+satisfy it because the bytes the client layout reads as the capability offset
+lie inside the reply's DER-encoded public key, whose fixed object identifier
+never encodes 18, while a client message whose last capability word happens
+to equal 178 is not a reply (review round 1). Evidence: `spice_message` (`link-message`/`link-reply`),
 `spice_channel` (main, display, inputs, cursor, playback, record, tunnel,
 smartcard, usbredir, port, webdav, other), `spice_link_error` (closed labels).
 Connection ids, public keys and capabilities are never emitted.

@@ -185,18 +185,30 @@ _H2_CONNECTION_SPECIFIC = frozenset((b"connection", b"keep-alive", b"proxy-conne
 _H2_PSEUDO_LETTERS = {b":method": "m", b":authority": "a", b":scheme": "s", b":path": "p", b":protocol": "r", b":status": "t"}
 
 
+def _valid_port(port):
+    return port.isdigit() and len(port) <= 5 and 0 < int(port) <= 65535
+
+
 def _authority_host(value):
     """DNS host of an :authority value, or None for IP literals; userinfo and bad ports are errors."""
     if b"@" in value or not value:
         raise ParseError("HTTP/2 :authority must be host[:port] without userinfo")
     if value[:1] == b"[":
         end = value.find(b"]")
-        if end < 0 or (len(value) > end + 1 and (value[end + 1:end + 2] != b":" or not value[end + 2:].isdigit())):
+        if end < 0:
             raise ParseError("Invalid HTTP/2 :authority IP literal")
+        try:
+            ipaddress.IPv6Address(value[1:end].decode("ascii"))
+        except (UnicodeDecodeError, ValueError):
+            raise ParseError("Invalid HTTP/2 :authority IP literal") from None
+        rest = value[end + 1:]
+        if rest:
+            if rest[:1] != b":" or not _valid_port(rest[1:]):
+                raise ParseError("Invalid HTTP/2 :authority port")
         return None
     host, sep, port = value.rpartition(b":")
     if sep:
-        if not port.isdigit() or len(port) > 5 or int(port) > 65535:
+        if not _valid_port(port):
             raise ParseError("Invalid HTTP/2 :authority port")
     else:
         host = value

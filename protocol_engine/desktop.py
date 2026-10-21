@@ -136,31 +136,35 @@ class SPICEParser(FrameParser):
 
     def validate(self, data):
         body = data[16:]
-        if len(body) >= SPICE_PUBLIC_KEY + 16 and int.from_bytes(body[SPICE_PUBLIC_KEY + 12:SPICE_PUBLIC_KEY + 16], "little") == SPICE_PUBLIC_KEY + 16:
-            error = int.from_bytes(body[:4], "little")
-            common = int.from_bytes(body[SPICE_PUBLIC_KEY + 4:SPICE_PUBLIC_KEY + 8], "little")
-            channel = int.from_bytes(body[SPICE_PUBLIC_KEY + 8:SPICE_PUBLIC_KEY + 12], "little")
-            if error >= len(SPICE_LINK_ERRORS):
-                raise ParseError("SPICE link error outside the specification")
-            if common > MAX_SPICE_CAPS or channel > MAX_SPICE_CAPS or len(body) != SPICE_PUBLIC_KEY + 16 + 4 * (common + channel):
-                raise ParseError("SPICE link reply capability counts disagree with its size")
-            self.scope = "negotiation_response"
-            self.extra_evidence = (("spice_message", "link-reply", "link_header", "structural"),
-                                   ("spice_link_error", SPICE_LINK_ERRORS[error], "link_reply", "structural"))
-            self.reason = "SPICE link reply validated; public key and capabilities not emitted"
-            return
         if len(body) < 18:
             raise ParseError("SPICE link message shorter than its fixed fields")
+        # The client layout is tried first: a reply can never satisfy it, because the bytes a
+        # client layout reads as the capability offset (body[14:18]) fall inside the reply's
+        # DER-encoded RSA public key, whose fixed object identifier never encodes 18. A client
+        # message whose trailing capability word happens to equal the reply's offset must
+        # therefore not be read as a reply (review finding, round 1).
         channel_type = body[4]                      # body[5] is the channel id, not emitted
         common = int.from_bytes(body[6:10], "little")
         channel = int.from_bytes(body[10:14], "little")
         offset = int.from_bytes(body[14:18], "little")
-        if not channel_type or offset != 18 or common > MAX_SPICE_CAPS or channel > MAX_SPICE_CAPS:
+        if (channel_type and offset == 18 and common <= MAX_SPICE_CAPS and channel <= MAX_SPICE_CAPS
+                and len(body) == 18 + 4 * (common + channel)):
+            if channel_type != 1 and not int.from_bytes(body[:4], "little"):
+                raise ParseError("SPICE secondary channel without a connection id")
+            self.extra_evidence = (("spice_message", "link-message", "link_header", "structural"),
+                                   ("spice_channel", SPICE_CHANNELS.get(channel_type, "other"), "link_message", "structural"))
+            self.reason = "SPICE link message validated; connection id and capabilities not emitted"
+            return
+        if len(body) < SPICE_PUBLIC_KEY + 16 or int.from_bytes(body[SPICE_PUBLIC_KEY + 12:SPICE_PUBLIC_KEY + 16], "little") != SPICE_PUBLIC_KEY + 16:
             raise ParseError("SPICE link message fields outside the profile")
-        if len(body) != 18 + 4 * (common + channel):
-            raise ParseError("SPICE link message capability counts disagree with its size")
-        if channel_type != 1 and not int.from_bytes(body[:4], "little"):
-            raise ParseError("SPICE secondary channel without a connection id")
-        self.extra_evidence = (("spice_message", "link-message", "link_header", "structural"),
-                               ("spice_channel", SPICE_CHANNELS.get(channel_type, "other"), "link_message", "structural"))
-        self.reason = "SPICE link message validated; connection id and capabilities not emitted"
+        error = int.from_bytes(body[:4], "little")
+        common = int.from_bytes(body[SPICE_PUBLIC_KEY + 4:SPICE_PUBLIC_KEY + 8], "little")
+        channel = int.from_bytes(body[SPICE_PUBLIC_KEY + 8:SPICE_PUBLIC_KEY + 12], "little")
+        if error >= len(SPICE_LINK_ERRORS):
+            raise ParseError("SPICE link error outside the specification")
+        if common > MAX_SPICE_CAPS or channel > MAX_SPICE_CAPS or len(body) != SPICE_PUBLIC_KEY + 16 + 4 * (common + channel):
+            raise ParseError("SPICE link reply capability counts disagree with its size")
+        self.scope = "negotiation_response"
+        self.extra_evidence = (("spice_message", "link-reply", "link_header", "structural"),
+                               ("spice_link_error", SPICE_LINK_ERRORS[error], "link_reply", "structural"))
+        self.reason = "SPICE link reply validated; public key and capabilities not emitted"

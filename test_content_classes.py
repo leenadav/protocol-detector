@@ -76,6 +76,17 @@ class ContentClassTests(unittest.TestCase):
         self.assertEqual(session_verdict(inspect(IPP_REQUEST), response, "tcp", 631).port_usage, "standard")
         self.assertEqual(classify(inspect(WEBDAV_REQUEST), "tcp", 443).port_usage, "standard")
 
+    def test_native_grpc_needs_http2(self):
+        # Review round 1: native gRPC exists only over HTTP/2; the same content type on HTTP/1.1 stays web-browsing.
+        native = inspect(b"POST /svc HTTP/1.1\r\nHost: example.com\r\nContent-Type: application/grpc\r\nContent-Length: 0\r\n\r\n")
+        self.assertEqual((native.application_protocol, values(native)["http_content_type"], classify(native).app), ("http/1.1", "grpc", "web-browsing"))
+        web = inspect(b"POST /svc HTTP/1.1\r\nHost: example.com\r\nContent-Type: application/grpc-web+proto\r\nContent-Length: 0\r\n\r\n")
+        self.assertEqual((values(web)["http_content_type"], classify(web).app), ("grpc-web", "grpc"))
+        from protocol_fixtures import H2_GRPC
+        self.assertEqual(classify(inspect(H2_GRPC)).app, "grpc")
+        h2_web = h2((b":method", b"POST"), (b":scheme", b"https"), (b":path", b"/svc"), (b"content-type", b"application/grpc-web"))
+        self.assertEqual(classify(inspect(h2_web)).app, "grpc")
+
     def test_dns_over_https(self):
         for data in (DOH_POST, DOH_GET):
             observation = inspect(data)

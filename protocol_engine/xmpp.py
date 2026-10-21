@@ -32,6 +32,7 @@ class XMPPParser:
         self.config = config
         self.limit = min(config.max_line, MAX_HEADER)
         self.buffer = bytearray()
+        self.quote = None                       # open quote byte while scanning an attribute value
         self.done = False
         self.shift = None
         self.host = None
@@ -42,7 +43,7 @@ class XMPPParser:
     def feed(self, data):
         pos = 0
         while not self.done and pos < len(data):
-            close = data.find(b">", pos)
+            close = self._tag_end(data, pos)
             end = len(data) if close < 0 else close + 1
             piece = data[pos:end]
             if len(self.buffer) + len(piece) > self.limit:
@@ -52,6 +53,22 @@ class XMPPParser:
             if close >= 0:
                 self._tag_closed()
         return pos
+
+    def _tag_end(self, data, pos):
+        """Index of the first '>' outside quotes from pos, or -1; the quote state spans feeds."""
+        quote = self.quote
+        for index in range(pos, len(data)):
+            byte = data[index]
+            if quote is not None:
+                if byte == quote:
+                    quote = None
+            elif byte in (0x22, 0x27):
+                quote = byte
+            elif byte == 0x3e:
+                self.quote = None
+                return index
+        self.quote = quote
+        return -1
 
     def _tag_closed(self):
         text = bytes(self.buffer).lstrip(b" \t\r\n")

@@ -15,7 +15,7 @@ packet lengths) and the new routes in dispatch.py (`B`/`l` + NUL, `FINS`,
 `REDQ`, the DSI header before the Kafka probe) and datagram.py (RIP words).
 Trace: cookies, vendor strings, public keys, passwords and report contents
 never reach evidence; every size against its container; that text routes for
-`B...`, `l...` and `F...` are unchanged. 558 tests pass.
+`B...`, `l...` and `F...` are unchanged. 561 tests pass.
 
 Previous focus (v0.52): `protocol_engine/xmpp.py` (declaration regex, tag
 boundary, attribute regex and the 16/1023 bounds, namespace and id rules,

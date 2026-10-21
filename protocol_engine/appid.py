@@ -118,9 +118,10 @@ def _web_application(observation):
         return "websocket" if _evidence(observation, "http2_protocol") == "websocket" else "http-proxy"
     if method in WEBDAV_METHOD_NAMES:
         return "webdav"
-    content = _evidence(observation, "http2_content_type") or _evidence(observation, "http_content_type")
-    if method == "POST" and content in ("grpc", "grpc-web"):
-        return "grpc"
+    http2_content = _evidence(observation, "http2_content_type")
+    content = http2_content or _evidence(observation, "http_content_type")
+    if method == "POST" and (http2_content == "grpc" or content == "grpc-web"):
+        return "grpc"      # native gRPC exists only over HTTP/2; gRPC-Web is carried by either version
     if content == "dns" or _evidence(observation, "http2_accept") == "dns" or _evidence(observation, "http_accept") == "dns":
         return "dns-over-https"
     if content in _CONTENT_APPLICATIONS and (method in (None, "POST") or content == "ocsp"):

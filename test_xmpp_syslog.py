@@ -67,6 +67,28 @@ class XMPPTests(unittest.TestCase):
         self.assertIsNone(inspect(header(((b"xmlns", b"jabber:client"), (b"xmlns:stream", STREAMS)))).observation.hostname)
         self.assertIsNone(inspect(header(((b"to", b"192.0.2.1"), (b"xmlns", b"jabber:client"), (b"xmlns:stream", STREAMS)))).observation.hostname)
 
+    def test_greater_than_inside_quoted_attribute_values(self):
+        # Review round 1: '>' is legal inside a quoted attribute value and must not end the open tag.
+        for quote in (b"'", b'"'):
+            q = quote
+            data = (b"<stream:stream xmlns=" + q + b"jabber:client" + q + b" xmlns:stream=" + q + STREAMS + q + b" version=" + q + b"1.0" + q
+                    + b" id=" + q + b"a>b>c" + q + b" from=" + q + b"chat.example" + q + b">")
+            observation = inspect(data).observation
+            self.assertEqual((observation.status, values(observation)["xmpp_stream"], observation.hostname), ("identified", "response", "chat.example"), quote)
+            self.assertNotIn("a>b", repr(observation))
+            for split in range(len(data) + 1):
+                inspector = Inspector()
+                inspector.feed(data[:split])
+                inspector.feed(data[split:])
+                self.assertEqual(inspector.observation, observation, split)
+            inspector = inspect(data + b"<stream:features/>")
+            self.assertEqual(inspector.metrics.bytes_inspected, len(data))
+        prolog = b"<?xml version='1.0' encoding='UTF-8'?>"
+        mixed = prolog + b"<stream:stream to='chat.example' xmlns='jabber:client' xmlns:stream='" + STREAMS + b"' xml:lang=\"x>y\">"
+        self.assertEqual(inspect(mixed).observation.status, "identified")
+        unterminated = b"<stream:stream xmlns='jabber:client' xmlns:stream='" + STREAMS + b"' id='never closed > " + b"x" * 5000
+        self.assertEqual(inspect(unterminated).observation.status, "budget_exhausted")
+
     def test_header_rules(self):
         cases = (
             (header(((b"xmlns", b"jabber:other"), (b"xmlns:stream", STREAMS))), "unknown"),

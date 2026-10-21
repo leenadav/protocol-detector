@@ -120,6 +120,11 @@ class RequestHeadersTests(unittest.TestCase):
         other = block((b":method", b"CONNECT"), (b":protocol", b"webtransport"), (b":scheme", b"https"), (b":path", b"/"), (b":authority", b"ws.example"))
         self.assertEqual(values(inspect(PREAMBLE + h2_frame(1, other, flags=0x04, stream=1))[0].observation)["http2_protocol"], "other")
         # CONNECT with :scheme, :protocol without CONNECT, extension methods.
+        grpc_bad_authority = block((b":method", b"POST"), (b":scheme", b"https"), (b":path", b"/svc"), (b":authority", b"[not-an-ip]:999999"),
+                                   (b"content-type", b"application/grpc"))
+        observation = inspect(PREAMBLE + h2_frame(1, grpc_bad_authority, flags=0x04, stream=1))[0].observation
+        self.assertEqual((observation.scope, observation.hostname, classify(observation).app), ("initial_message", None, "web-browsing"))
+        self.assertNotIn("http2_content_type", values(observation))
         for bad in (block((b":method", b"CONNECT"), (b":scheme", b"https"), (b":authority", b"a.example")),
                     block((b":method", b"GET"), (b":protocol", b"websocket"), (b":scheme", b"https"), (b":path", b"/"), (b":authority", b"a.example")),
                     block((b":method", b"CONNECT"))):
@@ -140,7 +145,9 @@ class RequestHeadersTests(unittest.TestCase):
             observation = inspect(data)[0].observation
             self.assertEqual((observation.hostname, values(observation).get("http2_method")), (expected, "GET"), authority)
         for authority in (b"user@www.example.com", b"www.example.com:", b"www.example.com:99999", b"www.example.com:4a3", b"", b"b\xfccher.example",
-                          b"[2001:db8::1", b"[2001:db8::1]x", b"-bad-.example", b"a..b"):
+                          b"[2001:db8::1", b"[2001:db8::1]x", b"-bad-.example", b"a..b",
+                          # review round 1: bracket contents must be an IPv6 literal and the port obeys the same rules
+                          b"[not-an-ip]:999999", b"[not-an-ip]", b"[2001:db8::1]:999999", b"[2001:db8::1]:0", b"[2001:db8::1]:", b"[]", b"www.example.com:0"):
             data = PREAMBLE + h2_frame(1, block((b":method", b"GET"), (b":scheme", b"https"), (b":path", b"/"), (b":authority", authority)), flags=0x04, stream=1)
             observation = inspect(data)[0].observation
             self.assertEqual((observation.status, observation.hostname), ("identified", None), authority)

@@ -100,6 +100,23 @@ class SPICETests(unittest.TestCase):
         error = le32(5) + bytes(162) + le32(0) + le32(0) + le32(178)
         self.assertEqual(values(stream(spice_header(len(error)) + error).observation)["spice_link_error"], "need-secured")
 
+    def test_client_capabilities_never_read_as_a_reply(self):
+        # Review round 1: a client main-channel message with 32 common and 8 channel capabilities whose
+        # last capability word equals the reply's capability offset (178) must stay a client message.
+        for connection in (0, 20):
+            body = le32(connection) + bytes((1, 0)) + le32(32) + le32(8) + le32(18) + bytes(156) + le32(178)
+            data = spice_header(len(body)) + body
+            observation = stream(data).observation
+            self.assertEqual((observation.status, observation.scope, values(observation)["spice_message"], values(observation)["spice_channel"]),
+                             ("identified", "initial_message", "link-message", "main"), connection)
+            splits_agree(self, data)
+        # A genuine reply still parses: its DER public key can never satisfy the client layout.
+        self.assertEqual(values(stream(SPICE_REPLY).observation)["spice_message"], "link-reply")
+        reply = SPICE_REPLY[16:]
+        der = bytes.fromhex("30819f300d06092a864886f70d010101050003818d00") + bytes(162 - 22)
+        realistic = spice_header(len(reply)) + reply[:4] + der + reply[4 + 162:]
+        self.assertEqual(values(stream(realistic).observation)["spice_message"], "link-reply")
+
     def test_link_rules(self):
         body = SPICE_LINK[16:]
         cases = ((b"REDQ" + le32(1) + le32(0) + le32(len(body)) + body, "unknown"), (b"REDQ" + le32(2) + le32(3) + le32(len(body)) + body, "unknown"),
