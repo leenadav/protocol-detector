@@ -16,7 +16,7 @@ _table = ["unknown"] * 256
 for _byte in b"!#$%&'*+.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-":
     _table[_byte] = "text"
 for _byte, _family in ((64, "rsync"), (3, "tpkt"), (22, "tls"), (5, "socks5"), (16, "mqtt"), (19, "bittorrent"),
-                       (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus"), (0x12, "tds"), (0x84, "cql")):
+                       (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus"), (0x12, "tds"), (0x84, "cql"), (58, "irc")):
     _table[_byte] = _family
 for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68, 69, 118, 0x81, 0x80, 0x60, 0x3c, 66, 108, 70):
     _table[_byte] = "ambiguous"

@@ -1,8 +1,7 @@
 """Initial binary stream messages. All advertised sizes are bounded before growth."""
 import re
 from .framing import FrameParser, ber_field, ber_length
-from .parsers import BudgetError, ParseError
-from .extended import UnsupportedPrefix
+from .parsers import BudgetError, ParseError, UnsupportedPrefix
 from .wire import stun
 
 
@@ -228,6 +227,9 @@ class MemcachedParser(FrameParser):
         self.reason = "Memcached binary request framing validated; values and server reply unverified"
 
 
+_LDAP_OID = re.compile(rb"[0-2](?:\.(?:0|[1-9][0-9]{0,9})){1,30}")
+_LDAP_EXTENDED = {b"1.3.6.1.4.1.1466.20037": "starttls", b"1.3.6.1.4.1.4203.1.11.3": "whoami",
+                  b"1.3.6.1.4.1.4203.1.11.1": "password-modify", b"1.3.6.1.1.8": "cancel", b"1.3.6.1.4.1.1466.20036": "notice-of-disconnection"}
 _LDAP_RESULTS = {0: "success", 1: "operations-error", 2: "protocol-error", 7: "auth-method-not-supported", 8: "stronger-auth-required",
                  14: "sasl-bind-in-progress", 32: "no-such-object", 34: "invalid-dn-syntax", 48: "inappropriate-authentication",
                  49: "invalid-credentials", 50: "insufficient-access-rights", 51: "busy", 52: "unavailable", 53: "unwilling-to-perform"}
@@ -252,8 +254,12 @@ class LDAPParser(FrameParser):
             raise ParseError("Invalid LDAP request message ID")
         if pos < len(message) and message[pos] == 0x61:
             return self._bind_response(message, pos)
+        if pos < len(message) and message[pos] == 0x77:
+            return self._extended_request(message, pos)
+        if pos < len(message) and message[pos] == 0x78:
+            return self._extended_response(message, pos)
         if pos >= len(message) or message[pos] != 0x60:
-            raise UnsupportedPrefix("Only the initial LDAP BindRequest and BindResponse are supported")
+            raise UnsupportedPrefix("Only the initial LDAP BindRequest, BindResponse, ExtendedRequest and ExtendedResponse are supported")
         bind, pos = ber_field(message, pos, len(message), 0x60)
         if pos != len(message):
             raise UnsupportedPrefix("LDAP controls are outside the initial bind profile")
@@ -283,12 +289,64 @@ class LDAPParser(FrameParser):
         if cursor != len(bind):
             raise ParseError("Trailing LDAP bind fields")
         self.reason = "LDAPv3 BindRequest BER fields validated; credentials, DN semantics and authentication unverified"
+        self.extra_evidence = (("ldap_message", "bind_request", "ldap_message", "structural"),)
 
-    def _bind_response(self, message, pos):
-        """BindResponse (RFC 4511 4.2.2): LDAPResult fields, optional referral and serverSaslCreds."""
-        response, pos = ber_field(message, pos, len(message), 0x61)
+    def _extended_request(self, message, pos):
+        """ExtendedRequest (RFC 4511 4.12): requestName OID, optional requestValue. StartTLS (4.14.1) carries no value."""
+        request, pos = ber_field(message, pos, len(message), 0x77)
         if pos != len(message):
-            raise UnsupportedPrefix("LDAP controls are outside the initial bind profile")
+            raise UnsupportedPrefix("LDAP controls are outside the initial extended-operation profile")
+        name, cursor = ber_field(request, 0, len(request), 0x80)
+        if not _LDAP_OID.fullmatch(name):
+            raise ParseError("LDAP requestName is not a numeric OID")
+        if cursor < len(request):
+            _, cursor = ber_field(request, cursor, len(request), 0x81)
+        if cursor != len(request):
+            raise ParseError("Trailing LDAP ExtendedRequest fields")
+        operation = _LDAP_EXTENDED.get(name, "other")
+        if operation == "starttls":
+            if cursor != len(name) + 2 and len(request) != len(name) + 2:
+                raise ParseError("StartTLS request carries no requestValue")
+            # The client sends nothing more until the server's ExtendedResponse; its next bytes are the ClientHello.
+            self.shift = ("ldap-starttls", "tls")
+        self.protocol_name = "ldap"
+        self.extra_evidence = (("ldap_message", "extended_request", "ldap_message", "structural"),
+                               ("ldap_extended", operation, "ldap_message", "structural"))
+        self.reason = ("LDAPv3 StartTLS ExtendedRequest validated; the TLS handshake follows the server's success response" if operation == "starttls"
+                       else "LDAPv3 ExtendedRequest BER fields validated; request name class reported, value not inspected")
+
+    def _extended_response(self, message, pos):
+        """ExtendedResponse (RFC 4511 4.12): LDAPResult, optional responseName OID and responseValue."""
+        response, pos = ber_field(message, pos, len(message), 0x78)
+        if pos != len(message):
+            raise UnsupportedPrefix("LDAP controls are outside the initial extended-operation profile")
+        code, cursor = self._ldap_result(response)
+        operation = "unnamed"
+        if cursor < len(response) and response[cursor] == 0x8a:
+            name, cursor = ber_field(response, cursor, len(response), 0x8a)
+            if not _LDAP_OID.fullmatch(name):
+                raise ParseError("LDAP responseName is not a numeric OID")
+            operation = _LDAP_EXTENDED.get(name, "other")
+        if cursor < len(response) and response[cursor] == 0x8b:
+            if operation == "starttls":
+                raise ParseError("StartTLS response carries no responseValue")
+            _, cursor = ber_field(response, cursor, len(response), 0x8b)
+        if cursor != len(response):
+            raise ParseError("Trailing LDAP ExtendedResponse fields")
+        if operation == "starttls" and code == 0:
+            # A named success is structural: the server's next bytes are its ServerHello. An
+            # unnamed success (RFC 4511 allows the name to be absent) is left to host correlation.
+            self.shift = ("ldap-starttls", "tls")
+        self.protocol_name = "ldap"
+        self.scope = "negotiation_response"
+        self.extra_evidence = (("ldap_message", "extended_response", "ldap_message", "structural"),
+                               ("ldap_extended", operation, "ldap_message", "structural"),
+                               ("ldap_result", _LDAP_RESULTS.get(code, "other"), "ldap_message", "asserted"))
+        self.reason = ("LDAPv3 StartTLS ExtendedResponse success validated; the TLS handshake follows" if operation == "starttls" and code == 0
+                       else "LDAPv3 ExtendedResponse LDAPResult validated; result code and response name class reported, value not inspected")
+
+    def _ldap_result(self, response):
+        """LDAPResult (RFC 4511 4.1.9) without referral: resultCode, matchedDN, diagnosticMessage. Returns (code, cursor)."""
         code, cursor = ber_field(response, 0, len(response), 0x0a)
         if len(code) != 1 or code[0] > 123:
             raise ParseError("LDAP resultCode outside RFC 4511")
@@ -309,14 +367,23 @@ class LDAPParser(FrameParser):
                 url, inner = ber_field(referral, inner, len(referral), 4)
                 if not url:
                     raise ParseError("Empty LDAP referral URL")
+        return code[0], cursor
+
+    def _bind_response(self, message, pos):
+        """BindResponse (RFC 4511 4.2.2): LDAPResult fields, optional referral and serverSaslCreds."""
+        response, pos = ber_field(message, pos, len(message), 0x61)
+        if pos != len(message):
+            raise UnsupportedPrefix("LDAP controls are outside the initial bind profile")
+        code, cursor = self._ldap_result(response)
         if cursor < len(response) and response[cursor] == 0x87:
             _, cursor = ber_field(response, cursor, len(response), 0x87)
         if cursor != len(response):
             raise ParseError("Trailing LDAP BindResponse fields")
         self.protocol_name = "ldap"
         self.scope = "negotiation_response"
-        self.extra_evidence = (("ldap_result", _LDAP_RESULTS.get(code[0], "other"), "bind_response", "asserted"),)
         self.reason = "LDAP BindResponse validated; result code reported, DN, diagnostic text and SASL credentials not emitted"
+        self.extra_evidence = (("ldap_message", "bind_response", "ldap_message", "structural"),
+                               ("ldap_result", _LDAP_RESULTS.get(code, "other"), "bind_response", "asserted"))
 
 
 class DNSParser(FrameParser):
@@ -330,9 +397,10 @@ class DNSParser(FrameParser):
         return size + 2
 
     def validate(self, data):
-        from .wire import dns_details, dns_message_evidence
+        from .wire import dns_details, dns_message_evidence, dns_query_type_evidence
         self.protocol_name, self.reason, qname, qtype = dns_details(data[2:], self.config)
-        self.extra_evidence = tuple((e.field, e.value, "message", e.strength) for e in dns_message_evidence(data[2:]))
+        self.extra_evidence = tuple((e.field, e.value, "message", e.strength)
+                                    for e in dns_message_evidence(data[2:]) + dns_query_type_evidence(qname, qtype))
         if self.config.retain_contexts:
             self.contexts = {"dns-req-query-name": qname, "dns-req-query-type": qtype}
 
@@ -347,4 +415,6 @@ class STUNParser(FrameParser):
         return 20 + int.from_bytes(header[2:4], "big")
 
     def validate(self, data):
-        self.protocol_name, self.reason = stun(data, self.config)
+        match = stun(data, self.config)
+        self.protocol_name, self.reason = match.application_protocol, match.reason
+        self.extra_evidence = tuple((e.field, e.value, "message", e.strength) for e in match.evidence if e.field != "application_protocol")

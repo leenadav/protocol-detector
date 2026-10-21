@@ -214,7 +214,10 @@ class ExpansionTests(unittest.TestCase):
         for attr in (b"\x00\x08\x00\x00", b"\x00\x20\x00\x01xxxx", b"\x80\x28\x00\x00"):
             bad = STUN[:2] + len(attr).to_bytes(2, "big") + STUN[4:] + attr
             self.assertEqual(DatagramInspector().inspect(bad).status, "malformed")
-        self.assertEqual(DatagramInspector().inspect(b"\x00\x03" + STUN[2:]).status, "unknown")
+        # v0.54: the TURN methods validate; an Allocate request without attributes is still structurally a TURN message.
+        allocate = DatagramInspector().inspect(b"\x00\x03" + STUN[2:])
+        self.assertEqual((allocate.status, allocate.application_protocol), ("identified", "stun"))
+        self.assertEqual(DatagramInspector().inspect(b"\x00\x0e" + STUN[2:]).status, "unknown")   # method 14 is undefined
 
     def test_dhcp_options_operation_and_cookie(self):
         inspector = DatagramInspector()

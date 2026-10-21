@@ -920,3 +920,61 @@ STREAM_CASES += ((X11_SETUP, 'x11'), (X11_SETUP_MSB, 'x11'), (SPICE_LINK, 'spice
                  (AFP_GET_STATUS, 'afp'), (AFP_OPEN_REPLY, 'afp'), (FINS_NODE_REQUEST, 'fins'), (FINS_NODE_REPLY, 'fins'), (FINS_FRAME, 'fins'))
 DATAGRAM_CASES += ((RIP_REQUEST, 'rip/2'), (RIP_RESPONSE, 'rip/2'), (RIP_V1, 'rip/1'))
 HINTED_DATAGRAM_CASES += ((RTCP_SR, 'rtcp', 'rtcp'),)
+
+
+def ldap_extended(message_id, tag, oid, result=None):
+    """ExtendedRequest (0x77) with requestName, or ExtendedResponse (0x78) with an LDAPResult and optional responseName."""
+    body = b""
+    if result is not None:
+        body = b"\x0a\x01" + bytes((result,)) + b"\x04\x00\x04\x00"
+    if oid is not None:
+        body += bytes((0x80 if tag == 0x77 else 0x8a, len(oid))) + oid
+    operation = bytes((tag, len(body))) + body
+    message = b"\x02\x01" + bytes((message_id,)) + operation
+    return b"\x30" + bytes((len(message),)) + message
+
+
+LDAP_STARTTLS_OID = b"1.3.6.1.4.1.1466.20037"
+LDAP_STARTTLS_REQUEST = ldap_extended(1, 0x77, LDAP_STARTTLS_OID)
+LDAP_STARTTLS_RESPONSE = ldap_extended(1, 0x78, LDAP_STARTTLS_OID, 0)
+LDAP_STARTTLS_UNNAMED = ldap_extended(1, 0x78, None, 0)
+LDAP_STARTTLS_REFUSED = ldap_extended(1, 0x78, LDAP_STARTTLS_OID, 52)   # unavailable
+LDAP_WHOAMI_REQUEST = ldap_extended(2, 0x77, b"1.3.6.1.4.1.4203.1.11.3")
+
+
+def stun_message(kind, attributes=b"", transaction=b"0123456789ab"):
+    return kind.to_bytes(2, "big") + len(attributes).to_bytes(2, "big") + b"\x21\x12\xa4\x42" + transaction + attributes
+
+
+TURN_ALLOCATE = stun_message(0x0003, b"\x00\x19\x00\x04\x11\x00\x00\x00")                      # REQUESTED-TRANSPORT udp
+TURN_ALLOCATE_ERROR = stun_message(0x0113, b"\x00\x09\x00\x10\x00\x00\x04\x01Unauthorized" + b"\x00\x14\x00\x0bexample.org\x00" + b"\x00\x15\x00\x04abcd")
+TURN_REFRESH = stun_message(0x0004, b"\x00\x0d\x00\x04\x00\x00\x02\x58")                       # LIFETIME 600
+TURN_CHANNEL_BIND = stun_message(0x0009, b"\x00\x0c\x00\x04\x40\x00\x00\x00" + b"\x00\x12\x00\x08\x00\x01\x30\x39\xe1\x12\xa4\x42")
+TURN_SEND_INDICATION = stun_message(0x0016, b"\x00\x12\x00\x08\x00\x01\x30\x39\xe1\x12\xa4\x42" + b"\x00\x13\x00\x04data")
+
+
+def netbios_name(name, suffix=0x20):
+    padded = name.ljust(15, b" ") + bytes((suffix,))
+    encoded = b"".join(bytes((0x41 + (byte >> 4), 0x41 + (byte & 15))) for byte in padded)
+    return b"\x20" + encoded + b"\x00"
+
+
+NBNS_QUERY = b"\x80\x01\x01\x10\x00\x01\x00\x00\x00\x00\x00\x00" + netbios_name(b"FILESERVER") + b"\x00\x20\x00\x01"
+NBSTAT_QUERY = b"\x80\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00" + netbios_name(b"*", 0) + b"\x00\x21\x00\x01"
+DNS_SRV_QUERY = b"\x80\x03\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00" + b"\x05_ldap\x04_tcp\x07example\x03com\x00" + b"\x00\x21\x00\x01"
+
+IRC_NICK = b"NICK alice\r\n"
+IRC_USER = b"USER alice 0 * :Alice Example\r\n"
+IRC_CAP_LS = b"CAP LS 302\r\n"
+IRC_SERVER_NOTICE = b":irc.example.org NOTICE * :*** Looking up your hostname...\r\n"
+IRC_SERVER_WELCOME = b":irc.example.org 001 alice :Welcome to the Example IRC Network alice!alice@192.0.2.1\r\n"
+IRC_UNPREFIXED_NOTICE = b"NOTICE AUTH :*** Checking Ident\r\n"
+IRC_PING = b"PING :1760000000\r\n"
+RPC_IN_DATA_REQUEST = (b"RPC_IN_DATA /rpc/rpcproxy.dll?mail.example.org:6001 HTTP/1.1\r\nHost: mail.example.org\r\n"
+                       b"Content-Length: 1073741824\r\nPragma: ResourceTypeUuid=44e265dd-7daf-42cd-8f3f-ab6f8ef6d1d7\r\n\r\n")
+STREAM_CASES += ((LDAP_STARTTLS_REQUEST, 'ldap'), (LDAP_STARTTLS_RESPONSE, 'ldap'), (LDAP_STARTTLS_UNNAMED, 'ldap'), (LDAP_WHOAMI_REQUEST, 'ldap'),
+                 (TURN_ALLOCATE, 'stun'), (TURN_ALLOCATE_ERROR, 'stun'), (IRC_NICK, 'irc'), (IRC_USER, 'irc'), (IRC_CAP_LS, 'irc'),
+                 (IRC_SERVER_NOTICE, 'irc'), (IRC_SERVER_WELCOME, 'irc'), (IRC_UNPREFIXED_NOTICE, 'irc'), (IRC_PING, 'irc'),
+                 (RPC_IN_DATA_REQUEST, 'http/1.1'))
+DATAGRAM_CASES += ((TURN_ALLOCATE, 'stun'), (TURN_REFRESH, 'stun'), (TURN_CHANNEL_BIND, 'stun'), (TURN_SEND_INDICATION, 'stun'),
+                   (NBNS_QUERY, 'dns'), (NBSTAT_QUERY, 'dns'), (DNS_SRV_QUERY, 'dns'))

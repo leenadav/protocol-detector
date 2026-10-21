@@ -82,9 +82,9 @@ class ResponseDirectionTests(unittest.TestCase):
 
     def test_dns_message_kind_rcode_and_risk(self):
         query = inspect(DNS)
-        self.assertEqual(fields(query, "dns_"), {"dns_message": "query"})
+        self.assertEqual(fields(query, "dns_"), {"dns_message": "query", "dns_query_type": "a"})
         response = inspect(DNS_RESPONSE)
-        self.assertEqual((response.application_protocol, fields(response, "dns_")), ("dns", {"dns_message": "response", "dns_rcode": "noerror"}))
+        self.assertEqual((response.application_protocol, fields(response, "dns_")), ("dns", {"dns_message": "response", "dns_rcode": "noerror", "dns_query_type": "a"}))
         self.assertNotIn("192.0.2.1", repr(response))
         nxdomain = inspect(DNS_NXDOMAIN)
         self.assertEqual(fields(nxdomain, "dns_rcode"), {"dns_rcode": "nxdomain"})
@@ -100,7 +100,7 @@ class ResponseDirectionTests(unittest.TestCase):
         self.assertTrue({"dns_message", "dns_rcode", "dns_query_shape"} <= set(fields(heuristic, "dns_")))
         tcp = Inspector()
         tcp.feed(len(DNS_NXDOMAIN).to_bytes(2, "big") + DNS_NXDOMAIN)
-        self.assertEqual((tcp.observation.application_protocol, fields(tcp.observation, "dns_")), ("dns", {"dns_message": "response", "dns_rcode": "nxdomain"}))
+        self.assertEqual((tcp.observation.application_protocol, fields(tcp.observation, "dns_")), ("dns", {"dns_message": "response", "dns_rcode": "nxdomain", "dns_query_type": "a"}))
         self.assertEqual(classify(tcp.observation, "tcp", 53).risks, ("dns-error-response",))
         # Queries never carry answers, authority records, the AA bit or a response code.
         for mutated in (DNS[:6] + b"\x00\x01" + DNS[8:], DNS[:8] + b"\x00\x01" + DNS[10:], DNS[:2] + b"\x05\x00" + DNS[4:], DNS[:3] + b"\x03" + DNS[4:]):

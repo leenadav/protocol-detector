@@ -28,7 +28,7 @@ closed set reviewers should expect in records.
 | dhcp | udp | yes | yes | `dhcp_message`, `dhcp_operation` |
 | diameter | tcp | yes | yes | `diameter_message`, `diameter_result` |
 | dnp3 | tcp | yes | same shape | - |
-| dns | tcp/udp | yes | yes | `dns_message`, `dns_rcode` |
+| dns | tcp/udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode` |
 | dtls | udp | yes | yes | `handshake`, `offered_dtls_version`, `selected_cipher`, `selected_dtls_version` |
 | ethernet-ip | tcp/udp | yes | same shape | `enip_command` |
 | fastcgi | tcp | yes | yes | `fastcgi_record`, `fastcgi_role` |
@@ -42,11 +42,12 @@ closed set reviewers should expect in records.
 | ikev2 | udp | yes | yes | `exchange`, `offered_dh_group`, `selected_dh_group` |
 | imap | tcp | yes | yes | - |
 | ipfix | udp | yes | n/a (one-way) | - |
+| irc | tcp | yes | - | `irc_message` |
 | iso-tsap | tcp | yes | yes | - |
 | kafka | tcp | yes | - | `kafka_api_key` |
 | kerberos | tcp/udp | yes | yes | `kerberos_error`, `kerberos_message` |
 | l2tp | udp | yes | yes | `l2tp_message` |
-| ldap | tcp | yes | yes | `ldap_result` |
+| ldap | tcp | yes | yes | `ldap_extended`, `ldap_message`, `ldap_result` |
 | memcached | tcp | yes | yes | `memcached_message`, `memcached_status` |
 | modbus | tcp | yes | yes | `modbus_exception`, `modbus_pdu` |
 | mongodb | tcp | yes | yes | `mongodb_message` |
@@ -84,7 +85,7 @@ closed set reviewers should expect in records.
 | ssdp | udp | yes | same shape | - |
 | ssh | tcp | yes | same shape | `ssh_version` |
 | stomp | tcp | yes | yes | - |
-| stun | tcp/udp | yes | same shape | - |
+| stun | tcp/udp | yes | same shape | `stun_class`, `stun_method` |
 | syslog | udp/tcp | yes | n/a (one-way) | `syslog_framing` |
 | tacacs-plus | tcp | yes | yes | `tacacs_packet`, `tacacs_type` |
 | tds | tcp | yes | yes | `tds_encryption`, `tds_federated_auth`, `tds_mars` |
@@ -98,7 +99,7 @@ closed set reviewers should expect in records.
 | xmpp | tcp | yes | yes | `hostname`, `xmpp_namespace`, `xmpp_stream`, `xmpp_version` |
 | zmtp | tcp | yes | yes | `zmtp_mechanism`, `zmtp_role` |
 
-81 families in the catalog, 81 with fixtures, 69 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
+82 families in the catalog, 82 with fixtures, 69 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, irc, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
 <!-- coverage-matrix:end -->
 
 ## Direction evidence and remaining replies (v0.49)
@@ -370,3 +371,81 @@ packet version 2 with a known type 200..207 and a length within the datagram
 (SR/RR report blocks and BYE sources bounded by their counts), at most eight
 packets. Evidence: `rtcp_packet` (first type), `rtcp_packets` (count). Report
 contents and SDES items are never read.
+
+## LDAP StartTLS, IRC, TURN methods, DNS query types and RPC over HTTP (v0.54)
+
+One new family (82 in total, 74 automatic), one new shift boundary and four
+new applications named from structural evidence.
+
+`ldap`: besides BindRequest and BindResponse, the first message may be an
+ExtendedRequest (0x77: requestName as a numeric OID of at most 31 arcs, an
+optional requestValue) or an ExtendedResponse (0x78: LDAPResult, optional
+responseName OID, optional responseValue). Evidence: `ldap_message`
+(`bind_request`, `bind_response`, `extended_request`, `extended_response`),
+`ldap_extended` (`starttls`, `whoami`, `password-modify`, `cancel`,
+`notice-of-disconnection`, `other`, `unnamed`), `ldap_result`. A StartTLS
+request (OID 1.3.6.1.4.1.1466.20037, which carries no value) announces the
+`ldap-starttls` shift: the client's next bytes are its ClientHello. A
+StartTLS response whose responseName is present and whose result is success
+announces the same shift on the server direction (its next bytes are the
+ServerHello). RFC 4511 lets the server omit the responseName; such an
+unnamed success is identified as LDAP without a shift and `analyze_pcap`
+correlates it with the client's StartTLS request before opening the TLS
+phase on the server side (`ldap_starttls_correlated`). Any response value
+on a StartTLS response, a non-OID name or a result code above 123 is
+malformed; controls remain outside the profile (unknown). Extended values,
+DNs and diagnostics are never emitted. The `cleartext-credential-protocol`
+risk is dropped for a StartTLS exchange: the bind that follows travels
+inside TLS.
+
+`irc` (new family, automatic): a client registration line (`NICK` with the
+RFC 2812 nickname grammar, at most 64 characters; `USER` with exactly its
+four parameters, which FTP and POP3 never take; `CAP` with a subcommand
+LS/LIST/REQ/ACK/NAK/END/NEW/DEL and a three-digit LS version) reaches the
+IRC profile through the text route; `PASS` stays ambiguous and now names
+`ftp,pop3,irc` as candidates. A server opening line is routed by its `:`
+prefix (a server name or `nick!user@host`) followed by a three-digit numeric
+reply naming a nickname or `*`, or NOTICE, PING, PONG, CAP, MODE, NICK,
+JOIN, AUTHENTICATE or PRIVMSG with their parameter counts; the unprefixed
+`NOTICE AUTH`/`NOTICE *` and `PING` lines some servers send first are
+accepted on the text route. Lines are at most 512 bytes including CRLF (a
+longer line is malformed before any newline arrives), parameters at most 15,
+no NUL/CR/LF. Evidence: `irc_message` (`nick`, `user`, `cap`, `pass` with the
+irc hint only, `notice`, `ping`, `pong`, `numeric`, `error`, `mode`,
+`privmsg`, `join`, `authenticate`). Nicknames, user names, hosts, channels,
+passwords and message text are never emitted. JOIN/PRIVMSG/CTCP/DCC
+sessions, server-to-server links and IRCv3 tags are outside the profile.
+
+`stun`: the TURN methods (RFC 5766/6062) validate alongside Binding:
+Allocate, Refresh, Send, Data, CreatePermission, ChannelBind, Connect,
+ConnectionBind and ConnectionAttempt. Send, Data and ConnectionAttempt exist
+only as indications; the other methods never as indications (Binding
+indications are keepalives and stay valid). TURN attributes are checked:
+REQUESTED-TRANSPORT (4 bytes, UDP or TCP, zero reserved bytes), LIFETIME (4),
+CHANNEL-NUMBER (4, 0x4000..0x7FFF with zero reserved bytes), EVEN-PORT (1,
+only the R bit), RESERVATION-TOKEN (8), XOR-PEER-ADDRESS and
+XOR-RELAYED-ADDRESS as address attributes, USERNAME (at most 513 bytes),
+REALM/NONCE/SOFTWARE (at most 763), ERROR-CODE (class 3..6, number 0..99,
+reason at most 763). Evidence: `stun_method` (closed labels), `stun_class`
+(`request`, `indication`, `success-response`, `error-response`); the TURN
+methods map to the `turn` application (`implicitly_uses` stun). Relayed
+addresses, user names, realms, nonces and HMACs are never emitted or
+verified. Undefined methods remain unknown.
+
+`dns`: `dns_query_type` (closed labels: a, ns, cname, soa, ptr, mx, txt, aaaa,
+srv, naptr, ds, rrsig, dnskey, svcb, https, any, nb, nbstat, other) joins the
+query and response evidence on UDP and TCP. NetBIOS name service queries
+share the DNS layout; the NB (0x20) and NBSTAT (0x21) types are told from DNS
+only when the first label is the 32-byte first-level encoding over A..P, so
+an SRV query (also type 33) keeps its label and a type-32 question with an
+ordinary name is `other`. `nb`/`nbstat` map to the `netbios-ns` application
+(udp/137). Names are never emitted.
+
+`http`: the RPC over HTTP methods `RPC_CONNECT`, `RPC_IN_DATA` and
+`RPC_OUT_DATA` (MS-RPCH) are recognised method tokens; a request with one of
+them maps to `ms-rpc-over-http` (`implicitly_uses` web-browsing). The
+encapsulated DCE/RPC PDUs are not inspected.
+
+Dispatch: `:` (0x3a) routes to the IRC server-line parser; a mutated first
+byte that used to be unknown there is now malformed when the IRC grammar
+rejects it. No other route changed.

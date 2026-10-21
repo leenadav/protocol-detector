@@ -119,6 +119,29 @@ class Analyzer:
         if status[:1] == "2" and server.open_shift("http-connect"):
             self.counts["connect_tunnels_correlated"] += 1
 
+    def _correlate_ldap(self, key, state):
+        """Open the TLS phase on the server direction of an LDAP StartTLS exchange answered without a responseName.
+
+        The client's ExtendedRequest names StartTLS and shifts by itself; a named
+        success response shifts by itself too. RFC 4511 lets the server omit the
+        responseName, in which case the success alone cannot be told from any other
+        extended result, so the host correlates both directions (v0.54).
+        """
+        connection = self.manager.connections.get(key)
+        if connection is None:
+            return
+        client = connection["directions"][state["client"]].inspector
+        server = connection["directions"][state["server"]].inspector
+        request, response = client.observation, server.observation
+        if request.status != "identified" or response.status != "identified" or response.application_protocol != "ldap":
+            return
+        if not any(e.field == "shift" and e.value == "ldap-starttls" for e in request.evidence):
+            return
+        fields = {e.field: e.value for e in response.evidence if e.field in ("ldap_message", "ldap_extended", "ldap_result")}
+        if fields.get("ldap_message") == "extended_response" and fields.get("ldap_extended") == "unnamed" and fields.get("ldap_result") == "success":
+            if server.open_shift("ldap-starttls", "tls"):
+                self.counts["ldap_starttls_correlated"] += 1
+
     def _correlate_http2(self, key, state):
         """Expect HTTP/2 on the server direction once the client's preface identified the connection.
 
@@ -347,6 +370,7 @@ class Analyzer:
         self.last_events = snapshot.events
         if any(event.observation.status == "identified" for event in snapshot.events):
             self._correlate_connect(key, state)
+            self._correlate_ldap(key, state)
             self._correlate_http2(key, state)
         final = state['fin'].get(source)
         if final is not None and final <= stream.limit and stream.contiguous == final:

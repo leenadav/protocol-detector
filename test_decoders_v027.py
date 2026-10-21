@@ -31,7 +31,7 @@ class TextAmbiguityTests(unittest.TestCase):
 
     def test_shared_lines_report_candidates_as_context_not_identity(self):
         for data, candidates in ((b'220 mail.example.org ESMTP\r\n', 'smtp,ftp'), (b'USER alice\r\n', 'ftp,pop3'),
-                                 (b'PASS secret\r\n', 'ftp,pop3'), (b'QUIT\r\n', 'ftp,pop3'), (b'* OK ready\r\n', 'imap')):
+                                 (b'PASS secret\r\n', 'ftp,pop3,irc'), (b'QUIT\r\n', 'ftp,pop3'), (b'* OK ready\r\n', 'imap')):
             result = stream(data)
             self.assertEqual(result.status, 'unknown', result)
             self.assertIsNone(result.application_protocol)

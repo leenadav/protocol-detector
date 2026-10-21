@@ -14,6 +14,10 @@ class BudgetError(ParseError):
     pass
 
 
+class UnsupportedPrefix(ParseError):
+    """An ambiguous or unsupported structure, not proof of a malformed protocol."""
+
+
 class LineParser:
     def __init__(self, config, protocol):
         self.config = config
@@ -70,10 +74,16 @@ class LineParser:
             end = len(data) if newline < 0 else newline + 1
             piece = data[pos:end]
             # Check limits before growing memory, including unterminated lines.
-            limit = min(self.config.max_line, 255) if self.protocol == "ssh" else self.config.max_line
+            limit = self.config.max_line
+            if self.protocol == "ssh":
+                limit = min(limit, 255)
+            elif self.protocol == "irc":
+                limit = min(limit, 512)   # RFC 2812 2.3: 510 characters plus CRLF
             if len(self.line) + len(piece) > limit:
                 if self.protocol == "ssh" and limit == 255:
                     raise ParseError("SSH identification exceeds 255 bytes")
+                if self.protocol == "irc" and limit == 512:
+                    raise ParseError("IRC line exceeds 512 bytes")
                 raise BudgetError("Line length budget exceeded")
             self.line.extend(piece)
             pos = end

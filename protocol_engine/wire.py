@@ -6,8 +6,7 @@ import struct
 import zlib
 from .datagram_result import DatagramMatch
 from .model import Evidence
-from .parsers import BudgetError, ParseError
-from .extended import UnsupportedPrefix
+from .parsers import BudgetError, ParseError, UnsupportedPrefix
 
 
 def dns_probe(data):
@@ -24,6 +23,27 @@ _DNS_RESPONSE_EVIDENCE = tuple((Evidence("dns_message", "response", "wire", "str
 _DNS_PROTOCOL_EVIDENCE = (Evidence("application_protocol", "dns", "wire", "structural"),)
 
 
+_DNS_QTYPES = {1: "a", 2: "ns", 5: "cname", 6: "soa", 12: "ptr", 15: "mx", 16: "txt", 28: "aaaa", 33: "srv", 35: "naptr", 43: "ds",
+               46: "rrsig", 48: "dnskey", 64: "svcb", 65: "https", 255: "any", 32: "nb"}
+_NETBIOS_LABEL = frozenset(b"ABCDEFGHIJKLMNOPabcdefghijklmnop")   # question names are expanded lowercase
+_DNS_QTYPE_EVIDENCE = {label: (Evidence("dns_query_type", label, "wire", "structural"),) for label in list(_DNS_QTYPES.values()) + ["nbstat", "other"]}
+
+
+def dns_query_type_class(qname, qtype):
+    """Closed label for the question type; NetBIOS name service queries (NB 0x20, NBSTAT 0x21) are told from DNS SRV by their 32-byte first-level encoded label."""
+    first = qname.split(b".", 1)[0] if qname else b""
+    netbios = len(first) == 32 and all(byte in _NETBIOS_LABEL for byte in first)
+    if qtype == 33 and netbios:
+        return "nbstat"
+    if qtype == 32:
+        return "nb" if netbios else "other"
+    return _DNS_QTYPES.get(qtype, "other")
+
+
+def dns_query_type_evidence(qname, qtype):
+    return _DNS_QTYPE_EVIDENCE[dns_query_type_class(qname, qtype)]
+
+
 def dns_message_evidence(header):
     """(dns_message, dns_rcode) evidence rows for a validated header; query or response, no names."""
     if not header[2] & 0x80:
@@ -32,8 +52,9 @@ def dns_message_evidence(header):
 
 
 def dns(data, config):
-    protocol, reason, _, _ = dns_details(data, config)
-    return DatagramMatch(reason, application_protocol=protocol, evidence=_DNS_PROTOCOL_EVIDENCE + dns_message_evidence(data))
+    protocol, reason, qname, qtype = dns_details(data, config)
+    return DatagramMatch(reason, application_protocol=protocol,
+                         evidence=_DNS_PROTOCOL_EVIDENCE + dns_message_evidence(data) + dns_query_type_evidence(qname, qtype))
 
 
 def dns_details(data, config):
@@ -143,14 +164,26 @@ def _expand_name(data, start, end):
     return b".".join(labels)
 
 
+_STUN_METHODS = {1: "binding", 3: "allocate", 4: "refresh", 6: "send", 7: "data", 8: "create-permission", 9: "channel-bind",
+                 10: "connect", 11: "connection-bind", 12: "connection-attempt"}
+_STUN_CLASSES = ("request", "indication", "success-response", "error-response")
+_STUN_INDICATION_ONLY = frozenset((6, 7, 12))       # Send, Data, ConnectionAttempt never have requests or responses
+_STUN_ADDRESS_ATTRIBUTES = frozenset((0x0001, 0x0020, 0x0012, 0x0016, 0x8020))   # MAPPED, XOR-MAPPED, XOR-PEER, XOR-RELAYED, legacy XOR
+_STUN_FIXED_SIZES = {0x0019: 4, 0x000d: 4, 0x000c: 4, 0x0018: 1, 0x0022: 8, 0x8022: None}
+_STUN_TEXT_LIMITS = {0x0006: 513, 0x0014: 763, 0x0015: 763, 0x8022: 763}
+
+
 def stun(data, config):
     if len(data) < 20 or data[0] & 0xc0 or data[4:8] != b"\x21\x12\xa4\x42":
         raise ParseError("Invalid STUN header")
     length = int.from_bytes(data[2:4], "big")
     kind = int.from_bytes(data[:2], "big")
     method = (kind & 15) | ((kind >> 1) & 0x70) | ((kind >> 2) & 0xf80)
-    if method != 1:
-        raise UnsupportedPrefix("Only STUN Binding method is supported; TURN methods need separate validation")
+    klass = ((kind >> 7) & 2) | ((kind >> 4) & 1)
+    if method not in _STUN_METHODS:
+        raise UnsupportedPrefix("STUN method outside Binding and the TURN methods")
+    if (method in _STUN_INDICATION_ONLY) != (klass == 1) and method != 1:
+        raise ParseError("STUN class inconsistent with its method (Send/Data/ConnectionAttempt are indications only)")
     if length % 4 or length + 20 != len(data):
         raise ParseError("Invalid STUN message length")
     pos, count = 20, 0
@@ -165,10 +198,27 @@ def stun(data, config):
         padded = pos + 4 + ((size + 3) & ~3)
         if padded > len(data):
             raise ParseError("STUN attribute exceeds message")
-        if tag in (0x0001, 0x0020):
+        if tag in _STUN_ADDRESS_ATTRIBUTES:
             value = data[pos + 4:end]
             if size not in (8, 20) or value[0] != 0 or (value[1], size) not in ((1, 8), (2, 20)):
                 raise ParseError("Invalid STUN address attribute")
+        elif tag in _STUN_FIXED_SIZES and _STUN_FIXED_SIZES[tag] is not None:
+            if size != _STUN_FIXED_SIZES[tag]:
+                raise ParseError("TURN attribute size outside the specification")
+            value = data[pos + 4:end]
+            if tag == 0x0019 and (value[0] not in (6, 17) or any(value[1:])):
+                raise ParseError("TURN REQUESTED-TRANSPORT must name UDP or TCP with zero reserved bytes")
+            if tag == 0x000c and (value[0] & 0xc0 != 0x40 or any(value[2:])):
+                raise ParseError("TURN CHANNEL-NUMBER outside 0x4000..0x7FFF")
+            if tag == 0x0018 and value[0] & 0x7f:
+                raise ParseError("TURN EVEN-PORT reserved bits set")
+        elif tag in _STUN_TEXT_LIMITS:
+            if size > _STUN_TEXT_LIMITS[tag]:
+                raise ParseError("STUN text attribute exceeds its specified length")
+        elif tag == 0x0009:
+            value = data[pos + 4:end]
+            if size < 4 or size > 4 + 763 or value[0] or value[1] or not 3 <= value[2] <= 6 or value[3] > 99:
+                raise ParseError("Invalid STUN ERROR-CODE attribute")
         if tag == 0x0008 and size != 20:
             raise ParseError("Invalid STUN MESSAGE-INTEGRITY size")
         if tag == 0x001c and (size < 16 or size > 32 or size % 4):
@@ -180,7 +230,13 @@ def stun(data, config):
             if int.from_bytes(data[pos + 4:end], "big") != expected:
                 raise ParseError("STUN FINGERPRINT mismatch")
         pos = padded
-    return "stun", "STUN Binding framing validated; optional fingerprint checked, HMAC and peer identity unverified"
+    name = _STUN_METHODS[method]
+    reason = ("STUN Binding framing validated; optional fingerprint checked, HMAC and peer identity unverified" if method == 1
+              else "TURN {} framing validated; relayed addresses, credentials, realm and nonce not emitted, HMAC unverified".format(name))
+    return DatagramMatch(reason, application_protocol="stun",
+                         evidence=(Evidence("application_protocol", "stun", "wire", "structural"),
+                                   Evidence("stun_method", name, "wire", "structural"),
+                                   Evidence("stun_class", _STUN_CLASSES[klass], "wire", "structural")))
 
 
 _DHCP_MESSAGES = {1: "discover", 2: "offer", 3: "request", 4: "decline", 5: "ack", 6: "nak", 7: "release", 8: "inform"}

@@ -1,7 +1,7 @@
 """First-line profiles for FTP, POP3 and IMAP client/server text, plus Telnet negotiation.
 
 Text commands shared by several protocols (USER, PASS, QUIT, NOOP, STAT, LIST,
-RETR, DELE, AUTH) are reported as ambiguous with the candidate set, never as a
+RETR, DELE, AUTH; PASS also with IRC) are reported as ambiguous with the candidate set, never as a
 guess; the session verdict can intersect both directions' candidates. Arguments
 (user names, passwords, paths) are validated for framing and never emitted.
 """
@@ -62,6 +62,8 @@ def command_line(line):
             raise ParseError("Command requires an argument")
         if verb == b"AUTH" and argument.upper() in (b"TLS", b"SSL", b"TLS-C", b"TLS-P"):
             return "ftp", ("ftp",), ("auth-tls", "tls")  # RFC 4217 security mechanism names are FTP-only
+        if verb == b"PASS":
+            return None, ("ftp", "pop3", "irc"), None   # IRC PASS also takes one argument (RFC 2812 3.1.1)
         return None, ("ftp", "pop3"), None
     return None
 

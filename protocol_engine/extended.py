@@ -4,16 +4,13 @@ import re
 from .model import normalize_hostname
 from .media import METHODS, accept_class, content_type_class
 from .control import ControlHeaders, START
-from .parsers import BudgetError, LineParser, ParseError, TOKEN
+from .parsers import BudgetError, LineParser, ParseError, TOKEN, UnsupportedPrefix
 from .service_text import nats, imap_capability
 from .session_text import command_line, imap_command, pop3_greeting
+from .irc import irc_client_line, irc_server_notice
 
 H2_PREFACE = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 _NATS_START = re.compile(rb'(INFO|CONNECT)[ \t]+(.+)', re.I)
-
-
-class UnsupportedPrefix(ParseError):
-    """An ambiguous or unsupported structure, not proof of a malformed protocol."""
 
 
 class AmbiguousPrefix(UnsupportedPrefix):
@@ -148,6 +145,14 @@ class TextParser(LineParser):
                 self.reason = 'IMAP tagged client command validated; arguments and credentials are not inspected or emitted'
                 if line.split(b" ")[1].upper() == b"STARTTLS":
                     self.shift = ("starttls", "tls")
+                return
+            irc = irc_client_line(line) or (irc_server_notice(line) if line[:1] in (b"N", b"n", b"P", b"p") else None)
+            if irc is not None:
+                self.family = self.protocol_name = "irc"
+                self.scope = "initial_message" if irc in ("nick", "user", "cap") else "protocol_header"
+                self.done = True
+                self.extra_evidence = (("irc_message", irc, "irc_line", "structural"),)
+                self.reason = "IRC message grammar validated ({}); nicknames, hosts, channels and text are never emitted".format(irc)
                 return
             classified = command_line(line)
             if classified is not None:

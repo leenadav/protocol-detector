@@ -83,6 +83,7 @@ _SUPPORTED = (
     ProtocolSupport("x11", ("tcp",), "initial_message/negotiation_response", "Client connection setup (byte order, protocol 11.0, bounded authorization name and data lengths; cookie never emitted); the server setup reply with the x11-server hint"),
     ProtocolSupport("spice", ("tcp",), "initial_message/negotiation_response", "SpiceLinkHeader 2.x with SpiceLinkMess (channel type, capability counts) or SpiceLinkReply (error, public key size, capability counts)"),
     ProtocolSupport("afp", ("tcp",), "initial_message/negotiation_response", "DSI GetStatus and OpenSession requests and replies (header fields, option types and lengths); AFP commands not inspected"),
+    ProtocolSupport("irc", ("tcp",), "initial_message/protocol_header", "Client registration lines (NICK with nickname grammar, USER with its four parameters, CAP subcommands; PASS is ambiguous with FTP/POP3) and server opening lines (':'-prefixed numeric replies, NOTICE, PING, CAP; unprefixed NOTICE AUTH/* and PING); message class reported, nicknames, hosts, channels and text never emitted"),
     ProtocolSupport("fins", ("tcp",), "initial_message/negotiation_response/response_header", "Omron FINS/TCP node address request and reply, and the first FINS frame header (ICF, gateway count, address ranges); data not read"),
     ProtocolSupport("rip", ("udp",), "datagram", "RIP v1/v2 request or response: zero field, 1..25 entries, address family, metric, v1 zero fields, v2 simple-password or MD5 authentication framing"),
     ProtocolSupport("rtcp", ("udp",), "datagram", "Hint required: RTCP compound packet beginning with SR or RR, every packet length within the datagram", True),
@@ -91,7 +92,7 @@ _SUPPORTED = (
     ProtocolSupport("rfb", ("tcp",), "protocol_header", "RFB 3.3/3.7/3.8 banner; no VNC security exchange"),
     ProtocolSupport("bittorrent", ("tcp",), "initial_message", "68-byte peer handshake; encrypted transport unsupported"),
     ProtocolSupport("memcached", ("tcp",), "initial_message", "Selected binary request commands 0x00..0x10; no SASL/text/meta; binary responses (status and sizes consistent with the command, status reported)"),
-    ProtocolSupport("ldap", ("tcp",), "initial_message", "LDAPv3 BindRequest, simple/SASL, and BindResponse (result code reported; DN, diagnostic and SASL credentials not emitted); no controls or searches"),
+    ProtocolSupport("ldap", ("tcp",), "initial_message", "LDAPv3 BindRequest, simple/SASL, BindResponse, ExtendedRequest and ExtendedResponse (result code and extended operation class reported; a StartTLS request or named success response announces the ldap-starttls shift to TLS; DN, diagnostic, SASL credentials and extended values not emitted); no controls or searches"),
     ProtocolSupport("sip", ("tcp", "udp"), "initial_headers/datagram", "SIP/2.0 required header framing; no dialogue/body semantics"),
     ProtocolSupport("rtsp", ("tcp",), "initial_headers", "RTSP/1.0 and 2.0 header framing; no RTP/media decoding"),
 )

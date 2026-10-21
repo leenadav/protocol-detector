@@ -2,8 +2,10 @@
 
 STANDARD_METHODS = frozenset((b"GET", b"HEAD", b"POST", b"PUT", b"DELETE", b"CONNECT", b"OPTIONS", b"TRACE", b"PATCH"))
 WEBDAV_METHODS = frozenset((b"PROPFIND", b"PROPPATCH", b"MKCOL", b"COPY", b"MOVE", b"LOCK", b"UNLOCK", b"REPORT", b"SEARCH"))
-METHODS = STANDARD_METHODS | WEBDAV_METHODS
+RPC_HTTP_METHODS = frozenset((b"RPC_CONNECT", b"RPC_IN_DATA", b"RPC_OUT_DATA"))   # MS-RPCH 2.1.2 (Outlook Anywhere / RPC over HTTP)
+METHODS = STANDARD_METHODS | WEBDAV_METHODS | RPC_HTTP_METHODS
 WEBDAV_METHOD_NAMES = frozenset(method.decode("ascii") for method in WEBDAV_METHODS)
+RPC_HTTP_METHOD_NAMES = frozenset(method.decode("ascii") for method in RPC_HTTP_METHODS)
 
 _CLASSES = (
     (b"application/grpc-web", "grpc-web", True),

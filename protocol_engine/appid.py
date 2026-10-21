@@ -13,7 +13,7 @@ profile, never an authenticated product identity.
 from typing import NamedTuple, Optional, Tuple
 from types import MappingProxyType
 from .applications import APPLICATIONS, OUTCOMES, Application, application_name, custom_application
-from .media import WEBDAV_METHOD_NAMES
+from .media import RPC_HTTP_METHOD_NAMES, WEBDAV_METHOD_NAMES
 from .model import Observation
 from .risks import flow_risks
 
@@ -90,6 +90,10 @@ def _application(observation, transport, signatures=None):
         base = _web_application(observation)
     elif base == "sun-rpc":
         base = _RPC_APPLICATIONS.get(_evidence(observation, "rpc_program"), base)
+    elif base == "dns" and _evidence(observation, "dns_query_type") in ("nb", "nbstat"):
+        base = "netbios-ns"   # NetBIOS name service shares the DNS message layout; NB/NBSTAT questions with an encoded name are its own
+    elif base == "stun" and _evidence(observation, "stun_method") not in (None, "binding"):
+        base = "turn"
     if observation.application:
         if base is None:
             base = "unknown-" + transport
@@ -118,6 +122,8 @@ def _web_application(observation):
         return "websocket" if _evidence(observation, "http2_protocol") == "websocket" else "http-proxy"
     if method in WEBDAV_METHOD_NAMES:
         return "webdav"
+    if method in RPC_HTTP_METHOD_NAMES:
+        return "ms-rpc-over-http"
     http2_content = _evidence(observation, "http2_content_type")
     content = http2_content or _evidence(observation, "http_content_type")
     if method == "POST" and (http2_content == "grpc" or content == "grpc-web"):
