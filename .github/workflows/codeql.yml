@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: CodeQL (python, security-extended)
@@ -39,7 +43,7 @@ jobs:
           category: "/language:python"
           upload: never
           output: codeql-results
-      - name: Fail on error-level CodeQL findings
+      - name: Fail on error-level CodeQL findings (summary table of packs, rules and findings)
         run: python3 -B tools/codeql_gate.py codeql-results
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

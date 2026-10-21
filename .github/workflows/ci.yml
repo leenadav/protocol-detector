@@ -225,12 +225,23 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
       - name: Install pinned analysis tools
         run: python -m pip install --require-hashes -r requirements-dev.txt
       - name: Ruff (errors, bugbear, security rules)
-        run: ruff check --output-format github .
+        run: |
+          ruff check --output-format github .
+          echo "ruff: no findings ($(ruff --version))" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Bandit (Python security linter)
-        run: bandit -c bandit.yaml -r protocol_engine analyze_pcap.py live_capture.py sessions.py packets.py link_packets.py capture_stream.py -f txt
+        run: |
+          bandit -c bandit.yaml -r protocol_engine analyze_pcap.py live_capture.py sessions.py packets.py link_packets.py capture_stream.py -f txt | tee bandit.txt
+          {
+            echo
+            echo '```'
+            grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Secret scan (gitleaks, full history)
         uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         env:
@@ -243,19 +254,31 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
       - name: Every action must be pinned to a commit SHA
         run: python -B tools/check_action_pins.py .github/workflows
       - name: Generate CycloneDX SBOM for the package (zero runtime dependencies expected)
         run: |
           python -m pip install --require-hashes -r requirements-dev.txt
           cyclonedx-py environment --output-format json --output-file sbom.cdx.json
-          python -B tools/sbom_summary.py sbom.cdx.json
+          python -B tools/sbom_summary.py sbom.cdx.json | tee sbom-summary.txt
+          {
+            echo "### SBOM"
+            echo
+            head -n 1 sbom-summary.txt
+            echo "pyproject.toml declares no runtime dependency (checked by tools/sbom_summary.py)."
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload SBOM
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -278,25 +301,33 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
       - name: Build the sdist and wheel with the hash-pinned toolchain
         run: |
           python -m pip install --require-hashes -r requirements-dev.txt
           python -m build --sdist --wheel --outdir dist
       - name: The wheel holds exactly the engine package and declares no runtime dependency
         run: python -B tools/check_wheel.py "dist/*.whl" | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Install the wheel into an empty environment and classify a fixture from it
+      - name: Install the wheel into an empty environment and classify fixtures from it (python 3.13)
+        # tools/wheel_smoke.py refuses to import the engine from the checkout: the classification
+        # must come from site-packages of the environment the wheel was installed into.
         run: |
           python -m venv /tmp/wheel-env
           /tmp/wheel-env/bin/python -m pip install --no-deps --no-index dist/*.whl
-          cd /tmp && /tmp/wheel-env/bin/python - <<'PY'
-          from protocol_engine import Inspector, DatagramInspector, supported_protocols
-          inspector = Inspector()
-          inspector.feed(b"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n")
-          assert inspector.observation.application_protocol == "http/1.1", inspector.observation
-          dns = DatagramInspector().inspect(bytes.fromhex("123401000001000000000000") + b"\x03www\x07example\x03com\x00\x00\x01\x00\x01")
-          assert dns.application_protocol == "dns", dns
-          print("installed wheel classifies; families:", len(list(supported_protocols())))
-          PY
+          (cd /tmp && /tmp/wheel-env/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py") | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Python 3.9, the oldest supported interpreter
+        id: py39
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.9"
+      - name: Install the same wheel under python 3.9 and classify the fixtures again
+        env:
+          PY39: ${{ steps.py39.outputs.python-path }}
+        run: |
+          "$PY39" -m venv /tmp/wheel-env39
+          /tmp/wheel-env39/bin/python -m pip install --no-deps --no-index dist/*.whl
+          (cd /tmp && /tmp/wheel-env39/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py") | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Upload the distributions
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -325,7 +356,9 @@ jobs:
           echo "${SHA256}  actionlint.tar.gz" | sha256sum -c -
           tar xzf actionlint.tar.gz actionlint
       - name: Lint every workflow (syntax, expressions, shellcheck-style script checks)
-        run: ./actionlint -no-color .github/workflows/*.yml
+        run: |
+          ./actionlint -no-color .github/workflows/*.yml
+          echo "actionlint: $(find .github/workflows -name '*.yml' | wc -l) workflow files clean" | tee -a "$GITHUB_STEP_SUMMARY"
 
   toolchain-audit:
     name: known vulnerabilities in the dev toolchain (pip-audit)
@@ -342,6 +375,8 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
       - name: Install the hash-pinned toolchain (pip-audit included)
         run: python -m pip install --require-hashes -r requirements-dev.txt
       - name: Audit every pinned development dependency against the advisory databases
@@ -363,4 +398,4 @@ jobs:
         with:
           python-version: "3.13"
       - name: Documented security requirements must have an executable check
-        run: python -B tools/check_security_requirements.py
+        run: python -B tools/check_security_requirements.py | tee -a "$GITHUB_STEP_SUMMARY"
