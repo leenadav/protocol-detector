@@ -1,4 +1,4 @@
-# Protocol detector v0.34
+# Protocol detector v0.35
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **67 protocol families**, with explicit profiles rather than claims of full
@@ -69,6 +69,15 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.35 — faster ClientHello parsing, same errors
+
+The TLS ClientHello walk (the engine's hottest parser) now uses index
+arithmetic instead of per-field helper calls: a ClientHello inspection drops
+from about 73 to 55 µs. Every bound raises the same error as before; a
+differential tool (`tools/compare_client_hello.py`) replays every truncation
+and thousands of seeded mutations against another source tree and reports zero
+differences in result or exception against v0.34. BENCHMARK-V035.md.
 
 ## New in v0.34 — published output schemas
 

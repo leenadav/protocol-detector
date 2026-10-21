@@ -23,7 +23,7 @@ tests; evidence strengths are structural / asserted / offered / derived /
 heuristic / configured_mapping / context; no hostname, path, credential or
 payload bytes appear in live output unless explicitly enabled.
 
-Status: the roadmap is complete at v0.30; v0.31 added pcapng input, v0.32 S7comm after ISO-TSAP v0.33 server-side CONNECT correlation and v0.34 published output schemas (post-roadmap work). Later work (mDNS/LLMNR,
+Status: the roadmap is complete at v0.30; v0.31 added pcapng input, v0.32 S7comm after ISO-TSAP v0.33 server-side CONNECT correlation v0.34 published output schemas and v0.35 the ClientHello hot-path rewrite (post-roadmap work). Later work (mDNS/LLMNR,
 SMB1 session setup, HTTP/2 server frames
 after h2c, certificate-based risks) is listed in PROTOCOLS.md and RISKS.md
 under their exclusions and remains out of scope until requested.

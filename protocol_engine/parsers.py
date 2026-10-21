@@ -378,43 +378,87 @@ def parse_hello(body, info=None, offered=None):
     """Validate a ClientHello body; return (hostname, alpn) and fill info when supplied.
 
     `offered`, when a list, receives [legacy_version, supported_versions tuple]
-    without the cost of the full ClientHelloInfo collection.
+    without the cost of the full ClientHelloInfo collection. The fixed fields and
+    the extension walk are index arithmetic over the body (this is the hottest
+    parser in the engine); every bound raises the same ParseError the Reader
+    helper raises, so truncated or inconsistent lengths fail identically.
     """
-    reader = Reader(body)
-    version = reader.take(2)
+    size = len(body)
+    if size < 2:
+        raise ParseError("TLS field exceeds enclosing length")
+    version = body[0:2]
     if offered is not None:
         offered.append(int.from_bytes(version, "big"))
         offered.append(())
     if version not in (b"\x03\x01", b"\x03\x02", b"\x03\x03"):
         raise ParseError("Unsupported ClientHello version")
-    reader.take(32)
-    if len(reader.vector(1)) > 32:
+    pos = 34  # version + random
+    if pos + 1 > size:
+        raise ParseError("TLS field exceeds enclosing length")
+    session_length = body[pos]
+    pos += 1
+    if pos + session_length > size:
+        raise ParseError("TLS field exceeds enclosing length")
+    if session_length > 32:
         raise ParseError("Session ID exceeds maximum")
-    ciphers = reader.vector(2)
-    compression = reader.vector(1)
-    if len(ciphers) < 2 or len(ciphers) % 2 or not compression or 0 not in compression:
+    pos += session_length
+    if pos + 2 > size:
+        raise ParseError("TLS field exceeds enclosing length")
+    cipher_length = (body[pos] << 8) | body[pos + 1]
+    pos += 2
+    if pos + cipher_length > size:
+        raise ParseError("TLS field exceeds enclosing length")
+    ciphers = body[pos:pos + cipher_length]
+    pos += cipher_length
+    if pos + 1 > size:
+        raise ParseError("TLS field exceeds enclosing length")
+    compression_length = body[pos]
+    pos += 1
+    if pos + compression_length > size:
+        raise ParseError("TLS field exceeds enclosing length")
+    compression = body[pos:pos + compression_length]
+    pos += compression_length
+    if cipher_length < 2 or cipher_length % 2 or not compression or 0 not in compression:
         raise ParseError("Invalid cipher or compression vector")
     if info is not None:
         info.version = int.from_bytes(version, "big")
         info.ciphers = _u16_list(ciphers)
     hostname, alpn = None, ()
-    if reader.pos == len(body):
+    if pos == size:
         return hostname, alpn
-    extensions = Reader(reader.vector(2))
-    reader.end()
+    if pos + 2 > size:
+        raise ParseError("TLS field exceeds enclosing length")
+    extensions_length = (body[pos] << 8) | body[pos + 1]
+    pos += 2
+    if pos + extensions_length > size:
+        raise ParseError("TLS field exceeds enclosing length")
+    if pos + extensions_length != size:
+        raise ParseError("Trailing bytes in TLS structure")
+    data, end = body, size
     seen = set()
     order = []
-    while extensions.pos < len(extensions.data):
-        kind = int.from_bytes(extensions.take(2), "big")
-        value = extensions.vector(2)
+    while pos < end:
+        if pos + 2 > end:
+            raise ParseError("TLS field exceeds enclosing length")
+        kind = (data[pos] << 8) | data[pos + 1]
+        pos += 2
+        if pos + 2 > end:
+            raise ParseError("TLS field exceeds enclosing length")
+        length = (data[pos] << 8) | data[pos + 1]
+        pos += 2
+        if pos + length > end:
+            raise ParseError("TLS field exceeds enclosing length")
+        value = data[pos:pos + length]
+        pos += length
         if kind in seen:
             raise ParseError("Duplicate TLS extension")
         seen.add(kind)
-        order.append(kind)
-        if info is not None and len(order) > 128:
-            raise BudgetError("ClientHello extension count exceeds inspection limit")
+        if info is not None:
+            order.append(kind)
+            if len(order) > 128:
+                raise BudgetError("ClientHello extension count exceeds inspection limit")
         if kind == 43 and offered is not None:
-            # supported_versions: one length byte then 16-bit values; collected without a Reader.
+            # supported_versions: one length byte then 16-bit values.
             if not value or value[0] != len(value) - 1 or value[0] % 2:
                 raise ParseError("Invalid supported_versions extension")
             offered[1] = tuple(int.from_bytes(value[i:i + 2], "big") for i in range(1, len(value), 2))

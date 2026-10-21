@@ -1,11 +1,18 @@
-# Review scope: protocol detector v0.34
+# Review scope: protocol detector v0.35
 
 Python3.9-compatible IPv4 passive classification: 67 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.34): schemas/*.schema.json (closed objects, enumerations
+New focus (v0.35): the rewritten `parse_hello` in parsers.py (fixed-field
+offsets, extension walk, extension-count budget only with info, trailing-byte
+check order) and tools/compare_client_hello.py. Trace: every bound before
+every slice; identical ParseError messages; the differential run against the
+previous tree (12,640 cases, zero differences); unchanged behaviour for DTLS
+and QUIC callers of parse_hello. 424 tests pass. BENCHMARK-V035.md.
+
+Previous focus (v0.34): schemas/*.schema.json (closed objects, enumerations
 matching the engine's statuses, kinds, strengths, port usage and policy
 actions), tools/schema_check.py (type semantics for bool/int/number, oneOf
 counting, local refs, error paths), test_schema.py coverage of option

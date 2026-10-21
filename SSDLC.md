@@ -19,7 +19,7 @@ artifact in the repository and every security claim has an executable check.
 2. `make check` passes locally.
 3. PROTOCOLS.md / APPID.md / ARCHITECTURE.md updated; threat model touched if a boundary moved; schemas/ updated when an output field changes (OUTPUT.md).
 4. SECURITY-REQUIREMENTS.md row added when the change introduces a new guarantee.
-5. Benchmark recorded when a hot path changed.
+5. Benchmark recorded when a hot path changed, with a differential check against the previous tree when a parser was rewritten (tools/compare_client_hello.py is the model).
 
 ## Local commands
 

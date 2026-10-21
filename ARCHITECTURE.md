@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.34 — engine and observation contracts
+# Stream/datagram engine v0.35 — engine and observation contracts
 
 ## Ownership
 
@@ -708,3 +708,15 @@ bounds, oneOf/anyOf, local $ref) so validation needs no dependency.
 test_schema.py runs both tools over the synthetic captures under every
 shape-changing option and validates every line, which turns an accidental
 field addition into a test failure and documents the contract in OUTPUT.md.
+
+## ClientHello hot path (v0.35)
+
+`parse_hello` reads the fixed fields and walks the extension list with
+explicit offsets and bound checks instead of the `Reader` helper (which stays
+for the rare SNI/ALPN/list sub-structures and for the server hello). The
+rewrite is behaviour-preserving by construction: each slice is preceded by
+the same comparison the helper performed and raises the same `ParseError`
+message, and `tools/compare_client_hello.py` compares results and exceptions
+with a baseline tree over every truncation and seeded mutations. The engine
+contract that a hot-path change must keep its error semantics (AGENTS.md) is
+checked this way rather than asserted.
