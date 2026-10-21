@@ -15,9 +15,9 @@ _table = ["unknown"] * 256
 for _byte in b"!#$%&'*+.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-":
     _table[_byte] = "text"
 for _byte, _family in ((64, "rsync"), (3, "tpkt"), (22, "tls"), (5, "socks5"), (16, "mqtt"), (19, "bittorrent"), (128, "memcached"),
-                       (0x81, "netbios-ss"), (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus"), (0x12, "tds")):
+                       (0x81, "netbios-ss"), (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus"), (0x12, "tds"), (0x84, "cql")):
     _table[_byte] = _family
-for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68):
+for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68, 69, 118):
     _table[_byte] = "ambiguous"
 FIRST_BYTE = tuple(_table)
 del _table, _byte, _family
@@ -27,6 +27,14 @@ _STOMP_STARTS = (b'CONNECT\n', b'CONNECT\r\n', b'CONNECTED\n', b'CONNECTED\r\n',
 def select(prefix):
     """Return a family or None; prefix contains 1..LOOKAHEAD bytes."""
     first = prefix[0]
+    if first in (82, 69, 118):
+        # PostgreSQL server messages 'R'/'E'/'v' carry a big-endian length right after the type
+        # byte; a text protocol never has two NUL bytes there. Wait for the discriminator.
+        if len(prefix) < 3:
+            if len(prefix) == 1 or prefix[1] == 0:
+                return None
+        elif prefix[1] == 0 and prefix[2] == 0:
+            return "postgresql"
     if first in (72, 65, 69, 82):  # OPC UA HELF/ACKF/ERRF/RHEF before the text and AMQP/RFB routes
         if len(prefix) < 8:
             if any(magic.startswith(prefix[:4]) for magic in OPCUA_MAGICS):
@@ -61,6 +69,8 @@ def select(prefix):
     family = FIRST_BYTE[first]
     if family != "ambiguous":
         return family
+    if first in (69, 118):
+        return "text"
     if first == 255:
         if len(prefix) < 2:
             return None

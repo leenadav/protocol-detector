@@ -7,6 +7,11 @@ from .framing import FrameParser
 from .parsers import BudgetError, ParseError
 
 
+_MYSQL_PLUGINS = {b'mysql_native_password': 'mysql_native_password', b'caching_sha2_password': 'caching_sha2_password',
+                  b'sha256_password': 'sha256_password', b'mysql_clear_password': 'cleartext', b'authentication_ldap_sasl_client': 'ldap-sasl',
+                  b'authentication_kerberos_client': 'kerberos'}
+
+
 class MySQLParser(FrameParser):
     header_size = 4
     protocol_name = 'mysql'
@@ -14,8 +19,12 @@ class MySQLParser(FrameParser):
 
     def frame_size(self, header):
         size = int.from_bytes(header[:3], 'little')
-        if header[3] == 1 and size == 32:
-            return 36  # client SSLRequest answering the server handshake
+        if header[3] == 1:
+            if size == 32:
+                return 36  # client SSLRequest answering the server handshake
+            if size < 34:
+                raise ParseError('MySQL HandshakeResponse41 shorter than its fixed fields')
+            return size + 4  # client HandshakeResponse41 (v0.45)
         if header[3] != 0:
             raise ParseError('MySQL initial server handshake requires sequence zero')
         if size < 32:
@@ -24,7 +33,7 @@ class MySQLParser(FrameParser):
 
     def validate(self, data):
         if data[3] == 1:
-            return self._ssl_request(data[4:])
+            return self._ssl_request(data[4:]) if len(data) == 36 else self._handshake_response(data[4:])
         if data[4] != 10:
             raise UnsupportedPrefix('Only MySQL server HandshakeV10 is supported')
         end = data.find(b'\0', 5, min(len(data), 134))
@@ -52,6 +61,74 @@ class MySQLParser(FrameParser):
             raise UnsupportedPrefix('MySQL authentication plugin outside supported handshake profile')
         self.reason = 'MySQL modern server handshake validated; advertised version/capabilities, authentication and commands unverified'
         self.extra_evidence = (('mysql_tls_supported', str(bool(capabilities & 0x800)).lower(), 'server_handshake', 'offered'),)
+
+    def _handshake_response(self, payload):
+        """Protocol::HandshakeResponse41: capabilities, max packet, charset, reserved, user, auth data, database, plugin, attributes."""
+        capabilities = int.from_bytes(payload[:4], 'little')
+        if capabilities & 0x200 != 0x200:
+            raise UnsupportedPrefix('MySQL HandshakeResponse41 requires CLIENT_PROTOCOL_41')
+        if capabilities & 0x800:
+            raise ParseError('MySQL HandshakeResponse41 with CLIENT_SSL must follow an SSLRequest')
+        if not payload[8] or any(payload[9:28]):
+            raise ParseError('MySQL HandshakeResponse41 character set or reserved bytes invalid')
+        end = payload.find(b'\0', 32)
+        if end < 32 or end - 32 > 128:
+            raise ParseError('MySQL user name missing, unterminated or too long')
+        pos = end + 1
+        if capabilities & 0x200000:          # CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA
+            if pos >= len(payload) or payload[pos] >= 0xfb:
+                raise ParseError('MySQL authentication response length outside the one-byte profile')
+            pos += 1 + payload[pos]
+        elif capabilities & 0x8000:          # CLIENT_SECURE_CONNECTION
+            if pos >= len(payload):
+                raise ParseError('MySQL authentication response length missing')
+            pos += 1 + payload[pos]
+        else:
+            end = payload.find(b'\0', pos)
+            if end < 0:
+                raise ParseError('MySQL authentication response unterminated')
+            pos = end + 1
+        if pos > len(payload):
+            raise ParseError('MySQL authentication response exceeds the packet')
+        if capabilities & 0x8:               # CLIENT_CONNECT_WITH_DB
+            end = payload.find(b'\0', pos)
+            if end < pos or end - pos > 64:
+                raise ParseError('MySQL database name unterminated or too long')
+            pos = end + 1
+        plugin = None
+        if capabilities & 0x80000:           # CLIENT_PLUGIN_AUTH
+            end = payload.find(b'\0', pos)
+            if end < pos or end - pos > 64:
+                raise ParseError('MySQL plugin name unterminated or too long')
+            plugin = bytes(payload[pos:end])
+            pos = end + 1
+        if capabilities & 0x100000:          # CLIENT_CONNECT_ATTRS
+            if pos >= len(payload) or payload[pos] >= 0xfb:
+                raise ParseError('MySQL attribute block length outside the one-byte profile')
+            total = payload[pos]
+            pos += 1
+            attrs_end = pos + total
+            if attrs_end > len(payload):
+                raise ParseError('MySQL attribute block exceeds the packet')
+            count = 0
+            while pos < attrs_end:
+                count += 1
+                if count > 32:
+                    raise BudgetError('MySQL connection attribute count exceeds limit')
+                if payload[pos] >= 0xfb:
+                    raise ParseError('MySQL attribute length outside the one-byte profile')
+                pos += 1 + payload[pos]
+            if pos != attrs_end:
+                raise ParseError('MySQL attribute block length disagrees with its entries')
+        if capabilities & 0x4000000 and pos < len(payload):   # CLIENT_ZSTD_COMPRESSION_ALGORITHM
+            pos += 1
+        if pos != len(payload):
+            raise ParseError('Trailing bytes after MySQL HandshakeResponse41')
+        self.scope = 'authentication_request'
+        self.reason = 'MySQL HandshakeResponse41 validated; user, database and authentication data not emitted'
+        label = _MYSQL_PLUGINS.get(plugin, 'none' if plugin is None else 'other')
+        self.extra_evidence = (('mysql_auth_plugin', label, 'handshake_response', 'asserted'),
+                               ('mysql_client_ssl', 'not-requested', 'handshake_response', 'structural'))
 
     def _ssl_request(self, payload):
         """Protocol::SSLRequest: capability flags with CLIENT_SSL, max packet, charset, 23 reserved bytes."""

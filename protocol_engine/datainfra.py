@@ -51,6 +51,20 @@ class KafkaParser(FrameParser):
         self.reason = "Kafka request header validated; topics, records and authentication not decoded"
 
 
+_CQL_RESPONSES = {0x00: "error", 0x02: "ready", 0x03: "authenticate", 0x06: "supported"}
+
+
+def _cql_string(body, pos):
+    """[string]: 2-byte length then printable ASCII; returns the position after it (ParseError on overflow)."""
+    if pos + 2 > len(body):
+        raise ParseError("Truncated CQL string")
+    size = int.from_bytes(body[pos:pos + 2], "big")
+    value = body[pos + 2:pos + 2 + size]
+    if len(value) != size or any(byte < 32 or byte > 126 for byte in value):
+        raise ParseError("CQL string outside printable ASCII or the frame")
+    return pos + 2 + size
+
+
 class CQLParser(FrameParser):
     """Cassandra native protocol v4 request frame: STARTUP or OPTIONS."""
     header_size = 9
@@ -58,20 +72,58 @@ class CQLParser(FrameParser):
     scope = "protocol_header"
 
     def frame_size(self, header):
-        if header[0] != 0x04:
-            raise UnsupportedPrefix("CQL profile covers protocol version 4 requests")
+        if header[0] not in (0x04, 0x84):
+            raise UnsupportedPrefix("CQL profile covers protocol version 4 requests and responses")
         if header[1] & 0xf0:
             raise ParseError("CQL flags reserved bits set")
+        size = int.from_bytes(header[5:9], "big")
+        if header[0] == 0x84:
+            if header[4] not in _CQL_RESPONSES:
+                raise UnsupportedPrefix("CQL response profile covers ERROR, READY, AUTHENTICATE and SUPPORTED")
+            minimum = {0x00: 6, 0x02: 0, 0x03: 2, 0x06: 2}[header[4]]
+            if not minimum <= size <= 4096 or (header[4] == 0x02 and size):
+                raise ParseError("CQL response body length outside profile")
+            return 9 + size
         if header[4] not in (0x01, 0x05):
             raise UnsupportedPrefix("CQL profile covers STARTUP and OPTIONS requests")
-        size = int.from_bytes(header[5:9], "big")
         if header[4] == 0x05 and size:
             raise ParseError("CQL OPTIONS carries no body")
         if header[4] == 0x01 and not 2 <= size <= 4096:
             raise ParseError("CQL STARTUP body length outside profile")
         return 9 + size
 
+    def _response(self, data):
+        opcode, body = data[4], data[9:]
+        if opcode == 0x00:
+            if not _cql_string(body, 4):
+                raise ParseError("CQL ERROR requires a code and a message string")
+        elif opcode == 0x03:
+            if _cql_string(body, 0) != len(body):
+                raise ParseError("CQL AUTHENTICATE carries one authenticator class string")
+        elif opcode == 0x06:
+            count = int.from_bytes(body[:2], "big")
+            if not 1 <= count <= 16:
+                raise ParseError("CQL SUPPORTED multimap count outside profile")
+            pos = 2
+            for _ in range(count):
+                pos = _cql_string(body, pos)
+                if pos + 2 > len(body):
+                    raise ParseError("Truncated CQL SUPPORTED multimap")
+                values = int.from_bytes(body[pos:pos + 2], "big")
+                pos += 2
+                if values > 64:
+                    raise BudgetError("CQL SUPPORTED value count exceeds limit")
+                for _ in range(values):
+                    pos = _cql_string(body, pos)
+            if pos != len(body):
+                raise ParseError("Trailing bytes after CQL SUPPORTED multimap")
+        self.scope = "negotiation_response"
+        self.extra_evidence = (("cql_response", _CQL_RESPONSES[opcode], "response", "structural"),)
+        self.reason = "Cassandra native protocol v4 response validated; error text and option values not emitted"
+
     def validate(self, data):
+        if data[0] == 0x84:
+            return self._response(data)
         if data[4] == 0x01:
             count = int.from_bytes(data[9:11], "big")
             if not 1 <= count <= 16:

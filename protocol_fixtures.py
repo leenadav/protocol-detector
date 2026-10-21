@@ -559,3 +559,66 @@ DCERPC_BIND_ACK = dcerpc_pdu(0x0c, struct.pack('<HHI', 0x10b8, 0x10b8, 0x1234567
                              + b'\x01\x00\x00\x00' + b'\x00\x00\x00\x00' + NDR20)
 DCERPC_BIND_NAK = dcerpc_pdu(0x0d, struct.pack('<H', 9) + b'\x01' + b'\x05\x00')
 STREAM_CASES += ((DCERPC_BIND_ACK, 'dcerpc/5.0'), (DCERPC_BIND_NAK, 'dcerpc/5.0'))
+
+
+# v0.45: database and directory server replies. Names, salts and messages are placeholders.
+def pg_server(kind, body):
+    return kind + (4 + len(body)).to_bytes(4, 'big') + body
+
+
+POSTGRESQL_AUTH_MD5 = pg_server(b'R', (5).to_bytes(4, 'big') + b'\x01\x02\x03\x04')
+POSTGRESQL_AUTH_SASL = pg_server(b'R', (10).to_bytes(4, 'big') + b'SCRAM-SHA-256\x00SCRAM-SHA-256-PLUS\x00\x00')
+POSTGRESQL_AUTH_OK = pg_server(b'R', (0).to_bytes(4, 'big'))
+POSTGRESQL_ERROR = pg_server(b'E', b'SFATAL\x00VFATAL\x00C28P01\x00Mpassword authentication failed for user "placeholder"\x00Fauth.c\x00L326\x00Rauth_failed\x00\x00')
+POSTGRESQL_NEGOTIATE = pg_server(b'v', (0).to_bytes(4, 'big') + (1).to_bytes(4, 'big') + b'_pq_.placeholder\x00')
+STREAM_CASES += ((POSTGRESQL_AUTH_MD5, 'postgresql'), (POSTGRESQL_AUTH_SASL, 'postgresql'), (POSTGRESQL_AUTH_OK, 'postgresql'),
+                 (POSTGRESQL_ERROR, 'postgresql'), (POSTGRESQL_NEGOTIATE, 'postgresql'))
+
+
+def ldap_bind_response(code=0, matched=b'', diagnostic=b'', extra=b'', message_id=b'\x01'):
+    return _ber(0x30, _ber(2, message_id) + _ber(0x61, _ber(0x0a, bytes([code])) + _ber(4, matched) + _ber(4, diagnostic) + extra))
+
+
+LDAP_BIND_RESPONSE = ldap_bind_response()
+LDAP_BIND_INVALID = ldap_bind_response(49, b'', b'80090308: LdapErr: placeholder')
+STREAM_CASES += ((LDAP_BIND_RESPONSE, 'ldap'), (LDAP_BIND_INVALID, 'ldap'))
+
+
+def cql_response(opcode, body, stream=1, flags=0):
+    return b'\x84' + bytes([flags]) + stream.to_bytes(2, 'big') + bytes([opcode]) + len(body).to_bytes(4, 'big') + body
+
+
+def cql_string(text):
+    return len(text).to_bytes(2, 'big') + text
+
+
+CQL_READY = cql_response(0x02, b'')
+CQL_AUTHENTICATE = cql_response(0x03, cql_string(b'org.apache.cassandra.auth.PasswordAuthenticator'))
+CQL_SUPPORTED = cql_response(0x06, (2).to_bytes(2, 'big') + cql_string(b'CQL_VERSION') + (1).to_bytes(2, 'big') + cql_string(b'3.4.4')
+                             + cql_string(b'COMPRESSION') + (2).to_bytes(2, 'big') + cql_string(b'snappy') + cql_string(b'lz4'))
+CQL_ERROR = cql_response(0x00, (0x0100).to_bytes(4, 'big') + cql_string(b'placeholder message'))
+STREAM_CASES += ((CQL_READY, 'cql/4'), (CQL_AUTHENTICATE, 'cql/4'), (CQL_SUPPORTED, 'cql/4'), (CQL_ERROR, 'cql/4'))
+
+
+def mysql_handshake_response(capabilities=0x3fa20f, user=b'placeholder', auth=bytes(32), database=None, plugin=b'caching_sha2_password', attrs=None, zstd=None):
+    payload = capabilities.to_bytes(4, 'little') + (0x1000000).to_bytes(4, 'little') + b'\xff' + bytes(23) + user + b'\0'
+    if capabilities & 0x200000:
+        payload += bytes([len(auth)]) + auth
+    elif capabilities & 0x8000:
+        payload += bytes([len(auth)]) + auth
+    else:
+        payload += auth + b'\0'
+    if capabilities & 0x8:
+        payload += (database or b'placeholderdb') + b'\0'
+    if capabilities & 0x80000:
+        payload += plugin + b'\0'
+    if capabilities & 0x100000:
+        block = b''.join(bytes([len(item)]) + item for pair in (attrs or ((b'_client_name', b'libmysql'),)) for item in pair)
+        payload += bytes([len(block)]) + block
+    if zstd is not None:
+        payload += bytes([zstd])
+    return len(payload).to_bytes(3, 'little') + b'\x01' + payload
+
+
+MYSQL_HANDSHAKE_RESPONSE = mysql_handshake_response()
+HINTED_STREAM_CASES += ((MYSQL_HANDSHAKE_RESPONSE, 'mysql', 'mysql'),)

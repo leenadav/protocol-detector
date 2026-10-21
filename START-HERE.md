@@ -375,3 +375,9 @@ CONNECT, ACCEPT, REFUSE ו־RESEND של Oracle Net (סכומי בדיקה בכו
 ו־`kerberos_error`; שמות ראשיים וכרטיסים אינם נפלטים) ו־Bind_ack/Bind_nak של DCE/RPC (ראיות `dcerpc_pdu` ו־
 `accepted_transfer_syntax`). הסיכון הנמוך החדש `kerberos-error-response` מסמן שגיאות KDC שאינן שלב
 pre-authentication-required השגרתי. 458 בדיקות עוברות.
+
+
+עדכון 0.45: תשובות שרת של מסדי נתונים וספריות: בקשות אימות, תשובות שגיאה ומשא ומתן על גרסה של PostgreSQL (שיטה
+ומחלקת SQLSTATE מדווחות; מלחים והודעות אינם נפלטים), BindResponse של LDAP (קוד תוצאה), מסגרות תשובה של Cassandra
+(ERROR, READY, AUTHENTICATE, SUPPORTED) ו־HandshakeResponse41 של לקוח MySQL (תוסף מדווח; משתמש ומסד נתונים אינם
+נפלטים) מאומתים, כך ששני הכיוונים של חיבורי מסדי הנתונים האלה נושאים ראיות מבניות. 463 בדיקות עוברות.

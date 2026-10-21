@@ -17,7 +17,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | bgp | tcp | Automatic profiles | negotiation_request | BGPv4 OPEN, standard optional lengths and capability framing |
 | bittorrent | tcp | Automatic profiles | initial_message | 68-byte peer handshake; encrypted transport unsupported |
 | coap | udp | Automatic profiles | datagram | CoAP v1 framing, token <=8; tiny messages require coap hint |
-| cql | tcp | Automatic profiles | protocol_header | Cassandra native protocol v4 STARTUP/OPTIONS |
+| cql | tcp | Automatic profiles | protocol_header | Cassandra native protocol v4 STARTUP/OPTIONS requests and ERROR/READY/AUTHENTICATE/SUPPORTED responses |
 | dcerpc | tcp | Automatic profiles | bind_request | Connection-oriented v5.0 unfragmented Bind, Bind_ack (result list, accepted NDR 2.0/NDR64 1.0) and Bind_nak; no authentication, stub decoding or product identity |
 | dhcp | udp | Automatic profiles | datagram | DHCPv4 types 1..8, no overloaded options |
 | dnp3 | tcp | Automatic profiles | protocol_header | Data link frame with header and block CRCs verified |
@@ -38,12 +38,12 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | kafka | tcp | Automatic profiles | request_header | Request header for ApiVersions/Metadata/Produce/Fetch/SaslHandshake and similar first requests |
 | kerberos | tcp/udp | Automatic profiles | initial_message/datagram | KDC AS/TGS-REQ, AS/TGS-REP and KRB-ERROR ASN.1 framing (pvno 5, msg-type per tag, ordered fields, error code reported); principals, tickets and pre-authentication unverified and never emitted |
 | l2tp | udp | Automatic profiles | datagram | L2TPv2 SCCRQ control message with Message Type AVP first |
-| ldap | tcp | Automatic profiles | initial_message | LDAPv3 BindRequest, simple/SASL; no controls or searches |
+| ldap | tcp | Automatic profiles | initial_message | LDAPv3 BindRequest, simple/SASL, and BindResponse (result code reported; DN, diagnostic and SASL credentials not emitted); no controls or searches |
 | memcached | tcp | Automatic profiles | initial_message | Selected binary request commands 0x00..0x10; no SASL/text/meta |
 | modbus | tcp | Automatic profiles | request_header | MBAP header and public function request PDU shapes; transaction ids above 0x01ff need a hint |
 | mongodb | tcp | Hint required | initial_message | Hint required: uncompressed OP_MSG body/sequences, bounded BSON and CRC-32C; no telemetry or command semantics |
 | mqtt | tcp | Automatic profiles | initial_message | 3.1.1/5.0 CONNECT; MQTT5 CONNECT/Will property validation |
-| mysql | tcp | Hint required | protocol_header | Hint required: modern HandshakeV10, 21-byte challenge and native/caching_sha2/sha256 plugin |
+| mysql | tcp | Hint required | protocol_header | Hint required: server HandshakeV10 (21-byte challenge, native/caching_sha2/sha256 plugin), client SSLRequest or HandshakeResponse41 (capabilities, bounded user/database/plugin/attributes, plugin reported, names not emitted) |
 | nats | tcp | Automatic profiles | protocol_header | INFO/CONNECT with required typed JSON fields; bounded extensions, no message bodies |
 | netbios-ss | tcp | Automatic profiles | negotiation_request | NetBIOS session request with two first-level encoded names; names not emitted |
 | netflow | udp | Automatic profiles | datagram | NetFlow v5 record framing and NetFlow v9 flowsets (reported as netflow/5, netflow/9) |
@@ -51,7 +51,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | openvpn | tcp/udp | Automatic profiles | initial_message/datagram | Client hard-reset control packet (plain or tls-auth layout); no key exchange claim |
 | opcua | tcp | Automatic profiles | negotiation_request/negotiation_response | OPC UA TCP connection messages Hello, Acknowledge, Error and ReverseHello: little-endian size, buffer minimums, bounded printable opc.tcp URLs and reasons (not emitted); no secure channel |
 | pop3 | tcp | Automatic profiles | protocol_header/initial_message | Server +OK/-ERR status line or POP3-only client command; shared verbs resolved by correlation |
-| postgresql | tcp | Automatic profiles | initial_message/negotiation_request | v3.0..3.2 startup or SSL/GSS request; no authentication |
+| postgresql | tcp | Automatic profiles | initial_message/negotiation_request | v3.0..3.2 startup or SSL/GSS request (client); Authentication*, ErrorResponse and NegotiateProtocolVersion (server) with method, SQLSTATE class reported; salts, SASL data and messages not emitted |
 | pptp | tcp | Automatic profiles | negotiation_request | Start-Control-Connection-Request (156 bytes); names not emitted |
 | quic | udp | Automatic profiles | datagram | QUIC v1/v2 Initial (client protection removed with public Initial keys; ClientHello SNI/ALPN as offers) and Version Negotiation; no handshake completion, server packets or 0-RTT |
 | radius | udp | Hint required | datagram | Hint required: Access-Request PAP/CHAP/State with supported attributes; no authenticator verification or EAP |
@@ -1231,3 +1231,48 @@ and association group are never emitted.
 
 Primary specifications: [MS-SMB2 2.2.4](https://learn.microsoft.com/openspecs/windows_protocols/ms-smb2/63abf97c-0d09-47e2-88d6-6bfa552949a5),
 [RFC 4120 5.4.2, 5.9.1](https://www.rfc-editor.org/rfc/rfc4120.html#section-5.4.2), [C706 12.6.4.4-12.6.4.5](https://pubs.opengroup.org/onlinepubs/9629399/chap12.htm).
+
+## Database and directory server replies (v0.45)
+
+`postgresql` accepts the server's first messages: `R` Authentication (methods
+AuthenticationOk, KerberosV5, CleartextPassword, MD5Password with a four-byte
+salt, SCMCredential, GSS, GSSContinue with data, SSPI, SASL with a list of
+upper-case mechanism names ended by an empty string, SASLContinue and SASLFinal
+with data), `E` ErrorResponse (unique single-letter fields ended by an empty
+field, severity ERROR/FATAL/PANIC and a five-character SQLSTATE) and `v`
+NegotiateProtocolVersion (option count matching the terminated names). The
+length covers itself and the message exactly. Evidence `postgresql_message`
+(`authentication`, `error`, `negotiate-version`), `postgresql_auth` (the
+method) and `postgresql_error_class` (the first two SQLSTATE characters).
+Salts, SASL data, option names and message text are never emitted; the
+one-byte `S`/`N` answer to an SSLRequest is too short to identify. Prefix: `R`,
+`E` or `v` followed by two NUL bytes routes to `postgresql`; one byte alone
+waits, any other second byte stays text (SMTP `EHLO`, RFB).
+
+`ldap` accepts the BindResponse (RFC 4511 4.2.2): ENUMERATED resultCode 0..123,
+matchedDN and diagnosticMessage as UTF-8 OCTET STRINGs, optional referral list
+of non-empty URLs (at most 16) and optional serverSaslCreds, no controls.
+Reported as `ldap` (the response carries no version) with `ldap_result`
+(`success`, `invalid-credentials`, `sasl-bind-in-progress`, ... or `other`).
+
+`cql` accepts response frames (version byte 0x84) with opcodes ERROR (code and
+message string), READY (empty), AUTHENTICATE (one class string) and SUPPORTED
+(a string multimap of 1..16 keys, at most 64 values each), bodies at most 4096
+bytes. Evidence `cql_response`. Error text, authenticator class and option
+values are never emitted.
+
+`mysql` (hint required, as before) accepts the client HandshakeResponse41 in
+sequence 1: CLIENT_PROTOCOL_41 set and CLIENT_SSL clear (TLS clients send the
+32-byte SSLRequest instead), nonzero character set, 23 reserved zero bytes, a
+terminated user name of at most 128 bytes, the authentication response in the
+length-encoded, one-byte-length or terminated form chosen by the capabilities,
+optional database (at most 64 bytes) and plugin name, optional connection
+attributes (at most 64) and the zstd level. Evidence `mysql_auth_plugin`
+(`mysql_native_password`, `caching_sha2_password`, `sha256_password`,
+`cleartext`, `ldap-sasl`, `kerberos`, `none`, `other`) and
+`mysql_client_ssl=not-requested`. User, database, attribute and authentication
+bytes are never emitted.
+
+Primary specifications: [PostgreSQL message formats](https://www.postgresql.org/docs/current/protocol-message-formats.html),
+[RFC 4511 4.2.2](https://www.rfc-editor.org/rfc/rfc4511.html#section-4.2.2), Cassandra native protocol v4 specification,
+[MySQL HandshakeResponse41](https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_handshake_response.html).

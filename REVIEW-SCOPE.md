@@ -1,11 +1,20 @@
-# Review scope: protocol detector v0.44
+# Review scope: protocol detector v0.45
 
 Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.44): `SMB2Parser._response`/`_contexts` (network.py), the
+New focus (v0.45): `PostgreSQLParser._server` (binary.py: length arithmetic
+with the type byte, SASL list and error field walks, SQLSTATE class),
+`LDAPParser._bind_response`, `CQLParser._response` with `_cql_string`,
+`MySQLParser._handshake_response` (capability-driven field layout, one-byte
+length-encoded profile, attribute block arithmetic) and the dispatch waits for
+`R`/`E`/`v` followed by NUL bytes. Trace: no salt, mechanism, message, DN,
+diagnostic, option value, user, database or attribute in evidence or reasons;
+text protocols starting with E/R/v unchanged. 463 tests pass.
+
+Previous focus (v0.44): `SMB2Parser._response`/`_contexts` (network.py), the
 rewritten `_kerberos_body` with `_kerberos_fields` (windows.py: three field
 layouts, strictly increasing tags, GeneralizedTime and error-code bounds,
 dispatch and probe tags 11/13/30) and `DCERPCParser._bind_ack`/`_bind_nak`
