@@ -1,52 +1,82 @@
-# Protocol coverage — v0.25
+# Protocol coverage — v0.30
 
-The engine implements 41 families with the profiles below. This is a complete
-inventory of this release, not a claim to recognize every protocol or application.
-All input must start at the supported message/stream boundary; no port-only match.
+The engine implements 66 families (60 selected automatically from the first
+bytes, 6 only with an explicit candidate hint) with the profiles below. This
+table is generated from `protocol_engine.catalog.supported_protocols()`
+(`python3 -B protodetect.py protocols`) and is a complete inventory of this
+release, not a claim to recognize every protocol or application. All input must
+start at the supported message/stream boundary; no port-only match. Sections
+below record each milestone's exact profile and exclusions; the newest
+additions (v0.27 decoders, v0.28 shifts, v0.29 heuristics) are at the end.
 
 | Family | Transport | Selection | Observation scope | Implemented profile |
 |---|---|---|---|---|
-| quic | udp | Automatic profiles | datagram | QUIC v1/v2 client Initial with protection removed (public Initial keys), ClientHello SNI/ALPN as offers, Version Negotiation; no handshake completion, server Initials, 0-RTT or later packets |
-| ikev2 | udp | Automatic profiles | datagram | IKE_SA_INIT initiator, bounded AES-CBC/GCM and MODP14..18 offers, KE/nonce, optional non-ESP marker; no authentication or established tunnel claim |
-| dtls | udp | Automatic profiles | datagram | DTLS1.2 complete epoch-zero ClientHello in one record/datagram; client assertions only, no fragments or decryption |
-| dcerpc | tcp | Automatic profiles | bind_request | Connection-oriented 5.0 Bind, NDR 2.0/NDR64 1.0 offers; no authentication, replies, stub decoding or product identity |
-| giop | tcp | Automatic profiles | request_header/locate_request | GIOP 1.2 unfragmented KeyAddr Request/LocateRequest; bounded CDR; opaque arguments and service contexts |
-| git | tcp | Automatic profiles | service_request | Native Git pkt-line request; bounded path, optional DNS/IPv4 host and extras; no packfile/server/version-negotiation validation |
-| radius | udp | Hint required | datagram | Hint required: Access-Request PAP/CHAP/State with supported attributes; no authenticator verification or EAP |
-| fastcgi | tcp | Automatic profiles | initial_params | v1 BEGIN_REQUEST plus complete PARAMS stream; one request, zero reserved fields, no response/body semantics |
-| rsync | tcp | Automatic profiles | protocol_header | Daemon greeting, final protocols 27..32; version/digest offers, no authentication or transfer |
-| mysql | tcp | Hint required | protocol_header | Hint required: modern HandshakeV10, 21-byte challenge and native/caching_sha2/sha256 plugin |
-| mongodb | tcp | Hint required | initial_message | Hint required: uncompressed OP_MSG body/sequences, bounded BSON and CRC-32C; no telemetry or command semantics |
-| stomp | tcp | Automatic profiles | protocol_header | 1.1/1.2 CONNECT/STOMP/CONNECTED, complete empty-body NUL-terminated frame |
-| nats | tcp | Automatic profiles | protocol_header | INFO/CONNECT with required typed JSON fields; bounded extensions, no message bodies |
-| imap | tcp | Automatic profiles | protocol_header | Server CAPABILITY or OK/PREAUTH with explicit IMAP4rev1/2 capability; no commands/authentication |
-| rdp | tcp | Automatic profiles | negotiation_request | TPKT/X.224 with RDP negotiation, optional cookie/correlation; no routing token or session |
+| amqp | tcp | Automatic profiles | protocol_header | Plain 0-9-1/1.0 version header only |
+| bacnet | udp | Automatic profiles | datagram | BVLC function/length and NPDU version/control framing |
 | bgp | tcp | Automatic profiles | negotiation_request | BGPv4 OPEN, standard optional lengths and capability framing |
-| smb2 | tcp | Automatic profiles | negotiation_request | Direct TCP SMB2/3 NEGOTIATE including 3.1.1 context framing; offers only |
-| snmp | udp | Automatic profiles | datagram | v1/v2c Get/GetNext/GetBulk read requests; no v3, responses or traps |
-| tftp | udp | Automatic profiles | datagram | RRQ/WRQ with bounded options; no transfer state |
-| ntp | udp | Hint required | datagram | Hint required: v3/v4 base client/server header, no extensions/authentication |
+| bittorrent | tcp | Automatic profiles | initial_message | 68-byte peer handshake; encrypted transport unsupported |
+| coap | udp | Automatic profiles | datagram | CoAP v1 framing, token <=8; tiny messages require coap hint |
+| cql | tcp | Automatic profiles | protocol_header | Cassandra native protocol v4 STARTUP/OPTIONS |
+| dcerpc | tcp | Automatic profiles | bind_request | Connection-oriented v5.0 unfragmented Bind, NDR 2.0/NDR64 1.0 offers; no authentication, replies, stub decoding or product identity |
+| dhcp | udp | Automatic profiles | datagram | DHCPv4 types 1..8, no overloaded options |
+| dnp3 | tcp | Automatic profiles | protocol_header | Data link frame with header and block CRCs verified |
+| dns | tcp/udp | Automatic profiles | initial_message/datagram | QUERY opcode, one question; TCP length prefixes >=512 require dns hint |
+| dtls | udp | Automatic profiles | datagram | DTLS1.2 complete epoch-zero ClientHello in one record/datagram; bounded extensions, client assertions only; no fragments, negotiation or decryption |
+| ethernet-ip | tcp/udp | Automatic profiles | protocol_header/datagram | Encapsulation header with RegisterSession/list/data commands; CIP not decoded |
+| fastcgi | tcp | Automatic profiles | initial_params | v1 BEGIN_REQUEST plus complete PARAMS stream; one request, zero reserved fields, no response/body semantics |
+| ftp | tcp | Automatic profiles | initial_message | Client command line (FTP-only verbs); shared USER/PASS/QUIT verbs are ambiguous with POP3 and resolved by session correlation with a 220 greeting |
+| giop | tcp | Automatic profiles | request_header/locate_request | GIOP 1.2 unfragmented KeyAddr Request/LocateRequest; bounded CDR, opaque arguments and service contexts; no replies or object identity |
+| git | tcp | Automatic profiles | service_request | Native Git pkt-line service request; bounded pathname, optional DNS/IPv4 host and extra parameters; no packfile, server or negotiated-version validation |
 | http | tcp | Automatic profiles | initial_message | HTTP/1.0 and 1.1 start-line/headers |
 | http2 | tcp | Automatic profiles | initial_message | Client preface plus initial SETTINGS; no HPACK |
-| tls | tcp | Automatic profiles | initial_message/server_hello/hello_retry_request | ClientHello plus TLS1.2/1.3 ServerHello and TLS1.3 retry profiles; no decryption/authentication |
-| ssh | tcp | Automatic profiles | initial_message | Leading SSH-2.0/1.99 identification; with fingerprints, one bounded KEXINIT refinement (HASSH) |
-| socks5 | tcp | Automatic profiles | initial_message | No-auth offer plus client request; server unverified |
-| smtp | tcp | Automatic profiles | initial_message | EHLO/HELO only; ambiguous 220 banners unknown |
-| mqtt | tcp | Automatic profiles | initial_message | 3.1.1/5.0 CONNECT; MQTT5 CONNECT/Will property validation |
-| resp | tcp | Automatic profiles | initial_message | Non-null bulk-string request array; no product inference |
-| amqp | tcp | Automatic profiles | protocol_header | Plain 0-9-1/1.0 version header only |
-| dns | tcp/udp | Automatic profiles | initial_message/datagram | QUERY opcode, one question; TCP length prefixes >=512 require dns hint |
-| stun | tcp/udp | Automatic profiles | initial_message/datagram | Binding method; attributes and optional fingerprint, no HMAC validation |
-| dhcp | udp | Automatic profiles | datagram | DHCPv4 types 1..8, no overloaded options |
-| coap | udp | Automatic profiles | datagram | CoAP v1 framing, token <=8; tiny messages require coap hint |
-| syslog | udp | Automatic profiles | datagram | RFC5424 version 1 header/structured data; no RFC3164 |
-| postgresql | tcp | Automatic profiles | initial_message/negotiation_request | v3.0..3.2 startup or SSL/GSS request; no authentication |
-| rfb | tcp | Automatic profiles | protocol_header | RFB 3.3/3.7/3.8 banner; no VNC security exchange |
-| bittorrent | tcp | Automatic profiles | initial_message | 68-byte peer handshake; encrypted transport unsupported |
-| memcached | tcp | Automatic profiles | initial_message | Selected binary request commands 0x00..0x10; no SASL/text/meta |
+| iec-104 | tcp | Automatic profiles | protocol_header | APCI U-format start frames automatically; I/S formats with a hint |
+| ikev2 | udp | Automatic profiles | datagram | IKE_SA_INIT initiator: bounded SA/KE/nonce, AES-CBC/GCM and MODP14..18 offers, optional non-ESP marker; no authentication or established IPsec claim |
+| imap | tcp | Automatic profiles | protocol_header | Server CAPABILITY or OK/PREAUTH with explicit IMAP4rev1/2 capability; no commands/authentication |
+| ipfix | udp | Automatic profiles | datagram | IPFIX (RFC 7011) message header and set framing, validated by the shared flow-export validator |
+| iso-tsap | tcp | Automatic profiles | negotiation_request | TPKT/X.224 connection request with TSAP parameters (RFC 1006); shares the TPKT route with RDP |
+| kafka | tcp | Automatic profiles | request_header | Request header for ApiVersions/Metadata/Produce/Fetch/SaslHandshake and similar first requests |
+| kerberos | tcp/udp | Automatic profiles | initial_message/datagram | KDC AS-REQ/TGS-REQ ASN.1 framing (pvno 5, msg-type, req-body); principals and pre-authentication unverified |
+| l2tp | udp | Automatic profiles | datagram | L2TPv2 SCCRQ control message with Message Type AVP first |
 | ldap | tcp | Automatic profiles | initial_message | LDAPv3 BindRequest, simple/SASL; no controls or searches |
-| sip | tcp/udp | Automatic profiles | initial_headers/datagram | SIP/2.0 required header framing; no dialogue/body semantics |
+| memcached | tcp | Automatic profiles | initial_message | Selected binary request commands 0x00..0x10; no SASL/text/meta |
+| modbus | tcp | Automatic profiles | request_header | MBAP header and public function request PDU shapes; transaction ids above 0x01ff need a hint |
+| mongodb | tcp | Hint required | initial_message | Hint required: uncompressed OP_MSG body/sequences, bounded BSON and CRC-32C; no telemetry or command semantics |
+| mqtt | tcp | Automatic profiles | initial_message | 3.1.1/5.0 CONNECT; MQTT5 CONNECT/Will property validation |
+| mysql | tcp | Hint required | protocol_header | Hint required: modern HandshakeV10, 21-byte challenge and native/caching_sha2/sha256 plugin |
+| nats | tcp | Automatic profiles | protocol_header | INFO/CONNECT with required typed JSON fields; bounded extensions, no message bodies |
+| netbios-ss | tcp | Automatic profiles | negotiation_request | NetBIOS session request with two first-level encoded names; names not emitted |
+| netflow | udp | Automatic profiles | datagram | NetFlow v5 record framing and NetFlow v9 flowsets (reported as netflow/5, netflow/9) |
+| ntp | udp | Hint required | datagram | Hint required: v3/v4 base client/server header, no extensions/authentication |
+| openvpn | tcp/udp | Automatic profiles | initial_message/datagram | Client hard-reset control packet (plain or tls-auth layout); no key exchange claim |
+| pop3 | tcp | Automatic profiles | protocol_header/initial_message | Server +OK/-ERR status line or POP3-only client command; shared verbs resolved by correlation |
+| postgresql | tcp | Automatic profiles | initial_message/negotiation_request | v3.0..3.2 startup or SSL/GSS request; no authentication |
+| pptp | tcp | Automatic profiles | negotiation_request | Start-Control-Connection-Request (156 bytes); names not emitted |
+| quic | udp | Automatic profiles | datagram | QUIC v1/v2 Initial (client protection removed with public Initial keys; ClientHello SNI/ALPN as offers) and Version Negotiation; no handshake completion, server packets or 0-RTT |
+| radius | udp | Hint required | datagram | Hint required: Access-Request PAP/CHAP/State with supported attributes; no authenticator verification or EAP |
+| rdp | tcp | Automatic profiles | negotiation_request | TPKT/X.224 with RDP negotiation, optional cookie/correlation; no routing token or session |
+| resp | tcp | Automatic profiles | initial_message | Non-null bulk-string request array; no product inference |
+| rfb | tcp | Automatic profiles | protocol_header | RFB 3.3/3.7/3.8 banner; no VNC security exchange |
+| rsync | tcp | Automatic profiles | protocol_header | Daemon greeting, final protocols 27..32; version/digest offers, no authentication or transfer |
+| rtp | udp | Hint required | datagram | Hint required: RTP v2 fixed header, CSRC and extension framing |
 | rtsp | tcp | Automatic profiles | initial_headers | RTSP/1.0 and 2.0 header framing; no RTP/media decoding |
+| sflow | udp | Automatic profiles | datagram | sFlow v5 datagram with IPv4 agent and bounded sample headers |
+| sip | tcp/udp | Automatic profiles | initial_headers/datagram | SIP/2.0 required header framing; no dialogue/body semantics |
+| smb1 | tcp | Automatic profiles | negotiation_request | NetBIOS session header plus SMB_COM_NEGOTIATE request with dialect strings; maps to the smb application |
+| smb2 | tcp | Automatic profiles | negotiation_request | Direct TCP SMB2/3 NEGOTIATE including 3.1.1 context framing; offers only |
+| smtp | tcp | Automatic profiles | initial_message | EHLO/HELO only; ambiguous 220 banners unknown |
+| snmp | udp | Automatic profiles | datagram | v1/v2c Get/GetNext/GetBulk read requests; no v3, responses or traps |
+| socks5 | tcp | Automatic profiles | initial_message | No-auth offer plus client request; server unverified |
+| ssdp | udp | Automatic profiles | datagram | M-SEARCH/NOTIFY/response HTTPU header block with SSDP headers |
+| ssh | tcp | Automatic profiles | initial_message | Leading SSH-2.0/1.99 identification |
+| stomp | tcp | Automatic profiles | protocol_header | 1.1/1.2 CONNECT/STOMP/CONNECTED, complete empty-body NUL-terminated frame |
+| stun | tcp/udp | Automatic profiles | initial_message/datagram | Binding method; attributes and optional fingerprint, no HMAC validation |
+| syslog | udp | Automatic profiles | datagram | RFC5424 version 1 header/structured data; no RFC3164 |
+| tacacs-plus | tcp | Automatic profiles | protocol_header | TACACS+ header for the first packet of a session; START body lengths when unencrypted |
+| telnet | tcp | Automatic profiles | negotiation_request | Two complete IAC option negotiation commands; terminal data not inspected |
+| tftp | udp | Automatic profiles | datagram | RRQ/WRQ with bounded options; no transfer state |
+| tls | tcp | Automatic profiles | initial_message/server_hello/hello_retry_request | ClientHello plus bounded TLS1.2/1.3 server hello/retry profiles; selections unauthenticated, no decryption |
+| websocket | tcp | Hint required | frame_header | One frame header after an HTTP Upgrade boundary (reached by the websocket-upgrade shift or an explicit candidate); payload not decoded |
+| wireguard | udp | Automatic profiles | datagram | Handshake initiation/response/cookie message sizes and reserved bytes; no key or tunnel claim |
 
 ## Profiles and exclusions
 
