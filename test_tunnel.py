@@ -90,7 +90,7 @@ class TunnelCorrelationTests(unittest.TestCase):
         unknown = Inspector()
         unknown.feed(b"\xfa\xfb" + bytes(30))
         self.assertFalse(unknown.open_shift("http-connect"))
-        tight = Inspector(Config(max_bytes=len(CONNECT_RESPONSE) + 10))
+        tight = Inspector(Config(max_bytes=64))  # 39 response bytes leave fewer than 64
         tight.feed(CONNECT_RESPONSE)
         self.assertFalse(tight.open_shift("http-connect"))  # fewer than 64 bytes of budget left
         with self.assertRaises(ValueError):
