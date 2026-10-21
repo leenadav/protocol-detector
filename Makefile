@@ -59,10 +59,14 @@ ci-local: check fuzz
 	$(PYTHON) -B analyze_pcap.py sample-expanded.pcap --events-only --sessions > /dev/null
 	$(PYTHON) -B protodetect.py analyze sample-expanded.pcap --json --sessions | $(PYTHON) -B protodetect.py schema offline-row --validate /dev/stdin
 
-# Build the sdist and wheel (dev tools installed) and check the wheel carries only the engine package.
+# Build the sdist and wheel (dev tools installed), check the wheel carries only the engine package,
+# then install it into an empty environment and classify fixtures from there (never from the tree).
 package:
 	$(PYTHON) -m build --sdist --wheel --outdir dist
 	$(PYTHON) -B tools/check_wheel.py "dist/*.whl"
+	rm -rf dist/wheel-env && $(PYTHON) -m venv dist/wheel-env
+	dist/wheel-env/bin/python -m pip install --quiet --no-deps --no-index dist/*.whl
+	cd dist && wheel-env/bin/python ../tools/wheel_smoke.py
 
 # Workflow lint with a locally installed actionlint (CI fetches a checksum-verified release).
 workflow-lint:
