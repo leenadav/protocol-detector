@@ -31,7 +31,10 @@ class Inspector:
         if signatures is not None and len(signatures) and not self.config.retain_contexts:
             raise ValueError("Signatures require Config(retain_contexts=True)")
         self.signatures = signatures
-        self._unknown = None  # bounded unknown-payload buffer while signatures may still match
+        self._unknown = None  # bounded unknown-payload buffer while signatures may still match or heuristics profile it
+        wants_signatures = signatures is not None and len(signatures) and signatures.wants(_UNKNOWN_FAMILY)
+        self._unknown_limit = max(self.config.signature_bytes if wants_signatures else 0,
+                                  self.config.heuristic_bytes if self.config.heuristics else 0)
         self._continuing = False  # identified; parser still deriving optional evidence (fingerprints)
         if protocol_hint is not None and protocol_hint not in PARSERS:
             raise ValueError("Unsupported TCP candidate hint")
@@ -75,7 +78,11 @@ class Inspector:
             if not final:
                 return ()
             self._unknown = None
-            return self._finish(Observation(status="unknown", reason=reason))
+            evidence = ()
+            if self.config.heuristics:
+                from .heuristics import heuristic_evidence
+                evidence = heuristic_evidence(data, self.source, self.config.heuristic_bytes)
+            return self._finish(Observation(status="unknown", reason=reason, evidence=evidence))
         self._unknown = None
         evidence = (Evidence("application", match.name, "signature:" + _UNKNOWN_FAMILY, "configured_signature"),)
         if self._hint is not None:
@@ -272,12 +279,12 @@ class Inspector:
             # Dispatch already failed; only unknown-payload signatures remain. Collect a
             # bounded prefix and evaluate after each update: a positive match is final,
             # a miss waits for more bytes, the budget or EOF. No parser runs here.
-            room = self.config.signature_bytes - len(self._unknown)
+            room = self._unknown_limit - len(self._unknown)
             self._unknown.extend(chunk[:room])
             self.metrics.bytes_inspected += min(room, len(chunk))
             self.metrics.parser_calls += 1
             return self._unknown_observation("Prefix outside supported protocol families",
-                                             final=len(self._unknown) >= self.config.signature_bytes)
+                                             final=len(self._unknown) >= self._unknown_limit)
         try:
             previous = 0
             if self._candidate is None:
@@ -287,13 +294,13 @@ class Inspector:
                 candidate = self._hint or select(probe)
                 if candidate == "unknown":
                     self.metrics.bytes_inspected += len(probe) - previous
-                    if self.signatures is not None and self.signatures.wants(_UNKNOWN_FAMILY):
-                        self._unknown = bytearray(bytes(self._prefix) + chunk[:self.config.signature_bytes - previous])
+                    if self._unknown_limit:
+                        self._unknown = bytearray(bytes(self._prefix) + chunk[:self._unknown_limit - previous])
                         self._prefix.clear()
                         self.metrics.bytes_inspected += len(self._unknown) - len(probe)
                         self.metrics.parser_calls += 1
                         return self._unknown_observation("Prefix outside supported protocol families",
-                                                         final=len(self._unknown) >= self.config.signature_bytes)
+                                                         final=len(self._unknown) >= self._unknown_limit)
                     return self._finish(Observation(status="unknown", reason="Prefix outside supported protocol families"))
                 if candidate is None:
                     # select() always resolves once LOOKAHEAD bytes are available.

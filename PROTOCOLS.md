@@ -867,3 +867,38 @@ Primary specifications: [RFC 9110 9.3.6](https://www.rfc-editor.org/rfc/rfc9110.
 [PostgreSQL SSLRequest](https://www.postgresql.org/docs/18/protocol-message-formats.html),
 [MySQL Protocol::SSLRequest](https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_ssl_request.html),
 [MS-RDPBCGR 2.2.1.2 Server X.224 Connection Confirm PDU](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/13757f8f-66db-4273-9d2c-385c33b1e483).
+
+## Unknown-traffic heuristics and flow risks (v0.29)
+
+Nothing in this milestone identifies an application. Two additions describe
+what the engine could not identify, and one attaches advisory flags.
+
+- **Payload heuristics** (`Config(heuristics=True)`, default off): a TCP prefix
+  that no family selects is collected up to `heuristic_bytes` (default 512)
+  before the `unknown` observation is published; a UDP datagram no validator
+  accepts is profiled as a whole within the same bound. The observation gains
+  `payload_class`, `payload_entropy`, `payload_printable` and
+  `payload_bytes_profiled` evidence of strength `heuristic` (thresholds in
+  RISKS.md). Status stays `unknown`; verdicts stay `unknown-tcp`/`unknown-udp`.
+  Parsers that selected a family and then rejected the message are not
+  profiled: their reason already names the violated profile.
+- **DNS query-name shape** (heuristics on): `dns_query_shape`
+  (`ordinary`/`suspicious`), `dns_query_labels`, `dns_query_longest_label`,
+  `dns_label_entropy`. The name is not emitted.
+- **New structural evidence, always on**: TLS ClientHello `tls_offered_max_version` (`supported_versions` wins over the legacy
+  field, GREASE ignored); SSH `ssh_version` (`2.0` or `1.99`).
+- **Flow risks**: `Verdict.risks`, a sorted tuple from the table in RISKS.md
+  (`nonstandard-port`, `cleartext-credential-protocol`, `obsolete-protocol`,
+  `tls-legacy-version-offer`, `tls-missing-sni`, `unknown-high-entropy-payload`,
+  `malformed-protocol`, `dns-suspicious-query-name`, `http-proxy-tunnel`,
+  `desktop-or-file-sharing-session`). Session records, offline/live
+  classification events and live summaries carry them.
+
+Excluded: certificate checks, cipher-strength assessment, beaconing or
+periodicity analysis, scan detection, learned byte-distribution models, and
+any risk needing more than the initial message (RISKS.md).
+
+Primary references: [nDPI flow risks](https://github.com/ntop/nDPI/blob/dev/doc/flow_risks.rst)
+(vocabulary), [RFC 8446 4.2.1](https://www.rfc-editor.org/rfc/rfc8446.html#section-4.2.1) (supported_versions precedence),
+[RFC 8701](https://www.rfc-editor.org/rfc/rfc8701.html) (GREASE values), [RFC 4253 4.2](https://www.rfc-editor.org/rfc/rfc4253.html#section-4.2) (SSH version string),
+Shannon entropy over a byte histogram (standard definition; no external model).

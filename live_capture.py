@@ -42,7 +42,7 @@ def capture_command(interface, bpf, executable=None):
 class CaptureMonitor:
     def __init__(self, emit, max_connections=128, byte_limit=65536, idle_timeout=60,
                  all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096, include_hostnames=False,
-                 signatures=None, fingerprints=False):
+                 signatures=None, fingerprints=False, heuristics=False):
         self.emit = emit
         reference = weakref.ref(self)
         def retired(source, destination, event):
@@ -56,17 +56,21 @@ class CaptureMonitor:
                 owner._session(record)
         self.analyzer = Analyzer(max_connections, byte_limit, idle_timeout, compact=True, udp_hint=udp_hint, tcp_hint=tcp_hint,
                                  crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, on_session=session,
-                                 include_hostnames=include_hostnames, signatures=signatures, fingerprints=fingerprints)
+                                 include_hostnames=include_hostnames, signatures=signatures, fingerprints=fingerprints,
+                                 heuristics=heuristics)
         self.tcp_hint, self.udp_hint = tcp_hint, udp_hint
         self.counts = Counter()
         self.protocols = Counter()
         self.apps = Counter()
+        self.risks = Counter()
         self.all_events = all_events
 
     def _session(self, record):
         # One App-ID verdict per connection/flow; no payload-derived values.
         self.counts['sessions'] += 1
         self.apps[record['app']] += 1
+        for risk in record.get('risks', ()):
+            self.risks[risk] += 1
         self.emit(record)
 
     def _retiring_bytes(self, source):
@@ -123,10 +127,11 @@ class CaptureMonitor:
             if self.all_events or observation.status in ("identified", "invalidated"):
                 # No payload, community, credentials, HTTP path, or hostname output.
                 derived = {evidence.field: evidence.value for evidence in observation.evidence if evidence.strength == "derived"}
+                verdict = classify(observation, transport, server[1] if server else None, None, self.analyzer.signatures)
                 self.emit({"type": "classification", "timestamp": record.timestamp,
                            "source": packet.source, "destination": packet.destination,
                            "transport": transport, "status": observation.status,
-                           "protocol": protocol, "app": classify(observation, transport, server[1] if server else None, None, self.analyzer.signatures).app,
+                           "protocol": protocol, "app": verdict.app, "risks": list(verdict.risks),
                            "fingerprints": derived or None, "event": event.kind,
                            "scope": observation.scope,
                            "candidate_hint": self.udp_hint if transport == 'udp' else self.tcp_hint,
@@ -144,7 +149,7 @@ class CaptureMonitor:
 
     def summary(self, elapsed, final=False, capture_stats=None):
         return {"type": "summary" if final else "progress", "elapsed_seconds": round(elapsed, 3),
-                "counts": dict(self.counts), "protocols": dict(self.protocols), "apps": dict(self.apps),
+                "counts": dict(self.counts), "protocols": dict(self.protocols), "apps": dict(self.apps), "risks": dict(self.risks),
                 "active_connections": len(self.analyzer.tracked), "active_udp_flows": len(self.analyzer.udp_flows),
                 "capture_stats": capture_stats,
                 "scope": "Initial messages only; capture loss may be reported at shutdown"}
@@ -186,6 +191,8 @@ def readable(event):
             suffix += ' | ' + event['reason']
         if event.get('fingerprints'):
             suffix += ' | ' + ' '.join('{}={}'.format(k, v) for k, v in sorted(event['fingerprints'].items()))
+        if event.get('risks'):
+            suffix += ' | risks=' + ','.join(event['risks'])
         print("{:<12} {:<13} {:<17} {} -> {}{}".format(event["status"].upper(), event["protocol"] or "unknown",
                                                    event.get("app") or "-", endpoint(event["source"]), endpoint(event["destination"]), suffix), flush=True)
     elif kind == "session":
@@ -200,6 +207,8 @@ def readable(event):
             counts.get("stream_invalidations", 0), counts.get("incomplete", 0), ", ".join("{}={}".format(k, v) for k, v in event["protocols"].items()) or "no identifications"), flush=True)
         if event.get("apps"):
             print("Applications: " + ", ".join("{}={}".format(k, v) for k, v in sorted(event["apps"].items())), flush=True)
+        if event.get("risks"):
+            print("Flow risks: " + ", ".join("{}={}".format(k, v) for k, v in sorted(event["risks"].items())), flush=True)
         if kind == "summary":
             print("Capture statistics: " + (json.dumps(event["capture_stats"]) if event["capture_stats"] else
                   "unavailable; absence of capture loss is not established"), flush=True)
@@ -209,10 +218,10 @@ def readable(event):
 
 def run_capture(stream, emit, duration=60, max_packets=0, stats_interval=10, process=None,
                 max_connections=128, byte_limit=65536, idle_timeout=60, all_events=False, udp_hint=None, tcp_hint=None,
-                crc32c_byte_limit=4096, include_hostnames=False, signatures=None, fingerprints=False):
+                crc32c_byte_limit=4096, include_hostnames=False, signatures=None, fingerprints=False, heuristics=False):
     decoder = PcapStreamDecoder()
     monitor = CaptureMonitor(emit, max_connections, byte_limit, idle_timeout, all_events, udp_hint, tcp_hint, crc32c_byte_limit,
-                             include_hostnames, signatures, fingerprints)
+                             include_hostnames, signatures, fingerprints, heuristics)
     diagnostics = CaptureDiagnostics()
     selector = selectors.DefaultSelector()
     start = time.monotonic()
@@ -348,6 +357,7 @@ def main():
     parser.add_argument("--hostnames", action="store_true", help="Include asserted SNI/Host names in session records")
     parser.add_argument("--signatures", help="JSON file of custom application signatures (see SIGNATURES.md)")
     parser.add_argument("--fingerprints", action="store_true", help="Derive JA3/JA4/JA3S/JA4S/HASSH/HTTP2 fingerprints (FINGERPRINTS.md)")
+    parser.add_argument("--heuristics", action="store_true", help="Profile unknown payload prefixes and DNS name shape; advisory evidence only (RISKS.md)")
     parser.add_argument("--json", action="store_true", help="JSON Lines metadata; no payload output")
     args = parser.parse_args()
     if (not math.isfinite(args.duration) or args.duration < 0 or args.max_packets < 0
@@ -378,7 +388,7 @@ def main():
               "max_reassembly_buffer_bytes": 4 * args.byte_limit * args.max_connections})
         return run_capture(stream, emit, args.duration, args.max_packets, args.stats_interval, process,
                            args.max_connections, args.byte_limit, args.idle_timeout, args.all_events, args.udp_hint, args.tcp_hint,
-                           args.crc32c_byte_limit, args.hostnames, signatures, args.fingerprints)
+                           args.crc32c_byte_limit, args.hostnames, signatures, args.fingerprints, args.heuristics)
     except BrokenPipeError:
         return 0
     except (OSError, ValueError, subprocess.SubprocessError) as exc:

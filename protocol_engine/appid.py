@@ -13,6 +13,7 @@ profile, never an authenticated product identity.
 from typing import NamedTuple, Optional, Tuple
 from .applications import APPLICATIONS, OUTCOMES, Application, application_name, custom_application
 from .model import Observation
+from .risks import flow_risks
 
 # Statuses that mean payload existed but no supported profile matched it.
 _UNMATCHED = ("unknown", "malformed", "budget_exhausted")
@@ -36,6 +37,7 @@ class Verdict(NamedTuple):
     encryption: Optional[str]
     reasons: Tuple[str, ...]
     shifted_from: Optional[str] = None  # application whose structural boundary announced this one (CONNECT, STARTTLS, ...)
+    risks: Tuple[str, ...] = ()         # RISKS.md flow risks derived from the verdict and the directional evidence
 
     @property
     def identified(self):
@@ -147,6 +149,13 @@ def classify(observation, transport=None, server_port=None, payload_bytes=None, 
 
 def session_verdict(client, server, transport="tcp", server_port=None, client_bytes=None, server_bytes=None,
                     handshake_complete=True, signatures=None):
+    """Combine both directions of one session into a single verdict, with flow risks attached."""
+    verdict = _session_verdict(client, server, transport, server_port, client_bytes, server_bytes, handshake_complete, signatures)
+    risks = flow_risks(verdict, client, server)
+    return verdict._replace(risks=risks) if risks else verdict
+
+
+def _session_verdict(client, server, transport, server_port, client_bytes, server_bytes, handshake_complete, signatures):
     """Combine both directions of one session into a single verdict.
 
     Rules, in order: an identified direction wins (client preferred; a differing
@@ -214,4 +223,5 @@ def verdict_fields(verdict):
             "base_app": verdict.base_app, "implicitly_uses": list(verdict.implicitly_uses),
             "port_usage": verdict.port_usage, "engine_status": verdict.status,
             "client_protocol": verdict.client_protocol, "server_protocol": verdict.server_protocol,
-            "encryption": verdict.encryption, "reasons": list(verdict.reasons), "shifted_from": verdict.shifted_from}
+            "encryption": verdict.encryption, "reasons": list(verdict.reasons), "shifted_from": verdict.shifted_from,
+            "risks": list(verdict.risks)}

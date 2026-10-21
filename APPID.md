@@ -1,4 +1,4 @@
-# App-ID style application identification — v0.28 (introduced in v0.22)
+# App-ID style application identification — v0.29 (introduced in v0.22)
 
 This document maps the vocabulary of application-aware firewalls (Palo Alto
 Networks App-ID is the reference model) onto this engine, states exactly what is
@@ -13,7 +13,7 @@ parity with a commercial signature corpus.
 | Application signatures | Bounded structural profiles per family (66 families, PROTOCOLS.md); configured exact-host mappings (`RuleIndex`) | `protocol_engine/` |
 | Decryption + re-identification | TLS: not performed; `feed_decrypted()` accepts plaintext from a host TLS stack. QUIC: Initial protection (public keys) is removed to read the ClientHello | `engine.py`, `quic.py` |
 | Protocol decoders / tunneled apps | Decoders per family; **application shift** at structural boundaries (CONNECT, Upgrade, STARTTLS, SSLRequest, RDP negotiation) inspects the phase after the boundary | `engine.py` |
-| Heuristics for evasive traffic | Planned (v0.29) | — |
+| Heuristics for evasive traffic | **Implemented** as advisory evidence: unknown-payload entropy/printable profile and DNS name shape (`Config(heuristics=True)`); never an identification. Flow risks (RISKS.md) on every verdict | `protocol_engine/heuristics.py`, `risks.py` |
 | Client/server implementation fingerprints (not an App-ID feature; nDPI-style) | **Implemented**: JA3/JA4/JA3S/JA4S/HASSH/HTTP2 (FINGERPRINTS.md) | `protocol_engine/fingerprints.py` |
 | Session verdict (`web-browsing`, `ssl`, `unknown-tcp`, …) | **Implemented** | `protocol_engine/appid.py` |
 | Application catalog (category, risk, characteristics, dependencies) | **Implemented**, 70 entries | `protocol_engine/applications.py` |
@@ -87,9 +87,11 @@ counted, not tracked):
  "end_reason": "Both TCP directions closed with FIN", "app": "web-browsing", "category": "general-internet",
  "subcategory": "internet-utility", "technology": "browser-based", "risk": 4, "characteristics": ["widely-used", "..."],
  "base_app": null, "implicitly_uses": [], "port_usage": "standard", "engine_status": "identified",
- "client_protocol": "http/1.1", "server_protocol": "http/1.1", "encryption": null, "reasons": ["..."], "shifted_from": null}
+ "client_protocol": "http/1.1", "server_protocol": "http/1.1", "encryption": null, "reasons": ["..."], "shifted_from": null, "risks": ["cleartext-credential-protocol"]}
 ```
 
+`risks` lists the RISKS.md flow risks derived from the verdict and both
+directions' evidence (sorted, possibly empty).
 Byte counts are observed payload bytes per direction including retransmissions;
 packets include the handshake. No hostname, path, credential or payload value is
 present unless `--hostnames` is given, which adds the asserted SNI/Host name.

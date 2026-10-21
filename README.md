@@ -1,4 +1,4 @@
-# Protocol detector v0.28
+# Protocol detector v0.29
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **66 protocol families**, with explicit profiles rather than claims of full
@@ -44,6 +44,23 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.29 — unknown-traffic heuristics and flow risks
+
+Every verdict now carries **flow risks**, advisory names in the spirit of nDPI
+(`nonstandard-port`, `cleartext-credential-protocol`, `obsolete-protocol` for
+SMB1/Telnet/SSH 1.99/TLS < 1.2/RDP standard security, `tls-legacy-version-offer`,
+`tls-missing-sni`, `malformed-protocol`, `http-proxy-tunnel`,
+`desktop-or-file-sharing-session`, and with heuristics on
+`unknown-high-entropy-payload` and `dns-suspicious-query-name`). They appear in
+session records, classification events and live summaries. With
+`--heuristics` (`Config(heuristics=True)`, off by default) an unknown payload
+prefix is profiled (entropy, printable ratio, class) within `heuristic_bytes`
+and DNS query names gain shape evidence; the status stays `unknown`, nothing is
+identified by a heuristic, and no payload byte is emitted. TLS ClientHellos
+now always record the highest offered version and SSH banners their version.
+See [RISKS.md](RISKS.md) for every risk, threshold and limit. 402 tests pass;
+BENCHMARK-V029.md.
 
 ## New in v0.28 — application shift at structural boundaries
 

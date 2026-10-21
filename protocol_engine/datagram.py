@@ -51,11 +51,32 @@ def enip_datagram(data, config):
 
 
 def dns_with_contexts(data, config):
-    if not config.retain_contexts:
+    if not config.retain_contexts and not config.heuristics:
         return dns(data, config)
     from .wire import dns_details
     protocol, reason, qname, qtype = dns_details(data, config)
-    return protocol, reason, {"dns-req-query-name": qname, "dns-req-query-type": qtype}
+    contexts = {"dns-req-query-name": qname, "dns-req-query-type": qtype} if config.retain_contexts else None
+    if not config.heuristics:
+        return protocol, reason, contexts
+    return DatagramMatch(reason, application_protocol=protocol, contexts=contexts, signature_family="dns",
+                         evidence=(Evidence("application_protocol", protocol, "wire", "structural"),) + dns_name_shape(qname))
+
+
+def dns_name_shape(qname):
+    """Heuristic evidence about a query name's shape; the name itself is never emitted.
+
+    suspicious: a label of 40+ bytes, a total name of 150+ bytes, or a label of
+    16+ bytes whose byte entropy is >= 4.0 bits (RISKS.md).
+    """
+    from .heuristics import label_entropy
+    labels = [label for label in qname.rstrip(b".").split(b".") if label]
+    longest = max((len(label) for label in labels), default=0)
+    entropy = max((label_entropy(label.lower()) for label in labels if len(label) >= 16), default=0.0)
+    shape = "suspicious" if longest >= 40 or len(qname) >= 150 or entropy >= 4.0 else "ordinary"
+    return (Evidence("dns_query_shape", shape, "wire:heuristic", "heuristic"),
+            Evidence("dns_query_labels", str(len(labels)), "wire:heuristic", "heuristic"),
+            Evidence("dns_query_longest_label", str(longest), "wire:heuristic", "heuristic"),
+            Evidence("dns_label_entropy", "{:.2f}".format(entropy), "wire:heuristic", "heuristic"))
 
 
 VALIDATORS = MappingProxyType({"quic": quic, "wireguard": wireguard, "openvpn": openvpn, "l2tp": l2tp, "ssdp": ssdp, "netflow": netflow,
@@ -90,7 +111,11 @@ class DatagramInspector:
                 return Observation(status="identified", application=match.name, evidence=evidence, scope="signature_match",
                                    reason="Custom signature matched an unknown datagram; no protocol profile validated",
                                    transport="udp")
-        return Observation(status="unknown", reason=reason, **base)
+        evidence = ()
+        if self.config.heuristics:
+            from .heuristics import heuristic_evidence
+            evidence = heuristic_evidence(data, "wire", self.config.heuristic_bytes)
+        return Observation(status="unknown", reason=reason, evidence=evidence, **base)
 
     def _signature_evidence(self, protocol, contexts):
         if self.signatures is None or contexts is None:

@@ -1,10 +1,27 @@
-# Review scope: protocol detector v0.28
+# Review scope: protocol detector v0.29
 
 Python3.9-compatible IPv4 passive classification: 66 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
-defines the verdict vocabulary and the application catalog.
+defines the verdict vocabulary and the application catalog; RISKS.md the flow
+risks and heuristic thresholds.
 
-New focus (v0.28): the application-shift state machine in engine.py
+New focus (v0.29): protocol_engine/heuristics.py, risks.py, the generalized
+unknown-payload buffer in engine.py (`_unknown_limit`), `DatagramInspector._unknown`
+and `dns_with_contexts`/`dns_name_shape` in datagram.py, `offered_max_version`
+and the `offered` out-parameter of `parse_hello` in parsers.py, `ssh_version`
+evidence, `session_verdict` wrapping in appid.py, and the risks plumbing in
+live_capture.py/analyze_pcap.py. Trace: heuristics never change a status or
+verdict name; buffer bound = max(signature_bytes, heuristic_bytes) and byte
+accounting under it; event timing change for unknown streams when heuristics
+are on; the entropy normalization (0.90 x log2(min(size,256))) and class order;
+DNS shape thresholds and that no label text leaves the engine; TLS version
+precedence (supported_versions over legacy, GREASE skipped) and its use in
+`tls-legacy-version-offer`; the RDP/SSH/SMB1/Telnet obsolete rules; risk
+evaluation cost (single pass) and the `_replace` on a NamedTuple with default
+fields; JSON shape of `risks` in session records, classification events and
+summaries. 402 tests pass. BENCHMARK-V029.md.
+
+Previous focus (v0.28): the application-shift state machine in engine.py
 (`_begin_shift`, `_forward`, `_shift_result`, `_merge_shift`, `_continue`) and
 the boundary detection in parsers.py (`_shift_boundary`), extended.py
 (`_consume_smtp`, IMAP/POP3/FTP shifts), binary.py, database.py, remote.py

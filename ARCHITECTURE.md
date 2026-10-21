@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.28 — engine and observation contracts
+# Stream/datagram engine v0.29 — engine and observation contracts
 
 ## Ownership
 
@@ -610,3 +610,25 @@ routes 0xd0 to it and copies the child's scope and shift. `WebSocketParser`
 lives in `upgrade.py` and is registered as a hint-only family. `appid._build`
 accepts the carrier application (`shifted_from`), appends it to
 `implicitly_uses` and accepts the carrier's standard ports.
+
+## Heuristics and flow risks (v0.29)
+
+`heuristics.py` computes a `PayloadProfile` in one pass with a 256-entry
+histogram and classifies it; `heuristic_evidence` turns it into four
+`heuristic`-strength Evidence rows. `Inspector` reuses the bounded
+unknown-payload buffer that custom signatures introduced: `_unknown_limit` is
+the larger of `signature_bytes` (when a signature set wants `unknown-tcp`) and
+`heuristic_bytes` (when heuristics are on); zero means the old immediate
+`unknown`. `DatagramInspector._unknown` profiles the datagram directly.
+`dns_with_contexts` returns a `DatagramMatch` with shape evidence when
+heuristics are on (the plain tuple otherwise), so the default UDP path is
+unchanged.
+
+`risks.py` holds the documented `RISKS` table and `flow_risks(verdict, client,
+server)`: one pass over each direction's evidence collecting only the eight
+fields it reads, early return of the shared empty tuple, about 1-2 µs.
+`appid.session_verdict` wraps the former merge (`_session_verdict`) and attaches
+the risks with `Verdict._replace`, so every verdict path (classify, session
+records, live events) carries them without touching the merge rules. TLS
+ClientHello parsing gained an optional `offered` out-parameter so the version
+evidence costs a small list rather than a full `ClientHelloInfo`.

@@ -19,8 +19,8 @@ from pathlib import Path
 from protocol_engine import Config, Inspector
 from protocol_engine.appid import classify, session_verdict, verdict_fields
 from protocol_fixtures import (CONNECT_REQUEST, CONNECT_RESPONSE, FTP_AUTH_TLS, H2C_UPGRADE, IMAP_STARTTLS, MYSQL, MYSQL_SSL_REQUEST,
-                               POP3_STLS, POSTGRESQL_SSL, RDP, RDP_CONFIRM, SMTP_STARTTLS, WEBSOCKET_101, WEBSOCKET_FRAME,
-                               WEBSOCKET_SERVER_FRAME, WEBSOCKET_UPGRADE)
+                               POP3_STLS, POSTGRESQL_SSL, RDP, RDP_CONFIRM, SMTP_STARTTLS, WEBSOCKET_101, WEBSOCKET_ACCEPT, WEBSOCKET_FRAME,
+                               WEBSOCKET_KEY, WEBSOCKET_SERVER_FRAME, WEBSOCKET_UPGRADE)
 from proxy_demo import client_hello
 from test_services import rdp
 
@@ -160,8 +160,8 @@ class BoundaryProfileTests(unittest.TestCase):
     def test_websocket_upgrade_rules_and_frame_profile(self):
         for data in (WEBSOCKET_UPGRADE.replace(b"Connection: Upgrade\r\n", b""), WEBSOCKET_UPGRADE.replace(b"GET", b"POST"),
                      WEBSOCKET_UPGRADE.replace(b"Sec-WebSocket-Version: 13", b"Sec-WebSocket-Version: 8"),
-                     WEBSOCKET_UPGRADE.replace(b"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n", b""),
-                     WEBSOCKET_101.replace(b"Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n", b"")):
+                     WEBSOCKET_UPGRADE.replace(b"Sec-WebSocket-Key: " + WEBSOCKET_KEY + b"\r\n", b""),
+                     WEBSOCKET_101.replace(b"Sec-WebSocket-Accept: " + WEBSOCKET_ACCEPT + b"\r\n", b"")):
             self.assertEqual(run(data)[0].observation.status, "malformed", data)
         with_body = run(WEBSOCKET_UPGRADE.replace(b"\r\n\r\n", b"\r\nContent-Length: 2\r\n\r\n") + b"ab" + WEBSOCKET_FRAME)[0].observation
         self.assertEqual((with_body.application_protocol, fields(with_body, "shift")), ("http/1.1", {}))

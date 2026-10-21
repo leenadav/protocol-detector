@@ -16,15 +16,19 @@ class Config:
     signature_bytes: int = 2000     # unknown-payload prefix retained for custom signatures
     fingerprints: bool = False      # derive JA3/JA4/JA3S/JA4S/HASSH/HTTP2 handshake fingerprints
     quic_decrypt: bool = True       # remove QUIC Initial protection (public keys) to read the ClientHello
+    heuristics: bool = False        # profile unknown payload prefixes (entropy/printable) and DNS name shape
+    heuristic_bytes: int = 512      # unknown-payload prefix profiled when heuristics are on
 
     def __post_init__(self):
         limits = ((self.max_bytes, 64, 1048576), (self.max_updates, 1, 1000000),
                   (self.max_line, 16, 65536), (self.max_headers, 1, 4096),
-                  (self.max_crc32c_bytes, 0, 1048576), (self.signature_bytes, 16, 65536))
+                  (self.max_crc32c_bytes, 0, 1048576), (self.signature_bytes, 16, 65536),
+                  (self.heuristic_bytes, 16, 65536))
         if any(type(value) is not int or not low <= value <= high for value, low, high in limits):
             raise ValueError("Invalid inspection resource limits")
-        if type(self.retain_contexts) is not bool or type(self.fingerprints) is not bool or type(self.quic_decrypt) is not bool:
-            raise ValueError("retain_contexts, fingerprints and quic_decrypt must be booleans")
+        if (type(self.retain_contexts) is not bool or type(self.fingerprints) is not bool or type(self.quic_decrypt) is not bool
+                or type(self.heuristics) is not bool):
+            raise ValueError("retain_contexts, fingerprints, quic_decrypt and heuristics must be booleans")
 
 
 @dataclass(frozen=True)

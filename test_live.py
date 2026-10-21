@@ -283,7 +283,10 @@ class LiveCaptureTests(unittest.TestCase):
 
     def test_max_packets_and_truncated_pipe_exit(self):
         for data, limit, expected in ((pcap_bytes(sample_frames()), 1, 0), (b'bad', 0, 1)):
-            proc = subprocess.Popen([sys.executable, '-c', 'import sys; sys.stdout.buffer.write(%r)' % data],
+            # The child stands in for tcpdump: it must survive the SIGINT that run_capture sends on
+            # stop and exit 0 by itself, otherwise its exit status races the limit and reads as a
+            # capture failure (a Python child dies with status 1 if SIGINT lands during shutdown).
+            proc = subprocess.Popen([sys.executable, '-c', 'import signal, sys; signal.signal(signal.SIGINT, signal.SIG_IGN); sys.stdout.buffer.write(%r)' % data],
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             events = []
             self.assertEqual(run_capture(proc.stdout, events.append, duration=2, max_packets=limit, process=proc), expected)

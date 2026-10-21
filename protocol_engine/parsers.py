@@ -90,6 +90,7 @@ class LineParser:
             self.protocol_name = "ssh"
             self.done = True
             self.reason = "SSH identification validated; key exchange not inspected"
+            self.extra_evidence = (("ssh_version", line.split(b"-", 2)[1].decode("ascii"), "banner", "structural"),)
             if self.config.fingerprints:
                 # Keep reading one KEXINIT packet for the HASSH fingerprint; identification stands either way.
                 self.kexinit = KexInit(self.config)
@@ -350,16 +351,39 @@ class ClientHelloInfo:
         self.body = None
 
 
+_TLS_VERSION_NAMES = {0x0300: "SSL 3.0", 0x0301: "1.0", 0x0302: "1.1", 0x0303: "1.2", 0x0304: "1.3"}
+
+
+def offered_max_version(legacy, supported):
+    """Highest TLS version a ClientHello offers.
+
+    With a supported_versions extension the legacy field is ignored (RFC 8446
+    4.2.1); GREASE and unknown values are skipped. Otherwise the legacy field.
+    """
+    best = 0
+    for value in supported:
+        if value > best and value in _TLS_VERSION_NAMES:
+            best = value
+    return _TLS_VERSION_NAMES.get(best or legacy, "unknown")
+
+
 def _u16_list(data, width=2):
     if len(data) % width:
         raise ParseError("TLS list length is not a multiple of its element width")
     return tuple(int.from_bytes(data[i:i + width], "big") for i in range(0, len(data), width))
 
 
-def parse_hello(body, info=None):
-    """Validate a ClientHello body; return (hostname, alpn) and fill info when supplied."""
+def parse_hello(body, info=None, offered=None):
+    """Validate a ClientHello body; return (hostname, alpn) and fill info when supplied.
+
+    `offered`, when a list, receives [legacy_version, supported_versions tuple]
+    without the cost of the full ClientHelloInfo collection.
+    """
     reader = Reader(body)
     version = reader.take(2)
+    if offered is not None:
+        offered.append(int.from_bytes(version, "big"))
+        offered.append(())
     if version not in (b"\x03\x01", b"\x03\x02", b"\x03\x03"):
         raise ParseError("Unsupported ClientHello version")
     reader.take(32)
@@ -388,6 +412,11 @@ def parse_hello(body, info=None):
         order.append(kind)
         if info is not None and len(order) > 128:
             raise BudgetError("ClientHello extension count exceeds inspection limit")
+        if kind == 43 and offered is not None:
+            # supported_versions: one length byte then 16-bit values; collected without a Reader.
+            if not value or value[0] != len(value) - 1 or value[0] % 2:
+                raise ParseError("Invalid supported_versions extension")
+            offered[1] = tuple(int.from_bytes(value[i:i + 2], "big") for i in range(1, len(value), 2))
         if info is not None and kind in (10, 11, 13, 43):
             lists = Reader(value)
             if kind == 10:
@@ -452,6 +481,7 @@ class TLSParser:
         self.contexts = None
         self.hello = None
         self.fingerprints = ()
+        self.extra_evidence = ()
         self.reason = "Waiting for complete TLS hello"
 
     def feed(self, data):
@@ -488,7 +518,9 @@ class TLSParser:
                 if self.handshake[0] == 1:
                     body = bytes(self.handshake[4:])
                     info = ClientHelloInfo() if (self.config.retain_contexts or self.config.fingerprints) else None
-                    self.host, self.alpn = parse_hello(body, info)
+                    offered = []
+                    self.host, self.alpn = parse_hello(body, info, offered)
+                    self.extra_evidence = (("tls_offered_max_version", offered_max_version(offered[0], offered[1]), "client_hello", "offered"),)
                     if info is not None and self.config.fingerprints:
                         from .fingerprints import ja3, ja4
                         self.fingerprints = (("ja4", ja4(info), "client_hello"), ("ja3", ja3(info), "client_hello"))
