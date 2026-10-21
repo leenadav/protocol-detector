@@ -2,7 +2,7 @@
 import ipaddress
 import re
 from .model import normalize_hostname
-from .media import accept_class, content_type_class
+from .media import METHODS, accept_class, content_type_class
 from .control import ControlHeaders, START
 from .parsers import BudgetError, LineParser, ParseError, TOKEN
 from .service_text import nats, imap_capability
@@ -180,7 +180,6 @@ MAX_H2_PREAMBLE_FRAMES = 8      # WINDOW_UPDATE/PRIORITY/PING/SETTINGS frames to
 MAX_H2_BLOCK_FRAMES = 8         # HEADERS plus CONTINUATION frames of one header block
 _H2_TOKEN = frozenset(b"!#$%&'*+-.^_`|~0123456789abcdefghijklmnopqrstuvwxyz")
 _H2_METHOD = frozenset(b"!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
-_H2_METHODS = frozenset((b"GET", b"HEAD", b"POST", b"PUT", b"DELETE", b"CONNECT", b"OPTIONS", b"TRACE", b"PATCH"))
 _H2_PSEUDO_REQUEST = frozenset((b":method", b":scheme", b":authority", b":path", b":protocol"))
 _H2_CONNECTION_SPECIFIC = frozenset((b"connection", b"keep-alive", b"proxy-connection", b"transfer-encoding", b"upgrade"))
 _H2_PSEUDO_LETTERS = {b":method": "m", b":authority": "a", b":scheme": "s", b":path": "p", b":protocol": "r", b":status": "t"}
@@ -448,7 +447,7 @@ class HTTP2Parser:
         if not method or len(method) > 32 or any(b not in _H2_METHOD for b in method):
             raise ParseError("Invalid HTTP/2 :method")
         evidence = [("http2_message", "request", "headers_frame", "structural"),
-                    ("http2_method", method.decode("ascii") if method in _H2_METHODS else "extension", "headers_frame", "structural")]
+                    ("http2_method", method.decode("ascii") if method in METHODS else "extension", "headers_frame", "structural")]
         if method == b"CONNECT" and b":protocol" not in pseudo:
             if b":scheme" in pseudo or b":path" in pseudo or b":authority" not in pseudo:
                 raise ParseError("HTTP/2 CONNECT requires :authority alone")

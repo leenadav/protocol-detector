@@ -1,11 +1,21 @@
-# Review scope: protocol detector v0.51
+# Review scope: protocol detector v0.52
 
-Python3.9-compatible IPv4 passive classification: 74 families, 67 automatic.
+Python3.9-compatible IPv4 passive classification: 75 families, 68 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.51): `protocol_engine/rpc.py` (opaque_auth bounds, AUTH_SYS
+New focus (v0.52): `protocol_engine/xmpp.py` (declaration regex, tag
+boundary, attribute regex and the 16/1023 bounds, namespace and id rules,
+hostname from to/from only), `SyslogStreamParser` in syslog.py (octet count
+digits and bounds, LF framing, reuse of the UDP validator), the `<` and
+digit-space-`<` routes in dispatch.py, `host_source` on parsers in
+engine.py, and the WebDAV/ipp/ocsp/soap refinements in media.py and appid.py.
+Trace: no stream id, JID, language or message content in evidence or
+reasons; that every digit-first text route (SMTP/FTP replies, RESP, git) is
+unchanged; the budget on a declaration without a stream tag. 546 tests pass.
+
+Previous focus (v0.51): `protocol_engine/rpc.py` (opaque_auth bounds, AUTH_SYS
 length arithmetic, reply status tables, the trailing-bytes rule, the 0x80
 memcached/RPC split in dispatch and the UDP candidate words),
 `protocol_engine/diameter.py` (AVP walk: header, padding, vendor flag,

@@ -421,3 +421,9 @@ WebSocket מעל CONNECT מורחב ל־websocket, ומיפויי מארחים �
 הסיסמה־בגלוי היחיד) ולחיצת היד של Neo4j Bolt (תשובת השרת עם רמז). בקשות HTTP/1.x מדווחות את ה־method ואת מחלקת
 ה־content-type כמו HTTP/2, ו־`dns-over-https` מזוהה מכותרת content או accept של application/dns-message בשתי
 הגרסאות. 74 משפחות, 67 אוטומטיות, 82 יישומים, 538 בדיקות עוברות.
+
+
+עדכון 0.52: כותרת ה־stream של XMPP מאומתת בשני הכיוונים (זרמי client, server ו־component; הדומיין ב־to/from הופך
+לשם מארח מוצהר), syslog מקבל מסגור TCP לפי RFC 6587 (ספירת אוקטטים ולא־שקוף) מעל פרופיל RFC 5424, ו־App-ID מזהה
+`webdav` (שיטות WebDAV ב־HTTP/1.x ו־HTTP/2), `ipp`, `ocsp` ו־`soap` ממחלקת התוכן של הבקשה או התשובה. 75 משפחות,
+68 אוטומטיות, 87 יישומים, 546 בדיקות עוברות.

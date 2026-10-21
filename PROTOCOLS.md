@@ -80,7 +80,7 @@ closed set reviewers should expect in records.
 | ssh | tcp | yes | same shape | `ssh_version` |
 | stomp | tcp | yes | yes | - |
 | stun | tcp/udp | yes | same shape | - |
-| syslog | udp | yes | n/a (one-way) | - |
+| syslog | udp/tcp | yes | n/a (one-way) | `syslog_framing` |
 | tacacs-plus | tcp | yes | yes | `tacacs_packet`, `tacacs_type` |
 | tds | tcp | yes | yes | `tds_encryption`, `tds_federated_auth`, `tds_mars` |
 | telnet | tcp | yes | same shape | - |
@@ -89,9 +89,10 @@ closed set reviewers should expect in records.
 | tns | tcp | yes | yes | `tns_connect_data`, `tns_response`, `tns_version` |
 | websocket | tcp | yes | yes | `websocket_masked`, `websocket_opcode` |
 | wireguard | udp | yes | yes | `message_type` |
+| xmpp | tcp | yes | yes | `hostname`, `xmpp_namespace`, `xmpp_stream`, `xmpp_version` |
 | zmtp | tcp | yes | yes | `zmtp_mechanism`, `zmtp_role` |
 
-74 families in the catalog, 74 with fixtures, 62 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
+75 families in the catalog, 75 with fixtures, 63 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
 <!-- coverage-matrix:end -->
 
 ## Direction evidence and remaining replies (v0.49)
@@ -253,3 +254,44 @@ when the first accepted media type is a DNS message; HTTP/2 gains the same
 `dns` class and `http2_accept`. App-ID: a request or response carrying a DNS
 message, or a request accepting one, is `dns-over-https` (implicitly
 web-browsing) over HTTP/1.x and HTTP/2. Header values are never emitted.
+
+## XMPP, syslog over TCP and HTTP-carried applications (v0.52)
+
+`xmpp` (RFC 6120, TCP, 75 families in total, 68 automatic): the initial stream
+header in either direction. An optional XML declaration (`version="1.x"`,
+optional UTF-8 encoding and standalone) may precede the `<stream:stream` open
+tag, which must be followed by whitespace or `>`; the tag is read up to 4096
+bytes (bounded by `max_line`) and at most 16 attributes, each quoted and free
+of `<`, `&` and control bytes, at most 1023 bytes, no duplicates. Required:
+`xmlns` in {jabber:client, jabber:server, jabber:component:accept} and
+`xmlns:stream` equal to the streams namespace; `version`, when present, is
+numeric. A header carrying a non-empty `id` is the receiving entity's response
+(scope `negotiation_response`); otherwise it is the initiating header. The
+`to` domain (initiating) or `from` domain (response) becomes an asserted
+`hostname` from source `xmpp_stream` (IPv4 literals give none; invalid names
+reject). Evidence: `xmpp_stream` (`initiating`/`response`), `xmpp_namespace`
+(`client`/`server`/`component`), `xmpp_version` (`1.0`, `legacy`, `other`).
+Stream ids, languages, the initiating `from` JID, features, STARTTLS and
+stanzas are never read or emitted; a header preceded by whitespace or using a
+prefix other than `stream:` is outside the profile. Dispatch: a first byte `<`
+followed by a digit is syslog, `<?xml` or `<stream:stream` is XMPP, anything
+else is unknown.
+
+`syslog` over TCP (RFC 6587): one complete frame in octet-counting form (a
+decimal count of at most five digits without a leading zero, a space, exactly
+that many bytes, at least 16 and at most `min(max_line, 8192)`) or
+non-transparent form (`<PRI>` through LF, CRLF tolerated); the message itself
+must satisfy the RFC 5424 profile already used for UDP. Evidence:
+`syslog_framing` (`octet-counting`/`non-transparent`). Dispatch: one to five
+digits, a space and `<` select syslog; other digit-first text (SMTP/FTP
+replies, RESP arrays, git pkt-lines) keeps its route.
+
+HTTP-carried applications (App-ID only; the HTTP profile is unchanged): the
+method vocabulary now includes the WebDAV methods (PROPFIND, PROPPATCH, MKCOL,
+COPY, MOVE, LOCK, UNLOCK, REPORT, SEARCH) on HTTP/1.x and HTTP/2, and the
+content classes `ipp` (application/ipp), `ocsp` (application/ocsp-request or
+-response) and `soap` (application/soap+xml, before the generic `+xml` rule).
+A WebDAV method is `webdav`; a POST or a response with an `ipp` or `soap`
+class is `ipp` or `soap`; an `ocsp` class in either direction is `ocsp`. All
+four implicitly use web-browsing and inherit the asserted nature of the
+header they read.

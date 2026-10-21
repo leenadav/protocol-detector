@@ -79,3 +79,79 @@ def syslog(data, config):
     if not ids or (pos < len(sd) and sd[pos] != 32):
         raise ParseError("Invalid syslog structured-data boundary")
     return "syslog/5424", "RFC5424 header and structured-data framing validated; log content unverified"
+
+
+class SyslogStreamParser:
+    """RFC 6587 TCP framing: octet counting (MSG-LEN SP SYSLOG-MSG) or non-transparent (SYSLOG-MSG LF).
+
+    One complete RFC 5424 message is validated by the datagram profile above;
+    the framing kind is reported, the message content is never emitted.
+    """
+    protocol_name = "syslog/5424"
+    MAX_MESSAGE = 8192
+
+    def __init__(self, config):
+        self.config = config
+        self.limit = min(config.max_line, self.MAX_MESSAGE)
+        self.buffer = bytearray()
+        self.counting = None
+        self.length = None
+        self.done = False
+        self.shift = None
+        self.extra_evidence = ()
+        self.reason = "Waiting for one complete framed syslog message"
+
+    def feed(self, data):
+        pos = 0
+        while not self.done and pos < len(data):
+            if self.counting is None:
+                self.counting = data[pos] != 0x3c          # '<' starts a non-transparent frame
+            if self.counting:
+                if self.length is None:
+                    pos = self._length(data, pos)
+                    if self.length is None:
+                        return pos
+                amount = min(self.length - len(self.buffer), len(data) - pos)
+                self.buffer.extend(data[pos:pos + amount])
+                pos += amount
+                if len(self.buffer) == self.length:
+                    self._message(bytes(self.buffer))
+            else:
+                newline = data.find(b"\n", pos)
+                end = len(data) if newline < 0 else newline + 1
+                if len(self.buffer) + end - pos > self.limit:
+                    raise BudgetError("Syslog message exceeds the line budget")
+                self.buffer.extend(data[pos:end])
+                pos = end
+                if newline >= 0:
+                    message = bytes(self.buffer[:-1])
+                    self._message(message[:-1] if message.endswith(b"\r") else message)
+        return pos
+
+    def _length(self, data, pos):
+        while pos < len(data):
+            byte = data[pos]
+            pos += 1
+            if byte == 0x20:
+                if not self.buffer:
+                    raise ParseError("Syslog octet count missing")
+                length = int(self.buffer)
+                self.buffer.clear()
+                if length < 16:
+                    raise ParseError("Syslog octet count below the shortest RFC 5424 header")
+                if length > self.limit:
+                    raise BudgetError("Syslog octet count exceeds the line budget")
+                self.length = length
+                return pos
+            if not 0x30 <= byte <= 0x39 or len(self.buffer) >= 5 or (not self.buffer and byte == 0x30):
+                raise ParseError("Invalid syslog octet count")
+            self.buffer.append(byte)
+        return pos
+
+    def _message(self, message):
+        protocol, reason = syslog(message, self.config)
+        self.protocol_name = protocol
+        self.done = True
+        framing = "octet-counting" if self.counting else "non-transparent"
+        self.extra_evidence = (("syslog_framing", framing, "frame", "structural"),)
+        self.reason = reason + "; TCP " + framing + " framing"

@@ -26,6 +26,8 @@ from .opcua import OPCUAParser
 from .rpc import RPCParser
 from .diameter import DiameterParser
 from .greetings import BoltParser, ZMTPParser
+from .xmpp import XMPPParser
+from .syslog import SyslogStreamParser
 
 PARSERS = MappingProxyType({
     "dcerpc": DCERPCParser, "giop": GIOPParser, "git": GitParser, "fastcgi": FastCGIParser, "rsync": RsyncParser,
@@ -41,6 +43,7 @@ PARSERS = MappingProxyType({
     "websocket": WebSocketParser, "s7comm": S7Parser, "http2-server": HTTP2ServerParser,
     "tds": TDSParser, "tns": TNSParser, "opcua": OPCUAParser,
     "onc-rpc": RPCParser, "diameter": DiameterParser, "zmtp": ZMTPParser, "bolt": BoltParser,
+    "xmpp": XMPPParser, "syslog": SyslogStreamParser,
 })
 
 # Automatic ambiguity routes are not public candidate hints.

@@ -18,7 +18,7 @@ for _byte in b"!#$%&'*+.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno
 for _byte, _family in ((64, "rsync"), (3, "tpkt"), (22, "tls"), (5, "socks5"), (16, "mqtt"), (19, "bittorrent"),
                        (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus"), (0x12, "tds"), (0x84, "cql")):
     _table[_byte] = _family
-for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68, 69, 118, 0x81, 0x80, 0x60):
+for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68, 69, 118, 0x81, 0x80, 0x60, 0x3c):
     _table[_byte] = "ambiguous"
 FIRST_BYTE = tuple(_table)
 del _table, _byte, _family
@@ -72,6 +72,16 @@ def select(prefix):
                 return None
             return 'socks5' if prefix[2] == 5 and prefix[3] <= 8 and prefix[4] == 0 and prefix[5] in (1, 3, 4) else 'dcerpc'
         return 'socks5'
+    if 0x31 <= first <= 0x39:
+        # Syslog octet counting: a decimal length (at most five digits), a space, then '<PRI>'. Other digit-first
+        # text (SMTP/FTP replies, RESP, git pkt-lines handled above) leaves as soon as the shape breaks.
+        digits = 0
+        while digits < min(len(prefix), 5) and 0x30 <= prefix[digits] <= 0x39:
+            digits += 1
+        if digits == len(prefix) or (digits < len(prefix) and prefix[digits] == 0x20 and digits + 1 == len(prefix)):
+            return None
+        if digits < len(prefix) - 1 and prefix[digits] == 0x20 and prefix[digits + 1] == 0x3c:
+            return 'syslog'
     family = FIRST_BYTE[first]
     if family != "ambiguous":
         return family
@@ -111,6 +121,18 @@ def select(prefix):
         if prefix[8:12] == b"\x00\x00\x00\x01" and prefix[12:16] in (b"\x00\x00\x00\x00", b"\x00\x00\x00\x01") and int.from_bytes(prefix[2:4], "big") >= 20:
             return 'onc-rpc'
         return 'memcached'
+    if first == 0x3c:   # '<'
+        # Syslog non-transparent framing (<PRI>1 ...) or an XMPP stream header, optionally after an XML declaration (v0.52).
+        if len(prefix) < 2:
+            return None
+        if 0x30 <= prefix[1] <= 0x39:
+            return 'syslog'
+        for start in (b"<?xml", b"<stream:stream"):
+            if prefix.startswith(start):
+                return 'xmpp'
+            if start.startswith(prefix):
+                return None
+        return 'unknown'
     if first == 0x60:
         # Neo4j Bolt magic 60 60 b0 17; '`' is otherwise a legal HTTP token byte.
         if len(prefix) < 4:

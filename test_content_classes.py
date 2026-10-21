@@ -39,7 +39,8 @@ class ContentClassTests(unittest.TestCase):
         self.assertNotIn("http_content_type", values(observation))
         for method in (b"GET", b"HEAD", b"POST", b"PUT", b"DELETE", b"OPTIONS", b"TRACE", b"PATCH"):
             self.assertEqual(values(inspect(method + b" / HTTP/1.1\r\nHost: a.example\r\n\r\n"))["http_method"], method.decode())
-        self.assertEqual(values(inspect(b"PROPFIND / HTTP/1.1\r\nHost: a.example\r\n\r\n"))["http_method"], "extension")
+        self.assertEqual(values(inspect(b"PROPFIND / HTTP/1.1\r\nHost: a.example\r\n\r\n"))["http_method"], "PROPFIND")
+        self.assertEqual(values(inspect(b"BREW / HTTP/1.1\r\nHost: a.example\r\n\r\n"))["http_method"], "extension")
         self.assertEqual(values(inspect(b"get / HTTP/1.1\r\nHost: a.example\r\n\r\n"))["http_method"], "GET")
         connect = inspect(b"CONNECT a.example:443 HTTP/1.1\r\nHost: a.example:443\r\n\r\n")
         self.assertEqual((values(connect)["http_method"], classify(connect).app), ("CONNECT", "http-proxy"))
@@ -54,6 +55,26 @@ class ContentClassTests(unittest.TestCase):
         response = inspect(b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 0\r\n\r\n")
         self.assertEqual((values(response)["http_status"], values(response)["http_content_type"]), ("200", "text"))
         self.assertNotIn("http_method", values(response))
+
+    def test_http_carried_applications(self):
+        from protocol_fixtures import IPP_REQUEST, OCSP_RESPONSE, SOAP_REQUEST, WEBDAV_REQUEST
+        for data, method, content, app in ((WEBDAV_REQUEST, "PROPFIND", None, "webdav"), (IPP_REQUEST, "POST", "ipp", "ipp"),
+                                           (SOAP_REQUEST, "POST", "soap", "soap"), (OCSP_RESPONSE, None, "ocsp", "ocsp")):
+            observation = inspect(data)
+            fields = values(observation)
+            self.assertEqual((fields.get("http_method"), fields.get("http_content_type"), classify(observation).app), (method, content, app), data[:12])
+            self.assertEqual(classify(observation).implicitly_uses, ("web-browsing",))
+        for method in (b"PROPPATCH", b"MKCOL", b"COPY", b"MOVE", b"LOCK", b"UNLOCK", b"REPORT", b"SEARCH"):
+            observation = inspect(method + b" /dav/x HTTP/1.1\r\nHost: a.example\r\n\r\n")
+            self.assertEqual((values(observation)["http_method"], classify(observation).app), (method.decode(), "webdav"))
+        request = inspect(b"POST /ocsp HTTP/1.1\r\nHost: ocsp.example\r\nContent-Type: application/ocsp-request\r\nContent-Length: 0\r\n\r\n")
+        self.assertEqual(classify(request).app, "ocsp")
+        self.assertEqual(classify(inspect(b"GET /ws HTTP/1.1\r\nHost: a.example\r\nContent-Type: application/soap+xml\r\n\r\n")).app, "web-browsing")
+        self.assertEqual(classify(inspect(b"GET /p HTTP/1.1\r\nHost: a.example\r\nContent-Type: application/ipp\r\n\r\n")).app, "web-browsing")
+        response = inspect(b"HTTP/1.1 200 OK\r\nContent-Type: application/ipp\r\nContent-Length: 0\r\n\r\n")
+        self.assertEqual(classify(response).app, "ipp")
+        self.assertEqual(session_verdict(inspect(IPP_REQUEST), response, "tcp", 631).port_usage, "standard")
+        self.assertEqual(classify(inspect(WEBDAV_REQUEST), "tcp", 443).port_usage, "standard")
 
     def test_dns_over_https(self):
         for data in (DOH_POST, DOH_GET):

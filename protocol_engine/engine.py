@@ -296,7 +296,7 @@ class Inspector:
                              encryption or protocol, self.source, "structural")]
         if self._hint is not None:
             evidence.append(Evidence('candidate_hint', self._hint, self._hint_source, 'context'))
-        host_source = "tls_sni" if encryption else "http_host"
+        host_source = getattr(parser, "host_source", "tls_sni" if encryption else "http_host")
         application = None
         if hostname:
             evidence.append(Evidence("hostname", hostname, self.source + ":" + host_source, "asserted"))

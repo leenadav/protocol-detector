@@ -13,6 +13,7 @@ profile, never an authenticated product identity.
 from typing import NamedTuple, Optional, Tuple
 from types import MappingProxyType
 from .applications import APPLICATIONS, OUTCOMES, Application, application_name, custom_application
+from .media import WEBDAV_METHOD_NAMES
 from .model import Observation
 from .risks import flow_risks
 
@@ -106,6 +107,7 @@ def _application(observation, transport, signatures=None):
     return APPLICATIONS[base]
 
 
+_CONTENT_APPLICATIONS = MappingProxyType({"ipp": "ipp", "ocsp": "ocsp", "soap": "soap"})
 _RPC_APPLICATIONS = MappingProxyType({"portmap": "portmapper", "nfs": "nfs", "mount": "nfs", "nlm": "nfs", "nsm": "nfs", "nfs-acl": "nfs"})
 
 
@@ -114,11 +116,15 @@ def _web_application(observation):
     method = _evidence(observation, "http_method") or _evidence(observation, "http2_method")
     if method == "CONNECT":
         return "websocket" if _evidence(observation, "http2_protocol") == "websocket" else "http-proxy"
+    if method in WEBDAV_METHOD_NAMES:
+        return "webdav"
     content = _evidence(observation, "http2_content_type") or _evidence(observation, "http_content_type")
     if method == "POST" and content in ("grpc", "grpc-web"):
         return "grpc"
     if content == "dns" or _evidence(observation, "http2_accept") == "dns" or _evidence(observation, "http_accept") == "dns":
         return "dns-over-https"
+    if content in _CONTENT_APPLICATIONS and (method in (None, "POST") or content == "ocsp"):
+        return _CONTENT_APPLICATIONS[content]
     return "web-browsing"
 
 

@@ -103,7 +103,7 @@ class RequestHeadersTests(unittest.TestCase):
     def test_content_type_classes(self):
         cases = (("application/grpc", "grpc"), ("application/grpc+proto", "grpc"), ("Application/GRPC; charset=x", "grpc"),
                  ("application/grpc-web-text", "grpc-web"), ("application/json", "json"), ("application/problem+json", "json"),
-                 ("text/xml", "xml"), ("application/soap+xml", "xml"), ("application/x-www-form-urlencoded", "form"),
+                 ("text/xml", "xml"), ("application/soap+xml", "soap"), ("application/rss+xml", "xml"), ("application/x-www-form-urlencoded", "form"),
                  ("multipart/form-data; boundary=abc", "multipart"), ("application/x-protobuf", "protobuf"),
                  ("application/octet-stream", "binary"), ("text/html; charset=utf-8", "text"), ("image/png", "other"), ("", "other"))
         for value, expected in cases:
@@ -126,8 +126,11 @@ class RequestHeadersTests(unittest.TestCase):
             observation = inspect(PREAMBLE + h2_frame(1, bad, flags=0x04, stream=1))[0].observation
             self.assertEqual((observation.status, observation.scope), ("identified", "initial_message"))
             self.assertNotIn("http2_method", values(observation))
-        extension = block((b":method", b"PROPFIND"), (b":scheme", b"https"), (b":path", b"/"), (b":authority", b"a.example"))
+        extension = block((b":method", b"BREW"), (b":scheme", b"https"), (b":path", b"/"), (b":authority", b"a.example"))
         self.assertEqual(values(inspect(PREAMBLE + h2_frame(1, extension, flags=0x04, stream=1))[0].observation)["http2_method"], "extension")
+        webdav = block((b":method", b"PROPFIND"), (b":scheme", b"https"), (b":path", b"/dav/"), (b":authority", b"a.example"))
+        observation = inspect(PREAMBLE + h2_frame(1, webdav, flags=0x04, stream=1))[0].observation
+        self.assertEqual((values(observation)["http2_method"], classify(observation).app), ("PROPFIND", "webdav"))
 
     def test_authority_forms(self):
         cases = ((b"www.example.com:8443", "www.example.com"), (b"WWW.Example.COM.", "www.example.com"), (b"192.0.2.1", None),

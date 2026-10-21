@@ -843,3 +843,19 @@ STREAM_CASES += ((ONC_RPC_CALL, 'onc-rpc/2'), (ONC_RPC_REPLY, 'onc-rpc/2'), (rpc
                  (BOLT_HANDSHAKE, 'bolt'), (DOH_POST, 'http/1.1'), (DOH_GET, 'http/1.1'))
 HINTED_STREAM_CASES += ((BOLT_RESPONSE, 'bolt', 'bolt'),)
 DATAGRAM_CASES += ((RPC_PORTMAP_CALL, 'onc-rpc/2'), (RPC_NFS_CALL, 'onc-rpc/2'), (RPC_REPLY, 'onc-rpc/2'), (RPC_REPLY_DENIED, 'onc-rpc/2'))
+
+
+# v0.52: XMPP stream headers, syslog over TCP and HTTP-carried applications. Names are placeholders.
+XMPP_CLIENT = (b"<?xml version='1.0'?><stream:stream to='chat.example' xmlns='jabber:client' "
+               b"xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>")
+XMPP_SERVER = (b"<?xml version='1.0'?><stream:stream from='chat.example' id='c2s-0001' xmlns='jabber:client' "
+               b"xmlns:stream='http://etherx.jabber.org/streams' version='1.0' xml:lang='en'>")
+XMPP_S2S = b"<stream:stream xmlns='jabber:server' xmlns:stream='http://etherx.jabber.org/streams' to='b.example' from='a.example'>"
+SYSLOG_TCP = SYSLOG + b"\n"
+SYSLOG_OCTET = str(len(SYSLOG)).encode() + b" " + SYSLOG
+WEBDAV_REQUEST = b"PROPFIND /dav/ HTTP/1.1\r\nHost: files.example\r\nDepth: 1\r\nContent-Length: 0\r\n\r\n"
+IPP_REQUEST = b"POST /ipp/print HTTP/1.1\r\nHost: printer.example\r\nContent-Type: application/ipp\r\nContent-Length: 0\r\n\r\n"
+OCSP_RESPONSE = b"HTTP/1.1 200 OK\r\nContent-Type: application/ocsp-response\r\nContent-Length: 0\r\n\r\n"
+SOAP_REQUEST = b"POST /ws HTTP/1.1\r\nHost: api.example\r\nContent-Type: application/soap+xml; charset=utf-8\r\nContent-Length: 0\r\n\r\n"
+STREAM_CASES += ((XMPP_CLIENT, 'xmpp'), (XMPP_SERVER, 'xmpp'), (XMPP_S2S, 'xmpp'), (SYSLOG_TCP, 'syslog/5424'), (SYSLOG_OCTET, 'syslog/5424'),
+                 (WEBDAV_REQUEST, 'http/1.1'), (IPP_REQUEST, 'http/1.1'), (OCSP_RESPONSE, 'http/1.1'), (SOAP_REQUEST, 'http/1.1'))
