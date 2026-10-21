@@ -7,8 +7,9 @@ from protocol_engine.appid import classify
 from protocol_engine.datagram import DatagramInspector
 from protocol_engine.wire import dns_probe
 from protocol_fixtures import (DNS, DNS_RESPONSE, LLMNR_CONFLICT, LLMNR_QUERY, LLMNR_RESPONSE, MDNS_ANNOUNCEMENT, MDNS_KNOWN_ANSWER, MDNS_PLAIN_QUERY,
-                               MDNS_PROBE, MDNS_QUERY, MDNS_RESPONSE, NBNS_NEGATIVE_RESPONSE, NBNS_POSITIVE_RESPONSE, NBNS_QUERY, NBNS_QUERY_RESPONSE,
-                               NBNS_REFRESH, NBNS_REGISTRATION, NBNS_RELEASE, NBNS_WACK, RIP_RESPONSE, dns_message, dns_name, dns_record, netbios_name)
+                               MDNS_PROBE, MDNS_QUERY, MDNS_RESPONSE, MDNS_SHARED_ANNOUNCEMENT, NBNS_NEGATIVE_RESPONSE, NBNS_POSITIVE_RESPONSE, NBNS_QUERY,
+                               NBNS_QUERY_RESPONSE, NBNS_REFRESH, NBNS_REGISTRATION, NBNS_RELEASE, NBNS_WACK, NBSTAT_RESPONSE, RIP_RESPONSE, dns_message,
+                               dns_name, dns_record, nbstat_response, netbios_name)
 
 LOCAL_A = dns_name(b"laptop", b"local") + b"\x00\x01\x00\x01"
 
@@ -30,7 +31,8 @@ def stream(data, hint=None):
 
 class MulticastDNSTests(unittest.TestCase):
     CASES = ((MDNS_QUERY, "query", "ptr", "unicast-requested"), (MDNS_PLAIN_QUERY, "query", "a", "plain"), (MDNS_RESPONSE, "response", "ptr", "announcement"),
-             (MDNS_KNOWN_ANSWER, "query", "ptr", "known-answer"), (MDNS_PROBE, "query", "any", "probe"), (MDNS_ANNOUNCEMENT, "response", "a", "announcement"))
+             (MDNS_KNOWN_ANSWER, "query", "ptr", "known-answer"), (MDNS_PROBE, "query", "any", "probe"), (MDNS_ANNOUNCEMENT, "response", "a", "announcement"),
+             (MDNS_SHARED_ANNOUNCEMENT, "response", "ptr", "announcement"))
 
     def test_profiles_identify_with_closed_labels(self):
         for data, message, qtype, profile in self.CASES:
@@ -62,6 +64,20 @@ class MulticastDNSTests(unittest.TestCase):
         self.assertEqual(datagram(two_plain).status, "unknown")                                        # several questions without markers
         self.assertEqual(datagram(dns_message(0, 0x0000, questions=(LOCAL_A,) * 8)).application_protocol, "mdns")
         self.assertEqual(datagram(dns_message(0, 0x0000, questions=(LOCAL_A,) * 9)).status, "unknown")   # question budget
+        # Review round 1: a query never carries the cache-flush bit (RFC 6762 10.2), in known answers or probe authority records.
+        service = dns_name(b"_http", b"_tcp", b"local")
+        flushed_known_answer = dns_message(0, 0x0000, questions=(service + b"\x00\x0c\x00\x01",),
+                                           answers=(dns_record(service, 12, 0x8001, 4500, dns_name(b"p", b"_http", b"_tcp", b"local")),))
+        flushed_probe = dns_message(0, 0x0000, questions=(LOCAL_A[:-4] + b"\x00\xff\x80\x01",),
+                                    authority=(dns_record(dns_name(b"laptop", b"local"), 1, 0x8001, 120, bytes(4)),))
+        self.assertEqual(datagram(flushed_known_answer).status, "malformed")
+        self.assertEqual(datagram(flushed_probe).status, "malformed")
+        # A shared record announcement (no question, no flush bit) is named by its first record owner.
+        shared = datagram(MDNS_SHARED_ANNOUNCEMENT)
+        self.assertEqual((shared.application_protocol, fields(shared, "mdns_profile", "dns_query_type")), ("mdns", {"mdns_profile": "announcement", "dns_query_type": "ptr"}))
+        two_shared = dns_message(0, 0x8400, answers=(dns_record(service, 12, 1, 4500, dns_name(b"a", b"_http", b"_tcp", b"local")),
+                                                     dns_record(b"\xc0\x0c", 12, 1, 4500, dns_name(b"b", b"_http", b"_tcp", b"local"))))   # compressed second owner
+        self.assertEqual(fields(datagram(two_shared), "mdns_profile"), {"mdns_profile": "announcement"})
         malformed = (
             dns_message(0, 0x8000, answers=(dns_record(dns_name(b"laptop", b"local"), 1, 1, 120, bytes(4)),)),   # response without AA
             dns_message(0, 0x8403, answers=(dns_record(dns_name(b"laptop", b"local"), 1, 0x8001, 120, bytes(4)),)),   # rcode on a response
@@ -108,13 +124,14 @@ class MulticastDNSTests(unittest.TestCase):
 class NetBIOSNameServiceTests(unittest.TestCase):
     CASES = ((NBNS_QUERY, "query", "query", "noerror"), (NBNS_REGISTRATION, "query", "registration", None), (NBNS_RELEASE, "query", "release", None),
              (NBNS_REFRESH, "query", "refresh", None), (NBNS_WACK, "response", "wack", "noerror"), (NBNS_POSITIVE_RESPONSE, "response", "registration", "noerror"),
-             (NBNS_NEGATIVE_RESPONSE, "response", "registration", "yxdomain"), (NBNS_QUERY_RESPONSE, "response", "query", "noerror"))
+             (NBNS_NEGATIVE_RESPONSE, "response", "registration", "yxdomain"), (NBNS_QUERY_RESPONSE, "response", "query", "noerror"),
+             (NBSTAT_RESPONSE, "response", "query", "noerror"))
 
     def test_opcodes_identify_the_family(self):
         for data, message, opcode, rcode in self.CASES:
             observation = datagram(data)
             self.assertEqual((observation.status, observation.application_protocol), ("identified", "netbios-ns"), data[:4].hex())
-            expected = {"dns_message": message, "nbns_opcode": opcode, "dns_query_type": "nb"}
+            expected = {"dns_message": message, "nbns_opcode": opcode, "dns_query_type": "nbstat" if data is NBSTAT_RESPONSE else "nb"}
             if message == "response":
                 expected["dns_rcode"] = rcode
             self.assertEqual(fields(observation, "dns_message", "nbns_opcode", "dns_query_type", "dns_rcode"), expected, data[:4].hex())
@@ -144,6 +161,23 @@ class NetBIOSNameServiceTests(unittest.TestCase):
         )
         for data in malformed:
             self.assertEqual(datagram(data).status, "malformed", data[:4].hex())
+        # Review round 1: record data keyed by message kind (RFC 1002 4.2.x).
+        nb_record = lambda rdata, opcode_flags=0x8580: dns_message(0x8004, opcode_flags, answers=(dns_record(nb, 32, 1, 300000, rdata),))
+        self.assertEqual(datagram(nb_record(b"\x29\x10")).status, "malformed")                       # two-byte data outside a WACK
+        self.assertEqual(datagram(nb_record(b"\x00\x00" + bytes(4) + b"\x00\x00" + bytes(4))).application_protocol, "netbios-ns")   # multi-homed
+        self.assertEqual(datagram(nb_record(b"\x00\x01" + bytes(4))).status, "malformed")             # NB_FLAGS reserved bit
+        self.assertEqual(fields(datagram(nb_record(b"\x80\x00" + bytes(4))), "nbns_opcode"), {"nbns_opcode": "query"})   # group name flag is legal
+        self.assertEqual(datagram(dns_message(0x8004, 0xbc00, answers=(dns_record(nb, 32, 1, 2, b"\x29\x10\x00\x00\x00\x00"),))).status, "malformed")   # WACK with 6 bytes
+        self.assertEqual(datagram(dns_message(0x8004, 0x3c00, questions=(question,), additional=(dns_record(b"\xc0\x0c", 32, 1, 2, b"\x29\x10"),))).status, "malformed")   # WACK as a request
+        status_rr = lambda rdata: dns_message(0x8004, 0x8400, answers=(dns_record(nb, 33, 1, 0, rdata),))
+        self.assertEqual(datagram(status_rr(b"")).status, "malformed")                                   # empty node status
+        self.assertEqual(datagram(status_rr(bytes((5,)) + bytes(18 * 2 + 46))).status, "malformed")      # NUM_NAMES beyond the data
+        self.assertEqual(datagram(status_rr(bytes((1,)) + bytes(18 + 45))).status, "malformed")          # statistics truncated
+        self.assertEqual(datagram(nbstat_response(names=0)).application_protocol, "netbios-ns")
+        self.assertEqual(datagram(nbstat_response(flags=0x0401)).status, "malformed")                   # NAME_FLAGS reserved bit
+        self.assertEqual(datagram(nbstat_response(flags=0xe400)).application_protocol, "netbios-ns")    # group, H-node, active
+        self.assertEqual(datagram(dns_message(0x8004, 0x0000, questions=(nb + b"\x00\x21\x00\x01",), answers=(dns_record(nb, 33, 1, 0, bytes((0,)) + bytes(46)),))).status, "malformed")   # node status in a request
+        self.assertNotIn("FILESERVER", repr(datagram(NBSTAT_RESPONSE)))
         # Opcodes 5..8 need the encoded name; an ordinary name with a registration opcode is outside every profile.
         # (Transaction ids 0x0001/0x0002 would also select the TFTP candidate, whose rejection is malformed.)
         plain = dns_message(0x8001, 0x2910, questions=(dns_name(b"fileserver") + b"\x00\x20\x00\x01",),

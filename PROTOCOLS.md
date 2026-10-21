@@ -495,13 +495,17 @@ question in the twelve header bytes); mDNS and NetBIOS-NS are UDP profiles,
 so over TCP the family stays `dns` and only the evidence rows below are
 added, while NetBIOS registration opcodes over TCP are unknown.
 
-`mdns` (RFC 6762, automatic): a message whose first question or record name
-ends in `.local`, or whose question carries the QU bit (class 0x8000), or
-whose answer or additional record carries the cache-flush bit, or which has
-several questions or no question at all with answers. Queries may carry
-answers (known-answer suppression) and authority records (probes) but never
-the AA bit or a response code; responses must carry AA and a zero response
-code. Evidence: `dns_message`, `dns_rcode`, `dns_query_type` (the first
+`mdns` (RFC 6762, automatic): a message whose first question name, or the
+first record's owner name when there is no question, ends in `.local`, or
+whose question carries the QU bit (class 0x8000), or whose response record
+carries the cache-flush bit, or which has several questions or no question at
+all with answers (an announcement is named by its first record, so a shared
+record without the cache-flush bit is one too; a compressed later owner is
+not expanded). Queries may carry answers (known-answer suppression) and
+authority records (probes) but never the AA bit, a response code or the
+cache-flush bit, which exists only in response record sections (RFC 6762
+10.2; no DNS class has that bit, so a query carrying it is malformed on every
+layout); responses must carry AA and a zero response code. Evidence: `dns_message`, `dns_rcode`, `dns_query_type` (the first
 question's type, or the first answer's type in an announcement) and
 `mdns_profile`: `announcement` (no question), `probe` (query with authority
 records), `known-answer` (query with answers), `unicast-requested` (QU bit),
@@ -516,9 +520,13 @@ first label is the 32-byte first-level encoding over A..P, with the QUERY
 opcode, or the opcodes registration (5), release (6), WACK (7) and refresh
 (8) with that encoded name. Requests carry one question and, for the
 registration-class opcodes, exactly one additional NB record; responses carry
-at most one question and one answer and no other section. NB record data is
-a two-byte WACK flag word or a multiple of six bytes (flags plus IPv4
-address). Evidence: `dns_message`, `dns_rcode` (NBNS result codes read
+at most one question and one answer and no other section. Record data is
+keyed by message kind (review round 1): a WACK (opcode 7, response only)
+carries exactly the two-byte flags word; any other NB record carries one or
+more 6-byte entries (NB_FLAGS with zero reserved bits, IPv4 address); an
+NBSTAT record appears only in responses and carries NUM_NAMES, exactly that
+many 18-byte node-name entries (NAME_FLAGS with zero reserved bits) and the
+46-byte statistics block. Evidence: `dns_message`, `dns_rcode` (NBNS result codes read
 through the DNS table: ACT_ERR is `yxdomain`, RFS_ERR `refused`, SRV_ERR
 `servfail`), `dns_query_type` (`nb`/`nbstat`), `nbns_opcode` (`query`,
 `registration`, `release`, `wack`, `refresh`). Names, addresses and node

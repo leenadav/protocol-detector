@@ -60,6 +60,33 @@ _NETBIOS_LABEL = frozenset(b"ABCDEFGHIJKLMNOPabcdefghijklmnop")   # question nam
 _DNS_QTYPE_EVIDENCE = {label: (Evidence("dns_query_type", label, "wire", "structural"),) for label in list(_DNS_QTYPES.values()) + ["nbstat", "other"]}
 
 
+def _local_name(name):
+    return name == b"local" or name.endswith(b".local")
+
+
+def _nbns_rdata(data, pos, end, kind, opcode, response):
+    """RFC 1002 record data keyed by message kind: WACK flags word, NB address entries, NBSTAT node status."""
+    size = end - pos
+    if kind == 32:
+        if opcode == 7:
+            if not response or size != 2:
+                raise ParseError("NetBIOS WACK carries exactly the two-byte flags word in a response")
+            return
+        if size < 6 or size % 6:
+            raise ParseError("NetBIOS NB record data must be one or more 6-byte address entries")
+        for entry in range(pos, end, 6):
+            if int.from_bytes(data[entry:entry + 2], "big") & 0x1fff:
+                raise ParseError("NetBIOS NB_FLAGS reserved bits set")
+        return
+    if not response:
+        raise ParseError("NetBIOS node status data appears only in responses")
+    if size < 47 or (size - 47) % 18 or 1 + 18 * data[pos] + 46 != size:
+        raise ParseError("NetBIOS node status data must hold NUM_NAMES 18-byte entries and the 46-byte statistics")
+    for entry in range(pos + 1, pos + 1 + 18 * data[pos], 18):
+        if int.from_bytes(data[entry + 16:entry + 18], "big") & 0x01ff:
+            raise ParseError("NetBIOS NAME_FLAGS reserved bits set")
+
+
 def _netbios_name(qname):
     first = qname.split(b".", 1)[0] if qname else b""
     return len(first) == 32 and all(byte in _NETBIOS_LABEL for byte in first)
@@ -178,7 +205,7 @@ def dns_details(data, config, llmnr=False):
             qname, qtype = expanded, kind
             netbios = netbios or (kind in (32, 33) and _netbios_name(expanded))
         unicast_requested = unicast_requested or bool(klass & 0x8000)
-        local = local or expanded.endswith(b"local") and (expanded == b"local" or expanded.endswith(b".local"))
+        local = local or _local_name(expanded)
     cache_flush = False
     for section, count in enumerate(counts[1:]):
         for _ in range(count):
@@ -192,9 +219,15 @@ def dns_details(data, config, llmnr=False):
             if end > len(data):
                 raise ParseError("DNS RDATA exceeds message")
             if not counts[0] and not qtype:
+                # An announcement has no question: the first record's owner names the message (RFC 6762 8.3).
                 qname, qtype = _expand_name(data, start, pos - 10), kind
                 netbios = netbios or (kind in (32, 33) and _netbios_name(qname))
-            if section != 1 and klass & 0x8000 and kind != 41:
+                local = local or _local_name(qname)
+            if klass & 0x8000 and kind != 41:
+                # The cache-flush bit exists only in multicast DNS responses (RFC 6762 10.2); a query's
+                # known-answer list or probe authority records never carry it, and no DNS class has that bit.
+                if not response:
+                    raise ParseError("The cache-flush bit belongs to multicast DNS responses, not to queries")
                 cache_flush = True
             if kind in (1, 28) and size != (4 if kind == 1 else 16):
                 raise ParseError("Invalid DNS address record size")
@@ -218,8 +251,8 @@ def dns_details(data, config, llmnr=False):
                     cursor += 4 + int.from_bytes(data[cursor + 2:cursor + 4], "big")
                 if cursor != end:
                     raise ParseError("Invalid EDNS option length")
-            if kind == 32 and netbios and size != 2 and size % 6:
-                raise ParseError("NetBIOS NB record data must be a WACK flag word or 6-byte address entries")
+            if netbios and kind in (32, 33):
+                _nbns_rdata(data, pos, end, kind, opcode, response)
             pos = end
     if pos != len(data):
         raise ParseError("Trailing bytes after DNS sections")

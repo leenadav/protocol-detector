@@ -1020,6 +1020,18 @@ LLMNR_QUERY = dns_message(0x4242, 0x0000, questions=(dns_name(b"laptop") + b"\x0
 LLMNR_RESPONSE = dns_message(0x4242, 0x8000, questions=(dns_name(b"laptop") + b"\x00\x01\x00\x01",),
                              answers=(dns_record(dns_name(b"laptop"), 1, 1, 30, bytes((192, 0, 2, 7))),))
 LLMNR_CONFLICT = dns_message(0x4243, 0x0400, questions=(dns_name(b"laptop") + b"\x00\x01\x00\x01",))
+MDNS_SHARED_ANNOUNCEMENT = dns_message(0, 0x8400, answers=(dns_record(_HTTP_SERVICE, 12, 0x0001, 4500, _PRINTER),))   # shared PTR, no cache-flush
+
+
+def nbstat_response(names=2, flags=0x0400):
+    """Node status response (RFC 1002 4.2.18): NUM_NAMES, 18-byte entries (15-byte name, suffix, NAME_FLAGS), 46-byte statistics."""
+    entries = b"".join(b"FILESERVER     "[:15] + bytes((suffix,)) + flags.to_bytes(2, "big") for suffix in (0x00, 0x20, 0x03)[:names])
+    rdata = bytes((names,)) + entries + bytes(46)
+    return dns_message(0x8004, 0x8400, answers=(dns_record(_NB_NAME, 33, 1, 0, rdata),))
+
+
+NBSTAT_RESPONSE = nbstat_response()
+DATAGRAM_CASES += ((MDNS_SHARED_ANNOUNCEMENT, 'mdns'), (NBSTAT_RESPONSE, 'netbios-ns'))
 DATAGRAM_CASES += ((MDNS_QUERY, 'mdns'), (MDNS_PLAIN_QUERY, 'mdns'), (MDNS_RESPONSE, 'mdns'), (MDNS_KNOWN_ANSWER, 'mdns'), (MDNS_PROBE, 'mdns'),
                    (MDNS_ANNOUNCEMENT, 'mdns'), (NBNS_REGISTRATION, 'netbios-ns'), (NBNS_RELEASE, 'netbios-ns'), (NBNS_REFRESH, 'netbios-ns'),
                    (NBNS_WACK, 'netbios-ns'), (NBNS_POSITIVE_RESPONSE, 'netbios-ns'), (NBNS_NEGATIVE_RESPONSE, 'netbios-ns'), (NBNS_QUERY_RESPONSE, 'netbios-ns'))

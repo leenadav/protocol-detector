@@ -16,7 +16,7 @@ hints share the dns validator, `llmnr` is hint only), `binary.py`
 address or TXT content reaches evidence; every RDATA size against its
 record; the probe never admits RIP or DTLS bytes; mutations of the new
 fixtures stay bounded. Also in scope: the v0.54 round-3 repair
-(`Analyzer.peer_events`, `CaptureMonitor._classification`). 586 tests pass.
+(`Analyzer.peer_events`, `CaptureMonitor._classification`). 587 tests pass.
 
 Previous focus (v0.54): `protocol_engine/binary.py` LDAP ExtendedRequest and
 ExtendedResponse (OID grammar, the StartTLS no-value rule, result walk shared

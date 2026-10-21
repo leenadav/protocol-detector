@@ -250,6 +250,30 @@ class LDAPStartTLSTests(unittest.TestCase):
         classifications = [(e["source"], e["destination"], e["event"], e["protocol"]) for e in events if e["type"] == "classification"]
         self.assertEqual(classifications.count((B, A, "shifted", "tls")), 1)
 
+    def test_replayed_same_direction_event_survives_a_fin_on_the_same_packet(self):
+        # v0.55 review round 1: the server segment carries the CONNECT 2xx, the ServerHello and FIN; the FIN
+        # snapshot rebuild must keep the replay's shifted event.
+        from capture_stream import CaptureRecord
+        from live_capture import CaptureMonitor
+        from protocol_fixtures import CONNECT_REQUEST, CONNECT_RESPONSE
+        cr, cs = 1000, 9000
+        payload = CONNECT_RESPONSE + TLS_SERVER13
+        frames = [frame(A, B, 999, 0, 2), frame(B, A, 8999, 1000, 18), frame(A, B, cr, cs, 24, CONNECT_REQUEST),
+                  frame(B, A, cs, cr + len(CONNECT_REQUEST), 25, payload)]                      # PSH/ACK/FIN
+        analyzer = Analyzer()
+        for number, data in enumerate(frames):
+            analyzer.process(number, decode_packet(data))
+        kinds = [(e.kind, e.observation.application_protocol or e.observation.encryption) for e in analyzer.last_events]
+        self.assertEqual(kinds, [("updated", "http/1.1"), ("shifted", "tls")])
+        self.assertEqual(analyzer.peer_events, ())
+        events = []
+        monitor = CaptureMonitor(events.append)
+        for number, data in enumerate(frames):
+            monitor.accept(CaptureRecord(number, data, len(data), 1), number)
+        classifications = [(e["source"], e["destination"], e["event"], e["protocol"]) for e in events if e["type"] == "classification"]
+        self.assertEqual(classifications.count((B, A, "shifted", "tls")), 1)
+        self.assertEqual(classifications.count((B, A, "updated", "http/1.1")), 1)
+
     def test_replay_preconditions(self):
         inspector = Inspector()
         inspector.feed(LDAP_STARTTLS_REQUEST)

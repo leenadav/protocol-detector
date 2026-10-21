@@ -415,7 +415,8 @@ class Analyzer:
         if final is not None and final <= stream.limit and stream.contiguous == final:
             finished = self.manager.finish_direction(source, destination,
                 "Observed contiguous TCP FIN before initial message completed")
-            snapshot = replace(finished, events=snapshot.events + finished.events)
+            # Keep the correlation-replay events already appended to last_events (review round 1 of v0.55).
+            snapshot = replace(finished, events=self.last_events + finished.events)
             self.last_events = snapshot.events
         self.last_classification = snapshot.classification
         changed = state["reported"].get(source) != snapshot
