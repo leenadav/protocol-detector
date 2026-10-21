@@ -1,11 +1,19 @@
-# Review scope: protocol detector v0.35
+# Review scope: protocol detector v0.37
 
 Python3.9-compatible IPv4 passive classification: 67 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.35): the rewritten `parse_hello` in parsers.py (fixed-field
+New focus (v0.36-v0.37): HTTP2ServerParser behind the 101 h2c shift
+(no preface, no fingerprint, shift-only registration) and
+tools/compare_engine.py with its CI job (baseline package loading without
+polluting the working tree's imports, comparison keys, report rendering,
+report-only exit code). Trace: that the self-comparison is empty, that the
+report lists the h2c and ISO-TSAP changes when run against older trees, and
+that the CI job cannot fail a build on its own.
+
+Previous focus (v0.35): the rewritten `parse_hello` in parsers.py (fixed-field
 offsets, extension walk, extension-count budget only with info, trailing-byte
 check order) and tools/compare_client_hello.py. Trace: every bound before
 every slice; identical ParseError messages; the differential run against the

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "protocol-stream-engine"
-version = "0.36.0"
+version = "0.37.0"
 description = "Bounded incremental protocol classification for TCP streams and UDP datagrams"
 requires-python = ">=3.9"
 dependencies = []
@@ -31,6 +31,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "test_*.py" = ["S", "B"]
 "live_capture.py" = ["S603", "S404", "S607"]   # argv-only subprocess with resolved executable, reviewed
+"tools/compare_engine.py" = ["S603"]        # sys.executable with argv-only arguments, reviewed
 "live_smoke.py" = ["S603", "S404", "S607", "S104"]
 "*interop*.py" = ["S603", "S404", "S607"]
 "benchmark*.py" = ["S603", "S404", "S607"]
