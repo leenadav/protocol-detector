@@ -7,7 +7,7 @@ artifact in the repository and every security claim has an executable check.
 |---|---|---|
 | Requirements | Security requirements written as testable statements (SR-n) | SECURITY-REQUIREMENTS.md; CI job `security-requirements` fails when a row has no existing test |
 | Design | Threat model per trust boundary, STRIDE table, explicit contracts for budgets and evidence | THREAT-MODEL.md, ARCHITECTURE.md, PROTOCOLS.md profile per family |
-| Implementation | Bounded parsing patterns (length before allocation, one parser per stream, immutable registries), no runtime dependencies, Python 3.9 syntax | Code review via PR template checklist; CODEOWNERS |
+| Implementation | Bounded parsing patterns (length before allocation, one parser per stream, immutable registries), no runtime dependencies, Python 3.9 syntax | CONTRIBUTING.md definition of done, code review via PR template checklist, issue templates that ask for synthetic inputs only; CODEOWNERS |
 | Verification | Unit tests (every split point, single bytes, truncations), seeded mutation fuzzing, GC-release tests, work-bound assertions, static analysis, documentation numbers recomputed from the tree | `make check`, CI `verify` matrix (3.9/3.11/3.13) with job summaries, ruff, bandit, CodeQL (error-level findings fail via `tools/codeql_gate.py`; SARIF kept as an artifact, uploaded to the Security tab once code scanning is enabled in repository settings), `tools/check_docs_counts.py` (README/REVIEW-SCOPE families, applications, tests and version), nightly fuzz |
 | Supply chain | SHA-pinned actions, hash-pinned dev tools (wheel and source hashes where a wheel is platform specific), known-vulnerability audit of the toolchain, SBOM, read-only tokens with per-job additions only where a step needs them, Dependabot, workflow linting | CI `supply-chain`, CI `toolchain-audit` (pip-audit over requirements-dev.txt in hash mode, strict, also on the weekly schedule so new advisories surface without a code change), dependabot.yml, `tools/check_action_pins.py`, CI `workflow-lint` (actionlint fetched by version with its published SHA-256 verified before use), harden-runner egress audit on every job |
 | Release | The full gate on the tagged commit (compile, tests, ruff, pins, security requirements, docs numbers, coverage matrix, policy lint), tag must equal the package version, sdist/wheel, SBOM, build provenance attestation, checksums | `.github/workflows/release.yml` |
@@ -63,7 +63,7 @@ workflow defect, never an engine finding.
 make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint, coverage matrix, docs numbers
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories (dev tools installed)
 make ci-local       # make check plus extended fuzzing and the offline replay/schema validation CI runs
-make workflow-lint  # actionlint over .github/workflows (needs a local actionlint; CI fetches a checksum-verified release)
+make workflow-lint  # actionlint over .github/workflows (needs a local actionlint and shellcheck, which the hosted runner has; CI fetches a checksum-verified release)
 make fuzz           # extended seeded fuzzing
 python3 -B tools/compare_engine.py ../previous-checkout --report diff.md   # behaviour diff against another tree
 make sbom           # CycloneDX SBOM of the environment (requires dev tools)
