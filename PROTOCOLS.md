@@ -18,7 +18,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | bittorrent | tcp | Automatic profiles | initial_message | 68-byte peer handshake; encrypted transport unsupported |
 | coap | udp | Automatic profiles | datagram | CoAP v1 framing, token <=8; tiny messages require coap hint |
 | cql | tcp | Automatic profiles | protocol_header | Cassandra native protocol v4 STARTUP/OPTIONS |
-| dcerpc | tcp | Automatic profiles | bind_request | Connection-oriented v5.0 unfragmented Bind, NDR 2.0/NDR64 1.0 offers; no authentication, replies, stub decoding or product identity |
+| dcerpc | tcp | Automatic profiles | bind_request | Connection-oriented v5.0 unfragmented Bind, Bind_ack (result list, accepted NDR 2.0/NDR64 1.0) and Bind_nak; no authentication, stub decoding or product identity |
 | dhcp | udp | Automatic profiles | datagram | DHCPv4 types 1..8, no overloaded options |
 | dnp3 | tcp | Automatic profiles | protocol_header | Data link frame with header and block CRCs verified |
 | dns | tcp/udp | Automatic profiles | initial_message/datagram | Query or response with QUERY opcode and one question, bounded record walk; message kind and rcode reported; TCP length prefixes >=512 require dns hint |
@@ -36,7 +36,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | ipfix | udp | Automatic profiles | datagram | IPFIX (RFC 7011) message header and set framing, validated by the shared flow-export validator |
 | iso-tsap | tcp | Automatic profiles | negotiation_request | TPKT/X.224 connection request with TSAP parameters (RFC 1006); shares the TPKT route with RDP |
 | kafka | tcp | Automatic profiles | request_header | Request header for ApiVersions/Metadata/Produce/Fetch/SaslHandshake and similar first requests |
-| kerberos | tcp/udp | Automatic profiles | initial_message/datagram | KDC AS-REQ/TGS-REQ ASN.1 framing (pvno 5, msg-type, req-body); principals and pre-authentication unverified |
+| kerberos | tcp/udp | Automatic profiles | initial_message/datagram | KDC AS/TGS-REQ, AS/TGS-REP and KRB-ERROR ASN.1 framing (pvno 5, msg-type per tag, ordered fields, error code reported); principals, tickets and pre-authentication unverified and never emitted |
 | l2tp | udp | Automatic profiles | datagram | L2TPv2 SCCRQ control message with Message Type AVP first |
 | ldap | tcp | Automatic profiles | initial_message | LDAPv3 BindRequest, simple/SASL; no controls or searches |
 | memcached | tcp | Automatic profiles | initial_message | Selected binary request commands 0x00..0x10; no SASL/text/meta |
@@ -65,7 +65,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | sflow | udp | Automatic profiles | datagram | sFlow v5 datagram with IPv4 agent and bounded sample headers |
 | sip | tcp/udp | Automatic profiles | initial_headers/datagram | SIP/2.0 required header framing; no dialogue/body semantics |
 | smb1 | tcp | Automatic profiles | negotiation_request | NetBIOS session header plus SMB_COM_NEGOTIATE request with dialect strings; maps to the smb application |
-| smb2 | tcp | Automatic profiles | negotiation_request | Direct TCP SMB2/3 NEGOTIATE including 3.1.1 context framing; offers only |
+| smb2 | tcp | Automatic profiles | negotiation_request | Direct TCP SMB2/3 NEGOTIATE request (offers) or response (selected dialect, signing mode, 3.1.1 contexts); security token not emitted |
 | smtp | tcp | Automatic profiles | initial_message | EHLO/HELO only; ambiguous 220 banners unknown |
 | snmp | udp | Automatic profiles | datagram | v1/v2c and v3 messages with every standard PDU kind (Get, GetNext, GetBulk, Set, Response, Trap, Inform, Report; v3 USM header and plaintext or encrypted scoped PDU); PDU kind reported, values never emitted |
 | socks5 | tcp | Automatic profiles | initial_message/negotiation_response | Client no-auth offer plus request, or server method selection plus reply; subnegotiation and tunnel unverified |
@@ -1193,3 +1193,41 @@ record.
 
 Primary specifications: [RFC 3416](https://www.rfc-editor.org/rfc/rfc3416.html), [RFC 1157 4.1.6](https://www.rfc-editor.org/rfc/rfc1157.html#section-4.1.6),
 [RFC 2578](https://www.rfc-editor.org/rfc/rfc2578.html), [RFC 1035 4.1.1](https://www.rfc-editor.org/rfc/rfc1035.html#section-4.1.1).
+
+## Server replies: SMB2 NEGOTIATE response, Kerberos replies and errors, DCE/RPC bind results (v0.44)
+
+`smb2` accepts the NEGOTIATE response (MS-SMB2 2.2.4): header flags exactly
+SERVER_TO_REDIR, STATUS_SUCCESS, no chained command, body StructureSize 65,
+SecurityMode with signing enabled or required, DialectRevision in 2.0.2, 2.1,
+2.???(wildcard), 3.0, 3.0.2 or 3.1.1, nonzero transfer sizes, a security buffer
+at offset 128 inside the frame (the GSS token is never emitted) and, for 3.1.1
+only, negotiate contexts aligned to 8 bytes with exactly one selected
+pre-authentication hash and at most one cipher. Evidence `smb_dialect`
+(`2.0.2`, `2.1`, `wildcard`, `3.0`, `3.0.2`, `3.1.1`) and `smb_signing`
+(`enabled`/`required`), both asserted. Requests are unchanged.
+
+`kerberos` accepts AS-REP (tag 11), TGS-REP (13) and KRB-ERROR (30) on UDP and
+TCP next to the requests. Replies need pvno 5, a msg-type matching the tag,
+strictly ordered context fields from the KDC-REP definition (optional padata,
+crealm as a non-empty GeneralString, cname, ticket under APPLICATION 1,
+enc-part) and nothing else. KRB-ERROR needs pvno, msg-type, stime as a
+GeneralizedTime in UTC, susec, an error-code 0..127, realm and sname; ctime,
+cusec, crealm, cname, e-text and e-data are optional with their own tags.
+Evidence `kerberos_message` (`as-req`, `tgs-req`, `as-rep`, `tgs-rep`,
+`error`) and `kerberos_error` (the numeric code). Principals, realms, tickets,
+encrypted parts and error text are never emitted. RISKS.md derives
+`kerberos-error-response` from any code other than 25.
+
+`dcerpc` accepts Bind_ack (type 12) and Bind_nak (type 13) with the Bind header
+rules (version 5.0, first and last fragment flags, ASCII/IEEE representation,
+no authentication verifier). Bind_ack: nonzero max transmit/receive sizes, a
+secondary address of at most 256 printable bytes with its terminator, 4-byte
+alignment, a result list whose count matches the PDU exactly; accepted or
+negotiate-ack results carry NDR 2.0 or NDR64 1.0, rejected ones a nil syntax.
+Bind_nak: reject reason 0..9 or 0xffff, 1..32 protocol versions all major 5,
+an optional Microsoft signature tail. Evidence `dcerpc_pdu` (`bind`,
+`bind-ack`, `bind-nak`) and `accepted_transfer_syntax`; the secondary address
+and association group are never emitted.
+
+Primary specifications: [MS-SMB2 2.2.4](https://learn.microsoft.com/openspecs/windows_protocols/ms-smb2/63abf97c-0d09-47e2-88d6-6bfa552949a5),
+[RFC 4120 5.4.2, 5.9.1](https://www.rfc-editor.org/rfc/rfc4120.html#section-5.4.2), [C706 12.6.4.4-12.6.4.5](https://pubs.opengroup.org/onlinepubs/9629399/chap12.htm).

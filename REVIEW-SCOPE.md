@@ -1,11 +1,20 @@
-# Review scope: protocol detector v0.43
+# Review scope: protocol detector v0.44
 
 Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.43): `_snmp_pdu`/`_snmp_bindings` in network.py (per-kind
+New focus (v0.44): `SMB2Parser._response`/`_contexts` (network.py), the
+rewritten `_kerberos_body` with `_kerberos_fields` (windows.py: three field
+layouts, strictly increasing tags, GeneralizedTime and error-code bounds,
+dispatch and probe tags 11/13/30) and `DCERPCParser._bind_ack`/`_bind_nak`
+(secondary address bounds and alignment, result list arithmetic, nil syntax on
+rejection, nak version list with the optional signature tail). Trace: no
+token, principal, realm, ticket, address or association group in evidence or
+reasons; every split point; the kerberos-error-response rule. 458 tests pass.
+
+Previous focus (v0.43): `_snmp_pdu`/`_snmp_bindings` in network.py (per-kind
 status rules, the v1 Trap-PDU layout, the SMI value tag and length table,
 version-specific PDU sets for v1, v2c and v3), `dns_message_evidence` and the
 stricter query rule in wire.py, and the DatagramMatch returns that now carry

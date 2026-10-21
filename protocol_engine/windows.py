@@ -1,4 +1,6 @@
 """SMB1 negotiate, NetBIOS session request, Kerberos AS/TGS requests and TACACS+ headers."""
+from .datagram_result import DatagramMatch
+from .model import Evidence
 from .framing import FrameParser, ber_field, ber_length
 from .parsers import BudgetError, ParseError
 from .extended import UnsupportedPrefix
@@ -69,56 +71,128 @@ class NetBIOSSessionParser(FrameParser):
         self.reason = "NetBIOS session request names validated (first-level encoding); names are not emitted"
 
 
-def _kerberos_body(data, limit, config):
-    """Validate KDC-REQ: [APPLICATION 10|12] SEQUENCE { [1] pvno 5, [2] msg-type, [3] padata?, [4] req-body }."""
-    tag = data[0]
-    if tag not in (0x6a, 0x6c):
-        raise UnsupportedPrefix("Kerberos profile supports AS-REQ and TGS-REQ only")
-    outer, end = ber_field(data, 0, limit, tag)
-    if end != limit:
-        raise ParseError("Trailing bytes after Kerberos request")
-    sequence, end = ber_field(outer, 0, len(outer), 0x30)
-    if end != len(outer):
-        raise ParseError("Kerberos request wrapper must contain one SEQUENCE")
-    pos, seen = 0, []
+_KRB_TAGS = {0x6a: ("as-req", b"\x0a"), 0x6c: ("tgs-req", b"\x0c"), 0x6b: ("as-rep", b"\x0b"), 0x6d: ("tgs-rep", b"\x0d"), 0x7e: ("error", b"\x1e")}
+KRB_ERR_PREAUTH_REQUIRED = 25
+
+
+def _kerberos_fields(sequence, config, allowed, budget):
+    """Yield (field number, value) of a KDC message SEQUENCE: context-specific, strictly increasing."""
+    pos, last, count = 0, -1, 0
     while pos < len(sequence):
-        if len(seen) > 4:
-            raise BudgetError("Kerberos request field count exceeds profile")
+        count += 1
+        if count > budget:
+            raise BudgetError("Kerberos field count exceeds profile")
         field_tag = sequence[pos]
         if field_tag & 0xe0 != 0xa0:
-            raise ParseError("Kerberos request fields must be context-specific constructed")
+            raise ParseError("Kerberos fields must be context-specific constructed")
         value, pos = ber_field(sequence, pos, len(sequence), field_tag)
         number = field_tag & 0x1f
-        if seen and number <= seen[-1]:
-            raise ParseError("Kerberos request fields out of order")
-        seen.append(number)
-        if number == 1:
-            integer, _ = ber_field(value, 0, len(value), 2)
-            if integer != b"\x05":
+        if number <= last or number not in allowed:
+            raise ParseError("Kerberos fields out of order or outside the message definition")
+        last = number
+        yield number, value
+
+
+def _krb_inner(value, tag, what):
+    inner, end = ber_field(value, 0, len(value), tag)
+    if end != len(value):
+        raise ParseError("Kerberos " + what + " framing invalid")
+    return inner
+
+
+def _kerberos_body(data, limit, config):
+    """Validate one KDC message: AS/TGS-REQ, AS/TGS-REP or KRB-ERROR; return (reason, evidence rows)."""
+    tag = data[0]
+    if tag not in _KRB_TAGS:
+        raise UnsupportedPrefix("Kerberos profile covers KDC requests, replies and KRB-ERROR")
+    name, msg_type = _KRB_TAGS[tag]
+    outer, end = ber_field(data, 0, limit, tag)
+    if end != limit:
+        raise ParseError("Trailing bytes after Kerberos message")
+    sequence, end = ber_field(outer, 0, len(outer), 0x30)
+    if end != len(outer):
+        raise ParseError("Kerberos wrapper must contain one SEQUENCE")
+    evidence = [("kerberos_message", name, "message", "structural")]
+    if name.endswith("req"):
+        seen = set()
+        for number, value in _kerberos_fields(sequence, config, (1, 2, 3, 4), 5):
+            seen.add(number)
+            if number == 1 and _krb_inner(value, 2, "pvno") != b"\x05":
                 raise UnsupportedPrefix("Kerberos pvno outside version 5")
-        elif number == 2:
-            integer, _ = ber_field(value, 0, len(value), 2)
-            if integer != (b"\x0a" if tag == 0x6a else b"\x0c"):
+            elif number == 2 and _krb_inner(value, 2, "msg-type") != msg_type:
                 raise ParseError("Kerberos msg-type disagrees with application tag")
-        elif number == 3:
-            padata, inner_end = ber_field(value, 0, len(value), 0x30)
-            if inner_end != len(value):
-                raise ParseError("Kerberos padata framing invalid")
-            count, inner = 0, 0
-            while inner < len(padata):
-                count += 1
-                if count > min(config.max_headers, 32):
-                    raise BudgetError("Kerberos padata count exceeds budget")
-                _, inner = ber_field(padata, inner, len(padata), 0x30)
-        elif number == 4:
-            body, inner_end = ber_field(value, 0, len(value), 0x30)
-            if inner_end != len(value) or not body:
+            elif number == 3:
+                padata = _krb_inner(value, 0x30, "padata")
+                count, inner = 0, 0
+                while inner < len(padata):
+                    count += 1
+                    if count > min(config.max_headers, 32):
+                        raise BudgetError("Kerberos padata count exceeds budget")
+                    _, inner = ber_field(padata, inner, len(padata), 0x30)
+            elif number == 4 and not _krb_inner(value, 0x30, "req-body"):
                 raise ParseError("Kerberos req-body framing invalid")
-        else:
-            raise ParseError("Unexpected Kerberos request field")
-    if 1 not in seen or 2 not in seen or 4 not in seen:
-        raise ParseError("Kerberos request requires pvno, msg-type and req-body")
-    return "kerberos", "Kerberos KDC request ASN.1 framing validated; principals, pre-authentication and tickets unverified"
+        if not {1, 2, 4} <= seen:
+            raise ParseError("Kerberos request requires pvno, msg-type and req-body")
+        return "Kerberos KDC request ASN.1 framing validated; principals, pre-authentication and tickets unverified", tuple(evidence)
+    if name.endswith("rep"):
+        seen = set()
+        for number, value in _kerberos_fields(sequence, config, (0, 1, 2, 3, 4, 5, 6), 8):
+            seen.add(number)
+            if number == 0 and _krb_inner(value, 2, "pvno") != b"\x05":
+                raise UnsupportedPrefix("Kerberos pvno outside version 5")
+            elif number == 1 and _krb_inner(value, 2, "msg-type") != msg_type:
+                raise ParseError("Kerberos msg-type disagrees with application tag")
+            elif number == 2:
+                padata = _krb_inner(value, 0x30, "padata")
+                count, inner = 0, 0
+                while inner < len(padata):
+                    count += 1
+                    if count > min(config.max_headers, 32):
+                        raise BudgetError("Kerberos padata count exceeds budget")
+                    _, inner = ber_field(padata, inner, len(padata), 0x30)
+            elif number == 3 and not _krb_inner(value, 0x1b, "crealm"):
+                raise ParseError("Kerberos crealm must be a non-empty GeneralString")
+            elif number == 4 and not _krb_inner(value, 0x30, "cname"):
+                raise ParseError("Kerberos cname framing invalid")
+            elif number == 5 and not _krb_inner(value, 0x61, "ticket"):
+                raise ParseError("Kerberos ticket framing invalid")
+            elif number == 6 and not _krb_inner(value, 0x30, "enc-part"):
+                raise ParseError("Kerberos enc-part framing invalid")
+        if not {0, 1, 3, 4, 5, 6} <= seen:
+            raise ParseError("Kerberos reply requires pvno, msg-type, crealm, cname, ticket and enc-part")
+        return "Kerberos KDC reply ASN.1 framing validated; ticket and encrypted part opaque, principals not emitted", tuple(evidence)
+    seen, code = set(), None
+    for number, value in _kerberos_fields(sequence, config, tuple(range(13)), 14):
+        seen.add(number)
+        if number == 0 and _krb_inner(value, 2, "pvno") != b"\x05":
+            raise UnsupportedPrefix("Kerberos pvno outside version 5")
+        elif number == 1 and _krb_inner(value, 2, "msg-type") != msg_type:
+            raise ParseError("Kerberos msg-type disagrees with application tag")
+        elif number in (2, 4):
+            stamp = _krb_inner(value, 0x18, "time")
+            if len(stamp) != 15 or not stamp[:14].isdigit() or stamp[14:] != b"Z":
+                raise ParseError("Kerberos time must be a GeneralizedTime in UTC")
+        elif number in (3, 5):
+            usec = _krb_inner(value, 2, "microseconds")
+            if not 1 <= len(usec) <= 3 or int.from_bytes(usec, "big", signed=True) < 0:
+                raise ParseError("Kerberos microseconds outside range")
+        elif number == 6:
+            raw = _krb_inner(value, 2, "error-code")
+            code = int.from_bytes(raw, "big", signed=True)
+            if not 1 <= len(raw) <= 2 or not 0 <= code <= 127:
+                raise ParseError("Kerberos error-code outside RFC 4120 range")
+        elif number in (7, 9) and not _krb_inner(value, 0x1b, "realm"):
+            raise ParseError("Kerberos realm must be a non-empty GeneralString")
+        elif number in (8, 10) and not _krb_inner(value, 0x30, "principal"):
+            raise ParseError("Kerberos principal framing invalid")
+        elif number == 11:
+            _krb_inner(value, 0x1b, "e-text")
+        elif number == 12:
+            _krb_inner(value, 4, "e-data")
+    if not {0, 1, 4, 5, 6, 9, 10} <= seen:
+        raise ParseError("KRB-ERROR requires pvno, msg-type, stime, susec, error-code, realm and sname")
+    evidence.append(("kerberos_error", str(code), "message", "structural"))
+    return "KRB-ERROR ASN.1 framing validated; error code reported, principals and text not emitted", tuple(evidence)
 
 
 class KerberosParser(FrameParser):
@@ -135,18 +209,23 @@ class KerberosParser(FrameParser):
         return 4 + size
 
     def validate(self, data):
-        self.protocol_name, self.reason = _kerberos_body(data[4:], len(data) - 4, self.config)
+        self.reason, self.extra_evidence = _kerberos_body(data[4:], len(data) - 4, self.config)
+        if self.extra_evidence[0][1].endswith(("rep", "error")):
+            self.scope = "negotiation_response"
 
 
 def kerberos(data, config):
     if len(data) < 40:
-        raise ParseError("Kerberos datagram too short for a KDC request")
-    return _kerberos_body(data, len(data), config)
+        raise ParseError("Kerberos datagram too short for a KDC message")
+    reason, rows = _kerberos_body(data, len(data), config)
+    return DatagramMatch(reason, application_protocol="kerberos",
+                         evidence=(Evidence("application_protocol", "kerberos", "wire", "structural"),)
+                         + tuple(Evidence(field, value, "wire:" + source, strength) for field, value, source, strength in rows))
 
 
 def kerberos_probe(data):
-    """Application tag 10/12 with a definite length that exactly fits the message."""
-    if len(data) < 40 or data[0] not in (0x6a, 0x6c):
+    """Application tag 10/11/12/13/30 with a definite length that exactly fits the message."""
+    if len(data) < 40 or data[0] not in _KRB_TAGS:
         return False
     try:
         size, start = ber_length(data, 1, len(data))

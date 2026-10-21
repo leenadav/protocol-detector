@@ -62,6 +62,9 @@ class BGPParser(FrameParser):
         self.reason = "BGPv4 OPEN and capability framing validated; peer identity and session unverified"
 
 
+_SMB_DIALECTS = {0x202: "2.0.2", 0x210: "2.1", 0x2ff: "wildcard", 0x300: "3.0", 0x302: "3.0.2", 0x311: "3.1.1"}
+
+
 class SMB2Parser(FrameParser):
     header_size = 8
     protocol_name = "smb2"
@@ -80,9 +83,12 @@ class SMB2Parser(FrameParser):
         u16 = lambda at: int.from_bytes(data[at:at + 2], "little")
         u32 = lambda at: int.from_bytes(data[at:at + 4], "little")
         if u16(4) != 64 or u16(12) != 0:
-            raise UnsupportedPrefix("Only SMB2 NEGOTIATE requests supported")
+            raise UnsupportedPrefix("Only SMB2 NEGOTIATE requests and responses supported")
+        flags = u32(16)
+        if flags == 1:
+            return self._response(data, u16, u32)
         # This initial synchronous request is unsigned and not compounded.
-        if u32(16) != 0 or u32(20) != 0 or any(data[8:12] + data[36:64]):
+        if flags != 0 or u32(20) != 0 or any(data[8:12] + data[36:64]):
             raise ParseError("Invalid initial SMB2 request flags, IDs or signature")
         if u16(64) != 36 or u16(68) not in (1, 2, 3) or u16(70) != 0:
             raise ParseError("Invalid SMB2 negotiate fixed fields")
@@ -101,37 +107,66 @@ class SMB2Parser(FrameParser):
             if any(data[92:100]) or len(data) != end:
                 raise ParseError("Unexpected SMB2 negotiate extension")
         else:
-            pos, contexts = u32(92), u16(96)
-            if not contexts or contexts > 128:
-                raise BudgetError("SMB3 negotiate context count outside inspection limit")
-            if u16(98) or pos < end or pos % 8 or pos > len(data):
-                raise ParseError("Invalid SMB3 context offset")
-            seen = set()
-            for index in range(contexts):
-                if pos + 8 > len(data):
-                    raise ParseError("Truncated SMB3 context header")
-                kind, size = u16(pos), u16(pos + 2)
-                if kind in seen or u32(pos + 4):
-                    raise ParseError("Duplicate SMB3 context or nonzero reserved field")
-                seen.add(kind)
-                start, end = pos + 8, pos + 8 + size
-                if end > len(data):
-                    raise ParseError("SMB3 context exceeds frame")
-                if kind == 1:
-                    if size < 6:
-                        raise ParseError("Truncated SMB3 preauthentication context")
-                    hashes, salt = u16(start), u16(start + 2)
-                    if not hashes or 4 + 2 * hashes + salt != size:
-                        raise ParseError("Invalid SMB3 preauthentication lengths")
-                    if 1 not in {u16(at) for at in range(start + 4, start + 4 + 2 * hashes, 2)}:
-                        raise UnsupportedPrefix("SMB3 preauthentication lacks supported SHA-512 offer")
-                elif kind == 2:
-                    if size < 4 or not u16(start) or 2 + 2 * u16(start) != size:
-                        raise ParseError("Invalid SMB3 encryption capability lengths")
-                pos = (end + 7) & ~7 if index + 1 < contexts else end
-            if 1 not in seen or pos != len(data):
-                raise ParseError("Missing SMB3 preauthentication context or trailing data")
+            self._contexts(data, u16, u32, u32(92), u16(96), end, u16(98))
         self.reason = "SMB2/3 direct TCP NEGOTIATE request validated; dialects are offers, signing/encryption unverified"
+
+    def _contexts(self, data, u16, u32, pos, contexts, end, reserved, response=False):
+        """SMB 3.1.1 negotiate contexts: 8-byte aligned, unique kinds, preauth (kind 1) required."""
+        if not contexts or contexts > 128:
+            raise BudgetError("SMB3 negotiate context count outside inspection limit")
+        if reserved or pos < end or pos % 8 or pos > len(data):
+            raise ParseError("Invalid SMB3 context offset")
+        seen = set()
+        for index in range(contexts):
+            if pos + 8 > len(data):
+                raise ParseError("Truncated SMB3 context header")
+            kind, size = u16(pos), u16(pos + 2)
+            if kind in seen or u32(pos + 4):
+                raise ParseError("Duplicate SMB3 context or nonzero reserved field")
+            seen.add(kind)
+            start, end = pos + 8, pos + 8 + size
+            if end > len(data):
+                raise ParseError("SMB3 context exceeds frame")
+            if kind == 1:
+                if size < 6:
+                    raise ParseError("Truncated SMB3 preauthentication context")
+                hashes, salt = u16(start), u16(start + 2)
+                if not hashes or 4 + 2 * hashes + salt != size or (response and hashes != 1):
+                    raise ParseError("Invalid SMB3 preauthentication lengths")
+                if 1 not in {u16(at) for at in range(start + 4, start + 4 + 2 * hashes, 2)}:
+                    raise UnsupportedPrefix("SMB3 preauthentication lacks supported SHA-512 offer")
+            elif kind == 2:
+                if size < 4 or not u16(start) or 2 + 2 * u16(start) != size or (response and u16(start) != 1):
+                    raise ParseError("Invalid SMB3 encryption capability lengths")
+            pos = (end + 7) & ~7 if index + 1 < contexts else end
+        if 1 not in seen or pos != len(data):
+            raise ParseError("Missing SMB3 preauthentication context or trailing data")
+
+    def _response(self, data, u16, u32):
+        """MS-SMB2 2.2.4 NEGOTIATE response: fixed 64-byte body, security buffer, 3.1.1 contexts."""
+        if u32(8) != 0 or u32(20) != 0:
+            raise UnsupportedPrefix("SMB2 NEGOTIATE response profile covers STATUS_SUCCESS without next-command chaining")
+        if len(data) < 128 or u16(64) != 65:
+            raise ParseError("SMB2 NEGOTIATE response body shorter than its fixed fields")
+        security_mode, dialect, contexts = u16(66), u16(68), u16(70)
+        if security_mode not in (1, 2, 3):
+            raise ParseError("SMB2 response security mode must enable signing")
+        if dialect not in _SMB_DIALECTS:
+            raise UnsupportedPrefix("SMB2 response dialect outside the profile")
+        if not u32(92) or not u32(96) or not u32(100):
+            raise ParseError("SMB2 response transfer sizes must be nonzero")
+        offset, length = u16(120), u16(122)
+        if length and (offset != 128 or offset + length > len(data)):
+            raise ParseError("SMB2 response security buffer outside the frame")
+        end = 128 + length
+        if dialect == 0x311:
+            self._contexts(data, u16, u32, u32(124), contexts, end, 0, response=True)
+        elif contexts or u32(124) or len(data) != end:
+            raise ParseError("Negotiate contexts require dialect 3.1.1")
+        self.scope = "negotiation_response"
+        self.reason = "SMB2/3 NEGOTIATE response validated; selected dialect and signing mode unauthenticated, security token not emitted"
+        self.extra_evidence = (("smb_dialect", _SMB_DIALECTS[dialect], "negotiate_response", "asserted"),
+                               ("smb_signing", "required" if security_mode & 2 else "enabled", "negotiate_response", "asserted"))
 
 
 def tftp(data, config):

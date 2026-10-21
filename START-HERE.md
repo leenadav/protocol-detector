@@ -368,3 +368,10 @@ CONNECT, ACCEPT, REFUSE ו־RESEND של Oracle Net (סכומי בדיקה בכו
 הסוג. DNS מדווח `dns_message` ולתשובות גם `dns_rcode`; שאילתות שנושאות תשובות או קוד תשובה נדחות. הסיכון החדש
 `dns-error-response` מסמן תשובות servfail, nxdomain ו־refused, כך שגם צד השרת של זרמי UDP תורם ראיות לפסק הדין.
 454 בדיקות עוברות.
+
+
+עדכון 0.44: צד השרת של שלוש משפחות נוספות מאומת: תשובת NEGOTIATE של SMB2 (דיאלקט נבחר, מצב חתימה, הקשרי 3.1.1;
+ראיות `smb_dialect` ו־`smb_signing`), AS-REP, TGS-REP ו־KRB-ERROR של Kerberos ב־UDP וב־TCP (ראיות `kerberos_message`
+ו־`kerberos_error`; שמות ראשיים וכרטיסים אינם נפלטים) ו־Bind_ack/Bind_nak של DCE/RPC (ראיות `dcerpc_pdu` ו־
+`accepted_transfer_syntax`). הסיכון הנמוך החדש `kerberos-error-response` מסמן שגיאות KDC שאינן שלב
+pre-authentication-required השגרתי. 458 בדיקות עוברות.

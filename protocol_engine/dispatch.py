@@ -123,7 +123,7 @@ def select(prefix):
             return "pptp"
         if prefix[4:8] == b"\x21\x12\xa4\x42":
             return "stun"
-        if first == 0 and prefix[4] in (0x6a, 0x6c) and _kerberos_length(prefix):
+        if first == 0 and prefix[4] in (0x6a, 0x6b, 0x6c, 0x6d, 0x7e) and _kerberos_length(prefix):
             return "kerberos"
         if prefix[2:4] == b"\x00\x00" and prefix[4] in (1, 2, 4, 11) and prefix[5] == 0 and prefix[6:8] == b"\x00\x00":
             # Oracle Net header: length, checksum 0, type, reserved 0, header checksum 0.

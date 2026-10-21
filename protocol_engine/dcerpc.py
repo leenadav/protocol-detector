@@ -28,8 +28,9 @@ class DCERPCParser(FrameParser):
     scope = 'bind_request'
 
     def frame_size(self, data):
-        if data[:3] != b'\x05\x00\x0b':
-            raise UnsupportedPrefix('DCE/RPC profile requires version 5.0 Bind')
+        if data[:2] != b'\x05\x00' or data[2] not in (0x0b, 0x0c, 0x0d):
+            raise UnsupportedPrefix('DCE/RPC profile requires version 5.0 Bind, Bind_ack or Bind_nak')
+        self.ptype = data[2]
         if data[3] & 3 != 3 or data[3] & ~0x17:
             raise UnsupportedPrefix('DCE/RPC profile requires unfragmented bind flags')
         if data[4:8] not in (b'\0\0\0\0', b'\x10\0\0\0'):
@@ -38,11 +39,15 @@ class DCERPCParser(FrameParser):
         if int.from_bytes(data[10:12], self.byteorder):
             raise UnsupportedPrefix('DCE/RPC authentication verifier outside profile')
         size = int.from_bytes(data[8:10], self.byteorder)
-        if size < 72:
-            raise ParseError('DCE/RPC bind too short for one presentation context')
+        if size < {0x0b: 72, 0x0c: 52, 0x0d: 21}[self.ptype]:
+            raise ParseError('DCE/RPC PDU too short for its type')
         return size
 
     def validate(self, data):
+        if self.ptype == 0x0c:
+            return self._bind_ack(data)
+        if self.ptype == 0x0d:
+            return self._bind_nak(data)
         count = data[24]
         if not count or any(data[25:28]):
             raise ParseError('Invalid DCE/RPC context list count or reserved fields')
@@ -82,6 +87,64 @@ class DCERPCParser(FrameParser):
                 pos += 20
         if pos != len(data):
             raise ParseError('Unexpected bytes after DCE/RPC bind context list')
-        self.extra_evidence = tuple(('offered_transfer_syntax', name, 'bind_request', 'offered')
-                                    for name in sorted(offered))
+        self.extra_evidence = (('dcerpc_pdu', 'bind', 'header', 'structural'),) + tuple(
+            ('offered_transfer_syntax', name, 'bind_request', 'offered') for name in sorted(offered))
         self.reason = 'DCE/RPC bind presentation offers validated; interface identity, server and negotiation unverified'
+
+    def _bind_ack(self, data):
+        """Bind_ack: max sizes, association group, secondary address, result list with one entry per context."""
+        order = self.byteorder
+        if not int.from_bytes(data[16:18], order) or not int.from_bytes(data[18:20], order):
+            raise ParseError('DCE/RPC bind_ack transfer sizes must be nonzero')
+        address_length = int.from_bytes(data[24:26], order)
+        pos = 26 + address_length
+        if address_length > 256 or pos > len(data) or (address_length and (data[pos - 1] != 0 or not all(0x20 <= b < 0x7f for b in data[26:pos - 1]))):
+            raise ParseError('DCE/RPC secondary address outside the profile')
+        pos = (pos + 3) & ~3
+        if pos + 4 > len(data):
+            raise ParseError('Truncated DCE/RPC result list header')
+        count = data[pos]
+        if not count or any(data[pos + 1:pos + 4]):
+            raise ParseError('Invalid DCE/RPC result list count or reserved fields')
+        if count > min(self.config.max_headers, 128):
+            raise BudgetError('DCE/RPC result count exceeds budget')
+        pos += 4
+        if len(data) - pos != 24 * count:
+            raise ParseError('DCE/RPC result list length disagrees with its count')
+        syntaxes = _SYNTAXES[order]
+        accepted = set()
+        for _ in range(count):
+            result = int.from_bytes(data[pos:pos + 2], order)
+            syntax = data[pos + 4:pos + 24]
+            if result > 3:
+                raise ParseError('DCE/RPC context result outside the specification')
+            if result in (0, 3):
+                name = syntaxes.get(syntax)
+                if name is None:
+                    raise UnsupportedPrefix('DCE/RPC accepted transfer syntax outside NDR 2.0 / NDR64 1.0 profile')
+                accepted.add(name)
+            elif any(syntax):
+                raise ParseError('DCE/RPC rejected context must carry a nil transfer syntax')
+            pos += 24
+        self.scope = 'bind_response'
+        self.extra_evidence = (('dcerpc_pdu', 'bind-ack', 'header', 'structural'),) + tuple(
+            ('accepted_transfer_syntax', name, 'bind_ack', 'asserted') for name in sorted(accepted))
+        self.reason = 'DCE/RPC bind_ack result list validated; secondary address not emitted, interface identity unverified'
+
+    def _bind_nak(self, data):
+        """Bind_nak: reject reason and supported protocol versions; a trailing signature (MS extension) is tolerated."""
+        order = self.byteorder
+        reason = int.from_bytes(data[16:18], order)
+        if reason > 9 and reason != 0xffff:
+            raise ParseError('DCE/RPC bind_nak reason outside the specification')
+        count = data[18]
+        if not count or count > 32:
+            raise ParseError('DCE/RPC bind_nak version count outside the profile')
+        end = 19 + 2 * count
+        if end > len(data) or len(data) - end not in (0, 1, 2, 3, 16, 17, 18, 19):
+            raise ParseError('DCE/RPC bind_nak version list disagrees with the PDU length')
+        if any(data[at] != 5 for at in range(19, end, 2)):
+            raise UnsupportedPrefix('DCE/RPC bind_nak lists versions other than 5')
+        self.scope = 'bind_response'
+        self.extra_evidence = (('dcerpc_pdu', 'bind-nak', 'header', 'structural'),)
+        self.reason = 'DCE/RPC bind_nak validated; reject reason not emitted'

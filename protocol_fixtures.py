@@ -482,3 +482,80 @@ SNMP_TRAP_V1 = snmp_message(0xa4, _ber(6, b"\x2b\x06\x01\x04\x01\x81\x7f") + _be
                             + _ber(0x43, b"\x00\xff") + _ber(0x30, _ber(0x30, _SYS_DESCR + _ber(0x80, b""))), version=0)
 DATAGRAM_CASES += ((DNS_RESPONSE, "dns"), (DNS_NXDOMAIN, "dns"), (SNMP_RESPONSE, "snmp/2c"), (SNMP_SET, "snmp/2c"), (SNMP_INFORM, "snmp/2c"),
                    (SNMP_TRAP_V2, "snmp/2c"), (SNMP_TRAP_V1, "snmp/1"))
+
+
+# v0.44: server replies. GUIDs, tokens and principals are placeholders.
+def smb2_response(dialect=0x302, security_mode=1, token=b'\x60\x06\x06\x04placeholder'[:8], contexts=b'', context_count=0):
+    header = bytearray(64)
+    header[:4] = b'\xfeSMB'
+    header[4:6] = (64).to_bytes(2, 'little')
+    header[16:20] = (1).to_bytes(4, 'little')          # SERVER_TO_REDIR
+    header[14:16] = (1).to_bytes(2, 'little')          # credits granted
+    body = bytearray(64)
+    body[0:2] = (65).to_bytes(2, 'little')
+    body[2:4] = security_mode.to_bytes(2, 'little')
+    body[4:6] = dialect.to_bytes(2, 'little')
+    body[6:8] = context_count.to_bytes(2, 'little')
+    body[8:24] = bytes(range(16))
+    body[24:28] = (0x7f).to_bytes(4, 'little')
+    for at in (28, 32, 36):
+        body[at:at + 4] = (0x800000).to_bytes(4, 'little')
+    body[40:56] = bytes(16)
+    body[56:58] = (128 if token else 0).to_bytes(2, 'little')
+    body[58:60] = len(token).to_bytes(2, 'little')
+    frame = bytes(header) + bytes(body) + token
+    if contexts:
+        offset = (len(frame) + 7) & ~7
+        body[60:64] = offset.to_bytes(4, 'little')
+        frame = bytes(header) + bytes(body) + token + bytes(offset - len(frame)) + contexts
+    return len(frame).to_bytes(4, 'big') + frame
+
+
+_SMB_RESPONSE_CONTEXTS = (struct.pack('<HHIHHH', 1, 38, 0, 1, 32, 1) + bytes(32) + bytes(2) + struct.pack('<HHIHH', 2, 4, 0, 1, 2))
+SMB2_RESPONSE = smb2_response()
+SMB311_RESPONSE = smb2_response(dialect=0x311, security_mode=3, contexts=_SMB_RESPONSE_CONTEXTS, context_count=2)
+STREAM_CASES += ((SMB2_RESPONSE, 'smb2'), (SMB311_RESPONSE, 'smb2'))
+
+
+def _krb_principal(name):
+    return _ber(0x30, _ber(0xa0, _ber(2, b'\x01')) + _ber(0xa1, _ber(0x30, _ber(0x1b, name))))
+
+
+def krb_rep(tag=0x6b, fields=None):
+    msg_type = {0x6b: b'\x0b', 0x6d: b'\x0d'}[tag]
+    if fields is None:
+        fields = (_ber(0xa0, _ber(2, b'\x05')) + _ber(0xa1, _ber(2, msg_type)) + _ber(0xa3, _ber(0x1b, b'EXAMPLE.ORG'))
+                  + _ber(0xa4, _krb_principal(b'user'))
+                  + _ber(0xa5, _ber(0x61, _ber(0x30, _ber(0xa0, _ber(2, b'\x05')) + _ber(0xa1, _ber(0x1b, b'EXAMPLE.ORG'))
+                                            + _ber(0xa2, _krb_principal(b'krbtgt')) + _ber(0xa3, _ber(0x30, _ber(0xa0, _ber(2, b'\x12')) + _ber(0xa2, _ber(4, bytes(24))))))))
+                  + _ber(0xa6, _ber(0x30, _ber(0xa0, _ber(2, b'\x12')) + _ber(0xa2, _ber(4, bytes(32))))))
+    return _ber(tag, _ber(0x30, fields))
+
+
+def krb_error(code=25, fields=None):
+    if fields is None:
+        fields = (_ber(0xa0, _ber(2, b'\x05')) + _ber(0xa1, _ber(2, b'\x1e')) + _ber(0xa4, _ber(0x18, b'20260101120000Z')) + _ber(0xa5, _ber(2, b'\x01'))
+                  + _ber(0xa6, _ber(2, bytes([code]))) + _ber(0xa9, _ber(0x1b, b'EXAMPLE.ORG')) + _ber(0xaa, _krb_principal(b'krbtgt'))
+                  + _ber(0xac, _ber(4, bytes(12))))
+    return _ber(0x7e, _ber(0x30, fields))
+
+
+KERBEROS_AS_REP = krb_rep()
+KERBEROS_TGS_REP = krb_rep(0x6d)
+KERBEROS_ERROR = krb_error()
+DATAGRAM_CASES += ((KERBEROS_AS_REP, 'kerberos'), (KERBEROS_TGS_REP, 'kerberos'), (KERBEROS_ERROR, 'kerberos'))
+STREAM_CASES += tuple((len(data).to_bytes(4, 'big') + data, 'kerberos') for data in (KERBEROS_AS_REP, KERBEROS_ERROR))
+
+NDR20 = bytes.fromhex('045d888aeb1cc9119fe808002b10486002000000')
+
+
+def dcerpc_pdu(ptype, body, byteorder='little'):
+    order = b'\x10\x00\x00\x00' if byteorder == 'little' else b'\x00\x00\x00\x00'
+    size = (16 + len(body)).to_bytes(2, byteorder)
+    return b'\x05\x00' + bytes([ptype, 0x03]) + order + size + b'\x00\x00' + (1).to_bytes(4, byteorder) + body
+
+
+DCERPC_BIND_ACK = dcerpc_pdu(0x0c, struct.pack('<HHI', 0x10b8, 0x10b8, 0x12345678) + struct.pack('<H', 4) + b'135\x00' + bytes(2)
+                             + b'\x01\x00\x00\x00' + b'\x00\x00\x00\x00' + NDR20)
+DCERPC_BIND_NAK = dcerpc_pdu(0x0d, struct.pack('<H', 9) + b'\x01' + b'\x05\x00')
+STREAM_CASES += ((DCERPC_BIND_ACK, 'dcerpc/5.0'), (DCERPC_BIND_NAK, 'dcerpc/5.0'))

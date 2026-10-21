@@ -25,6 +25,7 @@ RISKS = MappingProxyType({
     "tls-weak-certificate-signature": ("high", "TLS 1.2 server leaf certificate signed with MD5 or SHA-1"),
     "tls-certificate-lifetime-excessive": ("low", "TLS 1.2 server leaf certificate valid for more than 398 days"),
     "dns-error-response": ("low", "DNS response with rcode servfail, nxdomain or refused"),
+    "kerberos-error-response": ("low", "KRB-ERROR other than KDC_ERR_PREAUTH_REQUIRED (the normal pre-authentication step)"),
     "tls-encrypted-client-hello": ("low", "ClientHello carries an outer encrypted_client_hello extension: the visible server_name is the client-facing public name and the real name is encrypted"),
 })
 MAX_CERTIFICATE_LIFETIME_DAYS = 398   # CA/Browser Forum baseline since September 2020
@@ -35,7 +36,7 @@ _LEGACY_TLS = frozenset(("1.0", "1.1", "SSL 3.0"))
 
 _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags", "rdp_selected_protocol",
                      "tls_offered_max_version", "dns_query_shape", "payload_class", "tls_certificate_self_issued",
-                     "tls_certificate_key", "tls_certificate_signature", "tls_certificate_lifetime_days", "tls_ech", "dns_rcode"))
+                     "tls_certificate_key", "tls_certificate_signature", "tls_certificate_lifetime_days", "tls_ech", "dns_rcode", "kerberos_error"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -115,6 +116,9 @@ def flow_risks(verdict, client, server):
             elif field == "tls_certificate_signature":
                 if value in WEAK_SIGNATURES:
                     found.append("tls-weak-certificate-signature")
+            elif field == "kerberos_error":
+                if value != "25":
+                    found.append("kerberos-error-response")
             elif field == "dns_rcode":
                 if value in ("servfail", "nxdomain", "refused"):
                     found.append("dns-error-response")
