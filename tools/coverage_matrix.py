@@ -43,6 +43,8 @@ DIRECTION_RULES = (
     ("fastcgi_record", lambda value: value in ("stdout", "stderr", "end-request")),
     ("memcached_message", lambda value: value == "response"),
     ("http2_message", lambda value: value == "response"),
+    ("zmtp_role", lambda value: value == "server"),
+    ("rpc_message", lambda value: value == "reply"),
 )
 HIDDEN_FIELDS = frozenset(("application_protocol", "encryption", "candidate_hint"))
 # Fixtures that live outside the generic case lists (name, hint, transport).

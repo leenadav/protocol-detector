@@ -189,6 +189,21 @@ _ENTRIES = (
     _app("syslog", "business-systems", "management", "client-server", 2, "RFC 5424 syslog message", (), ("udp/514", "tcp/514"), ("tcp/6514",)),
     _app("fastcgi", "business-systems", "general-business", "client-server", 2, "FastCGI BEGIN_REQUEST and PARAMS", (), ("tcp/9000",)),
     _app("rsync", "business-systems", "storage-backup", "client-server", 3, "rsync daemon greeting", ("transfers-files",), ("tcp/873",)),
+    _app("sun-rpc", "networking", "infrastructure", "client-server", 3, "ONC RPC v2 call or reply for a program outside the named ones",
+         ("has-known-vulnerabilities", "prone-to-misuse"), ("tcp/dynamic", "udp/dynamic"), aliases=("onc-rpc", "rpc")),
+    _app("portmapper", "networking", "infrastructure", "client-server", 3, "ONC RPC portmapper/rpcbind (program 100000)",
+         ("has-known-vulnerabilities", "prone-to-misuse"), ("tcp/111", "udp/111"), implicitly_uses=("sun-rpc",), aliases=("rpcbind",)),
+    _app("nfs", "business-systems", "storage-backup", "client-server", 3, "NFS, mount, lock manager, status monitor or NFS ACL program over ONC RPC",
+         ("transfers-files", "has-known-vulnerabilities", "widely-used"), ("tcp/2049", "udp/2049", "tcp/dynamic", "udp/dynamic"),
+         implicitly_uses=("sun-rpc",), depends_on=("portmapper",)),
+    _app("diameter", "business-systems", "auth-service", "client-server", 2, "Diameter capabilities exchange (CER/CEA) on the base application",
+         (), ("tcp/3868",), ("tcp/5868",)),
+    _app("zeromq", "business-systems", "general-business", "peer-to-peer", 2, "ZMTP 3.x greeting; mechanism and bind side reported",
+         ("cleartext-credentials",), ("tcp/dynamic",), aliases=("zmtp",)),
+    _app("neo4j", "business-systems", "database", "client-server", 2, "Neo4j Bolt handshake", (), ("tcp/7687",), aliases=("bolt",)),
+    _app("dns-over-https", "networking", "infrastructure", "browser-based", 3,
+         "DNS message carried in HTTP (application/dns-message content or accept header over HTTP/1.x or HTTP/2); an asserted header class",
+         ("evasive", "tunnels-other-applications"), ("tcp/443",), implicitly_uses=("web-browsing",), aliases=("doh",)),
     _app("git", "business-systems", "software-development", "client-server", 3, "Native Git service request",
          ("transfers-files",), ("tcp/9418",), aliases=("git-base",)),
     _app("giop", "business-systems", "general-business", "client-server", 2, "GIOP 1.2 request", (), ("tcp/dynamic",),
@@ -248,6 +263,7 @@ _ENTRIES = (
 _PROTOCOL_NAMES = MappingProxyType({
     "http": "web-browsing", "http2": "web-browsing", "tls": "ssl", "dtls": "dtls", "quic": "quic", "smb1": "smb", "rfb": "vnc", "socks5": "socks", "smb2": "smb",
     "dcerpc": "dce-rpc", "ikev2": "ike", "tds": "mssql-db", "tns": "oracle", "opcua": "opc-ua",
+    "onc-rpc": "sun-rpc", "zmtp": "zeromq", "bolt": "neo4j",
 })
 
 

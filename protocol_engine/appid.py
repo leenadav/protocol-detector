@@ -11,6 +11,7 @@ A verdict is as strong as the evidence beneath it: an identified structural
 profile, never an authenticated product identity.
 """
 from typing import NamedTuple, Optional, Tuple
+from types import MappingProxyType
 from .applications import APPLICATIONS, OUTCOMES, Application, application_name, custom_application
 from .model import Observation
 from .risks import flow_risks
@@ -86,6 +87,8 @@ def _application(observation, transport, signatures=None):
     base = application_name(observation.application_protocol, observation.encryption)
     if base == "web-browsing":
         base = _web_application(observation)
+    elif base == "sun-rpc":
+        base = _RPC_APPLICATIONS.get(_evidence(observation, "rpc_program"), base)
     if observation.application:
         if base is None:
             base = "unknown-" + transport
@@ -103,13 +106,19 @@ def _application(observation, transport, signatures=None):
     return APPLICATIONS[base]
 
 
+_RPC_APPLICATIONS = MappingProxyType({"portmap": "portmapper", "nfs": "nfs", "mount": "nfs", "nlm": "nfs", "nsm": "nfs", "nfs-acl": "nfs"})
+
+
 def _web_application(observation):
-    """web-browsing refined by the request structure: CONNECT tunnels, extended-CONNECT WebSocket, gRPC content."""
+    """web-browsing refined by the request structure: CONNECT tunnels, extended-CONNECT WebSocket, gRPC and DNS content."""
     method = _evidence(observation, "http_method") or _evidence(observation, "http2_method")
     if method == "CONNECT":
         return "websocket" if _evidence(observation, "http2_protocol") == "websocket" else "http-proxy"
-    if method == "POST" and _evidence(observation, "http2_content_type") in ("grpc", "grpc-web"):
+    content = _evidence(observation, "http2_content_type") or _evidence(observation, "http_content_type")
+    if method == "POST" and content in ("grpc", "grpc-web"):
         return "grpc"
+    if content == "dns" or _evidence(observation, "http2_accept") == "dns" or _evidence(observation, "http_accept") == "dns":
+        return "dns-over-https"
     return "web-browsing"
 
 
@@ -189,7 +198,7 @@ def _session_verdict(client, server, transport, server_port, client_bytes, serve
             return _outcome(unknown_name, transport, chosen.status, reasons, client, server)
         if len(identified) == 2:
             other = _application(identified[1], transport, signatures)
-            if other is not None and other.name != application.name:
+            if other is not None and other.name != application.name and other.name not in application.implicitly_uses:
                 reasons.append("Server direction identified as " + other.name)
         reasons.append(chosen.reason)
         for obs in (client, server):

@@ -1,11 +1,24 @@
-# Review scope: protocol detector v0.50
+# Review scope: protocol detector v0.51
 
-Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
+Python3.9-compatible IPv4 passive classification: 74 families, 67 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.50): `protocol_engine/hpack.py` (integer limit, Huffman table
+New focus (v0.51): `protocol_engine/rpc.py` (opaque_auth bounds, AUTH_SYS
+length arithmetic, reply status tables, the trailing-bytes rule, the 0x80
+memcached/RPC split in dispatch and the UDP candidate words),
+`protocol_engine/diameter.py` (AVP walk: header, padding, vendor flag,
+once-only codes, mandatory set, Result-Code ranges), `protocol_engine/greetings.py`
+(ZMTP mechanism and filler rules, Bolt version space and the hint-only
+response), the HTTP/1 `http_method`/`http_content_type`/`http_accept`
+evidence in parsers.py and `_web_application`/`_RPC_APPLICATIONS` in appid.py.
+Trace: no machine name, uid, identity, realm, product name, header value or
+argument byte in evidence or reasons; every size against its container; that
+the new first-byte routes (0x60, 0x80, 0xff, 0x01) leave memcached, telnet,
+BGP, FastCGI, AMQP and HTTP text untouched. 538 tests pass.
+
+Previous focus (v0.50): `protocol_engine/hpack.py` (integer limit, Huffman table
 construction and padding rule, dynamic table accounting and eviction, the
 three budgets) and the HTTP/2 continuation in extended.py (`_frames`,
 `_frame_header`, `_frame_complete`, `_headers`, `_request`, `_response`,

@@ -23,6 +23,9 @@ from .upgrade import WebSocketParser
 from .s7 import S7Parser
 from .enterprise_db import TDSParser, TNSParser
 from .opcua import OPCUAParser
+from .rpc import RPCParser
+from .diameter import DiameterParser
+from .greetings import BoltParser, ZMTPParser
 
 PARSERS = MappingProxyType({
     "dcerpc": DCERPCParser, "giop": GIOPParser, "git": GitParser, "fastcgi": FastCGIParser, "rsync": RsyncParser,
@@ -37,6 +40,7 @@ PARSERS = MappingProxyType({
     "iso-tsap": COTPParser, "ethernet-ip": ENIPParser, "iec-104": IEC104Parser, "kafka": KafkaParser, "cql": CQLParser,
     "websocket": WebSocketParser, "s7comm": S7Parser, "http2-server": HTTP2ServerParser,
     "tds": TDSParser, "tns": TNSParser, "opcua": OPCUAParser,
+    "onc-rpc": RPCParser, "diameter": DiameterParser, "zmtp": ZMTPParser, "bolt": BoltParser,
 })
 
 # Automatic ambiguity routes are not public candidate hints.

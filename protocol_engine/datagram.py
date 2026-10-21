@@ -5,6 +5,7 @@ Candidate hints restrict validation; they never cause an identification themselv
 """
 from types import MappingProxyType
 from .datagram_result import DatagramMatch
+from .rpc import onc_rpc
 from .dtls import dtls
 from .ikev2 import ikev2, ike_probe
 from .quic import QuicAssembler, quic, quic_probe
@@ -82,7 +83,7 @@ def dns_name_shape(qname):
 
 VALIDATORS = MappingProxyType({"quic": quic, "wireguard": wireguard, "openvpn": openvpn, "l2tp": l2tp, "ssdp": ssdp, "netflow": netflow,
                                "sflow": sflow, "bacnet": bacnet, "kerberos": kerberos, "ethernet-ip": enip_datagram, "rtp": rtp,
-                               "ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
+                               "ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog, "onc-rpc": onc_rpc})
 
 
 class DatagramInspector:
@@ -180,6 +181,8 @@ class DatagramInspector:
                 candidates.append("l2tp")
             if enip_probe(data) and len(data) >= 24:
                 candidates.append("ethernet-ip")
+            if len(data) >= 20 and (data[4:12] == b"\x00\x00\x00\x00\x00\x00\x00\x02" or (data[4:8] == b"\x00\x00\x00\x01" and data[8:12] in (b"\x00\x00\x00\x00", b"\x00\x00\x00\x01"))):
+                candidates.append("onc-rpc")   # CALL with RPC version 2, or a REPLY with a valid reply_stat (v0.51)
         # SPI bytes are arbitrary and may also satisfy a different protocol's
         # probe. Keep that competitor; at most one extra fixed-position route.
         if not protocol_hint and ike_probe(data):

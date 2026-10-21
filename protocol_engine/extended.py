@@ -2,6 +2,7 @@
 import ipaddress
 import re
 from .model import normalize_hostname
+from .media import accept_class, content_type_class
 from .control import ControlHeaders, START
 from .parsers import BudgetError, LineParser, ParseError, TOKEN
 from .service_text import nats, imap_capability
@@ -183,30 +184,6 @@ _H2_METHODS = frozenset((b"GET", b"HEAD", b"POST", b"PUT", b"DELETE", b"CONNECT"
 _H2_PSEUDO_REQUEST = frozenset((b":method", b":scheme", b":authority", b":path", b":protocol"))
 _H2_CONNECTION_SPECIFIC = frozenset((b"connection", b"keep-alive", b"proxy-connection", b"transfer-encoding", b"upgrade"))
 _H2_PSEUDO_LETTERS = {b":method": "m", b":authority": "a", b":scheme": "s", b":path": "p", b":protocol": "r", b":status": "t"}
-
-
-def content_type_class(value):
-    """Bounded class of a content-type header value; the value itself is never emitted."""
-    media = value.split(b";", 1)[0].strip().lower()
-    if media.startswith(b"application/grpc-web"):
-        return "grpc-web"
-    if media == b"application/grpc" or media.startswith(b"application/grpc+"):
-        return "grpc"
-    if media == b"application/json" or media.endswith(b"+json"):
-        return "json"
-    if media in (b"application/xml", b"text/xml") or media.endswith(b"+xml"):
-        return "xml"
-    if media == b"application/x-www-form-urlencoded":
-        return "form"
-    if media.startswith(b"multipart/"):
-        return "multipart"
-    if media in (b"application/x-protobuf", b"application/protobuf", b"application/vnd.google.protobuf"):
-        return "protobuf"
-    if media == b"application/octet-stream":
-        return "binary"
-    if media.startswith(b"text/"):
-        return "text"
-    return "other"
 
 
 def _authority_host(value):
@@ -453,6 +430,9 @@ class HTTP2Parser:
         content_type = next((value for name, value in regular if name == b"content-type"), None)
         if content_type is not None:
             evidence.append(("http2_content_type", content_type_class(content_type), "headers_frame", "asserted"))
+        accept = next((value for name, value in regular if name == b"accept"), None)
+        if accept is not None and accept_class(accept) == "dns":
+            evidence.append(("http2_accept", "dns", "headers_frame", "asserted"))
         if self.config.fingerprints and self.request:
             self.fingerprints += (("h2_pseudo_order", ",".join(order), "headers_frame"),)
         if self.contexts is not None:

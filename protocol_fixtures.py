@@ -780,3 +780,66 @@ _grpc_block = (b'\x83\x87' + hpack_literal(b':path', b'/demo.Greeter/SayHello', 
 H2_GRPC = H2_PREFACE + H2_SETTINGS + h2_frame(1, _grpc_block, flags=0x04, stream=1)
 H2_RESPONSE = H2_SERVER_SETTINGS + h2_frame(4, b'', flags=0x01) + h2_frame(1, HPACK_RESPONSE, flags=0x04, stream=1)
 del _grpc_block
+
+
+# v0.51: ONC RPC, Diameter, ZMTP, Bolt and DNS over HTTPS. Names are placeholders.
+def xdr(*values):
+    return b"".join(value.to_bytes(4, "big") for value in values)
+
+
+def rpc_record(message):
+    return (0x80000000 | len(message)).to_bytes(4, "big") + message
+
+
+def rpc_call(program, version, procedure, credential=b"", verifier=b"", xid=0x1a2b3c4d, args=b""):
+    """CALL header; credential/verifier are complete opaque_auth encodings (flavor, length, body)."""
+    return xdr(xid, 0, 2, program, version, procedure) + (credential or xdr(0, 0)) + (verifier or xdr(0, 0)) + args
+
+
+def auth_sys(machine=b"client", uid=0, gid=0, gids=(0,), stamp=0x5f5e100):
+    body = xdr(stamp, len(machine)) + machine + bytes((-len(machine)) % 4) + xdr(uid, gid, len(gids), *gids)
+    return xdr(1, len(body)) + body
+
+
+RPC_PORTMAP_CALL = rpc_call(100000, 2, 3, auth_sys(), args=xdr(100003, 3, 6, 0))      # GETPORT for NFS v3 over TCP
+RPC_NFS_CALL = rpc_call(100003, 3, 0)                                                   # NFS v3 NULL with AUTH_NONE
+RPC_REPLY = xdr(0x1a2b3c4d, 1, 0) + xdr(0, 0) + xdr(0) + xdr(2049)                       # accepted, success, one result word
+RPC_REPLY_DENIED = xdr(0x1a2b3c4d, 1, 1, 1, 2)                                           # denied, AUTH_ERROR, AUTH_BADCRED
+ONC_RPC_CALL = rpc_record(RPC_PORTMAP_CALL)
+ONC_RPC_REPLY = rpc_record(RPC_REPLY)
+
+
+def diameter_avp(code, value, flags=0x40, vendor=None):
+    head = code.to_bytes(4, "big") + bytes((flags | (0x80 if vendor is not None else 0),))
+    length = 8 + (4 if vendor is not None else 0) + len(value)
+    head += length.to_bytes(3, "big") + (vendor.to_bytes(4, "big") if vendor is not None else b"")
+    return head + value + bytes((-len(value)) % 4)
+
+
+def diameter_message(flags, avps, code=257, application=0, hop=0x11112222, end=0x33334444):
+    body = b"".join(avps)
+    return b"\x01" + (20 + len(body)).to_bytes(3, "big") + bytes((flags,)) + code.to_bytes(3, "big") + xdr(application, hop, end) + body
+
+
+DIAMETER_CAPABILITIES = (diameter_avp(264, b"peer.example"), diameter_avp(296, b"example"), diameter_avp(257, b"\x00\x01" + bytes((192, 0, 2, 1))),
+                         diameter_avp(266, xdr(10415)), diameter_avp(269, b"demo-stack"), diameter_avp(258, xdr(4)))
+DIAMETER_CER = diameter_message(0x80, DIAMETER_CAPABILITIES)
+DIAMETER_CEA = diameter_message(0x00, (diameter_avp(268, xdr(2001)),) + DIAMETER_CAPABILITIES)
+
+
+def zmtp_greeting(mechanism=b"NULL", as_server=0, minor=0):
+    return b"\xff" + bytes(7) + b"\x01\x7f" + bytes((3, minor)) + mechanism.ljust(20, b"\x00") + bytes((as_server,)) + bytes(31)
+
+
+ZMTP_GREETING = zmtp_greeting()
+ZMTP_SERVER_GREETING = zmtp_greeting(b"CURVE", as_server=1, minor=1)
+BOLT_HANDSHAKE = b"\x60\x60\xb0\x17" + bytes((0, 2, 4, 5)) + bytes((0, 0, 4, 4)) + bytes((0, 0, 0, 0)) + bytes((0, 0, 0, 0))
+BOLT_RESPONSE = b"\x00\x00\x04\x05"
+DOH_POST = b"POST /dns-query HTTP/1.1\r\nHost: doh.example\r\nContent-Type: application/dns-message\r\nContent-Length: 0\r\n\r\n"
+DOH_GET = b"GET /dns-query?dns=AAABAAABAAAAAAAAA2ZvbwNiYXIAAAEAAQ HTTP/1.1\r\nHost: doh.example\r\nAccept: application/dns-message\r\n\r\n"
+DOH_RESPONSE = b"HTTP/1.1 200 OK\r\nContent-Type: application/dns-message\r\nContent-Length: 0\r\n\r\n"
+STREAM_CASES += ((ONC_RPC_CALL, 'onc-rpc/2'), (ONC_RPC_REPLY, 'onc-rpc/2'), (rpc_record(RPC_NFS_CALL), 'onc-rpc/2'), (rpc_record(RPC_REPLY_DENIED), 'onc-rpc/2'),
+                 (DIAMETER_CER, 'diameter'), (DIAMETER_CEA, 'diameter'), (ZMTP_GREETING, 'zmtp/3'), (ZMTP_SERVER_GREETING, 'zmtp/3'),
+                 (BOLT_HANDSHAKE, 'bolt'), (DOH_POST, 'http/1.1'), (DOH_GET, 'http/1.1'))
+HINTED_STREAM_CASES += ((BOLT_RESPONSE, 'bolt', 'bolt'),)
+DATAGRAM_CASES += ((RPC_PORTMAP_CALL, 'onc-rpc/2'), (RPC_NFS_CALL, 'onc-rpc/2'), (RPC_REPLY, 'onc-rpc/2'), (RPC_REPLY_DENIED, 'onc-rpc/2'))

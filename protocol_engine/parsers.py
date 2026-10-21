@@ -1,8 +1,10 @@
 """Bounded incremental parsers. Each feed receives only newly available bytes."""
 import re
+from .media import accept_class, content_type_class
 from .model import normalize_hostname
 
 TOKEN = rb"[!#$%&'*+.^_`|~0-9A-Za-z-]+"
+_METHODS = frozenset((b"GET", b"HEAD", b"POST", b"PUT", b"DELETE", b"OPTIONS", b"TRACE", b"PATCH"))
 
 
 class ParseError(ValueError):
@@ -40,6 +42,8 @@ class LineParser:
         self.method = None
         self.target = None
         self.status = None
+        self.content_type_seen = False
+        self.accept_seen = False
         self.upgrade = None
         self.connection_upgrade = False
         self.websocket_key = False
@@ -107,6 +111,9 @@ class LineParser:
             if request:
                 self.method, self.target = line.split(b" ", 2)[:2]
                 self.method = self.method.upper()
+                if self.method != b"CONNECT":   # CONNECT is recorded only in authority-form (tunnel request)
+                    self.extra_evidence += (("http_method", self.method.decode("ascii") if self.method in _METHODS else "extension",
+                                             "request_line", "structural"),)
             else:
                 self.status = int(line.split(b" ", 2)[1])
                 self.extra_evidence += (("http_status", str(self.status), "status_line", "structural"),)
@@ -180,6 +187,15 @@ class LineParser:
                         self.host = normalize_hostname(host)
             except (ValueError, UnicodeError):
                 raise ParseError("Invalid Host authority") from None
+        elif name == b"content-type":
+            if not self.content_type_seen:
+                self.content_type_seen = True
+                self.extra_evidence += (("http_content_type", content_type_class(value), "headers", "asserted"),)
+        elif name == b"accept":
+            if not self.accept_seen:
+                self.accept_seen = True
+                if accept_class(value) == "dns":
+                    self.extra_evidence += (("http_accept", "dns", "headers", "asserted"),)
         elif name == b"content-length":
             # Conservative policy: duplicate CL is not accepted, even if identical.
             if self.content_length is not None or not re.fullmatch(rb"[0-9]{1,20}", value):

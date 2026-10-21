@@ -413,3 +413,11 @@ SMB1 (שלוש פריסות דיאלקט) ומסגרת Connection.Start של ב�
 ערכי כותרות. `grpc` נוסף לקטלוג (POST עם content-type של application/grpc), CONNECT ב־HTTP/2 ממופה ל־http-proxy,
 WebSocket מעל CONNECT מורחב ל־websocket, ומיפויי מארחים מוגדרים ושישה הקשרי חתימה `http2-*` חדשים חלים על HTTP/2.
 המנתח הלא־מקוון מצפה לצד השרת של חיבור HTTP/2 עם ידע מוקדם ברגע שה־preface של הלקוח זיהה אותו. 513 בדיקות עוברות.
+
+
+עדכון 0.51: ארבע משפחות חדשות: ONC RPC v2 מעל רשומות TCP ו־UDP (קריאות עם מבני AUTH_NONE/AUTH_SYS מאומתים ותוויות
+תוכניות, תשובות מתקבלות ונדחות; App-ID `portmapper`, `nfs`, `sun-rpc`), חילופי היכולות של Diameter (CER/CEA עם
+בדיקת כל כותרת AVP וה־AVP־ים החובה, מחלקת התוצאה מדווחת), ברכת ZMTP 3.x (מנגנון וצד ה־bind; PLAIN הוא מקרה
+הסיסמה־בגלוי היחיד) ולחיצת היד של Neo4j Bolt (תשובת השרת עם רמז). בקשות HTTP/1.x מדווחות את ה־method ואת מחלקת
+ה־content-type כמו HTTP/2, ו־`dns-over-https` מזוהה מכותרת content או accept של application/dns-message בשתי
+הגרסאות. 74 משפחות, 67 אוטומטיות, 82 יישומים, 538 בדיקות עוברות.

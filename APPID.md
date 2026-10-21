@@ -35,6 +35,9 @@ A verdict names either a catalog application or a session outcome.
 | `ssh`, `dns`, `smb`, `rdp`, … | The family's structural profile passed (see catalog aliases for vendor names) | same |
 | `http-proxy` | HTTP/1.x `CONNECT authority` request (the tunnel contents are inspected as a shifted phase) or an HTTP/2 CONNECT request (v0.50) | http-proxy |
 | `websocket` | Frame header after an `Upgrade: websocket` boundary (or explicit candidate), or an HTTP/2 extended CONNECT with `:protocol: websocket` (v0.50) | websocket |
+| `dns-over-https` | HTTP/1.x or HTTP/2 request or response whose content-type (or a request's accept) is `application/dns-message` (v0.51); an asserted header class, `implicitly_uses` web-browsing | dns-over-https |
+| `portmapper`, `nfs`, `sun-rpc` | ONC RPC v2 call or reply (v0.51): program 100000 is `portmapper`; NFS, mount, NLM, NSM and NFS ACL are `nfs` (`depends_on` portmapper); other programs and every reply are `sun-rpc`, which the session merge treats as the carrier of the client's application | sun-rpc / portmapper / nfs |
+| `diameter`, `zeromq`, `neo4j` | Diameter CER/CEA, ZMTP 3.x greeting, Bolt handshake (v0.51) | same |
 | `grpc` | HTTP/2 request HEADERS decoded (v0.50): `:method` POST with an `application/grpc*` content-type class (an asserted header over a structurally validated HTTP/2 connection); `implicitly_uses` web-browsing | grpc |
 | `ssl` with `shifted_from` | TLS ClientHello/ServerHello after CONNECT (`http-proxy`; the server side is opened by direction correlation, v0.33), STARTTLS (`smtp`/`imap`/`pop3`/`ftp`), SSLRequest (`postgresql`/`mysql`) or RDP negotiation (`rdp`); the carrier is listed in `implicitly_uses` | application shift |
 | `wireguard`, `openvpn` | Handshake/control framing validated; reported through `encryption`, no tunnel contents or peer identity | same |

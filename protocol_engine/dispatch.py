@@ -9,15 +9,16 @@ from .ics import enip_probe, modbus_probe
 from .datainfra import kafka_probe
 from .enterprise_db import tns_probe
 from .opcua import OPCUA_MAGICS, opcua_probe
+from .greetings import BOLT_MAGIC
 
 LOOKAHEAD = 24
 _table = ["unknown"] * 256
 for _byte in b"!#$%&'*+.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-":
     _table[_byte] = "text"
-for _byte, _family in ((64, "rsync"), (3, "tpkt"), (22, "tls"), (5, "socks5"), (16, "mqtt"), (19, "bittorrent"), (128, "memcached"),
+for _byte, _family in ((64, "rsync"), (3, "tpkt"), (22, "tls"), (5, "socks5"), (16, "mqtt"), (19, "bittorrent"),
                        (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus"), (0x12, "tds"), (0x84, "cql")):
     _table[_byte] = _family
-for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68, 69, 118, 0x81):
+for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68, 69, 118, 0x81, 0x80, 0x60):
     _table[_byte] = "ambiguous"
 FIRST_BYTE = tuple(_table)
 del _table, _byte, _family
@@ -88,7 +89,33 @@ def select(prefix):
             return 'bgp'
         if 0xf1 <= prefix[1] <= 0xfe:
             return 'telnet'
-        return 'unknown'
+        # ZMTP 3.x greeting: 0xff, eight padding bytes (every known implementation starts them
+        # with zero), 0x7f, major version 3 (v0.51). Other second bytes stay unknown at once.
+        if prefix[1] != 0:
+            return 'unknown'
+        if len(prefix) < 11:
+            return None
+        return 'zmtp' if prefix[9] == 0x7f and prefix[10] == 3 else 'unknown'
+    if first == 0x80:
+        # ONC RPC record marking (last fragment, length below 64 KiB) carries the message type
+        # and RPC version 2 at bytes 8..16; a memcached GET (opcode 0) needs a key, so its body
+        # length is never zero, and no memcached request has a 24-byte key with opaque 0 or 1.
+        if len(prefix) < 2:
+            return None
+        if prefix[1] != 0:
+            return 'memcached'
+        if len(prefix) < 16:
+            return None
+        if prefix[8:16] == b"\x00\x00\x00\x00\x00\x00\x00\x02":
+            return 'onc-rpc'
+        if prefix[8:12] == b"\x00\x00\x00\x01" and prefix[12:16] in (b"\x00\x00\x00\x00", b"\x00\x00\x00\x01") and int.from_bytes(prefix[2:4], "big") >= 20:
+            return 'onc-rpc'
+        return 'memcached'
+    if first == 0x60:
+        # Neo4j Bolt magic 60 60 b0 17; '`' is otherwise a legal HTTP token byte.
+        if len(prefix) < 4:
+            return None if BOLT_MAGIC.startswith(prefix) else 'text'
+        return 'bolt' if prefix[:4] == BOLT_MAGIC else 'text'
     if first == 4:
         if len(prefix) < 5:
             return None
@@ -131,6 +158,12 @@ def select(prefix):
     if first in (0, 1):
         if len(prefix) < 8:
             return None
+        # Diameter CER/CEA: version 1, reserved command flags zero, command code 257, application id 0 (v0.51).
+        if first == 1 and prefix[4] & 0x0f == 0 and prefix[5:8] == b"\x00\x01\x01":
+            if len(prefix) < 12:
+                return None
+            if prefix[8:12] == b"\x00\x00\x00\x00":
+                return "diameter"
         # This conservative BEGIN_REQUEST header cannot be our DNS profile:
         # DNS QDCOUNT would be padding<<8, never one when reserved is zero.
         if first == 1 and prefix[1] == 1 and prefix[2:4] != b"\x00\x00" and prefix[4:6] == b"\x00\x08" and prefix[7] == 0:

@@ -20,10 +20,12 @@ closed set reviewers should expect in records.
 | bacnet | udp | yes | same shape | - |
 | bgp | tcp | yes | same shape | - |
 | bittorrent | tcp | yes | same shape | - |
+| bolt | tcp | yes | yes | `bolt_message`, `bolt_version` |
 | coap | udp | yes | same shape | - |
 | cql | tcp | yes | yes | `cql_response` |
 | dcerpc | tcp | yes | yes | `accepted_transfer_syntax`, `dcerpc_pdu`, `offered_transfer_syntax` |
 | dhcp | udp | yes | yes | `dhcp_message`, `dhcp_operation` |
+| diameter | tcp | yes | yes | `diameter_message`, `diameter_result` |
 | dnp3 | tcp | yes | same shape | - |
 | dns | tcp/udp | yes | yes | `dns_message`, `dns_rcode` |
 | dtls | udp | yes | yes | `handshake`, `offered_dtls_version`, `selected_cipher`, `selected_dtls_version` |
@@ -32,7 +34,7 @@ closed set reviewers should expect in records.
 | ftp | tcp | yes | - | - |
 | giop | tcp | yes | yes | `giop_message`, `giop_status` |
 | git | tcp | yes | yes | `git_message`, `offered_version` |
-| http | tcp | yes | yes | `hostname`, `http_status`, `http_upgrade` |
+| http | tcp | yes | yes | `hostname`, `http_accept`, `http_content_type`, `http_method`, `http_status`, `http_upgrade` |
 | http2 | tcp | yes | yes | `hostname`, `http2_content_type`, `http2_message`, `http2_method`, `http2_scheme`, `http2_status` |
 | iec-104 | tcp | yes | same shape | - |
 | ikev2 | udp | yes | yes | `exchange`, `offered_dh_group`, `selected_dh_group` |
@@ -52,6 +54,7 @@ closed set reviewers should expect in records.
 | netbios-ss | tcp | yes | - | - |
 | netflow | udp | yes | n/a (one-way) | - |
 | ntp | udp | yes | yes | `ntp_mode` |
+| onc-rpc | tcp/udp | yes | yes | `rpc_accept_status`, `rpc_credential`, `rpc_message`, `rpc_program`, `rpc_program_version`, `rpc_reject_status`, `rpc_reply` |
 | opcua | tcp | yes | yes | `opcua_message`, `opcua_protocol_version` |
 | openvpn | tcp/udp | yes | yes | `openvpn_control`, `tls_auth` |
 | pop3 | tcp | yes | yes | - |
@@ -86,8 +89,9 @@ closed set reviewers should expect in records.
 | tns | tcp | yes | yes | `tns_connect_data`, `tns_response`, `tns_version` |
 | websocket | tcp | yes | yes | `websocket_masked`, `websocket_opcode` |
 | wireguard | udp | yes | yes | `message_type` |
+| zmtp | tcp | yes | yes | `zmtp_mechanism`, `zmtp_role` |
 
-70 families in the catalog, 70 with fixtures, 58 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
+74 families in the catalog, 74 with fixtures, 62 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
 <!-- coverage-matrix:end -->
 
 ## Direction evidence and remaining replies (v0.49)
@@ -182,3 +186,70 @@ CONNECT for `websocket` is `websocket`.
 Not in the profile: later streams and trailers, PUSH_PROMISE, header blocks
 larger than 16 KiB, SETTINGS_HEADER_TABLE_SIZE above the default, HTTP/2 over
 TLS without `feed_decrypted`, and HTTP/3 (QPACK).
+
+## ONC RPC, Diameter, ZMTP, Bolt and HTTP content classes (v0.51)
+
+Four new families (74 in total, 67 automatic) and two HTTP refinements.
+
+`onc-rpc` (RFC 5531, `onc-rpc/2`, TCP and UDP): a CALL carries xid, message
+type 0, RPC version 2, program, version, procedure (at most 65535) and two
+opaque_auth structures. Known programs are reported as labels (`rpc_program`:
+`portmap` 100000, `nfs` 100003, `mount` 100005, `nlm` 100021, `nsm` 100024,
+`nfs-acl` 100227, `rquota` 100011, otherwise `other`) with their published
+version ranges enforced; unknown programs need a nonzero number and a version
+at most 255. Credentials: AUTH_NONE (empty), AUTH_SYS (stamp, printable
+machine name up to 255 bytes with zero padding, uid, gid, at most 16 gids,
+exact length), AUTH_SHORT, AUTH_DH and RPCSEC_GSS by flavor and a 4-aligned
+length at most 400; the verifier is never AUTH_SYS. Procedure arguments are
+not decoded. A REPLY is accepted (verifier, accept status 0..5, version range
+for PROG_MISMATCH) or denied (RPC_MISMATCH with a version range, or AUTH_ERROR
+with status 1..14); only a successful reply may carry results. Over TCP one
+last-fragment record of at least 20 bytes must hold the message; first byte
+0x80 with a zero second byte routes to RPC only when bytes 8..16 hold message
+type 0 with version 2, or message type 1 with reply status 0/1 (a memcached GET
+always has a non-empty body and never a 24-byte key with opaque 0 or 1). Over
+UDP the same words select the candidate. Evidence: `rpc_message`
+(`call`/`reply`), `rpc_program`, `rpc_program_version`, `rpc_credential`
+(asserted flavor), `rpc_reply` (`accepted`/`denied`), `rpc_accept_status`,
+`rpc_reject_status`. Machine names, uids, gids, GSS tokens, arguments and
+results are never emitted. App-ID: `portmapper` (100000), `nfs` (NFS, mount,
+NLM, NSM, NFS ACL) and `sun-rpc` otherwise; replies are `sun-rpc`, which the
+session merge treats as the carrier rather than a conflicting identification.
+
+`diameter` (RFC 6733, TCP): Capabilities-Exchange-Request and -Answer on the
+base application only: version 1, length a multiple of four, reserved command
+flags zero, P clear (never proxiable), no E on a request and no T on an
+answer. Every AVP header is checked (reserved flags, length within the message
+and at least its header, zero padding, vendor id when V is set, at most
+`min(max_headers, 128)` AVPs); Origin-Host, Origin-Realm, Host-IP-Address
+(IPv4 or IPv6 Address), Vendor-Id and Product-Name are mandatory, carry the M
+flag and, except Host-IP-Address, appear once; a CEA needs a Result-Code in
+1001..5999. Evidence: `diameter_message` (`cer`/`cea`) and `diameter_result`
+(`informational`, `success`, `protocol-error`, `transient-failure`,
+`permanent-failure`). Identities, addresses, product names and vendor-specific
+AVP contents are never emitted. Other commands (watchdog, disconnect,
+application messages) are outside the profile.
+
+`zmtp` (ZeroMQ ZMTP 3.0/3.1, TCP): the 64-byte greeting (0xff, eight padding
+bytes whose first is zero as every known implementation sends, 0x7f, major 3, minor 0 or 1, a 20-byte upper-case mechanism name with
+zero padding, as-server 0/1, 31 zero filler bytes). Evidence: `zmtp_mechanism`
+(`null`, `plain`, `curve`, `gssapi`, `other`) and `zmtp_role` (`client`, or
+`server` for the bind side). The `cleartext-credential-protocol` risk applies
+to the PLAIN mechanism only. Handshake commands and frames are not read.
+
+`bolt` (Neo4j, TCP): the client handshake (magic 60 60 b0 17 and four version
+ranges, each reserved byte zero, range at most the minor, major and minor
+within the published versions 1.0–5.x, zero slots only after the last
+proposal) is automatic; the four-byte server version response is accepted
+only with the `bolt` hint, because four bytes alone never select a family.
+Evidence: `bolt_message` (`handshake`/`version-response`) and `bolt_version`
+(preferred or selected version, `none` when the server declines).
+
+HTTP/1.x requests now report `http_method` (the eight RFC 9110 methods or
+`extension`; CONNECT only in authority-form as before), the first
+`content-type` as `http_content_type` (asserted class, same vocabulary as
+HTTP/2 plus `dns` for `application/dns-message`) and `http_accept` = `dns`
+when the first accepted media type is a DNS message; HTTP/2 gains the same
+`dns` class and `http2_accept`. App-ID: a request or response carrying a DNS
+message, or a request accepting one, is `dns-over-https` (implicitly
+web-browsing) over HTTP/1.x and HTTP/2. Header values are never emitted.
