@@ -23,6 +23,6 @@ tests; evidence strengths are structural / asserted / offered / derived /
 heuristic / configured_mapping / context; no hostname, path, credential or
 payload bytes appear in live output unless explicitly enabled.
 
-Status: the roadmap is complete at v0.30; v0.31 added pcapng input, v0.32 S7comm after ISO-TSAP, v0.33 server-side CONNECT correlation, v0.34 published output schemas, v0.35 the ClientHello hot-path rewrite, v0.36 h2c server frames, v0.37 the per-commit behaviour diff, v0.38 SNMPv3 and v0.39 the TLS 1.2 certificate watch (post-roadmap work). Later work (mDNS/LLMNR,
+Status: the roadmap is complete at v0.30; v0.31 added pcapng input, v0.32 S7comm after ISO-TSAP, v0.33 server-side CONNECT correlation, v0.34 published output schemas, v0.35 the ClientHello hot-path rewrite, v0.36 h2c server frames, v0.37 the per-commit behaviour diff, v0.38 SNMPv3 and v0.39 the TLS 1.2 certificate watch and v0.40 the MSSQL/Oracle negotiation families (post-roadmap work). Later work (mDNS/LLMNR,
 SMB1 session setup, certificate-based risks) is listed in PROTOCOLS.md and RISKS.md
 under their exclusions and remains out of scope until requested.

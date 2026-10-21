@@ -1,6 +1,6 @@
 # Protocol coverage — v0.32
 
-The engine implements 67 families (60 selected automatically from the first
+The engine implements 69 families (62 selected automatically from the first
 bytes, 7 only with an explicit candidate hint or a structural shift) with the
 profiles below. This table is generated from
 `protocol_engine.catalog.supported_protocols()` (`python3 -B protodetect.py
@@ -74,9 +74,11 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | stun | tcp/udp | Automatic profiles | initial_message/datagram | Binding method; attributes and optional fingerprint, no HMAC validation |
 | syslog | udp | Automatic profiles | datagram | RFC5424 version 1 header/structured data; no RFC3164 |
 | tacacs-plus | tcp | Automatic profiles | protocol_header | TACACS+ header for the first packet of a session; START body lengths when unencrypted |
+| tds | tcp | Automatic profiles | negotiation_request/negotiation_response | MSSQL TDS 7.x PRELOGIN packet (client) or its response (server): header, option table, VERSION/ENCRYPTION mandatory, fixed option lengths; instance names, thread, trace and nonce bytes not emitted; no LOGIN7 or query stream |
 | telnet | tcp | Automatic profiles | negotiation_request | Two complete IAC option negotiation commands; terminal data not inspected |
 | tftp | udp | Automatic profiles | datagram | RRQ/WRQ with bounded options; no transfer state |
 | tls | tcp | Automatic profiles | initial_message/server_hello/hello_retry_request | ClientHello plus bounded TLS1.2/1.3 server hello/retry profiles; optional leaf-certificate structure after a TLS 1.2 ServerHello (`certificates`); selections unauthenticated, no decryption |
+| tns | tcp | Automatic profiles | negotiation_request/negotiation_response | Oracle Net CONNECT (client) or ACCEPT/REFUSE/RESEND (server) packet: header checksums zero, versions 308..319, connect data offset/length consistency, printable descriptor; descriptor contents not emitted; no DATA packets or authentication |
 | websocket | tcp | Hint required | frame_header | One frame header after an HTTP Upgrade boundary (reached by the websocket-upgrade shift or an explicit candidate); payload not decoded |
 | wireguard | udp | Automatic profiles | datagram | Handshake initiation/response/cookie message sizes and reserved bytes; no key or tunnel claim |
 
@@ -1052,3 +1054,46 @@ expiry check (the engine has no clock; the lifetime is reported for policy).
 Primary specifications: [RFC 5246 7.4.2](https://www.rfc-editor.org/rfc/rfc5246.html#section-7.4.2),
 [RFC 5280 4.1](https://www.rfc-editor.org/rfc/rfc5280.html#section-4.1), [RFC 5480](https://www.rfc-editor.org/rfc/rfc5480.html),
 [RFC 8410](https://www.rfc-editor.org/rfc/rfc8410.html).
+
+## Enterprise database negotiation: MSSQL TDS and Oracle Net (v0.40)
+
+`tds` (MS-TDS 2.2.6.5) accepts a PRELOGIN packet from the client (type 0x12)
+or its tabular response from the server (type 0x04): status with the EOM bit
+and no bits outside 0x1b, window zero, SPID zero on the client packet, length
+20..4096 covering the whole packet, then an option table of 5-byte entries
+(token, offset, length) ended by 0xff. Tokens 0x00..0x07 may appear once each
+in any order; VERSION (6 bytes) and ENCRYPTION (1 byte, OFF/ON/NOT_SUP/REQ) are
+mandatory; INSTOPT is a terminated string, THREADID 0 or 4 bytes, MARS and
+FEDAUTHREQUIRED 0/1, TRACEID 36 bytes (empty in a response), NONCE 32 bytes.
+Every data region lies after the table and inside the packet, and nothing
+follows the last datum. Evidence: `tds_encryption`, `tds_mars`,
+`tds_federated_auth` (offered). Driver versions, instance names, thread and
+trace identifiers and nonces are never emitted. LOGIN7, TLS carried inside
+TDS packets, TDS 8.0 strict (which starts with a plain TLS ClientHello and is
+identified as `tls`) and the query stream are outside the profile. Prefix: a
+first byte 0x12 routes to `tds`; a type-4 packet routes to `tds` instead of
+`cql` when its status has the EOM bit, the window byte is zero and the first
+payload byte is the VERSION token, which a CQL request cannot produce without
+a body of at least 64 KiB.
+
+`tns` (Oracle Net, SQL*Net) accepts the first packet of either direction: an
+8-byte header with packet checksum, reserved byte and header checksum all zero
+and length 8..8192, then CONNECT (type 1: version 308..319, version-compatible
+300, byte-order marker 0x0001/0x0100, connect data length >= 1, offset 34..74,
+descriptor either absent from this packet (`deferred`, sent in a following
+DATA packet) or exactly filling it as a printable string starting with `(`),
+ACCEPT (type 2: version in range, marker, data region inside the packet),
+REFUSE (type 4: data length matching, printable `(`-descriptor when present)
+or RESEND (type 11: header only). Evidence: `tns_version` (asserted),
+`tns_connect_data` (`inline`/`deferred`), `tns_response`
+(`accept`/`refuse`/`resend`). Service names, hosts, programs, users, error
+descriptors and reason codes are never emitted. DATA packets, O5LOGON
+authentication, redirects and marker/attention packets are outside the
+profile. Prefix: a header whose checksum, reserved and header-checksum bytes
+are zero with one of the four types (and the version bytes for CONNECT/ACCEPT)
+routes to `tns` ahead of the length-prefixed families sharing a leading 0x00
+byte; DNS over TCP (question count 1), Modbus (length 2..254) and PostgreSQL
+(protocol 3 or request codes) cannot match that header.
+
+Primary specifications: [MS-TDS 2.2.6.5](https://learn.microsoft.com/openspecs/windows_protocols/ms-tds/60f56408-0188-4cd5-8b90-25c6f2423868);
+Oracle Net has no public specification, the framing follows the Wireshark TNS dissector and observed clients.

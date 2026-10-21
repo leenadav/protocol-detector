@@ -1,11 +1,20 @@
-# Review scope: protocol detector v0.39
+# Review scope: protocol detector v0.40
 
-Python3.9-compatible IPv4 passive classification: 67 families, 60 automatic.
+Python3.9-compatible IPv4 passive classification: 69 families, 62 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.39): `CertificateWatch` in tls_server.py and the DER walk in
+New focus (v0.40): enterprise_db.py (`TDSParser`, `TNSParser`, `tns_probe`)
+and the two dispatch changes. Trace: the type-4 TDS response versus a
+compressed CQL request (bytes 7 and 8 zero), the TNS header test placed ahead
+of Modbus/PostgreSQL/Kafka/DNS in the leading-0x00 block, every option data
+region inside the packet with nothing after the last datum, the deferred
+versus inline connect descriptor, printable-descriptor checks on REFUSE, no
+instance name, descriptor, thread or trace bytes in evidence or reasons; the
+new catalog entries and `_PROTOCOL_NAMES` mapping. 442 tests pass.
+
+Previous focus (v0.39): `CertificateWatch` in tls_server.py and the DER walk in
 x509.py behind `Config(certificates=True)`. Trace: the watch starts only after
 a TLS 1.2 ServerHello (never 1.3 or a retry); record/handshake framing and the
 shared `max_bytes` budget (the watch may never consume past it, also when the

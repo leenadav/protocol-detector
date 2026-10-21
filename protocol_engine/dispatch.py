@@ -7,13 +7,14 @@ from .extended import H2_PREFACE
 from .git_transport import HEX as GIT_HEX
 from .ics import enip_probe, modbus_probe
 from .datainfra import kafka_probe
+from .enterprise_db import tns_probe
 
 LOOKAHEAD = 24
 _table = ["unknown"] * 256
 for _byte in b"!#$%&'*+.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-":
     _table[_byte] = "text"
 for _byte, _family in ((64, "rsync"), (3, "tpkt"), (22, "tls"), (5, "socks5"), (16, "mqtt"), (19, "bittorrent"), (128, "memcached"),
-                       (0x81, "netbios-ss"), (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus")):
+                       (0x81, "netbios-ss"), (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus"), (0x12, "tds")):
     _table[_byte] = _family
 for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68):
     _table[_byte] = "ambiguous"
@@ -58,7 +59,17 @@ def select(prefix):
     if first == 4:
         if len(prefix) < 5:
             return None
-        return 'ethernet-ip' if prefix[1] == 0 and prefix[4] == 0 else 'cql'
+        if prefix[1] == 0 and prefix[4] == 0:
+            return 'ethernet-ip'
+        if prefix[1] & 1:
+            # A TDS PRELOGIN response (type 4, EOM status, window 0, VERSION token first) versus a
+            # compressed CQL request: CQL never compresses STARTUP/OPTIONS, and a body length with
+            # both low bytes zero (bytes 7 and 8) would be at least 64 KiB, beyond any budget.
+            if len(prefix) < 9:
+                return None
+            if prefix[7] == 0 and prefix[8] == 0:
+                return 'tds'
+        return 'cql'
     if first in (0x63, 0x64, 0x65, 0x66, 0x6f, 0x70):
         if len(prefix) < 2:
             return None
@@ -101,6 +112,12 @@ def select(prefix):
             return "stun"
         if first == 0 and prefix[4] in (0x6a, 0x6c) and _kerberos_length(prefix):
             return "kerberos"
+        if prefix[2:4] == b"\x00\x00" and prefix[4] in (1, 2, 4, 11) and prefix[5] == 0 and prefix[6:8] == b"\x00\x00":
+            # Oracle Net header: length, checksum 0, type, reserved 0, header checksum 0.
+            if prefix[4] != 11 and len(prefix) < 10:
+                return None
+            if tns_probe(prefix):
+                return "tns"
         if modbus_probe(prefix):
             return "modbus"
         code = int.from_bytes(prefix[4:8], "big")

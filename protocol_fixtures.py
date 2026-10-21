@@ -375,3 +375,47 @@ def tls_record(payload, kind=22):
 LEAF_CERTIFICATE = x509()
 CA_CERTIFICATE = x509(subject=b'Placeholder CA', key='rsa-4096', not_after=b'20491231235959Z')
 TLS_SERVER12_CERTIFICATE = TLS_SERVER12 + tls_record(certificate_message(LEAF_CERTIFICATE, CA_CERTIFICATE))
+
+
+# v0.40: enterprise database negotiation packets. Instance and descriptor strings are placeholders.
+def tds_prelogin(options=None, kind=0x12, status=0x01, spid=0, packet_id=1, window=0):
+    """TDS PRELOGIN (type 0x12) or its response (type 0x04): header, option table, terminator, data."""
+    if options is None:
+        options = ((0x00, bytes.fromhex('100000000000')), (0x01, b'\x00'), (0x02, b'\x00'), (0x03, bytes(4)),
+                   (0x04, b'\x00'), (0x05, bytes(36)), (0x06, b'\x00'))
+    table_length = 5 * len(options) + 1
+    table, data, offset = b'', b'', table_length
+    for token, value in options:
+        table += bytes([token]) + offset.to_bytes(2, 'big') + len(value).to_bytes(2, 'big')
+        data += value
+        offset += len(value)
+    payload = table + b'\xff' + data
+    return bytes([kind, status]) + (8 + len(payload)).to_bytes(2, 'big') + spid.to_bytes(2, 'big') + bytes([packet_id, window]) + payload
+
+
+TDS_PRELOGIN = tds_prelogin()
+TDS_PRELOGIN_RESPONSE = tds_prelogin(((0x00, bytes.fromhex('100007d00000')), (0x01, b'\x01'), (0x02, b'\x00'), (0x03, b''),
+                                      (0x04, b'\x00'), (0x06, b'\x00')), kind=0x04, spid=0x0039)
+TNS_DESCRIPTOR = b'(DESCRIPTION=(CONNECT_DATA=(SERVICE_NAME=placeholder)(CID=(PROGRAM=placeholder)(HOST=placeholder)(USER=placeholder)))(ADDRESS=(PROTOCOL=TCP)(HOST=placeholder)(PORT=1521)))'
+
+
+def tns_packet(kind, body):
+    return (8 + len(body)).to_bytes(2, 'big') + b'\x00\x00' + bytes([kind, 0]) + b'\x00\x00' + body
+
+
+def tns_connect(version=0x013c, descriptor=TNS_DESCRIPTOR, offset=58, inline=True, compatible=0x012c, marker=b'\x00\x01'):
+    body = (version.to_bytes(2, 'big') + compatible.to_bytes(2, 'big') + b'\x0c\x41' + b'\x20\x00' + b'\xff\xff' + b'\x4f\x98'
+            + b'\x00\x00' + marker + len(descriptor).to_bytes(2, 'big') + offset.to_bytes(2, 'big') + b'\x00\x00\x08\x00'
+            + b'\x41\x41' + bytes(8) + bytes(8))
+    body = body[:offset - 8] + bytes(max(0, offset - 8 - len(body)))
+    return tns_packet(1, body + (descriptor if inline else b''))
+
+
+TNS_CONNECT = tns_connect()
+TNS_CONNECT_DEFERRED = tns_connect(inline=False)
+TNS_ACCEPT = tns_packet(2, b'\x01\x3c' + b'\x0c\x41' + b'\x20\x00' + b'\xff\xff' + b'\x00\x01' + b'\x00\x00' + b'\x00\x20' + b'\x01\x01' + bytes(8))
+TNS_RESEND = tns_packet(11, b'')
+TNS_REFUSE_TEXT = b'(DESCRIPTION=(TMP=)(VSNNUM=318767104)(ERR=12514)(ERROR_STACK=(ERROR=(CODE=12514)(EMFI=4))))'
+TNS_REFUSE = tns_packet(4, b'\x22\x00' + len(TNS_REFUSE_TEXT).to_bytes(2, 'big') + TNS_REFUSE_TEXT)
+STREAM_CASES += ((TDS_PRELOGIN, 'tds'), (TDS_PRELOGIN_RESPONSE, 'tds'), (TNS_CONNECT, 'tns'), (TNS_CONNECT_DEFERRED, 'tns'),
+                 (TNS_ACCEPT, 'tns'), (TNS_RESEND, 'tns'), (TNS_REFUSE, 'tns'))

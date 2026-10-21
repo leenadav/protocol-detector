@@ -144,6 +144,10 @@ _ENTRIES = (
          ("udp/3478", "tcp/3478"), ("tcp/5349", "udp/5349")),
     _app("postgresql", "business-systems", "database", "client-server", 3, "PostgreSQL v3 startup or SSL/GSS request",
          ("transfers-files", "cleartext-credentials"), ("tcp/5432",), aliases=("postgres",)),
+    _app("mssql-db", "business-systems", "database", "client-server", 3, "MSSQL TDS 7.x PRELOGIN exchange",
+         ("transfers-files", "has-known-vulnerabilities", "widely-used"), ("tcp/1433",), aliases=("mssql", "tds", "sql-server", "ms-sql")),
+    _app("oracle", "business-systems", "database", "client-server", 3, "Oracle Net (TNS) connect exchange",
+         ("transfers-files", "has-known-vulnerabilities", "widely-used"), ("tcp/1521",), aliases=("oracle-db", "tns", "sqlnet", "oracle-net")),
     _app("mysql", "business-systems", "database", "client-server", 3, "MySQL HandshakeV10 (explicit candidate)",
          ("transfers-files", "has-known-vulnerabilities"), ("tcp/3306",)),
     _app("mongodb", "business-systems", "database", "client-server", 3, "MongoDB OP_MSG (explicit candidate)",
@@ -238,7 +242,7 @@ _ENTRIES = (
 # Engine protocol/encryption labels to catalog names. Versions after '/' never matter.
 _PROTOCOL_NAMES = MappingProxyType({
     "http": "web-browsing", "http2": "web-browsing", "tls": "ssl", "dtls": "dtls", "quic": "quic", "smb1": "smb", "rfb": "vnc", "socks5": "socks", "smb2": "smb",
-    "dcerpc": "dce-rpc", "ikev2": "ike",
+    "dcerpc": "dce-rpc", "ikev2": "ike", "tds": "mssql-db", "tns": "oracle",
 })
 
 

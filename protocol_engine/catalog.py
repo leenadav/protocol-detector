@@ -48,6 +48,8 @@ _SUPPORTED = (
     ProtocolSupport("radius", ("udp",), "datagram", "Hint required: Access-Request PAP/CHAP/State with supported attributes; no authenticator verification or EAP", True),
     ProtocolSupport("fastcgi", ("tcp",), "initial_params", "v1 BEGIN_REQUEST plus complete PARAMS stream; one request, zero reserved fields, no response/body semantics"),
     ProtocolSupport("rsync", ("tcp",), "protocol_header", "Daemon greeting, final protocols 27..32; version/digest offers, no authentication or transfer"),
+    ProtocolSupport("tds", ("tcp",), "negotiation_request/negotiation_response", "MSSQL TDS 7.x PRELOGIN packet (client) or its response (server): header, option table, VERSION/ENCRYPTION mandatory, fixed option lengths; instance names, thread, trace and nonce bytes not emitted; no LOGIN7 or query stream"),
+    ProtocolSupport("tns", ("tcp",), "negotiation_request/negotiation_response", "Oracle Net CONNECT (client) or ACCEPT/REFUSE/RESEND (server) packet: header checksums zero, versions 308..319, connect data offset/length consistency, printable descriptor; descriptor contents not emitted; no DATA packets or authentication"),
     ProtocolSupport("mysql", ("tcp",), "protocol_header", "Hint required: modern HandshakeV10, 21-byte challenge and native/caching_sha2/sha256 plugin", True),
     ProtocolSupport("mongodb", ("tcp",), "initial_message", "Hint required: uncompressed OP_MSG body/sequences, bounded BSON and CRC-32C; no telemetry or command semantics", True),
     ProtocolSupport("stomp", ("tcp",), "protocol_header", "1.1/1.2 CONNECT/STOMP/CONNECTED, complete empty-body NUL-terminated frame"),
