@@ -1,7 +1,7 @@
-# Protocol detector v0.25
+# Protocol detector v0.27
 
 A standalone Python 3.9+ protocol classification engine and passive observation
-tool. **40 protocol families**, with explicit profiles rather than claims of full
+tool. **65 protocol families**, with explicit profiles rather than claims of full
 protocol/session validation. No Python runtime dependencies. Live capture uses
 an installed `tcpdump`; ordinary demos and tests require no capture privileges.
 We are staying in Python. This release does not integrate with or modify an SWG.
@@ -44,6 +44,23 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.27 — 23 more decoders and greeting/command correlation
+
+Coverage grows from 41 to **65 families, 60 automatic** (381 tests). New TCP
+profiles: FTP, POP3 (client and server), IMAP tagged client commands, Telnet
+negotiation, SMB1 negotiate, NetBIOS session request, Kerberos AS/TGS requests
+(also UDP), TACACS+, OpenVPN over TCP, PPTP, Modbus/TCP, DNP3 (CRC-verified),
+ISO-TSAP (RFC 1006/X.224), EtherNet/IP (also UDP), IEC 60870-5-104, Kafka and
+Cassandra CQL v4. New UDP profiles: WireGuard and OpenVPN (reported as
+`encryption`), L2TPv2, SSDP, NetFlow v5/v9, IPFIX, sFlow v5, BACnet/IP, and RTP
+with an explicit hint only. Text lines shared by several protocols (`220`
+greetings, `USER`/`PASS`/`QUIT` …) are no longer guessed: the direction reports
+`unknown` with an `ambiguous_candidates` context, and the session verdict
+intersects both directions (`220` + `USER` becomes `ftp` with status
+`correlated`). The application catalog has 68 entries. v0.26 (IP-level
+protocols) was dropped; the engine stays an application-layer classifier over
+TCP/UDP. See PROTOCOLS.md (v0.27 section) and BENCHMARK-V027.md.
 
 ## New in v0.25 — QUIC Initial recognition with ClientHello recovery
 

@@ -1,10 +1,27 @@
-# Review scope: protocol detector v0.25
+# Review scope: protocol detector v0.27
 
-Python3.9-compatible IPv4 passive classification: 41 families, 37 automatic.
+Python3.9-compatible IPv4 passive classification: 65 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
-defines the new verdict vocabulary and the application catalog.
+defines the verdict vocabulary and the application catalog.
 
-New focus (v0.25): QUIC (protocol_engine/quic.py, aes.py). Trace: long-header
+New focus (v0.27): 23 decoders in protocol_engine/session_text.py, windows.py,
+vpn.py, telemetry.py, ics.py, datainfra.py, their dispatch routes
+(dispatch.py 0x00/0x01, 0x03 TPKT, 0x04/0x63.., 0x68, 0xff blocks) and UDP
+candidate probes (datagram.py). Trace: every length/count field against the
+frame or datagram before body access; min(max_headers, N) bounds on dialects,
+padata, AVPs, flowsets, sets, samples; DNP3 CRC coverage and the 255-byte
+frame bound; Kerberos BER definite-length handling and field ordering; TPKT
+child selection (RDP cookie / negotiation / bare request vs. COTP); Kafka
+8-byte selection and fragmentation equivalence; Telnet byte-at-a-time state
+and the 64-byte bound; the `AmbiguousPrefix` route (shared 220/USER/PASS/QUIT
+lines, `* OK` without capabilities) producing terminal `unknown` with
+`ambiguous_candidates` context only, and `session_verdict` correlation
+requiring both directions with an intersection of exactly one family (never a
+hint or port); WireGuard/OpenVPN reported as encryption without tunnel claims;
+no emission of dialects, NetBIOS names, principals, realms, host/vendor names,
+client ids, LOCATION/USN strings. 381 tests pass. BENCHMARK-V027.md.
+
+Previous focus (v0.25): QUIC (protocol_engine/quic.py, aes.py). Trace: long-header
 bounds (CID lengths, token, Length varint vs datagram, coalesced trailing bytes),
 probe placement ahead of DTLS and IKE competition, key derivation against the
 RFC 9001/9369 vectors, header protection sample offset and reserved-bit check,

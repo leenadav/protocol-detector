@@ -109,11 +109,13 @@ class ServiceTests(unittest.TestCase):
                      '* OK [CAPABILITY IMAP4rev2] שרת מוכן\r\n'.encode()):
             self.assert_protocol(data, 'imap')
         for data in (b'* OK ready\r\n', b'* OK [CAPABILITY OTHER] ready\r\n', b'* CAPABILITY XIMAP4rev2\r\n',
-                     b'* OK [CAPABILITY IMAP4rev2]\r\n', b'A001 CAPABILITY\r\n',
+                     b'* OK [CAPABILITY IMAP4rev2]\r\n',
                      b'* CAPABILITY IMAP4rev2 (wrong)\r\n', b'* CAPABILITY IMAP4rev2  STARTTLS\r\n',
                      b'* OK [CAPABILITY IMAP4rev2] \x00\r\n', b'* OK [CAPABILITY IMAP4rev2] \xff\r\n'):
             self.assert_rejected(data)
         self.assertEqual(inspect(IMAP, config=Config(max_headers=2)).observation.status, 'budget_exhausted')
+        # Since v0.27 a tagged client command is structural IMAP evidence in its own right.
+        self.assertEqual(self.assert_protocol(b'A001 CAPABILITY\r\n', 'imap').observation.scope, 'initial_message')
 
     def test_rdp_cookie_correlation_and_security_offers(self):
         correlation = b'\x06\x00\x24\x00' + bytes(range(1, 17)) + bytes(16)

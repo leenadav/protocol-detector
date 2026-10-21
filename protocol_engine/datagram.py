@@ -8,6 +8,11 @@ from .datagram_result import DatagramMatch
 from .dtls import dtls
 from .ikev2 import ikev2, ike_probe
 from .quic import QuicAssembler, quic, quic_probe
+from .vpn import l2tp, openvpn, wireguard, wireguard_probe
+from .telemetry import netflow, netflow_probe, sflow, ssdp, ssdp_probe
+from .ics import ENIPParser, bacnet, bacnet_probe, enip_probe
+from .windows import kerberos, kerberos_probe
+from .datainfra import rtp
 from .model import Config, Evidence, Metrics, Observation
 from .parsers import BudgetError, ParseError
 from .signatures import SignatureSet
@@ -37,6 +42,14 @@ def sip(data, config):
     return "sip/2.0", "SIP required header framing and datagram body length validated; body/dialogue semantics unverified"
 
 
+def enip_datagram(data, config):
+    parser = ENIPParser(config)
+    consumed = parser.feed(data)
+    if not parser.done or consumed != len(data):
+        raise ParseError("EtherNet/IP datagram must contain exactly one encapsulation message")
+    return parser.protocol_name, parser.reason
+
+
 def dns_with_contexts(data, config):
     if not config.retain_contexts:
         return dns(data, config)
@@ -45,7 +58,9 @@ def dns_with_contexts(data, config):
     return protocol, reason, {"dns-req-query-name": qname, "dns-req-query-type": qtype}
 
 
-VALIDATORS = MappingProxyType({"quic": quic, "ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
+VALIDATORS = MappingProxyType({"quic": quic, "wireguard": wireguard, "openvpn": openvpn, "l2tp": l2tp, "ssdp": ssdp, "netflow": netflow,
+                               "sflow": sflow, "bacnet": bacnet, "kerberos": kerberos, "ethernet-ip": enip_datagram, "rtp": rtp,
+                               "ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog})
 
 
 class DatagramInspector:
@@ -100,6 +115,10 @@ class DatagramInspector:
             candidates = (protocol_hint,)
         elif quic_probe(data):
             candidates = ("quic",)
+        elif wireguard_probe(data):
+            candidates = ("wireguard",)
+        elif ssdp_probe(data):
+            candidates = ("ssdp",)
         elif data[:3] in (b"\x16\xfe\xff", b"\x16\xfe\xfd"):
             candidates = ("dtls",)
         elif len(data) >= 8 and data[4:8] == b"\x21\x12\xa4\x42":
@@ -121,6 +140,20 @@ class DatagramInspector:
             # Tiny empty CoAP messages are too weak for automatic selection.
             if len(data) >= 4 and len(data) > 4 + (data[0] & 15) and data[0] >> 6 == 1 and data[0] & 15 <= 8:
                 candidates.append("coap")
+            if netflow_probe(data):
+                candidates.append("netflow")
+            if data[:4] == b"\0\0\0\x05" and len(data) >= 28:
+                candidates.append("sflow")
+            if bacnet_probe(data):
+                candidates.append("bacnet")
+            if kerberos_probe(data):
+                candidates.append("kerberos")
+            if len(data) >= 14 and data[0] in (0x38, 0x50):
+                candidates.append("openvpn")
+            if len(data) >= 20 and data[0] & 0xcb == 0xc8:
+                candidates.append("l2tp")
+            if enip_probe(data) and len(data) >= 24:
+                candidates.append("ethernet-ip")
         # SPI bytes are arbitrary and may also satisfy a different protocol's
         # probe. Keep that competitor; at most one extra fixed-position route.
         if not protocol_hint and ike_probe(data):

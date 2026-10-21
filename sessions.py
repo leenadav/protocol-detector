@@ -50,6 +50,8 @@ class Stream:
         candidate = self.inspector.candidate
         if candidate == "git_text":
             candidate = "text"  # Shared routing scope before a structural discriminator.
+        if candidate == "tpkt":
+            candidate = "rdp"
         matched = "tls" if observation.encryption == "tls" else observation.application_protocol
         if matched == "http/2":
             matched = "http2"

@@ -45,6 +45,16 @@ def _label(observation):
     return observation.application_protocol or observation.encryption
 
 
+def _candidates(observation):
+    """Candidate families recorded by an ambiguous unknown direction, or an empty set."""
+    if observation.status != "unknown":
+        return frozenset()
+    for evidence in observation.evidence:
+        if evidence.field == "ambiguous_candidates":
+            return frozenset(evidence.value.split(","))
+    return frozenset()
+
+
 def _application(observation, transport, signatures=None):
     """Catalog entry for an identified observation.
 
@@ -139,6 +149,18 @@ def session_verdict(client, server, transport="tcp", server_port=None, client_by
                 reasons.append("One direction was invalidated: " + obs.reason)
         return _build(application, transport, server_port, "identified", client, server, reasons)
     observations = [obs for obs in (client, server) if obs is not None]
+    candidate_sets = [_candidates(obs) for obs in observations]
+    candidate_sets = [item for item in candidate_sets if item]
+    if len(candidate_sets) == 2:
+        # Both directions were structurally valid text for several families; the
+        # intersection names the one family consistent with both sides.
+        common = candidate_sets[0] & candidate_sets[1]
+        if len(common) == 1:
+            name = next(iter(common))
+            if name in APPLICATIONS:
+                reasons.append("Bidirectional correlation of ambiguous directions: " + ",".join(sorted(candidate_sets[0])) +
+                               " with " + ",".join(sorted(candidate_sets[1])))
+                return _build(APPLICATIONS[name], transport, server_port, "correlated", client, server, reasons)
     unmatched = [obs for obs in observations if obs.status in _UNMATCHED]
     if unmatched:
         return _outcome(unknown_name, transport, unmatched[0].status, [obs.reason for obs in unmatched], client, server)

@@ -5,14 +5,17 @@ Ambiguous HTTP method prefixes stay undecided until a distinguishing byte.
 """
 from .extended import H2_PREFACE
 from .git_transport import HEX as GIT_HEX
+from .ics import enip_probe, modbus_probe
+from .datainfra import kafka_probe
 
 LOOKAHEAD = 24
 _table = ["unknown"] * 256
 for _byte in b"!#$%&'*+.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-":
     _table[_byte] = "text"
-for _byte, _family in ((64, "rsync"), (3, "rdp"), (22, "tls"), (5, "socks5"), (16, "mqtt"), (19, "bittorrent"), (128, "memcached"), (255, "bgp")):
+for _byte, _family in ((64, "rsync"), (3, "tpkt"), (22, "tls"), (5, "socks5"), (16, "mqtt"), (19, "bittorrent"), (128, "memcached"),
+                       (0x81, "netbios-ss"), (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus")):
     _table[_byte] = _family
-for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83):
+for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68):
     _table[_byte] = "ambiguous"
 FIRST_BYTE = tuple(_table)
 del _table, _byte, _family
@@ -37,11 +40,39 @@ def select(prefix):
     if first == 5:
         if len(prefix) < 2:
             return None
+        if prefix[1] == 0x64:
+            return 'dnp3'  # 0x0564 start bytes; SOCKS5 would announce 100 methods, DCE/RPC needs minor 0
         # RPC minor version zero cannot be a valid SOCKS5 method count.
         return 'dcerpc' if prefix[1] == 0 else 'socks5'
     family = FIRST_BYTE[first]
     if family != "ambiguous":
         return family
+    if first == 255:
+        if len(prefix) < 2:
+            return None
+        if prefix[1] == 255:
+            return 'bgp'
+        if 0xf1 <= prefix[1] <= 0xfe:
+            return 'telnet'
+        return 'unknown'
+    if first == 4:
+        if len(prefix) < 5:
+            return None
+        return 'ethernet-ip' if prefix[1] == 0 and prefix[4] == 0 else 'cql'
+    if first in (0x63, 0x64, 0x65, 0x66, 0x6f, 0x70):
+        if len(prefix) < 2:
+            return None
+        if prefix[1] != 0:
+            return 'text'
+        if len(prefix) < 8:
+            return None
+        return 'ethernet-ip' if enip_probe(prefix) else 'unknown'
+    if first == 0x68:
+        if len(prefix) < 2:
+            return None
+        if prefix[1] != 4:
+            return 'text'
+        return 'iec-104' if len(prefix) >= 6 and prefix[2] & 3 == 3 and prefix[3:6] == b'\0\0\0' else ('text' if len(prefix) >= 6 else None)
     if first in (67, 83):
         # Common SSH/SMTP and HTTP C*/S* prefixes can leave immediately; only
         # CO... and ST... need the longer handshake discriminator.
@@ -62,17 +93,31 @@ def select(prefix):
             return "fastcgi"
         if first == 0 and prefix[4:8] == b"\xfeSMB":
             return "smb2"
+        if first == 0 and prefix[4:8] == b"\xffSMB":
+            return "smb1"
+        if first == 0 and prefix[4:8] == b"\x1a\x2b\x3c\x4d":
+            return "pptp"
         if prefix[4:8] == b"\x21\x12\xa4\x42":
             return "stun"
+        if first == 0 and prefix[4] in (0x6a, 0x6c) and _kerberos_length(prefix):
+            return "kerberos"
+        if modbus_probe(prefix):
+            return "modbus"
         code = int.from_bytes(prefix[4:8], "big")
         if first == 0 and (code in (80877103, 80877104) or (code >> 16 == 3 and code & 65535 <= 2)):
             return "postgresql"
+        if first == 0 and kafka_probe(prefix):
+            return "kafka"
         if int.from_bytes(prefix[:2], "big") < 12:
             return "unknown"
         if len(prefix) < 14:
             return None
         from .wire import dns_probe
-        return "dns" if dns_probe(prefix[2:14]) else "unknown"
+        if dns_probe(prefix[2:14]):
+            return "dns"
+        if prefix[2] in (0x38, 0x50) and 14 <= int.from_bytes(prefix[:2], "big") <= 1500 and prefix[3:11] != bytes(8):
+            return "openvpn"
+        return "unknown"
     if first == 48:  # BER SEQUENCE versus an HTTP method beginning with '0'.
         if len(prefix) < 2:
             return None
@@ -110,3 +155,15 @@ def select(prefix):
         if (not digits or digits.isdigit()) and len(prefix) < LOOKAHEAD:
             return None
     return "text"
+
+
+def _kerberos_length(prefix):
+    """TCP length prefix must equal the BER-encoded KDC-REQ size (tag + length + content)."""
+    size = int.from_bytes(prefix[:4], "big")
+    first = prefix[5]
+    if first < 128:
+        return size == 2 + first
+    width = first & 127
+    if not 1 <= width <= 3 or 6 + width > len(prefix):
+        return False
+    return size == 2 + width + int.from_bytes(prefix[6:6 + width], "big")

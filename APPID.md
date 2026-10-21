@@ -1,4 +1,4 @@
-# App-ID style application identification — v0.22
+# App-ID style application identification — v0.27 (introduced in v0.22)
 
 This document maps the vocabulary of application-aware firewalls (Palo Alto
 Networks App-ID is the reference model) onto this engine, states exactly what is
@@ -10,13 +10,13 @@ parity with a commercial signature corpus.
 | App-ID stage | This engine | Where |
 |---|---|---|
 | Policy pre-check on IP/port | Not implemented; detection never uses ports | — |
-| Application signatures | Bounded structural profiles per family (40 families, PROTOCOLS.md); configured exact-host mappings (`RuleIndex`) | `protocol_engine/` |
+| Application signatures | Bounded structural profiles per family (65 families, PROTOCOLS.md); configured exact-host mappings (`RuleIndex`) | `protocol_engine/` |
 | Decryption + re-identification | TLS: not performed; `feed_decrypted()` accepts plaintext from a host TLS stack. QUIC: Initial protection (public keys) is removed to read the ClientHello | `engine.py`, `quic.py` |
 | Protocol decoders / tunneled apps | Decoders exist per family; tunnel transitions are the host's phase boundaries (v0.28 planned) | `engine.py` |
 | Heuristics for evasive traffic | Planned (v0.29) | — |
 | Client/server implementation fingerprints (not an App-ID feature; nDPI-style) | **Implemented**: JA3/JA4/JA3S/JA4S/HASSH/HTTP2 (FINGERPRINTS.md) | `protocol_engine/fingerprints.py` |
 | Session verdict (`web-browsing`, `ssl`, `unknown-tcp`, …) | **Implemented** | `protocol_engine/appid.py` |
-| Application catalog (category, risk, characteristics, dependencies) | **Implemented**, 44 entries | `protocol_engine/applications.py` |
+| Application catalog (category, risk, characteristics, dependencies) | **Implemented**, 68 entries | `protocol_engine/applications.py` |
 | application-default (standard port check) | **Implemented** as `port_usage` | `appid.py` |
 | Traffic log / session record | **Implemented** as `{"type": "session"}` events | `analyze_pcap.py`, `live_capture.py` |
 | Custom App-ID signatures with contexts | **Implemented** (SIGNATURES.md) | `protocol_engine/signatures.py` |
@@ -33,13 +33,18 @@ A verdict names either a catalog application or a session outcome.
 | `<configured name>` | `RuleIndex` exact-host mapping on `tls_sni`/`http_host`; `base_app` names the carrier (`ssl`/`web-browsing`), `implicitly_uses` lists it | specific app implicitly using ssl/web-browsing |
 | `<signature name>` | Custom signature matched (SIGNATURES.md); category/risk come from the signature, `base_app` is its `parent` or the family that exposed the contexts, including `unknown-tcp`/`unknown-udp` | custom App-ID |
 | `ssh`, `dns`, `smb`, `rdp`, … | The family's structural profile passed (see catalog aliases for vendor names) | same |
+| `wireguard`, `openvpn` | Handshake/control framing validated; reported through `encryption`, no tunnel contents or peer identity | same |
+| `ftp`, `pop3`, `smtp` with status `correlated` | Each direction alone was ambiguous (`220` greeting, `USER` command); the intersection of both candidate sets is one family (v0.27) | same |
 | `unknown-tcp` / `unknown-udp` | Payload existed and every supported profile rejected it, or a budget ran out before a profile completed | unknown-tcp / unknown-udp |
 | `insufficient-data` | Payload existed, inspection ended (FIN, RST, idle, EOF) while still detecting | insufficient-data |
 | `incomplete` | No handshake completion observed, or handshake without any payload | incomplete |
 | `not-applicable` | Observation integrity lost (conflicting overlap, control rejection, capture gap); any earlier label is retracted | not-applicable |
 
 Rules of the session merge (`session_verdict`): an identified direction wins and
-the client direction is preferred; a differing server identification is kept in
+the client direction is preferred; when neither direction identified but both
+carry `ambiguous_candidates` context whose intersection is exactly one family,
+the verdict is that family with status `correlated` (never from one direction,
+a hint or a port); a differing server identification is kept in
 `reasons`, never silently dropped. Without identification, payload outside every
 profile is `unknown-*`; an invalidated direction makes the session
 `not-applicable`; remaining payload is `insufficient-data`; otherwise

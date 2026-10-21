@@ -5,6 +5,7 @@ from .model import normalize_hostname
 from .control import ControlHeaders, START
 from .parsers import BudgetError, LineParser, ParseError, TOKEN
 from .service_text import nats, imap_capability
+from .session_text import command_line, imap_command, pop3_greeting
 
 H2_PREFACE = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 _NATS_START = re.compile(rb'(INFO|CONNECT)[ \t]+(.+)', re.I)
@@ -12,6 +13,14 @@ _NATS_START = re.compile(rb'(INFO|CONNECT)[ \t]+(.+)', re.I)
 
 class UnsupportedPrefix(ParseError):
     """An ambiguous or unsupported structure, not proof of a malformed protocol."""
+
+
+class AmbiguousPrefix(UnsupportedPrefix):
+    """Valid for several families at once; carries the candidate set for session correlation."""
+
+    def __init__(self, message, candidates):
+        super().__init__(message)
+        self.candidates = tuple(candidates)
 
 
 class TextParser(LineParser):
@@ -91,14 +100,39 @@ class TextParser(LineParser):
                 return
         if line.startswith(b'* '):
             if not imap_capability(line, self.config):
-                raise UnsupportedPrefix('Untagged text without explicit IMAP revision capabilities is ambiguous')
+                raise AmbiguousPrefix('Untagged text without explicit IMAP revision capabilities is ambiguous', ('imap',))
             self.family = self.protocol_name = 'imap'
             self.scope = 'protocol_header'
             self.done = True
             self.reason = 'IMAP server capability syntax validated; revision capabilities, authentication and later messages unverified'
             return
         if re.match(rb"220(?:[ -]|$)", line):
-            raise UnsupportedPrefix("A 220 server greeting alone is ambiguous; SMTP client greeting required")
+            raise AmbiguousPrefix("A 220 server greeting alone is ambiguous between SMTP and FTP; a client command is required", ("smtp", "ftp"))
+        is_http = re.fullmatch(TOKEN + rb" [\x21-\x7e]+ HTTP/1\.[01]", line) or re.fullmatch(rb"HTTP/1\.[01] [1-5][0-9]{2} .*", line)
+        if not is_http:
+            if line[:1] in (b'+', b'-') and pop3_greeting(line):
+                self.family = self.protocol_name = 'pop3'
+                self.scope = 'protocol_header'
+                self.done = True
+                self.reason = 'POP3 server status line validated; mailbox and authentication unverified'
+                return
+            if imap_command(line, self.config):
+                self.family = self.protocol_name = 'imap'
+                self.scope = 'initial_message'
+                self.done = True
+                self.reason = 'IMAP tagged client command validated; arguments and credentials are not inspected or emitted'
+                return
+            classified = command_line(line)
+            if classified is not None:
+                family, candidates = classified
+                if family is None:
+                    raise AmbiguousPrefix("Command shared by FTP and POP3; the server greeting decides", candidates)
+                self.family = self.protocol_name = family
+                self.scope = 'initial_message'
+                self.done = True
+                self.reason = ('FTP client command syntax validated; arguments are not emitted, transfers unverified' if family == 'ftp'
+                               else 'POP3 client command syntax validated; credentials are not emitted, mailbox unverified')
+                return
         self.family = "http"
         # First-line framing has resolved the family. Later HTTP headers need
         # no shared-text dispatch, regardless of how many protocols are added.

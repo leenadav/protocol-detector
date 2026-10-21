@@ -170,3 +170,101 @@ QUIC_INITIAL = bytes.fromhex(
     'f3d1f9af93d1af5950bd493f5aa731b4056df31bd267b6b90a079831aaf579be0a39013137aac6d404f518cfd4684064'
     '7e78bfe706ca4cf5e9c5453e9f7cfd2b8b4c8d169a44e55c88d4a9a7f9474241e221af44860018ab0856972e194cd934')
 DATAGRAM_CASES += ((QUIC_INITIAL, 'quic'),)
+
+# ---- v0.27 fixtures: synthetic first messages for the new families -------------
+import struct as _struct
+from protocol_engine.ics import _dnp3_crc as _dnp3_crc
+
+FTP = b'FEAT\r\n'
+POP3_SERVER = b'+OK POP3 server ready\r\n'
+POP3_CLIENT = b'CAPA\r\n'
+IMAP_CLIENT = b'a001 CAPABILITY\r\n'
+TELNET = b'\xff\xfd\x18\xff\xfb\x01'
+_smb1_dialects = b'\x02PC NETWORK PROGRAM 1.0\x00\x02NT LM 0.12\x00\x02SMB 2.002\x00'
+_smb1_body = (b'\xffSMB\x72' + bytes(4) + b'\x18' + b'\x01\x48' + bytes(2) + bytes(8) + bytes(2) + bytes(2) + b'\xff\xfe' + bytes(2) + bytes(2)
+              + b'\x00' + len(_smb1_dialects).to_bytes(2, 'little') + _smb1_dialects)
+SMB1 = b'\x00' + len(_smb1_body).to_bytes(3, 'big') + _smb1_body
+del _smb1_dialects, _smb1_body
+
+
+def _netbios_name(name):
+    padded = name.ljust(15)[:15].encode('ascii') + b'\x20'
+    return b'\x20' + b''.join(bytes((0x41 + (byte >> 4), 0x41 + (byte & 15))) for byte in padded) + b'\x00'
+
+
+NETBIOS_SS = b'\x81\x00\x00\x44' + _netbios_name('FILESERVER') + _netbios_name('WORKSTATION')
+
+
+def _ber(tag, content):
+    size = len(content)
+    if size < 128:
+        return bytes((tag, size)) + content
+    width = (size.bit_length() + 7) // 8
+    return bytes((tag, 0x80 | width)) + size.to_bytes(width, 'big') + content
+
+
+def _krb_asreq():
+    body = _ber(0x30, _ber(0xa0, _ber(0x03, b'\x00\x40\x81\x00\x10'))  # kdc-options (bit string)
+                 + _ber(0xa1, _ber(0x30, _ber(0xa0, _ber(0x02, b'\x01')) + _ber(0xa1, _ber(0x30, _ber(0x1b, b'user')))))
+                 + _ber(0xa2, _ber(0x1b, b'EXAMPLE.ORG'))
+                 + _ber(0xa5, _ber(0x18, b'20371231235959Z')) + _ber(0xa7, _ber(0x02, b'\x12\x34\x56\x78'))
+                 + _ber(0xa8, _ber(0x30, _ber(0x02, b'\x12') + _ber(0x02, b'\x11'))))
+    kdc_req = _ber(0x30, _ber(0xa1, _ber(0x02, b'\x05')) + _ber(0xa2, _ber(0x02, b'\x0a')) + _ber(0xa4, body))
+    return _ber(0x6a, kdc_req)
+
+
+KERBEROS = _krb_asreq()
+KERBEROS_TCP = len(KERBEROS).to_bytes(4, 'big') + KERBEROS
+_tacacs_body = b'\x01\x00\x01\x01' + bytes((4, 0, 0, 0)) + b'user'
+TACACS = b'\xc0\x01\x01\x01' + b'\x12\x34\x56\x78' + len(_tacacs_body).to_bytes(4, 'big') + _tacacs_body
+del _tacacs_body
+WIREGUARD = b'\x01\x00\x00\x00' + b'\x11\x22\x33\x44' + bytes(32) + bytes(48) + bytes(28) + bytes(16) + bytes(16)
+OPENVPN = b'\x38' + b'\x01\x02\x03\x04\x05\x06\x07\x08' + b'\x00' + bytes(4)
+OPENVPN_TCP = len(OPENVPN).to_bytes(2, 'big') + OPENVPN
+PPTP = (_struct.pack('!HHIHHHHIIHH', 156, 1, 0x1a2b3c4d, 1, 0, 0x0100, 0, 3, 3, 65535, 1)
+        + b'client-host'.ljust(64, b'\x00') + b'vendor'.ljust(64, b'\x00'))
+L2TP = (b'\xc8\x02' + (12 + 8 + 10 + 8).to_bytes(2, 'big') + bytes(4) + bytes(4)
+        + b'\x80\x08\x00\x00\x00\x00\x00\x01'      # Message Type = SCCRQ
+        + b'\x80\x0a\x00\x00\x00\x02\x01\x00\x00\x00'  # Protocol Version 1.0 with revision
+        + b'\x80\x08\x00\x00\x00\x03\x00\x03')     # Framing capabilities
+SSDP = (b'M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: "ssdp:discover"\r\nMX: 2\r\nST: ssdp:all\r\n\r\n')
+_nf5_record = bytes(16) + _struct.pack('!IIII', 10, 1200, 100, 200) + bytes(16)
+NETFLOW5 = _struct.pack('!HHIIIIBBH', 5, 2, 1000, 1700000000, 0, 42, 0, 0, 0) + _nf5_record * 2
+del _nf5_record
+NETFLOW9 = _struct.pack('!HHIIII', 9, 1, 1000, 1700000000, 7, 1) + _struct.pack('!HH', 0, 20) + _struct.pack('!HHHHHHHH', 256, 3, 8, 4, 12, 4, 2, 4)
+IPFIX = _struct.pack('!HHIII', 10, 16 + 16, 1700000000, 1, 1) + _struct.pack('!HH', 2, 16) + _struct.pack('!HHHHHH', 256, 2, 8, 4, 12, 4)[:8] + bytes(4)
+SFLOW = (_struct.pack('!IIIIIII', 5, 1, 0xc0000201, 0, 1, 1000, 1) + _struct.pack('!II', 2, 28) + bytes(28))
+MODBUS = _struct.pack('!HHHBBHH', 1, 0, 6, 1, 3, 0, 10)
+
+
+def _dnp3_frame(user_data):
+    header = b'\x05\x64' + bytes((len(user_data) + 5, 0xc4)) + (1).to_bytes(2, 'little') + (10).to_bytes(2, 'little')
+    frame = header + _dnp3_crc(header).to_bytes(2, 'little')
+    for pos in range(0, len(user_data), 16):
+        chunk = user_data[pos:pos + 16]
+        frame += chunk + _dnp3_crc(chunk).to_bytes(2, 'little')
+    return frame
+
+
+DNP3 = _dnp3_frame(b'\xc0\xc1\x01\x3c\x02\x06')
+BACNET = b'\x81\x0b\x00\x0c\x01\x20\xff\xff\x00\xff\x10\x08'
+ISO_TSAP = b'\x03\x00\x00\x16\x11\xe0\x00\x00\x00\x01\x00\xc0\x01\x0a\xc1\x02\x01\x00\xc2\x02\x01\x02'
+ENIP = _struct.pack('<HHII', 0x65, 4, 0, 0) + bytes(8) + bytes(4) + b'\x01\x00\x00\x00'
+ENIP_UDP = _struct.pack('<HHII', 0x63, 0, 0, 0) + bytes(8) + bytes(4)
+IEC104 = b'\x68\x04\x07\x00\x00\x00'
+_kafka_body = _struct.pack('!hhi', 18, 3, 1) + _struct.pack('!h', 6) + b'client' + b'\x00' + b'\x07' + b'tester' + b'\x06' + b'1.0.0' + b'\x00'
+KAFKA = len(_kafka_body).to_bytes(4, 'big') + _kafka_body
+del _kafka_body
+_cql_map = _struct.pack('!H', 1) + _struct.pack('!H', 11) + b'CQL_VERSION' + _struct.pack('!H', 5) + b'3.0.0'
+CQL = b'\x04\x00\x00\x01\x01' + len(_cql_map).to_bytes(4, 'big') + _cql_map
+del _cql_map
+RTP = b'\x80\x60\x00\x01\x00\x00\x00\xa0\x12\x34\x56\x78' + bytes(20)
+
+STREAM_CASES += ((FTP, 'ftp'), (POP3_SERVER, 'pop3'), (POP3_CLIENT, 'pop3'), (IMAP_CLIENT, 'imap'), (TELNET, 'telnet'),
+                 (SMB1, 'smb1'), (NETBIOS_SS, 'netbios-ss'), (KERBEROS_TCP, 'kerberos'), (TACACS, 'tacacs-plus'),
+                 (OPENVPN_TCP, 'openvpn'), (PPTP, 'pptp'), (MODBUS, 'modbus'), (DNP3, 'dnp3'), (ISO_TSAP, 'iso-tsap'),
+                 (ENIP, 'ethernet-ip'), (IEC104, 'iec-104'), (KAFKA, 'kafka'), (CQL, 'cql/4'))
+DATAGRAM_CASES += ((WIREGUARD, 'wireguard'), (OPENVPN, 'openvpn'), (L2TP, 'l2tp/2'), (SSDP, 'ssdp'), (NETFLOW5, 'netflow/5'),
+                   (NETFLOW9, 'netflow/9'), (IPFIX, 'ipfix'), (SFLOW, 'sflow/5'), (BACNET, 'bacnet'), (KERBEROS, 'kerberos'),
+                   (ENIP_UDP, 'ethernet-ip'))
+HINTED_DATAGRAM_CASES += ((RTP, 'rtp', 'rtp'),)

@@ -69,7 +69,10 @@ class DCERPCTests(unittest.TestCase):
     def test_socks_compatibility_and_two_byte_discriminator(self):
         self.assertIsNone(select(b'\x05'))
         self.assertEqual(select(b'\x05\x00'),'dcerpc')
-        for count in range(1,256):self.assertEqual(select(bytes([5,count])),'socks5')
+        for count in range(1,256):
+            if count==0x64:continue  # 05 64 is the DNP3 data-link start since v0.27
+            self.assertEqual(select(bytes([5,count])),'socks5')
+        self.assertEqual(select(b'\x05\x64'),'dnp3')
         for cut in range(len(SOCKS5)+1):
             e=Inspector();e.feed(SOCKS5[:cut]);e.feed(SOCKS5[cut:]);self.assertEqual(e.observation.application_protocol,'socks5')
         e=inspect(b'\x05\x00');self.assertEqual(e.observation.status,'detecting');e.end()

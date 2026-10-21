@@ -232,3 +232,15 @@ JA4 מ־DTLS, JA4S ו־JA3S מ־ServerHello, HASSH מהודעת KEXINIT של ל�
 ההצפנה מתבצעת בפייתון טהור ועולה כ־2 מילישניות לחבילה; אפשר לכבות אותה עם
 `Config(quic_decrypt=False)` ולהישאר בזיהוי מבני בלבד. חבילות שרת, חבילות מאוחרות ו־HTTP/3
 עצמו אינם מפוענחים. 41 משפחות, 359 בדיקות עוברות. פירוט ב־PROTOCOLS.md.
+
+
+עדכון 0.27 מוסיף 23 משפחות פרוטוקולים חדשות — מ־41 ל־65 (60 במסלול אוטומטי). ב־TCP: FTP, POP3
+(לקוח ושרת), פקודות לקוח IMAP, משא ומתן Telnet, SMB1, בקשת סשן NetBIOS, בקשות Kerberos (גם UDP),
+TACACS+, OpenVPN, PPTP, Modbus/TCP, DNP3 (עם בדיקת CRC), ISO-TSAP, EtherNet/IP (גם UDP),
+IEC 60870-5-104, Kafka ו־Cassandra CQL. ב־UDP: WireGuard ו־OpenVPN (מדווחים כשדה `encryption`),
+L2TPv2, SSDP, NetFlow v5/v9, IPFIX, sFlow, BACnet/IP ו־RTP (רק עם רמז מפורש).
+שורות טקסט שמשותפות לכמה פרוטוקולים (ברכת `220`, פקודות `USER`/`PASS`/`QUIT`) אינן מנוחשות עוד:
+הכיוון מדווח `unknown` עם רשימת מועמדים כהקשר, והכרעת הסשן מצליבה את שני הכיוונים —
+`220` מהשרת יחד עם `USER` מהלקוח הופכים ל־`ftp` במצב `correlated`. גרסה 0.26 (פרוטוקולי IP)
+בוטלה: המנוע נשאר מסווג בשכבת האפליקציה מעל TCP/UDP. 381 בדיקות עוברות; פירוט ב־PROTOCOLS.md
+(סעיף v0.27) ונתוני ביצועים ב־BENCHMARK-V027.md.

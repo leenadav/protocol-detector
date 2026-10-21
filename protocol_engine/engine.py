@@ -2,7 +2,7 @@ from dataclasses import replace
 from typing import Optional, Tuple
 from .model import Config, Evidence, Event, Metrics, Observation, RuleIndex
 from .parsers import BudgetError, ParseError
-from .extended import UnsupportedPrefix
+from .extended import AmbiguousPrefix, UnsupportedPrefix
 from .dispatch import LOOKAHEAD, select
 from .registry import PARSERS, FACTORIES
 from .signatures import SignatureSet
@@ -132,7 +132,7 @@ class Inspector:
         parser = self._parser
         encryption = "tls" if self._candidate == "tls" else None
         protocol = None if encryption else parser.protocol_name
-        if self._candidate in ("text", "git_text"):
+        if self._candidate in ("text", "git_text", "tpkt"):
             self._candidate = parser.family
         hostname = parser.host if hasattr(parser, "host") else None
         alpn = parser.alpn if encryption else ()
@@ -253,6 +253,11 @@ class Inspector:
                 return self._finish(self._identified())
         except BudgetError as error:
             return self._finish(Observation(status="budget_exhausted", reason=str(error)))
+        except AmbiguousPrefix as error:
+            # Structurally valid for several families: record the candidates so a
+            # session-level verdict can intersect both directions. Never a guess here.
+            return self._finish(Observation(status="unknown", reason=str(error), evidence=(
+                Evidence("ambiguous_candidates", ",".join(error.candidates), self.source, "context"),)))
         except UnsupportedPrefix as error:
             return self._finish(Observation(status="unknown", reason=str(error)))
         except ParseError as error:

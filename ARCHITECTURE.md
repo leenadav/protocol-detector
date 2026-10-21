@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.25 — engine and observation contracts
+# Stream/datagram engine v0.27 — engine and observation contracts
 
 ## Ownership
 
@@ -546,3 +546,33 @@ tls-family `ssl-req-*` signatures apply to QUIC ClientHellos; contexts remain
 internal. Per-Initial cost is about 2 ms (AES-CTR of 75 blocks dominates);
 `Config.quic_decrypt=False` keeps structural recognition only. Rate limiting
 of Initial floods remains the host's responsibility (THREAT-MODEL T14).
+
+## Decoder expansion and text ambiguity (v0.27)
+
+New parsers live in six modules by domain (`session_text.py`, `windows.py`,
+`vpn.py`, `telemetry.py`, `ics.py`, `datainfra.py`) and register through the
+same three tables as before: `dispatch.FIRST_BYTE`/`select` for TCP prefix
+routing, `registry.PARSERS`/`FACTORIES` for parser construction, and
+`datagram.VALIDATORS` plus the candidate-selection block for UDP. `select`
+still returns exactly one family (or `None` to wait); ambiguous first bytes
+(0x00/0x01 length-prefixed frames, 0x03 TPKT, 0x04/0x63.. EtherNet-IP versus
+CQL/text, 0x68, 0xff) are resolved by fixed-position tests inside the prefix,
+never by scanning. The Kafka probe decides at 8 bytes so that whole feeds and
+3-byte fragments select identically (fragmentation-equivalence test).
+
+`AmbiguousPrefix` (a subclass of `UnsupportedPrefix`) carries a candidate
+tuple. `Inspector._finish` turns it into a terminal `unknown` observation whose
+only evidence is `ambiguous_candidates` with strength `context`; the direction
+inspected no more bytes. `appid.session_verdict` reads that evidence from both
+directions, and when the intersection has exactly one family builds a verdict
+with status `correlated` from the catalog entry. Correlation needs two
+observations from the same session; a hint, a port or a single direction never
+produces it (SR-2, SR-25).
+
+`TPKTParser` is a two-stage parser: TPKT framing, then a byte test on the X.224
+body chooses `RDPParser` or `COTPParser` and adopts the child's protocol name,
+reason and evidence. `TelnetParser` is a byte-at-a-time state machine with a
+64-byte command bound. UDP validators follow the `DatagramMatch` contract for
+encryption-only results (WireGuard, OpenVPN) and the `(protocol, reason)`
+contract otherwise. Every new validator bounds counts by `min(config.max_headers,
+N)` and refuses lengths that disagree with the datagram before touching bodies.
