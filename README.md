@@ -79,7 +79,7 @@ binding's value checked against its SMI type and never emitted; evidence
 `dns_rcode`; queries carrying answers or a response code are rejected. The
 new risk `dns-error-response` marks servfail, nxdomain and refused answers, so
 the server side of UDP flows now contributes evidence to the session verdict.
-454 tests.
+454 tests; BENCHMARK-V043.md records the cost check against v0.39.
 
 ## New in v0.42 — Encrypted ClientHello awareness
 

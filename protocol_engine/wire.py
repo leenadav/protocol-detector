@@ -4,6 +4,8 @@ No ports, I/O, application attribution or payload values in diagnostic messages.
 """
 import struct
 import zlib
+from .datagram_result import DatagramMatch
+from .model import Evidence
 from .parsers import BudgetError, ParseError
 from .extended import UnsupportedPrefix
 
@@ -14,24 +16,24 @@ def dns_probe(data):
 
 
 _DNS_RCODES = ("noerror", "formerr", "servfail", "nxdomain", "notimp", "refused", "yxdomain", "yxrrset", "nxrrset", "notauth", "notzone")
+# Evidence rows are immutable; the sixteen possible header outcomes are built once (hot UDP path).
+_DNS_QUERY_EVIDENCE = (Evidence("dns_message", "query", "wire", "structural"),)
+_DNS_RESPONSE_EVIDENCE = tuple((Evidence("dns_message", "response", "wire", "structural"),
+                                Evidence("dns_rcode", _DNS_RCODES[code] if code < len(_DNS_RCODES) else "other", "wire", "structural"))
+                               for code in range(16))
+_DNS_PROTOCOL_EVIDENCE = (Evidence("application_protocol", "dns", "wire", "structural"),)
 
 
 def dns_message_evidence(header):
     """(dns_message, dns_rcode) evidence rows for a validated header; query or response, no names."""
-    from .model import Evidence
     if not header[2] & 0x80:
-        return (Evidence("dns_message", "query", "wire", "structural"),)
-    rcode = header[3] & 0x0f
-    return (Evidence("dns_message", "response", "wire", "structural"),
-            Evidence("dns_rcode", _DNS_RCODES[rcode] if rcode < len(_DNS_RCODES) else "other", "wire", "structural"))
+        return _DNS_QUERY_EVIDENCE
+    return _DNS_RESPONSE_EVIDENCE[header[3] & 0x0f]
 
 
 def dns(data, config):
-    from .datagram_result import DatagramMatch
-    from .model import Evidence
     protocol, reason, _, _ = dns_details(data, config)
-    return DatagramMatch(reason, application_protocol=protocol,
-                         evidence=(Evidence("application_protocol", protocol, "wire", "structural"),) + dns_message_evidence(data))
+    return DatagramMatch(reason, application_protocol=protocol, evidence=_DNS_PROTOCOL_EVIDENCE + dns_message_evidence(data))
 
 
 def dns_details(data, config):
