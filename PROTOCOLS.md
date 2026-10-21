@@ -404,8 +404,12 @@ direction already carried past its LDAP message and the inspector skipped
 while terminal (`Inspector.boundary`, `Inspector.replay`): a ClientHello
 recorded before the server's answer, or coalesced with the request in one
 segment, is inspected exactly once and counted once (review round 2). The
-CONNECT correlation of v0.33 uses the same path, so a ServerHello sharing
-the 2xx's segment is no longer lost. Any response value on a StartTLS
+events such a replay publishes belong to the replayed direction: the
+analyzer extends the packet's own events when it is the same direction and
+exposes the other direction's as `Analyzer.peer_events` (source,
+destination, event), which the live observer emits with that direction
+(review round 3). The CONNECT correlation of v0.33 uses the same path, so a
+ServerHello sharing the 2xx's segment is no longer lost. Any response value on a StartTLS
 response, a non-OID name or a result code above 123 is malformed; controls
 remain outside the profile (unknown). Extended values, DNs and diagnostics
 are never emitted. The `cleartext-credential-protocol` risk stays on an

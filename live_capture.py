@@ -123,27 +123,34 @@ class CaptureMonitor:
                        "scope": "initial_message", "reason": message})
         server = self.analyzer.last_server
         for event in self.analyzer.last_events:
-            observation = event.observation
-            self.counts[observation.status] += 1
-            protocol = observation.application_protocol or observation.encryption
-            if observation.status == "identified":
-                self.protocols[protocol] += 1
-            if self.all_events or observation.status in ("identified", "invalidated"):
-                # No payload, community, credentials, HTTP path, or hostname output.
-                derived = {evidence.field: evidence.value for evidence in observation.evidence if evidence.strength == "derived"}
-                certificate = {evidence.field[16:]: evidence.value for evidence in observation.evidence
-                               if evidence.field.startswith("tls_certificate_")}
-                verdict = classify(observation, transport, server[1] if server else None, None, self.analyzer.signatures)
-                self.emit({"type": "classification", "timestamp": record.timestamp,
-                           "source": packet.source, "destination": packet.destination,
-                           "transport": transport, "status": observation.status,
-                           "protocol": protocol, "app": verdict.app, "risks": list(verdict.risks),
-                           "policy": (self.analyzer.policy.evaluate(verdict, transport, server[1] if server else None).action
-                                      if self.analyzer.policy is not None else None),
-                           "fingerprints": derived or None, "certificate": certificate or None, "event": event.kind,
-                           "scope": observation.scope,
-                           "candidate_hint": self.udp_hint if transport == 'udp' else self.tcp_hint,
-                           "reason": observation.reason})
+            self._classification(event, packet.source, packet.destination, transport, record.timestamp, server)
+        # A correlation may have replayed retained bytes on the other direction of the same
+        # connection (LDAP StartTLS client side); those events carry their own direction.
+        for source, destination, event in self.analyzer.peer_events:
+            self._classification(event, source, destination, transport, record.timestamp, server)
+
+    def _classification(self, event, source, destination, transport, timestamp, server):
+        observation = event.observation
+        self.counts[observation.status] += 1
+        protocol = observation.application_protocol or observation.encryption
+        if observation.status == "identified":
+            self.protocols[protocol] += 1
+        if self.all_events or observation.status in ("identified", "invalidated"):
+            # No payload, community, credentials, HTTP path, or hostname output.
+            derived = {evidence.field: evidence.value for evidence in observation.evidence if evidence.strength == "derived"}
+            certificate = {evidence.field[16:]: evidence.value for evidence in observation.evidence
+                           if evidence.field.startswith("tls_certificate_")}
+            verdict = classify(observation, transport, server[1] if server else None, None, self.analyzer.signatures)
+            self.emit({"type": "classification", "timestamp": timestamp,
+                       "source": source, "destination": destination,
+                       "transport": transport, "status": observation.status,
+                       "protocol": protocol, "app": verdict.app, "risks": list(verdict.risks),
+                       "policy": (self.analyzer.policy.evaluate(verdict, transport, server[1] if server else None).action
+                                  if self.analyzer.policy is not None else None),
+                       "fingerprints": derived or None, "certificate": certificate or None, "event": event.kind,
+                       "scope": observation.scope,
+                       "candidate_hint": self.udp_hint if transport == 'udp' else self.tcp_hint,
+                       "reason": observation.reason})
 
     def invalidate_all(self, reason, scope="active_connections"):
         active = len(self.analyzer.tracked)

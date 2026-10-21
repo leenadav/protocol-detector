@@ -13,7 +13,9 @@ unnamed-server phases opened only for a success with the same message id,
 nothing on a refusal) together with `Stream.open_shift` in sessions.py and
 `Inspector.boundary`/`replay` in engine.py (bytes skipped while terminal are
 replayed once into a peer-opened phase, never counted twice; the CONNECT
-correlation now uses the same path); `protocol_engine/irc.py` (prefix grammar, parameter
+correlation now uses the same path) and `Analyzer.peer_events` plus
+`CaptureMonitor._classification` in live_capture.py (replay events reach
+the live output with the replayed direction, exactly once); `protocol_engine/irc.py` (prefix grammar, parameter
 counts, the 512-byte limit in `LineParser.feed` for the `:` route and the
 hint only, four-parameter USER ambiguous with FTP, `PASS` only with the hint); `protocol_engine/wire.py` STUN class/method consistency and
 the TURN attribute sizes, `dns_query_type_class` (lowercase expanded names,
@@ -21,7 +23,7 @@ the TURN attribute sizes, `dns_query_type_class` (lowercase expanded names,
 `netbios-ns`, `ms-rpc-over-http`); the new `:` route in dispatch.py. Trace:
 extended values, nicknames, hosts, realms, nonces and names never reach
 evidence; the shift never fires on a refused or unnamed response; every
-attribute size against its message. 578 tests pass.
+attribute size against its message. 579 tests pass.
 
 Previous focus (v0.53): `protocol_engine/desktop.py` (X11 setup lengths and
 padding, the hinted reply's byte-order inference and size arithmetic, SPICE

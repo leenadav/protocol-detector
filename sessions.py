@@ -90,6 +90,7 @@ class Stream:
         exactly once. Returns True when the phase was opened; events are left in
         self.events like a feed.
         """
+        self.events = ()
         inspector = self.inspector
         start = inspector.boundary
         if not inspector.open_shift(boundary, expected):

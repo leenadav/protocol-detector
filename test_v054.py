@@ -196,6 +196,60 @@ class LDAPStartTLSTests(unittest.TestCase):
         self.assertEqual((analyzer.counts["connect_tunnels_correlated"], client.encryption, server.encryption, record["app"]), (1, "tls", "tls", "ssl"))
         self.assertEqual(fields(server, "shift", "selected_tls_version"), {"shift": "http-connect", "selected_tls_version": "1.3"})
 
+    def test_replayed_events_reach_the_analyzer_and_live_output(self):
+        # Review round 3: the replay publishes on the direction whose bytes were replayed; the analyzer
+        # exposes it as a peer event (or extends the packet's events when it is the same direction) and
+        # the live observer emits exactly one classification for it.
+        from capture_stream import CaptureRecord
+        from live_capture import CaptureMonitor
+        from protocol_fixtures import CONNECT_REQUEST, CONNECT_RESPONSE
+        frames = ldap_flow(LDAP_STARTTLS_UNNAMED)
+        reordered = [frames[0], frames[1], frames[2], frames[4], frames[3], frames[5]]
+        analyzer = Analyzer()
+        seen = []
+        for number, data in enumerate(reordered):
+            analyzer.process(number, decode_packet(data))
+            seen.append((tuple((e.kind, e.observation.encryption or e.observation.application_protocol) for e in analyzer.last_events),
+                         tuple((src, dst, e.kind, e.observation.encryption) for src, dst, e in analyzer.peer_events)))
+        # Packet 4 is the server's unnamed success: its own direction identifies LDAP, the client replay publishes TLS.
+        self.assertEqual(seen[4], ((("updated", "ldap"),), ((A, B, "shifted", "tls"),)))
+        self.assertEqual(seen[3], ((), ()))            # the early ClientHello itself published nothing
+        self.assertEqual(seen[5][0], (("shifted", "tls"),))   # the ServerHello completes the server's own phase
+        self.assertEqual(seen[5][1], ())
+        self.assertEqual(sum(len(peer) for _, peer in seen), 1)
+        analyzer.finish("done")
+        # Live output: one TLS classification for the client direction, carried by the server packet's turn.
+        events = []
+        monitor = CaptureMonitor(events.append)
+        for number, data in enumerate(reordered):
+            monitor.accept(CaptureRecord(number, data, len(data), 1), number)
+        monitor.analyzer.finish("done")
+        classifications = [(e["source"], e["destination"], e["event"], e["protocol"], e["app"]) for e in events if e["type"] == "classification"]
+        self.assertEqual(classifications.count((A, B, "shifted", "tls", "ssl")), 1)
+        self.assertEqual(classifications.count((B, A, "shifted", "tls", "ssl")), 1)
+        self.assertEqual([c for c in classifications if c[2] == "shifted"], [(A, B, "shifted", "tls", "ssl"), (B, A, "shifted", "tls", "ssl")])
+        self.assertEqual(monitor.counts["identified"], 4)   # ldap request, ldap response, two TLS phases
+        records = [e for e in events if e["type"] == "session"]
+        self.assertEqual((len(records), records[0]["app"], records[0]["shifted_from"]), (1, "ssl", "ldap"))
+        # CONNECT 2xx coalesced with the ServerHello: the replay is on the packet's own direction and extends its events.
+        cr, cs = 1000, 9000
+        frames = [frame(A, B, 999, 0, 2), frame(B, A, 8999, 1000, 18), frame(A, B, cr, cs, 24, CONNECT_REQUEST),
+                  frame(B, A, cs, cr + len(CONNECT_REQUEST), 24, CONNECT_RESPONSE + TLS_SERVER13),
+                  frame(A, B, cr + len(CONNECT_REQUEST), cs + len(CONNECT_RESPONSE) + len(TLS_SERVER13), 24, HELLO)]
+        analyzer = Analyzer()
+        for number, data in enumerate(frames):
+            analyzer.process(number, decode_packet(data))
+            if number == 3:
+                self.assertEqual([(e.kind, e.observation.application_protocol or e.observation.encryption) for e in analyzer.last_events],
+                                 [("updated", "http/1.1"), ("shifted", "tls")])
+                self.assertEqual(analyzer.peer_events, ())
+        events = []
+        monitor = CaptureMonitor(events.append)
+        for number, data in enumerate(frames):
+            monitor.accept(CaptureRecord(number, data, len(data), 1), number)
+        classifications = [(e["source"], e["destination"], e["event"], e["protocol"]) for e in events if e["type"] == "classification"]
+        self.assertEqual(classifications.count((B, A, "shifted", "tls")), 1)
+
     def test_replay_preconditions(self):
         inspector = Inspector()
         inspector.feed(LDAP_STARTTLS_REQUEST)

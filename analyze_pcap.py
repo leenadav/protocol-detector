@@ -65,6 +65,10 @@ class Analyzer:
         self.last_events = ()
         self.last_classification = None
         self.last_server = None
+        # Events a correlation produced on the other direction of the packet's connection, as
+        # (source, destination, event): replayed bytes publish there, not on the packet's direction.
+        self.peer_events = ()
+        self._replayed = []
         self.retiring = None
         self.max_udp_flows = max_connections if max_udp_flows is None else max_udp_flows
         if not 0 <= self.max_udp_flows <= 65536:
@@ -95,6 +99,16 @@ class Analyzer:
         self.counts["sessions"] += 1
         self.on_session(record)
 
+    def _open_shift(self, state, endpoint, boundary, expected=None):
+        """Open a peer-decided phase on one direction's stream and keep the events its replay published."""
+        connection = self.manager.connections[self.manager.key(state["client"], state["server"])]
+        stream = connection["directions"][endpoint]
+        if not stream.open_shift(boundary, expected):
+            return False
+        other = state["server"] if endpoint == state["client"] else state["client"]
+        self._replayed.append((endpoint, other, stream.events))
+        return True
+
     def _correlate_connect(self, key, state):
         """Open the tunnel phase on the server direction of a CONNECT once its 2xx answer is seen.
 
@@ -108,15 +122,14 @@ class Analyzer:
         if connection is None:
             return
         client = connection["directions"][state["client"]].inspector
-        server_stream = connection["directions"][state["server"]]
-        request, response = client.observation, server_stream.inspector.observation
+        request, response = client.observation, connection["directions"][state["server"]].inspector.observation
         if response.status != "identified" or not (response.application_protocol or "").startswith("http/"):
             return
         if request.status != "identified" or not any(
                 (e.field == "http_method" and e.value == "CONNECT") or (e.field == "shift" and e.value == "http-connect") for e in request.evidence):
             return
         status = next((e.value for e in response.evidence if e.field == "http_status"), "")
-        if status[:1] == "2" and server_stream.open_shift("http-connect"):
+        if status[:1] == "2" and self._open_shift(state, state["server"], "http-connect"):
             # The stream replays a ServerHello that shared the 2xx's segment (v0.54, review round 2).
             self.counts["connect_tunnels_correlated"] += 1
 
@@ -136,8 +149,7 @@ class Analyzer:
         connection = self.manager.connections.get(key)
         if connection is None:
             return
-        client_stream, server_stream = connection["directions"][state["client"]], connection["directions"][state["server"]]
-        client, server = client_stream.inspector, server_stream.inspector
+        client, server = connection["directions"][state["client"]].inspector, connection["directions"][state["server"]].inspector
         request, response = client.observation, server.observation
         if request.status != "identified" or response.status != "identified" or response.application_protocol != "ldap":
             return
@@ -153,9 +165,9 @@ class Analyzer:
             return
         # Opening through the streams replays bytes the inspectors skipped while terminal: a ClientHello
         # recorded before the server's answer, or a ServerHello coalesced with the response (review round 2).
-        opened = client_stream.open_shift("ldap-starttls", "tls")
+        opened = self._open_shift(state, state["client"], "ldap-starttls", "tls")
         if answered["ldap_extended"] == "unnamed":
-            opened = server_stream.open_shift("ldap-starttls", "tls") or opened
+            opened = self._open_shift(state, state["server"], "ldap-starttls", "tls") or opened
         if opened:
             self.counts["ldap_starttls_correlated"] += 1
 
@@ -297,6 +309,8 @@ class Analyzer:
         self.last_events = ()
         self.last_classification = None
         self.last_server = None
+        self.peer_events = ()
+        self._replayed = []
         self.now = max(self.now, timestamp)
         self.expire(self.now)
         if isinstance(packet, UDPPacket):
@@ -389,6 +403,14 @@ class Analyzer:
             self._correlate_connect(key, state)
             self._correlate_ldap(key, state)
             self._correlate_http2(key, state)
+            # Replayed bytes publish on their own direction: the packet's direction extends this
+            # packet's events, the other direction is reported as peer events (review round 3).
+            for endpoint, other, events in self._replayed:
+                if endpoint == source:
+                    self.last_events += events
+                else:
+                    self.peer_events += tuple((endpoint, other, event) for event in events)
+            self._replayed = []
         final = state['fin'].get(source)
         if final is not None and final <= stream.limit and stream.contiguous == final:
             finished = self.manager.finish_direction(source, destination,
