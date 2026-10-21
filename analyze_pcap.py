@@ -91,6 +91,30 @@ class Analyzer:
         self.counts["sessions"] += 1
         self.on_session(record)
 
+    def _correlate_connect(self, key, state):
+        """Open the tunnel phase on the server direction of a CONNECT once its 2xx answer is seen.
+
+        The client request announces the http-connect shift by itself; the server's
+        2xx cannot (a 200 without body framing looks like any other reply), so the
+        host correlates both directions and asks the server Inspector to inspect its
+        later bytes as the tunnel (usually the TLS ServerHello). Nothing is retracted:
+        the server stays identified as HTTP until the shifted phase publishes.
+        """
+        connection = self.manager.connections.get(key)
+        if connection is None:
+            return
+        client = connection["directions"][state["client"]].inspector
+        server = connection["directions"][state["server"]].inspector
+        request, response = client.observation, server.observation
+        if response.status != "identified" or not (response.application_protocol or "").startswith("http/"):
+            return
+        if request.status != "identified" or not any(
+                (e.field == "http_method" and e.value == "CONNECT") or (e.field == "shift" and e.value == "http-connect") for e in request.evidence):
+            return
+        status = next((e.value for e in response.evidence if e.field == "http_status"), "")
+        if status[:1] == "2" and server.open_shift("http-connect"):
+            self.counts["connect_tunnels_correlated"] += 1
+
     def _tcp_session(self, key, state, connection, reason):
         if self.on_session is None:
             return
@@ -285,6 +309,8 @@ class Analyzer:
             self.drop(key)
             return "INVALIDATED: " + str(error)
         self.last_events = snapshot.events
+        if any(event.observation.status == "identified" for event in snapshot.events):
+            self._correlate_connect(key, state)
         final = state['fin'].get(source)
         if final is not None and final <= stream.limit and stream.contiguous == final:
             finished = self.manager.finish_direction(source, destination,

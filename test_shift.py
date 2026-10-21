@@ -262,11 +262,15 @@ class PipelineTests(unittest.TestCase):
                 analyze(path, json_output=True, events_only=True, sessions=True)
         rows = [json.loads(line) for line in output.getvalue().splitlines()]
         kinds = [row["events"][0]["kind"] for row in rows if "classification" in row]
-        self.assertEqual(kinds, ["updated", "updated", "shifted"])
-        shifted = [row["classification"] for row in rows if "classification" in row][-1]
+        # v0.33: the server direction is opened as a tunnel too once the 2xx answers the CONNECT;
+        # without server bytes it ends as the HTTP carrier with an incomplete shifted phase.
+        self.assertEqual(kinds, ["updated", "updated", "shifted", "shifted"])
+        shifted, server_end = [row["classification"] for row in rows if "classification" in row][2:]
         self.assertEqual((shifted["status"], shifted["encryption"]), ("identified", "tls"))
         self.assertEqual({e["field"]: e["value"] for e in shifted["evidence"] if e["field"] in ("shift", "shift_from")},
                          {"shift": "http-connect", "shift_from": "http/1.1"})
+        self.assertEqual((server_end["application_protocol"], {e["field"]: e["value"] for e in server_end["evidence"] if e["field"] in ("shift", "shifted_payload")}),
+                         ("http/1.1", {"shift": "http-connect", "shifted_payload": "incomplete"}))
         session = [row for row in rows if row.get("type") == "session"][0]
         self.assertEqual((session["app"], session["shifted_from"], session["implicitly_uses"], session["port_usage"], session["server_protocol"]),
                          ("ssl", "http-proxy", ["http-proxy"], "standard", "http/1.1"))

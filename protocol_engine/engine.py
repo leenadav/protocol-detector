@@ -53,6 +53,7 @@ class Inspector:
         self._next = None      # Inspector for the phase after a structural application shift
         self._carrier = None   # identification that announced the shift
         self._shift = None     # boundary name
+        self._shift_source = source  # "wire" for a boundary this direction announced, "wire:peer" when the host opened it
 
     @property
     def candidate(self):
@@ -134,6 +135,32 @@ class Inspector:
             events += self._forward(rest)
         return events
 
+    def open_shift(self, boundary, expected=None):
+        """Host-driven shift: the peer direction established that a boundary applies here too.
+
+        Used when the other direction's structure decides this one's (an HTTP 2xx
+        answering a CONNECT: the response alone cannot be told from a body-less
+        reply, but together with the request it marks the start of the tunnel).
+        Allowed only on a terminal identified observation that has not shifted;
+        returns True when the next bytes will be inspected as the new phase.
+        """
+        if not isinstance(boundary, str) or not 1 <= len(boundary) <= 64:
+            raise ValueError("Shift boundary must be a short name")
+        if expected is not None and expected not in PARSERS:
+            raise ValueError("Unsupported shifted-phase candidate")
+        if (not self._terminal or self._next is not None or self.observation.status != "identified"
+                or any(e.field == "shift" for e in self.observation.evidence)):
+            return False
+        remaining = self.config.max_bytes - self.metrics.bytes_inspected
+        if remaining < 64:
+            return False
+        self._carrier, self._shift, self._shift_source = self.observation, boundary, self.source + ":peer"
+        config = replace(self.config, max_bytes=remaining) if remaining != self.config.max_bytes else self.config
+        self._next = Inspector(config, self.rules, self.source, protocol_hint=expected, signatures=self.signatures)
+        self._next._hint_source = "shift:" + boundary
+        self._terminal = False
+        return True
+
     def _forward(self, data):
         inner = self._next
         bytes_before, calls_before = inner.metrics.bytes_inspected, inner.metrics.parser_calls
@@ -144,7 +171,7 @@ class Inspector:
 
     def _shift_result(self, inner):
         carrier, boundary = self._carrier, self._shift
-        marker = (Evidence("shift", boundary, self.source, "structural"),)
+        marker = (Evidence("shift", boundary, self._shift_source, "structural"),)
         if inner.status == "identified":
             kept = tuple(e for e in carrier.evidence
                          if (e.field == "hostname" and inner.hostname is None) or (e.field == "application" and inner.application is None and inner.hostname is None))

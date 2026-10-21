@@ -966,3 +966,21 @@ Shannon entropy over a byte histogram (standard definition; no external model).
 Primary specifications: [RFC 1006](https://www.rfc-editor.org/rfc/rfc1006.html), [ITU-T X.224 13.4 (CC TPDU)](https://www.itu.int/rec/T-REC-X.224),
 S7comm protocol as documented by the [Wireshark S7comm dissector](https://wiki.wireshark.org/S7comm) and
 [Snap7](https://snap7.sourceforge.net/) (public PDU layout; no vendor specification is reproduced).
+
+## Server-side CONNECT correlation (v0.33)
+
+A `2xx` answering a `CONNECT` cannot be told from a body-less reply by the
+server direction alone, so v0.28 left the server side of a tunnel at
+`http/1.x`. The Analyzer now correlates both directions of a connection: when
+the client direction carries `http_method=CONNECT` (or has already shifted at
+`http-connect`) and the server direction is identified HTTP with
+`http_status` 200..299, the host opens the `http-connect` shift on the server
+Inspector (`Inspector.open_shift`, shift evidence source `wire:peer`). The
+server's later bytes are inspected as the tunnel, typically a TLS ServerHello,
+which brings `selected_tls_version`, JA3S/JA4S and the TLS server risks into
+the session; `server_protocol` becomes `tls`. Nothing is retracted: the HTTP
+identification stands until the shifted phase publishes, and a tunnel whose
+server bytes match nothing leaves `http/1.x` with `shifted_payload` context.
+A 3xx/4xx/5xx answer, a plain request or an unobserved direction opens
+nothing. HTTP responses now carry `http_status` evidence. Capture order does
+not matter: the check runs on every identification in either direction.

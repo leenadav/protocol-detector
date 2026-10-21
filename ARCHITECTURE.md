@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.32 — engine and observation contracts
+# Stream/datagram engine v0.33 — engine and observation contracts
 
 ## Ownership
 
@@ -682,3 +682,18 @@ the COTP data header checked in `frame_size` and the S7 header/parameter rules
 in `validate`; it is registered hint-only (`s7comm`), so a bare S7 PDU without
 the connection is never selected from the TPKT prefix. No dispatch table
 changed: the shift mechanism of v0.28 carries the new family.
+
+## Host-driven shift (v0.33)
+
+`Inspector.open_shift(boundary, expected=None)` reopens a terminal identified
+Inspector as the carrier of a shift whose boundary another direction
+established. It refuses when the observation is not identified, already
+shifted or pending, or when fewer than 64 budget bytes remain; it never
+emits an event by itself (the shifted phase publishes when its bytes arrive)
+and marks the `shift` evidence with source `wire:peer` so consumers can tell a
+peer-derived boundary from one the direction announced. `Analyzer._correlate_connect`
+runs after every identification event on a TCP connection and reads only
+evidence (`http_method`, `shift`, `http_status`); `SessionManager` already
+feeds every contiguous byte to the Inspector, so the server's tunnel bytes
+reach the reopened phase without any change to reassembly. Live capture uses
+the same Analyzer and gains the behaviour unchanged.

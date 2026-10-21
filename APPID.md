@@ -35,7 +35,7 @@ A verdict names either a catalog application or a session outcome.
 | `ssh`, `dns`, `smb`, `rdp`, … | The family's structural profile passed (see catalog aliases for vendor names) | same |
 | `http-proxy` | HTTP `CONNECT authority` request; the tunnel contents are inspected as a shifted phase | http-proxy |
 | `websocket` | Frame header after an `Upgrade: websocket` boundary (or explicit candidate) | websocket |
-| `ssl` with `shifted_from` | TLS ClientHello/ServerHello after CONNECT (`http-proxy`), STARTTLS (`smtp`/`imap`/`pop3`/`ftp`), SSLRequest (`postgresql`/`mysql`) or RDP negotiation (`rdp`); the carrier is listed in `implicitly_uses` | application shift |
+| `ssl` with `shifted_from` | TLS ClientHello/ServerHello after CONNECT (`http-proxy`; the server side is opened by direction correlation, v0.33), STARTTLS (`smtp`/`imap`/`pop3`/`ftp`), SSLRequest (`postgresql`/`mysql`) or RDP negotiation (`rdp`); the carrier is listed in `implicitly_uses` | application shift |
 | `wireguard`, `openvpn` | Handshake/control framing validated; reported through `encryption`, no tunnel contents or peer identity | same |
 | `ftp`, `pop3`, `smtp` with status `correlated` | Each direction alone was ambiguous (`220` greeting, `USER` command); the intersection of both candidate sets is one family (v0.27) | same |
 | `unknown-tcp` / `unknown-udp` | Payload existed and every supported profile rejected it, or a budget ran out before a profile completed | unknown-tcp / unknown-udp |

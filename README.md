@@ -1,4 +1,4 @@
-# Protocol detector v0.32
+# Protocol detector v0.33
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **67 protocol families**, with explicit profiles rather than claims of full
@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, version); `analyze_pcap.py`, `live_capture.py` | this file |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 418 tests, seeded fuzzing, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 421 tests, seeded fuzzing, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -69,6 +69,17 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.33 — both sides of a CONNECT tunnel
+
+The Analyzer correlates the two directions of an HTTP CONNECT: once the client
+request and the server's 2xx are both identified, the server direction is
+reopened as the tunnel (`Inspector.open_shift`, evidence source `wire:peer`)
+and its later bytes are inspected, so the TLS ServerHello inside the tunnel
+yields `selected_tls_version`, server fingerprints and risks, and
+`server_protocol` becomes `tls`. Other answers or plain requests open nothing;
+a failed tunnel phase keeps the HTTP identification. HTTP responses now carry
+`http_status` evidence. 421 tests pass; BENCHMARK-V033.md.
 
 ## New in v0.32 — S7comm after the ISO-TSAP connection
 

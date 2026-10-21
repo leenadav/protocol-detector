@@ -109,6 +109,7 @@ class LineParser:
                 self.method = self.method.upper()
             else:
                 self.status = int(line.split(b" ", 2)[1])
+                self.extra_evidence += (("http_status", str(self.status), "status_line", "structural"),)
             self.protocol_name = "http/1.1" if version == b"HTTP/1.1" else "http/1.0"
             self.reason = "Start-line validated; waiting for headers"
             if self.contexts is not None:
