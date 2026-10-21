@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.31 — engine and observation contracts
+# Stream/datagram engine v0.32 — engine and observation contracts
 
 ## Ownership
 
@@ -671,3 +671,14 @@ decoder exactly as for classic input. `packets.read_pcap_records` is now a
 64 KiB chunked loop over the same decoder, so offline and live paths cannot
 diverge, and `analyze_pcap` decodes frames with `link_packets.decode_frame`
 by link type.
+
+## S7comm through the cotp-connect shift (v0.32)
+
+`COTPParser` validates both X.224 connection TPDUs and sets
+`shift = ("cotp-connect", "s7comm")`; `TPKTParser` copies the shift from its
+child and now routes a confirm to `RDPParser` only when the body is an RDP
+negotiation response. `s7.S7Parser` is a `FrameParser` on the TPKT length with
+the COTP data header checked in `frame_size` and the S7 header/parameter rules
+in `validate`; it is registered hint-only (`s7comm`), so a bare S7 PDU without
+the connection is never selected from the TPKT prefix. No dispatch table
+changed: the shift mechanism of v0.28 carries the new family.

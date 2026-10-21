@@ -55,7 +55,7 @@ def inspect(data, hint='mongodb', **kwargs):
 class DatabaseTests(unittest.TestCase):
     def test_catalog_marks_explicit_selection_and_hints_remain_context(self):
         from protocol_engine import supported_protocols
-        self.assertEqual({entry.family for entry in supported_protocols() if entry.requires_hint}, {'mysql', 'mongodb', 'ntp', 'radius', 'rtp', 'websocket'})
+        self.assertEqual({entry.family for entry in supported_protocols() if entry.requires_hint}, {'mysql', 'mongodb', 'ntp', 'radius', 'rtp', 'websocket', 's7comm'})
         result = inspect(MONGODB, source='decrypted').observation
         self.assertTrue(any(e.field == 'application_protocol' and e.source == 'decrypted' for e in result.evidence))
         self.assertTrue(any(e.field == 'candidate_hint' and e.strength == 'context' for e in result.evidence))

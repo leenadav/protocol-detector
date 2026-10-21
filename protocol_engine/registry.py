@@ -20,6 +20,7 @@ from .vpn import OpenVPNParser, PPTPParser
 from .ics import COTPParser, DNP3Parser, ENIPParser, IEC104Parser, ModbusParser, TPKTParser
 from .datainfra import CQLParser, KafkaParser
 from .upgrade import WebSocketParser
+from .s7 import S7Parser
 
 PARSERS = MappingProxyType({
     "dcerpc": DCERPCParser, "giop": GIOPParser, "git": GitParser, "fastcgi": FastCGIParser, "rsync": RsyncParser,
@@ -32,7 +33,7 @@ PARSERS = MappingProxyType({
     "telnet": TelnetParser, "smb1": SMB1Parser, "netbios-ss": NetBIOSSessionParser, "kerberos": KerberosParser,
     "tacacs-plus": TACACSParser, "openvpn": OpenVPNParser, "pptp": PPTPParser, "modbus": ModbusParser, "dnp3": DNP3Parser,
     "iso-tsap": COTPParser, "ethernet-ip": ENIPParser, "iec-104": IEC104Parser, "kafka": KafkaParser, "cql": CQLParser,
-    "websocket": WebSocketParser,
+    "websocket": WebSocketParser, "s7comm": S7Parser,
 })
 
 # Automatic ambiguity routes are not public candidate hints.

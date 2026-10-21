@@ -1,11 +1,19 @@
-# Review scope: protocol detector v0.31
+# Review scope: protocol detector v0.32
 
-Python3.9-compatible IPv4 passive classification: 66 families, 60 automatic.
+Python3.9-compatible IPv4 passive classification: 67 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.31): capture_stream.PcapStreamDecoder pcapng path (format
+New focus (v0.32): protocol_engine/s7.py (TPKT/COTP data header, S7 header
+and parameter rules, setup-communication bounds), the COTP confirm branch and
+shift in ics.py, the TPKT confirm routing (RDP negotiation response versus
+ISO-TSAP). Trace: PDU length arithmetic for job versus ack headers, function
+code gate, carrier kept on failure, split-point and mutation equivalence,
+verdict shifted_from and catalog alias move (s7comm is now an application,
+iso-tsap keeps cotp). 418 tests pass. BENCHMARK-V032.md.
+
+Previous focus (v0.31): capture_stream.PcapStreamDecoder pcapng path (format
 detection, block length/alignment/trailer checks, section byte order and
 interface reset, if_tsresol bounds, EPB/SPB length rules, option walk,
 skipped block types, failure closing the decoder), packets.read_pcap_records

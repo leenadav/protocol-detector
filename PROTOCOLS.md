@@ -1,13 +1,14 @@
-# Protocol coverage — v0.30
+# Protocol coverage — v0.32
 
-The engine implements 66 families (60 selected automatically from the first
-bytes, 6 only with an explicit candidate hint) with the profiles below. This
-table is generated from `protocol_engine.catalog.supported_protocols()`
-(`python3 -B protodetect.py protocols`) and is a complete inventory of this
-release, not a claim to recognize every protocol or application. All input must
-start at the supported message/stream boundary; no port-only match. Sections
-below record each milestone's exact profile and exclusions; the newest
-additions (v0.27 decoders, v0.28 shifts, v0.29 heuristics) are at the end.
+The engine implements 67 families (60 selected automatically from the first
+bytes, 7 only with an explicit candidate hint or a structural shift) with the
+profiles below. This table is generated from
+`protocol_engine.catalog.supported_protocols()` (`python3 -B protodetect.py
+protocols`) and is a complete inventory of this release, not a claim to
+recognize every protocol or application. All input must start at the supported
+message/stream boundary; no port-only match. Sections below record each
+milestone's exact profile and exclusions; the newest additions (v0.27
+decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 
 | Family | Transport | Selection | Observation scope | Implemented profile |
 |---|---|---|---|---|
@@ -59,6 +60,7 @@ additions (v0.27 decoders, v0.28 shifts, v0.29 heuristics) are at the end.
 | rsync | tcp | Automatic profiles | protocol_header | Daemon greeting, final protocols 27..32; version/digest offers, no authentication or transfer |
 | rtp | udp | Hint required | datagram | Hint required: RTP v2 fixed header, CSRC and extension framing |
 | rtsp | tcp | Automatic profiles | initial_headers | RTSP/1.0 and 2.0 header framing; no RTP/media decoding |
+| s7comm | tcp | Hint required | protocol_header | One S7 PDU in a COTP data TPDU after the ISO-TSAP connection (reached by the cotp-connect shift or an explicit candidate): header, ROSCTR, public function codes, setup communication fields; addresses and values not decoded |
 | sflow | udp | Automatic profiles | datagram | sFlow v5 datagram with IPv4 agent and bounded sample headers |
 | sip | tcp/udp | Automatic profiles | initial_headers/datagram | SIP/2.0 required header framing; no dialogue/body semantics |
 | smb1 | tcp | Automatic profiles | negotiation_request | NetBIOS session header plus SMB_COM_NEGOTIATE request with dialect strings; maps to the smb application |
@@ -932,3 +934,35 @@ Primary references: [nDPI flow risks](https://github.com/ntop/nDPI/blob/dev/doc/
 (vocabulary), [RFC 8446 4.2.1](https://www.rfc-editor.org/rfc/rfc8446.html#section-4.2.1) (supported_versions precedence),
 [RFC 8701](https://www.rfc-editor.org/rfc/rfc8701.html) (GREASE values), [RFC 4253 4.2](https://www.rfc-editor.org/rfc/rfc4253.html#section-4.2) (SSH version string),
 Shannon entropy over a byte histogram (standard definition; no external model).
+
+## S7comm after the ISO-TSAP connection (v0.32)
+
+- **ISO-TSAP** now also validates the server's X.224 Connection Confirm
+  (0xd0): length byte, nonzero destination reference, class 0..4, unique
+  parameters with the TPDU-size/TSAP rules of the request; a confirm without
+  parameters is outside the profile. Requests must carry a zero destination
+  reference. The TPKT route sends a 0xd0 body to RDP only when it carries an
+  RDP_NEG_RSP/RDP_NEG_FAILURE (type 2/3, length 8), otherwise to ISO-TSAP.
+- Both the request and the confirm announce the `cotp-connect` shift: the
+  bytes after them are inspected as **s7comm** only (a candidate restriction,
+  not an identification). A failed or missing S7 phase leaves `iso-tsap`
+  identified with `shifted_payload` context, as for every shift.
+- **S7comm** (new family, reached through the shift or an explicit candidate):
+  TPKT (length 17..8192) + COTP data TPDU `02 f0 80` + S7 header with protocol
+  id 0x32, ROSCTR job/ack/ack-data/userdata, zero reserved field, parameter
+  and data lengths that fill the PDU exactly (ack/ack-data add the two error
+  bytes, error class <= 0x8f). Job and ack-data parameters start with a public
+  function code (CPU services, read/write var, download/upload family, PLC
+  control/stop, setup communication); setup communication is exactly eight
+  bytes with queue sizes 1..255 and a PDU length from {240, 480, 960, 1920,
+  2048, 4096, 8192}; userdata needs at least eight parameter bytes. Evidence
+  `s7_rosctr`, `s7_function`. Item addresses, values, block names and
+  passwords are not decoded or emitted. Catalog: `s7comm` (business-systems/
+  ics-protocol, tcp/102, aliases `s7`, `siemens-s7`), implicitly uses
+  `iso-tsap`.
+- Excluded: S7comm-plus (S7-1200/1500 0x72 protocol), fragmented PDUs,
+  response correlation, authentication state.
+
+Primary specifications: [RFC 1006](https://www.rfc-editor.org/rfc/rfc1006.html), [ITU-T X.224 13.4 (CC TPDU)](https://www.itu.int/rec/T-REC-X.224),
+S7comm protocol as documented by the [Wireshark S7comm dissector](https://wiki.wireshark.org/S7comm) and
+[Snap7](https://snap7.sourceforge.net/) (public PDU layout; no vendor specification is reproduced).

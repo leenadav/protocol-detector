@@ -140,8 +140,15 @@ class COTPParser(FrameParser):
         return size
 
     def validate(self, data):
-        if data[4] != len(data) - 5 or data[5] != 0xe0 or data[6:8] != b"\0\0" or data[10] & 0xf0 not in (0, 0x10, 0x20, 0x30, 0x40):
+        confirm = data[5] == 0xd0
+        if data[4] != len(data) - 5 or data[5] not in (0xe0, 0xd0) or data[10] & 0xf0 not in (0, 0x10, 0x20, 0x30, 0x40):
             raise ParseError("Invalid X.224 connection request header")
+        if confirm:
+            if data[6:8] == b"\0\0":
+                raise ParseError("X.224 connection confirm requires a nonzero destination reference")
+            self.scope = "negotiation_response"
+        elif data[6:8] != b"\0\0":
+            raise ParseError("X.224 connection request requires a zero destination reference")
         pos, codes = 11, set()
         while pos < len(data):
             if pos + 2 > len(data):
@@ -157,9 +164,14 @@ class COTPParser(FrameParser):
             if code in (0xc1, 0xc2) and not 1 <= size <= 32:
                 raise ParseError("X.224 TSAP parameter length outside profile")
             pos += 2 + size
-        if not codes & {0xc1, 0xc2}:
+        if not confirm and not codes & {0xc1, 0xc2}:
             raise UnsupportedPrefix("X.224 request without TSAP parameters is outside the ISO-TSAP profile")
-        self.reason = "TPKT/X.224 connection request with TSAP parameters validated; upper protocol (for example S7comm) unverified"
+        if confirm and not codes:
+            raise UnsupportedPrefix("X.224 confirm without parameters is outside the ISO-TSAP profile")
+        self.reason = ("TPKT/X.224 connection confirm validated; the upper protocol (S7comm) follows in the shifted phase" if confirm else
+                       "TPKT/X.224 connection request with TSAP parameters validated; the upper protocol (S7comm) follows in the shifted phase")
+        # After the COTP connection both sides exchange S7 PDUs in COTP data TPDUs.
+        self.shift = ("cotp-connect", "s7comm")
 
 
 _ENIP_COMMANDS = {0x0004: "list_services", 0x0063: "list_identity", 0x0064: "list_interfaces", 0x0065: "register_session",
@@ -249,7 +261,8 @@ class TPKTParser(FrameParser):
     def validate(self, data):
         from .remote import RDPParser
         rest = data[11:]
-        rdp = rest.startswith(b"Cookie: mstshash=") or rest[:1] == b"\x01" or not rest or data[5] == 0xd0
+        negotiation = len(rest) == 8 and rest[:1] in (b"\x02", b"\x03") and rest[2:4] == b"\x08\x00"
+        rdp = rest.startswith(b"Cookie: mstshash=") or rest[:1] == b"\x01" or not rest or (data[5] == 0xd0 and negotiation)
         child = RDPParser(self.config) if rdp else COTPParser(self.config)
         child.validate(data)
         self.child = child

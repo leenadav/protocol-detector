@@ -292,3 +292,12 @@ FTP_AUTH_TLS = b'AUTH TLS\r\n'
 MYSQL_SSL_REQUEST = b'\x20\x00\x00\x01' + (0x000a0a05).to_bytes(4, 'little') + (16777216).to_bytes(4, 'little') + b'\x21' + bytes(23)
 RDP_CONFIRM = bytes.fromhex('030000130ed01234000000' '0200080001000000')  # X.224 CC + RDP_NEG_RSP selecting PROTOCOL_SSL
 HINTED_STREAM_CASES += ((WEBSOCKET_EMPTY_FRAME, 'websocket', 'websocket'),)
+
+# v0.32: S7comm after the ISO-TSAP connection.
+ISO_TSAP_CONFIRM = b'\x03\x00\x00\x16\x11\xd0\x00\x01\x00\x02\x00\xc0\x01\x0a\xc1\x02\x01\x00\xc2\x02\x01\x02'
+_s7_setup = b'\x32\x01\x00\x00\x00\x01\x00\x08\x00\x00' + b'\xf0\x00\x00\x01\x00\x01\x01\xe0'
+S7COMM = b'\x03\x00' + (7 + len(_s7_setup)).to_bytes(2, 'big') + b'\x02\xf0\x80' + _s7_setup
+_s7_ack = b'\x32\x03\x00\x00\x00\x01\x00\x08\x00\x00\x00\x00' + b'\xf0\x00\x00\x01\x00\x01\x00\xf0'
+S7COMM_ACK = b'\x03\x00' + (7 + len(_s7_ack)).to_bytes(2, 'big') + b'\x02\xf0\x80' + _s7_ack
+del _s7_setup, _s7_ack
+HINTED_STREAM_CASES += ((S7COMM, 's7comm', 's7comm'),)

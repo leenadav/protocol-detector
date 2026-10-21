@@ -33,6 +33,7 @@ _SUPPORTED = (
     ProtocolSupport("dnp3", ("tcp",), "protocol_header", "Data link frame with header and block CRCs verified"),
     ProtocolSupport("bacnet", ("udp",), "datagram", "BVLC function/length and NPDU version/control framing"),
     ProtocolSupport("iso-tsap", ("tcp",), "negotiation_request", "TPKT/X.224 connection request with TSAP parameters (RFC 1006); shares the TPKT route with RDP"),
+    ProtocolSupport("s7comm", ("tcp",), "protocol_header", "One S7 PDU in a COTP data TPDU after the ISO-TSAP connection (reached by the cotp-connect shift or an explicit candidate): header, ROSCTR, public function codes, setup communication fields; addresses and values not decoded", requires_hint=True),
     ProtocolSupport("ethernet-ip", ("tcp", "udp"), "protocol_header/datagram", "Encapsulation header with RegisterSession/list/data commands; CIP not decoded"),
     ProtocolSupport("iec-104", ("tcp",), "protocol_header", "APCI U-format start frames automatically; I/S formats with a hint"),
     ProtocolSupport("kafka", ("tcp",), "request_header", "Request header for ApiVersions/Metadata/Produce/Fetch/SaslHandshake and similar first requests"),
