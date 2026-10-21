@@ -48,12 +48,15 @@ closed set reviewers should expect in records.
 | kerberos | tcp/udp | yes | yes | `kerberos_error`, `kerberos_message` |
 | l2tp | udp | yes | yes | `l2tp_message` |
 | ldap | tcp | yes | yes | `ldap_extended`, `ldap_message`, `ldap_result` |
+| llmnr | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `llmnr_flags` |
+| mdns | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `mdns_profile` |
 | memcached | tcp | yes | yes | `memcached_message`, `memcached_status` |
 | modbus | tcp | yes | yes | `modbus_exception`, `modbus_pdu` |
 | mongodb | tcp | yes | yes | `mongodb_message` |
 | mqtt | tcp | yes | - | - |
 | mysql | tcp | yes | yes | `mysql_auth_plugin`, `mysql_client_ssl`, `mysql_tls_supported` |
 | nats | tcp | yes | yes | - |
+| netbios-ns | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `nbns_opcode` |
 | netbios-ss | tcp | yes | - | - |
 | netflow | udp | yes | n/a (one-way) | - |
 | ntp | udp | yes | yes | `ntp_mode` |
@@ -99,7 +102,7 @@ closed set reviewers should expect in records.
 | xmpp | tcp | yes | yes | `hostname`, `xmpp_namespace`, `xmpp_stream`, `xmpp_version` |
 | zmtp | tcp | yes | yes | `zmtp_mechanism`, `zmtp_role` |
 
-82 families in the catalog, 82 with fixtures, 69 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, irc, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
+85 families in the catalog, 85 with fixtures, 72 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, irc, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
 <!-- coverage-matrix:end -->
 
 ## Direction evidence and remaining replies (v0.49)
@@ -473,3 +476,68 @@ encapsulated DCE/RPC PDUs are not inspected.
 Dispatch: `:` (0x3a) routes to the IRC server-line parser; a mutated first
 byte that used to be unknown there is now malformed when the IRC grammar
 rejects it. No other route changed.
+
+## Name services on the DNS layout: mDNS, NetBIOS-NS, LLMNR (v0.55)
+
+Three new families (85 in total, 76 automatic) share the DNS message layout
+and are told apart by structure, never by port. The validator in `wire.py`
+walks the sections once and names the family afterwards; names are returned
+only for signature contexts and are never emitted.
+
+Candidate selection (`dns_probe`): the QUERY opcode with exactly one question
+selects as before. The rarer layouts also select, under a plausibility rule
+that keeps other datagrams (RIP entries, DTLS records) out: the first name
+must start with a label of 1..63 bytes and the four section counts must sum
+to 1..32. They are: QUERY with 2..8 questions, QUERY with no question when
+the message is a response carrying answers, and the NetBIOS name service
+opcodes 5..8 with at most one question. The TCP dispatch is unchanged (one
+question in the twelve header bytes); mDNS and NetBIOS-NS are UDP profiles,
+so over TCP the family stays `dns` and only the evidence rows below are
+added, while NetBIOS registration opcodes over TCP are unknown.
+
+`mdns` (RFC 6762, automatic): a message whose first question or record name
+ends in `.local`, or whose question carries the QU bit (class 0x8000), or
+whose answer or additional record carries the cache-flush bit, or which has
+several questions or no question at all with answers. Queries may carry
+answers (known-answer suppression) and authority records (probes) but never
+the AA bit or a response code; responses must carry AA and a zero response
+code. Evidence: `dns_message`, `dns_rcode`, `dns_query_type` (the first
+question's type, or the first answer's type in an announcement) and
+`mdns_profile`: `announcement` (no question), `probe` (query with authority
+records), `known-answer` (query with answers), `unicast-requested` (QU bit),
+`plain`. Several questions without any marker stay outside the profile
+(unknown); a response without a question and without a marker is malformed.
+Service instance names, host names, addresses and TXT records are never
+emitted. App-ID: `mdns` (aliases bonjour, zeroconf), udp/5353.
+
+`netbios-ns` (RFC 1002, automatic; the v0.54 `dns` + `nb`/`nbstat`
+refinement becomes a family): a NB (0x20) or NBSTAT (0x21) question whose
+first label is the 32-byte first-level encoding over A..P, with the QUERY
+opcode, or the opcodes registration (5), release (6), WACK (7) and refresh
+(8) with that encoded name. Requests carry one question and, for the
+registration-class opcodes, exactly one additional NB record; responses carry
+at most one question and one answer and no other section. NB record data is
+a two-byte WACK flag word or a multiple of six bytes (flags plus IPv4
+address). Evidence: `dns_message`, `dns_rcode` (NBNS result codes read
+through the DNS table: ACT_ERR is `yxdomain`, RFS_ERR `refused`, SRV_ERR
+`servfail`), `dns_query_type` (`nb`/`nbstat`), `nbns_opcode` (`query`,
+`registration`, `release`, `wack`, `refresh`). Names, addresses and node
+status tables are never emitted. The `dns-error-response` risk applies to
+`servfail`, `nxdomain` and `refused` as for DNS.
+
+`llmnr` (RFC 4795, hint only): the bytes of an LLMNR query are those of a
+unicast DNS query with RD clear, so only the `llmnr` candidate selects this
+profile; the port never does. With the hint: opcode zero, exactly one
+question, a zero Z nibble; the C bit (DNS's AA position) and T bit (DNS's RD
+position) are read with their LLMNR meaning: a query carries neither answers,
+authority records, a response code nor the T bit; `.local` and NetBIOS names
+are not LLMNR (unknown). Evidence: `dns_message`, `dns_rcode`,
+`dns_query_type`, `llmnr_flags` (`none`, `conflict`, `tentative`). Without
+the hint an LLMNR query identifies as `dns` and a conflict query (C bit) is
+malformed DNS, both as before.
+
+Behaviour change: UDP NB/NBSTAT queries now identify as `netbios-ns` rather
+than `dns` with the `nb` row (the App-ID verdict is unchanged); a `.local`
+query identifies as `mdns`. Two seeded DTLS mutations that used to be unknown
+briefly read as malformed before the non-empty-section rule was added to the
+probe; the released probe keeps them unknown.

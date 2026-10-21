@@ -977,4 +977,50 @@ STREAM_CASES += ((LDAP_STARTTLS_REQUEST, 'ldap'), (LDAP_STARTTLS_RESPONSE, 'ldap
                  (IRC_SERVER_NOTICE, 'irc'), (IRC_SERVER_WELCOME, 'irc'), (IRC_UNPREFIXED_NOTICE, 'irc'), (IRC_PING, 'irc'),
                  (RPC_IN_DATA_REQUEST, 'http/1.1'))
 DATAGRAM_CASES += ((TURN_ALLOCATE, 'stun'), (TURN_REFRESH, 'stun'), (TURN_CHANNEL_BIND, 'stun'), (TURN_SEND_INDICATION, 'stun'),
-                   (NBNS_QUERY, 'dns'), (NBSTAT_QUERY, 'dns'), (DNS_SRV_QUERY, 'dns'))
+                   (NBNS_QUERY, 'netbios-ns'), (NBSTAT_QUERY, 'netbios-ns'), (DNS_SRV_QUERY, 'dns'))
+
+
+def dns_name(*labels):
+    return b"".join(bytes((len(label),)) + label for label in labels) + b"\x00"
+
+
+def dns_record(name, kind, klass, ttl, rdata):
+    return name + kind.to_bytes(2, "big") + klass.to_bytes(2, "big") + ttl.to_bytes(4, "big") + len(rdata).to_bytes(2, "big") + rdata
+
+
+def dns_message(ident, flags, questions=(), answers=(), authority=(), additional=()):
+    header = ident.to_bytes(2, "big") + flags.to_bytes(2, "big") + b"".join(len(section).to_bytes(2, "big") for section in (questions, answers, authority, additional))
+    return header + b"".join(questions) + b"".join(answers) + b"".join(authority) + b"".join(additional)
+
+
+_HTTP_SERVICE = dns_name(b"_http", b"_tcp", b"local")
+_PRINTER = dns_name(b"My Printer", b"_http", b"_tcp", b"local")
+_HOST_LOCAL = dns_name(b"laptop", b"local")
+MDNS_QUERY = dns_message(0, 0x0000, questions=(_HTTP_SERVICE + b"\x00\x0c\x80\x01",))                   # PTR, QU bit
+MDNS_PLAIN_QUERY = dns_message(0, 0x0000, questions=(_HOST_LOCAL + b"\x00\x01\x00\x01", _HOST_LOCAL + b"\x00\x1c\x00\x01"))   # A and AAAA
+MDNS_RESPONSE = dns_message(0, 0x8400, answers=(dns_record(_HTTP_SERVICE, 12, 0x8001, 4500, _PRINTER),))   # cache-flush PTR
+MDNS_KNOWN_ANSWER = dns_message(0, 0x0000, questions=(_HTTP_SERVICE + b"\x00\x0c\x00\x01",),
+                                answers=(dns_record(_HTTP_SERVICE, 12, 0x0001, 4500, _PRINTER),))
+MDNS_PROBE = dns_message(0, 0x0000, questions=(_HOST_LOCAL + b"\x00\xff\x80\x01",),
+                         authority=(dns_record(_HOST_LOCAL, 1, 0x0001, 120, bytes((192, 0, 2, 7))),))
+MDNS_ANNOUNCEMENT = dns_message(0, 0x8400, answers=(dns_record(_HOST_LOCAL, 1, 0x8001, 120, bytes((192, 0, 2, 7))),
+                                                    dns_record(_HOST_LOCAL, 28, 0x8001, 120, bytes(16))))
+_NB_NAME = netbios_name(b"FILESERVER")
+NBNS_REGISTRATION = dns_message(0x8001, 0x2910, questions=(_NB_NAME + b"\x00\x20\x00\x01",),
+                                additional=(dns_record(b"\xc0\x0c", 32, 1, 300000, b"\x00\x00" + bytes((192, 0, 2, 5))),))
+NBNS_RELEASE = dns_message(0x8002, 0x3010, questions=(_NB_NAME + b"\x00\x20\x00\x01",),
+                           additional=(dns_record(b"\xc0\x0c", 32, 1, 0, b"\x00\x00" + bytes((192, 0, 2, 5))),))
+NBNS_REFRESH = dns_message(0x8003, 0x4010, questions=(_NB_NAME + b"\x00\x20\x00\x01",),
+                           additional=(dns_record(b"\xc0\x0c", 32, 1, 300000, b"\x00\x00" + bytes((192, 0, 2, 5))),))
+NBNS_WACK = dns_message(0x8001, 0xbc00, answers=(dns_record(_NB_NAME, 32, 1, 2, b"\x29\x10"),))
+NBNS_POSITIVE_RESPONSE = dns_message(0x8001, 0xad80, answers=(dns_record(_NB_NAME, 32, 1, 300000, b"\x00\x00" + bytes((192, 0, 2, 5))),))
+NBNS_NEGATIVE_RESPONSE = dns_message(0x8001, 0xad86, answers=(dns_record(_NB_NAME, 32, 1, 0, b"\x00\x00" + bytes((192, 0, 2, 9))),))   # ACT_ERR
+NBNS_QUERY_RESPONSE = dns_message(0x8001, 0x8580, answers=(dns_record(_NB_NAME, 32, 1, 300000, b"\x00\x00" + bytes((192, 0, 2, 5))),))
+LLMNR_QUERY = dns_message(0x4242, 0x0000, questions=(dns_name(b"laptop") + b"\x00\x01\x00\x01",))
+LLMNR_RESPONSE = dns_message(0x4242, 0x8000, questions=(dns_name(b"laptop") + b"\x00\x01\x00\x01",),
+                             answers=(dns_record(dns_name(b"laptop"), 1, 1, 30, bytes((192, 0, 2, 7))),))
+LLMNR_CONFLICT = dns_message(0x4243, 0x0400, questions=(dns_name(b"laptop") + b"\x00\x01\x00\x01",))
+DATAGRAM_CASES += ((MDNS_QUERY, 'mdns'), (MDNS_PLAIN_QUERY, 'mdns'), (MDNS_RESPONSE, 'mdns'), (MDNS_KNOWN_ANSWER, 'mdns'), (MDNS_PROBE, 'mdns'),
+                   (MDNS_ANNOUNCEMENT, 'mdns'), (NBNS_REGISTRATION, 'netbios-ns'), (NBNS_RELEASE, 'netbios-ns'), (NBNS_REFRESH, 'netbios-ns'),
+                   (NBNS_WACK, 'netbios-ns'), (NBNS_POSITIVE_RESPONSE, 'netbios-ns'), (NBNS_NEGATIVE_RESPONSE, 'netbios-ns'), (NBNS_QUERY_RESPONSE, 'netbios-ns'))
+HINTED_DATAGRAM_CASES += ((LLMNR_QUERY, 'llmnr', 'llmnr'), (LLMNR_RESPONSE, 'llmnr', 'llmnr'), (LLMNR_CONFLICT, 'llmnr', 'llmnr'))

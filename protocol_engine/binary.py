@@ -398,10 +398,14 @@ class DNSParser(FrameParser):
         return size + 2
 
     def validate(self, data):
-        from .wire import dns_details, dns_message_evidence, dns_query_type_evidence
-        self.protocol_name, self.reason, qname, qtype = dns_details(data[2:], self.config)
-        self.extra_evidence = tuple((e.field, e.value, "message", e.strength)
-                                    for e in dns_message_evidence(data[2:]) + dns_query_type_evidence(qname, qtype))
+        from .wire import dns_details
+        protocol, self.reason, qname, qtype, rows = dns_details(data[2:], self.config)
+        if protocol == "netbios-ns" and any(e.field == "nbns_opcode" and e.value != "query" for e in rows):
+            raise UnsupportedPrefix("NetBIOS name service registration traffic is UDP only")
+        # Over TCP the layout is DNS: NB/NBSTAT questions and multicast markers keep their evidence rows,
+        # the App-ID layer refines them, and the family stays dns (mDNS and NetBIOS-NS are UDP profiles).
+        self.protocol_name = "dns"
+        self.extra_evidence = tuple((e.field, e.value, "message", e.strength) for e in rows)
         if self.config.retain_contexts:
             self.contexts = {"dns-req-query-name": qname, "dns-req-query-type": qtype}
 

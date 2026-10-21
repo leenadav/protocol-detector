@@ -430,7 +430,9 @@ class TURNTests(unittest.TestCase):
 class DNSQueryTypeTests(unittest.TestCase):
     def test_netbios_name_service_is_told_from_dns_by_label_and_type(self):
         nbns = DatagramInspector().inspect(NBNS_QUERY)
-        self.assertEqual((nbns.application_protocol, fields(nbns, "dns_query_type", "dns_message")), ("dns", {"dns_query_type": "nb", "dns_message": "query"}))
+        # v0.55: NetBIOS name service is its own UDP family; the DNS-layout evidence rows stay.
+        self.assertEqual((nbns.application_protocol, fields(nbns, "dns_query_type", "dns_message", "nbns_opcode")),
+                         ("netbios-ns", {"dns_query_type": "nb", "dns_message": "query", "nbns_opcode": "query"}))
         self.assertEqual(classify(nbns, "udp", 137).app, "netbios-ns")
         self.assertEqual(classify(nbns, "udp", 137).port_usage, "standard")
         nbstat = DatagramInspector().inspect(NBSTAT_QUERY)

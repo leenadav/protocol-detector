@@ -10,8 +10,28 @@ from .parsers import BudgetError, ParseError, UnsupportedPrefix
 
 
 def dns_probe(data):
-    return (len(data) >= 12 and data[2] & 0x78 == 0 and not data[3] & 0x40
-            and data[4:6] == b"\x00\x01")
+    """DNS message layout (v0.55): the QUERY opcode with 1..8 questions, or zero questions for a response that
+    carries answers (multicast DNS announcement), or the NetBIOS name service opcodes 5..8 (registration,
+    release, WACK, refresh) with at most one question; the Z bit stays clear."""
+    if len(data) < 12 or data[3] & 0x40:
+        return False
+    opcode = data[2] & 0x78
+    questions = int.from_bytes(data[4:6], "big")
+    if opcode == 0 and questions == 1:
+        return True
+    # The multicast and NetBIOS layouts are rarer: their section counts must also be plausible
+    # (RFC 6762 answers, RFC 1002 one additional record) and the first name must start with a
+    # label of 1..63 bytes, so other datagrams (RIP entries, DTLS records) never become candidates.
+    if len(data) <= 12 or not 1 <= data[12] <= 63:
+        return False
+    total = sum(struct.unpack("!4H", data[4:12]))
+    if not 1 <= total <= 32:
+        return False
+    if opcode == 0:
+        if questions == 0:
+            return bool(data[2] & 0x80) and data[6:8] != b"\x00\x00"
+        return questions <= 8
+    return opcode in (0x28, 0x30, 0x38, 0x40) and questions <= 1
 
 
 _DNS_RCODES = ("noerror", "formerr", "servfail", "nxdomain", "notimp", "refused", "yxdomain", "yxrrset", "nxrrset", "notauth", "notzone")
@@ -20,7 +40,18 @@ _DNS_QUERY_EVIDENCE = (Evidence("dns_message", "query", "wire", "structural"),)
 _DNS_RESPONSE_EVIDENCE = tuple((Evidence("dns_message", "response", "wire", "structural"),
                                 Evidence("dns_rcode", _DNS_RCODES[code] if code < len(_DNS_RCODES) else "other", "wire", "structural"))
                                for code in range(16))
-_DNS_PROTOCOL_EVIDENCE = (Evidence("application_protocol", "dns", "wire", "structural"),)
+DNS_FAMILIES = ("dns", "mdns", "netbios-ns", "llmnr")
+_DNS_PROTOCOL_EVIDENCE = {name: (Evidence("application_protocol", name, "wire", "structural"),) for name in DNS_FAMILIES}
+_NBNS_OPCODES = {0: "query", 5: "registration", 6: "release", 7: "wack", 8: "refresh"}
+_NBNS_OPCODE_EVIDENCE = {label: (Evidence("nbns_opcode", label, "wire", "structural"),) for label in _NBNS_OPCODES.values()}
+_MDNS_PROFILE_EVIDENCE = {label: (Evidence("mdns_profile", label, "wire", "structural"),)
+                          for label in ("announcement", "probe", "known-answer", "unicast-requested", "plain")}
+_LLMNR_FLAG_EVIDENCE = {label: (Evidence("llmnr_flags", label, "wire", "structural"),) for label in ("none", "conflict", "tentative")}
+_DNS_REASONS = {
+    "dns": "DNS question and record framing validated; unknown RDATA semantics and DNSSEC unverified",
+    "mdns": "Multicast DNS framing validated (.local names, QU or cache-flush bits, question count); names and records never emitted",
+    "llmnr": "LLMNR header and single question validated with the llmnr hint (opcode zero, zero Z field); names never emitted",
+}
 
 
 _DNS_QTYPES = {1: "a", 2: "ns", 5: "cname", 6: "soa", 12: "ptr", 15: "mx", 16: "txt", 28: "aaaa", 33: "srv", 35: "naptr", 43: "ds",
@@ -29,10 +60,14 @@ _NETBIOS_LABEL = frozenset(b"ABCDEFGHIJKLMNOPabcdefghijklmnop")   # question nam
 _DNS_QTYPE_EVIDENCE = {label: (Evidence("dns_query_type", label, "wire", "structural"),) for label in list(_DNS_QTYPES.values()) + ["nbstat", "other"]}
 
 
+def _netbios_name(qname):
+    first = qname.split(b".", 1)[0] if qname else b""
+    return len(first) == 32 and all(byte in _NETBIOS_LABEL for byte in first)
+
+
 def dns_query_type_class(qname, qtype):
     """Closed label for the question type; NetBIOS name service queries (NB 0x20, NBSTAT 0x21) are told from DNS SRV by their 32-byte first-level encoded label."""
-    first = qname.split(b".", 1)[0] if qname else b""
-    netbios = len(first) == 32 and all(byte in _NETBIOS_LABEL for byte in first)
+    netbios = _netbios_name(qname)
     if qtype == 33 and netbios:
         return "nbstat"
     if qtype == 32:
@@ -51,23 +86,44 @@ def dns_message_evidence(header):
     return _DNS_RESPONSE_EVIDENCE[header[3] & 0x0f]
 
 
+def dns_protocol_evidence(protocol):
+    return _DNS_PROTOCOL_EVIDENCE[protocol]
+
+
 def dns(data, config):
-    protocol, reason, qname, qtype = dns_details(data, config)
-    return DatagramMatch(reason, application_protocol=protocol,
-                         evidence=_DNS_PROTOCOL_EVIDENCE + dns_message_evidence(data) + dns_query_type_evidence(qname, qtype))
+    protocol, reason, _, _, evidence = dns_details(data, config)
+    return DatagramMatch(reason, application_protocol=protocol, evidence=_DNS_PROTOCOL_EVIDENCE[protocol] + evidence)
 
 
-def dns_details(data, config):
-    """Validate; return (protocol, reason, qname bytes, qtype) for signature contexts."""
-    if not dns_probe(data):
-        raise UnsupportedPrefix("DNS profile requires QUERY opcode and one question")
+def llmnr(data, config):
+    """Hint-only: LLMNR shares the DNS layout and only its header semantics differ (RFC 4795 2.1.1)."""
+    protocol, reason, _, _, evidence = dns_details(data, config, llmnr=True)
+    return DatagramMatch(reason, application_protocol=protocol, evidence=_DNS_PROTOCOL_EVIDENCE[protocol] + evidence)
+
+
+def dns_details(data, config, llmnr=False):
+    """Validate one DNS-layout message.
+
+    Returns (protocol, reason, qname bytes, qtype, evidence rows) where protocol is
+    `dns`, `mdns` (multicast DNS markers: a `.local` name, a QU or cache-flush bit,
+    several questions or an unsolicited announcement), `netbios-ns` (NB/NBSTAT
+    question with a 32-byte first-level encoded name, or the NetBIOS opcodes 5..8)
+    or, with llmnr=True (hint only), `llmnr`. The evidence rows exclude the
+    application_protocol row; names are returned for signature contexts only.
+    """
+    if llmnr:
+        if len(data) < 12 or data[2] & 0x78 or data[3] & 0xf0 or data[4:6] != b"\x00\x01":
+            raise UnsupportedPrefix("LLMNR requires opcode zero, one question and a zero Z field")
+    elif not dns_probe(data):
+        raise UnsupportedPrefix("DNS layout requires the QUERY or a NetBIOS name service opcode and a bounded question count")
     if data[2] & 2:
         raise UnsupportedPrefix("Truncated DNS messages require transport retry")
+    response = bool(data[2] & 0x80)
+    opcode = (data[2] >> 3) & 15
+    rcode = data[3] & 0x0f
     counts = struct.unpack("!4H", data[4:12])
     if sum(counts) > 128:
         raise BudgetError("DNS record count exceeds inspection limit")
-    if not data[2] & 0x80 and (data[2] & 0x04 or data[3] & 0x0f or counts[1] or counts[2]):
-        raise ParseError("DNS query must not carry the AA bit, answers, authority records or a response code")
     steps = 0
     boundaries = set()
 
@@ -104,49 +160,115 @@ def dns_details(data, config):
                 raise ParseError("DNS expanded name exceeds 255 bytes")
             pos += length
 
-    pos = name(12)
-    if pos + 4 > len(data):
-        raise ParseError("Truncated DNS question")
-    qname = _expand_name(data, 12, pos)
-    qtype, qclass = struct.unpack("!HH", data[pos:pos + 4])
-    if not qtype or qclass & 0x7fff not in (1, 255):
-        raise UnsupportedPrefix("Unsupported DNS question type/class profile")
-    pos += 4
-    for _ in range(sum(counts[1:])):
+    pos = 12
+    qname, qtype = b"", 0
+    unicast_requested = local = False
+    netbios = opcode != 0
+    for index in range(counts[0]):
+        start = pos
         pos = name(pos)
-        if pos + 10 > len(data):
-            raise ParseError("Truncated DNS resource record")
-        kind, _, _, size = struct.unpack("!HHIH", data[pos:pos + 10])
-        pos += 10
-        end = pos + size
-        if end > len(data):
-            raise ParseError("DNS RDATA exceeds message")
-        if kind in (1, 28) and size != (4 if kind == 1 else 16):
-            raise ParseError("Invalid DNS address record size")
-        if kind in (2, 5, 12) and name(pos) != end:
-            raise ParseError("Invalid DNS name RDATA length")
-        if kind == 15 and (size < 3 or name(pos + 2) != end):
-            raise ParseError("Invalid DNS MX RDATA")
-        if kind == 6 and name(name(pos)) + 20 != end:
-            raise ParseError("Invalid DNS SOA RDATA")
-        if kind == 16:
-            cursor = pos
-            while cursor < end:
-                cursor += 1 + data[cursor]
-            if cursor != end:
-                raise ParseError("Invalid DNS TXT RDATA")
-        if kind == 41:
-            cursor = pos
-            while cursor < end:
-                if cursor + 4 > end:
-                    raise ParseError("Truncated EDNS option")
-                cursor += 4 + int.from_bytes(data[cursor + 2:cursor + 4], "big")
-            if cursor != end:
-                raise ParseError("Invalid EDNS option length")
-        pos = end
+        if pos + 4 > len(data):
+            raise ParseError("Truncated DNS question")
+        expanded = _expand_name(data, start, pos)
+        kind, klass = struct.unpack("!HH", data[pos:pos + 4])
+        if not kind or klass & 0x7fff not in (1, 255):
+            raise UnsupportedPrefix("Unsupported DNS question type/class profile")
+        pos += 4
+        if index == 0:
+            qname, qtype = expanded, kind
+            netbios = netbios or (kind in (32, 33) and _netbios_name(expanded))
+        unicast_requested = unicast_requested or bool(klass & 0x8000)
+        local = local or expanded.endswith(b"local") and (expanded == b"local" or expanded.endswith(b".local"))
+    cache_flush = False
+    for section, count in enumerate(counts[1:]):
+        for _ in range(count):
+            start = pos
+            pos = name(pos)
+            if pos + 10 > len(data):
+                raise ParseError("Truncated DNS resource record")
+            kind, klass, _, size = struct.unpack("!HHIH", data[pos:pos + 10])
+            pos += 10
+            end = pos + size
+            if end > len(data):
+                raise ParseError("DNS RDATA exceeds message")
+            if not counts[0] and not qtype:
+                qname, qtype = _expand_name(data, start, pos - 10), kind
+                netbios = netbios or (kind in (32, 33) and _netbios_name(qname))
+            if section != 1 and klass & 0x8000 and kind != 41:
+                cache_flush = True
+            if kind in (1, 28) and size != (4 if kind == 1 else 16):
+                raise ParseError("Invalid DNS address record size")
+            if kind in (2, 5, 12) and name(pos) != end:
+                raise ParseError("Invalid DNS name RDATA length")
+            if kind == 15 and (size < 3 or name(pos + 2) != end):
+                raise ParseError("Invalid DNS MX RDATA")
+            if kind == 6 and name(name(pos)) + 20 != end:
+                raise ParseError("Invalid DNS SOA RDATA")
+            if kind == 16:
+                cursor = pos
+                while cursor < end:
+                    cursor += 1 + data[cursor]
+                if cursor != end:
+                    raise ParseError("Invalid DNS TXT RDATA")
+            if kind == 41:
+                cursor = pos
+                while cursor < end:
+                    if cursor + 4 > end:
+                        raise ParseError("Truncated EDNS option")
+                    cursor += 4 + int.from_bytes(data[cursor + 2:cursor + 4], "big")
+                if cursor != end:
+                    raise ParseError("Invalid EDNS option length")
+            if kind == 32 and netbios and size != 2 and size % 6:
+                raise ParseError("NetBIOS NB record data must be a WACK flag word or 6-byte address entries")
+            pos = end
     if pos != len(data):
         raise ParseError("Trailing bytes after DNS sections")
-    return "dns", "DNS question and record framing validated; unknown RDATA semantics and DNSSEC unverified", qname, qtype
+    evidence = dns_message_evidence(data) + dns_query_type_evidence(qname, qtype)
+    if llmnr:
+        # RFC 4795 2.1.1: C (conflict) sits where DNS keeps AA, T (tentative) where DNS keeps RD; the Z nibble was checked.
+        conflict, tentative = bool(data[2] & 0x04), bool(data[2] & 0x01)
+        if not response and (rcode or counts[1] or counts[2] or tentative):
+            raise ParseError("LLMNR query must not carry answers, authority records, a response code or the T bit")
+        if netbios or local:
+            raise UnsupportedPrefix("NetBIOS or .local names are not LLMNR")
+        label = "conflict" if conflict else ("tentative" if tentative else "none")
+        return "llmnr", _DNS_REASONS["llmnr"], qname, qtype, evidence + _LLMNR_FLAG_EVIDENCE[label]
+    if netbios:
+        if opcode not in _NBNS_OPCODES or not _netbios_name(qname):
+            raise UnsupportedPrefix("NetBIOS name service needs an encoded name with a query, registration, release, WACK or refresh opcode")
+        if not response:
+            if rcode or counts[1] or counts[2] or (opcode and (counts[0] != 1 or counts[3] != 1)):
+                raise ParseError("NetBIOS name service request sections outside RFC 1002")
+        elif counts[0] > 1 or counts[1] > 1 or counts[2] or counts[3]:
+            raise ParseError("NetBIOS name service response sections outside RFC 1002")
+        label = _NBNS_OPCODES[opcode]
+        reason = "NetBIOS name service {} framing validated; names, addresses and node status are never emitted".format(label)
+        return "netbios-ns", reason, qname, qtype, evidence + _NBNS_OPCODE_EVIDENCE[label]
+    if not counts[0] or unicast_requested or cache_flush or local:
+        # Multicast DNS (RFC 6762): QU questions, cache-flush answers, .local names, known-answer and probe
+        # queries carrying records, unsolicited announcements without questions.
+        if not counts[0] and not (local or cache_flush):
+            raise ParseError("DNS response without a question")
+        if response and (rcode or not data[2] & 0x04):
+            raise ParseError("Multicast DNS responses carry the AA bit and a zero response code")
+        if not response and (rcode or data[2] & 0x04):
+            raise ParseError("Multicast DNS queries carry neither the AA bit nor a response code")
+        if not counts[0]:
+            profile = "announcement"
+        elif not response and counts[2]:
+            profile = "probe"
+        elif not response and counts[1]:
+            profile = "known-answer"
+        elif unicast_requested:
+            profile = "unicast-requested"
+        else:
+            profile = "plain"
+        return "mdns", _DNS_REASONS["mdns"], qname, qtype, evidence + _MDNS_PROFILE_EVIDENCE[profile]
+    if counts[0] != 1:
+        raise UnsupportedPrefix("Several questions without multicast DNS markers are outside the DNS profile")
+    if not response and (data[2] & 0x04 or rcode or counts[1] or counts[2]):
+        raise ParseError("DNS query must not carry the AA bit, answers, authority records or a response code")
+    return "dns", _DNS_REASONS["dns"], qname, qtype, evidence
 
 
 def _expand_name(data, start, end):

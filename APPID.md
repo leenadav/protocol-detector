@@ -41,7 +41,9 @@ A verdict names either a catalog application or a session outcome.
 | `xmpp` | RFC 6120 stream header, either direction (v0.52) | jabber |
 | `x11`, `spice`, `afp`, `omron-fins`, `rip`, `rtcp` | X11 setup (reply with the `x11-server` hint), SPICE link header, DSI session opening, FINS/TCP exchange, RIP datagrams, hinted RTCP (v0.53) | same |
 | `turn` | STUN framing with a TURN method (Allocate, Refresh, CreatePermission, ChannelBind, Send/Data indications, TCP relay methods; v0.54), structural `stun_method`; `implicitly_uses` stun; Binding stays `stun` | stun / turn |
-| `netbios-ns` | DNS-layout NB or NBSTAT question whose first label is the 32-byte NetBIOS first-level encoding (v0.54), structural `dns_query_type`; other DNS types stay `dns` | dns / netbios-ns |
+| `netbios-ns` | The NetBIOS name service family (v0.55): NB/NBSTAT questions with the 32-byte encoded name, registration/release/refresh requests, WACK and responses; over TCP the `dns` family keeps the `nb` row and this refinement still applies | netbios-ns |
+| `mdns` | Multicast DNS family (v0.55): `.local` names, QU or cache-flush bits, several questions or announcements; `mdns_profile` reported; aliases bonjour, zeroconf | mdns |
+| `llmnr` | LLMNR family with the `llmnr` hint only (v0.55): the bytes equal a unicast DNS query, so without the hint the verdict is `dns` | llmnr |
 | `irc` | Client registration line (NICK, CAP) or `:`-prefixed server opening line (v0.54); USER with four parameters is ambiguous with FTP and PASS with FTP/POP3, both resolved by the session merge | irc |
 | `ms-rpc-over-http` | HTTP/1.x request with the RPC_CONNECT, RPC_IN_DATA or RPC_OUT_DATA method (MS-RPCH, v0.54); `implicitly_uses` web-browsing | msrpc-over-http |
 | `webdav`, `ipp`, `ocsp`, `soap` | HTTP/1.x or HTTP/2 request with a WebDAV method; POST or response with an `application/ipp` or `application/soap+xml` content class; `application/ocsp-*` in either direction (v0.52); all `implicitly_uses` web-browsing | same |

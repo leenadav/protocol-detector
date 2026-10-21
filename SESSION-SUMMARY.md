@@ -32,6 +32,7 @@ last look; v0.51 and v0.52 were queued).
 | v0.52 | XMPP stream header in both directions (domain as hostname), syslog over TCP (RFC 6587 octet counting and non-transparent framing), App-ID `webdav`, `ipp`, `ocsp`, `soap` from HTTP methods and content classes. |
 | v0.53 | X11 connection setup (hinted server reply), SPICE link messages and replies, AFP session opening over DSI, Omron FINS/TCP, RIP v1/v2 and hinted RTCP. |
 | v0.54 | LDAP ExtendedRequest/ExtendedResponse with the `ldap-starttls` shift (named server success; client and unnamed-success directions opened by message-id correlation in the analyzer, with retained bytes replayed from the reassembly buffer and the replay's events delivered to live output on their own direction); IRC family (client registration and `:`-prefixed server lines, four-parameter USER ambiguous with FTP); TURN methods and attributes over STUN (`turn`); `dns_query_type` with NetBIOS NB/NBSTAT (`netbios-ns`); RPC over HTTP methods (`ms-rpc-over-http`). |
+| v0.55 | Name services on the DNS layout: `mdns` (markers: `.local`, QU/cache-flush bits, several questions, announcements; profile reported), `netbios-ns` as a family (query, registration, release, WACK, refresh and responses), hint-only `llmnr`; the DNS-layout candidate rule admits the rarer layouts only under a plausibility check. |
 
 Numbers moved from 59 families / 60 applications / about 420 tests at the
 start of the session to 75 families (68 automatic), 87 catalog applications,
