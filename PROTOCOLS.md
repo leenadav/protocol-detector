@@ -12,7 +12,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 
 | Family | Transport | Selection | Observation scope | Implemented profile |
 |---|---|---|---|---|
-| amqp | tcp | Automatic profiles | protocol_header | Plain 0-9-1/1.0 version header only |
+| amqp | tcp | Automatic profiles | protocol_header | Plain 0-9-1/1.0 version header only; broker Connection.Start frame (properties, mechanisms and locales framed, not emitted) |
 | bacnet | udp | Automatic profiles | datagram | BVLC function/length and NPDU version/control framing |
 | bgp | tcp | Automatic profiles | negotiation_request | BGPv4 OPEN, standard optional lengths and capability framing |
 | bittorrent | tcp | Automatic profiles | initial_message | 68-byte peer handshake; encrypted transport unsupported |
@@ -26,7 +26,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | ethernet-ip | tcp/udp | Automatic profiles | protocol_header/datagram | Encapsulation header with RegisterSession/list/data commands; CIP not decoded |
 | fastcgi | tcp | Automatic profiles | initial_params | v1 BEGIN_REQUEST plus complete PARAMS stream; one request, zero reserved fields, no response/body semantics |
 | ftp | tcp | Automatic profiles | initial_message | Client command line (FTP-only verbs); shared USER/PASS/QUIT verbs are ambiguous with POP3 and resolved by session correlation with a 220 greeting |
-| giop | tcp | Automatic profiles | request_header/locate_request | GIOP 1.2 unfragmented KeyAddr Request/LocateRequest; bounded CDR, opaque arguments and service contexts; no replies or object identity |
+| giop | tcp | Automatic profiles | request_header/locate_request | GIOP 1.2 unfragmented KeyAddr Request/LocateRequest and Reply/LocateReply (status reported); bounded CDR, opaque arguments, bodies and service contexts; no object identity |
 | git | tcp | Automatic profiles | service_request | Native Git pkt-line service request; bounded pathname, optional DNS/IPv4 host and extra parameters; no packfile, server or negotiated-version validation |
 | http | tcp | Automatic profiles | initial_message | HTTP/1.0 and 1.1 start-line/headers |
 | http2 | tcp | Automatic profiles | initial_message | Client preface plus initial SETTINGS; no HPACK |
@@ -40,7 +40,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | l2tp | udp | Automatic profiles | datagram | L2TPv2 SCCRQ control message with Message Type AVP first |
 | ldap | tcp | Automatic profiles | initial_message | LDAPv3 BindRequest, simple/SASL, and BindResponse (result code reported; DN, diagnostic and SASL credentials not emitted); no controls or searches |
 | memcached | tcp | Automatic profiles | initial_message | Selected binary request commands 0x00..0x10; no SASL/text/meta |
-| modbus | tcp | Automatic profiles | request_header | MBAP header and public function request PDU shapes; transaction ids above 0x01ff need a hint |
+| modbus | tcp | Automatic profiles | request_header | MBAP header with public function request PDU shapes, normal response shapes (byte count and data) and exception responses (code reported); transaction ids above 0x01ff need a hint |
 | mongodb | tcp | Hint required | initial_message | Hint required: uncompressed OP_MSG body/sequences, bounded BSON and CRC-32C; no telemetry or command semantics |
 | mqtt | tcp | Automatic profiles | initial_message | 3.1.1/5.0 CONNECT; MQTT5 CONNECT/Will property validation |
 | mysql | tcp | Hint required | protocol_header | Hint required: server HandshakeV10 (21-byte challenge, native/caching_sha2/sha256 plugin), client SSLRequest or HandshakeResponse41 (capabilities, bounded user/database/plugin/attributes, plugin reported, names not emitted) |
@@ -64,7 +64,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | s7comm | tcp | Hint required | protocol_header | One S7 PDU in a COTP data TPDU after the ISO-TSAP connection (reached by the cotp-connect shift or an explicit candidate): header, ROSCTR, public function codes, setup communication fields; addresses and values not decoded |
 | sflow | udp | Automatic profiles | datagram | sFlow v5 datagram with IPv4 agent and bounded sample headers |
 | sip | tcp/udp | Automatic profiles | initial_headers/datagram | SIP/2.0 required header framing; no dialogue/body semantics |
-| smb1 | tcp | Automatic profiles | negotiation_request | NetBIOS session header plus SMB_COM_NEGOTIATE request with dialect strings; maps to the smb application |
+| smb1 | tcp | Automatic profiles | negotiation_request | NetBIOS session header plus SMB_COM_NEGOTIATE request (dialect strings) or response (NT LM 0.12, LAN Manager or core layout; challenge and domain not emitted); maps to the smb application |
 | smb2 | tcp | Automatic profiles | negotiation_request | Direct TCP SMB2/3 NEGOTIATE request (offers) or response (selected dialect, signing mode, 3.1.1 contexts); security token not emitted |
 | smtp | tcp | Automatic profiles | initial_message | EHLO/HELO only; ambiguous 220 banners unknown |
 | snmp | udp | Automatic profiles | datagram | v1/v2c and v3 messages with every standard PDU kind (Get, GetNext, GetBulk, Set, Response, Trap, Inform, Report; v3 USM header and plaintext or encrypted scoped PDU); PDU kind reported, values never emitted |
@@ -74,7 +74,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | stomp | tcp | Automatic profiles | protocol_header | 1.1/1.2 CONNECT/STOMP/CONNECTED, complete empty-body NUL-terminated frame |
 | stun | tcp/udp | Automatic profiles | initial_message/datagram | Binding method; attributes and optional fingerprint, no HMAC validation |
 | syslog | udp | Automatic profiles | datagram | RFC5424 version 1 header/structured data; no RFC3164 |
-| tacacs-plus | tcp | Automatic profiles | protocol_header | TACACS+ header for the first packet of a session; START body lengths when unencrypted |
+| tacacs-plus | tcp | Automatic profiles | protocol_header | TACACS+ header for the first two packets of a session (START seq 1, REPLY seq 2); body lengths and status codes checked when unencrypted, never emitted |
 | tds | tcp | Automatic profiles | negotiation_request/negotiation_response | MSSQL TDS 7.x PRELOGIN packet (client) or its response (server): header, option table, VERSION/ENCRYPTION mandatory, fixed option lengths; instance names, thread, trace and nonce bytes not emitted; no LOGIN7 or query stream |
 | telnet | tcp | Automatic profiles | negotiation_request | Two complete IAC option negotiation commands; terminal data not inspected |
 | tftp | udp | Automatic profiles | datagram | RRQ/WRQ with bounded options; no transfer state |
@@ -1314,3 +1314,44 @@ verdict since v0.43.
 
 Primary specifications: [RFC 6347 4.2.1](https://www.rfc-editor.org/rfc/rfc6347.html#section-4.2.1), [RFC 2865 4.2-4.4](https://www.rfc-editor.org/rfc/rfc2865.html#section-4.2),
 OpenVPN protocol (ssl.h control opcodes), [RFC 7296 1.2, 2.7](https://www.rfc-editor.org/rfc/rfc7296.html#section-1.2).
+
+## TCP server replies: Modbus, GIOP, TACACS+, SMB1 and AMQP (v0.47)
+
+`modbus` accepts normal responses whose shape differs from the request (read
+coils/inputs/registers and report-slave-id/read-file as byte count plus data,
+with register counts even and at most 250 bytes; exception status one byte;
+comm-event counter four bytes) and exception responses (function | 0x80 with
+one exception code 1..11 except the unassigned 9, for a public function).
+Echo-shaped responses (write single/multiple) are indistinguishable from their
+requests and stay `request`. Evidence `modbus_pdu` (`request`, `response`,
+`exception`) and `modbus_exception`; RISKS.md derives
+`modbus-exception-response`.
+
+`giop` accepts Reply (status 0..5, bounded service-context list, optional
+8-aligned opaque body) and LocateReply (status 0..5, no body for UNKNOWN_OBJECT
+and OBJECT_HERE, opaque forward references otherwise). Evidence `giop_message`
+and `giop_status` (closed names).
+
+`tacacs-plus` accepts the server packet with seq_no 2: the same header rules;
+when the unencrypted flag is set the REPLY body lengths and status codes are
+checked per type (authentication PASS/FAIL/GETDATA/GETUSER/GETPASS/RESTART/
+ERROR/FOLLOW, authorization PASS_ADD/PASS_REPL/FAIL/ERROR/FOLLOW with the
+argument length list, accounting SUCCESS/ERROR/FOLLOW). Evidence
+`tacacs_packet` (`start`/`reply`) and `tacacs_type`.
+
+`smb1` accepts the SMB_COM_NEGOTIATE response (reply flag, STATUS_SUCCESS)
+in the NT LM 0.12 (17 words: dialect index at most 32 or 0xffff, security mode
+bits, encryption key length 0 or 8), LAN Manager (13 words) or core (1 word)
+layout with the byte count matching the frame. Evidence `smb1_message` and
+`smb1_dialect_layout`; challenge and domain are never emitted.
+
+`amqp` accepts the broker's Connection.Start method frame (type 1, channel 0,
+payload at most 4089 bytes: class 10 method 10, version 0-9, a bounded opaque
+server-properties table, non-empty printable mechanisms and locales, frame-end
+0xCE). Evidence `amqp_message` (`protocol-header`/`connection-start`). Prefix:
+a type-1 frame on channel 0 whose payload starts with class/method 10/10 routes
+to `amqp` once eleven bytes are present.
+
+Primary specifications: [Modbus Application Protocol V1.1b3 6-7](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b3.pdf),
+[CORBA 3.4 GIOP 9.4](https://www.omg.org/spec/CORBA/3.4/Interoperability/PDF), [RFC 8907 5.2, 6.2, 7.2](https://www.rfc-editor.org/rfc/rfc8907.html#section-5.2),
+[MS-CIFS 2.2.4.52.2](https://learn.microsoft.com/openspecs/windows_protocols/ms-cifs/b39f253e-4963-40df-8dff-2f9040ebbeb1), [AMQP 0-9-1 4.2.3, 1.4.2.1](https://www.rabbitmq.com/resources/specs/amqp0-9-1.pdf).

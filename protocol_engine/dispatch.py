@@ -125,6 +125,12 @@ def select(prefix):
         # DNS QDCOUNT would be padding<<8, never one when reserved is zero.
         if first == 1 and prefix[1] == 1 and prefix[2:4] != b"\x00\x00" and prefix[4:6] == b"\x00\x08" and prefix[7] == 0:
             return "fastcgi"
+        if first == 1 and prefix[1:3] == b"\x00\x00":
+            # AMQP 0-9-1 method frame on channel zero: Connection.Start (class 10, method 10) from the broker.
+            if len(prefix) < 11:
+                return None
+            if prefix[7:11] == b"\x00\x0a\x00\x0a":
+                return "amqp"
         if first == 0 and prefix[4:8] == b"\xfeSMB":
             return "smb2"
         if first == 0 and prefix[4:8] == b"\xffSMB":

@@ -23,8 +23,10 @@ class SMB1Parser(FrameParser):
     def validate(self, framed):
         data = framed[4:]
         if data[4] != 0x72:
-            raise UnsupportedPrefix("Only SMB1 NEGOTIATE requests are supported")
-        if data[5:9] != bytes(4) or data[9] & 0x80:
+            raise UnsupportedPrefix("Only SMB1 NEGOTIATE requests and responses are supported")
+        if data[9] & 0x80:
+            return self._response(data)
+        if data[5:9] != bytes(4):
             raise ParseError("SMB1 negotiate request must carry zero status and the request direction flag")
         if data[32] != 0:
             raise ParseError("SMB1 negotiate word count must be zero")
@@ -45,7 +47,39 @@ class SMB1Parser(FrameParser):
             if dialects > min(self.config.max_headers, 32):
                 raise BudgetError("SMB1 dialect count exceeds budget")
             pos = end + 1
+        self.extra_evidence = (("smb1_message", "negotiate-request", "header", "structural"),)
         self.reason = "SMB1 negotiate request framing and dialect strings validated; dialect selection and session unverified"
+
+    def _response(self, data):
+        """SMB_COM_NEGOTIATE response: NT LM 0.12 (17 words), LAN Manager (13) or core (1) layouts (v0.47)."""
+        if data[5:9] != bytes(4):
+            raise UnsupportedPrefix("SMB1 negotiate response profile covers STATUS_SUCCESS")
+        words = data[32]
+        if words not in (1, 13, 17):
+            raise UnsupportedPrefix("SMB1 negotiate response word count outside the known dialect layouts")
+        if len(data) < 33 + 2 * words + 2:
+            raise ParseError("SMB1 negotiate response shorter than its parameter words")
+        dialect_index = int.from_bytes(data[33:35], "little")
+        if dialect_index > 32 and dialect_index != 0xffff:
+            raise ParseError("SMB1 dialect index outside the request's possible range")
+        byte_count = int.from_bytes(data[33 + 2 * words:35 + 2 * words], "little")
+        body = data[35 + 2 * words:]
+        if len(body) != byte_count:
+            raise ParseError("SMB1 byte count disagrees with frame")
+        if words == 17:
+            if data[35] & ~0x0f:
+                raise ParseError("SMB1 security mode reserved bits set")
+            challenge = data[66]   # EncryptionKeyLength: the last of the 34 parameter bytes
+            if challenge > byte_count or challenge not in (0, 8):
+                raise ParseError("SMB1 encryption key length must be 0 or 8 within the byte count")
+            label = "nt-lm-0.12"
+        elif words == 13:
+            label = "lan-manager"
+        else:
+            label = "core"
+        self.scope = "negotiation_response"
+        self.extra_evidence = (("smb1_message", "negotiate-response", "header", "structural"), ("smb1_dialect_layout", label, "header", "asserted"))
+        self.reason = "SMB1 negotiate response framing validated; challenge and domain not emitted, dialect selection unverified"
 
 
 class NetBIOSSessionParser(FrameParser):
@@ -245,8 +279,8 @@ class TACACSParser(FrameParser):
             raise ParseError("TACACS+ major version must be 0xc")
         if header[1] not in (1, 2, 3):
             raise UnsupportedPrefix("TACACS+ type outside authentication/authorization/accounting")
-        if header[2] != 1:
-            raise UnsupportedPrefix("TACACS+ profile covers the first packet of a session (seq_no 1)")
+        if header[2] not in (1, 2):
+            raise UnsupportedPrefix("TACACS+ profile covers the first two packets of a session (seq_no 1 and 2)")
         if header[3] & 0xfa:
             raise ParseError("TACACS+ reserved flag bits set")
         size = int.from_bytes(header[8:12], "big")
@@ -255,6 +289,9 @@ class TACACSParser(FrameParser):
         return 12 + size
 
     def validate(self, data):
+        kind = {1: "authentication", 2: "authorization", 3: "accounting"}[data[1]]
+        if data[2] == 2:
+            return self._reply(data, kind)
         if data[3] & 1 and data[1] == 1:
             body = data[12:]
             if len(body) < 8:
@@ -263,4 +300,22 @@ class TACACSParser(FrameParser):
                 raise ParseError("TACACS+ START action or authen_type invalid")
             if 8 + body[4] + body[5] + body[6] + body[7] != len(body):
                 raise ParseError("TACACS+ START field lengths disagree with body")
+        self.extra_evidence = (("tacacs_packet", "start", "header", "structural"), ("tacacs_type", kind, "header", "structural"))
         self.reason = "TACACS+ header validated; body is encrypted or opaque, no authentication claim"
+
+    def _reply(self, data, kind):
+        """Server packet seq_no 2 (RFC 8907 4.1): unencrypted REPLY bodies checked by type (v0.47)."""
+        body = data[12:]
+        if data[3] & 1:
+            if kind == "authentication":
+                if len(body) < 6 or body[0] not in (1, 2, 3, 4, 5, 6, 7, 0x21) or 6 + int.from_bytes(body[2:4], "big") + int.from_bytes(body[4:6], "big") != len(body):
+                    raise ParseError("TACACS+ authentication REPLY status or lengths invalid")
+            elif kind == "authorization":
+                if len(body) < 6 or body[0] not in (1, 2, 16, 17, 33) or 6 + body[1] + int.from_bytes(body[2:4], "big") + int.from_bytes(body[4:6], "big") + sum(body[6:6 + body[1]]) != len(body) or len(body) < 6 + body[1]:
+                    raise ParseError("TACACS+ authorization REPLY status or lengths invalid")
+            else:
+                if len(body) < 5 or body[4] not in (1, 2, 3) or 5 + int.from_bytes(body[0:2], "big") + int.from_bytes(body[2:4], "big") != len(body):
+                    raise ParseError("TACACS+ accounting REPLY status or lengths invalid")
+        self.scope = "negotiation_response"
+        self.extra_evidence = (("tacacs_packet", "reply", "header", "structural"), ("tacacs_type", kind, "header", "structural"))
+        self.reason = "TACACS+ reply header validated; body is encrypted or opaque, status and messages not emitted"

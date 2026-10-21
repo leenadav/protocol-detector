@@ -26,6 +26,7 @@ evidence strength is `heuristic` and their thresholds are listed here.
 | `tls-self-issued-certificate` | medium | With `--certificates` (v0.39): the leaf certificate after a TLS 1.2 ServerHello has an issuer equal to its subject (`tls_certificate_self_issued=yes`). Self-signed in practice; the signature itself is not verified |
 | `tls-weak-certificate-key` | high | Leaf public key below RSA 2048 bits or a named curve below 256 bits (`tls_certificate_key`, e.g. `rsa-1024`). `ec-other` and `other` never flag |
 | `tls-weak-certificate-signature` | high | Leaf signed with `md5-rsa`, `sha1-rsa` or `ecdsa-sha1` (`tls_certificate_signature`) |
+| `modbus-exception-response` | low | Modbus/TCP exception response (`modbus_pdu=exception`, v0.47); the exception code is reported as `modbus_exception` |
 | `radius-access-reject` | low | RADIUS Access-Reject (hinted family, evidence `radius_code`, v0.46); the request's authenticator is never checked |
 | `kerberos-error-response` | low | KRB-ERROR (UDP or TCP, evidence `kerberos_error`, v0.44) with an error code other than 25 (KDC_ERR_PREAUTH_REQUIRED, which every initial AS exchange produces); bad passwords (24), unknown principals (6), expired or revoked principals and clock skew all land here |
 | `dns-error-response` | low | DNS response (UDP or TCP, evidence `dns_rcode`, v0.43) with rcode `servfail`, `nxdomain` or `refused`; a single flow signal for resolution failures, not a judgement about the name |

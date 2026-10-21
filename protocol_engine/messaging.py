@@ -264,22 +264,67 @@ class RESPParser:
 
 
 class AMQPParser:
-    """Eight-byte plain AMQP version header, not the handshake or frame stream."""
+    """Eight-byte plain AMQP version header, or the broker's Connection.Start frame (v0.47)."""
     scope = "protocol_header"
     VERSIONS = {b"AMQP\x00\x00\x09\x01": "amqp/0-9-1", b"AMQP\x00\x01\x00\x00": "amqp/1.0"}
+    MAX_FRAME = 4096
 
     def __init__(self, config):
+        self.config = config
         self.header = bytearray()
+        self.needed = 8
         self.done = False
+        self.extra_evidence = ()
         self.reason = "Waiting for complete AMQP version header"
 
     def feed(self, data):
-        amount = min(8 - len(self.header), len(data))
+        amount = min(self.needed - len(self.header), len(data))
         self.header.extend(data[:amount])
-        if len(self.header) == 8:
-            self.protocol_name = self.VERSIONS.get(bytes(self.header))
-            if self.protocol_name is None:
-                raise UnsupportedPrefix("Unsupported AMQP protocol version header")
+        if len(self.header) < self.needed:
+            return amount
+        if self.header[0] == 1:
+            if self.needed == 8:
+                size = int.from_bytes(self.header[3:7], "big")
+                if self.header[1:3] != b"\x00\x00" or size < 14:
+                    raise ParseError("AMQP frame header outside the Connection.Start profile")
+                if size > self.MAX_FRAME:
+                    raise BudgetError("AMQP Connection.Start frame exceeds the profile size")
+                self.needed = 8 + size   # 7 header bytes, payload, frame-end octet
+                return amount + self.feed(data[amount:]) if len(data) > amount else amount
+            self._connection_start(bytes(self.header[7:-1]), self.header[-1])
+            self.protocol_name = "amqp/0-9-1"
+            self.scope = "negotiation_response"
             self.done = True
-            self.reason = "AMQP version header validated; negotiation, frames and peer identity unverified"
+            self.extra_evidence = (("amqp_message", "connection-start", "frame", "structural"),)
+            self.reason = "AMQP 0-9-1 Connection.Start frame validated; server properties, mechanisms and locales not emitted"
+            return amount
+        self.protocol_name = self.VERSIONS.get(bytes(self.header))
+        if self.protocol_name is None:
+            raise UnsupportedPrefix("Unsupported AMQP protocol version header")
+        self.done = True
+        self.extra_evidence = (("amqp_message", "protocol-header", "header", "structural"),)
+        self.reason = "AMQP version header validated; negotiation, frames and peer identity unverified"
         return amount
+
+    def _connection_start(self, payload, frame_end):
+        if frame_end != 0xce:
+            raise ParseError("AMQP frame-end octet missing")
+        if payload[:4] != b"\x00\x0a\x00\x0a" or payload[4:6] != b"\x00\x09":
+            raise UnsupportedPrefix("AMQP frame is not Connection.Start for version 0-9")
+        pos = 6
+        table = int.from_bytes(payload[pos:pos + 4], "big")
+        pos += 4
+        if pos + table > len(payload):
+            raise ParseError("AMQP server-properties table exceeds the frame")
+        pos += table   # field names and values stay opaque and are never emitted
+        for what in ("mechanisms", "locales"):
+            if pos + 4 > len(payload):
+                raise ParseError("AMQP Connection.Start " + what + " length truncated")
+            size = int.from_bytes(payload[pos:pos + 4], "big")
+            pos += 4
+            value = payload[pos:pos + size]
+            if not size or len(value) != size or any(byte < 0x20 or byte > 0x7e for byte in value):
+                raise ParseError("AMQP Connection.Start " + what + " must be non-empty printable text")
+            pos += size
+        if pos != len(payload):
+            raise ParseError("Trailing bytes in AMQP Connection.Start")

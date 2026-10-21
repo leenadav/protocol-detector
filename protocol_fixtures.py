@@ -658,3 +658,58 @@ _ike_response_body = _ike_response_sa + bytes.fromhex('28000108000e0000') + byte
 IKEV2_RESPONSE = (bytes.fromhex('1112131415161718') + bytes.fromhex('2122232425262728') + bytes.fromhex('2120222000000000')
                   + (28 + len(_ike_response_body)).to_bytes(4, 'big') + _ike_response_body)
 DATAGRAM_CASES += ((IKEV2_RESPONSE, 'ikev2'),)
+
+
+# v0.47: TCP server replies for ICS and legacy families. Challenges, domains and properties are placeholders.
+def modbus_frame(function, pdu, unit=1, transaction=1):
+    return _struct.pack('!HHHBB', transaction, 0, 2 + len(pdu), unit, function) + pdu
+
+
+MODBUS_RESPONSE = modbus_frame(3, b'\x04' + b'\x00\x0a\x00\x0b')
+MODBUS_EXCEPTION = modbus_frame(0x83, b'\x02')
+STREAM_CASES += ((MODBUS_RESPONSE, 'modbus'), (MODBUS_EXCEPTION, 'modbus'))
+
+
+def giop_message(kind, body, order='>'):
+    return b'GIOP\x01\x02' + bytes([order == '<', kind]) + _struct.pack(order + 'I', len(body)) + body
+
+
+GIOP_REPLY = giop_message(1, _struct.pack('>III', 1, 0, 0) + bytes(4) + b'\x00\x00\x00\x04' + b'demo')   # status NO_EXCEPTION, no contexts, 8-aligned body
+GIOP_LOCATE_REPLY = giop_message(4, _struct.pack('>II', 1, 1))                                               # OBJECT_HERE
+STREAM_CASES += ((GIOP_REPLY, 'giop/1.2'), (GIOP_LOCATE_REPLY, 'giop/1.2'))
+
+_tacacs_reply_body = b'\x01\x00' + (11).to_bytes(2, 'big') + (0).to_bytes(2, 'big') + b'placeholder'   # PASS, server_msg only
+TACACS_REPLY = b'\xc0\x01\x02\x01' + b'\x12\x34\x56\x78' + len(_tacacs_reply_body).to_bytes(4, 'big') + _tacacs_reply_body
+STREAM_CASES += ((TACACS_REPLY, 'tacacs-plus'),)
+
+
+def smb1_response(words=17, dialect_index=1, challenge=bytes(8), domain=b'P\x00L\x00A\x00C\x00E\x00\x00\x00', security_mode=0x03):
+    header = b'\xffSMB\x72' + bytes(4) + b'\x98' + b'\x01\x48' + bytes(2) + bytes(8) + bytes(2) + bytes(2) + b'\xff\xfe' + bytes(2) + bytes(2)
+    if words == 17:
+        params = (_struct.pack('<HBHHIIII', dialect_index, security_mode, 50, 1, 16644, 65536, 0, 0x8000e3fd) + bytes(8) + _struct.pack('<hB', 0, len(challenge)))
+        body = challenge + domain
+    elif words == 13:
+        params = _struct.pack('<HHHHHHIIhHH', dialect_index, security_mode, 50, 1, 1, 0, 16644, 0, 0, len(challenge), 0)
+        body = challenge
+    else:
+        params = _struct.pack('<H', dialect_index)
+        body = b''
+    frame = header + bytes([words]) + params + len(body).to_bytes(2, 'little') + body
+    return b'\x00' + len(frame).to_bytes(3, 'big') + frame
+
+
+SMB1_RESPONSE = smb1_response()
+STREAM_CASES += ((SMB1_RESPONSE, 'smb1'),)
+
+
+def amqp_frame(payload, kind=1, channel=0):
+    return bytes([kind]) + channel.to_bytes(2, 'big') + len(payload).to_bytes(4, 'big') + payload + b'\xce'
+
+
+def amqp_longstr(text):
+    return len(text).to_bytes(4, 'big') + text
+
+
+_amqp_table = b'\x07productS' + amqp_longstr(b'placeholder')
+AMQP_START = amqp_frame(b'\x00\x0a\x00\x0a' + b'\x00\x09' + len(_amqp_table).to_bytes(4, 'big') + _amqp_table + amqp_longstr(b'PLAIN AMQPLAIN') + amqp_longstr(b'en_US'))
+STREAM_CASES += ((AMQP_START, 'amqp/0-9-1'),)

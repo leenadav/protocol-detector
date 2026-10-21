@@ -1,11 +1,20 @@
-# Review scope: protocol detector v0.46
+# Review scope: protocol detector v0.47
 
 Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.46): `dtls._server_flight` (translation to the TLS 1.2
+New focus (v0.47): `ModbusParser._response`/`_exception` with the widened
+probe (function | 0x80), `GIOPParser._reply`, `TACACSParser._reply` (per-type
+length arithmetic on unencrypted bodies), `SMB1Parser._response` (three word
+counts, challenge length rule) and the AMQP frame mode with its eleven-byte
+dispatch discriminator. Trace: exception codes and statuses as closed labels
+only; no challenge, domain, server message, property or argument bytes in
+evidence; echo-shaped Modbus responses deliberately left as requests. 474
+tests pass.
+
+Previous focus (v0.46): `dtls._server_flight` (translation to the TLS 1.2
 ServerHello profile, dropped TLS labels and fingerprints), `radius._response`
 (per-code attribute sets, repeatable Reply-Message/EAP/Class, State on a
 Challenge), the OpenVPN server reset layout (ack array arithmetic, remote

@@ -5,14 +5,17 @@ from .parsers import ParseError
 from .extended import UnsupportedPrefix
 
 _MODBUS_FIXED = {1: 4, 2: 4, 3: 4, 4: 4, 5: 4, 6: 4, 7: 0, 8: 4, 11: 0, 12: 0, 17: 0}
+_MODBUS_EXCEPTIONS = {1: "illegal-function", 2: "illegal-data-address", 3: "illegal-data-value", 4: "server-device-failure",
+                      5: "acknowledge", 6: "server-device-busy", 8: "memory-parity-error", 10: "gateway-path-unavailable",
+                      11: "gateway-target-failed-to-respond"}
 
 
 def modbus_probe(prefix):
-    """MBAP header: protocol id 0, length 2..254, unit id, function code; transaction id arbitrary."""
+    """MBAP header: protocol id 0, length 2..254, unit id, function code (or exception code | 0x80); transaction id arbitrary."""
     if len(prefix) < 8 or prefix[2:4] != b"\0\0":
         return False
     length = int.from_bytes(prefix[4:6], "big")
-    return 2 <= length <= 254 and 1 <= prefix[7] <= 127
+    return 2 <= length <= 254 and 1 <= prefix[7] & 0x7f <= 127
 
 
 class ModbusParser(FrameParser):
@@ -27,6 +30,12 @@ class ModbusParser(FrameParser):
 
     def validate(self, data):
         function, pdu = data[7], data[8:]
+        if function & 0x80:
+            return self._exception(function & 0x7f, pdu)
+        if function in (1, 2, 3, 4) and len(pdu) >= 1 and len(pdu) != 4:
+            return self._response(function, pdu)
+        if function in (7, 11, 12, 17) and pdu:
+            return self._response(function, pdu)
         if function in _MODBUS_FIXED:
             if len(pdu) != _MODBUS_FIXED[function]:
                 raise ParseError("Modbus request PDU length does not match the function code")
@@ -44,7 +53,36 @@ class ModbusParser(FrameParser):
                 raise ParseError("Modbus request PDU empty")
         else:
             raise UnsupportedPrefix("Modbus function code outside the public function profile")
+        self.extra_evidence = (("modbus_pdu", "request", "mbap", "structural"),)
         self.reason = "Modbus/TCP MBAP header and request PDU shape validated; register semantics unverified"
+
+    def _response(self, function, pdu):
+        """Normal responses whose shape differs from the request: byte count plus data (v0.47)."""
+        if function in (1, 2, 3, 4, 12, 17):
+            count = pdu[0]
+            if len(pdu) != 1 + count or not count:
+                raise ParseError("Modbus response byte count disagrees with the PDU")
+            if function in (3, 4) and (count % 2 or count > 250):
+                raise ParseError("Modbus register response needs an even byte count of at most 250")
+            if function in (1, 2) and count > 250:
+                raise ParseError("Modbus coil response exceeds 250 bytes")
+        elif function == 7:
+            if len(pdu) != 1:
+                raise ParseError("Modbus exception-status response carries one byte")
+        elif len(pdu) != 4:   # 11: status word and event count
+            raise ParseError("Modbus comm-event-counter response carries four bytes")
+        self.scope = "response_header"
+        self.extra_evidence = (("modbus_pdu", "response", "mbap", "structural"),)
+        self.reason = "Modbus/TCP MBAP header and response PDU shape validated; values not emitted, request unverified"
+
+    def _exception(self, function, pdu):
+        if function not in _MODBUS_FIXED and function not in (15, 16, 20, 21, 22, 23, 24, 43):
+            raise UnsupportedPrefix("Modbus exception for a function code outside the public profile")
+        if len(pdu) != 1 or not 1 <= pdu[0] <= 11 or pdu[0] in (9,):
+            raise ParseError("Modbus exception response carries one exception code 1..11")
+        self.scope = "response_header"
+        self.extra_evidence = (("modbus_pdu", "exception", "mbap", "structural"), ("modbus_exception", _MODBUS_EXCEPTIONS.get(pdu[0], "other"), "mbap", "asserted"))
+        self.reason = "Modbus/TCP exception response validated; exception code reported, request unverified"
 
 
 def _dnp3_crc(data):
