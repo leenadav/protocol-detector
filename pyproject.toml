@@ -32,6 +32,7 @@ ignore = [
 "test_*.py" = ["S", "B"]
 "live_capture.py" = ["S603", "S404", "S607"]   # argv-only subprocess with resolved executable, reviewed
 "tools/compare_engine.py" = ["S603"]        # sys.executable with argv-only arguments, reviewed
+"tools/check_pin_drift.py" = ["S603"]       # resolved git executable with argv-only arguments, reviewed
 "live_smoke.py" = ["S603", "S404", "S607", "S104"]
 "*interop*.py" = ["S603", "S404", "S607"]
 "benchmark*.py" = ["S603", "S404", "S607"]
