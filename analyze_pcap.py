@@ -120,12 +120,15 @@ class Analyzer:
             self.counts["connect_tunnels_correlated"] += 1
 
     def _correlate_ldap(self, key, state):
-        """Open the TLS phase on the server direction of an LDAP StartTLS exchange answered without a responseName.
+        """Open the TLS phase of an LDAP StartTLS exchange once the server's success answers the client's request.
 
-        The client's ExtendedRequest names StartTLS and shifts by itself; a named
-        success response shifts by itself too. RFC 4511 lets the server omit the
-        responseName, in which case the success alone cannot be told from any other
-        extended result, so the host correlates both directions (v0.54).
+        The client's StartTLS ExtendedRequest decides nothing on its own: the client
+        must wait for the answer and continues in plaintext after a refusal, so its
+        direction is opened here only when the server's ExtendedResponse carries
+        resultCode success for the same message id. A response that names the
+        StartTLS OID shifts the server direction by itself; RFC 4511 lets the server
+        omit the responseName, and that unnamed success is opened here as well, again
+        only with a matching message id (v0.54, review round 1).
         """
         connection = self.manager.connections.get(key)
         if connection is None:
@@ -135,12 +138,21 @@ class Analyzer:
         request, response = client.observation, server.observation
         if request.status != "identified" or response.status != "identified" or response.application_protocol != "ldap":
             return
-        if not any(e.field == "shift" and e.value == "ldap-starttls" for e in request.evidence):
+        asked = {e.field: e.value for e in request.evidence if e.field in ("ldap_message", "ldap_extended")}
+        if asked != {"ldap_message": "extended_request", "ldap_extended": "starttls"}:
             return
-        fields = {e.field: e.value for e in response.evidence if e.field in ("ldap_message", "ldap_extended", "ldap_result")}
-        if fields.get("ldap_message") == "extended_response" and fields.get("ldap_extended") == "unnamed" and fields.get("ldap_result") == "success":
-            if server.open_shift("ldap-starttls", "tls"):
-                self.counts["ldap_starttls_correlated"] += 1
+        answered = {e.field: e.value for e in response.evidence if e.field in ("ldap_message", "ldap_extended", "ldap_result")}
+        if answered.get("ldap_message") != "extended_response" or answered.get("ldap_result") != "success" \
+                or answered.get("ldap_extended") not in ("starttls", "unnamed"):
+            return
+        ids = [(inspector.correlation or {}).get("ldap_message_id") for inspector in (client, server)]
+        if ids[0] is None or ids[0] != ids[1]:
+            return
+        opened = client.open_shift("ldap-starttls", "tls")
+        if answered["ldap_extended"] == "unnamed":
+            opened = server.open_shift("ldap-starttls", "tls") or opened
+        if opened:
+            self.counts["ldap_starttls_correlated"] += 1
 
     def _correlate_http2(self, key, state):
         """Expect HTTP/2 on the server direction once the client's preface identified the connection.

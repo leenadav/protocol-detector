@@ -384,33 +384,46 @@ responseName OID, optional responseValue). Evidence: `ldap_message`
 (`bind_request`, `bind_response`, `extended_request`, `extended_response`),
 `ldap_extended` (`starttls`, `whoami`, `password-modify`, `cancel`,
 `notice-of-disconnection`, `other`, `unnamed`), `ldap_result`. A StartTLS
-request (OID 1.3.6.1.4.1.1466.20037, which carries no value) announces the
-`ldap-starttls` shift: the client's next bytes are its ClientHello. A
-StartTLS response whose responseName is present and whose result is success
-announces the same shift on the server direction (its next bytes are the
-ServerHello). RFC 4511 lets the server omit the responseName; such an
-unnamed success is identified as LDAP without a shift and `analyze_pcap`
-correlates it with the client's StartTLS request before opening the TLS
-phase on the server side (`ldap_starttls_correlated`). Any response value
-on a StartTLS response, a non-OID name or a result code above 123 is
-malformed; controls remain outside the profile (unknown). Extended values,
-DNs and diagnostics are never emitted. The `cleartext-credential-protocol`
-risk is dropped for a StartTLS exchange: the bind that follows travels
-inside TLS.
+request (OID 1.3.6.1.4.1.1466.20037, which carries no value) announces
+nothing by itself: the client must wait for the answer and continues in
+plaintext after a refusal (RFC 4511 4.14), so the client direction is never
+shifted from the request alone (review round 1; this differs from the
+SMTP/IMAP/POP3/FTP client-side STARTTLS shifts of v0.28, which stand as
+documented). A StartTLS response whose responseName is present and whose
+result is success announces the `ldap-starttls` shift on the server
+direction (its next bytes are the ServerHello). `analyze_pcap` correlates
+both directions: when the server's ExtendedResponse carries success for the
+*same message id* as the client's StartTLS request (the id is private
+correlation metadata on the Inspector, never evidence), it opens the TLS
+phase on the client direction and, for a success without responseName (RFC
+4511 allows the omission), on the server direction too
+(`ldap_starttls_correlated`). A refusal, an unrelated message id or a success
+for another operation opens nothing. Any response value on a StartTLS
+response, a non-OID name or a result code above 123 is malformed; controls
+remain outside the profile (unknown). Extended values, DNs and diagnostics
+are never emitted. The `cleartext-credential-protocol` risk stays on an
+LDAP observation until the correlated shift to `ssl` is established.
 
 `irc` (new family, automatic): a client registration line (`NICK` with the
-RFC 2812 nickname grammar, at most 64 characters; `USER` with exactly its
-four parameters, which FTP and POP3 never take; `CAP` with a subcommand
+RFC 2812 nickname grammar, at most 64 characters; `CAP` with a subcommand
 LS/LIST/REQ/ACK/NAK/END/NEW/DEL and a three-digit LS version) reaches the
-IRC profile through the text route; `PASS` stays ambiguous and now names
-`ftp,pop3,irc` as candidates. A server opening line is routed by its `:`
+IRC profile through the text route. `USER` with exactly its four parameters
+is validated against the IRC grammar but reported as ambiguous between
+`ftp` and `irc` (an FTP user name is a free-form string that may contain
+spaces, RFC 959; POP3 takes one space-free argument and is excluded), and
+`PASS` stays ambiguous with `ftp,pop3,irc`; the session verdict resolves
+both from the server direction, and the `irc` hint selects the IRC parser
+for them with the same line validation (review round 1). A server opening line is routed by its `:`
 prefix (a server name or `nick!user@host`) followed by a three-digit numeric
 reply naming a nickname or `*`, or NOTICE, PING, PONG, CAP, MODE, NICK,
 JOIN, AUTHENTICATE or PRIVMSG with their parameter counts; the unprefixed
 `NOTICE AUTH`/`NOTICE *` and `PING` lines some servers send first are
-accepted on the text route. Lines are at most 512 bytes including CRLF (a
-longer line is malformed before any newline arrives), parameters at most 15,
-no NUL/CR/LF. Evidence: `irc_message` (`nick`, `user`, `cap`, `pass` with the
+accepted on the text route. Lines are at most 512 bytes including CRLF: on
+the `:` route and with the `irc` hint the limit is enforced before any
+newline arrives (a longer pending line is malformed at once); on the shared
+text route a pending line is bounded by `max_line` like every other text
+first line and an IRC candidate longer than 510 bytes is malformed once the
+line completes (review round 1). Parameters at most 15, no NUL/CR/LF. Evidence: `irc_message` (`nick`, `user`, `cap`, `pass` with the
 irc hint only, `notice`, `ping`, `pong`, `numeric`, `error`, `mode`,
 `privmsg`, `join`, `authenticate`). Nicknames, user names, hosts, channels,
 passwords and message text are never emitted. JOIN/PRIVMSG/CTCP/DCC

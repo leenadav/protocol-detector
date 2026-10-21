@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 572 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 576 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -72,14 +72,15 @@ privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
 
 ## New in v0.54 — LDAP StartTLS, IRC, TURN, NetBIOS name service and RPC over HTTP
 
-LDAP ExtendedRequest/ExtendedResponse with the `ldap-starttls` shift (client
-request and named server success shift by themselves; an unnamed success is
-correlated across directions by the analyzer); a new IRC family (client
-registration lines and `:`-prefixed server lines, nothing but the message
-class emitted); TURN methods and attributes over STUN framing (`turn`
+LDAP ExtendedRequest/ExtendedResponse with the `ldap-starttls` shift (a named
+server success shifts by itself; the client direction and an unnamed success
+are opened by the analyzer only for a success with the same message id); a
+new IRC family (client registration lines and `:`-prefixed server lines,
+nothing but the message class emitted; four-parameter USER stays ambiguous
+with FTP); TURN methods and attributes over STUN framing (`turn`
 application); `dns_query_type` evidence with NetBIOS NB/NBSTAT detection
 (`netbios-ns`); the RPC_CONNECT/RPC_IN_DATA/RPC_OUT_DATA methods
-(`ms-rpc-over-http`). 82 families, 74 automatic, 97 applications, 572 tests.
+(`ms-rpc-over-http`). 82 families, 74 automatic, 97 applications, 576 tests.
 
 ## New in v0.53 — Remote desktop, storage, ICS and routing greetings
 

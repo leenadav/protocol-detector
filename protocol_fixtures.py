@@ -973,7 +973,7 @@ IRC_PING = b"PING :1760000000\r\n"
 RPC_IN_DATA_REQUEST = (b"RPC_IN_DATA /rpc/rpcproxy.dll?mail.example.org:6001 HTTP/1.1\r\nHost: mail.example.org\r\n"
                        b"Content-Length: 1073741824\r\nPragma: ResourceTypeUuid=44e265dd-7daf-42cd-8f3f-ab6f8ef6d1d7\r\n\r\n")
 STREAM_CASES += ((LDAP_STARTTLS_REQUEST, 'ldap'), (LDAP_STARTTLS_RESPONSE, 'ldap'), (LDAP_STARTTLS_UNNAMED, 'ldap'), (LDAP_WHOAMI_REQUEST, 'ldap'),
-                 (TURN_ALLOCATE, 'stun'), (TURN_ALLOCATE_ERROR, 'stun'), (IRC_NICK, 'irc'), (IRC_USER, 'irc'), (IRC_CAP_LS, 'irc'),
+                 (TURN_ALLOCATE, 'stun'), (TURN_ALLOCATE_ERROR, 'stun'), (IRC_NICK, 'irc'), (IRC_CAP_LS, 'irc'),
                  (IRC_SERVER_NOTICE, 'irc'), (IRC_SERVER_WELCOME, 'irc'), (IRC_UNPREFIXED_NOTICE, 'irc'), (IRC_PING, 'irc'),
                  (RPC_IN_DATA_REQUEST, 'http/1.1'))
 DATAGRAM_CASES += ((TURN_ALLOCATE, 'stun'), (TURN_REFRESH, 'stun'), (TURN_CHANNEL_BIND, 'stun'), (TURN_SEND_INDICATION, 'stun'),

@@ -47,6 +47,7 @@ class Inspector:
         self._parser = None
         self._candidate = None
         self._terminal = False
+        self.correlation = None   # the identifying parser's private correlation metadata (e.g. an LDAP message id); never emitted
         self._inner = None
         self._outer = None
         self._hint_source = "caller"
@@ -286,6 +287,7 @@ class Inspector:
 
     def _identified(self):
         parser = self._parser
+        self.correlation = getattr(parser, "correlation", None)
         encryption = "tls" if self._candidate == "tls" else None
         protocol = None if encryption else parser.protocol_name
         if self._candidate in ("text", "git_text", "tpkt"):

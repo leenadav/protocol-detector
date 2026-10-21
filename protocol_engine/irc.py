@@ -72,8 +72,11 @@ def _valid_prefix(prefix):
 def irc_client_line(line):
     """Classify one registration line a client sends first. Returns an irc_message label or None when not IRC.
 
-    NICK, USER and CAP are IRC-only verbs. USER needs the four RFC 2812 parameters,
-    which FTP and POP3 never take, so USER with one argument stays with them.
+    NICK and CAP are IRC-only verbs. USER with the four RFC 2812 parameters is
+    validated here but reported by the text route as ambiguous with FTP, whose
+    USER argument is a free-form string that may contain spaces (RFC 959); POP3
+    takes a single space-free argument and is excluded. One-argument USER never
+    reaches this function's IRC rules.
     """
     if not 4 <= len(line) <= IRC_LINE_LIMIT - 2 or line[:1] == b":":
         return None

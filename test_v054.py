@@ -32,22 +32,48 @@ def fields(observation, *names):
     return {e.field: e.value for e in observation.evidence if e.field in names}
 
 
+def ldap_flow(response, client_after=HELLO, server_after=TLS_SERVER13, request=LDAP_STARTTLS_REQUEST):
+    """SYN, SYN-ACK, client request, server response, then one more segment per direction."""
+    cr, cs = 1000, 9000
+    frames = [frame(A, B, 999, 0, 2), frame(B, A, 8999, 1000, 18),
+              frame(A, B, cr, cs, 24, request), frame(B, A, cs, cr + len(request), 24, response),
+              frame(A, B, cr + len(request), cs + len(response), 24, client_after)]
+    if server_after:
+        frames.append(frame(B, A, cs + len(response), cr + len(request) + len(client_after), 24, server_after))
+    return frames
+
+
+def analyze(frames):
+    records = []
+    analyzer = Analyzer(on_session=records.append)
+    for number, data in enumerate(frames):
+        analyzer.process(number, decode_packet(data))
+    directions = analyzer.manager.connections[analyzer.manager.key(A, B)]["directions"]
+    client, server = directions[A].inspector.observation, directions[B].inspector.observation
+    analyzer.finish("done")
+    return analyzer, client, server, records[0]
+
+
 class LDAPStartTLSTests(unittest.TestCase):
-    def test_request_and_named_response_shift_to_tls(self):
+    def test_request_alone_never_shifts_and_keeps_the_cleartext_risk(self):
+        # Review round 1: the client must wait for the server's answer and may continue in plaintext after a
+        # refusal, so the request announces no boundary by itself and does not clear the credential risk.
         request = stream(LDAP_STARTTLS_REQUEST)
         self.assertEqual((request.status, request.application_protocol, request.scope), ("identified", "ldap", "initial_message"))
         self.assertEqual(fields(request, "ldap_message", "ldap_extended", "shift", "shifted_payload"),
-                         {"ldap_message": "extended_request", "ldap_extended": "starttls", "shift": "ldap-starttls", "shifted_payload": "incomplete"})
-        shifted = stream(LDAP_STARTTLS_REQUEST + HELLO)
-        self.assertEqual((shifted.status, shifted.encryption, shifted.application_protocol), ("identified", "tls", None))
-        self.assertEqual(fields(shifted, "shift", "shift_from"), {"shift": "ldap-starttls", "shift_from": "ldap"})
-        self.assertTrue(shifted.reason.startswith("After ldap-starttls"))
-        verdict = classify(shifted, "tcp", 389)
-        self.assertEqual((verdict.app, verdict.shifted_from, "ldap" in verdict.implicitly_uses), ("ssl", "ldap", True))
-        self.assertNotIn("cleartext-credential-protocol", verdict.risks)
+                         {"ldap_message": "extended_request", "ldap_extended": "starttls"})
+        self.assertIn("cleartext-credential-protocol", classify(request, "tcp", 389).risks)
+        followed = stream(LDAP_STARTTLS_REQUEST + HELLO)
+        self.assertEqual((followed.application_protocol, followed.encryption, fields(followed, "shift")), ("ldap", None, {}))
+        self.assertNotIn(LDAP_STARTTLS_OID.decode(), repr(request))
+
+    def test_named_success_response_shifts_the_server_direction(self):
         response = stream(LDAP_STARTTLS_RESPONSE + TLS_SERVER13)
         self.assertEqual((response.status, response.encryption), ("identified", "tls"))
         self.assertEqual(fields(response, "shift", "shift_from", "selected_tls_version"), {"shift": "ldap-starttls", "shift_from": "ldap", "selected_tls_version": "1.3"})
+        verdict = classify(response, "tcp", 389)
+        self.assertEqual((verdict.app, verdict.shifted_from, "ldap" in verdict.implicitly_uses), ("ssl", "ldap", True))
+        self.assertNotIn("cleartext-credential-protocol", verdict.risks)
         alone = stream(LDAP_STARTTLS_RESPONSE)
         self.assertEqual((alone.application_protocol, alone.scope), ("ldap", "negotiation_response"))
         self.assertEqual(fields(alone, "ldap_message", "ldap_extended", "ldap_result", "shift"),
@@ -65,13 +91,11 @@ class LDAPStartTLSTests(unittest.TestCase):
         bind = stream(LDAP)
         self.assertEqual(fields(bind, "ldap_message"), {"ldap_message": "bind_request"})
         self.assertIn("cleartext-credential-protocol", classify(bind, "tcp", 389).risks)
-        self.assertNotIn("cleartext-credential-protocol", classify(stream(LDAP_STARTTLS_REQUEST), "tcp", 389).risks)
 
     def test_extended_operation_rules(self):
         # requestName must be a numeric OID; StartTLS takes no value; trailing fields and controls are rejected or unsupported.
         self.assertEqual(stream(ldap_extended(1, 0x77, b"starttls")).status, "malformed")
-        with_value = LDAP_STARTTLS_REQUEST
-        body = with_value[7:] + b"\x81\x01x"
+        body = LDAP_STARTTLS_REQUEST[7:] + b"\x81\x01x"
         operation = b"\x77" + bytes((len(body),)) + body
         message = b"\x02\x01\x01" + operation
         self.assertEqual(stream(b"\x30" + bytes((len(message),)) + message).status, "malformed")
@@ -89,53 +113,61 @@ class LDAPStartTLSTests(unittest.TestCase):
         controls = LDAP_STARTTLS_REQUEST + b"\xa0\x00"
         controls = b"\x30" + bytes((controls[1] + 2,)) + controls[2:]
         self.assertEqual(stream(controls).status, "unknown")
-        bad_code = ldap_extended(1, 0x78, LDAP_STARTTLS_OID, 124)
-        self.assertEqual(stream(bad_code).status, "malformed")
+        self.assertEqual(stream(ldap_extended(1, 0x78, LDAP_STARTTLS_OID, 124)).status, "malformed")
         self.assertEqual(stream(ldap_extended(1, 0x78, b"not.an.oid", 0)).status, "malformed")
-        self.assertNotIn(LDAP_STARTTLS_OID.decode(), repr(stream(LDAP_STARTTLS_REQUEST).evidence))
-        for split in range(1, len(LDAP_STARTTLS_REQUEST + HELLO)):
+        # The message id is private correlation metadata: readable by the host, never evidence.
+        inspector = Inspector()
+        inspector.feed(ldap_extended(7, 0x77, LDAP_STARTTLS_OID))
+        self.assertEqual(inspector.correlation, {"ldap_message_id": 7})
+        self.assertNotIn("7", "".join(e.value for e in inspector.observation.evidence))
+        for split in range(1, len(LDAP_STARTTLS_RESPONSE + TLS_SERVER13)):
             inspector = Inspector()
-            data = LDAP_STARTTLS_REQUEST + HELLO
+            data = LDAP_STARTTLS_RESPONSE + TLS_SERVER13
             inspector.feed(data[:split])
             inspector.feed(data[split:])
             self.assertEqual(inspector.observation, stream(data), split)
 
-    def test_analyzer_correlates_an_unnamed_success_response(self):
-        def flow(response):
-            cr, cs = 1000, 9000
-            request = LDAP_STARTTLS_REQUEST
-            return [frame(A, B, 999, 0, 2), frame(B, A, 8999, 1000, 18),
-                    frame(A, B, cr, cs, 24, request), frame(B, A, cs, cr + len(request), 24, response),
-                    frame(A, B, cr + len(request), cs + len(response), 24, HELLO),
-                    frame(B, A, cs + len(response), cr + len(request) + len(HELLO), 24, TLS_SERVER13)]
+    def test_analyzer_opens_both_directions_on_a_matching_success(self):
+        for response in (LDAP_STARTTLS_UNNAMED, LDAP_STARTTLS_RESPONSE):
+            analyzer, client, server, record = analyze(ldap_flow(response))
+            self.assertEqual(analyzer.counts["ldap_starttls_correlated"], 1, response)
+            self.assertEqual((client.encryption, server.encryption), ("tls", "tls"))
+            self.assertEqual(fields(client, "shift", "shift_from"), {"shift": "ldap-starttls", "shift_from": "ldap"})
+            self.assertEqual(fields(server, "shift", "shift_from", "selected_tls_version"), {"shift": "ldap-starttls", "shift_from": "ldap", "selected_tls_version": "1.3"})
+            self.assertEqual((record["app"], record["shifted_from"], record["client_protocol"], record["server_protocol"]), ("ssl", "ldap", "tls", "tls"))
+            self.assertNotIn("cleartext-credential-protocol", record["risks"])
 
-        def run(frames):
-            records = []
-            analyzer = Analyzer(on_session=records.append)
-            for number, data in enumerate(frames):
-                analyzer.process(number, decode_packet(data))
-            directions = analyzer.manager.connections[analyzer.manager.key(A, B)]["directions"]
-            client, server = directions[A].inspector.observation, directions[B].inspector.observation
-            analyzer.finish("done")
-            return analyzer, client, server, records[0]
+    def test_analyzer_keeps_plaintext_ldap_after_a_refusal(self):
+        # Review round 1: request, refusal, then an ordinary BindRequest and BindResponse in the clear.
+        from protocol_fixtures import LDAP_BIND_RESPONSE
+        analyzer, client, server, record = analyze(ldap_flow(LDAP_STARTTLS_REFUSED, client_after=LDAP, server_after=LDAP_BIND_RESPONSE))
+        self.assertEqual(analyzer.counts["ldap_starttls_correlated"], 0)
+        self.assertEqual((client.application_protocol, server.application_protocol, client.encryption, server.encryption), ("ldap", "ldap", None, None))
+        self.assertEqual((fields(client, "shift", "shifted_payload"), fields(server, "shift", "shifted_payload")), ({}, {}))
+        self.assertEqual((record["app"], record["shifted_from"]), ("ldap", None))
+        self.assertIn("cleartext-credential-protocol", record["risks"])
+        # A refusal followed by a ClientHello anyway: the client is not opened, the bytes are not inspected as TLS.
+        analyzer, client, server, record = analyze(ldap_flow(LDAP_STARTTLS_REFUSED))
+        self.assertEqual((analyzer.counts["ldap_starttls_correlated"], client.encryption, fields(client, "shift")), (0, None, {}))
+        self.assertEqual(record["app"], "ldap")
 
-        analyzer, client, server, record = run(flow(LDAP_STARTTLS_UNNAMED))
-        self.assertEqual(analyzer.counts["ldap_starttls_correlated"], 1)
-        self.assertEqual((client.encryption, server.encryption), ("tls", "tls"))
-        self.assertEqual(fields(server, "shift", "shift_from", "selected_tls_version"), {"shift": "ldap-starttls", "shift_from": "ldap", "selected_tls_version": "1.3"})
-        self.assertEqual((record["app"], record["shifted_from"], record["client_protocol"], record["server_protocol"]), ("ssl", "ldap", "tls", "tls"))
-        self.assertNotIn("cleartext-credential-protocol", record["risks"])
-        analyzer, client, server, record = run(flow(LDAP_STARTTLS_RESPONSE))
-        self.assertEqual(analyzer.counts["ldap_starttls_correlated"], 0)     # the named response shifted by itself
-        self.assertEqual((client.encryption, server.encryption, record["app"]), ("tls", "tls", "ssl"))
-        analyzer, client, server, record = run(flow(LDAP_STARTTLS_REFUSED))
-        self.assertEqual((analyzer.counts["ldap_starttls_correlated"], server.application_protocol, fields(server, "shift")), (0, "ldap", {}))
-        verdict = session_verdict(client, server, "tcp", 389, 400, 200, True, None)
-        self.assertEqual(verdict.app, "ssl")   # the client did start TLS; the server direction stayed with its refusal
+    def test_analyzer_requires_the_same_message_id(self):
+        # Review round 1: an unnamed success for another outstanding operation must not open TLS.
+        other_success = ldap_extended(2, 0x78, None, 0)
+        analyzer, client, server, record = analyze(ldap_flow(other_success, client_after=LDAP, server_after=ldap_extended(2, 0x78, None, 0)))
+        self.assertEqual(analyzer.counts["ldap_starttls_correlated"], 0)
+        self.assertEqual((client.application_protocol, server.application_protocol, fields(client, "shift"), fields(server, "shift")), ("ldap", "ldap", {}, {}))
+        self.assertEqual(record["app"], "ldap")
+        # The same mismatch with a named success: the server shifts by its own structure, the client stays LDAP.
+        named_other = ldap_extended(2, 0x78, LDAP_STARTTLS_OID, 0)
+        analyzer, client, server, record = analyze(ldap_flow(named_other))
+        self.assertEqual((analyzer.counts["ldap_starttls_correlated"], client.encryption, fields(client, "shift")), (0, None, {}))
+        self.assertEqual((server.encryption, fields(server, "shift")), ("tls", {"shift": "ldap-starttls"}))
+        self.assertNotIn("ldap_message_id", repr(record))
 
 
 class IRCTests(unittest.TestCase):
-    CLIENT = ((IRC_NICK, "nick", "initial_message"), (IRC_USER, "user", "initial_message"), (IRC_CAP_LS, "cap", "initial_message"),
+    CLIENT = ((IRC_NICK, "nick", "initial_message"), (IRC_CAP_LS, "cap", "initial_message"),
               (IRC_UNPREFIXED_NOTICE, "notice", "protocol_header"), (IRC_PING, "ping", "protocol_header"))
     SERVER = ((IRC_SERVER_NOTICE, "notice"), (IRC_SERVER_WELCOME, "numeric"), (b":irc.example.org PING :abc\r\n", "ping"),
               (b":irc.example.org CAP * LS :multi-prefix sasl\r\n", "cap"), (b":alice!~a@192.0.2.1 NICK :alice2\r\n", "nick"),
@@ -161,6 +193,22 @@ class IRCTests(unittest.TestCase):
         user = stream(b"USER alice\r\n")
         self.assertEqual(fields(user, "ambiguous_candidates"), {"ambiguous_candidates": "ftp,pop3"})
         self.assertEqual(session_verdict(stream(IRC_NICK), stream(IRC_SERVER_NOTICE), "tcp", 6667, 40, 60, True, None).app, "irc")
+
+    def test_four_parameter_user_is_ambiguous_with_ftp_until_the_server_decides(self):
+        # Review round 1: an FTP user name may contain spaces (RFC 959), so the IRC USER form is not disjoint from FTP.
+        user = stream(IRC_USER)
+        self.assertEqual((user.status, user.application_protocol), ("unknown", None))
+        self.assertEqual([(e.field, e.value, e.strength) for e in user.evidence], [("ambiguous_candidates", "ftp,irc", "context")])
+        self.assertNotIn("alice", repr(user))
+        self.assertNotIn("Alice", repr(user))
+        self.assertEqual(session_verdict(user, stream(IRC_SERVER_NOTICE), "tcp", 6667, 40, 60, True, None).app, "irc")
+        ftp = session_verdict(user, stream(b"220 ftp.example.org FTP server ready\r\n"), "tcp", 21, 40, 60, True, None)
+        self.assertEqual((ftp.app, ftp.status), ("ftp", "correlated"))
+        self.assertEqual(session_verdict(user, None, "tcp", 6667, 40, 0, True, None).app, "unknown-tcp")
+        hinted = stream(IRC_USER, "irc")
+        self.assertEqual((hinted.application_protocol, fields(hinted, "irc_message")), ("irc", {"irc_message": "user"}))
+        self.assertEqual(stream(b"USER a b c d e\r\n", "irc").status, "malformed")
+        self.assertEqual(stream(b"USER alice 0 * :Alice Example extra words\r\n").status, "unknown")   # trailing parameter keeps it four
 
     def test_grammar_rules(self):
         malformed = (b"NICK\r\n", b"NICK 1abc\r\n", b"NICK a b\r\n", b"NICK " + b"a" * 65 + b"\r\n", b"USER a b c d e\r\n",
@@ -200,6 +248,13 @@ class IRCTests(unittest.TestCase):
                     self.assertNotIn("alice", repr(observation.evidence))
         self.assertEqual(stream(b":" + b"a" * 600).status, "malformed")      # 512-byte IRC line limit, before any newline
         self.assertEqual(stream(b":" + b"a" * 500).status, "incomplete")
+        self.assertEqual(stream(b"NICK " + b"a" * 600, "irc").status, "malformed")   # the hinted parser enforces it too
+        # Review round 1: the shared text route (NICK/USER/CAP without a hint) is bounded by max_line, not 512,
+        # until the line completes; a complete line over 510 bytes is then malformed.
+        for verb in (b"NICK ", b"USER ", b"CAP LS "):
+            self.assertEqual(stream(verb + b"a" * 600).status, "incomplete", verb)
+            self.assertEqual(stream(verb + b"a" * 600 + b"\r\n").status, "malformed", verb)
+            self.assertEqual(stream(verb + b"a" * 9000).status, "budget_exhausted", verb)
 
 
 class TURNTests(unittest.TestCase):

@@ -18,7 +18,7 @@ from pathlib import Path
 
 from protocol_engine import Config, Inspector
 from protocol_engine.appid import classify, session_verdict, verdict_fields
-from protocol_fixtures import (CONNECT_REQUEST, CONNECT_RESPONSE, FTP_AUTH_TLS, H2_SERVER_SETTINGS, H2C_101, H2C_UPGRADE, IMAP_STARTTLS, LDAP_STARTTLS_REQUEST,
+from protocol_fixtures import (CONNECT_REQUEST, CONNECT_RESPONSE, FTP_AUTH_TLS, H2_SERVER_SETTINGS, H2C_101, H2C_UPGRADE, IMAP_STARTTLS,
                                LDAP_STARTTLS_RESPONSE, MYSQL, MYSQL_SSL_REQUEST,
                                POP3_STLS, POSTGRESQL_SSL, RDP, RDP_CONFIRM, SMTP_STARTTLS, WEBSOCKET_101, WEBSOCKET_ACCEPT, WEBSOCKET_FRAME,
                                WEBSOCKET_KEY, WEBSOCKET_SERVER_FRAME, WEBSOCKET_UPGRADE)
@@ -54,8 +54,7 @@ SHIFTS = (
     (MYSQL_SSL_REQUEST + HELLO, "mysql", "mysql", "mysql-sslrequest", None, "tls"),
     (RDP + HELLO, None, "rdp", "rdp-negotiation", None, "tls"),
     (RDP_CONFIRM + HELLO, None, "rdp", "rdp-negotiation", None, "tls"),
-    (LDAP_STARTTLS_REQUEST + HELLO, None, "ldap", "ldap-starttls", None, "tls"),
-    (LDAP_STARTTLS_RESPONSE + HELLO, None, "ldap", "ldap-starttls", None, "tls"),
+    (LDAP_STARTTLS_RESPONSE + HELLO, None, "ldap", "ldap-starttls", None, "tls"),   # the client side is opened by correlation only
 )
 
 

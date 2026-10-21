@@ -252,6 +252,7 @@ class LDAPParser(FrameParser):
         identifier, pos = ber_field(message, 0, len(message), 2)
         if not 1 <= len(identifier) <= 4 or identifier[0] & 128 or int.from_bytes(identifier, "big") == 0:
             raise ParseError("Invalid LDAP request message ID")
+        self.correlation = {"ldap_message_id": int.from_bytes(identifier, "big")}   # host correlation only, never evidence
         if pos < len(message) and message[pos] == 0x61:
             return self._bind_response(message, pos)
         if pos < len(message) and message[pos] == 0x77:
@@ -304,15 +305,15 @@ class LDAPParser(FrameParser):
         if cursor != len(request):
             raise ParseError("Trailing LDAP ExtendedRequest fields")
         operation = _LDAP_EXTENDED.get(name, "other")
-        if operation == "starttls":
-            if cursor != len(name) + 2 and len(request) != len(name) + 2:
-                raise ParseError("StartTLS request carries no requestValue")
-            # The client sends nothing more until the server's ExtendedResponse; its next bytes are the ClientHello.
-            self.shift = ("ldap-starttls", "tls")
+        if operation == "starttls" and len(request) != len(name) + 2:
+            raise ParseError("StartTLS request carries no requestValue")
+        # A StartTLS request announces nothing by itself: the client must wait for the server's
+        # answer and continues in plaintext after a refusal (RFC 4511 4.14), so the client
+        # direction is shifted by host correlation with the matching success response, never here.
         self.protocol_name = "ldap"
         self.extra_evidence = (("ldap_message", "extended_request", "ldap_message", "structural"),
                                ("ldap_extended", operation, "ldap_message", "structural"))
-        self.reason = ("LDAPv3 StartTLS ExtendedRequest validated; the TLS handshake follows the server's success response" if operation == "starttls"
+        self.reason = ("LDAPv3 StartTLS ExtendedRequest validated; TLS follows only after the server's success response" if operation == "starttls"
                        else "LDAPv3 ExtendedRequest BER fields validated; request name class reported, value not inspected")
 
     def _extended_response(self, message, pos):

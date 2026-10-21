@@ -42,6 +42,7 @@ class LineParser:
         self.fingerprints = ()
         self.extra_evidence = ()
         self.shift = None          # (boundary, expected family) once the message announces a protocol change
+        self.correlation = None    # private per-message metadata for host-side direction correlation; never emitted
         self.method = None
         self.target = None
         self.status = None

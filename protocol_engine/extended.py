@@ -147,6 +147,9 @@ class TextParser(LineParser):
                     self.shift = ("starttls", "tls")
                 return
             irc = irc_client_line(line) or (irc_server_notice(line) if line[:1] in (b"N", b"n", b"P", b"p") else None)
+            if irc == "user":
+                # RFC 959 lets an FTP user name contain spaces, so the four-parameter form is valid for both.
+                raise AmbiguousPrefix("USER with four parameters is valid for FTP and IRC; the server direction decides", ("ftp", "irc"))
             if irc is not None:
                 self.family = self.protocol_name = "irc"
                 self.scope = "initial_message" if irc in ("nick", "user", "cap") else "protocol_header"

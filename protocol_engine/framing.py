@@ -13,6 +13,7 @@ class FrameParser:
         self.header_done = False
         self.done = False
         self.shift = None
+        self.correlation = None    # private per-message metadata for host-side direction correlation; never emitted
         self.reason = "Waiting for complete framed message"
 
     def feed(self, data):

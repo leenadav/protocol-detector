@@ -7,18 +7,18 @@ risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
 New focus (v0.54): `protocol_engine/binary.py` LDAP ExtendedRequest and
 ExtendedResponse (OID grammar, the StartTLS no-value rule, result walk shared
-with BindResponse, the shift only on a named success) and the analyzer's
-`_correlate_ldap` (unnamed success opened only after the client's StartTLS
-request); `protocol_engine/irc.py` (prefix grammar, parameter counts, the
-512-byte line limit enforced before a newline in `LineParser.feed`, the USER
-four-parameter rule that keeps one-argument USER with FTP/POP3, `PASS` only
-with the hint); `protocol_engine/wire.py` STUN class/method consistency and
+with BindResponse, the shift only on a named success, the private message id
+in `parser.correlation`) and the analyzer's `_correlate_ldap` (client and
+unnamed-server phases opened only for a success with the same message id,
+nothing on a refusal); `protocol_engine/irc.py` (prefix grammar, parameter
+counts, the 512-byte limit in `LineParser.feed` for the `:` route and the
+hint only, four-parameter USER ambiguous with FTP, `PASS` only with the hint); `protocol_engine/wire.py` STUN class/method consistency and
 the TURN attribute sizes, `dns_query_type_class` (lowercase expanded names,
 32-byte A..P label, SRV versus NBSTAT); `appid.py` refinements (`turn`,
 `netbios-ns`, `ms-rpc-over-http`); the new `:` route in dispatch.py. Trace:
 extended values, nicknames, hosts, realms, nonces and names never reach
 evidence; the shift never fires on a refused or unnamed response; every
-attribute size against its message. 572 tests pass.
+attribute size against its message. 576 tests pass.
 
 Previous focus (v0.53): `protocol_engine/desktop.py` (X11 setup lengths and
 padding, the hinted reply's byte-order inference and size arithmetic, SPICE
