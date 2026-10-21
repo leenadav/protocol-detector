@@ -1,4 +1,4 @@
-# Protocol detector v0.30
+# Protocol detector v0.31
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **66 protocol families**, with explicit profiles rather than claims of full
@@ -12,7 +12,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 
 | Area | What exists | Where to read |
 |---|---|---|
-| Protocol profiles | 66 families (60 automatic, 6 hint-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only | [PROTOCOLS.md](PROTOCOLS.md) |
+| Protocol profiles | 66 families (60 automatic, 6 hint-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
 | Application verdicts | App-ID style vocabulary: 70 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
 | Application shift | CONNECT, WebSocket/h2c upgrade, STARTTLS/STLS/AUTH TLS, PostgreSQL/MySQL SSLRequest, RDP negotiation: the phase after the boundary is inspected and the carrier is kept as `shifted_from` | PROTOCOLS.md (v0.28) |
 | Custom signatures | JSON rules over bounded parser contexts (host, SNI, ALPN, banner, query name, payload prefix) with a safe regex subset | [SIGNATURES.md](SIGNATURES.md) |
@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, version); `analyze_pcap.py`, `live_capture.py` | this file |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 410 tests, seeded fuzzing, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 415 tests, seeded fuzzing, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -69,6 +69,19 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.31 — pcapng input
+
+Offline analysis (`analyze_pcap.py`, `protodetect analyze`) and live replay
+(`live_capture.py --stdin`) accept **pcapng** captures as well as classic
+PCAP: Section Header, Interface Description, Enhanced and Simple Packet Blocks
+with options, several interfaces and several sections; statistics, name
+resolution, decryption-secrets and custom blocks are skipped. Every block
+length is checked against its trailer and a 1 MiB + 64 KiB bound before any
+byte is read, and a failure closes the decoder as before. The offline reader
+now streams through the same decoder as the live path, so raw IPv4, Linux
+cooked and loopback captures work offline too. IPv6 and non-TCP/UDP packets
+remain counted as unsupported. 415 tests pass; BENCHMARK-V031.md.
 
 ## New in v0.30 — policy evaluation and one command line
 

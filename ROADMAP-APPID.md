@@ -23,7 +23,7 @@ tests; evidence strengths are structural / asserted / offered / derived /
 heuristic / configured_mapping / context; no hostname, path, credential or
 payload bytes appear in live output unless explicitly enabled.
 
-Status: the roadmap is complete at v0.30. Later work (mDNS/LLMNR, S7comm,
+Status: the roadmap is complete at v0.30; v0.31 added pcapng input (post-roadmap maintenance). Later work (mDNS/LLMNR, S7comm,
 SMB1 session setup, server-side CONNECT correlation, HTTP/2 server frames
 after h2c, certificate-based risks) is listed in PROTOCOLS.md and RISKS.md
 under their exclusions and remains out of scope until requested.

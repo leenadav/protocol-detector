@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.30 — engine and observation contracts
+# Stream/datagram engine v0.31 — engine and observation contracts
 
 ## Ownership
 
@@ -653,3 +653,21 @@ documentation stays authoritative), `protocols`/`apps`/`demo` call the demo
 scripts, `risks` prints the RISKS table, `policy lint|test` and `signatures
 lint` validate operator files, and `version` reads pyproject. Broken pipes
 from paging tools end the delegated command quietly.
+
+## pcapng framing (v0.31)
+
+`capture_stream.PcapStreamDecoder` recognizes the format from the first four
+bytes (pcapng Section Header Block magic, else one of the four classic
+magics) and keeps two incremental parsers behind one `feed`/`end` contract.
+The pcapng parser reads a block only once its whole `total_length` is
+buffered, after checking the length (>= 12, multiple of 4, <= 1 MiB + 64
+KiB) and its trailer copy; Section Header Blocks set the byte order and reset
+the interface table (<= 256 interfaces per section), Interface Description
+Blocks supply link type, snapshot length and `if_tsresol`, Enhanced and
+Simple Packet Blocks become `CaptureRecord`s with their interface's link type,
+and every other block type is counted and skipped. Options are walked with
+bounds before any value is read. A failure clears the buffer and closes the
+decoder exactly as for classic input. `packets.read_pcap_records` is now a
+64 KiB chunked loop over the same decoder, so offline and live paths cannot
+diverge, and `analyze_pcap` decodes frames with `link_packets.decode_frame`
+by link type.

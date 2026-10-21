@@ -53,39 +53,20 @@ def read_pcap(path):
 
 
 def read_pcap_records(path):
-    """Yield Ethernet CaptureRecord objects, retaining original wire length."""
-    formats = {
-        b"\xd4\xc3\xb2\xa1": ("<", 1000000),
-        b"\xa1\xb2\xc3\xd4": (">", 1000000),
-        b"\x4d\x3c\xb2\xa1": ("<", 1000000000),
-        b"\xa1\xb2\x3c\x4d": (">", 1000000000),
-    }
+    """Yield CaptureRecord objects (classic PCAP or pcapng), retaining original wire length.
+
+    Frames keep their link type; supported types are those of capture_stream.LINK_TYPES.
+    """
+    from capture_stream import PcapStreamDecoder
+    decoder = PcapStreamDecoder()
     with open(path, "rb") as capture:
-        header = capture.read(24)
-        if header[:4] == b"\x0a\x0d\x0d\x0a":
-            raise CaptureError("PCAPNG unsupported; export as classic PCAP")
-        if len(header) != 24 or header[:4] not in formats:
-            raise CaptureError("Missing or invalid classic PCAP header")
-        endian, resolution = formats[header[:4]]
-        major, minor, _, _, snaplen, linktype = struct.unpack(endian + "HHIIII", header[4:])
-        if (major, minor) != (2, 4) or not 1 <= snaplen <= 1048576:
-            raise CaptureError("Unsupported PCAP version or snapshot length")
-        if linktype != 1:
-            raise CaptureError("Only plain Ethernet link type 1 is supported")
         while True:
-            record = capture.read(16)
-            if not record:
-                return
-            if len(record) != 16:
-                raise CaptureError("Truncated PCAP record header")
-            seconds, fraction, included, original = struct.unpack(endian + "IIII", record)
-            if included > snaplen or included > original or fraction >= resolution:
-                raise CaptureError("Invalid PCAP record lengths or timestamp")
-            frame = capture.read(included)
-            if len(frame) != included:
-                raise CaptureError("Truncated PCAP record data")
-            # A captured frame may be shorter than its original wire length.
-            yield CaptureRecord(seconds + fraction / resolution, frame, original, linktype)
+            chunk = capture.read(65536)
+            if not chunk:
+                break
+            for record in decoder.feed(chunk):
+                yield record
+    decoder.end()
 
 
 def _ipv4(frame):

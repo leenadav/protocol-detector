@@ -30,9 +30,12 @@ class PcapTests(unittest.TestCase):
             with self.assertRaises(CaptureError):
                 self.read_bytes(data)
         invalid = bytearray(valid)
-        invalid[20:24] = (101).to_bytes(4, "little")
+        invalid[20:24] = (999).to_bytes(4, "little")  # unknown link type
         with self.assertRaises(CaptureError):
             self.read_bytes(invalid)
+        raw_ip = bytearray(valid)
+        raw_ip[20:24] = (101).to_bytes(4, "little")  # supported since v0.31: frames decode by link type
+        self.assertEqual(len(self.read_bytes(raw_ip)), 12)
 
     def test_reject_bad_packet_lengths_fragments_and_udp(self):
         original = frame(A, B, 1000, 9000, 24, REQUEST)

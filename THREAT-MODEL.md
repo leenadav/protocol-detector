@@ -60,7 +60,7 @@ file (lengths, link types, IPv6). A8 compromises a CI dependency or action.
 | T4 | Work/allocation amplification through advertised sizes (A4) | DoS | Budgets checked before allocation; aggregate work counters; frame size vs max_bytes | SR-1, SR-6 |
 | T5 | Capture loss turned into clean EOF (A5) | Repudiation | Truncation/drops emit capture_gap and clear state; exit code 2 | SR-7 |
 | T6 | Payload or credential leakage (A6) | Information disclosure | Reasons/evidence contain no values; live output omits hostnames by default; session records opt-in | SR-8, SR-9 |
-| T7 | Malicious PCAP structure (A7) | DoS/Tampering | Snaplen/length/timestamp validation; 1MiB snapshot cap; IPv6 and unknown link types rejected | SR-10, SR-11 |
+| T7 | Malicious PCAP or pcapng structure (A7) | DoS/Tampering | Snaplen/length/timestamp validation; 1MiB snapshot cap; pcapng block length, trailer, interface and option bounds checked before reads; IPv6 and unknown link types rejected | SR-10, SR-11, SR-33 |
 | T8 | Shell injection through interface/BPF (operator input reaching tcpdump) | Elevation | argv only, no shell, strict interface regex | SR-12 |
 | T9 | Decrypted-plaintext API misuse (feeding ciphertext) | Spoofing | feed_decrypted requires an identified TLS envelope; source provenance recorded | SR-13 |
 | T10 | Reference cycles delaying buffer release under load | DoS | Unbound callbacks, weak owner references; GC-disabled release tests | SR-14 |

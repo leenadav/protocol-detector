@@ -106,3 +106,36 @@ if __name__ == "__main__":
     with Path(args.output).open("xb") as output:
         output.write(pcap_bytes([udp_frame(A, B, RADIUS)] if args.radius else database_frames(args.database) if args.database else expanded_frames() if args.expanded else sample_frames()))
     print("Created synthetic capture: " + args.output)
+
+
+def _block(endian, kind, body):
+    total = 12 + ((len(body) + 3) & ~3)
+    return struct.pack(endian + "II", kind, total) + body + bytes(total - 12 - len(body)) + struct.pack(endian + "I", total)
+
+
+def pcapng_option(endian, code, value):
+    return struct.pack(endian + "HH", code, len(value)) + value + bytes((-len(value)) % 4)
+
+
+def pcapng_bytes(frames, endian="<", tsresol=None, linktype=1, snaplen=65535, simple=False, extra_blocks=(), interfaces=1):
+    """pcapng capture: one SHB, `interfaces` IDBs, then EPBs (or SPBs) for each frame.
+
+    tsresol is the raw if_tsresol byte (None omits the option: microseconds).
+    extra_blocks are inserted after the interface descriptions as (kind, body).
+    """
+    bom = 0x1A2B3C4D
+    section = struct.pack(endian + "IHHq", bom, 1, 0, -1) + pcapng_option(endian, 0, b"")
+    data = _block(endian, 0x0A0D0D0A, section)
+    options = (pcapng_option(endian, 9, bytes([tsresol])) if tsresol is not None else b"") + pcapng_option(endian, 0, b"")
+    for _ in range(interfaces):
+        data += _block(endian, 1, struct.pack(endian + "HHI", linktype, 0, snaplen) + options)
+    for kind, body in extra_blocks:
+        data += _block(endian, kind, body)
+    resolution = 1000000 if tsresol is None else ((1 << (tsresol & 0x7f)) if tsresol & 0x80 else 10 ** tsresol)
+    for index, packet in enumerate(frames):
+        if simple:
+            data += _block(endian, 3, struct.pack(endian + "I", len(packet)) + (packet[:snaplen] if snaplen else packet))
+        else:
+            stamp = (1700000000 + index) * resolution
+            data += _block(endian, 6, struct.pack(endian + "IIIII", index % interfaces, stamp >> 32, stamp & 0xffffffff, len(packet), len(packet)) + packet)
+    return data

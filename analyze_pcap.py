@@ -5,7 +5,8 @@ import weakref
 from dataclasses import asdict, replace
 from collections import Counter
 from functools import partial
-from packets import CaptureError, PacketError, UDPPacket, decode_packet, read_pcap_records
+from link_packets import decode_frame
+from packets import CaptureError, PacketError, UDPPacket, read_pcap_records
 from protocol_engine import Config, DatagramInspector, Event, Inspector, SignatureSet
 from protocol_engine.appid import classify, session_verdict, verdict_fields
 from protocol_engine.policy import Policy, PolicyError
@@ -363,7 +364,7 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
                 capture_gap("Capture truncation; active stream observations invalidated", number=number)
                 continue
             try:
-                packet = decode_packet(frame)
+                packet = decode_frame(frame, record.linktype)
             except PacketError as error:
                 counts["skipped"] += 1
                 if not events_only:
@@ -398,8 +399,8 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Inspect classic Ethernet/IPv4 TCP/UDP PCAP offline")
-    parser.add_argument("capture", help="Path to a classic .pcap file")
+    parser = argparse.ArgumentParser(description="Inspect IPv4 TCP/UDP captures (classic PCAP or pcapng) offline")
+    parser.add_argument("capture", help="Path to a classic .pcap or .pcapng file")
     parser.add_argument("--json", action="store_true", help="Write structured JSON Lines")
     parser.add_argument("--events-only", action="store_true", help="Only classification changes and final summary")
     parser.add_argument("--sessions", action="store_true", help="Emit one App-ID verdict record per TCP connection / UDP flow")

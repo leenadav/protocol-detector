@@ -1,11 +1,21 @@
-# Review scope: protocol detector v0.30
+# Review scope: protocol detector v0.31
 
 Python3.9-compatible IPv4 passive classification: 66 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.30): protocol_engine/policy.py (loading, Rule.matches,
+New focus (v0.31): capture_stream.PcapStreamDecoder pcapng path (format
+detection, block length/alignment/trailer checks, section byte order and
+interface reset, if_tsresol bounds, EPB/SPB length rules, option walk,
+skipped block types, failure closing the decoder), packets.read_pcap_records
+now streaming through the decoder, analyze_pcap decoding by link type.
+Trace: every slice preceded by a bound check; MAX_BLOCK versus snapshot and
+options; 64-bit timestamp arithmetic; behaviour of a capture cut between
+blocks (complete by definition); interface count and option count limits;
+equivalence of classic and pcapng results. 415 tests pass. BENCHMARK-V031.md.
+
+Previous focus (v0.30): protocol_engine/policy.py (loading, Rule.matches,
 Policy.evaluate, dependency_warnings, lint), its use in analyze_pcap.Analyzer
 ._record and live_capture (classification events, summaries), and
 protodetect.py. Trace: every validation path (types, bounds, unknown names,
