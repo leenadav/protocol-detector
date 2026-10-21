@@ -371,6 +371,42 @@ def offered_max_version(legacy, supported):
     return _TLS_VERSION_NAMES.get(best or legacy, "unknown")
 
 
+ECH_EXTENSION = 0xfe0d    # encrypted_client_hello, draft-ietf-tls-esni
+_HPKE_KDF = (0x0001, 0x0002, 0x0003)
+_HPKE_AEAD = (0x0001, 0x0002, 0x0003, 0xffff)
+
+
+def ech_type(value):
+    """Validate an ECHClientHello extension body and return "outer" or "inner".
+
+    Outer: HPKE cipher suite (known KDF and AEAD identifiers), config id, enc
+    and payload vectors filling the extension exactly; the payload is opaque
+    ciphertext (or GREASE) and is never read. Inner: the type byte alone.
+    """
+    if not value:
+        raise ParseError("Empty encrypted_client_hello extension")
+    if value[0] == 1:
+        if len(value) != 1:
+            raise ParseError("Inner encrypted_client_hello carries no fields")
+        return "inner"
+    if value[0] != 0:
+        raise ParseError("Unknown encrypted_client_hello type")
+    if len(value) < 10:
+        raise ParseError("Outer encrypted_client_hello shorter than its fixed fields")
+    kdf = (value[1] << 8) | value[2]
+    aead = (value[3] << 8) | value[4]
+    if kdf not in _HPKE_KDF or aead not in _HPKE_AEAD:
+        raise ParseError("Unknown HPKE cipher suite in encrypted_client_hello")
+    enc_length = (value[6] << 8) | value[7]
+    pos = 8 + enc_length
+    if pos + 2 > len(value):
+        raise ParseError("encrypted_client_hello enc exceeds the extension")
+    payload_length = (value[pos] << 8) | value[pos + 1]
+    if payload_length < 1 or pos + 2 + payload_length != len(value):
+        raise ParseError("encrypted_client_hello payload length disagrees with the extension")
+    return "outer"
+
+
 def _u16_list(data, width=2):
     if len(data) % width:
         raise ParseError("TLS list length is not a multiple of its element width")
@@ -393,6 +429,7 @@ def parse_hello(body, info=None, offered=None):
     if offered is not None:
         offered.append(int.from_bytes(version, "big"))
         offered.append(())
+        offered.append(None)   # encrypted_client_hello type ("outer"/"inner") when the extension is present
     if version not in (b"\x03\x01", b"\x03\x02", b"\x03\x03"):
         raise ParseError("Unsupported ClientHello version")
     pos = 34  # version + random
@@ -465,6 +502,10 @@ def parse_hello(body, info=None, offered=None):
             if not value or value[0] != len(value) - 1 or value[0] % 2:
                 raise ParseError("Invalid supported_versions extension")
             offered[1] = tuple(int.from_bytes(value[i:i + 2], "big") for i in range(1, len(value), 2))
+        elif kind == ECH_EXTENSION:
+            ech = ech_type(value)
+            if offered is not None:
+                offered[2] = ech
         if info is not None and kind in (10, 11, 13, 43):
             lists = Reader(value)
             if kind == 10:
@@ -581,6 +622,9 @@ class TLSParser:
                     offered = []
                     self.host, self.alpn = parse_hello(body, info, offered)
                     self.extra_evidence = (("tls_offered_max_version", offered_max_version(offered[0], offered[1]), "client_hello", "offered"),)
+                    if offered[2] is not None:
+                        # The visible SNI is the client-facing public name; the real name is encrypted.
+                        self.extra_evidence += (("tls_ech", offered[2], "client_hello", "offered"),)
                     if info is not None and self.config.fingerprints:
                         from .fingerprints import ja3, ja4
                         self.fingerprints = (("ja4", ja4(info), "client_hello"), ("ja3", ja3(info), "client_hello"))

@@ -439,3 +439,20 @@ SOCKS5_SERVER = b'\x05\x00' + b'\x05\x00\x00\x01' + bytes([10, 0, 0, 1]) + b'\x0
 SOCKS5_SERVER_AUTH = b'\x05\x02' + b'\x05\x00\x00\x03\x0bplaceholder' + b'\x00\x50'
 STREAM_CASES += ((OPCUA_HELLO, 'opcua'), (OPCUA_ACK, 'opcua'), (OPCUA_ERROR, 'opcua'), (OPCUA_REVERSE_HELLO, 'opcua'),
                  (SOCKS5_SERVER, 'socks5'), (SOCKS5_SERVER_AUTH, 'socks5'))
+
+
+# v0.42: ClientHello carrying an outer encrypted_client_hello extension; the payload is opaque filler.
+def client_hello_with(extensions, ciphers=(0x1301, 0x1302, 0xc02f)):
+    body = b'\x03\x03' + bytes(32) + b'\x00' + len(ciphers * 2).to_bytes(2, 'big') + b''.join(c.to_bytes(2, 'big') for c in ciphers) + b'\x01\x00'
+    ext = b''.join(k.to_bytes(2, 'big') + len(v).to_bytes(2, 'big') + v for k, v in extensions)
+    body += len(ext).to_bytes(2, 'big') + ext
+    handshake = b'\x01' + len(body).to_bytes(3, 'big') + body
+    return b'\x16\x03\x03' + len(handshake).to_bytes(2, 'big') + handshake
+
+
+def ech_outer(kdf=0x0001, aead=0x0001, config_id=0x2a, enc=bytes(32), payload=bytes(144)):
+    return b'\x00' + kdf.to_bytes(2, 'big') + aead.to_bytes(2, 'big') + bytes([config_id]) + len(enc).to_bytes(2, 'big') + enc + len(payload).to_bytes(2, 'big') + payload
+
+
+SNI_PUBLIC = b'\x00\x15\x00\x00\x12public.example.net'
+TLS_ECH_HELLO = client_hello_with(((0, SNI_PUBLIC), (43, b'\x02\x03\x04'), (16, b'\x00\x03\x02h2'), (0xfe0d, ech_outer())))

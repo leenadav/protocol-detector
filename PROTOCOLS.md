@@ -78,7 +78,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | tds | tcp | Automatic profiles | negotiation_request/negotiation_response | MSSQL TDS 7.x PRELOGIN packet (client) or its response (server): header, option table, VERSION/ENCRYPTION mandatory, fixed option lengths; instance names, thread, trace and nonce bytes not emitted; no LOGIN7 or query stream |
 | telnet | tcp | Automatic profiles | negotiation_request | Two complete IAC option negotiation commands; terminal data not inspected |
 | tftp | udp | Automatic profiles | datagram | RRQ/WRQ with bounded options; no transfer state |
-| tls | tcp | Automatic profiles | initial_message/server_hello/hello_retry_request | ClientHello plus bounded TLS1.2/1.3 server hello/retry profiles; optional leaf-certificate structure after a TLS 1.2 ServerHello (`certificates`); selections unauthenticated, no decryption |
+| tls | tcp | Automatic profiles | initial_message/server_hello/hello_retry_request | ClientHello plus bounded TLS1.2/1.3 server hello/retry profiles; optional leaf-certificate structure after a TLS 1.2 ServerHello (`certificates`); encrypted_client_hello extension structure reported as `tls_ech`; selections unauthenticated, no decryption |
 | tns | tcp | Automatic profiles | negotiation_request/negotiation_response | Oracle Net CONNECT (client) or ACCEPT/REFUSE/RESEND (server) packet: header checksums zero, versions 308..319, connect data offset/length consistency, printable descriptor; descriptor contents not emitted; no DATA packets or authentication |
 | websocket | tcp | Hint required | frame_header | One frame header after an HTTP Upgrade boundary (reached by the websocket-upgrade shift or an explicit candidate); payload not decoded |
 | wireguard | udp | Automatic profiles | datagram | Handshake initiation/response/cookie message sizes and reserved bytes; no key or tunnel claim |
@@ -1135,3 +1135,24 @@ six bytes and routes to `socks5` when they read as a reply header, otherwise to
 
 Primary specifications: [OPC 10000-6 7.1](https://reference.opcfoundation.org/Core/Part6/v105/docs/7.1),
 [RFC 1928](https://www.rfc-editor.org/rfc/rfc1928.html).
+
+## Encrypted ClientHello awareness (v0.42)
+
+A ClientHello (TLS record, and the QUIC Initial CRYPTO stream) carrying the
+`encrypted_client_hello` extension (0xfe0d, draft-ietf-tls-esni) is validated
+structurally: type byte 0 (outer) with an HPKE cipher suite whose KDF is
+HKDF-SHA256/384/512 and whose AEAD is AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305
+or the export-only value, a config id, an `enc` vector and a non-empty
+`payload` vector filling the extension exactly; or type byte 1 (inner) with
+no fields. Any other shape makes the ClientHello malformed, as for every other
+extension the parser reads. The payload is ciphertext (or GREASE) and is never
+read, so an outer extension cannot be told from a GREASE one; the evidence
+`tls_ech` (`outer`/`inner`, strength `offered`, source `client_hello` or
+`quic_client_hello`) says only what the client sent. With an outer extension
+the visible `server_name` is the client-facing public name: the hostname and
+any configured mapping derived from it describe the fronting server, not the
+encrypted inner name. RISKS.md derives `tls-encrypted-client-hello` (low) from
+`tls_ech=outer`. Fingerprints include the extension as any other (JA4 counts
+it), and DTLS is unchanged.
+
+Primary specification: [draft-ietf-tls-esni section 5](https://datatracker.ietf.org/doc/html/draft-ietf-tls-esni#section-5).

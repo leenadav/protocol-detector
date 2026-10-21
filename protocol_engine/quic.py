@@ -240,8 +240,9 @@ def quic(data, config, assembler=None):
         return DatagramMatch(encryption="quic", evidence=tuple(evidence),
                              reason="QUIC Initial protection removed; ClientHello incomplete in this datagram")
     info = ClientHelloInfo() if (config.retain_contexts or config.fingerprints) else None
+    offered = []
     try:
-        hostname, alpn = parse_hello(hello[4:], info)
+        hostname, alpn = parse_hello(hello[4:], info, offered)
     except ParseError:
         evidence.append(Evidence("crypto_assembly", "invalid", "wire", "structural"))
         return DatagramMatch(encryption="quic", evidence=tuple(evidence),
@@ -251,6 +252,8 @@ def quic(data, config, assembler=None):
         evidence.append(Evidence("hostname", hostname, "quic_sni", "asserted"))
     if alpn:
         evidence.append(Evidence("offered_alpn", ",".join(alpn), "quic_alpn", "asserted"))
+    if offered[2] is not None:
+        evidence.append(Evidence("tls_ech", offered[2], "quic_client_hello", "offered"))
     contexts = None
     if info is not None:
         info.version = 0x0304  # QUIC requires TLS 1.3; supported_versions carries it

@@ -63,7 +63,7 @@ _SUPPORTED = (
     ProtocolSupport("ntp", ("udp",), "datagram", "Hint required: v3/v4 base client/server header, no extensions/authentication", True),
     ProtocolSupport("http", ("tcp",), "initial_message", "HTTP/1.0 and 1.1 start-line/headers"),
     ProtocolSupport("http2", ("tcp",), "initial_message", "Client preface plus initial SETTINGS; no HPACK"),
-    ProtocolSupport("tls", ("tcp",), "initial_message/server_hello/hello_retry_request", "ClientHello plus bounded TLS1.2/1.3 server hello/retry profiles; optional leaf-certificate structure after a TLS 1.2 ServerHello (`certificates`); selections unauthenticated, no decryption"),
+    ProtocolSupport("tls", ("tcp",), "initial_message/server_hello/hello_retry_request", "ClientHello plus bounded TLS1.2/1.3 server hello/retry profiles; optional leaf-certificate structure after a TLS 1.2 ServerHello (`certificates`); encrypted_client_hello extension structure reported as `tls_ech`; selections unauthenticated, no decryption"),
     ProtocolSupport("ssh", ("tcp",), "initial_message", "Leading SSH-2.0/1.99 identification"),
     ProtocolSupport("socks5", ("tcp",), "initial_message/negotiation_response", "Client no-auth offer plus request, or server method selection plus reply; subnegotiation and tunnel unverified"),
     ProtocolSupport("opcua", ("tcp",), "negotiation_request/negotiation_response", "OPC UA TCP connection messages Hello, Acknowledge, Error and ReverseHello: little-endian size, buffer minimums, bounded printable opc.tcp URLs and reasons (not emitted); no secure channel"),

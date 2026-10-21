@@ -1,11 +1,18 @@
-# Review scope: protocol detector v0.41
+# Review scope: protocol detector v0.42
 
 Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.41): opcua.py and the rewritten buffer-based `Socks5Parser` in
+New focus (v0.42): `ech_type` in parsers.py and its two callers (TLSParser
+through the `offered` list, quic.py). Trace: every ECH field bound against the
+extension, exact fill, the inner type carrying no fields, the malformed path
+(the whole ClientHello becomes malformed exactly as for other extensions), the
+evidence strength (`offered`) and sources, the risk only for `outer`, DTLS
+untouched, JA4 unchanged in method. 450 tests pass.
+
+Previous focus (v0.41): opcua.py and the rewritten buffer-based `Socks5Parser` in
 extended.py with its two roles. Trace: the OPC UA route ahead of the text,
 AMQP and RFB prefixes (prefixes of the four magics now wait for byte 4 or 8;
 anything else falls through unchanged), every string length against the
