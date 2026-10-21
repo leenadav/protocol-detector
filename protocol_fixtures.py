@@ -301,3 +301,7 @@ _s7_ack = b'\x32\x03\x00\x00\x00\x01\x00\x08\x00\x00\x00\x00' + b'\xf0\x00\x00\x
 S7COMM_ACK = b'\x03\x00' + (7 + len(_s7_ack)).to_bytes(2, 'big') + b'\x02\xf0\x80' + _s7_ack
 del _s7_setup, _s7_ack
 HINTED_STREAM_CASES += ((S7COMM, 's7comm', 's7comm'),)
+
+# v0.36: server side of an h2c upgrade.
+H2C_101 = b'HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: h2c\r\n\r\n'
+H2_SERVER_SETTINGS = b'\x00\x00\x0c\x04\x00\x00\x00\x00\x00' + b'\x00\x03\x00\x00\x00\x64' + b'\x00\x04\x00\x01\x00\x00'

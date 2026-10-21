@@ -870,7 +870,7 @@ the bytes after it as a new phase ("application shift"). Rules:
 |---|---|---|
 | `http-connect` | `CONNECT authority HTTP/1.x` with an authority-form target (`host:port`, bracketed IPv6 allowed); scope `tunnel_request`, evidence `http_method=CONNECT`; verdict application `http-proxy`. A CONNECT with a path target stays plain HTTP without a shift | any protocol (unrestricted) |
 | `websocket-upgrade` | request: `GET`, `Upgrade: websocket`, `Connection: Upgrade`, `Sec-WebSocket-Key` (22 base64 chars + `==`), `Sec-WebSocket-Version: 13`, no body; response: `101` with `Upgrade: websocket` and `Sec-WebSocket-Accept` (27 chars + `=`). Missing pieces are malformed | `websocket` |
-| `h2c-upgrade` | request with `Upgrade: h2c`, `Connection: Upgrade`, `HTTP2-Settings` (base64url). The 101 response is recognized (`http_upgrade=h2c`) but server frames without a preface are not inspected | `http2` (client preface + SETTINGS) |
+| `h2c-upgrade` | request with `Upgrade: h2c`, `Connection: Upgrade`, `HTTP2-Settings` (base64url); since v0.36 also the `101` response with `Upgrade: h2c` and `Connection: Upgrade`, after which the server's first frame is a non-ACK SETTINGS on stream 0 without any preface (`http2-server`, a shift-only parser with the same SETTINGS rules and no fingerprint) | `http2` (client preface + SETTINGS) / `http2-server` (SETTINGS only) |
 | `starttls` | SMTP: after EHLO/HELO the client direction keeps reading command lines (<= 512 bytes each, known verbs only, at most min(max_headers, 8) NOOPs) until `STARTTLS` (shift), any other command (watch ends) or an unexpected line (watch ends, identification stands). IMAP `tag STARTTLS`, POP3 `STLS` shift immediately | `tls` |
 | `auth-tls` | FTP `AUTH TLS|SSL|TLS-C|TLS-P` (RFC 4217 names are FTP-only, so the shared `AUTH` verb identifies FTP here) | `tls` |
 | `postgresql-sslrequest` | SSLRequest (80877103, 8 bytes). GSSENCRequest does not shift | `tls` |
@@ -886,7 +886,7 @@ key present when the MASK bit is set. Evidence `websocket_opcode`,
 `websocket_masked`. Payload bytes are not read.
 
 Excluded: server-side CONNECT (a `200` cannot be told from a body-less response
-without the request), HTTP/2 server frames after `101 h2c`, `Upgrade: TLS`
+without the request), `Upgrade: TLS`
 (RFC 2817), SMTP server `220 Go ahead` correlation, RDP standard security after
 a TLS offer (the shifted bytes are then `unknown`), nested shifts beyond one
 boundary per direction, and any claim that the TLS handshake inside the tunnel

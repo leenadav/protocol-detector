@@ -1,7 +1,7 @@
 """Immutable parser factories, built once outside the data path."""
 from types import MappingProxyType
 from .parsers import TLSParser
-from .extended import HTTP2Parser, Socks5Parser, TextParser
+from .extended import HTTP2Parser, HTTP2ServerParser, Socks5Parser, TextParser
 from .messaging import AMQPParser, MQTTParser, RESPParser
 from .binary import BitTorrentParser, DNSParser, LDAPParser, MemcachedParser, PostgreSQLParser, RFBParser, STUNParser
 
@@ -33,7 +33,7 @@ PARSERS = MappingProxyType({
     "telnet": TelnetParser, "smb1": SMB1Parser, "netbios-ss": NetBIOSSessionParser, "kerberos": KerberosParser,
     "tacacs-plus": TACACSParser, "openvpn": OpenVPNParser, "pptp": PPTPParser, "modbus": ModbusParser, "dnp3": DNP3Parser,
     "iso-tsap": COTPParser, "ethernet-ip": ENIPParser, "iec-104": IEC104Parser, "kafka": KafkaParser, "cql": CQLParser,
-    "websocket": WebSocketParser, "s7comm": S7Parser,
+    "websocket": WebSocketParser, "s7comm": S7Parser, "http2-server": HTTP2ServerParser,
 })
 
 # Automatic ambiguity routes are not public candidate hints.

@@ -18,7 +18,7 @@ from pathlib import Path
 
 from protocol_engine import Config, Inspector
 from protocol_engine.appid import classify, session_verdict, verdict_fields
-from protocol_fixtures import (CONNECT_REQUEST, CONNECT_RESPONSE, FTP_AUTH_TLS, H2C_UPGRADE, IMAP_STARTTLS, MYSQL, MYSQL_SSL_REQUEST,
+from protocol_fixtures import (CONNECT_REQUEST, CONNECT_RESPONSE, FTP_AUTH_TLS, H2_SERVER_SETTINGS, H2C_101, H2C_UPGRADE, IMAP_STARTTLS, MYSQL, MYSQL_SSL_REQUEST,
                                POP3_STLS, POSTGRESQL_SSL, RDP, RDP_CONFIRM, SMTP_STARTTLS, WEBSOCKET_101, WEBSOCKET_ACCEPT, WEBSOCKET_FRAME,
                                WEBSOCKET_KEY, WEBSOCKET_SERVER_FRAME, WEBSOCKET_UPGRADE)
 from proxy_demo import client_hello
@@ -44,6 +44,7 @@ SHIFTS = (
     (WEBSOCKET_UPGRADE + WEBSOCKET_FRAME, None, "http/1.1", "websocket-upgrade", "websocket", None),
     (WEBSOCKET_101 + WEBSOCKET_SERVER_FRAME, None, "http/1.1", "websocket-upgrade", "websocket", None),
     (H2C_UPGRADE + H2_PREFACE_SETTINGS, None, "http/1.1", "h2c-upgrade", "http/2", None),
+    (H2C_101 + H2_SERVER_SETTINGS, None, "http/1.1", "h2c-upgrade", "http/2", None),
     (SMTP_STARTTLS + HELLO, None, "smtp", "starttls", None, "tls"),
     (IMAP_STARTTLS + HELLO, None, "imap", "starttls", None, "tls"),
     (POP3_STLS + HELLO, None, "pop3", "starttls", None, "tls"),
@@ -181,8 +182,18 @@ class BoundaryProfileTests(unittest.TestCase):
         verdict = classify(run(WEBSOCKET_UPGRADE + WEBSOCKET_FRAME)[0].observation, "tcp", 80)
         self.assertEqual((verdict.app, verdict.shifted_from, verdict.port_usage), ("websocket", "web-browsing", "standard"))
         self.assertIn("web-browsing", verdict.implicitly_uses)
-        h2c_response = run(b"HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: h2c\r\n\r\n" + bytes(9))[0].observation
-        self.assertEqual((h2c_response.application_protocol, fields(h2c_response, "shift", "http_upgrade")), ("http/1.1", {"http_upgrade": "h2c"}))
+        # 101 h2c (v0.36): the server's first frame is SETTINGS without a preface; a preface there is wrong.
+        h2c_response = run(H2C_101 + bytes(9))[0].observation
+        self.assertEqual((h2c_response.application_protocol, fields(h2c_response, "shift", "shifted_payload", "http_upgrade")),
+                         ("http/1.1", {"shift": "h2c-upgrade", "shifted_payload": "malformed", "http_upgrade": "h2c"}))
+        with_preface = run(H2C_101 + H2_PREFACE_SETTINGS)[0].observation
+        self.assertEqual((with_preface.application_protocol, fields(with_preface, "shifted_payload")["shifted_payload"]), ("http/1.1", "malformed"))
+        self.assertEqual(run(H2C_101.replace(b"Connection: Upgrade\r\n", b""))[0].observation.status, "malformed")
+        server_frames = run(H2C_101 + H2_SERVER_SETTINGS, )[0].observation
+        self.assertEqual((server_frames.application_protocol, fields(server_frames, "shift_from")), ("http/2", {"shift_from": "http/1.1"}))
+        self.assertFalse(any(e.strength == "derived" for e in run(H2C_101 + H2_SERVER_SETTINGS, config=Config(fingerprints=True))[0].observation.evidence))
+        self.assertEqual(run(H2_SERVER_SETTINGS, "http2-server")[0].observation.application_protocol, "http/2")
+        self.assertNotEqual(run(H2_SERVER_SETTINGS)[0].observation.status, "identified")  # never from a bare prefix
 
     def test_smtp_watches_for_starttls_within_bounds(self):
         mail = run(b"EHLO client.example\r\nMAIL FROM:<a@b>\r\n" + HELLO)[0]

@@ -217,8 +217,8 @@ class LineParser:
         """Decide whether the bytes after this header block belong to another protocol.
 
         CONNECT: the tunnel payload follows (any protocol; TLS in practice). Upgrade
-        to websocket/h2c on a request, or a 101 response naming websocket: the
-        frames follow. A 200 to CONNECT cannot be told from a body-less response
+        to websocket/h2c on a request, or a 101 response naming websocket or h2c:
+        the frames follow (server HTTP/2 frames carry no preface). A 200 to CONNECT cannot be told from a body-less response
         on the server side alone, so no server-side CONNECT shift exists; the
         session verdict combines the client shift with the server response.
         """
@@ -249,7 +249,10 @@ class LineParser:
                 if not self.websocket_accept:
                     raise ParseError("101 websocket upgrade requires Sec-WebSocket-Accept")
                 self.shift = ("websocket-upgrade", "websocket")
-            # 101 h2c: the server continues with HTTP/2 frames without a preface; not inspected.
+            elif token == b"h2c":
+                if not self.connection_upgrade:
+                    raise ParseError("101 h2c upgrade requires a Connection: Upgrade header")
+                self.shift = ("h2c-upgrade", "http2-server")  # server frames follow without a preface
 
 
 class KexInit:

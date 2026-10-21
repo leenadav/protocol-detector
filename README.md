@@ -1,4 +1,4 @@
-# Protocol detector v0.35
+# Protocol detector v0.36
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **67 protocol families**, with explicit profiles rather than claims of full
@@ -69,6 +69,15 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.36 — server frames after an h2c upgrade
+
+A `101 Switching Protocols` with `Upgrade: h2c` now shifts the server
+direction to a preface-less HTTP/2 parser (`http2-server`, reachable only
+through the shift or an explicit candidate): the server's initial SETTINGS
+frame is validated with the client rules and no client fingerprint is derived.
+Both directions of an h2c upgrade therefore end as `http/2` shifted from
+`http/1.1`. 424 tests pass.
 
 ## New in v0.35 — faster ClientHello parsing, same errors
 

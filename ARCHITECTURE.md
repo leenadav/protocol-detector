@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.35 — engine and observation contracts
+# Stream/datagram engine v0.36 — engine and observation contracts
 
 ## Ownership
 
@@ -720,3 +720,12 @@ message, and `tools/compare_client_hello.py` compares results and exceptions
 with a baseline tree over every truncation and seeded mutations. The engine
 contract that a hot-path change must keep its error semantics (AGENTS.md) is
 checked this way rather than asserted.
+
+## Shift-only parsers (v0.36)
+
+`HTTP2ServerParser` shows the pattern for a parser that exists only behind a
+shift or an explicit candidate: it is registered in `PARSERS` (so the shift's
+expected family resolves and `--tcp-hint` can name it) but has no catalog
+family of its own because it reports the existing `http/2` protocol name. The
+dispatch tables never route to it, so a bare server SETTINGS frame stays
+unknown without the 101 that explains it.

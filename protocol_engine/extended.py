@@ -233,6 +233,27 @@ class HTTP2Parser:
         return pos
 
 
+class HTTP2ServerParser(HTTP2Parser):
+    """Server side of an h2c upgrade: the first frame is SETTINGS without any preface (RFC 7540 3.2).
+
+    Reached only through the h2c-upgrade shift of a 101 response or an explicit
+    candidate; the SETTINGS fingerprint is a client characteristic and is not
+    derived for a server.
+    """
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.prefix_position = len(H2_PREFACE)
+        self.reason = "Waiting for the server's initial HTTP/2 SETTINGS after the h2c upgrade"
+
+    def feed(self, data):
+        consumed = super().feed(data)
+        if self.done:
+            self.fingerprints = ()
+            self.reason = "HTTP/2 server SETTINGS after the h2c upgrade validated; headers, HPACK and later frames not inspected"
+        return consumed
+
+
 class Socks5Parser:
     """Client greeting offering no-auth, followed by a complete client request.
 
