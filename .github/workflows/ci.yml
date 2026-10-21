@@ -107,16 +107,22 @@ jobs:
             echo
             head -40 behaviour-diff.md
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Check out the pull request base (the first checkout drops its credentials, so git fetch cannot)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: pr-base
       - name: Compare with the pull request base as well (whole change, when the base carries the engine)
         if: github.event_name == 'pull_request'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           SEED: ${{ github.run_id }}
         run: |
-          git fetch --depth 1 origin "$BASE_SHA"
-          if git cat-file -e "$BASE_SHA:protocol_engine/engine.py" 2>/dev/null; then
-            git worktree add --detach ../base "$BASE_SHA"
-            python -B tools/compare_engine.py ../base --iterations 300 --seed "$SEED" --report behaviour-diff-base.md --report-only
+          if [ -f pr-base/protocol_engine/engine.py ]; then
+            python -B tools/compare_engine.py pr-base --iterations 300 --seed "$SEED" --report behaviour-diff-base.md --report-only
           else
             printf '# Engine behaviour diff\n\nThe pull request base %s has no engine to compare with.\n' "$BASE_SHA" > behaviour-diff-base.md
           fi
