@@ -1,4 +1,4 @@
-# Protocol detector v0.33
+# Protocol detector v0.34
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **67 protocol families**, with explicit profiles rather than claims of full
@@ -20,8 +20,8 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | QUIC | v1/v2 client Initial recognition with protection removal (public keys) and ClientHello recovery; HTTP/3 ALPN as an offer | PROTOCOLS.md (v0.25) |
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
-| Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, version); `analyze_pcap.py`, `live_capture.py` | this file |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 421 tests, seeded fuzzing, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 424 tests, seeded fuzzing, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -69,6 +69,16 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.34 — published output schemas
+
+Every JSON line the tools emit now conforms to a JSON Schema in `schemas/`
+(`session`, `live-event`, `offline-row`), validated in the test suite under
+every option that changes the output shape and checkable in the field with
+`protodetect schema NAME --validate FILE` or `tools/schema_check.py` (a
+dependency-free draft-07 subset validator). Objects are closed
+(`additionalProperties: false`), enumerations are listed, and the contract is
+documented in [OUTPUT.md](OUTPUT.md). 424 tests pass.
 
 ## New in v0.33 — both sides of a CONNECT tunnel
 

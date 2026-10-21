@@ -1,11 +1,19 @@
-# Review scope: protocol detector v0.33
+# Review scope: protocol detector v0.34
 
 Python3.9-compatible IPv4 passive classification: 67 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.33): Inspector.open_shift (preconditions, budget, peer
+New focus (v0.34): schemas/*.schema.json (closed objects, enumerations
+matching the engine's statuses, kinds, strengths, port usage and policy
+actions), tools/schema_check.py (type semantics for bool/int/number, oneOf
+counting, local refs, error paths), test_schema.py coverage of option
+combinations. Trace: any emitted key missing from a schema; nullable fields;
+the `datagram` event kind on UDP rows; optional fields that depend on flags
+(fingerprints, hostname, policy, boundary). 424 tests pass.
+
+Previous focus (v0.33): Inspector.open_shift (preconditions, budget, peer
 provenance, no immediate event), Analyzer._correlate_connect (evidence-only
 decision, both capture orders, counter), http_status evidence on responses.
 Trace: a reopened terminal Inspector receiving bytes through SessionManager,

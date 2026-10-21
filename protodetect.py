@@ -8,6 +8,7 @@
   protodetect policy lint FILE [--strict]               validate a policy and report warnings
   protodetect policy test FILE --app ssl [--port 443 ...]  evaluate a synthetic verdict
   protodetect signatures lint FILE                      validate a custom signature file
+  protodetect schema [NAME] [--validate FILE]           print a published output schema or validate JSON Lines
   protodetect version
 
 The subcommands delegate to the existing scripts without changing their
@@ -118,6 +119,9 @@ def main(argv=None):
     test.add_argument("--encryption", choices=("tls", "dtls", "quic", "wireguard", "openvpn"))
     test.add_argument("--shifted-from", dest="shifted_from", help="Carrier application after a structural shift")
     test.add_argument("--risk", action="append", help="Flow risk name (repeatable)")
+    schema = commands.add_parser("schema", help="Print an output schema (OUTPUT.md) or validate JSON Lines against one")
+    schema.add_argument("name", nargs="?", help="session, live-event or offline-row; omitted lists the schemas")
+    schema.add_argument("--validate", metavar="FILE", help="JSON Lines file (or - for stdin) to validate against NAME")
     signatures = commands.add_parser("signatures", help="Validate a custom signature file (SIGNATURES.md)")
     signature_commands = signatures.add_subparsers(dest="signature_command", required=True)
     signature_commands.add_parser("lint").add_argument("file")
@@ -144,6 +148,20 @@ def main(argv=None):
         return _policy_lint(args.file, args.strict) if args.policy_command == "lint" else _policy_test(args)
     if args.command == "signatures":
         return _signatures_lint(args.file)
+    if args.command == "schema":
+        sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent / "tools"))
+        import schema_check
+        if args.name is None:
+            for name in schema_check.names():
+                print(name)
+            return 0
+        if args.name not in schema_check.names():
+            print("unknown schema: " + args.name)
+            return 1
+        if args.validate:
+            return schema_check.main([args.name, args.validate])
+        print(json.dumps(schema_check.load(args.name), indent=2))
+        return 0
     return 2
 
 

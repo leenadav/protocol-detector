@@ -1,0 +1,678 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://protocol-detector/schemas/live-event.schema.json",
+  "title": "Live capture event",
+  "description": "One JSON Lines event of live_capture.py --json / protodetect live --json.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/started"
+    },
+    {
+      "$ref": "#/$defs/classification"
+    },
+    {
+      "$ref": "#/$defs/session"
+    },
+    {
+      "$ref": "#/$defs/summary"
+    },
+    {
+      "$ref": "#/$defs/capture_gap"
+    },
+    {
+      "$ref": "#/$defs/error"
+    }
+  ],
+  "$defs": {
+    "endpoint": {
+      "type": "array",
+      "items": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "value",
+        "source",
+        "strength"
+      ],
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "strength": {
+          "enum": [
+            "structural",
+            "asserted",
+            "offered",
+            "derived",
+            "heuristic",
+            "configured_mapping",
+            "configured_signature",
+            "context"
+          ]
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "transport",
+        "encryption",
+        "application_protocol",
+        "application",
+        "hostname",
+        "offered_alpn",
+        "evidence",
+        "reason",
+        "scope"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "detecting",
+            "identified",
+            "unknown",
+            "malformed",
+            "incomplete",
+            "budget_exhausted",
+            "invalidated"
+          ]
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        },
+        "encryption": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "application_protocol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "application": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hostname": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "offered_alpn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        },
+        "reason": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "revision",
+        "kind",
+        "observation"
+      ],
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "enum": [
+            "updated",
+            "refined",
+            "shifted",
+            "invalidated",
+            "datagram"
+          ]
+        },
+        "observation": {
+          "$ref": "#/$defs/observation"
+        }
+      }
+    },
+    "counter": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "rule",
+        "reasons"
+      ],
+      "properties": {
+        "action": {
+          "enum": [
+            "allow",
+            "deny",
+            "alert"
+          ]
+        },
+        "rule": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "session"
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        },
+        "client": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "server": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "start": {
+          "type": "number"
+        },
+        "end": {
+          "type": "number"
+        },
+        "packets": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "client_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "server_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_reason": {
+          "type": "string"
+        },
+        "app": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "subcategory": {
+          "type": "string"
+        },
+        "technology": {
+          "type": "string"
+        },
+        "risk": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "characteristics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "base_app": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "implicitly_uses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "port_usage": {
+          "enum": [
+            "standard",
+            "nonstandard",
+            "unknown"
+          ]
+        },
+        "engine_status": {
+          "type": "string"
+        },
+        "client_protocol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "server_protocol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "encryption": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shifted_from": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fingerprints": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "hostname": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "policy": {
+          "$ref": "#/$defs/policy"
+        }
+      },
+      "required": [
+        "type",
+        "transport",
+        "client",
+        "server",
+        "start",
+        "end",
+        "packets",
+        "client_bytes",
+        "server_bytes",
+        "end_reason",
+        "app",
+        "category",
+        "subcategory",
+        "technology",
+        "risk",
+        "characteristics",
+        "base_app",
+        "implicitly_uses",
+        "port_usage",
+        "engine_status",
+        "client_protocol",
+        "server_protocol",
+        "encryption",
+        "reasons",
+        "shifted_from",
+        "risks"
+      ]
+    },
+    "started": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "reason",
+        "interface",
+        "filter",
+        "tcp_hint",
+        "udp_hint",
+        "signatures",
+        "crc32c_byte_limit",
+        "max_reassembly_buffer_bytes"
+      ],
+      "properties": {
+        "type": {
+          "const": "started"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "interface": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "filter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tcp_hint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "udp_hint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "signatures": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "crc32c_byte_limit": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_reassembly_buffer_bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "timestamp",
+        "source",
+        "destination",
+        "transport",
+        "status",
+        "protocol",
+        "app",
+        "scope",
+        "candidate_hint",
+        "reason"
+      ],
+      "properties": {
+        "type": {
+          "const": "classification"
+        },
+        "timestamp": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "destination": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        },
+        "status": {
+          "enum": [
+            "detecting",
+            "identified",
+            "unknown",
+            "malformed",
+            "incomplete",
+            "budget_exhausted",
+            "invalidated"
+          ]
+        },
+        "protocol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "app": {
+          "type": "string"
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "policy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "allow",
+            "deny",
+            "alert",
+            null
+          ]
+        },
+        "fingerprints": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "event": {
+          "enum": [
+            "updated",
+            "refined",
+            "shifted",
+            "invalidated",
+            "datagram"
+          ]
+        },
+        "scope": {
+          "type": "string"
+        },
+        "candidate_hint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "boundary": {
+          "const": "observation_retired"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "elapsed_seconds",
+        "counts",
+        "protocols",
+        "apps",
+        "risks",
+        "policy",
+        "active_connections",
+        "active_udp_flows",
+        "capture_stats",
+        "scope"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "summary",
+            "progress"
+          ]
+        },
+        "elapsed_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "counts": {
+          "$ref": "#/$defs/counter"
+        },
+        "protocols": {
+          "$ref": "#/$defs/counter"
+        },
+        "apps": {
+          "$ref": "#/$defs/counter"
+        },
+        "risks": {
+          "$ref": "#/$defs/counter"
+        },
+        "policy": {
+          "$ref": "#/$defs/counter"
+        },
+        "active_connections": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "active_udp_flows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capture_stats": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "scope": {
+          "type": "string"
+        },
+        "capture_quality": {
+          "enum": [
+            "failed",
+            "loss_reported",
+            "truncated",
+            "no_kernel_drops_reported",
+            "unverified"
+          ]
+        },
+        "stop_reason": {
+          "enum": [
+            "error",
+            "limit_or_interrupt",
+            "eof"
+          ]
+        }
+      }
+    },
+    "capture_gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "active_connections",
+        "scope",
+        "reason"
+      ],
+      "properties": {
+        "type": {
+          "const": "capture_gap"
+        },
+        "active_connections": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "scope": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "frame": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "reason"
+      ],
+      "properties": {
+        "type": {
+          "const": "error"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

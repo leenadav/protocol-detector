@@ -1,0 +1,364 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://protocol-detector/schemas/session.schema.json",
+  "title": "Session record",
+  "description": "One App-ID style verdict per TCP connection or UDP flow (APPID.md, RISKS.md, POLICY.md). No payload, path, credential or hostname unless --hostnames.",
+  "$ref": "#/$defs/session",
+  "$defs": {
+    "endpoint": {
+      "type": "array",
+      "items": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "value",
+        "source",
+        "strength"
+      ],
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "strength": {
+          "enum": [
+            "structural",
+            "asserted",
+            "offered",
+            "derived",
+            "heuristic",
+            "configured_mapping",
+            "configured_signature",
+            "context"
+          ]
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "transport",
+        "encryption",
+        "application_protocol",
+        "application",
+        "hostname",
+        "offered_alpn",
+        "evidence",
+        "reason",
+        "scope"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "detecting",
+            "identified",
+            "unknown",
+            "malformed",
+            "incomplete",
+            "budget_exhausted",
+            "invalidated"
+          ]
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        },
+        "encryption": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "application_protocol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "application": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hostname": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "offered_alpn": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        },
+        "reason": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "revision",
+        "kind",
+        "observation"
+      ],
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "enum": [
+            "updated",
+            "refined",
+            "shifted",
+            "invalidated",
+            "datagram"
+          ]
+        },
+        "observation": {
+          "$ref": "#/$defs/observation"
+        }
+      }
+    },
+    "counter": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "rule",
+        "reasons"
+      ],
+      "properties": {
+        "action": {
+          "enum": [
+            "allow",
+            "deny",
+            "alert"
+          ]
+        },
+        "rule": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "session"
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        },
+        "client": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "server": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "start": {
+          "type": "number"
+        },
+        "end": {
+          "type": "number"
+        },
+        "packets": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "client_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "server_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_reason": {
+          "type": "string"
+        },
+        "app": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "subcategory": {
+          "type": "string"
+        },
+        "technology": {
+          "type": "string"
+        },
+        "risk": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "characteristics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "base_app": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "implicitly_uses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "port_usage": {
+          "enum": [
+            "standard",
+            "nonstandard",
+            "unknown"
+          ]
+        },
+        "engine_status": {
+          "type": "string"
+        },
+        "client_protocol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "server_protocol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "encryption": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shifted_from": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fingerprints": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "hostname": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "policy": {
+          "$ref": "#/$defs/policy"
+        }
+      },
+      "required": [
+        "type",
+        "transport",
+        "client",
+        "server",
+        "start",
+        "end",
+        "packets",
+        "client_bytes",
+        "server_bytes",
+        "end_reason",
+        "app",
+        "category",
+        "subcategory",
+        "technology",
+        "risk",
+        "characteristics",
+        "base_app",
+        "implicitly_uses",
+        "port_usage",
+        "engine_status",
+        "client_protocol",
+        "server_protocol",
+        "encryption",
+        "reasons",
+        "shifted_from",
+        "risks"
+      ]
+    }
+  }
+}

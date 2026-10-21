@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.33 — engine and observation contracts
+# Stream/datagram engine v0.34 — engine and observation contracts
 
 ## Ownership
 
@@ -697,3 +697,14 @@ evidence (`http_method`, `shift`, `http_status`); `SessionManager` already
 feeds every contiguous byte to the Inspector, so the server's tunnel bytes
 reach the reopened phase without any change to reassembly. Live capture uses
 the same Analyzer and gains the behaviour unchanged.
+
+## Output schemas (v0.34)
+
+`schemas/*.schema.json` describe the three JSON Lines surfaces (session
+records, live events, offline rows) with closed objects and listed
+enumerations; `tools/schema_check.py` implements the draft-07 subset they
+use (types, enum/const, properties/required/additionalProperties, items,
+bounds, oneOf/anyOf, local $ref) so validation needs no dependency.
+test_schema.py runs both tools over the synthetic captures under every
+shape-changing option and validates every line, which turns an accidental
+field addition into a test failure and documents the contract in OUTPUT.md.

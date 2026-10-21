@@ -17,7 +17,7 @@ artifact in the repository and every security claim has an executable check.
 
 1. Tests added for the new behaviour, including adversarial inputs.
 2. `make check` passes locally.
-3. PROTOCOLS.md / APPID.md / ARCHITECTURE.md updated; threat model touched if a boundary moved.
+3. PROTOCOLS.md / APPID.md / ARCHITECTURE.md updated; threat model touched if a boundary moved; schemas/ updated when an output field changes (OUTPUT.md).
 4. SECURITY-REQUIREMENTS.md row added when the change introduces a new guarantee.
 5. Benchmark recorded when a hot path changed.
 
