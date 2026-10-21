@@ -58,6 +58,7 @@ jobs:
           python -B protodetect.py analyze sample-expanded.pcap --policy policy-example.json --json --events-only > /dev/null
           python -B protodetect.py analyze sample-expanded.pcap --json --sessions > rows.jsonl
           python -B protodetect.py schema offline-row --validate rows.jsonl
+          python -B tools/coverage_matrix.py --check PROTOCOLS.md
 
   behaviour-diff:
     name: behaviour diff against the previous commit

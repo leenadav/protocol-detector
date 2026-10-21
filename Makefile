@@ -1,4 +1,4 @@
-.PHONY: test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint
+.PHONY: test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -45,7 +45,10 @@ live-smoke:
 replay-live:
 	cat sample-expanded.pcap | $(PYTHON) -B live_capture.py --stdin --duration 0
 
-check: lint test pins requirements policy-lint
+coverage-matrix:
+	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
+
+check: lint test pins requirements policy-lint coverage-matrix
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 lint:

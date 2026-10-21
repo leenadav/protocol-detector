@@ -713,3 +713,7 @@ def amqp_longstr(text):
 _amqp_table = b'\x07productS' + amqp_longstr(b'placeholder')
 AMQP_START = amqp_frame(b'\x00\x0a\x00\x0a' + b'\x00\x09' + len(_amqp_table).to_bytes(4, 'big') + _amqp_table + amqp_longstr(b'PLAIN AMQPLAIN') + amqp_longstr(b'en_US'))
 STREAM_CASES += ((AMQP_START, 'amqp/0-9-1'),)
+
+
+# v0.48: an HTTP response for the direction coverage matrix.
+HTTP_RESPONSE = b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"

@@ -1,11 +1,17 @@
-# Review scope: protocol detector v0.47
+# Review scope: protocol detector v0.48
 
 Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.47): `ModbusParser._response`/`_exception` with the widened
+New focus (v0.48): tools/coverage_matrix.py and the generated table in
+PROTOCOLS.md. Trace: the side attribution rules (scopes, evidence predicates,
+declared server fixtures, symmetric and one-way sets) against the fixtures
+they describe, the `--check` gate in CI and `make check`, and that the
+evidence column is the complete set of fields a record may carry per family.
+
+Previous focus (v0.47): `ModbusParser._response`/`_exception` with the widened
 probe (function | 0x80), `GIOPParser._reply`, `TACACSParser._reply` (per-type
 length arithmetic on unencrypted bodies), `SMB1Parser._response` (three word
 counts, challenge length rule) and the AMQP frame mode with its eleven-byte

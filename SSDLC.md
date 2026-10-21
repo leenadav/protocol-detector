@@ -20,12 +20,13 @@ artifact in the repository and every security claim has an executable check.
 3. PROTOCOLS.md / APPID.md / ARCHITECTURE.md updated; threat model touched if a boundary moved; schemas/ updated when an output field changes (OUTPUT.md).
 4. SECURITY-REQUIREMENTS.md row added when the change introduces a new guarantee.
 5. Benchmark recorded when a hot path changed, with a differential check against the previous tree when a parser was rewritten (tools/compare_client_hello.py is the model).
-6. The behaviour diff report of the CI job (`tools/compare_engine.py` against the parent commit, uploaded as an artifact) lists only intended changes; an unexpected family in the report is a review finding.
+6. The direction coverage matrix in PROTOCOLS.md is regenerated (`tools/coverage_matrix.py --write PROTOCOLS.md`) when fixtures or evidence fields change; CI checks it.
+7. The behaviour diff report of the CI job (`tools/compare_engine.py` against the parent commit, uploaded as an artifact) lists only intended changes; an unexpected family in the report is a review finding.
 
 ## Local commands
 
 ```bash
-make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint
+make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint, coverage matrix
 make fuzz           # extended seeded fuzzing
 python3 -B tools/compare_engine.py ../previous-checkout --report diff.md   # behaviour diff against another tree
 make sbom           # CycloneDX SBOM of the environment (requires dev tools)
