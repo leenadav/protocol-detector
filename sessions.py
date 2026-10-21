@@ -81,6 +81,25 @@ class Stream:
                                   else "Excluded by prefix dispatch"))
         return results
 
+    def open_shift(self, boundary, expected=None):
+        """Host-driven shift on this direction (the peer decided it); replays retained bytes after the carrier.
+
+        The inspector drops bytes once it is terminal, but this stream keeps the
+        bounded initial window, so a ClientHello captured before the peer's answer
+        (or coalesced with the carrier in one segment) is fed into the opened phase
+        exactly once. Returns True when the phase was opened; events are left in
+        self.events like a feed.
+        """
+        self.events = ()
+        inspector = self.inspector
+        start = inspector.boundary
+        if not inspector.open_shift(boundary, expected):
+            return False
+        if start is not None and self.contiguous > start:
+            self.events = inspector.replay(bytes(self.buffer[start:self.contiguous]))
+            self.results = self._compat_results()
+        return True
+
     def feed(self, sequence, payload):
         self.events = ()
         if self.error:
