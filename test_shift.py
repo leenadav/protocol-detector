@@ -69,8 +69,10 @@ class ShiftMechanismTests(unittest.TestCase):
             self.assertTrue(final.reason.startswith("After " + boundary))
             self.assertLessEqual(inspector.metrics.bytes_inspected, len(data))
             self.assertEqual(inspector.metrics.candidates_selected, 1)
-            self.assertTrue(inspector._terminal)
+            # The HTTP/2 phase after an h2c upgrade keeps reading frames for the first HEADERS block (v0.50).
+            self.assertEqual(inspector._terminal, boundary != "h2c-upgrade", boundary)
             self.assertEqual(inspector.feed(b"more" * 100), ())
+            self.assertTrue(inspector._terminal, boundary)
 
     def test_all_split_points_and_fragments_agree(self):
         rng = random.Random(2028)

@@ -1,11 +1,24 @@
-# Review scope: protocol detector v0.49
+# Review scope: protocol detector v0.50
 
 Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.49): `_tftp_server` (network.py), the L2TP/PPTP reply rules
+New focus (v0.50): `protocol_engine/hpack.py` (integer limit, Huffman table
+construction and padding rule, dynamic table accounting and eviction, the
+three budgets) and the HTTP/2 continuation in extended.py (`_frames`,
+`_frame_header`, `_frame_complete`, `_headers`, `_request`, `_response`,
+`_authority_host`, `content_type_class`), plus `Inspector.expect` and
+`_correlate_http2` in analyze_pcap.py and the `_forward`/`end` merge of a
+continuing shifted phase. Trace: every frame length against `max_bytes`, the
+CONTINUATION and preamble counts, HPACK indices against both tables, that a
+ParseError anywhere leaves the SETTINGS identification intact with no header
+evidence, that no path, user agent, cookie, authority port or header value
+reaches evidence or reasons, and that the gRPC/http-proxy/websocket refinement
+needs the structural method plus the asserted field. 513 tests pass.
+
+Previous focus (v0.49): `_tftp_server` (network.py), the L2TP/PPTP reply rules
 (vpn.py), `MemcachedParser._response_size` with the 0x81 netbios/memcached
 split, `GitParser._advertisement` with `_git_first_ref` and the 24-byte hex
 wait in dispatch, the FastCGI application-record path, and the new direction

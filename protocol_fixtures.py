@@ -741,3 +741,42 @@ HINTED_DATAGRAM_CASES += ((NTP_SERVER, 'ntp/4', 'ntp'), (TFTP_ERROR, 'tftp', 'tf
 HINTED_STREAM_CASES += ((MONGODB_REPLY, 'mongodb', 'mongodb'),)
 STREAM_CASES += ((MEMCACHED_RESPONSE, 'memcached/binary'), (MEMCACHED_ERROR, 'memcached/binary'), (GIT_REFS, 'git'), (GIT_VERSION2, 'git'),
                  (FASTCGI_STDOUT, 'fastcgi/1'), (FASTCGI_END, 'fastcgi/1'), (PPTP_SCCRP, 'pptp'))
+
+
+# v0.50: HTTP/2 HEADERS after the initial SETTINGS (RFC 7541 Appendix C vectors; names are placeholders).
+def h2_frame(kind, payload, flags=0, stream=0):
+    return len(payload).to_bytes(3, 'big') + bytes((kind, flags)) + stream.to_bytes(4, 'big') + payload
+
+
+def hpack_integer(value, prefix_bits, first=0):
+    """RFC 7541 5.1 integer with the given prefix width; `first` carries the representation bits."""
+    limit = (1 << prefix_bits) - 1
+    if value < limit:
+        return bytes((first | value,))
+    out = bytearray((first | limit,))
+    value -= limit
+    while value >= 128:
+        out.append(value % 128 + 128)
+        value //= 128
+    out.append(value)
+    return bytes(out)
+
+
+def hpack_literal(name, value, indexed=0):
+    """Literal header field without indexing, raw (non-Huffman) strings; indexed names use the static table."""
+    head = hpack_integer(indexed, 4) if indexed else b'\x00' + len(name).to_bytes(1, 'big') + name
+    return head + hpack_integer(len(value), 7) + value
+
+
+H2_PREFACE = b'PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n'
+H2_SETTINGS = h2_frame(4, b'\x00\x03\x00\x00\x00\x64\x00\x04\x00\x01\x00\x00')
+H2_WINDOW_UPDATE = h2_frame(8, (15663105).to_bytes(4, 'big'))
+HPACK_REQUEST = bytes.fromhex('828684418cf1e3c2e5f23a6ba0ab90f4ff')     # RFC 7541 C.4.1: GET http://www.example.com/
+HPACK_RESPONSE = bytes.fromhex('488264025885aec3771a4b6196d07abe941054d444a8200595040b8166e082a62d1bff6e919d29ad171863c78f0b97c8e9ae82ae43d3')  # C.6.1
+H2_REQUEST = H2_PREFACE + H2_SETTINGS + H2_WINDOW_UPDATE + h2_frame(1, HPACK_REQUEST, flags=0x05, stream=1)
+_grpc_block = (b'\x83\x87' + hpack_literal(b':path', b'/demo.Greeter/SayHello', indexed=4)
+               + hpack_literal(b':authority', b'grpc.example', indexed=1)
+               + hpack_literal(b'content-type', b'application/grpc', indexed=31) + hpack_literal(b'te', b'trailers'))
+H2_GRPC = H2_PREFACE + H2_SETTINGS + h2_frame(1, _grpc_block, flags=0x04, stream=1)
+H2_RESPONSE = H2_SERVER_SETTINGS + h2_frame(4, b'', flags=0x01) + h2_frame(1, HPACK_RESPONSE, flags=0x04, stream=1)
+del _grpc_block

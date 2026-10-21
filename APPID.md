@@ -33,8 +33,9 @@ A verdict names either a catalog application or a session outcome.
 | `<configured name>` | `RuleIndex` exact-host mapping on `tls_sni`/`http_host`; `base_app` names the carrier (`ssl`/`web-browsing`), `implicitly_uses` lists it | specific app implicitly using ssl/web-browsing |
 | `<signature name>` | Custom signature matched (SIGNATURES.md); category/risk come from the signature, `base_app` is its `parent` or the family that exposed the contexts, including `unknown-tcp`/`unknown-udp` | custom App-ID |
 | `ssh`, `dns`, `smb`, `rdp`, … | The family's structural profile passed (see catalog aliases for vendor names) | same |
-| `http-proxy` | HTTP `CONNECT authority` request; the tunnel contents are inspected as a shifted phase | http-proxy |
-| `websocket` | Frame header after an `Upgrade: websocket` boundary (or explicit candidate) | websocket |
+| `http-proxy` | HTTP/1.x `CONNECT authority` request (the tunnel contents are inspected as a shifted phase) or an HTTP/2 CONNECT request (v0.50) | http-proxy |
+| `websocket` | Frame header after an `Upgrade: websocket` boundary (or explicit candidate), or an HTTP/2 extended CONNECT with `:protocol: websocket` (v0.50) | websocket |
+| `grpc` | HTTP/2 request HEADERS decoded (v0.50): `:method` POST with an `application/grpc*` content-type class (an asserted header over a structurally validated HTTP/2 connection); `implicitly_uses` web-browsing | grpc |
 | `ssl` with `shifted_from` | TLS ClientHello/ServerHello after CONNECT (`http-proxy`; the server side is opened by direction correlation, v0.33), STARTTLS (`smtp`/`imap`/`pop3`/`ftp`), SSLRequest (`postgresql`/`mysql`) or RDP negotiation (`rdp`); the carrier is listed in `implicitly_uses` | application shift |
 | `wireguard`, `openvpn` | Handshake/control framing validated; reported through `encryption`, no tunnel contents or peer identity | same |
 | `ftp`, `pop3`, `smtp` with status `correlated` | Each direction alone was ambiguous (`220` greeting, `USER` command); the intersection of both candidate sets is one family (v0.27) | same |

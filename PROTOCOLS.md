@@ -33,7 +33,7 @@ closed set reviewers should expect in records.
 | giop | tcp | yes | yes | `giop_message`, `giop_status` |
 | git | tcp | yes | yes | `git_message`, `offered_version` |
 | http | tcp | yes | yes | `hostname`, `http_status`, `http_upgrade` |
-| http2 | tcp | yes | yes | - |
+| http2 | tcp | yes | yes | `hostname`, `http2_content_type`, `http2_message`, `http2_method`, `http2_scheme`, `http2_status` |
 | iec-104 | tcp | yes | same shape | - |
 | ikev2 | udp | yes | yes | `exchange`, `offered_dh_group`, `selected_dh_group` |
 | imap | tcp | yes | yes | - |
@@ -125,3 +125,60 @@ greeting), Kafka responses (a correlation id only), rsync and the NetBIOS
 positive session response (four bytes), and the QUIC server Initial (its keys
 derive from the client's original connection id, which the packet does not
 carry).
+
+## HTTP/2 HEADERS after SETTINGS (v0.50)
+
+The `http2` profile no longer stops at the client preface and initial SETTINGS.
+Identification is still published there (`initial_message`); the parser then
+keeps reading frames until the first header block ends and publishes a
+`refined` observation with scope `request_headers` (client) or
+`response_headers` (server, after the h2c upgrade or with the `http2-server`
+candidate, which `analyze_pcap` now sets on the server direction once the
+client preface identified the connection: `http2_servers_expected`, evidence
+`candidate_hint` from `peer:http2-preface`). Hints select the parser; the
+server bytes still have to validate.
+
+Frames accepted before HEADERS, at most eight: SETTINGS (ACK with empty payload,
+or a further non-ACK frame validated like the first), WINDOW_UPDATE (4 bytes,
+positive increment), PRIORITY (5 bytes, not on stream 0, not self-dependent),
+PING (8 bytes, stream 0). HEADERS must open a client-initiated (odd) stream
+with known flags only; PADDED and PRIORITY fields are removed structurally
+(padding inside the frame, dependency not the stream itself). CONTINUATION
+frames must follow on the same stream with no other frame between, at most
+eight per block; the block is capped at 16384 bytes and the remaining
+`max_bytes`. DATA, RST_STREAM, PUSH_PROMISE, GOAWAY and unknown types end the
+watch quietly, as does any ParseError or exceeded budget: the SETTINGS
+identification stands without header evidence. DATA payloads are never read.
+
+The block is decoded with `protocol_engine/hpack.py` (RFC 7541): static table,
+canonical Huffman code (complete, nibble-table decoder, strict padding, EOS
+is an error), integers limited to four continuation bytes, literals with and
+without indexing, dynamic table never above 4096 bytes (size updates only at
+the start of a block, at most two), field count `min(max_headers, 128)`, string
+length `min(max_line, 8192)`, decoded list size 16384 bytes. The header list
+must satisfy RFC 9113 8: lowercase token names, no connection-specific fields,
+`te` only `trailers`, values without NUL/CR/LF or edge whitespace, pseudo
+headers before regular ones and each at most once. Requests need `:method`
+(a token, 32 bytes at most), `:scheme` and a non-empty `:path`, except CONNECT
+which needs `:authority` alone; an extended CONNECT (`:protocol`, RFC 8441)
+needs scheme, path and authority. Responses need a three-digit `:status`
+100..599 and no other pseudo header.
+
+Emitted evidence is a closed vocabulary: `http2_message` (`request`/
+`response`), `http2_method` (the nine RFC 9110 methods or `extension`),
+`http2_scheme` (`http`, `https`, `other`), `http2_protocol` (`websocket`/
+`other`, asserted), `http2_status` (the code), `http2_content_type`
+(asserted class: `grpc`, `grpc-web`, `json`, `xml`, `form`, `multipart`,
+`protobuf`, `binary`, `text`, `other`) and `hostname` from `:authority`
+(port removed, DNS names only; IP literals give no hostname; userinfo or a
+bad port rejects the block). Paths, user agents, cookies and every other
+value are never emitted; with `retain_contexts` they feed the `http2-req-*`
+and `http2-rsp-status` signature contexts (SIGNATURES.md). With
+`fingerprints`, `h2_pseudo_order` records the pseudo-header order
+(`m,s,p,a` style). App-ID: a POST with a `grpc`/`grpc-web` content class is
+`grpc` (implicitly web-browsing), CONNECT is `http-proxy`, an extended
+CONNECT for `websocket` is `websocket`.
+
+Not in the profile: later streams and trailers, PUSH_PROMISE, header blocks
+larger than 16 KiB, SETTINGS_HEADER_TABLE_SIZE above the default, HTTP/2 over
+TLS without `feed_decrypted`, and HTTP/3 (QPACK).

@@ -171,9 +171,82 @@ class TextParser(LineParser):
         self.done, self.reason = self.control.done, self.control.reason
 
 
+# HTTP/2 frame types inspected after the initial SETTINGS (RFC 9113 section 6).
+_H2_DATA, _H2_HEADERS, _H2_PRIORITY, _H2_SETTINGS, _H2_PING, _H2_WINDOW_UPDATE, _H2_CONTINUATION = 0, 1, 2, 4, 6, 8, 9
+_H2_END_STREAM, _H2_END_HEADERS, _H2_PADDED, _H2_PRIORITY_FLAG = 0x1, 0x4, 0x8, 0x20
+MAX_H2_HEADER_BLOCK = 16384     # decoded header list and encoded block budget (SETTINGS_MAX_HEADER_LIST_SIZE class)
+MAX_H2_PREAMBLE_FRAMES = 8      # WINDOW_UPDATE/PRIORITY/PING/SETTINGS frames tolerated before HEADERS
+MAX_H2_BLOCK_FRAMES = 8         # HEADERS plus CONTINUATION frames of one header block
+_H2_TOKEN = frozenset(b"!#$%&'*+-.^_`|~0123456789abcdefghijklmnopqrstuvwxyz")
+_H2_METHOD = frozenset(b"!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+_H2_METHODS = frozenset((b"GET", b"HEAD", b"POST", b"PUT", b"DELETE", b"CONNECT", b"OPTIONS", b"TRACE", b"PATCH"))
+_H2_PSEUDO_REQUEST = frozenset((b":method", b":scheme", b":authority", b":path", b":protocol"))
+_H2_CONNECTION_SPECIFIC = frozenset((b"connection", b"keep-alive", b"proxy-connection", b"transfer-encoding", b"upgrade"))
+_H2_PSEUDO_LETTERS = {b":method": "m", b":authority": "a", b":scheme": "s", b":path": "p", b":protocol": "r", b":status": "t"}
+
+
+def content_type_class(value):
+    """Bounded class of a content-type header value; the value itself is never emitted."""
+    media = value.split(b";", 1)[0].strip().lower()
+    if media.startswith(b"application/grpc-web"):
+        return "grpc-web"
+    if media == b"application/grpc" or media.startswith(b"application/grpc+"):
+        return "grpc"
+    if media == b"application/json" or media.endswith(b"+json"):
+        return "json"
+    if media in (b"application/xml", b"text/xml") or media.endswith(b"+xml"):
+        return "xml"
+    if media == b"application/x-www-form-urlencoded":
+        return "form"
+    if media.startswith(b"multipart/"):
+        return "multipart"
+    if media in (b"application/x-protobuf", b"application/protobuf", b"application/vnd.google.protobuf"):
+        return "protobuf"
+    if media == b"application/octet-stream":
+        return "binary"
+    if media.startswith(b"text/"):
+        return "text"
+    return "other"
+
+
+def _authority_host(value):
+    """DNS host of an :authority value, or None for IP literals; userinfo and bad ports are errors."""
+    if b"@" in value or not value:
+        raise ParseError("HTTP/2 :authority must be host[:port] without userinfo")
+    if value[:1] == b"[":
+        end = value.find(b"]")
+        if end < 0 or (len(value) > end + 1 and (value[end + 1:end + 2] != b":" or not value[end + 2:].isdigit())):
+            raise ParseError("Invalid HTTP/2 :authority IP literal")
+        return None
+    host, sep, port = value.rpartition(b":")
+    if sep:
+        if not port.isdigit() or len(port) > 5 or int(port) > 65535:
+            raise ParseError("Invalid HTTP/2 :authority port")
+    else:
+        host = value
+    try:
+        return normalize_hostname(host.decode("ascii"))
+    except UnicodeDecodeError:
+        raise ParseError("HTTP/2 :authority must be ASCII") from None
+    except ValueError:
+        if all(c in b"0123456789." for c in host):
+            return None     # IPv4 literal: structurally fine, never an application identity
+        raise ParseError("Invalid HTTP/2 :authority host") from None
+
+
 class HTTP2Parser:
-    """Client preface AND complete initial SETTINGS; no HPACK or stream decoding."""
+    """Client preface AND complete initial SETTINGS, then the first request HEADERS block.
+
+    Identification is published once SETTINGS is complete. The parser then keeps
+    reading frames (bounded count) until the first HEADERS block ends, decodes it
+    with HPACK and emits only bounded, enumerated evidence: method, scheme,
+    content-type class, the :authority host, the :protocol of an extended CONNECT.
+    Any frame outside the profile ends the continuation quietly; the
+    identification stands. DATA payloads are never read.
+    """
     protocol_name = "http/2"
+    request = True
+    preface = H2_PREFACE
 
     def __init__(self, config):
         self.config = config
@@ -182,10 +255,24 @@ class HTTP2Parser:
         self.payload = bytearray()
         self.length = None
         self.done = False
+        self.continues = False
+        self.consumed = 0
         self.fingerprints = ()
+        self.extra_evidence = ()
+        self.refined = False       # True once a HEADERS block added evidence; lets the engine skip a rebuild
+        self.host = None
+        self.contexts = {} if config.retain_contexts else None
+        self.frame = bytearray()
+        self.body = bytearray()
+        self.block = bytearray()
+        self.block_stream = None
+        self.preamble_frames = 0
+        self.block_frames = 0
         self.reason = "Waiting for complete HTTP/2 client preface and initial SETTINGS"
 
     def feed(self, data):
+        if self.done:
+            return self._frames(data)
         pos = 0
         if self.prefix_position < len(H2_PREFACE):
             amount = min(len(H2_PREFACE) - self.prefix_position, len(data))
@@ -194,12 +281,14 @@ class HTTP2Parser:
             self.prefix_position += amount
             pos += amount
             if self.prefix_position < len(H2_PREFACE):
+                self.consumed += pos
                 return pos
         if len(self.header) < 9:
             amount = min(9 - len(self.header), len(data) - pos)
             self.header.extend(data[pos:pos + amount])
             pos += amount
             if len(self.header) < 9:
+                self.consumed += pos
                 return pos
             self.length = int.from_bytes(self.header[:3], "big")
             stream = int.from_bytes(self.header[5:9], "big") & 0x7fffffff
@@ -207,30 +296,220 @@ class HTTP2Parser:
                 raise ParseError("Initial HTTP/2 frame must be non-ACK SETTINGS on stream zero")
             if self.length > 16384 or self.length % 6:
                 raise ParseError("Invalid initial SETTINGS payload length")
-            if 33 + self.length > self.config.max_bytes:
+            if len(self.preface) + 9 + self.length > self.config.max_bytes:
                 raise BudgetError("Initial HTTP/2 SETTINGS exceeds byte budget")
         amount = min(self.length - len(self.payload), len(data) - pos)
         self.payload.extend(data[pos:pos + amount])
         pos += amount
+        self.consumed += pos
         if len(self.payload) == self.length:
-            settings = []
-            for offset in range(0, self.length, 6):
-                setting = int.from_bytes(self.payload[offset:offset + 2], "big")
-                value = int.from_bytes(self.payload[offset + 2:offset + 6], "big")
-                settings.append((setting, value))
-                if setting == 2 and value not in (0, 1):
-                    raise ParseError("Invalid SETTINGS_ENABLE_PUSH")
-                if setting == 4 and value > 0x7fffffff:
-                    raise ParseError("Invalid SETTINGS_INITIAL_WINDOW_SIZE")
-                if setting == 5 and not 16384 <= value <= 0xffffff:
-                    raise ParseError("Invalid SETTINGS_MAX_FRAME_SIZE")
-                # Unknown setting identifiers and repeated settings are allowed.
-            if self.config.fingerprints:
+            settings = self._settings(self.payload)
+            if self.config.fingerprints and self.request:
                 from .fingerprints import h2_settings_fingerprint
                 self.fingerprints = (("h2_settings", h2_settings_fingerprint(settings), "settings_frame"),)
             self.done = True
-            self.reason = "HTTP/2 client preface and initial SETTINGS validated; headers, HPACK and later frames not inspected"
+            self.continues = True
+            self.reason = ("HTTP/2 client preface and initial SETTINGS validated; no HEADERS frame decoded yet" if self.request
+                           else "HTTP/2 server SETTINGS after the h2c upgrade validated; no HEADERS frame decoded yet")
         return pos
+
+    @staticmethod
+    def _settings(payload):
+        settings = []
+        for offset in range(0, len(payload), 6):
+            setting = int.from_bytes(payload[offset:offset + 2], "big")
+            value = int.from_bytes(payload[offset + 2:offset + 6], "big")
+            settings.append((setting, value))
+            if setting == 2 and value not in (0, 1):
+                raise ParseError("Invalid SETTINGS_ENABLE_PUSH")
+            if setting == 4 and value > 0x7fffffff:
+                raise ParseError("Invalid SETTINGS_INITIAL_WINDOW_SIZE")
+            if setting == 5 and not 16384 <= value <= 0xffffff:
+                raise ParseError("Invalid SETTINGS_MAX_FRAME_SIZE")
+            # Unknown setting identifiers and repeated settings are allowed.
+        return settings
+
+    # -- frames after the initial SETTINGS --
+
+    def _frames(self, data):
+        pos = 0
+        while pos < len(data) and self.continues:
+            if len(self.frame) < 9:
+                amount = min(9 - len(self.frame), len(data) - pos)
+                self.frame.extend(data[pos:pos + amount])
+                pos += amount
+                self.consumed += amount
+                if len(self.frame) < 9:
+                    break
+                self.length = int.from_bytes(self.frame[:3], "big")
+                if self.consumed + self.length > self.config.max_bytes:
+                    raise BudgetError("HTTP/2 frame exceeds the byte budget")
+                if not self._frame_header(self.frame[3], self.frame[4], int.from_bytes(self.frame[5:9], "big") & 0x7fffffff):
+                    self.continues = False     # outside the profile: keep the identification, stop reading
+                    break
+            amount = min(self.length - len(self.body), len(data) - pos)
+            self.body.extend(data[pos:pos + amount])
+            pos += amount
+            self.consumed += amount
+            if len(self.body) == self.length:
+                self._frame_complete(self.frame[3], self.frame[4], int.from_bytes(self.frame[5:9], "big") & 0x7fffffff, self.body)
+                self.frame = bytearray()
+                self.body = bytearray()
+        return pos
+
+    def _frame_header(self, kind, flags, stream):
+        """Validate a frame header; False for a frame type outside the profile."""
+        if self.block_stream is not None:
+            if kind != _H2_CONTINUATION or stream != self.block_stream or flags & ~_H2_END_HEADERS:
+                raise ParseError("HTTP/2 header block interrupted by another frame")
+            self.block_frames += 1
+            if self.block_frames >= MAX_H2_BLOCK_FRAMES:
+                raise BudgetError("HTTP/2 CONTINUATION frame count exceeds budget")
+            if len(self.block) + self.length > MAX_H2_HEADER_BLOCK:
+                raise BudgetError("HTTP/2 header block exceeds the size budget")
+            return True
+        if kind == _H2_HEADERS:
+            if not stream & 1 or flags & ~(_H2_END_STREAM | _H2_END_HEADERS | _H2_PADDED | _H2_PRIORITY_FLAG):
+                raise ParseError("HTTP/2 HEADERS must open a client-initiated stream with known flags")
+            if self.length > MAX_H2_HEADER_BLOCK:
+                raise BudgetError("HTTP/2 HEADERS frame exceeds the size budget")
+            self.block_stream = stream
+            return True
+        if kind not in (_H2_SETTINGS, _H2_WINDOW_UPDATE, _H2_PRIORITY, _H2_PING):
+            return False
+        self.preamble_frames += 1
+        if self.preamble_frames > MAX_H2_PREAMBLE_FRAMES:
+            raise BudgetError("HTTP/2 frame count before HEADERS exceeds budget")
+        if kind == _H2_SETTINGS:
+            if stream or flags & ~1 or (flags & 1 and self.length) or (not flags & 1 and (self.length % 6 or self.length > 16384)):
+                raise ParseError("Invalid HTTP/2 SETTINGS frame")
+        elif kind == _H2_WINDOW_UPDATE:
+            if self.length != 4 or flags:
+                raise ParseError("Invalid HTTP/2 WINDOW_UPDATE frame")
+        elif kind == _H2_PRIORITY:
+            if self.length != 5 or flags or not stream:
+                raise ParseError("Invalid HTTP/2 PRIORITY frame")
+        elif self.length != 8 or stream or flags & ~1:
+            raise ParseError("Invalid HTTP/2 PING frame")
+        return True
+
+    def _frame_complete(self, kind, flags, stream, body):
+        if kind == _H2_SETTINGS and not flags & 1:
+            self._settings(body)
+        elif kind == _H2_WINDOW_UPDATE:
+            if not int.from_bytes(body, "big") & 0x7fffffff:
+                raise ParseError("HTTP/2 WINDOW_UPDATE increment must be positive")
+        elif kind == _H2_PRIORITY:
+            if int.from_bytes(body[:4], "big") & 0x7fffffff == stream:
+                raise ParseError("HTTP/2 PRIORITY frame depends on its own stream")
+        elif kind in (_H2_HEADERS, _H2_CONTINUATION):
+            fragment = body
+            if kind == _H2_HEADERS:
+                if flags & _H2_PADDED:
+                    if not fragment:
+                        raise ParseError("Padded HTTP/2 HEADERS frame without a pad length")
+                    pad = fragment[0]
+                    fragment = fragment[1:]
+                    if pad > len(fragment) - (5 if flags & _H2_PRIORITY_FLAG else 0):
+                        raise ParseError("HTTP/2 HEADERS padding exceeds the frame")
+                    fragment = fragment[:len(fragment) - pad]
+                if flags & _H2_PRIORITY_FLAG:
+                    if len(fragment) < 5 or int.from_bytes(fragment[:4], "big") & 0x7fffffff == stream:
+                        raise ParseError("Invalid HTTP/2 HEADERS priority fields")
+                    fragment = fragment[5:]
+            self.block.extend(fragment)
+            if flags & _H2_END_HEADERS:
+                self._headers(bytes(self.block))
+                self.continues = False
+
+    # -- the decoded header block --
+
+    def _headers(self, block):
+        from .hpack import Decoder
+        decoder = Decoder(max_fields=min(self.config.max_headers, 128), max_string=min(self.config.max_line, 8192),
+                          max_list_size=MAX_H2_HEADER_BLOCK)
+        fields = decoder.decode(block)
+        pseudo, regular, order = {}, [], []
+        for name, value in fields:
+            bare = name[1:] if name[:1] == b":" else name
+            if not bare or any(b not in _H2_TOKEN for b in bare):
+                raise ParseError("HTTP/2 field name must be a lowercase token")
+            if any(b in (0, 10, 13) for b in value) or value[:1] in (b" ", b"\t") or value[-1:] in (b" ", b"\t"):
+                raise ParseError("HTTP/2 field value contains forbidden bytes or edge whitespace")
+            if name[:1] == b":":
+                if regular:
+                    raise ParseError("HTTP/2 pseudo-header after a regular field")
+                if name in pseudo:
+                    raise ParseError("Duplicate HTTP/2 pseudo-header")
+                if name not in (_H2_PSEUDO_REQUEST if self.request else (b":status",)):
+                    raise ParseError("HTTP/2 pseudo-header outside this message direction")
+                pseudo[name] = value
+                order.append(_H2_PSEUDO_LETTERS[name])
+                continue
+            if name in _H2_CONNECTION_SPECIFIC or (name == b"te" and value.lower() != b"trailers"):
+                raise ParseError("HTTP/2 connection-specific field")
+            regular.append((name, value))
+        evidence = self._request(pseudo, regular) if self.request else self._response(pseudo, regular)
+        content_type = next((value for name, value in regular if name == b"content-type"), None)
+        if content_type is not None:
+            evidence.append(("http2_content_type", content_type_class(content_type), "headers_frame", "asserted"))
+        if self.config.fingerprints and self.request:
+            self.fingerprints += (("h2_pseudo_order", ",".join(order), "headers_frame"),)
+        if self.contexts is not None:
+            self._contexts(pseudo, regular)
+        self.extra_evidence += tuple(evidence)
+        self.scope = "request_headers" if self.request else "response_headers"
+        self.refined = True
+
+    def _request(self, pseudo, regular):
+        if b":method" not in pseudo:
+            raise ParseError("HTTP/2 request without :method")
+        method = pseudo[b":method"]
+        if not method or len(method) > 32 or any(b not in _H2_METHOD for b in method):
+            raise ParseError("Invalid HTTP/2 :method")
+        evidence = [("http2_message", "request", "headers_frame", "structural"),
+                    ("http2_method", method.decode("ascii") if method in _H2_METHODS else "extension", "headers_frame", "structural")]
+        if method == b"CONNECT" and b":protocol" not in pseudo:
+            if b":scheme" in pseudo or b":path" in pseudo or b":authority" not in pseudo:
+                raise ParseError("HTTP/2 CONNECT requires :authority alone")
+        else:
+            if b":scheme" not in pseudo or not pseudo.get(b":path"):
+                raise ParseError("HTTP/2 request requires :scheme and a non-empty :path")
+            scheme = pseudo[b":scheme"].lower()
+            evidence.append(("http2_scheme", scheme.decode("ascii") if scheme in (b"http", b"https") else "other", "headers_frame", "structural"))
+            if b":protocol" in pseudo:
+                if method != b"CONNECT" or b":authority" not in pseudo:
+                    raise ParseError("HTTP/2 :protocol requires an extended CONNECT with :authority")
+                protocol = pseudo[b":protocol"].lower()
+                evidence.append(("http2_protocol", "websocket" if protocol == b"websocket" else "other", "headers_frame", "asserted"))
+        if b":authority" in pseudo:
+            self.host = _authority_host(pseudo[b":authority"])
+        self.reason = ("HTTP/2 client preface, SETTINGS and first request HEADERS validated (HPACK decoded); "
+                       "only method, scheme, authority host, extended-CONNECT protocol and content-type class are emitted")
+        return evidence
+
+    def _response(self, pseudo, regular):
+        status = pseudo.get(b":status")
+        if status is None or len(status) != 3 or not status.isdigit() or not 100 <= int(status) <= 599:
+            raise ParseError("HTTP/2 response requires a three-digit :status")
+        self.reason = ("HTTP/2 server SETTINGS and first response HEADERS validated (HPACK decoded); "
+                       "only the status code and content-type class are emitted")
+        return [("http2_message", "response", "headers_frame", "structural"),
+                ("http2_status", status.decode("ascii"), "headers_frame", "structural")]
+
+    def _contexts(self, pseudo, regular):
+        if self.request:
+            self.contexts["http2-req-method"] = pseudo[b":method"]
+            if b":path" in pseudo:
+                self.contexts["http2-req-uri-path"] = pseudo[b":path"].split(b"?", 1)[0]
+            if b":authority" in pseudo:
+                self.contexts["http2-req-host-header"] = pseudo[b":authority"]
+            agent = next((value for name, value in regular if name == b"user-agent"), None)
+            if agent is not None:
+                self.contexts["http2-req-user-agent-header"] = agent[:1024]
+            self.contexts["http2-req-headers"] = b"".join(name + b": " + value + b"\r\n" for name, value in regular)
+        else:
+            self.contexts["http2-rsp-status"] = int(pseudo[b":status"])
 
 
 class HTTP2ServerParser(HTTP2Parser):
@@ -238,20 +517,16 @@ class HTTP2ServerParser(HTTP2Parser):
 
     Reached only through the h2c-upgrade shift of a 101 response or an explicit
     candidate; the SETTINGS fingerprint is a client characteristic and is not
-    derived for a server.
+    derived for a server. The first response HEADERS block is decoded like the
+    client's request (status code and content-type class only).
     """
+    request = False
+    preface = b""
 
     def __init__(self, config):
         super().__init__(config)
         self.prefix_position = len(H2_PREFACE)
         self.reason = "Waiting for the server's initial HTTP/2 SETTINGS after the h2c upgrade"
-
-    def feed(self, data):
-        consumed = super().feed(data)
-        if self.done:
-            self.fingerprints = ()
-            self.reason = "HTTP/2 server SETTINGS after the h2c upgrade validated; headers, HPACK and later frames not inspected"
-        return consumed
 
 
 class Socks5Parser:

@@ -84,8 +84,8 @@ def _application(observation, transport, signatures=None):
     unknown-tcp/unknown-udp.
     """
     base = application_name(observation.application_protocol, observation.encryption)
-    if base == "web-browsing" and _evidence(observation, "http_method") == "CONNECT":
-        base = "http-proxy"
+    if base == "web-browsing":
+        base = _web_application(observation)
     if observation.application:
         if base is None:
             base = "unknown-" + transport
@@ -101,6 +101,16 @@ def _application(observation, transport, signatures=None):
     if base is None:
         return None
     return APPLICATIONS[base]
+
+
+def _web_application(observation):
+    """web-browsing refined by the request structure: CONNECT tunnels, extended-CONNECT WebSocket, gRPC content."""
+    method = _evidence(observation, "http_method") or _evidence(observation, "http2_method")
+    if method == "CONNECT":
+        return "websocket" if _evidence(observation, "http2_protocol") == "websocket" else "http-proxy"
+    if method == "POST" and _evidence(observation, "http2_content_type") in ("grpc", "grpc-web"):
+        return "grpc"
+    return "web-browsing"
 
 
 def _port_usage(application, transport, server_port):

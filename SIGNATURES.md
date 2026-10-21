@@ -51,6 +51,11 @@ even with `negate`; a signature needs at least one non-negated condition.
 | `http-req-headers` | raw | http | `name: value\r\n` lines, lowercase names, 4096 bytes |
 | `http-req-content-length`, `http-rsp-status` | integer | http | |
 | `http-rsp-reason` | text | http | Response reason phrase |
+| `http2-req-method`, `http2-req-uri-path` | text | http2 | HTTP/2 request pseudo-headers after HPACK decoding (v0.50); path excludes the query string |
+| `http2-req-host-header` | text | http2 | Raw `:authority` value (host[:port]) |
+| `http2-req-user-agent-header` | text | http2 | First user-agent value, 1024 bytes |
+| `http2-req-headers` | raw | http2 | Regular fields as `name: value\r\n` lines, decoded block capped at 16 KiB |
+| `http2-rsp-status` | integer | http2-server | `:status` of the first response HEADERS (h2c upgrade or `http2-server` candidate) |
 | `ssl-req-chello-sni` | text | tls | Normalized SNI (TLS ClientHello, and QUIC Initial ClientHello since v0.25) |
 | `ssl-req-alpn` | text | tls | Comma-joined ALPN offers in order |
 | `ssl-req-client-hello` | raw | tls | ClientHello body (random included; never emitted) |

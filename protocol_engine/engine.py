@@ -161,13 +161,33 @@ class Inspector:
         self._terminal = False
         return True
 
+    def expect(self, candidate, source):
+        """Host-driven candidate: the peer direction established which family this one must be.
+
+        Used for the server side of an HTTP/2 connection with prior knowledge: the
+        client preface identifies the connection, the server's first SETTINGS frame
+        alone is routed nowhere. The candidate only selects the parser; its bytes
+        still have to validate structurally. Allowed only before any byte arrived
+        and when no hint exists; returns True when adopted.
+        """
+        if candidate not in PARSERS:
+            raise ValueError("Unsupported expected candidate")
+        if not isinstance(source, str) or not 1 <= len(source) <= 64:
+            raise ValueError("Expectation source must be a short name")
+        if self.metrics.bytes_received or self._hint is not None or self._terminal or self._next is not None:
+            return False
+        self._hint, self._hint_source = candidate, "peer:" + source
+        return True
+
     def _forward(self, data):
         inner = self._next
         bytes_before, calls_before = inner.metrics.bytes_inspected, inner.metrics.parser_calls
         events = inner.feed(data)
         self.metrics.bytes_inspected += inner.metrics.bytes_inspected - bytes_before
         self.metrics.parser_calls += inner.metrics.parser_calls - calls_before
-        return self._merge_shift() if events else ()
+        # An inner phase that ends its continuation without new evidence publishes
+        # nothing, yet the shift is complete: merge so this inspector turns terminal too.
+        return self._merge_shift() if events or inner._terminal else ()
 
     def _shift_result(self, inner):
         carrier, boundary = self._carrier, self._shift
@@ -193,6 +213,14 @@ class Inspector:
             self._terminal = True
         return self._publish(merged, "shifted")
 
+    def _refined(self):
+        """Observation after a continuation: rebuilt only when the parser derived something new.
+
+        Parsers may expose `refined = False` while nothing beyond the published
+        identification was learned; the published observation then stands as is.
+        """
+        return self._identified() if getattr(self._parser, "refined", True) else self.observation
+
     def _continue(self, chunk):
         """Bytes for a parser that already identified (fingerprints, STARTTLS watch)."""
         try:
@@ -200,14 +228,14 @@ class Inspector:
             self.metrics.bytes_inspected += consumed
         except ParseError:
             self.metrics.bytes_inspected += len(chunk)
-            return self._finish(self._identified(), "refined")
+            return self._finish(self._refined(), "refined")
         if not self._parser.continues:
             shift = getattr(self._parser, "shift", None)
             if shift is not None:
                 return self._begin_shift(shift, chunk[consumed:])
-            return self._finish(self._identified(), "refined")
+            return self._finish(self._refined(), "refined")
         if self.metrics.bytes_inspected >= self.config.max_bytes:
-            return self._finish(self._identified(), "refined")
+            return self._finish(self._refined(), "refined")
         return ()
 
     def invalidate(self, reason: str) -> Tuple[Event, ...]:
@@ -231,7 +259,9 @@ class Inspector:
         if not self._terminal:
             if self._next is not None:
                 events = self._next.end(reason)
-                if events:
+                if events or self._next._terminal:
+                    # A continuing inner phase that ends without new evidence publishes
+                    # nothing; its identification is still the shifted result.
                     return self._merge_shift()
                 self._next = None
                 return self._finish(self._shift_result(Observation(status="incomplete", reason=reason)), "shifted")
@@ -239,7 +269,7 @@ class Inspector:
                 shift = getattr(self._parser, "shift", None)
                 if shift is not None:
                     return self._begin_shift(shift, b"") + self.end(reason)
-                return self._finish(self._identified(), "refined")  # keep the identification; no further evidence
+                return self._finish(self._refined(), "refined")  # keep the identification; no further evidence
             if self._unknown is not None:
                 return self._unknown_observation("Prefix outside supported protocol families")
             if self._candidate is None and self._prefix and self.signatures is not None and self.signatures.wants(_UNKNOWN_FAMILY):

@@ -119,6 +119,26 @@ class Analyzer:
         if status[:1] == "2" and server.open_shift("http-connect"):
             self.counts["connect_tunnels_correlated"] += 1
 
+    def _correlate_http2(self, key, state):
+        """Expect HTTP/2 on the server direction once the client's preface identified the connection.
+
+        With prior knowledge (RFC 9113 3.3, including after ALPN) the server's first
+        frame is a bare SETTINGS frame that no prefix routes anywhere. The client
+        preface decides the family; the server bytes still have to validate as
+        SETTINGS and HEADERS. Only a direction that has not sent anything yet adopts
+        the expectation.
+        """
+        connection = self.manager.connections.get(key)
+        if connection is None:
+            return
+        client = connection["directions"][state["client"]].inspector
+        server = connection["directions"][state["server"]].inspector
+        request = client.observation
+        if request.status != "identified" or request.application_protocol != "http/2" or any(e.field == "shift" for e in request.evidence):
+            return
+        if server.expect("http2-server", "http2-preface"):
+            self.counts["http2_servers_expected"] += 1
+
     def _tcp_session(self, key, state, connection, reason):
         if self.on_session is None:
             return
@@ -327,6 +347,7 @@ class Analyzer:
         self.last_events = snapshot.events
         if any(event.observation.status == "identified" for event in snapshot.events):
             self._correlate_connect(key, state)
+            self._correlate_http2(key, state)
         final = state['fin'].get(source)
         if final is not None and final <= stream.limit and stream.contiguous == final:
             finished = self.manager.finish_direction(source, destination,

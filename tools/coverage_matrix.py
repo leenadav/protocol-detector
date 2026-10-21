@@ -21,7 +21,7 @@ import protocol_fixtures as fixtures  # noqa: E402
 
 START, END = "<!-- coverage-matrix:start -->", "<!-- coverage-matrix:end -->"
 SERVER_SCOPES = frozenset(("negotiation_response", "server_hello", "hello_retry_request", "reply_header", "locate_reply",
-                           "response_header", "bind_response"))
+                           "response_header", "bind_response", "response_headers"))
 # Datagram observations share the scope "datagram"; these evidence values mark the server side.
 DIRECTION_RULES = (
     ("dns_message", lambda value: value == "response"),
@@ -42,6 +42,7 @@ DIRECTION_RULES = (
     ("git_message", lambda value: value in ("ref-advertisement", "version-2")),
     ("fastcgi_record", lambda value: value in ("stdout", "stderr", "end-request")),
     ("memcached_message", lambda value: value == "response"),
+    ("http2_message", lambda value: value == "response"),
 )
 HIDDEN_FIELDS = frozenset(("application_protocol", "encryption", "candidate_hint"))
 # Fixtures that live outside the generic case lists (name, hint, transport).
@@ -49,7 +50,7 @@ EXTRA = (
     ("TLS_SERVER12", None, "tcp"), ("TLS_SERVER13", None, "tcp"), ("TLS_RETRY", None, "tcp"),
     ("TLS_SERVER12_CERTIFICATE", None, "tcp"), ("TLS_ECH_HELLO", None, "tcp"), ("CONNECT_RESPONSE", None, "tcp"), ("H2C_101", None, "tcp"),
     ("RDP_CONFIRM", None, "tcp"), ("ISO_TSAP_CONFIRM", None, "tcp"), ("HTTP_RESPONSE", None, "tcp"),
-    ("H2_SERVER_SETTINGS", "http2-server", "tcp"), ("WEBSOCKET_FRAME", "websocket", "tcp"), ("WEBSOCKET_SERVER_FRAME", "websocket", "tcp"),
+    ("H2_SERVER_SETTINGS", "http2-server", "tcp"), ("H2_REQUEST", None, "tcp"), ("H2_GRPC", None, "tcp"), ("H2_RESPONSE", "http2-server", "tcp"), ("WEBSOCKET_FRAME", "websocket", "tcp"), ("WEBSOCKET_SERVER_FRAME", "websocket", "tcp"),
     ("S7COMM", "s7comm", "tcp"), ("S7COMM_ACK", "s7comm", "tcp"), ("RTP", "rtp", "udp"),
 )
 # Fixtures whose bytes are a server message although their scope and evidence do not say so.

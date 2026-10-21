@@ -517,6 +517,19 @@ walk that returns closed-set labels only) and appends the result to
 rows at strength `asserted` (chain shape `structural`). Any ParseError or
 BudgetError ends the watch with the identification intact.
 
+The HTTP/2 parsers (v0.50) use the same mechanism without a configuration
+switch: after SETTINGS they set `continues` and read bounded frames until the
+first header block ends, decode it with `hpack.Decoder`, and set `refined`
+once evidence was added. `Inspector._refined` rebuilds the observation only
+when a parser reports `refined`; parsers without the attribute keep the
+previous behaviour. A shifted inner phase may itself continue (h2c upgrade,
+then HEADERS): `_forward` and `end()` merge the inner result whenever the
+inner Inspector became terminal, even when its last step published nothing.
+`Inspector.expect(candidate, source)` lets a host set a candidate on a
+direction that has not sent anything yet (evidence `candidate_hint` from
+`peer:<source>`); `analyze_pcap` uses it for the server side of a
+prior-knowledge HTTP/2 connection.
+
 TLSParser fills `ClientHelloInfo` when contexts or fingerprints are configured
 and computes JA4/JA3 at completion; `tls_server.parse_server_hello` appends
 JA4S/JA3S for completed ServerHello profiles (not for retries); `dtls()` passes

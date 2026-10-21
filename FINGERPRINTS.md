@@ -15,6 +15,7 @@ bytes, session identifiers, key shares or cookies enter any digest.
 | `ja3s` | TLS ServerHello | md5 of `version,cipher,extensions` |
 | `hassh` | SSH client KEXINIT | md5 of `kex;enc_c2s;mac_c2s;comp_c2s` name-lists |
 | `h2_settings` | HTTP/2 initial SETTINGS | Akamai-style `id:value;id:value` in frame order (SETTINGS portion only) |
+| `h2_pseudo_order` | HTTP/2 first request HEADERS (v0.50) | Akamai-style pseudo-header order letters joined by commas: `m` :method, `a` :authority, `s` :scheme, `p` :path, `r` :protocol (for example `m,s,p,a`); client side only |
 
 Fingerprints are emitted on classification events (`fingerprints` object in
 live JSON, `ja4=...` suffix in readable output) and collected per session in
