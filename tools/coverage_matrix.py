@@ -45,6 +45,7 @@ DIRECTION_RULES = (
     ("http2_message", lambda value: value == "response"),
     ("zmtp_role", lambda value: value == "server"),
     ("rpc_message", lambda value: value == "reply"),
+    ("rip_command", lambda value: value == "response"),
 )
 HIDDEN_FIELDS = frozenset(("application_protocol", "encryption", "candidate_hint"))
 # Fixtures that live outside the generic case lists (name, hint, transport).
@@ -52,7 +53,8 @@ EXTRA = (
     ("TLS_SERVER12", None, "tcp"), ("TLS_SERVER13", None, "tcp"), ("TLS_RETRY", None, "tcp"),
     ("TLS_SERVER12_CERTIFICATE", None, "tcp"), ("TLS_ECH_HELLO", None, "tcp"), ("CONNECT_RESPONSE", None, "tcp"), ("H2C_101", None, "tcp"),
     ("RDP_CONFIRM", None, "tcp"), ("ISO_TSAP_CONFIRM", None, "tcp"), ("HTTP_RESPONSE", None, "tcp"),
-    ("H2_SERVER_SETTINGS", "http2-server", "tcp"), ("H2_REQUEST", None, "tcp"), ("H2_GRPC", None, "tcp"), ("H2_RESPONSE", "http2-server", "tcp"), ("WEBSOCKET_FRAME", "websocket", "tcp"), ("WEBSOCKET_SERVER_FRAME", "websocket", "tcp"),
+    ("H2_SERVER_SETTINGS", "http2-server", "tcp"), ("H2_REQUEST", None, "tcp"), ("H2_GRPC", None, "tcp"), ("H2_RESPONSE", "http2-server", "tcp"),
+    ("X11_REPLY", "x11-server", "tcp"), ("WEBSOCKET_FRAME", "websocket", "tcp"), ("WEBSOCKET_SERVER_FRAME", "websocket", "tcp"),
     ("S7COMM", "s7comm", "tcp"), ("S7COMM_ACK", "s7comm", "tcp"), ("RTP", "rtp", "udp"),
 )
 # Fixtures whose bytes are a server message although their scope and evidence do not say so.
@@ -61,7 +63,7 @@ SERVER_FIXTURE_NAMES = ("TLS_SERVER12", "TLS_SERVER13", "TLS_RETRY", "TLS_SERVER
                         "STOMP_SERVER", "NATS_INFO", "POP3_SERVER", "MYSQL", "IMAP", "HTTP_RESPONSE")
 # Families whose initial message has the same shape in both directions (one fixture proves both),
 # and families that only ever flow one way (exporter to collector, client to broker).
-SYMMETRIC = frozenset(("bgp", "ssh", "telnet", "dnp3", "iec-104", "bacnet", "ethernet-ip", "stun", "sip", "rtsp", "ssdp", "rtp", "bittorrent", "coap", "rfb"))
+SYMMETRIC = frozenset(("bgp", "ssh", "telnet", "dnp3", "iec-104", "bacnet", "ethernet-ip", "stun", "sip", "rtsp", "ssdp", "rtp", "rtcp", "bittorrent", "coap", "rfb"))
 ONE_WAY = frozenset(("netflow", "ipfix", "sflow", "syslog"))
 
 

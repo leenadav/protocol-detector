@@ -209,6 +209,12 @@ _ENTRIES = (
          ("widely-used",), ("tcp/80",), implicitly_uses=("web-browsing",)),
     _app("soap", "business-systems", "general-business", "browser-based", 2, "SOAP 1.2 envelope carried in HTTP (application/soap+xml); an asserted header class",
          ("widely-used",), ("tcp/80",), ("tcp/443",), implicitly_uses=("web-browsing",)),
+    _app("x11", "networking", "remote-access", "client-server", 3, "X11 connection setup", ("has-known-vulnerabilities",), ("tcp/6000-6063",)),
+    _app("spice", "networking", "remote-access", "client-server", 3, "SPICE link header (client message or server reply)", (), ("tcp/5900-5999",), ("tcp/5900-5999",)),
+    _app("afp", "business-systems", "storage-backup", "client-server", 3, "Apple Filing Protocol session opening over DSI", ("transfers-files",), ("tcp/548",)),
+    _app("omron-fins", "business-systems", "ics-protocol", "client-server", 3, "Omron FINS/TCP node address exchange or frame", ("has-known-vulnerabilities",), ("tcp/9600",), aliases=("fins",)),
+    _app("rip", "networking", "routing", "peer-to-peer", 2, "RIP v1/v2 request or response", ("cleartext-credentials",), ("udp/520",)),
+    _app("rtcp", "collaboration", "voip-video", "client-server", 1, "RTCP compound packet (explicit candidate)", (), ("udp/dynamic",)),
     _app("xmpp", "collaboration", "instant-messaging", "client-server", 3, "XMPP stream header (client, server or component stream)",
          ("widely-used", "transfers-files"), ("tcp/5222", "tcp/5269"), ("tcp/5223",), aliases=("jabber",)),
     _app("dns-over-https", "networking", "infrastructure", "browser-based", 3,
@@ -273,7 +279,7 @@ _ENTRIES = (
 _PROTOCOL_NAMES = MappingProxyType({
     "http": "web-browsing", "http2": "web-browsing", "tls": "ssl", "dtls": "dtls", "quic": "quic", "smb1": "smb", "rfb": "vnc", "socks5": "socks", "smb2": "smb",
     "dcerpc": "dce-rpc", "ikev2": "ike", "tds": "mssql-db", "tns": "oracle", "opcua": "opc-ua",
-    "onc-rpc": "sun-rpc", "zmtp": "zeromq", "bolt": "neo4j",
+    "onc-rpc": "sun-rpc", "zmtp": "zeromq", "bolt": "neo4j", "fins": "omron-fins",
 })
 
 

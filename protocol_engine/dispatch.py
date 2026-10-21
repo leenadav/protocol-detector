@@ -18,7 +18,7 @@ for _byte in b"!#$%&'*+.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno
 for _byte, _family in ((64, "rsync"), (3, "tpkt"), (22, "tls"), (5, "socks5"), (16, "mqtt"), (19, "bittorrent"),
                        (0xc0, "tacacs-plus"), (0xc1, "tacacs-plus"), (0x12, "tds"), (0x84, "cql")):
     _table[_byte] = _family
-for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68, 69, 118, 0x81, 0x80, 0x60, 0x3c):
+for _byte in (0, 1, 48, 82, 80, 65, 42, 67, 83, 255, 4, 0x63, 0x64, 0x65, 0x66, 0x6f, 0x70, 0x68, 69, 118, 0x81, 0x80, 0x60, 0x3c, 66, 108, 70):
     _table[_byte] = "ambiguous"
 FIRST_BYTE = tuple(_table)
 del _table, _byte, _family
@@ -121,6 +121,19 @@ def select(prefix):
         if prefix[8:12] == b"\x00\x00\x00\x01" and prefix[12:16] in (b"\x00\x00\x00\x00", b"\x00\x00\x00\x01") and int.from_bytes(prefix[2:4], "big") >= 20:
             return 'onc-rpc'
         return 'memcached'
+    if first in (66, 108):   # 'B' or 'l': X11 setup byte order followed by an unused zero byte (v0.53); text never has NUL second
+        if len(prefix) < 2:
+            return None
+        if prefix[1] != 0:
+            return 'text'
+        if len(prefix) < 6:
+            return None
+        major = prefix[2:4] == (b"\x00\x0b" if first == 66 else b"\x0b\x00")
+        return 'x11' if major and prefix[4:6] == b"\x00\x00" else 'unknown'
+    if first == 70:   # 'F': Omron FINS/TCP magic with a zero length high byte (v0.53)
+        if len(prefix) < 5:
+            return None if b"FINS\x00".startswith(prefix) else 'text'
+        return 'fins' if prefix[:5] == b"FINS\x00" else 'text'
     if first == 0x3c:   # '<'
         # Syslog non-transparent framing (<PRI>1 ...) or an XMPP stream header, optionally after an XML declaration (v0.52).
         if len(prefix) < 2:
@@ -219,6 +232,12 @@ def select(prefix):
         code = int.from_bytes(prefix[4:8], "big")
         if first == 0 and (code in (80877103, 80877104) or (code >> 16 == 3 and code & 65535 <= 2)):
             return "postgresql"
+        if prefix[1] in (3, 4) and (prefix[4:8] == b"\x00\x00\x00\x00" or (first == 1 and prefix[4] == 0xff)):
+            # AFP over DSI (v0.53), before the Kafka probe: a DSI header read as a Kafka length exceeds every budget: GetStatus/OpenSession request (offset zero) or reply (AFP result), reserved zero.
+            if len(prefix) < 16:
+                return None
+            if prefix[12:16] == b"\x00\x00\x00\x00" and int.from_bytes(prefix[8:12], "big") <= 4096:
+                return "afp"
         if first == 0 and kafka_probe(prefix):
             return "kafka"
         if int.from_bytes(prefix[:2], "big") < 12:
@@ -243,6 +262,10 @@ def select(prefix):
         if prefix[offset] == 2:
             return "ldap"
     if first == 82:
+        if prefix[:4] == b"REDQ":
+            return "spice"
+        if len(prefix) < 4 and b"REDQ".startswith(prefix):
+            return None
         for version in (b"RFB 003.003\n", b"RFB 003.007\n", b"RFB 003.008\n"):
             if prefix.startswith(version):
                 return "rfb"

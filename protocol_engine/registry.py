@@ -28,6 +28,9 @@ from .diameter import DiameterParser
 from .greetings import BoltParser, ZMTPParser
 from .xmpp import XMPPParser
 from .syslog import SyslogStreamParser
+from .desktop import SPICEParser, X11Parser, X11ReplyParser
+from .afp import DSIParser
+from .fins import FINSParser
 
 PARSERS = MappingProxyType({
     "dcerpc": DCERPCParser, "giop": GIOPParser, "git": GitParser, "fastcgi": FastCGIParser, "rsync": RsyncParser,
@@ -44,6 +47,7 @@ PARSERS = MappingProxyType({
     "tds": TDSParser, "tns": TNSParser, "opcua": OPCUAParser,
     "onc-rpc": RPCParser, "diameter": DiameterParser, "zmtp": ZMTPParser, "bolt": BoltParser,
     "xmpp": XMPPParser, "syslog": SyslogStreamParser,
+    "x11": X11Parser, "x11-server": X11ReplyParser, "spice": SPICEParser, "afp": DSIParser, "fins": FINSParser,
 })
 
 # Automatic ambiguity routes are not public candidate hints.

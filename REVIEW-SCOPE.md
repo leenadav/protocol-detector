@@ -1,11 +1,23 @@
-# Review scope: protocol detector v0.52
+# Review scope: protocol detector v0.53
 
-Python3.9-compatible IPv4 passive classification: 75 families, 68 automatic.
+Python3.9-compatible IPv4 passive classification: 81 families, 73 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.52): `protocol_engine/xmpp.py` (declaration regex, tag
+New focus (v0.53): `protocol_engine/desktop.py` (X11 setup lengths and
+padding, the hinted reply's byte-order inference and size arithmetic, SPICE
+message/reply discrimination by the caps offset), `protocol_engine/afp.py`
+(DSI header rules, option walk, status reply bound), `protocol_engine/fins.py`
+(length per command, ICF/GCT/address ranges), `protocol_engine/rip.py` (entry
+arithmetic, authentication entries and trailer, whole-table request, RTCP
+packet lengths) and the new routes in dispatch.py (`B`/`l` + NUL, `FINS`,
+`REDQ`, the DSI header before the Kafka probe) and datagram.py (RIP words).
+Trace: cookies, vendor strings, public keys, passwords and report contents
+never reach evidence; every size against its container; that text routes for
+`B...`, `l...` and `F...` are unchanged. 558 tests pass.
+
+Previous focus (v0.52): `protocol_engine/xmpp.py` (declaration regex, tag
 boundary, attribute regex and the 16/1023 bounds, namespace and id rules,
 hostname from to/from only), `SyslogStreamParser` in syslog.py (octet count
 digits and bounds, LF framing, reuse of the UDP validator), the `<` and

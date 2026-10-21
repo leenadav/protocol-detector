@@ -859,3 +859,64 @@ OCSP_RESPONSE = b"HTTP/1.1 200 OK\r\nContent-Type: application/ocsp-response\r\n
 SOAP_REQUEST = b"POST /ws HTTP/1.1\r\nHost: api.example\r\nContent-Type: application/soap+xml; charset=utf-8\r\nContent-Length: 0\r\n\r\n"
 STREAM_CASES += ((XMPP_CLIENT, 'xmpp'), (XMPP_SERVER, 'xmpp'), (XMPP_S2S, 'xmpp'), (SYSLOG_TCP, 'syslog/5424'), (SYSLOG_OCTET, 'syslog/5424'),
                  (WEBDAV_REQUEST, 'http/1.1'), (IPP_REQUEST, 'http/1.1'), (OCSP_RESPONSE, 'http/1.1'), (SOAP_REQUEST, 'http/1.1'))
+
+
+# v0.53: X11, SPICE, AFP over DSI, Omron FINS/TCP, RIP and RTCP. Names and keys are placeholders.
+def le16(value):
+    return value.to_bytes(2, "little")
+
+
+def le32(value):
+    return value.to_bytes(4, "little")
+
+
+X11_SETUP = (b"l\x00" + le16(11) + le16(0) + le16(18) + le16(16) + b"\x00\x00" + b"MIT-MAGIC-COOKIE-1" + b"\x00\x00" + bytes(range(16)))
+X11_SETUP_MSB = (b"B\x00" + (11).to_bytes(2, "big") + bytes(2) + bytes(2) + bytes(2) + b"\x00\x00")   # no authorization
+_x11_body = (le32(12101000) + le32(0x00400000) + le32(0x003fffff) + le32(256) + le16(8) + le16(65535) + bytes((1, 1, 0, 0, 32, 32, 8, 255))
+             + bytes(4) + b"vendor-x" + bytes((32, 1, 32, 0, 0, 0, 0, 0)) + bytes(40))
+X11_REPLY = b"\x01\x00" + le16(11) + le16(0) + le16(len(_x11_body) // 4) + _x11_body
+del _x11_body
+
+
+def spice_header(size):
+    return b"REDQ" + le32(2) + le32(2) + le32(size)
+
+
+_spice_mess = le32(0) + bytes((1, 0)) + le32(1) + le32(1) + le32(18) + le32(0x0000000b) + le32(0x00000001)
+SPICE_LINK = spice_header(len(_spice_mess)) + _spice_mess
+_spice_reply = le32(0) + bytes(162) + le32(1) + le32(1) + le32(178) + le32(0x0000000b) + le32(0x00000001)
+SPICE_REPLY = spice_header(len(_spice_reply)) + _spice_reply
+del _spice_mess, _spice_reply
+
+
+def dsi(flags, command, request_id, payload=b"", error=0):
+    return bytes((flags, command)) + request_id.to_bytes(2, "big") + (error & 0xffffffff).to_bytes(4, "big") + len(payload).to_bytes(4, "big") + bytes(4) + payload
+
+
+AFP_OPEN_SESSION = dsi(0, 4, 1, b"\x01\x04" + (1024).to_bytes(4, "big"))
+AFP_GET_STATUS = dsi(0, 3, 2)
+AFP_OPEN_REPLY = dsi(1, 4, 1, b"\x00\x04" + (1024).to_bytes(4, "big"))
+
+
+def fins(command, body, error=0):
+    return b"FINS" + (8 + len(body)).to_bytes(4, "big") + command.to_bytes(4, "big") + error.to_bytes(4, "big") + body
+
+
+FINS_NODE_REQUEST = fins(0, (0).to_bytes(4, "big"))
+FINS_NODE_REPLY = fins(1, (11).to_bytes(4, "big") + (1).to_bytes(4, "big"))
+FINS_FRAME = fins(2, bytes((0x80, 0, 2, 0, 1, 0, 0, 11, 0, 5)) + b"\x01\x01" + b"\x82\x00\x64\x00\x00\x01")
+
+
+def rip_entry(address, metric, family=2, tag=0, mask=b"\x00\x00\x00\x00", next_hop=b"\x00\x00\x00\x00"):
+    return family.to_bytes(2, "big") + tag.to_bytes(2, "big") + address + mask + next_hop + metric.to_bytes(4, "big")
+
+
+RIP_REQUEST = b"\x01\x02\x00\x00" + rip_entry(bytes(4), 16, family=0)
+RIP_RESPONSE = b"\x02\x02\x00\x00" + rip_entry(bytes((192, 0, 2, 0)), 1, mask=bytes((255, 255, 255, 0))) + rip_entry(bytes((198, 51, 100, 0)), 3, mask=bytes((255, 255, 255, 0)))
+RIP_V1 = b"\x02\x01\x00\x00" + rip_entry(bytes((10, 0, 0, 0)), 2)
+RTCP_SR = (b"\x81\xc8\x00\x0c" + bytes((0x12, 0x34, 0x56, 0x78)) + bytes(8) + bytes(4) + bytes(4) + bytes(4) + bytes(24)
+           + b"\x81\xca\x00\x03" + bytes((0x12, 0x34, 0x56, 0x78)) + b"\x01\x04demo" + b"\x00\x00")
+STREAM_CASES += ((X11_SETUP, 'x11'), (X11_SETUP_MSB, 'x11'), (SPICE_LINK, 'spice'), (SPICE_REPLY, 'spice'), (AFP_OPEN_SESSION, 'afp'),
+                 (AFP_GET_STATUS, 'afp'), (AFP_OPEN_REPLY, 'afp'), (FINS_NODE_REQUEST, 'fins'), (FINS_NODE_REPLY, 'fins'), (FINS_FRAME, 'fins'))
+DATAGRAM_CASES += ((RIP_REQUEST, 'rip/2'), (RIP_RESPONSE, 'rip/2'), (RIP_V1, 'rip/1'))
+HINTED_DATAGRAM_CASES += ((RTCP_SR, 'rtcp', 'rtcp'),)

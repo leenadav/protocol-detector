@@ -16,6 +16,7 @@ closed set reviewers should expect in records.
 <!-- coverage-matrix:start -->
 | Family | Transports | Client | Server | Evidence fields |
 |---|---|---|---|---|
+| afp | tcp | yes | yes | `afp_command`, `dsi_message` |
 | amqp | tcp | yes | yes | `amqp_message` |
 | bacnet | udp | yes | same shape | - |
 | bgp | tcp | yes | same shape | - |
@@ -31,6 +32,7 @@ closed set reviewers should expect in records.
 | dtls | udp | yes | yes | `handshake`, `offered_dtls_version`, `selected_cipher`, `selected_dtls_version` |
 | ethernet-ip | tcp/udp | yes | same shape | `enip_command` |
 | fastcgi | tcp | yes | yes | `fastcgi_record`, `fastcgi_role` |
+| fins | tcp | yes | yes | `fins_frame`, `fins_message` |
 | ftp | tcp | yes | - | - |
 | giop | tcp | yes | yes | `giop_message`, `giop_status` |
 | git | tcp | yes | yes | `git_message`, `offered_version` |
@@ -65,7 +67,9 @@ closed set reviewers should expect in records.
 | rdp | tcp | yes | yes | `rdp_security_flags`, `rdp_selected_protocol` |
 | resp | tcp | yes | - | - |
 | rfb | tcp | yes | same shape | - |
+| rip | udp | yes | yes | `rip_authentication`, `rip_command` |
 | rsync | tcp | yes | - | `rsync_protocol` |
+| rtcp | udp | yes | same shape | `rtcp_packet`, `rtcp_packets` |
 | rtp | udp | yes | same shape | - |
 | rtsp | tcp | yes | same shape | - |
 | s7comm | tcp | yes | yes | `s7_function`, `s7_rosctr` |
@@ -76,6 +80,7 @@ closed set reviewers should expect in records.
 | smtp | tcp | yes | - | `smtp_client_identity` |
 | snmp | udp | yes | yes | `snmp_flags`, `snmp_pdu`, `snmp_scoped_pdu`, `snmp_security` |
 | socks5 | tcp | yes | yes | `socks_command`, `socks_method`, `socks_port`, `socks_reply`, `socks_target` |
+| spice | tcp | yes | yes | `spice_channel`, `spice_link_error`, `spice_message` |
 | ssdp | udp | yes | same shape | - |
 | ssh | tcp | yes | same shape | `ssh_version` |
 | stomp | tcp | yes | yes | - |
@@ -89,10 +94,11 @@ closed set reviewers should expect in records.
 | tns | tcp | yes | yes | `tns_connect_data`, `tns_response`, `tns_version` |
 | websocket | tcp | yes | yes | `websocket_masked`, `websocket_opcode` |
 | wireguard | udp | yes | yes | `message_type` |
+| x11 | tcp | yes | yes | `x11_authorization`, `x11_byte_order`, `x11_message` |
 | xmpp | tcp | yes | yes | `hostname`, `xmpp_namespace`, `xmpp_stream`, `xmpp_version` |
 | zmtp | tcp | yes | yes | `zmtp_mechanism`, `zmtp_role` |
 
-75 families in the catalog, 75 with fixtures, 63 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
+81 families in the catalog, 81 with fixtures, 69 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
 <!-- coverage-matrix:end -->
 
 ## Direction evidence and remaining replies (v0.49)
@@ -295,3 +301,65 @@ A WebDAV method is `webdav`; a POST or a response with an `ipp` or `soap`
 class is `ipp` or `soap`; an `ocsp` class in either direction is `ocsp`. All
 four implicitly use web-browsing and inherit the asserted nature of the
 header they read.
+
+## X11, SPICE, AFP over DSI, Omron FINS/TCP, RIP and RTCP (v0.53)
+
+Six new families (81 in total, 73 automatic).
+
+`x11`: the client connection setup is automatic: byte-order byte `B` or `l`
+followed by a zero unused byte (no text protocol has NUL there), protocol
+11.0, authorization protocol name at most 64 bytes (printable) and data at
+most 1024 bytes, both padded to four; data without a name is rejected.
+Evidence: `x11_message` (`setup-request`), `x11_byte_order` (`msb`/`lsb`),
+`x11_authorization` (asserted: `mit-magic-cookie-1`, `xdm-authorization-1`,
+`sun-des-1`, `mit-kerberos-5`, `other`, `none`); the cookie is never read
+beyond its length. The server setup reply (status 0 failed, 1 success, 2
+authenticate; byte order inferred from the major version 11; success replies
+need consistent image byte order, bitmap bit order, scanline unit and pad,
+keycode range and vendor/format/screen sizes within the reply) is accepted
+only with the `x11-server` hint because its first byte is 0, 1 or 2
+(`x11_message` `setup-success`/`setup-failed`/`setup-authenticate`, scope
+`negotiation_response`). Vendor strings and reasons are never emitted.
+
+`spice`: the SpiceLinkHeader (magic REDQ, major 2, minor at most 2, size)
+followed by the client SpiceLinkMess (channel type, capability counts at most
+32 each, caps offset 18, exact size; secondary channels need a connection id)
+or the server SpiceLinkReply (error 0..9, 162-byte public key, caps offset
+178, exact size). Evidence: `spice_message` (`link-message`/`link-reply`),
+`spice_channel` (main, display, inputs, cursor, playback, record, tunnel,
+smartcard, usbredir, port, webdav, other), `spice_link_error` (closed labels).
+Connection ids, public keys and capabilities are never emitted.
+
+`afp` (DSI): GetStatus and OpenSession requests (flags 0, data offset 0) and
+replies (flags 1, AFP result 0 or negative), reserved bytes zero, payload at
+most 64 bytes (OpenSession options: attention quantum, server request quantum,
+replay cache size, each four bytes) or 4096 bytes (the server information
+answering GetStatus, not decoded). Dispatch tests the whole 16-byte header
+before the Kafka probe. Evidence: `dsi_message` (`request`/`reply`),
+`afp_command` (`open-session`/`get-status`). DSICommand and later AFP
+commands are outside the profile.
+
+`fins` (Omron FINS/TCP): magic FINS, length, command 0 (node address request:
+length 12, one node address 0..254), 1 (reply: two node addresses) or 2 (a
+FINS frame of 20..2048 bytes whose ICF has only the command/response bits,
+reserved zero, gateway count at most 7 and network and unit addresses within
+range; responses carry an end code). Evidence: `fins_message`
+(`node-address-request`, `node-address-reply`, `frame`), `fins_frame`
+(`command`/`response`). Memory areas, addresses and data are never read.
+
+`rip` (UDP): command 1 or 2, version 1 or 2, zero field, 1..25 twenty-byte
+entries; a v2 authentication entry (simple password or MD5 with packet length,
+key id, 16-byte digest length and the trailer entry) may open the datagram;
+entries need address family IP, metric 1..16 and, in v1, zero route tag, mask
+and next hop; a one-entry request with family 0 and metric 16 is the
+whole-table request. Evidence: `rip_command`, `rip_authentication` (`none`,
+`simple-password`, `md5`); the password is never emitted and only
+`simple-password` keeps the `cleartext-credential-protocol` risk. Candidate
+selection needs the command/version bytes, a zero field and a length of
+4 + 20n with n at least one.
+
+`rtcp` (UDP, hint only): a compound packet beginning with SR or RR, every
+packet version 2 with a known type 200..207 and a length within the datagram
+(SR/RR report blocks and BYE sources bounded by their counts), at most eight
+packets. Evidence: `rtcp_packet` (first type), `rtcp_packets` (count). Report
+contents and SDES items are never read.

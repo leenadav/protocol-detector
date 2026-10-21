@@ -38,7 +38,7 @@ _LEGACY_TLS = frozenset(("1.0", "1.1", "SSL 3.0"))
 
 _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags", "rdp_selected_protocol",
                      "tls_offered_max_version", "dns_query_shape", "payload_class", "tls_certificate_self_issued",
-                     "tls_certificate_key", "tls_certificate_signature", "tls_certificate_lifetime_days", "tls_ech", "dns_rcode", "kerberos_error", "radius_code", "modbus_pdu", "zmtp_mechanism"))
+                     "tls_certificate_key", "tls_certificate_signature", "tls_certificate_lifetime_days", "tls_ech", "dns_rcode", "kerberos_error", "radius_code", "modbus_pdu", "zmtp_mechanism", "rip_authentication"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -133,6 +133,9 @@ def flow_risks(verdict, client, server):
             elif field == "tls_ech":
                 if value == "outer":
                     found.append("tls-encrypted-client-hello")
+            elif field == "rip_authentication":
+                if value != "simple-password" and "cleartext-credential-protocol" in found:
+                    found.remove("cleartext-credential-protocol")   # only the v2 simple password travels in the clear
             elif field == "zmtp_mechanism":
                 # Only the PLAIN mechanism sends a username and password in the clear; NULL has no
                 # credentials and CURVE/GSSAPI authenticate cryptographically.
