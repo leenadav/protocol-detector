@@ -714,7 +714,16 @@ established. It refuses when the observation is not identified, already
 shifted or pending, or when fewer than 64 budget bytes remain; it never
 emits an event by itself (the shifted phase publishes when its bytes arrive)
 and marks the `shift` evidence with source `wire:peer` so consumers can tell a
-peer-derived boundary from one the direction announced. `Analyzer._correlate_connect`
+peer-derived boundary from one the direction announced. Bytes the direction
+carried past its identified message are not inspected and are not kept by the
+Inspector; it records where that message ended (`Inspector.boundary`, the
+stream offset) and `Inspector.replay(data)` feeds such skipped bytes into a
+peer-opened phase exactly once without counting them again (v0.54). The
+reassembly `Stream.open_shift(boundary, expected=None)` wraps both: it opens
+the phase and replays `buffer[boundary:contiguous]`, so a ClientHello captured
+before the peer's answer, or a ServerHello coalesced with a 2xx, is classified.
+`Analyzer._correlate_connect` and `_correlate_ldap` open phases through the
+stream. `Analyzer._correlate_connect`
 runs after every identification event on a TCP connection and reads only
 evidence (`http_method`, `shift`, `http_status`); `SessionManager` already
 feeds every contiguous byte to the Inspector, so the server's tunnel bytes

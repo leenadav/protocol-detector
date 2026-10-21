@@ -108,15 +108,16 @@ class Analyzer:
         if connection is None:
             return
         client = connection["directions"][state["client"]].inspector
-        server = connection["directions"][state["server"]].inspector
-        request, response = client.observation, server.observation
+        server_stream = connection["directions"][state["server"]]
+        request, response = client.observation, server_stream.inspector.observation
         if response.status != "identified" or not (response.application_protocol or "").startswith("http/"):
             return
         if request.status != "identified" or not any(
                 (e.field == "http_method" and e.value == "CONNECT") or (e.field == "shift" and e.value == "http-connect") for e in request.evidence):
             return
         status = next((e.value for e in response.evidence if e.field == "http_status"), "")
-        if status[:1] == "2" and server.open_shift("http-connect"):
+        if status[:1] == "2" and server_stream.open_shift("http-connect"):
+            # The stream replays a ServerHello that shared the 2xx's segment (v0.54, review round 2).
             self.counts["connect_tunnels_correlated"] += 1
 
     def _correlate_ldap(self, key, state):
@@ -128,13 +129,15 @@ class Analyzer:
         resultCode success for the same message id. A response that names the
         StartTLS OID shifts the server direction by itself; RFC 4511 lets the server
         omit the responseName, and that unnamed success is opened here as well, again
-        only with a matching message id (v0.54, review round 1).
+        only with a matching message id (v0.54, review round 1). Bytes a direction
+        already carried past its LDAP message are replayed into the opened phase by
+        the stream (review round 2).
         """
         connection = self.manager.connections.get(key)
         if connection is None:
             return
-        client = connection["directions"][state["client"]].inspector
-        server = connection["directions"][state["server"]].inspector
+        client_stream, server_stream = connection["directions"][state["client"]], connection["directions"][state["server"]]
+        client, server = client_stream.inspector, server_stream.inspector
         request, response = client.observation, server.observation
         if request.status != "identified" or response.status != "identified" or response.application_protocol != "ldap":
             return
@@ -148,9 +151,11 @@ class Analyzer:
         ids = [(inspector.correlation or {}).get("ldap_message_id") for inspector in (client, server)]
         if ids[0] is None or ids[0] != ids[1]:
             return
-        opened = client.open_shift("ldap-starttls", "tls")
+        # Opening through the streams replays bytes the inspectors skipped while terminal: a ClientHello
+        # recorded before the server's answer, or a ServerHello coalesced with the response (review round 2).
+        opened = client_stream.open_shift("ldap-starttls", "tls")
         if answered["ldap_extended"] == "unnamed":
-            opened = server.open_shift("ldap-starttls", "tls") or opened
+            opened = server_stream.open_shift("ldap-starttls", "tls") or opened
         if opened:
             self.counts["ldap_starttls_correlated"] += 1
 

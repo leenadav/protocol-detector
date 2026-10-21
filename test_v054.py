@@ -151,6 +151,75 @@ class LDAPStartTLSTests(unittest.TestCase):
         self.assertEqual((analyzer.counts["ldap_starttls_correlated"], client.encryption, fields(client, "shift")), (0, None, {}))
         self.assertEqual(record["app"], "ldap")
 
+    def test_capture_order_with_the_client_hello_before_the_answer_is_replayed(self):
+        # Review round 2: the ClientHello segment is recorded before the server's success. The client inspector was
+        # terminal and skipped it; the stream still holds it and replays it into the phase the answer opens.
+        from protocol_fixtures import CONNECT_REQUEST, CONNECT_RESPONSE
+        for response in (LDAP_STARTTLS_UNNAMED, LDAP_STARTTLS_RESPONSE):
+            frames = ldap_flow(response)
+            reordered = [frames[0], frames[1], frames[2], frames[4], frames[3], frames[5]]   # ClientHello before the answer
+            analyzer, client, server, record = analyze(reordered)
+            self.assertEqual(analyzer.counts["ldap_starttls_correlated"], 1, response)
+            self.assertEqual((client.encryption, server.encryption), ("tls", "tls"), response)
+            self.assertEqual(fields(client, "shift", "shift_from"), {"shift": "ldap-starttls", "shift_from": "ldap"})
+            self.assertEqual((record["app"], record["shifted_from"], record["client_protocol"], record["server_protocol"]), ("ssl", "ldap", "tls", "tls"))
+            self.assertNotIn("cleartext-credential-protocol", record["risks"])
+        # Byte accounting: the replayed ClientHello is counted once, as received when first offered.
+        records = []
+        analyzer = Analyzer(on_session=records.append)
+        frames = ldap_flow(LDAP_STARTTLS_UNNAMED)
+        for number, data in enumerate([frames[0], frames[1], frames[2], frames[4], frames[3], frames[5]]):
+            analyzer.process(number, decode_packet(data))
+        stream = analyzer.manager.connections[analyzer.manager.key(A, B)]["directions"][A]
+        self.assertEqual(stream.inspector.metrics.bytes_received, len(LDAP_STARTTLS_REQUEST) + len(HELLO))
+        self.assertEqual(stream.inspector.boundary, len(LDAP_STARTTLS_REQUEST))
+        self.assertLessEqual(stream.inspector.metrics.bytes_inspected, len(LDAP_STARTTLS_REQUEST) + len(HELLO))
+        self.assertEqual([e.kind for e in stream.events], ["shifted"])     # the replay published the merged phase once
+        analyzer.finish("done")
+        # The request and the ClientHello coalesced in one client segment are split at the message boundary too.
+        cr, cs = 1000, 9000
+        coalesced = LDAP_STARTTLS_REQUEST + HELLO
+        frames = [frame(A, B, 999, 0, 2), frame(B, A, 8999, 1000, 18), frame(A, B, cr, cs, 24, coalesced),
+                  frame(B, A, cs, cr + len(coalesced), 24, LDAP_STARTTLS_UNNAMED),
+                  frame(B, A, cs + len(LDAP_STARTTLS_UNNAMED), cr + len(coalesced), 24, TLS_SERVER13)]
+        analyzer, client, server, record = analyze(frames)
+        self.assertEqual((analyzer.counts["ldap_starttls_correlated"], client.encryption, server.encryption, record["app"]), (1, "tls", "tls", "ssl"))
+        # A refusal recorded after the ClientHello still opens nothing: the retained bytes stay uninspected.
+        frames = ldap_flow(LDAP_STARTTLS_REFUSED)
+        analyzer, client, server, record = analyze([frames[0], frames[1], frames[2], frames[4], frames[3], frames[5]])
+        self.assertEqual((analyzer.counts["ldap_starttls_correlated"], client.application_protocol, client.encryption, record["app"]), (0, "ldap", None, "ldap"))
+        # The same replay serves the CONNECT correlation when the 2xx and the ServerHello share one segment (v0.33 gap).
+        frames = [frame(A, B, 999, 0, 2), frame(B, A, 8999, 1000, 18), frame(A, B, cr, cs, 24, CONNECT_REQUEST),
+                  frame(B, A, cs, cr + len(CONNECT_REQUEST), 24, CONNECT_RESPONSE + TLS_SERVER13),
+                  frame(A, B, cr + len(CONNECT_REQUEST), cs + len(CONNECT_RESPONSE) + len(TLS_SERVER13), 24, HELLO)]
+        analyzer, client, server, record = analyze(frames)
+        self.assertEqual((analyzer.counts["connect_tunnels_correlated"], client.encryption, server.encryption, record["app"]), (1, "tls", "tls", "ssl"))
+        self.assertEqual(fields(server, "shift", "selected_tls_version"), {"shift": "http-connect", "selected_tls_version": "1.3"})
+
+    def test_replay_preconditions(self):
+        inspector = Inspector()
+        inspector.feed(LDAP_STARTTLS_REQUEST)
+        self.assertEqual(inspector.boundary, len(LDAP_STARTTLS_REQUEST))
+        with self.assertRaises(ValueError):
+            inspector.replay(HELLO)                      # no phase opened
+        inspector.feed(HELLO)                            # skipped while terminal
+        self.assertTrue(inspector.open_shift("ldap-starttls", "tls"))
+        with self.assertRaises(ValueError):
+            inspector.replay(HELLO + b"x")               # more than was skipped
+        with self.assertRaises(TypeError):
+            inspector.replay("text")
+        events = inspector.replay(HELLO)
+        self.assertEqual([e.kind for e in events], ["shifted"])
+        self.assertEqual((inspector.observation.encryption, inspector.metrics.bytes_received), ("tls", len(LDAP_STARTTLS_REQUEST) + len(HELLO)))
+        with self.assertRaises(ValueError):
+            inspector.replay(HELLO)                      # the phase is finished
+        own = Inspector()
+        own.feed(LDAP_STARTTLS_RESPONSE)                 # the named success shifts by itself, not by the peer
+        self.assertIsNone(own.boundary)
+        with self.assertRaises(ValueError):
+            own.replay(TLS_SERVER13)
+        self.assertEqual(stream(LDAP_STARTTLS_RESPONSE + TLS_SERVER13).encryption, "tls")
+
     def test_analyzer_requires_the_same_message_id(self):
         # Review round 1: an unnamed success for another outstanding operation must not open TLS.
         other_success = ldap_extended(2, 0x78, None, 0)
