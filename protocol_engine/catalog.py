@@ -13,6 +13,7 @@ class ProtocolSupport:
 
 
 _SUPPORTED = (
+    ProtocolSupport("websocket", ("tcp",), "frame_header", "One frame header after an HTTP Upgrade boundary (reached by the websocket-upgrade shift or an explicit candidate); payload not decoded", requires_hint=True),
     ProtocolSupport("ftp", ("tcp",), "initial_message", "Client command line (FTP-only verbs); shared USER/PASS/QUIT verbs are ambiguous with POP3 and resolved by session correlation with a 220 greeting"),
     ProtocolSupport("pop3", ("tcp",), "protocol_header/initial_message", "Server +OK/-ERR status line or POP3-only client command; shared verbs resolved by correlation"),
     ProtocolSupport("telnet", ("tcp",), "negotiation_request", "Two complete IAC option negotiation commands; terminal data not inspected"),

@@ -63,6 +63,11 @@ class ExpansionTests(unittest.TestCase):
             partial.end()
             self.assertEqual(partial.observation.status, "incomplete")
             inspector = self.stream(data + b"later" * 100)
+            if any(e.field == "shift" for e in inspector.observation.evidence):
+                # The message announced a protocol change (for example RDP requesting TLS):
+                # bytes after it are inspected once by the shifted phase, then ignored.
+                self.assertEqual(inspector.observation.status, "identified")
+                continue
             self.assertEqual(inspector.metrics.bytes_inspected, len(data))
             calls = inspector.metrics.parser_calls
             inspector.feed(b"later" * 10000)
@@ -380,8 +385,15 @@ class ExpansionTests(unittest.TestCase):
             self.assertEqual(counts["udp"], len(DATAGRAM_CASES))
             retired = [row for row in rows if row.get("type") == "stream_end"]
             classified = [row for row in rows if "frame" in row]
-            self.assertEqual(len(retired), len(STREAM_CASES))  # Unobserved reverse directions.
-            self.assertTrue(all(row["classification"]["status"] == "incomplete" for row in retired))
+            unobserved = [row for row in retired if row["classification"]["status"] == "incomplete"]
+            self.assertEqual(len(unobserved), len(STREAM_CASES))  # Unobserved reverse directions.
+            for row in retired:
+                if row not in unobserved:
+                    # A request that announced a protocol shift (RDP TLS offer, PostgreSQL SSLRequest)
+                    # ended without shifted bytes: the identification stands and says so.
+                    self.assertEqual(row["classification"]["status"], "identified")
+                    self.assertIn({"field": "shifted_payload", "value": "incomplete"},
+                                  [{"field": e["field"], "value": e["value"]} for e in row["classification"]["evidence"]])
             self.assertEqual(len(classified), len(expected))
             self.assertEqual(classified[-1]["classification"]["transport"], "udp")
             with contextlib.redirect_stdout(io.StringIO()):

@@ -12,6 +12,7 @@ class FrameParser:
         self.needed = self.header_size
         self.header_done = False
         self.done = False
+        self.shift = None
         self.reason = "Waiting for complete framed message"
 
     def feed(self, data):

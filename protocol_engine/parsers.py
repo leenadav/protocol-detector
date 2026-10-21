@@ -35,9 +35,20 @@ class LineParser:
         self.continues = False
         self.kexinit = None
         self.fingerprints = ()
+        self.extra_evidence = ()
+        self.shift = None          # (boundary, expected family) once the message announces a protocol change
+        self.method = None
+        self.target = None
+        self.status = None
+        self.upgrade = None
+        self.connection_upgrade = False
+        self.websocket_key = False
+        self.websocket_version = False
+        self.websocket_accept = False
+        self.h2_settings = False
 
     def feed(self, data):
-        if self.continues:
+        if self.continues and self.kexinit is not None:
             consumed = self.kexinit.feed(data)
             if self.kexinit.done:
                 from .fingerprints import hassh
@@ -46,8 +57,12 @@ class LineParser:
                 self.kexinit = None
                 self.continues = False
             return consumed
+        # A continuation (STARTTLS watch) consumes lines only on later calls: the call that
+        # completes the identification returns at the boundary so the Inspector publishes
+        # first and routes later lines through the error-tolerant continuation path.
+        continuing = self.done and self.continues
         pos = 0
-        while pos < len(data) and not self.done:
+        while pos < len(data) and (not self.done or (continuing and self.continues)):
             newline = data.find(b"\n", pos)
             end = len(data) if newline < 0 else newline + 1
             piece = data[pos:end]
@@ -88,6 +103,11 @@ class LineParser:
                 raise ParseError("Unsupported HTTP/1.x start-line")
             self.http11_request = bool(request and line.endswith(b"HTTP/1.1"))
             version = line.rsplit(b" ", 1)[-1] if request else line.split(b" ", 1)[0]
+            if request:
+                self.method, self.target = line.split(b" ", 2)[:2]
+                self.method = self.method.upper()
+            else:
+                self.status = int(line.split(b" ", 2)[1])
             self.protocol_name = "http/1.1" if version == b"HTTP/1.1" else "http/1.0"
             self.reason = "Start-line validated; waiting for headers"
             if self.contexts is not None:
@@ -109,6 +129,7 @@ class LineParser:
                 raise ParseError("Ambiguous Transfer-Encoding and Content-Length")
             self.done = True
             self.reason = "HTTP start-line and headers validated; body and later requests not inspected"
+            self._shift_boundary()
             if self.contexts is not None:
                 self.contexts["http-req-headers"] = bytes(self.contexts["http-req-headers"])
                 if self.host is not None:
@@ -166,6 +187,67 @@ class LineParser:
             if self.transfer_encoding or value.lower() != b"chunked":
                 raise ParseError("Unsupported or duplicate Transfer-Encoding")
             self.transfer_encoding = True
+        elif name == b"upgrade":
+            if self.upgrade is not None or not re.fullmatch(rb"[\x21-\x7e]{1,64}(?:, *[\x21-\x7e]{1,64}){0,7}", value):
+                raise ParseError("Invalid or duplicate Upgrade header")
+            self.upgrade = value.split(b",", 1)[0].strip().lower()
+        elif name == b"connection":
+            if b"upgrade" in [token.strip().lower() for token in value.split(b",")]:
+                self.connection_upgrade = True
+        elif name == b"sec-websocket-key":
+            if self.websocket_key or not re.fullmatch(rb"[A-Za-z0-9+/]{22}==", value):
+                raise ParseError("Invalid or duplicate Sec-WebSocket-Key")
+            self.websocket_key = True
+        elif name == b"sec-websocket-version":
+            if self.websocket_version or value != b"13":
+                raise ParseError("Unsupported or duplicate Sec-WebSocket-Version")
+            self.websocket_version = True
+        elif name == b"sec-websocket-accept":
+            if self.websocket_accept or not re.fullmatch(rb"[A-Za-z0-9+/]{27}=", value):
+                raise ParseError("Invalid or duplicate Sec-WebSocket-Accept")
+            self.websocket_accept = True
+        elif name == b"http2-settings":
+            if self.h2_settings or not re.fullmatch(rb"[A-Za-z0-9_\-]{0,1024}", value):
+                raise ParseError("Invalid or duplicate HTTP2-Settings")
+            self.h2_settings = True
+
+    def _shift_boundary(self):
+        """Decide whether the bytes after this header block belong to another protocol.
+
+        CONNECT: the tunnel payload follows (any protocol; TLS in practice). Upgrade
+        to websocket/h2c on a request, or a 101 response naming websocket: the
+        frames follow. A 200 to CONNECT cannot be told from a body-less response
+        on the server side alone, so no server-side CONNECT shift exists; the
+        session verdict combines the client shift with the server response.
+        """
+        if self.method == b"CONNECT":
+            if not re.fullmatch(rb"(?:[A-Za-z0-9.\-]{1,253}|\[[0-9A-Fa-f:.]{2,45}\]):[0-9]{1,5}", self.target or b""):
+                return  # not authority-form: still HTTP syntax, but no proxy would open a tunnel for it
+            self.scope = "tunnel_request"
+            self.extra_evidence += (("http_method", "CONNECT", "request_line", "structural"),)
+            self.shift = ("http-connect", None)
+            return
+        if self.upgrade is None:
+            return
+        token = self.upgrade if self.upgrade in (b"websocket", b"h2c") else b"other"
+        self.extra_evidence += (("http_upgrade", token.decode("ascii"), "headers", "structural"),)
+        if self.method is not None:
+            if not self.connection_upgrade:
+                raise ParseError("Upgrade requires a Connection: Upgrade header")
+            if self.content_length or self.transfer_encoding:
+                return  # a request body precedes any switch; later bytes are not framed by the new protocol yet
+            if token == b"websocket":
+                if self.method != b"GET" or not (self.websocket_key and self.websocket_version):
+                    raise ParseError("WebSocket upgrade requires GET with Sec-WebSocket-Key and -Version 13")
+                self.shift = ("websocket-upgrade", "websocket")
+            elif token == b"h2c" and self.h2_settings:
+                self.shift = ("h2c-upgrade", "http2")
+        elif self.status == 101:
+            if token == b"websocket":
+                if not self.websocket_accept:
+                    raise ParseError("101 websocket upgrade requires Sec-WebSocket-Accept")
+                self.shift = ("websocket-upgrade", "websocket")
+            # 101 h2c: the server continues with HTTP/2 frames without a preface; not inspected.
 
 
 class KexInit:

@@ -25,9 +25,10 @@ _IMAP_TAG = re.compile(rb"[A-Za-z0-9.\-_]{1,32}")
 
 
 def command_line(line):
-    """Classify one client command line. Returns (family, candidates) or None when not a command.
+    """Classify one client command line. Returns (family, candidates, shift) or None when not a command.
 
-    family is 'ftp', 'pop3' or None (ambiguous between the candidates).
+    family is 'ftp', 'pop3' or None (ambiguous between the candidates); shift is
+    the (boundary, expected family) announced by STLS / AUTH TLS, else None.
     """
     if not 3 <= len(line) <= 520 or any(byte < 32 or byte > 126 for byte in line):
         return None
@@ -47,19 +48,21 @@ def command_line(line):
             raise ParseError("FTP TYPE argument invalid")
         if verb == b"PORT" and not re.fullmatch(rb"(\d{1,3},){5}\d{1,3}", argument):
             raise ParseError("FTP PORT argument invalid")
-        return "ftp", ("ftp",)
+        return "ftp", ("ftp",), None
     if verb in POP3_ONLY:
         if verb == b"APOP" and len(argument.split(b" ")) != 2:
             raise ParseError("POP3 APOP requires name and digest")
         if verb == b"TOP" and not re.fullmatch(rb"\d{1,10} \d{1,10}", argument):
             raise ParseError("POP3 TOP requires two numbers")
-        return "pop3", ("pop3",)
+        return "pop3", ("pop3",), (("starttls", "tls") if verb == b"STLS" else None)
     if verb in SHARED:
         if verb in (b"USER", b"PASS", b"AUTH") and not argument:
             raise ParseError("Command requires an argument")
         if verb in (b"RETR", b"DELE") and not argument:
             raise ParseError("Command requires an argument")
-        return None, ("ftp", "pop3")
+        if verb == b"AUTH" and argument.upper() in (b"TLS", b"SSL", b"TLS-C", b"TLS-P"):
+            return "ftp", ("ftp",), ("auth-tls", "tls")  # RFC 4217 security mechanism names are FTP-only
+        return None, ("ftp", "pop3"), None
     return None
 
 

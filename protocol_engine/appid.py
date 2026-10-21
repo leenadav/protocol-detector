@@ -35,6 +35,7 @@ class Verdict(NamedTuple):
     server_protocol: Optional[str]
     encryption: Optional[str]
     reasons: Tuple[str, ...]
+    shifted_from: Optional[str] = None  # application whose structural boundary announced this one (CONNECT, STARTTLS, ...)
 
     @property
     def identified(self):
@@ -43,6 +44,23 @@ class Verdict(NamedTuple):
 
 def _label(observation):
     return observation.application_protocol or observation.encryption
+
+
+def _evidence(observation, field):
+    for evidence in observation.evidence:
+        if evidence.field == field:
+            return evidence.value
+    return None
+
+
+def _shifted_from(observation):
+    """Catalog name of the application that carried a shift into this observation, or None."""
+    carrier = _evidence(observation, "shift_from")
+    if carrier is None:
+        return None
+    if _evidence(observation, "shift") == "http-connect":
+        return "http-proxy"
+    return application_name(carrier if not carrier.startswith("http") else carrier, None) or carrier
 
 
 def _candidates(observation):
@@ -64,6 +82,8 @@ def _application(observation, transport, signatures=None):
     unknown-tcp/unknown-udp.
     """
     base = application_name(observation.application_protocol, observation.encryption)
+    if base == "web-browsing" and _evidence(observation, "http_method") == "CONNECT":
+        base = "http-proxy"
     if observation.application:
         if base is None:
             base = "unknown-" + transport
@@ -87,14 +107,23 @@ def _port_usage(application, transport, server_port):
     return "standard" if application.uses_port(transport, server_port) else "nonstandard"
 
 
-def _build(application, transport, server_port, status, client, server, reasons):
+def _build(application, transport, server_port, status, client, server, reasons, shifted_from=None):
+    implicitly_uses = application.implicitly_uses
+    port_usage = _port_usage(application, transport, server_port)
+    if shifted_from is not None and shifted_from != application.name:
+        if shifted_from not in implicitly_uses:
+            implicitly_uses = implicitly_uses + (shifted_from,)
+        if port_usage != "standard" and shifted_from in APPLICATIONS:
+            # ssl after STARTTLS on 587 or after RDP negotiation on 3389 is the carrier's standard port.
+            carrier_usage = _port_usage(APPLICATIONS[shifted_from], transport, server_port)
+            port_usage = carrier_usage if carrier_usage == "standard" else port_usage
     return Verdict(application.name, application.category, application.subcategory, application.technology,
                    application.risk, application.characteristics, application.container,
-                   application.implicitly_uses, _port_usage(application, transport, server_port), status,
+                   implicitly_uses, port_usage, status,
                    _label(client) if client is not None and client.status == "identified" else None,
                    _label(server) if server is not None and server.status == "identified" else None,
                    (client.encryption if client is not None else None) or (server.encryption if server is not None else None),
-                   tuple(reasons))
+                   tuple(reasons), shifted_from)
 
 
 def _outcome(name, transport, status, reasons, client=None, server=None):
@@ -147,7 +176,8 @@ def session_verdict(client, server, transport="tcp", server_port=None, client_by
         for obs in (client, server):
             if obs is not None and obs.status == "invalidated":
                 reasons.append("One direction was invalidated: " + obs.reason)
-        return _build(application, transport, server_port, "identified", client, server, reasons)
+        shifted_from = _shifted_from(chosen) or (_shifted_from(identified[1]) if len(identified) == 2 else None)
+        return _build(application, transport, server_port, "identified", client, server, reasons, shifted_from)
     observations = [obs for obs in (client, server) if obs is not None]
     candidate_sets = [_candidates(obs) for obs in observations]
     candidate_sets = [item for item in candidate_sets if item]
@@ -184,4 +214,4 @@ def verdict_fields(verdict):
             "base_app": verdict.base_app, "implicitly_uses": list(verdict.implicitly_uses),
             "port_usage": verdict.port_usage, "engine_status": verdict.status,
             "client_protocol": verdict.client_protocol, "server_protocol": verdict.server_protocol,
-            "encryption": verdict.encryption, "reasons": list(verdict.reasons)}
+            "encryption": verdict.encryption, "reasons": list(verdict.reasons), "shifted_from": verdict.shifted_from}

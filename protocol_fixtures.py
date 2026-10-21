@@ -268,3 +268,23 @@ DATAGRAM_CASES += ((WIREGUARD, 'wireguard'), (OPENVPN, 'openvpn'), (L2TP, 'l2tp/
                    (NETFLOW9, 'netflow/9'), (IPFIX, 'ipfix'), (SFLOW, 'sflow/5'), (BACNET, 'bacnet'), (KERBEROS, 'kerberos'),
                    (ENIP_UDP, 'ethernet-ip'))
 HINTED_DATAGRAM_CASES += ((RTP, 'rtp', 'rtp'),)
+
+# v0.28: messages that announce a protocol change at a structural boundary.
+CONNECT_REQUEST = b'CONNECT example.com:443 HTTP/1.1\r\nHost: example.com:443\r\nProxy-Connection: keep-alive\r\n\r\n'
+CONNECT_RESPONSE = b'HTTP/1.1 200 Connection established\r\n\r\n'
+WEBSOCKET_UPGRADE = (b'GET /chat HTTP/1.1\r\nHost: example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n'
+                     b'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n')
+WEBSOCKET_101 = (b'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n'
+                 b'Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n')
+WEBSOCKET_FRAME = b'\x81\x85\x37\xfa\x21\x3d\x7f\x9f\x4d\x51\x58'   # RFC 6455 5.7: masked text frame "Hello"
+WEBSOCKET_SERVER_FRAME = b'\x81\x05Hello'                             # RFC 6455 5.7: unmasked text frame
+WEBSOCKET_EMPTY_FRAME = b'\x81\x80\x37\xfa\x21\x3d'                   # masked text frame with an empty payload
+H2C_UPGRADE = (b'GET / HTTP/1.1\r\nHost: example.com\r\nConnection: Upgrade, HTTP2-Settings\r\nUpgrade: h2c\r\n'
+               b'HTTP2-Settings: AAMAAABkAARAAAAAAAIAAAAA\r\n\r\n')
+SMTP_STARTTLS = b'EHLO client.example\r\nSTARTTLS\r\n'
+IMAP_STARTTLS = b'a001 STARTTLS\r\n'
+POP3_STLS = b'STLS\r\n'
+FTP_AUTH_TLS = b'AUTH TLS\r\n'
+MYSQL_SSL_REQUEST = b'\x20\x00\x00\x01' + (0x000a0a05).to_bytes(4, 'little') + (16777216).to_bytes(4, 'little') + b'\x21' + bytes(23)
+RDP_CONFIRM = bytes.fromhex('030000130ed01234000000' '0200080001000000')  # X.224 CC + RDP_NEG_RSP selecting PROTOCOL_SSL
+HINTED_STREAM_CASES += ((WEBSOCKET_EMPTY_FRAME, 'websocket', 'websocket'),)

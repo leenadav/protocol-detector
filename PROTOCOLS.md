@@ -806,3 +806,64 @@ Primary specifications: [RFC 959](https://www.rfc-editor.org/rfc/rfc959.html) (F
 [IEC 60870-5-104 APCI](https://webstore.iec.ch/publication/25035),
 [Kafka protocol guide](https://kafka.apache.org/protocol.html), [CQL binary protocol v4](https://github.com/apache/cassandra/blob/trunk/doc/native_protocol_v4.spec),
 [RFC 3550 5.1](https://www.rfc-editor.org/rfc/rfc3550.html) (RTP).
+
+## Application shift at structural boundaries (v0.28)
+
+Some initial messages announce that a different protocol follows them. The
+engine now ends the carrier's inspection exactly at that boundary and inspects
+the bytes after it as a new phase ("application shift"). Rules:
+
+- The carrier identification is published first and is never removed. If the
+  shifted phase identifies, the observation becomes the new protocol with
+  `shift=<boundary>` and `shift_from=<carrier protocol>` structural evidence and
+  an event of kind `shifted`; the carrier's asserted hostname (CONNECT/Host) is
+  kept only when the new phase offers none. If the shifted phase ends unknown,
+  malformed, incomplete or out of budget, the carrier stays identified with
+  `shift` plus `shifted_payload=<status>` context evidence.
+- Both phases share one byte budget (`max_bytes`) and one update budget; the
+  shifted phase runs the same dispatch and parsers, restricted to the family the
+  boundary promises where the protocol defines it (TLS after STARTTLS/SSLRequest/
+  RDP negotiation, WebSocket after `Upgrade: websocket`, HTTP/2 preface after
+  `Upgrade: h2c`), unrestricted after CONNECT. The restriction is a candidate
+  selection, not an identification: a non-TLS payload after STARTTLS is
+  `shifted_payload=unknown`.
+- Boundaries are structural, never port-based, and each direction decides from
+  its own bytes. The session verdict combines them: `ssl` after CONNECT carries
+  `shifted_from=http-proxy`, STARTTLS `shifted_from=smtp|imap|pop3|ftp`, and the
+  carrier is added to `implicitly_uses`; `port_usage` is standard when the port
+  is standard for either the new application or the carrier (587 for ssl after
+  smtp STARTTLS).
+
+| Boundary | Carrier profile addition | Phase after |
+|---|---|---|
+| `http-connect` | `CONNECT authority HTTP/1.x` with an authority-form target (`host:port`, bracketed IPv6 allowed); scope `tunnel_request`, evidence `http_method=CONNECT`; verdict application `http-proxy`. A CONNECT with a path target stays plain HTTP without a shift | any protocol (unrestricted) |
+| `websocket-upgrade` | request: `GET`, `Upgrade: websocket`, `Connection: Upgrade`, `Sec-WebSocket-Key` (22 base64 chars + `==`), `Sec-WebSocket-Version: 13`, no body; response: `101` with `Upgrade: websocket` and `Sec-WebSocket-Accept` (27 chars + `=`). Missing pieces are malformed | `websocket` |
+| `h2c-upgrade` | request with `Upgrade: h2c`, `Connection: Upgrade`, `HTTP2-Settings` (base64url). The 101 response is recognized (`http_upgrade=h2c`) but server frames without a preface are not inspected | `http2` (client preface + SETTINGS) |
+| `starttls` | SMTP: after EHLO/HELO the client direction keeps reading command lines (<= 512 bytes each, known verbs only, at most min(max_headers, 8) NOOPs) until `STARTTLS` (shift), any other command (watch ends) or an unexpected line (watch ends, identification stands). IMAP `tag STARTTLS`, POP3 `STLS` shift immediately | `tls` |
+| `auth-tls` | FTP `AUTH TLS|SSL|TLS-C|TLS-P` (RFC 4217 names are FTP-only, so the shared `AUTH` verb identifies FTP here) | `tls` |
+| `postgresql-sslrequest` | SSLRequest (80877103, 8 bytes). GSSENCRequest does not shift | `tls` |
+| `mysql-sslrequest` | Client packet with sequence 1 and 32-byte payload: capabilities with CLIENT_PROTOCOL_41 and CLIENT_SSL, nonzero character set, 19 zero reserved bytes (the last four may carry MariaDB extended capabilities). MySQL remains a hint-only family | `tls` |
+| `rdp-negotiation` | Client X.224 CR whose RDP_NEG_REQ offers any protocol other than standard RDP security (TLS, CredSSP, RDSTLS, AAD). New: server X.224 Connection Confirm (0xd0, nonzero DST-REF, class 0) with RDP_NEG_RSP (type 2, flags <= 0x1f, exactly one selected protocol; shift when nonzero) or RDP_NEG_FAILURE (type 3, code 1..6, no shift); scope `negotiation_response` | `tls` |
+
+**WebSocket** (new family, reached only through the boundary or an explicit
+candidate): one frame header per RFC 6455 5.2: RSV bits zero, opcode text/
+binary/close/ping/pong (a continuation frame cannot open a stream; reserved
+opcodes are malformed), minimal length encoding (16-bit >= 126, 64-bit >= 65536
+with the high bit clear), control frames unfragmented and <= 125 bytes, masking
+key present when the MASK bit is set. Evidence `websocket_opcode`,
+`websocket_masked`. Payload bytes are not read.
+
+Excluded: server-side CONNECT (a `200` cannot be told from a body-less response
+without the request), HTTP/2 server frames after `101 h2c`, `Upgrade: TLS`
+(RFC 2817), SMTP server `220 Go ahead` correlation, RDP standard security after
+a TLS offer (the shifted bytes are then `unknown`), nested shifts beyond one
+boundary per direction, and any claim that the TLS handshake inside the tunnel
+completed.
+
+Primary specifications: [RFC 9110 9.3.6](https://www.rfc-editor.org/rfc/rfc9110.html#name-connect) (CONNECT),
+[RFC 9110 7.8](https://www.rfc-editor.org/rfc/rfc9110.html#name-upgrade) (Upgrade), [RFC 6455 4.1, 4.2.2, 5.2](https://www.rfc-editor.org/rfc/rfc6455.html),
+[RFC 7540 3.2](https://www.rfc-editor.org/rfc/rfc7540.html#section-3.2) (h2c upgrade), [RFC 3207](https://www.rfc-editor.org/rfc/rfc3207.html) (SMTP STARTTLS),
+[RFC 2595 3, 4](https://www.rfc-editor.org/rfc/rfc2595.html) (IMAP STARTTLS, POP3 STLS), [RFC 4217](https://www.rfc-editor.org/rfc/rfc4217.html) (FTP AUTH TLS),
+[PostgreSQL SSLRequest](https://www.postgresql.org/docs/18/protocol-message-formats.html),
+[MySQL Protocol::SSLRequest](https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_ssl_request.html),
+[MS-RDPBCGR 2.2.1.2 Server X.224 Connection Confirm PDU](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/13757f8f-66db-4273-9d2c-385c33b1e483).

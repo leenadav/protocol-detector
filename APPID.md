@@ -1,4 +1,4 @@
-# App-ID style application identification — v0.27 (introduced in v0.22)
+# App-ID style application identification — v0.28 (introduced in v0.22)
 
 This document maps the vocabulary of application-aware firewalls (Palo Alto
 Networks App-ID is the reference model) onto this engine, states exactly what is
@@ -10,13 +10,13 @@ parity with a commercial signature corpus.
 | App-ID stage | This engine | Where |
 |---|---|---|
 | Policy pre-check on IP/port | Not implemented; detection never uses ports | — |
-| Application signatures | Bounded structural profiles per family (65 families, PROTOCOLS.md); configured exact-host mappings (`RuleIndex`) | `protocol_engine/` |
+| Application signatures | Bounded structural profiles per family (66 families, PROTOCOLS.md); configured exact-host mappings (`RuleIndex`) | `protocol_engine/` |
 | Decryption + re-identification | TLS: not performed; `feed_decrypted()` accepts plaintext from a host TLS stack. QUIC: Initial protection (public keys) is removed to read the ClientHello | `engine.py`, `quic.py` |
-| Protocol decoders / tunneled apps | Decoders exist per family; tunnel transitions are the host's phase boundaries (v0.28 planned) | `engine.py` |
+| Protocol decoders / tunneled apps | Decoders per family; **application shift** at structural boundaries (CONNECT, Upgrade, STARTTLS, SSLRequest, RDP negotiation) inspects the phase after the boundary | `engine.py` |
 | Heuristics for evasive traffic | Planned (v0.29) | — |
 | Client/server implementation fingerprints (not an App-ID feature; nDPI-style) | **Implemented**: JA3/JA4/JA3S/JA4S/HASSH/HTTP2 (FINGERPRINTS.md) | `protocol_engine/fingerprints.py` |
 | Session verdict (`web-browsing`, `ssl`, `unknown-tcp`, …) | **Implemented** | `protocol_engine/appid.py` |
-| Application catalog (category, risk, characteristics, dependencies) | **Implemented**, 68 entries | `protocol_engine/applications.py` |
+| Application catalog (category, risk, characteristics, dependencies) | **Implemented**, 70 entries | `protocol_engine/applications.py` |
 | application-default (standard port check) | **Implemented** as `port_usage` | `appid.py` |
 | Traffic log / session record | **Implemented** as `{"type": "session"}` events | `analyze_pcap.py`, `live_capture.py` |
 | Custom App-ID signatures with contexts | **Implemented** (SIGNATURES.md) | `protocol_engine/signatures.py` |
@@ -33,6 +33,9 @@ A verdict names either a catalog application or a session outcome.
 | `<configured name>` | `RuleIndex` exact-host mapping on `tls_sni`/`http_host`; `base_app` names the carrier (`ssl`/`web-browsing`), `implicitly_uses` lists it | specific app implicitly using ssl/web-browsing |
 | `<signature name>` | Custom signature matched (SIGNATURES.md); category/risk come from the signature, `base_app` is its `parent` or the family that exposed the contexts, including `unknown-tcp`/`unknown-udp` | custom App-ID |
 | `ssh`, `dns`, `smb`, `rdp`, … | The family's structural profile passed (see catalog aliases for vendor names) | same |
+| `http-proxy` | HTTP `CONNECT authority` request; the tunnel contents are inspected as a shifted phase | http-proxy |
+| `websocket` | Frame header after an `Upgrade: websocket` boundary (or explicit candidate) | websocket |
+| `ssl` with `shifted_from` | TLS ClientHello/ServerHello after CONNECT (`http-proxy`), STARTTLS (`smtp`/`imap`/`pop3`/`ftp`), SSLRequest (`postgresql`/`mysql`) or RDP negotiation (`rdp`); the carrier is listed in `implicitly_uses` | application shift |
 | `wireguard`, `openvpn` | Handshake/control framing validated; reported through `encryption`, no tunnel contents or peer identity | same |
 | `ftp`, `pop3`, `smtp` with status `correlated` | Each direction alone was ambiguous (`220` greeting, `USER` command); the intersection of both candidate sets is one family (v0.27) | same |
 | `unknown-tcp` / `unknown-udp` | Payload existed and every supported profile rejected it, or a budget ran out before a profile completed | unknown-tcp / unknown-udp |
@@ -67,7 +70,9 @@ environment. `python3 -B appid_catalog.py` prints the catalog, `--json` emits it
 
 `port_usage` compares the server port with the catalog ports: `standard`,
 `nonstandard` (application-default violation) or `unknown` (no port known, no
-catalog ports, or an outcome rather than an application).
+catalog ports, or an outcome rather than an application). After an application
+shift the carrier's standard ports count too (`ssl` shifted from `smtp` on
+587 is `standard`); `shifted_from` names the carrier application.
 
 ## Session records
 
@@ -82,7 +87,7 @@ counted, not tracked):
  "end_reason": "Both TCP directions closed with FIN", "app": "web-browsing", "category": "general-internet",
  "subcategory": "internet-utility", "technology": "browser-based", "risk": 4, "characteristics": ["widely-used", "..."],
  "base_app": null, "implicitly_uses": [], "port_usage": "standard", "engine_status": "identified",
- "client_protocol": "http/1.1", "server_protocol": "http/1.1", "encryption": null, "reasons": ["..."]}
+ "client_protocol": "http/1.1", "server_protocol": "http/1.1", "encryption": null, "reasons": ["..."], "shifted_from": null}
 ```
 
 Byte counts are observed payload bytes per direction including retransmissions;
@@ -99,8 +104,9 @@ make apps
 
 ## Limits
 
-- Verdicts describe the initial message scope; later requests, application
-  shifts and tunnel contents are not inspected (v0.28 planned).
+- Verdicts describe the initial message scope plus one structural shift per
+  direction; later requests on a kept-alive connection and the contents of a
+  TLS tunnel (without `feed_decrypted`) are not inspected.
 - No proprietary signature corpus, cloud lookup, machine-learned classifier or
   URL category database is included. Specific web applications require
   configured host mappings or custom signatures (SIGNATURES.md).

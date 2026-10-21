@@ -1,7 +1,7 @@
-# Protocol detector v0.27
+# Protocol detector v0.28
 
 A standalone Python 3.9+ protocol classification engine and passive observation
-tool. **65 protocol families**, with explicit profiles rather than claims of full
+tool. **66 protocol families**, with explicit profiles rather than claims of full
 protocol/session validation. No Python runtime dependencies. Live capture uses
 an installed `tcpdump`; ordinary demos and tests require no capture privileges.
 We are staying in Python. This release does not integrate with or modify an SWG.
@@ -44,6 +44,24 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.28 — application shift at structural boundaries
+
+A message that announces a protocol change now ends the carrier's inspection
+exactly at the boundary, and the bytes after it are inspected as a new phase:
+HTTP `CONNECT` (tunnel contents, usually TLS; verdict `ssl` shifted from
+`http-proxy`), `Upgrade: websocket` requests and `101` responses (new
+**WebSocket** frame-header family), `Upgrade: h2c`, SMTP `STARTTLS` (watched
+after EHLO), IMAP `STARTTLS`, POP3 `STLS`, FTP `AUTH TLS`, PostgreSQL and MySQL
+`SSLRequest`, and RDP security negotiation (the server Connection Confirm is now
+parsed too). The carrier identification is published first and never removed;
+a shifted phase that identifies is published as a `shifted` event with
+`shift`/`shift_from` evidence, one that fails leaves `shifted_payload` context.
+Session verdicts carry `shifted_from`, add the carrier to `implicitly_uses` and
+accept the carrier's standard port (ssl after STARTTLS on 587 is `standard`).
+Both phases share one byte budget. Coverage is **66 families, 60 automatic**,
+70 catalog applications (`http-proxy`, `websocket` added); 391 tests pass. See
+PROTOCOLS.md (v0.28 section), APPID.md and BENCHMARK-V028.md.
 
 ## New in v0.27 — 23 more decoders and greeting/command correlation
 

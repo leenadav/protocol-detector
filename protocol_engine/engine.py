@@ -46,6 +46,10 @@ class Inspector:
         self._terminal = False
         self._inner = None
         self._outer = None
+        self._hint_source = "caller"
+        self._next = None      # Inspector for the phase after a structural application shift
+        self._carrier = None   # identification that announced the shift
+        self._shift = None     # boundary name
 
     @property
     def candidate(self):
@@ -75,7 +79,7 @@ class Inspector:
         self._unknown = None
         evidence = (Evidence("application", match.name, "signature:" + _UNKNOWN_FAMILY, "configured_signature"),)
         if self._hint is not None:
-            evidence += (Evidence("candidate_hint", self._hint, "caller", "context"),)
+            evidence += (Evidence("candidate_hint", self._hint, self._hint_source, "context"),)
         return self._finish(Observation(status="identified", application=match.name, evidence=evidence,
                                         reason="Custom signature matched an unknown payload prefix; no protocol profile validated",
                                         scope="signature_match"))
@@ -95,12 +99,91 @@ class Inspector:
         self._prefix.clear()
         return self._publish(observation, kind)
 
+    # -- application shift at a structural boundary (CONNECT, Upgrade, STARTTLS, SSLRequest, RDP negotiation) --
+
+    def _begin_shift(self, shift, rest):
+        """The parser consumed exactly up to a boundary after which another protocol starts.
+
+        The identification is published as it stands. Bytes after the boundary go
+        to a fresh inner Inspector that shares the remaining byte budget; when it
+        reaches a terminal observation the merged result is published as a
+        "shifted" event. A failed inner inspection never removes the carrier's
+        identification: it is recorded as shifted_payload context.
+        """
+        boundary, expected = shift
+        events = self._publish(self._identified())
+        self._parser = None
+        self._continuing = False
+        self._prefix.clear()
+        self._carrier, self._shift = self.observation, boundary
+        remaining = self.config.max_bytes - self.metrics.bytes_inspected
+        if remaining < 64:
+            self._next = None
+            return events + self._finish(self._shift_result(Observation(status="budget_exhausted", reason="Byte budget exhausted at the shift boundary")), "shifted")
+        config = replace(self.config, max_bytes=remaining) if remaining != self.config.max_bytes else self.config
+        self._next = Inspector(config, self.rules, self.source, protocol_hint=expected, signatures=self.signatures)
+        self._next._hint_source = "shift:" + boundary
+        if rest:
+            events += self._forward(rest)
+        return events
+
+    def _forward(self, data):
+        inner = self._next
+        bytes_before, calls_before = inner.metrics.bytes_inspected, inner.metrics.parser_calls
+        events = inner.feed(data)
+        self.metrics.bytes_inspected += inner.metrics.bytes_inspected - bytes_before
+        self.metrics.parser_calls += inner.metrics.parser_calls - calls_before
+        return self._merge_shift() if events else ()
+
+    def _shift_result(self, inner):
+        carrier, boundary = self._carrier, self._shift
+        marker = (Evidence("shift", boundary, self.source, "structural"),)
+        if inner.status == "identified":
+            kept = tuple(e for e in carrier.evidence
+                         if (e.field == "hostname" and inner.hostname is None) or (e.field == "application" and inner.application is None and inner.hostname is None))
+            evidence = inner.evidence + kept + marker + (Evidence("shift_from", carrier.application_protocol or carrier.encryption or "unknown", self.source, "structural"),)
+            return replace(inner, hostname=inner.hostname if inner.hostname is not None else carrier.hostname,
+                           application=inner.application if (inner.application is not None or inner.hostname is not None) else carrier.application,
+                           evidence=evidence, reason="After {} boundary: {}".format(boundary, inner.reason))
+        return replace(carrier, evidence=carrier.evidence + marker + (Evidence("shifted_payload", inner.status, self.source, "context"),),
+                       reason=carrier.reason + "; bytes after the {} boundary: {}".format(boundary, inner.reason))
+
+    def _merge_shift(self):
+        inner = self._next
+        if inner.observation.status == "detecting":
+            return ()
+        merged = self._shift_result(inner.observation)
+        if inner._terminal:
+            self._next = None
+            self._carrier = None
+            self._terminal = True
+        return self._publish(merged, "shifted")
+
+    def _continue(self, chunk):
+        """Bytes for a parser that already identified (fingerprints, STARTTLS watch)."""
+        try:
+            consumed = self._parser.feed(chunk)
+            self.metrics.bytes_inspected += consumed
+        except ParseError:
+            self.metrics.bytes_inspected += len(chunk)
+            return self._finish(self._identified(), "refined")
+        if not self._parser.continues:
+            shift = getattr(self._parser, "shift", None)
+            if shift is not None:
+                return self._begin_shift(shift, chunk[consumed:])
+            return self._finish(self._identified(), "refined")
+        if self.metrics.bytes_inspected >= self.config.max_bytes:
+            return self._finish(self._identified(), "refined")
+        return ()
+
     def invalidate(self, reason: str) -> Tuple[Event, ...]:
         """Call when upstream reassembly/provenance is no longer trustworthy."""
         if not isinstance(reason, str) or not reason or len(reason) > 256:
             raise ValueError("Invalidation reason must contain 1..256 characters")
         self._inner = None
         self._outer = None
+        self._next = None
+        self._carrier = None
         self._unknown = None
         self._terminal = True
         self._parser = None
@@ -112,7 +195,16 @@ class Inspector:
         if not isinstance(reason, str) or not reason or len(reason) > 256:
             raise ValueError("End reason must contain 1..256 characters")
         if not self._terminal:
+            if self._next is not None:
+                events = self._next.end(reason)
+                if events:
+                    return self._merge_shift()
+                self._next = None
+                return self._finish(self._shift_result(Observation(status="incomplete", reason=reason)), "shifted")
             if self._continuing:
+                shift = getattr(self._parser, "shift", None)
+                if shift is not None:
+                    return self._begin_shift(shift, b"") + self.end(reason)
                 return self._finish(self._identified(), "refined")  # keep the identification; no further evidence
             if self._unknown is not None:
                 return self._unknown_observation("Prefix outside supported protocol families")
@@ -139,7 +231,7 @@ class Inspector:
         evidence = [Evidence("encryption" if encryption else "application_protocol",
                              encryption or protocol, self.source, "structural")]
         if self._hint is not None:
-            evidence.append(Evidence('candidate_hint', self._hint, 'caller', 'context'))
+            evidence.append(Evidence('candidate_hint', self._hint, self._hint_source, 'context'))
         host_source = "tls_sni" if encryption else "http_host"
         application = None
         if hostname:
@@ -174,6 +266,8 @@ class Inspector:
         self.metrics.updates += 1
         allowance = self.config.max_bytes - self.metrics.bytes_inspected
         chunk = data[:allowance]
+        if self._next is not None:
+            return self._forward(chunk)
         if self._unknown is not None:
             # Dispatch already failed; only unknown-payload signatures remain. Collect a
             # bounded prefix and evaluate after each update: a positive match is final,
@@ -215,18 +309,10 @@ class Inspector:
                     self._prefix.clear()
             self.metrics.parser_calls += 1
             if self._continuing:
-                # Already identified: the parser only derives optional evidence now.
-                # Any failure or budget end keeps the identification and stops quietly.
-                try:
-                    self.metrics.bytes_inspected += self._parser.feed(chunk)
-                except ParseError:
-                    self.metrics.bytes_inspected += len(chunk)
-                    return self._finish(self._identified(), "refined")
-                if not self._parser.continues:
-                    return self._finish(self._identified(), "refined")
-                if self.metrics.bytes_inspected >= self.config.max_bytes:
-                    return self._finish(self._identified(), "refined")
-                return ()
+                # Already identified: the parser only derives optional evidence now or
+                # watches for a shift boundary. Any failure or budget end keeps the
+                # identification and stops quietly.
+                return self._continue(chunk)
             # Charge submitted new bytes conservatively on errors. Prefix bytes
             # were already charged while dispatch waited for a discriminator.
             new_bytes = len(chunk) - previous
@@ -236,20 +322,17 @@ class Inspector:
             if self._parser is not None and self._parser.done:
                 if getattr(self._parser, "continues", False):
                     # Publish the identification now; keep the parser for derived evidence
-                    # (for example SSH KEXINIT after the banner). Remaining bytes of this
-                    # chunk belong to the continuation.
+                    # (for example SSH KEXINIT after the banner) or a later shift command
+                    # (SMTP STARTTLS). Remaining bytes of this chunk belong to the continuation.
                     self._continuing = True
                     events = self._publish(self._identified())
                     rest = chunk[consumed:]
                     if rest:
-                        try:
-                            self.metrics.bytes_inspected += self._parser.feed(rest)
-                        except ParseError:
-                            self.metrics.bytes_inspected += len(rest)
-                            return events + self._finish(self._identified(), "refined")
-                        if not self._parser.continues:
-                            return events + self._finish(self._identified(), "refined")
+                        events += self._continue(rest)
                     return events
+                shift = getattr(self._parser, "shift", None)
+                if shift is not None:
+                    return self._begin_shift(shift, chunk[consumed:])
                 return self._finish(self._identified())
         except BudgetError as error:
             return self._finish(Observation(status="budget_exhausted", reason=str(error)))

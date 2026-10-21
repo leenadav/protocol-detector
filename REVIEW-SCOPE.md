@@ -1,10 +1,31 @@
-# Review scope: protocol detector v0.27
+# Review scope: protocol detector v0.28
 
-Python3.9-compatible IPv4 passive classification: 65 families, 60 automatic.
+Python3.9-compatible IPv4 passive classification: 66 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog.
 
-New focus (v0.27): 23 decoders in protocol_engine/session_text.py, windows.py,
+New focus (v0.28): the application-shift state machine in engine.py
+(`_begin_shift`, `_forward`, `_shift_result`, `_merge_shift`, `_continue`) and
+the boundary detection in parsers.py (`_shift_boundary`), extended.py
+(`_consume_smtp`, IMAP/POP3/FTP shifts), binary.py, database.py, remote.py
+(RDP confirm), ics.py (TPKT route) and upgrade.py (WebSocket). Trace: byte
+accounting across both phases against max_bytes (inner budget = remaining,
+< 64 ends the shift), update budget, parser_calls; publish-before-shift
+ordering and the "shifted" event kind; carrier evidence kept in a merged
+observation (hostname/application only when the inner has none) and never a
+downgrade of the carrier; the LineParser continuation returning at the
+identifying line so a same-chunk STARTTLS error cannot make EHLO malformed;
+SMTP watch bounds (512-byte lines, known verbs, NOOP count); CONNECT
+authority-form regex and the no-shift fallback; Upgrade/Connection/Sec-WebSocket
+header rules, body exclusion, 101 handling, h2c server frames excluded;
+WebSocket frame-header bounds (RSV, opcodes, minimal lengths, control frames);
+MySQL SSLRequest capability/reserved checks within the hint-only family; RDP CC
+DST-REF/class/selected-protocol checks and failure codes; `shifted_from`
+derivation in appid (http-connect -> http-proxy), implicitly_uses and carrier
+port acceptance; invalidate/end/feed_decrypted interplay with a pending shift.
+391 tests pass. BENCHMARK-V028.md.
+
+Previous focus (v0.27): 23 decoders in protocol_engine/session_text.py, windows.py,
 vpn.py, telemetry.py, ics.py, datainfra.py, their dispatch routes
 (dispatch.py 0x00/0x01, 0x03 TPKT, 0x04/0x63.., 0x68, 0xff blocks) and UDP
 candidate probes (datagram.py). Trace: every length/count field against the

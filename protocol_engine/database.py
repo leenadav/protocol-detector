@@ -13,14 +13,18 @@ class MySQLParser(FrameParser):
     scope = 'protocol_header'
 
     def frame_size(self, header):
+        size = int.from_bytes(header[:3], 'little')
+        if header[3] == 1 and size == 32:
+            return 36  # client SSLRequest answering the server handshake
         if header[3] != 0:
             raise ParseError('MySQL initial server handshake requires sequence zero')
-        size = int.from_bytes(header[:3], 'little')
         if size < 32:
             raise ParseError('MySQL packet shorter than modern handshake profile')
         return size + 4
 
     def validate(self, data):
+        if data[3] == 1:
+            return self._ssl_request(data[4:])
         if data[4] != 10:
             raise UnsupportedPrefix('Only MySQL server HandshakeV10 is supported')
         end = data.find(b'\0', 5, min(len(data), 134))
@@ -48,6 +52,20 @@ class MySQLParser(FrameParser):
             raise UnsupportedPrefix('MySQL authentication plugin outside supported handshake profile')
         self.reason = 'MySQL modern server handshake validated; advertised version/capabilities, authentication and commands unverified'
         self.extra_evidence = (('mysql_tls_supported', str(bool(capabilities & 0x800)).lower(), 'server_handshake', 'offered'),)
+
+    def _ssl_request(self, payload):
+        """Protocol::SSLRequest: capability flags with CLIENT_SSL, max packet, charset, 23 reserved bytes."""
+        capabilities = int.from_bytes(payload[:4], 'little')
+        if capabilities & 0xa00 != 0xa00:
+            raise ParseError('MySQL SSLRequest requires CLIENT_PROTOCOL_41 and CLIENT_SSL')
+        if not payload[8]:
+            raise ParseError('MySQL SSLRequest character set must be nonzero')
+        if any(payload[9:28]):
+            raise ParseError('MySQL SSLRequest reserved bytes must be zero')  # bytes 28..31 may carry MariaDB extended capabilities
+        self.scope = 'negotiation_request'
+        self.reason = 'MySQL client SSLRequest validated; TLS follows, authentication unverified'
+        self.extra_evidence = (('mysql_client_ssl', 'requested', 'ssl_request', 'structural'),)
+        self.shift = ('mysql-sslrequest', 'tls')
 
 
 def _crc_table():

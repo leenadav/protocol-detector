@@ -249,10 +249,13 @@ class TPKTParser(FrameParser):
     def validate(self, data):
         from .remote import RDPParser
         rest = data[11:]
-        child = RDPParser(self.config) if (rest.startswith(b"Cookie: mstshash=") or rest[:1] == b"\x01" or not rest) else COTPParser(self.config)
+        rdp = rest.startswith(b"Cookie: mstshash=") or rest[:1] == b"\x01" or not rest or data[5] == 0xd0
+        child = RDPParser(self.config) if rdp else COTPParser(self.config)
         child.validate(data)
         self.child = child
         self.protocol_name = child.protocol_name
         self.reason = child.reason
+        self.scope = child.scope
+        self.shift = child.shift
         self.extra_evidence = getattr(child, "extra_evidence", ())
         self.family = child.protocol_name

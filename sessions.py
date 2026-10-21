@@ -75,7 +75,9 @@ class Stream:
                 status = "UNKNOWN"
             elif observation.status in ("budget_exhausted", "incomplete", "invalidated") and (candidate is None or name in candidates):
                 status = observation.status.upper()
-            results.append(Result(name.upper(), status, observation.reason if candidate is None or name in candidates
+            # A shifted phase (v0.28) identifies a family the first prefix never routed to; its
+            # reason explains the boundary and must not read as a dispatch exclusion.
+            results.append(Result(name.upper(), status, observation.reason if candidate is None or name in candidates or status == "MATCH"
                                   else "Excluded by prefix dispatch"))
         return results
 

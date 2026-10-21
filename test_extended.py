@@ -115,6 +115,12 @@ class ExtendedTests(unittest.TestCase):
             inspector = self.inspect(data)
             calls = inspector.metrics.parser_calls
             inspector.feed(b"later payload" * 1000)
+            if data.startswith(b"EHLO"):
+                # SMTP keeps watching one bounded command line for STARTTLS (v0.28); the first
+                # non-command line ends that watch, after which nothing is parsed again.
+                self.assertEqual(inspector.metrics.parser_calls, calls + 1)
+                calls += 1
+                inspector.feed(b"later payload" * 1000)
             self.assertEqual(inspector.metrics.parser_calls, calls)
             manager = SessionManager()
             a, b = ("192.0.2.1", 50000), ("192.0.2.2", 9876)

@@ -29,16 +29,37 @@ class TextParser(LineParser):
     In particular, EHLO can be a syntactically valid HTTP extension method;
     its first word alone must not select SMTP.
     """
+    SMTP_COMMANDS = frozenset((b"EHLO", b"HELO", b"MAIL", b"RCPT", b"DATA", b"RSET", b"NOOP", b"QUIT", b"VRFY", b"EXPN",
+                               b"HELP", b"AUTH", b"BDAT", b"STARTTLS"))
+
     def __init__(self, config):
         super().__init__(config, "http")
         self.family = "text"
         self.extra_evidence = ()
         self.control = None
+        self.watched = 0
 
     def feed(self, data):
         if self.continues:
             return LineParser.feed(self, data)
         return super().feed(data)
+
+    def _consume_smtp(self, line):
+        """After EHLO: watch a bounded number of client commands for STARTTLS (RFC 3207)."""
+        self.watched += 1
+        if len(line) + 2 > 512:
+            raise ParseError("SMTP command exceeds 512 bytes")
+        verb = line.split(b" ", 1)[0].upper()
+        if verb not in self.SMTP_COMMANDS:
+            raise ParseError("Unexpected SMTP command")
+        if verb == b"STARTTLS":
+            if line.upper() != b"STARTTLS":
+                raise ParseError("STARTTLS takes no parameters")
+            self.shift = ("starttls", "tls")
+            self.continues = False
+            return
+        if verb != b"NOOP" or self.watched >= min(self.config.max_headers, 8):
+            self.continues = False  # MAIL/AUTH/... begin the plaintext session; stop watching
 
     def consume_line(self, line):
         if self.first and not line.endswith((b"HTTP/1.0", b"HTTP/1.1")) and START.fullmatch(line):
@@ -88,6 +109,9 @@ class TextParser(LineParser):
             self.extra_evidence = (("smtp_client_identity", text, "smtp_greeting", "asserted"),)
             if self.contexts is not None:
                 self.contexts["smtp-req-argument"] = identity
+            # Keep reading commands for STARTTLS; the identification stands either way.
+            self.continues = True
+            self._line_handler = TextParser._consume_smtp
             return
         if line[:1] in (b'I', b'i', b'C', b'c'):
             match = _NATS_START.fullmatch(line)
@@ -121,15 +145,18 @@ class TextParser(LineParser):
                 self.scope = 'initial_message'
                 self.done = True
                 self.reason = 'IMAP tagged client command validated; arguments and credentials are not inspected or emitted'
+                if line.split(b" ")[1].upper() == b"STARTTLS":
+                    self.shift = ("starttls", "tls")
                 return
             classified = command_line(line)
             if classified is not None:
-                family, candidates = classified
+                family, candidates, shift = classified
                 if family is None:
                     raise AmbiguousPrefix("Command shared by FTP and POP3; the server greeting decides", candidates)
                 self.family = self.protocol_name = family
                 self.scope = 'initial_message'
                 self.done = True
+                self.shift = shift
                 self.reason = ('FTP client command syntax validated; arguments are not emitted, transfers unverified' if family == 'ftp'
                                else 'POP3 client command syntax validated; credentials are not emitted, mailbox unverified')
                 return

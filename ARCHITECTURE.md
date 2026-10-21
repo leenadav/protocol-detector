@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.27 — engine and observation contracts
+# Stream/datagram engine v0.28 — engine and observation contracts
 
 ## Ownership
 
@@ -576,3 +576,37 @@ reason and evidence. `TelnetParser` is a byte-at-a-time state machine with a
 encryption-only results (WireGuard, OpenVPN) and the `(protocol, reason)`
 contract otherwise. Every new validator bounds counts by `min(config.max_headers,
 N)` and refuses lengths that disagree with the datagram before touching bodies.
+
+## Application shift (v0.28)
+
+A parser announces a boundary by setting `shift = (boundary, expected_family)`
+when it completes; its `feed` must return the consumed count exactly at the
+boundary. `Inspector` then publishes the identification, drops the parser and
+creates an inner `Inspector` (`_next`) with the remaining byte budget
+(`replace(config, max_bytes=remaining)`; fewer than 64 bytes left ends the
+shift as `shifted_payload=budget_exhausted`), the same rules and signatures,
+and `protocol_hint=expected_family` whose evidence provenance is
+`shift:<boundary>` rather than `caller`. Later `feed` calls are forwarded; the
+inner metrics are added to the outer ones so `bytes_inspected` never exceeds
+the input. Every inner event is merged by `_shift_result`: an identified inner
+observation becomes the outer observation with `shift`/`shift_from` evidence
+and the carrier's hostname/application kept only when the inner offers none; a
+terminal non-identified inner observation re-publishes the carrier with
+`shifted_payload` context. Events carry kind `shifted`. `end()` on a pending
+shift ends the inner phase (`shifted_payload=incomplete`); `invalidate()`
+discards it. One shift per direction: the inner Inspector may itself continue
+(fingerprints) but a second boundary is not followed.
+
+The SMTP STARTTLS watch reuses the post-identification continuation: the
+EHLO line completes the identification and `LineParser.feed` returns at that
+line even when more bytes are present, so the Inspector publishes first and
+routes the following lines through `_continue`, where a parse error ends the
+watch quietly instead of turning an identified EHLO into `malformed`. A shift
+discovered during a continuation (STARTTLS) starts the inner phase from the
+bytes after that line.
+
+`RDPParser` now also validates the server Connection Confirm; `TPKTParser`
+routes 0xd0 to it and copies the child's scope and shift. `WebSocketParser`
+lives in `upgrade.py` and is registered as a hint-only family. `appid._build`
+accepts the carrier application (`shifted_from`), appends it to
+`implicitly_uses` and accepts the carrier's standard ports.

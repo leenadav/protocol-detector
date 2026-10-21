@@ -14,7 +14,7 @@ ARCHITECTURE/README updates, a Hebrew START-HERE note and a paired benchmark.
 | v0.25 | QUIC v1/v2 Initial: long header, HKDF/AES-128-GCM Initial decryption in pure Python, CRYPTO assembly, SNI/ALPN (h3) | done |
 | v0.26 | IP-level protocols and tunnel inner decode | dropped: the engine stays an application-layer classifier over TCP/UDP; non-TCP/UDP IP protocols remain counted as unsupported packets |
 | v0.27 | More decoders: FTP, POP3, IMAP client, Telnet, SMB1, NetBIOS, Kerberos, WireGuard, OpenVPN, PPTP, L2TP, TACACS+, SSDP, NetFlow/IPFIX, sFlow, Modbus, DNP3, BACnet, ISO-TSAP, ENIP, IEC104, Kafka, CQL, RTP (hint); greeting/command correlation (220+USER=ftp, +OK=pop3) | done (mDNS/LLMNR and S7comm deferred) |
-| v0.28 | Application shift at exact protocol boundaries: CONNECT tunnel, WebSocket upgrade, STARTTLS, PostgreSQL/MySQL SSLRequest, RDP PROTOCOL_SSL | planned |
+| v0.28 | Application shift at exact protocol boundaries: CONNECT tunnel, WebSocket/h2c upgrade, SMTP/IMAP/POP3 STARTTLS, FTP AUTH TLS, PostgreSQL/MySQL SSLRequest, RDP negotiation (client request and server confirm) | done |
 | v0.29 | Unknown-traffic heuristics (entropy, printable ratio) and nDPI-style flow risks | planned |
 | v0.30 | Policy engine (allow/deny by app/category/risk, implicit use, application-default, dependency warnings), unified CLI, CI matrix, final docs | planned |
 

@@ -20,6 +20,8 @@ class PostgreSQLParser(FrameParser):
                 raise ParseError("PostgreSQL encryption request length must be eight")
             self.scope = "negotiation_request"
             self.reason = "PostgreSQL SSL/GSS negotiation request validated; encryption not established"
+            if code == 80877103:
+                self.shift = ("postgresql-sslrequest", "tls")  # after the server's 'S' the client starts TLS
             return
         if code >> 16 != 3 or code & 65535 > 2:
             raise UnsupportedPrefix("Unsupported PostgreSQL startup version")
