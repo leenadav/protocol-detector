@@ -1,11 +1,16 @@
-# Review scope: protocol detector v0.37
+# Review scope: protocol detector v0.38
 
 Python3.9-compatible IPv4 passive classification: 67 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.36-v0.37): HTTP2ServerParser behind the 101 h2c shift
+New focus (v0.38): `_snmpv3` and the shared `_snmp_pdu` in network.py.
+Trace: every BER field bounded by its enclosing length, flag combinations,
+USM length limits, the privacy/plaintext choice, Report bindings accepting one
+value TLV, binding budget, no secret in evidence or reason. 427 tests pass.
+
+Previous focus (v0.36-v0.37): HTTP2ServerParser behind the 101 h2c shift
 (no preface, no fingerprint, shift-only registration) and
 tools/compare_engine.py with its CI job (baseline package loading without
 polluting the working tree's imports, comparison keys, report rendering,

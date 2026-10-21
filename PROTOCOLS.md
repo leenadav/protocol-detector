@@ -66,7 +66,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | smb1 | tcp | Automatic profiles | negotiation_request | NetBIOS session header plus SMB_COM_NEGOTIATE request with dialect strings; maps to the smb application |
 | smb2 | tcp | Automatic profiles | negotiation_request | Direct TCP SMB2/3 NEGOTIATE including 3.1.1 context framing; offers only |
 | smtp | tcp | Automatic profiles | initial_message | EHLO/HELO only; ambiguous 220 banners unknown |
-| snmp | udp | Automatic profiles | datagram | v1/v2c Get/GetNext/GetBulk read requests; no v3, responses or traps |
+| snmp | udp | Automatic profiles | datagram | v1/v2c Get/GetNext/GetBulk read requests; v3 messages (USM header, plaintext read/report or encrypted scoped PDU); no responses or traps |
 | socks5 | tcp | Automatic profiles | initial_message | No-auth offer plus client request; server unverified |
 | ssdp | udp | Automatic profiles | datagram | M-SEARCH/NOTIFY/response HTTPU header block with SSDP headers |
 | ssh | tcp | Automatic profiles | initial_message | Leading SSH-2.0/1.99 identification |
@@ -238,7 +238,7 @@ These are remaining engineering work, not implicitly identified protocols:
 | WebSocket / gRPC | Trusted HTTP upgrade/transaction boundaries or HTTP/2 headers/streams and application framing |
 | FTP / POP3 / additional IMAP commands | Additional validators and bidirectional evidence for ambiguous greetings/commands |
 | Additional database/RDP phases | MySQL client/auth/query phases, MongoDB compressed/legacy/telemetry sections, RDP later phases and independent traffic corpora |
-| RTP / SNMPv3 / NTS and others | Protocol-specific validation and evidence rules, especially for weak short headers |
+| NTS, SNMP responses/traps and others | Protocol-specific validation and evidence rules, especially for weak short headers (RTP is hinted since v0.27, SNMPv3 messages since v0.38) |
 | DNS-over-HTTPS, general application/product identity | Validated outer transactions plus inner payload inspection and explicit attribution evidence |
 | Persistent sessions and upgrades | Host integration for phase/transaction boundaries; no guessing from arbitrary payload substrings |
 
@@ -984,3 +984,27 @@ server bytes match nothing leaves `http/1.x` with `shifted_payload` context.
 A 3xx/4xx/5xx answer, a plain request or an unobserved direction opens
 nothing. HTTP responses now carry `http_status` evidence. Capture order does
 not matter: the check runs on every identification in either direction.
+
+## SNMPv3 messages (v0.38)
+
+The `snmp` family now also validates version-3 messages (RFC 3412 section 6,
+USM parameters per RFC 3414): `msgGlobalData` with `msgID >= 0`,
+`msgMaxSize >= 484`, a one-byte `msgFlags` with reserved bits clear and no
+privacy without authentication, `msgSecurityModel >= 1`;
+`msgSecurityParameters` as the USM SEQUENCE (engine id <= 32 bytes, boots and
+time >= 0, user <= 32, authentication parameters <= 64 and present when the
+auth flag is set, privacy parameters <= 32 and present when the priv flag is
+set) or, for other models, an opaque string <= 256 bytes; then either an
+encrypted scoped PDU (non-empty OCTET STRING, required when priv is set) or a
+plaintext ScopedPDU (context engine and name <= 32 bytes) carrying a
+Get/GetNext/GetBulk request with NULL values or a Report PDU with one value per
+binding, <= 128 bindings. Reported as `snmp/3` with structural evidence
+`snmp_security` (`usm` or `model-N`), `snmp_scoped_pdu` (`plaintext`/
+`encrypted`) and `snmp_flags`. User names, engine ids, authentication/privacy
+parameters, context names and values are never emitted. Set, Inform, Trap and
+Response PDUs, SNMPv3 over TCP and key or digest verification are outside the
+profile; the v1/v2c read-request profile is unchanged (both now share the PDU
+walk).
+
+Primary specifications: [RFC 3412 6](https://www.rfc-editor.org/rfc/rfc3412.html#section-6),
+[RFC 3414 2.4](https://www.rfc-editor.org/rfc/rfc3414.html#section-2.4), [RFC 3416](https://www.rfc-editor.org/rfc/rfc3416.html).

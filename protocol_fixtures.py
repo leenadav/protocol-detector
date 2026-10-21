@@ -305,3 +305,16 @@ HINTED_STREAM_CASES += ((S7COMM, 's7comm', 's7comm'),)
 # v0.36: server side of an h2c upgrade.
 H2C_101 = b'HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: h2c\r\n\r\n'
 H2_SERVER_SETTINGS = b'\x00\x00\x0c\x04\x00\x00\x00\x00\x00' + b'\x00\x03\x00\x00\x00\x64' + b'\x00\x04\x00\x01\x00\x00'
+
+# v0.38: SNMPv3 (RFC 3412) discovery request and an authenticated, encrypted message.
+def _snmpv3(flags, engine, user, auth_params, priv_params, scoped):
+    header = _ber(0x30, _ber(2, b'\x12\x34\x56\x78') + _ber(2, b'\x00\xff\xe3') + _ber(4, bytes([flags])) + _ber(2, b'\x03'))
+    usm = _ber(0x30, _ber(4, engine) + _ber(2, b'\x00') + _ber(2, b'\x00') + _ber(4, user) + _ber(4, auth_params) + _ber(4, priv_params))
+    return _ber(0x30, _ber(2, b'\x03') + header + _ber(4, usm) + scoped)
+
+
+_discovery_pdu = _ber(0xa0, _ber(2, b'\x01') + _ber(2, b'\x00') + _ber(2, b'\x00') + _ber(0x30, b''))
+SNMPV3_DISCOVERY = _snmpv3(0x04, b'', b'', b'', b'', _ber(0x30, _ber(4, b'') + _ber(4, b'') + _discovery_pdu))
+SNMPV3_ENCRYPTED = _snmpv3(0x07, b'\x80\x00\x1f\x88\x80\x01\x02\x03\x04', b'operator', bytes(12), bytes(8), _ber(4, bytes(range(48))))
+del _discovery_pdu
+DATAGRAM_CASES += ((SNMPV3_DISCOVERY, 'snmp/3'), (SNMPV3_ENCRYPTED, 'snmp/3'))

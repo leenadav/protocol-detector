@@ -14,7 +14,7 @@ evidence strength is `heuristic` and their thresholds are listed here.
 | Risk | Severity | Condition (all structural unless marked heuristic) |
 |---|---|---|
 | `nonstandard-port` | medium | Identified application with `port_usage=nonstandard` (catalog ports, carrier ports after a shift count as standard) |
-| `cleartext-credential-protocol` | medium | Identified application whose catalog characteristics include `cleartext-credentials` and no encryption in the session (FTP, POP3, IMAP, SMTP, Telnet, HTTP, ...). A STARTTLS/AUTH TLS shift to `ssl` clears it |
+| `cleartext-credential-protocol` | medium | Identified application whose catalog characteristics include `cleartext-credentials` and no encryption in the session (FTP, POP3, IMAP, SMTP, Telnet, HTTP, SNMPv1/v2c, ...). A STARTTLS/AUTH TLS shift to `ssl` clears it; an identified `snmp/3` message (v0.38) is exempt because USM never places the key on the wire |
 | `obsolete-protocol` | high | SMB1 negotiate; Telnet; SSH banner `1.99`; a ServerHello selecting TLS 1.1 or lower (`selected_tls_version`); RDP request offering only standard RDP security (`rdp_security_flags=0`) or a Connection Confirm selecting it (`rdp_selected_protocol=0`) |
 | `tls-legacy-version-offer` | medium | ClientHello whose highest offered version is TLS 1.1 or lower: `supported_versions` when present (GREASE/unknown values skipped, legacy field ignored per RFC 8446 4.2.1), else the legacy field. Evidence `tls_offered_max_version` |
 | `tls-missing-sni` | low | ClientHello (evidence `tls_offered_max_version` present) without `server_name` |

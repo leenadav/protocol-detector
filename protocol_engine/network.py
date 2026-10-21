@@ -1,5 +1,7 @@
 """Bounded management/routing protocol profiles; no peer authentication."""
+from .datagram_result import DatagramMatch
 from .framing import FrameParser, ber_field
+from .model import Evidence
 from .parsers import BudgetError, ParseError
 from .extended import UnsupportedPrefix
 
@@ -191,24 +193,12 @@ def _oid(value):
         raise ParseError("Truncated SNMP OID subidentifier")
 
 
-def snmp(data, config):
-    message, end = ber_field(data, 0, len(data), 0x30)
-    if end != len(data):
-        raise ParseError("Trailing SNMP datagram data")
-    version, pos = _integer(message, 0)
-    if version not in (0, 1):
-        raise UnsupportedPrefix("Only SNMPv1/v2c read requests supported")
-    _, pos = ber_field(message, pos, len(message), 4)  # never expose community
-    if pos >= len(message) or message[pos] not in ((0xa0, 0xa1) if version == 0 else (0xa0, 0xa1, 0xa5)):
-        raise UnsupportedPrefix("Only SNMP Get/GetNext/GetBulk supported")
-    kind = message[pos]
-    pdu, pos = ber_field(message, pos, len(message), kind)
-    if pos != len(message):
-        raise ParseError("Trailing SNMP PDU data")
+def _snmp_pdu(pdu, kind):
+    """Request-id, error/bulk integers and variable bindings of a Get/GetNext/GetBulk/Report PDU."""
     _, pos = _integer(pdu, 0)
     first, pos = _integer(pdu, pos)
     second, pos = _integer(pdu, pos)
-    if first < 0 or second < 0 or (kind != 0xa5 and (first or second)):
+    if first < 0 or second < 0 or (kind in (0xa0, 0xa1) and (first or second)):
         raise ParseError("Invalid SNMP request status/index or bulk counts")
     bindings, pos = ber_field(pdu, pos, len(pdu), 0x30)
     if pos != len(pdu):
@@ -221,9 +211,104 @@ def snmp(data, config):
         binding, pos = ber_field(bindings, pos, len(bindings), 0x30)
         oid, cursor = ber_field(binding, 0, len(binding), 6)
         _oid(oid)
-        null, cursor = ber_field(binding, cursor, len(binding), 5)
-        if null or cursor != len(binding):
+        if kind == 0xa8:
+            if cursor >= len(binding):
+                raise ParseError("SNMP report binding without a value")
+            _, cursor = ber_field(binding, cursor, len(binding), binding[cursor])  # counter or exception value, not emitted
+        else:
+            null, cursor = ber_field(binding, cursor, len(binding), 5)
+            if null:
+                raise ParseError("SNMP read binding must contain NULL value")
+        if cursor != len(binding):
             raise ParseError("SNMP read binding must contain NULL value")
+
+
+def _snmpv3(message, pos):
+    """SNMPv3 message (RFC 3412 6): global header, security parameters and a scoped PDU, plaintext or encrypted."""
+    header, pos = ber_field(message, pos, len(message), 0x30)
+    message_id, cursor = _integer(header, 0)
+    max_size, cursor = _integer(header, cursor)
+    flags, cursor = ber_field(header, cursor, len(header), 4)
+    model, cursor = _integer(header, cursor)
+    if cursor != len(header):
+        raise ParseError("Trailing SNMPv3 header data")
+    if message_id < 0 or max_size < 484 or model < 1:
+        raise ParseError("SNMPv3 header values outside RFC 3412 ranges")
+    if len(flags) != 1 or flags[0] & 0xf8:
+        raise ParseError("SNMPv3 msgFlags must be one byte with reserved bits clear")
+    auth, priv, reportable = flags[0] & 1, flags[0] & 2, flags[0] & 4
+    if priv and not auth:
+        raise ParseError("SNMPv3 privacy without authentication is invalid")
+    params, pos = ber_field(message, pos, len(message), 4)
+    if model == 3:
+        usm, end = ber_field(params, 0, len(params), 0x30)
+        if end != len(params):
+            raise ParseError("Trailing USM security parameter data")
+        engine_id, cursor = ber_field(usm, 0, len(usm), 4)
+        boots, cursor = _integer(usm, cursor)
+        clock, cursor = _integer(usm, cursor)
+        user, cursor = ber_field(usm, cursor, len(usm), 4)
+        auth_params, cursor = ber_field(usm, cursor, len(usm), 4)
+        priv_params, cursor = ber_field(usm, cursor, len(usm), 4)
+        if cursor != len(usm) or len(engine_id) > 32 or len(user) > 32 or len(auth_params) > 64 or len(priv_params) > 32 or boots < 0 or clock < 0:
+            raise ParseError("USM security parameters outside profile")
+        if auth and not auth_params:
+            raise ParseError("SNMPv3 authentication flag without authentication parameters")
+        if priv and not priv_params:
+            raise ParseError("SNMPv3 privacy flag without privacy parameters")
+        security = "usm"
+    else:
+        if len(params) > 256:
+            raise ParseError("SNMPv3 security parameters exceed profile")
+        security = "model-{}".format(model)
+    if pos >= len(message):
+        raise ParseError("SNMPv3 message without scoped PDU")
+    if priv:
+        encrypted, pos = ber_field(message, pos, len(message), 4)
+        if not encrypted or pos != len(message):
+            raise ParseError("SNMPv3 encrypted scoped PDU framing invalid")
+        scope = "encrypted"
+    else:
+        scoped, pos = ber_field(message, pos, len(message), 0x30)
+        if pos != len(message):
+            raise ParseError("Trailing SNMPv3 message data")
+        context_engine, cursor = ber_field(scoped, 0, len(scoped), 4)
+        context_name, cursor = ber_field(scoped, cursor, len(scoped), 4)
+        if len(context_engine) > 32 or len(context_name) > 32 or cursor >= len(scoped):
+            raise ParseError("SNMPv3 scoped PDU context outside profile")
+        kind = scoped[cursor]
+        if kind not in (0xa0, 0xa1, 0xa5, 0xa8):
+            raise UnsupportedPrefix("SNMPv3 profile covers Get/GetNext/GetBulk requests and Report PDUs")
+        pdu, cursor = ber_field(scoped, cursor, len(scoped), kind)
+        if cursor != len(scoped):
+            raise ParseError("Trailing SNMPv3 scoped PDU data")
+        _snmp_pdu(pdu, kind)
+        scope = "plaintext"
+    evidence = (Evidence("application_protocol", "snmp/3", "wire", "structural"),
+                Evidence("snmp_security", security, "wire", "structural"),
+                Evidence("snmp_scoped_pdu", scope, "wire", "structural"),
+                Evidence("snmp_flags", "".join(name for bit, name in ((auth, "auth"), (priv, "priv"), (reportable, "reportable")) if bit) or "none", "wire", "structural"))
+    return DatagramMatch("SNMPv3 header, security parameter and {} scoped PDU framing validated; user, engine, keys and values unverified and never emitted".format(scope),
+                         application_protocol="snmp/3", evidence=evidence)
+
+
+def snmp(data, config):
+    message, end = ber_field(data, 0, len(data), 0x30)
+    if end != len(data):
+        raise ParseError("Trailing SNMP datagram data")
+    version, pos = _integer(message, 0)
+    if version == 3:
+        return _snmpv3(message, pos)
+    if version not in (0, 1):
+        raise UnsupportedPrefix("Only SNMPv1/v2c read requests and SNMPv3 messages supported")
+    _, pos = ber_field(message, pos, len(message), 4)  # never expose community
+    if pos >= len(message) or message[pos] not in ((0xa0, 0xa1) if version == 0 else (0xa0, 0xa1, 0xa5)):
+        raise UnsupportedPrefix("Only SNMP Get/GetNext/GetBulk supported")
+    kind = message[pos]
+    pdu, pos = ber_field(message, pos, len(message), kind)
+    if pos != len(message):
+        raise ParseError("Trailing SNMP PDU data")
+    _snmp_pdu(pdu, kind)
     return "snmp/" + ("1" if version == 0 else "2c"), "SNMP read request BER/PDU/OID framing validated; community and response unverified"
 
 

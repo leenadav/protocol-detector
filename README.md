@@ -1,4 +1,4 @@
-# Protocol detector v0.37
+# Protocol detector v0.38
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **67 protocol families**, with explicit profiles rather than claims of full
@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 425 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 429 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, SBOM, pinned actions), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -69,6 +69,14 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.38 — SNMPv3
+
+The SNMP profile covers version 3: the global header (flags rules, size and
+model bounds), USM security parameters within RFC 3414 limits, and a plaintext
+Get/GetNext/GetBulk/Report scoped PDU or an encrypted one. Reported as
+`snmp/3` with `snmp_security`, `snmp_scoped_pdu` and `snmp_flags` evidence;
+users, engine ids, keys and values are never emitted. 429 tests pass.
 
 ## New in v0.37 — behaviour diff against the previous commit
 

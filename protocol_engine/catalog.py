@@ -56,7 +56,7 @@ _SUPPORTED = (
     ProtocolSupport("rdp", ("tcp",), "negotiation_request", "TPKT/X.224 with RDP negotiation, optional cookie/correlation; no routing token or session"),
     ProtocolSupport("bgp", ("tcp",), "negotiation_request", "BGPv4 OPEN, standard optional lengths and capability framing"),
     ProtocolSupport("smb2", ("tcp",), "negotiation_request", "Direct TCP SMB2/3 NEGOTIATE including 3.1.1 context framing; offers only"),
-    ProtocolSupport("snmp", ("udp",), "datagram", "v1/v2c Get/GetNext/GetBulk read requests; no v3, responses or traps"),
+    ProtocolSupport("snmp", ("udp",), "datagram", "v1/v2c Get/GetNext/GetBulk read requests; v3 messages (USM header, plaintext read/report or encrypted scoped PDU); no responses or traps"),
     ProtocolSupport("tftp", ("udp",), "datagram", "RRQ/WRQ with bounded options; no transfer state"),
     ProtocolSupport("ntp", ("udp",), "datagram", "Hint required: v3/v4 base client/server header, no extensions/authentication", True),
     ProtocolSupport("http", ("tcp",), "initial_message", "HTTP/1.0 and 1.1 start-line/headers"),

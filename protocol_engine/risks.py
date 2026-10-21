@@ -27,6 +27,9 @@ _LEGACY_TLS = frozenset(("1.0", "1.1", "SSL 3.0"))
 _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags", "rdp_selected_protocol",
                      "tls_offered_max_version", "dns_query_shape", "payload_class"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
+# Protocol versions whose credentials never travel in cleartext even though the
+# application family lists `cleartext-credentials` for its older versions.
+_PROTECTED_VERSIONS = frozenset(("snmp/3",))
 _NO_RISKS = ()
 _APP_RISKS = {}
 
@@ -70,6 +73,11 @@ def flow_risks(verdict, client, server):
         if status == "identified":
             if obs.application_protocol in _OBSOLETE_PROTOCOLS:
                 found.append("obsolete-protocol")
+            elif obs.application_protocol in _PROTECTED_VERSIONS and "cleartext-credential-protocol" in found:
+                # SNMPv3 keys are never on the wire (USM authenticates with HMAC
+                # parameters and encrypts the scoped PDU); only v1/v2c community
+                # strings are a cleartext credential.
+                found.remove("cleartext-credential-protocol")
         elif status != "unknown":
             continue
         for evidence in obs.evidence:

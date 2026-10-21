@@ -171,7 +171,7 @@ _ENTRIES = (
     _app("smb", "networking", "infrastructure", "client-server", 4, "SMB2/3 direct TCP NEGOTIATE",
          ("transfers-files", "widely-used", "used-by-malware", "has-known-vulnerabilities"), ("tcp/445",),
          aliases=("ms-ds-smb", "ms-ds-smbv2", "ms-ds-smbv3", "cifs", "smb2")),
-    _app("snmp", "networking", "infrastructure", "network-protocol", 2, "SNMPv1/v2c read requests",
+    _app("snmp", "networking", "infrastructure", "network-protocol", 2, "SNMPv1/v2c read requests and SNMPv3 messages",
          ("has-known-vulnerabilities", "cleartext-credentials"), ("udp/161", "udp/162")),
     _app("tftp", "general-internet", "file-sharing", "client-server", 4, "TFTP read/write request",
          ("transfers-files", "has-known-vulnerabilities"), ("udp/69",)),
