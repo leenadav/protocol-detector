@@ -381,3 +381,9 @@ pre-authentication-required השגרתי. 458 בדיקות עוברות.
 ומחלקת SQLSTATE מדווחות; מלחים והודעות אינם נפלטים), BindResponse של LDAP (קוד תוצאה), מסגרות תשובה של Cassandra
 (ERROR, READY, AUTHENTICATE, SUPPORTED) ו־HandshakeResponse41 של לקוח MySQL (תוסף מדווח; משתמש ומסד נתונים אינם
 נפלטים) מאומתים, כך ששני הכיוונים של חיבורי מסדי הנתונים האלה נושאים ראיות מבניות. 463 בדיקות עוברות.
+
+
+עדכון 0.46: תשובות שרת בדאטהגרמים: הצד השרתי של DTLS (HelloVerifyRequest, ServerHello), Access-Accept/Reject/Challenge
+של RADIUS (עם רמז, כללי תכונות לפי קוד, סיכון נמוך חדש `radius-access-reject`), איפוס קשיח של שרת OpenVPN ותשובת
+IKE_SA_INIT של IKEv2 (הצעה נבחרת יחידה, CERTREQ) מאומתים, כך שזרמי UDP נושאים ראיות שרת לפסק הדין שלהם.
+468 בדיקות עוברות.

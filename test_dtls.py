@@ -94,8 +94,10 @@ class DTLSTests(unittest.TestCase):
                 self.assertEqual(result.status,'unknown',result)
         for epoch in (1,65535):
             self.assertEqual(self.inspect(record(body,epoch=epoch)).status,'unknown')
-        for kind in (2,3,20):
+        for kind in (4,11,20):
             self.assertEqual(self.inspect(record(body,kind=kind)).status,'unknown')
+        for kind in (2,3):   # server message types are accepted since v0.46, but not with a ClientHello body
+            self.assertNotEqual(self.inspect(record(body,kind=kind)).status,'identified')
 
     def test_body_vectors_and_unsupported_negotiation(self):
         for body in (hello(session=bytes(33)),hello(ciphers=b''),hello(ciphers=b'x'),hello(compression=b''),hello(compression=b'\x01')):

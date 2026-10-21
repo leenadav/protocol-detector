@@ -174,7 +174,7 @@ class DatagramInspector:
                 candidates.append("bacnet")
             if kerberos_probe(data):
                 candidates.append("kerberos")
-            if len(data) >= 14 and data[0] in (0x38, 0x50):
+            if len(data) >= 14 and data[0] in (0x38, 0x40, 0x50):
                 candidates.append("openvpn")
             if len(data) >= 20 and data[0] & 0xcb == 0xc8:
                 candidates.append("l2tp")

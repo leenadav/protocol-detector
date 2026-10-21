@@ -622,3 +622,39 @@ def mysql_handshake_response(capabilities=0x3fa20f, user=b'placeholder', auth=by
 
 MYSQL_HANDSHAKE_RESPONSE = mysql_handshake_response()
 HINTED_STREAM_CASES += ((MYSQL_HANDSHAKE_RESPONSE, 'mysql', 'mysql'),)
+
+
+# v0.46: datagram server replies. Cookies, nonces, keys and authenticators are placeholders.
+def dtls_record(handshake_type, body, version=b'\xfe\xfd'):
+    handshake = bytes([handshake_type]) + len(body).to_bytes(3, 'big') + bytes(2) + bytes(3) + len(body).to_bytes(3, 'big') + body
+    return b'\x16' + version + bytes(8) + len(handshake).to_bytes(2, 'big') + handshake
+
+
+DTLS_HELLO_VERIFY = dtls_record(3, b'\xfe\xff' + bytes([20]) + bytes(range(20)))
+DTLS_SERVER_HELLO = dtls_record(2, b'\xfe\xfd' + bytes(range(32)) + b'\x00' + b'\xc0\x2f' + b'\x00' + b'\x00\x05' + b'\xff\x01\x00\x01\x00')
+DATAGRAM_CASES += ((DTLS_HELLO_VERIFY, 'dtls'), (DTLS_SERVER_HELLO, 'dtls'))
+
+
+def radius_packet(code, attributes, identifier=0x7b):
+    return bytes([code, identifier]) + (20 + len(attributes)).to_bytes(2, 'big') + bytes(range(16)) + attributes
+
+
+def radius_attr(kind, value):
+    return bytes((kind, len(value) + 2)) + value
+
+
+RADIUS_ACCEPT = radius_packet(2, radius_attr(6, b'\x00\x00\x00\x02') + radius_attr(18, b'Welcome placeholder') + radius_attr(25, bytes(8)) + radius_attr(27, b'\x00\x00\x0e\x10'))
+RADIUS_REJECT = radius_packet(3, radius_attr(18, b'placeholder denied') + radius_attr(80, bytes(16)))
+RADIUS_CHALLENGE = radius_packet(11, radius_attr(24, b'\x01\x02\x03\x04') + radius_attr(79, b'\x01\x02\x00\x06\x0d\x20') + radius_attr(80, bytes(16)))
+HINTED_DATAGRAM_CASES += ((RADIUS_ACCEPT, 'radius', 'radius'), (RADIUS_REJECT, 'radius', 'radius'), (RADIUS_CHALLENGE, 'radius', 'radius'))
+
+OPENVPN_SERVER = b'\x40' + b'\x11\x12\x13\x14\x15\x16\x17\x18' + b'\x01' + bytes(4) + b'\x01\x02\x03\x04\x05\x06\x07\x08' + bytes(4)
+OPENVPN_SERVER_TCP = len(OPENVPN_SERVER).to_bytes(2, 'big') + OPENVPN_SERVER
+DATAGRAM_CASES += ((OPENVPN_SERVER, 'openvpn'),)
+STREAM_CASES += ((OPENVPN_SERVER_TCP, 'openvpn'),)
+
+_ike_response_sa = bytes.fromhex('220000300000002c010100040300000c0100000c800e00800300000802000005030000080300000c000000080400000e')
+_ike_response_body = _ike_response_sa + bytes.fromhex('28000108000e0000') + bytes(256) + bytes.fromhex('00000024') + bytes(32)
+IKEV2_RESPONSE = (bytes.fromhex('1112131415161718') + bytes.fromhex('2122232425262728') + bytes.fromhex('2120222000000000')
+                  + (28 + len(_ike_response_body)).to_bytes(4, 'big') + _ike_response_body)
+DATAGRAM_CASES += ((IKEV2_RESPONSE, 'ikev2'),)

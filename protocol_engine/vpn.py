@@ -31,32 +31,40 @@ def wireguard(data, config):
 
 
 def _openvpn_control(data):
-    """Validate a P_CONTROL_HARD_RESET_CLIENT_V2/V3 packet; returns the tls-auth HMAC width or raises."""
+    """Validate a hard-reset control packet (client V2/V3, server V2); returns (tls-auth HMAC width, role) or raises."""
     if len(data) < 14:
         raise ParseError("OpenVPN control packet too short")
     opcode, key_id = data[0] >> 3, data[0] & 7
-    if opcode not in (7, 10):
-        raise UnsupportedPrefix("OpenVPN profile covers client hard-reset control packets")
+    if opcode not in (7, 8, 10):
+        raise UnsupportedPrefix("OpenVPN profile covers client and server hard-reset control packets")
     if key_id:
         raise ParseError("OpenVPN initial key id must be zero")
     if data[1:9] == bytes(8):
         raise ParseError("OpenVPN session id must be nonzero")
+    role = "server" if opcode == 8 else "client"
     for width in _OPENVPN_HMAC:
         offset = 9 + width + (8 if width else 0)  # tls-auth adds HMAC, packet id and timestamp
         if offset + 5 > len(data):
             continue
+        if opcode == 8:
+            # Server reset acknowledges the client's packet: 1..8 acked ids, the remote session id, then its own id.
+            acked = data[offset]
+            if 1 <= acked <= 8 and len(data) == offset + 1 + 4 * acked + 8 + 4 and data[offset + 1 + 4 * acked:offset + 1 + 4 * acked + 8] != bytes(8):
+                return width, role
+            continue
         if data[offset] == 0 and len(data) == offset + 5:  # empty ACK array then message packet id
-            return width
+            return width, role
         if opcode == 10 and data[offset] == 0 and len(data) > offset + 5:
-            return width  # V3 carries tls-crypt-v2 client key material after the packet id
+            return width, role  # V3 carries tls-crypt-v2 client key material after the packet id
     raise ParseError("OpenVPN control framing does not match plain or tls-auth layouts")
 
 
 def openvpn(data, config):
-    width = _openvpn_control(data)
+    width, role = _openvpn_control(data)
     return DatagramMatch(encryption="openvpn", evidence=(Evidence("encryption", "openvpn", "wire", "structural"),
-                                                          Evidence("tls_auth", "present" if width else "absent", "wire", "structural")),
-                         reason="OpenVPN client hard-reset control packet validated; no key exchange or tunnel claim")
+                                                          Evidence("tls_auth", "present" if width else "absent", "wire", "structural"),
+                                                          Evidence("openvpn_control", role + "-hard-reset", "wire", "structural")),
+                         reason="OpenVPN {} hard-reset control packet validated; no key exchange or tunnel claim".format(role))
 
 
 class OpenVPNParser(FrameParser):
@@ -71,9 +79,12 @@ class OpenVPNParser(FrameParser):
         return 2 + size
 
     def validate(self, data):
-        width = _openvpn_control(data[2:])
-        self.extra_evidence = (("tls_auth", "present" if width else "absent", "control_packet", "structural"),)
-        self.reason = "OpenVPN TCP client hard-reset control packet validated; no key exchange or tunnel claim"
+        width, role = _openvpn_control(data[2:])
+        self.extra_evidence = (("tls_auth", "present" if width else "absent", "control_packet", "structural"),
+                               ("openvpn_control", role + "-hard-reset", "control_packet", "structural"))
+        if role == "server":
+            self.scope = "negotiation_response"
+        self.reason = "OpenVPN TCP {} hard-reset control packet validated; no key exchange or tunnel claim".format(role)
 
 
 class PPTPParser(FrameParser):

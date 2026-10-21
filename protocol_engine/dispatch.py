@@ -155,7 +155,7 @@ def select(prefix):
         from .wire import dns_probe
         if dns_probe(prefix[2:14]):
             return "dns"
-        if prefix[2] in (0x38, 0x50) and 14 <= int.from_bytes(prefix[:2], "big") <= 1500 and prefix[3:11] != bytes(8):
+        if prefix[2] in (0x38, 0x40, 0x50) and 14 <= int.from_bytes(prefix[:2], "big") <= 1500 and prefix[3:11] != bytes(8):
             return "openvpn"
         return "unknown"
     if first == 48:  # BER SEQUENCE versus an HTTP method beginning with '0'.

@@ -14,9 +14,14 @@ _START_TYPES = (33, 34, 40, 41, 43)
 
 
 def _header_at(data, start):
-    return (len(data) >= start+28 and data[start+17] == 32 and data[start+18] == 34 and data[start+19] == 8
-            and data[start+16] in _START_TYPES and data[start+8:start+16] == bytes(8)
-            and data[start+20:start+24] == bytes(4))
+    """IKE_SA_INIT header: version 2.0, exchange 34, message id 0; initiator (flags I, responder SPI zero)
+    or responder (flags R, both SPIs nonzero, v0.46)."""
+    if not (len(data) >= start+28 and data[start+17] == 32 and data[start+18] == 34
+            and data[start+16] in _START_TYPES and data[start+20:start+24] == bytes(4)):
+        return False
+    if data[start+19] == 8:
+        return data[start+8:start+16] == bytes(8)
+    return data[start+19] == 0x20 and data[start+8:start+16] != bytes(8)
 
 
 def ike_probe(data):
@@ -39,11 +44,15 @@ def _u16(data, offset):
     return int.from_bytes(data[offset:offset+2], 'big')
 
 
-def _sa(data, budget):
+def _sa(data, budget, single=False):
+    """SA payload: proposals of IKE transforms. A responder's SA carries exactly one proposal
+    with one transform per type (RFC 7296 2.7)."""
     pos, number, groups, nonce_min = 0, 0, set(), 16
     while pos < len(data):
         budget.spend()
         number += 1
+        if single and number > 1:
+            raise ParseError('IKE responder SA must carry exactly one proposal')
         if len(data)-pos < 8:
             raise ParseError('Truncated IKE proposal header')
         size = _u16(data,pos+2)
@@ -101,6 +110,8 @@ def _sa(data, budget):
             raise ParseError('Trailing bytes or wrong transform count in IKE proposal')
         if not {1,2,4} <= types:
             raise ParseError('IKE proposal missing encryption, PRF or DH offers')
+        if single and count != len(types):
+            raise ParseError('IKE responder proposal must select one transform per type')
         if len(encryption) != 1:
             raise UnsupportedPrefix('Mixed CBC/AEAD in one IKE proposal is outside this profile')
         if (encryption == {'cbc'}) != (3 in types):
@@ -119,6 +130,7 @@ def ikev2(data, config):
         raise UnsupportedPrefix('Outside IKEv2 initial initiator header profile')
     if not any(data[start:start+8]):
         raise ParseError('IKE initiator SPI must be nonzero')
+    response = data[start+19] == 0x20
     size=int.from_bytes(data[start+24:start+28],'big')
     if size+start > config.max_bytes:
         raise BudgetError('Declared IKE message exceeds byte budget')
@@ -146,7 +158,7 @@ def ikev2(data, config):
                 raise ParseError('Duplicate required IKE payload')
             seen.add(kind)
         if kind == 33:
-            groups,nonce_min=_sa(body,budget)
+            groups,nonce_min=_sa(body,budget,single=response)
         elif kind == 34:
             if len(body)<4 or body[2:4]!=b'\0\0':
                 raise ParseError('Invalid IKE key-exchange header')
@@ -167,10 +179,18 @@ def ikev2(data, config):
                 if len(body)!=24:
                     raise ParseError('IKE NAT-detection hash must contain20 bytes')
             elif notification==16390:
-                if payload_number!=1 or not 1 <= len(body)-4 <= 64:
+                if response or payload_number!=1 or not 1 <= len(body)-4 <= 64:
                     raise ParseError('IKE cookie must be first and contain1..64 bytes')
+            elif notification in (16404,16405,16406,16407) and response:
+                if len(body)!=4:
+                    raise ParseError('IKE responder capability notifications carry no data')
             else:
                 raise UnsupportedPrefix('IKE notification outside NAT-detection/cookie profile')
+        elif kind == 38 and response:
+            if not body or body[0] not in (4,12,13) or (body[0]==4 and (len(body)-1)%20):
+                raise ParseError('IKE CERTREQ requires a supported encoding and SHA-1 hash list')
+            if len(body)>config.max_line:
+                raise BudgetError('IKE CERTREQ exceeds opaque field budget')
         elif kind == 43:
             if not body:
                 raise ParseError('Empty IKE Vendor ID')
@@ -182,9 +202,15 @@ def ikev2(data, config):
     if pos!=len(data):
         raise ParseError('Bytes remain after IKE payload chain terminates')
     if seen!={33,34,40}:
-        raise ParseError('IKE initial request requires SA, KE and nonce')
+        raise ParseError('IKE initial message requires SA, KE and nonce')
     if group not in groups or nonce_size<nonce_min:
         raise ParseError('IKE KE/nonce disagrees with algorithm proposals')
+    if response:
+        return DatagramMatch(application_protocol='ikev2',
+                             evidence=(Evidence('application_protocol','ikev2','wire','structural'),
+                                       Evidence('exchange','ike_sa_init_response','wire','structural'),
+                                       Evidence('selected_dh_group',str(group),'ike_responder','asserted')),
+                             reason='IKEv2 initial response (single proposal, KE, nonce) structure validated; selection unauthenticated, no established IPsec claim')
     return DatagramMatch(application_protocol='ikev2',
                          evidence=(Evidence('application_protocol','ikev2','wire','structural'),
                                    Evidence('exchange','ike_sa_init_request','wire','structural'),

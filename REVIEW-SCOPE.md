@@ -1,11 +1,20 @@
-# Review scope: protocol detector v0.45
+# Review scope: protocol detector v0.46
 
 Python3.9-compatible IPv4 passive classification: 70 families, 63 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.45): `PostgreSQLParser._server` (binary.py: length arithmetic
+New focus (v0.46): `dtls._server_flight` (translation to the TLS 1.2
+ServerHello profile, dropped TLS labels and fingerprints), `radius._response`
+(per-code attribute sets, repeatable Reply-Message/EAP/Class, State on a
+Challenge), the OpenVPN server reset layout (ack array arithmetic, remote
+session id) and the IKEv2 responder header/SA rules (`_header_at`,
+`_sa(single=True)`, CERTREQ and capability notifications). Trace: no cookie,
+authenticator, reply text, session id or key bytes in evidence; the responder
+SPI rule; both directions in a UDP flow verdict. 468 tests pass.
+
+Previous focus (v0.45): `PostgreSQLParser._server` (binary.py: length arithmetic
 with the type byte, SASL list and error field walks, SQLSTATE class),
 `LDAPParser._bind_response`, `CQLParser._response` with `_cql_string`,
 `MySQLParser._handshake_response` (capability-driven field layout, one-byte

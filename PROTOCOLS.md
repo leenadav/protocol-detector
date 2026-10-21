@@ -22,7 +22,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | dhcp | udp | Automatic profiles | datagram | DHCPv4 types 1..8, no overloaded options |
 | dnp3 | tcp | Automatic profiles | protocol_header | Data link frame with header and block CRCs verified |
 | dns | tcp/udp | Automatic profiles | initial_message/datagram | Query or response with QUERY opcode and one question, bounded record walk; message kind and rcode reported; TCP length prefixes >=512 require dns hint |
-| dtls | udp | Automatic profiles | datagram | DTLS1.2 complete epoch-zero ClientHello in one record/datagram; bounded extensions, client assertions only; no fragments, negotiation or decryption |
+| dtls | udp | Automatic profiles | datagram | DTLS1.2 complete epoch-zero ClientHello, HelloVerifyRequest or ServerHello in one record/datagram; bounded extensions, assertions only; no fragments, encrypted epochs or decryption |
 | ethernet-ip | tcp/udp | Automatic profiles | protocol_header/datagram | Encapsulation header with RegisterSession/list/data commands; CIP not decoded |
 | fastcgi | tcp | Automatic profiles | initial_params | v1 BEGIN_REQUEST plus complete PARAMS stream; one request, zero reserved fields, no response/body semantics |
 | ftp | tcp | Automatic profiles | initial_message | Client command line (FTP-only verbs); shared USER/PASS/QUIT verbs are ambiguous with POP3 and resolved by session correlation with a 220 greeting |
@@ -31,7 +31,7 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | http | tcp | Automatic profiles | initial_message | HTTP/1.0 and 1.1 start-line/headers |
 | http2 | tcp | Automatic profiles | initial_message | Client preface plus initial SETTINGS; no HPACK |
 | iec-104 | tcp | Automatic profiles | protocol_header | APCI U-format start frames automatically; I/S formats with a hint |
-| ikev2 | udp | Automatic profiles | datagram | IKE_SA_INIT initiator: bounded SA/KE/nonce, AES-CBC/GCM and MODP14..18 offers, optional non-ESP marker; no authentication or established IPsec claim |
+| ikev2 | udp | Automatic profiles | datagram | IKE_SA_INIT initiator or responder: bounded SA/KE/nonce, AES-CBC/GCM and MODP14..18 offers or the single selected proposal, optional CERTREQ and non-ESP marker; no authentication or established IPsec claim |
 | imap | tcp | Automatic profiles | protocol_header | Server CAPABILITY or OK/PREAUTH with explicit IMAP4rev1/2 capability; no commands/authentication |
 | ipfix | udp | Automatic profiles | datagram | IPFIX (RFC 7011) message header and set framing, validated by the shared flow-export validator |
 | iso-tsap | tcp | Automatic profiles | negotiation_request | TPKT/X.224 connection request with TSAP parameters (RFC 1006); shares the TPKT route with RDP |
@@ -48,13 +48,13 @@ decoders, v0.28 shifts, v0.29 heuristics, v0.32 S7comm) are at the end.
 | netbios-ss | tcp | Automatic profiles | negotiation_request | NetBIOS session request with two first-level encoded names; names not emitted |
 | netflow | udp | Automatic profiles | datagram | NetFlow v5 record framing and NetFlow v9 flowsets (reported as netflow/5, netflow/9) |
 | ntp | udp | Hint required | datagram | Hint required: v3/v4 base client/server header, no extensions/authentication |
-| openvpn | tcp/udp | Automatic profiles | initial_message/datagram | Client hard-reset control packet (plain or tls-auth layout); no key exchange claim |
+| openvpn | tcp/udp | Automatic profiles | initial_message/datagram | Client or server hard-reset control packet (plain or tls-auth layout, server acknowledgement array and remote session id); no key exchange claim |
 | opcua | tcp | Automatic profiles | negotiation_request/negotiation_response | OPC UA TCP connection messages Hello, Acknowledge, Error and ReverseHello: little-endian size, buffer minimums, bounded printable opc.tcp URLs and reasons (not emitted); no secure channel |
 | pop3 | tcp | Automatic profiles | protocol_header/initial_message | Server +OK/-ERR status line or POP3-only client command; shared verbs resolved by correlation |
 | postgresql | tcp | Automatic profiles | initial_message/negotiation_request | v3.0..3.2 startup or SSL/GSS request (client); Authentication*, ErrorResponse and NegotiateProtocolVersion (server) with method, SQLSTATE class reported; salts, SASL data and messages not emitted |
 | pptp | tcp | Automatic profiles | negotiation_request | Start-Control-Connection-Request (156 bytes); names not emitted |
 | quic | udp | Automatic profiles | datagram | QUIC v1/v2 Initial (client protection removed with public Initial keys; ClientHello SNI/ALPN as offers) and Version Negotiation; no handshake completion, server packets or 0-RTT |
-| radius | udp | Hint required | datagram | Hint required: Access-Request PAP/CHAP/State with supported attributes; no authenticator verification or EAP |
+| radius | udp | Hint required | datagram | Hint required: Access-Request PAP/CHAP/State, Access-Accept/Reject/Challenge with the attributes each code allows; code reported, no authenticator verification or EAP decoding |
 | rdp | tcp | Automatic profiles | negotiation_request | TPKT/X.224 with RDP negotiation, optional cookie/correlation; no routing token or session |
 | resp | tcp | Automatic profiles | initial_message | Non-null bulk-string request array; no product inference |
 | rfb | tcp | Automatic profiles | protocol_header | RFB 3.3/3.7/3.8 banner; no VNC security exchange |
@@ -1276,3 +1276,41 @@ bytes are never emitted.
 Primary specifications: [PostgreSQL message formats](https://www.postgresql.org/docs/current/protocol-message-formats.html),
 [RFC 4511 4.2.2](https://www.rfc-editor.org/rfc/rfc4511.html#section-4.2.2), Cassandra native protocol v4 specification,
 [MySQL HandshakeResponse41](https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_handshake_response.html).
+
+## Datagram server replies: DTLS, RADIUS, OpenVPN and IKEv2 (v0.46)
+
+`dtls` accepts the server's epoch-zero flight as one complete handshake per
+record: HelloVerifyRequest (server version 1.0/1.2 and a cookie of 1..32 bytes
+filling the message) and ServerHello (DTLS 1.2 legacy version, then the TLS 1.2
+ServerHello profile applied to the translated body: session id, cipher, null
+compression, bounded acknowledgement extensions). Evidence `handshake`
+(`hello_verify_request`, `server_hello`), `selected_dtls_version`,
+`selected_cipher`, `selected_alpn`; no fingerprint is derived for a DTLS
+server (the TLS-prefixed JA4S would misdescribe it) and the cookie is never
+emitted.
+
+`radius` (hint required, as before) accepts Access-Accept, Access-Reject and
+Access-Challenge: attributes limited to what RFC 2865 allows per code (a
+Reject carries only Reply-Message, Proxy-State, EAP-Message, Vendor-Specific
+and Message-Authenticator; a Challenge requires State), fixed four-byte
+integers, non-empty strings, vendor identifiers, no padding. Evidence
+`radius_code`. RISKS.md derives `radius-access-reject`.
+
+`openvpn` accepts P_CONTROL_HARD_RESET_SERVER_V2 (opcode 8) on UDP and TCP:
+key id zero, nonzero session id, optional tls-auth block, an acknowledgement
+array of 1..8 packet ids followed by the nonzero remote session id and the
+message packet id, nothing after. Evidence `openvpn_control`
+(`client-hard-reset`/`server-hard-reset`).
+
+`ikev2` accepts the IKE_SA_INIT response: flags R only, both SPIs nonzero,
+message id zero, an SA with exactly one proposal selecting one transform per
+type, KE and nonce as for the request, optional NAT-detection and capability
+notifications and CERTREQ payloads (X.509 encodings with SHA-1 hash lists).
+Evidence `exchange=ike_sa_init_response` and `selected_dh_group`.
+
+The DNS, SNMP, Kerberos and these replies make the server side of UDP flows
+visible to the analyzer, which combines both directions into the session
+verdict since v0.43.
+
+Primary specifications: [RFC 6347 4.2.1](https://www.rfc-editor.org/rfc/rfc6347.html#section-4.2.1), [RFC 2865 4.2-4.4](https://www.rfc-editor.org/rfc/rfc2865.html#section-4.2),
+OpenVPN protocol (ssl.h control opcodes), [RFC 7296 1.2, 2.7](https://www.rfc-editor.org/rfc/rfc7296.html#section-1.2).
