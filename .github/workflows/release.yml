@@ -48,6 +48,7 @@ jobs:
       - name: Build distributions and SBOM
         run: |
           python -m build --sdist --wheel --outdir dist
+          python -B tools/check_wheel.py "dist/*.whl"
           cyclonedx-py environment --output-format json --output-file dist/sbom.cdx.json
           (cd dist && sha256sum ./* > SHA256SUMS)
       - name: Attest build provenance

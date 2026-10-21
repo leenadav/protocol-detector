@@ -17,3 +17,7 @@ venv/
 !sample-mysql.pcap
 !sample-mongodb.pcap
 !sample-radius.pcap
+# Packaging output
+build/
+dist/
+*.egg-info/

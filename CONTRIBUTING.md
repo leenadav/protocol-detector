@@ -43,6 +43,7 @@ ARCHITECTURE.md; SSDLC.md describes the gates that enforce them.
 make check          # the full gate, same as CI
 make ci-local       # make check plus extended fuzzing and the offline replay/schema validation
 make fuzz           # extended seeded fuzzing
+make package        # sdist and wheel plus the wheel-content gate (dev tools installed)
 make workflow-lint  # actionlint over the workflows; install shellcheck too, the runner has it
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories
 ```
