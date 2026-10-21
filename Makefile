@@ -1,4 +1,4 @@
-.PHONY: test demo protocols apps sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements
+.PHONY: test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -14,6 +14,12 @@ protocols:
 
 apps:
 	$(PYTHON) -B appid_catalog.py
+
+risks:
+	$(PYTHON) -B protodetect.py risks
+
+policy-lint:
+	$(PYTHON) -B protodetect.py policy lint policy-example.json --strict
 
 sessions:
 	$(PYTHON) -B analyze_pcap.py sample-expanded.pcap --events-only --sessions
@@ -39,7 +45,7 @@ live-smoke:
 replay-live:
 	cat sample-expanded.pcap | $(PYTHON) -B live_capture.py --stdin --duration 0
 
-check: lint test pins requirements
+check: lint test pins requirements policy-lint
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 lint:

@@ -16,9 +16,14 @@ ARCHITECTURE/README updates, a Hebrew START-HERE note and a paired benchmark.
 | v0.27 | More decoders: FTP, POP3, IMAP client, Telnet, SMB1, NetBIOS, Kerberos, WireGuard, OpenVPN, PPTP, L2TP, TACACS+, SSDP, NetFlow/IPFIX, sFlow, Modbus, DNP3, BACnet, ISO-TSAP, ENIP, IEC104, Kafka, CQL, RTP (hint); greeting/command correlation (220+USER=ftp, +OK=pop3) | done (mDNS/LLMNR and S7comm deferred) |
 | v0.28 | Application shift at exact protocol boundaries: CONNECT tunnel, WebSocket/h2c upgrade, SMTP/IMAP/POP3 STARTTLS, FTP AUTH TLS, PostgreSQL/MySQL SSLRequest, RDP negotiation (client request and server confirm) | done |
 | v0.29 | Unknown-traffic heuristics (entropy, printable ratio, DNS name shape; opt-in, advisory only) and nDPI-style flow risks on every verdict | done |
-| v0.30 | Policy engine (allow/deny by app/category/risk, implicit use, application-default, dependency warnings), unified CLI, CI matrix, final docs | planned |
+| v0.30 | Policy evaluation (allow/deny/alert by app, alias, outcome, category, technology, risk, characteristics, flow risks, ports, encryption, shift carrier; application-default; dependency and never-match warnings), `protodetect` entry point, final docs; the CI matrix shipped with the SSDLC work | done |
 
 Conventions: new parsers get all-split-point, single-byte, mutation and budget
 tests; evidence strengths are structural / asserted / offered / derived /
 heuristic / configured_mapping / context; no hostname, path, credential or
 payload bytes appear in live output unless explicitly enabled.
+
+Status: the roadmap is complete at v0.30. Later work (mDNS/LLMNR, S7comm,
+SMB1 session setup, server-side CONNECT correlation, HTTP/2 server frames
+after h2c, certificate-based risks) is listed in PROTOCOLS.md and RISKS.md
+under their exclusions and remains out of scope until requested.

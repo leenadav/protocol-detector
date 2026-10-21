@@ -1,4 +1,4 @@
-# App-ID style application identification — v0.29 (introduced in v0.22)
+# App-ID style application identification — v0.30 (introduced in v0.22)
 
 This document maps the vocabulary of application-aware firewalls (Palo Alto
 Networks App-ID is the reference model) onto this engine, states exactly what is
@@ -9,7 +9,7 @@ parity with a commercial signature corpus.
 
 | App-ID stage | This engine | Where |
 |---|---|---|
-| Policy pre-check on IP/port | Not implemented; detection never uses ports | — |
+| Policy on the verdict (application, category, risk, application-default, risks, shift carrier) | **Implemented** as a post-verdict label (`allow`/`deny`/`alert`) with dependency warnings; detection never uses ports, enforcement is the host's (POLICY.md) | `protocol_engine/policy.py` |
 | Application signatures | Bounded structural profiles per family (66 families, PROTOCOLS.md); configured exact-host mappings (`RuleIndex`) | `protocol_engine/` |
 | Decryption + re-identification | TLS: not performed; `feed_decrypted()` accepts plaintext from a host TLS stack. QUIC: Initial protection (public keys) is removed to read the ClientHello | `engine.py`, `quic.py` |
 | Protocol decoders / tunneled apps | Decoders per family; **application shift** at structural boundaries (CONNECT, Upgrade, STARTTLS, SSLRequest, RDP negotiation) inspects the phase after the boundary | `engine.py` |
@@ -87,11 +87,13 @@ counted, not tracked):
  "end_reason": "Both TCP directions closed with FIN", "app": "web-browsing", "category": "general-internet",
  "subcategory": "internet-utility", "technology": "browser-based", "risk": 4, "characteristics": ["widely-used", "..."],
  "base_app": null, "implicitly_uses": [], "port_usage": "standard", "engine_status": "identified",
- "client_protocol": "http/1.1", "server_protocol": "http/1.1", "encryption": null, "reasons": ["..."], "shifted_from": null, "risks": ["cleartext-credential-protocol"]}
+ "client_protocol": "http/1.1", "server_protocol": "http/1.1", "encryption": null, "reasons": ["..."], "shifted_from": null, "risks": ["cleartext-credential-protocol"],
+ "policy": {"action": "deny", "rule": "deny-cleartext", "reasons": ["rule 'deny-cleartext' matched web-browsing"]}}
 ```
 
 `risks` lists the RISKS.md flow risks derived from the verdict and both
-directions' evidence (sorted, possibly empty).
+directions' evidence (sorted, possibly empty). `policy` appears only when a
+policy file was given (POLICY.md).
 Byte counts are observed payload bytes per direction including retransmissions;
 packets include the handshake. No hostname, path, credential or payload value is
 present unless `--hostnames` is given, which adds the asserted SNI/Host name.

@@ -1,4 +1,4 @@
-# Stream/datagram engine v0.29 — engine and observation contracts
+# Stream/datagram engine v0.30 — engine and observation contracts
 
 ## Ownership
 
@@ -632,3 +632,24 @@ the risks with `Verdict._replace`, so every verdict path (classify, session
 records, live events) carries them without touching the merge rules. TLS
 ClientHello parsing gained an optional `offered` out-parameter so the version
 evidence costs a small list rather than a full `ClientHelloInfo`.
+
+## Policy evaluation and the unified entry point (v0.30)
+
+`policy.py` turns a validated JSON document into `Rule` objects whose
+conditions are frozensets (names resolved through the catalog aliases, ports
+parsed into exact/range/dynamic tables) and evaluates them in order against a
+`Verdict` plus the session transport and server port. The engine itself is
+untouched: `Analyzer._record` and the live classification emitter call
+`Policy.evaluate` after the verdict exists and attach `Decision.fields()`
+(action, rule, reasons) to the record or event. Policies are operator input:
+loading is strict (unknown keys and names are errors, 1024 rules, 4 MiB) and
+nothing in a policy is executed or interpolated. `Policy.lint` reports
+dependency conflicts by evaluating synthetic verdicts for the catalog's
+`implicitly_uses`/`depends_on` entries, and rules that cannot match.
+
+`protodetect.py` is a thin argparse front end: `analyze` and `live` forward
+their remaining arguments to the existing scripts' `main()` (so their option
+documentation stays authoritative), `protocols`/`apps`/`demo` call the demo
+scripts, `risks` prints the RISKS table, `policy lint|test` and `signatures
+lint` validate operator files, and `version` reads pyproject. Broken pipes
+from paging tools end the delegated command quietly.

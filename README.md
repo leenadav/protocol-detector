@@ -1,4 +1,4 @@
-# Protocol detector v0.29
+# Protocol detector v0.30
 
 A standalone Python 3.9+ protocol classification engine and passive observation
 tool. **66 protocol families**, with explicit profiles rather than claims of full
@@ -17,6 +17,11 @@ make demo
 make protocols
 make interfaces
 make live INTERFACE=en0 DURATION=60
+# One entry point for every tool (v0.30); subcommands forward to the scripts below:
+python3 -B protodetect.py analyze sample-expanded.pcap --sessions --policy policy-example.json
+python3 -B protodetect.py live --interface en0 --duration 60 --json --heuristics
+python3 -B protodetect.py policy lint policy-example.json --strict
+python3 -B protodetect.py protocols | apps | risks | demo | version
 ```
 
 Live output is one short line per identification, plus periodic/final counters.
@@ -44,6 +49,24 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.30 — policy evaluation and one command line
+
+A JSON **policy** (POLICY.md) is evaluated on every session verdict: ordered
+rules match applications (names, aliases or session outcomes), categories,
+technologies, risk scores, characteristics, flow risks, port usage, transports
+and server ports, encryption and the carrier after an application shift;
+`application_default` rules match only on an application's standard ports, as
+in application-aware firewalls. The first match decides `allow`, `deny` or
+`alert`, else the policy default; decisions and the reasons behind them appear
+in session records, live events and summaries. `Policy.lint` warns about
+allowed applications whose implicitly-used or depended-on applications the
+policy denies, and about rules that can never match. The engine enforces
+nothing; the label is for the host. `protodetect.py` is the single entry
+point (`analyze`, `live`, `protocols`, `apps`, `risks`, `demo`, `policy
+lint|test`, `signatures lint`, `version`) and forwards to the existing scripts.
+This closes the App-ID roadmap (ROADMAP-APPID.md): 66 families, 70 catalog
+applications, 10 flow risks, 410 tests. BENCHMARK-V030.md.
 
 ## New in v0.29 — unknown-traffic heuristics and flow risks
 

@@ -8,6 +8,7 @@ from functools import partial
 from packets import CaptureError, PacketError, UDPPacket, decode_packet, read_pcap_records
 from protocol_engine import Config, DatagramInspector, Event, Inspector, SignatureSet
 from protocol_engine.appid import classify, session_verdict, verdict_fields
+from protocol_engine.policy import Policy, PolicyError
 from protocol_engine.registry import PARSERS
 from protocol_engine.datagram import VALIDATORS
 from protocol_engine.quic import QuicAssembler
@@ -26,7 +27,7 @@ class Analyzer:
     """
     def __init__(self, max_connections=32, byte_limit=65536, idle_timeout=60, compact=False, udp_hint=None, tcp_hint=None,
                  crc32c_byte_limit=4096, on_retire=None, on_session=None, max_udp_flows=None, include_hostnames=False,
-                 signatures=None, fingerprints=False, heuristics=False):
+                 signatures=None, fingerprints=False, heuristics=False, policy=None):
         for callback in (on_retire, on_session):
             if callback is not None and not callable(callback):
                 raise TypeError("Analyzer callbacks must be callable")
@@ -41,6 +42,9 @@ class Analyzer:
         if signatures is not None and not isinstance(signatures, SignatureSet):
             raise TypeError("signatures must be a SignatureSet")
         self.signatures = signatures if signatures is not None and len(signatures) else None
+        if policy is not None and not isinstance(policy, Policy):
+            raise TypeError("policy must be a Policy")
+        self.policy = policy
         self.inspection_config = Config(max_bytes=byte_limit, max_crc32c_bytes=crc32c_byte_limit,
                                         retain_contexts=self.signatures is not None, fingerprints=bool(fingerprints),
                                         heuristics=bool(heuristics))
@@ -75,6 +79,8 @@ class Analyzer:
                   "client_bytes": state["bytes"].get(client, 0), "server_bytes": state["bytes"].get(server, 0),
                   "end_reason": reason}
         record.update(verdict_fields(verdict))
+        if self.policy is not None:
+            record["policy"] = self.policy.evaluate(verdict, transport, server[1]).fields()
         fingerprints = {evidence.field: evidence.value for obs in observations if obs is not None
                         for evidence in obs.evidence if evidence.strength == "derived"}
         if fingerprints:
@@ -307,11 +313,13 @@ def readable_session(record):
         record["app"], endpoint(record["client"]), endpoint(record["server"]), record["category"],
         record["subcategory"], record["risk"], record["port_usage"], record["client_protocol"] or "-",
         record["server_protocol"] or "-", record["packets"], record["client_bytes"], record["server_bytes"],
-        record["end_reason"])) + (" | risks=" + ",".join(record["risks"]) if record.get("risks") else "")
+        record["end_reason"])) + (" | risks=" + ",".join(record["risks"]) if record.get("risks") else "") + (
+            " | policy={}{}".format(record["policy"]["action"], "({})".format(record["policy"]["rule"]) if record["policy"]["rule"] else "")
+            if record.get("policy") else "")
 
 
 def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_byte_limit=4096, udp_hint=None,
-            sessions=False, include_hostnames=False, signatures=None, fingerprints=False, heuristics=False):
+            sessions=False, include_hostnames=False, signatures=None, fingerprints=False, heuristics=False, policy=None):
     def retired(source, destination, event):
         if json_output:
             print(json.dumps({'type': 'stream_end', 'source': source, 'destination': destination,
@@ -325,7 +333,7 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
 
     analyzer = Analyzer(tcp_hint=tcp_hint, crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, udp_hint=udp_hint,
                         on_session=session if sessions else None, include_hostnames=include_hostnames, signatures=signatures,
-                        fingerprints=fingerprints, heuristics=heuristics)
+                        fingerprints=fingerprints, heuristics=heuristics, policy=policy)
     counts = Counter()
     def capture_gap(reason, scope="active_connections", number=None):
         active = len(analyzer.tracked)
@@ -399,17 +407,19 @@ def main():
     parser.add_argument("--signatures", help="JSON file of custom application signatures (see SIGNATURES.md)")
     parser.add_argument("--fingerprints", action="store_true", help="Derive JA3/JA4/JA3S/JA4S/HASSH/HTTP2 fingerprints (FINGERPRINTS.md)")
     parser.add_argument("--heuristics", action="store_true", help="Profile unknown payload prefixes and DNS name shape; advisory evidence only (RISKS.md)")
+    parser.add_argument("--policy", help="JSON policy evaluated on every session record (POLICY.md); implies --sessions")
     parser.add_argument("--udp-hint", choices=sorted(VALIDATORS), help="Restrict UDP validation to one candidate")
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to one validated candidate")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
     args = parser.parse_args()
     try:
         signatures = SignatureSet.from_path(args.signatures) if args.signatures else None
+        policy = Policy.from_path(args.policy) if args.policy else None
         analyze(args.capture, json_output=args.json, events_only=args.events_only, tcp_hint=args.tcp_hint,
-                crc32c_byte_limit=args.crc32c_byte_limit, udp_hint=args.udp_hint, sessions=args.sessions,
+                crc32c_byte_limit=args.crc32c_byte_limit, udp_hint=args.udp_hint, sessions=args.sessions or policy is not None,
                 include_hostnames=args.hostnames, signatures=signatures, fingerprints=args.fingerprints,
-                heuristics=args.heuristics)
-    except (OSError, CaptureError, ValueError) as error:
+                heuristics=args.heuristics, policy=policy)
+    except (OSError, CaptureError, ValueError, PolicyError) as error:
         parser.exit(1, "Capture error: {}\n".format(error))
 
 

@@ -69,6 +69,7 @@ file (lengths, link types, IPv6). A8 compromises a CI dependency or action.
 | T14 | Flood of 1200-byte QUIC Initials forces about 2 ms of pure-Python AES-GCM each (A1) | DoS | Only Initial-type long headers with supported versions are opened; datagram bounded by max_bytes; `Config.quic_decrypt=False` disables; per-packet cost documented; host owns rate limiting | SR-23, BENCHMARK-V025.md |
 | T13 | Operator-authored signature causes regex backtracking blow-up or retains payload (A1 drives input, operator error supplies the pattern) | DoS / Information disclosure | Parse-tree checks, literal anchor, substring prefilter, bounded buffers; contexts internal only | SR-18, SR-19 |
 | T15 | Heuristic class or flow risk read as an identification or as proof (operator misuse of advisory output) | Spoofing / Repudiation | Heuristics are off by default, keep status unknown, use strength `heuristic`; risks are names from a documented table with severities, never an application; RISKS.md states the limits | SR-29, SR-30 |
+| T16 | Malicious or mistaken policy file (operator input) causing crashes, unbounded work or silently permissive rules | Tampering / DoS | Strict schema validation, 1024-rule and 4 MiB bounds, linear evaluation with no code execution, dependency and never-match lint, decisions are labels the host enforces | SR-31, SR-32 |
 
 Residual risks: Python regex engines are backtracking; built-in patterns are
 anchored and linear, and custom signatures (v0.23) are restricted to a safe

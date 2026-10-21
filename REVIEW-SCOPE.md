@@ -1,11 +1,23 @@
-# Review scope: protocol detector v0.29
+# Review scope: protocol detector v0.30
 
 Python3.9-compatible IPv4 passive classification: 66 families, 60 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
-risks and heuristic thresholds.
+risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.29): protocol_engine/heuristics.py, risks.py, the generalized
+New focus (v0.30): protocol_engine/policy.py (loading, Rule.matches,
+Policy.evaluate, dependency_warnings, lint), its use in analyze_pcap.Analyzer
+._record and live_capture (classification events, summaries), and
+protodetect.py. Trace: every validation path (types, bounds, unknown names,
+alias resolution, port specs), first-match ordering, application-default
+semantics for standard/unknown/nonstandard port usage and the second-pass
+explanation, shifted_from and encryption "none" matching, outcome names in
+apps, synthetic verdicts in dependency warnings, evaluation cost with large
+rule sets, policy files as untrusted operator input (no execution, bounded
+size), decisions never altering verdicts, and the CLI's argument forwarding
+(REMAINDER) and exit codes. 410 tests pass. BENCHMARK-V030.md.
+
+Previous focus (v0.29): protocol_engine/heuristics.py, risks.py, the generalized
 unknown-payload buffer in engine.py (`_unknown_limit`), `DatagramInspector._unknown`
 and `dns_with_contexts`/`dns_name_shape` in datagram.py, `offered_max_version`
 and the `offered` out-parameter of `parse_hello` in parsers.py, `ssh_version`

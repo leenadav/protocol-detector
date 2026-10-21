@@ -24,7 +24,7 @@ artifact in the repository and every security claim has an executable check.
 ## Local commands
 
 ```bash
-make check          # compile, tests, ruff, action pins, security-requirement gate
+make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint
 make fuzz           # extended seeded fuzzing
 make sbom           # CycloneDX SBOM of the environment (requires dev tools)
 ```

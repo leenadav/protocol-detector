@@ -52,6 +52,10 @@ jobs:
           python -B live_capture.py --stdin --duration 0 --json < sample-expanded.pcap > /dev/null
           python -B protocol_demo.py --json > /dev/null
           python -B appid_catalog.py --json > /dev/null
+          python -B protodetect.py version
+          python -B protodetect.py policy lint policy-example.json --strict
+          python -B protodetect.py signatures lint signatures-example.json
+          python -B protodetect.py analyze sample-expanded.pcap --policy policy-example.json --json --events-only > /dev/null
 
   static-analysis:
     name: static analysis (ruff, bandit, secrets)
