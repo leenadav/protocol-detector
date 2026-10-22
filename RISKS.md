@@ -33,7 +33,7 @@ evidence strength is `heuristic` and their thresholds are listed here.
 | `tls-encrypted-client-hello` | low | ClientHello (TLS or QUIC) with an outer `encrypted_client_hello` extension (`tls_ech=outer`, v0.42): the `server_name` and any hostname mapping refer to the client-facing public name; the real server name is encrypted and the inner offer is not visible. An inner-type extension or a GREASE-shaped one that fails structure never flags |
 | `tls-certificate-lifetime-excessive` | low | Leaf validity longer than 398 days (`tls_certificate_lifetime_days`), the CA/Browser Forum baseline since September 2020 |
 | `ntlm-authentication` | medium | NTLM offered or performed (v0.56): `gss_mechanism` of `ntlm`, `ntlm-response` or `lm-response` on an SMB2/SMB1 session setup or an LDAP GSS-SPNEGO bind, or an HTTP/1 or HTTP/2 `Authorization`/`WWW-Authenticate` scheme `ntlm` (`http_auth_scheme`, `http_auth_challenge`, `http2_*`). Relay and legacy hash exposure; Kerberos and NEGOEX never flag |
-| `http-basic-authentication` | medium | HTTP/1 or HTTP/2 request whose `Authorization` scheme is `basic` in a session without encryption (v0.56); the credential bytes are never read |
+| `http-basic-authentication` | medium | HTTP/1 or HTTP/2 request with an `Authorization` or `Proxy-Authorization` header whose scheme is `basic` (any occurrence, not only the first) in a session without encryption (v0.56); the credential bytes are never read |
 | `smb-guest-or-anonymous-session` | low | SMB2 SESSION_SETUP response with the guest or null-session flag, or an SMB1 SESSION_SETUP_ANDX response with the guest action bit (`smb_session`, v0.56) |
 
 Severities are editorial defaults for policy authoring (`protocol_engine.risks.RISKS`).

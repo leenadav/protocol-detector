@@ -5,9 +5,9 @@ import unittest
 from protocol_engine import Config, Inspector
 from protocol_engine.appid import classify, session_verdict
 from protocol_engine.gss import classify_token
-from protocol_engine.media import auth_scheme_class
+from protocol_engine.media import MAX_AUTH_ELEMENTS, auth_scheme_class, challenge_scheme_classes
 from protocol_engine.parsers import BudgetError, ParseError
-from protocol_fixtures import (HTTP_BASIC_AUTH, HTTP_NTLM_CHALLENGE, LDAP, OID_KRB5, OID_NEGOEX, OID_NTLMSSP, SMB1, SMB1_RESPONSE, SMB1_SESSION_CHALLENGE,
+from protocol_fixtures import (HTTP_BASIC_AUTH, HTTP_NTLM_CHALLENGE, LDAP, OID_KRB5, OID_MS_KRB5, OID_NEGOEX, OID_NTLMSSP, SMB1, SMB1_RESPONSE, SMB1_SESSION_CHALLENGE,
                                SMB1_SESSION_GUEST, SMB1_SESSION_LEGACY, SMB1_SESSION_NTLM, SMB2, SMB2_RESPONSE, SMB2_SESSION_CHALLENGE, SMB2_SESSION_GUEST,
                                SMB2_SESSION_KRB5, SMB2_SESSION_NTLM, SMB2_SESSION_OK, SMB311, SPNEGO_ACCEPT, SPNEGO_KRB5_INIT, SPNEGO_MECHS_ONLY,
                                SPNEGO_NTLM_AUTHENTICATE, SPNEGO_NTLM_CHALLENGE, SPNEGO_NTLM_INIT, H2_PREFACE, H2_SETTINGS, der, hpack_literal, krb5_ap_req,
@@ -188,9 +188,9 @@ class HTTPAuthTests(unittest.TestCase):
         self.assertEqual(fields(challenge, "http_auth_challenge"), {"http_auth_challenge": ["negotiate", "ntlm"]})
         self.assertIn("ntlm-authentication", classify(challenge, "tcp", 80).risks)
         bearer = stream(b"GET / HTTP/1.1\r\nHost: h\r\nAuthorization: Bearer abc.def\r\nProxy-Authorization: Basic x\r\n\r\n")[0]
-        self.assertEqual(fields(bearer, "http_auth_scheme"), {"http_auth_scheme": "bearer"})        # the first credential header only
+        self.assertEqual(fields(bearer, "http_auth_scheme"), {"http_auth_scheme": ["bearer", "basic"]})   # every credential header (round 1)
         self.assertNotIn("abc.def", repr(bearer))
-        self.assertEqual(classify(bearer, "tcp", 80).risks, ("cleartext-credential-protocol",))
+        self.assertEqual(classify(bearer, "tcp", 80).risks, ("cleartext-credential-protocol", "http-basic-authentication"))
         ntlm = stream(b"GET / HTTP/1.1\r\nHost: h\r\nAuthorization: NTLM TlRMTVNTUAAB\r\n\r\n")[0]
         self.assertIn("ntlm-authentication", classify(ntlm, "tcp", 80).risks)
         # The session verdict carries the risks of both directions once.
@@ -207,6 +207,118 @@ class HTTPAuthTests(unittest.TestCase):
                          ("http/2", {"http2_auth_scheme": "negotiate", "http2_auth_challenge": ["ntlm", "basic"]}))
         self.assertNotIn("YIIB", repr(observation))
         self.assertIn("ntlm-authentication", classify(observation, "tcp", 443).risks)
+
+
+def krb5_token(tok_id=b"\x01\x00", tag=0x6e, body=bytes(16), trailing=b"", oid=OID_KRB5):
+    return der(0x60, der(0x06, oid) + tok_id + (der(tag, body) if tag is not None else b"") + trailing)
+
+
+def smb2_frame_with(frame, header_flags=None, signature=None, body_flags=None):
+    """Patch an SMB2 frame (4-byte direct-TCP prefix included): header Flags, Signature, request Flags byte."""
+    data = bytearray(frame)
+    if header_flags is not None:
+        data[4 + 16:4 + 20] = header_flags.to_bytes(4, "little")
+    if signature is not None:
+        data[4 + 48:4 + 64] = signature
+    if body_flags is not None:
+        data[4 + 66] = body_flags
+    return bytes(data)
+
+
+class ReviewRound1Tests(unittest.TestCase):
+    """Repairs for the v0.56 round-1 review findings (Kerberos TOK_ID, SMB2 header flags, repeated HTTP auth)."""
+
+    def test_kerberos_tokens_share_one_validator(self):
+        valid = [(krb5_token(), "AP-REQ"), (krb5_token(b"\x02\x00", 0x6f), "AP-REP"), (krb5_token(b"\x03\x00", 0x7e), "KRB-ERROR"),
+                 (krb5_token(b"\x04\x00", 0x30), "TGT-REQ"), (krb5_token(oid=OID_MS_KRB5), "MS-KRB5")]
+        invalid = [(krb5_token(b"\x05\x00"), "unknown TOK_ID"), (krb5_token(b"", None), "missing TOK_ID"),
+                   (krb5_token(b"\x01", None), "truncated TOK_ID"), (krb5_token(b"\x01\x00", None), "TOK_ID without a message"),
+                   (krb5_token(b"\x01\x00", 0x6f), "AP-REQ TOK_ID framing an AP-REP"), (krb5_token(b"\x02\x00", 0x6e), "AP-REP TOK_ID framing an AP-REQ"),
+                   (krb5_token(trailing=b"\x00"), "trailing byte after the message"),
+                   (der(0x60, der(0x06, OID_KRB5) + b"\x01\x00" + b"\x6e\x20" + bytes(4)), "message overruns the token")]
+        for token, name in valid:
+            self.assertEqual(classify_token(token).mechanism, "kerberos", name)
+            self.assertEqual(classify_token(spnego_init(mechs=(OID_KRB5,), token=token)).mechanism, "kerberos", name)
+            self.assertEqual(classify_token(spnego_resp(0, OID_KRB5, token)).mechanism, "kerberos", name)
+        for token, name in invalid:
+            for carried in (token, spnego_init(mechs=(OID_KRB5,), token=token), spnego_init(mechs=(OID_NTLMSSP,), token=token),
+                            spnego_resp(1, OID_KRB5, token), spnego_resp(1, None, token)):
+                with self.assertRaises(ParseError, msg=name):
+                    classify_token(carried)
+        # A malformed Kerberos mechToken never yields positive evidence on the carriers.
+        bad = spnego_init(mechs=(OID_KRB5,), token=krb5_token(b"\x09\x09"))
+        observation, kinds = stream(SMB2 + smb2_session_setup(bad))
+        self.assertEqual((observation.application_protocol, fields(observation, "gss_mechanism", "smb_message")), ("smb2", {}))
+        self.assertNotIn("refined", kinds)
+        bind = stream(ldap_bind(sasl(b"GSS-SPNEGO", bad)))[0]
+        self.assertEqual((bind.status, fields(bind, "gss_mechanism")), ("malformed", {}))
+        # Mechanism lists without a token are offers and keep their label.
+        self.assertEqual(classify_token(spnego_init(mechs=(OID_KRB5,))).mechanism, "kerberos")
+
+    def test_smb2_session_setup_header_flags(self):
+        request, final, challenge = SMB2_SESSION_NTLM, SMB2_SESSION_OK, SMB2_SESSION_CHALLENGE
+        signature = bytes(range(1, 17))
+
+        def session(frame, negotiate=SMB2):
+            observation = stream(negotiate + frame)[0]
+            return observation.application_protocol, fields(observation, "smb_message").get("smb_message")
+        accepted = [
+            (request, "session-setup-request", "plain request"),
+            (smb2_frame_with(request, header_flags=0x20), "session-setup-request", "SMB 3.1.1 priority value on a request"),
+            (smb2_frame_with(request, header_flags=0x08, signature=signature, body_flags=1), "session-setup-request", "signed binding request"),
+            (smb2_frame_with(final, header_flags=0x09, signature=signature), "session-setup-response", "signed final response"),
+            (challenge, "session-setup-response", "unsigned more-processing response"),
+        ]
+        for frame, expected, name in accepted:
+            negotiate = SMB2_RESPONSE if expected.endswith("response") else SMB2
+            self.assertEqual(session(frame, negotiate), ("smb2", expected), name)
+        rejected = [
+            (smb2_frame_with(request, header_flags=0x08, signature=signature), SMB2, "signed request without binding"),
+            (smb2_frame_with(challenge, header_flags=0x09, signature=signature), SMB2_RESPONSE, "signed more-processing response"),
+            (smb2_frame_with(request, signature=signature), SMB2, "unsigned request with signature bytes"),
+            (smb2_frame_with(final, signature=signature), SMB2_RESPONSE, "unsigned response with signature bytes"),
+            (smb2_frame_with(request, header_flags=0x02), SMB2, "async request"),
+            (smb2_frame_with(final, header_flags=0x03), SMB2_RESPONSE, "async response"),
+            (smb2_frame_with(request, header_flags=0x04), SMB2, "related operation"),
+            (smb2_frame_with(request, header_flags=0x10000000), SMB2, "DFS operation"),
+            (smb2_frame_with(request, header_flags=0x20000000), SMB2, "replay operation"),
+            (smb2_frame_with(final, header_flags=0x21), SMB2_RESPONSE, "priority value on a response"),
+            (smb2_frame_with(request, header_flags=0x80), SMB2, "reserved flag bit"),
+        ]
+        for frame, negotiate, name in rejected:
+            self.assertEqual(session(frame, negotiate), ("smb2", None), name)
+
+    def test_repeated_and_listed_http_authentication(self):
+        self.assertEqual(challenge_scheme_classes(b"Negotiate, NTLM"), ("negotiate", "ntlm"))
+        self.assertEqual(challenge_scheme_classes(b'Bearer realm="a, Basic", error="x", Basic realm="b"'), ("bearer", "basic"))
+        self.assertEqual(challenge_scheme_classes(b'Digest realm="x", qop="auth,auth-int", nonce="n", NTLM'), ("digest", "ntlm"))
+        self.assertEqual(challenge_scheme_classes(b"Negotiate oYIB==, NTLM"), ("negotiate", "ntlm"))
+        self.assertEqual(challenge_scheme_classes(b'realm="x", Basic'), ("other", "basic"))
+        self.assertEqual(challenge_scheme_classes(b" , ,"), ("empty",))
+        self.assertEqual(challenge_scheme_classes(b'"unterminated, NTLM'), ("other",))
+        self.assertEqual(challenge_scheme_classes(b"x, " * MAX_AUTH_ELEMENTS + b"NTLM"), ("other",))      # bounded list walk
+        self.assertEqual(challenge_scheme_classes(b"x, " * (MAX_AUTH_ELEMENTS - 1) + b"NTLM"), ("other", "ntlm"))
+        listed = stream(b"HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Bearer, NTLM\r\nContent-Length: 0\r\n\r\n")[0]
+        self.assertEqual(fields(listed, "http_auth_challenge"), {"http_auth_challenge": ["bearer", "ntlm"]})
+        self.assertIn("ntlm-authentication", classify(listed, "tcp", 80).risks)
+        repeated = stream(b"HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Digest realm=\"p\"\r\n"
+                          b"Proxy-Authenticate: Kerberos\r\nProxy-Authenticate: Basic realm=\"p\", NTLM\r\nContent-Length: 0\r\n\r\n")[0]
+        self.assertEqual(fields(repeated, "http_auth_challenge"), {"http_auth_challenge": ["digest", "other", "basic", "ntlm"]})
+        later = stream(b"GET / HTTP/1.1\r\nHost: h\r\nAuthorization: Bearer abc\r\nAuthorization: NTLM TlRMTVNTUAAB\r\n\r\n")[0]
+        self.assertEqual(fields(later, "http_auth_scheme"), {"http_auth_scheme": ["bearer", "ntlm"]})
+        self.assertIn("ntlm-authentication", classify(later, "tcp", 80).risks)
+        for text in (repr(listed), repr(repeated), repr(later)):
+            self.assertNotIn("TlRMTVNTUAAB", text)
+            self.assertNotIn('realm=', text)
+        block = (hpack_literal(b":method", b"GET") + hpack_literal(b":scheme", b"https") + hpack_literal(b":path", b"/") + hpack_literal(b":authority", b"h.example")
+                 + hpack_literal(b"authorization", b"Bearer x") + hpack_literal(b"proxy-authorization", b"Basic eDp5")
+                 + hpack_literal(b"www-authenticate", b"Negotiate, NTLM"))
+        headers = len(block).to_bytes(3, "big") + b"\x01\x05" + (1).to_bytes(4, "big") + block
+        h2 = stream(H2_PREFACE + H2_SETTINGS + headers)[0]
+        self.assertEqual(fields(h2, "http2_auth_scheme", "http2_auth_challenge"),
+                         {"http2_auth_scheme": ["bearer", "basic"], "http2_auth_challenge": ["negotiate", "ntlm"]})
+        self.assertEqual(classify(h2, "tcp", 80).risks.count("ntlm-authentication"), 1)
+        self.assertNotIn("eDp5", repr(h2))
 
 
 if __name__ == "__main__":

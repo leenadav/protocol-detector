@@ -1,6 +1,6 @@
 """Bounded incremental parsers. Each feed receives only newly available bytes."""
 import re
-from .media import METHODS, accept_class, auth_scheme_class, content_type_class
+from .media import METHODS, accept_class, auth_scheme_class, challenge_scheme_classes, content_type_class
 from .model import normalize_hostname
 
 TOKEN = rb"[!#$%&'*+.^_`|~0-9A-Za-z-]+"
@@ -48,7 +48,7 @@ class LineParser:
         self.status = None
         self.content_type_seen = False
         self.accept_seen = False
-        self.auth_seen = False
+        self.auth_schemes = ()
         self.challenges = ()
         self.upgrade = None
         self.connection_upgrade = False
@@ -210,15 +210,18 @@ class LineParser:
                     self.extra_evidence += (("http_accept", "dns", "headers", "asserted"),)
         elif name in (b"authorization", b"proxy-authorization"):
             # Only the scheme token is classified (v0.56); the credential bytes are never read beyond it.
-            if not self.auth_seen:
-                self.auth_seen = True
-                self.extra_evidence += (("http_auth_scheme", auth_scheme_class(value), "headers", "asserted"),)
-        elif name in (b"www-authenticate", b"proxy-authenticate"):
-            # Every distinct scheme offered is reported (a 401 commonly lists Negotiate and NTLM); labels only.
+            # Every occurrence counts (review round 1): a later header must not hide Basic or NTLM.
             label = auth_scheme_class(value)
-            if label not in self.challenges:
-                self.challenges += (label,)
-                self.extra_evidence += (("http_auth_challenge", label, "headers", "asserted"),)
+            if label not in self.auth_schemes:
+                self.auth_schemes += (label,)
+                self.extra_evidence += (("http_auth_scheme", label, "headers", "asserted"),)
+        elif name in (b"www-authenticate", b"proxy-authenticate"):
+            # Every distinct scheme offered is reported, across repeated headers and within one
+            # comma-separated challenge list (review round 1); labels only.
+            for label in challenge_scheme_classes(value):
+                if label not in self.challenges:
+                    self.challenges += (label,)
+                    self.extra_evidence += (("http_auth_challenge", label, "headers", "asserted"),)
         elif name == b"content-length":
             # Conservative policy: duplicate CL is not accepted, even if identical.
             if self.content_length is not None or not re.fullmatch(rb"[0-9]{1,20}", value):

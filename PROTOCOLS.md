@@ -557,8 +557,10 @@ as a closed label; credentials, principals, domains, challenges, tickets and
 MICs are never decoded. `protocol_engine/gss.py` classifies the token layouts
 these messages carry (RFC 2743 InitialContextToken, RFC 4178 SPNEGO
 NegTokenInit/NegTokenResp, MS-NLMP NTLMSSP): `gss_mechanism` is `kerberos`
-(the krb5, MS krb5 or user-to-user OID, or a Kerberos GSS token with a known
-TOK_ID), `ntlm` (the NTLMSSP OID or an NTLMSSP mechToken/responseToken),
+(the krb5, MS krb5 or user-to-user OID, or a Kerberos GSS token whose TOK_ID
+01 00, 02 00, 03 00 or 04 00 is followed by exactly the AP-REQ, AP-REP,
+KRB-ERROR or TGT-REQ it names, whether the token stands alone or is carried as
+a mechToken/responseToken), `ntlm` (the NTLMSSP OID or an NTLMSSP mechToken/responseToken),
 `negoex`, `spnego-other` (SPNEGO without a known preferred mechanism) or
 `other` (a non-SPNEGO GSS OID); `ntlm_message` is `negotiate`, `challenge` or
 `authenticate`. A NegTokenInit names the first listed mechType unless its
@@ -576,10 +578,16 @@ STATUS_SUCCESS or STATUS_MORE_PROCESSING_REQUIRED, SessionFlags within
 guest/null/encrypt, buffer at 72) adds `smb_message=session-setup-response`,
 `smb_session` (`continuing`, `guest`, `anonymous`, `encrypted`,
 `authenticated`) and the token labels. The NEGOTIATE request now also carries
-`smb_signing` (`enabled`/`required`) like the response. Any other command, a
-compounded or signed frame, a status outside the two, or a buffer that does
-not fill the frame leaves the NEGOTIATE identification as published (a
-non-SMB frame is not consumed at all); the watch never reads a third frame.
+`smb_signing` (`enabled`/`required`) like the response. The SMB2 header flags
+must fit the direction: a request may carry only the SMB 3.1.1 priority value,
+a response only SERVER_TO_REDIR; SIGNED is accepted only where MS-SMB2 signs
+this command (the final STATUS_SUCCESS response, a session-binding request)
+and the signature is never verified; an unsigned frame must carry a zero
+signature field; ASYNC, RELATED_OPERATIONS, DFS and REPLAY are rejected. Any
+other command, a compounded frame, a signed frame elsewhere, a status outside
+the two, or a buffer that does not fill the frame leaves the NEGOTIATE
+identification as published (a non-SMB frame is not consumed at all); the
+watch never reads a third frame.
 
 `smb1`: after a NEGOTIATE in either direction, one SESSION_SETUP_ANDX
 (0x73): the 12-word extended-security request classifies its security blob;
@@ -598,12 +606,24 @@ with credentials adds the token's `gss_mechanism`/`ntlm_message`. The
 mechanism string itself is never emitted.
 
 `http`: HTTP/1 and HTTP/2 requests report `http_auth_scheme`
-(`http2_auth_scheme`) from the first `Authorization`/`Proxy-Authorization`
-header, responses `http_auth_challenge` (`http2_auth_challenge`) for every
-distinct scheme offered by `WWW-Authenticate`/`Proxy-Authenticate` headers:
-`basic`, `bearer`, `digest`, `negotiate`, `ntlm`, `other`, `empty`. Only the
-scheme token before the first space or comma is read.
+(`http2_auth_scheme`) for every distinct scheme across all
+`Authorization`/`Proxy-Authorization` headers (one credential per header, so
+only its first token is read), responses `http_auth_challenge`
+(`http2_auth_challenge`) for every distinct challenge across all
+`WWW-Authenticate`/`Proxy-Authenticate` headers and within each
+comma-separated list: an element whose leading token is followed by `=` is an
+auth-param, any other element starts a challenge, commas inside quoted strings
+do not split, and at most 32 list elements per header are examined. Labels:
+`basic`, `bearer`, `digest`, `negotiate`, `ntlm`, `other`, `empty`. Only scheme
+tokens are read.
 
 Risks (RISKS.md): `ntlm-authentication`, `http-basic-authentication`,
 `smb-guest-or-anonymous-session`; `cleartext-credential-protocol` clears on
 LDAP binds whose mechanism never carries the password.
+
+Review round 1 repairs: a Kerberos token carried inside SPNEGO now passes the
+same TOK_ID validator as a direct one (a bad TOK_ID makes the whole token
+malformed instead of yielding `kerberos`); the SMB2 SESSION_SETUP header flags
+are checked as above (previously a signed or async frame was accepted against
+this section's own rule); repeated credential headers and challenge lists no
+longer hide a later Basic or NTLM scheme.

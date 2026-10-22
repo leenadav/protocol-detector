@@ -20,6 +20,9 @@ _MECHANISMS = {OID_KRB5: "kerberos", OID_MS_KRB5: "kerberos", OID_KRB5_USER_TO_U
 NTLMSSP_SIGNATURE = b"NTLMSSP\x00"
 _NTLM_MESSAGES = {1: "negotiate", 2: "challenge", 3: "authenticate"}
 _NEG_STATES = ("accept-completed", "accept-incomplete", "reject", "request-mic")
+# RFC 4121 4.1 / RFC 1964 1.1 TOK_ID and the Kerberos message each one frames: AP-REQ [APPLICATION 14],
+# AP-REP [APPLICATION 15], KRB-ERROR [APPLICATION 30]; user-to-user TGT-REQ is a SEQUENCE.
+_KERBEROS_TOKENS = {b"\x01\x00": 0x6e, b"\x02\x00": 0x6f, b"\x03\x00": 0x7e, b"\x04\x00": 0x30}
 MAX_TOKEN = 4096
 MAX_MECHANISMS = 8
 
@@ -39,15 +42,30 @@ def _ntlm_message(blob):
     return _NTLM_MESSAGES[kind]
 
 
+def _kerberos_token(blob, pos, limit):
+    """After a Kerberos mechanism OID: a known TOK_ID, then exactly the Kerberos message it names."""
+    expected = _KERBEROS_TOKENS.get(bytes(blob[pos:pos + 2]))
+    if expected is None:
+        raise ParseError("Kerberos GSS token needs a known TOK_ID")
+    _, end = ber_field(blob, pos + 2, limit, expected)
+    if end != limit:
+        raise ParseError("Kerberos GSS token has bytes after its message")
+
+
 def _inner(blob, limit):
-    """Mechanism of a mechToken/responseToken: NTLMSSP, a Kerberos GSS token, or other."""
+    """Mechanism of a mechToken/responseToken: NTLMSSP, a Kerberos GSS token, or other.
+
+    A token that names a Kerberos OID must pass the same validator as a direct
+    Kerberos token (review round 1); otherwise the blob is malformed.
+    """
     if blob.startswith(NTLMSSP_SIGNATURE):
         return "ntlm", _ntlm_message(blob)
     if blob[:1] == b"\x60":
         size, start = ber_length(blob, 1, limit)
         if start + size == limit and blob[start:start + 1] == b"\x06":
-            oid, _ = ber_field(blob, start, limit, 0x06)
-            if oid in _MECHANISMS and _MECHANISMS[oid] == "kerberos":
+            oid, pos = ber_field(blob, start, limit, 0x06)
+            if _MECHANISMS.get(oid) == "kerberos":
+                _kerberos_token(blob, pos, limit)
                 return "kerberos", None
     return "other", None
 
@@ -71,9 +89,8 @@ def classify_token(blob):
             if pos >= limit or blob[pos] != 0xa0:
                 raise ParseError("SPNEGO initial token requires NegTokenInit")
             return _neg_token_init(blob, pos, limit)
-        if oid in _MECHANISMS and _MECHANISMS[oid] == "kerberos":
-            if limit - pos < 2 or blob[pos:pos + 2] not in (b"\x01\x00", b"\x02\x00", b"\x03\x00", b"\x04\x00"):
-                raise ParseError("Kerberos GSS token needs a known TOK_ID")
+        if _MECHANISMS.get(oid) == "kerberos":
+            _kerberos_token(blob, pos, limit)
             return GssToken("kerberos", "kerberos", None, None)
         return GssToken("gss-other", "other", None, None)
     if tag == 0xa1:

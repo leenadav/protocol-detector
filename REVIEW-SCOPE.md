@@ -19,7 +19,10 @@ rules in `risks.py` (`ntlm-authentication`, `http-basic-authentication`,
 `smb-guest-or-anonymous-session`, the LDAP cleartext refinement). Trace: no
 credential, principal, domain, realm, challenge or ticket byte reaches
 evidence or reasons; the watch never reads a third frame; a malformed token
-keeps the carrier identification. 596 tests pass.
+keeps the carrier identification. Round-1 repairs: one Kerberos
+TOK_ID validator for direct and SPNEGO-carried tokens, SMB2 SESSION_SETUP
+header flags by direction (`network.py`), every credential header and every
+challenge in a list (`media.py` `challenge_scheme_classes`). 599 tests pass.
 
 Previous focus (v0.55): `protocol_engine/wire.py` `dns_probe` (the plausibility
 rule for the rarer layouts: first label 1..63, section counts 1..32, zero

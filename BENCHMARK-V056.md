@@ -25,3 +25,12 @@ NEGOTIATE alone was about 30 us), an HTTP/1 request with an Authorization
 header about 60 us. The token classifier is a fixed-depth DER walk bounded by
 4096 bytes and 8 mechTypes; every bound raises `ParseError`/`BudgetError` and
 ends the one-frame watch while the carrier identification stands.
+
+Review round 1 repairs (baseline 9b163c9, same harness): every flow within
+noise (http_flow 167.2 -> 170.1, tls_flow 180.6 -> 183.3, dns_datagram
+56.4 -> 59.7, quic_initial 2902.3 -> 2820.1 us). The repaired paths run only on
+authentication headers and SESSION_SETUP frames: a 401 response with two
+challenge headers about 81 us for a fresh Inspector. The challenge splitter is
+two compiled regular expressions, linear in the header value (about 40 ns per
+byte on hostile 8 KiB quoted or comma-heavy values) and stops after 32 list
+elements per header.
