@@ -80,8 +80,10 @@ lint:
 pins:
 	$(PYTHON) -B tools/check_action_pins.py .github/workflows
 
-# The ci gate lists every ci job; the drift workflow triggers on every workflow file.
+# The ci gate lists every ci job; the drift workflow triggers on every workflow file;
+# release publishes serialize; a release tag must point at a commit on main.
 workflow-policy:
+	$(PYTHON) -B tools/check_release_ref.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 

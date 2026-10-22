@@ -11,6 +11,10 @@
    job (its own, else the workflow's) must resolve to the same group for two different
    `v*` tags and must not cancel in progress, so releases of different tags never publish
    at the same time; the workflow-level group must stay per ref for branch dry runs.
+4. Release provenance (`release.yml`): a job the `publish` job needs must run
+   `tools/check_release_ref.py` in a step with no `if:` and no `continue-on-error`, in a
+   job without `continue-on-error`, so a tag on a commit that is not on main never
+   reaches the publish job (tag protection is not enforceable on this plan).
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -250,6 +254,49 @@ def check_release_concurrency(text, publish="publish"):
     return problems
 
 
+PROVENANCE = "tools/check_release_ref.py"
+
+
+def steps_of(job_block):
+    """[[lines of one step]] of a job's `steps:` list (items at indent 6)."""
+    steps, current = [], None
+    for line in job_block:
+        item = ITEM.match(line)
+        if item and len(item.group(1)) == 6:
+            current = [line]
+            steps.append(current)
+        elif current is not None and (not line.strip() or len(line) - len(line.lstrip(" ")) > 6):
+            current.append(line)
+        else:
+            current = None
+    return steps
+
+
+def check_release_provenance(text, publish="publish"):
+    ids, needs = job_ids_and_needs(text)
+    if publish not in ids:
+        return ["release.yml has no `{}` job".format(publish)]
+    guarded = []
+    for job in needs[publish]:
+        block = job_lines(text, job)
+        if any(key_of(line, indent=4) and key_of(line, indent=4)[1] == "continue-on-error" for line in block):
+            continue
+        for step in steps_of(block):
+            runs = any(PROVENANCE in line and not line.strip().startswith("#") for line in step)
+            if not runs:
+                continue
+            first = ITEM.match(step[0]).group(2)
+            keys = {key_of(line, indent=8)[1] for line in step[1:] if key_of(line, indent=8)}
+            inline = key_of(" " * 8 + first, indent=8)
+            if inline:
+                keys.add(inline[1])
+            if not keys & {"if", "continue-on-error"}:
+                guarded.append(job)
+    if not guarded:
+        return ["release.yml: no job the {} job needs runs {} unconditionally".format(publish, PROVENANCE)]
+    return []
+
+
 def main(root):
     root = Path(root)
     workflows = root / ".github" / "workflows"
@@ -259,6 +306,7 @@ def main(root):
         problems += check_gate((workflows / "ci.yml").read_text(encoding="utf-8"))
         problems += check_drift_paths((workflows / "supply-chain-drift.yml").read_text(encoding="utf-8"), files)
         problems += check_release_concurrency((workflows / "release.yml").read_text(encoding="utf-8"))
+        problems += check_release_provenance((workflows / "release.yml").read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         problems.append("cannot read the workflows: {}".format(error))
     for problem in problems:
@@ -384,6 +432,31 @@ def self_test():
             raise AssertionError("an expression outside plain github.* references must fail closed")
         except ValueError:
             pass
+    provenance = """jobs:
+  build:
+    runs-on: x
+{job_extra}    steps:
+      - uses: actions/checkout@0000000000000000000000000000000000000000
+      - name: provenance
+{step_extra}        run: python -B tools/check_release_ref.py --ref-type t --sha s --status x
+  other:
+    steps:
+      - run: python -B tools/check_release_ref.py
+  publish:
+    needs: {needs}
+"""
+    def prov(job_extra="", step_extra="", needs="build"):
+        return provenance.format(job_extra=job_extra, step_extra=step_extra, needs=needs)
+    assert check_release_provenance(prov()) == []
+    assert check_release_provenance(prov(needs="[build, other]")) == []
+    missing = ["release.yml: no job the publish job needs runs tools/check_release_ref.py unconditionally"]
+    assert check_release_provenance(prov(needs="other").replace("      - run: python -B tools/check_release_ref.py\n", "      - run: echo\n")) == missing
+    assert check_release_provenance(prov(step_extra="        if: github.ref_type == 'branch'\n")) == missing
+    assert check_release_provenance(prov(step_extra="        continue-on-error: true\n")) == missing
+    assert check_release_provenance(prov(job_extra="    continue-on-error: true\n")) == missing
+    assert check_release_provenance(prov().replace("        run: python -B tools/check_release_ref.py", "        # run: python -B tools/check_release_ref.py")) == missing
+    assert check_release_provenance(prov().replace("      - name: provenance\n", "      - if: false\n        name: provenance\n")) == missing
+    assert check_release_provenance(prov().replace("  publish:\n    needs: build\n", "")) == ["release.yml has no `publish` job"]
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)

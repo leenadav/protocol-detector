@@ -12,10 +12,12 @@ on:
     paths:
       - ".github/workflows/release.yml"
       - "pyproject.toml"
+      - "tools/check_release_ref.py"
   pull_request:
     paths:
       - ".github/workflows/release.yml"
       - "pyproject.toml"
+      - "tools/check_release_ref.py"
   workflow_dispatch:
 
 permissions:
@@ -72,6 +74,24 @@ jobs:
             test "v${VERSION}" = "${TAG}" || (echo "tag ${TAG} does not match version ${VERSION}" && exit 1)
           fi
           echo "release version ${VERSION} (ref type ${REF_TYPE})" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: A release tag must point at a commit already on main
+        # Tag protection is not enforceable on this plan (SSDLC.md), so the workflow checks it:
+        # compare/<sha>...main is "identical" or "ahead" only when main contains the commit.
+        # A tag fails closed on any other answer; dry runs report only. The pull-request head,
+        # not GitHub's synthetic merge commit, is what a dry run compares.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REF_TYPE: ${{ github.ref_type }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...main" --jq .status) || STATUS="api-error"
+          python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}" > provenance.txt \
+            && RESULT=0 || RESULT=$?
+          cat provenance.txt
+          cat provenance.txt >> "$GITHUB_STEP_SUMMARY"
+          rm provenance.txt
+          exit "${RESULT}"
       - name: Build distributions, check and smoke the wheel, SBOM and checksums
         run: |
           python -m build --sdist --wheel --outdir dist
