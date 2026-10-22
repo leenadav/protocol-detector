@@ -91,13 +91,18 @@
    (the workflows), each with no job-level `if:` or `continue-on-error` and with, in order,
    the pinned `init` (language, security-extended and security-and-quality suites), `analyze`
    (category, `upload: never`, output directory) and error-level gate steps, so neither
-   analysis can be dropped, narrowed or masked while the workflow stays green.
+   analysis can be dropped, narrowed or masked while the workflow stays green. Each job is
+   also pinned whole (check_pinned_job: keys, permissions, runner, all seven steps in order)
+   and the workflow sets no env, so no step can rewrite the SARIF or shadow `python3` before
+   the gate reads it (item 14).
 13. No masked ci job (`ci.yml`): the gate only means something if every job it needs can fail.
    No job or step may set `continue-on-error`; no run line may use `|| true`, `|| :` or
    `set +e`; no job other than the gate may set `if:`, and the gate's is exactly `always()`;
    only the steps in CONDITIONAL_STEPS (the three pull-request-only behaviour-diff base steps,
    pinned by job and every field) may be conditional; and the
-   gate's decision step is pinned (GATE_ENV / GATE_RUN), so a job cannot be skipped or
+   gate's decision step is pinned (GATE_ENV / GATE_RUN), the gate job is pinned whole
+   (CI_GATE_KEYS, harden-runner then the decision, nothing else) and the workflow env may set
+   only WORKFLOW_ENV (nothing can shadow the decision's `jq`), so a job cannot be skipped or
    allowed to fail while `ci gate (all jobs)` stays green. Syntax bans cannot be complete
    (shell has more ways to swallow a status than any list: `echo "$(check)"`, chained
    handlers, ...), so ci.yml is also covered by rule 14's lock. Whether a reviewed change
@@ -502,6 +507,41 @@ GATE_STEPS = [
 ]
 
 
+def check_pinned_job(path, text, job, keys, permissions, runner, steps):
+    """The whole of `job` is an allowlist: exactly `keys`, `permissions` (None: not set), `runner`
+    and `steps` in order (a step's `name` is free text and need not match). A gate decided by a
+    job's last step is only as sound as everything that runs before it in that job, since the
+    runner carries a step's appends to its per-step path and env files (found by a glob, so no
+    name ban can cover them) into the later steps of the same job."""
+    label = path.rsplit("/", 1)[-1]
+    try:
+        block = job_lines(text, job)
+    except ValueError:
+        return ["{} has no `{}` job".format(label, job)]
+    problems = []
+    found = {key_of(line, indent=4)[1] for line in block if key_of(line, indent=4)}
+    if found != keys:
+        problems.append("{}: the {} job must set exactly {} (no env, defaults, container, services, strategy or "
+                        "other keys); it sets {}".format(label, job, ", ".join(sorted(keys)), ", ".join(sorted(found))))
+    if permissions is not None and mapping_at(block, 4, "permissions") != permissions:
+        problems.append("{}: the {} job's permissions must be exactly {}".format(label, job, permissions))
+    value = mapping_at(block, 4, "runs-on")
+    if not isinstance(value, str) or strip_quotes(value) != runner:
+        problems.append("{}: the {} job must run on {}".format(label, job, runner))
+    found_steps = steps_of(block)
+    if len(found_steps) != len(steps):
+        problems.append("{}: the {} job must be exactly {} pinned steps; found {}".format(label, job, len(steps), len(found_steps)))
+    for number, (step, spec) in enumerate(zip(found_steps, steps), 1):
+        try:
+            fields = step_fields(step)
+        except ValueError as error:
+            problems.append("{}: {} step {}: {}".format(label, job, number, error))
+            continue
+        if not step_matches(dict(fields, name=fields.get("name") or ""), spec):
+            problems.append("{}: {} step {} ({}) is not the pinned form".format(label, job, number, fields.get("name", "unnamed")))
+    return problems
+
+
 def check_release_gate(text, publish="publish"):
     """Rule 4: the publish job directly needs GATE_JOB, which is exactly GATE_STEPS and nothing else."""
     ids, needs = job_ids_and_needs(text)
@@ -510,31 +550,7 @@ def check_release_gate(text, publish="publish"):
     problems = []
     if publish in needs and GATE_JOB not in needs[publish]:
         problems.append("publish-release.yml: the {} job must need {} directly".format(publish, GATE_JOB))
-    block = job_lines(text, GATE_JOB)
-    keys = {key_of(line, indent=4)[1] for line in block if key_of(line, indent=4)}
-    if keys != GATE_JOB_KEYS:
-        problems.append("publish-release.yml: the {} job must set exactly {} (no env, defaults, needs, container, "
-                        "services, strategy, if or continue-on-error); it sets {}".format(
-                            GATE_JOB, ", ".join(sorted(GATE_JOB_KEYS)), ", ".join(sorted(keys))))
-    if mapping_at(block, 4, "permissions") != GATE_PERMISSIONS:
-        problems.append("publish-release.yml: the {} job's permissions must be exactly {}".format(GATE_JOB, GATE_PERMISSIONS))
-    runner = mapping_at(block, 4, "runs-on")
-    if not isinstance(runner, str) or strip_quotes(runner) != GATE_RUNNER:
-        problems.append("publish-release.yml: the {} job must run on {}".format(GATE_JOB, GATE_RUNNER))
-    steps = steps_of(block)
-    if len(steps) != len(GATE_STEPS):
-        problems.append("publish-release.yml: the {} job must be exactly {} pinned steps (harden-runner, checkout, "
-                        "setup-python, provenance, release checks); found {}".format(GATE_JOB, len(GATE_STEPS), len(steps)))
-    for number, (step, spec) in enumerate(zip(steps, GATE_STEPS), 1):
-        try:
-            fields = step_fields(step)
-        except ValueError as error:
-            problems.append("publish-release.yml: {} step {}: {}".format(GATE_JOB, number, error))
-            continue
-        if not step_matches(fields, spec):
-            problems.append("publish-release.yml: {} step {} ({}) is not the pinned form".format(
-                GATE_JOB, number, fields.get("name", "unnamed")))
-    return problems
+    return problems + check_pinned_job(RELEASE_WORKFLOW, text, GATE_JOB, GATE_JOB_KEYS, GATE_PERMISSIONS, GATE_RUNNER, GATE_STEPS)
 
 
 def tag_trigger(text):
@@ -779,6 +795,24 @@ def check_cross_check(workflows, path=".github/workflows/ci.yml", job="workflow-
 CODEQL_WORKFLOW = ".github/workflows/codeql.yml"
 CODEQL_JOBS = {"analyze": ("python", "codeql-results"), "analyze-actions": ("actions", "codeql-actions-results")}
 CODEQL_SUITES = "security-extended,security-and-quality"
+CODEQL_JOB_KEYS = {"name", "runs-on", "timeout-minutes", "permissions", "steps"}
+CODEQL_PERMISSIONS = {"contents": "read", "security-events": "write", "actions": "read"}
+CODEQL_ARTIFACTS = {"analyze": "codeql-sarif-${{ github.sha }}", "analyze-actions": "codeql-actions-sarif-${{ github.sha }}"}
+
+
+def codeql_steps(job):
+    """Item 14: the whole CodeQL job, so no step can rewrite the SARIF or shadow python3 before the gate reads it."""
+    language, output = CODEQL_JOBS[job]
+    return [
+        {"uses": "step-security/harden-runner", "with": {"egress-policy": "audit"}},
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        {"uses": "github/codeql-action/init", "with": {"languages": language, "queries": CODEQL_SUITES}},
+        {"uses": "github/codeql-action/analyze", "with": {"category": "/language:" + language, "upload": "never", "output": output}},
+        {"run": ["python3 -B tools/codeql_gate.py " + output]},
+        {"uses": "actions/upload-artifact", "with": {"name": CODEQL_ARTIFACTS[job], "path": output, "retention-days": "30"}},
+        {"uses": "github/codeql-action/upload-sarif", "continue-on-error": "true",
+         "with": {"sarif_file": output, "category": "/language:" + language}},
+    ]
 
 
 def check_codeql(workflows):
@@ -825,6 +859,9 @@ def check_codeql(workflows):
                     CODEQL_WORKFLOW, job, action.rsplit("/", 1)[1] if action else "error-level gate"))
                 break
             position = found
+        problems += check_pinned_job(CODEQL_WORKFLOW, text, job, CODEQL_JOB_KEYS, CODEQL_PERMISSIONS, "ubuntu-24.04", codeql_steps(job))
+    if mapping_at(lines, 0, "env") is not None:
+        problems.append("{}: CodeQL may not set a workflow env (it reaches the gate steps)".format(CODEQL_WORKFLOW))
     return problems
 
 
@@ -839,6 +876,7 @@ CONDITIONAL_STEPS = {
     ],
 }
 GATE_ENV = {"RESULTS": "${{ toJSON(needs) }}"}
+CI_GATE_KEYS = {"name", "runs-on", "timeout-minutes", "if", "needs", "steps"}
 GATE_RUN = [
     'echo "$RESULTS" | jq -r \'to_entries[] | "\\(.key): \\(.value.result)"\' | tee gate.txt',
     '{',
@@ -902,6 +940,9 @@ def check_ci_masking(workflows, path=".github/workflows/ci.yml", gate="gate"):
             problems.append("{}:{}: continue-on-error would let a job the gate needs fail unseen".format(path, number))
         if MASKING.search(line):
             problems.append("{}:{}: `{}` masks a failing command".format(path, number, MASKING.search(line).group(0).strip()))
+    workflow_env = mapping_at(text.splitlines(), 0, "env")
+    if isinstance(workflow_env, str) or set(workflow_env or {}) - WORKFLOW_ENV:
+        problems.append("{}: workflow env may only set {} (it reaches the gate job)".format(path, ", ".join(sorted(WORKFLOW_ENV))))
     ids, _ = job_ids_and_needs(text)
     for job in ids:
         block = job_lines(text, job)
@@ -913,6 +954,11 @@ def check_ci_masking(workflows, path=".github/workflows/ci.yml", gate="gate"):
             if not any(set(fields) == {"name", "env", "run"} and fields["env"] == GATE_ENV and fields["run"] == GATE_RUN
                        for fields in steps):
                 problems.append("{}: the {} job must run the pinned all-jobs decision step".format(path, gate))
+            # item 14: nothing but harden-runner runs before the decision, so nothing can shadow its jq
+            problems += check_pinned_job(path, text, gate, CI_GATE_KEYS, None, "ubuntu-24.04", [
+                {"uses": "step-security/harden-runner", "with": {"egress-policy": "audit"}},
+                {"env": GATE_ENV, "run": GATE_RUN},
+            ])
             continue
         if condition is not None:
             problems.append("{}: job {} may not set if: (the gate would see it skipped only if it is listed)".format(path, job))
@@ -1836,6 +1882,53 @@ def self_test():
         with contextlib.redirect_stdout(captured):
             assert main(directory) == 1, captured.getvalue()
         assert "release-gate step 4 (Shadow gh for later steps) is not the pinned form" in captured.getvalue(), captured.getvalue()
+    # item 14: the CodeQL jobs and the ci gate job are whole-job allowlists too
+    codeql = real[CODEQL_WORKFLOW]
+    assert check_codeql(real) == [], check_codeql(real)
+    codeql_gate_step = ("      - name: Fail on error-level CodeQL findings (summary table of packs, rules and findings)\n"
+                        "        run: python3 -B tools/codeql_gate.py codeql-results\n")
+    assert codeql.count(codeql_gate_step) == 1
+    replace_sarif = '      - name: Tidy results\n        run: |\n          for f in codeql-results/*.sarif; do cp tools/empty.sarif "$f"; done\n'
+    for label, text in {
+        "sarif replaced before the gate": codeql.replace(codeql_gate_step, replace_sarif + codeql_gate_step, 1),
+        "step before init": codeql.replace("      - uses: github/codeql-action/init@", "      - run: echo x\n      - uses: github/codeql-action/init@", 1),
+        "job env": codeql.replace("    name: CodeQL (python, security-extended)\n", "    name: CodeQL (python, security-extended)\n    env:\n      LANG: C\n", 1),
+        "workflow env": codeql.replace("\njobs:\n", "\nenv:\n  PATH: /tmp/bin\n\njobs:\n", 1),
+        "container": codeql.replace("    name: CodeQL (actions, security-extended)\n", "    name: CodeQL (actions, security-extended)\n    container: python:3.13\n", 1),
+        "self-hosted": codeql.replace("    runs-on: ubuntu-24.04\n", "    runs-on: self-hosted\n", 1),
+        "upload-sarif fails the job": codeql.replace("        continue-on-error: true\n", "", 1),
+        "artifact renamed": codeql.replace("          name: codeql-sarif-${{ github.sha }}\n", "          name: x\n", 1),
+    }.items():
+        assert text != codeql, label
+        assert check_codeql(dict(real, **{CODEQL_WORKFLOW: text})), label
+    ci_full = real[".github/workflows/ci.yml"]
+    decision_step = "      - name: Every ci job must have succeeded\n"
+    assert ci_full.count(decision_step) == 1
+    shadow_jq = ('      - name: Shadow jq\n        run: |\n          mkdir -p "$RUNNER_TEMP/bin"\n'
+                 "          target=$(find \"$RUNNER_TEMP\" -type f -name 'add_path_*' -print -quit)\n"
+                 '          echo "$RUNNER_TEMP/bin" >> "$target"\n')
+    for label, text in {
+        "step before the decision": ci_full.replace(decision_step, shadow_jq + decision_step, 1),
+        "gate job env": ci_full.replace("    name: ci gate (all jobs)\n", "    name: ci gate (all jobs)\n    env:\n      LANG: C\n", 1),
+        "gate container": ci_full.replace("    name: ci gate (all jobs)\n", "    name: ci gate (all jobs)\n    container: ubuntu:24.04\n", 1),
+        "workflow PATH": ci_full.replace('  PIP_DISABLE_PIP_VERSION_CHECK: "1"\n', '  PIP_DISABLE_PIP_VERSION_CHECK: "1"\n  PATH: /tmp/bin\n', 1),
+    }.items():
+        assert text != ci_full, label
+        assert check_ci_masking({".github/workflows/ci.yml": text}), label
+    assert check_ci_masking({".github/workflows/ci.yml": ci_full}) == []
+    with tempfile.TemporaryDirectory() as directory:
+        (Path(directory) / ".github" / "workflows").mkdir(parents=True)
+        (Path(directory) / "tools").mkdir()
+        tampered = dict(real, **{CODEQL_WORKFLOW: codeql.replace(codeql_gate_step, replace_sarif + codeql_gate_step, 1),
+                                 ".github/workflows/ci.yml": ci_full.replace(decision_step, shadow_jq + decision_step, 1)})
+        for path, text in tampered.items():
+            (Path(directory) / path).write_text(text, encoding="utf-8")
+        (Path(directory) / WORKFLOW_LOCK).write_text(json.dumps(workflow_lock(tampered)), encoding="utf-8")
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            assert main(directory) == 1, captured.getvalue()
+        assert "codeql.yml: analyze step 5 (Tidy results) is not the pinned form" in captured.getvalue(), captured.getvalue()
+        assert "ci.yml: gate step 2 (Shadow jq) is not the pinned form" in captured.getvalue(), captured.getvalue()
     added = dict(real, **{".github/workflows/extra.yml": "on: push\n"})
     assert any("extra.yml: not in" in p for p in check_workflow_lock(added, lock_text))
     removed = {k: v for k, v in real.items() if k != ".github/workflows/nightly-fuzz.yml"}
