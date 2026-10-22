@@ -19,11 +19,13 @@ on:
       - ".github/workflows/publish-release.yml"
       - "pyproject.toml"
       - "tools/check_release_ref.py"
+      - "tools/check_release_checks.py"
   pull_request:
     paths:
       - ".github/workflows/publish-release.yml"
       - "pyproject.toml"
       - "tools/check_release_ref.py"
+      - "tools/check_release_checks.py"
   workflow_dispatch:
 
 permissions:
@@ -50,6 +52,9 @@ jobs:
     # Read-only: the gate, the version check, the distributions, the wheel smoke, the SBOM
     # and the checksums. Nothing in this job can write to the repository.
     name: release build (gate, version check, distributions, SBOM, checksums)
+    permissions:
+      contents: read   # checkout and the compare API for the provenance check
+      checks: read     # the tagged commit's check runs for the release checks gate
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -101,6 +106,20 @@ jobs:
           python -B tools/check_release_ref.py --self-test
           STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...main" --jq .status) || STATUS="api-error"
           python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}" --summary "${GITHUB_STEP_SUMMARY}"
+      - name: The tagged commit's CI gate and CodeQL must have passed
+        # Required checks are not enforceable on this plan (SSDLC.md), and this job re-runs the
+        # test gate but not CodeQL. Only runs GitHub Actions created for this exact commit count;
+        # a tag fails closed on a missing, pending or failed check; dry runs report only.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REF_TYPE: ${{ github.ref_type }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        # tools/check_workflow_policy.py rule 4 pins this step's env and run lines exactly.
+        run: |
+          python -B tools/check_release_checks.py --self-test
+          gh api --paginate "repos/${GH_REPO}/commits/${SHA}/check-runs?per_page=100" --jq '.check_runs[] | {name, status, conclusion, head_sha, completed_at, app: .app.slug}' > "${RUNNER_TEMP}/check-runs.jsonl" || echo "api-error" > "${RUNNER_TEMP}/check-runs.jsonl"
+          python -B tools/check_release_checks.py --ref-type "${REF_TYPE}" --sha "${SHA}" --runs "${RUNNER_TEMP}/check-runs.jsonl" --summary "${GITHUB_STEP_SUMMARY}"
       - name: Build distributions, check and smoke the wheel, SBOM and checksums
         run: |
           python -m build --sdist --wheel --outdir dist

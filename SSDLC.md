@@ -43,6 +43,7 @@ only with green checks is a review discipline, not a guarantee.
 | `ci`, `codeql`, `supply-chain-drift` and `release` workflow gates, job-level token permissions, SHA-pinned actions, hash-pinned toolchain | enforced by the workflows on every run |
 | Release publishes serialized, publish only from a pushed `v*` tag that matches the package version | enforced by the guarded controller `publish-release.yml` for tags on commits that carry it |
 | Release provenance: a `v*` tag publishes only a commit already on `main` | **not enforced yet.** `publish-release.yml` runs the check (`tools/check_release_ref.py`; rule 4 of `tools/check_workflow_policy.py` pins its exact env and run lines, the publish job's condition and its dependency path). But a tag push runs the workflow file at the tagged commit, and every older commit (for example `main` at 214042f, or 6e1cd61) still holds the unguarded `.github/workflows/release.yml`. A `v*` tag on such a commit publishes through it with no provenance check. The check becomes enforced, for tags on commits whose workflow passed the policy, once Lee disables the legacy `release` workflow (path `.github/workflows/release.yml`) in the Actions settings. Rule 5 keeps that path out of the tree, so disabling it never touches the controller. `python3 tools/check_release_exposure.py --ref <commit> [--disabled .github/workflows/release.yml]` models a tag on any commit without creating one |
+| Release checks: a `v*` tag publishes only a commit whose `ci gate (all jobs)` and CodeQL runs passed | enforced by `publish-release.yml` for tags on commits that carry it (`tools/check_release_checks.py`, with `checks: read` on the read-only build job). Only runs that GitHub Actions created for that exact commit count; the latest completed run of each must have succeeded, and none may still be running. A missing, pending, failed or cancelled check, or an unreadable API answer, fails the tag. Rule 4 pins the step. Same legacy caveat as provenance: not enforced for tags on older commits until the legacy `release` workflow is disabled. Tagging a commit whose CI or CodeQL is still running fails the release; re-run it once they finish |
 | Failing checks fail their step (pipefail) | enforced: every workflow sets `defaults: run: shell: bash`, which is `bash -eo pipefail`. The unspecified default is `bash -e`, under which `check \| tee` passed when the check failed. Rule 6 of the policy forbids dropping or overriding it |
 | Required status checks on `main` (the two names below) | recommended; not enforceable on the current plan |
 | Required pull request review, stale-approval dismissal, no force push or deletion on `main` | recommended; not enforceable on the current plan |
@@ -204,7 +205,7 @@ the review loop above.
    (GitHub compare API with the read-only token), with a tested decision
    helper and a workflow-policy rule that keeps the step on the publish
    job's dependency path.
-2. Green-checks-on-tag. Before publishing, require that `ci gate (all jobs)`
+2. Green-checks-on-tag (in review on `claude/cicd-next`). Before publishing, require that `ci gate (all jobs)`
    and CodeQL succeeded on the tagged commit (read-only `checks: read`), so
    a release cannot ship a commit whose CodeQL never passed (the release
    build re-runs the test gate but not CodeQL).

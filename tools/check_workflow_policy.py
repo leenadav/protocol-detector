@@ -14,7 +14,9 @@
 4. Release provenance (`publish-release.yml`): a job the `publish` job needs, with no job-level
    `if:` or `continue-on-error`, must contain the pinned provenance step: exactly the keys
    `name`, `env` and `run`, the env mapping in PROVENANCE_ENV and the run lines in
-   PROVENANCE_RUN (self-test, compare status, the decision with REF_TYPE, SHA and STATUS).
+   PROVENANCE_RUN (self-test, compare status, the decision with REF_TYPE, SHA and STATUS),
+   and likewise the pinned release-checks step (CHECKS_RUN: the tagged commit's check runs
+   from the API, the CI gate and CodeQL required by `tools/check_release_checks.py`).
    The publish job's `if:` must be exactly PUBLISH_CONDITION, so no status-check function
    (success(), always(), failure(), cancelled(), in any case or spacing) can let it run
    after the provenance job failed. So a tag on a commit that is not on main never reaches
@@ -283,6 +285,20 @@ PROVENANCE_RUN = [
     'python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}"'
     ' --summary "${GITHUB_STEP_SUMMARY}"',
 ]
+CHECKS = "tools/check_release_checks.py"
+CHECKS_RUN = [
+    'python -B tools/check_release_checks.py --self-test',
+    'gh api --paginate "repos/${GH_REPO}/commits/${SHA}/check-runs?per_page=100" --jq \'.check_runs[] | {name, status,'
+    ' conclusion, head_sha, completed_at, app: .app.slug}\' > "${RUNNER_TEMP}/check-runs.jsonl"'
+    ' || echo "api-error" > "${RUNNER_TEMP}/check-runs.jsonl"',
+    'python -B tools/check_release_checks.py --ref-type "${REF_TYPE}" --sha "${SHA}" --runs "${RUNNER_TEMP}/check-runs.jsonl"'
+    ' --summary "${GITHUB_STEP_SUMMARY}"',
+]
+# (label, helper, env, run lines): each must appear, exactly, in a job the publish job needs.
+PINNED_STEPS = [
+    ("provenance", PROVENANCE, PROVENANCE_ENV, PROVENANCE_RUN),
+    ("release checks", CHECKS, PROVENANCE_ENV, CHECKS_RUN),
+]
 PUBLISH_CONDITION = "github.event_name == 'push' && github.ref_type == 'tag'"
 RELEASE_WORKFLOW = ".github/workflows/publish-release.yml"
 LEGACY_RELEASE = ".github/workflows/release.yml"
@@ -348,22 +364,27 @@ def check_release_provenance(text, publish="publish"):
     if " ".join(strip_quotes(condition).split()) != PUBLISH_CONDITION:
         problems.append("publish-release.yml: the {} job's if: must be exactly `{}` (no status-check function "
                         "may let it run after a needed job failed)".format(publish, PUBLISH_CONDITION))
-    guarded = []
-    for job in needs[publish]:
-        block = job_lines(text, job)
-        job_keys = {key_of(line, indent=4)[1] for line in block if key_of(line, indent=4)}
-        if job_keys & {"if", "continue-on-error"}:
-            continue
-        for step in steps_of(block):
-            if not any(PROVENANCE in line for line in step):
+    for label, helper, env, run in PINNED_STEPS:
+        guarded = []
+        for job in needs[publish]:
+            block = job_lines(text, job)
+            job_keys = {key_of(line, indent=4)[1] for line in block if key_of(line, indent=4)}
+            if job_keys & {"if", "continue-on-error"}:
                 continue
-            fields = step_fields(step)
-            if (set(fields) == {"name", "env", "run"} and fields["env"] == PROVENANCE_ENV
-                    and fields["run"] == PROVENANCE_RUN):
-                guarded.append(job)
-    if not guarded:
-        problems.append("publish-release.yml: no job the {} job needs runs the pinned provenance step ({} with the "
-                        "compare status, REF_TYPE and SHA, unconditionally)".format(publish, PROVENANCE))
+            for step in steps_of(block):
+                if not any(helper in line for line in step):
+                    continue
+                fields = step_fields(step)
+                if set(fields) == {"name", "env", "run"} and fields["env"] == env and fields["run"] == run:
+                    guarded.append(job)
+        if guarded:
+            continue
+        if label == "provenance":
+            problems.append("publish-release.yml: no job the {} job needs runs the pinned provenance step ({} with the "
+                            "compare status, REF_TYPE and SHA, unconditionally)".format(publish, PROVENANCE))
+        else:
+            problems.append("publish-release.yml: no job the {} job needs runs the pinned {} step ({}, "
+                            "unconditionally)".format(publish, label, helper))
     return problems
 
 
@@ -584,8 +605,13 @@ def self_test():
 {publish_extra}    needs: {needs}
 """
 
+    checks_step = ("      - name: release checks\n        env:\n"
+                   + "".join("          {}: {}\n".format(k, v) for k, v in PROVENANCE_ENV.items())
+                   + "        run: |\n" + "".join("          {}\n".format(line) for line in CHECKS_RUN))
+
     def prov(job_extra="", step_extra="", needs="build", publish_extra="    if: github.event_name == 'push' && github.ref_type == 'tag'\n"):
-        return provenance.format(job_extra=job_extra, step_extra=step_extra, needs=needs, publish_extra=publish_extra)
+        text = provenance.format(job_extra=job_extra, step_extra=step_extra, needs=needs, publish_extra=publish_extra)
+        return text.replace("  other:\n", checks_step + "  other:\n", 1)
     good = prov()
     assert check_release_provenance(good) == [], check_release_provenance(good)
     assert check_release_provenance(prov(needs="[build, other]")) == []
@@ -617,9 +643,24 @@ def self_test():
     }
     for label, text in bypasses.items():
         assert text != good, label
-        assert check_release_provenance(text) == missing, (label, check_release_provenance(text))
+        found = check_release_provenance(text)
+        # job-level bypasses unguard both pinned steps; step-level ones only the provenance step
+        assert found[0] == missing[0] and len(found) <= 2, (label, found)
     condition = ["publish-release.yml: the publish job's if: must be exactly `{}` (no status-check function may let "
                  "it run after a needed job failed)".format(PUBLISH_CONDITION)]
+    checks_missing = ["publish-release.yml: no job the publish job needs runs the pinned release checks step "
+                      "(tools/check_release_checks.py, unconditionally)"]
+    final_checks = CHECKS_RUN[-1]
+    for label, text in {
+        "checks step dropped": good.replace(checks_step, ""),
+        "checks hard-coded ref type": good.replace(final_checks, final_checks.replace('--ref-type "${REF_TYPE}"', "--ref-type branch")),
+        "checks self-test only": good.replace("          " + final_checks + "\n", ""),
+        "checks masked": good.replace(final_checks, final_checks + " || true"),
+        "checks runs from elsewhere": good.replace(final_checks, final_checks.replace('--runs "${RUNNER_TEMP}/check-runs.jsonl"', "--runs /dev/null")),
+        "checks api swallowed": good.replace(CHECKS_RUN[1], 'echo "" > "${RUNNER_TEMP}/check-runs.jsonl"'),
+    }.items():
+        assert text != good, label
+        assert check_release_provenance(text) == checks_missing, (label, check_release_provenance(text))
     for override in ("    if: success() || github.ref_type == 'tag'\n",          # milestone 1 round 2
                      "    if: SUCCESS ( ) || github.ref_type == 'tag'\n",
                      "    if: Success() || github.event_name == 'push' && github.ref_type == 'tag'\n",
