@@ -38,8 +38,8 @@
    from the build job to the publish job, share a major version. A partial bump (one file,
    one job, or one half of the artifact pair; Dependabot PR #8 was computed before the
    release split and would have moved only the upload side to v7) fails here instead of
-   surfacing as a broken release. A remote `uses:` without a full SHA and a tag comment
-   fails closed.
+   surfacing as a broken release. `owner/repo` is compared case-insensitively, as GitHub
+   resolves it. A remote `uses:` without a full SHA and a tag comment fails closed.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -479,7 +479,9 @@ def check_action_consistency(workflows):
                 problems.append("{}:{}: `{}` is not pinned to a full SHA with a `# vX.Y.Z` comment".format(
                     path, number, reference))
                 continue
-            repository, action = pinned.group(1), pinned.group(1) + (pinned.group(2) or "")
+            # GitHub resolves owner/repo case-insensitively; the path inside the repository is case-sensitive.
+            repository = pinned.group(1).lower()
+            action = repository + (pinned.group(2) or "")
             pins.setdefault(repository, set()).add((pinned.group(3), (found.group(2) or "").strip()))
             majors.setdefault(action, set()).add(int(tag.group(1)))
     for repository, seen in sorted(pins.items()):
@@ -795,6 +797,16 @@ def self_test():
         found = check_action_consistency({"a.yml": co + bad, "b.yml": down4})
         assert any("cannot read this `uses` entry" in problem for problem in found), (bad, found)
     assert check_action_consistency({"a.yml": "      # uses: anything goes in a comment\n" + co}) == []
+    # milestone 3 round 2: owner/repo is case-insensitive on GitHub, so case must not split identities
+    mixed7 = up7.replace("actions/upload-artifact", "Actions/Upload-Artifact")
+    assert check_action_consistency({"a.yml": co + mixed7, "b.yml": co + down4}) == [
+        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version"]
+    found = check_action_consistency({"a.yml": co + up4 + mixed7, "b.yml": down4})
+    assert found[0].startswith("actions/upload-artifact is pinned 2 different ways") and len(found) == 2, found
+    assert check_action_consistency({"a.yml": co + up4.replace("actions/upload-artifact", "ACTIONS/UPLOAD-ARTIFACT"),
+                                     "b.yml": down4.replace("actions/download", "Actions/Download")}) == []
+    found = check_action_consistency({"a.yml": co + co.replace("actions/checkout", "Actions/Checkout").replace("1" * 40, "2" * 40)})
+    assert len(found) == 1 and found[0].startswith("actions/checkout is pinned 2 different ways"), found
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)
