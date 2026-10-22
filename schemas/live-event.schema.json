@@ -361,6 +361,43 @@
             },
             "lifetime_days": {
               "type": "string"
+            },
+            "not_before": {
+              "type": "string"
+            },
+            "not_after": {
+              "type": "string"
+            },
+            "ca": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no"
+              ]
+            },
+            "eku": {
+              "type": "string",
+              "enum": [
+                "server-auth",
+                "any",
+                "other",
+                "absent"
+              ]
+            },
+            "san": {
+              "type": "string",
+              "enum": [
+                "present",
+                "absent"
+              ]
+            },
+            "validity": {
+              "type": "string",
+              "enum": [
+                "current",
+                "expired",
+                "not-yet-valid"
+              ]
             }
           }
         },
@@ -571,6 +608,43 @@
             },
             "lifetime_days": {
               "type": "string"
+            },
+            "not_before": {
+              "type": "string"
+            },
+            "not_after": {
+              "type": "string"
+            },
+            "ca": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no"
+              ]
+            },
+            "eku": {
+              "type": "string",
+              "enum": [
+                "server-auth",
+                "any",
+                "other",
+                "absent"
+              ]
+            },
+            "san": {
+              "type": "string",
+              "enum": [
+                "present",
+                "absent"
+              ]
+            },
+            "validity": {
+              "type": "string",
+              "enum": [
+                "current",
+                "expired",
+                "not-yet-valid"
+              ]
             }
           }
         },

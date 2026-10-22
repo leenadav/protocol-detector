@@ -348,16 +348,39 @@ def _x509_key(kind):
     raise ValueError(kind)
 
 
+SERVER_AUTH_OID = bytes.fromhex('2b06010505070301')     # 1.3.6.1.5.5.7.3.1 id-kp-serverAuth
+CLIENT_AUTH_OID = bytes.fromhex('2b06010505070302')     # 1.3.6.1.5.5.7.3.2 id-kp-clientAuth
+ANY_KEY_USAGE_OID = bytes.fromhex('551d2500')           # 2.5.29.37.0 anyExtendedKeyUsage
+
+
+def x509_extension(oid, value, critical=False):
+    return _ber(0x30, _ber(6, oid) + (_ber(1, b'\xff') if critical else b'') + _ber(4, value))
+
+
 def x509(issuer=b'Placeholder CA', subject=b'placeholder', key='rsa-2048', signature=SHA256_RSA,
-         not_before=b'240101000000Z', not_after=b'241231235959Z', version=3, extensions=True, serial=b'\x01\x02\x03'):
-    """Build one DER certificate with placeholder bytes; `extensions` adds basicConstraints."""
+         not_before=b'240101000000Z', not_after=b'241231235959Z', version=3, extensions=True, serial=b'\x01\x02\x03',
+         ca=False, path_len=None, eku=(SERVER_AUTH_OID,), san=(b'placeholder.example',), extra=(), constraints=None):
+    """Build one DER certificate with placeholder bytes.
+
+    `extensions` adds basicConstraints (cA TRUE when `ca`, optional raw `path_len` INTEGER
+    contents), extendedKeyUsage from the `eku` OIDs (None omits it), subjectAltName with
+    dNSName placeholders (None omits it) and any `extra` encoded Extension elements.
+    `constraints` replaces the basicConstraints SEQUENCE contents with raw bytes.
+    """
     algorithm = _ber(0x30, _ber(6, signature) + (_ber(5, b'') if signature != ED25519_OID else b''))
     tbs = (_ber(0xa0, _ber(2, bytes([version - 1]))) if version > 1 else b'') + _ber(2, serial) + algorithm
     tbs += _x509_name(issuer)
     tbs += _ber(0x30, _ber(0x17 if len(not_before) == 13 else 0x18, not_before) + _ber(0x17 if len(not_after) == 13 else 0x18, not_after))
     tbs += _x509_name(subject) + _x509_key(key)
     if extensions:
-        tbs += _ber(0xa3, _ber(0x30, _ber(0x30, _ber(6, b'\x55\x1d\x13') + _ber(1, b'\xff') + _ber(4, _ber(0x30, b'')))))
+        if constraints is None:
+            constraints = (_ber(1, b'\xff') if ca else b'') + (_ber(2, path_len) if path_len is not None else b'')
+        items = [x509_extension(b'\x55\x1d\x13', _ber(0x30, constraints), critical=True)]
+        if eku is not None:
+            items.append(x509_extension(b'\x55\x1d\x25', _ber(0x30, b''.join(_ber(6, oid) for oid in eku))))
+        if san is not None:
+            items.append(x509_extension(b'\x55\x1d\x11', _ber(0x30, b''.join(_ber(0x82, name) for name in san))))
+        tbs += _ber(0xa3, _ber(0x30, b''.join(items) + b''.join(extra)))
     return _ber(0x30, _ber(0x30, tbs) + algorithm + _ber(3, b'\x00' + b'\x44' * 64))
 
 
@@ -373,7 +396,7 @@ def tls_record(payload, kind=22):
 
 
 LEAF_CERTIFICATE = x509()
-CA_CERTIFICATE = x509(subject=b'Placeholder CA', key='rsa-4096', not_after=b'20491231235959Z')
+CA_CERTIFICATE = x509(subject=b'Placeholder CA', key='rsa-4096', not_after=b'20491231235959Z', ca=True, eku=None, san=None)
 TLS_SERVER12_CERTIFICATE = TLS_SERVER12 + tls_record(certificate_message(LEAF_CERTIFICATE, CA_CERTIFICATE))
 
 

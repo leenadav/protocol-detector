@@ -1,11 +1,24 @@
-# Review scope: protocol detector v0.56
+# Review scope: protocol detector v0.57
 
 Python3.9-compatible IPv4 passive classification: 85 families, 76 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.56): `protocol_engine/gss.py` (DER walk of SPNEGO
+New focus (v0.57): `protocol_engine/tls_server.py` key exchange and cipher
+mode labels (the TLS 1.2 suite table, static ECDH versus ECDHE, TLS 1.3
+`key_share`/`pre_shared_key` combinations, the DTLS 1.2 reuse in `dtls.py`),
+`protocol_engine/x509.py` `_extensions` (duplicate OIDs, basicConstraints DER
+rules for cA and pathLenConstraint, extendedKeyUsage purpose budget of 16,
+subjectAltName framing without reading names, day-granular window, `validity`
+with its unset-clock bounds), the capture-time plumbing (`classify`/
+`session_verdict` `at=`, `flow_risks`, `analyze_pcap.certificate_fields` at the
+session's first packet, `live_capture` at the event's packet) and the five
+new risks. Trace: no alternative name, key purpose OID or time of day reaches
+output; a malformed extension keeps the ServerHello identification; nothing
+reads the wall clock. 612 tests pass.
+
+Previous focus (v0.56): `protocol_engine/gss.py` (DER walk of SPNEGO
 NegTokenInit/NegTokenResp and Kerberos GSS tokens: exact lengths at every
 level, 8 mechTypes, 4096-byte tokens, closed labels only), the one-frame
 session-setup watch in `protocol_engine/network.py` `SMB2Parser` and
@@ -27,7 +40,7 @@ the RFC 4120 envelope of the Kerberos message after the TOK_ID (`gss.py`
 `_kerberos_message`, KRB-ERROR through `windows.py` `_kerberos_body`), and
 SESSION_SETUP requests carry no header flags (`network.py`). Round-3 repairs:
 DER KerberosFlags (`gss.py` `_kerberos_flags`) and the 0..999999 microseconds
-range in `windows.py` `_kerberos_body`. 603 tests pass.
+range in `windows.py` `_kerberos_body`. 603 tests passed at v0.56.
 
 Previous focus (v0.55): `protocol_engine/wire.py` `dns_probe` (the plausibility
 rule for the rarer layouts: first label 1..63, section counts 1..32, zero

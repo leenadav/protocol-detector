@@ -29,7 +29,7 @@ closed set reviewers should expect in records.
 | diameter | tcp | yes | yes | `diameter_message`, `diameter_result` |
 | dnp3 | tcp | yes | same shape | - |
 | dns | tcp/udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode` |
-| dtls | udp | yes | yes | `handshake`, `offered_dtls_version`, `selected_cipher`, `selected_dtls_version` |
+| dtls | udp | yes | yes | `handshake`, `offered_dtls_version`, `selected_cipher`, `selected_cipher_mode`, `selected_dtls_version`, `selected_key_exchange` |
 | ethernet-ip | tcp/udp | yes | same shape | `enip_command` |
 | fastcgi | tcp | yes | yes | `fastcgi_record`, `fastcgi_role` |
 | fins | tcp | yes | yes | `fins_frame`, `fins_message` |
@@ -94,7 +94,7 @@ closed set reviewers should expect in records.
 | tds | tcp | yes | yes | `tds_encryption`, `tds_federated_auth`, `tds_mars` |
 | telnet | tcp | yes | same shape | - |
 | tftp | udp | yes | yes | `tftp_packet` |
-| tls | tcp | yes | yes | `hostname`, `offered_alpn`, `requested_group`, `selected_alpn`, `selected_cipher`, `selected_group`, `selected_tls_version`, `tls_certificate_chain`, `tls_certificate_key`, `tls_certificate_lifetime_days`, `tls_certificate_self_issued`, `tls_certificate_signature`, `tls_certificate_version`, `tls_ech`, `tls_handshake`, `tls_offered_max_version` |
+| tls | tcp | yes | yes | `hostname`, `offered_alpn`, `requested_group`, `selected_alpn`, `selected_cipher`, `selected_cipher_mode`, `selected_group`, `selected_key_exchange`, `selected_tls_version`, `tls_certificate_ca`, `tls_certificate_chain`, `tls_certificate_eku`, `tls_certificate_key`, `tls_certificate_lifetime_days`, `tls_certificate_not_after`, `tls_certificate_not_before`, `tls_certificate_san`, `tls_certificate_self_issued`, `tls_certificate_signature`, `tls_certificate_version`, `tls_ech`, `tls_handshake`, `tls_offered_max_version` |
 | tns | tcp | yes | yes | `tns_connect_data`, `tns_response`, `tns_version` |
 | websocket | tcp | yes | yes | `websocket_masked`, `websocket_opcode` |
 | wireguard | udp | yes | yes | `message_type` |
@@ -644,3 +644,64 @@ taken as proof of SMB 3.x. Round 3 repairs (carried into the v0.57 request,
 the round limit being reached): ap-options must carry at least 32 significant
 bits with zero padding, and the shared KRB-ERROR validator rejects cusec/susec
 outside 0..999999, which also tightens the standalone Kerberos family.
+
+## TLS posture: server key exchange, leaf certificate purpose and validity (v0.57)
+
+No new family. The ServerHello and the opt-in leaf certificate watch (v0.39)
+gain posture labels drawn from closed sets; nothing is verified and nothing
+names the server.
+
+Server selections (`protocol_engine/tls_server.py`, TLS 1.2, TLS 1.3 and
+DTLS 1.2 ServerHello; a HelloRetryRequest selects nothing and carries neither):
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `selected_key_exchange` | `ecdhe`, `dhe`, `static-ecdh`, `static-rsa`, `psk` | TLS 1.2 from the suite: `TLS_RSA_*` (0x002f) is `static-rsa`; `TLS_ECDH_*` (0xc025, 0xc026, 0xc029, 0xc02a, 0xc02d, 0xc02e, 0xc031, 0xc032) use the certificate's static key and are `static-ecdh`; `TLS_ECDHE_*` are `ecdhe`. TLS 1.3 from the extensions: a `key_share` names `ecdhe` (x25519, x448, P-256/384/521) or `dhe` (ffdhe2048..8192), with or without `pre_shared_key`; `pre_shared_key` alone is `psk` (psk_ke resumption, RFC 8446 4.2.9) |
+| `selected_cipher_mode` | `aead`, `cbc` | GCM suites and every TLS 1.3 suite are `aead`; the CBC suites (0x002f, 0xc023..0xc02a) are `cbc` |
+
+Both are `asserted`: the server's selection, unauthenticated, with handshake
+completion unverified. Risk `tls-no-forward-secrecy` (`static-rsa`,
+`static-ecdh`, `psk`).
+
+Leaf certificate (`protocol_engine/x509.py`, `--certificates`): the extension
+walk keeps checking every extension's framing as before and now interprets
+exactly three of them; any other extension is never read beyond its framing.
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `tls_certificate_ca` | `yes`, `no` | basicConstraints (2.5.29.19) `cA`. DER omits the FALSE default, so an encoded FALSE (or any BOOLEAN other than 0xff) is malformed; `pathLenConstraint` only with cA TRUE (RFC 5280 4.2.1.9), a 1..4-octet non-negative minimally encoded INTEGER; any other field is malformed. Absent extension: `no` |
+| `tls_certificate_eku` | `server-auth`, `any`, `other`, `absent` | extendedKeyUsage (2.5.29.37), 1..16 key purposes: `server-auth` when id-kp-serverAuth is listed, else `any` for anyExtendedKeyUsage, else `other` |
+| `tls_certificate_san` | `present`, `absent` | subjectAltName (2.5.29.17): a non-empty SEQUENCE of GeneralName choices [0]..[8], each framed within the sequence; no name is read or emitted |
+| `tls_certificate_not_before`, `tls_certificate_not_after` | `YYYY-MM-DD` | The validity window at calendar-day granularity (the time of day is dropped so the window is a coarse posture fact rather than a fingerprint) |
+
+`ca`, `eku` and `san` appear only for v3 certificates (v1 and v2 cannot carry
+extensions). The same extension OID twice is malformed (RFC 5280 4.2). As in
+v0.39, any deviation ends the watch with no certificate evidence and keeps the
+ServerHello identification.
+
+Validity at capture time: the engine has no clock. The hosts pass the capture
+time (`classify(..., at=)`, `session_verdict(..., at=)`): `analyze_pcap` the
+session's first packet, `live_capture` the packet that produced the event.
+Session records and live events add `certificate.validity` (`current`,
+`expired`, `not-yet-valid`) and the risk `tls-certificate-outside-validity`.
+Boundary days count as inside, and a session is judged at its start, so the
+comparison errs towards not flagging. A capture clock before 2000-01-01 (zeroed
+or synthetic timestamps) or beyond year 9999 is treated as unset: no validity,
+no risk. The wall clock of the analysis run is never read, so replaying an old
+capture judges certificates as they were at capture time.
+
+Risks: `tls-no-forward-secrecy`, `tls-ca-certificate-as-leaf`,
+`tls-certificate-not-for-server-auth`, `tls-certificate-without-san`,
+`tls-certificate-outside-validity` (RISKS.md). Still out of scope: chain
+building, signature and name verification, revocation, keyUsage bits, name
+constraints, policies, and TLS 1.3 certificates (encrypted).
+
+Behaviour diff against v0.56: `tools/compare_engine.py` covers the DTLS
+ServerHello (176 of its inputs gain the two selection rows, nothing else
+changes); its fixture set has no TLS server flight, so a supplementary run fed
+identical TLS 1.2, TLS 1.3, HelloRetryRequest and certificate flights (with
+seeded mutations, certificates on and off) to both trees: no status, protocol
+or reason changes; ServerHellos gain the selection rows, certificate flights
+the posture rows, and 2 of 410 mutated certificate flights now end the watch
+without certificate evidence because the mutation fell inside an extension
+v0.57 interprets.

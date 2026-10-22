@@ -8,6 +8,18 @@ _TLS12_ECC_CIPHERS = frozenset(range(0xc023, 0xc033))
 _TLS12_CIPHERS = frozenset((0x002f,)) | _TLS12_ECC_CIPHERS
 _KEY_SIZES = {23:65, 24:97, 25:133, 29:32, 30:56,
               256:256, 257:384, 258:512, 259:768, 260:1024}
+_FFDHE_GROUPS = frozenset(range(256, 261))
+# v0.57: key exchange and record protection named by the selected TLS 1.2 suite (RFC 5246, 5289).
+# ECDH_ suites (0xc025..0xc02a, 0xc02d..0xc032) use the certificate's static key: no forward secrecy.
+_TLS12_STATIC_ECDH = frozenset((0xc025, 0xc026, 0xc029, 0xc02a, 0xc02d, 0xc02e, 0xc031, 0xc032))
+_TLS12_AEAD = frozenset(range(0xc02b, 0xc033))
+NO_FORWARD_SECRECY = frozenset(('static-rsa', 'static-ecdh', 'psk'))
+
+
+def _tls12_key_exchange(cipher):
+    if cipher == 0x002f:
+        return 'static-rsa'
+    return 'static-ecdh' if cipher in _TLS12_STATIC_ECDH else 'ecdhe'
 
 
 def parse_server_hello(body, config, record_versions, record_remaining):
@@ -76,6 +88,11 @@ def parse_server_hello(body, config, record_versions, record_remaining):
                     raise ParseError('Server key share encoding length or point format invalid')
                 # Key validity / curve membership and DH checks require the TLS stack.
                 evidence.append(('selected_group', str(group), source, 'asserted'))
+                exchange = 'dhe' if group in _FFDHE_GROUPS else 'ecdhe'
+            else:
+                exchange = 'psk'   # psk_ke: the resumed secret alone keys the session (RFC 8446 4.2.9)
+            evidence.extend((('selected_key_exchange', exchange, source, 'asserted'),
+                             ('selected_cipher_mode', 'aead', source, 'asserted')))
         version = '1.3'
     else:
         if retry:
@@ -109,6 +126,8 @@ def parse_server_hello(body, config, record_versions, record_remaining):
                 evidence.append(('selected_alpn', text, source, 'asserted'))
             else:
                 raise UnsupportedPrefix('TLS 1.2 ServerHello extension outside supported profile')
+        evidence.extend((('selected_key_exchange', _tls12_key_exchange(cipher), source, 'asserted'),
+                         ('selected_cipher_mode', 'aead' if cipher in _TLS12_AEAD else 'cbc', source, 'asserted')))
         version = '1.2'
     evidence.extend((('selected_tls_version', version, source, 'asserted'),
                      ('selected_cipher', '0x%04x' % cipher, source, 'asserted')))
