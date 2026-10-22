@@ -1,10 +1,22 @@
-# Release gate: a tag builds the sdist/wheel, attaches a CycloneDX SBOM and a
-# SLSA-style build provenance attestation, and publishes a GitHub release.
+# Release gate. A `v*` tag builds the sdist and wheel in a read-only job, then a
+# separate job holding the write scopes attests and publishes exactly the files the
+# build job produced. workflow_dispatch and changes to this file run the build job
+# alone (a dry run that never publishes), so the release path is exercised before the
+# first real tag. See SSDLC.md.
 name: release
 
 on:
   push:
     tags: ["v*"]
+    branches: ["**"]
+    paths:
+      - ".github/workflows/release.yml"
+      - "pyproject.toml"
+  pull_request:
+    paths:
+      - ".github/workflows/release.yml"
+      - "pyproject.toml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,15 +25,17 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false   # a release in flight is never cancelled; a second tag queues behind it
 
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
 jobs:
   build:
-    name: release build (gate, version check, distributions, attestation, publish)
+    # Read-only: the gate, the version check, the distributions, the wheel smoke, the SBOM
+    # and the checksums. Nothing in this job can write to the repository.
+    name: release build (gate, version check, distributions, SBOM, checksums)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    permissions:
-      contents: write       # gh release create uploads the distributions to the release
-      id-token: write       # OIDC token for the Sigstore signing of the provenance attestation
-      attestations: write   # attest-build-provenance stores the attestation on the repository
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
@@ -33,7 +47,7 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
-      - name: The full gate must pass on the tagged commit
+      - name: The full gate must pass on the commit being released
         run: |
           python -m pip install --require-hashes -r requirements-dev.txt
           python -B -m compileall -q protocol_engine tools ./*.py
@@ -44,13 +58,19 @@ jobs:
           python -B tools/check_docs_counts.py
           python -B tools/coverage_matrix.py --check PROTOCOLS.md
           python -B protodetect.py policy lint policy-example.json --strict
-      - name: The tag must match the package version
+      - name: The reported version must equal pyproject.toml, and the tag when there is one
         env:
+          REF_TYPE: ${{ github.ref_type }}
           TAG: ${{ github.ref_name }}
         run: |
           VERSION=$(python -B protodetect.py version | awk '{print $NF}')
-          test "v${VERSION}" = "${TAG}" || (echo "tag ${TAG} does not match version ${VERSION}" && exit 1)
-      - name: Build distributions and SBOM
+          DECLARED=$(python -c 'import re; print(re.search(r"^version = \"([^\"]+)\"", open("pyproject.toml", encoding="utf-8").read(), re.M).group(1))')
+          test "${VERSION}" = "${DECLARED}" || (echo "protodetect reports ${VERSION} but pyproject.toml declares ${DECLARED}" && exit 1)
+          if [ "${REF_TYPE}" = "tag" ]; then
+            test "v${VERSION}" = "${TAG}" || (echo "tag ${TAG} does not match version ${VERSION}" && exit 1)
+          fi
+          echo "release version ${VERSION} (ref type ${REF_TYPE})" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Build distributions, check and smoke the wheel, SBOM and checksums
         run: |
           python -m build --sdist --wheel --outdir dist
           python -B tools/check_wheel.py "dist/*.whl"
@@ -59,6 +79,45 @@ jobs:
           (cd /tmp && /tmp/wheel-env/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py")
           cyclonedx-py environment --output-format json --output-file dist/sbom.cdx.json
           (cd dist && sha256sum ./* > SHA256SUMS)
+          {
+            echo "### Release files"
+            echo
+            echo '```'
+            cat dist/SHA256SUMS
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Hand the exact files to the publish job
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+
+  publish:
+    # Only a pushed `v*` tag reaches this job; dry runs stop after the build. It checks out
+    # nothing: it attests and publishes the build job's files after re-verifying their checksums.
+    name: release publish (attest, GitHub release)
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write       # gh release create uploads the distributions to the release
+      id-token: write       # OIDC token for the Sigstore signing of the provenance attestation
+      attestations: write   # attest-build-provenance stores the attestation on the repository
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+      - name: Fetch the build job's files
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-dist-${{ github.sha }}
+          path: dist
+      - name: The files must still match the checksums the build job recorded
+        run: (cd dist && sha256sum -c SHA256SUMS)
       - name: Attest build provenance
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
@@ -66,5 +125,6 @@ jobs:
       - name: Publish the release with the runner's gh CLI (no third-party action)
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes dist/*
