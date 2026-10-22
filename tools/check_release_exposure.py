@@ -39,7 +39,7 @@ def exposure(workflows, disabled=()):
             continue
         try:
             problems = (policy.check_release_concurrency(text) + policy.check_release_provenance(text)
-                        + policy.check_attestation_verify(text))
+                        + policy.check_release_gate(text) + policy.check_attestation_verify(text))
         except ValueError as error:
             problems = [str(error)]
         if problems:
@@ -104,6 +104,12 @@ def self_test():
     assert weakened != guarded
     found = exposure({policy.RELEASE_WORKFLOW: weakened})
     assert len(found) == 1 and "fails policy" in found[0][1], found
+    # Task 13: pinned checks that share a job with other steps (every controller before the
+    # release-gate job) can have their `gh` shadowed through the runner's path file, so they are exposed.
+    shared = guarded.replace("    needs: [release-gate, build]\n", "    needs: build\n")
+    assert shared != guarded
+    found = exposure({policy.RELEASE_WORKFLOW: shared})
+    assert len(found) == 1 and "must need release-gate directly" in found[0][1], found
     # Disabling the controller's own path would also silence it, which is why rule 5 keeps the paths apart.
     assert exposure({policy.RELEASE_WORKFLOW: weakened}, disabled={policy.RELEASE_WORKFLOW}) == []
     print("check_release_exposure self-test: ok")

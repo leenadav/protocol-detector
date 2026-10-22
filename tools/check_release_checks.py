@@ -1,7 +1,7 @@
 """Release checks gate: a `v*` tag may publish only a commit whose ci and CodeQL workflows passed.
 
 Required status checks are not enforceable on this repository's plan (SSDLC.md, "Enforced
-controls"), and the release build re-runs the test gate but not CodeQL. The release build
+controls"), and the release build re-runs the test gate but not CodeQL. The release-gate
 job lists the tagged commit's workflow runs with the read-only `actions: read` token
 (`gh api --paginate .../actions/runs?head_sha=<sha>`, one JSON object per line) and passes
 them here.

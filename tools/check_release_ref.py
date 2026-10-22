@@ -2,7 +2,7 @@
 
 Tag protection and required status checks are not enforceable on this repository's plan
 (SSDLC.md, "Enforced controls"), so a tag pushed by any writer, on any commit, reaches the
-release workflow. The release build job asks the GitHub compare API, with the read-only
+release workflow. The release-gate job asks the GitHub compare API, with the read-only
 token, how `main` relates to the tagged commit (`compare/<sha>...main`) and passes the
 answer here:
 

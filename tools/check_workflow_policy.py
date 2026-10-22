@@ -18,6 +18,12 @@
    and likewise the pinned release-checks step (CHECKS_RUN: the tagged commit's workflow runs
    from the Actions API, the ci and codeql workflows, by path and push event, required by
    `tools/check_release_checks.py`).
+   Both pinned steps must run in the `release-gate` job, which the publish job needs directly
+   and which is exactly GATE_STEPS (harden-runner, checkout, setup-python, provenance, release
+   checks) with exactly GATE_JOB_KEYS, GATE_PERMISSIONS and GATE_RUNNER: the runner carries a
+   step's appends to its per-step path and env files (found by a glob, so no name ban can
+   cover them) into later steps of the same job, so a job that ran anything else first could
+   hand the pinned steps a fake `gh` or `python`.
    The publish job's `if:` must be exactly PUBLISH_CONDITION, so no status-check function
    (success(), always(), failure(), cancelled(), in any case or spacing) can let it run
    after the provenance job failed. So a tag on a commit that is not on main never reaches
@@ -476,6 +482,58 @@ def check_release_provenance(text, publish="publish"):
         else:
             problems.append("publish-release.yml: no job the {} job needs runs the pinned {} step ({}, "
                             "unconditionally)".format(publish, label, helper))
+    return problems
+
+
+# The pinned steps run in a fresh job that holds nothing else (task 13 round 1): an earlier
+# step of the same job, or a repository test it runs, could otherwise append to the runner's
+# per-step path or env command file (found by a glob, so no name ban can cover it) and put a
+# fake `gh` or `python` in front of a pinned step. Rule 4 therefore pins the whole job.
+GATE_JOB = "release-gate"
+GATE_JOB_KEYS = {"name", "permissions", "runs-on", "timeout-minutes", "steps"}
+GATE_PERMISSIONS = {"contents": "read", "actions": "read"}
+GATE_RUNNER = "ubuntu-24.04"
+GATE_STEPS = [
+    {"uses": "step-security/harden-runner", "with": {"egress-policy": "audit"}},
+    {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+    {"uses": "actions/setup-python", "with": {"python-version": "3.13"}},
+    {"env": PROVENANCE_ENV, "run": PROVENANCE_RUN},
+    {"env": PROVENANCE_ENV, "run": CHECKS_RUN},
+]
+
+
+def check_release_gate(text, publish="publish"):
+    """Rule 4: the publish job directly needs GATE_JOB, which is exactly GATE_STEPS and nothing else."""
+    ids, needs = job_ids_and_needs(text)
+    if GATE_JOB not in ids:
+        return ["publish-release.yml has no `{}` job (the pinned checks must run in a job of their own)".format(GATE_JOB)]
+    problems = []
+    if publish in needs and GATE_JOB not in needs[publish]:
+        problems.append("publish-release.yml: the {} job must need {} directly".format(publish, GATE_JOB))
+    block = job_lines(text, GATE_JOB)
+    keys = {key_of(line, indent=4)[1] for line in block if key_of(line, indent=4)}
+    if keys != GATE_JOB_KEYS:
+        problems.append("publish-release.yml: the {} job must set exactly {} (no env, defaults, needs, container, "
+                        "services, strategy, if or continue-on-error); it sets {}".format(
+                            GATE_JOB, ", ".join(sorted(GATE_JOB_KEYS)), ", ".join(sorted(keys))))
+    if mapping_at(block, 4, "permissions") != GATE_PERMISSIONS:
+        problems.append("publish-release.yml: the {} job's permissions must be exactly {}".format(GATE_JOB, GATE_PERMISSIONS))
+    runner = mapping_at(block, 4, "runs-on")
+    if not isinstance(runner, str) or strip_quotes(runner) != GATE_RUNNER:
+        problems.append("publish-release.yml: the {} job must run on {}".format(GATE_JOB, GATE_RUNNER))
+    steps = steps_of(block)
+    if len(steps) != len(GATE_STEPS):
+        problems.append("publish-release.yml: the {} job must be exactly {} pinned steps (harden-runner, checkout, "
+                        "setup-python, provenance, release checks); found {}".format(GATE_JOB, len(GATE_STEPS), len(steps)))
+    for number, (step, spec) in enumerate(zip(steps, GATE_STEPS), 1):
+        try:
+            fields = step_fields(step)
+        except ValueError as error:
+            problems.append("publish-release.yml: {} step {}: {}".format(GATE_JOB, number, error))
+            continue
+        if not step_matches(fields, spec):
+            problems.append("publish-release.yml: {} step {} ({}) is not the pinned form".format(
+                GATE_JOB, number, fields.get("name", "unnamed")))
     return problems
 
 
@@ -1156,6 +1214,7 @@ def main(root):
         if RELEASE_WORKFLOW in texts:
             problems += check_release_concurrency(texts[RELEASE_WORKFLOW])
             problems += check_release_provenance(texts[RELEASE_WORKFLOW])
+            problems += check_release_gate(texts[RELEASE_WORKFLOW])
             problems += check_attestation_verify(texts[RELEASE_WORKFLOW])
     except (OSError, ValueError) as error:
         problems.append("cannot read the workflows: {}".format(error))
@@ -1731,6 +1790,52 @@ def self_test():
         problems = check_workflow_lock(shadow, json.dumps(workflow_lock(shadow)))
         assert any("later-step environment channels" in p for p in problems), (spelling, problems)
     assert not ENV_CHANNELS.search("GITHUB_OUTPUT GITHUB_STEP_SUMMARY GITHUB_REF GITHUB_SHA")
+    # task 13 round 1: the file-command channel is reachable by glob, so the pinned steps run in a
+    # job of their own that rule 4 pins whole; no earlier step or test of that job can exist
+    controller = real[RELEASE_WORKFLOW]
+    assert check_release_gate(controller) == [], check_release_gate(controller)
+    glob_shadow = ('      - name: Shadow gh for later steps\n'
+                   '        run: |\n'
+                   '          mkdir -p "$RUNNER_TEMP/bin"\n'
+                   "          printf '#!/bin/sh\\nprintf identical\\n' > \"$RUNNER_TEMP/bin/gh\"\n"
+                   '          chmod +x "$RUNNER_TEMP/bin/gh"\n'
+                   "          target=$(find \"$RUNNER_TEMP\" -type f -name 'add_path_*' -print -quit)\n"
+                   '          echo "$RUNNER_TEMP/bin" >> "$target"\n')
+    assert not ENV_CHANNELS.search(glob_shadow)
+    provenance_step = "      - name: A release tag must point at a commit already on main\n"
+    setup = '          python-version: "3.13"\n' + provenance_step
+    assert controller.count(setup) == 1
+    gate_header = "    name: release gate (provenance, release checks)\n"
+    for label, text in {
+        "glob shadow step": controller.replace(setup, '          python-version: "3.13"\n' + glob_shadow + provenance_step, 1),
+        "step dropped": controller.replace("      - name: Set up Python\n        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0\n"
+                                        '        with:\n          python-version: "3.13"\n', "", 1),
+        "setup-python cache": controller.replace(setup, '          python-version: "3.13"\n          cache: pip\n' + provenance_step, 1),
+        "step env added": controller.replace(setup, setup + "        working-directory: tools\n", 1),
+        "job env": controller.replace(gate_header, gate_header + "    env:\n      LANG: C\n", 1),
+        "job defaults": controller.replace(gate_header, gate_header + "    defaults:\n      run:\n        working-directory: tools\n", 1),
+        "job container": controller.replace(gate_header, gate_header + "    container: python:3.13\n", 1),
+        "job needs": controller.replace(gate_header, gate_header + "    needs: build\n", 1),
+        "job if": controller.replace(gate_header, gate_header + "    if: always()\n", 1),
+        "self-hosted": controller.replace("    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n", "    runs-on: self-hosted\n    timeout-minutes: 10\n", 1),
+        "write permission": controller.replace("      actions: read    # the tagged", "      actions: write   # the tagged", 1),
+        "publish skips gate": controller.replace("    needs: [release-gate, build]\n", "    needs: build\n", 1),
+        "gate renamed": controller.replace("  release-gate:\n", "  release-gate-old:\n", 1).replace("needs: release-gate\n", "needs: release-gate-old\n", 1),
+    }.items():
+        assert text != controller, label
+        assert check_release_gate(text), label
+    with tempfile.TemporaryDirectory() as directory:
+        target = Path(directory) / ".github" / "workflows"
+        target.mkdir(parents=True)
+        (Path(directory) / "tools").mkdir()
+        shadowed = dict(real, **{RELEASE_WORKFLOW: controller.replace(setup, '          python-version: "3.13"\n' + glob_shadow + provenance_step, 1)})
+        for path, text in shadowed.items():
+            (Path(directory) / path).write_text(text, encoding="utf-8")
+        (Path(directory) / WORKFLOW_LOCK).write_text(json.dumps(workflow_lock(shadowed)), encoding="utf-8")
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            assert main(directory) == 1, captured.getvalue()
+        assert "release-gate step 4 (Shadow gh for later steps) is not the pinned form" in captured.getvalue(), captured.getvalue()
     added = dict(real, **{".github/workflows/extra.yml": "on: push\n"})
     assert any("extra.yml: not in" in p for p in check_workflow_lock(added, lock_text))
     removed = {k: v for k, v in real.items() if k != ".github/workflows/nightly-fuzz.yml"}
