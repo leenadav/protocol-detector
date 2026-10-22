@@ -72,6 +72,7 @@ cannot pass unseen, whatever its spelling, and no settings change is needed. Cod
 |---|---|---|
 | ci | `ci gate (all jobs)` | every ci job below succeeded |
 | codeql | `CodeQL (python, security-extended)` | security-extended and security-and-quality suites, error level fails |
+| codeql | `CodeQL (actions, security-extended)` | the workflows themselves, analysed by CodeQL's `actions` pack with the same suites; error level fails |
 
 The jobs the gate covers, every one of which runs on every push and pull
 request:
@@ -234,11 +235,16 @@ the review loop above.
    so a later `secrets.RELEASE_PAT` went unseen. The ban now works on words, not
    expression syntax.
 7. Scheduled release audit (passed review in round 2).
-8. Parser cross-check (in review on `claude/cicd-next`). Every review finding
+8. Parser cross-check (passed review in round 2). Every review finding
    against the line-based policy (escapes, flow collections, explicit keys,
    comments inside run blocks) was a spelling a real YAML parser decodes
    differently. `tools/check_workflow_yaml.py` compares both parsers on every
-   fact the rules use and fails on any disagreement. A scheduled workflow always runs main's copy, so a
+   fact the rules use and fails on any disagreement.
+9. CodeQL for the workflows (in review on `claude/cicd-next`). CodeQL's
+   `actions` pack analyses the workflow files with the same suites as the
+   Python analysis: an independent reading beside zizmor and the policy. Its
+   results pass the same error-level gate, and since the release checks gate
+   requires the whole `codeql` workflow, they bind releases too. A scheduled workflow always runs main's copy, so a
    tag on an older commit cannot bypass it. It would list every published
    release and check that its tag commit is on `main` and that its files'
    attestations verify.
