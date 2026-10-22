@@ -9,7 +9,7 @@ fingerprints, hostnames, all-events).
 
 | Schema | Produced by | Rows |
 |---|---|---|
-| `session` | `analyze_pcap --sessions/--policy`, `live_capture` (always) | one verdict per TCP connection or UDP flow: endpoints, timing, byte counts, `app` and catalog attributes, `port_usage`, `engine_status`, protocols per direction, `encryption`, `reasons`, `shifted_from`, `risks`; optional `fingerprints`, `certificate` (only with `--certificates`: `chain`, `version`, `self_issued`, `key`, `signature`, `lifetime_days` labels, never names), `hostname` (only with `--hostnames`), `policy` |
+| `session` | `analyze_pcap --sessions/--policy`, `live_capture` (always) | one verdict per TCP connection or UDP flow: endpoints, timing, byte counts, `app` and catalog attributes, `port_usage`, `engine_status`, protocols per direction, `encryption`, `reasons`, `shifted_from`, `risks`; optional `fingerprints`, `certificate` (only with `--certificates`: `chain`, `version`, `self_issued`, `key`, `signature`, `lifetime_days`, `not_before`, `not_after` (calendar days), `ca`, `eku`, `san` labels, plus `validity` judged at the session's first packet when the capture clock is set; never names), `hostname` (only with `--hostnames`), `policy` |
 | `live-event` | `live_capture --json`, `protodetect live --json` | `started`, `classification` (per state-change event, plus retired observations with `--all-events`), `session`, `progress`/`summary`, `capture_gap`, `error` |
 | `offline-row` | `analyze_pcap --json`, `protodetect analyze --json` | per-frame rows with the direction's current classification and events (omitted with `--events-only` unless an event fired), `skipped` frames, `stream_end`, `capture_gap`, `session`, final `summary` |
 

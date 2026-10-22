@@ -7,7 +7,8 @@ beyond what the parsers already validated. RISKS.md documents every entry.
 """
 from types import MappingProxyType
 
-from .x509 import WEAK_SIGNATURES, weak_key
+from .tls_server import NO_FORWARD_SECRECY
+from .x509 import WEAK_SIGNATURES, validity, weak_key
 
 RISKS = MappingProxyType({
     "nonstandard-port": ("medium", "Identified application on a port outside its catalog ports (application-default violation)"),
@@ -32,6 +33,11 @@ RISKS = MappingProxyType({
     "ntlm-authentication": ("medium", "NTLM authentication offered or performed (SMB session setup, LDAP bind, HTTP Negotiate/NTLM): relay and legacy hash exposure"),
     "http-basic-authentication": ("medium", "HTTP Basic credentials sent without encryption in the session"),
     "smb-guest-or-anonymous-session": ("low", "SMB session established as guest or anonymous (null session)"),
+    "tls-no-forward-secrecy": ("medium", "Server selected a key exchange without forward secrecy: static RSA or static ECDH (TLS 1.2, DTLS 1.2) or psk_ke resumption (TLS 1.3)"),
+    "tls-ca-certificate-as-leaf": ("medium", "TLS 1.2 server leaf certificate asserts basicConstraints cA TRUE (a CA certificate presented as the end entity)"),
+    "tls-certificate-not-for-server-auth": ("medium", "TLS 1.2 server leaf certificate restricts its extended key usage to purposes other than serverAuth"),
+    "tls-certificate-without-san": ("low", "TLS 1.2 server v3 leaf certificate without a subjectAltName extension (subject-CN-only names are rejected by current clients)"),
+    "tls-certificate-outside-validity": ("medium", "TLS 1.2 server leaf certificate expired or not yet valid at the capture time (evaluated only when the host supplies a capture clock)"),
 })
 MAX_CERTIFICATE_LIFETIME_DAYS = 398   # CA/Browser Forum baseline since September 2020
 
@@ -42,7 +48,9 @@ _LEGACY_TLS = frozenset(("1.0", "1.1", "SSL 3.0"))
 _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags", "rdp_selected_protocol",
                      "tls_offered_max_version", "dns_query_shape", "payload_class", "tls_certificate_self_issued",
                      "tls_certificate_key", "tls_certificate_signature", "tls_certificate_lifetime_days", "tls_ech", "dns_rcode", "kerberos_error", "radius_code", "modbus_pdu", "zmtp_mechanism", "rip_authentication", "gss_mechanism", "ldap_bind", "smb_session",
-                     "http_auth_scheme", "http_auth_challenge", "http2_auth_scheme", "http2_auth_challenge"))
+                     "http_auth_scheme", "http_auth_challenge", "http2_auth_scheme", "http2_auth_challenge",
+                     "selected_key_exchange", "tls_certificate_ca", "tls_certificate_eku", "tls_certificate_san",
+                     "tls_certificate_not_before", "tls_certificate_not_after"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -68,12 +76,14 @@ def _application_risks(verdict):
     return cached
 
 
-def flow_risks(verdict, client, server):
+def flow_risks(verdict, client, server, at=None):
     """Sorted tuple of risk names for a verdict and its directional observations.
 
     The per-application part is cached; the per-observation part is one pass over
-    the evidence rows that carry the seven fields risks read. The common case
-    (nothing to flag) returns the shared empty tuple without allocating.
+    the evidence rows that carry the fields risks read. The common case
+    (nothing to flag) returns the shared empty tuple without allocating. `at` is
+    the capture time in POSIX seconds supplied by the host (the engine has no
+    clock); without it certificate validity is never evaluated.
     """
     found = list(_application_risks(verdict))
     if verdict.port_usage == "nonstandard":
@@ -97,6 +107,7 @@ def flow_risks(verdict, client, server):
                 found.remove("cleartext-credential-protocol")
         elif status != "unknown":
             continue
+        window = {}
         for evidence in obs.evidence:
             field = evidence.field
             if field not in _FIELDS:
@@ -161,6 +172,20 @@ def flow_risks(verdict, client, server):
                 # credentials and CURVE/GSSAPI authenticate cryptographically.
                 if value != "plain" and "cleartext-credential-protocol" in found:
                     found.remove("cleartext-credential-protocol")
+            elif field == "selected_key_exchange":
+                if value in NO_FORWARD_SECRECY:
+                    found.append("tls-no-forward-secrecy")
+            elif field == "tls_certificate_ca":
+                if value == "yes":
+                    found.append("tls-ca-certificate-as-leaf")
+            elif field == "tls_certificate_eku":
+                if value == "other":
+                    found.append("tls-certificate-not-for-server-auth")
+            elif field == "tls_certificate_san":
+                if value == "absent":
+                    found.append("tls-certificate-without-san")
+            elif field in ("tls_certificate_not_before", "tls_certificate_not_after"):
+                window[field] = value
             elif field == "tls_certificate_lifetime_days":
                 if value.isdigit() and int(value) > MAX_CERTIFICATE_LIFETIME_DAYS:
                     found.append("tls-certificate-lifetime-excessive")
@@ -168,6 +193,8 @@ def flow_risks(verdict, client, server):
                     or (field in ("rdp_security_flags", "rdp_selected_protocol") and value == "0"):
                 if "obsolete-protocol" not in found:
                     found.append("obsolete-protocol")
+        if window and validity(window.get("tls_certificate_not_before"), window.get("tls_certificate_not_after"), at) in ("expired", "not-yet-valid"):
+            found.append("tls-certificate-outside-validity")
     if not found:
         return _NO_RISKS
     return tuple(sorted(set(found)))

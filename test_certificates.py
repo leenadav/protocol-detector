@@ -26,7 +26,9 @@ from test_schema import run_json
 from tools import schema_check
 
 CERTS = Config(certificates=True)
-NAMES = ("laceholder", "010203")   # issuer/subject text and the serial number must never appear
+NAMES = ("laceholder", "010203")   # issuer/subject text, alternative names and the serial number must never appear
+# v0.57 posture of the default leaf: day-granular window, not a CA, serverAuth EKU, subjectAltName present.
+POSTURE = {"not_before": "2024-01-01", "not_after": "2024-12-31", "ca": "no", "eku": "server-auth", "san": "present"}
 
 
 def inspect(data, config=CERTS):
@@ -74,7 +76,7 @@ class CertificateWatchTests(unittest.TestCase):
         inspector, events = inspect(TLS_SERVER12_CERTIFICATE)
         self.assertEqual([event.kind for event in events], ["updated", "refined"])
         self.assertEqual(certificate(events[0].observation), {})
-        expected = {"chain": "chain", "version": "3", "self_issued": "no", "key": "rsa-2048", "signature": "sha256-rsa", "lifetime_days": "365"}
+        expected = {"chain": "chain", "version": "3", "self_issued": "no", "key": "rsa-2048", "signature": "sha256-rsa", "lifetime_days": "365", **POSTURE}
         self.assertEqual(certificate(events[1].observation), expected)
         self.assertEqual(certificate(inspector.observation), expected)
         strengths = {e.field: (e.source, e.strength) for e in inspector.observation.evidence if e.field.startswith("tls_certificate_")}
@@ -112,12 +114,12 @@ class CertificateWatchTests(unittest.TestCase):
             inspector, _ = inspect(flight(x509(**kwargs)))
             return certificate(inspector.observation), classify(inspector.observation, "tcp", 443).risks
         self.assertEqual(profile(key="rsa-1024"), ({"chain": "single", "version": "3", "self_issued": "no", "key": "rsa-1024",
-                                                     "signature": "sha256-rsa", "lifetime_days": "365"}, ("tls-weak-certificate-key",)))
+                                                     "signature": "sha256-rsa", "lifetime_days": "365", **POSTURE}, ("tls-weak-certificate-key",)))
         self.assertEqual(profile(key="ec-256", signature=ECDSA_SHA256)[0]["key"], "ec-256")
         self.assertEqual(profile(key="ec-256", signature=ECDSA_SHA256)[1], ())
         self.assertEqual(profile(key="ec-384", signature=ECDSA_SHA256)[0]["key"], "ec-384")
         self.assertEqual(profile(key="ec-other", signature=ECDSA_SHA256), ({"chain": "single", "version": "3", "self_issued": "no", "key": "ec-other",
-                                                                            "signature": "ecdsa-sha256", "lifetime_days": "365"}, ()))
+                                                                            "signature": "ecdsa-sha256", "lifetime_days": "365", **POSTURE}, ()))
         fields, found = profile(key="ed25519", signature=ED25519_OID)
         self.assertEqual((fields["key"], fields["signature"], found), ("ed25519", "ed25519", ()))
         fields, found = profile(signature=SHA1_RSA)
@@ -128,7 +130,7 @@ class CertificateWatchTests(unittest.TestCase):
         self.assertEqual((fields["lifetime_days"], found), (str((datetime(2049, 12, 31, 23, 59, 59) - datetime(2024, 1, 1)).days),
                                                             ("tls-certificate-lifetime-excessive",)))
         self.assertEqual(profile(not_after=b"250202000000Z"), ({"chain": "single", "version": "3", "self_issued": "no", "key": "rsa-2048",
-                                                                "signature": "sha256-rsa", "lifetime_days": "398"}, ()))   # 2024 is a leap year
+                                                                "signature": "sha256-rsa", "lifetime_days": "398", **dict(POSTURE, not_after="2025-02-02")}, ()))   # 2024 is a leap year
         self.assertEqual(profile(not_after=b"250203000000Z")[1], ("tls-certificate-lifetime-excessive",))
         fields, found = profile(issuer=b"placeholder")
         self.assertEqual((fields["self_issued"], found), ("yes", ("tls-self-issued-certificate",)))
@@ -250,8 +252,10 @@ class CertificateWatchTests(unittest.TestCase):
             self.assertEqual(schema_check.validate(json.loads(json.dumps(record)), schema_check.load("session")), [])
             if enabled:
                 self.assertEqual(record["certificate"], {"chain": "chain", "version": "3", "self_issued": "no", "key": "rsa-2048",
-                                                         "signature": "sha256-rsa", "lifetime_days": "365"})
-                self.assertIn("certificate=chain=chain,key=rsa-2048", readable_session(record))
+                                                         "signature": "sha256-rsa", "lifetime_days": "365", **POSTURE})
+                self.assertIn("certificate=ca=no,chain=chain,eku=server-auth,key=rsa-2048", readable_session(record))
+                # Frame numbers as timestamps are a 1970 clock: treated as unset, so no validity and no risk (v0.57).
+                self.assertNotIn("tls-certificate-outside-validity", record["risks"])
                 for name in NAMES:
                     self.assertNotIn(name, json.dumps(record))
         with tempfile.TemporaryDirectory() as directory:
@@ -261,6 +265,9 @@ class CertificateWatchTests(unittest.TestCase):
             self.assertEqual(code, 0)
             session = [json.loads(line) for line in lines if '"type": "session"' in line][0]
             self.assertEqual(session["certificate"]["signature"], "sha256-rsa")
+            # pcap_bytes stamps frames at 2023-11-14, before the leaf's 2024-01-01 notBefore (v0.57).
+            self.assertEqual(session["certificate"]["validity"], "not-yet-valid")
+            self.assertIn("tls-certificate-outside-validity", session["risks"])
             code, lines = run_json("analyze_pcap.py", str(path), "--json", "--sessions")
             self.assertEqual(code, 0)
             self.assertNotIn("certificate", [json.loads(line) for line in lines if '"type": "session"' in line][0])
@@ -269,6 +276,8 @@ class CertificateWatchTests(unittest.TestCase):
             events = [json.loads(line) for line in lines]
             refined = [event for event in events if event.get("type") == "classification" and event.get("event") == "refined"]
             self.assertEqual(refined[0]["certificate"]["key"], "rsa-2048")
+            self.assertEqual(refined[0]["certificate"]["validity"], "not-yet-valid")
+            self.assertIn("tls-certificate-outside-validity", refined[0]["risks"])
             self.assertEqual(schema_check.validate_lines(lines, "live-event")[1], [])
 
 

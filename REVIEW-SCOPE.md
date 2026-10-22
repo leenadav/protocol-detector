@@ -1,11 +1,28 @@
-# Review scope: protocol detector v0.56
+# Review scope: protocol detector v0.57
 
 Python3.9-compatible IPv4 passive classification: 85 families, 76 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.56): `protocol_engine/gss.py` (DER walk of SPNEGO
+New focus (v0.57): `protocol_engine/tls_server.py` key exchange and cipher
+mode labels (the TLS 1.2 suite table, static ECDH versus ECDHE, TLS 1.3
+`key_share`/`pre_shared_key` combinations, the DTLS 1.2 reuse in `dtls.py`),
+`protocol_engine/x509.py` `_extensions` (duplicate OIDs, basicConstraints DER
+rules for cA and pathLenConstraint, extendedKeyUsage purpose budget of 16,
+subjectAltName framing without reading names, day-granular window, `validity`
+with its unset-clock bounds), the capture-time plumbing (`classify`/
+`session_verdict` `at=`, `flow_risks`, `analyze_pcap.certificate_fields` at the
+session's first packet, `live_capture` at the event's packet) and the five
+new risks. Trace: no alternative name, key purpose OID or time of day reaches
+output; a malformed extension keeps the ServerHello identification; nothing
+reads the wall clock. Round-1 repairs: `_general_names` entry budget
+(256) and DER GeneralName forms, explicit `critical` FALSE rejected. Round-2
+repairs: GeneralName inner values (IA5 text, `_single` for explicit wrappers,
+x400Address and ediPartyName framing) and `_oid_contents` (minimal arcs) for
+every object identifier. 615 tests pass.
+
+Previous focus (v0.56): `protocol_engine/gss.py` (DER walk of SPNEGO
 NegTokenInit/NegTokenResp and Kerberos GSS tokens: exact lengths at every
 level, 8 mechTypes, 4096-byte tokens, closed labels only), the one-frame
 session-setup watch in `protocol_engine/network.py` `SMB2Parser` and
@@ -19,7 +36,15 @@ rules in `risks.py` (`ntlm-authentication`, `http-basic-authentication`,
 `smb-guest-or-anonymous-session`, the LDAP cleartext refinement). Trace: no
 credential, principal, domain, realm, challenge or ticket byte reaches
 evidence or reasons; the watch never reads a third frame; a malformed token
-keeps the carrier identification. 596 tests pass.
+keeps the carrier identification. Round-1 repairs: one Kerberos
+TOK_ID validator for direct and SPNEGO-carried tokens, SMB2 SESSION_SETUP
+header flags by direction (`network.py`), every credential header and every
+challenge in a list (`media.py` `challenge_scheme_classes`). Round-2 repairs:
+the RFC 4120 envelope of the Kerberos message after the TOK_ID (`gss.py`
+`_kerberos_message`, KRB-ERROR through `windows.py` `_kerberos_body`), and
+SESSION_SETUP requests carry no header flags (`network.py`). Round-3 repairs:
+DER KerberosFlags (`gss.py` `_kerberos_flags`) and the 0..999999 microseconds
+range in `windows.py` `_kerberos_body`. 603 tests passed at v0.56.
 
 Previous focus (v0.55): `protocol_engine/wire.py` `dns_probe` (the plausibility
 rule for the rarer layouts: first label 1..63, section counts 1..32, zero

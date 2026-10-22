@@ -33,11 +33,16 @@ evidence strength is `heuristic` and their thresholds are listed here.
 | `tls-encrypted-client-hello` | low | ClientHello (TLS or QUIC) with an outer `encrypted_client_hello` extension (`tls_ech=outer`, v0.42): the `server_name` and any hostname mapping refer to the client-facing public name; the real server name is encrypted and the inner offer is not visible. An inner-type extension or a GREASE-shaped one that fails structure never flags |
 | `tls-certificate-lifetime-excessive` | low | Leaf validity longer than 398 days (`tls_certificate_lifetime_days`), the CA/Browser Forum baseline since September 2020 |
 | `ntlm-authentication` | medium | NTLM offered or performed (v0.56): `gss_mechanism` of `ntlm`, `ntlm-response` or `lm-response` on an SMB2/SMB1 session setup or an LDAP GSS-SPNEGO bind, or an HTTP/1 or HTTP/2 `Authorization`/`WWW-Authenticate` scheme `ntlm` (`http_auth_scheme`, `http_auth_challenge`, `http2_*`). Relay and legacy hash exposure; Kerberos and NEGOEX never flag |
-| `http-basic-authentication` | medium | HTTP/1 or HTTP/2 request whose `Authorization` scheme is `basic` in a session without encryption (v0.56); the credential bytes are never read |
+| `http-basic-authentication` | medium | HTTP/1 or HTTP/2 request with an `Authorization` or `Proxy-Authorization` header whose scheme is `basic` (any occurrence, not only the first) in a session without encryption (v0.56); the credential bytes are never read |
 | `smb-guest-or-anonymous-session` | low | SMB2 SESSION_SETUP response with the guest or null-session flag, or an SMB1 SESSION_SETUP_ANDX response with the guest action bit (`smb_session`, v0.56) |
+| `tls-no-forward-secrecy` | medium | ServerHello key exchange without forward secrecy (`selected_key_exchange`, v0.57): `static-rsa` (TLS_RSA_*), `static-ecdh` (TLS_ECDH_* suites keyed by the certificate) in TLS 1.2 or DTLS 1.2, or `psk` (TLS 1.3 `pre_shared_key` without `key_share`). The selection is the server's assertion; completion is unverified |
+| `tls-ca-certificate-as-leaf` | medium | With `--certificates` (v0.57): the leaf's basicConstraints asserts cA TRUE (`tls_certificate_ca=yes`), a CA certificate presented as the end entity |
+| `tls-certificate-not-for-server-auth` | medium | The leaf's extendedKeyUsage lists neither id-kp-serverAuth nor anyExtendedKeyUsage (`tls_certificate_eku=other`, v0.57). An absent extension never flags |
+| `tls-certificate-without-san` | low | v3 leaf without subjectAltName (`tls_certificate_san=absent`, v0.57); current clients ignore the subject common name. v1/v2 leaves carry no `san` label and never flag |
+| `tls-certificate-outside-validity` | medium | The leaf's validity window (calendar days, `tls_certificate_not_before`/`_not_after`) does not contain the capture time the host supplied (v0.57): the session's first packet offline, the event's packet live. Boundary days count as inside; capture clocks before 2000-01-01 count as unset and never flag; without a capture time (`classify` without `at`) the risk is never evaluated |
 
 Severities are editorial defaults for policy authoring (`protocol_engine.risks.RISKS`).
-`protocol_engine.risks.flow_risks(verdict, client, server)` is one pass over
+`protocol_engine.risks.flow_risks(verdict, client, server, at=None)` is one pass over
 each direction's evidence (about 1-2 µs) and returns a sorted tuple.
 
 ## Unknown-payload heuristics
@@ -75,8 +80,9 @@ names and legitimate content-hash labels all trigger it; it is a triage hint.
 
 ## Not implemented
 
-Certificate validation (signature, chain, name match, revocation, expiry
-against a clock: the engine has no clock and emits only the lifetime), TLS 1.3
-certificates (encrypted), TLS cipher-strength assessment, HTTP header anomaly
+Certificate validation (signature, chain, name match, revocation; expiry is
+judged only against the capture time a host supplies, never a wall clock),
+TLS 1.3 certificates (encrypted), cipher-strength grading beyond forward
+secrecy and AEAD versus CBC, HTTP header anomaly
 scoring, port scan or probing detection, periodicity/beaconing analysis, byte
 distribution learning, and any risk that needs more than the initial message.

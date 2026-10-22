@@ -67,6 +67,7 @@ _SMB_DIALECTS = {0x202: "2.0.2", 0x210: "2.1", 0x2ff: "wildcard", 0x300: "3.0", 
 
 _SMB2_SESSION_FLAGS = {1: "guest", 2: "anonymous", 4: "encrypted"}
 STATUS_MORE_PROCESSING_REQUIRED = 0xC0000016
+SMB2_FLAGS_SERVER_TO_REDIR, SMB2_FLAGS_RELATED_OPERATIONS, SMB2_FLAGS_SIGNED = 0x01, 0x04, 0x08
 
 
 class SMB2Parser(FrameParser):
@@ -122,10 +123,24 @@ class SMB2Parser(FrameParser):
         u32 = lambda at: int.from_bytes(data[at:at + 4], "little")
         if u16(4) != 64 or u16(12) != 1:
             raise UnsupportedPrefix("Only a SESSION_SETUP frame is read after NEGOTIATE")
-        response = bool(u32(16) & 1)
-        if u32(20) != 0:
+        flags = u32(16)
+        response = bool(flags & SMB2_FLAGS_SERVER_TO_REDIR)
+        if u32(20) != 0 or flags & SMB2_FLAGS_RELATED_OPERATIONS:
             raise UnsupportedPrefix("Compounded SESSION_SETUP is outside the profile")
         status = u32(8)
+        # Review rounds 1 and 2: the header flags must fit this direction without relying on a negotiated
+        # dialect, which this one-direction watch never learns. A request carries no flags at all: the SMB 3.1.1
+        # priority value and the signed session-binding request both depend on the dialect, so they end the
+        # watch. A response may carry SERVER_TO_REDIR and, only on the final STATUS_SUCCESS response that every
+        # dialect may sign (MS-SMB2 3.3.5.5.3), SIGNED; the signature is never verified. Unsigned frames carry
+        # a zero signature field. Async, related, DFS, replay and reserved bits never apply.
+        if flags & ~(SMB2_FLAGS_SERVER_TO_REDIR | SMB2_FLAGS_SIGNED) or (not response and flags):
+            raise ParseError("SESSION_SETUP header flags outside the profile")
+        if flags & SMB2_FLAGS_SIGNED:
+            if status != 0:
+                raise ParseError("Signed SESSION_SETUP outside the final successful response")
+        elif any(data[48:64]):
+            raise ParseError("Unsigned SESSION_SETUP carries a signature")
         if response:
             if status not in (0, STATUS_MORE_PROCESSING_REQUIRED):
                 raise UnsupportedPrefix("SESSION_SETUP response status outside success and more-processing")

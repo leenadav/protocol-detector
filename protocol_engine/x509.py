@@ -2,7 +2,9 @@
 
 The walk reports what the structure says about itself (version, whether the
 issuer equals the subject, public key family and size, signature algorithm
-family, validity lifetime) and nothing that names or identifies the server:
+family, validity lifetime and, since v0.57, the CA flag, the extended key usage
+class, whether alternative names are present and the validity window in
+calendar days) and nothing that names or identifies the server:
 issuer, subject, serial number, alternative names, key bytes and signature
 bytes are read for their framing only and are never returned. Nothing is
 verified: no signature check, chain building, name matching or revocation.
@@ -10,7 +12,7 @@ Every DER length is checked against its container before the bytes are read
 and element counts are bounded, so a hostile certificate costs at most one
 linear pass over at most ``MAX_LEAF`` bytes.
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .parsers import ParseError
 
@@ -18,6 +20,9 @@ MAX_LEAF = 16384         # largest leaf certificate inspected; bigger ones end t
 MAX_NAME_PARTS = 32      # relative distinguished names per Name and attributes per RDN
 MAX_EXTENSIONS = 64
 MAX_SERIAL = 32          # RFC 5280 asks for <= 20 octets; a few CAs exceed it, nobody needs more than 32
+MAX_EKU = 16             # key purposes per extendedKeyUsage (v0.57)
+MAX_GENERAL_NAMES = 256  # subjectAltName entries (v0.57 review round 1); multi-domain leaves stay well below it
+MAX_PATH_LENGTH_OCTETS = 4
 
 # Object identifiers as encoded DER contents. Tables, not parsing, decide the label.
 _RSA = bytes.fromhex("2a864886f70d010101")        # 1.2.840.113549.1.1.1 rsaEncryption
@@ -41,6 +46,21 @@ _SIGNATURES = {bytes.fromhex("2a864886f70d010104"): "md5-rsa",
 WEAK_SIGNATURES = frozenset(("md5-rsa", "sha1-rsa", "ecdsa-sha1"))
 MIN_RSA_BITS = 2048
 MIN_EC_BITS = 256
+# v0.57: the three extensions whose contents are interpreted; every other extension is framing only.
+_BASIC_CONSTRAINTS = bytes.fromhex("551d13")      # 2.5.29.19
+_SUBJECT_ALT_NAME = bytes.fromhex("551d11")       # 2.5.29.17
+_EXTENDED_KEY_USAGE = bytes.fromhex("551d25")     # 2.5.29.37
+_SERVER_AUTH = bytes.fromhex("2b06010505070301")  # 1.3.6.1.5.5.7.3.1 id-kp-serverAuth
+_ANY_KEY_USAGE = bytes.fromhex("551d2500")        # 2.5.29.37.0 anyExtendedKeyUsage
+_EPOCH = datetime(1970, 1, 1)
+MIN_CAPTURE_TIME = 946684800      # 2000-01-01T00:00:00Z: earlier capture clocks are treated as unset
+MAX_CAPTURE_TIME = 253402300800   # 10000-01-01T00:00:00Z: beyond the calendar a certificate can express
+
+
+def _day(moment):
+    """Fixed-width YYYY-MM-DD (strftime does not zero-pad years below 1000 on every libc)."""
+    return "%04d-%02d-%02d" % (moment.year, moment.month, moment.day)
+
 
 _SEQUENCE, _SET, _INTEGER, _BIT_STRING, _OCTET_STRING, _NULL, _OID, _BOOLEAN = 0x30, 0x31, 0x02, 0x03, 0x04, 0x05, 0x06, 0x01
 _UTC_TIME, _GENERALIZED_TIME = 0x17, 0x18
@@ -79,11 +99,32 @@ def _expect(data, pos, limit, tag, what):
     return start, end
 
 
-def _oid(data, pos, limit, what):
-    start, end = _expect(data, pos, limit, _OID, what)
+def _oid_contents(data, start, end, what):
+    """DER OBJECT IDENTIFIER contents: 1..32 octets, every arc minimal (no leading 0x80), the last arc complete."""
     if start == end or end - start > 32 or data[end - 1] & 0x80:
         raise ParseError(what + " object identifier is malformed")
+    # An arc is non-minimal when it starts with 0x80: the first octet, or a 0x80 after an arc's last octet.
+    # bytes.find keeps this at C speed; 0x80 octets are rare in real identifiers.
+    position = data.find(b"\x80", start, end)
+    while position != -1:
+        if position == start or not data[position - 1] & 0x80:
+            raise ParseError(what + " object identifier arc is not minimally encoded")
+        position = data.find(b"\x80", position + 1, end)
+
+
+def _oid(data, pos, limit, what):
+    start, end = _expect(data, pos, limit, _OID, what)
+    _oid_contents(data, start, end, what)
     return bytes(data[start:end]), end
+
+
+def _single(data, start, end, what):
+    """The contents of an EXPLICIT tag: exactly one complete element filling it."""
+    if start == end:
+        raise ParseError(what + " is empty")
+    _, _, inner_end = _element(data, start, end)
+    if inner_end != end:
+        raise ParseError(what + " must hold exactly one element")
 
 
 def _algorithm(data, pos, limit, what):
@@ -197,27 +238,156 @@ def _public_key(data, pos, limit):
     return "other", end
 
 
+def _basic_constraints(data, start, end):
+    """BasicConstraints ::= SEQUENCE { cA BOOLEAN DEFAULT FALSE, pathLenConstraint INTEGER (0..MAX) OPTIONAL }."""
+    seq_start, seq_end = _expect(data, start, end, _SEQUENCE, "Basic constraints")
+    if seq_end != end:
+        raise ParseError("Basic constraints has trailing bytes")
+    ca, cursor = False, seq_start
+    if cursor < seq_end and data[cursor] == _BOOLEAN:
+        flag_start, flag_end = _expect(data, cursor, seq_end, _BOOLEAN, "Basic constraints cA")
+        if flag_end - flag_start != 1 or data[flag_start] != 0xff:
+            raise ParseError("Basic constraints cA must be absent or a DER TRUE")   # DER omits the FALSE default
+        ca, cursor = True, flag_end
+    if cursor < seq_end and data[cursor] == _INTEGER:
+        if not ca:
+            raise ParseError("Path length constraint requires cA TRUE")      # RFC 5280 4.2.1.9
+        value_start, value_end = _expect(data, cursor, seq_end, _INTEGER, "Path length constraint")
+        size = value_end - value_start
+        if not 1 <= size <= MAX_PATH_LENGTH_OCTETS or data[value_start] & 0x80 or \
+                (data[value_start] == 0 and size > 1 and not data[value_start + 1] & 0x80):
+            raise ParseError("Path length constraint must be a small non-negative minimally encoded INTEGER")
+        cursor = value_end
+    if cursor != seq_end:
+        raise ParseError("Basic constraints has unexpected fields")
+    return "yes" if ca else "no"
+
+
+def _key_usage_purposes(data, start, end):
+    """ExtKeyUsageSyntax ::= SEQUENCE SIZE (1..MAX) OF KeyPurposeId; returns a closed label."""
+    seq_start, seq_end = _expect(data, start, end, _SEQUENCE, "Extended key usage")
+    if seq_end != end or seq_start == seq_end:
+        raise ParseError("Extended key usage must be one non-empty sequence")
+    cursor, count, purposes = seq_start, 0, set()
+    while cursor < seq_end:
+        count += 1
+        if count > MAX_EKU:
+            raise ParseError("Extended key usage exceeds the purpose budget")
+        purpose, cursor = _oid(data, cursor, seq_end, "Key purpose")
+        if purpose in (_SERVER_AUTH, _ANY_KEY_USAGE):
+            purposes.add(purpose)
+    if _SERVER_AUTH in purposes:
+        return "server-auth"
+    return "any" if purposes else "other"
+
+
+# GeneralName CHOICE (RFC 5280 4.2.1.6) with the encoding form each alternative must use under DER:
+# otherName [0], x400Address [3], directoryName [4] (explicit: Name is a CHOICE) and ediPartyName [5] are
+# constructed; rfc822Name [1], dNSName [2], URI [6], iPAddress [7] and registeredID [8] are primitive.
+_GENERAL_NAME_TAGS = frozenset((0xa0, 0x81, 0x82, 0xa3, 0xa4, 0xa5, 0x86, 0x87, 0x88))
+
+
+def _general_names(data, start, end):
+    """GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName; framing only, no name is read or kept.
+
+    Review rounds 1 and 2 (v0.57): at most MAX_GENERAL_NAMES entries, each in the DER form of its
+    alternative with its inner framing: non-empty IA5 text names, a 4- or 16-octet address, a DER
+    registeredID, an otherName OID plus exactly one [0] value, 1..MAX_NAME_PARTS complete elements in an
+    x400Address, one Name in a directoryName, an ediPartyName of optional [0] and required [1] each
+    holding exactly one element. Bytes are checked, never kept.
+    """
+    seq_start, seq_end = _expect(data, start, end, _SEQUENCE, "Subject alternative name")
+    if seq_end != end or seq_start == seq_end:
+        raise ParseError("Subject alternative name must be one non-empty sequence")
+    cursor, count = seq_start, 0
+    while cursor < seq_end:
+        count += 1
+        if count > MAX_GENERAL_NAMES:
+            raise ParseError("Subject alternative name exceeds the entry budget")
+        tag, value_start, value_end = _element(data, cursor, seq_end)
+        if tag not in _GENERAL_NAME_TAGS:
+            raise ParseError("Subject alternative name entry is not a GeneralName choice in its DER form")
+        size = value_end - value_start
+        if tag in (0x81, 0x82, 0x86):
+            # IA5String (implicitly tagged): non-empty, seven-bit octets only (review round 2).
+            if not size or max(data[value_start:value_end]) & 0x80:
+                raise ParseError("Subject alternative name text entry must be a non-empty IA5String")
+        elif tag == 0x87:
+            if size not in (4, 16):
+                raise ParseError("Subject alternative name iPAddress must be 4 or 16 octets")
+        elif tag == 0x88:
+            _oid_contents(data, value_start, value_end, "Subject alternative name registeredID")
+        elif tag == 0xa0:
+            # otherName ::= SEQUENCE { type-id OBJECT IDENTIFIER, value [0] EXPLICIT ANY } (implicitly tagged [0]).
+            _, after = _oid(data, value_start, value_end, "Subject alternative name otherName")
+            tag_value, inner_start, inner_end = _element(data, after, value_end) if after < value_end else (None, 0, 0)
+            if tag_value != 0xa0 or inner_end != value_end:
+                raise ParseError("Subject alternative name otherName needs exactly its [0] value")
+            _single(data, inner_start, inner_end, "Subject alternative name otherName value")
+        elif tag == 0xa3:
+            # x400Address: ORAddress SEQUENCE contents, framed as 1..MAX_NAME_PARTS complete elements.
+            inner, parts = value_start, 0
+            while inner < value_end:
+                parts += 1
+                if parts > MAX_NAME_PARTS:
+                    raise ParseError("Subject alternative name x400Address exceeds the component budget")
+                _, _, inner = _element(data, inner, value_end)
+            if not parts:
+                raise ParseError("Subject alternative name x400Address is empty")
+        elif tag == 0xa4:
+            _, name_end = _name(data, value_start, value_end, "Subject alternative name directoryName")
+            if name_end != value_end:
+                raise ParseError("Subject alternative name directoryName has trailing bytes")
+        else:
+            # ediPartyName ::= SEQUENCE { nameAssigner [0] DirectoryString OPTIONAL, partyName [1] DirectoryString };
+            # DirectoryString is a CHOICE, so both tags are explicit and hold exactly one element.
+            inner = value_start
+            if inner < value_end and data[inner] == 0xa0:
+                _, assigner_start, inner = _element(data, inner, value_end)
+                _single(data, assigner_start, inner, "Subject alternative name ediPartyName nameAssigner")
+            if inner >= value_end or data[inner] != 0xa1:
+                raise ParseError("Subject alternative name ediPartyName needs its partyName")
+            _, party_start, party_end = _element(data, inner, value_end)
+            if party_end != value_end:
+                raise ParseError("Subject alternative name ediPartyName has trailing bytes")
+            _single(data, party_start, party_end, "Subject alternative name ediPartyName partyName")
+        cursor = value_end
+
+
 def _extensions(data, pos, limit):
+    """Walk Extensions; return (end, ca, eku, san) for the three interpreted extensions."""
     start, end = _expect(data, pos, limit, _SEQUENCE, "Extensions")
     if start == end:
         raise ParseError("Extensions sequence must not be empty")
-    cursor, count = start, 0
+    cursor, seen = start, set()
+    ca, eku, san = "no", "absent", "absent"
     while cursor < end:
-        count += 1
-        if count > MAX_EXTENSIONS:
+        if len(seen) >= MAX_EXTENSIONS:
             raise ParseError("Certificate exceeds the extension count budget")
         ext_start, ext_end = _expect(data, cursor, end, _SEQUENCE, "Extension")
-        _, inner = _oid(data, ext_start, ext_end, "Extension")
+        oid, inner = _oid(data, ext_start, ext_end, "Extension")
+        if oid in seen:
+            raise ParseError("Certificate repeats an extension")             # RFC 5280 4.2
+        seen.add(oid)
         tag, flag_start, flag_end = _element(data, inner, ext_end)
         if tag == _BOOLEAN:
-            if flag_end - flag_start != 1 or data[flag_start] not in (0x00, 0xff):
-                raise ParseError("Extension critical flag is not a DER boolean")
+            # critical is BOOLEAN DEFAULT FALSE: DER omits FALSE, so only an encoded TRUE (0xff) is valid
+            # (v0.57 review round 1; the same rule as basicConstraints cA).
+            if flag_end - flag_start != 1 or data[flag_start] != 0xff:
+                raise ParseError("Extension critical flag must be absent or a DER TRUE")
             inner = flag_end
         value_start, value_end = _expect(data, inner, ext_end, _OCTET_STRING, "Extension value")
         if value_end != ext_end:
             raise ParseError("Extension has trailing bytes")
+        if oid == _BASIC_CONSTRAINTS:
+            ca = _basic_constraints(data, value_start, value_end)
+        elif oid == _EXTENDED_KEY_USAGE:
+            eku = _key_usage_purposes(data, value_start, value_end)
+        elif oid == _SUBJECT_ALT_NAME:
+            _general_names(data, value_start, value_end)
+            san = "present"
         cursor = ext_end
-    return end
+    return end, ca, eku, san
 
 
 def leaf_profile(der):
@@ -255,6 +425,7 @@ def leaf_profile(der):
         raise ParseError("Certificate validity ends before it starts")
     subject, cursor = _name(der, validity_end, tbs_end, "Subject")
     key, cursor = _public_key(der, cursor, tbs_end)
+    posture = ("no", "absent", "absent")      # a v3 certificate without extensions: not a CA, no EKU, no SAN
     while cursor < tbs_end:
         tag, start, end = _element(der, cursor, tbs_end)
         if tag in (0x81, 0x82):
@@ -263,7 +434,8 @@ def leaf_profile(der):
         elif tag == 0xa3:
             if version != 3:
                 raise ParseError("Extensions require a v3 certificate")
-            if _extensions(der, start, end) != end or end != tbs_end:
+            walked, *posture = _extensions(der, start, end)
+            if walked != end or end != tbs_end:
                 raise ParseError("Extensions must be the last TBSCertificate field")
         else:
             raise ParseError("Unexpected field after the subject public key")
@@ -274,11 +446,34 @@ def leaf_profile(der):
     _, signature_end = _bit_string(der, cursor, outer_end, "Signature value")
     if signature_end != outer_end:
         raise ParseError("Certificate has bytes after the signature")
-    return (("tls_certificate_version", str(version)),
-            ("tls_certificate_self_issued", "yes" if issuer == subject else "no"),
-            ("tls_certificate_key", key),
-            ("tls_certificate_signature", _SIGNATURES.get(signature_oid, "other")),
-            ("tls_certificate_lifetime_days", str((not_after - not_before).days)))
+    fields = (("tls_certificate_version", str(version)),
+              ("tls_certificate_self_issued", "yes" if issuer == subject else "no"),
+              ("tls_certificate_key", key),
+              ("tls_certificate_signature", _SIGNATURES.get(signature_oid, "other")),
+              ("tls_certificate_lifetime_days", str((not_after - not_before).days)),
+              # v0.57: calendar days only (no time of day), so the window is a coarse posture fact, not a fingerprint.
+              ("tls_certificate_not_before", _day(not_before)),
+              ("tls_certificate_not_after", _day(not_after)))
+    if version == 3:
+        fields += (("tls_certificate_ca", posture[0]), ("tls_certificate_eku", posture[1]), ("tls_certificate_san", posture[2]))
+    return fields
+
+
+def validity(not_before, not_after, at):
+    """Validity of a leaf at capture time `at` (POSIX seconds) from its day-granular window.
+
+    Returns current / expired / not-yet-valid, or None when either date is
+    missing or the capture clock is unset (before MIN_CAPTURE_TIME: synthetic
+    and anonymised captures often start at zero). Boundary days count as
+    inside the window, so a day-granular comparison never flags a valid leaf.
+    Nothing here reads the wall clock of the analysis run.
+    """
+    if not not_before or not not_after or at is None or not MIN_CAPTURE_TIME <= at < MAX_CAPTURE_TIME:
+        return None
+    day = _day(_EPOCH + timedelta(seconds=int(at)))
+    if day < not_before:
+        return "not-yet-valid"
+    return "expired" if day > not_after else "current"
 
 
 def weak_key(label):
