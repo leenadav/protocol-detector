@@ -388,6 +388,10 @@ jobs:
           python -m pip install --require-hashes -r requirements-dev.txt > /dev/null
           zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows | tee zizmor.txt
           echo "zizmor $(zizmor --version | awk '{print $NF}'): $(tail -n 1 zizmor.txt)" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Cross-check the workflow policy parser against PyYAML (any disagreement is a policy blind spot)
+        run: |
+          python -B tools/check_workflow_yaml.py --self-test
+          python -B tools/check_workflow_yaml.py | tee -a "$GITHUB_STEP_SUMMARY"
 
   toolchain-audit:
     name: known vulnerabilities in the dev toolchain (pip-audit)

@@ -374,27 +374,38 @@ def step_fields(step):
             continue
         key = key_of(line, indent=8)
         if key is None:
-            raise ValueError("publish-release.yml: cannot read step line {!r}".format(line))
+            raise ValueError("workflow step: cannot read step line {!r}".format(line))
         name, value = key[1], key[2]
         body = []
         while index + 1 < len(lines) and (not lines[index + 1].strip() or len(lines[index + 1]) - len(lines[index + 1].lstrip(" ")) > 8):
             index += 1
             body.append(lines[index])
         if name in ("env", "with") and not value:
-            env = {}
-            for entry in body:
+            env, inner = {}, 0
+            while inner < len(body):
+                entry = body[inner]
+                inner += 1
                 if not entry.strip() or entry.strip().startswith("#"):
                     continue
                 pair = key_of(entry, indent=10)
                 if pair is None:
-                    raise ValueError("publish-release.yml: cannot read {} line {!r}".format(name, entry))
-                env[pair[1]] = strip_quotes(pair[2])
+                    raise ValueError("workflow step: cannot read {} line {!r}".format(name, entry))
+                if pair[2] in ("|", "|-", ">", ">-"):
+                    # a block scalar value: its lines are the deeper-indented ones that follow
+                    text = []
+                    while inner < len(body) and (not body[inner].strip() or len(body[inner]) - len(body[inner].lstrip(" ")) > 10):
+                        text.append(body[inner].strip())
+                        inner += 1
+                    joined = "\n" if pair[2].startswith("|") else " "
+                    env[pair[1]] = joined.join(line for line in text if line)
+                else:
+                    env[pair[1]] = strip_quotes(pair[2])
             fields[name] = env
         elif name == "run" and value in ("|", "|-"):
             # `#` lines in the block are script content (comments or here-document data), so they count
             fields[name] = [entry.strip() for entry in body if entry.strip()]
         else:
-            fields[name] = value if not body else None
+            fields[name] = value if not any(entry.strip() for entry in body) else None
         index += 1
     return fields
 

@@ -73,6 +73,8 @@ package:
 workflow-lint:
 	actionlint -no-color .github/workflows/*.yml
 	zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows
+	$(PYTHON) -B tools/check_workflow_yaml.py --self-test
+	$(PYTHON) -B tools/check_workflow_yaml.py
 
 lint:
 	ruff check .
