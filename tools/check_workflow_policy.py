@@ -86,6 +86,12 @@
    the pinned `init` (language, security-extended and security-and-quality suites), `analyze`
    (category, `upload: never`, output directory) and error-level gate steps, so neither
    analysis can be dropped, narrowed or masked while the workflow stays green.
+13. No masked ci job (`ci.yml`): the gate only means something if every job it needs can fail.
+   No job or step may set `continue-on-error`; no run line may use `|| true`, `|| :` or
+   `set +e`; no job other than the gate may set `if:`, and the gate's is exactly `always()`;
+   a step `if:` may only be one of STEP_CONDITIONS (the pull-request-only steps); and the
+   gate's decision step is pinned (GATE_ENV / GATE_RUN), so a job cannot be skipped or
+   allowed to fail while `ci gate (all jobs)` stays green.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -746,6 +752,54 @@ def check_codeql(workflows):
     return problems
 
 
+STEP_CONDITIONS = {"github.event_name == 'pull_request'"}
+GATE_ENV = {"RESULTS": "${{ toJSON(needs) }}"}
+GATE_RUN = [
+    'echo "$RESULTS" | jq -r \'to_entries[] | "\\(.key): \\(.value.result)"\' | tee gate.txt',
+    '{',
+    'echo "### ci gate"',
+    'echo',
+    "echo '```'",
+    'cat gate.txt',
+    "echo '```'",
+    '} >> "$GITHUB_STEP_SUMMARY"',
+    'echo "$RESULTS" | jq -e \'all(.[]; .result == "success")\' > /dev/null',
+]
+MASKING = re.compile(r"\|\|\s*(true|:)\b|\|\|\s*:\s*$|\bset\s+\+e\b")
+
+
+def check_ci_masking(workflows, path=".github/workflows/ci.yml", gate="gate"):
+    if path not in workflows:
+        return ["{} is missing".format(path)]
+    text = workflows[path]
+    problems = []
+    for number, line in enumerate(text.splitlines(), 1):
+        key = key_of(line)
+        if key and key[1] == "continue-on-error":
+            problems.append("{}:{}: continue-on-error would let a job the gate needs fail unseen".format(path, number))
+        if MASKING.search(line):
+            problems.append("{}:{}: `{}` masks a failing command".format(path, number, MASKING.search(line).group(0).strip()))
+    ids, _ = job_ids_and_needs(text)
+    for job in ids:
+        block = job_lines(text, job)
+        condition = next((key_of(line, indent=4)[2] for line in block if key_of(line, indent=4) and key_of(line, indent=4)[1] == "if"), None)
+        if job == gate:
+            if strip_quotes(condition or "") != "always()":
+                problems.append("{}: the {} job's if: must be exactly always()".format(path, gate))
+            steps = [step_fields(step) for step in steps_of(block)]
+            if not any(set(fields) == {"name", "env", "run"} and fields["env"] == GATE_ENV and fields["run"] == GATE_RUN
+                       for fields in steps):
+                problems.append("{}: the {} job must run the pinned all-jobs decision step".format(path, gate))
+            continue
+        if condition is not None:
+            problems.append("{}: job {} may not set if: (the gate would see it skipped only if it is listed)".format(path, job))
+        for step in steps_of(block):
+            fields = step_fields(step)
+            if "if" in fields and " ".join(strip_quotes(fields["if"] or "").split()) not in STEP_CONDITIONS:
+                problems.append("{}: job {}: step if: `{}` is not an allowed condition".format(path, job, fields["if"]))
+    return problems
+
+
 def check_tag_triggers(workflows):
     """`workflows`: {repository path: text}."""
     problems = []
@@ -953,6 +1007,7 @@ def main(root):
         problems += check_release_audit(texts)
         problems += check_cross_check(texts)
         problems += check_codeql(texts)
+        problems += check_ci_masking(texts)
         for name in files:
             problems += check_encoding(name, texts[name])
             problems += check_credentials(name, texts[name])
@@ -1406,6 +1461,29 @@ def self_test():
         assert text != audit_text, label
         assert check_release_audit({AUDIT_WORKFLOW: text}), label
     assert check_release_audit({}) == ["{} is missing (the scheduled release audit)".format(AUDIT_WORKFLOW)]
+    # CI/CD item 10: no ci job the gate needs can be masked
+    with open(".github/workflows/ci.yml", encoding="utf-8") as handle:
+        ci_text_for_masking = handle.read()
+    ci_ok = {".github/workflows/ci.yml": ci_text_for_masking}
+    assert check_ci_masking(ci_ok) == [], check_ci_masking(ci_ok)
+    decision = GATE_RUN[-1]
+    for label, text in {
+        "job continue-on-error": ci_text_for_masking.replace("    name: workflow lint (actionlint, zizmor)\n",
+                                                           "    name: workflow lint (actionlint, zizmor)\n    continue-on-error: true\n"),
+        "step continue-on-error": ci_text_for_masking.replace("      - name: Every ci job must have succeeded\n",
+                                                            "      - name: Every ci job must have succeeded\n        continue-on-error: true\n"),
+        "or true": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . || true\n", 1),
+        "or colon": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . || :\n", 1),
+        "set +e": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          set +e\n          ruff check --output-format github .\n", 1),
+        "job skipped": ci_text_for_masking.replace("    name: workflow lint (actionlint, zizmor)\n",
+                                                 "    name: workflow lint (actionlint, zizmor)\n    if: false\n"),
+        "step skipped": ci_text_for_masking.replace("        if: github.event_name == 'pull_request'\n", "        if: false\n", 1),
+        "gate condition changed": ci_text_for_masking.replace("    if: always()\n", "    if: success()\n"),
+        "gate decision masked": ci_text_for_masking.replace(decision, decision + " || echo ignored"),
+        "gate decision dropped": ci_text_for_masking.replace("          " + decision + "\n", ""),
+    }.items():
+        assert text != ci_text_for_masking, label
+        assert check_ci_masking({".github/workflows/ci.yml": text}), label
     # item 9 round 1: both CodeQL analyses are pinned
     with open(CODEQL_WORKFLOW, encoding="utf-8") as handle:
         codeql_text = handle.read()
