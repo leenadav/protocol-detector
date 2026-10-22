@@ -32,6 +32,14 @@
 6. Shell: every workflow sets top-level `defaults: run: shell: bash`, and no job or step
    overrides the shell. The unspecified default is `bash -e {0}` without pipefail, so a
    failing check piped into `tee` (the job-summary idiom used throughout) would pass.
+7. Action consistency: every action repository (`owner/repo`, sub-actions included) is pinned
+   to one commit SHA and one `# vX.Y.Z` tag comment across all workflows, and
+   `actions/upload-artifact` and `actions/download-artifact`, which hand the release files
+   from the build job to the publish job, share a major version. A partial bump (one file,
+   one job, or one half of the artifact pair; Dependabot PR #8 was computed before the
+   release split and would have moved only the upload side to v7) fails here instead of
+   surfacing as a broken release. A remote `uses:` without a full SHA and a tag comment
+   fails closed.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -443,6 +451,40 @@ def check_shell(path, text):
     return problems
 
 
+USES = re.compile(r"^\s*(?:-\s+)?uses:\s*(\S+?)\s*(#.*)?$")
+PINNED = re.compile(r"^([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(/[^@]*)?@([0-9a-f]{40})$")
+TAG = re.compile(r"^#\s*v(\d+)(?:\.\d+)*\s*$")
+ARTIFACT_PAIR = ("actions/upload-artifact", "actions/download-artifact")
+
+
+def check_action_consistency(workflows):
+    """`workflows`: {repository path: text}."""
+    problems, pins, majors = [], {}, {}
+    for path, text in sorted(workflows.items()):
+        for number, line in enumerate(text.splitlines(), 1):
+            found = USES.match(line)
+            if not found or found.group(1).startswith(("./", "docker://")):
+                continue
+            pinned = PINNED.match(found.group(1))
+            tag = TAG.match(found.group(2) or "")
+            if not pinned or not tag:
+                problems.append("{}:{}: `{}` is not pinned to a full SHA with a `# vX.Y.Z` comment".format(
+                    path, number, found.group(1)))
+                continue
+            repository, action = pinned.group(1), pinned.group(1) + (pinned.group(2) or "")
+            pins.setdefault(repository, set()).add((pinned.group(3), (found.group(2) or "").strip()))
+            majors.setdefault(action, set()).add(int(tag.group(1)))
+    for repository, seen in sorted(pins.items()):
+        if len(seen) > 1:
+            problems.append("{} is pinned {} different ways: {}".format(
+                repository, len(seen), "; ".join("{} {}".format(sha[:12], comment) for sha, comment in sorted(seen))))
+    upload, download = (majors.get(name, set()) for name in ARTIFACT_PAIR)
+    if upload and download and upload != download:
+        problems.append("{} (v{}) and {} (v{}) must share a major version".format(
+            ARTIFACT_PAIR[0], "/v".join(map(str, sorted(upload))), ARTIFACT_PAIR[1], "/v".join(map(str, sorted(download)))))
+    return problems
+
+
 def main(root):
     root = Path(root)
     workflows = root / ".github" / "workflows"
@@ -455,6 +497,7 @@ def main(root):
         problems += check_tag_triggers(texts)
         for name in files:
             problems += check_shell(name, texts[name])
+        problems += check_action_consistency(texts)
         if RELEASE_WORKFLOW in texts:
             problems += check_release_concurrency(texts[RELEASE_WORKFLOW])
             problems += check_release_provenance(texts[RELEASE_WORKFLOW])
@@ -703,6 +746,29 @@ def self_test():
     assert check_shell("w.yml", shell_ok.replace("  a:\n", "  a:\n    defaults:\n      run:\n        shell: sh\n")) == [
         "w.yml:9: overrides the shell; only the top-level bash default is allowed",
         "w.yml:11: overrides the shell; only the top-level bash default is allowed"]
+    up4 = "      - uses: actions/upload-artifact@" + "e" * 40 + " # v4.6.2\n"
+    down4 = "      - uses: actions/download-artifact@" + "d" * 40 + " # v4.3.0\n"
+    up7 = "      - uses: actions/upload-artifact@" + "c" * 40 + " # v7.0.2\n"
+    co = "      - uses: actions/checkout@" + "1" * 40 + " # v4.2.2\n"
+    init = "        uses: github/codeql-action/init@" + "f" * 40 + " # v3.28.18\n"
+    analyze = "        uses: github/codeql-action/analyze@" + "f" * 40 + " # v3.28.18\n"
+    consistent = {"a.yml": co + up4 + init + analyze + "      - uses: ./local-action\n", "b.yml": co + down4}
+    assert check_action_consistency(consistent) == []
+    assert check_action_consistency({"a.yml": co + up7, "b.yml": co + down4}) == [
+        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version"]
+    assert check_action_consistency({"a.yml": co + up7 + up4, "b.yml": down4})[0].startswith(
+        "actions/upload-artifact is pinned 2 different ways")
+    partial = {"a.yml": co, "b.yml": co.replace("1" * 40, "2" * 40).replace("v4.2.2", "v4.3.0")}
+    assert check_action_consistency(partial) == [
+        "actions/checkout is pinned 2 different ways: {} # v4.2.2; {} # v4.3.0".format("1" * 12, "2" * 12)]
+    same_sha_other_comment = {"a.yml": co, "b.yml": co.replace("v4.2.2", "v4.2.3")}
+    assert len(check_action_consistency(same_sha_other_comment)) == 1
+    codeql_split = {"a.yml": init + analyze.replace("f" * 40, "9" * 40)}
+    assert check_action_consistency(codeql_split)[0].startswith("github/codeql-action is pinned 2 different ways")
+    for bad in ("      - uses: actions/checkout@v4\n", "      - uses: actions/checkout@" + "1" * 40 + "\n",
+                "      - uses: actions/checkout@" + "1" * 39 + " # v4.2.2\n", "      - uses: actions/checkout@main # v4\n"):
+        found = check_action_consistency({"a.yml": bad})
+        assert len(found) == 1 and "is not pinned to a full SHA" in found[0], (bad, found)
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)
