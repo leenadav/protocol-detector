@@ -65,10 +65,110 @@ class BGPParser(FrameParser):
 _SMB_DIALECTS = {0x202: "2.0.2", 0x210: "2.1", 0x2ff: "wildcard", 0x300: "3.0", 0x302: "3.0.2", 0x311: "3.1.1"}
 
 
+_SMB2_SESSION_FLAGS = {1: "guest", 2: "anonymous", 4: "encrypted"}
+STATUS_MORE_PROCESSING_REQUIRED = 0xC0000016
+
+
 class SMB2Parser(FrameParser):
+    """SMB2/3 NEGOTIATE in either direction, then one SESSION_SETUP frame for the authentication mechanism (v0.56)."""
     header_size = 8
     protocol_name = "smb2"
     scope = "negotiation_request"
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.continues = False
+        self.refined = False
+        self.extra_evidence = ()
+        self.frame = bytearray()
+        self.frame_needed = 8
+
+    def feed(self, data):
+        if not self.done:
+            consumed = FrameParser.feed(self, data)
+            if self.done:
+                self.continues = True      # watch exactly one more frame: SESSION_SETUP names the mechanism
+            return consumed
+        return self._next_frame(data)
+
+    def _next_frame(self, data):
+        pos = 0
+        while pos < len(data) and self.continues:
+            start = pos
+            amount = min(self.frame_needed - len(self.frame), len(data) - pos)
+            self.frame.extend(data[pos:pos + amount])
+            pos += amount
+            if len(self.frame) < self.frame_needed:
+                break
+            if self.frame_needed == 8:
+                if self.frame[0] != 0 or self.frame[4:8] != b"\xfeSMB":
+                    self.continues = False      # not an SMB2 frame: the identification stands, these bytes are not inspected
+                    return start
+                size = int.from_bytes(self.frame[1:4], "big")
+                if size < 64 + 9:
+                    raise ParseError("SMB2 frame shorter than a SESSION_SETUP body")
+                if 4 + size > self.config.max_bytes:
+                    raise BudgetError("SMB2 SESSION_SETUP frame exceeds byte budget")
+                self.frame_needed = 4 + size
+                if len(self.frame) < self.frame_needed:
+                    continue
+            self._session_setup(bytes(self.frame[4:]))
+            self.continues = False
+        return pos
+
+    def _session_setup(self, data):
+        """MS-SMB2 2.2.5/2.2.6: the security buffer names the mechanism; nothing inside it is kept but closed labels."""
+        u16 = lambda at: int.from_bytes(data[at:at + 2], "little")
+        u32 = lambda at: int.from_bytes(data[at:at + 4], "little")
+        if u16(4) != 64 or u16(12) != 1:
+            raise UnsupportedPrefix("Only a SESSION_SETUP frame is read after NEGOTIATE")
+        response = bool(u32(16) & 1)
+        if u32(20) != 0:
+            raise UnsupportedPrefix("Compounded SESSION_SETUP is outside the profile")
+        status = u32(8)
+        if response:
+            if status not in (0, STATUS_MORE_PROCESSING_REQUIRED):
+                raise UnsupportedPrefix("SESSION_SETUP response status outside success and more-processing")
+            if u16(64) != 9:
+                raise ParseError("SESSION_SETUP response structure size must be 9")
+            offset, length = u16(68), u16(70)
+            if offset != 72 and length:
+                raise ParseError("SESSION_SETUP response security buffer must follow the fixed fields")
+            rows = [("smb_message", "session-setup-response", "session_setup", "structural")]
+            flags = u16(66)
+            if flags & ~7:
+                raise ParseError("SESSION_SETUP response session flags outside MS-SMB2")
+            if status == STATUS_MORE_PROCESSING_REQUIRED:
+                session = "continuing"
+            else:
+                session = next((label for bit, label in _SMB2_SESSION_FLAGS.items() if flags & bit), "authenticated")
+            rows.append(("smb_session", session, "session_setup", "asserted"))
+            start = 72
+        else:
+            if status:
+                raise ParseError("SESSION_SETUP request must carry STATUS_SUCCESS")
+            if u16(64) != 25:
+                raise ParseError("SESSION_SETUP request structure size must be 25")
+            if data[66] & ~1 or data[67] not in (1, 2, 3):
+                raise ParseError("SESSION_SETUP request flags or security mode outside MS-SMB2")
+            offset, length = u16(76), u16(78)
+            if offset != 88:
+                raise ParseError("SESSION_SETUP request security buffer must follow the fixed fields")
+            rows = [("smb_message", "session-setup-request", "session_setup", "structural")]   # signing mode already reported by NEGOTIATE
+            start = 88
+        if start + length != len(data):
+            raise ParseError("SESSION_SETUP security buffer disagrees with the frame")
+        if length:
+            from .gss import classify_token
+            token = classify_token(data[start:start + length])
+            rows.append(("gss_mechanism", token.mechanism, "session_setup", "asserted"))
+            if token.ntlm_message:
+                rows.append(("ntlm_message", token.ntlm_message, "session_setup", "asserted"))
+        elif not response:
+            raise ParseError("SESSION_SETUP request without a security buffer")
+        self.extra_evidence += tuple(rows)
+        self.refined = True
+        self.reason += "; SESSION_SETUP read for the authentication mechanism, credentials and tokens not emitted"
 
     def frame_size(self, header):
         if header[0] != 0 or header[4:8] != b"\xfeSMB":
@@ -109,6 +209,7 @@ class SMB2Parser(FrameParser):
         else:
             self._contexts(data, u16, u32, u32(92), u16(96), end, u16(98))
         self.reason = "SMB2/3 direct TCP NEGOTIATE request validated; dialects are offers, signing/encryption unverified"
+        self.extra_evidence = (("smb_signing", "required" if u16(68) & 2 else "enabled", "negotiate_request", "asserted"),)
 
     def _contexts(self, data, u16, u32, pos, contexts, end, reserved, response=False):
         """SMB 3.1.1 negotiate contexts: 8-byte aligned, unique kinds, preauth (kind 1) required."""

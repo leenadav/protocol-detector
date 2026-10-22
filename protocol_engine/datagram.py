@@ -22,7 +22,7 @@ from .extended import TextParser, UnsupportedPrefix
 from .syslog import syslog
 from .network import ntp, snmp, tftp
 from .radius import radius
-from .wire import coap, dhcp, dns, dns_probe, stun
+from .wire import coap, dhcp, dns, dns_probe, llmnr, stun
 
 def _sip_probe(data, limit):
     if not data or not 65 <= data[0] <= 90:
@@ -55,10 +55,10 @@ def enip_datagram(data, config):
 def dns_with_contexts(data, config):
     if not config.retain_contexts and not config.heuristics:
         return dns(data, config)
-    from .wire import dns_details, dns_message_evidence, dns_query_type_evidence
-    protocol, reason, qname, qtype = dns_details(data, config)
+    from .wire import dns_details, dns_protocol_evidence
+    protocol, reason, qname, qtype, rows = dns_details(data, config)
     contexts = {"dns-req-query-name": qname, "dns-req-query-type": qtype} if config.retain_contexts else None
-    evidence = (Evidence("application_protocol", protocol, "wire", "structural"),) + dns_message_evidence(data) + dns_query_type_evidence(qname, qtype)
+    evidence = dns_protocol_evidence(protocol) + rows
     if config.heuristics:
         evidence += dns_name_shape(qname)
     return DatagramMatch(reason, application_protocol=protocol, contexts=contexts, signature_family="dns", evidence=evidence)
@@ -83,7 +83,7 @@ def dns_name_shape(qname):
 
 VALIDATORS = MappingProxyType({"quic": quic, "wireguard": wireguard, "openvpn": openvpn, "l2tp": l2tp, "ssdp": ssdp, "netflow": netflow,
                                "sflow": sflow, "bacnet": bacnet, "kerberos": kerberos, "ethernet-ip": enip_datagram, "rtp": rtp,
-                               "ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog, "onc-rpc": onc_rpc, "rip": rip, "rtcp": rtcp})
+                               "ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "mdns": dns_with_contexts, "netbios-ns": dns_with_contexts, "llmnr": llmnr, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog, "onc-rpc": onc_rpc, "rip": rip, "rtcp": rtcp})
 
 
 class DatagramInspector:

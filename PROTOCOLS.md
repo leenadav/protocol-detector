@@ -36,7 +36,7 @@ closed set reviewers should expect in records.
 | ftp | tcp | yes | - | - |
 | giop | tcp | yes | yes | `giop_message`, `giop_status` |
 | git | tcp | yes | yes | `git_message`, `offered_version` |
-| http | tcp | yes | yes | `hostname`, `http_accept`, `http_content_type`, `http_method`, `http_status`, `http_upgrade` |
+| http | tcp | yes | yes | `hostname`, `http_accept`, `http_auth_challenge`, `http_auth_scheme`, `http_content_type`, `http_method`, `http_status`, `http_upgrade` |
 | http2 | tcp | yes | yes | `hostname`, `http2_content_type`, `http2_message`, `http2_method`, `http2_scheme`, `http2_status` |
 | iec-104 | tcp | yes | same shape | - |
 | ikev2 | udp | yes | yes | `exchange`, `offered_dh_group`, `selected_dh_group` |
@@ -47,13 +47,16 @@ closed set reviewers should expect in records.
 | kafka | tcp | yes | - | `kafka_api_key` |
 | kerberos | tcp/udp | yes | yes | `kerberos_error`, `kerberos_message` |
 | l2tp | udp | yes | yes | `l2tp_message` |
-| ldap | tcp | yes | yes | `ldap_extended`, `ldap_message`, `ldap_result` |
+| ldap | tcp | yes | yes | `gss_mechanism`, `ldap_bind`, `ldap_extended`, `ldap_message`, `ldap_result`, `ntlm_message` |
+| llmnr | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `llmnr_flags` |
+| mdns | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `mdns_profile` |
 | memcached | tcp | yes | yes | `memcached_message`, `memcached_status` |
 | modbus | tcp | yes | yes | `modbus_exception`, `modbus_pdu` |
 | mongodb | tcp | yes | yes | `mongodb_message` |
 | mqtt | tcp | yes | - | - |
 | mysql | tcp | yes | yes | `mysql_auth_plugin`, `mysql_client_ssl`, `mysql_tls_supported` |
 | nats | tcp | yes | yes | - |
+| netbios-ns | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `nbns_opcode` |
 | netbios-ss | tcp | yes | - | - |
 | netflow | udp | yes | n/a (one-way) | - |
 | ntp | udp | yes | yes | `ntp_mode` |
@@ -76,8 +79,8 @@ closed set reviewers should expect in records.
 | s7comm | tcp | yes | yes | `s7_function`, `s7_rosctr` |
 | sflow | udp | yes | n/a (one-way) | - |
 | sip | tcp/udp | yes | same shape | - |
-| smb1 | tcp | yes | yes | `smb1_dialect_layout`, `smb1_message` |
-| smb2 | tcp | yes | yes | `smb_dialect`, `smb_signing` |
+| smb1 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb1_dialect_layout`, `smb1_message`, `smb_session` |
+| smb2 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb_dialect`, `smb_message`, `smb_session`, `smb_signing` |
 | smtp | tcp | yes | - | `smtp_client_identity` |
 | snmp | udp | yes | yes | `snmp_flags`, `snmp_pdu`, `snmp_scoped_pdu`, `snmp_security` |
 | socks5 | tcp | yes | yes | `socks_command`, `socks_method`, `socks_port`, `socks_reply`, `socks_target` |
@@ -99,7 +102,7 @@ closed set reviewers should expect in records.
 | xmpp | tcp | yes | yes | `hostname`, `xmpp_namespace`, `xmpp_stream`, `xmpp_version` |
 | zmtp | tcp | yes | yes | `zmtp_mechanism`, `zmtp_role` |
 
-82 families in the catalog, 82 with fixtures, 69 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, irc, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
+85 families in the catalog, 85 with fixtures, 72 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, irc, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
 <!-- coverage-matrix:end -->
 
 ## Direction evidence and remaining replies (v0.49)
@@ -398,7 +401,18 @@ correlation metadata on the Inspector, never evidence), it opens the TLS
 phase on the client direction and, for a success without responseName (RFC
 4511 allows the omission), on the server direction too
 (`ldap_starttls_correlated`). A refusal, an unrelated message id or a success
-for another operation opens nothing. Any response value on a StartTLS
+for another operation opens nothing. The phase is opened through the
+reassembly stream (`Stream.open_shift`), which replays the bytes that
+direction already carried past its LDAP message and the inspector skipped
+while terminal (`Inspector.boundary`, `Inspector.replay`): a ClientHello
+recorded before the server's answer, or coalesced with the request in one
+segment, is inspected exactly once and counted once (review round 2). The
+events such a replay publishes belong to the replayed direction: the
+analyzer extends the packet's own events when it is the same direction and
+exposes the other direction's as `Analyzer.peer_events` (source,
+destination, event), which the live observer emits with that direction
+(review round 3). The CONNECT correlation of v0.33 uses the same path, so a
+ServerHello sharing the 2xx's segment is no longer lost. Any response value on a StartTLS
 response, a non-OID name or a result code above 123 is malformed; controls
 remain outside the profile (unknown). Extended values, DNs and diagnostics
 are never emitted. The `cleartext-credential-protocol` risk stays on an
@@ -462,3 +476,134 @@ encapsulated DCE/RPC PDUs are not inspected.
 Dispatch: `:` (0x3a) routes to the IRC server-line parser; a mutated first
 byte that used to be unknown there is now malformed when the IRC grammar
 rejects it. No other route changed.
+
+## Name services on the DNS layout: mDNS, NetBIOS-NS, LLMNR (v0.55)
+
+Three new families (85 in total, 76 automatic) share the DNS message layout
+and are told apart by structure, never by port. The validator in `wire.py`
+walks the sections once and names the family afterwards; names are returned
+only for signature contexts and are never emitted.
+
+Candidate selection (`dns_probe`): the QUERY opcode with exactly one question
+selects as before. The rarer layouts also select, under a plausibility rule
+that keeps other datagrams (RIP entries, DTLS records) out: the first name
+must start with a label of 1..63 bytes and the four section counts must sum
+to 1..32. They are: QUERY with 2..8 questions, QUERY with no question when
+the message is a response carrying answers, and the NetBIOS name service
+opcodes 5..8 with at most one question. The TCP dispatch is unchanged (one
+question in the twelve header bytes); mDNS and NetBIOS-NS are UDP profiles,
+so over TCP the family stays `dns` and only the evidence rows below are
+added, while NetBIOS registration opcodes over TCP are unknown.
+
+`mdns` (RFC 6762, automatic): a message whose first question name, or the
+first record's owner name when there is no question, ends in `.local`, or
+whose question carries the QU bit (class 0x8000), or whose response record
+carries the cache-flush bit, or which has several questions or no question at
+all with answers (an announcement is named by its first record, so a shared
+record without the cache-flush bit is one too; a compressed later owner is
+not expanded). Queries may carry answers (known-answer suppression) and
+authority records (probes) but never the AA bit, a response code or the
+cache-flush bit, which exists only in response record sections (RFC 6762
+10.2; no DNS class has that bit, so a query carrying it is malformed on every
+layout); responses must carry AA and a zero response code. Evidence: `dns_message`, `dns_rcode`, `dns_query_type` (the first
+question's type, or the first answer's type in an announcement) and
+`mdns_profile`: `announcement` (no question), `probe` (query with authority
+records), `known-answer` (query with answers), `unicast-requested` (QU bit),
+`plain`. Several questions without any marker stay outside the profile
+(unknown); a response without a question and without a marker is malformed.
+Service instance names, host names, addresses and TXT records are never
+emitted. App-ID: `mdns` (aliases bonjour, zeroconf), udp/5353.
+
+`netbios-ns` (RFC 1002, automatic; the v0.54 `dns` + `nb`/`nbstat`
+refinement becomes a family): a NB (0x20) or NBSTAT (0x21) question whose
+first label is the 32-byte first-level encoding over A..P, with the QUERY
+opcode, or the opcodes registration (5), release (6), WACK (7) and refresh
+(8) with that encoded name. Requests carry one question and, for the
+registration-class opcodes, exactly one additional NB record; responses carry
+at most one question and one answer and no other section. Record data is
+keyed by message kind (review round 1): a WACK (opcode 7, response only)
+carries exactly the two-byte flags word; any other NB record carries one or
+more 6-byte entries (NB_FLAGS with zero reserved bits, IPv4 address); an
+NBSTAT record appears only in responses and carries NUM_NAMES, exactly that
+many 18-byte node-name entries (NAME_FLAGS with zero reserved bits) and the
+46-byte statistics block. Evidence: `dns_message`, `dns_rcode` (NBNS result codes read
+through the DNS table: ACT_ERR is `yxdomain`, RFS_ERR `refused`, SRV_ERR
+`servfail`), `dns_query_type` (`nb`/`nbstat`), `nbns_opcode` (`query`,
+`registration`, `release`, `wack`, `refresh`). Names, addresses and node
+status tables are never emitted. The `dns-error-response` risk applies to
+`servfail`, `nxdomain` and `refused` as for DNS.
+
+`llmnr` (RFC 4795, hint only): the bytes of an LLMNR query are those of a
+unicast DNS query with RD clear, so only the `llmnr` candidate selects this
+profile; the port never does. With the hint: opcode zero, exactly one
+question, a zero Z nibble; the C bit (DNS's AA position) and T bit (DNS's RD
+position) are read with their LLMNR meaning: a query carries neither answers,
+authority records, a response code nor the T bit; `.local` and NetBIOS names
+are not LLMNR (unknown). Evidence: `dns_message`, `dns_rcode`,
+`dns_query_type`, `llmnr_flags` (`none`, `conflict`, `tentative`). Without
+the hint an LLMNR query identifies as `dns` and a conflict query (C bit) is
+malformed DNS, both as before.
+
+Behaviour change: UDP NB/NBSTAT queries now identify as `netbios-ns` rather
+than `dns` with the `nb` row (the App-ID verdict is unchanged); a `.local`
+query identifies as `mdns`. Two seeded DTLS mutations that used to be unknown
+briefly read as malformed before the non-empty-section rule was added to the
+probe; the released probe keeps them unknown.
+
+## Authentication mechanism evidence: SMB session setup, LDAP bind, HTTP Authorization (v0.56)
+
+No new family. The first authentication step of a session names its mechanism
+as a closed label; credentials, principals, domains, challenges, tickets and
+MICs are never decoded. `protocol_engine/gss.py` classifies the token layouts
+these messages carry (RFC 2743 InitialContextToken, RFC 4178 SPNEGO
+NegTokenInit/NegTokenResp, MS-NLMP NTLMSSP): `gss_mechanism` is `kerberos`
+(the krb5, MS krb5 or user-to-user OID, or a Kerberos GSS token with a known
+TOK_ID), `ntlm` (the NTLMSSP OID or an NTLMSSP mechToken/responseToken),
+`negoex`, `spnego-other` (SPNEGO without a known preferred mechanism) or
+`other` (a non-SPNEGO GSS OID); `ntlm_message` is `negotiate`, `challenge` or
+`authenticate`. A NegTokenInit names the first listed mechType unless its
+mechToken carries NTLMSSP or Kerberos; a NegTokenResp names its supportedMech
+or its responseToken. Budgets: 4096-byte tokens, 8 mechTypes, fixed DER depth,
+exact lengths at every level. Malformed tokens are `ParseError` and end the
+continuation without touching the carrier identification.
+
+`smb2`: after a NEGOTIATE in either direction the parser watches exactly one
+more direct-TCP frame. A SESSION_SETUP request (StructureSize 25, flags 0/1,
+SecurityMode 1..3, security buffer at offset 88 filling the frame, STATUS
+zero) adds `smb_message=session-setup-request` and the token's
+`gss_mechanism`/`ntlm_message`; a SESSION_SETUP response (StructureSize 9,
+STATUS_SUCCESS or STATUS_MORE_PROCESSING_REQUIRED, SessionFlags within
+guest/null/encrypt, buffer at 72) adds `smb_message=session-setup-response`,
+`smb_session` (`continuing`, `guest`, `anonymous`, `encrypted`,
+`authenticated`) and the token labels. The NEGOTIATE request now also carries
+`smb_signing` (`enabled`/`required`) like the response. Any other command, a
+compounded or signed frame, a status outside the two, or a buffer that does
+not fill the frame leaves the NEGOTIATE identification as published (a
+non-SMB frame is not consumed at all); the watch never reads a third frame.
+
+`smb1`: after a NEGOTIATE in either direction, one SESSION_SETUP_ANDX
+(0x73): the 12-word extended-security request classifies its security blob;
+the 13-word NT LM 0.12 request reports `gss_mechanism=ntlm-response` when the
+case-insensitive (at most 24 bytes) or case-sensitive (at most 1024) password
+response is present, `none` otherwise; the 10-word LAN Manager request reports
+`lm-response` or `none`; a response (3 or 4 words, action within the defined
+bits) reports `smb_session` (`guest`, `authenticated`, `continuing`) and the
+blob labels. Account, domain, OS and LAN Manager strings are bounded by the
+byte count and never read.
+
+`ldap`: BindRequest adds `ldap_bind`: `simple`, or `sasl-gssapi`,
+`sasl-gss-spnego`, `sasl-plain`, `sasl-digest-md5`, `sasl-cram-md5`,
+`sasl-scram`, `sasl-ntlm`, `sasl-external`, `sasl-other`; a GSS-SPNEGO bind
+with credentials adds the token's `gss_mechanism`/`ntlm_message`. The
+mechanism string itself is never emitted.
+
+`http`: HTTP/1 and HTTP/2 requests report `http_auth_scheme`
+(`http2_auth_scheme`) from the first `Authorization`/`Proxy-Authorization`
+header, responses `http_auth_challenge` (`http2_auth_challenge`) for every
+distinct scheme offered by `WWW-Authenticate`/`Proxy-Authenticate` headers:
+`basic`, `bearer`, `digest`, `negotiate`, `ntlm`, `other`, `empty`. Only the
+scheme token before the first space or comma is read.
+
+Risks (RISKS.md): `ntlm-authentication`, `http-basic-authentication`,
+`smb-guest-or-anonymous-session`; `cleartext-credential-protocol` clears on
+LDAP binds whose mechanism never carries the password.

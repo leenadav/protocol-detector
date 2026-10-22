@@ -2,7 +2,7 @@
 import ipaddress
 import re
 from .model import normalize_hostname
-from .media import METHODS, accept_class, content_type_class
+from .media import METHODS, accept_class, auth_scheme_class, content_type_class
 from .control import ControlHeaders, START
 from .parsers import BudgetError, LineParser, ParseError, TOKEN, UnsupportedPrefix
 from .service_text import nats, imap_capability
@@ -452,6 +452,14 @@ class HTTP2Parser:
         accept = next((value for name, value in regular if name == b"accept"), None)
         if accept is not None and accept_class(accept) == "dns":
             evidence.append(("http2_accept", "dns", "headers_frame", "asserted"))
+        authorization = next((value for name, value in regular if name in (b"authorization", b"proxy-authorization")), None)
+        if authorization is not None:
+            evidence.append(("http2_auth_scheme", auth_scheme_class(authorization), "headers_frame", "asserted"))
+        offered = []
+        for name, value in regular:
+            if name in (b"www-authenticate", b"proxy-authenticate") and auth_scheme_class(value) not in offered:
+                offered.append(auth_scheme_class(value))
+                evidence.append(("http2_auth_challenge", offered[-1], "headers_frame", "asserted"))
         if self.config.fingerprints and self.request:
             self.fingerprints += (("h2_pseudo_order", ",".join(order), "headers_frame"),)
         if self.contexts is not None:
