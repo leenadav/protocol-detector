@@ -27,7 +27,11 @@
    `.github/workflows/release.yml` must not exist. A tag push runs the workflow file at the
    tagged commit, so every older commit's unguarded release.yml stays reachable until that
    path is disabled in the repository's Actions settings; keeping the path free means
-   disabling it never disables the guarded controller. No other workflow may hold
+   disabling it never disables the guarded controller. No workflow may authenticate with a
+   stored credential: in every `${{ }}` expression (multi-line ones included) and every bare
+   `if:` condition, the `secrets` and `vars` contexts are banned in any syntax, except the
+   exact built-in `secrets.GITHUB_TOKEN`, and so is a `secrets:` key (`secrets: inherit`);
+   the controller keeps rule 8's stricter line ban. No other workflow may hold
    `contents`, `id-token`, `attestations`, `packages`, `actions`, `deployments` or
    `statuses: write`, or `write-all`, so none can publish on another trigger (CodeQL keeps
    `security-events: write` for its SARIF upload). `tools/check_release_exposure.py`
@@ -552,6 +556,31 @@ def check_attestation_verify(text, publish="publish"):
     return problems
 
 
+EXPRESSION_ANY = re.compile(r"\$\{\{(.*?)\}\}", re.S)
+STORED_CREDENTIAL = re.compile(r"\b(secrets|vars)\b", re.I)
+BUILT_IN_TOKEN = re.compile(r"^\s*secrets\s*\.\s*github_token\s*$", re.I)
+
+
+def check_credentials(path, text):
+    """Stored credentials (any secret but GITHUB_TOKEN, any variable) are banned in every workflow."""
+    problems = []
+    for found in EXPRESSION_ANY.finditer(text):
+        body = found.group(1)
+        if STORED_CREDENTIAL.search(body) and not BUILT_IN_TOKEN.match(body):
+            line = text.count("\n", 0, found.start()) + 1
+            problems.append("{}:{}: `${{{{{}}}}}` references a stored credential; only `secrets.GITHUB_TOKEN` "
+                            "is allowed".format(path, line, " ".join(body.split())))
+    for number, line in enumerate(text.splitlines(), 1):
+        if line.strip().startswith("#"):
+            continue
+        key = key_of(line)
+        if key and key[1] == "secrets":
+            problems.append("{}:{}: `secrets:` key (reusable workflow secrets) is not allowed".format(path, number))
+        elif key and key[1] == "if" and "${{" not in key[2] and STORED_CREDENTIAL.search(key[2]):
+            problems.append("{}:{}: `if:` references a stored credential".format(path, number))
+    return problems
+
+
 RELEASE_SCOPES = {"contents", "id-token", "attestations", "packages", "actions", "deployments", "statuses"}
 
 
@@ -761,6 +790,7 @@ def main(root):
         problems += check_action_consistency(texts)
         for name in files:
             problems += check_encoding(name, texts[name])
+            problems += check_credentials(name, texts[name])
         if RELEASE_WORKFLOW in texts:
             problems += check_release_concurrency(texts[RELEASE_WORKFLOW])
             problems += check_release_provenance(texts[RELEASE_WORKFLOW])
@@ -1158,6 +1188,21 @@ def self_test():
                         "quoted item then pair": '    needs: ["a", b: c]\n'}.items():
         found = check_encoding("w.yml", plain + "jobs2:\n  b:\n    x:\n" + line)
         assert found, (label, found)
+    # task 5 round 2: a read-only workflow authenticating with a stored PAT
+    pat_job = ("jobs:\n  a:\n    permissions:\n      contents: read\n    steps:\n      - env:\n"
+               "          GH_TOKEN: {value}\n        run: gh release create \"$GITHUB_REF_NAME\" dist/*\n")
+    assert check_credentials("w.yml", pat_job.format(value="${{ secrets.GITHUB_TOKEN }}")) == []
+    assert check_credentials("w.yml", pat_job.format(value="${{ github.token }}")) == []
+    assert check_credentials("w.yml", "    name: static analysis (ruff, bandit, secrets)\n") == []
+    for token in ("${{ secrets.RELEASE_PAT }}", "${{ secrets['RELEASE_PAT'] }}", "${{ SECRETS.release_pat }}",
+                  "${{ vars.RELEASE_PAT }}", "${{ fromJSON(toJSON(secrets)).RELEASE_PAT }}",
+                  "${{ secrets.GITHUB_TOKEN || secrets.RELEASE_PAT }}", "${{\n            secrets.RELEASE_PAT }}"):
+        found = check_credentials("w.yml", pat_job.format(value=token))
+        assert len(found) == 1 and "stored credential" in found[0], (token, found)
+    assert check_credentials("w.yml", "    uses: ./.github/workflows/x.yml\n    secrets: inherit\n")
+    assert check_credentials("w.yml", "    if: secrets.RELEASE_PAT != ''\n")
+    run_block = "      - run: |\n          echo ${{ secrets.RELEASE_PAT }}\n"
+    assert check_credentials("w.yml", run_block), "expressions inside run blocks are evaluated too"
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)
