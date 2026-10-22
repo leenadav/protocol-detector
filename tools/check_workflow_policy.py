@@ -68,6 +68,12 @@
    round 1), so outside block scalars and `${{ }}` expressions no flow mapping (`{`, `}`)
    is allowed at all, and a flow sequence must be one line of plain or quoted scalars: no
    nested collection, no `key: value` pair, no explicit key, tag, anchor or alias.
+10. Release audit (`release-audit.yml`): the detective control exists, keeps its daily
+   `schedule:` trigger (scheduled runs always use the default branch's copy, which no tag can
+   swap), and its `audit` job, with no job-level `if:` or `continue-on-error`, holds the pinned
+   gather-and-decide step (AUDIT_ENV / AUDIT_RUN: every `v*` tag compared with main, every
+   published release downloaded and each asset's attestation verified against
+   publish-release.yml for that tag, then `tools/release_audit.py`).
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -589,6 +595,58 @@ def check_credentials(path, text):
 RELEASE_SCOPES = {"contents", "id-token", "attestations", "packages", "actions", "deployments", "statuses"}
 
 
+AUDIT_WORKFLOW = ".github/workflows/release-audit.yml"
+AUDIT_ENV = {"GH_TOKEN": "${{ github.token }}", "GH_REPO": "${{ github.repository }}"}
+AUDIT_RUN = [
+    'python -B tools/release_audit.py --self-test',
+    'facts="$RUNNER_TEMP/facts.jsonl"',
+    ': > "$facts"',
+    'gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/v" --jq \'.[].ref\' > "$RUNNER_TEMP/tags.txt"',
+    'while IFS= read -r ref; do',
+    'tag="${ref#refs/tags/}"',
+    'status=$(gh api "repos/${GH_REPO}/compare/${tag}...main" --jq .status) || status="api-error"',
+    'jq -nc --arg tag "$tag" --arg compare "$status" \'{kind: "tag", tag: $tag, compare: $compare}\' >> "$facts"',
+    'done < "$RUNNER_TEMP/tags.txt"',
+    'gh api --paginate "repos/${GH_REPO}/releases?per_page=100" --jq \'.[] | select(.draft | not) | .tag_name\' > "$RUNNER_TEMP/releases.txt"',
+    'while IFS= read -r tag; do',
+    'dir="$RUNNER_TEMP/assets/$tag"',
+    'mkdir -p "$dir"',
+    'if gh release download "$tag" --dir "$dir"; then download=ok; else download=error; fi',
+    'count=$(find "$dir" -type f | wc -l)',
+    'jq -nc --arg tag "$tag" --arg download "$download" --argjson assets "$count" \'{kind: "release", tag: $tag, assets: $assets, download: $download}\' >> "$facts"',
+    'for file in "$dir"/*; do',
+    '[ -f "$file" ] || continue',
+    'if gh attestation verify "$file" --repo "$GH_REPO" --signer-workflow "$GH_REPO/.github/workflows/publish-release.yml" --source-ref "refs/tags/$tag" --deny-self-hosted-runners > /dev/null; then verified=true; else verified=false; fi',
+    'jq -nc --arg tag "$tag" --arg asset "$(basename "$file")" --argjson verified "$verified" \'{kind: "asset", tag: $tag, asset: $asset, verified: $verified}\' >> "$facts"',
+    'done',
+    'done < "$RUNNER_TEMP/releases.txt"',
+    'python -B tools/release_audit.py --facts "$facts" --summary "$GITHUB_STEP_SUMMARY"',
+]
+
+
+def check_release_audit(workflows):
+    if AUDIT_WORKFLOW not in workflows:
+        return ["{} is missing (the scheduled release audit)".format(AUDIT_WORKFLOW)]
+    text = workflows[AUDIT_WORKFLOW]
+    problems = []
+    lines = text.splitlines()
+    start = next((i for i, line in enumerate(lines) if re.match(r"^on:\s*(#.*)?$", line)), None)
+    end = next((j for j in range(start + 1, len(lines)) if re.match(r"^\S", lines[j])), len(lines)) if start is not None else 0
+    if start is None or not any(key_of(line, indent=2) and key_of(line, indent=2)[1] == "schedule" for line in lines[start + 1:end]):
+        problems.append("{}: the audit must keep its `schedule:` trigger".format(AUDIT_WORKFLOW))
+    try:
+        block = job_lines(text, "audit")
+    except ValueError as error:
+        return problems + ["{}: {}".format(AUDIT_WORKFLOW, error)]
+    if {key_of(line, indent=4)[1] for line in block if key_of(line, indent=4)} & {"if", "continue-on-error"}:
+        problems.append("{}: the audit job may not be conditional or allowed to fail".format(AUDIT_WORKFLOW))
+    pinned = [step for step in steps_of(block) if any("tools/release_audit.py" in line for line in step)]
+    if not any(set(fields) == {"name", "env", "run"} and fields["env"] == AUDIT_ENV and fields["run"] == AUDIT_RUN
+               for fields in (step_fields(step) for step in pinned)):
+        problems.append("{}: the audit job must run the pinned gather-and-decide step".format(AUDIT_WORKFLOW))
+    return problems
+
+
 def check_tag_triggers(workflows):
     """`workflows`: {repository path: text}."""
     problems = []
@@ -793,6 +851,7 @@ def main(root):
         for name in files:
             problems += check_shell(name, texts[name])
         problems += check_action_consistency(texts)
+        problems += check_release_audit(texts)
         for name in files:
             problems += check_encoding(name, texts[name])
             problems += check_credentials(name, texts[name])
@@ -1227,6 +1286,23 @@ def self_test():
                    "      - name: Publish outside the controller\n        env:\n"
                    "          GH_TOKEN: \"${{ false && format('{{x}}') || secrets.RELEASE_PAT }}\"\n"
                    "        run: gh release create \"v0.0.0-bypass\" --generate-notes\n")
+    with open(AUDIT_WORKFLOW, encoding="utf-8") as handle:
+        audit_text = handle.read()
+    assert check_release_audit({AUDIT_WORKFLOW: audit_text}) == [], check_release_audit({AUDIT_WORKFLOW: audit_text})
+    decide = "python -B tools/release_audit.py --facts \"$facts\" --summary \"$GITHUB_STEP_SUMMARY\""
+    verify_flag = ' --signer-workflow "$GH_REPO/.github/workflows/publish-release.yml"'
+    for label, text in {
+        "schedule dropped": audit_text.replace('  schedule:\n    - cron: "37 6 * * *"\n', ""),
+        "decision masked": audit_text.replace(decide, decide + " || true"),
+        "signer dropped": audit_text.replace(verify_flag, ""),
+        "tags skipped": audit_text.replace("tags/v\" --jq", "tags/none\" --jq"),
+        "job conditional": audit_text.replace("    timeout-minutes: 30\n", "    timeout-minutes: 30\n    if: false\n"),
+        "job allowed to fail": audit_text.replace("    timeout-minutes: 30\n", "    timeout-minutes: 30\n    continue-on-error: true\n"),
+        "step allowed to fail": audit_text.replace("      - name: Gather facts", "      - continue-on-error: true\n        name: Gather facts"),
+    }.items():
+        assert text != audit_text, label
+        assert check_release_audit({AUDIT_WORKFLOW: text}), label
+    assert check_release_audit({}) == ["{} is missing (the scheduled release audit)".format(AUDIT_WORKFLOW)]
     with tempfile.TemporaryDirectory() as directory:
         target = Path(directory) / ".github" / "workflows"
         target.mkdir(parents=True)

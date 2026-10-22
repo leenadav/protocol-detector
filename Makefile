@@ -86,6 +86,7 @@ workflow-policy:
 	$(PYTHON) -B tools/check_release_ref.py --self-test
 	$(PYTHON) -B tools/check_release_exposure.py --self-test
 	$(PYTHON) -B tools/check_release_checks.py --self-test
+	$(PYTHON) -B tools/release_audit.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 
