@@ -74,7 +74,8 @@
    round 1), so outside block scalars and `${{ }}` expressions no flow mapping (`{`, `}`)
    is allowed at all, and a flow sequence must be one line of plain or quoted scalars: no
    nested collection, no `key: value` pair, no explicit key, tag, anchor or alias.
-10. Release audit (`release-audit.yml`): the detective control exists, keeps its daily
+10. Release audit (`release-audit.yml`, pinned whole by check_pinned_job since item 15, with no
+   workflow env and no other job, so no step can shadow the gather step's `gh`): the detective control exists, keeps its daily
    `schedule:` trigger (scheduled runs always use the default branch's copy, which no tag can
    swap), and its `audit` job, with no job-level `if:` or `continue-on-error`, holds the pinned
    gather-and-decide step (AUDIT_ENV / AUDIT_RUN: every `v*` tag compared with main and
@@ -745,6 +746,10 @@ AUDIT_RUN = [
 ]
 
 
+AUDIT_JOB_KEYS = {"name", "runs-on", "timeout-minutes", "permissions", "steps"}
+AUDIT_PERMISSIONS = {"contents": "read", "attestations": "read"}
+
+
 def check_release_audit(workflows):
     if AUDIT_WORKFLOW not in workflows:
         return ["{} is missing (the scheduled release audit)".format(AUDIT_WORKFLOW)]
@@ -765,6 +770,17 @@ def check_release_audit(workflows):
     if not any(set(fields) == {"name", "env", "run"} and fields["env"] == AUDIT_ENV and fields["run"] == AUDIT_RUN
                for fields in (step_fields(step) for step in pinned)):
         problems.append("{}: the audit job must run the pinned gather-and-decide step".format(AUDIT_WORKFLOW))
+    # item 15: nothing but pinned actions runs before the gather step, so nothing can shadow its gh
+    problems += check_pinned_job(AUDIT_WORKFLOW, text, "audit", AUDIT_JOB_KEYS, AUDIT_PERMISSIONS, "ubuntu-24.04", [
+        {"uses": "step-security/harden-runner", "with": {"egress-policy": "audit"}},
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        {"uses": "actions/setup-python", "with": {"python-version": "3.13"}},
+        {"env": AUDIT_ENV, "run": AUDIT_RUN},
+    ])
+    if set(job_ids_and_needs(text)[0]) != {"audit"}:
+        problems.append("{}: the audit workflow may hold only the audit job".format(AUDIT_WORKFLOW))
+    if mapping_at(lines, 0, "env") is not None:
+        problems.append("{}: the audit may not set a workflow env (it reaches the gather step)".format(AUDIT_WORKFLOW))
     return problems
 
 
@@ -1929,6 +1945,37 @@ def self_test():
             assert main(directory) == 1, captured.getvalue()
         assert "codeql.yml: analyze step 5 (Tidy results) is not the pinned form" in captured.getvalue(), captured.getvalue()
         assert "ci.yml: gate step 2 (Shadow jq) is not the pinned form" in captured.getvalue(), captured.getvalue()
+    # item 15: the release audit job is a whole-job allowlist too
+    audit = real[AUDIT_WORKFLOW]
+    assert check_release_audit(real) == [], check_release_audit(real)
+    gather = "      - name: Gather facts about every v* tag and published release, then decide\n"
+    assert audit.count(gather) == 1
+    shadow_gh = ('      - name: Shadow gh\n        run: |\n          mkdir -p "$RUNNER_TEMP/bin"\n'
+                 "          target=$(find \"$RUNNER_TEMP\" -type f -name 'add_path_*' -print -quit)\n"
+                 '          echo "$RUNNER_TEMP/bin" >> "$target"\n')
+    audit_header = "    name: release audit (v* tags on main, every asset attested by the controller)\n"
+    for label, text in {
+        "step before gather": audit.replace(gather, shadow_gh + gather, 1),
+        "job env": audit.replace(audit_header, audit_header + "    env:\n      LANG: C\n", 1),
+        "workflow env": audit.replace("\njobs:\n", "\nenv:\n  PATH: /tmp/bin\n\njobs:\n", 1),
+        "container": audit.replace(audit_header, audit_header + "    container: ubuntu:24.04\n", 1),
+        "self-hosted": audit.replace("    runs-on: ubuntu-24.04\n", "    runs-on: self-hosted\n", 1),
+        "write permission": audit.replace("      contents: read       # list", "      contents: write      # list", 1),
+        "second job": audit + "  other:\n    runs-on: ubuntu-24.04\n    steps:\n      - run: echo\n",
+    }.items():
+        assert text != audit, label
+        assert check_release_audit(dict(real, **{AUDIT_WORKFLOW: text})), label
+    with tempfile.TemporaryDirectory() as directory:
+        (Path(directory) / ".github" / "workflows").mkdir(parents=True)
+        (Path(directory) / "tools").mkdir()
+        tampered = dict(real, **{AUDIT_WORKFLOW: audit.replace(gather, shadow_gh + gather, 1)})
+        for path, text in tampered.items():
+            (Path(directory) / path).write_text(text, encoding="utf-8")
+        (Path(directory) / WORKFLOW_LOCK).write_text(json.dumps(workflow_lock(tampered)), encoding="utf-8")
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            assert main(directory) == 1, captured.getvalue()
+        assert "release-audit.yml: audit step 4 (Shadow gh) is not the pinned form" in captured.getvalue(), captured.getvalue()
     added = dict(real, **{".github/workflows/extra.yml": "on: push\n"})
     assert any("extra.yml: not in" in p for p in check_workflow_lock(added, lock_text))
     removed = {k: v for k, v in real.items() if k != ".github/workflows/nightly-fuzz.yml"}
