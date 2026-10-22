@@ -92,7 +92,12 @@
    only the steps in CONDITIONAL_STEPS (the three pull-request-only behaviour-diff base steps,
    pinned by job and every field) may be conditional; and the
    gate's decision step is pinned (GATE_ENV / GATE_RUN), so a job cannot be skipped or
-   allowed to fail while `ci gate (all jobs)` stays green.
+   allowed to fail while `ci gate (all jobs)` stays green. Syntax bans cannot be complete
+   (shell has more ways to swallow a status than any list: `echo "$(check)"`, chained
+   handlers, ...), so every ci step, its run lines, condition, action identity, env and
+   inputs, is also locked in `tools/ci_steps.lock.json`: no step can change unless the lock
+   changes in the same commit, which puts every shell change in front of a reviewer. Whether
+   a reviewed change masks a failure is a review judgment, not something this rule can prove.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -104,6 +109,7 @@ concurrency expression other than a plain `github.*` context reference. Usage:
   check_workflow_policy.py [--root DIR] [--self-test]
 """
 import contextlib
+import json
 import fnmatch
 import io
 import re
@@ -860,6 +866,45 @@ def check_ci_masking(workflows, path=".github/workflows/ci.yml", gate="gate"):
     return problems
 
 
+CI_LOCK = "tools/ci_steps.lock.json"
+
+
+def ci_steps(text):
+    """{job: [step fields]} for ci.yml, with `uses` reduced to action identity (rule 7 owns versions)."""
+    result = {}
+    for job in job_ids_and_needs(text)[0]:
+        steps = []
+        for step in steps_of(job_lines(text, job)):
+            fields = dict(step_fields(step))
+            if "uses" in fields:
+                fields["uses"] = strip_quotes(fields["uses"] or "").split("@", 1)[0].lower()
+            if isinstance(fields.get("run"), str):
+                fields["run"] = [fields["run"]]
+            steps.append(fields)
+        result[job] = steps
+    return result
+
+
+def check_ci_lock(workflows, lock_text, path=".github/workflows/ci.yml"):
+    """Rule 13 lock: no ci step may change unless tools/ci_steps.lock.json changes with it."""
+    if path not in workflows:
+        return ["{} is missing".format(path)]
+    try:
+        locked = json.loads(lock_text)
+    except ValueError as error:
+        return ["{} is unreadable: {}".format(CI_LOCK, error)]
+    current = ci_steps(workflows[path])
+    if current == locked:
+        return []
+    problems = []
+    for job in sorted(set(current) | set(locked)):
+        if current.get(job) != locked.get(job):
+            problems.append("{}: job {}'s steps differ from {} (shell cannot be proven to fail when its check fails, so "
+                            "every ci step change must update the lock in the same change: python3 -B "
+                            "tools/check_workflow_policy.py --write-ci-lock)".format(path, job, CI_LOCK))
+    return problems
+
+
 def check_tag_triggers(workflows):
     """`workflows`: {repository path: text}."""
     problems = []
@@ -1068,6 +1113,8 @@ def main(root):
         problems += check_cross_check(texts)
         problems += check_codeql(texts)
         problems += check_ci_masking(texts)
+        lock = root / CI_LOCK
+        problems += check_ci_lock(texts, lock.read_text(encoding="utf-8") if lock.exists() else "missing")
         for name in files:
             problems += check_encoding(name, texts[name])
             problems += check_credentials(name, texts[name])
@@ -1575,6 +1622,23 @@ def self_test():
     }.items():
         assert text != ci_text_for_masking, label
         assert check_ci_masking({".github/workflows/ci.yml": text}), label
+    # task 11 round 1: the ci step lock catches what no syntax ban can (command substitution, ...)
+    with open(CI_LOCK, encoding="utf-8") as handle:
+        lock_text = handle.read()
+    assert check_ci_lock({".github/workflows/ci.yml": ci_text_for_masking}, lock_text) == []
+    for label, text in {
+        "command substitution": ci_text_for_masking.replace("          ruff check --output-format github .\n",
+                                                            '          echo "$(ruff check --output-format github .)"\n', 1),
+        "step added": ci_text_for_masking.replace("      - name: Ruff (errors, bugbear, security rules)\n",
+                                                  "      - run: echo extra\n      - name: Ruff (errors, bugbear, security rules)\n", 1),
+        "step removed": ci_text_for_masking.replace("          ruff check --output-format github .\n", "", 1),
+        "env changed": ci_text_for_masking.replace("          RESULTS: ${{ toJSON(needs) }}", "          RESULTS: '{}'", 1),
+        "action swapped": ci_text_for_masking.replace("uses: actions/setup-python@", "uses: someone/setup-python@", 1),
+    }.items():
+        assert text != ci_text_for_masking, label
+        assert check_ci_lock({".github/workflows/ci.yml": text}, lock_text), label
+    assert check_ci_lock({".github/workflows/ci.yml": ci_text_for_masking}, "{}")
+    assert check_ci_lock({".github/workflows/ci.yml": ci_text_for_masking}, "not json")
     # item 9 round 1: both CodeQL analyses are pinned
     with open(CODEQL_WORKFLOW, encoding="utf-8") as handle:
         codeql_text = handle.read()
@@ -1626,6 +1690,12 @@ def self_test():
         target.mkdir(parents=True)
         for source in Path(".github/workflows").glob("*.yml"):
             (target / source.name).write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            assert main(directory) == 1
+        assert "tools/ci_steps.lock.json is unreadable" in captured.getvalue(), captured.getvalue()
+        (Path(directory) / "tools").mkdir()
+        (Path(directory) / CI_LOCK).write_text(Path(CI_LOCK).read_text(encoding="utf-8"), encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()):
             assert main(directory) == 0
         (target / "bypass.yml").write_text(adversarial, encoding="utf-8")
@@ -1647,6 +1717,11 @@ def self_test():
 
 if __name__ == "__main__":
     arguments = sys.argv[1:]
+    if "--write-ci-lock" in arguments:
+        steps = ci_steps(Path(".github/workflows/ci.yml").read_text(encoding="utf-8"))
+        Path(CI_LOCK).write_text(json.dumps(steps, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+        print("wrote {} ({} jobs)".format(CI_LOCK, len(steps)))
+        sys.exit(0)
     if "--self-test" in arguments:
         sys.exit(self_test())
     root = arguments[arguments.index("--root") + 1] if "--root" in arguments else "."

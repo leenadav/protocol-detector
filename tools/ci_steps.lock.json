@@ -1,0 +1,574 @@
+{
+ "behaviour-diff": [
+  {
+   "name": "Harden runner egress",
+   "uses": "step-security/harden-runner",
+   "with": {
+    "egress-policy": "audit"
+   }
+  },
+  {
+   "uses": "actions/checkout",
+   "with": {
+    "fetch-depth": "2",
+    "persist-credentials": "false",
+    "ref": "${{ github.event.pull_request.head.sha || github.sha }}"
+   }
+  },
+  {
+   "uses": "actions/setup-python",
+   "with": {
+    "python-version": "3.13"
+   }
+  },
+  {
+   "env": {
+    "SEED": "${{ github.run_id }}"
+   },
+   "name": "Compare every fixture, truncation and seeded mutation with the parent commit",
+   "run": [
+    "if git rev-parse --verify -q HEAD~1 >/dev/null && git cat-file -e HEAD~1:protocol_engine/engine.py 2>/dev/null; then",
+    "git worktree add --detach ../baseline HEAD~1",
+    "python -B tools/compare_engine.py ../baseline --iterations 300 --seed \"$SEED\" --report behaviour-diff.md --report-only",
+    "else",
+    "printf '# Engine behaviour diff\\n\\nNo comparable parent commit (first commit or a parent without the engine).\\n' > behaviour-diff.md",
+    "fi",
+    "head -60 behaviour-diff.md",
+    "{",
+    "echo \"### Behaviour diff against the parent commit\"",
+    "echo",
+    "head -40 behaviour-diff.md",
+    "} >> \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "if": "github.event_name == 'pull_request'",
+   "name": "Check out the pull request base (the first checkout drops its credentials, so git fetch cannot)",
+   "uses": "actions/checkout",
+   "with": {
+    "fetch-depth": "1",
+    "path": "pr-base",
+    "persist-credentials": "false",
+    "ref": "${{ github.event.pull_request.base.sha }}"
+   }
+  },
+  {
+   "env": {
+    "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+    "SEED": "${{ github.run_id }}"
+   },
+   "if": "github.event_name == 'pull_request'",
+   "name": "Compare with the pull request base as well (whole change, when the base carries the engine)",
+   "run": [
+    "if [ -f pr-base/protocol_engine/engine.py ]; then",
+    "python -B tools/compare_engine.py pr-base --iterations 300 --seed \"$SEED\" --report behaviour-diff-base.md --report-only",
+    "else",
+    "printf '# Engine behaviour diff\\n\\nThe pull request base %s has no engine to compare with.\\n' \"$BASE_SHA\" > behaviour-diff-base.md",
+    "fi",
+    "head -60 behaviour-diff-base.md",
+    "{",
+    "echo \"### Behaviour diff against the pull request base\"",
+    "echo",
+    "head -40 behaviour-diff-base.md",
+    "} >> \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "if": "github.event_name == 'pull_request'",
+   "name": "Upload the pull request base diff report",
+   "uses": "actions/upload-artifact",
+   "with": {
+    "name": "behaviour-diff-base-${{ github.sha }}",
+    "path": "behaviour-diff-base.md",
+    "retention-days": "30"
+   }
+  },
+  {
+   "name": "Upload the behaviour diff report",
+   "uses": "actions/upload-artifact",
+   "with": {
+    "name": "behaviour-diff-${{ github.sha }}",
+    "path": "behaviour-diff.md",
+    "retention-days": "30"
+   }
+  }
+ ],
+ "gate": [
+  {
+   "name": "Harden runner egress",
+   "uses": "step-security/harden-runner",
+   "with": {
+    "egress-policy": "audit"
+   }
+  },
+  {
+   "env": {
+    "RESULTS": "${{ toJSON(needs) }}"
+   },
+   "name": "Every ci job must have succeeded",
+   "run": [
+    "echo \"$RESULTS\" | jq -r 'to_entries[] | \"\\(.key): \\(.value.result)\"' | tee gate.txt",
+    "{",
+    "echo \"### ci gate\"",
+    "echo",
+    "echo '```'",
+    "cat gate.txt",
+    "echo '```'",
+    "} >> \"$GITHUB_STEP_SUMMARY\"",
+    "echo \"$RESULTS\" | jq -e 'all(.[]; .result == \"success\")' > /dev/null"
+   ]
+  }
+ ],
+ "mutation-smoke": [
+  {
+   "name": "Harden runner egress",
+   "uses": "step-security/harden-runner",
+   "with": {
+    "egress-policy": "audit"
+   }
+  },
+  {
+   "uses": "actions/checkout",
+   "with": {
+    "fetch-depth": "2",
+    "persist-credentials": "false",
+    "ref": "${{ github.event.pull_request.head.sha || github.sha }}"
+   }
+  },
+  {
+   "uses": "actions/setup-python",
+   "with": {
+    "python-version": "3.9"
+   }
+  },
+  {
+   "env": {
+    "SEED": "20261021"
+   },
+   "name": "Seeded mutation diff against the parent commit with a second, fixed seed",
+   "run": [
+    "if git rev-parse --verify -q HEAD~1 >/dev/null && git cat-file -e HEAD~1:protocol_engine/engine.py 2>/dev/null; then",
+    "git worktree add --detach ../baseline-smoke HEAD~1",
+    "python -B tools/compare_engine.py ../baseline-smoke --iterations 100 --seed \"$SEED\" --report mutation-smoke.md --report-only",
+    "else",
+    "printf '# Engine behaviour diff\\n\\nNo comparable parent commit (first commit or a parent without the engine).\\n' > mutation-smoke.md",
+    "fi",
+    "{",
+    "echo \"### Mutation diff against the parent commit (seed $SEED, 100 mutations per fixture, python 3.9)\"",
+    "echo",
+    "head -40 mutation-smoke.md",
+    "echo",
+    "echo 'Reproduce: `python3 -B tools/compare_engine.py <parent checkout> --iterations 100 --seed '\"$SEED\"'`'",
+    "} >> \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "env": {
+    "SEED": "${{ github.run_number }}"
+   },
+   "name": "Reproducible fuzz pass (100 mutations per fixture, seed from the run number)",
+   "run": [
+    "python -B tools/fuzz_fixtures.py --iterations 100 --seed \"$SEED\" | tee fuzz-smoke.txt",
+    "{",
+    "echo \"### Fuzz smoke (seed $SEED, 100 mutations per fixture)\"",
+    "echo",
+    "echo '```'",
+    "tail -n 5 fuzz-smoke.txt",
+    "echo '```'",
+    "echo",
+    "echo 'Reproduce: `python3 -B tools/fuzz_fixtures.py --iterations 100 --seed '\"$SEED\"'`'",
+    "} >> \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "name": "Upload the mutation smoke report",
+   "uses": "actions/upload-artifact",
+   "with": {
+    "name": "mutation-smoke-${{ github.sha }}",
+    "path": "mutation-smoke.md\nfuzz-smoke.txt",
+    "retention-days": "14"
+   }
+  }
+ ],
+ "package": [
+  {
+   "name": "Harden runner egress",
+   "uses": "step-security/harden-runner",
+   "with": {
+    "egress-policy": "audit"
+   }
+  },
+  {
+   "uses": "actions/checkout",
+   "with": {
+    "persist-credentials": "false"
+   }
+  },
+  {
+   "uses": "actions/setup-python",
+   "with": {
+    "cache": "pip",
+    "cache-dependency-path": "requirements-dev.txt",
+    "python-version": "3.13"
+   }
+  },
+  {
+   "name": "Build the sdist and wheel with the hash-pinned toolchain",
+   "run": [
+    "python -m pip install --require-hashes -r requirements-dev.txt",
+    "python -m build --sdist --wheel --outdir dist"
+   ]
+  },
+  {
+   "name": "The wheel holds exactly the engine package and declares no runtime dependency",
+   "run": [
+    "python -B tools/check_wheel.py \"dist/*.whl\" | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "name": "Install the wheel into an empty environment and classify fixtures from it (python 3.13)",
+   "run": [
+    "python -m venv /tmp/wheel-env",
+    "/tmp/wheel-env/bin/python -m pip install --no-deps --no-index dist/*.whl",
+    "(cd /tmp && /tmp/wheel-env/bin/python \"$GITHUB_WORKSPACE/tools/wheel_smoke.py\") | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "id": "py39",
+   "name": "Python 3.9, the oldest supported interpreter",
+   "uses": "actions/setup-python",
+   "with": {
+    "python-version": "3.9"
+   }
+  },
+  {
+   "env": {
+    "PY39": "${{ steps.py39.outputs.python-path }}"
+   },
+   "name": "Install the same wheel under python 3.9 and classify the fixtures again",
+   "run": [
+    "\"$PY39\" -m venv /tmp/wheel-env39",
+    "/tmp/wheel-env39/bin/python -m pip install --no-deps --no-index dist/*.whl",
+    "(cd /tmp && /tmp/wheel-env39/bin/python \"$GITHUB_WORKSPACE/tools/wheel_smoke.py\") | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "name": "Upload the distributions",
+   "uses": "actions/upload-artifact",
+   "with": {
+    "name": "dist-${{ github.sha }}",
+    "path": "dist/",
+    "retention-days": "14"
+   }
+  }
+ ],
+ "security-requirements": [
+  {
+   "name": "Harden runner egress",
+   "uses": "step-security/harden-runner",
+   "with": {
+    "egress-policy": "audit"
+   }
+  },
+  {
+   "uses": "actions/checkout",
+   "with": {
+    "persist-credentials": "false"
+   }
+  },
+  {
+   "uses": "actions/setup-python",
+   "with": {
+    "python-version": "3.13"
+   }
+  },
+  {
+   "name": "Documented security requirements must have an executable check",
+   "run": [
+    "python -B tools/check_security_requirements.py | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  }
+ ],
+ "static-analysis": [
+  {
+   "name": "Harden runner egress",
+   "uses": "step-security/harden-runner",
+   "with": {
+    "egress-policy": "audit"
+   }
+  },
+  {
+   "uses": "actions/checkout",
+   "with": {
+    "fetch-depth": "0",
+    "persist-credentials": "false"
+   }
+  },
+  {
+   "uses": "actions/setup-python",
+   "with": {
+    "cache": "pip",
+    "cache-dependency-path": "requirements-dev.txt",
+    "python-version": "3.13"
+   }
+  },
+  {
+   "name": "Install pinned analysis tools",
+   "run": [
+    "python -m pip install --require-hashes -r requirements-dev.txt"
+   ]
+  },
+  {
+   "name": "Ruff (errors, bugbear, security rules)",
+   "run": [
+    "ruff check --output-format github .",
+    "echo \"ruff: no findings ($(ruff --version))\" | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "name": "Bandit (Python security linter)",
+   "run": [
+    "bandit -c bandit.yaml -r protocol_engine analyze_pcap.py live_capture.py sessions.py packets.py link_packets.py capture_stream.py -f txt | tee bandit.txt",
+    "{",
+    "echo",
+    "echo '```'",
+    "grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt",
+    "echo '```'",
+    "} >> \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "env": {
+    "GITHUB_TOKEN": "${{ secrets.GITHUB_TOKEN }}",
+    "GITLEAKS_ENABLE_SUMMARY": "true",
+    "GITLEAKS_ENABLE_UPLOAD_ARTIFACT": "false"
+   },
+   "name": "Secret scan (gitleaks, full history)",
+   "uses": "gitleaks/gitleaks-action"
+  }
+ ],
+ "supply-chain": [
+  {
+   "name": "Harden runner egress",
+   "uses": "step-security/harden-runner",
+   "with": {
+    "egress-policy": "audit"
+   }
+  },
+  {
+   "uses": "actions/checkout",
+   "with": {
+    "persist-credentials": "false"
+   }
+  },
+  {
+   "uses": "actions/setup-python",
+   "with": {
+    "cache": "pip",
+    "cache-dependency-path": "requirements-dev.txt",
+    "python-version": "3.13"
+   }
+  },
+  {
+   "name": "Every action must be pinned to a commit SHA",
+   "run": [
+    "python -B tools/check_action_pins.py .github/workflows"
+   ]
+  },
+  {
+   "name": "Generate CycloneDX SBOM for the package (zero runtime dependencies expected)",
+   "run": [
+    "python -m pip install --require-hashes -r requirements-dev.txt",
+    "cyclonedx-py environment --output-format json --output-file sbom.cdx.json",
+    "python -B tools/sbom_summary.py sbom.cdx.json | tee sbom-summary.txt",
+    "{",
+    "echo \"### SBOM\"",
+    "echo",
+    "head -n 1 sbom-summary.txt",
+    "echo \"pyproject.toml declares no runtime dependency (checked by tools/sbom_summary.py).\"",
+    "} >> \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "name": "Upload SBOM",
+   "uses": "actions/upload-artifact",
+   "with": {
+    "name": "sbom-${{ github.sha }}",
+    "path": "sbom.cdx.json",
+    "retention-days": "30"
+   }
+  }
+ ],
+ "toolchain-audit": [
+  {
+   "name": "Harden runner egress",
+   "uses": "step-security/harden-runner",
+   "with": {
+    "egress-policy": "audit"
+   }
+  },
+  {
+   "uses": "actions/checkout",
+   "with": {
+    "persist-credentials": "false"
+   }
+  },
+  {
+   "uses": "actions/setup-python",
+   "with": {
+    "cache": "pip",
+    "cache-dependency-path": "requirements-dev.txt",
+    "python-version": "3.13"
+   }
+  },
+  {
+   "name": "Install the hash-pinned toolchain (pip-audit included)",
+   "run": [
+    "python -m pip install --require-hashes -r requirements-dev.txt"
+   ]
+  },
+  {
+   "name": "Audit every pinned development dependency against the advisory databases",
+   "run": [
+    "pip-audit -r requirements-dev.txt --require-hashes --strict --progress-spinner off --desc on | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  }
+ ],
+ "verify": [
+  {
+   "name": "Harden runner egress",
+   "uses": "step-security/harden-runner",
+   "with": {
+    "egress-policy": "audit"
+   }
+  },
+  {
+   "uses": "actions/checkout",
+   "with": {
+    "persist-credentials": "false"
+   }
+  },
+  {
+   "uses": "actions/setup-python",
+   "with": {
+    "python-version": "${{ matrix.python }}"
+   }
+  },
+  {
+   "name": "Compile every module (syntax gate, no runtime dependencies allowed)",
+   "run": [
+    "python -m compileall -q protocol_engine tools ./*.py",
+    "grep -q '^dependencies = \\[\\]' pyproject.toml || (echo \"runtime dependencies are not allowed\" && exit 1)"
+   ]
+  },
+  {
+   "env": {
+    "PYTHON_VERSION": "${{ matrix.python }}"
+   },
+   "name": "Unit, fuzz and property tests",
+   "run": [
+    "python -B -m unittest discover -q 2> test-output.txt || (cat test-output.txt && exit 1)",
+    "tail -n 3 test-output.txt",
+    "{",
+    "echo \"### Tests (python $PYTHON_VERSION)\"",
+    "echo",
+    "echo '```'",
+    "tail -n 3 test-output.txt",
+    "echo '```'",
+    "} >> \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "name": "Documentation numbers must match the tree (families, applications, tests, version)",
+   "run": [
+    "python -B tools/check_docs_counts.py | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "name": "Offline replay of synthetic captures",
+   "run": [
+    "python -B analyze_pcap.py sample-expanded.pcap --events-only --sessions > /dev/null",
+    "python -B live_capture.py --stdin --duration 0 --json < sample-expanded.pcap > /dev/null",
+    "python -B protocol_demo.py --json > /dev/null",
+    "python -B appid_catalog.py --json > /dev/null",
+    "python -B protodetect.py version",
+    "python -B protodetect.py policy lint policy-example.json --strict",
+    "python -B protodetect.py signatures lint signatures-example.json",
+    "python -B protodetect.py analyze sample-expanded.pcap --policy policy-example.json --json --events-only > /dev/null",
+    "python -B protodetect.py analyze sample-expanded.pcap --json --sessions > rows.jsonl",
+    "python -B protodetect.py schema offline-row --validate rows.jsonl",
+    "python -B tools/coverage_matrix.py --check PROTOCOLS.md"
+   ]
+  }
+ ],
+ "workflow-lint": [
+  {
+   "name": "Harden runner egress",
+   "uses": "step-security/harden-runner",
+   "with": {
+    "egress-policy": "audit"
+   }
+  },
+  {
+   "uses": "actions/checkout",
+   "with": {
+    "persist-credentials": "false"
+   }
+  },
+  {
+   "uses": "actions/setup-python",
+   "with": {
+    "cache": "pip",
+    "cache-dependency-path": "requirements-dev.txt",
+    "python-version": "3.13"
+   }
+  },
+  {
+   "env": {
+    "SHA256": "023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757",
+    "VERSION": "1.7.7"
+   },
+   "name": "Fetch actionlint 1.7.7 and verify its published checksum",
+   "run": [
+    "curl -sSfL -o actionlint.tar.gz \"https://github.com/rhysd/actionlint/releases/download/v${VERSION}/actionlint_${VERSION}_linux_amd64.tar.gz\"",
+    "echo \"${SHA256}  actionlint.tar.gz\" | sha256sum -c -",
+    "tar xzf actionlint.tar.gz actionlint"
+   ]
+  },
+  {
+   "name": "Lint every workflow (syntax, expressions, shellcheck-style script checks)",
+   "run": [
+    "./actionlint -no-color .github/workflows/*.yml",
+    "echo \"actionlint: $(find .github/workflows -name '*.yml' | wc -l) workflow files clean\" | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "name": "Workflow policy (gate covers every ci job, drift gate triggers on every workflow, releases serialize, tags must be on main)",
+   "run": [
+    "python -B tools/check_release_ref.py --self-test",
+    "python -B tools/check_release_exposure.py --self-test",
+    "python -B tools/check_release_checks.py --self-test",
+    "python -B tools/release_audit.py --self-test",
+    "python -B tools/check_release_exposure.py --ref HEAD | tee -a \"$GITHUB_STEP_SUMMARY\"",
+    "python -B tools/check_workflow_policy.py --self-test",
+    "python -B tools/check_workflow_policy.py | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "name": "Audit every workflow for security weaknesses (zizmor, pedantic persona, offline audits)",
+   "run": [
+    "python -m pip install --require-hashes -r requirements-dev.txt > /dev/null",
+    "zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows | tee zizmor.txt",
+    "echo \"zizmor $(zizmor --version | awk '{print $NF}'): $(tail -n 1 zizmor.txt)\" | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  },
+  {
+   "name": "Cross-check the workflow policy parser against PyYAML (any disagreement is a policy blind spot)",
+   "run": [
+    "python -m pip install --require-hashes -r requirements-dev.txt > /dev/null",
+    "python -B tools/check_workflow_yaml.py --self-test",
+    "python -B tools/check_workflow_yaml.py | tee -a \"$GITHUB_STEP_SUMMARY\""
+   ]
+  }
+ ]
+}
