@@ -5,7 +5,7 @@ the release provenance check in `publish-release.yml` protects only commits that
 every older commit still holds the unguarded `.github/workflows/release.yml`, which publishes
 a matching tag. This tool models a tag on any commit without creating one: it reads the
 workflow files at that commit (`git show`), lists those a tag push would trigger, and reports
-each as exposed unless it is the guarded controller passing policy rules 3 and 4, or its path
+each as exposed unless it is the guarded controller passing policy rules 3, 4 and 8, or its path
 is named with `--disabled` (disabled in the repository's Actions settings, which applies to
 the workflow at that path on every ref).
 
@@ -38,7 +38,8 @@ def exposure(workflows, disabled=()):
             exposed.append((path, "runs on tag pushes outside the guarded controller"))
             continue
         try:
-            problems = policy.check_release_concurrency(text) + policy.check_release_provenance(text)
+            problems = (policy.check_release_concurrency(text) + policy.check_release_provenance(text)
+                        + policy.check_attestation_verify(text))
         except ValueError as error:
             problems = [str(error)]
         if problems:

@@ -121,6 +121,15 @@ jobs:
           python -B tools/check_release_checks.py --self-test
           gh api --paginate "repos/${GH_REPO}/actions/runs?head_sha=${SHA}&per_page=100" --jq '.workflow_runs[] | {path, name, event, status, conclusion, head_sha, updated_at}' > "${RUNNER_TEMP}/workflow-runs.jsonl" || echo "api-error" > "${RUNNER_TEMP}/workflow-runs.jsonl"
           python -B tools/check_release_checks.py --ref-type "${REF_TYPE}" --sha "${SHA}" --runs "${RUNNER_TEMP}/workflow-runs.jsonl" --summary "${GITHUB_STEP_SUMMARY}"
+      - name: The runner's gh supports every attestation flag the publish job verifies with
+        # The publish job only runs for a real tag; this dry-runnable check keeps an image change
+        # from first surfacing as a failed release.
+        run: |
+          HELP=$(gh attestation verify --help)
+          for flag in --repo --signer-workflow --source-ref --source-digest --deny-self-hosted-runners; do
+            grep -q -- "$flag" <<<"$HELP" || { echo "$(gh --version) lacks gh attestation verify $flag"; exit 1; }
+          done
+          echo "gh attestation verify flags present" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Build distributions, check and smoke the wheel, SBOM and checksums
         run: |
           python -m build --sdist --wheel --outdir dist
@@ -180,6 +189,17 @@ jobs:
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: "dist/*"
+      - name: Every file's attestation must verify before anything is published
+        # Binds each file to this controller workflow, this tag and commit, and a GitHub-hosted
+        # runner; a missing or partial attestation fails the release before gh release create.
+        # tools/check_workflow_policy.py rule 8 pins this step and its place between the two.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          for file in dist/*; do
+            gh attestation verify "$file" --repo "$GH_REPO" --signer-workflow "$GH_REPO/.github/workflows/publish-release.yml" --source-ref "$GITHUB_REF" --source-digest "$GITHUB_SHA" --deny-self-hosted-runners
+          done
       - name: Publish the release with the runner's gh CLI (no third-party action)
         env:
           GH_TOKEN: ${{ github.token }}
