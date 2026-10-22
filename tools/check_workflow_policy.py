@@ -15,8 +15,9 @@
    `if:` or `continue-on-error`, must contain the pinned provenance step: exactly the keys
    `name`, `env` and `run`, the env mapping in PROVENANCE_ENV and the run lines in
    PROVENANCE_RUN (self-test, compare status, the decision with REF_TYPE, SHA and STATUS),
-   and likewise the pinned release-checks step (CHECKS_RUN: the tagged commit's check runs
-   from the API, the CI gate and CodeQL required by `tools/check_release_checks.py`).
+   and likewise the pinned release-checks step (CHECKS_RUN: the tagged commit's workflow runs
+   from the Actions API, the ci and codeql workflows, by path and push event, required by
+   `tools/check_release_checks.py`).
    The publish job's `if:` must be exactly PUBLISH_CONDITION, so no status-check function
    (success(), always(), failure(), cancelled(), in any case or spacing) can let it run
    after the provenance job failed. So a tag on a commit that is not on main never reaches
@@ -288,10 +289,10 @@ PROVENANCE_RUN = [
 CHECKS = "tools/check_release_checks.py"
 CHECKS_RUN = [
     'python -B tools/check_release_checks.py --self-test',
-    'gh api --paginate "repos/${GH_REPO}/commits/${SHA}/check-runs?per_page=100" --jq \'.check_runs[] | {name, status,'
-    ' conclusion, head_sha, completed_at, app: .app.slug}\' > "${RUNNER_TEMP}/check-runs.jsonl"'
-    ' || echo "api-error" > "${RUNNER_TEMP}/check-runs.jsonl"',
-    'python -B tools/check_release_checks.py --ref-type "${REF_TYPE}" --sha "${SHA}" --runs "${RUNNER_TEMP}/check-runs.jsonl"'
+    'gh api --paginate "repos/${GH_REPO}/actions/runs?head_sha=${SHA}&per_page=100" --jq \'.workflow_runs[] | {path, name,'
+    ' event, status, conclusion, head_sha, updated_at}\' > "${RUNNER_TEMP}/workflow-runs.jsonl"'
+    ' || echo "api-error" > "${RUNNER_TEMP}/workflow-runs.jsonl"',
+    'python -B tools/check_release_checks.py --ref-type "${REF_TYPE}" --sha "${SHA}" --runs "${RUNNER_TEMP}/workflow-runs.jsonl"'
     ' --summary "${GITHUB_STEP_SUMMARY}"',
 ]
 # (label, helper, env, run lines): each must appear, exactly, in a job the publish job needs.
@@ -656,8 +657,9 @@ def self_test():
         "checks hard-coded ref type": good.replace(final_checks, final_checks.replace('--ref-type "${REF_TYPE}"', "--ref-type branch")),
         "checks self-test only": good.replace("          " + final_checks + "\n", ""),
         "checks masked": good.replace(final_checks, final_checks + " || true"),
-        "checks runs from elsewhere": good.replace(final_checks, final_checks.replace('--runs "${RUNNER_TEMP}/check-runs.jsonl"', "--runs /dev/null")),
-        "checks api swallowed": good.replace(CHECKS_RUN[1], 'echo "" > "${RUNNER_TEMP}/check-runs.jsonl"'),
+        "checks runs from elsewhere": good.replace(final_checks, final_checks.replace('--runs "${RUNNER_TEMP}/workflow-runs.jsonl"', "--runs /dev/null")),
+        "checks api swallowed": good.replace(CHECKS_RUN[1], 'echo "" > "${RUNNER_TEMP}/workflow-runs.jsonl"'),
+        "checks from check runs by name": good.replace(CHECKS_RUN[1], CHECKS_RUN[1].replace("actions/runs?head_sha=${SHA}&per_page=100", "commits/${SHA}/check-runs?per_page=100")),
     }.items():
         assert text != good, label
         assert check_release_provenance(text) == checks_missing, (label, check_release_provenance(text))

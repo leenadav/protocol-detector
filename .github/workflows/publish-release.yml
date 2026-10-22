@@ -54,7 +54,7 @@ jobs:
     name: release build (gate, version check, distributions, SBOM, checksums)
     permissions:
       contents: read   # checkout and the compare API for the provenance check
-      checks: read     # the tagged commit's check runs for the release checks gate
+      actions: read    # the tagged commit's workflow runs for the release checks gate
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -106,10 +106,11 @@ jobs:
           python -B tools/check_release_ref.py --self-test
           STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...main" --jq .status) || STATUS="api-error"
           python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}" --summary "${GITHUB_STEP_SUMMARY}"
-      - name: The tagged commit's CI gate and CodeQL must have passed
+      - name: The tagged commit's ci and CodeQL workflows must have passed
         # Required checks are not enforceable on this plan (SSDLC.md), and this job re-runs the
-        # test gate but not CodeQL. Only runs GitHub Actions created for this exact commit count;
-        # a tag fails closed on a missing, pending or failed check; dry runs report only.
+        # test gate but not CodeQL. Only push runs of ci.yml and codeql.yml (by workflow path)
+        # for this exact commit count, never a job name another workflow could reuse; a tag
+        # fails closed on a missing, pending or failed run; dry runs report only.
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -118,8 +119,8 @@ jobs:
         # tools/check_workflow_policy.py rule 4 pins this step's env and run lines exactly.
         run: |
           python -B tools/check_release_checks.py --self-test
-          gh api --paginate "repos/${GH_REPO}/commits/${SHA}/check-runs?per_page=100" --jq '.check_runs[] | {name, status, conclusion, head_sha, completed_at, app: .app.slug}' > "${RUNNER_TEMP}/check-runs.jsonl" || echo "api-error" > "${RUNNER_TEMP}/check-runs.jsonl"
-          python -B tools/check_release_checks.py --ref-type "${REF_TYPE}" --sha "${SHA}" --runs "${RUNNER_TEMP}/check-runs.jsonl" --summary "${GITHUB_STEP_SUMMARY}"
+          gh api --paginate "repos/${GH_REPO}/actions/runs?head_sha=${SHA}&per_page=100" --jq '.workflow_runs[] | {path, name, event, status, conclusion, head_sha, updated_at}' > "${RUNNER_TEMP}/workflow-runs.jsonl" || echo "api-error" > "${RUNNER_TEMP}/workflow-runs.jsonl"
+          python -B tools/check_release_checks.py --ref-type "${REF_TYPE}" --sha "${SHA}" --runs "${RUNNER_TEMP}/workflow-runs.jsonl" --summary "${GITHUB_STEP_SUMMARY}"
       - name: Build distributions, check and smoke the wheel, SBOM and checksums
         run: |
           python -m build --sdist --wheel --outdir dist
