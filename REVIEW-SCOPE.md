@@ -1,11 +1,21 @@
-# Review scope: protocol detector v0.57
+# Review scope: protocol detector v0.58
 
 Python3.9-compatible IPv4 passive classification: 85 families, 76 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.57): `protocol_engine/tls_server.py` key exchange and cipher
+New focus (v0.58): `protocol_engine/ssh_posture.py` (`kexinit_posture`:
+fixed name tables for key exchange families and weak classes, the Terrapin
+rule, nothing but classes returned), the SSH continuation in
+`protocol_engine/parsers.py` (KEXINIT now read without fingerprints,
+`refined` only after a valid packet, HASSH still opt-in) and the three SSH
+risks in `risks.py` (`hostkey-rsa-sha1` reported but exempt). Trace: no
+algorithm name or cookie byte reaches evidence or reasons; a malformed
+KEXINIT, the budget or EOF keep the identification with no classes; bytes
+after the KEXINIT are not consumed. 622 tests pass.
+
+Previous focus (v0.57): `protocol_engine/tls_server.py` key exchange and cipher
 mode labels (the TLS 1.2 suite table, static ECDH versus ECDHE, TLS 1.3
 `key_share`/`pre_shared_key` combinations, the DTLS 1.2 reuse in `dtls.py`),
 `protocol_engine/x509.py` `_extensions` (duplicate OIDs, basicConstraints DER
@@ -22,7 +32,7 @@ repairs: GeneralName inner values (IA5 text, `_single` for explicit wrappers,
 x400Address and ediPartyName framing) and `_oid_contents` (minimal arcs) for
 every object identifier. Round-3 repair (carried into the v0.58 request): the EC
 named-curve parameter goes through `_oid` (one DER OID filling the parameters).
-616 tests pass.
+616 tests passed at v0.57.
 
 Previous focus (v0.56): `protocol_engine/gss.py` (DER walk of SPNEGO
 NegTokenInit/NegTokenResp and Kerberos GSS tokens: exact lengths at every

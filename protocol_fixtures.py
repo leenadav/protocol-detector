@@ -1217,3 +1217,28 @@ def ldap_sasl_bind(mechanism, credentials):
 LDAP_SPNEGO_BIND = ldap_sasl_bind(b"GSS-SPNEGO", SPNEGO_NTLM_INIT)
 STREAM_CASES += ((HTTP_BASIC_AUTH, 'http/1.1'), (HTTP_NTLM_CHALLENGE, 'http/1.1'), (LDAP_SPNEGO_BIND, 'ldap/3'))
 
+
+
+# v0.58: SSH banner plus one SSH_MSG_KEXINIT (RFC 4253 7.1). Cookie bytes are a placeholder.
+def ssh_kexinit(kex=b"curve25519-sha256", hostkeys=b"ssh-ed25519", ciphers=b"aes128-ctr", macs=b"hmac-sha2-256",
+                compression=b"none", first_follows=0, msg=20):
+    lists = (kex, hostkeys, ciphers, ciphers, macs, macs, compression, compression, b"", b"")
+    payload = bytes([msg]) + bytes(range(16)) + b"".join(len(value).to_bytes(4, "big") + value for value in lists)
+    payload += bytes([first_follows]) + bytes(4)
+    padding = 8 - ((len(payload) + 5) % 8)
+    padding = padding + 8 if padding < 4 else padding
+    return (len(payload) + 1 + padding).to_bytes(4, "big") + bytes([padding]) + payload + bytes(padding)
+
+
+SSH_KEXINIT_MODERN = ssh_kexinit(kex=b"mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com,curve25519-sha256,ext-info-c,kex-strict-c-v00@openssh.com",
+                                 hostkeys=b"ssh-ed25519,rsa-sha2-512,rsa-sha2-256",
+                                 ciphers=b"chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-ctr",
+                                 macs=b"umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-256")
+SSH_KEXINIT_LEGACY = ssh_kexinit(kex=b"diffie-hellman-group14-sha1,diffie-hellman-group1-sha1",
+                                 hostkeys=b"ssh-rsa,ssh-dss",
+                                 ciphers=b"aes128-cbc,3des-cbc,aes128-ctr",
+                                 macs=b"hmac-sha1-etm@openssh.com,hmac-md5,hmac-sha1")
+SSH_MODERN_STREAM = b"SSH-2.0-OpenSSH_9.9\r\n" + SSH_KEXINIT_MODERN
+SSH_LEGACY_STREAM = b"SSH-2.0-LegacySSH_1.0\r\n" + SSH_KEXINIT_LEGACY
+# Banner-then-continuation streams identify before their last byte, so they are registered in
+# tools/coverage_matrix.py EXTRA (like the SMB session streams), not in STREAM_CASES.

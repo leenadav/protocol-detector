@@ -24,15 +24,17 @@ same `ClientHelloInfo` structure backs the `ssl-req-*` contexts.
 
 ## SSH identification followed by a refinement
 
-The SSH profile identifies on the banner. With fingerprints enabled the parser
-stays attached for exactly one binary packet, which must be `SSH_MSG_KEXINIT`
+The SSH profile identifies on the banner. The parser then stays attached for
+exactly one binary packet (since v0.58 whether or not fingerprints are
+enabled: the KEXINIT also yields the posture classes in PROTOCOLS.md; HASSH
+itself still needs fingerprints), which must be `SSH_MSG_KEXINIT`
 (RFC 4253 7.1: length 17..35000 and within `max_bytes`, padding >= 4, cookie,
 ten printable ASCII name-lists each <= 4096 bytes, `first_kex_packet_follows`
 0/1, zero reserved field, no trailing bytes). The engine publishes the
 identification immediately (`updated`) and a second event (`refined`) with
-`hassh` when the packet completes. A malformed packet, the byte budget or
+`hassh` (with fingerprints) and the posture classes when the packet completes. A malformed packet, the byte budget or
 `end()` closes the continuation **without changing the identification**: the
-stream stays `identified ssh` with no fingerprint. Bytes after the KEXINIT are
+stream stays `identified ssh` with no fingerprint and no posture classes. Bytes after the KEXINIT are
 not consumed.
 
 This is the first use of a general post-identification continuation in

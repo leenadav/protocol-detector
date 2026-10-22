@@ -61,9 +61,14 @@ class LineParser:
         if self.continues and self.kexinit is not None:
             consumed = self.kexinit.feed(data)
             if self.kexinit.done:
-                from .fingerprints import hassh
-                kex, enc, mac, comp = self.kexinit.lists[0], self.kexinit.lists[2], self.kexinit.lists[4], self.kexinit.lists[6]
-                self.fingerprints = (("hassh", hassh(kex, enc, mac, comp), "kexinit"),)
+                lists = self.kexinit.lists
+                from .ssh_posture import kexinit_posture
+                # v0.58: algorithm posture classes from the KEXINIT; names never leave the parser.
+                self.extra_evidence += tuple((field, value, "kexinit", "asserted") for field, value in kexinit_posture(lists))
+                if self.config.fingerprints:
+                    from .fingerprints import hassh
+                    self.fingerprints = (("hassh", hassh(lists[0], lists[2], lists[4], lists[6]), "kexinit"),)
+                self.refined = True
                 self.kexinit = None
                 self.continues = False
             return consumed
@@ -105,12 +110,13 @@ class LineParser:
                 raise ParseError("Invalid or unsupported SSH identification")
             self.protocol_name = "ssh"
             self.done = True
-            self.reason = "SSH identification validated; key exchange not inspected"
+            self.reason = "SSH identification validated; key exchange offers classified, nothing negotiated or verified"
             self.extra_evidence = (("ssh_version", line.split(b"-", 2)[1].decode("ascii"), "banner", "structural"),)
-            if self.config.fingerprints:
-                # Keep reading one KEXINIT packet for the HASSH fingerprint; identification stands either way.
-                self.kexinit = KexInit(self.config)
-                self.continues = True
+            # Keep reading one KEXINIT packet (v0.58: always, for the posture classes; HASSH only with
+            # fingerprints). The identification stands whatever the packet holds.
+            self.kexinit = KexInit(self.config)
+            self.continues = True
+            self.refined = False
             return
         if self.first:
             self.first = False
@@ -297,6 +303,9 @@ class LineParser:
                 self.shift = ("h2c-upgrade", "http2-server")  # server frames follow without a preface
 
 
+_SSH_NAME_BYTES = bytes(range(0x21, 0x7f))   # printable ASCII without space (RFC 4251 5 name-list)
+
+
 class KexInit:
     """One SSH_MSG_KEXINIT binary packet after the identification line (RFC 4253 7.1).
 
@@ -349,7 +358,7 @@ class KexInit:
             if pos + size > payload_end or size > 4096:
                 raise ParseError("SSH KEXINIT name-list exceeds packet or profile")
             value = packet[pos:pos + size]
-            if any(byte < 0x21 or byte > 0x7e for byte in value):
+            if value.translate(None, _SSH_NAME_BYTES):      # same rule as a per-byte check, at C speed (v0.58)
                 raise ParseError("SSH KEXINIT name-list must be printable ASCII")
             lists.append(value)
             pos += size

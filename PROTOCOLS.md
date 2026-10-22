@@ -86,7 +86,7 @@ closed set reviewers should expect in records.
 | socks5 | tcp | yes | yes | `socks_command`, `socks_method`, `socks_port`, `socks_reply`, `socks_target` |
 | spice | tcp | yes | yes | `spice_channel`, `spice_link_error`, `spice_message` |
 | ssdp | udp | yes | same shape | - |
-| ssh | tcp | yes | same shape | `ssh_version` |
+| ssh | tcp | yes | same shape | `ssh_kex_class`, `ssh_terrapin`, `ssh_version`, `ssh_weak_algorithm` |
 | stomp | tcp | yes | yes | - |
 | stun | tcp/udp | yes | same shape | `stun_class`, `stun_method` |
 | syslog | udp/tcp | yes | n/a (one-way) | `syslog_framing` |
@@ -712,3 +712,34 @@ or reason changes; ServerHellos gain the selection rows, certificate flights
 the posture rows, and 2 of 410 mutated certificate flights now end the watch
 without certificate evidence because the mutation fell inside an extension
 v0.57 interprets.
+
+## SSH algorithm posture from KEXINIT (v0.58)
+
+No new family. After the banner the SSH parser now always reads the one
+SSH_MSG_KEXINIT it already validated for HASSH (same RFC 4253 7.1 profile and
+budgets: packet 17..35000 bytes within `max_bytes`, ten printable name-lists of
+at most 4096 bytes, a valid trailer, nothing after it) and publishes a
+`refined` event with closed-set classes. Algorithm names, the cookie and the
+lists are never emitted. A KEXINIT is each side's offer: nothing is negotiated,
+selected or verified, so the classes describe what a side is willing to use.
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `ssh_kex_class` | `pq-hybrid`, `ecdh`, `dh-sha2`, `dh-sha1`, `other` | The strongest family among the offered key exchange names: sntrup761x25519 / mlkem768x25519 / mlkem768nistp256 / mlkem1024nistp384 (`pq-hybrid`); curve25519, curve448, ecdh-sha2-nistp* (`ecdh`); diffie-hellman group14-sha256, group15..18-sha512, group-exchange-sha256 (`dh-sha2`); group1-sha1, group14-sha1, group-exchange-sha1 (`dh-sha1`); anything else, including only pseudo-algorithms, is `other` |
+| `ssh_weak_algorithm` | `kex-sha1`, `hostkey-dss`, `hostkey-rsa-sha1`, `cipher-none`, `cipher-rc4`, `cipher-3des-or-64-bit-block`, `cipher-cbc`, `mac-none`, `mac-md5`, `mac-truncated` | One row per weak class offered in either direction's list (exact, case-sensitive names; empty names ignored) |
+| `ssh_terrapin` | `strict`, `exposed`, `not-applicable` | `strict` when kex-strict-c-v00@openssh.com or kex-strict-s-v00@openssh.com is offered; otherwise `exposed` when chacha20-poly1305@openssh.com, or an `-etm@openssh.com` MAC together with a CBC or 64-bit-block cipher, is offered (CVE-2023-48795); otherwise `not-applicable` |
+
+Risks (RISKS.md): `ssh-weak-algorithm-offered` (every weak class except
+`hostkey-rsa-sha1`, which many clients still offer for compatibility, and
+`cipher-none`, which has its own risk), `ssh-none-cipher-offered`,
+`ssh-terrapin-exposed`. Both directions are inspected; the session verdict
+carries each risk once.
+
+Behaviour change: an SSH stream now consumes its KEXINIT without
+`--fingerprints` (one more bounded packet per direction) and publishes a
+`refined` event. A banner without a KEXINIT, a malformed packet, the byte
+budget or EOF end the continuation with the identification unchanged and no
+classes. `tools/compare_engine.py` has no banner-plus-KEXINIT fixture in its
+generic stream list (those identify before their last byte), so the new
+fixtures `SSH_MODERN_STREAM` and `SSH_LEGACY_STREAM` are registered in the
+coverage matrix extras and exercised by `test_v058.py`.
