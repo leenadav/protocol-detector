@@ -1071,8 +1071,41 @@ def spnego_resp(state=1, mech=OID_NTLMSSP, token=None):
     return der(0xa1, der(0x30, fields))
 
 
+def krb5_encrypted(size=40, kvno=True):
+    """EncryptedData with placeholder ciphertext (zeros): etype 18, optional kvno, cipher."""
+    return _ber(0x30, _ber(0xa0, _ber(2, b"\x12")) + (_ber(0xa1, _ber(2, b"\x02")) if kvno else b"") + _ber(0xa2, _ber(4, bytes(size))))
+
+
+def krb5_ticket(size=40):
+    return _ber(0x61, _ber(0x30, _ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(0x1b, b"EXAMPLE.ORG"))
+                           + _ber(0xa2, _krb_principal(b"cifs")) + _ber(0xa3, krb5_encrypted(size))))
+
+
+def krb5_ap_req_message(size=40, fields=None):
+    """RFC 4120 5.5.1 AP-REQ with placeholder ticket and authenticator ciphertext."""
+    if fields is None:
+        fields = (_ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x0e")) + _ber(0xa2, _ber(3, b"\x00\x20\x00\x00\x00"))
+                  + _ber(0xa3, krb5_ticket(size)) + _ber(0xa4, krb5_encrypted(size, kvno=False)))
+    return _ber(0x6e, _ber(0x30, fields))
+
+
+def krb5_ap_rep_message(size=24):
+    return _ber(0x6f, _ber(0x30, _ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x0f")) + _ber(0xa2, krb5_encrypted(size, kvno=False))))
+
+
+def krb5_tgt_req_message(server=True, realm=True):
+    """User-to-user KERB-TGT-REQUEST (TOK_ID 04 00): pvno 5, msg-type 16, optional server-name and realm."""
+    return _ber(0x30, _ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x10"))
+                + (_ber(0xa2, _krb_principal(b"host")) if server else b"") + (_ber(0xa3, _ber(0x1b, b"EXAMPLE.ORG")) if realm else b""))
+
+
+def krb5_gss(message, tok_id=b"\x01\x00", oid=OID_KRB5):
+    """RFC 4121 InitialContextToken: mechanism OID, TOK_ID, Kerberos message."""
+    return _ber(0x60, _ber(0x06, oid) + tok_id + message)
+
+
 def krb5_ap_req(size=40):
-    return der(0x60, der(0x06, OID_KRB5) + b"\x01\x00" + der(0x6e, bytes(size)))
+    return krb5_gss(krb5_ap_req_message(size))
 
 
 SPNEGO_NTLM_INIT = spnego_init(token=ntlmssp(1))

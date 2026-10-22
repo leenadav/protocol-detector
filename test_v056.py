@@ -7,7 +7,8 @@ from protocol_engine.appid import classify, session_verdict
 from protocol_engine.gss import classify_token
 from protocol_engine.media import MAX_AUTH_ELEMENTS, auth_scheme_class, challenge_scheme_classes
 from protocol_engine.parsers import BudgetError, ParseError
-from protocol_fixtures import (HTTP_BASIC_AUTH, HTTP_NTLM_CHALLENGE, LDAP, OID_KRB5, OID_MS_KRB5, OID_NEGOEX, OID_NTLMSSP, SMB1, SMB1_RESPONSE, SMB1_SESSION_CHALLENGE,
+from protocol_fixtures import (HTTP_BASIC_AUTH, HTTP_NTLM_CHALLENGE, LDAP, OID_KRB5, OID_MS_KRB5, SMB311_RESPONSE, _ber, _krb_principal, krb_error,
+                               krb5_ap_rep_message, krb5_ap_req_message, krb5_encrypted, krb5_gss, krb5_tgt_req_message, OID_NEGOEX, OID_NTLMSSP, SMB1, SMB1_RESPONSE, SMB1_SESSION_CHALLENGE,
                                SMB1_SESSION_GUEST, SMB1_SESSION_LEGACY, SMB1_SESSION_NTLM, SMB2, SMB2_RESPONSE, SMB2_SESSION_CHALLENGE, SMB2_SESSION_GUEST,
                                SMB2_SESSION_KRB5, SMB2_SESSION_NTLM, SMB2_SESSION_OK, SMB311, SPNEGO_ACCEPT, SPNEGO_KRB5_INIT, SPNEGO_MECHS_ONLY,
                                SPNEGO_NTLM_AUTHENTICATE, SPNEGO_NTLM_CHALLENGE, SPNEGO_NTLM_INIT, H2_PREFACE, H2_SETTINGS, der, hpack_literal, krb5_ap_req,
@@ -31,8 +32,7 @@ def fields(observation, *names):
 
 def ldap_bind(auth):
     bind = b"\x02\x01\x03" + b"\x04\x00" + auth
-    message = b"\x02\x01\x01" + b"\x60" + bytes((len(bind),)) + bind
-    return b"\x30" + bytes((len(message),)) + message
+    return der(0x30, b"\x02\x01\x01" + der(0x60, bind))      # long-form lengths once a real Kerberos envelope is carried
 
 
 def sasl(mechanism, credentials=None):
@@ -209,8 +209,13 @@ class HTTPAuthTests(unittest.TestCase):
         self.assertIn("ntlm-authentication", classify(observation, "tcp", 443).risks)
 
 
-def krb5_token(tok_id=b"\x01\x00", tag=0x6e, body=bytes(16), trailing=b"", oid=OID_KRB5):
-    return der(0x60, der(0x06, oid) + tok_id + (der(tag, body) if tag is not None else b"") + trailing)
+def krb5_token(tok_id=b"\x01\x00", tag=0x6e, body=None, trailing=b"", oid=OID_KRB5):
+    """A GSS Kerberos token. Without `body` the message is a valid envelope for `tag`; with it, `tag` frames raw bytes."""
+    if body is None and tag is not None:
+        message = {0x6e: krb5_ap_req_message(), 0x6f: krb5_ap_rep_message(), 0x7e: krb_error(), 0x30: krb5_tgt_req_message()}[tag]
+    else:
+        message = der(tag, body) if tag is not None else b""
+    return krb5_gss(message + trailing, tok_id, oid)
 
 
 def smb2_frame_with(frame, header_flags=None, signature=None, body_flags=None):
@@ -235,7 +240,8 @@ class ReviewRound1Tests(unittest.TestCase):
                    (krb5_token(b"\x01", None), "truncated TOK_ID"), (krb5_token(b"\x01\x00", None), "TOK_ID without a message"),
                    (krb5_token(b"\x01\x00", 0x6f), "AP-REQ TOK_ID framing an AP-REP"), (krb5_token(b"\x02\x00", 0x6e), "AP-REP TOK_ID framing an AP-REQ"),
                    (krb5_token(trailing=b"\x00"), "trailing byte after the message"),
-                   (der(0x60, der(0x06, OID_KRB5) + b"\x01\x00" + b"\x6e\x20" + bytes(4)), "message overruns the token")]
+                   (der(0x60, der(0x06, OID_KRB5) + b"\x01\x00" + b"\x6e\x20" + bytes(4)), "message overruns the token"),
+                   (krb5_token(body=bytes(16)), "AP-REQ tag around arbitrary bytes")]
         for token, name in valid:
             self.assertEqual(classify_token(token).mechanism, "kerberos", name)
             self.assertEqual(classify_token(spnego_init(mechs=(OID_KRB5,), token=token)).mechanism, "kerberos", name)
@@ -264,8 +270,6 @@ class ReviewRound1Tests(unittest.TestCase):
             return observation.application_protocol, fields(observation, "smb_message").get("smb_message")
         accepted = [
             (request, "session-setup-request", "plain request"),
-            (smb2_frame_with(request, header_flags=0x20), "session-setup-request", "SMB 3.1.1 priority value on a request"),
-            (smb2_frame_with(request, header_flags=0x08, signature=signature, body_flags=1), "session-setup-request", "signed binding request"),
             (smb2_frame_with(final, header_flags=0x09, signature=signature), "session-setup-response", "signed final response"),
             (challenge, "session-setup-response", "unsigned more-processing response"),
         ]
@@ -274,6 +278,8 @@ class ReviewRound1Tests(unittest.TestCase):
             self.assertEqual(session(frame, negotiate), ("smb2", expected), name)
         rejected = [
             (smb2_frame_with(request, header_flags=0x08, signature=signature), SMB2, "signed request without binding"),
+            (smb2_frame_with(request, header_flags=0x20), SMB2, "priority value on a request (dialect unknown, round 2)"),
+            (smb2_frame_with(request, header_flags=0x08, signature=signature, body_flags=1), SMB2, "signed binding request (dialect unknown, round 2)"),
             (smb2_frame_with(challenge, header_flags=0x09, signature=signature), SMB2_RESPONSE, "signed more-processing response"),
             (smb2_frame_with(request, signature=signature), SMB2, "unsigned request with signature bytes"),
             (smb2_frame_with(final, signature=signature), SMB2_RESPONSE, "unsigned response with signature bytes"),
@@ -319,6 +325,77 @@ class ReviewRound1Tests(unittest.TestCase):
                          {"http2_auth_scheme": ["bearer", "basic"], "http2_auth_challenge": ["negotiate", "ntlm"]})
         self.assertEqual(classify(h2, "tcp", 80).risks.count("ntlm-authentication"), 1)
         self.assertNotIn("eDp5", repr(h2))
+
+
+class ReviewRound2Tests(unittest.TestCase):
+    """Repairs for the v0.56 round-2 findings: Kerberos message envelopes, dialect-dependent SMB2 flags."""
+
+    def test_kerberos_message_envelopes(self):
+        ap_req_fields = lambda **parts: krb5_ap_req_message(fields=b"".join(
+            parts.get(name, default) for name, default in (
+                ("pvno", _ber(0xa0, _ber(2, b"\x05"))), ("msg_type", _ber(0xa1, _ber(2, b"\x0e"))),
+                ("options", _ber(0xa2, _ber(3, b"\x00\x20\x00\x00\x00"))),
+                ("ticket", _ber(0xa3, _ber(0x61, _ber(0x30, _ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(0x1b, b"EXAMPLE.ORG"))
+                                                         + _ber(0xa2, _krb_principal(b"cifs")) + _ber(0xa3, krb5_encrypted()))))),
+                ("authenticator", _ber(0xa4, krb5_encrypted(kvno=False))))))
+        valid = [(krb5_gss(krb5_ap_req_message()), "AP-REQ"), (krb5_gss(ap_req_fields()), "AP-REQ from parts"),
+                 (krb5_gss(krb5_ap_rep_message(), b"\x02\x00"), "AP-REP"), (krb5_gss(krb_error(), b"\x03\x00"), "KRB-ERROR"),
+                 (krb5_gss(krb5_tgt_req_message(), b"\x04\x00"), "TGT-REQ"), (krb5_gss(krb5_tgt_req_message(False, False), b"\x04\x00"), "bare TGT-REQ")]
+        bad_ticket = lambda inner: _ber(0xa3, _ber(0x61, _ber(0x30, inner)))
+        invalid = [
+            (krb5_gss(b"\x6e\x00"), "empty AP-REQ"), (krb5_gss(b"\x6f\x00", b"\x02\x00"), "empty AP-REP"),
+            (krb5_gss(b"\x7e\x00", b"\x03\x00"), "empty KRB-ERROR"), (krb5_gss(b"\x30\x00", b"\x04\x00"), "empty TGT-REQ"),
+            (krb5_gss(_ber(0x6e, _ber(0x30, b""))), "AP-REQ with an empty SEQUENCE"),
+            (krb5_gss(ap_req_fields(pvno=_ber(0xa0, _ber(2, b"\x04")))), "pvno 4"),
+            (krb5_gss(ap_req_fields(msg_type=_ber(0xa1, _ber(2, b"\x0f")))), "AP-REQ carrying msg-type 15"),
+            (krb5_gss(ap_req_fields(authenticator=b"")), "AP-REQ without authenticator"),
+            (krb5_gss(ap_req_fields(ticket=b"")), "AP-REQ without ticket"),
+            (krb5_gss(ap_req_fields(options=_ber(0xa2, _ber(3, b"\x00\x20\x00\x00")))), "ap-options shorter than 32 bits"),
+            (krb5_gss(ap_req_fields(options=_ber(0xa2, _ber(3, b"\x08\x20\x00\x00\x00")))), "ap-options with 8 unused bits"),
+            (krb5_gss(ap_req_fields(ticket=_ber(0xa3, _ber(0x62, _ber(0x30, b"\x00"))))), "ticket not APPLICATION 1"),
+            (krb5_gss(ap_req_fields(ticket=bad_ticket(_ber(0xa0, _ber(2, b"\x04")) + _ber(0xa1, _ber(0x1b, b"R")) + _ber(0xa2, _krb_principal(b"s"))
+                                                      + _ber(0xa3, krb5_encrypted())))), "tkt-vno 4"),
+            (krb5_gss(ap_req_fields(ticket=bad_ticket(_ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(0x1b, b"")) + _ber(0xa2, _krb_principal(b"s"))
+                                                      + _ber(0xa3, krb5_encrypted())))), "empty realm"),
+            (krb5_gss(ap_req_fields(ticket=bad_ticket(_ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(0x1b, b"R"))
+                                                      + _ber(0xa2, _ber(0x30, _ber(0xa0, _ber(2, b"\x01")) + _ber(0xa1, _ber(0x30, _ber(0x1b, b"a") * 9))))
+                                                      + _ber(0xa3, krb5_encrypted())))), "principal beyond 8 components"),
+            (krb5_gss(ap_req_fields(ticket=bad_ticket(_ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(0x1b, b"R"))
+                                                      + _ber(0xa2, _ber(0x30, _ber(0xa0, _ber(2, b"\x01")) + _ber(0xa1, _ber(0x30, b""))))
+                                                      + _ber(0xa3, krb5_encrypted())))), "principal without components"),
+            (krb5_gss(ap_req_fields(authenticator=_ber(0xa4, _ber(0x30, _ber(0xa0, _ber(2, b"\x12")) + _ber(0xa2, _ber(4, b"")))))), "empty cipher"),
+            (krb5_gss(ap_req_fields(authenticator=_ber(0xa4, _ber(0x30, _ber(0xa2, _ber(4, b"x")))))), "EncryptedData without etype"),
+            (krb5_gss(ap_req_fields(authenticator=_ber(0xa4, _ber(0x30, _ber(0xa0, _ber(2, bytes(5))) + _ber(0xa2, _ber(4, b"x")))))), "etype wider than Int32"),
+            (krb5_gss(ap_req_fields(options=_ber(0xa3, _ber(3, b"\x00" * 5)), ticket=_ber(0xa2, krb5_encrypted()))), "fields out of order"),
+            (krb5_gss(_ber(0x6e, _ber(0x30, _ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x0e"))) + b"\x00")), "byte after the SEQUENCE"),
+            (krb5_gss(krb5_ap_rep_message()[:2] + b"\x31" + krb5_ap_rep_message()[3:], b"\x02\x00"), "AP-REP body not a SEQUENCE"),
+            (krb5_gss(_ber(0x30, _ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x11"))), b"\x04\x00"), "TGT-REQ msg-type 17"),
+            (krb5_gss(krb_error(fields=_ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x1e"))), b"\x03\x00"), "KRB-ERROR without stime"),
+        ]
+        for token, name in valid:
+            for carried in (token, spnego_init(mechs=(OID_KRB5,), token=token), spnego_resp(0, OID_KRB5, token)):
+                self.assertEqual(classify_token(carried).mechanism, "kerberos", name)
+        for token, name in invalid:
+            for carried in (token, spnego_init(mechs=(OID_KRB5,), token=token), spnego_resp(1, OID_KRB5, token)):
+                with self.assertRaises(ParseError, msg=name):
+                    classify_token(carried)
+        observation = stream(SMB2 + smb2_session_setup(spnego_init(mechs=(OID_KRB5,), token=krb5_gss(b"\x6e\x00"))))[0]
+        self.assertEqual(fields(observation, "gss_mechanism", "smb_message"), {})
+        self.assertEqual(fields(stream(SMB2 + SMB2_SESSION_KRB5)[0], "gss_mechanism"), {"gss_mechanism": "kerberos"})
+        self.assertNotIn("EXAMPLE.ORG", repr(stream(SMB2 + SMB2_SESSION_KRB5)[0]))
+
+    def test_dialect_dependent_flags_end_the_watch(self):
+        signature = bytes(range(1, 17))
+        for negotiate in (SMB2, SMB311):
+            for frame, name in ((smb2_frame_with(SMB2_SESSION_NTLM, header_flags=0x10), "priority 1"),
+                                (smb2_frame_with(SMB2_SESSION_NTLM, header_flags=0x70), "priority 7"),
+                                (smb2_frame_with(SMB2_SESSION_NTLM, header_flags=0x08, signature=signature, body_flags=1), "signed binding request")):
+                observation = stream(negotiate + frame)[0]
+                self.assertEqual((observation.application_protocol, fields(observation, "smb_message")), ("smb2", {}), name)
+            self.assertEqual(fields(stream(negotiate + SMB2_SESSION_NTLM)[0], "smb_message"), {"smb_message": "session-setup-request"})
+        for negotiate in (SMB2_RESPONSE, SMB311_RESPONSE):
+            final = stream(negotiate + smb2_frame_with(SMB2_SESSION_OK, header_flags=0x09, signature=signature))[0]
+            self.assertEqual(fields(final, "smb_message", "smb_session"), {"smb_message": "session-setup-response", "smb_session": "authenticated"})
 
 
 if __name__ == "__main__":

@@ -453,4 +453,4 @@ DNS מקבל את הפריסות הנדירות רק תחת בדיקת סביר�
 (Kerberos, NTLM עם סוג ההודעה, NEGOEX, סשן אורח או אנונימי), מנגנוני bind של LDAP (simple, SASL GSSAPI/GSS-SPNEGO/
 PLAIN/DIGEST/SCRAM/EXTERNAL ועוד) ומחלקות הסכמה של Authorization ו־WWW-Authenticate ב־HTTP/1 ו־HTTP/2. סיכונים חדשים:
 `ntlm-authentication`, `http-basic-authentication`, `smb-guest-or-anonymous-session`; סיכון האישורים־בגלוי נמחק ב־bind
-של LDAP שמנגנונו אינו נושא סיסמה. 85 משפחות, 76 אוטומטיות, 99 יישומים, 599 בדיקות עוברות.
+של LDAP שמנגנונו אינו נושא סיסמה. 85 משפחות, 76 אוטומטיות, 99 יישומים, 601 בדיקות עוברות.

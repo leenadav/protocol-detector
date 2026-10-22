@@ -34,3 +34,10 @@ challenge headers about 81 us for a fresh Inspector. The challenge splitter is
 two compiled regular expressions, linear in the header value (about 40 ns per
 byte on hostile 8 KiB quoted or comma-heavy values) and stops after 32 list
 elements per header.
+
+Review round 2 repairs: the Kerberos envelope walk runs only on Kerberos GSS
+tokens (one linear pass over at most the 4096-byte token, fields bounded by
+their message definitions and 8 principal components); the SMB2 flag rule is
+two comparisons. The A/B flows do not reach either path. With a real AP-REQ
+envelope, an SMB2 NEGOTIATE plus Kerberos SESSION_SETUP takes about 88 us for
+a fresh Inspector, of which the 251-byte SPNEGO token walk is about 32 us.

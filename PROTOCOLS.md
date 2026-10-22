@@ -560,7 +560,13 @@ NegTokenInit/NegTokenResp, MS-NLMP NTLMSSP): `gss_mechanism` is `kerberos`
 (the krb5, MS krb5 or user-to-user OID, or a Kerberos GSS token whose TOK_ID
 01 00, 02 00, 03 00 or 04 00 is followed by exactly the AP-REQ, AP-REP,
 KRB-ERROR or TGT-REQ it names, whether the token stands alone or is carried as
-a mechToken/responseToken), `ntlm` (the NTLMSSP OID or an NTLMSSP mechToken/responseToken),
+a mechToken/responseToken; the message must pass its RFC 4120 envelope: pvno 5,
+the msg-type of its TOK_ID, the required context fields in increasing order,
+AP-REQ ap-options as a KerberosFlags BIT STRING of at least 32 bits, a Ticket
+[APPLICATION 1] with tkt-vno 5, a non-empty realm, a PrincipalName of 1..8
+components and EncryptedData, EncryptedData with an Int32 etype, optional kvno
+and non-empty cipher, KRB-ERROR through the Kerberos family's own profile;
+names, realms and ciphertext are framed only), `ntlm` (the NTLMSSP OID or an NTLMSSP mechToken/responseToken),
 `negoex`, `spnego-other` (SPNEGO without a known preferred mechanism) or
 `other` (a non-SPNEGO GSS OID); `ntlm_message` is `negotiate`, `challenge` or
 `authenticate`. A NegTokenInit names the first listed mechType unless its
@@ -579,11 +585,13 @@ guest/null/encrypt, buffer at 72) adds `smb_message=session-setup-response`,
 `smb_session` (`continuing`, `guest`, `anonymous`, `encrypted`,
 `authenticated`) and the token labels. The NEGOTIATE request now also carries
 `smb_signing` (`enabled`/`required`) like the response. The SMB2 header flags
-must fit the direction: a request may carry only the SMB 3.1.1 priority value,
-a response only SERVER_TO_REDIR; SIGNED is accepted only where MS-SMB2 signs
-this command (the final STATUS_SUCCESS response, a session-binding request)
-and the signature is never verified; an unsigned frame must carry a zero
-signature field; ASYNC, RELATED_OPERATIONS, DFS and REPLAY are rejected. Any
+must fit the direction without relying on a negotiated dialect, which this
+one-direction watch never learns: a request carries no flags (the SMB 3.1.1
+priority value and the signed session-binding request are dialect-dependent
+and end the watch); a response carries SERVER_TO_REDIR and, only on the final
+STATUS_SUCCESS response that every dialect may sign, SIGNED; the signature is
+never verified; an unsigned frame must carry a zero signature field; ASYNC,
+RELATED_OPERATIONS, DFS, REPLAY and reserved bits are rejected. Any
 other command, a compounded frame, a signed frame elsewhere, a status outside
 the two, or a buffer that does not fill the frame leaves the NEGOTIATE
 identification as published (a non-SMB frame is not consumed at all); the
@@ -626,4 +634,8 @@ same TOK_ID validator as a direct one (a bad TOK_ID makes the whole token
 malformed instead of yielding `kerberos`); the SMB2 SESSION_SETUP header flags
 are checked as above (previously a signed or async frame was accepted against
 this section's own rule); repeated credential headers and challenge lists no
-longer hide a later Basic or NTLM scheme.
+longer hide a later Basic or NTLM scheme. Round 2 repairs: the Kerberos
+message after the TOK_ID must pass its envelope (an empty or arbitrary
+application body no longer yields `kerberos`), and the dialect-dependent
+request flags (priority, signed binding) now end the watch instead of being
+taken as proof of SMB 3.x.

@@ -68,7 +68,6 @@ _SMB_DIALECTS = {0x202: "2.0.2", 0x210: "2.1", 0x2ff: "wildcard", 0x300: "3.0", 
 _SMB2_SESSION_FLAGS = {1: "guest", 2: "anonymous", 4: "encrypted"}
 STATUS_MORE_PROCESSING_REQUIRED = 0xC0000016
 SMB2_FLAGS_SERVER_TO_REDIR, SMB2_FLAGS_RELATED_OPERATIONS, SMB2_FLAGS_SIGNED = 0x01, 0x04, 0x08
-SMB2_FLAGS_PRIORITY_MASK = 0x70        # SMB 3.1.1 request priority (MS-SMB2 2.2.1.2)
 
 
 class SMB2Parser(FrameParser):
@@ -129,15 +128,17 @@ class SMB2Parser(FrameParser):
         if u32(20) != 0 or flags & SMB2_FLAGS_RELATED_OPERATIONS:
             raise UnsupportedPrefix("Compounded SESSION_SETUP is outside the profile")
         status = u32(8)
-        # Review round 1: the header flags must fit this direction. Async, DFS and replay never apply to
-        # SESSION_SETUP; the priority value is a request-side SMB 3.1.1 field. SIGNED is allowed only where
-        # MS-SMB2 signs this command (the final successful response, 3.3.5.5.3; a session-binding request,
-        # 3.2.5.3.1); the signature itself is never verified. Unsigned frames carry a zero signature field.
-        if flags & ~(SMB2_FLAGS_SERVER_TO_REDIR | SMB2_FLAGS_SIGNED | (0 if response else SMB2_FLAGS_PRIORITY_MASK)):
+        # Review rounds 1 and 2: the header flags must fit this direction without relying on a negotiated
+        # dialect, which this one-direction watch never learns. A request carries no flags at all: the SMB 3.1.1
+        # priority value and the signed session-binding request both depend on the dialect, so they end the
+        # watch. A response may carry SERVER_TO_REDIR and, only on the final STATUS_SUCCESS response that every
+        # dialect may sign (MS-SMB2 3.3.5.5.3), SIGNED; the signature is never verified. Unsigned frames carry
+        # a zero signature field. Async, related, DFS, replay and reserved bits never apply.
+        if flags & ~(SMB2_FLAGS_SERVER_TO_REDIR | SMB2_FLAGS_SIGNED) or (not response and flags):
             raise ParseError("SESSION_SETUP header flags outside the profile")
         if flags & SMB2_FLAGS_SIGNED:
-            if (response and status != 0) or (not response and len(data) > 66 and not data[66] & 1):
-                raise ParseError("Signed SESSION_SETUP outside a final response or a binding request")
+            if status != 0:
+                raise ParseError("Signed SESSION_SETUP outside the final successful response")
         elif any(data[48:64]):
             raise ParseError("Unsigned SESSION_SETUP carries a signature")
         if response:
