@@ -384,7 +384,8 @@ def step_fields(step):
                 env[pair[1]] = strip_quotes(pair[2])
             fields[name] = env
         elif name == "run" and value in ("|", "|-"):
-            fields[name] = [entry.strip() for entry in body if entry.strip() and not entry.strip().startswith("#")]
+            # `#` lines in the block are script content (comments or here-document data), so they count
+            fields[name] = [entry.strip() for entry in body if entry.strip()]
         else:
             fields[name] = value if not body else None
         index += 1
@@ -549,7 +550,7 @@ def check_attestation_verify(text, publish="publish"):
     if isinstance(workflow_env, str) or set(workflow_env or {}) - WORKFLOW_ENV:
         problems.append("publish-release.yml: workflow env may only set {}".format(", ".join(sorted(WORKFLOW_ENV))))
     for number, line in enumerate(lines, 1):
-        found = None if line.strip().startswith("#") else CREDENTIAL_CONTEXTS.search(line)
+        found = CREDENTIAL_CONTEXTS.search(line)   # comment lines too: in a run block they are data
         if found:
             problems.append("publish-release.yml:{}: the controller may not reference `{}` (only the job's own "
                             "GITHUB_TOKEN may authenticate)".format(number, found.group(1)))
@@ -565,16 +566,16 @@ def check_credentials(path, text):
     """Stored credentials (any secret but GITHUB_TOKEN, any variable) are banned in every workflow.
 
     A word ban, not an expression parser: after removing the exact allowed strings, any `secrets`
-    or `vars` word on a non-comment line fails, wherever it sits (inside `${{ }}`, a quoted
+    or `vars` word on any line, comments included, fails, wherever it sits (inside `${{ }}`, a quoted
     `format('{{x}}')` string that would end a naive `}}` scan, a key such as `secrets: inherit`,
     an `if:` condition or a run block). Rule 9 excludes the YAML escapes and folds that could
     disguise the word, and GitHub resolves contexts only by identifier, so a context reference
     always contains the word (CI/CD task 6, from the task-5 round-3 finding).
     """
     problems = []
+    # Every line, comments included: inside a `run: |` block a `#` line is script data (a
+    # here-document line Actions interpolates and the shell can read), not a YAML comment.
     for number, line in enumerate(text.splitlines(), 1):
-        if line.strip().startswith("#"):
-            continue
         visible = line
         for allowed in CREDENTIAL_ALLOWED:
             visible = visible.replace(allowed, "")
@@ -1154,7 +1155,8 @@ def self_test():
         assert text != controller, label
         assert check_attestation_verify(text), label
     assert any("may not reference `secrets`" in problem for problem in check_attestation_verify(cases["build job secrets index"]))
-    assert check_attestation_verify(controller.replace("    steps:\n", "    # no secrets, vars or inputs are used here\n    steps:\n", 1)) == []
+    # comment lines are scanned too (task 6 round 1: in a run block a `#` line is data)
+    assert check_attestation_verify(controller.replace("    steps:\n", "    # no secrets, vars or inputs are used here\n    steps:\n", 1))
     # CI/CD task 5 (milestone 4 round 3): encodings YAML undoes before GitHub reads the file
     plain = ("on:\n  push:\n    tags: [\"v*\"]\njobs:\n  a:\n    steps:\n      - run: |\n          echo \"a\\\\b\" && x\n"
              "      - env:\n          T: ${{ github.token }}\n        run: echo ok && true\n      - run: >-\n          x \\\\\n"
@@ -1198,7 +1200,12 @@ def self_test():
     assert check_credentials("w.yml", pat_job.format(value="${{ secrets.GITHUB_TOKEN }}")) == []
     assert check_credentials("w.yml", pat_job.format(value="${{ github.token }}")) == []
     assert check_credentials("w.yml", "    name: static analysis (ruff, bandit, secrets)\n") == []
-    assert check_credentials("w.yml", "      # secrets and vars in a comment\n") == []
+    # task 6 round 1: a `#` line inside a run block is here-document data, not a YAML comment
+    heredoc = ("      - run: |\n          TOKEN=$(sed -n 's/^#//p' <<'DATA'\n          #${{ secrets.RELEASE_PAT }}\n"
+               "          DATA\n          )\n          GH_TOKEN=\"$TOKEN\" gh release create v0 dist/*\n")
+    assert check_credentials("w.yml", heredoc), "heredoc data line"
+    assert check_credentials("w.yml", "      # secrets and vars in a YAML comment are rejected too\n")
+    assert check_credentials("w.yml", "      - run: |\n          # ${{ vars.RELEASE_PAT }}\n")
     for value in ("${{ secrets.RELEASE_PAT }}", "${{ secrets['RELEASE_PAT'] }}", "${{ SECRETS.release_pat }}",
                   "${{ vars.RELEASE_PAT }}", "${{ fromJSON(toJSON(secrets)).RELEASE_PAT }}",
                   "${{ secrets.GITHUB_TOKEN || secrets.RELEASE_PAT }}", "${{secrets.GITHUB_TOKEN}}",
