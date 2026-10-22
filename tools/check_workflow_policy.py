@@ -451,7 +451,8 @@ def check_shell(path, text):
     return problems
 
 
-USES = re.compile(r"^\s*(?:-\s+)?uses:\s*(\S+?)\s*(#.*)?$")
+USES = re.compile(r"""^\s*(?:-\s+)?(?:uses|"uses"|'uses'):\s+("[^"\s]+"|'[^'\s]+'|[^\s"'#{}\[\],&*!|>]+)\s*(#.*)?$""")
+USES_KEY = re.compile(r"""(?:^|[\s{,\-])["']?uses["']?\s*:""")
 PINNED = re.compile(r"^([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(/[^@]*)?@([0-9a-f]{40})$")
 TAG = re.compile(r"^#\s*v(\d+)(?:\.\d+)*\s*$")
 ARTIFACT_PAIR = ("actions/upload-artifact", "actions/download-artifact")
@@ -462,14 +463,21 @@ def check_action_consistency(workflows):
     problems, pins, majors = [], {}, {}
     for path, text in sorted(workflows.items()):
         for number, line in enumerate(text.splitlines(), 1):
-            found = USES.match(line)
-            if not found or found.group(1).startswith(("./", "docker://")):
+            if line.strip().startswith("#") or not USES_KEY.search(line):
                 continue
-            pinned = PINNED.match(found.group(1))
+            found = USES.match(line)
+            if not found:
+                problems.append("{}:{}: cannot read this `uses` entry; only the block form "
+                                "`uses: owner/repo@<sha> # vX.Y.Z` (key and value optionally quoted) is supported".format(path, number))
+                continue
+            reference = strip_quotes(found.group(1))
+            if reference.startswith(("./", "docker://")):
+                continue
+            pinned = PINNED.match(reference)
             tag = TAG.match(found.group(2) or "")
             if not pinned or not tag:
                 problems.append("{}:{}: `{}` is not pinned to a full SHA with a `# vX.Y.Z` comment".format(
-                    path, number, found.group(1)))
+                    path, number, reference))
                 continue
             repository, action = pinned.group(1), pinned.group(1) + (pinned.group(2) or "")
             pins.setdefault(repository, set()).add((pinned.group(3), (found.group(2) or "").strip()))
@@ -769,6 +777,24 @@ def self_test():
                 "      - uses: actions/checkout@" + "1" * 39 + " # v4.2.2\n", "      - uses: actions/checkout@main # v4\n"):
         found = check_action_consistency({"a.yml": bad})
         assert len(found) == 1 and "is not pinned to a full SHA" in found[0], (bad, found)
+    # milestone 3 round 1: quoted keys and values are read; other spellings fail closed
+    quoted = {"a.yml": co + up7.replace("- uses:", '- "uses":'), "b.yml": co + down4}
+    assert check_action_consistency(quoted) == [
+        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version"], check_action_consistency(quoted)
+    single = {"a.yml": co + up7.replace("- uses: ", "- 'uses': '").replace(" # v7", "' # v7"), "b.yml": co + down4}
+    assert check_action_consistency(single) == [
+        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version"], check_action_consistency(single)
+    assert check_action_consistency({"a.yml": co + up4.replace("- uses: ", '- uses: "').replace(" # v4", '" # v4'), "b.yml": down4}) == []
+    unreadable = ["      - {uses: actions/upload-artifact@" + "c" * 40 + "}  # v7.0.2\n",                       # flow mapping
+                  "      - name: x\n        uses:\n          actions/upload-artifact@" + "c" * 40 + "\n",      # value on next line
+                  "      - uses: >-\n          actions/upload-artifact@" + "c" * 40 + "\n",                   # folded scalar
+                  "      - uses: *upload\n",                                                                 # alias
+                  "      - \"uses\" : actions/upload-artifact@" + "c" * 40 + " # v7.0.2\n",                   # space before colon
+                  "      - name: x\n        with: {uses: y}\n"]                                               # nested flow
+    for bad in unreadable:
+        found = check_action_consistency({"a.yml": co + bad, "b.yml": down4})
+        assert any("cannot read this `uses` entry" in problem for problem in found), (bad, found)
+    assert check_action_consistency({"a.yml": "      # uses: anything goes in a comment\n" + co}) == []
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)
