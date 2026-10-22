@@ -777,18 +777,23 @@ GATE_RUN = [
 ]
 MASKING = re.compile(r"\|\|\s*(true|:)\b|\|\|\s*:\s*$|\bset\s+\+e\b")
 # Shell that can swallow a failing status, checked on every ci run line (expressions removed). There
-# is no general way to prove a script fails when its check fails, so this is an allowlist: `||` only
-# with a handler that fails again, `if` only with the conditions in use today, and the constructs
-# below not at all (item 10 round 2: `|| echo ignored`, `|| exit 0`); `&&` only in the forms below.
-REFAIL = re.compile(r"\|\|\s*\([^()]*&&\s*exit\s+[1-9][0-9]*\s*\)\s*$")
-SHELL_ALLOWED_LINES = {"grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt"}   # summary text only
+# is no general way to prove a script fails when its check fails, so this is an allowlist of exact
+# lines for `||`, `&&` and `if`, and the constructs in SHELL_BANNED are not allowed at all.
+# `||` is allowed only on these exact lines (CI/CD task 11, from the item-10 round-3 finding: a
+# pattern for "a handler that fails again" was satisfied by `cmd || echo ignored || (... && exit 1)`,
+# whose middle handler short-circuits). Two fail again; the bandit one only picks summary text.
+SHELL_ALLOWED_OR = {
+    'grep -q \'^dependencies = \\[\\]\' pyproject.toml || (echo "runtime dependencies are not allowed" && exit 1)',
+    'python -B -m unittest discover -q 2> test-output.txt || (cat test-output.txt && exit 1)',
+    "grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt",
+}
 SHELL_ALLOWED_IF = {
     'if [ -f pr-base/protocol_engine/engine.py ]; then',
     'if git rev-parse --verify -q HEAD~1 >/dev/null && git cat-file -e HEAD~1:protocol_engine/engine.py 2>/dev/null; then',
 }
 # Under `bash -e` a failing command on the left of `&&` does not stop the script, so `&&` is allowed
-# only inside a re-fail handler, in an allowed `if` condition, or in these subshells, whose status is
-# their last command's.
+# only on the SHELL_ALLOWED_OR lines (inside their handlers), in an allowed `if` condition, or in these
+# subshells, whose status is their last command's.
 SHELL_ALLOWED_AND = {
     '(cd /tmp && /tmp/wheel-env/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py") | tee -a "$GITHUB_STEP_SUMMARY"',
     '(cd /tmp && /tmp/wheel-env39/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py") | tee -a "$GITHUB_STEP_SUMMARY"',
@@ -798,16 +803,16 @@ SHELL_BANNED = re.compile(r"\bexit\s+0\b|\breturn\b|\bset\s+\+|\btrap\b|(^|[;&|(
 
 def shell_problem(line):
     code = EXPRESSION_SPAN.sub("EXPR", line).strip()
-    if code in SHELL_ALLOWED_LINES:
+    if line.strip() in SHELL_ALLOWED_OR:
         return None
     if SHELL_BANNED.search(code):
         return "`{}` can swallow a failing status".format(SHELL_BANNED.search(code).group(0).strip())
-    if "||" in code and not REFAIL.search(code):
-        return "`||` without a handler that fails again (`|| (... && exit 1)`)"
+    if "||" in code:
+        return "`||` outside the exact lines in SHELL_ALLOWED_OR"
     if re.search(r"\bif\b", code) and line not in SHELL_ALLOWED_IF:
         return "`if` with a condition outside SHELL_ALLOWED_IF (a check inside a condition cannot fail the step)"
-    if "&&" in code and not REFAIL.search(code) and line not in SHELL_ALLOWED_IF and line.strip() not in SHELL_ALLOWED_AND:
-        return "`&&` outside a re-fail handler (under bash -e a failure on its left does not stop the script)"
+    if "&&" in code and line not in SHELL_ALLOWED_IF and line.strip() not in SHELL_ALLOWED_AND:
+        return "`&&` outside the allowed lines (under bash -e a failure on its left does not stop the script)"
     return None
 
 
@@ -1554,6 +1559,12 @@ def self_test():
         "trap": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          trap 'exit 0' ERR\n          ruff check --output-format github .\n", 1),
         "set +o": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          set +o errexit\n          ruff check --output-format github .\n", 1),
         "background": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . &\n", 1),
+        # task 11 (item 10 round 3): an earlier handler short-circuits a final re-fail suffix
+        "chained handler": ci_text_for_masking.replace("          ruff check --output-format github .\n",
+            "          ruff check --output-format github . || echo ignored || (echo failed && exit 1)\n", 1),
+        "new re-fail line": ci_text_for_masking.replace("          ruff check --output-format github .\n",
+            "          ruff check --output-format github . || (echo failed && exit 1)\n", 1),
+        "allowed line extended": ci_text_for_masking.replace("|| (cat test-output.txt && exit 1)", "|| true || (cat test-output.txt && exit 1)", 1),
         "and-list masks": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . && echo checked\n", 1),
         "explicit exit 0": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github .; exit 0\n", 1),
         "exception step body changed": ci_text_for_masking.replace("--iterations 300 --seed \"$SEED\" --report behaviour-diff-base.md --report-only",
