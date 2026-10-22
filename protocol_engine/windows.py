@@ -7,10 +7,113 @@ from .extended import UnsupportedPrefix
 
 
 class SMB1Parser(FrameParser):
-    """NetBIOS session header plus SMB_COM_NEGOTIATE request with NUL-terminated dialect strings."""
+    """NetBIOS session header plus SMB_COM_NEGOTIATE (either direction), then one SESSION_SETUP_ANDX frame (v0.56)."""
     header_size = 8
     protocol_name = "smb1"
     scope = "negotiation_request"
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.continues = False
+        self.refined = False
+        self.extra_evidence = ()
+        self.frame = bytearray()
+        self.frame_needed = 8
+
+    def feed(self, data):
+        if not self.done:
+            consumed = FrameParser.feed(self, data)
+            if self.done:
+                self.continues = True
+            return consumed
+        return self._next_frame(data)
+
+    def _next_frame(self, data):
+        pos = 0
+        while pos < len(data) and self.continues:
+            start = pos
+            amount = min(self.frame_needed - len(self.frame), len(data) - pos)
+            self.frame.extend(data[pos:pos + amount])
+            pos += amount
+            if len(self.frame) < self.frame_needed:
+                break
+            if self.frame_needed == 8:
+                if self.frame[0] != 0 or self.frame[4:8] != b"\xffSMB":
+                    self.continues = False      # not an SMB1 frame: the identification stands, these bytes are not inspected
+                    return start
+                size = int.from_bytes(self.frame[1:4], "big")
+                if size < 35:
+                    raise ParseError("SMB1 frame shorter than a header with word and byte counts")
+                if 4 + size > self.config.max_bytes:
+                    raise BudgetError("SMB1 SESSION_SETUP frame exceeds byte budget")
+                self.frame_needed = 4 + size
+                if len(self.frame) < self.frame_needed:
+                    continue
+            self._session_setup(bytes(self.frame[4:]))
+            self.continues = False
+        return pos
+
+    def _session_setup(self, data):
+        """SMB_COM_SESSION_SETUP_ANDX (0x73): extended security blob, LM/NTLM response lengths or the response action."""
+        if data[4] != 0x73:
+            raise UnsupportedPrefix("Only SESSION_SETUP_ANDX is read after NEGOTIATE")
+        words = data[32]
+        count = int.from_bytes(data[33 + 2 * words:35 + 2 * words], "little") if len(data) >= 35 + 2 * words else None
+        if count is None or 35 + 2 * words + count != len(data):
+            raise ParseError("SMB1 SESSION_SETUP_ANDX word or byte count disagrees with the frame")
+        body = data[35 + 2 * words:]
+        rows = []
+        if data[9] & 0x80:
+            status = int.from_bytes(data[5:9], "little")
+            if status not in (0, 0xC0000016):
+                raise UnsupportedPrefix("SESSION_SETUP_ANDX response status outside success and more-processing")
+            if words not in (3, 4):
+                raise ParseError("SESSION_SETUP_ANDX response word count must be 3 or 4")
+            action = int.from_bytes(data[37:39], "little")
+            if action & ~3:
+                raise ParseError("SESSION_SETUP_ANDX response action outside the defined bits")
+            rows.append(("smb1_message", "session-setup-response", "header", "structural"))
+            session = "continuing" if status else ("guest" if action & 1 else "authenticated")
+            rows.append(("smb_session", session, "session_setup", "asserted"))
+            if words == 4:
+                length = int.from_bytes(data[39:41], "little")
+                if length > count:
+                    raise ParseError("SESSION_SETUP_ANDX response security blob exceeds the byte count")
+                if length:
+                    rows += self._token(body[:length])
+        else:
+            if data[5:9] != bytes(4):
+                raise ParseError("SESSION_SETUP_ANDX request must carry zero status")
+            rows.append(("smb1_message", "session-setup-request", "header", "structural"))
+            if words == 12:
+                length = int.from_bytes(data[47:49], "little")
+                if not length or length > count:
+                    raise ParseError("SESSION_SETUP_ANDX extended security blob outside the byte count")
+                rows += self._token(body[:length])
+            elif words == 13:
+                insensitive, sensitive = int.from_bytes(data[47:49], "little"), int.from_bytes(data[49:51], "little")
+                if insensitive + sensitive > count or insensitive > 24 or sensitive > 1024:
+                    raise ParseError("SESSION_SETUP_ANDX password response lengths outside the byte count or NTLM sizes")
+                rows.append(("gss_mechanism", "ntlm-response" if insensitive or sensitive else "none", "session_setup", "asserted"))
+            elif words == 10:
+                length = int.from_bytes(data[47:49], "little")
+                if length > count or length > 24:
+                    raise ParseError("SESSION_SETUP_ANDX LAN Manager password length outside the byte count")
+                rows.append(("gss_mechanism", "lm-response" if length else "none", "session_setup", "asserted"))
+            else:
+                raise UnsupportedPrefix("SESSION_SETUP_ANDX word count outside the 10/12/13 layouts")
+        self.extra_evidence += tuple(rows)
+        self.refined = True
+        self.reason += "; SESSION_SETUP_ANDX read for the authentication mechanism, names and responses not emitted"
+
+    @staticmethod
+    def _token(blob):
+        from .gss import classify_token
+        token = classify_token(blob)
+        rows = [("gss_mechanism", token.mechanism, "session_setup", "asserted")]
+        if token.ntlm_message:
+            rows.append(("ntlm_message", token.ntlm_message, "session_setup", "asserted"))
+        return rows
 
     def frame_size(self, header):
         if header[0] != 0 or header[4:8] != b"\xffSMB":

@@ -56,6 +56,7 @@ EXTRA = (
     ("H2_SERVER_SETTINGS", "http2-server", "tcp"), ("H2_REQUEST", None, "tcp"), ("H2_GRPC", None, "tcp"), ("H2_RESPONSE", "http2-server", "tcp"),
     ("X11_REPLY", "x11-server", "tcp"), ("WEBSOCKET_FRAME", "websocket", "tcp"), ("WEBSOCKET_SERVER_FRAME", "websocket", "tcp"),
     ("S7COMM", "s7comm", "tcp"), ("S7COMM_ACK", "s7comm", "tcp"), ("RTP", "rtp", "udp"),
+    ("SMB2_SESSION_STREAM", None, "tcp"), ("SMB2_SESSION_RESPONSE_STREAM", None, "tcp"), ("SMB1_SESSION_STREAM", None, "tcp"), ("SMB1_SESSION_RESPONSE_STREAM", None, "tcp"),
 )
 # Fixtures whose bytes are a server message although their scope and evidence do not say so.
 SERVER_FIXTURE_NAMES = ("TLS_SERVER12", "TLS_SERVER13", "TLS_RETRY", "TLS_SERVER12_CERTIFICATE", "CONNECT_RESPONSE", "H2C_101",

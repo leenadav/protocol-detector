@@ -29,6 +29,9 @@ RISKS = MappingProxyType({
     "radius-access-reject": ("low", "RADIUS Access-Reject answering an Access-Request"),
     "kerberos-error-response": ("low", "KRB-ERROR other than KDC_ERR_PREAUTH_REQUIRED (the normal pre-authentication step)"),
     "tls-encrypted-client-hello": ("low", "ClientHello carries an outer encrypted_client_hello extension: the visible server_name is the client-facing public name and the real name is encrypted"),
+    "ntlm-authentication": ("medium", "NTLM authentication offered or performed (SMB session setup, LDAP bind, HTTP Negotiate/NTLM): relay and legacy hash exposure"),
+    "http-basic-authentication": ("medium", "HTTP Basic credentials sent without encryption in the session"),
+    "smb-guest-or-anonymous-session": ("low", "SMB session established as guest or anonymous (null session)"),
 })
 MAX_CERTIFICATE_LIFETIME_DAYS = 398   # CA/Browser Forum baseline since September 2020
 
@@ -38,7 +41,8 @@ _LEGACY_TLS = frozenset(("1.0", "1.1", "SSL 3.0"))
 
 _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags", "rdp_selected_protocol",
                      "tls_offered_max_version", "dns_query_shape", "payload_class", "tls_certificate_self_issued",
-                     "tls_certificate_key", "tls_certificate_signature", "tls_certificate_lifetime_days", "tls_ech", "dns_rcode", "kerberos_error", "radius_code", "modbus_pdu", "zmtp_mechanism", "rip_authentication"))
+                     "tls_certificate_key", "tls_certificate_signature", "tls_certificate_lifetime_days", "tls_ech", "dns_rcode", "kerberos_error", "radius_code", "modbus_pdu", "zmtp_mechanism", "rip_authentication", "gss_mechanism", "ldap_bind", "smb_session",
+                     "http_auth_scheme", "http_auth_challenge", "http2_auth_scheme", "http2_auth_challenge"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -136,6 +140,22 @@ def flow_risks(verdict, client, server):
             elif field == "rip_authentication":
                 if value != "simple-password" and "cleartext-credential-protocol" in found:
                     found.remove("cleartext-credential-protocol")   # only the v2 simple password travels in the clear
+            elif field == "gss_mechanism":
+                if value in ("ntlm", "ntlm-response", "lm-response") and "ntlm-authentication" not in found:
+                    found.append("ntlm-authentication")
+            elif field in ("http_auth_scheme", "http_auth_challenge", "http2_auth_scheme", "http2_auth_challenge"):
+                if value == "ntlm" and "ntlm-authentication" not in found:
+                    found.append("ntlm-authentication")
+                if value == "basic" and field.endswith("scheme") and verdict.encryption is None and "http-basic-authentication" not in found:
+                    found.append("http-basic-authentication")
+            elif field == "ldap_bind":
+                # Only a simple bind or SASL PLAIN carries the password; GSSAPI, SPNEGO, DIGEST, CRAM, SCRAM, NTLM
+                # and EXTERNAL authenticate without placing it on the wire (v0.56).
+                if value not in ("simple", "sasl-plain", "sasl-other") and "cleartext-credential-protocol" in found:
+                    found.remove("cleartext-credential-protocol")
+            elif field == "smb_session":
+                if value in ("guest", "anonymous") and "smb-guest-or-anonymous-session" not in found:
+                    found.append("smb-guest-or-anonymous-session")
             elif field == "zmtp_mechanism":
                 # Only the PLAIN mechanism sends a username and password in the clear; NULL has no
                 # credentials and CURVE/GSSAPI authenticate cryptographically.

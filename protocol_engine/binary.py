@@ -230,6 +230,8 @@ class MemcachedParser(FrameParser):
 _LDAP_OID = re.compile(rb"[0-2](?:\.(?:0|[1-9][0-9]{0,9})){1,30}")
 _LDAP_EXTENDED = {b"1.3.6.1.4.1.1466.20037": "starttls", b"1.3.6.1.4.1.4203.1.11.3": "whoami",
                   b"1.3.6.1.4.1.4203.1.11.1": "password-modify", b"1.3.6.1.1.8": "cancel", b"1.3.6.1.4.1.1466.20036": "notice-of-disconnection"}
+_LDAP_SASL = {b"GSSAPI": "sasl-gssapi", b"GSS-SPNEGO": "sasl-gss-spnego", b"PLAIN": "sasl-plain", b"DIGEST-MD5": "sasl-digest-md5",
+              b"CRAM-MD5": "sasl-cram-md5", b"EXTERNAL": "sasl-external", b"NTLM": "sasl-ntlm", b"SCRAM-SHA-1": "sasl-scram", b"SCRAM-SHA-256": "sasl-scram"}
 _LDAP_RESULTS = {0: "success", 1: "operations-error", 2: "protocol-error", 7: "auth-method-not-supported", 8: "stronger-auth-required",
                  14: "sasl-bind-in-progress", 32: "no-such-object", 34: "invalid-dn-syntax", 48: "inappropriate-authentication",
                  49: "invalid-credentials", 50: "insufficient-access-rights", 51: "busy", 52: "unavailable", 53: "unwilling-to-perform"}
@@ -274,23 +276,34 @@ class LDAPParser(FrameParser):
             raise ParseError("Invalid LDAP DN UTF-8") from None
         if cursor >= len(bind):
             raise ParseError("LDAP bind missing authentication field")
+        rows = ()
         if bind[cursor] == 0x80:
             _, cursor = ber_field(bind, cursor, len(bind), 0x80)
+            rows = (("ldap_bind", "simple", "bind_request", "structural"),)
         elif bind[cursor] == 0xa3:
             sasl, cursor = ber_field(bind, cursor, len(bind), 0xa3)
             mechanism, off = ber_field(sasl, 0, len(sasl), 4)
             if mechanism and not re.fullmatch(rb"[A-Z0-9_-]{1,20}", mechanism):
                 raise ParseError("Invalid LDAP SASL mechanism")
+            credentials = b""
             if off < len(sasl):
-                _, off = ber_field(sasl, off, len(sasl), 4)
+                credentials, off = ber_field(sasl, off, len(sasl), 4)
             if off != len(sasl):
                 raise ParseError("Trailing LDAP SASL fields")
+            rows = (("ldap_bind", _LDAP_SASL.get(mechanism, "sasl-other"), "bind_request", "structural"),)
+            if mechanism == b"GSS-SPNEGO" and credentials:
+                # The SPNEGO token names the inner mechanism (v0.56); nothing beyond closed labels is kept.
+                from .gss import classify_token
+                token = classify_token(credentials)
+                rows += (("gss_mechanism", token.mechanism, "bind_request", "asserted"),)
+                if token.ntlm_message:
+                    rows += (("ntlm_message", token.ntlm_message, "bind_request", "asserted"),)
         else:
             raise UnsupportedPrefix("Unsupported LDAP authentication choice")
         if cursor != len(bind):
             raise ParseError("Trailing LDAP bind fields")
         self.reason = "LDAPv3 BindRequest BER fields validated; credentials, DN semantics and authentication unverified"
-        self.extra_evidence = (("ldap_message", "bind_request", "ldap_message", "structural"),)
+        self.extra_evidence = (("ldap_message", "bind_request", "ldap_message", "structural"),) + rows
 
     def _extended_request(self, message, pos):
         """ExtendedRequest (RFC 4511 4.12): requestName OID, optional requestValue. StartTLS (4.14.1) carries no value."""

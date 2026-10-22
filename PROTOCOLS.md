@@ -36,7 +36,7 @@ closed set reviewers should expect in records.
 | ftp | tcp | yes | - | - |
 | giop | tcp | yes | yes | `giop_message`, `giop_status` |
 | git | tcp | yes | yes | `git_message`, `offered_version` |
-| http | tcp | yes | yes | `hostname`, `http_accept`, `http_content_type`, `http_method`, `http_status`, `http_upgrade` |
+| http | tcp | yes | yes | `hostname`, `http_accept`, `http_auth_challenge`, `http_auth_scheme`, `http_content_type`, `http_method`, `http_status`, `http_upgrade` |
 | http2 | tcp | yes | yes | `hostname`, `http2_content_type`, `http2_message`, `http2_method`, `http2_scheme`, `http2_status` |
 | iec-104 | tcp | yes | same shape | - |
 | ikev2 | udp | yes | yes | `exchange`, `offered_dh_group`, `selected_dh_group` |
@@ -47,7 +47,7 @@ closed set reviewers should expect in records.
 | kafka | tcp | yes | - | `kafka_api_key` |
 | kerberos | tcp/udp | yes | yes | `kerberos_error`, `kerberos_message` |
 | l2tp | udp | yes | yes | `l2tp_message` |
-| ldap | tcp | yes | yes | `ldap_extended`, `ldap_message`, `ldap_result` |
+| ldap | tcp | yes | yes | `gss_mechanism`, `ldap_bind`, `ldap_extended`, `ldap_message`, `ldap_result`, `ntlm_message` |
 | llmnr | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `llmnr_flags` |
 | mdns | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `mdns_profile` |
 | memcached | tcp | yes | yes | `memcached_message`, `memcached_status` |
@@ -79,8 +79,8 @@ closed set reviewers should expect in records.
 | s7comm | tcp | yes | yes | `s7_function`, `s7_rosctr` |
 | sflow | udp | yes | n/a (one-way) | - |
 | sip | tcp/udp | yes | same shape | - |
-| smb1 | tcp | yes | yes | `smb1_dialect_layout`, `smb1_message` |
-| smb2 | tcp | yes | yes | `smb_dialect`, `smb_signing` |
+| smb1 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb1_dialect_layout`, `smb1_message`, `smb_session` |
+| smb2 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb_dialect`, `smb_message`, `smb_session`, `smb_signing` |
 | smtp | tcp | yes | - | `smtp_client_identity` |
 | snmp | udp | yes | yes | `snmp_flags`, `snmp_pdu`, `snmp_scoped_pdu`, `snmp_security` |
 | socks5 | tcp | yes | yes | `socks_command`, `socks_method`, `socks_port`, `socks_reply`, `socks_target` |
@@ -549,3 +549,61 @@ than `dns` with the `nb` row (the App-ID verdict is unchanged); a `.local`
 query identifies as `mdns`. Two seeded DTLS mutations that used to be unknown
 briefly read as malformed before the non-empty-section rule was added to the
 probe; the released probe keeps them unknown.
+
+## Authentication mechanism evidence: SMB session setup, LDAP bind, HTTP Authorization (v0.56)
+
+No new family. The first authentication step of a session names its mechanism
+as a closed label; credentials, principals, domains, challenges, tickets and
+MICs are never decoded. `protocol_engine/gss.py` classifies the token layouts
+these messages carry (RFC 2743 InitialContextToken, RFC 4178 SPNEGO
+NegTokenInit/NegTokenResp, MS-NLMP NTLMSSP): `gss_mechanism` is `kerberos`
+(the krb5, MS krb5 or user-to-user OID, or a Kerberos GSS token with a known
+TOK_ID), `ntlm` (the NTLMSSP OID or an NTLMSSP mechToken/responseToken),
+`negoex`, `spnego-other` (SPNEGO without a known preferred mechanism) or
+`other` (a non-SPNEGO GSS OID); `ntlm_message` is `negotiate`, `challenge` or
+`authenticate`. A NegTokenInit names the first listed mechType unless its
+mechToken carries NTLMSSP or Kerberos; a NegTokenResp names its supportedMech
+or its responseToken. Budgets: 4096-byte tokens, 8 mechTypes, fixed DER depth,
+exact lengths at every level. Malformed tokens are `ParseError` and end the
+continuation without touching the carrier identification.
+
+`smb2`: after a NEGOTIATE in either direction the parser watches exactly one
+more direct-TCP frame. A SESSION_SETUP request (StructureSize 25, flags 0/1,
+SecurityMode 1..3, security buffer at offset 88 filling the frame, STATUS
+zero) adds `smb_message=session-setup-request` and the token's
+`gss_mechanism`/`ntlm_message`; a SESSION_SETUP response (StructureSize 9,
+STATUS_SUCCESS or STATUS_MORE_PROCESSING_REQUIRED, SessionFlags within
+guest/null/encrypt, buffer at 72) adds `smb_message=session-setup-response`,
+`smb_session` (`continuing`, `guest`, `anonymous`, `encrypted`,
+`authenticated`) and the token labels. The NEGOTIATE request now also carries
+`smb_signing` (`enabled`/`required`) like the response. Any other command, a
+compounded or signed frame, a status outside the two, or a buffer that does
+not fill the frame leaves the NEGOTIATE identification as published (a
+non-SMB frame is not consumed at all); the watch never reads a third frame.
+
+`smb1`: after a NEGOTIATE in either direction, one SESSION_SETUP_ANDX
+(0x73): the 12-word extended-security request classifies its security blob;
+the 13-word NT LM 0.12 request reports `gss_mechanism=ntlm-response` when the
+case-insensitive (at most 24 bytes) or case-sensitive (at most 1024) password
+response is present, `none` otherwise; the 10-word LAN Manager request reports
+`lm-response` or `none`; a response (3 or 4 words, action within the defined
+bits) reports `smb_session` (`guest`, `authenticated`, `continuing`) and the
+blob labels. Account, domain, OS and LAN Manager strings are bounded by the
+byte count and never read.
+
+`ldap`: BindRequest adds `ldap_bind`: `simple`, or `sasl-gssapi`,
+`sasl-gss-spnego`, `sasl-plain`, `sasl-digest-md5`, `sasl-cram-md5`,
+`sasl-scram`, `sasl-ntlm`, `sasl-external`, `sasl-other`; a GSS-SPNEGO bind
+with credentials adds the token's `gss_mechanism`/`ntlm_message`. The
+mechanism string itself is never emitted.
+
+`http`: HTTP/1 and HTTP/2 requests report `http_auth_scheme`
+(`http2_auth_scheme`) from the first `Authorization`/`Proxy-Authorization`
+header, responses `http_auth_challenge` (`http2_auth_challenge`) for every
+distinct scheme offered by `WWW-Authenticate`/`Proxy-Authenticate` headers:
+`basic`, `bearer`, `digest`, `negotiate`, `ntlm`, `other`, `empty`. Only the
+scheme token before the first space or comma is read.
+
+Risks (RISKS.md): `ntlm-authentication`, `http-basic-authentication`,
+`smb-guest-or-anonymous-session`; `cleartext-credential-protocol` clears on
+LDAP binds whose mechanism never carries the password.

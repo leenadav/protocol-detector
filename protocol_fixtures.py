@@ -1036,3 +1036,127 @@ DATAGRAM_CASES += ((MDNS_QUERY, 'mdns'), (MDNS_PLAIN_QUERY, 'mdns'), (MDNS_RESPO
                    (MDNS_ANNOUNCEMENT, 'mdns'), (NBNS_REGISTRATION, 'netbios-ns'), (NBNS_RELEASE, 'netbios-ns'), (NBNS_REFRESH, 'netbios-ns'),
                    (NBNS_WACK, 'netbios-ns'), (NBNS_POSITIVE_RESPONSE, 'netbios-ns'), (NBNS_NEGATIVE_RESPONSE, 'netbios-ns'), (NBNS_QUERY_RESPONSE, 'netbios-ns'))
 HINTED_DATAGRAM_CASES += ((LLMNR_QUERY, 'llmnr', 'llmnr'), (LLMNR_RESPONSE, 'llmnr', 'llmnr'), (LLMNR_CONFLICT, 'llmnr', 'llmnr'))
+
+
+# ---- v0.56: authentication tokens and SMB session setup ----
+def der(tag, body):
+    n = len(body)
+    return bytes((tag,)) + (bytes((n,)) if n < 128 else b"\x82" + n.to_bytes(2, "big")) + body
+
+
+OID_SPNEGO = b"\x2b\x06\x01\x05\x05\x02"
+OID_KRB5 = b"\x2a\x86\x48\x86\xf7\x12\x01\x02\x02"
+OID_MS_KRB5 = b"\x2a\x86\x48\x82\xf7\x12\x01\x02\x02"
+OID_NTLMSSP = b"\x2b\x06\x01\x04\x01\x82\x37\x02\x02\x0a"
+OID_NEGOEX = b"\x2b\x06\x01\x04\x01\x82\x37\x02\x02\x1e"
+
+
+def ntlmssp(message_type, size=32):
+    return b"NTLMSSP\x00" + message_type.to_bytes(4, "little") + bytes(size - 12)
+
+
+def spnego_init(mechs=(OID_NTLMSSP, OID_KRB5), token=None):
+    fields = der(0xa0, der(0x30, b"".join(der(0x06, oid) for oid in mechs)))
+    if token is not None:
+        fields += der(0xa2, der(0x04, token))
+    return der(0x60, der(0x06, OID_SPNEGO) + der(0xa0, der(0x30, fields)))
+
+
+def spnego_resp(state=1, mech=OID_NTLMSSP, token=None):
+    fields = der(0xa0, der(0x0a, bytes((state,))))
+    if mech is not None:
+        fields += der(0xa1, der(0x06, mech))
+    if token is not None:
+        fields += der(0xa2, der(0x04, token))
+    return der(0xa1, der(0x30, fields))
+
+
+def krb5_ap_req(size=40):
+    return der(0x60, der(0x06, OID_KRB5) + b"\x01\x00" + der(0x6e, bytes(size)))
+
+
+SPNEGO_NTLM_INIT = spnego_init(token=ntlmssp(1))
+SPNEGO_NTLM_CHALLENGE = spnego_resp(1, OID_NTLMSSP, ntlmssp(2, 56))
+SPNEGO_NTLM_AUTHENTICATE = spnego_resp(1, None, ntlmssp(3, 88))
+SPNEGO_ACCEPT = spnego_resp(0, None, None)
+SPNEGO_KRB5_INIT = spnego_init(mechs=(OID_MS_KRB5, OID_KRB5), token=krb5_ap_req())
+SPNEGO_MECHS_ONLY = spnego_init(mechs=(OID_KRB5, OID_MS_KRB5, OID_NEGOEX, OID_NTLMSSP))
+
+
+def smb2_session_setup(token, response=False, status=0, flags=0, security_mode=1):
+    header = bytearray(64)
+    header[:4] = b"\xfeSMB"
+    header[4:6] = (64).to_bytes(2, "little")
+    header[8:12] = status.to_bytes(4, "little")
+    header[12:14] = (1).to_bytes(2, "little")
+    header[16:20] = (1 if response else 0).to_bytes(4, "little")
+    header[24:32] = (2).to_bytes(8, "little")      # message id
+    if response:
+        body = struct.pack("<HHHH", 9, flags, 72, len(token))
+    else:
+        body = struct.pack("<HBBIIHHQ", 25, 0, security_mode, 1, 0, 88, len(token), 0)
+    frame = bytes(header) + body + token
+    return len(frame).to_bytes(4, "big") + frame
+
+
+SMB2_SESSION_NTLM = smb2_session_setup(SPNEGO_NTLM_INIT)
+SMB2_SESSION_KRB5 = smb2_session_setup(SPNEGO_KRB5_INIT, security_mode=3)
+SMB2_SESSION_CHALLENGE = smb2_session_setup(SPNEGO_NTLM_CHALLENGE, response=True, status=0xC0000016)
+SMB2_SESSION_GUEST = smb2_session_setup(SPNEGO_ACCEPT, response=True, flags=1)
+SMB2_SESSION_OK = smb2_session_setup(SPNEGO_ACCEPT, response=True)
+
+
+def smb1_header(command, response=False, status=0):
+    flags = 0x98 if response else 0x18
+    return b"\xffSMB" + bytes((command,)) + status.to_bytes(4, "little") + bytes((flags,)) + b"\x01\xc8" + bytes(2) + bytes(8) + bytes(2) + bytes(2) + b"\xff\xfe" + bytes(2) + bytes(2)
+
+
+def smb1_frame(body):
+    return b"\x00" + len(body).to_bytes(3, "big") + body
+
+
+def smb1_session_setup(token):
+    words = struct.pack("<BBHHHHIHII", 0xff, 0, 0, 4356, 16, 0, 0, len(token), 0, 0x8000)
+    data = token + b"Unix\x00Samba\x00"
+    return smb1_frame(smb1_header(0x73) + bytes((12,)) + words + len(data).to_bytes(2, "little") + data)
+
+
+def smb1_session_setup_legacy(insensitive=24, sensitive=24):
+    words = struct.pack("<BBHHHHIHHII", 0xff, 0, 0, 4356, 16, 0, 0, insensitive, sensitive, 0, 0)
+    data = bytes(insensitive + sensitive) + b"alice\x00WORKGROUP\x00Unix\x00Samba\x00"
+    return smb1_frame(smb1_header(0x73) + bytes((13,)) + words + len(data).to_bytes(2, "little") + data)
+
+
+def smb1_session_setup_response(token=b"", action=0, status=0):
+    if token:
+        words = struct.pack("<BBHHH", 0xff, 0, 0, action, len(token))
+        count = 4
+    else:
+        words = struct.pack("<BBHH", 0xff, 0, 0, action)
+        count = 3
+    data = token + b"Unix\x00Samba\x00WORKGROUP\x00"
+    return smb1_frame(smb1_header(0x73, response=True, status=status) + bytes((count,)) + words + len(data).to_bytes(2, "little") + data)
+
+
+SMB1_SESSION_NTLM = smb1_session_setup(SPNEGO_NTLM_INIT)
+SMB1_SESSION_LEGACY = smb1_session_setup_legacy()
+SMB1_SESSION_CHALLENGE = smb1_session_setup_response(SPNEGO_NTLM_CHALLENGE, status=0xC0000016)
+SMB1_SESSION_GUEST = smb1_session_setup_response(action=1)
+HTTP_BASIC_AUTH = b"GET /private HTTP/1.1\r\nHost: intranet.example.org\r\nAuthorization: Basic YWxpY2U6czNjcmV0\r\n\r\n"
+HTTP_NTLM_CHALLENGE = b"HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Negotiate\r\nWWW-Authenticate: NTLM\r\nContent-Length: 0\r\n\r\n"
+SMB2_SESSION_STREAM = SMB2 + SMB2_SESSION_NTLM
+SMB2_SESSION_RESPONSE_STREAM = SMB2_RESPONSE + SMB2_SESSION_CHALLENGE
+SMB1_SESSION_STREAM = SMB1 + SMB1_SESSION_NTLM
+SMB1_SESSION_RESPONSE_STREAM = SMB1_RESPONSE + SMB1_SESSION_CHALLENGE
+
+
+def ldap_sasl_bind(mechanism, credentials):
+    body = b"\x04" + bytes((len(mechanism),)) + mechanism + b"\x04" + bytes((len(credentials),)) + credentials
+    bind = b"\x02\x01\x03\x04\x00" + b"\xa3" + bytes((len(body),)) + body
+    message = b"\x02\x01\x01\x60" + bytes((len(bind),)) + bind
+    return b"\x30" + bytes((len(message),)) + message
+
+
+LDAP_SPNEGO_BIND = ldap_sasl_bind(b"GSS-SPNEGO", SPNEGO_NTLM_INIT)
+STREAM_CASES += ((HTTP_BASIC_AUTH, 'http/1.1'), (HTTP_NTLM_CHALLENGE, 'http/1.1'), (LDAP_SPNEGO_BIND, 'ldap/3'))
+

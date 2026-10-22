@@ -447,3 +447,10 @@ DSI, חילופי כתובות הצומת ומסגרות Omron FINS/TCP, דאט�
 משלהן ומובחנים מ־DNS רגיל לפי המבנה; LLMNR מצטרף כמשפחה עם רמז בלבד כי הבתים שלו זהים לשאילתת DNS. כלל המועמד למבנה
 DNS מקבל את הפריסות הנדירות רק תחת בדיקת סבירות, כך שבתים של RIP ו־DTLS אינם מתחרים. 85 משפחות, 76 אוטומטיות,
 99 יישומים, 587 בדיקות עוברות.
+
+
+עדכון 0.56: עדות למנגנון האימות כתווית סגורה בלבד, לעולם לא אישור כניסה: הקמת סשן SMB2 ו־SMB1 אחרי NEGOTIATE
+(Kerberos, NTLM עם סוג ההודעה, NEGOEX, סשן אורח או אנונימי), מנגנוני bind של LDAP (simple, SASL GSSAPI/GSS-SPNEGO/
+PLAIN/DIGEST/SCRAM/EXTERNAL ועוד) ומחלקות הסכמה של Authorization ו־WWW-Authenticate ב־HTTP/1 ו־HTTP/2. סיכונים חדשים:
+`ntlm-authentication`, `http-basic-authentication`, `smb-guest-or-anonymous-session`; סיכון האישורים־בגלוי נמחק ב־bind
+של LDAP שמנגנונו אינו נושא סיסמה. 85 משפחות, 76 אוטומטיות, 99 יישומים, 596 בדיקות עוברות.
