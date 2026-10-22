@@ -11,10 +11,14 @@
    job (its own, else the workflow's) must resolve to the same group for two different
    `v*` tags and must not cancel in progress, so releases of different tags never publish
    at the same time; the workflow-level group must stay per ref for branch dry runs.
-4. Release provenance (`release.yml`): a job the `publish` job needs must run
-   `tools/check_release_ref.py` in a step with no `if:` and no `continue-on-error`, in a
-   job without `continue-on-error`, so a tag on a commit that is not on main never
-   reaches the publish job (tag protection is not enforceable on this plan).
+4. Release provenance (`release.yml`): a job the `publish` job needs, with no job-level
+   `if:` or `continue-on-error`, must contain the pinned provenance step: exactly the keys
+   `name`, `env` and `run`, the env mapping in PROVENANCE_ENV and the run lines in
+   PROVENANCE_RUN (self-test, compare status, the decision with REF_TYPE, SHA and STATUS).
+   The publish job's `if:` may not use always(), failure() or cancelled(). So a tag on a
+   commit that is not on main never reaches the publish job (tag protection is not
+   enforceable on this plan), and a mention, a self-test alone, hard-coded inputs or a
+   masked exit code cannot stand in for the check.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -255,6 +259,21 @@ def check_release_concurrency(text, publish="publish"):
 
 
 PROVENANCE = "tools/check_release_ref.py"
+# The provenance step is pinned: a mention, a self-test alone, a hard-coded ref type or SHA,
+# a dropped status or an alternate command must not satisfy the rule (PR review of milestone 1).
+PROVENANCE_ENV = {
+    "GH_TOKEN": "${{ github.token }}",
+    "GH_REPO": "${{ github.repository }}",
+    "REF_TYPE": "${{ github.ref_type }}",
+    "SHA": "${{ github.event.pull_request.head.sha || github.sha }}",
+}
+PROVENANCE_RUN = [
+    'python -B tools/check_release_ref.py --self-test',
+    'STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...main" --jq .status) || STATUS="api-error"',
+    'python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}"'
+    ' --summary "${GITHUB_STEP_SUMMARY}"',
+]
+STATUS_OVERRIDES = ("always(", "failure(", "cancelled(")
 
 
 def steps_of(job_block):
@@ -272,29 +291,67 @@ def steps_of(job_block):
     return steps
 
 
+def step_fields(step):
+    """{key: value} at the step's top level, plus `env` as a dict and `run` as its lines."""
+    lines = [" " * 8 + step[0].split("-", 1)[1].lstrip()] + step[1:]
+    fields, index = {}, 0
+    while index < len(lines):
+        line = lines[index]
+        if not line.strip() or line.strip().startswith("#"):
+            index += 1
+            continue
+        key = key_of(line, indent=8)
+        if key is None:
+            raise ValueError("release.yml: cannot read step line {!r}".format(line))
+        name, value = key[1], key[2]
+        body = []
+        while index + 1 < len(lines) and (not lines[index + 1].strip() or len(lines[index + 1]) - len(lines[index + 1].lstrip(" ")) > 8):
+            index += 1
+            body.append(lines[index])
+        if name == "env" and not value:
+            env = {}
+            for entry in body:
+                if not entry.strip() or entry.strip().startswith("#"):
+                    continue
+                pair = key_of(entry, indent=10)
+                if pair is None:
+                    raise ValueError("release.yml: cannot read env line {!r}".format(entry))
+                env[pair[1]] = strip_quotes(pair[2])
+            fields[name] = env
+        elif name == "run" and value in ("|", "|-"):
+            fields[name] = [entry.strip() for entry in body if entry.strip() and not entry.strip().startswith("#")]
+        else:
+            fields[name] = value if not body else None
+        index += 1
+    return fields
+
+
 def check_release_provenance(text, publish="publish"):
     ids, needs = job_ids_and_needs(text)
     if publish not in ids:
         return ["release.yml has no `{}` job".format(publish)]
+    problems = []
+    condition = next((key_of(line, indent=4)[2] for line in job_lines(text, publish)
+                      if key_of(line, indent=4) and key_of(line, indent=4)[1] == "if"), "")
+    if any(override in condition.replace(" ", "") for override in STATUS_OVERRIDES):
+        problems.append("release.yml: the {} job's if: overrides the success of the jobs it needs".format(publish))
     guarded = []
     for job in needs[publish]:
         block = job_lines(text, job)
-        if any(key_of(line, indent=4) and key_of(line, indent=4)[1] == "continue-on-error" for line in block):
+        job_keys = {key_of(line, indent=4)[1] for line in block if key_of(line, indent=4)}
+        if job_keys & {"if", "continue-on-error"}:
             continue
         for step in steps_of(block):
-            runs = any(PROVENANCE in line and not line.strip().startswith("#") for line in step)
-            if not runs:
+            if not any(PROVENANCE in line for line in step):
                 continue
-            first = ITEM.match(step[0]).group(2)
-            keys = {key_of(line, indent=8)[1] for line in step[1:] if key_of(line, indent=8)}
-            inline = key_of(" " * 8 + first, indent=8)
-            if inline:
-                keys.add(inline[1])
-            if not keys & {"if", "continue-on-error"}:
+            fields = step_fields(step)
+            if (set(fields) == {"name", "env", "run"} and fields["env"] == PROVENANCE_ENV
+                    and fields["run"] == PROVENANCE_RUN):
                 guarded.append(job)
     if not guarded:
-        return ["release.yml: no job the {} job needs runs {} unconditionally".format(publish, PROVENANCE)]
-    return []
+        problems.append("release.yml: no job the {} job needs runs the pinned provenance step ({} with the "
+                        "compare status, REF_TYPE and SHA, unconditionally)".format(publish, PROVENANCE))
+    return problems
 
 
 def main(root):
@@ -438,25 +495,60 @@ def self_test():
 {job_extra}    steps:
       - uses: actions/checkout@0000000000000000000000000000000000000000
       - name: provenance
-{step_extra}        run: python -B tools/check_release_ref.py --ref-type t --sha s --status x
+{step_extra}        env:
+          GH_TOKEN: ${{{{ github.token }}}}
+          GH_REPO: ${{{{ github.repository }}}}
+          REF_TYPE: ${{{{ github.ref_type }}}}
+          SHA: ${{{{ github.event.pull_request.head.sha || github.sha }}}}
+        # comment lines are ignored
+        run: |
+          python -B tools/check_release_ref.py --self-test
+          STATUS=$(gh api "repos/${{GH_REPO}}/compare/${{SHA}}...main" --jq .status) || STATUS="api-error"
+          python -B tools/check_release_ref.py --ref-type "${{REF_TYPE}}" --sha "${{SHA}}" --status "${{STATUS}}" --summary "${{GITHUB_STEP_SUMMARY}}"
   other:
     steps:
-      - run: python -B tools/check_release_ref.py
+      - run: echo
   publish:
-    needs: {needs}
+{publish_extra}    needs: {needs}
 """
-    def prov(job_extra="", step_extra="", needs="build"):
-        return provenance.format(job_extra=job_extra, step_extra=step_extra, needs=needs)
-    assert check_release_provenance(prov()) == []
+
+    def prov(job_extra="", step_extra="", needs="build", publish_extra="    if: github.event_name == 'push' && github.ref_type == 'tag'\n"):
+        return provenance.format(job_extra=job_extra, step_extra=step_extra, needs=needs, publish_extra=publish_extra)
+    good = prov()
+    assert check_release_provenance(good) == [], check_release_provenance(good)
     assert check_release_provenance(prov(needs="[build, other]")) == []
-    missing = ["release.yml: no job the publish job needs runs tools/check_release_ref.py unconditionally"]
-    assert check_release_provenance(prov(needs="other").replace("      - run: python -B tools/check_release_ref.py\n", "      - run: echo\n")) == missing
-    assert check_release_provenance(prov(step_extra="        if: github.ref_type == 'branch'\n")) == missing
-    assert check_release_provenance(prov(step_extra="        continue-on-error: true\n")) == missing
-    assert check_release_provenance(prov(job_extra="    continue-on-error: true\n")) == missing
-    assert check_release_provenance(prov().replace("        run: python -B tools/check_release_ref.py", "        # run: python -B tools/check_release_ref.py")) == missing
-    assert check_release_provenance(prov().replace("      - name: provenance\n", "      - if: false\n        name: provenance\n")) == missing
-    assert check_release_provenance(prov().replace("  publish:\n    needs: build\n", "")) == ["release.yml has no `publish` job"]
+    missing = ["release.yml: no job the publish job needs runs the pinned provenance step (tools/check_release_ref.py "
+               "with the compare status, REF_TYPE and SHA, unconditionally)"]
+    final = 'python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}" --summary "${GITHUB_STEP_SUMMARY}"'
+    bypasses = {
+        "not needed": prov(needs="other"),
+        "step if": prov(step_extra="        if: github.ref_type == 'branch'\n"),
+        "step continue-on-error": prov(step_extra="        continue-on-error: true\n"),
+        "step shell": prov(step_extra="        shell: sh {0}\n"),
+        "step working-directory": prov(step_extra="        working-directory: /tmp\n"),
+        "job continue-on-error": prov(job_extra="    continue-on-error: true\n"),
+        "job if": prov(job_extra="    if: github.ref_type != 'tag'\n"),
+        "mention only": good.replace(final, "echo tools/check_release_ref.py"),
+        "self-test only": good.replace(final, "python -B tools/check_release_ref.py --self-test"),
+        "hard-coded ref type": good.replace('--ref-type "${REF_TYPE}"', "--ref-type branch"),
+        "hard-coded sha": good.replace('--sha "${SHA}"', "--sha 0123456789abcdef0123456789abcdef01234567"),
+        "missing status": good.replace(' --status "${STATUS}"', ""),
+        "hard-coded status": good.replace('--status "${STATUS}"', "--status ahead"),
+        "masked exit": good.replace(final, final + " || true"),
+        "extra line": good.replace(final, final + "\n          exit 0"),
+        "alternate command": good.replace(final, final.replace("python -B", "python3 -B")),
+        "commented out": good.replace("          " + final, "          # " + final),
+        "status not from compare": good.replace("compare/${SHA}...main", "compare/main...${SHA}"),
+        "ref type from input": good.replace("REF_TYPE: ${{ github.ref_type }}", "REF_TYPE: branch"),
+        "sha from input": good.replace("SHA: ${{ github.event.pull_request.head.sha || github.sha }}", "SHA: ${{ inputs.sha }}"),
+        "env dropped": good.replace("          GH_REPO: ${{ github.repository }}\n", ""),
+    }
+    for label, text in bypasses.items():
+        assert text != good, label
+        assert check_release_provenance(text) == missing, (label, check_release_provenance(text))
+    overridden = prov(publish_extra="    if: always() && github.ref_type == 'tag'\n")
+    assert check_release_provenance(overridden) == ["release.yml: the publish job's if: overrides the success of the jobs it needs"]
+    assert check_release_provenance(good.replace("  publish:\n", "  release:\n")) == ["release.yml has no `publish` job"]
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)

@@ -12,7 +12,7 @@ answer here:
 Anything else (an API error, an empty answer) fails closed on a tag. Branch, pull-request
 and manual dry runs only report, so the API call is exercised before the first tag.
 Standard library only. Usage:
-  check_release_ref.py --ref-type TYPE --sha SHA --status STATUS
+  check_release_ref.py --ref-type TYPE --sha SHA --status STATUS [--summary FILE]
   check_release_ref.py --self-test
 """
 import re
@@ -64,11 +64,14 @@ def main(arguments):
     values = {}
     for name in ("--ref-type", "--sha", "--status"):
         if name not in arguments or arguments.index(name) + 1 >= len(arguments):
-            print("usage: check_release_ref.py --ref-type TYPE --sha SHA --status STATUS", file=sys.stderr)
+            print("usage: check_release_ref.py --ref-type TYPE --sha SHA --status STATUS [--summary FILE]", file=sys.stderr)
             return 2
         values[name] = arguments[arguments.index(name) + 1]
     code, message = decide(values["--ref-type"], values["--sha"], values["--status"])
     print(message)
+    if "--summary" in arguments and arguments.index("--summary") + 1 < len(arguments):
+        with open(arguments[arguments.index("--summary") + 1], "a", encoding="utf-8") as summary:
+            summary.write(message + "\n")
     return code
 
 

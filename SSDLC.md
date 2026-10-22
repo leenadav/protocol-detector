@@ -41,7 +41,7 @@ only with green checks is a review discipline, not a guarantee.
 | Control | Status |
 |---|---|
 | `ci`, `codeql`, `supply-chain-drift` and `release` workflow gates, job-level token permissions, SHA-pinned actions, hash-pinned toolchain | enforced by the workflows on every run |
-| Release publishes serialized, publish only from a pushed `v*` tag that matches the package version and points at a commit already on `main` | enforced by `release.yml` (`tools/check_release_ref.py`; rule 4 of `tools/check_workflow_policy.py` keeps the check on the publish path) |
+| Release publishes serialized, publish only from a pushed `v*` tag that matches the package version and points at a commit already on `main` | enforced by `release.yml` (`tools/check_release_ref.py`; rule 4 of `tools/check_workflow_policy.py` pins the step's exact env and run lines on the publish job's dependency path, so a mention, a self-test alone, hard-coded inputs or a masked exit code fail the policy) |
 | Required status checks on `main` (the two names below) | recommended; not enforceable on the current plan |
 | Required pull request review, stale-approval dismissal, no force push or deletion on `main` | recommended; not enforceable on the current plan |
 | Tag protection for `v*`, a `release` environment with a required reviewer | recommended; not configured. The on-`main` check above compensates in part: an unreviewed branch commit cannot be released, but a writer who can push to `main` directly still can, since nothing enforces review on `main` |

@@ -84,14 +84,11 @@ jobs:
           GH_REPO: ${{ github.repository }}
           REF_TYPE: ${{ github.ref_type }}
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        # tools/check_workflow_policy.py rule 4 pins this step's env and run lines exactly.
         run: |
+          python -B tools/check_release_ref.py --self-test
           STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...main" --jq .status) || STATUS="api-error"
-          python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}" > provenance.txt \
-            && RESULT=0 || RESULT=$?
-          cat provenance.txt
-          cat provenance.txt >> "$GITHUB_STEP_SUMMARY"
-          rm provenance.txt
-          exit "${RESULT}"
+          python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}" --summary "${GITHUB_STEP_SUMMARY}"
       - name: Build distributions, check and smoke the wheel, SBOM and checksums
         run: |
           python -m build --sdist --wheel --outdir dist
