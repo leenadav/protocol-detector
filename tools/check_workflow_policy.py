@@ -47,8 +47,9 @@
    pinned by action identity or exact env and run lines, with no job-level env, services,
    container or other keys. Only the publish job may hold a write permission, workflow
    permissions stay `contents: read`, the workflow env may only set the two Python
-   variables (no BASH_ENV), and no secret is referenced. So nothing can publish before the
-   attestations are verified.
+   variables (no BASH_ENV), and no `secrets`, `vars`, `inputs` or `client_payload` context is
+   referenced in any syntax or case, so no credential but the job's own GITHUB_TOKEN can
+   authenticate. So nothing can publish before the attestations are verified.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -451,6 +452,10 @@ PUBLISH_JOB_KEYS = {"name", "if", "needs", "concurrency", "runs-on", "timeout-mi
 PUBLISH_PERMISSIONS = {"contents": "write", "id-token": "write", "attestations": "write"}
 WORKFLOW_PERMISSIONS = {"contents": "read"}
 WORKFLOW_ENV = {"PYTHONDONTWRITEBYTECODE", "PIP_DISABLE_PIP_VERSION_CHECK"}
+# Any credential other than the job's own GITHUB_TOKEN could let a read-only job write. These
+# contexts are banned outright, in any syntax (`secrets.X`, `secrets['X']`, `toJSON(secrets)`,
+# any case), not only as the literal `secrets.` (milestone 4 round 2).
+CREDENTIAL_CONTEXTS = re.compile(r"\b(secrets|vars|inputs|client_payload)\b", re.I)
 
 
 def mapping_at(lines, indent, key):
@@ -525,8 +530,11 @@ def check_attestation_verify(text, publish="publish"):
     workflow_env = mapping_at(lines, 0, "env")
     if isinstance(workflow_env, str) or set(workflow_env or {}) - WORKFLOW_ENV:
         problems.append("publish-release.yml: workflow env may only set {}".format(", ".join(sorted(WORKFLOW_ENV))))
-    if any("secrets." in line for line in lines if not line.strip().startswith("#")):
-        problems.append("publish-release.yml: the controller may not reference secrets")
+    for number, line in enumerate(lines, 1):
+        found = None if line.strip().startswith("#") else CREDENTIAL_CONTEXTS.search(line)
+        if found:
+            problems.append("publish-release.yml:{}: the controller may not reference `{}` (only the job's own "
+                            "GITHUB_TOKEN may authenticate)".format(number, found.group(1)))
     return problems
 
 
@@ -964,9 +972,17 @@ def self_test():
         "secret": controller.replace("          GH_TOKEN: ${{ github.token }}\n          GH_REPO: ${{ github.repository }}\n          TAG:",
                                      "          GH_TOKEN: ${{ secrets.RELEASE_PAT }}\n          GH_REPO: ${{ github.repository }}\n          TAG:"),
     }
+    build_env = "          GH_TOKEN: ${{ github.token }}\n          GH_REPO: ${{ github.repository }}\n          REF_TYPE:"
+    for label, token in {"secrets index": "${{ secrets['RELEASE_PAT'] }}", "secrets index spaced": '${{ secrets [ "RELEASE_PAT" ] }}',
+                         "secrets json": "${{ fromJSON(toJSON(secrets)).RELEASE_PAT }}", "secrets upper": "${{ SECRETS.RELEASE_PAT }}",
+                         "vars": "${{ vars.RELEASE_PAT }}", "inputs": "${{ inputs.token }}",
+                         "event inputs": "${{ github.event.inputs.token }}", "dispatch payload": "${{ github.event.client_payload.token }}"}.items():
+        cases["build job " + label] = controller.replace(build_env, build_env.replace("${{ github.token }}", token), 1)
     for label, text in cases.items():
         assert text != controller, label
         assert check_attestation_verify(text), label
+    assert any("may not reference `secrets`" in problem for problem in check_attestation_verify(cases["build job secrets index"]))
+    assert check_attestation_verify(controller.replace("    steps:\n", "    # no secrets, vars or inputs are used here\n    steps:\n", 1)) == []
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)
