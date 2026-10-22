@@ -89,7 +89,8 @@
 13. No masked ci job (`ci.yml`): the gate only means something if every job it needs can fail.
    No job or step may set `continue-on-error`; no run line may use `|| true`, `|| :` or
    `set +e`; no job other than the gate may set `if:`, and the gate's is exactly `always()`;
-   a step `if:` may only be one of STEP_CONDITIONS (the pull-request-only steps); and the
+   only the steps in CONDITIONAL_STEPS (the three pull-request-only behaviour-diff base steps,
+   pinned by job and every field) may be conditional; and the
    gate's decision step is pinned (GATE_ENV / GATE_RUN), so a job cannot be skipped or
    allowed to fail while `ci gate (all jobs)` stays green.
 
@@ -752,7 +753,16 @@ def check_codeql(workflows):
     return problems
 
 
-STEP_CONDITIONS = {"github.event_name == 'pull_request'"}
+# The only ci steps that may be conditional: the three pull-request-only behaviour-diff base steps,
+# pinned by job, every field and action identity (version consistency is rule 7), so the condition
+# cannot be moved onto a test, lint or policy step, nor a critical step renamed into an exception.
+CONDITIONAL_STEPS = {
+    "behaviour-diff": [
+        {'name': 'Check out the pull request base (the first checkout drops its credentials, so git fetch cannot)', 'if': "github.event_name == 'pull_request'", 'uses': 'actions/checkout', 'with': {'persist-credentials': 'false', 'fetch-depth': '1', 'ref': '${{ github.event.pull_request.base.sha }}', 'path': 'pr-base'}},
+        {'name': 'Compare with the pull request base as well (whole change, when the base carries the engine)', 'if': "github.event_name == 'pull_request'", 'env': {'BASE_SHA': '${{ github.event.pull_request.base.sha }}', 'SEED': '${{ github.run_id }}'}, 'run': ['if [ -f pr-base/protocol_engine/engine.py ]; then', 'python -B tools/compare_engine.py pr-base --iterations 300 --seed "$SEED" --report behaviour-diff-base.md --report-only', 'else', 'printf \'# Engine behaviour diff\\n\\nThe pull request base %s has no engine to compare with.\\n\' "$BASE_SHA" > behaviour-diff-base.md', 'fi', 'head -60 behaviour-diff-base.md', '{', 'echo "### Behaviour diff against the pull request base"', 'echo', 'head -40 behaviour-diff-base.md', '} >> "$GITHUB_STEP_SUMMARY"']},
+        {'name': 'Upload the pull request base diff report', 'if': "github.event_name == 'pull_request'", 'uses': 'actions/upload-artifact', 'with': {'name': 'behaviour-diff-base-${{ github.sha }}', 'path': 'behaviour-diff-base.md', 'retention-days': '30'}},
+    ],
+}
 GATE_ENV = {"RESULTS": "${{ toJSON(needs) }}"}
 GATE_RUN = [
     'echo "$RESULTS" | jq -r \'to_entries[] | "\\(.key): \\(.value.result)"\' | tee gate.txt',
@@ -795,8 +805,14 @@ def check_ci_masking(workflows, path=".github/workflows/ci.yml", gate="gate"):
             problems.append("{}: job {} may not set if: (the gate would see it skipped only if it is listed)".format(path, job))
         for step in steps_of(block):
             fields = step_fields(step)
-            if "if" in fields and " ".join(strip_quotes(fields["if"] or "").split()) not in STEP_CONDITIONS:
-                problems.append("{}: job {}: step if: `{}` is not an allowed condition".format(path, job, fields["if"]))
+            if "if" not in fields:
+                continue
+            normalized = dict(fields)
+            if "uses" in normalized:
+                normalized["uses"] = strip_quotes(normalized["uses"] or "").split("@", 1)[0].lower()
+            if normalized not in CONDITIONAL_STEPS.get(job, []):
+                problems.append("{}: job {}: step `{}` may not be conditional (only the pinned pull-request-only "
+                                "behaviour-diff base steps may)".format(path, job, fields.get("name", "unnamed")))
     return problems
 
 
@@ -1478,6 +1494,18 @@ def self_test():
         "job skipped": ci_text_for_masking.replace("    name: workflow lint (actionlint, zizmor)\n",
                                                  "    name: workflow lint (actionlint, zizmor)\n    if: false\n"),
         "step skipped": ci_text_for_masking.replace("        if: github.event_name == 'pull_request'\n", "        if: false\n", 1),
+        # item 10 round 1: the pull-request-only condition moved onto critical steps
+        "tests skipped on push": ci_text_for_masking.replace("      - name: Compile every module (syntax gate, no runtime dependencies allowed)\n",
+            "      - name: Compile every module (syntax gate, no runtime dependencies allowed)\n        if: github.event_name == 'pull_request'\n", 1),
+        "lint skipped on push": ci_text_for_masking.replace("      - name: Workflow policy (gate covers every ci job",
+            "      - if: github.event_name == 'pull_request'\n        name: Workflow policy (gate covers every ci job", 1),
+        "behaviour diff skipped on push": ci_text_for_masking.replace("      - name: Compare every fixture, truncation and seeded mutation with the parent commit\n",
+            "      - name: Compare every fixture, truncation and seeded mutation with the parent commit\n        if: github.event_name == 'pull_request'\n", 1),
+        "critical step renamed into an exception": ci_text_for_masking.replace(
+            "      - name: Compare every fixture, truncation and seeded mutation with the parent commit\n",
+            "      - name: Upload the pull request base diff report\n        if: github.event_name == 'pull_request'\n", 1),
+        "exception step body changed": ci_text_for_masking.replace("--iterations 300 --seed \"$SEED\" --report behaviour-diff-base.md --report-only",
+                                                                  "--iterations 1 --seed \"$SEED\" --report behaviour-diff-base.md --report-only"),
         "gate condition changed": ci_text_for_masking.replace("    if: always()\n", "    if: success()\n"),
         "gate decision masked": ci_text_for_masking.replace(decision, decision + " || echo ignored"),
         "gate decision dropped": ci_text_for_masking.replace("          " + decision + "\n", ""),
