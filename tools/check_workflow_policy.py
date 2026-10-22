@@ -103,8 +103,12 @@
    which puts every change to the ci gate, CodeQL, the release controller and the audit in
    front of a reviewer. Shell startup variables (BASH_ENV, ENV, BASH_FUNC_*, SHELLOPTS,
    BASHOPTS, PROMPT_COMMAND, PS4) are banned outright in every workflow, since they redefine a
-   pinned command without touching its step. Code the steps run (tools, tests, requirements)
-   is not locked; a change there changes the check itself and is reviewed as such.
+   pinned command without touching its step, and so are the runner's channels into later
+   steps' environment ($GITHUB_ENV, $GITHUB_PATH, its file-command directory, the legacy
+   ::set-env / ::add-path commands), through which an earlier step could shadow a pinned
+   step's `gh` or `python`. Both bans are by name: a name built at runtime is caught only by
+   the lock's review. Code the steps run (tools, tests, requirements) is not locked; a change
+   there changes the check itself and is reviewed as such.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -880,6 +884,10 @@ LOCK_USES = re.compile(r"""^(\s*(?:-\s+)?uses:\s*)(["']?)([A-Za-z0-9._/-]+)@[A-Z
 # Variables that change how bash starts or runs, so a pinned command could be redefined
 # without touching its step (BASH_ENV sources a file before every `run`).
 SHELL_STARTUP = re.compile(r"\b(?:BASH_ENV|ENV|BASH_FUNC_\w*|SHELLOPTS|BASHOPTS|PROMPT_COMMAND|PS4)\b")
+# The runner's channels for changing later steps' environment: a step that appends to
+# $GITHUB_PATH can put a fake `gh` or `python` in front of a pinned step, and $GITHUB_ENV can
+# set a variable whose name is built at runtime. No workflow uses them, so none may.
+ENV_CHANNELS = re.compile(r"GITHUB_ENV|GITHUB_PATH|_runner_file_commands|ACTIONS_ALLOW_UNSECURE_COMMANDS|::(?:set-env|add-path)\b")
 
 
 def lock_lines(text):
@@ -904,6 +912,10 @@ def check_workflow_lock(workflows, lock_text):
             if SHELL_STARTUP.search(line):
                 problems.append("{}:{}: shell startup variables (BASH_ENV, ENV, BASH_FUNC_*, SHELLOPTS, BASHOPTS, "
                                 "PROMPT_COMMAND, PS4) may not appear in a workflow".format(path, number))
+            if ENV_CHANNELS.search(line):
+                problems.append("{}:{}: later-step environment channels (GITHUB_ENV, GITHUB_PATH, the runner's "
+                                "file-command directory, ::set-env / ::add-path) may not appear in a "
+                                "workflow".format(path, number))
     try:
         locked = json.loads(lock_text)
     except ValueError as error:
@@ -1707,6 +1719,18 @@ def self_test():
         startup = with_file(real[path].replace(old, old + "    env:\n      BASH_ENV: tools/helpers.sh\n", 1), path)
         problems = check_workflow_lock(startup, json.dumps(workflow_lock(startup)))
         assert any("shell startup variables" in p for p in problems), (path, problems)
+    # item 13: no step may change a later step's environment
+    pinned = "          python -B tools/check_release_ref.py --self-test\n"
+    assert real[".github/workflows/publish-release.yml"].count(pinned) == 1
+    for spelling in ('echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"', 'echo "X=1" >> "${GITHUB_ENV}"',
+                     "cat x > /home/runner/work/_temp/_runner_file_commands/add_path_1",
+                     "echo '::add-path::/tmp/bin'", "echo '::set-env name=X::1'",
+                     "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"):
+        shadow = with_file(real[".github/workflows/publish-release.yml"].replace(
+            pinned, "          " + spelling + "\n" + pinned, 1), ".github/workflows/publish-release.yml")
+        problems = check_workflow_lock(shadow, json.dumps(workflow_lock(shadow)))
+        assert any("later-step environment channels" in p for p in problems), (spelling, problems)
+    assert not ENV_CHANNELS.search("GITHUB_OUTPUT GITHUB_STEP_SUMMARY GITHUB_REF GITHUB_SHA")
     added = dict(real, **{".github/workflows/extra.yml": "on: push\n"})
     assert any("extra.yml: not in" in p for p in check_workflow_lock(added, lock_text))
     removed = {k: v for k, v in real.items() if k != ".github/workflows/nightly-fuzz.yml"}
