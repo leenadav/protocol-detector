@@ -49,7 +49,8 @@ class ServerReplyTests(unittest.TestCase):
         for dialect, label in ((0x202, "2.0.2"), (0x210, "2.1"), (0x2ff, "wildcard"), (0x300, "3.0")):
             self.assert_identified(stream(smb2_response(dialect=dialect, token=b"")), "smb2", "negotiation_response", smb_dialect=label)
         verdict = session_verdict(stream(SMB2), stream(SMB2_RESPONSE), "tcp", 445, 108, 140, True, None)
-        self.assertEqual((verdict.app, verdict.port_usage, verdict.risks), ("smb", "standard", ("desktop-or-file-sharing-session",)))
+        # v0.59: the fixture server enables signing without requiring it.
+        self.assertEqual((verdict.app, verdict.port_usage, verdict.risks), ("smb", "standard", ("desktop-or-file-sharing-session", "smb-signing-not-required")))
         rejected = [
             smb2_response(security_mode=0),                                           # signing disabled is outside MS-SMB2
             smb2_response(dialect=0x303),                                             # unknown dialect
@@ -71,7 +72,8 @@ class ServerReplyTests(unittest.TestCase):
             inspector = Inspector()
             inspector.feed(SMB311_RESPONSE[:split])
             inspector.feed(SMB311_RESPONSE[split:])
-            self.assertEqual(fields(inspector.observation, "smb_"), {"smb_dialect": "3.1.1", "smb_signing": "required"}, split)
+            self.assertEqual(fields(inspector.observation, "smb_"), {"smb_dialect": "3.1.1", "smb_signing": "required", "smb_encryption": "supported",
+                                                                    "smb_encryption_cipher": "aes-128-gcm"}, split)   # v0.59 posture rows
 
     def test_kerberos_replies_and_errors(self):
         self.assert_identified(stream(KERBEROS_TCP), "kerberos", "initial_message", kerberos_message="as-req")

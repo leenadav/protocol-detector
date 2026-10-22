@@ -66,6 +66,10 @@ _SMB_DIALECTS = {0x202: "2.0.2", 0x210: "2.1", 0x2ff: "wildcard", 0x300: "3.0", 
 
 
 _SMB2_SESSION_FLAGS = {1: "guest", 2: "anonymous", 4: "encrypted"}
+# v0.59: MS-SMB2 2.2.3.1.2 encryption ciphers and 2.2.3.1.7 signing algorithms (closed labels; 0 cipher = none common).
+_SMB_CIPHERS = {0: "none", 1: "aes-128-ccm", 2: "aes-128-gcm", 3: "aes-256-ccm", 4: "aes-256-gcm"}
+_SMB_SIGNING_ALGORITHMS = {0: "hmac-sha256", 1: "aes-cmac", 2: "aes-gmac"}
+SMB2_GLOBAL_CAP_ENCRYPTION = 0x40
 STATUS_MORE_PROCESSING_REQUIRED = 0xC0000016
 SMB2_FLAGS_SERVER_TO_REDIR, SMB2_FLAGS_RELATED_OPERATIONS, SMB2_FLAGS_SIGNED = 0x01, 0x04, 0x08
 
@@ -232,7 +236,7 @@ class SMB2Parser(FrameParser):
             raise BudgetError("SMB3 negotiate context count outside inspection limit")
         if reserved or pos < end or pos % 8 or pos > len(data):
             raise ParseError("Invalid SMB3 context offset")
-        seen = set()
+        seen, posture = set(), {}
         for index in range(contexts):
             if pos + 8 > len(data):
                 raise ParseError("Truncated SMB3 context header")
@@ -254,9 +258,18 @@ class SMB2Parser(FrameParser):
             elif kind == 2:
                 if size < 4 or not u16(start) or 2 + 2 * u16(start) != size or (response and u16(start) != 1):
                     raise ParseError("Invalid SMB3 encryption capability lengths")
+                if response:
+                    posture["cipher"] = _SMB_CIPHERS.get(u16(start + 2), "other")
+            elif kind == 8:
+                # v0.59: SIGNING_CAPABILITIES; a response selects exactly one algorithm.
+                if size < 4 or not u16(start) or 2 + 2 * u16(start) != size or (response and u16(start) != 1):
+                    raise ParseError("Invalid SMB3 signing capability lengths")
+                if response:
+                    posture["signing"] = _SMB_SIGNING_ALGORITHMS.get(u16(start + 2), "other")
             pos = (end + 7) & ~7 if index + 1 < contexts else end
         if 1 not in seen or pos != len(data):
             raise ParseError("Missing SMB3 preauthentication context or trailing data")
+        return posture
 
     def _response(self, data, u16, u32):
         """MS-SMB2 2.2.4 NEGOTIATE response: fixed 64-byte body, security buffer, 3.1.1 contexts."""
@@ -275,14 +288,32 @@ class SMB2Parser(FrameParser):
         if length and (offset != 128 or offset + length > len(data)):
             raise ParseError("SMB2 response security buffer outside the frame")
         end = 128 + length
+        posture = {}
         if dialect == 0x311:
-            self._contexts(data, u16, u32, u32(124), contexts, end, 0, response=True)
+            posture = self._contexts(data, u16, u32, u32(124), contexts, end, 0, response=True)
         elif contexts or u32(124) or len(data) != end:
             raise ParseError("Negotiate contexts require dialect 3.1.1")
         self.scope = "negotiation_response"
         self.reason = "SMB2/3 NEGOTIATE response validated; selected dialect and signing mode unauthenticated, security token not emitted"
-        self.extra_evidence = (("smb_dialect", _SMB_DIALECTS[dialect], "negotiate_response", "asserted"),
-                               ("smb_signing", "required" if security_mode & 2 else "enabled", "negotiate_response", "asserted"))
+        rows = [("smb_dialect", _SMB_DIALECTS[dialect], "negotiate_response", "asserted"),
+                ("smb_signing", "required" if security_mode & 2 else "enabled", "negotiate_response", "asserted")]
+        # v0.59: what the selected dialect can protect. 2.0.2 and 2.1 have no SMB encryption; 3.0 and 3.0.2
+        # announce it with SMB2_GLOBAL_CAP_ENCRYPTION; 3.1.1 selects a cipher in its encryption context.
+        if dialect in (0x202, 0x210):
+            encryption = "unavailable"
+        elif dialect in (0x300, 0x302):
+            encryption = "supported" if u32(88) & SMB2_GLOBAL_CAP_ENCRYPTION else "not-supported"
+        elif dialect == 0x311:
+            encryption = "supported" if posture.get("cipher") not in (None, "none") else "not-supported"
+        else:
+            encryption = None                                         # the 2.??? wildcard selects nothing yet
+        if encryption is not None:
+            rows.append(("smb_encryption", encryption, "negotiate_response", "asserted"))
+        if "cipher" in posture:
+            rows.append(("smb_encryption_cipher", posture["cipher"], "negotiate_response", "asserted"))
+        if "signing" in posture:
+            rows.append(("smb_signing_algorithm", posture["signing"], "negotiate_response", "asserted"))
+        self.extra_evidence = tuple(rows)
 
 
 def tftp(data, config):

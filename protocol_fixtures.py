@@ -509,7 +509,7 @@ DATAGRAM_CASES += ((DNS_RESPONSE, "dns"), (DNS_NXDOMAIN, "dns"), (SNMP_RESPONSE,
 
 
 # v0.44: server replies. GUIDs, tokens and principals are placeholders.
-def smb2_response(dialect=0x302, security_mode=1, token=b'\x60\x06\x06\x04placeholder'[:8], contexts=b'', context_count=0):
+def smb2_response(dialect=0x302, security_mode=1, token=b'\x60\x06\x06\x04placeholder'[:8], contexts=b'', context_count=0, capabilities=0x7f):
     header = bytearray(64)
     header[:4] = b'\xfeSMB'
     header[4:6] = (64).to_bytes(2, 'little')
@@ -521,7 +521,7 @@ def smb2_response(dialect=0x302, security_mode=1, token=b'\x60\x06\x06\x04placeh
     body[4:6] = dialect.to_bytes(2, 'little')
     body[6:8] = context_count.to_bytes(2, 'little')
     body[8:24] = bytes(range(16))
-    body[24:28] = (0x7f).to_bytes(4, 'little')
+    body[24:28] = capabilities.to_bytes(4, 'little')
     for at in (28, 32, 36):
         body[at:at + 4] = (0x800000).to_bytes(4, 'little')
     body[40:56] = bytes(16)
@@ -1245,3 +1245,20 @@ SSH_MODERN_STREAM = b"SSH-2.0-OpenSSH_9.9\r\n" + SSH_KEXINIT_MODERN
 SSH_LEGACY_STREAM = b"SSH-2.0-LegacySSH_1.0\r\n" + SSH_KEXINIT_LEGACY
 # Banner-then-continuation streams identify before their last byte, so they are registered in
 # tools/coverage_matrix.py EXTRA (like the SMB session streams), not in STREAM_CASES.
+
+
+# v0.59: SMB 3.1.1 negotiate contexts for the response posture tests (8-byte aligned, preauth first).
+def smb3_contexts(*items):
+    """Concatenate (kind, payload) negotiate contexts with the alignment padding MS-SMB2 2.2.4 requires between them."""
+    out = b""
+    for index, (kind, payload) in enumerate(items):
+        if index:
+            out += bytes(-len(out) % 8)
+        out += struct.pack("<HHI", kind, len(payload), 0) + payload
+    return out
+
+
+SMB3_PREAUTH_RESPONSE = (1, struct.pack("<HH", 1, 32) + struct.pack("<H", 1) + bytes(32))
+SMB311_RESPONSE_POSTURE = smb2_response(dialect=0x311, security_mode=3, context_count=3, contexts=smb3_contexts(
+    SMB3_PREAUTH_RESPONSE, (2, struct.pack("<HH", 1, 4)), (8, struct.pack("<HH", 1, 2))))    # AES-256-GCM, AES-GMAC
+STREAM_CASES += ((SMB311_RESPONSE_POSTURE, 'smb2'),)

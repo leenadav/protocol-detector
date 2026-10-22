@@ -80,7 +80,7 @@ closed set reviewers should expect in records.
 | sflow | udp | yes | n/a (one-way) | - |
 | sip | tcp/udp | yes | same shape | - |
 | smb1 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb1_dialect_layout`, `smb1_message`, `smb_session` |
-| smb2 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb_dialect`, `smb_message`, `smb_session`, `smb_signing` |
+| smb2 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb_dialect`, `smb_encryption`, `smb_encryption_cipher`, `smb_message`, `smb_session`, `smb_signing`, `smb_signing_algorithm` |
 | smtp | tcp | yes | - | `smtp_client_identity` |
 | snmp | udp | yes | yes | `snmp_flags`, `snmp_pdu`, `snmp_scoped_pdu`, `snmp_security` |
 | socks5 | tcp | yes | yes | `socks_command`, `socks_method`, `socks_port`, `socks_reply`, `socks_target` |
@@ -747,3 +747,30 @@ classes. `tools/compare_engine.py` has no banner-plus-KEXINIT fixture in its
 generic stream list (those identify before their last byte), so the new
 fixtures `SSH_MODERN_STREAM` and `SSH_LEGACY_STREAM` are registered in the
 coverage matrix extras and exercised by `test_v058.py`.
+
+## SMB2/3 security posture from the NEGOTIATE response (v0.59)
+
+No new family. The SMB2/3 NEGOTIATE response, already validated since v0.44,
+now says what the selected dialect can protect. All values are the server's
+assertions in an unauthenticated message: nothing is negotiated, signed or
+verified by the engine.
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `smb_encryption` | `supported`, `not-supported`, `unavailable` | 2.0.2 and 2.1 have no SMB encryption (`unavailable`); 3.0 and 3.0.2 announce it with SMB2_GLOBAL_CAP_ENCRYPTION (0x40) in Capabilities; 3.1.1 selects a cipher in its ENCRYPTION_CAPABILITIES context (`not-supported` when the context is absent or selects cipher 0). The 2.??? wildcard response carries no label |
+| `smb_encryption_cipher` | `aes-128-ccm`, `aes-128-gcm`, `aes-256-ccm`, `aes-256-gcm`, `none`, `other` | The one cipher a 3.1.1 response selects (MS-SMB2 2.2.3.1.2; 0 means no common cipher) |
+| `smb_signing_algorithm` | `hmac-sha256`, `aes-cmac`, `aes-gmac`, `other` | The one algorithm a 3.1.1 response selects in SIGNING_CAPABILITIES (context 8, MS-SMB2 2.2.3.1.7); a count other than one, a length that disagrees with the count, or a duplicate context is malformed |
+
+`smb_signing` (`enabled`/`required`, since v0.44 on the response and v0.56 on
+the request) is unchanged. Requests carry no new rows: a client's offers say
+nothing about the server's policy, and the NETNAME context (which names the
+server) is still never read.
+
+Risks (RISKS.md): `smb-signing-not-required` (the server's response enables
+but does not require signing; a client's `enabled` never raises it) and
+`smb-encryption-unavailable` (`unavailable` or `not-supported`).
+
+Behaviour diff against v0.58 (84264 inputs): 599 `smb2` inputs gain posture
+rows only; one seeded mutation that turned a negotiate context into kind 8 with
+a length that disagrees with its count, skipped by v0.58 as an unknown context,
+is now malformed under the SIGNING_CAPABILITIES rule. No other change.
