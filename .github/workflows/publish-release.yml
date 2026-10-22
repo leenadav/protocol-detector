@@ -1,21 +1,27 @@
-# Release gate. A `v*` tag builds the sdist and wheel in a read-only job, then a
-# separate job holding the write scopes attests and publishes exactly the files the
-# build job produced. workflow_dispatch and changes to this file run the build job
+# Guarded release controller. A `v*` tag builds the sdist and wheel in a read-only job, then
+# a separate job holding the write scopes attests and publishes exactly the files the build
+# job produced. workflow_dispatch and changes to this file or its helper run the build job
 # alone (a dry run that never publishes), so the release path is exercised before the
 # first real tag. See SSDLC.md.
-name: release
+#
+# This file replaces .github/workflows/release.yml. A tag push runs the workflow file found
+# at the tagged commit, so every older commit's release.yml still publishes a matching tag
+# without the provenance check; that legacy path must be disabled in the repository's
+# Actions settings (SSDLC.md, "Enforced controls"), and tools/check_workflow_policy.py keeps
+# the path from coming back so disabling it never disables this controller.
+name: publish-release
 
 on:
   push:
     tags: ["v*"]
     branches: ["**"]
     paths:
-      - ".github/workflows/release.yml"
+      - ".github/workflows/publish-release.yml"
       - "pyproject.toml"
       - "tools/check_release_ref.py"
   pull_request:
     paths:
-      - ".github/workflows/release.yml"
+      - ".github/workflows/publish-release.yml"
       - "pyproject.toml"
       - "tools/check_release_ref.py"
   workflow_dispatch:
@@ -32,6 +38,12 @@ concurrency:
 env:
   PYTHONDONTWRITEBYTECODE: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+# Explicit bash runs `bash --noprofile --norc -eo pipefail`; the unspecified default is
+# `bash -e` without pipefail, under which a failing check piped into tee passes the step.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   build:

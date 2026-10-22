@@ -21,6 +21,12 @@ env:
   PYTHONDONTWRITEBYTECODE: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
+# Explicit bash runs `bash --noprofile --norc -eo pipefail`; the unspecified default is
+# `bash -e` without pipefail, under which a failing check piped into tee passes the step.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   verify:
     name: tests (python ${{ matrix.python }})
@@ -369,6 +375,8 @@ jobs:
       - name: Workflow policy (gate covers every ci job, drift gate triggers on every workflow, releases serialize, tags must be on main)
         run: |
           python -B tools/check_release_ref.py --self-test
+          python -B tools/check_release_exposure.py --self-test
+          python -B tools/check_release_exposure.py --ref HEAD | tee -a "$GITHUB_STEP_SUMMARY"
           python -B tools/check_workflow_policy.py --self-test
           python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Audit every workflow for security weaknesses (zizmor, pedantic persona, offline audits)

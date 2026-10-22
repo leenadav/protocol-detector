@@ -7,18 +7,28 @@
    match every workflow file that `tools/check_pin_drift.py .github/workflows` scans, plus
    the checker and requirements-dev.txt, so a pull request that edits any pinned action
    runs the live tag-to-SHA verification before merge, not only on the weekly schedule.
-3. Release serialization (`release.yml`): the concurrency group that governs the `publish`
+3. Release serialization (`publish-release.yml`): the concurrency group that governs the `publish`
    job (its own, else the workflow's) must resolve to the same group for two different
    `v*` tags and must not cancel in progress, so releases of different tags never publish
    at the same time; the workflow-level group must stay per ref for branch dry runs.
-4. Release provenance (`release.yml`): a job the `publish` job needs, with no job-level
+4. Release provenance (`publish-release.yml`): a job the `publish` job needs, with no job-level
    `if:` or `continue-on-error`, must contain the pinned provenance step: exactly the keys
    `name`, `env` and `run`, the env mapping in PROVENANCE_ENV and the run lines in
    PROVENANCE_RUN (self-test, compare status, the decision with REF_TYPE, SHA and STATUS).
-   The publish job's `if:` may not use always(), failure() or cancelled(). So a tag on a
-   commit that is not on main never reaches the publish job (tag protection is not
-   enforceable on this plan), and a mention, a self-test alone, hard-coded inputs or a
-   masked exit code cannot stand in for the check.
+   The publish job's `if:` must be exactly PUBLISH_CONDITION, so no status-check function
+   (success(), always(), failure(), cancelled(), in any case or spacing) can let it run
+   after the provenance job failed. So a tag on a commit that is not on main never reaches
+   the publish job (tag protection is not enforceable on this plan), and a mention, a
+   self-test alone, hard-coded inputs or a masked exit code cannot stand in for the check.
+5. Tag triggers: only `publish-release.yml` may run on `push: tags`, and the legacy path
+   `.github/workflows/release.yml` must not exist. A tag push runs the workflow file at the
+   tagged commit, so every older commit's unguarded release.yml stays reachable until that
+   path is disabled in the repository's Actions settings; keeping the path free means
+   disabling it never disables the guarded controller. `tools/check_release_exposure.py`
+   reports which workflows a tag on any given commit would run.
+6. Shell: every workflow sets top-level `defaults: run: shell: bash`, and no job or step
+   overrides the shell. The unspecified default is `bash -e {0}` without pipefail, so a
+   failing check piped into `tee` (the job-summary idiom used throughout) would pass.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -243,18 +253,18 @@ def check_release_concurrency(text, publish="publish"):
     job = concurrency_in(job_lines(text, publish), 4)
     governing = job or workflow
     if governing is None:
-        return ["release.yml: the {} job has no concurrency group".format(publish)]
+        return ["publish-release.yml: the {} job has no concurrency group".format(publish)]
     groups = [resolve(governing["group"], run) for run in TAG_RUNS]
     if groups[0] != groups[1]:
-        problems.append("release.yml: publishes of {} and {} resolve to different concurrency groups ({} / {})".format(
+        problems.append("publish-release.yml: publishes of {} and {} resolve to different concurrency groups ({} / {})".format(
             TAG_RUNS[0]["github.ref"], TAG_RUNS[1]["github.ref"], groups[0], groups[1]))
     for scope, found in (("workflow", workflow), ("{} job".format(publish), job)):
         if found is not None and found.get("cancel-in-progress", "false") != "false":
-            problems.append("release.yml: {} concurrency must not cancel a release in progress".format(scope))
+            problems.append("publish-release.yml: {} concurrency must not cancel a release in progress".format(scope))
     if workflow is None:
-        problems.append("release.yml: no workflow-level concurrency group for dry runs")
+        problems.append("publish-release.yml: no workflow-level concurrency group for dry runs")
     elif len({resolve(workflow["group"], run) for run in BRANCH_RUNS}) != len(BRANCH_RUNS):
-        problems.append("release.yml: the workflow-level group is not per ref, so dry runs of different branches block each other")
+        problems.append("publish-release.yml: the workflow-level group is not per ref, so dry runs of different branches block each other")
     return problems
 
 
@@ -273,7 +283,9 @@ PROVENANCE_RUN = [
     'python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}"'
     ' --summary "${GITHUB_STEP_SUMMARY}"',
 ]
-STATUS_OVERRIDES = ("always(", "failure(", "cancelled(")
+PUBLISH_CONDITION = "github.event_name == 'push' && github.ref_type == 'tag'"
+RELEASE_WORKFLOW = ".github/workflows/publish-release.yml"
+LEGACY_RELEASE = ".github/workflows/release.yml"
 
 
 def steps_of(job_block):
@@ -302,7 +314,7 @@ def step_fields(step):
             continue
         key = key_of(line, indent=8)
         if key is None:
-            raise ValueError("release.yml: cannot read step line {!r}".format(line))
+            raise ValueError("publish-release.yml: cannot read step line {!r}".format(line))
         name, value = key[1], key[2]
         body = []
         while index + 1 < len(lines) and (not lines[index + 1].strip() or len(lines[index + 1]) - len(lines[index + 1].lstrip(" ")) > 8):
@@ -315,7 +327,7 @@ def step_fields(step):
                     continue
                 pair = key_of(entry, indent=10)
                 if pair is None:
-                    raise ValueError("release.yml: cannot read env line {!r}".format(entry))
+                    raise ValueError("publish-release.yml: cannot read env line {!r}".format(entry))
                 env[pair[1]] = strip_quotes(pair[2])
             fields[name] = env
         elif name == "run" and value in ("|", "|-"):
@@ -329,12 +341,13 @@ def step_fields(step):
 def check_release_provenance(text, publish="publish"):
     ids, needs = job_ids_and_needs(text)
     if publish not in ids:
-        return ["release.yml has no `{}` job".format(publish)]
+        return ["publish-release.yml has no `{}` job".format(publish)]
     problems = []
     condition = next((key_of(line, indent=4)[2] for line in job_lines(text, publish)
                       if key_of(line, indent=4) and key_of(line, indent=4)[1] == "if"), "")
-    if any(override in condition.replace(" ", "") for override in STATUS_OVERRIDES):
-        problems.append("release.yml: the {} job's if: overrides the success of the jobs it needs".format(publish))
+    if " ".join(strip_quotes(condition).split()) != PUBLISH_CONDITION:
+        problems.append("publish-release.yml: the {} job's if: must be exactly `{}` (no status-check function "
+                        "may let it run after a needed job failed)".format(publish, PUBLISH_CONDITION))
     guarded = []
     for job in needs[publish]:
         block = job_lines(text, job)
@@ -349,8 +362,62 @@ def check_release_provenance(text, publish="publish"):
                     and fields["run"] == PROVENANCE_RUN):
                 guarded.append(job)
     if not guarded:
-        problems.append("release.yml: no job the {} job needs runs the pinned provenance step ({} with the "
+        problems.append("publish-release.yml: no job the {} job needs runs the pinned provenance step ({} with the "
                         "compare status, REF_TYPE and SHA, unconditionally)".format(publish, PROVENANCE))
+    return problems
+
+
+def tag_trigger(text):
+    """True when `on: push:` lists `tags` (a flow list, a block list or a scalar)."""
+    lines = text.splitlines()
+    start = next((i for i, line in enumerate(lines) if re.match(r"^on:\s*(#.*)?$", line)), None)
+    if start is None:
+        if re.search(r"^on:\s*\S", text, re.M):
+            raise ValueError("on: in flow or scalar form is not supported")
+        raise ValueError("no top-level on: mapping")
+    end = next((j for j in range(start + 1, len(lines)) if re.match(r"^\S", lines[j])), len(lines))
+    block = lines[start + 1:end]
+    for index, line in enumerate(block):
+        key = key_of(line, indent=2)
+        if key and key[1] == "push":
+            stop = next((j for j in range(index + 1, len(block)) if key_of(block[j]) and key_of(block[j])[0] <= 2), len(block))
+            return any(key_of(inner, indent=4) and key_of(inner, indent=4)[1] in ("tags", "tags-ignore")
+                       for inner in block[index + 1:stop])
+    return False
+
+
+def check_tag_triggers(workflows):
+    """`workflows`: {repository path: text}."""
+    problems = []
+    if LEGACY_RELEASE in workflows:
+        problems.append("{} must not exist: it is the legacy, unguarded release path to be disabled in the "
+                        "Actions settings, and the guarded controller lives at {}".format(LEGACY_RELEASE, RELEASE_WORKFLOW))
+    for path, text in sorted(workflows.items()):
+        if path != RELEASE_WORKFLOW and tag_trigger(text):
+            problems.append("{} runs on tag pushes; only {} may".format(path, RELEASE_WORKFLOW))
+    if RELEASE_WORKFLOW not in workflows:
+        problems.append("{} is missing".format(RELEASE_WORKFLOW))
+    return problems
+
+
+def check_shell(path, text):
+    lines = text.splitlines()
+    problems = []
+    start = next((i for i, line in enumerate(lines) if re.match(r"^defaults:\s*(#.*)?$", line)), None)
+    pinned = False
+    if start is not None:
+        end = next((j for j in range(start + 1, len(lines)) if re.match(r"^\S", lines[j])), len(lines))
+        body = [line for line in lines[start + 1:end] if line.strip() and not line.strip().startswith("#")]
+        pinned = (len(body) == 2 and key_of(body[0], indent=2) == (2, "run", "")
+                  and key_of(body[1], indent=4) is not None and key_of(body[1], indent=4)[1:] == ("shell", "bash"))
+    if not pinned:
+        problems.append("{}: top-level `defaults: run: shell: bash` is required (pipefail)".format(path))
+    for number, line in enumerate(lines, 1):
+        key = key_of(line)
+        if key is None or (start is not None and start < number - 1 <= start + 2):
+            continue
+        if key[1] == "shell" or (key[1] == "defaults" and key[0] > 0):
+            problems.append("{}:{}: overrides the shell; only the top-level bash default is allowed".format(path, number))
     return problems
 
 
@@ -362,8 +429,13 @@ def main(root):
     try:
         problems += check_gate((workflows / "ci.yml").read_text(encoding="utf-8"))
         problems += check_drift_paths((workflows / "supply-chain-drift.yml").read_text(encoding="utf-8"), files)
-        problems += check_release_concurrency((workflows / "release.yml").read_text(encoding="utf-8"))
-        problems += check_release_provenance((workflows / "release.yml").read_text(encoding="utf-8"))
+        texts = {name: (root / name).read_text(encoding="utf-8") for name in files}
+        problems += check_tag_triggers(texts)
+        for name in files:
+            problems += check_shell(name, texts[name])
+        if RELEASE_WORKFLOW in texts:
+            problems += check_release_concurrency(texts[RELEASE_WORKFLOW])
+            problems += check_release_provenance(texts[RELEASE_WORKFLOW])
     except (OSError, ValueError) as error:
         problems.append("cannot read the workflows: {}".format(error))
     for problem in problems:
@@ -474,14 +546,14 @@ def self_test():
     assert check_release_concurrency(release(group="release-publish")) == []
     assert check_release_concurrency(release(group="'release-publish'")) == []
     problems = check_release_concurrency(release())   # the PR #9 layout: one group per tag
-    assert problems == ["release.yml: publishes of refs/tags/v0.57.0 and refs/tags/v0.57.1 resolve to different "
+    assert problems == ["publish-release.yml: publishes of refs/tags/v0.57.0 and refs/tags/v0.57.1 resolve to different "
                         "concurrency groups (release-refs/tags/v0.57.0 / release-refs/tags/v0.57.1)"], problems
     problems = check_release_concurrency(release(group="publish-${{ github.ref_name }}"))
     assert len(problems) == 1 and "different concurrency groups" in problems[0], problems
     problems = check_release_concurrency(release(group="release-publish", cancel="true"))
-    assert problems == ["release.yml: publish job concurrency must not cancel a release in progress"], problems
+    assert problems == ["publish-release.yml: publish job concurrency must not cancel a release in progress"], problems
     problems = check_release_concurrency(release(workflow_group="release"))
-    assert problems == ["release.yml: the workflow-level group is not per ref, so dry runs of different branches block each other"], problems
+    assert problems == ["publish-release.yml: the workflow-level group is not per ref, so dry runs of different branches block each other"], problems
     assert check_release_concurrency(release(workflow_group="release-${{ github.ref }}-${{ github.run_id }}", group="release-publish")) == []
     for unreadable in ("${{ github.ref_type == 'tag' && 'tags' || github.ref }}", "${{ inputs.x }}"):
         try:
@@ -517,7 +589,7 @@ def self_test():
     good = prov()
     assert check_release_provenance(good) == [], check_release_provenance(good)
     assert check_release_provenance(prov(needs="[build, other]")) == []
-    missing = ["release.yml: no job the publish job needs runs the pinned provenance step (tools/check_release_ref.py "
+    missing = ["publish-release.yml: no job the publish job needs runs the pinned provenance step (tools/check_release_ref.py "
                "with the compare status, REF_TYPE and SHA, unconditionally)"]
     final = 'python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}" --summary "${GITHUB_STEP_SUMMARY}"'
     bypasses = {
@@ -546,15 +618,54 @@ def self_test():
     for label, text in bypasses.items():
         assert text != good, label
         assert check_release_provenance(text) == missing, (label, check_release_provenance(text))
-    overridden = prov(publish_extra="    if: always() && github.ref_type == 'tag'\n")
-    assert check_release_provenance(overridden) == ["release.yml: the publish job's if: overrides the success of the jobs it needs"]
-    assert check_release_provenance(good.replace("  publish:\n", "  release:\n")) == ["release.yml has no `publish` job"]
+    condition = ["publish-release.yml: the publish job's if: must be exactly `{}` (no status-check function may let "
+                 "it run after a needed job failed)".format(PUBLISH_CONDITION)]
+    for override in ("    if: success() || github.ref_type == 'tag'\n",          # milestone 1 round 2
+                     "    if: SUCCESS ( ) || github.ref_type == 'tag'\n",
+                     "    if: Success() || github.event_name == 'push' && github.ref_type == 'tag'\n",
+                     "    if: always() && github.ref_type == 'tag'\n",
+                     "    if: ${{ !cancelled() && github.ref_type == 'tag' }}\n",
+                     "    if: failure() || github.ref_type == 'tag'\n",
+                     "    if: github.ref_type == 'tag'\n",                       # also publishes on workflow_dispatch tags
+                     ""):                                                       # no condition: publishes on every event
+        assert check_release_provenance(prov(publish_extra=override)) == condition, (override, check_release_provenance(prov(publish_extra=override)))
+    assert check_release_provenance(prov(publish_extra="    if:   github.event_name == 'push'   &&  github.ref_type == 'tag'\n")) == []
+    assert check_release_provenance(prov(publish_extra='    if: "github.event_name == \'push\' && github.ref_type == \'tag\'"\n')) == []
+    legacy_workflow = "name: release\non:\n  push:\n    tags: [\"v*\"]\njobs:\n  build:\n    runs-on: x\n"
+    other = "name: ci\non:\n  push:\n    branches: [\"**\"]\njobs:\n  a:\n    runs-on: x\n"
+    tagged = "name: other\non:\n  push:\n    tags:\n      - \"v*\"\njobs:\n  a:\n    runs-on: x\n"
+    assert check_tag_triggers({RELEASE_WORKFLOW: legacy_workflow, ".github/workflows/ci.yml": other}) == []
+    assert check_tag_triggers({RELEASE_WORKFLOW: legacy_workflow, LEGACY_RELEASE: legacy_workflow}) == [
+        "{} must not exist: it is the legacy, unguarded release path to be disabled in the Actions settings, and the "
+        "guarded controller lives at {}".format(LEGACY_RELEASE, RELEASE_WORKFLOW),
+        "{} runs on tag pushes; only {} may".format(LEGACY_RELEASE, RELEASE_WORKFLOW)]
+    assert check_tag_triggers({RELEASE_WORKFLOW: legacy_workflow, ".github/workflows/x.yml": tagged}) == [
+        ".github/workflows/x.yml runs on tag pushes; only {} may".format(RELEASE_WORKFLOW)]
+    assert check_tag_triggers({".github/workflows/ci.yml": other}) == ["{} is missing".format(RELEASE_WORKFLOW)]
+    assert tag_trigger(tagged.replace("    tags:\n      - \"v*\"\n", "    tags-ignore: [\"x\"]\n"))
+    try:
+        tag_trigger("name: x\non: [push]\njobs: {}\n")
+        raise AssertionError("a flow-form on: must fail closed")
+    except ValueError:
+        pass
+    assert check_release_provenance(good.replace("  publish:\n", "  release:\n")) == ["publish-release.yml has no `publish` job"]
+    shell_ok = "name: x\non:\n  push:\ndefaults:\n  run:\n    shell: bash   # pipefail\njobs:\n  a:\n    steps:\n      - run: x | tee y\n"
+    assert check_shell("w.yml", shell_ok) == []
+    required = ["w.yml: top-level `defaults: run: shell: bash` is required (pipefail)"]
+    assert check_shell("w.yml", shell_ok.replace("defaults:\n  run:\n    shell: bash   # pipefail\n", "")) == required
+    assert check_shell("w.yml", shell_ok.replace("shell: bash", "shell: sh")) == required
+    assert check_shell("w.yml", shell_ok.replace("shell: bash", "shell: bash -e {0}")) == required
+    assert check_shell("w.yml", shell_ok.replace("      - run: x | tee y\n", "      - run: x | tee y\n        shell: sh\n")) == [
+        "w.yml:11: overrides the shell; only the top-level bash default is allowed"]
+    assert check_shell("w.yml", shell_ok.replace("  a:\n", "  a:\n    defaults:\n      run:\n        shell: sh\n")) == [
+        "w.yml:9: overrides the shell; only the top-level bash default is allowed",
+        "w.yml:11: overrides the shell; only the top-level bash default is allowed"]
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)
         (workflows / "ci.yml").write_text(SELF_TEST_CI.replace("{extra}", ""), encoding="utf-8")
         (workflows / "supply-chain-drift.yml").write_text(SELF_TEST_DRIFT.replace("{push}", ".github/workflows/ci.yml"), encoding="utf-8")
-        (workflows / "release.yml").write_text(release(), encoding="utf-8")
+        (workflows / "release.yml").write_text(release(), encoding="utf-8")   # legacy path and an unguarded release
         with contextlib.redirect_stdout(io.StringIO()):
             assert main(directory) == 1   # the deliberately broken tree must fail
     print("check_workflow_policy self-test: ok")
