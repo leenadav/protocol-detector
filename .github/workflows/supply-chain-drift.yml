@@ -11,14 +11,12 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - ".github/workflows/supply-chain-drift.yml"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/**"   # every workflow holds pinned actions; tools/check_workflow_policy.py enforces this
       - "tools/check_pin_drift.py"
       - "requirements-dev.txt"
   pull_request:
     paths:
-      - ".github/workflows/supply-chain-drift.yml"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/**"   # every workflow holds pinned actions; tools/check_workflow_policy.py enforces this
       - "tools/check_pin_drift.py"
       - "requirements-dev.txt"
 

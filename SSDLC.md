@@ -9,7 +9,7 @@ artifact in the repository and every security claim has an executable check.
 | Design | Threat model per trust boundary, STRIDE table, explicit contracts for budgets and evidence | THREAT-MODEL.md, ARCHITECTURE.md, PROTOCOLS.md profile per family |
 | Implementation | Bounded parsing patterns (length before allocation, one parser per stream, immutable registries), no runtime dependencies, Python 3.9 syntax | CONTRIBUTING.md definition of done, code review via PR template checklist, issue templates that ask for synthetic inputs only; CODEOWNERS |
 | Verification | Unit tests (every split point, single bytes, truncations), seeded mutation fuzzing, GC-release tests, work-bound assertions, static analysis, documentation numbers recomputed from the tree | `make check`, CI `verify` matrix (3.9/3.11/3.13) with job summaries, CI `behaviour-diff` (run-id seed) and CI `mutation-smoke` (a second, fixed seed under Python 3.9 plus a 100-mutation fuzz pass seeded by the run number, both with the reproducing command in the job summary), ruff, bandit, CodeQL with the `security-extended` and `security-and-quality` suites (error-level findings fail via `tools/codeql_gate.py`, which also writes a per-rule table to the job summary; SARIF kept as an artifact, uploaded to the Security tab once code scanning is enabled in repository settings), `tools/check_docs_counts.py` (README/REVIEW-SCOPE families, applications, tests and version), nightly fuzz |
-| Supply chain | SHA-pinned actions whose tag comments are re-verified weekly, hash-pinned dev tools (wheel and source hashes where a wheel is platform specific), known-vulnerability audit of the toolchain, SBOM, read-only tokens with per-job additions only where a step needs them, Dependabot, workflow linting | CI `supply-chain`, CI `toolchain-audit` (pip-audit over requirements-dev.txt in hash mode, strict, also on the weekly schedule so new advisories surface without a code change), dependabot.yml, `tools/check_action_pins.py`, CI `workflow-lint` (actionlint fetched by version with its published SHA-256 verified before use, then zizmor from the hash-pinned toolchain auditing every workflow for template injection, credential persistence, cache poisoning, undocumented or excessive permissions, unpinned or superfluous actions and missing concurrency limits; pedantic persona, any finding fails), harden-runner egress audit on every job of every workflow, the release published with the runner's own `gh` CLI rather than a third-party action, `.github/workflows/supply-chain-drift.yml` (weekly and whenever ci.yml, requirements-dev.txt or the checker change: `tools/check_pin_drift.py` resolves each pinned SHA's tag comment against the action repository and fails when the tag moved or vanished; the actionlint release and SHA-256 named in ci.yml are downloaded and re-verified; every dev dependency is downloaded with `--require-hashes` and pip-audit is installed from those verified files alone) |
+| Supply chain | SHA-pinned actions whose tag comments are re-verified weekly, hash-pinned dev tools (wheel and source hashes where a wheel is platform specific), known-vulnerability audit of the toolchain, SBOM, read-only tokens with per-job additions only where a step needs them, Dependabot, workflow linting | CI `supply-chain`, CI `toolchain-audit` (pip-audit over requirements-dev.txt in hash mode, strict, also on the weekly schedule so new advisories surface without a code change), dependabot.yml, `tools/check_action_pins.py`, CI `workflow-lint` (actionlint fetched by version with its published SHA-256 verified before use, then zizmor from the hash-pinned toolchain auditing every workflow for template injection, credential persistence, cache poisoning, undocumented or excessive permissions, unpinned or superfluous actions and missing concurrency limits; pedantic persona, any finding fails), harden-runner egress audit on every job of every workflow, the release published with the runner's own `gh` CLI rather than a third-party action, `.github/workflows/supply-chain-drift.yml` (weekly and whenever any workflow file, requirements-dev.txt or the checker change, which `tools/check_workflow_policy.py` enforces against the files the drift checker scans: `tools/check_pin_drift.py` resolves each pinned SHA's tag comment against the action repository and fails when the tag moved or vanished; the actionlint release and SHA-256 named in ci.yml are downloaded and re-verified; every dev dependency is downloaded with `--require-hashes` and pip-audit is installed from those verified files alone) |
 | Release | Every push builds the sdist and wheel, checks the wheel holds exactly the engine package with no runtime dependency (`tools/check_wheel.py`) and installs it into an empty environment under Python 3.13 and again under Python 3.9, where `tools/wheel_smoke.py` classifies an HTTP request and a DNS query from the installed package and refuses an import from the checkout (CI `package`); on a `v*` tag the release workflow's read-only build job passes the full gate (compile, tests, ruff, pins, security requirements, docs numbers, coverage matrix, policy lint), checks that the reported version equals pyproject.toml and the tag, builds, runs the wheel gate and smoke again and records the SBOM and SHA256SUMS; a separate publish job, the only one holding `contents`, `id-token` and `attestations: write`, checks out nothing, re-verifies the build job's checksums, attests SLSA-style build provenance (`actions/attest-build-provenance`, pinned by SHA) and publishes with the runner's `gh release create --verify-tag`. Manual dispatch and changes to release.yml or pyproject.toml run the build job alone as a dry run, so the release path is exercised before the first tag | `.github/workflows/release.yml`, `make package` |
 | Response | Private vulnerability reporting, SLAs, regression test with every fix, benchmark when the hot path changes | SECURITY.md, BENCHMARK-Vnnn.md |
 
@@ -30,8 +30,11 @@ Branch protection matches status checks by job name (the `name:` of each job,
 not the workflow name). Two names are enough: the `ci` workflow ends in an
 aggregate job, `ci gate (all jobs)`, that depends on every other ci job with
 `if: always()` and fails when any of them failed, was cancelled or was
-skipped, so a job added later is covered without a settings change; CodeQL
-runs in its own workflow and is required separately.
+skipped. `toJSON(needs)` only sees direct dependencies, so
+`tools/check_workflow_policy.py` (CI `workflow-lint`, `make check`,
+pre-commit) fails when a ci job is missing from the gate's `needs` or a listed
+job no longer exists: a job added later cannot pass unseen, and no settings
+change is needed. CodeQL runs in its own workflow and is required separately.
 
 | Workflow | Required check name | Gate |
 |---|---|---|
@@ -98,6 +101,36 @@ engine (the whole change as one report), and the secret scan needs
 `pull-requests: read` to list the pull request's commits. Both are configured
 in ci.yml; a red pull-request run with a green push run on the same commit is a
 workflow defect, never an engine finding.
+
+## CI/CD review loop (Codex, issue #7)
+
+The CI/CD track has its own review mailbox, separate from the engine's
+issue #2, and follows the same gated loop:
+
+1. Before a request, merge-forward the current `claude/appid-engine` head
+   into `claude/cicd` (merge commit, never rebase or force-push), run the
+   gates, push, and freeze that head. An engine commit that lands while the
+   review runs does not invalidate the frozen request.
+2. Post the `CODEX_REVIEW_REQUEST` in issue #7: task, round (at most three
+   per task), exact head and base SHAs, engine baseline SHA, files in
+   scope, tests and results, and the current CI/CD pull request.
+3. Post exactly one short `CODEX_REVIEW_REQUEST` notification on PR #3 that
+   links the issue #7 request, repeats head, base and round, and says
+   `lane=CI/CD`. PR #3 comments wake the reviewer for both lanes; issue #7
+   stays authoritative for CI/CD.
+4. Subscribe to the current CI/CD pull request, where the reviewer mirrors
+   its `CODEX_REVIEW_RESULT`. Pause CI/CD feature edits until a result names
+   the exact frozen head; synchronization a repair round explicitly needs
+   does not wait for it. A missing, blocked, failed or SHA-mismatched result
+   is not approval, and a merge is not approval either: findings stay open
+   until a later round verifies the repair.
+5. A result with zero actionable findings passes the gate; otherwise repair
+   with a regression check and request the next round. While a request is
+   pending, at most one server-side fallback check-in every 30 minutes,
+   quiet when nothing changed.
+
+The loop never merges, deploys, deletes branches, or changes branch
+protection, permissions or credentials.
 
 ## Caching and concurrency policy
 

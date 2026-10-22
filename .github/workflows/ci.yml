@@ -366,6 +366,10 @@ jobs:
         run: |
           ./actionlint -no-color .github/workflows/*.yml
           echo "actionlint: $(find .github/workflows -name '*.yml' | wc -l) workflow files clean" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Workflow policy (gate covers every ci job, drift gate triggers on every workflow)
+        run: |
+          python -B tools/check_workflow_policy.py --self-test
+          python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Audit every workflow for security weaknesses (zizmor, pedantic persona, offline audits)
         # Template injection, credential persistence, cache poisoning, excessive or undocumented
         # permissions, unpinned or superfluous actions, missing concurrency limits. Any finding fails.
@@ -415,8 +419,9 @@ jobs:
         run: python -B tools/check_security_requirements.py | tee -a "$GITHUB_STEP_SUMMARY"
 
   gate:
-    # Branch protection needs one required check that follows the job list: this job fails when any
-    # ci job failed, was cancelled or was skipped, so new jobs are covered without touching settings.
+    # Branch protection needs one required check: this job fails when any job in `needs` failed, was
+    # cancelled or was skipped. `needs` must list every other ci job; tools/check_workflow_policy.py
+    # (workflow-lint job, make check) fails when a job is missing from it or a listed job is gone.
     name: ci gate (all jobs)
     runs-on: ubuntu-24.04
     timeout-minutes: 5
