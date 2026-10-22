@@ -28,10 +28,10 @@
    tagged commit, so every older commit's unguarded release.yml stays reachable until that
    path is disabled in the repository's Actions settings; keeping the path free means
    disabling it never disables the guarded controller. No workflow may authenticate with a
-   stored credential: in every `${{ }}` expression (multi-line ones included) and every bare
-   `if:` condition, the `secrets` and `vars` contexts are banned in any syntax, except the
-   exact built-in `secrets.GITHUB_TOKEN`, and so is a `secrets:` key (`secrets: inherit`);
-   the controller keeps rule 8's stricter line ban. No other workflow may hold
+   stored credential: outside comments, the words `secrets` and `vars` may appear only as the
+   exact `${{ secrets.GITHUB_TOKEN }}` (and in one job name), a word ban that no expression
+   grammar (quoted `}}` in `format()` strings, multi-line expressions, `secrets: inherit`,
+   `if:` conditions) can route around; the controller keeps rule 8's stricter line ban. No other workflow may hold
    `contents`, `id-token`, `attestations`, `packages`, `actions`, `deployments` or
    `statuses: write`, or `write-all`, so none can publish on another trigger (CodeQL keeps
    `security-events: write` for its SARIF upload). `tools/check_release_exposure.py`
@@ -556,28 +556,32 @@ def check_attestation_verify(text, publish="publish"):
     return problems
 
 
-EXPRESSION_ANY = re.compile(r"\$\{\{(.*?)\}\}", re.S)
 STORED_CREDENTIAL = re.compile(r"\b(secrets|vars)\b", re.I)
-BUILT_IN_TOKEN = re.compile(r"^\s*secrets\s*\.\s*github_token\s*$", re.I)
+# The only places the words may appear: the built-in token, written exactly, and one job name.
+CREDENTIAL_ALLOWED = ("${{ secrets.GITHUB_TOKEN }}", "static analysis (ruff, bandit, secrets)")
 
 
 def check_credentials(path, text):
-    """Stored credentials (any secret but GITHUB_TOKEN, any variable) are banned in every workflow."""
+    """Stored credentials (any secret but GITHUB_TOKEN, any variable) are banned in every workflow.
+
+    A word ban, not an expression parser: after removing the exact allowed strings, any `secrets`
+    or `vars` word on a non-comment line fails, wherever it sits (inside `${{ }}`, a quoted
+    `format('{{x}}')` string that would end a naive `}}` scan, a key such as `secrets: inherit`,
+    an `if:` condition or a run block). Rule 9 excludes the YAML escapes and folds that could
+    disguise the word, and GitHub resolves contexts only by identifier, so a context reference
+    always contains the word (CI/CD task 6, from the task-5 round-3 finding).
+    """
     problems = []
-    for found in EXPRESSION_ANY.finditer(text):
-        body = found.group(1)
-        if STORED_CREDENTIAL.search(body) and not BUILT_IN_TOKEN.match(body):
-            line = text.count("\n", 0, found.start()) + 1
-            problems.append("{}:{}: `${{{{{}}}}}` references a stored credential; only `secrets.GITHUB_TOKEN` "
-                            "is allowed".format(path, line, " ".join(body.split())))
     for number, line in enumerate(text.splitlines(), 1):
         if line.strip().startswith("#"):
             continue
-        key = key_of(line)
-        if key and key[1] == "secrets":
-            problems.append("{}:{}: `secrets:` key (reusable workflow secrets) is not allowed".format(path, number))
-        elif key and key[1] == "if" and "${{" not in key[2] and STORED_CREDENTIAL.search(key[2]):
-            problems.append("{}:{}: `if:` references a stored credential".format(path, number))
+        visible = line
+        for allowed in CREDENTIAL_ALLOWED:
+            visible = visible.replace(allowed, "")
+        found = STORED_CREDENTIAL.search(visible)
+        if found:
+            problems.append("{}:{}: `{}` may only appear as `${{{{ secrets.GITHUB_TOKEN }}}}` (stored credentials "
+                            "are not allowed)".format(path, number, found.group(1)))
     return problems
 
 
@@ -1188,21 +1192,46 @@ def self_test():
                         "quoted item then pair": '    needs: ["a", b: c]\n'}.items():
         found = check_encoding("w.yml", plain + "jobs2:\n  b:\n    x:\n" + line)
         assert found, (label, found)
-    # task 5 round 2: a read-only workflow authenticating with a stored PAT
+    # task 5 round 2 and CI/CD task 6: a read-only workflow authenticating with a stored PAT
     pat_job = ("jobs:\n  a:\n    permissions:\n      contents: read\n    steps:\n      - env:\n"
                "          GH_TOKEN: {value}\n        run: gh release create \"$GITHUB_REF_NAME\" dist/*\n")
     assert check_credentials("w.yml", pat_job.format(value="${{ secrets.GITHUB_TOKEN }}")) == []
     assert check_credentials("w.yml", pat_job.format(value="${{ github.token }}")) == []
     assert check_credentials("w.yml", "    name: static analysis (ruff, bandit, secrets)\n") == []
-    for token in ("${{ secrets.RELEASE_PAT }}", "${{ secrets['RELEASE_PAT'] }}", "${{ SECRETS.release_pat }}",
+    assert check_credentials("w.yml", "      # secrets and vars in a comment\n") == []
+    for value in ("${{ secrets.RELEASE_PAT }}", "${{ secrets['RELEASE_PAT'] }}", "${{ SECRETS.release_pat }}",
                   "${{ vars.RELEASE_PAT }}", "${{ fromJSON(toJSON(secrets)).RELEASE_PAT }}",
-                  "${{ secrets.GITHUB_TOKEN || secrets.RELEASE_PAT }}", "${{\n            secrets.RELEASE_PAT }}"):
-        found = check_credentials("w.yml", pat_job.format(value=token))
-        assert len(found) == 1 and "stored credential" in found[0], (token, found)
+                  "${{ secrets.GITHUB_TOKEN || secrets.RELEASE_PAT }}", "${{secrets.GITHUB_TOKEN}}",
+                  # task 5 round 3: `}}` inside a quoted format() string ended the old expression scan
+                  '"${{ false && format(\'{{x}}\') || secrets.RELEASE_PAT }}"',
+                  "\"${{ false && format('{{{0}}}', 'a') || vars.RELEASE_PAT }}\"",
+                  "\"${{ format('it''s }}') && secrets.RELEASE_PAT }}\""):
+        found = check_credentials("w.yml", pat_job.format(value=value))
+        assert len(found) == 1 and "may only appear as" in found[0], (value, found)
+    two_lines = pat_job.format(value="${{\n            secrets.RELEASE_PAT }}")
+    assert len(check_credentials("w.yml", two_lines)) == 1
     assert check_credentials("w.yml", "    uses: ./.github/workflows/x.yml\n    secrets: inherit\n")
     assert check_credentials("w.yml", "    if: secrets.RELEASE_PAT != ''\n")
-    run_block = "      - run: |\n          echo ${{ secrets.RELEASE_PAT }}\n"
-    assert check_credentials("w.yml", run_block), "expressions inside run blocks are evaluated too"
+    assert check_credentials("w.yml", "      - run: |\n          echo ${{ secrets.RELEASE_PAT }}\n")
+    assert check_credentials("w.yml", "    name: static analysis (ruff, bandit, secrets) ${{ secrets.X }}\n")
+    # the task-5 round-3 workflow, run through the full policy over a copy of the real tree
+    adversarial = ("name: bypass\non:\n  push:\n    branches: [\"main\"]\npermissions:\n  contents: read\n"
+                   "defaults:\n  run:\n    shell: bash\njobs:\n  publish:\n    runs-on: ubuntu-24.04\n    steps:\n"
+                   "      - name: Publish outside the controller\n        env:\n"
+                   "          GH_TOKEN: \"${{ false && format('{{x}}') || secrets.RELEASE_PAT }}\"\n"
+                   "        run: gh release create \"v0.0.0-bypass\" --generate-notes\n")
+    with tempfile.TemporaryDirectory() as directory:
+        target = Path(directory) / ".github" / "workflows"
+        target.mkdir(parents=True)
+        for source in Path(".github/workflows").glob("*.yml"):
+            (target / source.name).write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()):
+            assert main(directory) == 0
+        (target / "bypass.yml").write_text(adversarial, encoding="utf-8")
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            assert main(directory) == 1
+        assert "bypass.yml:16: `secrets` may only appear as" in captured.getvalue(), captured.getvalue()
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)
