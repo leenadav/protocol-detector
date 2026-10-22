@@ -671,11 +671,14 @@ exactly three of them; any other extension is never read beyond its framing.
 |---|---|---|
 | `tls_certificate_ca` | `yes`, `no` | basicConstraints (2.5.29.19) `cA`. DER omits the FALSE default, so an encoded FALSE (or any BOOLEAN other than 0xff) is malformed; `pathLenConstraint` only with cA TRUE (RFC 5280 4.2.1.9), a 1..4-octet non-negative minimally encoded INTEGER; any other field is malformed. Absent extension: `no` |
 | `tls_certificate_eku` | `server-auth`, `any`, `other`, `absent` | extendedKeyUsage (2.5.29.37), 1..16 key purposes: `server-auth` when id-kp-serverAuth is listed, else `any` for anyExtendedKeyUsage, else `other` |
-| `tls_certificate_san` | `present`, `absent` | subjectAltName (2.5.29.17): a non-empty SEQUENCE of GeneralName choices [0]..[8], each framed within the sequence; no name is read or emitted |
+| `tls_certificate_san` | `present`, `absent` | subjectAltName (2.5.29.17): a non-empty SEQUENCE of 1..256 GeneralName choices, each in its DER form (otherName [0], x400Address [3], directoryName [4] and ediPartyName [5] constructed; rfc822Name [1], dNSName [2], URI [6], iPAddress [7] and registeredID [8] primitive) with its minimal shape (non-empty text names, a 4- or 16-octet address, a complete registeredID, an OID-led otherName with its [0] value, one Name in a directoryName); framed only, no name is read or emitted |
 | `tls_certificate_not_before`, `tls_certificate_not_after` | `YYYY-MM-DD` | The validity window at calendar-day granularity (the time of day is dropped so the window is a coarse posture fact rather than a fingerprint) |
 
 `ca`, `eku` and `san` appear only for v3 certificates (v1 and v2 cannot carry
-extensions). The same extension OID twice is malformed (RFC 5280 4.2). As in
+extensions). The same extension OID twice is malformed (RFC 5280 4.2), and so
+is an encoded `critical` FALSE on any extension (DER omits the default; review
+round 1, the same rule as cA). Before v0.57 an explicit FALSE was accepted, so
+such leaves now end the watch without certificate labels. As in
 v0.39, any deviation ends the watch with no certificate evidence and keeps the
 ServerHello identification.
 

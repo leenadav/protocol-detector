@@ -11,7 +11,8 @@ from protocol_engine.appid import classify, session_verdict
 from protocol_engine.parsers import ParseError
 from protocol_engine.risks import RISKS
 from protocol_engine.tls_server import _TLS12_CIPHERS
-from protocol_engine.x509 import _ANY_KEY_USAGE, _BASIC_CONSTRAINTS, _EXTENDED_KEY_USAGE, _SERVER_AUTH, _SUBJECT_ALT_NAME, MAX_EKU, leaf_profile, validity
+from protocol_engine.x509 import (_ANY_KEY_USAGE, _BASIC_CONSTRAINTS, _EXTENDED_KEY_USAGE, _SERVER_AUTH, _SUBJECT_ALT_NAME, MAX_EKU,
+                                  MAX_GENERAL_NAMES, leaf_profile, validity)
 from protocol_fixtures import (ANY_KEY_USAGE_OID, CLIENT_AUTH_OID, DTLS_SERVER_HELLO, SERVER_AUTH_OID, TLS_RETRY, TLS_SERVER12, TLS_SERVER13,
                                _ber, certificate_message, dtls_record, tls_record, x509, x509_extension)
 from proxy_demo import client_hello
@@ -130,8 +131,8 @@ class LeafPostureTests(unittest.TestCase):
         self.assertEqual(self.profile(eku=(SERVER_AUTH_OID,) * MAX_EKU)[0]["eku"], "server-auth")
         self.assertEqual(self.profile(eku=None), (dict(fields, eku="absent"), ()))
         self.assertEqual(self.profile(san=None), (dict(fields, san="absent"), ("tls-certificate-without-san",)))
-        many = tuple(b"host%03d.placeholder.example" % index for index in range(300))
-        self.assertEqual(self.profile(san=many), (fields, ()))
+        many = tuple(b"h%03d.placeholder.example" % index for index in range(MAX_GENERAL_NAMES))
+        self.assertEqual(self.profile(san=many), (fields, ()))                      # exactly at the entry budget
         unknown = x509_extension(bytes.fromhex("2b0601040182370a0302"), _ber(0x30, b""))       # framing only, never interpreted
         self.assertEqual(self.profile(extra=(unknown,)), (fields, ()))
         self.assertEqual(self.profile(extensions=False), (dict(fields, eku="absent", san="absent"), ("tls-certificate-without-san",)))
@@ -275,6 +276,64 @@ class ValidityTests(unittest.TestCase):
         unset = record(0, 1)
         self.assertNotIn("validity", unset["certificate"])
         self.assertNotIn("tls-certificate-outside-validity", unset["risks"])
+
+
+class ReviewRound1Tests(unittest.TestCase):
+    """Repairs for the v0.57 round-1 findings: SAN entry budget and GeneralName forms, DER critical flag."""
+
+    def assert_rejected(self, der, name):
+        with self.assertRaises(ParseError, msg=name):
+            leaf_profile(der)
+        observation = inspect(flight(der))
+        self.assertEqual((observation.status, observation.encryption, labels(observation, "tls_certificate_")), ("identified", "tls", {}), name)
+
+    def test_general_name_budget_and_forms(self):
+        def san(*entries):
+            return x509(san=None, extra=(x509_extension(SAN_OID, _ber(0x30, b"".join(entries))),))
+        name = _ber(0x30, _ber(0x31, _ber(0x30, _ber(6, b"\x55\x04\x03") + _ber(0x0c, b"placeholder"))))
+        valid = {"rfc822Name": _ber(0x81, b"a@placeholder.example"), "dNSName": _ber(0x82, b"placeholder.example"),
+                 "x400Address": _ber(0xa3, _ber(0x30, b"")), "directoryName": _ber(0xa4, name), "ediPartyName": _ber(0xa5, _ber(0xa1, _ber(0x0c, b"p"))),
+                 "URI": _ber(0x86, b"https://placeholder.example/"), "iPAddress v4": _ber(0x87, bytes(4)), "iPAddress v6": _ber(0x87, bytes(16)),
+                 "registeredID": _ber(0x88, b"\x2b\x06\x01"), "otherName": _ber(0xa0, _ber(6, b"\x2b\x06\x01\x04\x01\x82\x37\x14\x02\x03") + _ber(0xa0, _ber(0x0c, b"p")))}
+        for label, entry in valid.items():
+            self.assertEqual(dict(leaf_profile(san(entry)))["tls_certificate_san"], "present", label)
+        self.assertEqual(dict(leaf_profile(san(*valid.values())))["tls_certificate_san"], "present")
+        rejected = {
+            "primitive [0] otherName": san(b"\x80\x00"), "constructed [1] rfc822Name": san(_ber(0xa1, _ber(0x16, b"a"))),
+            "constructed [2] dNSName": san(b"\xa2\x00"), "primitive [3] x400Address": san(b"\x83\x01\x00"),
+            "primitive [4] directoryName": san(b"\x84\x01\x00"), "primitive [5] ediPartyName": san(b"\x85\x01\x00"),
+            "constructed [6] URI": san(b"\xa6\x00"), "constructed [7] iPAddress": san(_ber(0xa7, bytes(4))),
+            "constructed [8] registeredID": san(_ber(0xa8, b"\x2b")), "choice [9]": san(b"\x89\x01\x00"),
+            "universal tag": san(_ber(0x16, b"a")), "empty dNSName": san(b"\x82\x00"), "empty rfc822Name": san(b"\x81\x00"),
+            "empty URI": san(b"\x86\x00"), "empty x400Address": san(b"\xa3\x00"), "iPAddress of 5 octets": san(_ber(0x87, bytes(5))),
+            "iPAddress of 8 octets": san(_ber(0x87, bytes(8))), "registeredID cut mid-arc": san(_ber(0x88, b"\x2b\x86")),
+            "otherName without OID": san(_ber(0xa0, _ber(0xa0, _ber(0x0c, b"p")))),
+            "otherName without value": san(_ber(0xa0, _ber(6, b"\x2b\x06\x01"))),
+            "otherName with trailing bytes": san(_ber(0xa0, _ber(6, b"\x2b\x06\x01") + _ber(0xa0, _ber(0x0c, b"p")) + b"\x05\x00")),
+            "directoryName not a Name": san(_ber(0xa4, _ber(0x31, b""))),
+            "directoryName with trailing bytes": san(_ber(0xa4, name + b"\x05\x00")),
+            "one entry over the budget": x509(san=tuple(b"h%03d.placeholder.example" % index for index in range(MAX_GENERAL_NAMES + 1))),
+        }
+        for label, der in rejected.items():
+            self.assert_rejected(der, label)
+        for name_text in NAMES + ("placeholder.example",):
+            self.assertNotIn(name_text, repr(leaf_profile(san(*valid.values()))))
+
+    def test_explicit_critical_false_is_not_der(self):
+        def flagged(oid, value, flag):
+            return _ber(0x30, _ber(6, oid) + (_ber(1, flag) if flag is not None else b"") + _ber(4, value))
+        unknown = bytes.fromhex("2b0601040182370a0302")
+        cases = {"subjectAltName": (SAN_OID, _ber(0x30, _ber(0x82, b"placeholder.example")), {"san": None}),
+                 "extendedKeyUsage": (EKU_OID, _ber(0x30, _ber(6, SERVER_AUTH_OID)), {"eku": None}),
+                 "uninterpreted extension": (unknown, _ber(0x30, b""), {})}
+        for label, (oid, value, omit) in cases.items():
+            for flag in (None, b"\xff"):
+                self.assertIn("tls_certificate_san", dict(leaf_profile(x509(extra=(flagged(oid, value, flag),), **omit))), label)
+            for flag in (b"\x00", b"\x01", b"\x7f", b"\xff\xff"):
+                self.assert_rejected(x509(extra=(flagged(oid, value, flag),), **omit), label + " critical " + flag.hex())
+        base = x509(eku=None, san=None)
+        self.assertIn(b"\x55\x1d\x13\x01\x01\xff", base)
+        self.assert_rejected(base.replace(b"\x55\x1d\x13\x01\x01\xff", b"\x55\x1d\x13\x01\x01\x00"), "basicConstraints critical FALSE")
 
 
 if __name__ == "__main__":

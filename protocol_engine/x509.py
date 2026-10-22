@@ -21,6 +21,7 @@ MAX_NAME_PARTS = 32      # relative distinguished names per Name and attributes 
 MAX_EXTENSIONS = 64
 MAX_SERIAL = 32          # RFC 5280 asks for <= 20 octets; a few CAs exceed it, nobody needs more than 32
 MAX_EKU = 16             # key purposes per extendedKeyUsage (v0.57)
+MAX_GENERAL_NAMES = 256  # subjectAltName entries (v0.57 review round 1); multi-domain leaves stay well below it
 MAX_PATH_LENGTH_OCTETS = 4
 
 # Object identifiers as encoded DER contents. Tables, not parsing, decide the label.
@@ -259,16 +260,49 @@ def _key_usage_purposes(data, start, end):
     return "any" if purposes else "other"
 
 
+# GeneralName CHOICE (RFC 5280 4.2.1.6) with the encoding form each alternative must use under DER:
+# otherName [0], x400Address [3], directoryName [4] (explicit: Name is a CHOICE) and ediPartyName [5] are
+# constructed; rfc822Name [1], dNSName [2], URI [6], iPAddress [7] and registeredID [8] are primitive.
+_GENERAL_NAME_TAGS = frozenset((0xa0, 0x81, 0x82, 0xa3, 0xa4, 0xa5, 0x86, 0x87, 0x88))
+
+
 def _general_names(data, start, end):
-    """GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName; framing only, no name is read."""
+    """GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName; framing only, no name is read or kept.
+
+    Review round 1 (v0.57): at most MAX_GENERAL_NAMES entries, each in the DER form of its alternative,
+    with the minimal shape the alternative implies (non-empty text names, a 4- or 16-octet address, an
+    OID-led otherName, one Name in a directoryName).
+    """
     seq_start, seq_end = _expect(data, start, end, _SEQUENCE, "Subject alternative name")
     if seq_end != end or seq_start == seq_end:
         raise ParseError("Subject alternative name must be one non-empty sequence")
-    cursor = seq_start
+    cursor, count = seq_start, 0
     while cursor < seq_end:
-        tag, _, cursor = _element(data, cursor, seq_end)
-        if tag & 0xc0 != 0x80 or tag & 0x1f > 8:
-            raise ParseError("Subject alternative name entry is not a GeneralName choice")
+        count += 1
+        if count > MAX_GENERAL_NAMES:
+            raise ParseError("Subject alternative name exceeds the entry budget")
+        tag, value_start, value_end = _element(data, cursor, seq_end)
+        if tag not in _GENERAL_NAME_TAGS:
+            raise ParseError("Subject alternative name entry is not a GeneralName choice in its DER form")
+        size = value_end - value_start
+        if tag in (0x81, 0x82, 0x86, 0x88, 0xa3, 0xa5) and not size:
+            raise ParseError("Subject alternative name entry is empty")
+        if tag == 0x87 and size not in (4, 16):
+            raise ParseError("Subject alternative name iPAddress must be 4 or 16 octets")
+        if tag == 0x88 and data[value_end - 1] & 0x80:
+            raise ParseError("Subject alternative name registeredID is not a complete object identifier")
+        if tag == 0xa0:
+            _, after = _oid(data, value_start, value_end, "Subject alternative name otherName")
+            if after == value_end or data[after] != 0xa0:
+                raise ParseError("Subject alternative name otherName needs its [0] value")
+            _, _, inner_end = _element(data, after, value_end)
+            if inner_end != value_end:
+                raise ParseError("Subject alternative name otherName has trailing bytes")
+        elif tag == 0xa4:
+            _, name_end = _name(data, value_start, value_end, "Subject alternative name directoryName")
+            if name_end != value_end:
+                raise ParseError("Subject alternative name directoryName has trailing bytes")
+        cursor = value_end
 
 
 def _extensions(data, pos, limit):
@@ -288,8 +322,10 @@ def _extensions(data, pos, limit):
         seen.add(oid)
         tag, flag_start, flag_end = _element(data, inner, ext_end)
         if tag == _BOOLEAN:
-            if flag_end - flag_start != 1 or data[flag_start] not in (0x00, 0xff):
-                raise ParseError("Extension critical flag is not a DER boolean")
+            # critical is BOOLEAN DEFAULT FALSE: DER omits FALSE, so only an encoded TRUE (0xff) is valid
+            # (v0.57 review round 1; the same rule as basicConstraints cA).
+            if flag_end - flag_start != 1 or data[flag_start] != 0xff:
+                raise ParseError("Extension critical flag must be absent or a DER TRUE")
             inner = flag_end
         value_start, value_end = _expect(data, inner, ext_end, _OCTET_STRING, "Extension value")
         if value_end != ext_end:

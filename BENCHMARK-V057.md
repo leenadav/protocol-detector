@@ -36,3 +36,10 @@ server flight with certificates measured about 107 us (v0.56 fixture) and
 one linear pass over at most `MAX_LEAF` (16 KiB) bytes: extendedKeyUsage is
 capped at 16 purposes, subjectAltName entries are framed without reading
 their contents, and the duplicate check is a set of at most 64 OIDs.
+
+Review round 1 repairs (baseline 24f481f): the subjectAltName walk now checks
+each entry's DER form and shape and counts entries against a 256-entry budget;
+the critical-flag rule is one comparison. `leaf_profile` on identical bytes:
+30.4 us (basicConstraints-only leaf, unchanged within noise) and 39.8 -> 43.1 us
+(EKU and SAN leaf). A leaf at the 256-entry SAN budget stays one linear pass
+within `MAX_LEAF`. The A/B flows do not reach the certificate watch.

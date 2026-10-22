@@ -16,7 +16,8 @@ with its unset-clock bounds), the capture-time plumbing (`classify`/
 session's first packet, `live_capture` at the event's packet) and the five
 new risks. Trace: no alternative name, key purpose OID or time of day reaches
 output; a malformed extension keeps the ServerHello identification; nothing
-reads the wall clock. 612 tests pass.
+reads the wall clock. Round-1 repairs: `_general_names` entry budget
+(256) and DER GeneralName forms, explicit `critical` FALSE rejected. 614 tests pass.
 
 Previous focus (v0.56): `protocol_engine/gss.py` (DER walk of SPNEGO
 NegTokenInit/NegTokenResp and Kerberos GSS tokens: exact lengths at every
