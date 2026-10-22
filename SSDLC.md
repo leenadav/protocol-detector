@@ -72,7 +72,7 @@ cannot pass unseen, whatever its spelling, and no settings change is needed. Cod
 |---|---|---|
 | ci | `ci gate (all jobs)` | every ci job below succeeded |
 | codeql | `CodeQL (python, security-extended)` | security-extended and security-and-quality suites, error level fails |
-| codeql | `CodeQL (actions, security-extended)` | the workflows themselves, analysed by CodeQL's `actions` pack with the same suites; error level fails |
+| codeql | `CodeQL (actions, security-extended)` | the workflows themselves, analysed by CodeQL's `actions` pack with the same suites; error level fails. Rule 12 of the policy keeps both CodeQL jobs, their pinned init, analyze and gate steps, and the push trigger the release checks gate relies on |
 
 The jobs the gate covers, every one of which runs on every push and pull
 request:

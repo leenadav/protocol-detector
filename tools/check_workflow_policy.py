@@ -80,6 +80,12 @@
    `tools/check_workflow_yaml.py` (self-test, then the check, under pipefail), so the PyYAML
    second opinion cannot be dropped or masked while the gate stays green. `make check` does
    not run it because it needs the dev toolchain; `make workflow-lint` does.
+12. CodeQL (`codeql.yml`): it keeps its `push` trigger on every branch (the release checks gate
+   requires its push run), and both analyses exist, `analyze` (python) and `analyze-actions`
+   (the workflows), each with no job-level `if:` or `continue-on-error` and with, in order,
+   the pinned `init` (language, security-extended and security-and-quality suites), `analyze`
+   (category, `upload: never`, output directory) and error-level gate steps, so neither
+   analysis can be dropped, narrowed or masked while the workflow stays green.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -688,6 +694,58 @@ def check_cross_check(workflows, path=".github/workflows/ci.yml", job="workflow-
     return problems
 
 
+CODEQL_WORKFLOW = ".github/workflows/codeql.yml"
+CODEQL_JOBS = {"analyze": ("python", "codeql-results"), "analyze-actions": ("actions", "codeql-actions-results")}
+CODEQL_SUITES = "security-extended,security-and-quality"
+
+
+def check_codeql(workflows):
+    if CODEQL_WORKFLOW not in workflows:
+        return ["{} is missing".format(CODEQL_WORKFLOW)]
+    text = workflows[CODEQL_WORKFLOW]
+    problems = []
+    lines = text.splitlines()
+    start = next((i for i, line in enumerate(lines) if re.match(r"^on:\s*(#.*)?$", line)), None)
+    end = next((j for j in range(start + 1, len(lines)) if re.match(r"^\S", lines[j])), len(lines)) if start is not None else 0
+    on_block = lines[start + 1:end] if start is not None else []
+    push = next((i for i, line in enumerate(on_block) if key_of(line, indent=2) and key_of(line, indent=2)[1] == "push"), None)
+    branches = [key_of(line, indent=4)[2] for line in on_block[push + 1:] if key_of(line, indent=4)][:1] if push is not None else []
+    if push is None or branches != ['["**"]']:
+        problems.append("{}: CodeQL must keep `push: branches: [\"**\"]` (the release checks gate needs its push run)".format(CODEQL_WORKFLOW))
+    for job, (language, output) in CODEQL_JOBS.items():
+        try:
+            block = job_lines(text, job)
+        except ValueError:
+            problems.append("{}: the `{}` ({}) analysis is missing".format(CODEQL_WORKFLOW, job, language))
+            continue
+        if {key_of(line, indent=4)[1] for line in block if key_of(line, indent=4)} & {"if", "continue-on-error"}:
+            problems.append("{}: the `{}` job may not be conditional or allowed to fail".format(CODEQL_WORKFLOW, job))
+        expected = [
+            ({"uses", "with"}, "github/codeql-action/init", {"languages": language, "queries": CODEQL_SUITES}, None),
+            ({"uses", "with"}, "github/codeql-action/analyze", {"category": "/language:" + language, "upload": "never", "output": output}, None),
+            ({"name", "run"}, None, None, ["python3 -B tools/codeql_gate.py " + output]),
+        ]
+        position = -1
+        for keys, action, with_, run in expected:
+            found = None
+            for index, step in enumerate(steps_of(block)):
+                fields = step_fields(step)
+                if index <= position or set(fields) != keys:
+                    continue
+                if action and (strip_quotes(fields.get("uses") or "").split("@", 1)[0].lower() != action or fields.get("with") != with_):
+                    continue
+                if run and (fields.get("run") if isinstance(fields.get("run"), list) else [fields.get("run")]) != run:
+                    continue
+                found = index
+                break
+            if found is None:
+                problems.append("{}: the `{}` job lacks the pinned {} step (in order: init, analyze, gate)".format(
+                    CODEQL_WORKFLOW, job, action.rsplit("/", 1)[1] if action else "error-level gate"))
+                break
+            position = found
+    return problems
+
+
 def check_tag_triggers(workflows):
     """`workflows`: {repository path: text}."""
     problems = []
@@ -894,6 +952,7 @@ def main(root):
         problems += check_action_consistency(texts)
         problems += check_release_audit(texts)
         problems += check_cross_check(texts)
+        problems += check_codeql(texts)
         for name in files:
             problems += check_encoding(name, texts[name])
             problems += check_credentials(name, texts[name])
@@ -1347,6 +1406,31 @@ def self_test():
         assert text != audit_text, label
         assert check_release_audit({AUDIT_WORKFLOW: text}), label
     assert check_release_audit({}) == ["{} is missing (the scheduled release audit)".format(AUDIT_WORKFLOW)]
+    # item 9 round 1: both CodeQL analyses are pinned
+    with open(CODEQL_WORKFLOW, encoding="utf-8") as handle:
+        codeql_text = handle.read()
+    assert check_codeql({CODEQL_WORKFLOW: codeql_text}) == [], check_codeql({CODEQL_WORKFLOW: codeql_text})
+    actions_job = codeql_text[codeql_text.index("  analyze-actions:\n"):]
+    for label, text in {
+        "actions job removed": codeql_text.replace(actions_job, ""),
+        "python job renamed": codeql_text.replace("  analyze:\n", "  analyse:\n", 1),
+        "actions language changed": codeql_text.replace("          languages: actions\n", "          languages: python\n"),
+        "suites narrowed": codeql_text.replace("queries: security-extended,security-and-quality", "queries: security-extended", 1),
+        "gate masked": codeql_text.replace("run: python3 -B tools/codeql_gate.py codeql-actions-results",
+                                           "run: python3 -B tools/codeql_gate.py codeql-actions-results || true"),
+        "gate dropped": codeql_text.replace("      - name: Fail on error-level CodeQL findings (summary table of packs, rules and findings)\n"
+                                            "        run: python3 -B tools/codeql_gate.py codeql-actions-results\n", ""),
+        "gate pointed elsewhere": codeql_text.replace("tools/codeql_gate.py codeql-actions-results", "tools/codeql_gate.py codeql-results"),
+        "analysis output changed": codeql_text.replace("output: codeql-actions-results", "output: elsewhere"),
+        "job allowed to fail": codeql_text.replace("    name: CodeQL (actions, security-extended)\n",
+                                                   "    name: CodeQL (actions, security-extended)\n    continue-on-error: true\n"),
+        "job conditional": codeql_text.replace("    name: CodeQL (actions, security-extended)\n",
+                                               "    name: CodeQL (actions, security-extended)\n    if: false\n"),
+        "init allowed to fail": codeql_text.replace("      - uses: github/codeql-action/init@", "      - continue-on-error: true\n        uses: github/codeql-action/init@", 1),
+        "push trigger narrowed": codeql_text.replace('  push:\n    branches: ["**"]\n', '  push:\n    branches: ["main"]\n'),
+    }.items():
+        assert text != codeql_text, label
+        assert check_codeql({CODEQL_WORKFLOW: text}), label
     # item 8 round 1: the cross-check step itself is pinned
     with open(".github/workflows/ci.yml", encoding="utf-8") as handle:
         ci_text = handle.read()
