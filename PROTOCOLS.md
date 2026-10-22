@@ -719,7 +719,11 @@ No new family. After the banner the SSH parser now always reads the one
 SSH_MSG_KEXINIT it already validated for HASSH (same RFC 4253 7.1 profile and
 budgets: packet 17..35000 bytes within `max_bytes`, ten printable name-lists of
 at most 4096 bytes, a valid trailer, nothing after it) and publishes a
-`refined` event with closed-set classes. Algorithm names, the cookie and the
+`refined` event with closed-set classes. Each non-empty name-list must follow
+the RFC 4251 section 6 grammar: comma-separated names of 1..64 characters, so a
+leading, trailing or doubled comma or an over-long name rejects the KEXINIT
+(the banner stays identified with no classes, no HASSH and no `refined`
+event); a zero-length list stays valid. Algorithm names, the cookie and the
 lists are never emitted. A KEXINIT is each side's offer: nothing is negotiated,
 selected or verified, so the classes describe what a side is willing to use.
 
@@ -727,7 +731,7 @@ selected or verified, so the classes describe what a side is willing to use.
 |---|---|---|
 | `ssh_kex_class` | `pq-hybrid`, `ecdh`, `dh-sha2`, `dh-sha1`, `other` | The strongest family among the offered key exchange names: sntrup761x25519 / mlkem768x25519 / mlkem768nistp256 / mlkem1024nistp384 (`pq-hybrid`); curve25519, curve448, ecdh-sha2-nistp* (`ecdh`); diffie-hellman group14-sha256, group15..18-sha512, group-exchange-sha256 (`dh-sha2`); group1-sha1, group14-sha1, group-exchange-sha1 (`dh-sha1`); anything else, including only pseudo-algorithms, is `other` |
 | `ssh_weak_algorithm` | `kex-sha1`, `hostkey-dss`, `hostkey-rsa-sha1`, `cipher-none`, `cipher-rc4`, `cipher-3des-or-64-bit-block`, `cipher-cbc`, `mac-none`, `mac-md5`, `mac-truncated` | One row per weak class offered in either direction's list (exact, case-sensitive names; empty names ignored) |
-| `ssh_terrapin` | `strict`, `exposed`, `not-applicable` | `strict` when kex-strict-c-v00@openssh.com or kex-strict-s-v00@openssh.com is offered; otherwise `exposed` when chacha20-poly1305@openssh.com, or an `-etm@openssh.com` MAC together with a CBC or 64-bit-block cipher, is offered (CVE-2023-48795); otherwise `not-applicable` |
+| `ssh_terrapin` | `strict`, `exposed`, `not-applicable` | `strict` when kex-strict-c-v00@openssh.com or kex-strict-s-v00@openssh.com is offered; otherwise `exposed` when chacha20-poly1305@openssh.com is offered in either direction, or a CBC or 64-bit-block cipher and an `-etm@openssh.com` MAC are offered in the same direction (client-to-server lists, or server-to-client lists; CVE-2023-48795); otherwise `not-applicable` |
 
 Risks (RISKS.md): `ssh-weak-algorithm-offered` (every weak class except
 `hostkey-rsa-sha1`, which many clients still offer for compatibility, and
