@@ -776,6 +776,39 @@ GATE_RUN = [
     'echo "$RESULTS" | jq -e \'all(.[]; .result == "success")\' > /dev/null',
 ]
 MASKING = re.compile(r"\|\|\s*(true|:)\b|\|\|\s*:\s*$|\bset\s+\+e\b")
+# Shell that can swallow a failing status, checked on every ci run line (expressions removed). There
+# is no general way to prove a script fails when its check fails, so this is an allowlist: `||` only
+# with a handler that fails again, `if` only with the conditions in use today, and the constructs
+# below not at all (item 10 round 2: `|| echo ignored`, `|| exit 0`); `&&` only in the forms below.
+REFAIL = re.compile(r"\|\|\s*\([^()]*&&\s*exit\s+[1-9][0-9]*\s*\)\s*$")
+SHELL_ALLOWED_LINES = {"grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt"}   # summary text only
+SHELL_ALLOWED_IF = {
+    'if [ -f pr-base/protocol_engine/engine.py ]; then',
+    'if git rev-parse --verify -q HEAD~1 >/dev/null && git cat-file -e HEAD~1:protocol_engine/engine.py 2>/dev/null; then',
+}
+# Under `bash -e` a failing command on the left of `&&` does not stop the script, so `&&` is allowed
+# only inside a re-fail handler, in an allowed `if` condition, or in these subshells, whose status is
+# their last command's.
+SHELL_ALLOWED_AND = {
+    '(cd /tmp && /tmp/wheel-env/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py") | tee -a "$GITHUB_STEP_SUMMARY"',
+    '(cd /tmp && /tmp/wheel-env39/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py") | tee -a "$GITHUB_STEP_SUMMARY"',
+}
+SHELL_BANNED = re.compile(r"\bexit\s+0\b|\breturn\b|\bset\s+\+|\btrap\b|(^|[;&|(]\s*)!\s|\b(while|until)\b|(^|[^&])&\s*$")
+
+
+def shell_problem(line):
+    code = EXPRESSION_SPAN.sub("EXPR", line).strip()
+    if code in SHELL_ALLOWED_LINES:
+        return None
+    if SHELL_BANNED.search(code):
+        return "`{}` can swallow a failing status".format(SHELL_BANNED.search(code).group(0).strip())
+    if "||" in code and not REFAIL.search(code):
+        return "`||` without a handler that fails again (`|| (... && exit 1)`)"
+    if re.search(r"\bif\b", code) and line not in SHELL_ALLOWED_IF:
+        return "`if` with a condition outside SHELL_ALLOWED_IF (a check inside a condition cannot fail the step)"
+    if "&&" in code and not REFAIL.search(code) and line not in SHELL_ALLOWED_IF and line.strip() not in SHELL_ALLOWED_AND:
+        return "`&&` outside a re-fail handler (under bash -e a failure on its left does not stop the script)"
+    return None
 
 
 def check_ci_masking(workflows, path=".github/workflows/ci.yml", gate="gate"):
@@ -803,6 +836,12 @@ def check_ci_masking(workflows, path=".github/workflows/ci.yml", gate="gate"):
             continue
         if condition is not None:
             problems.append("{}: job {} may not set if: (the gate would see it skipped only if it is listed)".format(path, job))
+        for step in steps_of(block):
+            run = step_fields(step).get("run")
+            for line in (run if isinstance(run, list) else [run] if run else []):
+                reason = shell_problem(line)
+                if reason:
+                    problems.append("{}: job {}: {}: {}".format(path, job, line.strip()[:60], reason))
         for step in steps_of(block):
             fields = step_fields(step)
             if "if" not in fields:
@@ -1504,6 +1543,19 @@ def self_test():
         "critical step renamed into an exception": ci_text_for_masking.replace(
             "      - name: Compare every fixture, truncation and seeded mutation with the parent commit\n",
             "      - name: Upload the pull request base diff report\n        if: github.event_name == 'pull_request'\n", 1),
+        # item 10 round 2: generic handlers and other ways to swallow a status
+        "or echo": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . || echo ignored\n", 1),
+        "or exit 0": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . || exit 0\n", 1),
+        "or subshell without refail": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . || (echo failed)\n", 1),
+        "refail exit 0": ci_text_for_masking.replace("|| (echo \"runtime dependencies are not allowed\" && exit 1)", "|| (echo \"runtime dependencies are not allowed\" && exit 0)", 1),
+        "negated": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ! ruff check --output-format github .\n", 1),
+        "inside if": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          if ruff check --output-format github .; then echo ok; fi\n", 1),
+        "until loop": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          until ruff check --output-format github .; do break; done\n", 1),
+        "trap": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          trap 'exit 0' ERR\n          ruff check --output-format github .\n", 1),
+        "set +o": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          set +o errexit\n          ruff check --output-format github .\n", 1),
+        "background": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . &\n", 1),
+        "and-list masks": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . && echo checked\n", 1),
+        "explicit exit 0": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github .; exit 0\n", 1),
         "exception step body changed": ci_text_for_masking.replace("--iterations 300 --seed \"$SEED\" --report behaviour-diff-base.md --report-only",
                                                                   "--iterations 1 --seed \"$SEED\" --report behaviour-diff-base.md --report-only"),
         "gate condition changed": ci_text_for_masking.replace("    if: always()\n", "    if: success()\n"),
