@@ -144,7 +144,10 @@ class EngineTests(unittest.TestCase):
         whole = Inspector(FP); whole.feed(data)
         self.assertEqual(self.derived(whole.observation)["hassh"], expected)
         plain = Inspector(); plain.feed(data)
-        self.assertEqual((plain.observation.status, self.derived(plain.observation), plain.metrics.bytes_inspected), ("identified", {}, len(banner)))
+        # v0.58: the KEXINIT is read without fingerprints too (posture classes); HASSH still needs fingerprints.
+        self.assertEqual((plain.observation.status, self.derived(plain.observation), plain.metrics.bytes_inspected),
+                         ("identified", {}, len(banner) + len(packet)))
+        self.assertIn("ssh_kex_class", {e.field for e in plain.observation.evidence})
 
     def test_ssh_continuation_never_downgrades_identification(self):
         banner = b"SSH-2.0-x\r\n"

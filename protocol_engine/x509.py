@@ -223,7 +223,12 @@ def _public_key(data, pos, limit):
     if oid == _EC:
         if params is None or params[0] != _OID:
             return "ec-other", end       # explicit or implicit curve parameters: not a named curve
-        curve = _CURVES.get(params[2:])
+        # The named curve is an interpreted OID, so it passes the same DER rule as every other one
+        # (v0.57 round-3 finding): exactly one OID filling the parameters, minimal arcs, complete last arc.
+        named, after = _oid(params, 0, len(params), "EC named curve")
+        if after != len(params):
+            raise ParseError("EC named curve parameters have trailing bytes")
+        curve = _CURVES.get(named)
         if curve is None:
             return "ec-other", end
         coordinate = (curve + 7) // 8

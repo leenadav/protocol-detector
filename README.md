@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 615 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 622 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -70,6 +70,17 @@ If capture permission is denied, grant permission to the capture helper accordin
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
 
+## New in v0.58 — SSH algorithm posture
+
+The SSH key exchange offer (KEXINIT) is now read after every SSH banner, with
+or without `--fingerprints`, and summarised as classes, never algorithm names:
+the strongest key exchange family offered (post-quantum hybrid, ECDH,
+SHA-2 or SHA-1 Diffie-Hellman), the weak algorithm classes offered (SHA-1 key
+exchange, DSA or SHA-1 RSA host keys, RC4, 3DES, CBC, MD5 or truncated MACs,
+none) and whether the side is exposed to Terrapin or offers strict key
+exchange. New risks: `ssh-weak-algorithm-offered`, `ssh-none-cipher-offered`,
+`ssh-terrapin-exposed`. 85 families, 76 automatic, 99 applications, 622 tests.
+
 ## New in v0.57 — TLS posture
 
 ServerHello selections now name their key exchange (`ecdhe`, `dhe`,
@@ -81,7 +92,7 @@ and live events judge that window at the capture time, never the analysis
 clock. New risks: `tls-no-forward-secrecy`, `tls-ca-certificate-as-leaf`,
 `tls-certificate-not-for-server-auth`, `tls-certificate-without-san`,
 `tls-certificate-outside-validity`. 85 families, 76 automatic, 99
-applications, 615 tests.
+applications, 616 tests.
 
 ## New in v0.56 — Authentication mechanism evidence
 

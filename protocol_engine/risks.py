@@ -7,6 +7,7 @@ beyond what the parsers already validated. RISKS.md documents every entry.
 """
 from types import MappingProxyType
 
+from .ssh_posture import RISK_EXEMPT as _SSH_RISK_EXEMPT
 from .tls_server import NO_FORWARD_SECRECY
 from .x509 import WEAK_SIGNATURES, validity, weak_key
 
@@ -37,6 +38,9 @@ RISKS = MappingProxyType({
     "tls-ca-certificate-as-leaf": ("medium", "TLS 1.2 server leaf certificate asserts basicConstraints cA TRUE (a CA certificate presented as the end entity)"),
     "tls-certificate-not-for-server-auth": ("medium", "TLS 1.2 server leaf certificate restricts its extended key usage to purposes other than serverAuth"),
     "tls-certificate-without-san": ("low", "TLS 1.2 server v3 leaf certificate without a subjectAltName extension (subject-CN-only names are rejected by current clients)"),
+    "ssh-weak-algorithm-offered": ("medium", "SSH KEXINIT offers a weak algorithm class: SHA-1 key exchange, DSA host keys, RC4, 3DES or 64-bit block ciphers, CBC mode, MD5 or truncated MACs, or no MAC"),
+    "ssh-none-cipher-offered": ("high", "SSH KEXINIT offers the none cipher (no encryption)"),
+    "ssh-terrapin-exposed": ("medium", "SSH KEXINIT offers ChaCha20-Poly1305 or an encrypt-then-MAC MAC with a CBC-mode cipher without the strict key exchange marker (Terrapin, CVE-2023-48795)"),
     "tls-certificate-outside-validity": ("medium", "TLS 1.2 server leaf certificate expired or not yet valid at the capture time (evaluated only when the host supplies a capture clock)"),
 })
 MAX_CERTIFICATE_LIFETIME_DAYS = 398   # CA/Browser Forum baseline since September 2020
@@ -50,7 +54,7 @@ _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags"
                      "tls_certificate_key", "tls_certificate_signature", "tls_certificate_lifetime_days", "tls_ech", "dns_rcode", "kerberos_error", "radius_code", "modbus_pdu", "zmtp_mechanism", "rip_authentication", "gss_mechanism", "ldap_bind", "smb_session",
                      "http_auth_scheme", "http_auth_challenge", "http2_auth_scheme", "http2_auth_challenge",
                      "selected_key_exchange", "tls_certificate_ca", "tls_certificate_eku", "tls_certificate_san",
-                     "tls_certificate_not_before", "tls_certificate_not_after"))
+                     "tls_certificate_not_before", "tls_certificate_not_after", "ssh_weak_algorithm", "ssh_terrapin"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -172,6 +176,14 @@ def flow_risks(verdict, client, server, at=None):
                 # credentials and CURVE/GSSAPI authenticate cryptographically.
                 if value != "plain" and "cleartext-credential-protocol" in found:
                     found.remove("cleartext-credential-protocol")
+            elif field == "ssh_weak_algorithm":
+                if value == "cipher-none":
+                    found.append("ssh-none-cipher-offered")
+                if value not in _SSH_RISK_EXEMPT:
+                    found.append("ssh-weak-algorithm-offered")
+            elif field == "ssh_terrapin":
+                if value == "exposed":
+                    found.append("ssh-terrapin-exposed")
             elif field == "selected_key_exchange":
                 if value in NO_FORWARD_SECRECY:
                     found.append("tls-no-forward-secrecy")

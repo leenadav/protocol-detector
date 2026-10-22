@@ -449,12 +449,18 @@ DNS מקבל את הפריסות הנדירות רק תחת בדיקת סביר�
 99 יישומים, 587 בדיקות עוברות.
 
 
+עדכון 0.58: מצב האלגוריתמים של SSH כתוויות סגורות בלבד: הודעת KEXINIT שאחרי ה־banner נקראת תמיד (גם בלי
+`--fingerprints`) ומסוכמת כמחלקות, לעולם לא שמות אלגוריתמים: משפחת החלפת המפתחות החזקה ביותר שמוצעת
+(היברידית פוסט־קוונטית, ECDH, דיפי־הלמן SHA-2 או SHA-1), מחלקות אלגוריתמים חלשים שמוצעים (SHA-1, DSA, RC4, 3DES,
+CBC, MD5, MAC מקוצר, none) והאם הצד חשוף ל־Terrapin או מציע strict kex. סיכונים חדשים: `ssh-weak-algorithm-offered`,
+`ssh-none-cipher-offered`, `ssh-terrapin-exposed`. 85 משפחות, 76 אוטומטיות, 99 יישומים, 622 בדיקות עוברות.
+
 עדכון 0.57: מצב האבטחה של TLS כתוויות סגורות בלבד: ה־ServerHello מציין את שיטת החלפת המפתחות (ecdhe, dhe, static-ecdh,
 static-rsa, psk) ואת מצב ההצפנה (aead או cbc) ב־TLS 1.2, TLS 1.3 ו־DTLS 1.2. עם `--certificates` תעודת השרת מוסיפה דגל CA,
 מחלקת extended key usage, האם יש subjectAltName (לעולם לא השמות עצמם) וחלון התוקף בימים קלנדריים; התוקף נשפט לפי זמן
 הלכידה ולא לפי השעון של הרצת הניתוח. סיכונים חדשים: `tls-no-forward-secrecy`, `tls-ca-certificate-as-leaf`,
 `tls-certificate-not-for-server-auth`, `tls-certificate-without-san`, `tls-certificate-outside-validity`. 85 משפחות,
-76 אוטומטיות, 99 יישומים, 615 בדיקות עוברות.
+76 אוטומטיות, 99 יישומים, 616 בדיקות עוברות.
 
 עדכון 0.56: עדות למנגנון האימות כתווית סגורה בלבד, לעולם לא אישור כניסה: הקמת סשן SMB2 ו־SMB1 אחרי NEGOTIATE
 (Kerberos, NTLM עם סוג ההודעה, NEGOEX, סשן אורח או אנונימי), מנגנוני bind של LDAP (simple, SASL GSSAPI/GSS-SPNEGO/
