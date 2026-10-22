@@ -366,7 +366,7 @@ jobs:
         run: |
           ./actionlint -no-color .github/workflows/*.yml
           echo "actionlint: $(find .github/workflows -name '*.yml' | wc -l) workflow files clean" | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Workflow policy (gate covers every ci job, drift gate triggers on every workflow)
+      - name: Workflow policy (gate covers every ci job, drift gate triggers on every workflow, releases serialize)
         run: |
           python -B tools/check_workflow_policy.py --self-test
           python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"
