@@ -27,7 +27,10 @@
    `.github/workflows/release.yml` must not exist. A tag push runs the workflow file at the
    tagged commit, so every older commit's unguarded release.yml stays reachable until that
    path is disabled in the repository's Actions settings; keeping the path free means
-   disabling it never disables the guarded controller. `tools/check_release_exposure.py`
+   disabling it never disables the guarded controller. No other workflow may hold
+   `contents`, `id-token`, `attestations`, `packages`, `actions`, `deployments` or
+   `statuses: write`, or `write-all`, so none can publish on another trigger (CodeQL keeps
+   `security-events: write` for its SARIF upload). `tools/check_release_exposure.py`
    reports which workflows a tag on any given commit would run.
 6. Shell: every workflow sets top-level `defaults: run: shell: bash`, and no job or step
    overrides the shell. The unspecified default is `bash -e {0}` without pipefail, so a
@@ -56,7 +59,11 @@
    (`*`, including `<<: *x`). With those excluded, the decoded YAML equals the source text,
    so the line-based rules above (credential contexts, `tags:` triggers, pins, pinned steps)
    cannot be bypassed by an encoding YAML undoes before GitHub reads the workflow
-   (milestone 4 round 3, carried as CI/CD task 5).
+   (milestone 4 round 3, carried as CI/CD task 5). Flow collections can also hold structure
+   on one line that the line-based parsers never read (`push: {? tags: ["v*"]}`, task 5
+   round 1), so outside block scalars and `${{ }}` expressions no flow mapping (`{`, `}`)
+   is allowed at all, and a flow sequence must be one line of plain or quoted scalars: no
+   nested collection, no `key: value` pair, no explicit key, tag, anchor or alias.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -545,6 +552,9 @@ def check_attestation_verify(text, publish="publish"):
     return problems
 
 
+RELEASE_SCOPES = {"contents", "id-token", "attestations", "packages", "actions", "deployments", "statuses"}
+
+
 def check_tag_triggers(workflows):
     """`workflows`: {repository path: text}."""
     problems = []
@@ -556,6 +566,19 @@ def check_tag_triggers(workflows):
             problems.append("{} runs on tag pushes; only {} may".format(path, RELEASE_WORKFLOW))
     if RELEASE_WORKFLOW not in workflows:
         problems.append("{} is missing".format(RELEASE_WORKFLOW))
+    # A workflow outside the controller holding a release-relevant write scope could publish on
+    # any trigger, tag or not; only security-events (CodeQL's SARIF upload) may be written elsewhere.
+    for path, text in sorted(workflows.items()):
+        if path == RELEASE_WORKFLOW:
+            continue
+        for number, line in enumerate(text.splitlines(), 1):
+            if line.strip().startswith("#"):
+                continue
+            key = key_of(line)
+            if key and key[1] == "permissions" and strip_quotes(key[2]).replace(" ", "") in ("write-all",):
+                problems.append("{}:{}: write-all outside {}".format(path, number, RELEASE_WORKFLOW))
+            elif key and strip_quotes(key[2]) == "write" and key[1] in RELEASE_SCOPES:
+                problems.append("{}:{}: `{}: write` outside {}".format(path, number, key[1], RELEASE_WORKFLOW))
     return problems
 
 
@@ -625,6 +648,72 @@ def check_action_consistency(workflows):
 
 
 BLOCK_SCALAR = re.compile(r":\s*[|>][-+0-9]*\s*(#.*)?$")
+EXPRESSION_SPAN = re.compile(r"\$\{\{.*?\}\}")
+
+
+def flow_items(text):
+    """Comma-separated items of a flow sequence body, quote-aware; None when unreadable."""
+    items, current, quote = [], "", None
+    for char in text:
+        if quote:
+            current += char
+            if char == quote:
+                quote = None
+        elif char in "\"'":
+            quote = char
+            current += char
+        elif char == ",":
+            items.append(current.strip())
+            current = ""
+        else:
+            current += char
+    if quote:
+        return None
+    items.append(current.strip())
+    return items
+
+
+def mask_quotes(line):
+    """The line without its comment, each quoted string replaced by `"Q"`; None on an open quote."""
+    out, quote = "", None
+    for index, char in enumerate(line):
+        if quote:
+            if char == quote:
+                quote = None
+                out += 'Q"'
+        elif char in "\"'" and (out.rstrip()[-1:] in ("", ":", "-", "[", ",", "{")):
+            # a quote opens a quoted scalar only where a scalar starts; `job's` is plain text
+            quote = char
+            out += '"'
+        elif char == "#" and (index == 0 or line[index - 1] in " \t"):
+            break
+        else:
+            out += char
+    return None if quote else out
+
+
+def flow_problem(line):
+    """Why a non-block line's flow collections are not allowed, or None."""
+    code = mask_quotes(EXPRESSION_SPAN.sub("EXPR", line))
+    if code is None:
+        return "unterminated quote"
+    if "{" in code or "}" in code:
+        return "flow mapping (only `${{ }}` expressions may contain braces)"
+    if "[" not in code and "]" not in code:
+        return None
+    start, end = code.find("["), code.rfind("]")
+    if start < 0 or end < start or code.count("[") != 1 or code.count("]") != 1:
+        return "flow sequence must be a single, non-nested `[...]` on one line"
+    items = flow_items(code[start + 1:end])
+    if items is None:
+        return "unterminated quote in a flow sequence"
+    for item in items:
+        if item.startswith(("?", "&", "*", "!", "-")):
+            return "flow sequence item `{}` is not a plain scalar".format(item)
+        unquoted = item if not item[:1] in "\"'" else ""
+        if ": " in unquoted or unquoted.endswith(":"):
+            return "flow sequence item `{}` is a mapping".format(item)
+    return None
 FLOW_NODE = re.compile(r"[\[{,]\s*[&*!]")
 
 
@@ -648,8 +737,10 @@ def check_encoding(path, text):
             problems.append("{}:{}: YAML merge key, explicit key, tag, anchor or alias".format(path, number))
         elif value.startswith(("&", "*", "!")):
             problems.append("{}:{}: YAML tag, anchor or alias `{}`".format(path, number, value))
-        elif value.startswith(("[", "{")) and FLOW_NODE.search(value):
-            problems.append("{}:{}: YAML tag, anchor or alias inside a flow collection".format(path, number))
+        else:
+            reason = flow_problem(line)
+            if reason:
+                problems.append("{}:{}: {}".format(path, number, reason))
         if BLOCK_SCALAR.search(line):
             block_indent = indent
     return problems
@@ -901,6 +992,13 @@ def self_test():
     assert check_tag_triggers({RELEASE_WORKFLOW: legacy_workflow, ".github/workflows/x.yml": tagged}) == [
         ".github/workflows/x.yml runs on tag pushes; only {} may".format(RELEASE_WORKFLOW)]
     assert check_tag_triggers({".github/workflows/ci.yml": other}) == ["{} is missing".format(RELEASE_WORKFLOW)]
+    writer = other + "    permissions:\n      contents: write\n"
+    assert check_tag_triggers({RELEASE_WORKFLOW: legacy_workflow, ".github/workflows/w.yml": writer}) == [
+        ".github/workflows/w.yml:9: `contents: write` outside {}".format(RELEASE_WORKFLOW)]
+    for scope in ("id-token", "attestations", "packages"):
+        assert check_tag_triggers({RELEASE_WORKFLOW: legacy_workflow, "w.yml": writer.replace("contents", scope)}), scope
+    assert check_tag_triggers({RELEASE_WORKFLOW: legacy_workflow, "w.yml": other + "permissions: write-all\n"})
+    assert check_tag_triggers({RELEASE_WORKFLOW: legacy_workflow, "w.yml": writer.replace("contents", "security-events")}) == []
     assert tag_trigger(tagged.replace("    tags:\n      - \"v*\"\n", "    tags-ignore: [\"x\"]\n"))
     try:
         tag_trigger("name: x\non: [push]\njobs: {}\n")
@@ -1028,6 +1126,13 @@ def self_test():
              "      - env:\n          T: ${{ github.token }}\n        run: echo ok && true\n      - run: >-\n          x \\\\\n"
              "    # comment with \\\\ and *alias\n")
     assert check_encoding("w.yml", plain) == [], check_encoding("w.yml", plain)
+    fine = ('    needs: [verify, behaviour-diff]\n    python: ["3.9", "3.11"]\n    tags: ["v*"]  # a comment, with: [x]\n'
+            "    group: ${{ github.ref_type == 'tag' && 'a' || format('b-{0}', github.ref) }}\n    name: \"a: b, c\"\n"
+            "      - name: Fetch the build job's files\n      - name: \"quoted {braces} and [brackets]\"\n")
+    assert check_encoding("w.yml", fine) == [], check_encoding("w.yml", fine)
+    tag_trick = 'on:\n  push: {? tags: ["v*"]}\njobs:\n  a:\n    runs-on: x\n'
+    assert not tag_trigger(tag_trick)        # what the line parser sees; rule 9 is what rejects it
+    assert check_encoding("x.yml", tag_trick) == ["x.yml:2: flow mapping (only `${{ }}` expressions may contain braces)"]
     for label, line in {"unicode escape": '          GH_TOKEN: "${{ \\u0073ecrets.RELEASE_PAT }}"\n',
                         "hex escape": '          GH_TOKEN: "${{ \\x73ecrets.RELEASE_PAT }}"\n',
                         "escaped key": '    "t\\u0061gs": ["v*"]\n',
@@ -1039,7 +1144,18 @@ def self_test():
                         "flow alias": "    tags: [*v]\n",
                         "list alias": "      - *step\n",
                         "explicit key": "    ? secrets\n",
-                        "anchored mapping": "    &defaults\n"}.items():
+                        "anchored mapping": "    &defaults\n",
+                        # task 5 round 1: flow collections hiding structure from the line parsers
+                        "flow explicit key": '  push: {? tags: ["v*"]}\n',
+                        "flow mapping": '  push: {tags: ["v*"]}\n',
+                        "flow mapping value": "    with: {subject-path: dist/*}\n",
+                        "nested flow": '    tags: [["v*"]]\n',
+                        "flow pair": '    needs: [build: x]\n',
+                        "flow pair end": '    needs: [build:]\n',
+                        "flow explicit item": '    needs: [? build]\n',
+                        "multi-line flow": '    needs: [build,\n',
+                        "unterminated quote": '    tags: ["v*]\n',
+                        "quoted item then pair": '    needs: ["a", b: c]\n'}.items():
         found = check_encoding("w.yml", plain + "jobs2:\n  b:\n    x:\n" + line)
         assert found, (label, found)
     with tempfile.TemporaryDirectory() as directory:
