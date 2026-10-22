@@ -49,7 +49,8 @@ only with green checks is a review discipline, not a guarantee.
 | Workflow text means what GitHub reads: no YAML encoding that decodes into something the line-based policy rules did not see | enforced by rule 9 of `tools/check_workflow_policy.py`: outside literal block scalars, no backslash (so no `\u0073ecrets`-style escapes or escaped line breaks), and no tag, anchor, alias, merge key or explicit key. No flow mapping is allowed at all outside `${{ }}` expressions, and a flow sequence must be one line of plain or quoted scalars, so `push: {? tags: ["v*"]}` cannot hide a trigger from rule 5. No workflow may authenticate with a stored credential. On every line, comments included, the words `secrets` and `vars` may appear only as the exact `${{ secrets.GITHUB_TOKEN }}`, plus one job name. Comments are scanned because inside a `run: |` block a `#` line is script data, such as here-document input that Actions interpolates, not a YAML comment. This is a word ban rather than an expression parser, so no expression grammar can route around it: a quoted `}}` in a `format()` string, multi-line expressions, `secrets: inherit` and `if:` conditions are all covered. A read-only workflow therefore cannot publish with a PAT. Rule 5 also keeps release-relevant write scopes (`contents`, `id-token`, `attestations`, `packages`, `actions`, `deployments`, `statuses`, `write-all`) out of every workflow but the controller. The credential, trigger, pin and pinned-step rules therefore read the same text GitHub evaluates |
 | Scheduled release audit: every `v*` tag points at a commit on `main`; every published release names an existing, on-`main` `v*` tag and that tag's current commit; and every downloaded file, hidden ones included, carries an attestation from `publish-release.yml` for that tag ref and commit | enforced after the fact, once merged to `main`, by `.github/workflows/release-audit.yml`. It runs daily and on manual dispatch. A scheduled run always uses the default branch's copy, so no tag, legacy `release.yml` or branch-edited workflow can swap it. It holds read-only permissions (`contents`, `attestations: read`); `tools/release_audit.py` decides, and fails closed on unreadable facts. A failing run is GitHub's notification to the owner. Rule 10 of the policy keeps the schedule and pins the gather-and-decide step. This is detective: it reports a bad release but cannot stop one being published |
 | The policy reads what GitHub reads: the line parser in `tools/check_workflow_policy.py` and a real YAML parser agree on every fact the rules use | enforced by `tools/check_workflow_yaml.py` in CI `workflow-lint` and `make workflow-lint`, with the hash-pinned PyYAML. Rule 11 of the policy pins the CI step, including its own toolchain install, and forbids `if:` or `continue-on-error` on it or on its job, so the step cannot be dropped or masked while the gate stays green. `make check` does not run it because it needs the dev toolchain. Every workflow is parsed both ways. Any disagreement fails: top-level and job keys, job ids, `needs`, tag triggers, permissions, each step's keys, `name`, `if`, `uses`, `env`, `with` and `run` lines, or the `uses` list. The stored-credential ban is also re-run over every decoded key and string. Each review finding against the line rules was such a disagreement, so this closes the class rather than one spelling. Limit: PyYAML is YAML 1.1 and GitHub's parser is YAML 1.2; the one difference that matters here (`on` as a boolean) is normalized |
-| No masked ci job: every job `ci gate (all jobs)` needs can actually fail | enforced by rule 13 of `tools/check_workflow_policy.py`. In `ci.yml`: no `continue-on-error`. Run lines are checked against an allowlist, since a script cannot be proven to fail when its check fails: `\|\|` only on three exact lines: two whose handler fails again, `\|\| (… && exit 1)`, and the bandit summary-text fallback. A pattern for re-failing handlers was beaten by chaining (`\|\| echo ignored \|\| (… && exit 1)`). `&&` only inside those lines, the allowed `if` conditions, or the two wheel-smoke subshells, because under `bash -e` a failure left of `&&` does not stop the script; `if` only with the conditions in use; and no `exit 0`, `return`, `set +…`, `trap`, `!` negation, `while`/`until` or background `&`. no job-level `if:` except the gate's exact `always()`; a step `if:` only on the three pull-request-only behaviour-diff base steps, pinned by job and every field; and the gate's decision step pinned. Because a ban list cannot cover every shell form (`echo "$(check)"` hides the substitution's status), the whole of `ci.yml` is also locked in `tools/ci.lock.json`: steps and execution context alike (workflow and job `env`, `defaults`, runners, matrix), with only action versions normalised away, since rule 7 owns them. Nothing changes unless the lock changes in the same commit, regenerated with `--write-ci-lock`. Shell startup variables (`BASH_ENV`, `ENV`, `BASH_FUNC_*`, `SHELLOPTS`, `BASHOPTS`, `PROMPT_COMMAND`, `PS4`) are banned outright, since they redefine a locked command without touching its step. The lock makes changes reviewable; whether a reviewed change masks a failure stays a review judgment. Code the steps run (tools, tests, requirements) is not locked: changing it changes the check itself and is reviewed as such |
+| No masked ci job: every job `ci gate (all jobs)` needs can actually fail | enforced by rule 13 of `tools/check_workflow_policy.py`. In `ci.yml`: no `continue-on-error`. Run lines are checked against an allowlist, since a script cannot be proven to fail when its check fails: `\|\|` only on three exact lines: two whose handler fails again, `\|\| (… && exit 1)`, and the bandit summary-text fallback. A pattern for re-failing handlers was beaten by chaining (`\|\| echo ignored \|\| (… && exit 1)`). `&&` only inside those lines, the allowed `if` conditions, or the two wheel-smoke subshells, because under `bash -e` a failure left of `&&` does not stop the script; `if` only with the conditions in use; and no `exit 0`, `return`, `set +…`, `trap`, `!` negation, `while`/`until` or background `&`. no job-level `if:` except the gate's exact `always()`; a step `if:` only on the three pull-request-only behaviour-diff base steps, pinned by job and every field; and the gate's decision step pinned. Because a ban list cannot cover every shell form (`echo "$(check)"` hides the substitution's status), `ci.yml` is also covered by the workflow lock below. The lock makes changes reviewable; whether a reviewed change masks a failure stays a review judgment |
+| No unreviewed workflow change: every workflow line, steps and execution context alike | enforced by rule 14 of `tools/check_workflow_policy.py`. Every line of every workflow file is locked in `tools/workflows.lock.json`: steps and execution context alike (workflow and job `env`, `defaults`, runners, matrix), with only action versions normalised away, since rule 7 owns them (only a plain `owner/repo@ref` plus comment is normalised). No workflow changes, appears or disappears unless the lock changes in the same commit, regenerated with `--write-workflow-lock`. That covers the ci gate, CodeQL, the release controller and the audit, whose results decide releases. Shell startup variables (`BASH_ENV`, `ENV`, `BASH_FUNC_*`, `SHELLOPTS`, `BASHOPTS`, `PROMPT_COMMAND`, `PS4`) are banned in every workflow, since they redefine a pinned command without touching its step. The lock makes changes reviewable (CODEOWNERS covers the tree); it cannot judge a reviewed change. Code the steps run (tools, tests, requirements) is not locked: changing it changes the check itself and is reviewed as such |
 | Failing checks fail their step (pipefail) | enforced: every workflow sets `defaults: run: shell: bash`, which is `bash -eo pipefail`. The unspecified default is `bash -e`, under which `check \| tee` passed when the check failed. Rule 6 of the policy forbids dropping or overriding it |
 | Required status checks on `main` (the two names below) | recommended; not enforceable on the current plan |
 | Required pull request review, stale-approval dismissal, no force push or deletion on `main` | recommended; not enforceable on the current plan |
@@ -216,21 +217,21 @@ the review loop above.
    and CodeQL succeeded on the tagged commit (read-only `checks: read`), so
    a release cannot ship a commit whose CodeQL never passed (the release
    build re-runs the test gate but not CodeQL).
-3. Artifact action pairing (in review on `claude/cicd-next`). `upload-artifact` and `download-artifact` hand
+3. Artifact action pairing (passed review). `upload-artifact` and `download-artifact` hand
    the release files between jobs; Dependabot can move them to different
    majors (open PR #8 moves upload to v7 and leaves download at v4). A
    policy rule should require matching majors, or the pair should be
    updated together.
-4. Post-publish verification (in review on `claude/cicd-next`; verification runs after
+4. Post-publish verification (three review rounds used; the late finding was carried by items 5 and 6, which resolved it; verification runs after
    attesting and before publishing, so a failed verification publishes nothing). After `attest-build-provenance`, verify the
    attestation of every published file with `gh attestation verify` in the
    publish job, so a failed or partial attestation fails the release.
-5. Workflow encoding fail-closed (in review on `claude/cicd-next`). This carries
+5. Workflow encoding fail-closed (three review rounds used; the late finding was carried by item 6, which resolved it). This carries
    over the milestone-4 round-3 finding, which arrived after that task's three
    rounds: a double-quoted YAML escape (`"${{ \u0073ecrets.X }}"`) hid a
    credential context from the line-based rule 8. Rule 9 bans every YAML
    encoding that decodes into different text.
-6. Stored-credential word ban (in review on `claude/cicd-next`). This carries
+6. Stored-credential word ban (passed review). This carries
    over the task-5 round-3 finding, which arrived after task 5's three rounds:
    the expression scan ended at a `}}` inside a quoted `format('{{x}}')` string,
    so a later `secrets.RELEASE_PAT` went unseen. The ban now works on words, not
@@ -249,22 +250,29 @@ the review loop above.
    Python analysis: an independent reading beside zizmor and the policy. Its
    results pass the same error-level gate, and since the release checks gate
    requires the whole `codeql` workflow, they bind releases too.
-10. No masked ci job (three review rounds used; the round-3 finding is carried by item 11). The aggregate gate only
+10. No masked ci job (three review rounds used; the round-3 finding was carried by item 11, which resolved it). The aggregate gate only
    means something if each job it needs can fail. Rule 13 forbids every way
    to make a job or step pass regardless of its outcome.
-11. Exact-line `||` allowlist (in review on `claude/cicd-next`). This carries
+11. Exact-line `||` allowlist (passed review in round 3). This carries
    over the item-10 round-3 finding: `cmd || echo ignored || (echo failed &&
    exit 1)` satisfied the re-fail pattern, but its middle handler
    short-circuits. `||` is now allowed only on the three exact lines in use.
    Round 1 found `echo "$(check)"`: the substitution's status is lost to the
    successful `echo`. A syntax ban cannot list every such form, so ci.yml
-   is now also locked in `tools/ci.lock.json`; nothing in it can change
+   is now also locked (since item 12, in `tools/workflows.lock.json`); nothing in it can change
    without the lock changing in the same commit, which puts the shell change
    before a reviewer (CODEOWNERS covers the whole tree). Round 2 found that a
    step-only lock missed execution context: a job or workflow `BASH_ENV` can
    source a function that turns a locked check into success. The lock now
    covers every line of ci.yml (action versions aside), and shell startup
    variables are banned.
+12. Lock every workflow (in review on `claude/cicd-next`). The round-2
+   `BASH_ENV` bypass of item 11 applied unchanged to the other workflows: a
+   job-level `BASH_ENV` in `codeql.yml`, `publish-release.yml` or
+   `release-audit.yml` passed the policy, and could redefine the CodeQL gate,
+   the release controller's pinned provenance and checks commands, or the
+   audit. Rule 14 locks every line of every workflow file and bans shell
+   startup variables in all of them; the ci-only lock is folded into it.
 
 ## Caching and concurrency policy
 

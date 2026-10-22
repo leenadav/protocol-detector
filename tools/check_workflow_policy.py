@@ -94,13 +94,17 @@
    gate's decision step is pinned (GATE_ENV / GATE_RUN), so a job cannot be skipped or
    allowed to fail while `ci gate (all jobs)` stays green. Syntax bans cannot be complete
    (shell has more ways to swallow a status than any list: `echo "$(check)"`, chained
-   handlers, ...), so the whole of ci.yml, steps and execution context (workflow and job
-   env, defaults, runners, matrix), is also locked in `tools/ci.lock.json`, with only action
-   versions normalised away: nothing can change unless the lock changes in the same commit,
-   which puts every shell change in front of a reviewer. Shell startup variables (BASH_ENV and
-   kin) are banned outright. Code the steps run (tools, tests, requirements) is not locked; a
-   change there changes the check itself and is reviewed as such. Whether
-   a reviewed change masks a failure is a review judgment, not something this rule can prove.
+   handlers, ...), so ci.yml is also covered by rule 14's lock. Whether a reviewed change
+   masks a failure is a review judgment, not something this rule can prove.
+14. Workflow lock (every workflow file): every line of every workflow, steps and execution
+   context (workflow and job env, defaults, runners, matrix) alike, is locked in
+   `tools/workflows.lock.json`, with only action versions normalised away (rule 7 owns them):
+   no workflow can change, appear or disappear unless the lock changes in the same commit,
+   which puts every change to the ci gate, CodeQL, the release controller and the audit in
+   front of a reviewer. Shell startup variables (BASH_ENV, ENV, BASH_FUNC_*, SHELLOPTS,
+   BASHOPTS, PROMPT_COMMAND, PS4) are banned outright in every workflow, since they redefine a
+   pinned command without touching its step. Code the steps run (tools, tests, requirements)
+   is not locked; a change there changes the check itself and is reviewed as such.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -869,17 +873,17 @@ def check_ci_masking(workflows, path=".github/workflows/ci.yml", gate="gate"):
     return problems
 
 
-CI_LOCK = "tools/ci.lock.json"
+WORKFLOW_LOCK = "tools/workflows.lock.json"
 # Only a plain ref and an optional trailing comment are normalised, so nothing executable can
 # hide after the `@` of a run-block line that happens to start with `uses:`.
 LOCK_USES = re.compile(r"""^(\s*(?:-\s+)?uses:\s*)(["']?)([A-Za-z0-9._/-]+)@[A-Za-z0-9._/-]+\2(\s+#.*)?$""")
-# Variables that change how bash starts or runs, so a locked command could be redefined
+# Variables that change how bash starts or runs, so a pinned command could be redefined
 # without touching its step (BASH_ENV sources a file before every `run`).
 SHELL_STARTUP = re.compile(r"\b(?:BASH_ENV|ENV|BASH_FUNC_\w*|SHELLOPTS|BASHOPTS|PROMPT_COMMAND|PS4)\b")
 
 
-def ci_lock_lines(text):
-    """ci.yml as locked: every line, with `uses` reduced to action identity (rule 7 owns versions)."""
+def lock_lines(text):
+    """A workflow as locked: every line, with `uses` reduced to action identity (rule 7 owns versions)."""
     lines = []
     for line in text.splitlines():
         match = LOCK_USES.match(line)
@@ -887,29 +891,40 @@ def ci_lock_lines(text):
     return lines
 
 
-def check_ci_lock(workflows, lock_text, path=".github/workflows/ci.yml"):
-    """Rule 13 lock: no line of ci.yml (steps, job and workflow env, defaults, runners, matrix) may
-    change unless tools/ci.lock.json changes with it."""
-    if path not in workflows:
-        return ["{} is missing".format(path)]
+def workflow_lock(workflows):
+    return {"files": {path: lock_lines(text) for path, text in sorted(workflows.items())}}
+
+
+def check_workflow_lock(workflows, lock_text):
+    """Rule 14: no line of any workflow may change, and no workflow appear or disappear, unless
+    tools/workflows.lock.json changes with it; shell startup variables are banned everywhere."""
     problems = []
-    for number, line in enumerate(workflows[path].splitlines(), 1):
-        if SHELL_STARTUP.search(line):
-            problems.append("{}:{}: shell startup variables (BASH_ENV, ENV, BASH_FUNC_*, SHELLOPTS, BASHOPTS, "
-                            "PROMPT_COMMAND, PS4) may not appear in ci.yml".format(path, number))
+    for path in sorted(workflows):
+        for number, line in enumerate(workflows[path].splitlines(), 1):
+            if SHELL_STARTUP.search(line):
+                problems.append("{}:{}: shell startup variables (BASH_ENV, ENV, BASH_FUNC_*, SHELLOPTS, BASHOPTS, "
+                                "PROMPT_COMMAND, PS4) may not appear in a workflow".format(path, number))
     try:
         locked = json.loads(lock_text)
     except ValueError as error:
-        return problems + ["{} is unreadable: {}".format(CI_LOCK, error)]
-    current = ci_lock_lines(workflows[path])
-    if not isinstance(locked, dict) or locked.get("path") != path or not isinstance(locked.get("lines"), list):
-        return problems + ["{} does not lock {}".format(CI_LOCK, path)]
-    if current != locked["lines"]:
-        number = next((i for i, (a, b) in enumerate(zip(current, locked["lines"]), 1) if a != b),
-                      min(len(current), len(locked["lines"])) + 1)
-        problems.append("{}:{}: differs from {} (shell cannot be proven to fail when its check fails, so every "
-                        "ci.yml change, steps and execution context alike, must update the lock in the same change: "
-                        "python3 -B tools/check_workflow_policy.py --write-ci-lock)".format(path, number, CI_LOCK))
+        return problems + ["{} is unreadable: {}".format(WORKFLOW_LOCK, error)]
+    files = locked.get("files") if isinstance(locked, dict) else None
+    if not isinstance(files, dict) or not all(isinstance(lines, list) for lines in files.values()):
+        return problems + ["{} does not hold a files mapping".format(WORKFLOW_LOCK)]
+    hint = ("shell cannot be proven to fail when its check fails, so every workflow change, steps and "
+            "execution context alike, must update the lock in the same change: python3 -B "
+            "tools/check_workflow_policy.py --write-workflow-lock")
+    for path in sorted(set(workflows) | set(files)):
+        if path not in files:
+            problems.append("{}: not in {} ({})".format(path, WORKFLOW_LOCK, hint))
+        elif path not in workflows:
+            problems.append("{}: locked in {} but missing ({})".format(path, WORKFLOW_LOCK, hint))
+        else:
+            current, expected = lock_lines(workflows[path]), files[path]
+            if current != expected:
+                number = next((i for i, (a, b) in enumerate(zip(current, expected), 1) if a != b),
+                              min(len(current), len(expected)) + 1)
+                problems.append("{}:{}: differs from {} ({})".format(path, number, WORKFLOW_LOCK, hint))
     return problems
 
 
@@ -1121,8 +1136,8 @@ def main(root):
         problems += check_cross_check(texts)
         problems += check_codeql(texts)
         problems += check_ci_masking(texts)
-        lock = root / CI_LOCK
-        problems += check_ci_lock(texts, lock.read_text(encoding="utf-8") if lock.exists() else "missing")
+        lock = root / WORKFLOW_LOCK
+        problems += check_workflow_lock(texts, lock.read_text(encoding="utf-8") if lock.exists() else "missing")
         for name in files:
             problems += check_encoding(name, texts[name])
             problems += check_credentials(name, texts[name])
@@ -1631,9 +1646,13 @@ def self_test():
         assert text != ci_text_for_masking, label
         assert check_ci_masking({".github/workflows/ci.yml": text}), label
     # task 11 round 1: the ci lock catches what no syntax ban can (command substitution, ...)
-    with open(CI_LOCK, encoding="utf-8") as handle:
+    with open(WORKFLOW_LOCK, encoding="utf-8") as handle:
         lock_text = handle.read()
-    assert check_ci_lock({".github/workflows/ci.yml": ci_text_for_masking}, lock_text) == []
+    real = {p.as_posix(): p.read_text(encoding="utf-8") for p in sorted(Path(".github/workflows").glob("*.yml"))}
+
+    def with_file(text, path=".github/workflows/ci.yml"):
+        return dict(real, **{path: text})
+    assert check_workflow_lock(with_file(ci_text_for_masking), lock_text) == []
     for label, text in {
         "command substitution": ci_text_for_masking.replace("          ruff check --output-format github .\n",
                                                             '          echo "$(ruff check --output-format github .)"\n', 1),
@@ -1658,22 +1677,41 @@ def self_test():
         "line appended": ci_text_for_masking + "# trailing\n",
     }.items():
         assert text != ci_text_for_masking, label
-        assert check_ci_lock({".github/workflows/ci.yml": text}, lock_text), label
+        assert check_workflow_lock(with_file(text), lock_text), label
     named = ci_text_for_masking.replace('env:\n  PYTHONDONTWRITEBYTECODE: "1"\n', 'env:\n  BASH_ENV: x\n  PYTHONDONTWRITEBYTECODE: "1"\n', 1)
-    regenerated = json.dumps({"path": ".github/workflows/ci.yml", "lines": ci_lock_lines(named)})
-    assert any("shell startup variables" in p for p in check_ci_lock({".github/workflows/ci.yml": named}, regenerated))
+    regenerated = json.dumps(workflow_lock(with_file(named)))
+    assert any("shell startup variables" in p for p in check_workflow_lock(with_file(named), regenerated))
     for spelling in ("ENV: x", "BASH_FUNC_ruff%%: () { :; }", "SHELLOPTS: x", "echo PS4=x >> \"$GITHUB_ENV\""):
-        assert check_ci_lock({".github/workflows/ci.yml": "a: 1\n" + spelling + "\n"},
-                             json.dumps({"path": ".github/workflows/ci.yml", "lines": ["a: 1", spelling]})), spelling
+        sample = {".github/workflows/x.yml": "a: 1\n" + spelling + "\n"}
+        assert check_workflow_lock(sample, json.dumps(workflow_lock(sample))), spelling
     bumped = re.sub(r"(uses: actions/setup-python@)[0-9a-f]{40} # v[0-9.]+", r"\g<1>" + "0" * 40 + " # v9.9.9", ci_text_for_masking)
-    assert bumped != ci_text_for_masking and check_ci_lock({".github/workflows/ci.yml": bumped}, lock_text) == []
+    assert bumped != ci_text_for_masking and check_workflow_lock(with_file(bumped), lock_text) == []
     hidden = ci_text_for_masking.replace("          ruff check --output-format github .\n",
                                          "          uses: a/b@c; ruff() { :; }\n          ruff check --output-format github .\n", 1)
-    assert hidden != ci_text_for_masking and check_ci_lock({".github/workflows/ci.yml": hidden}, lock_text)
-    assert ci_lock_lines('      - uses: "Actions/Checkout@v4" # pin\n') == ["      - uses: actions/checkout"]
-    assert check_ci_lock({".github/workflows/ci.yml": ci_text_for_masking}, json.dumps({"path": "x", "lines": []}))
-    assert check_ci_lock({".github/workflows/ci.yml": ci_text_for_masking}, "{}")
-    assert check_ci_lock({".github/workflows/ci.yml": ci_text_for_masking}, "not json")
+    assert hidden != ci_text_for_masking and check_workflow_lock(with_file(hidden), lock_text)
+    assert lock_lines('      - uses: "Actions/Checkout@v4" # pin\n') == ["      - uses: actions/checkout"]
+    assert check_workflow_lock(with_file(ci_text_for_masking), json.dumps({"files": []}))
+    assert check_workflow_lock(with_file(ci_text_for_masking), "{}")
+    assert check_workflow_lock(with_file(ci_text_for_masking), "not json")
+    # item 12: every workflow is locked, not just ci.yml
+    for path, old, new in (
+        (".github/workflows/codeql.yml", "    runs-on: ubuntu-24.04\n", "    runs-on: ubuntu-24.04\n    env:\n      LANG: C\n"),
+        (".github/workflows/publish-release.yml", "    runs-on: ubuntu-24.04\n", "    runs-on: ubuntu-24.04\n    env:\n      LANG: C\n"),
+        (".github/workflows/release-audit.yml", "    runs-on: ubuntu-24.04\n", "    runs-on: ubuntu-24.04\n    env:\n      LANG: C\n"),
+        (".github/workflows/nightly-fuzz.yml", "    runs-on: ubuntu-24.04\n", "    runs-on: ubuntu-24.04\n    env:\n      LANG: C\n"),
+        (".github/workflows/supply-chain-drift.yml", "    runs-on: ubuntu-24.04\n", "    runs-on: ubuntu-24.04\n    env:\n      LANG: C\n"),
+    ):
+        assert real[path].count(old) >= 1, path
+        changed = with_file(real[path].replace(old, new, 1), path)
+        assert any(p.startswith(path + ":") for p in check_workflow_lock(changed, lock_text)), path
+        startup = with_file(real[path].replace(old, old + "    env:\n      BASH_ENV: tools/helpers.sh\n", 1), path)
+        problems = check_workflow_lock(startup, json.dumps(workflow_lock(startup)))
+        assert any("shell startup variables" in p for p in problems), (path, problems)
+    added = dict(real, **{".github/workflows/extra.yml": "on: push\n"})
+    assert any("extra.yml: not in" in p for p in check_workflow_lock(added, lock_text))
+    removed = {k: v for k, v in real.items() if k != ".github/workflows/nightly-fuzz.yml"}
+    assert any("nightly-fuzz.yml: locked in" in p for p in check_workflow_lock(removed, lock_text))
+    assert check_workflow_lock(real, lock_text) == []
     # item 9 round 1: both CodeQL analyses are pinned
     with open(CODEQL_WORKFLOW, encoding="utf-8") as handle:
         codeql_text = handle.read()
@@ -1728,9 +1766,9 @@ def self_test():
         captured = io.StringIO()
         with contextlib.redirect_stdout(captured):
             assert main(directory) == 1
-        assert "tools/ci.lock.json is unreadable" in captured.getvalue(), captured.getvalue()
+        assert "tools/workflows.lock.json is unreadable" in captured.getvalue(), captured.getvalue()
         (Path(directory) / "tools").mkdir()
-        (Path(directory) / CI_LOCK).write_text(Path(CI_LOCK).read_text(encoding="utf-8"), encoding="utf-8")
+        (Path(directory) / WORKFLOW_LOCK).write_text(Path(WORKFLOW_LOCK).read_text(encoding="utf-8"), encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()):
             assert main(directory) == 0
         (target / "bypass.yml").write_text(adversarial, encoding="utf-8")
@@ -1752,11 +1790,12 @@ def self_test():
 
 if __name__ == "__main__":
     arguments = sys.argv[1:]
-    if "--write-ci-lock" in arguments:
-        lines = ci_lock_lines(Path(".github/workflows/ci.yml").read_text(encoding="utf-8"))
-        lock = {"path": ".github/workflows/ci.yml", "lines": lines}
-        Path(CI_LOCK).write_text(json.dumps(lock, indent=1) + "\n", encoding="utf-8")
-        print("wrote {} ({} lines)".format(CI_LOCK, len(lines)))
+    if "--write-workflow-lock" in arguments:
+        workflows = Path(".github/workflows")
+        paths = sorted(list(workflows.glob("*.yml")) + list(workflows.glob("*.yaml")))
+        lock = workflow_lock({p.as_posix(): p.read_text(encoding="utf-8") for p in paths})
+        Path(WORKFLOW_LOCK).write_text(json.dumps(lock, indent=1) + "\n", encoding="utf-8")
+        print("wrote {} ({} workflow files)".format(WORKFLOW_LOCK, len(lock["files"])))
         sys.exit(0)
     if "--self-test" in arguments:
         sys.exit(self_test())
