@@ -71,9 +71,10 @@
 10. Release audit (`release-audit.yml`): the detective control exists, keeps its daily
    `schedule:` trigger (scheduled runs always use the default branch's copy, which no tag can
    swap), and its `audit` job, with no job-level `if:` or `continue-on-error`, holds the pinned
-   gather-and-decide step (AUDIT_ENV / AUDIT_RUN: every `v*` tag compared with main, every
-   published release downloaded and each asset's attestation verified against
-   publish-release.yml for that tag, then `tools/release_audit.py`).
+   gather-and-decide step (AUDIT_ENV / AUDIT_RUN: every `v*` tag compared with main and
+   resolved to its commit, every published release resolved and downloaded, and every file
+   found, hidden ones included, verified against publish-release.yml for that tag and commit,
+   then `tools/release_audit.py`).
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -605,20 +606,20 @@ AUDIT_RUN = [
     'while IFS= read -r ref; do',
     'tag="${ref#refs/tags/}"',
     'status=$(gh api "repos/${GH_REPO}/compare/${tag}...main" --jq .status) || status="api-error"',
-    'jq -nc --arg tag "$tag" --arg compare "$status" \'{kind: "tag", tag: $tag, compare: $compare}\' >> "$facts"',
+    'commit=$(gh api "repos/${GH_REPO}/commits/${ref}" --jq .sha) || commit="api-error"',
+    'jq -nc --arg tag "$tag" --arg compare "$status" --arg commit "$commit" \'{kind: "tag", tag: $tag, compare: $compare, commit: $commit}\' >> "$facts"',
     'done < "$RUNNER_TEMP/tags.txt"',
     'gh api --paginate "repos/${GH_REPO}/releases?per_page=100" --jq \'.[] | select(.draft | not) | .tag_name\' > "$RUNNER_TEMP/releases.txt"',
     'while IFS= read -r tag; do',
-    'dir="$RUNNER_TEMP/assets/$tag"',
-    'mkdir -p "$dir"',
+    'commit=$(gh api "repos/${GH_REPO}/commits/refs/tags/${tag}" --jq .sha) || commit="api-error"',
+    'dir=$(mktemp -d "$RUNNER_TEMP/assets.XXXXXX")',
     'if gh release download "$tag" --dir "$dir"; then download=ok; else download=error; fi',
     'count=$(find "$dir" -type f | wc -l)',
-    'jq -nc --arg tag "$tag" --arg download "$download" --argjson assets "$count" \'{kind: "release", tag: $tag, assets: $assets, download: $download}\' >> "$facts"',
-    'for file in "$dir"/*; do',
-    '[ -f "$file" ] || continue',
-    'if gh attestation verify "$file" --repo "$GH_REPO" --signer-workflow "$GH_REPO/.github/workflows/publish-release.yml" --source-ref "refs/tags/$tag" --deny-self-hosted-runners > /dev/null; then verified=true; else verified=false; fi',
+    'jq -nc --arg tag "$tag" --arg commit "$commit" --arg download "$download" --argjson assets "$count" \'{kind: "release", tag: $tag, commit: $commit, assets: $assets, download: $download}\' >> "$facts"',
+    "while IFS= read -r -d '' file; do",
+    'if gh attestation verify "$file" --repo "$GH_REPO" --signer-workflow "$GH_REPO/.github/workflows/publish-release.yml" --source-ref "refs/tags/$tag" --source-digest "$commit" --deny-self-hosted-runners > /dev/null; then verified=true; else verified=false; fi',
     'jq -nc --arg tag "$tag" --arg asset "$(basename "$file")" --argjson verified "$verified" \'{kind: "asset", tag: $tag, asset: $asset, verified: $verified}\' >> "$facts"',
-    'done',
+    'done < <(find "$dir" -type f -print0)',
     'done < "$RUNNER_TEMP/releases.txt"',
     'python -B tools/release_audit.py --facts "$facts" --summary "$GITHUB_STEP_SUMMARY"',
 ]
@@ -1295,6 +1296,8 @@ def self_test():
         "schedule dropped": audit_text.replace('  schedule:\n    - cron: "37 6 * * *"\n', ""),
         "decision masked": audit_text.replace(decide, decide + " || true"),
         "signer dropped": audit_text.replace(verify_flag, ""),
+        "source digest dropped": audit_text.replace(' --source-digest "$commit"', ""),
+        "glob instead of find": audit_text.replace('done < <(find "$dir" -type f -print0)', 'done < <(printf "%s\\0" "$dir"/*)'),
         "tags skipped": audit_text.replace("tags/v\" --jq", "tags/none\" --jq"),
         "job conditional": audit_text.replace("    timeout-minutes: 30\n", "    timeout-minutes: 30\n    if: false\n"),
         "job allowed to fail": audit_text.replace("    timeout-minutes: 30\n", "    timeout-minutes: 30\n    continue-on-error: true\n"),
