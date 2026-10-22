@@ -13,7 +13,7 @@ from protocol_engine.risks import RISKS
 from protocol_engine.tls_server import _TLS12_CIPHERS
 from protocol_engine.x509 import (_ANY_KEY_USAGE, _BASIC_CONSTRAINTS, _EXTENDED_KEY_USAGE, _SERVER_AUTH, _SUBJECT_ALT_NAME, MAX_EKU,
                                   MAX_GENERAL_NAMES, leaf_profile, validity)
-from protocol_fixtures import (ANY_KEY_USAGE_OID, CLIENT_AUTH_OID, DTLS_SERVER_HELLO, SERVER_AUTH_OID, TLS_RETRY, TLS_SERVER12, TLS_SERVER13,
+from protocol_fixtures import (ANY_KEY_USAGE_OID, CLIENT_AUTH_OID, DTLS_SERVER_HELLO, ECDSA_SHA256, SERVER_AUTH_OID, TLS_RETRY, TLS_SERVER12, TLS_SERVER13,
                                _ber, certificate_message, dtls_record, tls_record, x509, x509_extension)
 from proxy_demo import client_hello
 from test_certificates import dotted
@@ -372,6 +372,30 @@ class ReviewRound2Tests(unittest.TestCase):
             "key purpose OID non-minimal": x509(eku=(b"\x2b\x06\x01\x05\x05\x07\x03\x80\x01",)),
         }
         for label, der in rejected.items():
+            with self.assertRaises(ParseError, msg=label):
+                leaf_profile(der)
+            observation = inspect(flight(der))
+            self.assertEqual((observation.status, observation.encryption, labels(observation, "tls_certificate_")), ("identified", "tls", {}), label)
+
+
+class ReviewRound3Tests(unittest.TestCase):
+    """v0.57 round-3 finding (carried into the v0.58 request): the EC named-curve OID is DER-checked like every other OID."""
+
+    def test_ec_named_curve_oid_is_der(self):
+        def leaf_with_curve(parameters):
+            spki = _ber(0x30, _ber(0x30, _ber(6, bytes.fromhex("2a8648ce3d0201")) + parameters) + _ber(3, b"\x00\x04" + b"\x22" * 64))
+            return x509(signature=ECDSA_SHA256, spki=spki)
+        accepted = {"P-256": (_ber(6, bytes.fromhex("2a8648ce3d030107")), "ec-256"),
+                    "unknown named curve (secp256k1)": (_ber(6, bytes.fromhex("2b8104000a")), "ec-other"),
+                    "multi-octet arc in an unknown curve": (_ber(6, b"\x2b\x81\x00\x01"), "ec-other"),
+                    "implicit parameters (NULL)": (_ber(5, b""), "ec-other")}
+        for label, (parameters, expected) in accepted.items():
+            self.assertEqual(dict(leaf_profile(leaf_with_curve(parameters)))["tls_certificate_key"], expected, label)
+        rejected = {"empty OID": b"\x06\x00", "leading 80 00": b"\x06\x02\x80\x00",
+                    "non-minimal later arc": b"\x06\x03\x2b\x80\x01", "incomplete final arc": b"\x06\x02\x2b\x86",
+                    "OID with a trailing element": _ber(6, bytes.fromhex("2a8648ce3d030107")) + b"\x05\x00"}
+        for label, parameters in rejected.items():
+            der = leaf_with_curve(parameters)
             with self.assertRaises(ParseError, msg=label):
                 leaf_profile(der)
             observation = inspect(flight(der))

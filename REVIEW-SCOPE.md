@@ -20,7 +20,9 @@ reads the wall clock. Round-1 repairs: `_general_names` entry budget
 (256) and DER GeneralName forms, explicit `critical` FALSE rejected. Round-2
 repairs: GeneralName inner values (IA5 text, `_single` for explicit wrappers,
 x400Address and ediPartyName framing) and `_oid_contents` (minimal arcs) for
-every object identifier. 615 tests pass.
+every object identifier. Round-3 repair (carried into the v0.58 request): the EC
+named-curve parameter goes through `_oid` (one DER OID filling the parameters).
+616 tests pass.
 
 Previous focus (v0.56): `protocol_engine/gss.py` (DER walk of SPNEGO
 NegTokenInit/NegTokenResp and Kerberos GSS tokens: exact lengths at every

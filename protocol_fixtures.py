@@ -359,19 +359,20 @@ def x509_extension(oid, value, critical=False):
 
 def x509(issuer=b'Placeholder CA', subject=b'placeholder', key='rsa-2048', signature=SHA256_RSA,
          not_before=b'240101000000Z', not_after=b'241231235959Z', version=3, extensions=True, serial=b'\x01\x02\x03',
-         ca=False, path_len=None, eku=(SERVER_AUTH_OID,), san=(b'placeholder.example',), extra=(), constraints=None):
+         ca=False, path_len=None, eku=(SERVER_AUTH_OID,), san=(b'placeholder.example',), extra=(), constraints=None, spki=None):
     """Build one DER certificate with placeholder bytes.
 
     `extensions` adds basicConstraints (cA TRUE when `ca`, optional raw `path_len` INTEGER
     contents), extendedKeyUsage from the `eku` OIDs (None omits it), subjectAltName with
     dNSName placeholders (None omits it) and any `extra` encoded Extension elements.
-    `constraints` replaces the basicConstraints SEQUENCE contents with raw bytes.
+    `constraints` replaces the basicConstraints SEQUENCE contents with raw bytes; `spki` replaces the
+    SubjectPublicKeyInfo with raw bytes.
     """
     algorithm = _ber(0x30, _ber(6, signature) + (_ber(5, b'') if signature != ED25519_OID else b''))
     tbs = (_ber(0xa0, _ber(2, bytes([version - 1]))) if version > 1 else b'') + _ber(2, serial) + algorithm
     tbs += _x509_name(issuer)
     tbs += _ber(0x30, _ber(0x17 if len(not_before) == 13 else 0x18, not_before) + _ber(0x17 if len(not_after) == 13 else 0x18, not_after))
-    tbs += _x509_name(subject) + _x509_key(key)
+    tbs += _x509_name(subject) + (spki if spki is not None else _x509_key(key))
     if extensions:
         if constraints is None:
             constraints = (_ber(1, b'\xff') if ca else b'') + (_ber(2, path_len) if path_len is not None else b'')

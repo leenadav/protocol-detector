@@ -680,8 +680,9 @@ is an encoded `critical` FALSE on any extension (DER omits the default; review
 round 1, the same rule as cA). Before v0.57 an explicit FALSE was accepted, so
 such leaves now end the watch without certificate labels. Every object
 identifier in the walk (algorithms, attribute types, extensions, key purposes,
-registeredID, otherName) must be DER: minimally encoded arcs and a complete
-last arc (review round 2). As in
+registeredID, otherName and, since the round-3 repair carried into v0.58, the
+EC named-curve parameter) must be DER: minimally encoded arcs and a complete
+last arc, one OID filling the curve parameters (review rounds 2 and 3). As in
 v0.39, any deviation ends the watch with no certificate evidence and keeps the
 ServerHello identification.
 
