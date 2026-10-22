@@ -40,12 +40,15 @@
    release split and would have moved only the upload side to v7) fails here instead of
    surfacing as a broken release. `owner/repo` is compared case-insensitively, as GitHub
    resolves it. A remote `uses:` without a full SHA and a tag comment fails closed.
-8. Attestation verification (`publish-release.yml`): the publish job's steps are, in this
-   order, the provenance attestation (`actions/attest-build-provenance`), the pinned verify
-   step (VERIFY_ENV / VERIFY_RUN: `gh attestation verify` of every file bound to this
-   controller workflow, the tag ref, the commit and a GitHub-hosted runner) and the one
-   `gh release create`; the verify step has no `if:` or `continue-on-error`, and nothing
-   publishes before it.
+8. Attestation verification (`publish-release.yml`): the publish job is an allowlist,
+   exactly PUBLISH_STEPS in order (harden-runner, download, checksum check, attest, the
+   pinned `gh attestation verify` of every file bound to this controller workflow, the tag
+   ref, the commit and a GitHub-hosted runner, then the one `gh release create`), each
+   pinned by action identity or exact env and run lines, with no job-level env, services,
+   container or other keys. Only the publish job may hold a write permission, workflow
+   permissions stay `contents: read`, the workflow env may only set the two Python
+   variables (no BASH_ENV), and no secret is referenced. So nothing can publish before the
+   attestations are verified.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -351,14 +354,14 @@ def step_fields(step):
         while index + 1 < len(lines) and (not lines[index + 1].strip() or len(lines[index + 1]) - len(lines[index + 1].lstrip(" ")) > 8):
             index += 1
             body.append(lines[index])
-        if name == "env" and not value:
+        if name in ("env", "with") and not value:
             env = {}
             for entry in body:
                 if not entry.strip() or entry.strip().startswith("#"):
                     continue
                 pair = key_of(entry, indent=10)
                 if pair is None:
-                    raise ValueError("publish-release.yml: cannot read env line {!r}".format(entry))
+                    raise ValueError("publish-release.yml: cannot read {} line {!r}".format(name, entry))
                 env[pair[1]] = strip_quotes(pair[2])
             fields[name] = env
         elif name == "run" and value in ("|", "|-"):
@@ -431,28 +434,99 @@ VERIFY_RUN = [
 ]
 
 
+# The publish job is an allowlist, not a denylist of publishing commands: exactly these steps,
+# in this order, each pinned by action identity (version consistency is rule 7) or by its exact
+# env and run lines, so no `gh api`, `gh release upload`, curl or other step can publish before
+# the attestations are verified (milestone 4 round 1).
+PUBLISH_STEPS = [
+    {"uses": "step-security/harden-runner", "with": {"egress-policy": "audit"}},
+    {"uses": "actions/download-artifact", "with": {"name": "release-dist-${{ github.sha }}", "path": "dist"}},
+    {"run": ["(cd dist && sha256sum -c SHA256SUMS)"]},
+    {"uses": "actions/attest-build-provenance", "with": {"subject-path": "dist/*"}},
+    {"env": VERIFY_ENV, "run": VERIFY_RUN},
+    {"env": dict(VERIFY_ENV, TAG="${{ github.ref_name }}"),
+     "run": ['gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes dist/*']},
+]
+PUBLISH_JOB_KEYS = {"name", "if", "needs", "concurrency", "runs-on", "timeout-minutes", "permissions", "steps"}
+PUBLISH_PERMISSIONS = {"contents": "write", "id-token": "write", "attestations": "write"}
+WORKFLOW_PERMISSIONS = {"contents": "read"}
+WORKFLOW_ENV = {"PYTHONDONTWRITEBYTECODE", "PIP_DISABLE_PIP_VERSION_CHECK"}
+
+
+def mapping_at(lines, indent, key):
+    """The `key:` mapping at `indent` as {k: v}, its scalar value as a str, or None when absent."""
+    for index, line in enumerate(lines):
+        found = key_of(line, indent=indent)
+        if not found or found[1] != key:
+            continue
+        if found[2]:
+            return found[2]
+        result = {}
+        for entry in lines[index + 1:]:
+            if not entry.strip() or entry.strip().startswith("#"):
+                continue
+            if len(entry) - len(entry.lstrip(" ")) <= indent:
+                break
+            pair = key_of(entry, indent=indent + 2)
+            if pair is None:
+                raise ValueError("cannot read {} entry {!r}".format(key, entry))
+            result[pair[1]] = strip_quotes(pair[2])
+        return result
+    return None
+
+
+def step_matches(fields, spec):
+    if set(fields) != {"name"} | set(spec):
+        return False
+    for key, expected in spec.items():
+        value = fields[key]
+        if key == "uses":
+            if not isinstance(value, str) or strip_quotes(value).split("@", 1)[0].lower() != expected:
+                return False
+        elif key == "run":
+            if (value if isinstance(value, list) else [value]) != expected:
+                return False
+        elif value != expected:
+            return False
+    return True
+
+
 def check_attestation_verify(text, publish="publish"):
-    steps = steps_of(job_lines(text, publish))
-    attest = verify = release = None
+    """Rule 8: the publish job is exactly PUBLISH_STEPS, and nothing else in the controller can write."""
     problems = []
-    for index, step in enumerate(steps):
-        body = "\n".join(line for line in step if not line.strip().startswith("#"))
-        if "actions/attest-build-provenance@" in body.lower() and attest is None:
-            attest = index
-        if "gh release create" in body or "softprops/action-gh-release" in body.lower():
-            if release is not None:
-                problems.append("publish-release.yml: the {} job publishes in more than one step".format(publish))
-            release = index
-        if "gh attestation verify" in body:
+    lines = text.splitlines()
+    block = job_lines(text, publish)
+    extra = {key_of(line, indent=4)[1] for line in block if key_of(line, indent=4)} - PUBLISH_JOB_KEYS
+    if extra:
+        problems.append("publish-release.yml: the {} job may not set {}".format(publish, ", ".join(sorted(extra))))
+    steps = steps_of(block)
+    if len(steps) != len(PUBLISH_STEPS):
+        problems.append("publish-release.yml: the {} job must be exactly {} pinned steps (attest, verify, then publish); "
+                        "found {}".format(publish, len(PUBLISH_STEPS), len(steps)))
+    for number, (step, spec) in enumerate(zip(steps, PUBLISH_STEPS), 1):
+        try:
             fields = step_fields(step)
-            if set(fields) == {"name", "env", "run"} and fields["env"] == VERIFY_ENV and fields["run"] == VERIFY_RUN:
-                verify = index if verify is None else verify
-            else:
-                problems.append("publish-release.yml: the {} job's attestation verify step is not the pinned form "
-                                "(exact env and run lines, no if: or continue-on-error)".format(publish))
-    if attest is None or verify is None or release is None or not attest < verify < release:
-        problems.append("publish-release.yml: the {} job must attest, then run the pinned attestation verify step, "
-                        "then publish (found attest={}, verify={}, publish={})".format(publish, attest, verify, release))
+        except ValueError as error:
+            problems.append("publish-release.yml: {} step {}: {}".format(publish, number, error))
+            continue
+        if not step_matches(fields, spec):
+            problems.append("publish-release.yml: {} step {} ({}) is not the pinned form".format(
+                publish, number, fields.get("name", "unnamed")))
+    if mapping_at(block, 4, "permissions") != PUBLISH_PERMISSIONS:
+        problems.append("publish-release.yml: the {} job's permissions must be exactly {}".format(publish, PUBLISH_PERMISSIONS))
+    if mapping_at(lines, 0, "permissions") != WORKFLOW_PERMISSIONS:
+        problems.append("publish-release.yml: workflow permissions must be exactly {}".format(WORKFLOW_PERMISSIONS))
+    for job in job_ids_and_needs(text)[0]:
+        if job == publish:
+            continue
+        granted = mapping_at(job_lines(text, job), 4, "permissions")
+        if isinstance(granted, str) or (granted and any(value != "read" for value in granted.values())):
+            problems.append("publish-release.yml: only the {} job may hold a write permission ({} has {})".format(publish, job, granted))
+    workflow_env = mapping_at(lines, 0, "env")
+    if isinstance(workflow_env, str) or set(workflow_env or {}) - WORKFLOW_ENV:
+        problems.append("publish-release.yml: workflow env may only set {}".format(", ".join(sorted(WORKFLOW_ENV))))
+    if any("secrets." in line for line in lines if not line.strip().startswith("#")):
+        problems.append("publish-release.yml: the controller may not reference secrets")
     return problems
 
 
@@ -854,29 +928,45 @@ def self_test():
     verify_line = VERIFY_RUN[1]
     attest_block = controller[controller.index("      - name: Attest build provenance"):controller.index("      - name: Every file's attestation")]
     verify_block = controller[controller.index("      - name: Every file's attestation"):controller.index("      - name: Publish the release")]
-    order = "publish-release.yml: the publish job must attest, then run the pinned attestation verify step, then publish"
-    for label, text, expected in [
-        ("verify dropped", controller.replace(verify_block, ""), order),
-        ("verify after publish", controller.replace(verify_block, "").replace(
-            "        run: gh release create", "        run: gh release create", 1) + "", order),
-        ("attest dropped", controller.replace(attest_block, ""), order),
-        ("verify masked", controller.replace(verify_line, verify_line + " || true"), "not the pinned form"),
-        ("verify conditional", controller.replace("      - name: Every file's attestation must verify before anything is published\n",
-                                                  "      - name: Every file's attestation must verify before anything is published\n        if: false\n"), "not the pinned form"),
-        ("verify continue-on-error", controller.replace("      - name: Every file's attestation must verify before anything is published\n",
-                                                        "      - name: Every file's attestation must verify before anything is published\n        continue-on-error: true\n"), "not the pinned form"),
-        ("signer workflow dropped", controller.replace(' --signer-workflow "$GH_REPO/.github/workflows/publish-release.yml"', ""), "not the pinned form"),
-        ("source ref dropped", controller.replace(' --source-ref "$GITHUB_REF"', ""), "not the pinned form"),
-        ("self-hosted allowed", controller.replace(" --deny-self-hosted-runners", ""), "not the pinned form"),
-        ("one file only", controller.replace("for file in dist/*; do", "for file in dist/*.whl; do"), "not the pinned form"),
-        ("second publisher", controller + "      - run: gh release create again\n", "more than one step"),
-    ]:
-        if label == "verify after publish":
-            publish_block = controller[controller.index("      - name: Publish the release"):]
-            text = controller.replace(verify_block, "").replace(publish_block, publish_block + verify_block)
+    publish_block = controller[controller.index("      - name: Publish the release"):]
+    verify_name = "      - name: Every file's attestation must verify before anything is published\n"
+    early = ('      - name: Create the release early\n        env:\n          GH_TOKEN: ${{ github.token }}\n'
+             '        run: |\n          gh api "repos/$GITHUB_REPOSITORY/releases" -f tag_name="$GITHUB_REF_NAME"\n'
+             '          gh release upload "$GITHUB_REF_NAME" dist/*\n')
+    cases = {
+        # milestone 4 round 1: an unrecognized publisher before verification
+        "gh api release + upload before verify": controller.replace(verify_block, early + verify_block),
+        "gh release upload after attest": controller.replace(verify_block, early.replace(
+            '          gh api "repos/$GITHUB_REPOSITORY/releases" -f tag_name="$GITHUB_REF_NAME"\n', "") + verify_block),
+        "curl upload": controller.replace(verify_block, "      - run: curl -X POST https://uploads.github.com/x\n" + verify_block),
+        "verify dropped": controller.replace(verify_block, ""),
+        "verify after publish": controller.replace(verify_block, "").replace(publish_block, publish_block + verify_block),
+        "attest dropped": controller.replace(attest_block, ""),
+        "verify masked": controller.replace(verify_line, verify_line + " || true"),
+        "verify conditional": controller.replace(verify_name, verify_name + "        if: false\n"),
+        "verify continue-on-error": controller.replace(verify_name, verify_name + "        continue-on-error: true\n"),
+        "signer workflow dropped": controller.replace(' --signer-workflow "$GH_REPO/.github/workflows/publish-release.yml"', ""),
+        "source ref dropped": controller.replace(' --source-ref "$GITHUB_REF"', ""),
+        "self-hosted allowed": controller.replace(" --deny-self-hosted-runners", ""),
+        "one file only": controller.replace("for file in dist/*; do", "for file in dist/*.whl; do"),
+        "second publisher": controller + "      - run: gh release create again\n",
+        "attest subject narrowed": controller.replace('          subject-path: "dist/*"', '          subject-path: "dist/*.whl"'),
+        "other artifact": controller.replace("          name: release-dist-${{ github.sha }}\n          path: dist",
+                                             "          name: something-else\n          path: dist"),
+        "attest replaced": controller.replace("uses: actions/attest-build-provenance@", "uses: someone/attest-build-provenance@"),
+        "publish job env": controller.replace("    timeout-minutes: 10\n    permissions:\n      contents: write",
+                                              "    timeout-minutes: 10\n    env:\n      BASH_ENV: ./x.sh\n    permissions:\n      contents: write"),
+        "workflow BASH_ENV": controller.replace('  PIP_DISABLE_PIP_VERSION_CHECK: "1"\n', '  PIP_DISABLE_PIP_VERSION_CHECK: "1"\n  BASH_ENV: ./x.sh\n', 1),
+        "build job writes": controller.replace("      contents: read   # checkout", "      contents: write   # checkout"),
+        "workflow writes": controller.replace("permissions:\n  contents: read\n", "permissions:\n  contents: write\n", 1),
+        "write-all": controller.replace("permissions:\n  contents: read\n", "permissions: write-all\n", 1),
+        "publish extra permission": controller.replace("      attestations: write   # attest", "      packages: write\n      attestations: write   # attest"),
+        "secret": controller.replace("          GH_TOKEN: ${{ github.token }}\n          GH_REPO: ${{ github.repository }}\n          TAG:",
+                                     "          GH_TOKEN: ${{ secrets.RELEASE_PAT }}\n          GH_REPO: ${{ github.repository }}\n          TAG:"),
+    }
+    for label, text in cases.items():
         assert text != controller, label
-        found = check_attestation_verify(text)
-        assert any(expected in problem for problem in found), (label, found)
+        assert check_attestation_verify(text), label
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)

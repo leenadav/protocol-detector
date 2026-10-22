@@ -192,7 +192,7 @@ jobs:
       - name: Every file's attestation must verify before anything is published
         # Binds each file to this controller workflow, this tag and commit, and a GitHub-hosted
         # runner; a missing or partial attestation fails the release before gh release create.
-        # tools/check_workflow_policy.py rule 8 pins this step and its place between the two.
+        # tools/check_workflow_policy.py rule 8 pins every step of this job, in order (an allowlist).
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
