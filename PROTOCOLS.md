@@ -562,10 +562,12 @@ NegTokenInit/NegTokenResp, MS-NLMP NTLMSSP): `gss_mechanism` is `kerberos`
 KRB-ERROR or TGT-REQ it names, whether the token stands alone or is carried as
 a mechToken/responseToken; the message must pass its RFC 4120 envelope: pvno 5,
 the msg-type of its TOK_ID, the required context fields in increasing order,
-AP-REQ ap-options as a KerberosFlags BIT STRING of at least 32 bits, a Ticket
+AP-REQ ap-options as a DER KerberosFlags BIT STRING (at least 32 significant
+bits, unused-bit count 0..7, padding bits zero), a Ticket
 [APPLICATION 1] with tkt-vno 5, a non-empty realm, a PrincipalName of 1..8
 components and EncryptedData, EncryptedData with an Int32 etype, optional kvno
-and non-empty cipher, KRB-ERROR through the Kerberos family's own profile;
+and non-empty cipher, KRB-ERROR through the Kerberos family's own profile
+(whose ctime/stime microseconds must lie in RFC 4120's 0..999999);
 names, realms and ciphertext are framed only), `ntlm` (the NTLMSSP OID or an NTLMSSP mechToken/responseToken),
 `negoex`, `spnego-other` (SPNEGO without a known preferred mechanism) or
 `other` (a non-SPNEGO GSS OID); `ntlm_message` is `negotiate`, `challenge` or
@@ -638,4 +640,7 @@ longer hide a later Basic or NTLM scheme. Round 2 repairs: the Kerberos
 message after the TOK_ID must pass its envelope (an empty or arbitrary
 application body no longer yields `kerberos`), and the dialect-dependent
 request flags (priority, signed binding) now end the watch instead of being
-taken as proof of SMB 3.x.
+taken as proof of SMB 3.x. Round 3 repairs (carried into the v0.57 request,
+the round limit being reached): ap-options must carry at least 32 significant
+bits with zero padding, and the shared KRB-ERROR validator rejects cusec/susec
+outside 0..999999, which also tightens the standalone Kerberos family.

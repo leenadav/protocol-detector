@@ -25,7 +25,9 @@ header flags by direction (`network.py`), every credential header and every
 challenge in a list (`media.py` `challenge_scheme_classes`). Round-2 repairs:
 the RFC 4120 envelope of the Kerberos message after the TOK_ID (`gss.py`
 `_kerberos_message`, KRB-ERROR through `windows.py` `_kerberos_body`), and
-SESSION_SETUP requests carry no header flags (`network.py`). 601 tests pass.
+SESSION_SETUP requests carry no header flags (`network.py`). Round-3 repairs:
+DER KerberosFlags (`gss.py` `_kerberos_flags`) and the 0..999999 microseconds
+range in `windows.py` `_kerberos_body`. 603 tests pass.
 
 Previous focus (v0.55): `protocol_engine/wire.py` `dns_probe` (the plausibility
 rule for the rarer layouts: first label 1..63, section counts 1..32, zero

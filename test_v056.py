@@ -2,7 +2,7 @@
 import random
 import unittest
 
-from protocol_engine import Config, Inspector
+from protocol_engine import Config, DatagramInspector, Inspector
 from protocol_engine.appid import classify, session_verdict
 from protocol_engine.gss import classify_token
 from protocol_engine.media import MAX_AUTH_ELEMENTS, auth_scheme_class, challenge_scheme_classes
@@ -396,6 +396,60 @@ class ReviewRound2Tests(unittest.TestCase):
         for negotiate in (SMB2_RESPONSE, SMB311_RESPONSE):
             final = stream(negotiate + smb2_frame_with(SMB2_SESSION_OK, header_flags=0x09, signature=signature))[0]
             self.assertEqual(fields(final, "smb_message", "smb_session"), {"smb_message": "session-setup-response", "smb_session": "authenticated"})
+
+
+def krb_error_with(susec=b"\x01", cusec=None):
+    """KRB-ERROR fields with chosen microsecond INTEGER contents (susec required, cusec optional)."""
+    stamp = _ber(0x18, b"20260101120000Z")
+    return krb_error(fields=_ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x1e"))
+                     + ((_ber(0xa2, stamp) + _ber(0xa3, _ber(2, cusec))) if cusec is not None else b"")
+                     + _ber(0xa4, stamp) + _ber(0xa5, _ber(2, susec)) + _ber(0xa6, _ber(2, b"\x19"))
+                     + _ber(0xa9, _ber(0x1b, b"EXAMPLE.ORG")) + _ber(0xaa, _krb_principal(b"krbtgt")))
+
+
+class ReviewRound3Tests(unittest.TestCase):
+    """Repairs for the v0.56 round-3 findings, carried into the v0.57 round-1 request."""
+
+    def carriers(self, token):
+        return (token, spnego_init(mechs=(OID_KRB5,), token=token), spnego_resp(1, OID_KRB5, token))
+
+    def test_kerberos_flags_bit_string(self):
+        def ap_req(options):
+            fields = (_ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x0e")) + _ber(0xa2, _ber(3, options))
+                      + _ber(0xa3, _ber(0x61, _ber(0x30, _ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(0x1b, b"EXAMPLE.ORG"))
+                                                   + _ber(0xa2, _krb_principal(b"cifs")) + _ber(0xa3, krb5_encrypted()))))
+                      + _ber(0xa4, krb5_encrypted(kvno=False)))
+            return krb5_gss(krb5_ap_req_message(fields=fields))
+        accepted = [b"\x00\x20\x00\x00\x00", b"\x00" * 5, b"\x00\x20\x00\x00\x00\x00"]
+        accepted += [bytes((unused,)) + b"\x20\x00\x00\x00\x00" for unused in range(1, 8)]          # 40 - unused >= 32, zero padding
+        rejected = [bytes((unused,)) + b"\x20\x00\x00\x00" for unused in range(1, 8)]                # fewer than 32 significant bits
+        rejected += [b"\x07\x00\x00\x00\x01",                                                       # the reviewer's trigger: 25 bits, padding set
+                     b"\x01\x20\x00\x00\x00\x01", b"\x03\x20\x00\x00\x00\x04",                    # nonzero padding bits
+                     b"\x00\x20\x00\x00", b"\x00", b"\x01", b"", b"\x08" + bytes(5)]
+        for options in accepted:
+            for carried in self.carriers(ap_req(options)):
+                self.assertEqual(classify_token(carried).mechanism, "kerberos", options.hex())
+        for options in rejected:
+            for carried in self.carriers(ap_req(options)):
+                with self.assertRaises(ParseError, msg=options.hex()):
+                    classify_token(carried)
+
+    def test_kerberos_error_microseconds_range(self):
+        accepted = [b"\x00", b"\x01", b"\x0f\x42\x3f"]                         # 0, 1, 999999
+        rejected = [b"\x0f\x42\x40", b"\x7f\xff\xff", b"\xff", b"\x80\x00", b"", b"\x00\x00\x00\x01"]   # 1000000, max, negatives, empty, 4 octets
+        for usec in accepted:
+            for message in (krb_error_with(susec=usec), krb_error_with(cusec=usec)):
+                for carried in self.carriers(krb5_gss(message, b"\x03\x00")):
+                    self.assertEqual(classify_token(carried).mechanism, "kerberos", usec.hex())
+                self.assertEqual(DatagramInspector().inspect(message).status, "identified", usec.hex())
+                self.assertEqual(stream(len(message).to_bytes(4, "big") + message)[0].status, "identified", usec.hex())
+        for usec in rejected:
+            for message in (krb_error_with(susec=usec), krb_error_with(cusec=usec)):
+                for carried in self.carriers(krb5_gss(message, b"\x03\x00")):
+                    with self.assertRaises(ParseError, msg=usec.hex()):
+                        classify_token(carried)
+                self.assertNotEqual(DatagramInspector().inspect(message).status, "identified", usec.hex())
+                self.assertNotEqual(stream(len(message).to_bytes(4, "big") + message)[0].status, "identified", usec.hex())
 
 
 if __name__ == "__main__":

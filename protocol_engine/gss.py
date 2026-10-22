@@ -112,6 +112,14 @@ def _ticket(value):
     _encrypted_data(found[3], "Ticket enc-part")
 
 
+def _kerberos_flags(bits, what):
+    """KerberosFlags ::= BIT STRING (SIZE (32..MAX)) under DER (review round 3): at least 32 significant
+    bits, an unused-bit count of 0..7 (0 when there are no data octets), and zero padding bits."""
+    unused = bits[0] if bits else 8
+    if unused > 7 or (len(bits) - 1) * 8 - unused < 32 or (unused and bits[-1] & ((1 << unused) - 1)):
+        raise ParseError(what + " must be a DER KerberosFlags BIT STRING of at least 32 bits")
+
+
 def _kerberos_message(message, tag):
     """RFC 4120 5.5.1 AP-REQ, 5.5.2 AP-REP, 5.9.1 KRB-ERROR, user-to-user TGT-REQ: bounded envelopes, nothing kept."""
     if tag == 0x7e:
@@ -133,9 +141,7 @@ def _kerberos_message(message, tag):
         found = _fields(sequence, (0, 1, 2, 3, 4), {0, 1, 2, 3, 4}, "AP-REQ")
         _small_integer(found[0], "AP-REQ pvno", 5)
         _small_integer(found[1], "AP-REQ msg-type", 14)
-        options = _only(found[2], 0x03, "AP-REQ ap-options")
-        if len(options) < 5 or options[0] > 7:
-            raise ParseError("AP-REQ ap-options must be a KerberosFlags BIT STRING of at least 32 bits")
+        _kerberos_flags(_only(found[2], 0x03, "AP-REQ ap-options"), "AP-REQ ap-options")
         _ticket(found[3])
         _encrypted_data(found[4], "AP-REQ authenticator")
     else:
