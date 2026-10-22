@@ -389,7 +389,9 @@ jobs:
           zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows | tee zizmor.txt
           echo "zizmor $(zizmor --version | awk '{print $NF}'): $(tail -n 1 zizmor.txt)" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Cross-check the workflow policy parser against PyYAML (any disagreement is a policy blind spot)
+        # tools/check_workflow_policy.py rule 11 pins this step (it installs its own hash-pinned toolchain).
         run: |
+          python -m pip install --require-hashes -r requirements-dev.txt > /dev/null
           python -B tools/check_workflow_yaml.py --self-test
           python -B tools/check_workflow_yaml.py | tee -a "$GITHUB_STEP_SUMMARY"
 

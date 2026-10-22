@@ -75,6 +75,11 @@
    resolved to its commit, every published release resolved and downloaded, and every file
    found, hidden ones included, verified against publish-release.yml for that tag and commit,
    then `tools/release_audit.py`).
+11. Parser cross-check (`ci.yml`): the `workflow-lint` job, with no job-level `if:` or
+   `continue-on-error`, holds the pinned step that installs the hash-pinned toolchain and runs
+   `tools/check_workflow_yaml.py` (self-test, then the check, under pipefail), so the PyYAML
+   second opinion cannot be dropped or masked while the gate stays green. `make check` does
+   not run it because it needs the dev toolchain; `make workflow-lint` does.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -659,6 +664,30 @@ def check_release_audit(workflows):
     return problems
 
 
+CROSS_CHECK_RUN = [
+    "python -m pip install --require-hashes -r requirements-dev.txt > /dev/null",
+    "python -B tools/check_workflow_yaml.py --self-test",
+    'python -B tools/check_workflow_yaml.py | tee -a "$GITHUB_STEP_SUMMARY"',
+]
+
+
+def check_cross_check(workflows, path=".github/workflows/ci.yml", job="workflow-lint"):
+    if path not in workflows:
+        return ["{} is missing".format(path)]
+    text = workflows[path]
+    try:
+        block = job_lines(text, job)
+    except ValueError as error:
+        return ["{}: {}".format(path, error)]
+    problems = []
+    if {key_of(line, indent=4)[1] for line in block if key_of(line, indent=4)} & {"if", "continue-on-error"}:
+        problems.append("{}: the {} job may not be conditional or allowed to fail".format(path, job))
+    steps = [step_fields(step) for step in steps_of(block) if any("check_workflow_yaml.py" in line for line in step)]
+    if not any(set(fields) == {"name", "run"} and fields["run"] == CROSS_CHECK_RUN for fields in steps):
+        problems.append("{}: the {} job must run the pinned PyYAML cross-check step".format(path, job))
+    return problems
+
+
 def check_tag_triggers(workflows):
     """`workflows`: {repository path: text}."""
     problems = []
@@ -864,6 +893,7 @@ def main(root):
             problems += check_shell(name, texts[name])
         problems += check_action_consistency(texts)
         problems += check_release_audit(texts)
+        problems += check_cross_check(texts)
         for name in files:
             problems += check_encoding(name, texts[name])
             problems += check_credentials(name, texts[name])
@@ -1317,6 +1347,27 @@ def self_test():
         assert text != audit_text, label
         assert check_release_audit({AUDIT_WORKFLOW: text}), label
     assert check_release_audit({}) == ["{} is missing (the scheduled release audit)".format(AUDIT_WORKFLOW)]
+    # item 8 round 1: the cross-check step itself is pinned
+    with open(".github/workflows/ci.yml", encoding="utf-8") as handle:
+        ci_text = handle.read()
+    ci = {".github/workflows/ci.yml": ci_text}
+    assert check_cross_check(ci) == [], check_cross_check(ci)
+    check_line = 'python -B tools/check_workflow_yaml.py | tee -a "$GITHUB_STEP_SUMMARY"'
+    cross_name = "      - name: Cross-check the workflow policy parser against PyYAML"
+    for label, text in {
+        "step removed": ci_text.replace("          " + check_line + "\n", "").replace(
+            "          python -B tools/check_workflow_yaml.py --self-test\n", ""),
+        "check masked": ci_text.replace(check_line, check_line + " || true"),
+        "self-test only": ci_text.replace("          " + check_line + "\n", ""),
+        "install dropped": ci_text.replace("          python -m pip install --require-hashes -r requirements-dev.txt > /dev/null\n"
+                                           "          python -B tools/check_workflow_yaml.py --self-test", "          python -B tools/check_workflow_yaml.py --self-test"),
+        "step conditional": ci_text.replace(cross_name, "      - if: false\n        name: Cross-check the workflow policy parser against PyYAML"),
+        "step allowed to fail": ci_text.replace(cross_name, "      - continue-on-error: true\n        name: Cross-check the workflow policy parser against PyYAML"),
+        "job allowed to fail": ci_text.replace("    name: workflow lint (actionlint, zizmor)\n",
+                                               "    name: workflow lint (actionlint, zizmor)\n    continue-on-error: true\n"),
+    }.items():
+        assert text != ci_text, label
+        assert check_cross_check({".github/workflows/ci.yml": text}), label
     with tempfile.TemporaryDirectory() as directory:
         target = Path(directory) / ".github" / "workflows"
         target.mkdir(parents=True)
