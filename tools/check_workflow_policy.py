@@ -50,6 +50,13 @@
    variables (no BASH_ENV), and no `secrets`, `vars`, `inputs` or `client_payload` context is
    referenced in any syntax or case, so no credential but the job's own GITHUB_TOKEN can
    authenticate. So nothing can publish before the attestations are verified.
+9. Encoding: outside literal block scalars (`run: |` bodies, where YAML decodes nothing), no
+   workflow may contain a backslash (double-quoted escapes such as `\u0073ecrets`, escaped
+   line breaks) or start a value or flow item with a tag (`!`), an anchor (`&`) or an alias
+   (`*`, including `<<: *x`). With those excluded, the decoded YAML equals the source text,
+   so the line-based rules above (credential contexts, `tags:` triggers, pins, pinned steps)
+   cannot be bypassed by an encoding YAML undoes before GitHub reads the workflow
+   (milestone 4 round 3, carried as CI/CD task 5).
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -617,6 +624,37 @@ def check_action_consistency(workflows):
     return problems
 
 
+BLOCK_SCALAR = re.compile(r":\s*[|>][-+0-9]*\s*(#.*)?$")
+FLOW_NODE = re.compile(r"[\[{,]\s*[&*!]")
+
+
+def check_encoding(path, text):
+    problems = []
+    block_indent = None
+    for number, line in enumerate(text.splitlines(), 1):
+        stripped = line.strip()
+        indent = len(line) - len(line.lstrip(" "))
+        if block_indent is not None:
+            if not stripped or indent > block_indent:
+                continue          # literal or folded block content: YAML decodes no escapes here
+            block_indent = None
+        if not stripped or stripped.startswith("#"):
+            continue
+        if "\\" in line:
+            problems.append("{}:{}: backslash outside a block scalar (YAML escapes are not allowed)".format(path, number))
+        key, item = KEY.match(line), ITEM.match(line)
+        value = (key.group(3) or "") if key else (item.group(2) if item else "")
+        if stripped.startswith(("<<", "&", "*", "!", "? ")):
+            problems.append("{}:{}: YAML merge key, explicit key, tag, anchor or alias".format(path, number))
+        elif value.startswith(("&", "*", "!")):
+            problems.append("{}:{}: YAML tag, anchor or alias `{}`".format(path, number, value))
+        elif value.startswith(("[", "{")) and FLOW_NODE.search(value):
+            problems.append("{}:{}: YAML tag, anchor or alias inside a flow collection".format(path, number))
+        if BLOCK_SCALAR.search(line):
+            block_indent = indent
+    return problems
+
+
 def main(root):
     root = Path(root)
     workflows = root / ".github" / "workflows"
@@ -630,6 +668,8 @@ def main(root):
         for name in files:
             problems += check_shell(name, texts[name])
         problems += check_action_consistency(texts)
+        for name in files:
+            problems += check_encoding(name, texts[name])
         if RELEASE_WORKFLOW in texts:
             problems += check_release_concurrency(texts[RELEASE_WORKFLOW])
             problems += check_release_provenance(texts[RELEASE_WORKFLOW])
@@ -983,6 +1023,25 @@ def self_test():
         assert check_attestation_verify(text), label
     assert any("may not reference `secrets`" in problem for problem in check_attestation_verify(cases["build job secrets index"]))
     assert check_attestation_verify(controller.replace("    steps:\n", "    # no secrets, vars or inputs are used here\n    steps:\n", 1)) == []
+    # CI/CD task 5 (milestone 4 round 3): encodings YAML undoes before GitHub reads the file
+    plain = ("on:\n  push:\n    tags: [\"v*\"]\njobs:\n  a:\n    steps:\n      - run: |\n          echo \"a\\\\b\" && x\n"
+             "      - env:\n          T: ${{ github.token }}\n        run: echo ok && true\n      - run: >-\n          x \\\\\n"
+             "    # comment with \\\\ and *alias\n")
+    assert check_encoding("w.yml", plain) == [], check_encoding("w.yml", plain)
+    for label, line in {"unicode escape": '          GH_TOKEN: "${{ \\u0073ecrets.RELEASE_PAT }}"\n',
+                        "hex escape": '          GH_TOKEN: "${{ \\x73ecrets.RELEASE_PAT }}"\n',
+                        "escaped key": '    "t\\u0061gs": ["v*"]\n',
+                        "escaped line break": '          GH_TOKEN: "${{ sec\\\n            rets.RELEASE_PAT }}"\n',
+                        "anchor": "          GH_TOKEN: &tok ${{ github.token }}\n",
+                        "alias": "          GH_TOKEN: *tok\n",
+                        "tag": "          GH_TOKEN: !!str ${{ github.token }}\n",
+                        "merge key": "        <<: *defaults\n",
+                        "flow alias": "    tags: [*v]\n",
+                        "list alias": "      - *step\n",
+                        "explicit key": "    ? secrets\n",
+                        "anchored mapping": "    &defaults\n"}.items():
+        found = check_encoding("w.yml", plain + "jobs2:\n  b:\n    x:\n" + line)
+        assert found, (label, found)
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)
