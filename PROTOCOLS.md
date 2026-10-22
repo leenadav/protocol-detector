@@ -68,7 +68,7 @@ closed set reviewers should expect in records.
 | pptp | tcp | yes | yes | `pptp_message`, `pptp_result` |
 | quic | udp | yes | - | `crypto_assembly`, `hostname`, `initial_protection`, `offered_alpn`, `packet_type`, `quic_version` |
 | radius | udp | yes | yes | `radius_code` |
-| rdp | tcp | yes | yes | `rdp_security_flags`, `rdp_selected_protocol` |
+| rdp | tcp | yes | yes | `rdp_offered_security`, `rdp_security_flags`, `rdp_selected_protocol`, `rdp_selected_security` |
 | resp | tcp | yes | - | - |
 | rfb | tcp | yes | same shape | - |
 | rip | udp | yes | yes | `rip_authentication`, `rip_command` |
@@ -774,3 +774,33 @@ Behaviour diff against v0.58 (84264 inputs): 599 `smb2` inputs gain posture
 rows only; one seeded mutation that turned a negotiate context into kind 8 with
 a length that disagrees with its count, skipped by v0.58 as an unknown context,
 is now malformed under the SIGNING_CAPABILITIES rule. No other change.
+
+## RDP security posture from the X.224 negotiation (v0.60)
+
+No new family. The RDP Connection Request and Connection Confirm, validated
+since v0.28 and v0.44, now carry closed labels for what the numeric
+`rdp_security_flags` and `rdp_selected_protocol` already reported, plus the
+negotiation flags and failure codes that were validated but not reported. Every
+value is an offer or an unauthenticated server assertion; the engine does not
+follow the security exchange.
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `rdp_offered_security` | `standard-rdp`, `tls`, `credssp`, `rdstls`, `credssp-early-user-auth`, `aad` | One row per requestedProtocols bit (MS-RDPBCGR 2.2.1.1.1: PROTOCOL_SSL, PROTOCOL_HYBRID, PROTOCOL_RDSTLS, PROTOCOL_HYBRID_EX, PROTOCOL_RDSAAD); `standard-rdp` only when no bit is set |
+| `rdp_credential_mode` | `restricted-admin`, `remote-credential-guard` | RDP_NEG_REQ flags RESTRICTED_ADMIN_MODE_REQUIRED (0x01) and REDIRECTED_AUTHENTICATION_MODE_REQUIRED (0x02); CORRELATION_INFO_PRESENT is framing and not reported |
+| `rdp_selected_security` | as `rdp_offered_security` | The one protocol a Connection Confirm selects (2.2.1.2.1); `standard-rdp` for 0 |
+| `rdp_server_supports` | `extended-client-data`, `gfx-pipeline`, `restricted-admin`, `remote-credential-guard` | RDP_NEG_RSP flags 0x01, 0x02, 0x08, 0x10; NEGRSP_FLAG_RESERVED (0x04) is accepted and not reported |
+| `rdp_failure` | `ssl-required`, `ssl-not-allowed`, `ssl-certificate-missing`, `inconsistent-flags`, `hybrid-required`, `ssl-with-user-auth-required` | RDP_NEG_FAILURE failureCode 1..6 (2.2.1.2.2), next to the existing `rdp_negotiation=failure` |
+
+The structural profile is unchanged: the same offers, flags and codes are
+accepted or rejected as before. The cookie, routing token and correlation id
+are never emitted.
+
+Risk (RISKS.md): `rdp-nla-not-negotiated` when a Connection Confirm selects
+standard RDP security or TLS without CredSSP. A request's offers and a
+negotiation failure never raise it. `obsolete-protocol` for standard RDP
+security is unchanged.
+
+Behaviour diff against v0.59 (84264 inputs): 43 `rdp` inputs gain posture rows
+only; status, protocol and reason are unchanged (also checked over 1441
+targeted single-byte mutations of five RDP messages).

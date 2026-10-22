@@ -43,6 +43,7 @@ RISKS = MappingProxyType({
     "ssh-weak-algorithm-offered": ("medium", "SSH KEXINIT offers a weak algorithm class: SHA-1 key exchange, DSA host keys, RC4, 3DES or 64-bit block ciphers, CBC mode, MD5 or truncated MACs, or no MAC"),
     "ssh-none-cipher-offered": ("high", "SSH KEXINIT offers the none cipher (no encryption)"),
     "ssh-terrapin-exposed": ("medium", "SSH KEXINIT offers ChaCha20-Poly1305 or an encrypt-then-MAC MAC with a CBC-mode cipher without the strict key exchange marker (Terrapin, CVE-2023-48795)"),
+    "rdp-nla-not-negotiated": ("medium", "RDP server Connection Confirm selects standard RDP security or TLS without CredSSP: no network level authentication, so the logon happens inside the session"),
     "tls-certificate-outside-validity": ("medium", "TLS 1.2 server leaf certificate expired or not yet valid at the capture time (evaluated only when the host supplies a capture clock)"),
 })
 MAX_CERTIFICATE_LIFETIME_DAYS = 398   # CA/Browser Forum baseline since September 2020
@@ -57,7 +58,7 @@ _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags"
                      "http_auth_scheme", "http_auth_challenge", "http2_auth_scheme", "http2_auth_challenge",
                      "selected_key_exchange", "tls_certificate_ca", "tls_certificate_eku", "tls_certificate_san",
                      "tls_certificate_not_before", "tls_certificate_not_after", "ssh_weak_algorithm", "ssh_terrapin",
-                     "smb_signing", "smb_encryption"))
+                     "smb_signing", "smb_encryption", "rdp_selected_security"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -194,6 +195,10 @@ def flow_risks(verdict, client, server, at=None):
             elif field == "ssh_terrapin":
                 if value == "exposed":
                     found.append("ssh-terrapin-exposed")
+            elif field == "rdp_selected_security":
+                # Only the server's selection decides; RDSTLS and AAD authenticate before the session as well (v0.60).
+                if value in ("standard-rdp", "tls"):
+                    found.append("rdp-nla-not-negotiated")
             elif field == "selected_key_exchange":
                 if value in NO_FORWARD_SECRECY:
                     found.append("tls-no-forward-secrecy")

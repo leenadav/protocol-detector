@@ -1,18 +1,24 @@
-# Review scope: protocol detector v0.59
+# Review scope: protocol detector v0.60
 
 Python3.9-compatible IPv4 passive classification: 85 families, 76 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.59): `protocol_engine/network.py` `SMB2Parser._response`
+New focus (v0.60): `protocol_engine/remote.py` `RDPParser` (closed labels for
+requestedProtocols bits, RDP_NEG_REQ credential-mode flags, the selected
+protocol, RDP_NEG_RSP flags and failure codes; the accept/reject profile is
+unchanged) and `rdp-nla-not-negotiated` in `risks.py` (server selection only).
+Trace: no cookie, routing token or correlation id is emitted. 633 tests pass.
+
+Previous focus (v0.59): `protocol_engine/network.py` `SMB2Parser._response`
 (encryption by dialect: 2.x unavailable, 3.0/3.0.2 from the Capabilities
 encryption bit, 3.1.1 from the selected cipher) and `_contexts` (the 3.1.1
 ENCRYPTION and new SIGNING capability contexts: one selection per response,
 counts against lengths, duplicates rejected), and the two SMB risks in
 `risks.py` (`smb-signing-not-required` only from a response, read through the
 evidence source). Trace: the NETNAME context is never read; requests gain no
-rows. 627 tests pass.
+rows. 627 tests passed at v0.59.
 
 Previous focus (v0.58): `protocol_engine/ssh_posture.py` (`kexinit_posture`:
 fixed name tables for key exchange families and weak classes, the Terrapin

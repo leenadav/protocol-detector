@@ -291,6 +291,21 @@ POP3_STLS = b'STLS\r\n'
 FTP_AUTH_TLS = b'AUTH TLS\r\n'
 MYSQL_SSL_REQUEST = b'\x20\x00\x00\x01' + (0x000a0a05).to_bytes(4, 'little') + (16777216).to_bytes(4, 'little') + b'\x21' + bytes(23)
 RDP_CONFIRM = bytes.fromhex('030000130ed01234000000' '0200080001000000')  # X.224 CC + RDP_NEG_RSP selecting PROTOCOL_SSL
+
+
+def rdp_request(protocols=3, flags=0, cookie=b"", correlation=False):
+    """TPKT + X.224 Connection Request + RDP_NEG_REQ (MS-RDPBCGR 2.2.1.1); flags 0x08 is added with a correlation block."""
+    body = cookie + bytes([1, flags | (8 if correlation else 0)]) + (8).to_bytes(2, "little") + protocols.to_bytes(4, "little")
+    if correlation:
+        body += b"\x06\x00\x24\x00" + bytes(range(1, 17)) + bytes(16)
+    x224 = bytes([6 + len(body), 0xe0, 0, 0, 0, 0, 0]) + body
+    return b"\x03\x00" + (4 + len(x224)).to_bytes(2, "big") + x224
+
+
+def rdp_confirm(selected=1, flags=0, kind=2):
+    """TPKT + X.224 Connection Confirm + RDP_NEG_RSP (kind 2) or RDP_NEG_FAILURE (kind 3, `selected` is the code)."""
+    x224 = bytes([14, 0xd0, 0x12, 0x34, 0, 0, 0, kind, flags]) + (8).to_bytes(2, "little") + selected.to_bytes(4, "little")
+    return b"\x03\x00" + (4 + len(x224)).to_bytes(2, "big") + x224
 HINTED_STREAM_CASES += ((WEBSOCKET_EMPTY_FRAME, 'websocket', 'websocket'),)
 
 # v0.32: S7comm after the ISO-TSAP connection.
