@@ -5,9 +5,12 @@ controls"), and the release build re-runs the test gate but not CodeQL. The rele
 job lists the tagged commit's check runs with the read-only `checks: read` token
 (`gh api --paginate .../commits/<sha>/check-runs`, one JSON object per line) and passes
 them here. For each required check name, only runs that GitHub Actions created for that
-exact commit count; the most recently completed one must have succeeded and none may still
-be running. A missing, pending, failed or unreadable check fails closed on a tag; branch,
-pull-request and manual dry runs only report. Standard library only. Usage:
+exact commit count; at least one must have completed, and the most recently completed one
+must have succeeded. A run still shown as in progress neither passes nor blocks: GitHub can
+leave a job's check run `in_progress` after its workflow run completed (observed on 6e1cd61,
+CodeQL job 120019258442), and a re-run in flight does not undo an earlier success, while a
+later completed failure does. A missing, only-pending, failed or unreadable check fails
+closed on a tag; branch, pull-request and manual dry runs only report. Standard library only. Usage:
   check_release_checks.py --ref-type TYPE --sha SHA --runs FILE [--summary FILE]
   check_release_checks.py --self-test
 """
@@ -42,10 +45,11 @@ def verdicts(runs, sha):
         if not mine:
             found[name] = (False, "no run by {} on this commit".format(APP))
             continue
-        if any(run.get("status") != "completed" for run in mine):
-            found[name] = (False, "still running")
+        completed = [run for run in mine if run.get("status") == "completed"]
+        if not completed:
+            found[name] = (False, "still running, no completed run yet")
             continue
-        latest = max(mine, key=lambda run: run.get("completed_at") or "")
+        latest = max(completed, key=lambda run: run.get("completed_at") or "")
         conclusion = latest.get("conclusion")
         found[name] = (conclusion == "success", "latest run concluded {}".format(conclusion))
     return found
@@ -86,7 +90,7 @@ def self_test():
         "spoofed app": "\n".join([run(ci, app="some-other-app"), run(codeql)]),
         "other commit": "\n".join([run(ci, head=other), run(codeql)]),
         "latest re-run failed": "\n".join([run(ci), run(ci, "failure", at="2026-10-22T11:00:00Z"), run(codeql)]),
-        "a re-run still running": "\n".join([run(ci), run(ci, None, "queued"), run(codeql)]),
+        "only running": "\n".join([run(ci, None, "queued"), run(codeql)]),
         "unreadable": "not json",
         "not an object": "[]",
         "empty": "",
@@ -95,6 +99,8 @@ def self_test():
         assert decide("tag", sha, text)[0] == 1, label
         code, lines = decide("branch", sha, text)
         assert code == 0 and "report only" in lines[0], label
+    # A stale or in-flight run beside a completed success does not block (the 6e1cd61 case).
+    assert decide("tag", sha, "\n".join([run(ci), run(codeql), run(codeql, None, "in_progress")]))[0] == 0
     # A later successful re-run replaces an earlier failure.
     assert decide("tag", sha, "\n".join([run(ci, "failure"), run(ci, at="2026-10-22T11:00:00Z"), run(codeql)]))[0] == 0
     print("check_release_checks self-test: ok")
