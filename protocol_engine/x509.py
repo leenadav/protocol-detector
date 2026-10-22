@@ -99,11 +99,32 @@ def _expect(data, pos, limit, tag, what):
     return start, end
 
 
-def _oid(data, pos, limit, what):
-    start, end = _expect(data, pos, limit, _OID, what)
+def _oid_contents(data, start, end, what):
+    """DER OBJECT IDENTIFIER contents: 1..32 octets, every arc minimal (no leading 0x80), the last arc complete."""
     if start == end or end - start > 32 or data[end - 1] & 0x80:
         raise ParseError(what + " object identifier is malformed")
+    # An arc is non-minimal when it starts with 0x80: the first octet, or a 0x80 after an arc's last octet.
+    # bytes.find keeps this at C speed; 0x80 octets are rare in real identifiers.
+    position = data.find(b"\x80", start, end)
+    while position != -1:
+        if position == start or not data[position - 1] & 0x80:
+            raise ParseError(what + " object identifier arc is not minimally encoded")
+        position = data.find(b"\x80", position + 1, end)
+
+
+def _oid(data, pos, limit, what):
+    start, end = _expect(data, pos, limit, _OID, what)
+    _oid_contents(data, start, end, what)
     return bytes(data[start:end]), end
+
+
+def _single(data, start, end, what):
+    """The contents of an EXPLICIT tag: exactly one complete element filling it."""
+    if start == end:
+        raise ParseError(what + " is empty")
+    _, _, inner_end = _element(data, start, end)
+    if inner_end != end:
+        raise ParseError(what + " must hold exactly one element")
 
 
 def _algorithm(data, pos, limit, what):
@@ -269,9 +290,11 @@ _GENERAL_NAME_TAGS = frozenset((0xa0, 0x81, 0x82, 0xa3, 0xa4, 0xa5, 0x86, 0x87, 
 def _general_names(data, start, end):
     """GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName; framing only, no name is read or kept.
 
-    Review round 1 (v0.57): at most MAX_GENERAL_NAMES entries, each in the DER form of its alternative,
-    with the minimal shape the alternative implies (non-empty text names, a 4- or 16-octet address, an
-    OID-led otherName, one Name in a directoryName).
+    Review rounds 1 and 2 (v0.57): at most MAX_GENERAL_NAMES entries, each in the DER form of its
+    alternative with its inner framing: non-empty IA5 text names, a 4- or 16-octet address, a DER
+    registeredID, an otherName OID plus exactly one [0] value, 1..MAX_NAME_PARTS complete elements in an
+    x400Address, one Name in a directoryName, an ediPartyName of optional [0] and required [1] each
+    holding exactly one element. Bytes are checked, never kept.
     """
     seq_start, seq_end = _expect(data, start, end, _SEQUENCE, "Subject alternative name")
     if seq_end != end or seq_start == seq_end:
@@ -285,23 +308,49 @@ def _general_names(data, start, end):
         if tag not in _GENERAL_NAME_TAGS:
             raise ParseError("Subject alternative name entry is not a GeneralName choice in its DER form")
         size = value_end - value_start
-        if tag in (0x81, 0x82, 0x86, 0x88, 0xa3, 0xa5) and not size:
-            raise ParseError("Subject alternative name entry is empty")
-        if tag == 0x87 and size not in (4, 16):
-            raise ParseError("Subject alternative name iPAddress must be 4 or 16 octets")
-        if tag == 0x88 and data[value_end - 1] & 0x80:
-            raise ParseError("Subject alternative name registeredID is not a complete object identifier")
-        if tag == 0xa0:
+        if tag in (0x81, 0x82, 0x86):
+            # IA5String (implicitly tagged): non-empty, seven-bit octets only (review round 2).
+            if not size or max(data[value_start:value_end]) & 0x80:
+                raise ParseError("Subject alternative name text entry must be a non-empty IA5String")
+        elif tag == 0x87:
+            if size not in (4, 16):
+                raise ParseError("Subject alternative name iPAddress must be 4 or 16 octets")
+        elif tag == 0x88:
+            _oid_contents(data, value_start, value_end, "Subject alternative name registeredID")
+        elif tag == 0xa0:
+            # otherName ::= SEQUENCE { type-id OBJECT IDENTIFIER, value [0] EXPLICIT ANY } (implicitly tagged [0]).
             _, after = _oid(data, value_start, value_end, "Subject alternative name otherName")
-            if after == value_end or data[after] != 0xa0:
-                raise ParseError("Subject alternative name otherName needs its [0] value")
-            _, _, inner_end = _element(data, after, value_end)
-            if inner_end != value_end:
-                raise ParseError("Subject alternative name otherName has trailing bytes")
+            tag_value, inner_start, inner_end = _element(data, after, value_end) if after < value_end else (None, 0, 0)
+            if tag_value != 0xa0 or inner_end != value_end:
+                raise ParseError("Subject alternative name otherName needs exactly its [0] value")
+            _single(data, inner_start, inner_end, "Subject alternative name otherName value")
+        elif tag == 0xa3:
+            # x400Address: ORAddress SEQUENCE contents, framed as 1..MAX_NAME_PARTS complete elements.
+            inner, parts = value_start, 0
+            while inner < value_end:
+                parts += 1
+                if parts > MAX_NAME_PARTS:
+                    raise ParseError("Subject alternative name x400Address exceeds the component budget")
+                _, _, inner = _element(data, inner, value_end)
+            if not parts:
+                raise ParseError("Subject alternative name x400Address is empty")
         elif tag == 0xa4:
             _, name_end = _name(data, value_start, value_end, "Subject alternative name directoryName")
             if name_end != value_end:
                 raise ParseError("Subject alternative name directoryName has trailing bytes")
+        else:
+            # ediPartyName ::= SEQUENCE { nameAssigner [0] DirectoryString OPTIONAL, partyName [1] DirectoryString };
+            # DirectoryString is a CHOICE, so both tags are explicit and hold exactly one element.
+            inner = value_start
+            if inner < value_end and data[inner] == 0xa0:
+                _, assigner_start, inner = _element(data, inner, value_end)
+                _single(data, assigner_start, inner, "Subject alternative name ediPartyName nameAssigner")
+            if inner >= value_end or data[inner] != 0xa1:
+                raise ParseError("Subject alternative name ediPartyName needs its partyName")
+            _, party_start, party_end = _element(data, inner, value_end)
+            if party_end != value_end:
+                raise ParseError("Subject alternative name ediPartyName has trailing bytes")
+            _single(data, party_start, party_end, "Subject alternative name ediPartyName partyName")
         cursor = value_end
 
 

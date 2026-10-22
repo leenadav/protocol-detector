@@ -454,7 +454,7 @@ static-rsa, psk) ואת מצב ההצפנה (aead או cbc) ב־TLS 1.2, TLS 1.3
 מחלקת extended key usage, האם יש subjectAltName (לעולם לא השמות עצמם) וחלון התוקף בימים קלנדריים; התוקף נשפט לפי זמן
 הלכידה ולא לפי השעון של הרצת הניתוח. סיכונים חדשים: `tls-no-forward-secrecy`, `tls-ca-certificate-as-leaf`,
 `tls-certificate-not-for-server-auth`, `tls-certificate-without-san`, `tls-certificate-outside-validity`. 85 משפחות,
-76 אוטומטיות, 99 יישומים, 614 בדיקות עוברות.
+76 אוטומטיות, 99 יישומים, 615 בדיקות עוברות.
 
 עדכון 0.56: עדות למנגנון האימות כתווית סגורה בלבד, לעולם לא אישור כניסה: הקמת סשן SMB2 ו־SMB1 אחרי NEGOTIATE
 (Kerberos, NTLM עם סוג ההודעה, NEGOEX, סשן אורח או אנונימי), מנגנוני bind של LDAP (simple, SASL GSSAPI/GSS-SPNEGO/

@@ -336,5 +336,47 @@ class ReviewRound1Tests(unittest.TestCase):
         self.assert_rejected(base.replace(b"\x55\x1d\x13\x01\x01\xff", b"\x55\x1d\x13\x01\x01\x00"), "basicConstraints critical FALSE")
 
 
+class ReviewRound2Tests(unittest.TestCase):
+    """Repairs for the v0.57 round-2 finding: GeneralName inner values, DER object identifiers everywhere."""
+
+    def test_general_name_inner_values(self):
+        def san(*entries):
+            return x509(san=None, extra=(x509_extension(SAN_OID, _ber(0x30, b"".join(entries))),))
+        other_oid = _ber(6, b"\x2b\x06\x01")
+        valid = {"IA5 text with every seven-bit value": _ber(0x82, bytes(range(1, 128))),
+                 "registeredID with a multi-octet arc": _ber(0x88, b"\x2b\x81\x00"),
+                 "otherName": _ber(0xa0, other_oid + _ber(0xa0, _ber(0x0c, b"p"))),
+                 "x400Address of two elements": _ber(0xa3, _ber(0x30, b"") + _ber(0x61, _ber(0x13, b"x"))),
+                 "ediPartyName with nameAssigner": _ber(0xa5, _ber(0xa0, _ber(0x0c, b"a")) + _ber(0xa1, _ber(0x0c, b"p")))}
+        for label, entry in valid.items():
+            self.assertEqual(dict(leaf_profile(san(entry)))["tls_certificate_san"], "present", label)
+        rejected = {
+            "rfc822Name octet 0xff": san(b"\x81\x01\xff"), "dNSName octet 0x80": san(b"\x82\x01\x80"),
+            "URI with a high octet": san(b"\x86\x02\x61\xff"),
+            "registeredID non-minimal first arc": san(b"\x88\x02\x80\x00"), "registeredID empty": san(b"\x88\x00"),
+            "registeredID non-minimal later arc": san(b"\x88\x03\x2b\x80\x01"),
+            "otherName empty [0]": san(_ber(0xa0, other_oid + b"\xa0\x00")),
+            "otherName two values": san(_ber(0xa0, other_oid + _ber(0xa0, _ber(0x0c, b"p") + _ber(0x0c, b"q")))),
+            "otherName truncated value": san(_ber(0xa0, other_oid + b"\xa0\x03\x0c\x05\x61")),
+            "otherName wrong value tag": san(_ber(0xa0, other_oid + _ber(0xa1, _ber(0x0c, b"p")))),
+            "otherName non-minimal type-id": san(_ber(0xa0, _ber(6, b"\x2b\x80\x06") + _ber(0xa0, _ber(0x0c, b"p")))),
+            "x400Address one stray byte": san(b"\xa3\x01\xff"),
+            "x400Address beyond 32 elements": san(_ber(0xa3, _ber(0x05, b"") * 33)),
+            "ediPartyName one stray byte": san(b"\xa5\x01\xff"),
+            "ediPartyName without partyName": san(_ber(0xa5, _ber(0xa0, _ber(0x0c, b"a")))),
+            "ediPartyName empty partyName": san(_ber(0xa5, b"\xa1\x00")),
+            "ediPartyName partyName of two values": san(_ber(0xa5, _ber(0xa1, _ber(0x0c, b"p") + _ber(0x0c, b"q")))),
+            "ediPartyName trailing element": san(_ber(0xa5, _ber(0xa1, _ber(0x0c, b"p")) + _ber(0xa2, _ber(0x0c, b"x")))),
+            "ediPartyName empty nameAssigner": san(_ber(0xa5, b"\xa0\x00" + _ber(0xa1, _ber(0x0c, b"p")))),
+            "extension OID non-minimal": x509(extra=(x509_extension(b"\x2b\x80\x06\x01", _ber(0x30, b"")),)),
+            "key purpose OID non-minimal": x509(eku=(b"\x2b\x06\x01\x05\x05\x07\x03\x80\x01",)),
+        }
+        for label, der in rejected.items():
+            with self.assertRaises(ParseError, msg=label):
+                leaf_profile(der)
+            observation = inspect(flight(der))
+            self.assertEqual((observation.status, observation.encryption, labels(observation, "tls_certificate_")), ("identified", "tls", {}), label)
+
+
 if __name__ == "__main__":
     unittest.main()

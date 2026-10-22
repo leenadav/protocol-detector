@@ -43,3 +43,9 @@ the critical-flag rule is one comparison. `leaf_profile` on identical bytes:
 30.4 us (basicConstraints-only leaf, unchanged within noise) and 39.8 -> 43.1 us
 (EKU and SAN leaf). A leaf at the 256-entry SAN budget stays one linear pass
 within `MAX_LEAF`. The A/B flows do not reach the certificate watch.
+
+Review round 2 repairs (baseline f059567): GeneralName inner framing and the DER
+object-identifier rule for every OID. A per-octet Python loop cost about 6 us
+per leaf, so the rule uses `bytes.find` for 0x80 octets and `max()` for the
+IA5 check: `leaf_profile` 31.5 -> 33.2 us (basicConstraints-only leaf) and
+39.9 -> 42.0 us (EKU and SAN leaf) on identical bytes.
