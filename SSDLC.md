@@ -56,8 +56,9 @@ aggregate job, `ci gate (all jobs)`, that depends on every other ci job with
 skipped. `toJSON(needs)` only sees direct dependencies, so
 `tools/check_workflow_policy.py` (CI `workflow-lint`, `make check`,
 pre-commit) fails when a ci job is missing from the gate's `needs` or a listed
-job no longer exists: a job added later cannot pass unseen, and no settings
-change is needed. CodeQL runs in its own workflow and is required separately.
+job no longer exists, and fails closed on any entry of the `jobs:` mapping it
+cannot read as a block-style job key (plain or quoted): a job added later
+cannot pass unseen, whatever its spelling, and no settings change is needed. CodeQL runs in its own workflow and is required separately.
 
 | Workflow | Recommended required check name | Gate |
 |---|---|---|

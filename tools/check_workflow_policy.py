@@ -14,7 +14,10 @@
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
-`concurrency:` as a mapping) and fails closed on anything it cannot read, including a
+`concurrency:` as a mapping; keys plain or quoted) and fails closed on anything it cannot
+read: every entry of the `jobs:` mapping must be a block-style job key, so a job spelled
+another way (inline flow mapping, alias, explicit `?` key, merge key, tab indentation)
+fails the check instead of being left out of the gate comparison, and so does a
 concurrency expression other than a plain `github.*` context reference. Usage:
   check_workflow_policy.py [--root DIR] [--self-test]
 """
@@ -26,8 +29,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-JOB = re.compile(r"^  ([A-Za-z0-9_-]+):\s*(#.*)?$")
-KEY = re.compile(r"^(\s*)([A-Za-z0-9_-]+):\s*(.*?)\s*(#.*)?$")
+KEY = re.compile(r"""^( *)("[^"]*"|'[^']*'|[A-Za-z0-9_-]+):(?:\s+(.*?))?\s*(#.*)?$""")
 ITEM = re.compile(r"^(\s*)-\s*(.+?)\s*(#.*)?$")
 DRIFT_INPUTS = ["tools/check_pin_drift.py", "requirements-dev.txt"]
 
@@ -39,6 +41,14 @@ def strip_quotes(value):
     return value
 
 
+def key_of(line, indent=None):
+    """(indent, unquoted key, value) of a `key: value` line, or None."""
+    match = KEY.match(line)
+    if not match or (indent is not None and len(match.group(1)) != indent):
+        return None
+    return len(match.group(1)), strip_quotes(match.group(2)), match.group(3) or ""
+
+
 def jobs_block(lines):
     """Lines of the top-level `jobs:` mapping, or raise if absent."""
     for index, line in enumerate(lines):
@@ -48,23 +58,45 @@ def jobs_block(lines):
     raise ValueError("no top-level jobs: mapping")
 
 
+def job_starts(block):
+    """[(line index, job id)] of the `jobs:` mapping; any entry that is not a block-style
+    job key raises, so no job can hide from the gate comparison by its spelling."""
+    starts = []
+    for index, line in enumerate(block):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if line.startswith("\t") or line[:len(line) - len(line.lstrip(" \t"))].count("\t"):
+            raise ValueError("jobs: tab indentation is not supported: {!r}".format(line))
+        indent = len(line) - len(line.lstrip(" "))
+        if indent >= 4:
+            if not starts:
+                raise ValueError("jobs: content before the first job key: {!r}".format(line))
+            continue
+        key = key_of(line, indent=2)
+        if key is None or key[2]:
+            raise ValueError("jobs: cannot read job entry {!r}; only block-style `  <id>:` job keys are supported".format(line))
+        starts.append((index, key[1]))
+    return starts
+
+
 def job_ids_and_needs(text):
     """({job id, ...}, {job id: [needs ids]})."""
     lines = text.splitlines()
     block = jobs_block(lines)
+    starts = dict(job_starts(block))
     ids, needs, current = [], {}, None
     index = 0
     while index < len(block):
         line = block[index]
-        match = JOB.match(line)
-        if match:
-            current = match.group(1)
+        if index in starts:
+            current = starts[index]
             ids.append(current)
             needs[current] = []
         elif current is not None:
-            key = KEY.match(line)
-            if key and len(key.group(1)) == 4 and key.group(2) == "needs":
-                value = key.group(3)
+            key = key_of(line, indent=4)
+            if key and key[1] == "needs":
+                value = key[2]
                 if value.startswith("["):
                     if not value.endswith("]"):
                         raise ValueError("job {}: multi-line flow list in needs is not supported".format(current))
@@ -108,12 +140,12 @@ def trigger_paths(text, event):
     end = next((j for j in range(start + 1, len(lines)) if re.match(r"^\S", lines[j])), len(lines))
     block = lines[start + 1:end]
     for index, line in enumerate(block):
-        key = KEY.match(line)
-        if key and len(key.group(1)) == 2 and key.group(2) == event:
-            stop = next((j for j in range(index + 1, len(block)) if KEY.match(block[j]) and len(KEY.match(block[j]).group(1)) <= 2), len(block))
+        key = key_of(line, indent=2)
+        if key and key[1] == event:
+            stop = next((j for j in range(index + 1, len(block)) if key_of(block[j]) and key_of(block[j])[0] <= 2), len(block))
             for inner in range(index + 1, stop):
-                sub = KEY.match(block[inner])
-                if sub and len(sub.group(1)) == 4 and sub.group(2) == "paths":
+                sub = key_of(block[inner], indent=4)
+                if sub and sub[1] == "paths":
                     paths = []
                     for item in block[inner + 1:stop]:
                         found = ITEM.match(item)
@@ -156,20 +188,20 @@ BRANCH_RUNS = [
 def concurrency_in(lines, indent):
     """{'group': ..., 'cancel-in-progress': ...} of the `concurrency:` key at `indent`, or None."""
     for index, line in enumerate(lines):
-        key = KEY.match(line)
-        if not key or len(key.group(1)) != indent or key.group(2) != "concurrency":
+        key = key_of(line, indent=indent)
+        if not key or key[1] != "concurrency":
             continue
-        if key.group(3):
-            return {"group": strip_quotes(key.group(3))}
+        if key[2]:
+            return {"group": strip_quotes(key[2])}
         found = {}
         for inner in lines[index + 1:]:
-            sub = KEY.match(inner)
+            sub = key_of(inner)
             if not inner.strip() or inner.strip().startswith("#"):
                 continue
-            if not sub or len(sub.group(1)) <= indent:
+            if not sub or sub[0] <= indent:
                 break
-            if len(sub.group(1)) == indent + 2:
-                found[sub.group(2)] = strip_quotes(sub.group(3))
+            if sub[0] == indent + 2:
+                found[sub[1]] = strip_quotes(sub[2])
         if "group" not in found:
             raise ValueError("concurrency at indent {} has no group".format(indent))
         return found
@@ -178,10 +210,12 @@ def concurrency_in(lines, indent):
 
 def job_lines(text, job):
     block = jobs_block(text.splitlines())
-    start = next((i for i, line in enumerate(block) if JOB.match(line) and JOB.match(line).group(1) == job), None)
-    if start is None:
+    starts = job_starts(block)
+    position = next((n for n, (_, name) in enumerate(starts) if name == job), None)
+    if position is None:
         raise ValueError("no `{}` job".format(job))
-    end = next((j for j in range(start + 1, len(block)) if JOB.match(block[j])), len(block))
+    start = starts[position][0]
+    end = starts[position + 1][0] if position + 1 < len(starts) else len(block)
     return block[start + 1:end]
 
 
@@ -303,6 +337,26 @@ def self_test():
     assert problems == ["gate.needs names job(s) that do not exist: gone"], problems
     assert job_ids_and_needs(SELF_TEST_CI.replace("{extra}", ""))[1]["extra"] == ["verify", "lint"]
     assert check_gate("jobs:\n  a:\n    x: 1\n") == ["ci.yml has no `gate` job"]
+    # PR #6 round 2: a job key spelled other than `  plain-id:` must not drop out of the comparison.
+    gate_tail = "  gate:\n    if: always()\n    needs: [verify]\n"
+    for spelling in ('"new-check"', "'new-check'"):
+        quoted = "jobs:\n  verify:\n    runs-on: x\n  {}:  # added later\n    runs-on: x\n".format(spelling) + gate_tail
+        assert check_gate(quoted) == ["gate.needs is missing job(s): new-check"], check_gate(quoted)
+        assert check_gate(quoted.replace("needs: [verify]", "needs: [verify, {}]".format(spelling))) == []
+    assert job_ids_and_needs('jobs:\n  a:\n    "needs": [b]\n  b:\n    x: 1\n')[1]["a"] == ["b"]
+    for unreadable in ("  new-check: {runs-on: x}\n",          # inline flow mapping
+                       "  new-check: *template\n",              # alias
+                       "  ? new-check\n  : runs-on: x\n",       # explicit key
+                       "  <<: *defaults\n",                     # merge key
+                       "  new.check:\n    runs-on: x\n",      # outside the job-id alphabet
+                       "\tnew-check:\n    runs-on: x\n",      # tab indentation
+                       " new-check:\n    runs-on: x\n"):       # off-grid indentation
+        text = "jobs:\n  verify:\n    runs-on: x\n" + unreadable + gate_tail
+        try:
+            check_gate(text)
+            raise AssertionError("must fail closed: {!r}".format(unreadable))
+        except ValueError:
+            pass
     files = [".github/workflows/ci.yml", ".github/workflows/release.yml"]
     assert check_drift_paths(SELF_TEST_DRIFT.replace("{push}", ".github/workflows/**"), files) == []
     problems = check_drift_paths(SELF_TEST_DRIFT.replace("{push}", ".github/workflows/ci.yml"), files)
