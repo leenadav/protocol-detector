@@ -50,6 +50,7 @@ only with green checks is a review discipline, not a guarantee.
 | Scheduled release audit: every `v*` tag points at a commit on `main`; every published release names an existing, on-`main` `v*` tag and that tag's current commit; and every downloaded file, hidden ones included, carries an attestation from `publish-release.yml` for that tag ref and commit | enforced after the fact, once merged to `main`, by `.github/workflows/release-audit.yml`. It runs daily and on manual dispatch. A scheduled run always uses the default branch's copy, so no tag, legacy `release.yml` or branch-edited workflow can swap it. It holds read-only permissions (`contents`, `attestations: read`); `tools/release_audit.py` decides, and fails closed on unreadable facts. A failing run is GitHub's notification to the owner. Rule 10 of the policy keeps the schedule, pins the gather-and-decide step and pins the audit job whole (keys, permissions, runner, harden-runner, checkout and setup-python before that step and nothing else, no workflow env, no other job), so no step can shadow the gather step's `gh` and fabricate verified attestations. This is detective: it reports a bad release but cannot stop one being published |
 | The policy reads what GitHub reads: the line parser in `tools/check_workflow_policy.py` and a real YAML parser agree on every fact the rules use | enforced by `tools/check_workflow_yaml.py` in CI `workflow-lint` and `make workflow-lint`, with the hash-pinned PyYAML. Rule 11 of the policy pins the CI step, including its own toolchain install, and forbids `if:` or `continue-on-error` on it or on its job, so the step cannot be dropped or masked while the gate stays green. `make check` does not run it because it needs the dev toolchain. Every workflow is parsed both ways. Any disagreement fails: top-level and job keys, job ids, `needs`, tag triggers, permissions, each step's keys, `name`, `if`, `uses`, `env`, `with` and `run` lines, or the `uses` list. The stored-credential ban is also re-run over every decoded key and string. Each review finding against the line rules was such a disagreement, so this closes the class rather than one spelling. Limit: PyYAML is YAML 1.1 and GitHub's parser is YAML 1.2; the one difference that matters here (`on` as a boolean) is normalized |
 | No masked ci job: every job `ci gate (all jobs)` needs can actually fail | enforced by rule 13 of `tools/check_workflow_policy.py`. In `ci.yml`: no `continue-on-error`. The gate job itself is pinned whole (keys, runner, harden-runner then the decision step, nothing else), and the workflow env may only set the two Python/pip settings, so nothing can shadow the decision's `jq`. Run lines are checked against an allowlist, since a script cannot be proven to fail when its check fails: `\|\|` only on three exact lines: two whose handler fails again, `\|\| (… && exit 1)`, and the bandit summary-text fallback. A pattern for re-failing handlers was beaten by chaining (`\|\| echo ignored \|\| (… && exit 1)`). `&&` only inside those lines, the allowed `if` conditions, or the two wheel-smoke subshells, because under `bash -e` a failure left of `&&` does not stop the script; `if` only with the conditions in use; and no `exit 0`, `return`, `set +…`, `trap`, `!` negation, `while`/`until` or background `&`. no job-level `if:` except the gate's exact `always()`; a step `if:` only on the three pull-request-only behaviour-diff base steps, pinned by job and every field; and the gate's decision step pinned. Because a ban list cannot cover every shell form (`echo "$(check)"` hides the substitution's status), `ci.yml` is also covered by the workflow lock below. The lock makes changes reviewable; whether a reviewed change masks a failure stays a review judgment |
+| Independent scanners run before repository code | enforced by rule 15 of `tools/check_workflow_policy.py`. `static-analysis` (ruff, bandit, gitleaks), `workflow-lint` (actionlint, zizmor) and `toolchain-audit` (pip-audit) each start with exactly their pinned steps through the last scanner: pinned actions, the isolated install `python -I -m pip install --require-hashes -r requirements-dev.txt` (plain `python -m pip` would run a repository `pip/` package) and the scanners, so no repository script runs first and can shadow them. The configuration they read (`pyproject.toml`, `bandit.yaml`) and `requirements-dev.txt` stay reviewed changes to the checks (backlog item 17) |
 | No unreviewed workflow change: every workflow line, steps and execution context alike | enforced by rule 14 of `tools/check_workflow_policy.py`. Every line of every workflow file is locked in `tools/workflows.lock.json`: steps and execution context alike (workflow and job `env`, `defaults`, runners, matrix), with only action versions normalised away, since rule 7 owns them (only a plain `owner/repo@ref` plus comment is normalised). No workflow changes, appears or disappears unless the lock changes in the same commit, regenerated with `--write-workflow-lock`. That covers the ci gate, CodeQL, the release controller and the audit, whose results decide releases. Shell startup variables (`BASH_ENV`, `ENV`, `BASH_FUNC_*`, `SHELLOPTS`, `BASHOPTS`, `PROMPT_COMMAND`, `PS4`) are banned in every workflow, since they redefine a pinned command without touching its step. So are the runner's channels into later steps' environment (`$GITHUB_ENV`, `$GITHUB_PATH`, its file-command directory, the legacy `::set-env` / `::add-path` commands and `ACTIONS_ALLOW_UNSECURE_COMMANDS`): an earlier step appending to `$GITHUB_PATH` could otherwise put a fake `gh` or `python` in front of the controller's pinned provenance and checks steps. Both bans go by name; a name built at runtime is left to the lock's review. The lock makes changes reviewable (CODEOWNERS covers the tree); it cannot judge a reviewed change. Code the steps run (tools, tests, requirements) is not locked: changing it changes the check itself and is reviewed as such |
 | Failing checks fail their step (pipefail) | enforced: every workflow sets `defaults: run: shell: bash`, which is `bash -eo pipefail`. The unspecified default is `bash -e`, under which `check \| tee` passed when the check failed. Rule 6 of the policy forbids dropping or overriding it |
 | Required status checks on `main` (the two names below) | recommended; not enforceable on the current plan |
@@ -204,8 +205,8 @@ protection, permissions or credentials.
 Prioritized from concrete gaps; one bounded milestone at a time, each through
 the review loop above.
 
-1. Release tag provenance (compensating control; in review on
-   `claude/cicd-next`; enforced only after the legacy `release` workflow is
+1. Release tag provenance (compensating control; code passed review after
+   three rounds; enforced only after the legacy `release` workflow is
    disabled, a Lee action). Tag protection and
    required checks are not enforceable on the current plan, so any `v*` tag
    pushed by a writer, on any commit, reaches the publish job. The release
@@ -213,7 +214,7 @@ the review loop above.
    (GitHub compare API with the read-only token), with a tested decision
    helper and a workflow-policy rule that keeps the step on the publish
    job's dependency path.
-2. Green-checks-on-tag (in review on `claude/cicd-next`). Before publishing, require that `ci gate (all jobs)`
+2. Green-checks-on-tag (passed review in round 2). Before publishing, require that `ci gate (all jobs)`
    and CodeQL succeeded on the tagged commit (read-only `checks: read`), so
    a release cannot ship a commit whose CodeQL never passed (the release
    build re-runs the test gate but not CodeQL).
@@ -300,13 +301,37 @@ the review loop above.
    shared `check_pinned_job` that also pins `release-gate`), and the
    workflow env of `codeql.yml` (none) and `ci.yml` (the two Python/pip
    settings) is pinned, since a workflow `PATH:` would reach every job.
-15. Whole-job pin for the release audit (in review on `claude/cicd-next`).
+15. Whole-job pin for the release audit (passed review in round 1).
    The last job whose final step decides a verdict. Rule 10 pinned the
    audit's gather-and-decide step but let steps run before it: with the
    lock regenerated, a step that put a directory on the runner's path file
    (the same glob as item 13) passed the policy, and a fake `gh` there
    could report every attestation as verified. The audit job is now pinned
    whole, its workflow sets no env and holds no other job.
+16. Scanners before repository code (in review on `claude/cicd-next`). The
+   third-party scanners are independent of the repository, so a repository
+   script must not be able to change them. In `workflow-lint` the
+   repository's own tools ran before zizmor, so a change to any of them
+   could shadow zizmor through the runner's path file with no workflow
+   change. And every scanner job installed its toolchain with
+   `python -m pip`, which puts the working directory first on `sys.path`:
+   a repository `pip/` package runs instead of pip (demonstrated locally)
+   and could install a fake ruff, bandit or pip-audit. zizmor now runs
+   before the repository tools, the installs use `python -I -m pip`, and
+   rule 15 pins each scanner job's steps exactly through its last scanner.
+
+Next, in priority order (from the gaps still open after item 16):
+
+17. Scanner configuration may only tighten. `pyproject.toml` (ruff's rule
+   selection) and `bandit.yaml` (skips) are read by the scanners, so a
+   change there can silence them while every workflow stays pinned. A
+   policy rule should keep a baseline of the selected rule families and
+   bandit skips and fail when one is removed, so loosening becomes an
+   explicit, reviewed baseline change.
+18. First real runs (blocked on the Actions billing limit, a Lee action).
+   Every control so far is verified locally only. Once jobs start, confirm
+   on a real run that each pinned gate job behaves as tested (the release
+   dry run, CodeQL, the ci gate, the audit), and record the run ids.
 
 ## Caching and concurrency policy
 

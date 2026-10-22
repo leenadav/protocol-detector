@@ -121,6 +121,15 @@
    step's `gh` or `python`. Both bans are by name: a name built at runtime is caught only by
    the lock's review. Code the steps run (tools, tests, requirements) is not locked; a change
    there changes the check itself and is reviewed as such.
+15. Scanners first (`ci.yml`): ruff, bandit and gitleaks in `static-analysis`, actionlint and
+   zizmor in `workflow-lint` and pip-audit in `toolchain-audit` are independent of the
+   repository, so a repository script must not be able to change them. Each of those jobs
+   starts with exactly SCANNER_JOBS' steps (keys, permissions, runner too), through its last
+   scanner: pinned actions, the isolated toolchain install (`python -I -m pip`, since
+   `python -m pip` would run a repository `pip/` package) and the scanners themselves, so no
+   repository code runs before them and can shadow them through the runner's path file.
+   Configuration they read (pyproject.toml, bandit.yaml) and requirements-dev.txt stay
+   reviewed changes to the checks.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -508,9 +517,10 @@ GATE_STEPS = [
 ]
 
 
-def check_pinned_job(path, text, job, keys, permissions, runner, steps):
+def check_pinned_job(path, text, job, keys, permissions, runner, steps, prefix=False):
     """The whole of `job` is an allowlist: exactly `keys`, `permissions` (None: not set), `runner`
-    and `steps` in order (a step's `name` is free text and need not match). A gate decided by a
+    and `steps` in order (a step's `name` is free text and need not match; with `prefix`, the
+    job's first steps are exactly `steps` and later ones are free). A gate decided by a
     job's last step is only as sound as everything that runs before it in that job, since the
     runner carries a step's appends to its per-step path and env files (found by a glob, so no
     name ban can cover them) into the later steps of the same job."""
@@ -530,8 +540,9 @@ def check_pinned_job(path, text, job, keys, permissions, runner, steps):
     if not isinstance(value, str) or strip_quotes(value) != runner:
         problems.append("{}: the {} job must run on {}".format(label, job, runner))
     found_steps = steps_of(block)
-    if len(found_steps) != len(steps):
-        problems.append("{}: the {} job must be exactly {} pinned steps; found {}".format(label, job, len(steps), len(found_steps)))
+    if len(found_steps) < len(steps) or (not prefix and len(found_steps) != len(steps)):
+        problems.append("{}: the {} job must {} {} pinned steps; found {}".format(
+            label, job, "start with" if prefix else "be exactly", len(steps), len(found_steps)))
     for number, (step, spec) in enumerate(zip(found_steps, steps), 1):
         try:
             fields = step_fields(step)
@@ -1060,6 +1071,67 @@ def check_workflow_lock(workflows, lock_text):
     return problems
 
 
+# Rule 15: the independent third-party scanners run before any repository code in their job,
+# so no repository script can shadow them through the runner's per-step path file, and the
+# toolchain they come from is installed with `python -I -m pip` (isolated: `python -m pip`
+# puts the working directory first on sys.path, so a repository `pip/` package would run
+# instead of pip). Each scanner job's steps up to its last scanner are pinned exactly.
+HARDEN_STEP = {"uses": "step-security/harden-runner", "with": {"egress-policy": "audit"}}
+CACHED_PYTHON = {"uses": "actions/setup-python",
+                 "with": {"python-version": "3.13", "cache": "pip", "cache-dependency-path": "requirements-dev.txt"}}
+ISOLATED_INSTALL = "python -I -m pip install --require-hashes -r requirements-dev.txt"
+SCANNER_JOB_KEYS = {"name", "runs-on", "timeout-minutes", "steps"}
+SCANNER_JOBS = {
+    "static-analysis": (SCANNER_JOB_KEYS | {"permissions"}, {"contents": "read", "pull-requests": "read"}, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false", "fetch-depth": "0"}},
+        CACHED_PYTHON,
+        {"run": [ISOLATED_INSTALL]},
+        {"run": ["ruff check --output-format github .",
+                 'echo "ruff: no findings ($(ruff --version))" | tee -a "$GITHUB_STEP_SUMMARY"']},
+        {"run": ["bandit -c bandit.yaml -r protocol_engine analyze_pcap.py live_capture.py sessions.py packets.py link_packets.py "
+                 "capture_stream.py -f txt | tee bandit.txt",
+                 "{", "echo", "echo '```'", "grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt", "echo '```'",
+                 '} >> "$GITHUB_STEP_SUMMARY"']},
+        {"uses": "gitleaks/gitleaks-action", "env": {"GITHUB_TOKEN": "${{ secrets.GITHUB_TOKEN }}",
+                                                     "GITLEAKS_ENABLE_UPLOAD_ARTIFACT": "false", "GITLEAKS_ENABLE_SUMMARY": "true"}},
+    ]),
+    "workflow-lint": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        CACHED_PYTHON,
+        {"env": {"VERSION": "1.7.7", "SHA256": "023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757"},
+         "run": ['curl -sSfL -o actionlint.tar.gz "https://github.com/rhysd/actionlint/releases/download/v${VERSION}/actionlint_'
+                 '${VERSION}_linux_amd64.tar.gz"',
+                 'echo "${SHA256}  actionlint.tar.gz" | sha256sum -c -',
+                 "tar xzf actionlint.tar.gz actionlint"]},
+        {"run": ["./actionlint -no-color .github/workflows/*.yml",
+                 'echo "actionlint: $(find .github/workflows -name \'*.yml\' | wc -l) workflow files clean" | tee -a "$GITHUB_STEP_SUMMARY"']},
+        {"run": [ISOLATED_INSTALL + " > /dev/null",
+                 "zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows | tee zizmor.txt",
+                 'echo "zizmor $(zizmor --version | awk \'{print $NF}\'): $(tail -n 1 zizmor.txt)" | tee -a "$GITHUB_STEP_SUMMARY"']},
+    ]),
+    "toolchain-audit": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        CACHED_PYTHON,
+        {"run": [ISOLATED_INSTALL]},
+        {"run": ['pip-audit -r requirements-dev.txt --require-hashes --strict --progress-spinner off --desc on | tee -a '
+                 '"$GITHUB_STEP_SUMMARY"']},
+    ]),
+}
+
+
+def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
+    """Rule 15: every scanner job starts with exactly its pinned steps, through its last scanner."""
+    if path not in workflows:
+        return ["{} is missing".format(path)]
+    problems = []
+    for job, (keys, permissions, steps) in SCANNER_JOBS.items():
+        problems += check_pinned_job(path, workflows[path], job, keys, permissions, "ubuntu-24.04", steps, prefix=True)
+    return problems
+
+
 def check_tag_triggers(workflows):
     """`workflows`: {repository path: text}."""
     problems = []
@@ -1268,6 +1340,7 @@ def main(root):
         problems += check_cross_check(texts)
         problems += check_codeql(texts)
         problems += check_ci_masking(texts)
+        problems += check_scanner_order(texts)
         lock = root / WORKFLOW_LOCK
         problems += check_workflow_lock(texts, lock.read_text(encoding="utf-8") if lock.exists() else "missing")
         for name in files:
@@ -1976,6 +2049,48 @@ def self_test():
         with contextlib.redirect_stdout(captured):
             assert main(directory) == 1, captured.getvalue()
         assert "release-audit.yml: audit step 4 (Shadow gh) is not the pinned form" in captured.getvalue(), captured.getvalue()
+    # item 16: the independent scanners run before any repository code in their jobs
+    assert check_scanner_order(real) == [], check_scanner_order(real)
+    zizmor_step = "      - name: Audit every workflow for security weaknesses (zizmor, pedantic persona, offline audits)\n"
+    policy_step = ("      - name: Workflow policy (gate covers every ci job, drift gate triggers on every workflow, releases "
+                   "serialize, tags must be on main)\n")
+    assert ci_full.count(zizmor_step) == 1 and ci_full.count(policy_step) == 1
+    zizmor_block = ci_full[ci_full.index(zizmor_step):ci_full.index(policy_step)]
+    ruff_step = "      - name: Ruff (errors, bugbear, security rules)\n"
+    audit_step = "      - name: Audit every pinned development dependency against the advisory databases\n"
+    repo_step = "      - name: Prepare\n        run: python -B tools/check_docs_counts.py\n"
+    for label, text in {
+        "repository code before ruff": ci_full.replace(ruff_step, repo_step + ruff_step, 1),
+        "repository code before pip-audit": ci_full.replace(audit_step, repo_step + audit_step, 1),
+        "zizmor after the repository tools": ci_full.replace(zizmor_block, "", 1).replace(
+            "      - name: Cross-check the workflow policy parser", zizmor_block + "      - name: Cross-check the workflow policy parser", 1),
+        "pip not isolated (static-analysis)": ci_full.replace("        run: python -I -m pip install --require-hashes -r requirements-dev.txt\n"
+                                                              "      - name: Ruff", "        run: python -m pip install --require-hashes -r "
+                                                              "requirements-dev.txt\n      - name: Ruff", 1),
+        "pip not isolated (zizmor)": ci_full.replace("          python -I -m pip install --require-hashes -r requirements-dev.txt > /dev/null\n          zizmor",
+                                                     "          python -m pip install --require-hashes -r requirements-dev.txt > /dev/null\n          zizmor", 1),
+        "step env on ruff": ci_full.replace(ruff_step, ruff_step + "        env:\n          PATH: ./bin\n", 1),
+        "job env": ci_full.replace("    name: known vulnerabilities in the dev toolchain (pip-audit)\n",
+                                   "    name: known vulnerabilities in the dev toolchain (pip-audit)\n    env:\n      LANG: C\n", 1),
+        "scanner dropped": ci_full.replace("          ruff check --output-format github .\n", "", 1),
+        "self-hosted": ci_full.replace("    name: workflow lint (actionlint, zizmor)\n    runs-on: ubuntu-24.04\n",
+                                       "    name: workflow lint (actionlint, zizmor)\n    runs-on: self-hosted\n", 1),
+    }.items():
+        assert text != ci_full, label
+        assert check_scanner_order({".github/workflows/ci.yml": text}), label
+    after = ci_full.replace("  security-requirements:\n", "      - run: echo after the scanners\n\n  security-requirements:\n", 1)
+    assert after != ci_full and check_scanner_order({".github/workflows/ci.yml": after}) == []
+    with tempfile.TemporaryDirectory() as directory:
+        (Path(directory) / ".github" / "workflows").mkdir(parents=True)
+        (Path(directory) / "tools").mkdir()
+        tampered = dict(real, **{".github/workflows/ci.yml": ci_full.replace(ruff_step, repo_step + ruff_step, 1)})
+        for path, text in tampered.items():
+            (Path(directory) / path).write_text(text, encoding="utf-8")
+        (Path(directory) / WORKFLOW_LOCK).write_text(json.dumps(workflow_lock(tampered)), encoding="utf-8")
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            assert main(directory) == 1, captured.getvalue()
+        assert "ci.yml: static-analysis step 5 (Prepare) is not the pinned form" in captured.getvalue(), captured.getvalue()
     added = dict(real, **{".github/workflows/extra.yml": "on: push\n"})
     assert any("extra.yml: not in" in p for p in check_workflow_lock(added, lock_text))
     removed = {k: v for k, v in real.items() if k != ".github/workflows/nightly-fuzz.yml"}

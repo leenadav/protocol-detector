@@ -236,7 +236,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
       - name: Install pinned analysis tools
-        run: python -m pip install --require-hashes -r requirements-dev.txt
+        run: python -I -m pip install --require-hashes -r requirements-dev.txt
       - name: Ruff (errors, bugbear, security rules)
         run: |
           ruff check --output-format github .
@@ -372,6 +372,15 @@ jobs:
         run: |
           ./actionlint -no-color .github/workflows/*.yml
           echo "actionlint: $(find .github/workflows -name '*.yml' | wc -l) workflow files clean" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Audit every workflow for security weaknesses (zizmor, pedantic persona, offline audits)
+        # Template injection, credential persistence, cache poisoning, excessive or undocumented
+        # permissions, unpinned or superfluous actions, missing concurrency limits. Any finding fails.
+        # It runs before any repository code in this job (tools/check_workflow_policy.py rule 15),
+        # so no repository script can shadow it through the runner's per-step path file.
+        run: |
+          python -I -m pip install --require-hashes -r requirements-dev.txt > /dev/null
+          zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows | tee zizmor.txt
+          echo "zizmor $(zizmor --version | awk '{print $NF}'): $(tail -n 1 zizmor.txt)" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Workflow policy (gate covers every ci job, drift gate triggers on every workflow, releases serialize, tags must be on main)
         run: |
           python -B tools/check_release_ref.py --self-test
@@ -381,13 +390,6 @@ jobs:
           python -B tools/check_release_exposure.py --ref HEAD | tee -a "$GITHUB_STEP_SUMMARY"
           python -B tools/check_workflow_policy.py --self-test
           python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Audit every workflow for security weaknesses (zizmor, pedantic persona, offline audits)
-        # Template injection, credential persistence, cache poisoning, excessive or undocumented
-        # permissions, unpinned or superfluous actions, missing concurrency limits. Any finding fails.
-        run: |
-          python -m pip install --require-hashes -r requirements-dev.txt > /dev/null
-          zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows | tee zizmor.txt
-          echo "zizmor $(zizmor --version | awk '{print $NF}'): $(tail -n 1 zizmor.txt)" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Cross-check the workflow policy parser against PyYAML (any disagreement is a policy blind spot)
         # tools/check_workflow_policy.py rule 11 pins this step (it installs its own hash-pinned toolchain).
         run: |
@@ -413,7 +415,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
       - name: Install the hash-pinned toolchain (pip-audit included)
-        run: python -m pip install --require-hashes -r requirements-dev.txt
+        run: python -I -m pip install --require-hashes -r requirements-dev.txt
       - name: Audit every pinned development dependency against the advisory databases
         run: pip-audit -r requirements-dev.txt --require-hashes --strict --progress-spinner off --desc on | tee -a "$GITHUB_STEP_SUMMARY"
 
