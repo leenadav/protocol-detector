@@ -46,7 +46,7 @@ make check          # the full gate, same as CI
 make ci-local       # make check plus extended fuzzing and the offline replay/schema validation
 make fuzz           # extended seeded fuzzing
 make package        # sdist and wheel plus the wheel-content gate (dev tools installed)
-make workflow-lint  # actionlint over the workflows; install shellcheck too, the runner has it
+make workflow-lint  # actionlint over the workflows (install shellcheck too, the runner has it) then the zizmor security audit (dev toolchain)
 make pin-drift      # pinned action SHAs still match their tag comments (network)
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories
 ```

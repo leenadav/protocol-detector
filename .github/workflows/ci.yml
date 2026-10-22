@@ -46,11 +46,13 @@ jobs:
           python -m compileall -q protocol_engine tools ./*.py
           grep -q '^dependencies = \[\]' pyproject.toml || (echo "runtime dependencies are not allowed" && exit 1)
       - name: Unit, fuzz and property tests
+        env:
+          PYTHON_VERSION: ${{ matrix.python }}
         run: |
           python -B -m unittest discover -q 2> test-output.txt || (cat test-output.txt && exit 1)
           tail -n 3 test-output.txt
           {
-            echo "### Tests (python ${{ matrix.python }})"
+            echo "### Tests (python $PYTHON_VERSION)"
             echo
             echo '```'
             tail -n 3 test-output.txt
@@ -336,7 +338,7 @@ jobs:
           retention-days: 14
 
   workflow-lint:
-    name: workflow lint (actionlint)
+    name: workflow lint (actionlint, zizmor)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -347,6 +349,11 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
       - name: Fetch actionlint 1.7.7 and verify its published checksum
         env:
           VERSION: "1.7.7"
@@ -359,6 +366,13 @@ jobs:
         run: |
           ./actionlint -no-color .github/workflows/*.yml
           echo "actionlint: $(find .github/workflows -name '*.yml' | wc -l) workflow files clean" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Audit every workflow for security weaknesses (zizmor, pedantic persona, offline audits)
+        # Template injection, credential persistence, cache poisoning, excessive or undocumented
+        # permissions, unpinned or superfluous actions, missing concurrency limits. Any finding fails.
+        run: |
+          python -m pip install --require-hashes -r requirements-dev.txt > /dev/null
+          zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows | tee zizmor.txt
+          echo "zizmor $(zizmor --version | awk '{print $NF}'): $(tail -n 1 zizmor.txt)" | tee -a "$GITHUB_STEP_SUMMARY"
 
   toolchain-audit:
     name: known vulnerabilities in the dev toolchain (pip-audit)
@@ -399,3 +413,30 @@ jobs:
           python-version: "3.13"
       - name: Documented security requirements must have an executable check
         run: python -B tools/check_security_requirements.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+  gate:
+    # Branch protection needs one required check that follows the job list: this job fails when any
+    # ci job failed, was cancelled or was skipped, so new jobs are covered without touching settings.
+    name: ci gate (all jobs)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: always()
+    needs: [verify, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, security-requirements]
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+      - name: Every ci job must have succeeded
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"' | tee gate.txt
+          {
+            echo "### ci gate"
+            echo
+            echo '```'
+            cat gate.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "$RESULTS" | jq -e 'all(.[]; .result == "success")' > /dev/null

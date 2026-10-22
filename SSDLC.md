@@ -9,7 +9,7 @@ artifact in the repository and every security claim has an executable check.
 | Design | Threat model per trust boundary, STRIDE table, explicit contracts for budgets and evidence | THREAT-MODEL.md, ARCHITECTURE.md, PROTOCOLS.md profile per family |
 | Implementation | Bounded parsing patterns (length before allocation, one parser per stream, immutable registries), no runtime dependencies, Python 3.9 syntax | CONTRIBUTING.md definition of done, code review via PR template checklist, issue templates that ask for synthetic inputs only; CODEOWNERS |
 | Verification | Unit tests (every split point, single bytes, truncations), seeded mutation fuzzing, GC-release tests, work-bound assertions, static analysis, documentation numbers recomputed from the tree | `make check`, CI `verify` matrix (3.9/3.11/3.13) with job summaries, CI `behaviour-diff` (run-id seed) and CI `mutation-smoke` (a second, fixed seed under Python 3.9 plus a 100-mutation fuzz pass seeded by the run number, both with the reproducing command in the job summary), ruff, bandit, CodeQL with the `security-extended` and `security-and-quality` suites (error-level findings fail via `tools/codeql_gate.py`, which also writes a per-rule table to the job summary; SARIF kept as an artifact, uploaded to the Security tab once code scanning is enabled in repository settings), `tools/check_docs_counts.py` (README/REVIEW-SCOPE families, applications, tests and version), nightly fuzz |
-| Supply chain | SHA-pinned actions whose tag comments are re-verified weekly, hash-pinned dev tools (wheel and source hashes where a wheel is platform specific), known-vulnerability audit of the toolchain, SBOM, read-only tokens with per-job additions only where a step needs them, Dependabot, workflow linting | CI `supply-chain`, CI `toolchain-audit` (pip-audit over requirements-dev.txt in hash mode, strict, also on the weekly schedule so new advisories surface without a code change), dependabot.yml, `tools/check_action_pins.py`, CI `workflow-lint` (actionlint fetched by version with its published SHA-256 verified before use), harden-runner egress audit on every job of every workflow, `.github/workflows/supply-chain-drift.yml` (weekly and whenever ci.yml, requirements-dev.txt or the checker change: `tools/check_pin_drift.py` resolves each pinned SHA's tag comment against the action repository and fails when the tag moved or vanished; the actionlint release and SHA-256 named in ci.yml are downloaded and re-verified; every dev dependency is downloaded with `--require-hashes` and pip-audit is installed from those verified files alone) |
+| Supply chain | SHA-pinned actions whose tag comments are re-verified weekly, hash-pinned dev tools (wheel and source hashes where a wheel is platform specific), known-vulnerability audit of the toolchain, SBOM, read-only tokens with per-job additions only where a step needs them, Dependabot, workflow linting | CI `supply-chain`, CI `toolchain-audit` (pip-audit over requirements-dev.txt in hash mode, strict, also on the weekly schedule so new advisories surface without a code change), dependabot.yml, `tools/check_action_pins.py`, CI `workflow-lint` (actionlint fetched by version with its published SHA-256 verified before use, then zizmor from the hash-pinned toolchain auditing every workflow for template injection, credential persistence, cache poisoning, undocumented or excessive permissions, unpinned or superfluous actions and missing concurrency limits; pedantic persona, any finding fails), harden-runner egress audit on every job of every workflow, the release published with the runner's own `gh` CLI rather than a third-party action, `.github/workflows/supply-chain-drift.yml` (weekly and whenever ci.yml, requirements-dev.txt or the checker change: `tools/check_pin_drift.py` resolves each pinned SHA's tag comment against the action repository and fails when the tag moved or vanished; the actionlint release and SHA-256 named in ci.yml are downloaded and re-verified; every dev dependency is downloaded with `--require-hashes` and pip-audit is installed from those verified files alone) |
 | Release | Every push builds the sdist and wheel, checks the wheel holds exactly the engine package with no runtime dependency (`tools/check_wheel.py`) and installs it into an empty environment under Python 3.13 and again under Python 3.9, where `tools/wheel_smoke.py` classifies an HTTP request and a DNS query from the installed package and refuses an import from the checkout (CI `package`); the tagged commit then passes the full gate (compile, tests, ruff, pins, security requirements, docs numbers, coverage matrix, policy lint), the tag must equal the package version, the wheel smoke runs again, and the release carries sdist/wheel, SBOM, SLSA-style build provenance attestation (`actions/attest-build-provenance`, pinned by SHA) and checksums | `.github/workflows/release.yml`, `make package` |
 | Response | Private vulnerability reporting, SLAs, regression test with every fix, benchmark when the hot path changes | SECURITY.md, BENCHMARK-Vnnn.md |
 
@@ -27,11 +27,21 @@ artifact in the repository and every security claim has an executable check.
 ## Required checks on `main`
 
 Branch protection matches status checks by job name (the `name:` of each job,
-not the workflow name). These are the names to mark required; every one runs
-on every push and pull request, so none can leave a pull request stuck
-waiting for a check that never starts:
+not the workflow name). Two names are enough: the `ci` workflow ends in an
+aggregate job, `ci gate (all jobs)`, that depends on every other ci job with
+`if: always()` and fails when any of them failed, was cancelled or was
+skipped, so a job added later is covered without a settings change; CodeQL
+runs in its own workflow and is required separately.
 
 | Workflow | Required check name | Gate |
+|---|---|---|
+| ci | `ci gate (all jobs)` | every ci job below succeeded |
+| codeql | `CodeQL (python, security-extended)` | security-extended and security-and-quality suites, error level fails |
+
+The jobs the gate covers, every one of which runs on every push and pull
+request:
+
+| Workflow | Job name | Gate |
 |---|---|---|
 | ci | `tests (python 3.9)`, `tests (python 3.11)`, `tests (python 3.13)` | compile, unit/fuzz/property tests, docs numbers, offline replay, coverage matrix |
 | ci | `behaviour diff against the previous commit` | `tools/compare_engine.py` against the parent (and the pull request base) |
@@ -39,10 +49,9 @@ waiting for a check that never starts:
 | ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, gitleaks over the full history |
 | ci | `supply chain (SBOM, licence, pins)` | action pins, CycloneDX SBOM, zero-runtime-dependency contract |
 | ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py`, wheel smoke under 3.13 and 3.9 |
-| ci | `workflow lint (actionlint)` | actionlint with shellcheck over every workflow |
+| ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
 | ci | `known vulnerabilities in the dev toolchain (pip-audit)` | pip-audit in hash mode, strict |
 | ci | `security requirements gate` | every SR row names an existing test |
-| codeql | `CodeQL (python, security-extended)` | security-extended and security-and-quality suites, error level fails |
 
 Do not mark the `supply-chain-drift` jobs required: that workflow is path
 filtered and scheduled, so it does not run on most pull requests and a
@@ -99,7 +108,9 @@ workflow defect, never an engine finding.
   nothing at all.
 - `ci`, `codeql` and `supply-chain-drift` each run in a concurrency group per
   ref with `cancel-in-progress`, so a newer push cancels the superseded run
-  of the same branch. The release workflow has no group: a tag runs once.
+  of the same branch. `release` and `nightly-fuzz` have a group per ref
+  without cancellation: a release or fuzz run in flight is never cut short,
+  a second one queues behind it.
 - Every workflow sets `permissions: contents: read` at the top; a job adds a
   permission only for the step that needs it (`pull-requests: read` for the
   secret scan on pull requests, `security-events: write` for the SARIF
@@ -112,7 +123,7 @@ make check          # compile, tests, ruff, action pins, security-requirement ga
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories (dev tools installed)
 make ci-local       # make check plus extended fuzzing and the offline replay/schema validation CI runs
 make package        # sdist and wheel plus the wheel-content gate (dev tools installed)
-make workflow-lint  # actionlint over .github/workflows (needs a local actionlint and shellcheck, which the hosted runner has; CI fetches a checksum-verified release)
+make workflow-lint  # actionlint (needs a local actionlint and shellcheck, which the hosted runner has; CI fetches a checksum-verified release) then zizmor from the dev toolchain
 make pin-drift      # pinned action SHAs still match the tags in their comments (network; the weekly supply-chain-drift workflow runs the same check)
 make fuzz           # extended seeded fuzzing
 python3 -B tools/compare_engine.py ../previous-checkout --report diff.md   # behaviour diff against another tree

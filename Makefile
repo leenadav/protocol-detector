@@ -68,9 +68,11 @@ package:
 	dist/wheel-env/bin/python -m pip install --quiet --no-deps --no-index dist/*.whl
 	cd dist && wheel-env/bin/python ../tools/wheel_smoke.py
 
-# Workflow lint with a locally installed actionlint (CI fetches a checksum-verified release).
+# Workflow lint with a locally installed actionlint (CI fetches a checksum-verified release) and the
+# zizmor security audit from the dev toolchain (pedantic persona, offline audits, any finding fails).
 workflow-lint:
 	actionlint -no-color .github/workflows/*.yml
+	zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows
 
 lint:
 	ruff check .

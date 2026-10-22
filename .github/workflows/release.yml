@@ -9,14 +9,19 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false   # a release in flight is never cancelled; a second tag queues behind it
+
 jobs:
   build:
+    name: release build (gate, version check, distributions, attestation, publish)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
-      contents: write
-      id-token: write
-      attestations: write
+      contents: write       # gh release create uploads the distributions to the release
+      id-token: write       # OIDC token for the Sigstore signing of the provenance attestation
+      attestations: write   # attest-build-provenance stores the attestation on the repository
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
@@ -58,8 +63,8 @@ jobs:
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: "dist/*"
-      - name: Publish release
-        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
-        with:
-          files: dist/*
-          generate_release_notes: true
+      - name: Publish the release with the runner's gh CLI (no third-party action)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes dist/*
