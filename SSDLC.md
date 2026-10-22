@@ -143,11 +143,10 @@ issue #2, and follows the same gated loop:
 3. Post exactly one short `CODEX_REVIEW_REQUEST` notification on PR #3 that
    links the issue #7 request, repeats head, base and round, and says
    `lane=CI/CD`. PR #3 comments wake the reviewer for both lanes; issue #7
-   stays authoritative for CI/CD. This is a narrow exception Lee granted to
-   the AGENTS.md rule that only the engine session writes to PR #3: one short
-   wake notification per canonical issue #7 request, nothing else. Review
-   content never goes on PR #3, and issue #2 stays engine-only (the CI/CD
-   session never writes there).
+   stays authoritative for CI/CD. AGENTS.md makes PR #3 a shared wake
+   channel: one short, lane-prefixed notification per canonical issue #7
+   request, nothing else. Review content never goes on PR #3, and issue #2
+   stays engine-only (the CI/CD session never writes there).
 4. Subscribe to the current CI/CD pull request, where the reviewer mirrors
    its `CODEX_REVIEW_RESULT`. Pause CI/CD feature edits until a result names
    the exact frozen head; synchronization a repair round explicitly needs
@@ -158,9 +157,54 @@ issue #2, and follows the same gated loop:
    with a regression check and request the next round. While a request is
    pending, at most one server-side fallback check-in every 30 minutes,
    quiet when nothing changed.
+6. Continuation (Lee, 2026-10-22, confirmed in the CI/CD session; issue #7
+   comment 6348691524):
+   - No matching review within 60 minutes of the request's posting: work on
+     the next CI/CD milestone may continue. The clock is not reset by polling
+     or status-only messages. The open request and its frozen snapshot stay
+     pending, and late findings are still evaluated and repaired.
+   - An approving result (zero actionable findings in that task's scope)
+     allows continuing at once. If no useful work has resumed 30 minutes
+     after it, start the next milestone from the backlog below without
+     waiting for another acknowledgement. A pass in one scope never resolves
+     findings in another.
+   - One cloud reminder at most, set for the nearest applicable deadline
+     (60-minute missing review or 30-minute idle after approval), cancelled
+     or re-armed when a result or progress makes it obsolete. No duplicate
+     periodic pollers; an explicit stop or pause from Lee, or a concrete
+     access or usage blocker, is reported once and respected.
+   - The next milestone is the next bounded CI/CD item within this lane,
+     never engine features. A snapshot that passed review is preserved: new
+     milestones go on a branch cut from it (`claude/cicd-next`), so the
+     pull request carrying the approved head does not change under review.
 
 The loop never merges, deploys, deletes branches, or changes branch
 protection, permissions or credentials.
+
+## CI/CD backlog
+
+Prioritized from concrete gaps; one bounded milestone at a time, each through
+the review loop above.
+
+1. Release tag provenance (compensating control). Tag protection and
+   required checks are not enforceable on the current plan, so any `v*` tag
+   pushed by a writer, on any commit, reaches the publish job. The release
+   build job should refuse a tag whose commit is not already on `main`
+   (GitHub compare API with the read-only token), with a tested decision
+   helper and a workflow-policy rule that keeps the step on the publish
+   job's dependency path.
+2. Green-checks-on-tag. Before publishing, require that `ci gate (all jobs)`
+   and CodeQL succeeded on the tagged commit (read-only `checks: read`), so
+   a release cannot ship a commit whose CodeQL never passed (the release
+   build re-runs the test gate but not CodeQL).
+3. Artifact action pairing. `upload-artifact` and `download-artifact` hand
+   the release files between jobs; Dependabot can move them to different
+   majors (open PR #8 moves upload to v7 and leaves download at v4). A
+   policy rule should require matching majors, or the pair should be
+   updated together.
+4. Post-publish verification. After `attest-build-provenance`, verify the
+   attestation of every published file with `gh attestation verify` in the
+   publish job, so a failed or partial attestation fails the release.
 
 ## Caching and concurrency policy
 
