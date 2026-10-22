@@ -23,3 +23,25 @@ repos:
         entry: python3 -B tools/check_security_requirements.py
         language: system
         pass_filenames: false
+      - id: policy-lint
+        name: example policy lints strictly
+        entry: python3 -B protodetect.py policy lint policy-example.json --strict
+        language: system
+        pass_filenames: false
+        files: ^(policy-example\.json|protocol_engine/|protodetect\.py)
+      - id: coverage-matrix
+        name: direction coverage matrix in PROTOCOLS.md matches the fixtures
+        entry: python3 -B tools/coverage_matrix.py --check PROTOCOLS.md
+        language: system
+        pass_filenames: false
+      - id: docs-counts
+        name: README/REVIEW-SCOPE numbers match the tree
+        entry: python3 -B tools/check_docs_counts.py
+        language: system
+        pass_filenames: false
+      - id: zizmor
+        name: workflow security audit (zizmor, dev toolchain)
+        entry: zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows
+        language: system
+        pass_filenames: false
+        files: ^\.github/workflows/

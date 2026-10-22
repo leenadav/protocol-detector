@@ -1,16 +1,50 @@
-# Review scope: protocol detector v0.54
+# Review scope: protocol detector v0.56
 
-Python3.9-compatible IPv4 passive classification: 82 families, 74 automatic.
+Python3.9-compatible IPv4 passive classification: 85 families, 76 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.54): `protocol_engine/binary.py` LDAP ExtendedRequest and
+New focus (v0.56): `protocol_engine/gss.py` (DER walk of SPNEGO
+NegTokenInit/NegTokenResp and Kerberos GSS tokens: exact lengths at every
+level, 8 mechTypes, 4096-byte tokens, closed labels only), the one-frame
+session-setup watch in `protocol_engine/network.py` `SMB2Parser` and
+`protocol_engine/windows.py` `SMB1Parser` (header checks before consuming,
+non-SMB bytes left unconsumed, buffer offsets and lengths against the frame,
+word-count layouts 10/12/13 and 3/4, `refined` only after validation),
+`binary.py` LDAP `ldap_bind` labels with the GSS-SPNEGO token, the
+`Authorization`/`WWW-Authenticate` scheme classes in `parsers.py` and
+`extended.py` (scheme token only, every distinct challenge), and the risk
+rules in `risks.py` (`ntlm-authentication`, `http-basic-authentication`,
+`smb-guest-or-anonymous-session`, the LDAP cleartext refinement). Trace: no
+credential, principal, domain, realm, challenge or ticket byte reaches
+evidence or reasons; the watch never reads a third frame; a malformed token
+keeps the carrier identification. 596 tests pass.
+
+Previous focus (v0.55): `protocol_engine/wire.py` `dns_probe` (the plausibility
+rule for the rarer layouts: first label 1..63, section counts 1..32, zero
+questions only for a response with answers, NetBIOS opcodes with at most one
+question) and `dns_details` (one section walk, then the family decision:
+NetBIOS encoded name or opcode, multicast markers, strict unicast rules;
+the `llmnr=True` header semantics), `datagram.py` (the `mdns`/`netbios-ns`
+hints share the dns validator, `llmnr` is hint only), `binary.py`
+`DNSParser` (TCP keeps `dns`, rejects registration opcodes). Trace: no name,
+address or TXT content reaches evidence; every RDATA size against its
+record; the probe never admits RIP or DTLS bytes; mutations of the new
+fixtures stay bounded. Also in scope: the v0.54 round-3 repair
+(`Analyzer.peer_events`, `CaptureMonitor._classification`). 587 tests passed at v0.55.
+
+Previous focus (v0.54): `protocol_engine/binary.py` LDAP ExtendedRequest and
 ExtendedResponse (OID grammar, the StartTLS no-value rule, result walk shared
 with BindResponse, the shift only on a named success, the private message id
 in `parser.correlation`) and the analyzer's `_correlate_ldap` (client and
 unnamed-server phases opened only for a success with the same message id,
-nothing on a refusal); `protocol_engine/irc.py` (prefix grammar, parameter
+nothing on a refusal) together with `Stream.open_shift` in sessions.py and
+`Inspector.boundary`/`replay` in engine.py (bytes skipped while terminal are
+replayed once into a peer-opened phase, never counted twice; the CONNECT
+correlation now uses the same path) and `Analyzer.peer_events` plus
+`CaptureMonitor._classification` in live_capture.py (replay events reach
+the live output with the replayed direction, exactly once); `protocol_engine/irc.py` (prefix grammar, parameter
 counts, the 512-byte limit in `LineParser.feed` for the `:` route and the
 hint only, four-parameter USER ambiguous with FTP, `PASS` only with the hint); `protocol_engine/wire.py` STUN class/method consistency and
 the TURN attribute sizes, `dns_query_type_class` (lowercase expanded names,
@@ -18,7 +52,7 @@ the TURN attribute sizes, `dns_query_type_class` (lowercase expanded names,
 `netbios-ns`, `ms-rpc-over-http`); the new `:` route in dispatch.py. Trace:
 extended values, nicknames, hosts, realms, nonces and names never reach
 evidence; the shift never fires on a refused or unnamed response; every
-attribute size against its message. 576 tests pass.
+attribute size against its message. 579 tests passed at v0.54.
 
 Previous focus (v0.53): `protocol_engine/desktop.py` (X11 setup lengths and
 padding, the hinted reply's byte-order inference and size arithmetic, SPICE

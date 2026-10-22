@@ -48,6 +48,7 @@ class Inspector:
         self._candidate = None
         self._terminal = False
         self.correlation = None   # the identifying parser's private correlation metadata (e.g. an LDAP message id); never emitted
+        self.boundary = None      # stream offset where a terminal identified message ended; hosts that retain bytes replay from here
         self._inner = None
         self._outer = None
         self._hint_source = "caller"
@@ -161,6 +162,23 @@ class Inspector:
         self._next._hint_source = "shift:" + boundary
         self._terminal = False
         return True
+
+    def replay(self, data: bytes) -> Tuple[Event, ...]:
+        """Bytes this inspector skipped while terminal, retained by the host and wanted by a phase opened with open_shift.
+
+        A capture may record the client's ClientHello before the server answer that
+        opens the client's TLS phase; the reassembly buffer still holds those bytes.
+        They were counted in bytes_received when first offered and are not counted
+        again. Allowed only while a host-opened phase is pending.
+        """
+        if not isinstance(data, bytes):
+            raise TypeError("replay expects bytes")
+        if self._next is None or self._terminal or self._shift_source != self.source + ":peer":
+            raise ValueError("replay needs a shifted phase opened by the peer direction")
+        if len(data) > self.metrics.bytes_received - self.metrics.bytes_inspected:
+            raise ValueError("replay exceeds the bytes this inspector skipped")
+        self.metrics.bytes_received -= len(data)
+        return self.feed(data)
 
     def expect(self, candidate, source):
         """Host-driven candidate: the peer direction established which family this one must be.
@@ -399,6 +417,9 @@ class Inspector:
                 shift = getattr(self._parser, "shift", None)
                 if shift is not None:
                     return self._begin_shift(shift, chunk[consumed:])
+                # Bytes after the message are not inspected; a host that retains them can replay
+                # them into a phase the peer direction opens later (open_shift + replay).
+                self.boundary = self.metrics.bytes_received - len(data) - previous + consumed
                 return self._finish(self._identified())
         except BudgetError as error:
             return self._finish(Observation(status="budget_exhausted", reason=str(error)))

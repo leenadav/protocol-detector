@@ -35,7 +35,9 @@ ARCHITECTURE.md; SSDLC.md describes the gates that enforce them.
 6. A benchmark record (BENCHMARK-Vnnn.md) when a hot path changes, measured
    with `benchmark_ab.py --baseline <previous tree>`.
 7. The behaviour diff against the parent commit (`tools/compare_engine.py`,
-   shown in the CI job summary) lists only the families you meant to change.
+   shown in the CI job summary, run with the run id as seed and again with a
+   fixed second seed by the mutation smoke job) lists only the families you
+   meant to change.
 
 ## Local commands
 
@@ -44,7 +46,8 @@ make check          # the full gate, same as CI
 make ci-local       # make check plus extended fuzzing and the offline replay/schema validation
 make fuzz           # extended seeded fuzzing
 make package        # sdist and wheel plus the wheel-content gate (dev tools installed)
-make workflow-lint  # actionlint over the workflows; install shellcheck too, the runner has it
+make workflow-lint  # actionlint over the workflows (install shellcheck too, the runner has it) then the zizmor security audit (dev toolchain)
+make pin-drift      # pinned action SHAs still match their tag comments (network)
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories
 ```
 

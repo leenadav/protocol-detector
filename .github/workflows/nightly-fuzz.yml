@@ -14,8 +14,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: nightly-fuzz-${{ github.ref }}
+  cancel-in-progress: false   # a manual run never cancels the scheduled one; they queue
+
 jobs:
   fuzz:
+    name: extended mutation fuzz
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:

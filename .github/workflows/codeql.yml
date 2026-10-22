@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: CodeQL (python, security-extended)
@@ -17,8 +21,8 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-      security-events: write
-      actions: read
+      security-events: write   # upload-sarif writes the results to code scanning (no-op until enabled)
+      actions: read            # codeql-action reads the workflow run to attach its analysis status
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
@@ -39,7 +43,7 @@ jobs:
           category: "/language:python"
           upload: never
           output: codeql-results
-      - name: Fail on error-level CodeQL findings
+      - name: Fail on error-level CodeQL findings (summary table of packs, rules and findings)
         run: python3 -B tools/codeql_gate.py codeql-results
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

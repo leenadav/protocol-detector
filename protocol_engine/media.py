@@ -4,6 +4,17 @@ STANDARD_METHODS = frozenset((b"GET", b"HEAD", b"POST", b"PUT", b"DELETE", b"CON
 WEBDAV_METHODS = frozenset((b"PROPFIND", b"PROPPATCH", b"MKCOL", b"COPY", b"MOVE", b"LOCK", b"UNLOCK", b"REPORT", b"SEARCH"))
 RPC_HTTP_METHODS = frozenset((b"RPC_CONNECT", b"RPC_IN_DATA", b"RPC_OUT_DATA"))   # MS-RPCH 2.1.2 (Outlook Anywhere / RPC over HTTP)
 METHODS = STANDARD_METHODS | WEBDAV_METHODS | RPC_HTTP_METHODS
+_AUTH_SCHEMES = {b"basic": "basic", b"bearer": "bearer", b"digest": "digest", b"negotiate": "negotiate", b"ntlm": "ntlm"}
+
+
+def auth_scheme_class(value):
+    """Closed label for the first auth-scheme token of an Authorization/WWW-Authenticate value (RFC 9110 11.4).
+
+    Only the scheme token before the first space or comma is read; credentials,
+    realms, nonces and tokens are never decoded.
+    """
+    scheme = value.split(b" ", 1)[0].split(b",", 1)[0].strip(b"\t").lower()
+    return _AUTH_SCHEMES.get(scheme, "other" if scheme else "empty")
 WEBDAV_METHOD_NAMES = frozenset(method.decode("ascii") for method in WEBDAV_METHODS)
 RPC_HTTP_METHOD_NAMES = frozenset(method.decode("ascii") for method in RPC_HTTP_METHODS)
 
