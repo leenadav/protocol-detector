@@ -176,7 +176,7 @@ from pathlib import Path
 
 KEY = re.compile(r"""^( *)("[^"]*"|'[^']*'|[A-Za-z0-9_-]+):(?:\s+(.*?))?\s*(#.*)?$""")
 ITEM = re.compile(r"^(\s*)-\s*(.+?)\s*(#.*)?$")
-DRIFT_INPUTS = ["tools/check_pin_drift.py", "requirements-dev.txt"]
+DRIFT_INPUTS = ["tools/check_pin_drift.py", "requirements-dev.txt", "tools/check_go_drift.py", "tools/scanners/go.mod"]
 
 
 def strip_quotes(value):
@@ -1652,11 +1652,15 @@ on:
       - "{push}"
       - "tools/check_pin_drift.py"
       - "requirements-dev.txt"
+      - "tools/check_go_drift.py"
+      - "tools/scanners/go.mod"
   pull_request:
     paths:
       - ".github/workflows/**"
       - "tools/check_pin_drift.py"
       - "requirements-dev.txt"
+      - "tools/check_go_drift.py"
+      - "tools/scanners/go.mod"
 jobs:
   a:
     runs-on: x
@@ -1717,6 +1721,9 @@ def self_test():
             pass
     files = [".github/workflows/ci.yml", ".github/workflows/release.yml"]
     assert check_drift_paths(SELF_TEST_DRIFT.replace("{push}", ".github/workflows/**"), files) == []
+    for missing in ("tools/check_go_drift.py", "tools/scanners/go.mod"):   # item 23: the Go drift inputs
+        without = SELF_TEST_DRIFT.replace("{push}", ".github/workflows/**").replace('      - "{}"\n'.format(missing), "")
+        assert "supply-chain-drift push paths do not cover {}".format(missing) in check_drift_paths(without, files), missing
     problems = check_drift_paths(SELF_TEST_DRIFT.replace("{push}", ".github/workflows/ci.yml"), files)
     assert problems == ["supply-chain-drift push paths do not cover .github/workflows/release.yml"], problems
     try:

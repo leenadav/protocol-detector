@@ -407,6 +407,7 @@ jobs:
           python -B tools/check_release_exposure.py --self-test
           python -B tools/check_release_checks.py --self-test
           python -B tools/release_audit.py --self-test
+          python -B tools/check_go_drift.py --self-test
           python -B tools/check_release_exposure.py --ref HEAD | tee -a "$GITHUB_STEP_SUMMARY"
           python -B tools/check_workflow_policy.py --self-test
           python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"
