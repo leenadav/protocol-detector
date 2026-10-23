@@ -349,7 +349,7 @@ Next, in priority order (from the gaps still open after item 16):
    added line; the search now reads every blob introduced since the
    baseline raw, which no attribute, textconv or replace ref changes.
    Tested on real temporary repositories.
-20. Blanket noqa (in review on `claude/cicd-next`). A `# noqa` without a
+20. Blanket noqa (passed review in round 1). A `# noqa` without a
    rule code silences every ruff rule on its line, with no configuration
    change. None exists today, so ruff now selects PGH004 (a noqa must name
    its rule) and rule 16 refuses a blanket noqa by its own search as well.
@@ -358,6 +358,13 @@ Next, in priority order (from the gaps still open after item 16):
    engine-lane files (`protocol_engine/fingerprints.py`, tests, fuzz
    tools), so removing them is an engine-lane change to coordinate, not
    part of this item.
+Open, not startable from this lane today: item 18 below; RUF100 (unused
+noqa), which needs engine-lane edits; and a pinned, checksum-verified
+gitleaks binary run with `--ignore-gitleaks-allow` in place of
+`gitleaks-action`, which needs a release whose checksum can be verified
+(github.com release downloads are refused from the CI/CD session's
+environment).
+
 18. First real runs (blocked on the Actions billing limit, a Lee action).
    Every control so far is verified locally only. Once jobs start, confirm
    on a real run that each pinned gate job behaves as tested (the release
