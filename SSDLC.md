@@ -358,8 +358,8 @@ Next, in priority order (from the gaps still open after item 16):
    engine-lane files (`protocol_engine/fingerprints.py`, tests, fuzz
    tools), so removing them is an engine-lane change to coordinate, not
    part of this item.
-21. gitleaks ignores inline allows itself (in review on `claude/cicd-next`;
-   its first real run needs Actions). `gitleaks-action` took no arguments
+21. gitleaks ignores inline allows itself (passed review in round 1; its
+   first real run needs Actions). `gitleaks-action` took no arguments
    and fetched an unpinned gitleaks release. The secret scan now builds
    gitleaks 8.30.1 with `go install` from the Go module proxy, which checks
    the module against the Go checksum database, so no release tarball or
@@ -379,8 +379,10 @@ Next, in priority order (from the gaps still open after item 16):
    (130 commits) is clean, and a fake token with an inline allow, added and
    then deleted, is reported. Needs CI: the step itself on a GitHub runner.
 
-Open, not startable from this lane today: item 18 below; and RUF100 (unused
-noqa), which needs engine-lane edits.
+Open, not startable from this lane today: item 18 below; RUF100 (unused
+noqa), which needs engine-lane edits; and the engine branch's own secret
+scan, which will report the `sntrup761x25519` false positive from its
+PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
 
 18. First real runs (blocked on the Actions billing limit, a Lee action).
    Every control so far is verified locally only. Once jobs start, confirm
