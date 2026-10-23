@@ -390,7 +390,7 @@ Next, in priority order (from the gaps still open after item 16):
    (130 commits) is clean, and a fake token with an inline allow, added and
    then deleted, is reported. Needs CI: the step itself on a GitHub runner.
 
-22. Supported Go and a Go toolchain audit (in review on `claude/cicd-next`;
+22. Supported Go and a Go toolchain audit (passed review in round 1;
    its first real run needs Actions). Item 21 built gitleaks with Go
    1.24.11, which the minimum gitleaks 8.30.1 allows but which is past Go's
    support window (the two newest releases, 1.27 and 1.26). govulncheck
@@ -410,15 +410,16 @@ Next, in priority order (from the gaps still open after item 16):
    no vulnerabilities in either binary), and the 1.24.11 build makes
    govulncheck exit 3. Needs CI: both steps on a GitHub runner.
 
-23. Go toolchain drift (in review on `claude/cicd-next`; its first real run
+23. Go toolchain drift (round 1 found a gap, repaired; in review on `claude/cicd-next`; its first real run
    needs Actions). Item 22 exists because Go 1.24 left its support window
    unnoticed, and govulncheck only reports vulnerabilities already known.
    `tools/check_go_drift.py` reads the Go module proxy's toolchain list
    (the source `GOTOOLCHAIN` uses) and fails when the `actions/setup-go`
    versions in ci.yml differ, when the `go` directive of
    `tools/scanners/go.mod` differs from them, when the pinned line is not one
-   of the two newest stable Go lines, or when a newer patch exists on it; an
-   unreadable list fails. It runs weekly as the `go-toolchain-drift` job of
+   of the two newest stable Go lines, or when the pin is not exactly that
+   line's newest patch: older fails, and so does a patch the list does not
+   hold (round 1 found `1.27.99` accepted as newest); an unreadable list fails. It runs weekly as the `go-toolchain-drift` job of
    supply-chain-drift (whose paths, and rule 2, now include the checker and
    `go.mod`), as `make go-drift`, and its offline self-test runs with the
    other tool self-tests. Against the live list it passes for 1.27.3 and

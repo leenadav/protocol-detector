@@ -6,8 +6,9 @@ reports vulnerabilities already known; this catches the drift itself:
 
   - every `actions/setup-go` step in ci.yml installs the same `go-version`, and it equals
     the `go` directive of tools/scanners/go.mod (the builds run with GOTOOLCHAIN=local);
-  - that release line is one of the two newest stable Go lines (Go supports two), and no
-    newer patch release exists on it (patch releases carry the security fixes).
+  - that release line is one of the two newest stable Go lines (Go supports two), and the
+    pin is exactly its newest patch release: an older patch fails (patch releases carry the
+    security fixes), and so does a patch the list does not hold (a typo or premature bump).
 
 Releases are read from the Go module proxy's toolchain list
 (https://proxy.golang.org/golang.org/toolchain/@v/list), the source `GOTOOLCHAIN` itself
@@ -75,6 +76,10 @@ def decide(versions, directive, lines):
     elif lines[(major, minor)] > patch:
         problems.append("Go {} is behind its line's newest patch release {}.{}.{} (patch releases carry the security "
                         "fixes)".format(pinned, major, minor, lines[(major, minor)]))
+    elif lines[(major, minor)] < patch:
+        # item 23 round 1: a release the list does not hold (a typo or a premature bump) is not "the newest patch"
+        problems.append("Go {} is not in the Go toolchain list (its line's newest release is {}.{}.{}): the pin names a "
+                        "release that does not exist".format(pinned, major, minor, lines[(major, minor)]))
     return problems
 
 
@@ -95,6 +100,9 @@ def self_test():
     assert decide(*pinned_versions(ci.format("1.26.10"), gomod.format("1.26.10")), lines) == []
     for label, (ci_text, gomod_text, expected) in {
         "behind its patch": (ci.format("1.27.2"), gomod.format("1.27.2"), "behind its line's newest patch release 1.27.3"),
+        "future patch": (ci.format("1.27.99"), gomod.format("1.27.99"), "not in the Go toolchain list"),
+        "newest plus one": (ci.format("1.27.4"), gomod.format("1.27.4"), "not in the Go toolchain list"),
+        "newest plus one, older line": (ci.format("1.26.11"), gomod.format("1.26.11"), "not in the Go toolchain list"),
         "out of support": (ci.format("1.25.9"), gomod.format("1.25.9"), "past its support window"),
         "two setup-go versions": (ci.format("1.27.3") + ci.format("1.26.10"), gomod.format("1.27.3"), "different Go versions"),
         "go.mod differs": (ci.format("1.27.3"), gomod.format("1.26.10"), "differs from"),
