@@ -4,8 +4,8 @@ import unittest
 from protocol_engine import Config, Inspector
 from protocol_engine.appid import classify, session_verdict
 from protocol_engine.risks import RISKS
-from protocol_fixtures import (MYSQL, MYSQL_HANDSHAKE_RESPONSE, MYSQL_SSL_REQUEST, POSTGRESQL, POSTGRESQL_SSL, TDS_PRELOGIN,
-                               TDS_PRELOGIN_RESPONSE, mysql_handshake_response, tds_prelogin)
+from protocol_fixtures import (MYSQL, MYSQL_HANDSHAKE_RESPONSE, MYSQL_SSL_REQUEST, POSTGRESQL, POSTGRESQL_SSL, SNI_PUBLIC, TDS_PRELOGIN,
+                               TDS_PRELOGIN_RESPONSE, client_hello_with, mysql_handshake_response, tds_prelogin)
 
 DB_RISKS = ("database-encryption-unavailable", "database-session-unencrypted", "cleartext-credential-protocol")
 
@@ -69,6 +69,26 @@ class DatabaseTransportTests(unittest.TestCase):
         self.assertEqual((field(request, "postgresql_message"), "database-session-unencrypted" in classify(request, "tcp", 5432).risks), ([], False))
         for name in DB_RISKS:
             self.assertIn(name, RISKS)
+
+    def test_decrypted_bytes_are_not_seen_in_the_clear(self):
+        # Self-review of v0.61: a handshake the host decrypted out of TLS was protected on the wire, so the
+        # "seen in the clear" rules apply to wire rows only. The capability rows keep their meaning.
+        hello = client_hello_with(((0, SNI_PUBLIC), (43, b"\x02\x03\x04")))
+        clear = mysql_handshake_response(plugin=b"mysql_clear_password")
+        for data, hint, port in ((MYSQL_HANDSHAKE_RESPONSE, "mysql", 3306), (clear, "mysql", 3306), (POSTGRESQL, "postgresql", 5432)):
+            inner = Inspector(Config(), source="decrypted", protocol_hint=hint)
+            inner.feed(data)
+            self.assertNotIn("database-session-unencrypted", classify(inner.observation, "tcp", port).risks, hint)
+            outer = Inspector(Config())
+            outer.feed(hello)
+            outer.feed_decrypted(data)
+            self.assertNotIn("database-session-unencrypted", classify(outer.observation, "tcp", port).risks, hint)
+        decrypted = Inspector(Config(), source="decrypted", protocol_hint="mysql")
+        decrypted.feed(clear)
+        self.assertEqual(classify(decrypted.observation, "tcp", 3306).risks, ())    # no cleartext password either
+        tds = Inspector(Config(), source="decrypted")
+        tds.feed(tds_response(2))
+        self.assertIn("database-encryption-unavailable", classify(tds.observation, "tcp", 1433).risks)   # an assertion, not visibility
 
     def test_split_points(self):
         for data, hint, name in ((tds_response(0), None, "tds_session_encryption"), (POSTGRESQL, None, "postgresql_message")):

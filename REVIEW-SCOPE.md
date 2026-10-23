@@ -10,7 +10,8 @@ New focus (v0.63): `protocol_engine/windows.py` (`_field_map`,
 walks of the KDC-REQ-BODY, Ticket and EncryptedData that never change the
 identification) and the Kerberos rules in `risks.py`. Trace: minimal Int32
 etypes, at most 32 offered, strictly increasing tags; no principal, ticket or
-ciphertext byte is emitted. 645 tests pass.
+ciphertext byte is emitted. Also: the v0.61 "seen in the clear" database rules
+now read wire rows only (`risks.py`, self-review repair). 646 tests pass.
 
 Previous focus (v0.62): `protocol_engine/network.py` `_snmpv3`
 (`snmp_security_level` from msgFlags, `snmp_usm_discovery` for USM messages

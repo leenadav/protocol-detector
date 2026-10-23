@@ -824,7 +824,11 @@ CLIENT_SSL; TDS response `none`) and `database-session-unencrypted` (a MySQL
 HandshakeResponse41 or PostgreSQL StartupMessage seen in the clear; TDS response
 `login-only` or `none`). A MySQL HandshakeResponse41 naming
 `mysql_clear_password` now also raises `cleartext-credential-protocol`: that
-plugin places the password itself in the cleartext message.
+plugin places the password itself in the cleartext message. The "seen in the
+clear" rules (MySQL HandshakeResponse41, PostgreSQL StartupMessage, the
+cleartext plugin) read only wire-sourced rows: bytes a host decrypted out of
+TLS (`feed_decrypted`, `Inspector(source="decrypted")`) were protected on the
+wire (self-review repair before the v0.61 review).
 
 Behaviour diff against v0.60 (84264 inputs): 105 `postgresql` and 74 `tds`
 inputs gain evidence rows only; status, protocol and reason are unchanged (also

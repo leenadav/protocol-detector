@@ -213,12 +213,13 @@ def flow_risks(verdict, client, server, at=None):
                 if value == "false":
                     found.append("database-encryption-unavailable")
             elif field == "mysql_client_ssl":
-                # A HandshakeResponse41 is only visible when no SSLRequest started TLS before it (v0.61).
-                if value == "not-requested":
+                # A HandshakeResponse41 on the wire means no SSLRequest started TLS before it (v0.61). Bytes a host
+                # decrypted (feed_decrypted, Inspector(source="decrypted")) were protected, so only wire rows count.
+                if value == "not-requested" and evidence.source.startswith("wire"):
                     found.append("database-session-unencrypted")
             elif field == "mysql_auth_plugin":
-                # mysql_clear_password puts the password itself in this cleartext HandshakeResponse41.
-                if value == "cleartext" and "cleartext-credential-protocol" not in found:
+                # mysql_clear_password puts the password itself in a HandshakeResponse41 sent on the wire.
+                if value == "cleartext" and evidence.source.startswith("wire") and "cleartext-credential-protocol" not in found:
                     found.append("cleartext-credential-protocol")
             elif field == "tds_session_encryption":
                 if value == "none":
@@ -226,7 +227,7 @@ def flow_risks(verdict, client, server, at=None):
                 if value in ("none", "login-only"):
                     found.append("database-session-unencrypted")
             elif field == "postgresql_message":
-                if value == "startup":
+                if value == "startup" and evidence.source.startswith("wire"):
                     found.append("database-session-unencrypted")
             elif field == "kerberos_etype_offered":
                 if value in WEAK_ETYPE_CLASSES:
