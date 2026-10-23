@@ -166,10 +166,10 @@ issue #2, and follows the same gated loop:
    corrected by Lee via Codex after a review run was verified to start from
    it): it links the issue #7 request and repeats head, base and round;
    several requests posted together share one wake. Issue #7 stays
-   authoritative. This supersedes the PR #3 wake channel that AGENTS.md
-   still names for the CI/CD lane; PR #3 is merged and is no longer used for
-   CI/CD wakes. Review content never goes in the wake, and issue #2 stays
-   engine-only (the CI/CD session never writes there).
+   authoritative. PR #13 replaces merged PR #3 as the shared wake channel
+   for both lanes, as AGENTS.md records. Review content never goes in the
+   wake, and issue #2 stays engine-only (the CI/CD session never writes
+   there).
 4. Subscribe to the current CI/CD pull request, where the reviewer mirrors
    its `CODEX_REVIEW_RESULT`. Pause CI/CD feature edits until a result names
    the exact frozen head; synchronization a repair round explicitly needs
