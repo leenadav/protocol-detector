@@ -45,7 +45,7 @@ closed set reviewers should expect in records.
 | irc | tcp | yes | - | `irc_message` |
 | iso-tsap | tcp | yes | yes | - |
 | kafka | tcp | yes | - | `kafka_api_key` |
-| kerberos | tcp/udp | yes | yes | `kerberos_error`, `kerberos_message` |
+| kerberos | tcp/udp | yes | yes | `kerberos_error`, `kerberos_etype_offered`, `kerberos_etype_preferred`, `kerberos_message`, `kerberos_reply_etype`, `kerberos_ticket_etype` |
 | l2tp | udp | yes | yes | `l2tp_message` |
 | ldap | tcp | yes | yes | `gss_mechanism`, `ldap_bind`, `ldap_extended`, `ldap_message`, `ldap_result`, `ntlm_message` |
 | llmnr | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `llmnr_flags` |
@@ -852,3 +852,34 @@ a Report PDU, which RFC 3414 sends below the session's level by design
 Behaviour diff against v0.61 (84264 inputs): 268 `snmp/3` inputs gain evidence
 rows only; status, protocol and reason are unchanged (also checked over 2530
 targeted single-byte mutations of three messages).
+
+## Kerberos encryption types (v0.63)
+
+No new family and no new rejection. KDC requests and replies, validated since
+v0.27 and v0.44, now report the encryption types they offer or use as closed
+classes of the IANA registry: `aes-sha2` (19, 20), `aes-sha1` (17, 18),
+`camellia` (25, 26), `des3` (5, 7, 16), `rc4` (23, 24), `des` (1, 2, 3) and
+`other` for any other Int32.
+
+| Evidence | Where | Rule |
+|---|---|---|
+| `kerberos_etype_preferred` | AS-REQ, TGS-REQ | Class of the first `etype` in the KDC-REQ-BODY (RFC 4120 5.4.1, preference order) |
+| `kerberos_etype_offered` | AS-REQ, TGS-REQ | One row per distinct class in the `etype` list, in order of first appearance; at most 32 etypes |
+| `kerberos_reply_etype` | AS-REP, TGS-REP | `etype` of the reply's `enc-part` EncryptedData (the reply key the KDC chose) |
+| `kerberos_ticket_etype` | AS-REP, TGS-REP | `etype` of the ticket's `enc-part` (the service or TGT key; an RC4 service ticket can be cracked offline) |
+
+The labels are emitted only when the substructure they come from walks cleanly
+under DER-style rules: KDC-REQ-BODY fields context-tagged in strictly
+increasing order with kdc-options, realm, till, nonce and a non-empty etype
+list present; a Ticket with exactly tkt-vno, realm, sname and enc-part; an
+EncryptedData with etype, an optional INTEGER kvno and a non-empty cipher;
+every etype a minimally encoded Int32. Any deviation drops only the label: the
+message is identified exactly as before. Principals, realms, nonces, addresses,
+tickets and ciphertext are never emitted.
+
+Risks (RISKS.md): `kerberos-weak-etype-offered` (a request offers `rc4`, `des`
+or `des3`) and `kerberos-weak-etype-selected` (a reply or its ticket uses one).
+
+Behaviour diff against v0.62 (84264 inputs): 1106 `kerberos` inputs gain
+evidence rows only; status, protocol and reason are unchanged (also checked
+over 5016 targeted single-byte mutations of three messages).

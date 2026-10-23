@@ -1,15 +1,22 @@
-# Review scope: protocol detector v0.62
+# Review scope: protocol detector v0.63
 
 Python3.9-compatible IPv4 passive classification: 85 families, 76 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.62): `protocol_engine/network.py` `_snmpv3`
+New focus (v0.63): `protocol_engine/windows.py` (`_field_map`,
+`_request_etypes`, `_encrypted_etype`, `_ticket_etype`, `_etype`: label-only
+walks of the KDC-REQ-BODY, Ticket and EncryptedData that never change the
+identification) and the Kerberos rules in `risks.py`. Trace: minimal Int32
+etypes, at most 32 offered, strictly increasing tags; no principal, ticket or
+ciphertext byte is emitted. 645 tests pass.
+
+Previous focus (v0.62): `protocol_engine/network.py` `_snmpv3`
 (`snmp_security_level` from msgFlags, `snmp_usm_discovery` for USM messages
 without authentication and engine ID) and the SNMPv3 rule in `risks.py`
 (per-observation, with the discovery and Report exemptions). Trace: no engine
-ID, user or parameter byte is emitted; the profile is unchanged. 640 tests pass.
+ID, user or parameter byte is emitted; the profile is unchanged. 640 tests passed at v0.62.
 
 Previous focus (v0.61): `protocol_engine/enterprise_db.py` (`tds_session_encryption`
 from the PRELOGIN response only), `protocol_engine/binary.py` (the

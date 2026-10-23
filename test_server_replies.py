@@ -119,7 +119,8 @@ class ServerReplyTests(unittest.TestCase):
             data = tcp(KERBEROS_AS_REP)
             inspector.feed(data[:split])
             inspector.feed(data[split:])
-            self.assertEqual(fields(inspector.observation, "kerberos_"), {"kerberos_message": "as-rep"}, split)
+            self.assertEqual(fields(inspector.observation, "kerberos_"), {"kerberos_message": "as-rep", "kerberos_reply_etype": "aes-sha1",
+                                                                          "kerberos_ticket_etype": "aes-sha1"}, split)   # etypes since v0.63
 
     def test_dcerpc_bind_ack_and_nak(self):
         self.assert_identified(stream(DCERPC), "dcerpc/5.0", "bind_request", dcerpc_pdu="bind", offered_transfer_syntax="ndr/2.0")

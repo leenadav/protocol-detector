@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "protocol-stream-engine"
-version = "0.62.0"
+version = "0.63.0"
 description = "Bounded incremental protocol classification for TCP streams and UDP datagrams"
 requires-python = ">=3.9"
 dependencies = []

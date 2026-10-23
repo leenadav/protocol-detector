@@ -237,6 +237,82 @@ def _krb_inner(value, tag, what):
     return inner
 
 
+# IANA Kerberos encryption type numbers (RFC 3961, 3962, 4757, 6803, 8009) as closed classes (v0.63).
+ETYPE_CLASSES = {1: "des", 2: "des", 3: "des", 5: "des3", 7: "des3", 16: "des3", 17: "aes-sha1", 18: "aes-sha1",
+                 19: "aes-sha2", 20: "aes-sha2", 23: "rc4", 24: "rc4", 25: "camellia", 26: "camellia"}
+# RFC 6649 deprecates single DES and RFC 8429 RC4-HMAC and 3DES.
+WEAK_ETYPE_CLASSES = frozenset(("des", "des3", "rc4"))
+MAX_ETYPES = 32
+_REQ_BODY_FIELDS = tuple(range(12))          # RFC 4120 5.4.1 KDC-REQ-BODY [0]..[11]
+_REQ_BODY_REQUIRED = frozenset((0, 2, 5, 7, 8))   # kdc-options, realm, till, nonce, etype
+
+
+def _field_map(sequence, allowed):
+    """{field number: value} of a context-tagged SEQUENCE body with strictly increasing tags (same rules as
+    _kerberos_fields; the allowed tuple bounds the count). Raises ParseError on any deviation."""
+    fields, pos, last, end = {}, 0, -1, len(sequence)
+    while pos < end:
+        field_tag = sequence[pos]
+        number = field_tag & 0x1f
+        if field_tag & 0xe0 != 0xa0 or number <= last or number not in allowed:
+            raise ParseError("Kerberos fields out of order or outside the message definition")
+        fields[number], pos = ber_field(sequence, pos, end, field_tag)
+        last = number
+    return fields
+
+
+def _etype(raw):
+    """Int32 (RFC 4120 5.2.4) in minimal two's-complement encoding, as its class."""
+    if not 1 <= len(raw) <= 4 or (len(raw) > 1 and ((raw[0] == 0 and raw[1] < 0x80) or (raw[0] == 0xff and raw[1] >= 0x80))):
+        raise ParseError("Kerberos etype must be a minimally encoded Int32")
+    return ETYPE_CLASSES.get(int.from_bytes(raw, "big", signed=True), "other")
+
+
+def _request_etypes(body):
+    """Offered etype classes of a KDC-REQ-BODY, or () unless the whole body walks cleanly (no new rejections)."""
+    try:
+        fields = _field_map(body, _REQ_BODY_FIELDS)
+        if not _REQ_BODY_REQUIRED <= fields.keys():
+            return ()
+        listed, pos, offered = _krb_inner(fields[8], 0x30, "etype"), 0, []
+        while pos < len(listed):
+            if len(offered) == MAX_ETYPES:
+                raise BudgetError("Kerberos etype list exceeds profile")
+            raw, pos = ber_field(listed, pos, len(listed), 2)
+            offered.append(_etype(raw))
+        if not offered:
+            return ()
+    except ParseError:
+        return ()
+    rows = [("kerberos_etype_preferred", offered[0], "req_body", "offered")]
+    rows.extend(("kerberos_etype_offered", label, "req_body", "offered") for label in dict.fromkeys(offered))
+    return tuple(rows)
+
+
+def _encrypted_etype(encrypted):
+    """etype class of one EncryptedData SEQUENCE body (etype [0], kvno [1] optional, cipher [2]), or None."""
+    try:
+        fields = _field_map(encrypted, (0, 1, 2))
+        if 0 not in fields or 2 not in fields or not _krb_inner(fields[2], 4, "cipher"):
+            return None
+        if 1 in fields:
+            _krb_inner(fields[1], 2, "kvno")
+        return _etype(_krb_inner(fields[0], 2, "etype"))
+    except ParseError:
+        return None
+
+
+def _ticket_etype(ticket):
+    """etype class of a Ticket's enc-part (tkt-vno [0], realm [1], sname [2], enc-part [3]), or None."""
+    try:
+        fields = _field_map(_krb_inner(ticket, 0x30, "ticket"), (0, 1, 2, 3))
+        if len(fields) != 4:
+            return None
+        return _encrypted_etype(_krb_inner(fields[3], 0x30, "ticket enc-part"))
+    except ParseError:
+        return None
+
+
 def _kerberos_body(data, limit, config):
     """Validate one KDC message: AS/TGS-REQ, AS/TGS-REP or KRB-ERROR; return (reason, evidence rows)."""
     tag = data[0]
@@ -251,7 +327,7 @@ def _kerberos_body(data, limit, config):
         raise ParseError("Kerberos wrapper must contain one SEQUENCE")
     evidence = [("kerberos_message", name, "message", "structural")]
     if name.endswith("req"):
-        seen = set()
+        seen, etype_rows = set(), ()
         for number, value in _kerberos_fields(sequence, config, (1, 2, 3, 4), 5):
             seen.add(number)
             if number == 1 and _krb_inner(value, 2, "pvno") != b"\x05":
@@ -266,13 +342,17 @@ def _kerberos_body(data, limit, config):
                     if count > min(config.max_headers, 32):
                         raise BudgetError("Kerberos padata count exceeds budget")
                     _, inner = ber_field(padata, inner, len(padata), 0x30)
-            elif number == 4 and not _krb_inner(value, 0x30, "req-body"):
-                raise ParseError("Kerberos req-body framing invalid")
+            elif number == 4:
+                body = _krb_inner(value, 0x30, "req-body")
+                if not body:
+                    raise ParseError("Kerberos req-body framing invalid")
+                etype_rows = _request_etypes(body)
         if not {1, 2, 4} <= seen:
             raise ParseError("Kerberos request requires pvno, msg-type and req-body")
+        evidence.extend(etype_rows)
         return "Kerberos KDC request ASN.1 framing validated; principals, pre-authentication and tickets unverified", tuple(evidence)
     if name.endswith("rep"):
-        seen = set()
+        seen, reply_etype, ticket_etype = set(), None, None
         for number, value in _kerberos_fields(sequence, config, (0, 1, 2, 3, 4, 5, 6), 8):
             seen.add(number)
             if number == 0 and _krb_inner(value, 2, "pvno") != b"\x05":
@@ -291,12 +371,22 @@ def _kerberos_body(data, limit, config):
                 raise ParseError("Kerberos crealm must be a non-empty GeneralString")
             elif number == 4 and not _krb_inner(value, 0x30, "cname"):
                 raise ParseError("Kerberos cname framing invalid")
-            elif number == 5 and not _krb_inner(value, 0x61, "ticket"):
-                raise ParseError("Kerberos ticket framing invalid")
-            elif number == 6 and not _krb_inner(value, 0x30, "enc-part"):
-                raise ParseError("Kerberos enc-part framing invalid")
+            elif number == 5:
+                ticket = _krb_inner(value, 0x61, "ticket")
+                if not ticket:
+                    raise ParseError("Kerberos ticket framing invalid")
+                ticket_etype = _ticket_etype(ticket)
+            elif number == 6:
+                enc_part = _krb_inner(value, 0x30, "enc-part")
+                if not enc_part:
+                    raise ParseError("Kerberos enc-part framing invalid")
+                reply_etype = _encrypted_etype(enc_part)
         if not {0, 1, 3, 4, 5, 6} <= seen:
             raise ParseError("Kerberos reply requires pvno, msg-type, crealm, cname, ticket and enc-part")
+        if reply_etype is not None:
+            evidence.append(("kerberos_reply_etype", reply_etype, "enc_part", "asserted"))
+        if ticket_etype is not None:
+            evidence.append(("kerberos_ticket_etype", ticket_etype, "ticket", "asserted"))
         return "Kerberos KDC reply ASN.1 framing validated; ticket and encrypted part opaque, principals not emitted", tuple(evidence)
     seen, code = set(), None
     for number, value in _kerberos_fields(sequence, config, tuple(range(13)), 14):
