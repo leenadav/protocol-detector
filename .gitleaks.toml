@@ -13,4 +13,6 @@ paths = [
 regexes = [
   # RFC 6455 section 1.3 WebSocket example nonce/accept and RFC 9001/9369 QUIC vectors reproduced in fixtures.
   '''Sec-WebSocket-(Key|Accept)''',
+  # PROTOCOLS.md names SSH key exchange methods; this public algorithm identifier is not a credential.
+  '''^sntrup761x25519$''',
 ]

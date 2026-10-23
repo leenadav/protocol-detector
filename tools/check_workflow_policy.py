@@ -34,8 +34,8 @@
    tagged commit, so every older commit's unguarded release.yml stays reachable until that
    path is disabled in the repository's Actions settings; keeping the path free means
    disabling it never disables the guarded controller. No workflow may authenticate with a
-   stored credential: outside comments, the words `secrets` and `vars` may appear only as the
-   exact `${{ secrets.GITHUB_TOKEN }}` (and in one job name), a word ban that no expression
+   stored credential: the words `secrets` and `vars` may appear only in one job name (since
+   item 21 no workflow uses `${{ secrets.GITHUB_TOKEN }}`; `${{ github.token }}` serves), a word ban that no expression
    grammar (quoted `}}` in `format()` strings, multi-line expressions, `secrets: inherit`,
    `if:` conditions) can route around; the controller keeps rule 8's stricter line ban. No other workflow may hold
    `contents`, `id-token`, `attestations`, `packages`, `actions`, `deployments` or
@@ -722,12 +722,14 @@ def check_attestation_verify(text, publish="publish"):
 
 
 STORED_CREDENTIAL = re.compile(r"\b(secrets|vars)\b", re.I)
-# The only places the words may appear: the built-in token, written exactly, and one job name.
-CREDENTIAL_ALLOWED = ("${{ secrets.GITHUB_TOKEN }}", "static analysis (ruff, bandit, secrets)")
+# The only place the words may appear: one job name. No workflow references a secret at all since
+# item 21 replaced gitleaks-action, the last user of `${{ secrets.GITHUB_TOKEN }}`; `${{ github.token }}`
+# remains the way a step authenticates as the job.
+CREDENTIAL_ALLOWED = ("static analysis (ruff, bandit, secrets)",)
 
 
 def check_credentials(path, text):
-    """Stored credentials (any secret but GITHUB_TOKEN, any variable) are banned in every workflow.
+    """Stored credentials (every secret, any variable) are banned in every workflow.
 
     A word ban, not an expression parser: after removing the exact allowed strings, any `secrets`
     or `vars` word on any line, comments included, fails, wherever it sits (inside `${{ }}`, a quoted
@@ -745,8 +747,8 @@ def check_credentials(path, text):
             visible = visible.replace(allowed, "")
         found = STORED_CREDENTIAL.search(visible)
         if found:
-            problems.append("{}:{}: `{}` may only appear as `${{{{ secrets.GITHUB_TOKEN }}}}` (stored credentials "
-                            "are not allowed)".format(path, number, found.group(1)))
+            problems.append("{}:{}: `{}` may not appear in a workflow (stored credentials are not allowed; a step "
+                            "authenticates as the job with `${{{{ github.token }}}}`)".format(path, number, found.group(1)))
     return problems
 
 
@@ -1107,7 +1109,7 @@ CACHED_PYTHON = {"uses": "actions/setup-python",
 ISOLATED_INSTALL = "python -I -m pip install --require-hashes -r requirements-dev.txt"
 SCANNER_JOB_KEYS = {"name", "runs-on", "timeout-minutes", "steps"}
 SCANNER_JOBS = {
-    "static-analysis": (SCANNER_JOB_KEYS | {"permissions"}, {"contents": "read", "pull-requests": "read"}, [
+    "static-analysis": (SCANNER_JOB_KEYS | {"permissions"}, {"contents": "read"}, [
         HARDEN_STEP,
         {"uses": "actions/checkout", "with": {"persist-credentials": "false", "fetch-depth": "0"}},
         CACHED_PYTHON,
@@ -1118,8 +1120,16 @@ SCANNER_JOBS = {
                  "capture_stream.py -f txt | tee bandit.txt",
                  "{", "echo", "echo '```'", "grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt", "echo '```'",
                  '} >> "$GITHUB_STEP_SUMMARY"']},
-        {"uses": "gitleaks/gitleaks-action", "env": {"GITHUB_TOKEN": "${{ secrets.GITHUB_TOKEN }}",
-                                                     "GITLEAKS_ENABLE_UPLOAD_ARTIFACT": "false", "GITLEAKS_ENABLE_SUMMARY": "true"}},
+        # item 21: gitleaks 8.30.1 built from the Go module proxy and checked against the Go checksum
+        # database, in RUNNER_TEMP, run so that it ignores inline allow comments in every commit
+        {"uses": "actions/setup-go", "with": {"go-version": "1.24.11", "cache": "false"}},
+        {"env": {"GOPROXY": "https://proxy.golang.org", "GOSUMDB": "sum.golang.org", "GOTOOLCHAIN": "local",
+                 "GOFLAGS": "", "GONOSUMDB": "", "GOPRIVATE": "", "GOINSECURE": ""},
+         "run": ['cd "$RUNNER_TEMP"',
+                 'GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8@v8.30.1',
+                 'cd "$GITHUB_WORKSPACE"',
+                 '"$RUNNER_TEMP/bin/gitleaks" git --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . 2>&1 | '
+                 'tee -a "$GITHUB_STEP_SUMMARY"']},
     ]),
     "workflow-lint": (SCANNER_JOB_KEYS, None, [
         HARDEN_STEP,
@@ -1978,7 +1988,7 @@ def self_test():
     # task 5 round 2 and CI/CD task 6: a read-only workflow authenticating with a stored PAT
     pat_job = ("jobs:\n  a:\n    permissions:\n      contents: read\n    steps:\n      - env:\n"
                "          GH_TOKEN: {value}\n        run: gh release create \"$GITHUB_REF_NAME\" dist/*\n")
-    assert check_credentials("w.yml", pat_job.format(value="${{ secrets.GITHUB_TOKEN }}")) == []
+    assert check_credentials("w.yml", pat_job.format(value="${{ secrets.GITHUB_TOKEN }}")), "item 21: no secret at all"
     assert check_credentials("w.yml", pat_job.format(value="${{ github.token }}")) == []
     assert check_credentials("w.yml", "    name: static analysis (ruff, bandit, secrets)\n") == []
     # task 6 round 1: a `#` line inside a run block is here-document data, not a YAML comment
@@ -1995,7 +2005,7 @@ def self_test():
                   "\"${{ false && format('{{{0}}}', 'a') || vars.RELEASE_PAT }}\"",
                   "\"${{ format('it''s }}') && secrets.RELEASE_PAT }}\""):
         found = check_credentials("w.yml", pat_job.format(value=value))
-        assert len(found) == 1 and "may only appear as" in found[0], (value, found)
+        assert len(found) == 1 and "may not appear in a workflow" in found[0], (value, found)
     two_lines = pat_job.format(value="${{\n            secrets.RELEASE_PAT }}")
     assert len(check_credentials("w.yml", two_lines)) == 1
     assert check_credentials("w.yml", "    uses: ./.github/workflows/x.yml\n    secrets: inherit\n")
@@ -2100,12 +2110,10 @@ def self_test():
         # task 11 round 2: execution context outside the steps is locked too
         "workflow BASH_ENV": ci_text_for_masking.replace('env:\n  PYTHONDONTWRITEBYTECODE: "1"\n',
                                                          'env:\n  BASH_ENV: tools/helpers.sh\n  PYTHONDONTWRITEBYTECODE: "1"\n', 1),
-        "job BASH_ENV": ci_text_for_masking.replace("    timeout-minutes: 15\n    permissions:\n      contents: read\n      pull-requests: read",
-                                                    "    timeout-minutes: 15\n    env:\n      BASH_ENV: tools/helpers.sh\n    permissions:\n"
-                                                    "      contents: read\n      pull-requests: read", 1),
-        "job env other name": ci_text_for_masking.replace("    timeout-minutes: 15\n    permissions:\n      contents: read\n      pull-requests: read",
-                                                          "    timeout-minutes: 15\n    env:\n      RUFF_FIX: 1\n    permissions:\n"
-                                                          "      contents: read\n      pull-requests: read", 1),
+        "job BASH_ENV": ci_text_for_masking.replace("    name: static analysis (ruff, bandit, secrets)\n",
+                                                    "    name: static analysis (ruff, bandit, secrets)\n    env:\n      BASH_ENV: tools/helpers.sh\n", 1),
+        "job env other name": ci_text_for_masking.replace("    name: static analysis (ruff, bandit, secrets)\n",
+                                                          "    name: static analysis (ruff, bandit, secrets)\n    env:\n      RUFF_FIX: 1\n", 1),
         "workflow env changed": ci_text_for_masking.replace('  PIP_DISABLE_PIP_VERSION_CHECK: "1"\n', '  PIP_DISABLE_PIP_VERSION_CHECK: "0"\n', 1),
         "defaults changed": ci_text_for_masking.replace("defaults:\n  run:\n    shell: bash\n",
                                                         "defaults:\n  run:\n    shell: bash\n    working-directory: tools\n", 1),
@@ -2585,7 +2593,7 @@ def self_test():
         captured = io.StringIO()
         with contextlib.redirect_stdout(captured):
             assert main(directory) == 1
-        assert "bypass.yml:16: `secrets` may only appear as" in captured.getvalue(), captured.getvalue()
+        assert "bypass.yml:16: `secrets` may not appear in a workflow" in captured.getvalue(), captured.getvalue()
     with tempfile.TemporaryDirectory() as directory:
         workflows = Path(directory) / ".github" / "workflows"
         workflows.mkdir(parents=True)

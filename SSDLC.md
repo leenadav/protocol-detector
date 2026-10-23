@@ -46,7 +46,7 @@ only with green checks is a review discipline, not a guarantee.
 | Release checks: a `v*` tag publishes only a commit whose `ci` and `codeql` workflows passed | enforced by `publish-release.yml` for tags on commits that carry it (`tools/check_release_checks.py`, with `actions: read` on the read-only `release-gate` job). Results are bound to the workflow's identity, not to a job name another workflow could reuse: only `push` runs of `.github/workflows/ci.yml` and `.github/workflows/codeql.yml` for that exact commit count. A push run executes the commit's own copy of the file, and a `ci` run succeeds only when its `ci gate (all jobs)` does. At least one run of each must have completed, and the latest completed one must have succeeded. A run GitHub still shows as in progress neither passes nor blocks: a stale job state was observed on 6e1cd61 after its workflow run completed. A missing, only-pending, failed or cancelled run, or an unreadable API answer, fails the tag. Rule 4 pins the step and its `release-gate` job. Same legacy caveat as provenance: not enforced for tags on older commits until the legacy `release` workflow is disabled. Tagging a commit whose ci or CodeQL is still running, or was cancelled by a newer push, fails the release; re-run it once a completed run exists |
 | Attestation verified before publishing: every released file's provenance attestation must verify, bound to this controller workflow, the tag ref, the commit and a GitHub-hosted runner, before `gh release create` runs | enforced by `publish-release.yml` for tags on commits that carry it: `gh attestation verify` with `--signer-workflow`, `--source-ref`, `--source-digest` and `--deny-self-hosted-runners`. Rule 8 of the policy makes the publish job an allowlist: exactly its six steps, in order, each pinned by action identity or exact env and run lines, so no other step can publish before verification. It also enforces that only the publish job holds a write permission, that the workflow env sets no `BASH_ENV` or anything beyond the two Python variables, and that the controller references no `secrets`, `vars`, `inputs` or `client_payload` context in any syntax or case (`secrets['X']` and `toJSON(secrets)` included), so no credential but each job's own GITHUB_TOKEN can authenticate. The publish path only runs on a real tag, so a build-job dry-run step checks that the runner's `gh` supports every flag used. Same legacy caveat as provenance |
 | Consistent action pins: one SHA and tag per action repository across every workflow; `upload-artifact` and `download-artifact` (the release handoff) on one major version | enforced by rule 7 of `tools/check_workflow_policy.py` (CI `workflow-lint`, `make check`, pre-commit). A partial bump fails before merge. Dependabot PR #8, computed before the release split, would have moved only the upload side to v7 |
-| Workflow text means what GitHub reads: no YAML encoding that decodes into something the line-based policy rules did not see | enforced by rule 9 of `tools/check_workflow_policy.py`: outside literal block scalars, no backslash (so no `\u0073ecrets`-style escapes or escaped line breaks), and no tag, anchor, alias, merge key or explicit key. No flow mapping is allowed at all outside `${{ }}` expressions, and a flow sequence must be one line of plain or quoted scalars, so `push: {? tags: ["v*"]}` cannot hide a trigger from rule 5. No workflow may authenticate with a stored credential. On every line, comments included, the words `secrets` and `vars` may appear only as the exact `${{ secrets.GITHUB_TOKEN }}`, plus one job name. Comments are scanned because inside a `run: |` block a `#` line is script data, such as here-document input that Actions interpolates, not a YAML comment. This is a word ban rather than an expression parser, so no expression grammar can route around it: a quoted `}}` in a `format()` string, multi-line expressions, `secrets: inherit` and `if:` conditions are all covered. A read-only workflow therefore cannot publish with a PAT. Rule 5 also keeps release-relevant write scopes (`contents`, `id-token`, `attestations`, `packages`, `actions`, `deployments`, `statuses`, `write-all`) out of every workflow but the controller. The credential, trigger, pin and pinned-step rules therefore read the same text GitHub evaluates |
+| Workflow text means what GitHub reads: no YAML encoding that decodes into something the line-based policy rules did not see | enforced by rule 9 of `tools/check_workflow_policy.py`: outside literal block scalars, no backslash (so no `\u0073ecrets`-style escapes or escaped line breaks), and no tag, anchor, alias, merge key or explicit key. No flow mapping is allowed at all outside `${{ }}` expressions, and a flow sequence must be one line of plain or quoted scalars, so `push: {? tags: ["v*"]}` cannot hide a trigger from rule 5. No workflow may authenticate with a stored credential. On every line, comments included, the words `secrets` and `vars` may appear only in one job name; since item 21 no workflow references `${{ secrets.GITHUB_TOKEN }}` either, and a step authenticates as the job with `${{ github.token }}`. Comments are scanned because inside a `run: |` block a `#` line is script data, such as here-document input that Actions interpolates, not a YAML comment. This is a word ban rather than an expression parser, so no expression grammar can route around it: a quoted `}}` in a `format()` string, multi-line expressions, `secrets: inherit` and `if:` conditions are all covered. A read-only workflow therefore cannot publish with a PAT. Rule 5 also keeps release-relevant write scopes (`contents`, `id-token`, `attestations`, `packages`, `actions`, `deployments`, `statuses`, `write-all`) out of every workflow but the controller. The credential, trigger, pin and pinned-step rules therefore read the same text GitHub evaluates |
 | Scheduled release audit: every `v*` tag points at a commit on `main`; every published release names an existing, on-`main` `v*` tag and that tag's current commit; and every downloaded file, hidden ones included, carries an attestation from `publish-release.yml` for that tag ref and commit | enforced after the fact, once merged to `main`, by `.github/workflows/release-audit.yml`. It runs daily and on manual dispatch. A scheduled run always uses the default branch's copy, so no tag, legacy `release.yml` or branch-edited workflow can swap it. It holds read-only permissions (`contents`, `attestations: read`); `tools/release_audit.py` decides, and fails closed on unreadable facts. A failing run is GitHub's notification to the owner. Rule 10 of the policy keeps the schedule, pins the gather-and-decide step and pins the audit job whole (keys, permissions, runner, harden-runner, checkout and setup-python before that step and nothing else, no workflow env, no other job), so no step can shadow the gather step's `gh` and fabricate verified attestations. This is detective: it reports a bad release but cannot stop one being published |
 | The policy reads what GitHub reads: the line parser in `tools/check_workflow_policy.py` and a real YAML parser agree on every fact the rules use | enforced by `tools/check_workflow_yaml.py` in CI `workflow-lint` and `make workflow-lint`, with the hash-pinned PyYAML. Rule 11 of the policy pins the CI step, including its own toolchain install, and forbids `if:` or `continue-on-error` on it or on its job, so the step cannot be dropped or masked while the gate stays green. `make check` does not run it because it needs the dev toolchain. Every workflow is parsed both ways. Any disagreement fails: top-level and job keys, job ids, `needs`, tag triggers, permissions, each step's keys, `name`, `if`, `uses`, `env`, `with` and `run` lines, or the `uses` list. The stored-credential ban is also re-run over every decoded key and string. Each review finding against the line rules was such a disagreement, so this closes the class rather than one spelling. Limit: PyYAML is YAML 1.1 and GitHub's parser is YAML 1.2; the one difference that matters here (`on` as a boolean) is normalized |
 | No masked ci job: every job `ci gate (all jobs)` needs can actually fail | enforced by rule 13 of `tools/check_workflow_policy.py`. In `ci.yml`: no `continue-on-error`. The gate job itself is pinned whole (keys, runner, harden-runner then the decision step, nothing else), and the workflow env may only set the two Python/pip settings, so nothing can shadow the decision's `jq`. Run lines are checked against an allowlist, since a script cannot be proven to fail when its check fails: `\|\|` only on three exact lines: two whose handler fails again, `\|\| (… && exit 1)`, and the bandit summary-text fallback. A pattern for re-failing handlers was beaten by chaining (`\|\| echo ignored \|\| (… && exit 1)`). `&&` only inside those lines, the allowed `if` conditions, or the two wheel-smoke subshells, because under `bash -e` a failure left of `&&` does not stop the script; `if` only with the conditions in use; and no `exit 0`, `return`, `set +…`, `trap`, `!` negation, `while`/`until` or background `&`. no job-level `if:` except the gate's exact `always()`; a step `if:` only on the three pull-request-only behaviour-diff base steps, pinned by job and every field; and the gate's decision step pinned. Because a ban list cannot cover every shell form (`echo "$(check)"` hides the substitution's status), `ci.yml` is also covered by the workflow lock below. The lock makes changes reviewable; whether a reviewed change masks a failure stays a review judgment |
@@ -86,7 +86,7 @@ request:
 | ci | `tests (python 3.9)`, `tests (python 3.11)`, `tests (python 3.13)` | compile, unit/fuzz/property tests, docs numbers, offline replay, coverage matrix |
 | ci | `behaviour diff against the previous commit` | `tools/compare_engine.py` against the parent (and the pull request base) |
 | ci | `per-commit mutation smoke (second seed, python 3.9)` | second-seed mutation diff and a 100-mutation fuzz pass |
-| ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, gitleaks over the full history |
+| ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, and gitleaks 8.30.1 (built from the Go module proxy, verified against the Go checksum database) over the full history with inline allows ignored |
 | ci | `supply chain (SBOM, licence, pins)` | action pins, CycloneDX SBOM, zero-runtime-dependency contract |
 | ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py`, wheel smoke under 3.13 and 3.9 |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
@@ -143,9 +143,9 @@ CI runs on every push and on pull requests. On a pull request the checkout is
 GitHub's synthetic merge commit, so two jobs behave differently from a push:
 the behaviour diff checks out the pull request head and compares it with its
 own parent, then also with the pull request base when that base carries the
-engine (the whole change as one report), and the secret scan needs
-`pull-requests: read` to list the pull request's commits. Both are configured
-in ci.yml; a red pull-request run with a green push run on the same commit is a
+engine (the whole change as one report). The secret scan reads the full
+history of the checkout itself, so it needs no pull-request permission. Both are
+configured in ci.yml; a red pull-request run with a green push run on the same commit is a
 workflow defect, never an engine finding.
 
 ## CI/CD review loop (Codex, issue #7)
@@ -358,12 +358,29 @@ Next, in priority order (from the gaps still open after item 16):
    engine-lane files (`protocol_engine/fingerprints.py`, tests, fuzz
    tools), so removing them is an engine-lane change to coordinate, not
    part of this item.
-Open, not startable from this lane today: item 18 below; RUF100 (unused
-noqa), which needs engine-lane edits; and a pinned, checksum-verified
-gitleaks binary run with `--ignore-gitleaks-allow` in place of
-`gitleaks-action`, which needs a release whose checksum can be verified
-(github.com release downloads are refused from the CI/CD session's
-environment).
+21. gitleaks ignores inline allows itself (in review on `claude/cicd-next`;
+   its first real run needs Actions). `gitleaks-action` took no arguments
+   and fetched an unpinned gitleaks release. The secret scan now builds
+   gitleaks 8.30.1 with `go install` from the Go module proxy, which checks
+   the module against the Go checksum database, so no release tarball or
+   checksum from github.com is needed. The build runs in `RUNNER_TEMP` with
+   the integrity settings written out (`GOPROXY`, `GOSUMDB`, `GOTOOLCHAIN:
+   local`, empty `GOFLAGS` / `GONOSUMDB` / `GOPRIVATE` / `GOINSECURE`), on Go
+   1.24.11 from `actions/setup-go` v5.6.0 (SHA resolved over git; no cache).
+   It runs `gitleaks git --ignore-gitleaks-allow`, so an inline allow is void
+   in every commit; rule 16's history search stays as a second line. The
+   full history scanned locally with this command found one false positive,
+   the public SSH key exchange name `sntrup761x25519` in PROTOCOLS.md (engine
+   commit 0252b07), now allowlisted by exact match in `.gitleaks.toml`
+   (advancing the scanner lock); without that entry the scan, and so the ci
+   gate, would fail once Actions runs. Dropping the action also drops its
+   `${{ secrets.GITHUB_TOKEN }}` and `pull-requests: read`, so rule 5 now
+   allows no `secrets` reference at all. Verified locally: the full history
+   (130 commits) is clean, and a fake token with an inline allow, added and
+   then deleted, is reported. Needs CI: the step itself on a GitHub runner.
+
+Open, not startable from this lane today: item 18 below; and RUF100 (unused
+noqa), which needs engine-lane edits.
 
 18. First real runs (blocked on the Actions billing limit, a Lee action).
    Every control so far is verified locally only. Once jobs start, confirm
@@ -396,8 +413,7 @@ environment).
   started (nothing attested or published); re-run that tag's release run by
   hand. The same holds for a second manual fuzz run.
 - Every workflow sets `permissions: contents: read` at the top; a job adds a
-  permission only for the step that needs it (`pull-requests: read` for the
-  secret scan on pull requests, `security-events: write` for the SARIF
+  permission only for the step that needs it (`security-events: write` for the SARIF
   upload, `contents/id-token/attestations: write` on the release publish job
   only, which runs solely for a pushed `v*` tag and never checks out code).
 
