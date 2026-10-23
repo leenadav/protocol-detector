@@ -18,7 +18,7 @@ target-version = "py39"
 
 [tool.ruff.lint]
 # Correctness and security rules only; style is not a CI gate.
-select = ["E9", "F", "B", "S", "PLE", "W605"]
+select = ["E9", "F", "B", "S", "PLE", "W605", "PGH004"]   # PGH004: a noqa must name its rule
 ignore = [
   "B011",  # assert False in tests is deliberate
   "S101",  # asserts are test code

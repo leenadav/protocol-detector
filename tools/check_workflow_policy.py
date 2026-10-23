@@ -150,7 +150,8 @@
    deleted still fails; in a git checkout a missing git, a
    baseline that is not an ancestor of HEAD or a shallow history without it fails closed, and
    `workflow-lint` checks out the full history for it (item 19, carried from item 16 round 3).
-   Single-line `# noqa: <code>` stays a reviewed code change.
+   A blanket noqa comment without a rule code is refused as well (and ruff selects PGH004);
+   a single-line noqa naming its rule code stays a reviewed code change (item 20).
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -1167,7 +1168,9 @@ SCANNER_AUTOLOAD = re.compile(r"(^|/)(ruff\.toml|\.ruff\.toml|zizmor\.ya?ml|acti
 # Inline forms that silence a scanner wider than one reviewed line, or that no file uses. The
 # gitleaks token is built, never written, so no repository file has to be exempt from the scan.
 GITLEAKS_INLINE = re.compile(re.escape("gitleaks" + ":allow"), re.I)
-TOOL_INLINE = re.compile(r"#\s*nosec\b|#\s*(?:ruff|flake8)\s*:\s*noqa", re.I)
+# A blanket noqa comment (no rule code) silences every rule on its line; ruff's PGH004 reports it too
+# (item 20), but this does not depend on whether a blanket noqa can silence PGH004 itself.
+TOOL_INLINE = re.compile(r"#\s*nosec\b|#\s*(?:ruff|flake8)\s*:\s*noqa|#\s*noqa\b(?!\s*:\s*[A-Z])", re.I)
 # ruff and bandit never read these; gitleaks scans them, so its token is searched there too.
 SKIP_DIRS = {".git", "__pycache__", "dist", "build"}
 GITLEAKS_KEY = re.compile(r"^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$")
@@ -2343,6 +2346,11 @@ def self_test():
 
     with tempfile.TemporaryDirectory() as directory:
         assert scanner_tree(directory)[0] == 0, scanner_tree(directory)[1]
+    with tempfile.TemporaryDirectory() as directory:   # a noqa naming its rule is allowed
+        (Path(directory) / "tools").mkdir()
+        (Path(directory) / "tools/sbom_summary.py").write_text(Path("tools/sbom_summary.py").read_text(encoding="utf-8"), encoding="utf-8")
+        status, output = scanner_tree(directory, [("tools/sbom_summary.py", lambda t: t + "\nimport subprocess  # no" + "qa: S404\n")])
+        assert status == 0, output
     with tempfile.TemporaryDirectory() as directory:   # unrelated pyproject.toml changes (the version) need no relock
         status, output = scanner_tree(directory, [("pyproject.toml", lambda t: t.replace('\nversion = "', '\nversion = "9', 1))])
         assert status == 0, output
@@ -2370,6 +2378,10 @@ def self_test():
         "ruff outside its sections": ([("pyproject.toml", lambda t: t + "\n[tool]\nruff.lint.select = []\n")], True, "ruff settings must live"),
         "file-wide noqa": ([("tools/sbom_summary.py", lambda t: "# ruff" + ": noqa\n" + t)], True, "silences a scanner"),
         "nosec": ([("tools/sbom_summary.py", lambda t: t + "\nimport subprocess  # no" + "sec\n")], True, "silences a scanner"),
+        # item 20: a blanket noqa silences every rule on its line; one naming its rule stays allowed
+        "blanket noqa": ([("tools/sbom_summary.py", lambda t: t + "\nimport subprocess  # no" + "qa\n")], True, "silences a scanner"),
+        "blanket noqa, colon only": ([("tools/sbom_summary.py", lambda t: t + "\nimport subprocess  # NO" + "QA:\n")], True, "silences a scanner"),
+        "PGH004 dropped": ([("pyproject.toml", lambda t: t.replace(', "PGH004"]', "]", 1))], False, "pyproject.toml: differs from"),
         "gitleaks inline allow": ([("protocol_fixtures.py", lambda t: t + '\nTOKEN = "x"  # gitleaks' + ':allow\n')], True, "silences a scanner"),
         # task 16 round 2: gitleaks scans Markdown and build directories too, so its token is found there,
         # and disabledRules is refused in every spelling, even with the lock advanced
