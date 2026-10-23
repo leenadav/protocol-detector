@@ -161,13 +161,15 @@ issue #2, and follows the same gated loop:
 2. Post the `CODEX_REVIEW_REQUEST` in issue #7: task, round (at most three
    per task), exact head and base SHAs, engine baseline SHA, files in
    scope, tests and results, and the current CI/CD pull request.
-3. Post exactly one short `CODEX_REVIEW_REQUEST` notification on PR #3 that
-   links the issue #7 request, repeats head, base and round, and says
-   `lane=CI/CD`. PR #3 comments wake the reviewer for both lanes; issue #7
-   stays authoritative for CI/CD. AGENTS.md makes PR #3 a shared wake
-   channel: one short, lane-prefixed notification per canonical issue #7
-   request, nothing else. Review content never goes on PR #3, and issue #2
-   stays engine-only (the CI/CD session never writes there).
+3. Post exactly one short, `lane=CI/CD`-labelled `CODEX_REVIEW_REQUEST`
+   wake on the current CI/CD pull request, draft PR #13 (since 2026-10-23,
+   corrected by Lee via Codex after a review run was verified to start from
+   it): it links the issue #7 request and repeats head, base and round;
+   several requests posted together share one wake. Issue #7 stays
+   authoritative. This supersedes the PR #3 wake channel that AGENTS.md
+   still names for the CI/CD lane; PR #3 is merged and is no longer used for
+   CI/CD wakes. Review content never goes in the wake, and issue #2 stays
+   engine-only (the CI/CD session never writes there).
 4. Subscribe to the current CI/CD pull request, where the reviewer mirrors
    its `CODEX_REVIEW_RESULT`. Pause CI/CD feature edits until a result names
    the exact frozen head; synchronization a repair round explicitly needs
