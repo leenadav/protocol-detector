@@ -128,8 +128,17 @@
    scanner: pinned actions, the isolated toolchain install (`python -I -m pip`, since
    `python -m pip` would run a repository `pip/` package) and the scanners themselves, so no
    repository code runs before them and can shadow them through the runner's path file.
-   Configuration they read (pyproject.toml, bandit.yaml) and requirements-dev.txt stay
-   reviewed changes to the checks.
+   The configuration they read is rule 16's; requirements-dev.txt (hash-pinned, audited by
+   pip-audit) stays a reviewed change to the toolchain.
+16. Scanner configuration: ruff's `[tool.ruff*]` sections of pyproject.toml, bandit.yaml and
+   .gitleaks.toml are locked in `tools/scanner_config.lock.json` (`--write-scanner-lock`), so
+   loosening a rule selection, an ignore, a skip or an allowlist means advancing a reviewed
+   baseline. Whatever the lock says: .gitleaks.toml keeps `[extend] useDefault = true` and no
+   `disabledRules`; no file a scanner loads on its own may exist (.gitleaksignore, ruff.toml
+   or .ruff.toml or a pyproject.toml below the root, zizmor.yml, actionlint.yaml, .bandit),
+   ruff settings may not sit outside `[tool.ruff*]`, and no file may use a suppression wider
+   than one reviewed line or one no file uses (`# ruff: noqa`, `# nosec`, `gitleaks:allow`).
+   Single-line `# noqa: <code>` stays a reviewed code change.
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -142,6 +151,7 @@ concurrency expression other than a plain `github.*` context reference. Usage:
 """
 import contextlib
 import json
+import os
 import fnmatch
 import io
 import re
@@ -1132,6 +1142,104 @@ def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
     return problems
 
 
+# Rule 16: the configuration the scanners read is part of the check. Ruff's sections of
+# pyproject.toml, bandit.yaml and .gitleaks.toml are locked in SCANNER_LOCK, so loosening any
+# of them means advancing a reviewed baseline; and, whatever the lock says, gitleaks keeps its
+# default rules, and no other file a scanner would load on its own may exist (task 16 round 1).
+SCANNER_LOCK = "tools/scanner_config.lock.json"
+SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml")
+# Files a scanner picks up from the tree without being told to: each would bypass the lock.
+SCANNER_AUTOLOAD = re.compile(r"(^|/)(ruff\.toml|\.ruff\.toml|zizmor\.ya?ml|actionlint\.ya?ml|\.gitleaksignore|\.bandit)$")
+# Inline forms that silence a scanner wider than one reviewed line, or that no file uses.
+INLINE_SUPPRESSION = re.compile(r"gitleaks:allow|#\s*nosec\b|#\s*(?:ruff|flake8)\s*:\s*noqa", re.I)
+SKIP_DIRS = {".git", "__pycache__", "dist", "build"}
+
+
+def scanner_config_lines(path, text):
+    """The locked part of a scanner configuration file: ruff's sections of pyproject.toml, else every line."""
+    if path != "pyproject.toml":
+        return [line.rstrip() for line in text.splitlines()]
+    lines, inside = [], False
+    for line in text.splitlines():
+        header = re.match(r"^\s*\[+\s*([^\]]+?)\s*\]+", line)
+        if header:
+            inside = header.group(1).strip().strip('"').startswith("tool.ruff")
+        if inside:
+            lines.append(line.rstrip())
+    return lines
+
+
+def scanner_config_lock(root):
+    root = Path(root)
+    return {"files": {path: scanner_config_lines(path, (root / path).read_text(encoding="utf-8"))
+                      for path in SCANNER_CONFIG if (root / path).exists()}}
+
+
+def check_scanner_config(root, lock_text):
+    """Rule 16: locked scanner configuration, gitleaks' defaults kept, no auto-loaded or wide suppressions."""
+    root = Path(root)
+    problems = []
+    hint = "every scanner configuration change must update the lock in the same change: python3 -B tools/check_workflow_policy.py --write-scanner-lock"
+    for path in SCANNER_CONFIG:
+        if not (root / path).exists():
+            problems.append("{} is missing (the scanners would fall back to other configuration)".format(path))
+    gitleaks = root / ".gitleaks.toml"
+    if gitleaks.exists():
+        text = gitleaks.read_text(encoding="utf-8")
+        body = [line.split("#", 1)[0].strip() for line in text.splitlines()]
+        extend = next((i for i, line in enumerate(body) if line == "[extend]"), None)
+        section = []
+        if extend is not None:
+            for line in body[extend + 1:]:
+                if line.startswith("["):
+                    break
+                section.append(line.replace(" ", ""))
+        if "useDefault=true" not in section:
+            problems.append(".gitleaks.toml: `[extend] useDefault = true` is required (gitleaks' default rules)")
+        if any(re.match(r"^\s*disabledRules\b", line) for line in text.splitlines()):
+            problems.append(".gitleaks.toml: disabledRules may not switch off a gitleaks rule")
+    pyproject = root / "pyproject.toml"
+    if pyproject.exists():
+        outside, inside = [], False
+        for number, line in enumerate(pyproject.read_text(encoding="utf-8").splitlines(), 1):
+            header = re.match(r"^\s*\[+\s*([^\]]+?)\s*\]+", line)
+            if header:
+                inside = header.group(1).strip().strip('"').startswith("tool.ruff")
+            elif not inside and re.search(r"\bruff\b", line.split("#", 1)[0]):
+                outside.append(number)
+        for number in outside:
+            problems.append("pyproject.toml:{}: ruff settings must live in [tool.ruff*] sections (the lock covers only "
+                            "those)".format(number))
+    for directory, subdirectories, files in os.walk(root):
+        subdirectories[:] = [d for d in subdirectories if d not in SKIP_DIRS and not d.startswith(".venv")]
+        for name in files:
+            path = (Path(directory) / name).relative_to(root).as_posix()
+            if SCANNER_AUTOLOAD.search(path) or (name == "pyproject.toml" and path != "pyproject.toml"):
+                problems.append("{}: a scanner loads this file on its own, outside the reviewed configuration".format(path))
+            if path in ("tools/check_workflow_policy.py", SCANNER_LOCK) or name.endswith(".md"):
+                continue
+            try:
+                text = (Path(directory) / name).read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError):
+                continue
+            for number, line in enumerate(text.splitlines(), 1):
+                found = INLINE_SUPPRESSION.search(line)
+                if found:
+                    problems.append("{}:{}: `{}` silences a scanner beyond one reviewed line".format(path, number, found.group(0)))
+    try:
+        locked = json.loads(lock_text)
+    except ValueError as error:
+        return problems + ["{} is unreadable: {}".format(SCANNER_LOCK, error)]
+    files = locked.get("files") if isinstance(locked, dict) else None
+    if not isinstance(files, dict):
+        return problems + ["{} does not hold a files mapping".format(SCANNER_LOCK)]
+    current = scanner_config_lock(root)["files"]
+    for path in sorted(set(current) | set(files)):
+        if current.get(path) != files.get(path):
+            problems.append("{}: differs from {} ({})".format(path, SCANNER_LOCK, hint))
+    return problems
+
+
 def check_tag_triggers(workflows):
     """`workflows`: {repository path: text}."""
     problems = []
@@ -1341,6 +1449,8 @@ def main(root):
         problems += check_codeql(texts)
         problems += check_ci_masking(texts)
         problems += check_scanner_order(texts)
+        scanner_lock = root / SCANNER_LOCK
+        problems += check_scanner_config(root, scanner_lock.read_text(encoding="utf-8") if scanner_lock.exists() else "missing")
         lock = root / WORKFLOW_LOCK
         problems += check_workflow_lock(texts, lock.read_text(encoding="utf-8") if lock.exists() else "missing")
         for name in files:
@@ -2091,6 +2201,68 @@ def self_test():
         with contextlib.redirect_stdout(captured):
             assert main(directory) == 1, captured.getvalue()
         assert "ci.yml: static-analysis step 5 (Prepare) is not the pinned form" in captured.getvalue(), captured.getvalue()
+    # task 16 round 1: the scanners' own configuration is locked, and nothing they auto-load may appear;
+    # every case runs the full policy with the workflows and their lock unchanged
+    def scanner_tree(directory, edits=(), relock=False):
+        base = Path(directory)
+        for path, text in real.items():
+            (base / path).parent.mkdir(parents=True, exist_ok=True)
+            (base / path).write_text(text, encoding="utf-8")
+        (base / "tools").mkdir(exist_ok=True)
+        (base / WORKFLOW_LOCK).write_text(Path(WORKFLOW_LOCK).read_text(encoding="utf-8"), encoding="utf-8")
+        for path in SCANNER_CONFIG:
+            (base / path).write_text(Path(path).read_text(encoding="utf-8"), encoding="utf-8")
+        for path, change in edits:
+            target = base / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            old = target.read_text(encoding="utf-8") if target.exists() else ""
+            target.write_text(change(old), encoding="utf-8")
+        lock = json.dumps(scanner_config_lock(base)) if relock else Path(SCANNER_LOCK).read_text(encoding="utf-8")
+        (base / SCANNER_LOCK).write_text(lock, encoding="utf-8")
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            status = main(base)
+        return status, captured.getvalue()
+
+    with tempfile.TemporaryDirectory() as directory:
+        assert scanner_tree(directory)[0] == 0, scanner_tree(directory)[1]
+    with tempfile.TemporaryDirectory() as directory:   # unrelated pyproject.toml changes (the version) need no relock
+        status, output = scanner_tree(directory, [("pyproject.toml", lambda t: t.replace('\nversion = "', '\nversion = "9', 1))])
+        assert status == 0, output
+    allow_all = lambda t: t.replace("paths = [\n", "paths = [\n  \'\'\'.*\'\'\',\n", 1)
+    cases = {
+        # loosening without advancing the baseline
+        "gitleaks global path allowlist": ([(".gitleaks.toml", allow_all)], False, ".gitleaks.toml: differs from"),
+        "bandit skip added": ([("bandit.yaml", lambda t: t.replace('skips: ["B404", "B603"]', 'skips: ["B404", "B603", "B602"]'))],
+                              False, "bandit.yaml: differs from"),
+        "ruff selection narrowed": ([("pyproject.toml", lambda t: t.replace('"E9", "F", "B", "S",', '"E9", "F",', 1))],
+                                    False, "pyproject.toml: differs from"),
+        "ruff file ignore added": ([("pyproject.toml", lambda t: t.replace('"test_*.py" = ["S", "B"]', '"*.py" = ["S", "B"]', 1))],
+                                   False, "pyproject.toml: differs from"),
+        # never allowed, even with an advanced baseline
+        "gitleaks rule disabled": ([(".gitleaks.toml", lambda t: t.replace("useDefault = true\n", "useDefault = true\ndisabledRules = [\"generic-api-key\"]\n"))],
+                                   True, "disabledRules may not"),
+        "gitleaks defaults off": ([(".gitleaks.toml", lambda t: t.replace("useDefault = true", "useDefault = false"))], True, "useDefault = true` is required"),
+        "gitleaks ignore fingerprint": ([(".gitleaksignore", lambda t: "a1b2c3:protocol_fixtures.py:generic-api-key:12\n")], True, ".gitleaksignore: a scanner loads"),
+        "nested ruff.toml": ([("tools/ruff.toml", lambda t: "[lint]\nselect = []\n")], True, "tools/ruff.toml: a scanner loads"),
+        "nested pyproject.toml": ([("protocol_engine/pyproject.toml", lambda t: "[tool.ruff.lint]\nselect = []\n")], True,
+                                  "protocol_engine/pyproject.toml: a scanner loads"),
+        "zizmor config": ([(".github/zizmor.yml", lambda t: "rules:\n  unpinned-uses:\n    disable: true\n")], True, ".github/zizmor.yml: a scanner loads"),
+        "actionlint config": ([(".github/actionlint.yaml", lambda t: "paths:\n  .github/workflows/**:\n    ignore: ['.*']\n")], True,
+                              ".github/actionlint.yaml: a scanner loads"),
+        "ruff outside its sections": ([("pyproject.toml", lambda t: t + "\n[tool]\nruff.lint.select = []\n")], True, "ruff settings must live"),
+        "file-wide noqa": ([("tools/sbom_summary.py", lambda t: "# ruff: noqa\n" + t)], True, "silences a scanner"),
+        "nosec": ([("tools/sbom_summary.py", lambda t: t + "\nimport subprocess  # nosec\n")], True, "silences a scanner"),
+        "gitleaks inline allow": ([("protocol_fixtures.py", lambda t: t + '\nTOKEN = "x"  # gitleaks:allow\n')], True, "silences a scanner"),
+    }
+    for label, (edits, relock, expected) in cases.items():
+        with tempfile.TemporaryDirectory() as directory:
+            if any(path in ("tools/sbom_summary.py", "protocol_fixtures.py") for path, _ in edits):
+                for path, _ in edits:
+                    (Path(directory) / path).parent.mkdir(parents=True, exist_ok=True)
+                    (Path(directory) / path).write_text(Path(path).read_text(encoding="utf-8"), encoding="utf-8")
+            status, output = scanner_tree(directory, edits, relock)
+            assert status == 1 and expected in output, (label, output)
     added = dict(real, **{".github/workflows/extra.yml": "on: push\n"})
     assert any("extra.yml: not in" in p for p in check_workflow_lock(added, lock_text))
     removed = {k: v for k, v in real.items() if k != ".github/workflows/nightly-fuzz.yml"}
@@ -2153,6 +2325,8 @@ def self_test():
         assert "tools/workflows.lock.json is unreadable" in captured.getvalue(), captured.getvalue()
         (Path(directory) / "tools").mkdir()
         (Path(directory) / WORKFLOW_LOCK).write_text(Path(WORKFLOW_LOCK).read_text(encoding="utf-8"), encoding="utf-8")
+        for path in SCANNER_CONFIG + (SCANNER_LOCK,):
+            (Path(directory) / path).write_text(Path(path).read_text(encoding="utf-8"), encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()):
             assert main(directory) == 0
         (target / "bypass.yml").write_text(adversarial, encoding="utf-8")
@@ -2174,6 +2348,11 @@ def self_test():
 
 if __name__ == "__main__":
     arguments = sys.argv[1:]
+    if "--write-scanner-lock" in arguments:
+        lock = scanner_config_lock(".")
+        Path(SCANNER_LOCK).write_text(json.dumps(lock, indent=1) + "\n", encoding="utf-8")
+        print("wrote {} ({} configuration files)".format(SCANNER_LOCK, len(lock["files"])))
+        sys.exit(0)
     if "--write-workflow-lock" in arguments:
         workflows = Path(".github/workflows")
         paths = sorted(list(workflows.glob("*.yml")) + list(workflows.glob("*.yaml")))
