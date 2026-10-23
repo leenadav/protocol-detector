@@ -198,6 +198,16 @@ issue #2, and follows the same gated loop:
      never engine features. A snapshot that passed review is preserved: new
      milestones go on a branch cut from it (`claude/cicd-next`), so the
      pull request carrying the approved head does not change under review.
+7. Receiver and routing (Lee, 2026-10-23, relayed by Codex): PR #11 merged,
+   so the CI/CD receiver is draft PR #13 (`claude/cicd-next` -> `main`).
+   GitHub delivers a pull request's events to one Claude session, so only
+   the CI/CD session subscribes to PR #13. A `lane=engine` result link that
+   reaches it is forwarded, as the canonical issue #2 link only, to the
+   engine session by cloud session message, with no review content and no
+   engine edits; `lane=CI/CD` results stay in issue #7. Permission questions
+   go to Codex in issue #7, and a Codex yes counts as the user's agreement,
+   except for merging, deploying, settings, permissions, credentials and
+   billing, which stay with Lee.
 
 The loop never merges, deploys, deletes branches, or changes branch
 protection, permissions or credentials.
@@ -420,7 +430,22 @@ noqa), which needs engine-lane edits; and the engine branch's own secret
 scan, which will report the `sntrup761x25519` false positive from its
 PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
 
-18. First real runs (blocked on the Actions billing limit, a Lee action).
+24. Dependabot for the Go scanner module (in review on `claude/cicd-next`;
+   decided by Codex as Lee authorized: option 1, keep the scanner lock).
+   `.github/dependabot.yml` gains a weekly `gomod` entry for
+   `/tools/scanners`, grouped as `scanners`, and every Dependabot entry now
+   waits 7 days before proposing a new release (`cooldown`, zizmor's
+   `dependabot-cooldown` audit, which flagged the two existing entries too). Rule 16 still locks
+   `tools/scanners/go.mod`, so each update PR also advances
+   `tools/scanner_config.lock.json` as its reviewed baseline step, and
+   govulncheck in `toolchain-audit` decides whether the result is safe. The
+   Go release itself stays manual; item 23's drift job flags it. Verified
+   locally: the file parses, `go mod tidy -diff` reports no change, `go mod
+   verify` reports all modules verified, and `go list -m -u` shows the
+   updates Dependabot would propose today (govulncheck v1.9.0, xz v0.5.17).
+   Needs GitHub: the Dependabot run itself.
+18. First real runs (blocked on the Actions billing limit, which Lee will
+   not raise).
    Every control so far is verified locally only. Once jobs start, confirm
    on a real run that each pinned gate job behaves as tested (the release
    dry run, CodeQL, the ci gate, the audit), and record the run ids.
