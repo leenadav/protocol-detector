@@ -249,27 +249,30 @@ jobs:
             grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Set up Go for the pinned gitleaks build
+      - name: Set up Go for the pinned scanner builds
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
-          go-version: "1.24.11"
+          go-version: "1.27.3"
           cache: false
       - name: Secret scan (gitleaks 8.30.1, full history, inline allows ignored)
-        # Built from the Go module proxy and verified against the Go checksum database, in
-        # RUNNER_TEMP so nothing in the repository takes part in the build. --ignore-gitleaks-allow
-        # makes gitleaks itself ignore inline allow comments in every commit it scans (item 21);
-        # .gitleaks.toml (rule 16) is the only allowlist.
+        # tools/scanners/go.mod and go.sum pin gitleaks and every dependency (checked against the Go
+        # checksum database; rule 16 locks go.mod). Only those two files are copied to RUNNER_TEMP and
+        # built there, read-only. --ignore-gitleaks-allow makes gitleaks itself ignore inline allow
+        # comments in every commit it scans (item 21); .gitleaks.toml (rule 16) is the only allowlist.
         env:
           GOPROXY: https://proxy.golang.org
           GOSUMDB: sum.golang.org
           GOTOOLCHAIN: local
-          GOFLAGS: ""
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
           GONOSUMDB: ""
           GOPRIVATE: ""
           GOINSECURE: ""
         run: |
-          cd "$RUNNER_TEMP"
-          GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8@v8.30.1
+          mkdir -p "$RUNNER_TEMP/scanners"
+          cp tools/scanners/go.mod tools/scanners/go.sum "$RUNNER_TEMP/scanners/"
+          cd "$RUNNER_TEMP/scanners"
+          GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8
           cd "$GITHUB_WORKSPACE"
           "$RUNNER_TEMP/bin/gitleaks" git --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -415,7 +418,7 @@ jobs:
           python -B tools/check_workflow_yaml.py | tee -a "$GITHUB_STEP_SUMMARY"
 
   toolchain-audit:
-    name: known vulnerabilities in the dev toolchain (pip-audit)
+    name: known vulnerabilities in the dev toolchain (pip-audit, govulncheck)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -435,6 +438,32 @@ jobs:
         run: python -I -m pip install --require-hashes -r requirements-dev.txt
       - name: Audit every pinned development dependency against the advisory databases
         run: pip-audit -r requirements-dev.txt --require-hashes --strict --progress-spinner off --desc on | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Set up Go for the pinned scanner builds
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: "1.27.3"
+          cache: false
+      - name: Audit the Go-built scanners against the Go vulnerability database (govulncheck)
+        # The same pinned build as the secret scan (tools/scanners), checked symbol by symbol: any known
+        # vulnerability reachable in gitleaks or govulncheck, in a dependency or the Go standard library
+        # it was built with, fails the job (item 22).
+        env:
+          GOPROXY: https://proxy.golang.org
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          mkdir -p "$RUNNER_TEMP/scanners"
+          cp tools/scanners/go.mod tools/scanners/go.sum "$RUNNER_TEMP/scanners/"
+          cd "$RUNNER_TEMP/scanners"
+          GOBIN="$RUNNER_TEMP/bin" go install tool
+          cd "$GITHUB_WORKSPACE"
+          "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/gitleaks" | tee -a "$GITHUB_STEP_SUMMARY"
+          "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/govulncheck" | tee -a "$GITHUB_STEP_SUMMARY"
 
   security-requirements:
     name: security requirements gate

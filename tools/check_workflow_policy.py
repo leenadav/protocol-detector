@@ -1107,6 +1107,15 @@ HARDEN_STEP = {"uses": "step-security/harden-runner", "with": {"egress-policy": 
 CACHED_PYTHON = {"uses": "actions/setup-python",
                  "with": {"python-version": "3.13", "cache": "pip", "cache-dependency-path": "requirements-dev.txt"}}
 ISOLATED_INSTALL = "python -I -m pip install --require-hashes -r requirements-dev.txt"
+# The Go-built scanners (items 21 and 22): one supported Go, the module proxy and checksum database
+# written out, read-only modules, no workspace, and only tools/scanners/go.mod and go.sum copied
+# out of the checkout for the build.
+SETUP_GO = {"uses": "actions/setup-go", "with": {"go-version": "1.27.3", "cache": "false"}}
+GO_BUILD_ENV = {"GOPROXY": "https://proxy.golang.org", "GOSUMDB": "sum.golang.org", "GOTOOLCHAIN": "local",
+                "GOFLAGS": "-mod=readonly", "GOWORK": "off", "GONOSUMDB": "", "GOPRIVATE": "", "GOINSECURE": ""}
+SCANNER_BUILD = ['mkdir -p "$RUNNER_TEMP/scanners"',
+                 'cp tools/scanners/go.mod tools/scanners/go.sum "$RUNNER_TEMP/scanners/"',
+                 'cd "$RUNNER_TEMP/scanners"']
 SCANNER_JOB_KEYS = {"name", "runs-on", "timeout-minutes", "steps"}
 SCANNER_JOBS = {
     "static-analysis": (SCANNER_JOB_KEYS | {"permissions"}, {"contents": "read"}, [
@@ -1120,14 +1129,13 @@ SCANNER_JOBS = {
                  "capture_stream.py -f txt | tee bandit.txt",
                  "{", "echo", "echo '```'", "grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt", "echo '```'",
                  '} >> "$GITHUB_STEP_SUMMARY"']},
-        # item 21: gitleaks 8.30.1 built from the Go module proxy and checked against the Go checksum
-        # database, in RUNNER_TEMP, run so that it ignores inline allow comments in every commit
-        {"uses": "actions/setup-go", "with": {"go-version": "1.24.11", "cache": "false"}},
-        {"env": {"GOPROXY": "https://proxy.golang.org", "GOSUMDB": "sum.golang.org", "GOTOOLCHAIN": "local",
-                 "GOFLAGS": "", "GONOSUMDB": "", "GOPRIVATE": "", "GOINSECURE": ""},
-         "run": ['cd "$RUNNER_TEMP"',
-                 'GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8@v8.30.1',
-                 'cd "$GITHUB_WORKSPACE"',
+        # items 21 and 22: gitleaks 8.30.1 from the tools/scanners module (go.sum pins every dependency,
+        # checked against the Go checksum database), built from a copy in RUNNER_TEMP on a supported Go,
+        # run so that it ignores inline allow comments in every commit
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": SCANNER_BUILD + ['GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8',
+                                 'cd "$GITHUB_WORKSPACE"',
                  '"$RUNNER_TEMP/bin/gitleaks" git --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . 2>&1 | '
                  'tee -a "$GITHUB_STEP_SUMMARY"']},
     ]),
@@ -1153,6 +1161,14 @@ SCANNER_JOBS = {
         {"run": [ISOLATED_INSTALL]},
         {"run": ['pip-audit -r requirements-dev.txt --require-hashes --strict --progress-spinner off --desc on | tee -a '
                  '"$GITHUB_STEP_SUMMARY"']},
+        # item 22: govulncheck over the same pinned Go build, symbol by symbol
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": SCANNER_BUILD + ['GOBIN="$RUNNER_TEMP/bin" go install tool',
+                                 'cd "$GITHUB_WORKSPACE"',
+                                 '"$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/gitleaks" | tee -a "$GITHUB_STEP_SUMMARY"',
+                                 '"$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/govulncheck" | tee -a '
+                                 '"$GITHUB_STEP_SUMMARY"']},
     ]),
 }
 
@@ -1172,7 +1188,11 @@ def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
 # of them means advancing a reviewed baseline; and, whatever the lock says, gitleaks keeps its
 # default rules, and no other file a scanner would load on its own may exist (task 16 round 1).
 SCANNER_LOCK = "tools/scanner_config.lock.json"
-SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml")
+SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml", "tools/scanners/go.mod")
+# go.mod directives that would change what the pinned scanners are or how they behave: `replace`
+# substitutes another module for gitleaks or a dependency, `godebug` changes standard-library
+# behaviour (x509, TLS) of the built binaries (item 22).
+GO_MOD_BANNED = re.compile(r"^\s*(replace|godebug)\b")
 # Files a scanner picks up from the tree without being told to: each would bypass the lock.
 SCANNER_AUTOLOAD = re.compile(r"(^|/)(ruff\.toml|\.ruff\.toml|zizmor\.ya?ml|actionlint\.ya?ml|\.gitleaksignore|\.bandit)$")
 # Inline forms that silence a scanner wider than one reviewed line, or that no file uses. The
@@ -1322,6 +1342,12 @@ def check_scanner_config(root, lock_text):
         if "useDefault=true" not in section:
             problems.append(".gitleaks.toml: `[extend] useDefault = true` is required (gitleaks' default rules)")
         problems += gitleaks_keys(text)
+    gomod = root / "tools/scanners/go.mod"
+    if gomod.exists():
+        for number, line in enumerate(gomod.read_text(encoding="utf-8").splitlines(), 1):
+            if GO_MOD_BANNED.match(line):
+                problems.append("tools/scanners/go.mod:{}: `{}` may not change what the pinned scanners are or how they "
+                                "behave".format(number, GO_MOD_BANNED.match(line).group(1)))
     pyproject = root / "pyproject.toml"
     if pyproject.exists():
         outside, inside = [], False
@@ -2308,9 +2334,18 @@ def self_test():
         "pip not isolated (zizmor)": ci_full.replace("          python -I -m pip install --require-hashes -r requirements-dev.txt > /dev/null\n          zizmor",
                                                      "          python -m pip install --require-hashes -r requirements-dev.txt > /dev/null\n          zizmor", 1),
         "step env on ruff": ci_full.replace(ruff_step, ruff_step + "        env:\n          PATH: ./bin\n", 1),
-        "job env": ci_full.replace("    name: known vulnerabilities in the dev toolchain (pip-audit)\n",
-                                   "    name: known vulnerabilities in the dev toolchain (pip-audit)\n    env:\n      LANG: C\n", 1),
+        "job env": ci_full.replace("    name: known vulnerabilities in the dev toolchain (pip-audit, govulncheck)\n",
+                                   "    name: known vulnerabilities in the dev toolchain (pip-audit, govulncheck)\n    env:\n      LANG: C\n", 1),
         "scanner dropped": ci_full.replace("          ruff check --output-format github .\n", "", 1),
+        # item 22: the Go-built scanners' build is pinned too
+        "writable modules": ci_full.replace('          GOFLAGS: "-mod=readonly"\n', '          GOFLAGS: "-mod=mod"\n', 1),
+        "workspace on": ci_full.replace('          GOWORK: "off"\n', '          GOWORK: "auto"\n', 1),
+        "old Go": ci_full.replace('          go-version: "1.27.3"\n', '          go-version: "1.24.11"\n', 1),
+        "build in the checkout": ci_full.replace('          cd "$RUNNER_TEMP/scanners"\n', '          cd tools/scanners\n', 1),
+        "govulncheck dropped": ci_full.replace('          "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/gitleaks" | tee -a "$GITHUB_STEP_SUMMARY"\n', "", 1),
+        "repository code before govulncheck": ci_full.replace(
+            "      - name: Audit the Go-built scanners against the Go vulnerability database (govulncheck)\n",
+            repo_step + "      - name: Audit the Go-built scanners against the Go vulnerability database (govulncheck)\n", 1),
         "self-hosted": ci_full.replace("    name: workflow lint (actionlint, zizmor)\n    runs-on: ubuntu-24.04\n",
                                        "    name: workflow lint (actionlint, zizmor)\n    runs-on: self-hosted\n", 1),
     }.items():
@@ -2339,12 +2374,17 @@ def self_test():
         (base / "tools").mkdir(exist_ok=True)
         (base / WORKFLOW_LOCK).write_text(Path(WORKFLOW_LOCK).read_text(encoding="utf-8"), encoding="utf-8")
         for path in SCANNER_CONFIG:
+            (base / path).parent.mkdir(parents=True, exist_ok=True)
             (base / path).write_text(Path(path).read_text(encoding="utf-8"), encoding="utf-8")
         for path, change in edits:
             target = base / path
             target.parent.mkdir(parents=True, exist_ok=True)
             old = target.read_text(encoding="utf-8") if target.exists() else ""
-            target.write_text(change(old), encoding="utf-8")
+            changed = change(old)
+            if changed is None:
+                target.unlink()
+            else:
+                target.write_text(changed, encoding="utf-8")
         lock = json.dumps(scanner_config_lock(base)) if relock else Path(SCANNER_LOCK).read_text(encoding="utf-8")
         (base / SCANNER_LOCK).write_text(lock, encoding="utf-8")
         captured = io.StringIO()
@@ -2389,6 +2429,15 @@ def self_test():
         # item 20: a blanket noqa silences every rule on its line; one naming its rule stays allowed
         "blanket noqa": ([("tools/sbom_summary.py", lambda t: t + "\nimport subprocess  # no" + "qa\n")], True, "silences a scanner"),
         "blanket noqa, colon only": ([("tools/sbom_summary.py", lambda t: t + "\nimport subprocess  # NO" + "QA:\n")], True, "silences a scanner"),
+        # item 22: the pinned Go scanners' module
+        "gitleaks version changed": ([("tools/scanners/go.mod", lambda t: t.replace("gitleaks/v8 v8.30.1", "gitleaks/v8 v8.29.1", 1))],
+                                     False, "tools/scanners/go.mod: differs from"),
+        "go.mod replace": ([("tools/scanners/go.mod", lambda t: t + "\nreplace github.com/zricethezav/gitleaks/v8 => github.com/someone/gitleaks/v8 v8.30.1\n")],
+                           True, "`replace` may not change"),
+        "go.mod replace block": ([("tools/scanners/go.mod", lambda t: t + "\nreplace (\n\tgithub.com/ulikunitz/xz => ./xz\n)\n")],
+                                 True, "`replace` may not change"),
+        "go.mod godebug": ([("tools/scanners/go.mod", lambda t: t + "\ngodebug x509sha1=1\n")], True, "`godebug` may not change"),
+        "go.mod missing": ([("tools/scanners/go.mod", lambda t: None)], True, "tools/scanners/go.mod is missing"),
         "PGH004 dropped": ([("pyproject.toml", lambda t: t.replace(', "PGH004"]', "]", 1))], False, "pyproject.toml: differs from"),
         "gitleaks inline allow": ([("protocol_fixtures.py", lambda t: t + '\nTOKEN = "x"  # gitleaks' + ':allow\n')], True, "silences a scanner"),
         # task 16 round 2: gitleaks scans Markdown and build directories too, so its token is found there,
@@ -2586,6 +2635,7 @@ def self_test():
         (Path(directory) / "tools").mkdir()
         (Path(directory) / WORKFLOW_LOCK).write_text(Path(WORKFLOW_LOCK).read_text(encoding="utf-8"), encoding="utf-8")
         for path in SCANNER_CONFIG + (SCANNER_LOCK,):
+            (Path(directory) / path).parent.mkdir(parents=True, exist_ok=True)
             (Path(directory) / path).write_text(Path(path).read_text(encoding="utf-8"), encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()):
             assert main(directory) == 0
