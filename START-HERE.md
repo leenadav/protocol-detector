@@ -449,6 +449,11 @@ DNS מקבל את הפריסות הנדירות רק תחת בדיקת סביר�
 99 יישומים, 587 בדיקות עוברות.
 
 
+עדכון 0.61: הגנת התעבורה של מסדי נתונים: תשובת ה־PRELOGIN של TDS (MSSQL) מסומנת `full`, `login-only` או `none`;
+StartupMessage של PostgreSQL או HandshakeResponse41 של MySQL שנראים בגלוי מסמנים שהשיחה אינה מוצפנת; ברכת MySQL בלי
+CLIENT_SSL אומרת שהשרת אינו יכול להצפין. סיכונים חדשים: `database-encryption-unavailable` ו־`database-session-unencrypted`;
+`mysql_clear_password` מעלה כעת `cleartext-credential-protocol`. 85 משפחות, 76 אוטומטיות, 99 יישומים, 637 בדיקות עוברות.
+
 עדכון 0.60: מצב האבטחה של RDP ממשא ומתן ה־X.224 כתוויות סגורות: אילו פרוטוקולי אבטחה הלקוח מציע (RDP רגיל, TLS,
 CredSSP, CredSSP עם הרשאת משתמש מוקדמת, RDSTLS, Azure AD), האם הוא מבקש restricted admin או remote credential guard,
 מה השרת בוחר ותומך בו, וסיבת הכישלון בשמה כשהמשא ומתן נכשל. סיכון חדש: `rdp-nla-not-negotiated` (השרת בוחר אבטחת RDP

@@ -44,6 +44,8 @@ RISKS = MappingProxyType({
     "ssh-none-cipher-offered": ("high", "SSH KEXINIT offers the none cipher (no encryption)"),
     "ssh-terrapin-exposed": ("medium", "SSH KEXINIT offers ChaCha20-Poly1305 or an encrypt-then-MAC MAC with a CBC-mode cipher without the strict key exchange marker (Terrapin, CVE-2023-48795)"),
     "rdp-nla-not-negotiated": ("medium", "RDP server Connection Confirm selects standard RDP security or TLS without CredSSP: no network level authentication, so the logon happens inside the session"),
+    "database-encryption-unavailable": ("medium", "Database server cannot encrypt the session: MySQL greeting without CLIENT_SSL, or a TDS PRELOGIN response that does not support encryption (the login is protected only by TDS's reversible password obfuscation)"),
+    "database-session-unencrypted": ("medium", "Database session proceeds without transport encryption: a MySQL HandshakeResponse41 or PostgreSQL StartupMessage seen in the clear, or a TDS PRELOGIN response that encrypts only the login packet or nothing"),
     "tls-certificate-outside-validity": ("medium", "TLS 1.2 server leaf certificate expired or not yet valid at the capture time (evaluated only when the host supplies a capture clock)"),
 })
 MAX_CERTIFICATE_LIFETIME_DAYS = 398   # CA/Browser Forum baseline since September 2020
@@ -58,7 +60,8 @@ _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags"
                      "http_auth_scheme", "http_auth_challenge", "http2_auth_scheme", "http2_auth_challenge",
                      "selected_key_exchange", "tls_certificate_ca", "tls_certificate_eku", "tls_certificate_san",
                      "tls_certificate_not_before", "tls_certificate_not_after", "ssh_weak_algorithm", "ssh_terrapin",
-                     "smb_signing", "smb_encryption", "rdp_selected_security"))
+                     "smb_signing", "smb_encryption", "rdp_selected_security",
+                     "mysql_tls_supported", "mysql_client_ssl", "mysql_auth_plugin", "tds_session_encryption", "postgresql_message"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -199,6 +202,25 @@ def flow_risks(verdict, client, server, at=None):
                 # Only the server's selection decides; RDSTLS and AAD authenticate before the session as well (v0.60).
                 if value in ("standard-rdp", "tls"):
                     found.append("rdp-nla-not-negotiated")
+            elif field == "mysql_tls_supported":
+                if value == "false":
+                    found.append("database-encryption-unavailable")
+            elif field == "mysql_client_ssl":
+                # A HandshakeResponse41 is only visible when no SSLRequest started TLS before it (v0.61).
+                if value == "not-requested":
+                    found.append("database-session-unencrypted")
+            elif field == "mysql_auth_plugin":
+                # mysql_clear_password puts the password itself in this cleartext HandshakeResponse41.
+                if value == "cleartext" and "cleartext-credential-protocol" not in found:
+                    found.append("cleartext-credential-protocol")
+            elif field == "tds_session_encryption":
+                if value == "none":
+                    found.append("database-encryption-unavailable")
+                if value in ("none", "login-only"):
+                    found.append("database-session-unencrypted")
+            elif field == "postgresql_message":
+                if value == "startup":
+                    found.append("database-session-unencrypted")
             elif field == "selected_key_exchange":
                 if value in NO_FORWARD_SECRECY:
                     found.append("tls-no-forward-secrecy")

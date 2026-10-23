@@ -38,6 +38,7 @@ last look; v0.51 and v0.52 were queued).
 | v0.58 | SSH algorithm posture: the KEXINIT after the banner is read by default; `ssh_kex_class` (pq-hybrid, ecdh, dh-sha2, dh-sha1, other), `ssh_weak_algorithm` classes, `ssh_terrapin` (strict, exposed, not-applicable); risks `ssh-weak-algorithm-offered`, `ssh-none-cipher-offered`, `ssh-terrapin-exposed`. |
 | v0.59 | SMB transport protection posture from the NEGOTIATE response: `smb_encryption` (supported, not-supported, unavailable), `smb_encryption_cipher`, `smb_signing_algorithm` (3.1.1 SIGNING_CAPABILITIES context); risks `smb-signing-not-required`, `smb-encryption-unavailable`. |
 | v0.60 | RDP security posture from the X.224 negotiation: `rdp_offered_security`, `rdp_credential_mode`, `rdp_selected_security`, `rdp_server_supports`, `rdp_failure`; risk `rdp-nla-not-negotiated`. |
+| v0.61 | Database transport protection: `tds_session_encryption` (full, login-only, none) on the TDS PRELOGIN response, `postgresql_message=startup`; risks `database-encryption-unavailable`, `database-session-unencrypted`; `mysql_clear_password` raises `cleartext-credential-protocol`. |
 
 Numbers moved from 59 families / 60 applications / about 420 tests at the
 start of the session to 75 families (68 automatic), 87 catalog applications,

@@ -91,7 +91,7 @@ closed set reviewers should expect in records.
 | stun | tcp/udp | yes | same shape | `stun_class`, `stun_method` |
 | syslog | udp/tcp | yes | n/a (one-way) | `syslog_framing` |
 | tacacs-plus | tcp | yes | yes | `tacacs_packet`, `tacacs_type` |
-| tds | tcp | yes | yes | `tds_encryption`, `tds_federated_auth`, `tds_mars` |
+| tds | tcp | yes | yes | `tds_encryption`, `tds_federated_auth`, `tds_mars`, `tds_session_encryption` |
 | telnet | tcp | yes | same shape | - |
 | tftp | udp | yes | yes | `tftp_packet` |
 | tls | tcp | yes | yes | `hostname`, `offered_alpn`, `requested_group`, `selected_alpn`, `selected_cipher`, `selected_cipher_mode`, `selected_group`, `selected_key_exchange`, `selected_tls_version`, `tls_certificate_ca`, `tls_certificate_chain`, `tls_certificate_eku`, `tls_certificate_key`, `tls_certificate_lifetime_days`, `tls_certificate_not_after`, `tls_certificate_not_before`, `tls_certificate_san`, `tls_certificate_self_issued`, `tls_certificate_signature`, `tls_certificate_version`, `tls_ech`, `tls_handshake`, `tls_offered_max_version` |
@@ -804,3 +804,28 @@ security is unchanged.
 Behaviour diff against v0.59 (84264 inputs): 43 `rdp` inputs gain posture rows
 only; status, protocol and reason are unchanged (also checked over 1441
 targeted single-byte mutations of five RDP messages).
+
+## Database transport protection (v0.61)
+
+No new family and no change to any accept/reject profile. Evidence the
+database parsers already validated now says whether the session is encrypted:
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `tds_session_encryption` | `full`, `login-only`, `none` | TDS PRELOGIN response only. The response's ENCRYPTION value is the server's resolution of both offers (MS-TDS 2.2.6.5): ENCRYPT_ON and ENCRYPT_REQ encrypt the whole session, ENCRYPT_OFF only the LOGIN7 packet, ENCRYPT_NOT_SUP nothing (a client that required encryption then disconnects). The request's `tds_encryption` is an offer and gains no label |
+| `postgresql_message` | `startup` (new value) | A PostgreSQL v3 StartupMessage on the wire: neither SSLRequest nor GSSENCRequest preceded it, so the session is not encrypted. Parameter names and values (user, database) are never emitted |
+
+`mysql_tls_supported` (server greeting, CLIENT_SSL) and `mysql_client_ssl`
+(`not-requested` on a HandshakeResponse41, `requested` on an SSLRequest) are
+unchanged; they now feed risks.
+
+Risks (RISKS.md): `database-encryption-unavailable` (MySQL greeting without
+CLIENT_SSL; TDS response `none`) and `database-session-unencrypted` (a MySQL
+HandshakeResponse41 or PostgreSQL StartupMessage seen in the clear; TDS response
+`login-only` or `none`). A MySQL HandshakeResponse41 naming
+`mysql_clear_password` now also raises `cleartext-credential-protocol`: that
+plugin places the password itself in the cleartext message.
+
+Behaviour diff against v0.60 (84264 inputs): 105 `postgresql` and 74 `tds`
+inputs gain evidence rows only; status, protocol and reason are unchanged (also
+checked over 1969 targeted single-byte mutations of three messages).

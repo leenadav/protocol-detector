@@ -11,6 +11,9 @@ from .extended import UnsupportedPrefix
 # MS-TDS 2.2.6.5 PRELOGIN option tokens and their fixed data lengths (None: variable).
 _TDS_OPTIONS = {0x00: 6, 0x01: 1, 0x02: None, 0x03: None, 0x04: 1, 0x05: 36, 0x06: 1, 0x07: 32}
 _TDS_ENCRYPTION = {0x00: "off", 0x01: "on", 0x02: "not-supported", 0x03: "required"}
+# What a PRELOGIN response's ENCRYPTION value leaves encrypted (MS-TDS 2.2.6.5: the response carries the server's
+# resolution of both offers): ON/REQ everything, OFF only the LOGIN7 packet, NOT_SUP nothing (v0.61).
+_TDS_SESSION_ENCRYPTION = {0x00: "login-only", 0x01: "full", 0x02: "none", 0x03: "full"}
 TDS_MAX_PRELOGIN = 4096
 
 
@@ -84,6 +87,7 @@ class TDSParser(FrameParser):
                 raise ParseError("TDS FEDAUTHREQUIRED option must be 0 or 1")
             evidence.append(("tds_federated_auth", "yes" if fedauth else "no", "prelogin", "offered"))
         if data[0] == 0x04:
+            evidence.append(("tds_session_encryption", _TDS_SESSION_ENCRYPTION[encryption], "prelogin_response", "asserted"))
             self.scope = "negotiation_response"
             self.reason = "TDS PRELOGIN response validated; server version and encryption choice unauthenticated"
         else:
