@@ -143,8 +143,11 @@
    .gitleaks.toml may use bare keys only, so `disabledRules` cannot hide in a quoted, escaped,
    dotted or inline-table spelling (gitleaks reads keys case-insensitively, so neither can
    `disabledrules`). And since gitleaks scans the full history, every commit after HISTORY_BASE
-   (the first commit free of the token, tree and diff) is searched too, merge results included,
-   so an inline allow added and then deleted still fails; in a git checkout a missing git, a
+   (the first commit free of the token, tree and diff) is searched too: every blob introduced
+   since, read raw with `rev-list --objects` and `cat-file --batch` and `--no-replace-objects`,
+   so no .gitattributes (`-diff`, `binary`, textconv) or replace ref can hide a line the way
+   it would from a diff, and merge results are included; an inline allow added and then
+   deleted still fails; in a git checkout a missing git, a
    baseline that is not an ancestor of HEAD or a shallow history without it fails closed, and
    `workflow-lint` checks out the full history for it (item 19, carried from item 16 round 3).
    Single-line `# noqa: <code>` stays a reviewed code change.
@@ -1249,20 +1252,32 @@ def check_history_suppressions(root, base=HISTORY_BASE):
     if run("merge-base", "--is-ancestor", base, "HEAD").returncode != 0:
         return ["the history baseline {} is not an ancestor of HEAD, so the history gitleaks scans cannot be "
                 "checked".format(base[:12])]
-    result = run("-c", "core.quotepath=off", "log", "-m", "-p", "--no-color", "--no-ext-diff", "--no-textconv",
-                 "--format=commit %H", base + "..HEAD")
-    if result.returncode != 0:
-        return ["git log failed: {}".format(result.stderr.decode("utf-8", "replace").strip())]
-    problems, commit, path = [], "", ""
-    for line in result.stdout.decode("utf-8", "replace").splitlines():
-        if line.startswith("commit "):
-            commit = line.split()[1][:12]
-        elif line.startswith("+++ "):
-            path = line[4:].strip()
-            path = path[2:] if path.startswith("b/") else path
-        elif line.startswith("+") and GITLEAKS_INLINE.search(line):
-            problems.append("commit {} adds gitleaks' inline allow to {}: gitleaks scans the full history, so it would "
-                            "still silence a secret there".format(commit, path))
+    # Raw objects, not diffs: `git log -p` honours .gitattributes (`-diff`, textconv), so a repository
+    # attribute could hide an added line from a diff while gitleaks still reads the blob (item 19 round 1).
+    listed = run("--no-replace-objects", "rev-list", "--objects", base + "..HEAD")
+    if listed.returncode != 0:
+        return ["git rev-list failed: {}".format(listed.stderr.decode("utf-8", "replace").strip())]
+    names = {}
+    for entry in listed.stdout.decode("utf-8", "replace").splitlines():
+        sha, _, name = entry.partition(" ")
+        names.setdefault(sha, name or "(no path)")
+    batch = subprocess.run([git, "-C", str(root), "--no-replace-objects", "cat-file", "--batch"],
+                           input="".join(sha + "\n" for sha in names).encode(), stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE, timeout=300, check=False)
+    if batch.returncode != 0:
+        return ["git cat-file failed: {}".format(batch.stderr.decode("utf-8", "replace").strip())]
+    problems, data, offset = [], batch.stdout, 0
+    while offset < len(data):
+        end = data.index(b"\n", offset)
+        header = data[offset:end].decode("utf-8", "replace").split()
+        if len(header) != 3:
+            return ["git cat-file answered {!r}: the history could not be read".format(" ".join(header))]
+        sha, kind, size = header[0], header[1], int(header[2])
+        body = data[end + 1:end + 1 + size]
+        offset = end + 1 + size + 1
+        if kind == "blob" and GITLEAKS_INLINE.search(body.decode("utf-8", "replace")):
+            problems.append("{} (blob {}, added after the history baseline) carries gitleaks' inline allow: gitleaks scans "
+                            "the full history, so it would still silence a secret there".format(names[sha], sha[:12]))
     return sorted(set(problems))
 
 
@@ -2418,7 +2433,7 @@ def self_test():
         commit(directory, "config.py", payload + "  # " + token + "\n", "A: payload with an inline allow")
         commit(directory, "config.py", None, "B: the file is deleted")
         found = check_history_suppressions(directory, base)
-        assert len(found) == 1 and "adds gitleaks' inline allow to config.py" in found[0], found
+        assert len(found) == 1 and found[0].startswith("config.py (blob "), found
         commit(directory, "notes.md", "fine\n", "C: later work")              # still found further back
         assert check_history_suppressions(directory, base)
     with tempfile.TemporaryDirectory() as directory:                            # the line removed, the file kept
@@ -2444,6 +2459,29 @@ def self_test():
         git_run(directory, "commit", "-q", "-m", "evil merge")
         commit(directory, "d.txt", None, "remove it")
         assert check_history_suppressions(directory, base), "a merge result must be searched"
+    for attributes in ("leak.py -diff\n", "leak.py binary\n", "*.py diff=hidden\n", "* -text -diff\n"):
+        with tempfile.TemporaryDirectory() as directory:                        # item 19 round 1: attributes hide diffs
+            git_run(directory, "init", "-q")
+            commit(directory, "README.txt", "base\n", "base")
+            base = head(directory)
+            git_run(directory, "config", "diff.hidden.textconv", "true")
+            commit(directory, ".gitattributes", attributes, "attributes")
+            commit(directory, "leak.py", payload + "  # " + token + "\n", "A")
+            commit(directory, "leak.py", None, "B")
+            found = check_history_suppressions(directory, base)
+            assert any(entry.startswith("leak.py (blob ") for entry in found), (attributes, found)
+    with tempfile.TemporaryDirectory() as directory:                            # replace refs cannot swap the blob
+        git_run(directory, "init", "-q")
+        commit(directory, "README.txt", "base\n", "base")
+        base = head(directory)
+        commit(directory, "leak.py", payload + "  # " + token + "\n", "A")
+        bad = subprocess.run([git, "-C", directory, "rev-parse", "HEAD:leak.py"], check=True, stdout=subprocess.PIPE).stdout.decode().strip()
+        (Path(directory) / "clean.txt").write_text("clean\n", encoding="utf-8")
+        good = subprocess.run([git, "-C", directory, "hash-object", "-w", "clean.txt"], check=True, stdout=subprocess.PIPE).stdout.decode().strip()
+        (Path(directory) / "clean.txt").unlink()
+        git_run(directory, "replace", bad, good)
+        commit(directory, "leak.py", None, "B")
+        assert check_history_suppressions(directory, base), "a replace ref must not hide the blob"
     with tempfile.TemporaryDirectory() as directory:                            # fail closed on an unknown baseline
         git_run(directory, "init", "-q", "-b", "main")
         commit(directory, "a.txt", "1\n", "only")
@@ -2464,7 +2502,7 @@ def self_test():
         captured = io.StringIO()
         with contextlib.redirect_stdout(captured):
             assert main(directory, history_base=base) == 1, captured.getvalue()
-        assert "adds gitleaks' inline allow to leak.py" in captured.getvalue(), captured.getvalue()
+        assert "leak.py (blob " in captured.getvalue(), captured.getvalue()
     added = dict(real, **{".github/workflows/extra.yml": "on: push\n"})
     assert any("extra.yml: not in" in p for p in check_workflow_lock(added, lock_text))
     removed = {k: v for k, v in real.items() if k != ".github/workflows/nightly-fuzz.yml"}
