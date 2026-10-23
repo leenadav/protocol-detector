@@ -46,6 +46,8 @@ RISKS = MappingProxyType({
     "rdp-nla-not-negotiated": ("medium", "RDP server Connection Confirm selects standard RDP security or TLS without CredSSP: no network level authentication, so the logon happens inside the session"),
     "database-encryption-unavailable": ("medium", "Database server cannot encrypt the session: MySQL greeting without CLIENT_SSL, or a TDS PRELOGIN response that does not support encryption (the login is protected only by TDS's reversible password obfuscation)"),
     "database-session-unencrypted": ("medium", "Database session proceeds without transport encryption: a MySQL HandshakeResponse41 or PostgreSQL StartupMessage seen in the clear, or a TDS PRELOGIN response that encrypts only the login packet or nothing"),
+    "snmpv3-unauthenticated": ("medium", "SNMPv3 message at noAuthNoPriv other than an engine-discovery request or a Report: operations and values are neither authenticated nor encrypted"),
+    "snmpv3-no-privacy": ("low", "SNMPv3 message at authNoPriv other than a Report: authenticated, but the scoped PDU (OIDs and values) travels in cleartext"),
     "tls-certificate-outside-validity": ("medium", "TLS 1.2 server leaf certificate expired or not yet valid at the capture time (evaluated only when the host supplies a capture clock)"),
 })
 MAX_CERTIFICATE_LIFETIME_DAYS = 398   # CA/Browser Forum baseline since September 2020
@@ -61,7 +63,8 @@ _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags"
                      "selected_key_exchange", "tls_certificate_ca", "tls_certificate_eku", "tls_certificate_san",
                      "tls_certificate_not_before", "tls_certificate_not_after", "ssh_weak_algorithm", "ssh_terrapin",
                      "smb_signing", "smb_encryption", "rdp_selected_security",
-                     "mysql_tls_supported", "mysql_client_ssl", "mysql_auth_plugin", "tds_session_encryption", "postgresql_message"))
+                     "mysql_tls_supported", "mysql_client_ssl", "mysql_auth_plugin", "tds_session_encryption", "postgresql_message",
+                     "snmp_security_level", "snmp_usm_discovery", "snmp_pdu"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -233,7 +236,7 @@ def flow_risks(verdict, client, server, at=None):
             elif field == "tls_certificate_san":
                 if value == "absent":
                     found.append("tls-certificate-without-san")
-            elif field in ("tls_certificate_not_before", "tls_certificate_not_after"):
+            elif field in ("tls_certificate_not_before", "tls_certificate_not_after", "snmp_security_level", "snmp_usm_discovery", "snmp_pdu"):
                 window[field] = value
             elif field == "tls_certificate_lifetime_days":
                 if value.isdigit() and int(value) > MAX_CERTIFICATE_LIFETIME_DAYS:
@@ -242,8 +245,17 @@ def flow_risks(verdict, client, server, at=None):
                     or (field in ("rdp_security_flags", "rdp_selected_protocol") and value == "0"):
                 if "obsolete-protocol" not in found:
                     found.append("obsolete-protocol")
-        if window and validity(window.get("tls_certificate_not_before"), window.get("tls_certificate_not_after"), at) in ("expired", "not-yet-valid"):
-            found.append("tls-certificate-outside-validity")
+        if window:
+            if ("tls_certificate_not_before" in window or "tls_certificate_not_after" in window) and \
+                    validity(window.get("tls_certificate_not_before"), window.get("tls_certificate_not_after"), at) in ("expired", "not-yet-valid"):
+                found.append("tls-certificate-outside-validity")
+            level = window.get("snmp_security_level")
+            # Discovery requests and Reports (RFC 3414 4, 3.1.1) are sent below the session's level by design (v0.62).
+            if level is not None and window.get("snmp_pdu") != "report" and "snmp_usm_discovery" not in window:
+                if level == "no-auth-no-priv":
+                    found.append("snmpv3-unauthenticated")
+                elif level == "auth-no-priv":
+                    found.append("snmpv3-no-privacy")
     if not found:
         return _NO_RISKS
     return tuple(sorted(set(found)))

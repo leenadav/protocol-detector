@@ -39,6 +39,7 @@ last look; v0.51 and v0.52 were queued).
 | v0.59 | SMB transport protection posture from the NEGOTIATE response: `smb_encryption` (supported, not-supported, unavailable), `smb_encryption_cipher`, `smb_signing_algorithm` (3.1.1 SIGNING_CAPABILITIES context); risks `smb-signing-not-required`, `smb-encryption-unavailable`. |
 | v0.60 | RDP security posture from the X.224 negotiation: `rdp_offered_security`, `rdp_credential_mode`, `rdp_selected_security`, `rdp_server_supports`, `rdp_failure`; risk `rdp-nla-not-negotiated`. |
 | v0.61 | Database transport protection: `tds_session_encryption` (full, login-only, none) on the TDS PRELOGIN response, `postgresql_message=startup`; risks `database-encryption-unavailable`, `database-session-unencrypted`; `mysql_clear_password` raises `cleartext-credential-protocol`. |
+| v0.62 | SNMPv3 security level: `snmp_security_level` (no-auth-no-priv, auth-no-priv, auth-priv), `snmp_usm_discovery`; risks `snmpv3-unauthenticated`, `snmpv3-no-privacy` with the discovery and Report exemptions. |
 
 Numbers moved from 59 families / 60 applications / about 420 tests at the
 start of the session to 75 families (68 automatic), 87 catalog applications,

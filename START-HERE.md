@@ -449,6 +449,10 @@ DNS מקבל את הפריסות הנדירות רק תחת בדיקת סביר�
 99 יישומים, 587 בדיקות עוברות.
 
 
+עדכון 0.62: רמת האבטחה של SNMPv3: כל הודעת SNMPv3 נושאת את רמת האבטחה שלה (`no-auth-no-priv`, `auth-no-priv`,
+`auth-priv`) ומסמנת בקשות גילוי מנוע. סיכונים חדשים: `snmpv3-unauthenticated` ו־`snmpv3-no-privacy`, שאינם עולים לבקשות גילוי
+או להודעות Report שהפרוטוקול שולח ברמה נמוכה יותר בכוונה. 85 משפחות, 76 אוטומטיות, 99 יישומים, 640 בדיקות עוברות.
+
 עדכון 0.61: הגנת התעבורה של מסדי נתונים: תשובת ה־PRELOGIN של TDS (MSSQL) מסומנת `full`, `login-only` או `none`;
 StartupMessage של PostgreSQL או HandshakeResponse41 של MySQL שנראים בגלוי מסמנים שהשיחה אינה מוצפנת; ברכת MySQL בלי
 CLIENT_SSL אומרת שהשרת אינו יכול להצפין. סיכונים חדשים: `database-encryption-unavailable` ו־`database-session-unencrypted`;

@@ -513,7 +513,10 @@ def _snmpv3(message, pos):
         if priv and not priv_params:
             raise ParseError("SNMPv3 privacy flag without privacy parameters")
         security = "usm"
+        # RFC 3414 4: an engine-discovery request carries an empty msgAuthoritativeEngineID and no authentication.
+        discovery = not auth and not engine_id
     else:
+        discovery = False
         if len(params) > 256:
             raise ParseError("SNMPv3 security parameters exceed profile")
         security = "model-{}".format(model)
@@ -544,7 +547,11 @@ def _snmpv3(message, pos):
                 Evidence("snmp_pdu", "encrypted" if priv else name, "wire", "structural"),
                 Evidence("snmp_security", security, "wire", "structural"),
                 Evidence("snmp_scoped_pdu", scope, "wire", "structural"),
-                Evidence("snmp_flags", "".join(name for bit, name in ((auth, "auth"), (priv, "priv"), (reportable, "reportable")) if bit) or "none", "wire", "structural"))
+                Evidence("snmp_flags", "".join(name for bit, name in ((auth, "auth"), (priv, "priv"), (reportable, "reportable")) if bit) or "none", "wire", "structural"),
+                # RFC 3411 securityLevel (v0.62); msgFlags already rejected privacy without authentication.
+                Evidence("snmp_security_level", "auth-priv" if priv else "auth-no-priv" if auth else "no-auth-no-priv", "wire", "structural"))
+    if discovery:
+        evidence += (Evidence("snmp_usm_discovery", "request", "wire", "structural"),)
     return DatagramMatch("SNMPv3 header, security parameter and {} scoped PDU framing validated; user, engine, keys and values unverified and never emitted".format(scope),
                          application_protocol="snmp/3", evidence=evidence)
 

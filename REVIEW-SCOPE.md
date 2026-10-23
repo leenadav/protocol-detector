@@ -1,16 +1,22 @@
-# Review scope: protocol detector v0.61
+# Review scope: protocol detector v0.62
 
 Python3.9-compatible IPv4 passive classification: 85 families, 76 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.61): `protocol_engine/enterprise_db.py` (`tds_session_encryption`
+New focus (v0.62): `protocol_engine/network.py` `_snmpv3`
+(`snmp_security_level` from msgFlags, `snmp_usm_discovery` for USM messages
+without authentication and engine ID) and the SNMPv3 rule in `risks.py`
+(per-observation, with the discovery and Report exemptions). Trace: no engine
+ID, user or parameter byte is emitted; the profile is unchanged. 640 tests pass.
+
+Previous focus (v0.61): `protocol_engine/enterprise_db.py` (`tds_session_encryption`
 from the PRELOGIN response only), `protocol_engine/binary.py` (the
 `postgresql_message=startup` marker) and the database rules in `risks.py`
 (`database-encryption-unavailable`, `database-session-unencrypted`, the MySQL
 cleartext plugin). Trace: offers never raise a risk; accept/reject profiles are
-unchanged. 637 tests pass.
+unchanged. 637 tests passed at v0.61.
 
 Previous focus (v0.60): `protocol_engine/remote.py` `RDPParser` (closed labels for
 requestedProtocols bits, RDP_NEG_REQ credential-mode flags, the selected

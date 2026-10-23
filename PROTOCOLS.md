@@ -82,7 +82,7 @@ closed set reviewers should expect in records.
 | smb1 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb1_dialect_layout`, `smb1_message`, `smb_session` |
 | smb2 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb_dialect`, `smb_encryption`, `smb_encryption_cipher`, `smb_message`, `smb_session`, `smb_signing`, `smb_signing_algorithm` |
 | smtp | tcp | yes | - | `smtp_client_identity` |
-| snmp | udp | yes | yes | `snmp_flags`, `snmp_pdu`, `snmp_scoped_pdu`, `snmp_security` |
+| snmp | udp | yes | yes | `snmp_flags`, `snmp_pdu`, `snmp_scoped_pdu`, `snmp_security`, `snmp_security_level`, `snmp_usm_discovery` |
 | socks5 | tcp | yes | yes | `socks_command`, `socks_method`, `socks_port`, `socks_reply`, `socks_target` |
 | spice | tcp | yes | yes | `spice_channel`, `spice_link_error`, `spice_message` |
 | ssdp | udp | yes | same shape | - |
@@ -829,3 +829,26 @@ plugin places the password itself in the cleartext message.
 Behaviour diff against v0.60 (84264 inputs): 105 `postgresql` and 74 `tds`
 inputs gain evidence rows only; status, protocol and reason are unchanged (also
 checked over 1969 targeted single-byte mutations of three messages).
+
+## SNMPv3 security level (v0.62)
+
+No new family and no change to the SNMPv3 profile of v0.38. Every validated
+SNMPv3 message now carries its RFC 3411 securityLevel, read from msgFlags (the
+profile already rejects privacy without authentication):
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `snmp_security_level` | `no-auth-no-priv`, `auth-no-priv`, `auth-priv` | msgFlags auth and priv bits of an SNMPv3 message; SNMPv1/v2c messages carry no level |
+| `snmp_usm_discovery` | `request` | USM message without authentication and with an empty msgAuthoritativeEngineID: the RFC 3414 section 4 engine-discovery request |
+
+The engine ID, user name and authentication or privacy parameters are still
+never emitted; only their absence or presence decides these labels.
+
+Risks (RISKS.md): `snmpv3-unauthenticated` (noAuthNoPriv) and
+`snmpv3-no-privacy` (authNoPriv). Neither is raised for a discovery request or
+a Report PDU, which RFC 3414 sends below the session's level by design
+(unknown engine, unknown user, time-window synchronisation).
+
+Behaviour diff against v0.61 (84264 inputs): 268 `snmp/3` inputs gain evidence
+rows only; status, protocol and reason are unchanged (also checked over 2530
+targeted single-byte mutations of three messages).
