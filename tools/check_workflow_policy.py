@@ -142,7 +142,11 @@
    in every file but `.git`, Markdown and build directories included (task 16 round 2), and
    .gitleaks.toml may use bare keys only, so `disabledRules` cannot hide in a quoted, escaped,
    dotted or inline-table spelling (gitleaks reads keys case-insensitively, so neither can
-   `disabledrules`).
+   `disabledrules`). And since gitleaks scans the full history, every commit after HISTORY_BASE
+   (the first commit free of the token, tree and diff) is searched too, merge results included,
+   so an inline allow added and then deleted still fails; in a git checkout a missing git, a
+   baseline that is not an ancestor of HEAD or a shallow history without it fails closed, and
+   `workflow-lint` checks out the full history for it (item 19, carried from item 16 round 3).
    Single-line `# noqa: <code>` stays a reviewed code change.
 
 Standard library only; the parser understands the block layout these workflows use
@@ -157,6 +161,8 @@ concurrency expression other than a plain `github.*` context reference. Usage:
 import contextlib
 import json
 import os
+import shutil
+import subprocess  # noqa: S404  (argv-only git invocation, no shell)
 import fnmatch
 import io
 import re
@@ -1113,7 +1119,7 @@ SCANNER_JOBS = {
     ]),
     "workflow-lint": (SCANNER_JOB_KEYS, None, [
         HARDEN_STEP,
-        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false", "fetch-depth": "0"}},
         CACHED_PYTHON,
         {"env": {"VERSION": "1.7.7", "SHA256": "023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757"},
          "run": ['curl -sSfL -o actionlint.tar.gz "https://github.com/rhysd/actionlint/releases/download/v${VERSION}/actionlint_'
@@ -1219,6 +1225,45 @@ def gitleaks_keys(text):
     if extend.get("useDefault") is not True:
         problems.append(".gitleaks.toml: `[extend] useDefault = true` is required (parsed)")
     return problems
+
+
+# Item 19 (carried from item 16 round 3): gitleaks scans the full history, so an inline allow
+# added in one commit and deleted in the next would still suppress the secret it sat beside.
+# Every commit after HISTORY_BASE, the first commit whose tree and diff carry no such token, is
+# searched as well; git must be present, and the baseline an ancestor of HEAD, or the check fails.
+HISTORY_BASE = "c5e2f2caf82dc55bb35b9c54537398dcdc05dbe9"
+
+
+def check_history_suppressions(root, base=HISTORY_BASE):
+    """Rule 16: no commit after `base` adds a line carrying gitleaks' inline allow (merge results included)."""
+    git = shutil.which("git")
+    if git is None:
+        return ["git is not installed: the history gitleaks scans cannot be checked for inline allows"]
+
+    def run(*arguments):
+        return subprocess.run([git, "-C", str(root), *arguments], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              timeout=120, check=False)
+
+    if run("cat-file", "-e", base + "^{commit}").returncode != 0:
+        return ["the history baseline {} is not in this clone (a shallow checkout? fetch the full history)".format(base[:12])]
+    if run("merge-base", "--is-ancestor", base, "HEAD").returncode != 0:
+        return ["the history baseline {} is not an ancestor of HEAD, so the history gitleaks scans cannot be "
+                "checked".format(base[:12])]
+    result = run("-c", "core.quotepath=off", "log", "-m", "-p", "--no-color", "--no-ext-diff", "--no-textconv",
+                 "--format=commit %H", base + "..HEAD")
+    if result.returncode != 0:
+        return ["git log failed: {}".format(result.stderr.decode("utf-8", "replace").strip())]
+    problems, commit, path = [], "", ""
+    for line in result.stdout.decode("utf-8", "replace").splitlines():
+        if line.startswith("commit "):
+            commit = line.split()[1][:12]
+        elif line.startswith("+++ "):
+            path = line[4:].strip()
+            path = path[2:] if path.startswith("b/") else path
+        elif line.startswith("+") and GITLEAKS_INLINE.search(line):
+            problems.append("commit {} adds gitleaks' inline allow to {}: gitleaks scans the full history, so it would "
+                            "still silence a secret there".format(commit, path))
+    return sorted(set(problems))
 
 
 def scanner_config_lock(root):
@@ -1486,7 +1531,7 @@ def check_encoding(path, text):
     return problems
 
 
-def main(root):
+def main(root, history_base=HISTORY_BASE):
     root = Path(root)
     workflows = root / ".github" / "workflows"
     files = sorted(p.relative_to(root).as_posix() for p in list(workflows.glob("*.yml")) + list(workflows.glob("*.yaml")))
@@ -1506,6 +1551,8 @@ def main(root):
         problems += check_scanner_order(texts)
         scanner_lock = root / SCANNER_LOCK
         problems += check_scanner_config(root, scanner_lock.read_text(encoding="utf-8") if scanner_lock.exists() else "missing")
+        if (root / ".git").exists():
+            problems += check_history_suppressions(root, history_base)
         lock = root / WORKFLOW_LOCK
         problems += check_workflow_lock(texts, lock.read_text(encoding="utf-8") if lock.exists() else "missing")
         for name in files:
@@ -2339,6 +2386,85 @@ def self_test():
                     (Path(directory) / path).write_text(Path(path).read_text(encoding="utf-8"), encoding="utf-8")
             status, output = scanner_tree(directory, edits, relock)
             assert status == 1 and expected in output, (label, output)
+    # item 19 (item 16 round 3): gitleaks scans the history, so an inline allow added and later removed
+    # still fails; real repositories, since the bypass lives in commits rather than in the final tree
+    git = shutil.which("git")
+    assert git, "the history regressions need git"
+    token = "gitleaks" + ":allow"
+
+    def git_run(directory, *arguments):
+        subprocess.run([git, "-C", directory, "-c", "user.name=t", "-c", "user.email=t@example.invalid",
+                        "-c", "commit.gpgsign=false", *arguments], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    def commit(directory, path, text, message):
+        target = Path(directory) / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if text is None:
+            target.unlink()
+        else:
+            target.write_text(text, encoding="utf-8")
+        git_run(directory, "add", "-A")
+        git_run(directory, "commit", "-q", "--allow-empty", "-m", message)
+
+    def head(directory):
+        return subprocess.run([git, "-C", directory, "rev-parse", "HEAD"], check=True, stdout=subprocess.PIPE).stdout.decode().strip()
+
+    payload = 'value = "placeholder"'   # stands for a detectable credential; only the allow comment matters here
+    with tempfile.TemporaryDirectory() as directory:
+        git_run(directory, "init", "-q")
+        commit(directory, "README.txt", "base\n", "base")
+        base = head(directory)
+        assert check_history_suppressions(directory, base) == []
+        commit(directory, "config.py", payload + "  # " + token + "\n", "A: payload with an inline allow")
+        commit(directory, "config.py", None, "B: the file is deleted")
+        found = check_history_suppressions(directory, base)
+        assert len(found) == 1 and "adds gitleaks' inline allow to config.py" in found[0], found
+        commit(directory, "notes.md", "fine\n", "C: later work")              # still found further back
+        assert check_history_suppressions(directory, base)
+    with tempfile.TemporaryDirectory() as directory:                            # the line removed, the file kept
+        git_run(directory, "init", "-q")
+        commit(directory, "README.txt", "base\n", "base")
+        base = head(directory)
+        commit(directory, "app.py", "x = 1\n" + payload + "  # " + token.upper() + "\n", "A")
+        commit(directory, "app.py", "x = 1\n", "B: the line is removed")
+        assert check_history_suppressions(directory, base)
+        git_run(directory, "commit", "-q", "--amend", "-m", "B amended: the parent still carries it")
+        assert check_history_suppressions(directory, base)
+    with tempfile.TemporaryDirectory() as directory:                            # introduced only by a merge result
+        git_run(directory, "init", "-q", "-b", "main")
+        commit(directory, "a.txt", "1\n", "base")
+        base = head(directory)
+        git_run(directory, "checkout", "-q", "-b", "side")
+        commit(directory, "b.txt", "side\n", "side")
+        git_run(directory, "checkout", "-q", "main")
+        commit(directory, "c.txt", "main\n", "main")
+        git_run(directory, "merge", "-q", "--no-commit", "side")
+        (Path(directory) / "d.txt").write_text(payload + " # " + token + "\n", encoding="utf-8")
+        git_run(directory, "add", "-A")
+        git_run(directory, "commit", "-q", "-m", "evil merge")
+        commit(directory, "d.txt", None, "remove it")
+        assert check_history_suppressions(directory, base), "a merge result must be searched"
+    with tempfile.TemporaryDirectory() as directory:                            # fail closed on an unknown baseline
+        git_run(directory, "init", "-q", "-b", "main")
+        commit(directory, "a.txt", "1\n", "only")
+        assert "is not in this clone" in check_history_suppressions(directory, "0" * 40)[0]
+        git_run(directory, "checkout", "-q", "--orphan", "other")
+        commit(directory, "b.txt", "2\n", "unrelated root")
+        other = head(directory)
+        git_run(directory, "checkout", "-q", "main")
+        assert "not an ancestor of HEAD" in check_history_suppressions(directory, other)[0]
+    with tempfile.TemporaryDirectory() as directory:                            # full policy, final tree clean
+        status, output = scanner_tree(directory)
+        assert status == 0, output
+        git_run(directory, "init", "-q")
+        commit(directory, "README.txt", "base\n", "base")
+        base = head(directory)
+        commit(directory, "leak.py", payload + "  # " + token + "\n", "A")
+        commit(directory, "leak.py", None, "B")
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            assert main(directory, history_base=base) == 1, captured.getvalue()
+        assert "adds gitleaks' inline allow to leak.py" in captured.getvalue(), captured.getvalue()
     added = dict(real, **{".github/workflows/extra.yml": "on: push\n"})
     assert any("extra.yml: not in" in p for p in check_workflow_lock(added, lock_text))
     removed = {k: v for k, v in real.items() if k != ".github/workflows/nightly-fuzz.yml"}

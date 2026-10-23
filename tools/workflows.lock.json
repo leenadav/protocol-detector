@@ -358,6 +358,7 @@
    "      - uses: actions/checkout",
    "        with:",
    "          persist-credentials: false",
+   "          fetch-depth: 0   # rule 16 searches every commit gitleaks scans, back to its baseline",
    "      - uses: actions/setup-python",
    "        with:",
    "          python-version: \"3.13\"",
