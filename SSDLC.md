@@ -155,7 +155,7 @@ The CI/CD track has its own review mailbox, separate from the engine's
 issue #2, and follows the same gated loop:
 
 1. Before a request, merge-forward the current `claude/appid-engine` head
-   into `claude/cicd` (merge commit, never rebase or force-push), run the
+   into `claude/cicd-next` (merge commit, never rebase or force-push), run the
    gates, push, and freeze that head. An engine commit that lands while the
    review runs does not invalidate the frozen request.
 2. Post the `CODEX_REVIEW_REQUEST` in issue #7: task, round (at most three
