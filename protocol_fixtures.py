@@ -1221,8 +1221,11 @@ STREAM_CASES += ((HTTP_BASIC_AUTH, 'http/1.1'), (HTTP_NTLM_CHALLENGE, 'http/1.1'
 
 # v0.58: SSH banner plus one SSH_MSG_KEXINIT (RFC 4253 7.1). Cookie bytes are a placeholder.
 def ssh_kexinit(kex=b"curve25519-sha256", hostkeys=b"ssh-ed25519", ciphers=b"aes128-ctr", macs=b"hmac-sha2-256",
-                compression=b"none", first_follows=0, msg=20):
-    lists = (kex, hostkeys, ciphers, ciphers, macs, macs, compression, compression, b"", b"")
+                compression=b"none", first_follows=0, msg=20, s2c_ciphers=None, s2c_macs=None):
+    # ciphers/macs fill both directions unless the server-to-client lists are given separately.
+    s2c_ciphers = ciphers if s2c_ciphers is None else s2c_ciphers
+    s2c_macs = macs if s2c_macs is None else s2c_macs
+    lists = (kex, hostkeys, ciphers, s2c_ciphers, macs, s2c_macs, compression, compression, b"", b"")
     payload = bytes([msg]) + bytes(range(16)) + b"".join(len(value).to_bytes(4, "big") + value for value in lists)
     payload += bytes([first_follows]) + bytes(4)
     padding = 8 - ((len(payload) + 5) % 8)

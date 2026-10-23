@@ -60,7 +60,8 @@
    "regexes = [",
    "  # RFC 6455 section 1.3 WebSocket example nonce/accept and RFC 9001/9369 QUIC vectors reproduced in fixtures.",
    "  '''Sec-WebSocket-(Key|Accept)''',",
-   "  # PROTOCOLS.md names SSH key exchange methods; this public algorithm identifier is not a credential.",
+   "  # The SSH post-quantum key exchange name in the PROTOCOLS.md v0.58 table (\"key exchange names:",
+   "  # sntrup761x25519\") matches generic-api-key; exact token only, so a real key next to it still flags.",
    "  '''^sntrup761x25519$''',",
    "]"
   ],
