@@ -137,7 +137,12 @@
    `disabledRules`; no file a scanner loads on its own may exist (.gitleaksignore, ruff.toml
    or .ruff.toml or a pyproject.toml below the root, zizmor.yml, actionlint.yaml, .bandit),
    ruff settings may not sit outside `[tool.ruff*]`, and no file may use a suppression wider
-   than one reviewed line or one no file uses (`# ruff: noqa`, `# nosec`, `gitleaks:allow`).
+   than one reviewed line or one no file uses (a file-wide ruff noqa, bandit's nosec, gitleaks'
+   inline allow comment). gitleaks scans every tracked file, so its inline allow is looked for
+   in every file but `.git`, Markdown and build directories included (task 16 round 2), and
+   .gitleaks.toml may use bare keys only, so `disabledRules` cannot hide in a quoted, escaped,
+   dotted or inline-table spelling (gitleaks reads keys case-insensitively, so neither can
+   `disabledrules`).
    Single-line `# noqa: <code>` stays a reviewed code change.
 
 Standard library only; the parser understands the block layout these workflows use
@@ -1150,9 +1155,13 @@ SCANNER_LOCK = "tools/scanner_config.lock.json"
 SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml")
 # Files a scanner picks up from the tree without being told to: each would bypass the lock.
 SCANNER_AUTOLOAD = re.compile(r"(^|/)(ruff\.toml|\.ruff\.toml|zizmor\.ya?ml|actionlint\.ya?ml|\.gitleaksignore|\.bandit)$")
-# Inline forms that silence a scanner wider than one reviewed line, or that no file uses.
-INLINE_SUPPRESSION = re.compile(r"gitleaks:allow|#\s*nosec\b|#\s*(?:ruff|flake8)\s*:\s*noqa", re.I)
+# Inline forms that silence a scanner wider than one reviewed line, or that no file uses. The
+# gitleaks token is built, never written, so no repository file has to be exempt from the scan.
+GITLEAKS_INLINE = re.compile(re.escape("gitleaks" + ":allow"), re.I)
+TOOL_INLINE = re.compile(r"#\s*nosec\b|#\s*(?:ruff|flake8)\s*:\s*noqa", re.I)
+# ruff and bandit never read these; gitleaks scans them, so its token is searched there too.
 SKIP_DIRS = {".git", "__pycache__", "dist", "build"}
+GITLEAKS_KEY = re.compile(r"^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$")
 
 
 def scanner_config_lines(path, text):
@@ -1167,6 +1176,49 @@ def scanner_config_lines(path, text):
         if inside:
             lines.append(line.rstrip())
     return lines
+
+
+def gitleaks_keys(text):
+    """.gitleaks.toml uses bare keys and plain table headers only, and none of them names disabledRules."""
+    problems, depth = [], 0
+    for number, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if depth:   # inside a multi-line array of string literals
+            if line.startswith("]"):
+                depth = 0
+            continue
+        if not line or line.startswith("#"):
+            continue
+        header = re.match(r"^\[\[?([^\]]*)\]\]?\s*(#.*)?$", line)
+        if header:
+            keys = header.group(1).strip()
+        else:
+            if "=" not in line:
+                problems.append(".gitleaks.toml:{}: cannot read this line (bare `key = value` lines only)".format(number))
+                continue
+            keys, value = (part.strip() for part in line.split("=", 1))
+            if value.startswith("{"):
+                problems.append(".gitleaks.toml:{}: inline tables are not allowed (they can hide a key)".format(number))
+            if value.startswith("[") and not value.rstrip().endswith("]"):
+                depth = 1
+        if not GITLEAKS_KEY.match(keys):
+            problems.append(".gitleaks.toml:{}: only bare keys are allowed (a quoted or escaped key can spell disabledRules)".format(number))
+        elif any(part.lower() == "disabledrules" for part in keys.split(".")):
+            problems.append(".gitleaks.toml:{}: disabledRules may not switch off a gitleaks rule".format(number))
+    try:
+        import tomllib   # Python 3.11+: also check what gitleaks will actually read
+    except ImportError:
+        return problems
+    try:
+        parsed = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as error:
+        return problems + [".gitleaks.toml is not valid TOML: {}".format(error)]
+    extend = parsed.get("extend") if isinstance(parsed.get("extend"), dict) else {}
+    if any(str(key).lower() == "disabledrules" for key in extend) or any(str(key).lower() == "disabledrules" for key in parsed):
+        problems.append(".gitleaks.toml: disabledRules may not switch off a gitleaks rule (parsed)")
+    if extend.get("useDefault") is not True:
+        problems.append(".gitleaks.toml: `[extend] useDefault = true` is required (parsed)")
+    return problems
 
 
 def scanner_config_lock(root):
@@ -1196,8 +1248,7 @@ def check_scanner_config(root, lock_text):
                 section.append(line.replace(" ", ""))
         if "useDefault=true" not in section:
             problems.append(".gitleaks.toml: `[extend] useDefault = true` is required (gitleaks' default rules)")
-        if any(re.match(r"^\s*disabledRules\b", line) for line in text.splitlines()):
-            problems.append(".gitleaks.toml: disabledRules may not switch off a gitleaks rule")
+        problems += gitleaks_keys(text)
     pyproject = root / "pyproject.toml"
     if pyproject.exists():
         outside, inside = [], False
@@ -1211,19 +1262,23 @@ def check_scanner_config(root, lock_text):
             problems.append("pyproject.toml:{}: ruff settings must live in [tool.ruff*] sections (the lock covers only "
                             "those)".format(number))
     for directory, subdirectories, files in os.walk(root):
-        subdirectories[:] = [d for d in subdirectories if d not in SKIP_DIRS and not d.startswith(".venv")]
+        subdirectories[:] = [d for d in subdirectories if d != ".git"]
+        relative = Path(directory).relative_to(root).parts
+        tool_scope = not any(part in SKIP_DIRS or part.startswith(".venv") for part in relative)
         for name in files:
             path = (Path(directory) / name).relative_to(root).as_posix()
-            if SCANNER_AUTOLOAD.search(path) or (name == "pyproject.toml" and path != "pyproject.toml"):
+            if tool_scope and (SCANNER_AUTOLOAD.search(path) or (name == "pyproject.toml" and path != "pyproject.toml")):
                 problems.append("{}: a scanner loads this file on its own, outside the reviewed configuration".format(path))
-            if path in ("tools/check_workflow_policy.py", SCANNER_LOCK) or name.endswith(".md"):
-                continue
+            elif name == ".gitleaksignore":
+                problems.append("{}: a scanner loads this file on its own, outside the reviewed configuration".format(path))
             try:
                 text = (Path(directory) / name).read_text(encoding="utf-8")
             except (UnicodeDecodeError, OSError):
-                continue
+                continue   # not text: gitleaks skips binary files too
             for number, line in enumerate(text.splitlines(), 1):
-                found = INLINE_SUPPRESSION.search(line)
+                found = GITLEAKS_INLINE.search(line)
+                if not found and tool_scope and not name.endswith(".md"):
+                    found = TOOL_INLINE.search(line)
                 if found:
                     problems.append("{}:{}: `{}` silences a scanner beyond one reviewed line".format(path, number, found.group(0)))
     try:
@@ -2251,9 +2306,30 @@ def self_test():
         "actionlint config": ([(".github/actionlint.yaml", lambda t: "paths:\n  .github/workflows/**:\n    ignore: ['.*']\n")], True,
                               ".github/actionlint.yaml: a scanner loads"),
         "ruff outside its sections": ([("pyproject.toml", lambda t: t + "\n[tool]\nruff.lint.select = []\n")], True, "ruff settings must live"),
-        "file-wide noqa": ([("tools/sbom_summary.py", lambda t: "# ruff: noqa\n" + t)], True, "silences a scanner"),
-        "nosec": ([("tools/sbom_summary.py", lambda t: t + "\nimport subprocess  # nosec\n")], True, "silences a scanner"),
-        "gitleaks inline allow": ([("protocol_fixtures.py", lambda t: t + '\nTOKEN = "x"  # gitleaks:allow\n')], True, "silences a scanner"),
+        "file-wide noqa": ([("tools/sbom_summary.py", lambda t: "# ruff" + ": noqa\n" + t)], True, "silences a scanner"),
+        "nosec": ([("tools/sbom_summary.py", lambda t: t + "\nimport subprocess  # no" + "sec\n")], True, "silences a scanner"),
+        "gitleaks inline allow": ([("protocol_fixtures.py", lambda t: t + '\nTOKEN = "x"  # gitleaks' + ':allow\n')], True, "silences a scanner"),
+        # task 16 round 2: gitleaks scans Markdown and build directories too, so its token is found there,
+        # and disabledRules is refused in every spelling, even with the lock advanced
+        "gitleaks allow in Markdown": ([("credentials.md", lambda t: 'token = "x" <!-- gitleaks' + ':allow -->\n')], False, "credentials.md:1:"),
+        "gitleaks allow in build": ([("build/leak.txt", lambda t: "x # gitleaks" + ":allow\n")], False, "build/leak.txt:1:"),
+        "gitleaks allow in dist": ([("dist/leak.txt", lambda t: "x # gitleaks" + ":allow\n")], False, "dist/leak.txt:1:"),
+        "gitleaks allow in __pycache__": ([("__pycache__/leak.txt", lambda t: "x # gitleaks" + ":allow\n")], False, "__pycache__/leak.txt:1:"),
+        "gitleaks allow in .venv": ([(".venv/leak.txt", lambda t: "x # gitleaks" + ":allow\n")], False, ".venv/leak.txt:1:"),
+        "gitleaks allow, upper case": ([("notes.txt", lambda t: "x # GITLEAKS" + ":ALLOW\n")], False, "notes.txt:1:"),
+        "gitleaksignore below the root": ([("build/.gitleaksignore", lambda t: "a1b2c3:x:generic-api-key:1\n")], True, "build/.gitleaksignore: a scanner loads"),
+        "quoted disabledRules": ([(".gitleaks.toml", lambda t: t.replace("useDefault = true\n", 'useDefault = true\n"disabledRules" = ["generic-api-key"]\n'))],
+                                 True, "only bare keys"),
+        "literal-quoted disabledRules": ([(".gitleaks.toml", lambda t: t.replace("useDefault = true\n", "useDefault = true\n'disabledRules' = ['generic-api-key']\n"))],
+                                         True, "only bare keys"),
+        "escaped disabledRules": ([(".gitleaks.toml", lambda t: t.replace("useDefault = true\n", 'useDefault = true\n"disabled\\u0052ules" = ["generic-api-key"]\n'))],
+                                  True, "only bare keys"),
+        "dotted disabledRules": ([(".gitleaks.toml", lambda t: t.replace('title = "protocol-detector"\n', 'title = "protocol-detector"\nextend.disabledRules = ["generic-api-key"]\n'))],
+                                 True, "disabledRules may not"),
+        "lower-case disabledrules": ([(".gitleaks.toml", lambda t: t.replace("useDefault = true\n", 'useDefault = true\ndisabledrules = ["generic-api-key"]\n'))],
+                                     True, "disabledRules may not"),
+        "inline table": ([(".gitleaks.toml", lambda t: t.replace("[extend]\nuseDefault = true\n", 'extend = { useDefault = true, disabledRules = ["generic-api-key"] }\n'))],
+                         True, "inline tables are not allowed"),
     }
     for label, (edits, relock, expected) in cases.items():
         with tempfile.TemporaryDirectory() as directory:
