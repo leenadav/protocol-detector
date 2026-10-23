@@ -8,6 +8,7 @@ beyond what the parsers already validated. RISKS.md documents every entry.
 from types import MappingProxyType
 
 from .ssh_posture import RISK_EXEMPT as _SSH_RISK_EXEMPT
+from .tls_ciphers import PROHIBITED as _PROHIBITED_CIPHERS
 from .tls_server import NO_FORWARD_SECRECY
 from .windows import WEAK_ETYPE_CLASSES
 from .x509 import WEAK_SIGNATURES, validity, weak_key
@@ -51,6 +52,8 @@ RISKS = MappingProxyType({
     "snmpv3-no-privacy": ("low", "SNMPv3 message at authNoPriv other than a Report: authenticated, but the scoped PDU (OIDs and values) travels in cleartext"),
     "kerberos-weak-etype-offered": ("low", "Kerberos AS-REQ or TGS-REQ offers RC4-HMAC, DES or 3DES (deprecated by RFC 6649 and RFC 8429)"),
     "kerberos-weak-etype-selected": ("high", "Kerberos AS-REP or TGS-REP encrypted with RC4-HMAC, DES or 3DES: the reply key or the ticket is open to offline cracking (an RC4 service ticket is the Kerberoasting case)"),
+    "tls-prohibited-cipher-offered": ("medium", "ClientHello offers a cipher suite RFC 9325 forbids negotiating: NULL encryption, anonymous key exchange, export-grade, RC4 or single DES"),
+    "tls-64-bit-block-cipher-offered": ("low", "ClientHello offers a 3DES or IDEA suite (64-bit block, Sweet32; RFC 9325 says SHOULD NOT negotiate)"),
     "tls-certificate-outside-validity": ("medium", "TLS 1.2 server leaf certificate expired or not yet valid at the capture time (evaluated only when the host supplies a capture clock)"),
 })
 MAX_CERTIFICATE_LIFETIME_DAYS = 398   # CA/Browser Forum baseline since September 2020
@@ -68,7 +71,7 @@ _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags"
                      "smb_signing", "smb_encryption", "rdp_selected_security",
                      "mysql_tls_supported", "mysql_client_ssl", "mysql_auth_plugin", "tds_session_encryption", "postgresql_message",
                      "snmp_security_level", "snmp_usm_discovery", "snmp_pdu",
-                     "kerberos_etype_offered", "kerberos_reply_etype", "kerberos_ticket_etype"))
+                     "kerberos_etype_offered", "kerberos_reply_etype", "kerberos_ticket_etype", "tls_weak_cipher_offered"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -235,6 +238,8 @@ def flow_risks(verdict, client, server, at=None):
             elif field in ("kerberos_reply_etype", "kerberos_ticket_etype"):
                 if value in WEAK_ETYPE_CLASSES:
                     found.append("kerberos-weak-etype-selected")
+            elif field == "tls_weak_cipher_offered":
+                found.append("tls-prohibited-cipher-offered" if value in _PROHIBITED_CIPHERS else "tls-64-bit-block-cipher-offered")
             elif field == "selected_key_exchange":
                 if value in NO_FORWARD_SECRECY:
                     found.append("tls-no-forward-secrecy")

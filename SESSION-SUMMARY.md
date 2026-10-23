@@ -41,6 +41,7 @@ last look; v0.51 and v0.52 were queued).
 | v0.61 | Database transport protection: `tds_session_encryption` (full, login-only, none) on the TDS PRELOGIN response, `postgresql_message=startup`; risks `database-encryption-unavailable`, `database-session-unencrypted`; `mysql_clear_password` raises `cleartext-credential-protocol`. |
 | v0.62 | SNMPv3 security level: `snmp_security_level` (no-auth-no-priv, auth-no-priv, auth-priv), `snmp_usm_discovery`; risks `snmpv3-unauthenticated`, `snmpv3-no-privacy` with the discovery and Report exemptions. |
 | v0.63 | Kerberos encryption types: `kerberos_etype_preferred`, `kerberos_etype_offered` on KDC requests, `kerberos_reply_etype`, `kerberos_ticket_etype` on replies; risks `kerberos-weak-etype-offered`, `kerberos-weak-etype-selected`. |
+| v0.64 | Weak cipher suites in TLS ClientHello offers: `tls_weak_cipher_offered` (null, export, anon, rc4, des, 64-bit-block) from the IANA registry via `tools/tls_cipher_classes.py`; risks `tls-prohibited-cipher-offered`, `tls-64-bit-block-cipher-offered`. |
 
 Numbers moved from 59 families / 60 applications / about 420 tests at the
 start of the session to 75 families (68 automatic), 87 catalog applications,

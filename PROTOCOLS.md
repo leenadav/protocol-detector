@@ -887,3 +887,34 @@ or `des3`) and `kerberos-weak-etype-selected` (a reply or its ticket uses one).
 Behaviour diff against v0.62 (84264 inputs): 1106 `kerberos` inputs gain
 evidence rows only; status, protocol and reason are unchanged (also checked
 over 5016 targeted single-byte mutations of three messages).
+
+## Weak cipher suites in TLS ClientHello offers (v0.64)
+
+No new family and no change to the ClientHello profile. The offered
+cipher-suite vector, already validated, is classified against a table derived
+from the IANA "TLS Cipher Suites" registry by `tools/tls_cipher_classes.py`
+(registry snapshot and sha256 in `protocol_engine/tls_ciphers.py`). Each suite
+gets at most one class, the first rule its registered name matches:
+
+| `tls_weak_cipher_offered` | Registry names | RFC 9325 (BCP 195) 4.1 |
+|---|---|---|
+| `null` | `*_WITH_NULL_*`, `TLS_NULL_WITH_NULL_NULL`, `TLS_SHA256_SHA256`, `TLS_SHA384_SHA384` | MUST NOT negotiate |
+| `export` | `*_EXPORT*` | MUST NOT negotiate |
+| `anon` | `*_anon_*` | MUST NOT negotiate |
+| `rc4` | `*_RC4_*` | MUST NOT negotiate |
+| `des` | `*_WITH_DES_CBC_*`, `*_DES40_*` | MUST NOT negotiate |
+| `64-bit-block` | `*_3DES_EDE_*`, `*_WITH_IDEA_*` | SHOULD NOT negotiate (Sweet32) |
+
+One row per class present, in the order above; suite numbers are not emitted.
+GREASE values, signalling values (`*_SCSV`) and every other suite carry no
+class. The rows are offers: the server's selection is still reported by
+`selected_cipher` and `selected_cipher_mode`, whose profile admits none of
+these suites. DTLS and QUIC ClientHellos are not classified (QUIC offers TLS
+1.3 suites only).
+
+Risks (RISKS.md): `tls-prohibited-cipher-offered` (any MUST NOT class) and
+`tls-64-bit-block-cipher-offered`.
+
+Behaviour diff against v0.63 (84264 inputs): no difference, since no fixture
+ClientHello or seeded mutation offers one of these suites; the new rows and
+risks are exercised by `test_v064`.

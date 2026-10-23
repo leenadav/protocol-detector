@@ -47,6 +47,8 @@ evidence strength is `heuristic` and their thresholds are listed here.
 | `ssh-weak-algorithm-offered` | medium | An SSH KEXINIT (v0.58) offers a weak class (`ssh_weak_algorithm`): SHA-1 key exchange, DSA host keys, RC4, 3DES or 64-bit block ciphers, CBC mode, MD5 or truncated MACs, or no MAC. `hostkey-rsa-sha1` (ssh-rsa) is reported but does not raise the risk alone; `cipher-none` raises its own risk. An offer, not the negotiated choice |
 | `ssh-none-cipher-offered` | high | An SSH KEXINIT offers the `none` cipher in either direction (v0.58) |
 | `ssh-terrapin-exposed` | medium | An SSH KEXINIT offers ChaCha20-Poly1305, or an encrypt-then-MAC MAC with a CBC or 64-bit-block cipher in the same direction, without a strict key exchange marker (`ssh_terrapin=exposed`, CVE-2023-48795, v0.58) |
+| `tls-prohibited-cipher-offered` | medium | ClientHello (v0.64) offering a suite RFC 9325 says MUST NOT be negotiated: `tls_weak_cipher_offered` of `null`, `export`, `anon`, `rc4` or `des` (classes derived from the IANA registry names). An offer, not the server's choice |
+| `tls-64-bit-block-cipher-offered` | low | ClientHello (v0.64) offering a 3DES-EDE or IDEA suite (`tls_weak_cipher_offered=64-bit-block`; Sweet32, RFC 9325 SHOULD NOT) |
 | `tls-no-forward-secrecy` | medium | ServerHello key exchange without forward secrecy (`selected_key_exchange`, v0.57): `static-rsa` (TLS_RSA_*), `static-ecdh` (TLS_ECDH_* suites keyed by the certificate) in TLS 1.2 or DTLS 1.2, or `psk` (TLS 1.3 `pre_shared_key` without `key_share`). The selection is the server's assertion; completion is unverified |
 | `tls-ca-certificate-as-leaf` | medium | With `--certificates` (v0.57): the leaf's basicConstraints asserts cA TRUE (`tls_certificate_ca=yes`), a CA certificate presented as the end entity |
 | `tls-certificate-not-for-server-auth` | medium | The leaf's extendedKeyUsage lists neither id-kp-serverAuth nor anyExtendedKeyUsage (`tls_certificate_eku=other`, v0.57). An absent extension never flags |
@@ -95,6 +97,6 @@ names and legitimate content-hash labels all trigger it; it is a triage hint.
 Certificate validation (signature, chain, name match, revocation; expiry is
 judged only against the capture time a host supplies, never a wall clock),
 TLS 1.3 certificates (encrypted), cipher-strength grading beyond forward
-secrecy and AEAD versus CBC, HTTP header anomaly
+secrecy, AEAD versus CBC and the RFC 9325 offer classes, HTTP header anomaly
 scoring, port scan or probing detection, periodicity/beaconing analysis, byte
 distribution learning, and any risk that needs more than the initial message.

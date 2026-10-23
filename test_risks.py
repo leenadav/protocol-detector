@@ -163,7 +163,7 @@ class RiskTests(unittest.TestCase):
         self.assertEqual(fields(modern, "tls_offered_max_version"), {"tls_offered_max_version": "1.3"})
         self.assertEqual(classify(modern, "tcp", 443).risks, ())
         sni = (0, b"\x00\x0c\x00\x00\x09localhost")
-        legacy_field = hello([0x002f, 0x000a], [sni])
+        legacy_field = hello([0x002f, 0x0035], [sni])   # AES suites only: 3DES raises its own risk since v0.64 (test_v064)
         self.assertEqual(self.risks(legacy_field, 443), ())  # legacy field 1.2 without supported_versions is TLS 1.2
         tls10 = legacy_field[:9] + b"\x03\x01" + legacy_field[11:]
         self.assertEqual(self.risks(tls10, 443), ("tls-legacy-version-offer",))

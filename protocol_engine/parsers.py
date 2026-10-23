@@ -2,6 +2,7 @@
 import re
 from .media import METHODS, accept_class, auth_scheme_class, challenge_scheme_classes, content_type_class
 from .model import normalize_hostname
+from .tls_ciphers import offered_weak_classes
 
 TOKEN = rb"[!#$%&'*+.^_`|~0-9A-Za-z-]+"
 
@@ -471,8 +472,9 @@ def _u16_list(data, width=2):
 def parse_hello(body, info=None, offered=None):
     """Validate a ClientHello body; return (hostname, alpn) and fill info when supplied.
 
-    `offered`, when a list, receives [legacy_version, supported_versions tuple]
-    without the cost of the full ClientHelloInfo collection. The fixed fields and
+    `offered`, when a list, receives [legacy_version, supported_versions tuple,
+    encrypted_client_hello type, cipher-suite vector bytes] without the cost of
+    the full ClientHelloInfo collection. The fixed fields and
     the extension walk are index arithmetic over the body (this is the hottest
     parser in the engine); every bound raises the same ParseError the Reader
     helper raises, so truncated or inconsistent lengths fail identically.
@@ -485,6 +487,7 @@ def parse_hello(body, info=None, offered=None):
         offered.append(int.from_bytes(version, "big"))
         offered.append(())
         offered.append(None)   # encrypted_client_hello type ("outer"/"inner") when the extension is present
+        offered.append(b"")    # cipher-suite vector, set once its length is validated (v0.64)
     if version not in (b"\x03\x01", b"\x03\x02", b"\x03\x03"):
         raise ParseError("Unsupported ClientHello version")
     pos = 34  # version + random
@@ -515,6 +518,8 @@ def parse_hello(body, info=None, offered=None):
     pos += compression_length
     if cipher_length < 2 or cipher_length % 2 or not compression or 0 not in compression:
         raise ParseError("Invalid cipher or compression vector")
+    if offered is not None:
+        offered[3] = ciphers
     if info is not None:
         info.version = int.from_bytes(version, "big")
         info.ciphers = _u16_list(ciphers)
@@ -680,6 +685,10 @@ class TLSParser:
                     if offered[2] is not None:
                         # The visible SNI is the client-facing public name; the real name is encrypted.
                         self.extra_evidence += (("tls_ech", offered[2], "client_hello", "offered"),)
+                    weak = offered_weak_classes(offered[3])
+                    if weak:
+                        # RFC 9325 classes of offered suites (v0.64); suite numbers are not emitted.
+                        self.extra_evidence += tuple(("tls_weak_cipher_offered", label, "client_hello", "offered") for label in weak)
                     if info is not None and self.config.fingerprints:
                         from .fingerprints import ja3, ja4
                         self.fingerprints = (("ja4", ja4(info), "client_hello"), ("ja3", ja3(info), "client_hello"))
