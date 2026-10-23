@@ -1,6 +1,7 @@
 # Weekly supply-chain drift gate: the pinned action SHAs must still be the commits their
 # tag comments name, the checksum-verified tool downloads must still resolve, and every
-# hash in requirements-dev.txt must still match what the index serves. A failure here
+# hash in requirements-dev.txt must still match what the index serves, and the Go that builds
+# the pinned scanners must be a supported line on its newest patch. A failure here
 # means a tag moved, a release disappeared or an index artifact changed: a review item,
 # never something to fix by re-pinning blindly. See SSDLC.md.
 name: supply-chain-drift
@@ -14,11 +15,15 @@ on:
       - ".github/workflows/**"   # every workflow holds pinned actions; tools/check_workflow_policy.py enforces this
       - "tools/check_pin_drift.py"
       - "requirements-dev.txt"
+      - "tools/check_go_drift.py"
+      - "tools/scanners/go.mod"
   pull_request:
     paths:
       - ".github/workflows/**"   # every workflow holds pinned actions; tools/check_workflow_policy.py enforces this
       - "tools/check_pin_drift.py"
       - "requirements-dev.txt"
+      - "tools/check_go_drift.py"
+      - "tools/scanners/go.mod"
 
 permissions:
   contents: read
@@ -30,6 +35,12 @@ concurrency:
 env:
   PYTHONDONTWRITEBYTECODE: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+# Explicit bash runs `bash --noprofile --norc -eo pipefail`; the unspecified default is
+# `bash -e` without pipefail, under which a failing check piped into tee passes the step.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   action-pin-drift:
@@ -104,3 +115,25 @@ jobs:
           python -m venv audit-env
           audit-env/bin/python -m pip install --require-hashes --no-index --find-links downloads -r requirements-dev.txt > /dev/null
           audit-env/bin/pip-audit --version | tee -a "$GITHUB_STEP_SUMMARY"
+
+  go-toolchain-drift:
+    name: the Go that builds the pinned scanners is supported and on its newest patch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: The checker's offline self-test
+        run: python -B tools/check_go_drift.py --self-test
+      - name: The setup-go version is one Go release, a supported line, on its newest patch
+        # Read from the Go module proxy's toolchain list; govulncheck in ci covers known
+        # vulnerabilities, this covers a release line or patch level that has fallen behind.
+        run: python -B tools/check_go_drift.py | tee -a "$GITHUB_STEP_SUMMARY"

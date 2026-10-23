@@ -360,6 +360,10 @@ class KexInit:
             value = packet[pos:pos + size]
             if value.translate(None, _SSH_NAME_BYTES):      # same rule as a per-byte check, at C speed (v0.58)
                 raise ParseError("SSH KEXINIT name-list must be printable ASCII")
+            # RFC 4251 section 6: a non-empty name-list holds non-empty names of at most 64 characters, so no
+            # leading, trailing or doubled comma (v0.58 review round 1). An empty list (size 0) stays valid.
+            if value and any(not 1 <= len(name) <= 64 for name in value.split(b",")):
+                raise ParseError("SSH KEXINIT name-list has an empty or over-long name")
             lists.append(value)
             pos += size
         if pos + 5 > payload_end or packet[pos] > 1 or packet[pos + 1:pos + 5] != bytes(4):

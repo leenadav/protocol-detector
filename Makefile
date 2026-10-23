@@ -1,4 +1,4 @@
-.PHONY: test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift workflow-policy
+.PHONY: test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -73,6 +73,8 @@ package:
 workflow-lint:
 	actionlint -no-color .github/workflows/*.yml
 	zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows
+	$(PYTHON) -B tools/check_workflow_yaml.py --self-test
+	$(PYTHON) -B tools/check_workflow_yaml.py
 
 lint:
 	ruff check .
@@ -80,8 +82,14 @@ lint:
 pins:
 	$(PYTHON) -B tools/check_action_pins.py .github/workflows
 
-# The ci gate lists every ci job; the drift workflow triggers on every workflow file.
+# The ci gate lists every ci job; the drift workflow triggers on every workflow file;
+# release publishes serialize; a release tag must point at a commit on main.
 workflow-policy:
+	$(PYTHON) -B tools/check_release_ref.py --self-test
+	$(PYTHON) -B tools/check_release_exposure.py --self-test
+	$(PYTHON) -B tools/check_release_checks.py --self-test
+	$(PYTHON) -B tools/release_audit.py --self-test
+	$(PYTHON) -B tools/check_go_drift.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 
@@ -99,3 +107,8 @@ sbom:
 pin-drift:
 	$(PYTHON) -B tools/check_pin_drift.py --self-test
 	$(PYTHON) -B tools/check_pin_drift.py .github/workflows
+
+# Weekly drift gate run locally: the Go that builds the pinned scanners is supported and on its newest patch (network).
+go-drift:
+	$(PYTHON) -B tools/check_go_drift.py --self-test
+	$(PYTHON) -B tools/check_go_drift.py

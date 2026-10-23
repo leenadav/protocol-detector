@@ -18,7 +18,7 @@ target-version = "py39"
 
 [tool.ruff.lint]
 # Correctness and security rules only; style is not a CI gate.
-select = ["E9", "F", "B", "S", "PLE", "W605"]
+select = ["E9", "F", "B", "S", "PLE", "W605", "PGH004"]   # PGH004: a noqa must name its rule
 ignore = [
   "B011",  # assert False in tests is deliberate
   "S101",  # asserts are test code
@@ -33,6 +33,8 @@ ignore = [
 "live_capture.py" = ["S603", "S404", "S607"]   # argv-only subprocess with resolved executable, reviewed
 "tools/compare_engine.py" = ["S603"]        # sys.executable with argv-only arguments, reviewed
 "tools/check_pin_drift.py" = ["S603"]       # resolved git executable with argv-only arguments, reviewed
+"tools/check_release_exposure.py" = ["S603"]   # resolved git executable with argv-only arguments, reviewed
+"tools/check_workflow_policy.py" = ["S603"]    # resolved git executable with argv-only arguments, reviewed
 "live_smoke.py" = ["S603", "S404", "S607", "S104"]
 "*interop*.py" = ["S603", "S404", "S607"]
 "benchmark*.py" = ["S603", "S404", "S607"]

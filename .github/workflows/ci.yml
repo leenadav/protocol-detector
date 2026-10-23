@@ -21,6 +21,12 @@ env:
   PYTHONDONTWRITEBYTECODE: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
+# Explicit bash runs `bash --noprofile --norc -eo pipefail`; the unspecified default is
+# `bash -e` without pipefail, under which a failing check piped into tee passes the step.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   verify:
     name: tests (python ${{ matrix.python }})
@@ -214,7 +220,6 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      pull-requests: read   # gitleaks-action lists the pull request's commits on pull_request events
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
@@ -230,7 +235,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
       - name: Install pinned analysis tools
-        run: python -m pip install --require-hashes -r requirements-dev.txt
+        run: python -I -m pip install --require-hashes -r requirements-dev.txt
       - name: Ruff (errors, bugbear, security rules)
         run: |
           ruff check --output-format github .
@@ -244,12 +249,32 @@ jobs:
             grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Secret scan (gitleaks, full history)
-        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+      - name: Set up Go for the pinned scanner builds
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: "1.27.3"
+          cache: false
+      - name: Secret scan (gitleaks 8.30.1, full history, inline allows ignored)
+        # tools/scanners/go.mod and go.sum pin gitleaks and every dependency (checked against the Go
+        # checksum database; rule 16 locks go.mod). Only those two files are copied to RUNNER_TEMP and
+        # built there, read-only. --ignore-gitleaks-allow makes gitleaks itself ignore inline allow
+        # comments in every commit it scans (item 21); .gitleaks.toml (rule 16) is the only allowlist.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
-          GITLEAKS_ENABLE_SUMMARY: "true"
+          GOPROXY: https://proxy.golang.org
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          mkdir -p "$RUNNER_TEMP/scanners"
+          cp tools/scanners/go.mod tools/scanners/go.sum "$RUNNER_TEMP/scanners/"
+          cd "$RUNNER_TEMP/scanners"
+          GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8
+          cd "$GITHUB_WORKSPACE"
+          "$RUNNER_TEMP/bin/gitleaks" git --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
 
   supply-chain:
     name: supply chain (SBOM, licence, pins)
@@ -349,6 +374,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0   # rule 16 searches every commit gitleaks scans, back to its baseline
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.13"
@@ -366,20 +392,34 @@ jobs:
         run: |
           ./actionlint -no-color .github/workflows/*.yml
           echo "actionlint: $(find .github/workflows -name '*.yml' | wc -l) workflow files clean" | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Workflow policy (gate covers every ci job, drift gate triggers on every workflow, releases serialize)
-        run: |
-          python -B tools/check_workflow_policy.py --self-test
-          python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Audit every workflow for security weaknesses (zizmor, pedantic persona, offline audits)
         # Template injection, credential persistence, cache poisoning, excessive or undocumented
         # permissions, unpinned or superfluous actions, missing concurrency limits. Any finding fails.
+        # It runs before any repository code in this job (tools/check_workflow_policy.py rule 15),
+        # so no repository script can shadow it through the runner's per-step path file.
         run: |
-          python -m pip install --require-hashes -r requirements-dev.txt > /dev/null
+          python -I -m pip install --require-hashes -r requirements-dev.txt > /dev/null
           zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows | tee zizmor.txt
           echo "zizmor $(zizmor --version | awk '{print $NF}'): $(tail -n 1 zizmor.txt)" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Workflow policy (gate covers every ci job, drift gate triggers on every workflow, releases serialize, tags must be on main)
+        run: |
+          python -B tools/check_release_ref.py --self-test
+          python -B tools/check_release_exposure.py --self-test
+          python -B tools/check_release_checks.py --self-test
+          python -B tools/release_audit.py --self-test
+          python -B tools/check_go_drift.py --self-test
+          python -B tools/check_release_exposure.py --ref HEAD | tee -a "$GITHUB_STEP_SUMMARY"
+          python -B tools/check_workflow_policy.py --self-test
+          python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Cross-check the workflow policy parser against PyYAML (any disagreement is a policy blind spot)
+        # tools/check_workflow_policy.py rule 11 pins this step (it installs its own hash-pinned toolchain).
+        run: |
+          python -m pip install --require-hashes -r requirements-dev.txt > /dev/null
+          python -B tools/check_workflow_yaml.py --self-test
+          python -B tools/check_workflow_yaml.py | tee -a "$GITHUB_STEP_SUMMARY"
 
   toolchain-audit:
-    name: known vulnerabilities in the dev toolchain (pip-audit)
+    name: known vulnerabilities in the dev toolchain (pip-audit, govulncheck)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -396,9 +436,35 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
       - name: Install the hash-pinned toolchain (pip-audit included)
-        run: python -m pip install --require-hashes -r requirements-dev.txt
+        run: python -I -m pip install --require-hashes -r requirements-dev.txt
       - name: Audit every pinned development dependency against the advisory databases
         run: pip-audit -r requirements-dev.txt --require-hashes --strict --progress-spinner off --desc on | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Set up Go for the pinned scanner builds
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: "1.27.3"
+          cache: false
+      - name: Audit the Go-built scanners against the Go vulnerability database (govulncheck)
+        # The same pinned build as the secret scan (tools/scanners), checked symbol by symbol: any known
+        # vulnerability reachable in gitleaks or govulncheck, in a dependency or the Go standard library
+        # it was built with, fails the job (item 22).
+        env:
+          GOPROXY: https://proxy.golang.org
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          mkdir -p "$RUNNER_TEMP/scanners"
+          cp tools/scanners/go.mod tools/scanners/go.sum "$RUNNER_TEMP/scanners/"
+          cd "$RUNNER_TEMP/scanners"
+          GOBIN="$RUNNER_TEMP/bin" go install tool
+          cd "$GITHUB_WORKSPACE"
+          "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/gitleaks" | tee -a "$GITHUB_STEP_SUMMARY"
+          "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/govulncheck" | tee -a "$GITHUB_STEP_SUMMARY"
 
   security-requirements:
     name: security requirements gate

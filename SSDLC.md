@@ -9,8 +9,8 @@ artifact in the repository and every security claim has an executable check.
 | Design | Threat model per trust boundary, STRIDE table, explicit contracts for budgets and evidence | THREAT-MODEL.md, ARCHITECTURE.md, PROTOCOLS.md profile per family |
 | Implementation | Bounded parsing patterns (length before allocation, one parser per stream, immutable registries), no runtime dependencies, Python 3.9 syntax | CONTRIBUTING.md definition of done, code review via PR template checklist, issue templates that ask for synthetic inputs only; CODEOWNERS |
 | Verification | Unit tests (every split point, single bytes, truncations), seeded mutation fuzzing, GC-release tests, work-bound assertions, static analysis, documentation numbers recomputed from the tree | `make check`, CI `verify` matrix (3.9/3.11/3.13) with job summaries, CI `behaviour-diff` (run-id seed) and CI `mutation-smoke` (a second, fixed seed under Python 3.9 plus a 100-mutation fuzz pass seeded by the run number, both with the reproducing command in the job summary), ruff, bandit, CodeQL with the `security-extended` and `security-and-quality` suites (error-level findings fail via `tools/codeql_gate.py`, which also writes a per-rule table to the job summary; SARIF kept as an artifact, uploaded to the Security tab once code scanning is enabled in repository settings), `tools/check_docs_counts.py` (README/REVIEW-SCOPE families, applications, tests and version), nightly fuzz |
-| Supply chain | SHA-pinned actions whose tag comments are re-verified weekly, hash-pinned dev tools (wheel and source hashes where a wheel is platform specific), known-vulnerability audit of the toolchain, SBOM, read-only tokens with per-job additions only where a step needs them, Dependabot, workflow linting | CI `supply-chain`, CI `toolchain-audit` (pip-audit over requirements-dev.txt in hash mode, strict, also on the weekly schedule so new advisories surface without a code change), dependabot.yml, `tools/check_action_pins.py`, CI `workflow-lint` (actionlint fetched by version with its published SHA-256 verified before use, then zizmor from the hash-pinned toolchain auditing every workflow for template injection, credential persistence, cache poisoning, undocumented or excessive permissions, unpinned or superfluous actions and missing concurrency limits; pedantic persona, any finding fails), harden-runner egress audit on every job of every workflow, the release published with the runner's own `gh` CLI rather than a third-party action, `.github/workflows/supply-chain-drift.yml` (weekly and whenever any workflow file, requirements-dev.txt or the checker change, which `tools/check_workflow_policy.py` enforces against the files the drift checker scans: `tools/check_pin_drift.py` resolves each pinned SHA's tag comment against the action repository and fails when the tag moved or vanished; the actionlint release and SHA-256 named in ci.yml are downloaded and re-verified; every dev dependency is downloaded with `--require-hashes` and pip-audit is installed from those verified files alone) |
-| Release | Every push builds the sdist and wheel, checks the wheel holds exactly the engine package with no runtime dependency (`tools/check_wheel.py`) and installs it into an empty environment under Python 3.13 and again under Python 3.9, where `tools/wheel_smoke.py` classifies an HTTP request and a DNS query from the installed package and refuses an import from the checkout (CI `package`); on a `v*` tag the release workflow's read-only build job passes the full gate (compile, tests, ruff, pins, security requirements, docs numbers, coverage matrix, policy lint), checks that the reported version equals pyproject.toml and the tag, builds, runs the wheel gate and smoke again and records the SBOM and SHA256SUMS; a separate publish job, the only one holding `contents`, `id-token` and `attestations: write`, checks out nothing, re-verifies the build job's checksums, attests SLSA-style build provenance (`actions/attest-build-provenance`, pinned by SHA) and publishes with the runner's `gh release create --verify-tag`, in one constant `release-publish` concurrency group so releases of different tags never publish at once. Manual dispatch and changes to release.yml or pyproject.toml run the build job alone as a dry run, so the release path is exercised before the first tag | `.github/workflows/release.yml`, `make package` |
+| Supply chain | SHA-pinned actions whose tag comments are re-verified weekly, a weekly check that the Go building the pinned scanners is a supported line on its newest patch (`tools/check_go_drift.py`), hash-pinned dev tools (wheel and source hashes where a wheel is platform specific), known-vulnerability audit of the toolchain, SBOM, read-only tokens with per-job additions only where a step needs them, Dependabot, workflow linting | CI `supply-chain`, CI `toolchain-audit` (govulncheck over the Go-built scanners pinned in `tools/scanners`, symbol-level, standard library included; pip-audit over requirements-dev.txt in hash mode, strict, also on the weekly schedule so new advisories surface without a code change), dependabot.yml, `tools/check_action_pins.py`, CI `workflow-lint` (actionlint fetched by version with its published SHA-256 verified before use, then zizmor from the hash-pinned toolchain auditing every workflow for template injection, credential persistence, cache poisoning, undocumented or excessive permissions, unpinned or superfluous actions and missing concurrency limits; pedantic persona, any finding fails), harden-runner egress audit on every job of every workflow, the release published with the runner's own `gh` CLI rather than a third-party action, `.github/workflows/supply-chain-drift.yml` (weekly and whenever any workflow file, requirements-dev.txt or the checker change, which `tools/check_workflow_policy.py` enforces against the files the drift checker scans: `tools/check_pin_drift.py` resolves each pinned SHA's tag comment against the action repository and fails when the tag moved or vanished; the actionlint release and SHA-256 named in ci.yml are downloaded and re-verified; every dev dependency is downloaded with `--require-hashes` and pip-audit is installed from those verified files alone) |
+| Release | Every push builds the sdist and wheel, checks the wheel holds exactly the engine package with no runtime dependency (`tools/check_wheel.py`) and installs it into an empty environment under Python 3.13 and again under Python 3.9, where `tools/wheel_smoke.py` classifies an HTTP request and a DNS query from the installed package and refuses an import from the checkout (CI `package`); on a `v*` tag the release workflow's read-only build job passes the full gate (compile, tests, ruff, pins, security requirements, docs numbers, coverage matrix, policy lint), checks that the reported version equals pyproject.toml and the tag, refuses a tag whose commit is not already on `main` (GitHub compare API with the read-only token, `tools/check_release_ref.py`, failing closed on any unexpected answer; dry runs only report; this and the release checks run first, in a `release-gate` job of pinned actions and the two pinned steps only, which the build and publish jobs need), builds, runs the wheel gate and smoke again and records the SBOM and SHA256SUMS; a separate publish job, the only one holding `contents`, `id-token` and `attestations: write`, checks out nothing, re-verifies the build job's checksums, attests SLSA-style build provenance (`actions/attest-build-provenance`, pinned by SHA) and publishes with the runner's `gh release create --verify-tag`, in one constant `release-publish` concurrency group so releases of different tags never publish at once. Manual dispatch and changes to publish-release.yml, its provenance helper or pyproject.toml run the build job alone as a dry run, so the release path is exercised before the first tag | `.github/workflows/publish-release.yml`, `make package` |
 | Response | Private vulnerability reporting, SLAs, regression test with every fix, benchmark when the hot path changes | SECURITY.md, BENCHMARK-Vnnn.md |
 
 ## Definition of done for a change
@@ -41,10 +41,22 @@ only with green checks is a review discipline, not a guarantee.
 | Control | Status |
 |---|---|
 | `ci`, `codeql`, `supply-chain-drift` and `release` workflow gates, job-level token permissions, SHA-pinned actions, hash-pinned toolchain | enforced by the workflows on every run |
-| Release publishes serialized, publish only from a pushed `v*` tag that matches the package version | enforced by `release.yml` |
+| Release publishes serialized, publish only from a pushed `v*` tag that matches the package version | enforced by the guarded controller `publish-release.yml` for tags on commits that carry it |
+| Release provenance: a `v*` tag publishes only a commit already on `main` | enforced since 2026-10-23, when Lee disabled the legacy `release` workflow (Actions workflow id 392108448, `.github/workflows/release.yml`, state `disabled_manually`). `publish-release.yml` runs the check (`tools/check_release_ref.py`; rule 4 of `tools/check_workflow_policy.py` pins its exact env and run lines, the publish job's condition and its dependency path, and the whole `release-gate` job it runs in: keys, permissions, runner and every step in order, so no earlier step or repository test of that job can shadow its `gh` or `python` through the runner's per-step path or env file). A tag push runs the workflow file at the tagged commit, and older commits (for example 214042f, 6e1cd61, or `main` at 70e7356) still hold the unguarded `.github/workflows/release.yml`; with that workflow disabled, a `v*` tag on them publishes nothing (`check_release_exposure.py --disabled .github/workflows/release.yml` reports no unguarded path on any of them, and `exposed` for `main` without the disable). Re-enabling the legacy workflow would reopen that path, so it must stay disabled. Rule 5 keeps the path out of the tree, so the disable never touches the controller. `python3 tools/check_release_exposure.py --ref <commit> [--disabled .github/workflows/release.yml]` models a tag on any commit without creating one |
+| Release checks: a `v*` tag publishes only a commit whose `ci` and `codeql` workflows passed | enforced by `publish-release.yml` for tags on commits that carry it (`tools/check_release_checks.py`, with `actions: read` on the read-only `release-gate` job). Results are bound to the workflow's identity, not to a job name another workflow could reuse: only `push` runs of `.github/workflows/ci.yml` and `.github/workflows/codeql.yml` for that exact commit count. A push run executes the commit's own copy of the file, and a `ci` run succeeds only when its `ci gate (all jobs)` does. At least one run of each must have completed, and the latest completed one must have succeeded. A run GitHub still shows as in progress neither passes nor blocks: a stale job state was observed on 6e1cd61 after its workflow run completed. A missing, only-pending, failed or cancelled run, or an unreadable API answer, fails the tag. Rule 4 pins the step and its `release-gate` job. With the legacy `release` workflow disabled (2026-10-23), this holds for every tag; re-enabling it would reopen older commits. Tagging a commit whose ci or CodeQL is still running, or was cancelled by a newer push, fails the release; re-run it once a completed run exists |
+| Attestation verified before publishing: every released file's provenance attestation must verify, bound to this controller workflow, the tag ref, the commit and a GitHub-hosted runner, before `gh release create` runs | enforced by `publish-release.yml` for tags on commits that carry it: `gh attestation verify` with `--signer-workflow`, `--source-ref`, `--source-digest` and `--deny-self-hosted-runners`. Rule 8 of the policy makes the publish job an allowlist: exactly its six steps, in order, each pinned by action identity or exact env and run lines, so no other step can publish before verification. It also enforces that only the publish job holds a write permission, that the workflow env sets no `BASH_ENV` or anything beyond the two Python variables, and that the controller references no `secrets`, `vars`, `inputs` or `client_payload` context in any syntax or case (`secrets['X']` and `toJSON(secrets)` included), so no credential but each job's own GITHUB_TOKEN can authenticate. The publish path only runs on a real tag, so a build-job dry-run step checks that the runner's `gh` supports every flag used. Same condition as provenance: the legacy `release` workflow stays disabled |
+| Consistent action pins: one SHA and tag per action repository across every workflow; `upload-artifact` and `download-artifact` (the release handoff) on one major version | enforced by rule 7 of `tools/check_workflow_policy.py` (CI `workflow-lint`, `make check`, pre-commit). A partial bump fails before merge. Dependabot PR #8, computed before the release split, would have moved only the upload side to v7 |
+| Workflow text means what GitHub reads: no YAML encoding that decodes into something the line-based policy rules did not see | enforced by rule 9 of `tools/check_workflow_policy.py`: outside literal block scalars, no backslash (so no `\u0073ecrets`-style escapes or escaped line breaks), and no tag, anchor, alias, merge key or explicit key. No flow mapping is allowed at all outside `${{ }}` expressions, and a flow sequence must be one line of plain or quoted scalars, so `push: {? tags: ["v*"]}` cannot hide a trigger from rule 5. No workflow may authenticate with a stored credential. On every line, comments included, the words `secrets` and `vars` may appear only in one job name; since item 21 no workflow references `${{ secrets.GITHUB_TOKEN }}` either, and a step authenticates as the job with `${{ github.token }}`. Comments are scanned because inside a `run: |` block a `#` line is script data, such as here-document input that Actions interpolates, not a YAML comment. This is a word ban rather than an expression parser, so no expression grammar can route around it: a quoted `}}` in a `format()` string, multi-line expressions, `secrets: inherit` and `if:` conditions are all covered. A read-only workflow therefore cannot publish with a PAT. Rule 5 also keeps release-relevant write scopes (`contents`, `id-token`, `attestations`, `packages`, `actions`, `deployments`, `statuses`, `write-all`) out of every workflow but the controller. The credential, trigger, pin and pinned-step rules therefore read the same text GitHub evaluates |
+| Scheduled release audit: every `v*` tag points at a commit on `main`; every published release names an existing, on-`main` `v*` tag and that tag's current commit; and every downloaded file, hidden ones included, carries an attestation from `publish-release.yml` for that tag ref and commit | enforced after the fact, once merged to `main`, by `.github/workflows/release-audit.yml`. It runs daily and on manual dispatch. A scheduled run always uses the default branch's copy, so no tag, legacy `release.yml` or branch-edited workflow can swap it. It holds read-only permissions (`contents`, `attestations: read`); `tools/release_audit.py` decides, and fails closed on unreadable facts. A failing run is GitHub's notification to the owner. Rule 10 of the policy keeps the schedule, pins the gather-and-decide step and pins the audit job whole (keys, permissions, runner, harden-runner, checkout and setup-python before that step and nothing else, no workflow env, no other job), so no step can shadow the gather step's `gh` and fabricate verified attestations. This is detective: it reports a bad release but cannot stop one being published |
+| The policy reads what GitHub reads: the line parser in `tools/check_workflow_policy.py` and a real YAML parser agree on every fact the rules use | enforced by `tools/check_workflow_yaml.py` in CI `workflow-lint` and `make workflow-lint`, with the hash-pinned PyYAML. Rule 11 of the policy pins the CI step, including its own toolchain install, and forbids `if:` or `continue-on-error` on it or on its job, so the step cannot be dropped or masked while the gate stays green. `make check` does not run it because it needs the dev toolchain. Every workflow is parsed both ways. Any disagreement fails: top-level and job keys, job ids, `needs`, tag triggers, permissions, each step's keys, `name`, `if`, `uses`, `env`, `with` and `run` lines, or the `uses` list. The stored-credential ban is also re-run over every decoded key and string. Each review finding against the line rules was such a disagreement, so this closes the class rather than one spelling. Limit: PyYAML is YAML 1.1 and GitHub's parser is YAML 1.2; the one difference that matters here (`on` as a boolean) is normalized |
+| No masked ci job: every job `ci gate (all jobs)` needs can actually fail | enforced by rule 13 of `tools/check_workflow_policy.py`. In `ci.yml`: no `continue-on-error`. The gate job itself is pinned whole (keys, runner, harden-runner then the decision step, nothing else), and the workflow env may only set the two Python/pip settings, so nothing can shadow the decision's `jq`. Run lines are checked against an allowlist, since a script cannot be proven to fail when its check fails: `\|\|` only on three exact lines: two whose handler fails again, `\|\| (… && exit 1)`, and the bandit summary-text fallback. A pattern for re-failing handlers was beaten by chaining (`\|\| echo ignored \|\| (… && exit 1)`). `&&` only inside those lines, the allowed `if` conditions, or the two wheel-smoke subshells, because under `bash -e` a failure left of `&&` does not stop the script; `if` only with the conditions in use; and no `exit 0`, `return`, `set +…`, `trap`, `!` negation, `while`/`until` or background `&`. no job-level `if:` except the gate's exact `always()`; a step `if:` only on the three pull-request-only behaviour-diff base steps, pinned by job and every field; and the gate's decision step pinned. Because a ban list cannot cover every shell form (`echo "$(check)"` hides the substitution's status), `ci.yml` is also covered by the workflow lock below. The lock makes changes reviewable; whether a reviewed change masks a failure stays a review judgment |
+| Independent scanners run before repository code | enforced by rule 15 of `tools/check_workflow_policy.py`. `static-analysis` (ruff, bandit, gitleaks), `workflow-lint` (actionlint, zizmor) and `toolchain-audit` (pip-audit, govulncheck) each start with exactly their pinned steps through the last scanner: pinned actions, the isolated install `python -I -m pip install --require-hashes -r requirements-dev.txt` (plain `python -m pip` would run a repository `pip/` package) and the scanners, so no repository script runs first and can shadow them. The configuration they read is rule 16's below; `requirements-dev.txt` (hash-pinned, audited by pip-audit) stays a reviewed change to the toolchain |
+| Scanner configuration may only change through a reviewed baseline | enforced by rule 16 of `tools/check_workflow_policy.py`. Ruff's `[tool.ruff*]` sections of `pyproject.toml`, `bandit.yaml` and `.gitleaks.toml` are locked in `tools/scanner_config.lock.json` (`--write-scanner-lock`): loosening a rule selection, ignore, skip or allowlist fails until the baseline is advanced in the same, reviewed change. Independently of the lock, `.gitleaks.toml` must keep `[extend] useDefault = true` and set no `disabledRules`; no file a scanner loads on its own may exist (`.gitleaksignore`, `ruff.toml`, `.ruff.toml` or a nested `pyproject.toml`, `zizmor.yml`, `actionlint.yaml`, `.bandit`); ruff settings must sit in `[tool.ruff*]`; and no file may use a file-wide ruff noqa, bandit's nosec or gitleaks' inline allow comment (none does). gitleaks scans every tracked file, so its inline allow is searched for in every file but `.git`, Markdown and build directories included, and `.gitleaks.toml` may use bare keys only, so `disabledRules` cannot hide in a quoted, escaped, dotted, lower-case or inline-table spelling. gitleaks scans the full history, so every blob introduced after the baseline `c5e2f2c` (the first commit free of the token) is searched too, read raw (`rev-list --objects`, `cat-file --batch`, `--no-replace-objects`) so that no `.gitattributes` setting or replace ref can hide it the way it would from a diff, merge results included: an inline allow added in one commit and deleted in the next still fails. In a git checkout, missing git, a baseline that is not an ancestor of `HEAD` or a shallow history without it fails closed; `workflow-lint` checks out the full history (pinned by rule 15). `tools/scanners/go.mod`, which pins the Go-built scanners, is locked as well, and may never use `replace` (another module in place of gitleaks or a dependency) or `godebug` (changed standard-library behaviour such as x509 checks). A blanket `# noqa` without a rule code is refused too, and ruff selects PGH004 for it; a single-line `# noqa: <code>` stays a reviewed code change |
+| No unreviewed workflow change: every workflow line, steps and execution context alike | enforced by rule 14 of `tools/check_workflow_policy.py`. Every line of every workflow file is locked in `tools/workflows.lock.json`: steps and execution context alike (workflow and job `env`, `defaults`, runners, matrix), with only action versions normalised away, since rule 7 owns them (only a plain `owner/repo@ref` plus comment is normalised). No workflow changes, appears or disappears unless the lock changes in the same commit, regenerated with `--write-workflow-lock`. That covers the ci gate, CodeQL, the release controller and the audit, whose results decide releases. Shell startup variables (`BASH_ENV`, `ENV`, `BASH_FUNC_*`, `SHELLOPTS`, `BASHOPTS`, `PROMPT_COMMAND`, `PS4`) are banned in every workflow, since they redefine a pinned command without touching its step. So are the runner's channels into later steps' environment (`$GITHUB_ENV`, `$GITHUB_PATH`, its file-command directory, the legacy `::set-env` / `::add-path` commands and `ACTIONS_ALLOW_UNSECURE_COMMANDS`): an earlier step appending to `$GITHUB_PATH` could otherwise put a fake `gh` or `python` in front of the controller's pinned provenance and checks steps. Both bans go by name; a name built at runtime is left to the lock's review. The lock makes changes reviewable (CODEOWNERS covers the tree); it cannot judge a reviewed change. Code the steps run (tools, tests, requirements) is not locked: changing it changes the check itself and is reviewed as such |
+| Failing checks fail their step (pipefail) | enforced: every workflow sets `defaults: run: shell: bash`, which is `bash -eo pipefail`. The unspecified default is `bash -e`, under which `check \| tee` passed when the check failed. Rule 6 of the policy forbids dropping or overriding it |
 | Required status checks on `main` (the two names below) | recommended; not enforceable on the current plan |
 | Required pull request review, stale-approval dismissal, no force push or deletion on `main` | recommended; not enforceable on the current plan |
-| Tag protection for `v*`, a `release` environment with a required reviewer | recommended; not configured |
+| Tag protection for `v*`, a `release` environment with a required reviewer | recommended; not configured. The provenance check above compensates in part once the legacy workflow is disabled: an unreviewed branch commit cannot be released. A writer who can push to `main` directly, or who pushes a branch with a modified workflow and tags it, still can, since nothing enforces review |
 
 ### Recommended required checks
 
@@ -64,6 +76,7 @@ cannot pass unseen, whatever its spelling, and no settings change is needed. Cod
 |---|---|---|
 | ci | `ci gate (all jobs)` | every ci job below succeeded |
 | codeql | `CodeQL (python, security-extended)` | security-extended and security-and-quality suites, error level fails |
+| codeql | `CodeQL (actions, security-extended)` | the workflows themselves, analysed by CodeQL's `actions` pack with the same suites; error level fails. Rule 12 of the policy keeps both CodeQL jobs and the push trigger the release checks gate relies on, and pins each job whole (keys, permissions, runner and all seven steps in order, with no workflow env), so no step can rewrite the SARIF or shadow `python3` before the error-level gate reads it |
 
 The jobs the gate covers, every one of which runs on every push and pull
 request:
@@ -73,11 +86,11 @@ request:
 | ci | `tests (python 3.9)`, `tests (python 3.11)`, `tests (python 3.13)` | compile, unit/fuzz/property tests, docs numbers, offline replay, coverage matrix |
 | ci | `behaviour diff against the previous commit` | `tools/compare_engine.py` against the parent (and the pull request base) |
 | ci | `per-commit mutation smoke (second seed, python 3.9)` | second-seed mutation diff and a 100-mutation fuzz pass |
-| ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, gitleaks over the full history |
+| ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, and gitleaks 8.30.1 (built from the Go module proxy, verified against the Go checksum database) over the full history with inline allows ignored |
 | ci | `supply chain (SBOM, licence, pins)` | action pins, CycloneDX SBOM, zero-runtime-dependency contract |
 | ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py`, wheel smoke under 3.13 and 3.9 |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
-| ci | `known vulnerabilities in the dev toolchain (pip-audit)` | pip-audit in hash mode, strict |
+| ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds |
 | ci | `security requirements gate` | every SR row names an existing test |
 
 Do not mark the `supply-chain-drift` jobs required: that workflow is path
@@ -111,9 +124,17 @@ the current plan:
   (the repository already pins every reference), keep the default workflow
   token read-only, and require approval for workflows from outside
   collaborators.
-- Releases: tags `v*` trigger the release workflow, which refuses a tag that
-  does not match the package version; protect the tag pattern so only the
-  owner can create it, and consider a `release` environment with a required
+- Releases (done 2026-10-23, workflow id 392108448 now `disabled_manually`):
+  disable the legacy `release` workflow (Actions, the workflow
+  named `release` at `.github/workflows/release.yml`, "Disable workflow").
+  This is required for release provenance: until it is disabled, a `v*` tag
+  on any older commit publishes through that commit's unguarded copy. Then
+  confirm the workflow shows as disabled, and that
+  `tools/check_release_exposure.py --ref <older commit> --disabled
+  .github/workflows/release.yml` reports no unguarded path. Tags `v*` trigger
+  `publish-release.yml`, which refuses a tag that does not match the package
+  version or whose commit is not on `main`. Protect the tag pattern so only
+  the owner can create it, and consider a `release` environment with a required
   reviewer on the publish job so a pushed tag still waits for a person before
   anything is attested or published.
 
@@ -123,9 +144,9 @@ CI runs on every push and on pull requests. On a pull request the checkout is
 GitHub's synthetic merge commit, so two jobs behave differently from a push:
 the behaviour diff checks out the pull request head and compares it with its
 own parent, then also with the pull request base when that base carries the
-engine (the whole change as one report), and the secret scan needs
-`pull-requests: read` to list the pull request's commits. Both are configured
-in ci.yml; a red pull-request run with a green push run on the same commit is a
+engine (the whole change as one report). The secret scan reads the full
+history of the checkout itself, so it needs no pull-request permission. Both are
+configured in ci.yml; a red pull-request run with a green push run on the same commit is a
 workflow defect, never an engine finding.
 
 ## CI/CD review loop (Codex, issue #7)
@@ -134,20 +155,21 @@ The CI/CD track has its own review mailbox, separate from the engine's
 issue #2, and follows the same gated loop:
 
 1. Before a request, merge-forward the current `claude/appid-engine` head
-   into `claude/cicd` (merge commit, never rebase or force-push), run the
+   into `claude/cicd-next` (merge commit, never rebase or force-push), run the
    gates, push, and freeze that head. An engine commit that lands while the
    review runs does not invalidate the frozen request.
 2. Post the `CODEX_REVIEW_REQUEST` in issue #7: task, round (at most three
    per task), exact head and base SHAs, engine baseline SHA, files in
    scope, tests and results, and the current CI/CD pull request.
-3. Post exactly one short `CODEX_REVIEW_REQUEST` notification on PR #3 that
-   links the issue #7 request, repeats head, base and round, and says
-   `lane=CI/CD`. PR #3 comments wake the reviewer for both lanes; issue #7
-   stays authoritative for CI/CD. This is a narrow exception Lee granted to
-   the AGENTS.md rule that only the engine session writes to PR #3: one short
-   wake notification per canonical issue #7 request, nothing else. Review
-   content never goes on PR #3, and issue #2 stays engine-only (the CI/CD
-   session never writes there).
+3. Post exactly one short, `lane=CI/CD`-labelled `CODEX_REVIEW_REQUEST`
+   wake on the current CI/CD pull request, draft PR #13 (since 2026-10-23,
+   corrected by Lee via Codex after a review run was verified to start from
+   it): it links the issue #7 request and repeats head, base and round;
+   several requests posted together share one wake. Issue #7 stays
+   authoritative. PR #13 replaces merged PR #3 as the shared wake channel
+   for both lanes, as AGENTS.md records. Review content never goes in the
+   wake, and issue #2 stays engine-only (the CI/CD session never writes
+   there).
 4. Subscribe to the current CI/CD pull request, where the reviewer mirrors
    its `CODEX_REVIEW_RESULT`. Pause CI/CD feature edits until a result names
    the exact frozen head; synchronization a repair round explicitly needs
@@ -158,9 +180,278 @@ issue #2, and follows the same gated loop:
    with a regression check and request the next round. While a request is
    pending, at most one server-side fallback check-in every 30 minutes,
    quiet when nothing changed.
+6. Continuation (Lee, 2026-10-22, confirmed in the CI/CD session; issue #7
+   comment 6348691524):
+   - No matching review within 60 minutes of the request's posting: work on
+     the next CI/CD milestone may continue. The clock is not reset by polling
+     or status-only messages. The open request and its frozen snapshot stay
+     pending, and late findings are still evaluated and repaired.
+   - An approving result (zero actionable findings in that task's scope)
+     allows continuing at once. If no useful work has resumed 30 minutes
+     after it, start the next milestone from the backlog below without
+     waiting for another acknowledgement. A pass in one scope never resolves
+     findings in another.
+   - One cloud reminder at most, set for the nearest applicable deadline
+     (60-minute missing review or 30-minute idle after approval), cancelled
+     or re-armed when a result or progress makes it obsolete. No duplicate
+     periodic pollers; an explicit stop or pause from Lee, or a concrete
+     access or usage blocker, is reported once and respected.
+   - The next milestone is the next bounded CI/CD item within this lane,
+     never engine features. A snapshot that passed review is preserved: new
+     milestones go on a branch cut from it (`claude/cicd-next`), so the
+     pull request carrying the approved head does not change under review.
+7. Receiver and routing (Lee, 2026-10-23, relayed by Codex): PR #11 merged,
+   so the CI/CD receiver is draft PR #13 (`claude/cicd-next` -> `main`).
+   GitHub delivers a pull request's events to one Claude session, so only
+   the CI/CD session subscribes to PR #13. A `lane=engine` result link that
+   reaches it is forwarded, as the canonical issue #2 link only, to the
+   engine session by cloud session message, with no review content and no
+   engine edits; `lane=CI/CD` results stay in issue #7. Permission questions
+   go to Codex in issue #7, and a Codex yes counts as the user's agreement,
+   except for merging, deploying, settings, permissions, credentials and
+   billing, which stay with Lee.
 
 The loop never merges, deploys, deletes branches, or changes branch
 protection, permissions or credentials.
+
+## CI/CD backlog
+
+Prioritized from concrete gaps; one bounded milestone at a time, each through
+the review loop above.
+
+1. Release tag provenance (compensating control; code passed review after
+   three rounds; enforced since Lee disabled the legacy `release` workflow
+   on 2026-10-23). Tag protection and
+   required checks are not enforceable on the current plan, so any `v*` tag
+   pushed by a writer, on any commit, reaches the publish job. The release
+   build job should refuse a tag whose commit is not already on `main`
+   (GitHub compare API with the read-only token), with a tested decision
+   helper and a workflow-policy rule that keeps the step on the publish
+   job's dependency path.
+2. Green-checks-on-tag (passed review in round 2). Before publishing, require that `ci gate (all jobs)`
+   and CodeQL succeeded on the tagged commit (read-only `checks: read`), so
+   a release cannot ship a commit whose CodeQL never passed (the release
+   build re-runs the test gate but not CodeQL).
+3. Artifact action pairing (passed review). `upload-artifact` and `download-artifact` hand
+   the release files between jobs; Dependabot can move them to different
+   majors (open PR #8 moves upload to v7 and leaves download at v4). A
+   policy rule should require matching majors, or the pair should be
+   updated together.
+4. Post-publish verification (three review rounds used; the late finding was carried by items 5 and 6, which resolved it; verification runs after
+   attesting and before publishing, so a failed verification publishes nothing). After `attest-build-provenance`, verify the
+   attestation of every published file with `gh attestation verify` in the
+   publish job, so a failed or partial attestation fails the release.
+5. Workflow encoding fail-closed (three review rounds used; the late finding was carried by item 6, which resolved it). This carries
+   over the milestone-4 round-3 finding, which arrived after that task's three
+   rounds: a double-quoted YAML escape (`"${{ \u0073ecrets.X }}"`) hid a
+   credential context from the line-based rule 8. Rule 9 bans every YAML
+   encoding that decodes into different text.
+6. Stored-credential word ban (passed review). This carries
+   over the task-5 round-3 finding, which arrived after task 5's three rounds:
+   the expression scan ended at a `}}` inside a quoted `format('{{x}}')` string,
+   so a later `secrets.RELEASE_PAT` went unseen. The ban now works on words, not
+   expression syntax.
+7. Scheduled release audit (passed review in round 2). A scheduled workflow always runs main's copy, so a
+   tag on an older commit cannot bypass it. It would list every published
+   release and check that its tag commit is on `main` and that its files'
+   attestations verify.
+8. Parser cross-check (passed review in round 2). Every review finding
+   against the line-based policy (escapes, flow collections, explicit keys,
+   comments inside run blocks) was a spelling a real YAML parser decodes
+   differently. `tools/check_workflow_yaml.py` compares both parsers on every
+   fact the rules use and fails on any disagreement.
+9. CodeQL for the workflows (passed review in round 2). CodeQL's
+   `actions` pack analyses the workflow files with the same suites as the
+   Python analysis: an independent reading beside zizmor and the policy. Its
+   results pass the same error-level gate, and since the release checks gate
+   requires the whole `codeql` workflow, they bind releases too.
+10. No masked ci job (three review rounds used; the round-3 finding was carried by item 11, which resolved it). The aggregate gate only
+   means something if each job it needs can fail. Rule 13 forbids every way
+   to make a job or step pass regardless of its outcome.
+11. Exact-line `||` allowlist (passed review in round 3). This carries
+   over the item-10 round-3 finding: `cmd || echo ignored || (echo failed &&
+   exit 1)` satisfied the re-fail pattern, but its middle handler
+   short-circuits. `||` is now allowed only on the three exact lines in use.
+   Round 1 found `echo "$(check)"`: the substitution's status is lost to the
+   successful `echo`. A syntax ban cannot list every such form, so ci.yml
+   is now also locked (since item 12, in `tools/workflows.lock.json`); nothing in it can change
+   without the lock changing in the same commit, which puts the shell change
+   before a reviewer (CODEOWNERS covers the whole tree). Round 2 found that a
+   step-only lock missed execution context: a job or workflow `BASH_ENV` can
+   source a function that turns a locked check into success. The lock now
+   covers every line of ci.yml (action versions aside), and shell startup
+   variables are banned.
+12. Lock every workflow (passed review in round 1). The round-2
+   `BASH_ENV` bypass of item 11 applied unchanged to the other workflows: a
+   job-level `BASH_ENV` in `codeql.yml`, `publish-release.yml` or
+   `release-audit.yml` passed the policy, and could redefine the CodeQL gate,
+   the release controller's pinned provenance and checks commands, or the
+   audit. Rule 14 locks every line of every workflow file and bans shell
+   startup variables in all of them; the ci-only lock is folded into it.
+13. No later-step environment channels (passed review in round 2).
+   Rule 4 pins the release controller's provenance and checks steps by env
+   and run lines, not by the `PATH` they run under. With the lock
+   regenerated, an earlier build step that wrote a fake `gh` and appended its
+   directory to `$GITHUB_PATH` passed the policy. No workflow uses
+   `$GITHUB_ENV` or `$GITHUB_PATH`, so rule 14 bans them, the runner's
+   file-command directory, the legacy `::set-env` / `::add-path` commands and
+   `ACTIONS_ALLOW_UNSECURE_COMMANDS` in every workflow. Round 1 found that the
+   runner's per-step `add_path_*` / `set_env_*` files can be found with a glob
+   under `RUNNER_TEMP`, so no name ban can close the channel; the build job's
+   unit tests could do the same with no workflow change at all. The pinned
+   provenance and checks steps now run in a fresh `release-gate` job that
+   holds only pinned actions and those two steps; rule 4 pins the whole job
+   (keys, permissions, runner, every step in order) and requires the publish
+   job to need it directly. The name ban stays as defence in depth (passed
+   review in round 2).
+14. Whole-job pins for the other gates (passed review in round 1).
+   Item 13's lesson applies to every job whose last step decides a gate.
+   Rule 12 pinned CodeQL's init, analyze and gate steps in order but let
+   other steps run between them: with the lock regenerated, a step that
+   replaced the SARIF files before `tools/codeql_gate.py` read them passed the
+   policy, and the release checks require that workflow. The ci `gate` job
+   likewise allowed steps before its decision, which could shadow `jq`.
+   Both CodeQL jobs and the ci gate job are now whole-job allowlists (the
+   shared `check_pinned_job` that also pins `release-gate`), and the
+   workflow env of `codeql.yml` (none) and `ci.yml` (the two Python/pip
+   settings) is pinned, since a workflow `PATH:` would reach every job.
+15. Whole-job pin for the release audit (passed review in round 1).
+   The last job whose final step decides a verdict. Rule 10 pinned the
+   audit's gather-and-decide step but let steps run before it: with the
+   lock regenerated, a step that put a directory on the runner's path file
+   (the same glob as item 13) passed the policy, and a fake `gh` there
+   could report every attestation as verified. The audit job is now pinned
+   whole, its workflow sets no env and holds no other job.
+16. Scanners before repository code (three review rounds used; the round-3 finding is carried by item 19). The
+   third-party scanners are independent of the repository, so a repository
+   script must not be able to change them. In `workflow-lint` the
+   repository's own tools ran before zizmor, so a change to any of them
+   could shadow zizmor through the runner's path file with no workflow
+   change. And every scanner job installed its toolchain with
+   `python -m pip`, which puts the working directory first on `sys.path`:
+   a repository `pip/` package runs instead of pip (demonstrated locally)
+   and could install a fake ruff, bandit or pip-audit. zizmor now runs
+   before the repository tools, the installs use `python -I -m pip`, and
+   rule 15 pins each scanner job's steps exactly through its last scanner.
+   Round 1 found that the stated configuration boundary missed gitleaks'
+   auto-loaded `.gitleaks.toml` and `.gitleaksignore`, which can suppress
+   secret findings with every workflow unchanged. Item 17 is folded in as
+   rule 16, covering every configuration file a scanner reads or loads on
+   its own (gitleaks, ruff, bandit, zizmor, actionlint) and the wide
+   inline suppressions.
+
+Next, in priority order (from the gaps still open after item 16):
+
+17. Scanner configuration may only tighten (folded into item 16 round 2 as
+   rule 16). `pyproject.toml` (ruff's rule
+   selection) and `bandit.yaml` (skips) are read by the scanners, so a
+   change there can silence them while every workflow stays pinned. A
+   policy rule should keep a baseline of the selected rule families and
+   bandit skips and fail when one is removed, so loosening becomes an
+   explicit, reviewed baseline change.
+19. Inline allows in the scanned history (passed review in round 2).
+   This carries over the item-16 round-3 finding: rule 16 searched only the
+   final checkout, but gitleaks scans the full history, so a secret added
+   with an inline allow in one commit and deleted in the next stayed
+   silenced. Running a pinned gitleaks with `--ignore-gitleaks-allow` would
+   be the scanner-side fix, but `gitleaks-action` takes no extra arguments
+   and its release could not be fetched and verified here; so rule 16 now
+   searches every commit since the clean baseline `c5e2f2c`, fails closed
+   without that history, and `workflow-lint` fetches it. Round 1 found that
+   reading diffs (`git log -p`) let a `.gitattributes` `-diff` entry hide the
+   added line; the search now reads every blob introduced since the
+   baseline raw, which no attribute, textconv or replace ref changes.
+   Tested on real temporary repositories.
+20. Blanket noqa (passed review in round 1). A `# noqa` without a
+   rule code silences every ruff rule on its line, with no configuration
+   change. None exists today, so ruff now selects PGH004 (a noqa must name
+   its rule) and rule 16 refuses a blanket noqa by its own search as well.
+   Ruff's RUF100 (unused noqa) would also be worth enabling, but all 22
+   existing directives name rules outside the selection and most sit in
+   engine-lane files (`protocol_engine/fingerprints.py`, tests, fuzz
+   tools), so removing them is an engine-lane change to coordinate, not
+   part of this item.
+21. gitleaks ignores inline allows itself (passed review in round 1; its
+   first real run needs Actions). `gitleaks-action` took no arguments
+   and fetched an unpinned gitleaks release. The secret scan now builds
+   gitleaks 8.30.1 with `go install` from the Go module proxy, which checks
+   the module against the Go checksum database, so no release tarball or
+   checksum from github.com is needed. The build runs in `RUNNER_TEMP` with
+   the integrity settings written out (`GOPROXY`, `GOSUMDB`, `GOTOOLCHAIN:
+   local`, empty `GOFLAGS` / `GONOSUMDB` / `GOPRIVATE` / `GOINSECURE`), on Go
+   1.24.11 from `actions/setup-go` v5.6.0 (SHA resolved over git; no cache).
+   It runs `gitleaks git --ignore-gitleaks-allow`, so an inline allow is void
+   in every commit; rule 16's history search stays as a second line. The
+   full history scanned locally with this command found one false positive,
+   the public SSH key exchange name `sntrup761x25519` in PROTOCOLS.md (engine
+   commit 0252b07), now allowlisted by exact match in `.gitleaks.toml`
+   (advancing the scanner lock); without that entry the scan, and so the ci
+   gate, would fail once Actions runs. Dropping the action also drops its
+   `${{ secrets.GITHUB_TOKEN }}` and `pull-requests: read`, so rule 5 now
+   allows no `secrets` reference at all. Verified locally: the full history
+   (130 commits) is clean, and a fake token with an inline allow, added and
+   then deleted, is reported. Needs CI: the step itself on a GitHub runner.
+
+22. Supported Go and a Go toolchain audit (passed review in round 1;
+   its first real run needs Actions). Item 21 built gitleaks with Go
+   1.24.11, which the minimum gitleaks 8.30.1 allows but which is past Go's
+   support window (the two newest releases, 1.27 and 1.26). govulncheck
+   (binary mode, symbol-level) found that build reachable by known
+   standard-library vulnerabilities (`crypto/x509`, `net/http`), and with Go
+   1.27.3 one remains in gitleaks' own dependency `github.com/ulikunitz/xz`
+   v0.5.12 (GO-2025-3922, fixed in v0.5.15; gitleaks 8.30.1 is the newest
+   release). `tools/scanners/go.mod` and `go.sum` now pin gitleaks 8.30.1,
+   govulncheck 1.8.0 and every dependency as Go tools, with xz at v0.5.15, on
+   Go 1.27.3 (the patch release that fixes the x509 finding in 1.27.2). Both
+   jobs copy only those two files to `RUNNER_TEMP` and build there with
+   `-mod=readonly` and no workspace. `toolchain-audit` runs govulncheck over
+   both binaries and fails on any reachable finding, as pip-audit does for
+   the Python tools; rule 15 pins the new steps and rule 16 locks `go.mod`
+   and bans `replace` and `godebug`. Verified locally: both steps, run as
+   written from an empty module cache, pass (no leaks over the full history,
+   no vulnerabilities in either binary), and the 1.24.11 build makes
+   govulncheck exit 3. Needs CI: both steps on a GitHub runner.
+
+23. Go toolchain drift (round 1 found a gap, repaired; in review on `claude/cicd-next`; its first real run
+   needs Actions). Item 22 exists because Go 1.24 left its support window
+   unnoticed, and govulncheck only reports vulnerabilities already known.
+   `tools/check_go_drift.py` reads the Go module proxy's toolchain list
+   (the source `GOTOOLCHAIN` uses) and fails when the `actions/setup-go`
+   versions in ci.yml differ, when the `go` directive of
+   `tools/scanners/go.mod` differs from them, when the pinned line is not one
+   of the two newest stable Go lines, or when the pin is not exactly that
+   line's newest patch: older fails, and so does a patch the list does not
+   hold (round 1 found `1.27.99` accepted as newest); an unreadable list fails. It runs weekly as the `go-toolchain-drift` job of
+   supply-chain-drift (whose paths, and rule 2, now include the checker and
+   `go.mod`), as `make go-drift`, and its offline self-test runs with the
+   other tool self-tests. Against the live list it passes for 1.27.3 and
+   would have failed item 21's 1.24.11 (out of support) and 1.27.2 (behind
+   1.27.3). Needs CI: the job on a GitHub runner.
+
+Open, not startable from this lane today: item 18 below; RUF100 (unused
+noqa), which needs engine-lane edits; and the engine branch's own secret
+scan, which will report the `sntrup761x25519` false positive from its
+PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
+
+24. Dependabot for the Go scanner module (in review on `claude/cicd-next`;
+   decided by Codex as Lee authorized: option 1, keep the scanner lock).
+   `.github/dependabot.yml` gains a weekly `gomod` entry for
+   `/tools/scanners`, grouped as `scanners`, and every Dependabot entry now
+   waits 7 days before proposing a new release (`cooldown`, zizmor's
+   `dependabot-cooldown` audit, which flagged the two existing entries too). Rule 16 still locks
+   `tools/scanners/go.mod`, so each update PR also advances
+   `tools/scanner_config.lock.json` as its reviewed baseline step, and
+   govulncheck in `toolchain-audit` decides whether the result is safe. The
+   Go release itself stays manual; item 23's drift job flags it. Verified
+   locally: the file parses, `go mod tidy -diff` reports no change, `go mod
+   verify` reports all modules verified, and `go list -m -u` shows the
+   updates Dependabot would propose today (govulncheck v1.9.0, xz v0.5.17).
+   Needs GitHub: the Dependabot run itself.
+18. First real runs (blocked on the Actions billing limit, which Lee will
+   not raise).
+   Every control so far is verified locally only. Once jobs start, confirm
+   on a real run that each pinned gate job behaves as tested (the release
+   dry run, CodeQL, the ci gate, the audit), and record the run ids.
 
 ## Caching and concurrency policy
 
@@ -188,8 +479,7 @@ protection, permissions or credentials.
   started (nothing attested or published); re-run that tag's release run by
   hand. The same holds for a second manual fuzz run.
 - Every workflow sets `permissions: contents: read` at the top; a job adds a
-  permission only for the step that needs it (`pull-requests: read` for the
-  secret scan on pull requests, `security-events: write` for the SARIF
+  permission only for the step that needs it (`security-events: write` for the SARIF
   upload, `contents/id-token/attestations: write` on the release publish job
   only, which runs solely for a pushed `v*` tag and never checks out code).
 
@@ -198,10 +488,12 @@ protection, permissions or credentials.
 ```bash
 make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint, coverage matrix, docs numbers
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories (dev tools installed)
+(mkdir -p /tmp/scanners && cp tools/scanners/go.mod tools/scanners/go.sum /tmp/scanners/ && cd /tmp/scanners && GOFLAGS=-mod=readonly GOWORK=off GOTOOLCHAIN=go1.27.3 GOBIN=/tmp/scanners/bin go install tool && bin/govulncheck -mode=binary bin/gitleaks)   # Go scanner advisories (needs Go)
 make ci-local       # make check plus extended fuzzing and the offline replay/schema validation CI runs
 make package        # sdist and wheel plus the wheel-content gate (dev tools installed)
 make workflow-lint  # actionlint (needs a local actionlint and shellcheck, which the hosted runner has; CI fetches a checksum-verified release) then zizmor from the dev toolchain
 make pin-drift      # pinned action SHAs still match the tags in their comments (network; the weekly supply-chain-drift workflow runs the same check)
+make go-drift       # the Go that builds the pinned scanners is a supported line on its newest patch (network; weekly in supply-chain-drift)
 make fuzz           # extended seeded fuzzing
 python3 -B tools/compare_engine.py ../previous-checkout --report diff.md   # behaviour diff against another tree
 make sbom           # CycloneDX SBOM of the environment (requires dev tools)

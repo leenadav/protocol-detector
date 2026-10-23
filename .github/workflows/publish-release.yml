@@ -1,0 +1,233 @@
+# Guarded release controller. A `v*` tag builds the sdist and wheel in a read-only job, then
+# a separate job holding the write scopes attests and publishes exactly the files the build
+# job produced. workflow_dispatch and changes to this file or its helper run the build job
+# alone (a dry run that never publishes), so the release path is exercised before the
+# first real tag. See SSDLC.md.
+#
+# This file replaces .github/workflows/release.yml. A tag push runs the workflow file found
+# at the tagged commit, so every older commit's release.yml still publishes a matching tag
+# without the provenance check; that legacy path must be disabled in the repository's
+# Actions settings (SSDLC.md, "Enforced controls"), and tools/check_workflow_policy.py keeps
+# the path from coming back so disabling it never disables this controller.
+name: publish-release
+
+on:
+  push:
+    tags: ["v*"]
+    branches: ["**"]
+    paths:
+      - ".github/workflows/publish-release.yml"
+      - "pyproject.toml"
+      - "tools/check_release_ref.py"
+      - "tools/check_release_checks.py"
+  pull_request:
+    paths:
+      - ".github/workflows/publish-release.yml"
+      - "pyproject.toml"
+      - "tools/check_release_ref.py"
+      - "tools/check_release_checks.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Per ref: a dry run or a re-run of one tag never cancels that ref's run in flight. Different
+# tags get different groups here, so the publish job carries its own constant group below.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+# Explicit bash runs `bash --noprofile --norc -eo pipefail`; the unspecified default is
+# `bash -e` without pipefail, under which a failing check piped into tee passes the step.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release-gate:
+    # The provenance and release checks run in a fresh job of pinned actions and these two
+    # steps only, so no earlier step and no repository test can change the PATH or the
+    # environment their `gh` and `python` run under (the runner's file commands carry such
+    # changes to later steps of the same job). tools/check_workflow_policy.py rule 4 pins
+    # this whole job: keys, permissions, runner and every step, in order.
+    name: release gate (provenance, release checks)
+    permissions:
+      contents: read   # checkout and the compare API for the provenance check
+      actions: read    # the tagged commit's workflow runs for the release checks gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+      - name: Check out the commit being released
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: A release tag must point at a commit already on main
+        # Tag protection is not enforceable on this plan (SSDLC.md), so the workflow checks it:
+        # compare/<sha>...main is "identical" or "ahead" only when main contains the commit.
+        # A tag fails closed on any other answer; dry runs report only. The pull-request head,
+        # not GitHub's synthetic merge commit, is what a dry run compares.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REF_TYPE: ${{ github.ref_type }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        # tools/check_workflow_policy.py rule 4 pins this step's env and run lines exactly.
+        run: |
+          python -B tools/check_release_ref.py --self-test
+          STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...main" --jq .status) || STATUS="api-error"
+          python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}" --summary "${GITHUB_STEP_SUMMARY}"
+      - name: The tagged commit's ci and CodeQL workflows must have passed
+        # Required checks are not enforceable on this plan (SSDLC.md), and the build job re-runs
+        # the test gate but not CodeQL. Only push runs of ci.yml and codeql.yml (by workflow path)
+        # for this exact commit count, never a job name another workflow could reuse; a tag
+        # fails closed on a missing, pending or failed run; dry runs report only.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REF_TYPE: ${{ github.ref_type }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        # tools/check_workflow_policy.py rule 4 pins this step's env and run lines exactly.
+        run: |
+          python -B tools/check_release_checks.py --self-test
+          gh api --paginate "repos/${GH_REPO}/actions/runs?head_sha=${SHA}&per_page=100" --jq '.workflow_runs[] | {path, name, event, status, conclusion, head_sha, updated_at}' > "${RUNNER_TEMP}/workflow-runs.jsonl" || echo "api-error" > "${RUNNER_TEMP}/workflow-runs.jsonl"
+          python -B tools/check_release_checks.py --ref-type "${REF_TYPE}" --sha "${SHA}" --runs "${RUNNER_TEMP}/workflow-runs.jsonl" --summary "${GITHUB_STEP_SUMMARY}"
+  build:
+    # Read-only: the gate, the version check, the distributions, the wheel smoke, the SBOM
+    # and the checksums. Nothing in this job can write to the repository.
+    name: release build (gate, version check, distributions, SBOM, checksums)
+    needs: release-gate
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: The full gate must pass on the commit being released
+        run: |
+          python -m pip install --require-hashes -r requirements-dev.txt
+          python -B -m compileall -q protocol_engine tools ./*.py
+          python -B -m unittest discover -q
+          ruff check .
+          python -B tools/check_action_pins.py .github/workflows
+          python -B tools/check_security_requirements.py
+          python -B tools/check_docs_counts.py
+          python -B tools/coverage_matrix.py --check PROTOCOLS.md
+          python -B protodetect.py policy lint policy-example.json --strict
+      - name: The reported version must equal pyproject.toml, and the tag when there is one
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION=$(python -B protodetect.py version | awk '{print $NF}')
+          DECLARED=$(python -c 'import re; print(re.search(r"^version = \"([^\"]+)\"", open("pyproject.toml", encoding="utf-8").read(), re.M).group(1))')
+          test "${VERSION}" = "${DECLARED}" || (echo "protodetect reports ${VERSION} but pyproject.toml declares ${DECLARED}" && exit 1)
+          if [ "${REF_TYPE}" = "tag" ]; then
+            test "v${VERSION}" = "${TAG}" || (echo "tag ${TAG} does not match version ${VERSION}" && exit 1)
+          fi
+          echo "release version ${VERSION} (ref type ${REF_TYPE})" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: The runner's gh supports every attestation flag the publish job verifies with
+        # The publish job only runs for a real tag; this dry-runnable check keeps an image change
+        # from first surfacing as a failed release.
+        run: |
+          HELP=$(gh attestation verify --help)
+          for flag in --repo --signer-workflow --source-ref --source-digest --deny-self-hosted-runners; do
+            grep -q -- "$flag" <<<"$HELP" || { echo "$(gh --version) lacks gh attestation verify $flag"; exit 1; }
+          done
+          echo "gh attestation verify flags present" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Build distributions, check and smoke the wheel, SBOM and checksums
+        run: |
+          python -m build --sdist --wheel --outdir dist
+          python -B tools/check_wheel.py "dist/*.whl"
+          python -m venv /tmp/wheel-env
+          /tmp/wheel-env/bin/python -m pip install --no-deps --no-index dist/*.whl
+          (cd /tmp && /tmp/wheel-env/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py")
+          cyclonedx-py environment --output-format json --output-file dist/sbom.cdx.json
+          (cd dist && sha256sum ./* > SHA256SUMS)
+          {
+            echo "### Release files"
+            echo
+            echo '```'
+            cat dist/SHA256SUMS
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Hand the exact files to the publish job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+
+  publish:
+    # Only a pushed `v*` tag reaches this job; dry runs stop after the build. It checks out
+    # nothing: it attests and publishes the build job's files after re-verifying their checksums.
+    name: release publish (attest, GitHub release)
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: [release-gate, build]
+    # One constant group for every tag: publishes of different tags never overlap, and one in
+    # flight is never cancelled. GitHub keeps one pending run per group, so a third tag pushed
+    # while one publishes and another waits replaces the waiting one, which ends cancelled
+    # (nothing published) and is re-run by hand. tools/check_workflow_policy.py enforces this.
+    concurrency:
+      group: release-publish
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write       # gh release create uploads the distributions to the release
+      id-token: write       # OIDC token for the Sigstore signing of the provenance attestation
+      attestations: write   # attest-build-provenance stores the attestation on the repository
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          egress-policy: audit
+      - name: Fetch the build job's files
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: release-dist-${{ github.sha }}
+          path: dist
+      - name: The files must still match the checksums the build job recorded
+        run: (cd dist && sha256sum -c SHA256SUMS)
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-path: "dist/*"
+      - name: Every file's attestation must verify before anything is published
+        # Binds each file to this controller workflow, this tag and commit, and a GitHub-hosted
+        # runner; a missing or partial attestation fails the release before gh release create.
+        # tools/check_workflow_policy.py rule 8 pins every step of this job, in order (an allowlist).
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          for file in dist/*; do
+            gh attestation verify "$file" --repo "$GH_REPO" --signer-workflow "$GH_REPO/.github/workflows/publish-release.yml" --source-ref "$GITHUB_REF" --source-digest "$GITHUB_SHA" --deny-self-hosted-runners
+          done
+      - name: Publish the release with the runner's gh CLI (no third-party action)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes dist/*

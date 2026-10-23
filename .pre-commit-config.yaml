@@ -19,11 +19,11 @@ repos:
         pass_filenames: false
         files: ^\.github/workflows/
       - id: workflow-policy
-        name: ci gate lists every job, drift gate triggers on every workflow
+        name: ci gate lists every job, drift gate triggers on every workflow, release provenance
         entry: python3 -B tools/check_workflow_policy.py
         language: system
         pass_filenames: false
-        files: ^(\.github/workflows/|tools/check_workflow_policy\.py)
+        files: ^(\.github/workflows/|tools/check_workflow_policy\.py|tools/check_release_ref\.py|tools/check_release_exposure\.py|tools/check_release_checks\.py|tools/release_audit\.py|tools/workflows\.lock\.json|tools/scanner_config\.lock\.json|pyproject\.toml|bandit\.yaml|\.gitleaks\.toml|\.gitleaksignore|tools/scanners/go\.(mod|sum))
       - id: security-requirements
         name: security requirements reference existing tests
         entry: python3 -B tools/check_security_requirements.py
