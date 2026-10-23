@@ -21,9 +21,11 @@ on:
 permissions:
   contents: read
 
+# Per ref: a dry run or a re-run of one tag never cancels that ref's run in flight. Different
+# tags get different groups here, so the publish job carries its own constant group below.
 concurrency:
   group: release-${{ github.ref }}
-  cancel-in-progress: false   # a release in flight is never cancelled; a second tag queues behind it
+  cancel-in-progress: false
 
 env:
   PYTHONDONTWRITEBYTECODE: "1"
@@ -100,6 +102,13 @@ jobs:
     name: release publish (attest, GitHub release)
     if: github.event_name == 'push' && github.ref_type == 'tag'
     needs: build
+    # One constant group for every tag: publishes of different tags never overlap, and one in
+    # flight is never cancelled. GitHub keeps one pending run per group, so a third tag pushed
+    # while one publishes and another waits replaces the waiting one, which ends cancelled
+    # (nothing published) and is re-run by hand. tools/check_workflow_policy.py enforces this.
+    concurrency:
+      group: release-publish
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

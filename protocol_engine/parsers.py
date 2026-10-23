@@ -1,6 +1,6 @@
 """Bounded incremental parsers. Each feed receives only newly available bytes."""
 import re
-from .media import METHODS, accept_class, auth_scheme_class, content_type_class
+from .media import METHODS, accept_class, auth_scheme_class, challenge_scheme_classes, content_type_class
 from .model import normalize_hostname
 
 TOKEN = rb"[!#$%&'*+.^_`|~0-9A-Za-z-]+"
@@ -48,7 +48,7 @@ class LineParser:
         self.status = None
         self.content_type_seen = False
         self.accept_seen = False
-        self.auth_seen = False
+        self.auth_schemes = ()
         self.challenges = ()
         self.upgrade = None
         self.connection_upgrade = False
@@ -61,9 +61,14 @@ class LineParser:
         if self.continues and self.kexinit is not None:
             consumed = self.kexinit.feed(data)
             if self.kexinit.done:
-                from .fingerprints import hassh
-                kex, enc, mac, comp = self.kexinit.lists[0], self.kexinit.lists[2], self.kexinit.lists[4], self.kexinit.lists[6]
-                self.fingerprints = (("hassh", hassh(kex, enc, mac, comp), "kexinit"),)
+                lists = self.kexinit.lists
+                from .ssh_posture import kexinit_posture
+                # v0.58: algorithm posture classes from the KEXINIT; names never leave the parser.
+                self.extra_evidence += tuple((field, value, "kexinit", "asserted") for field, value in kexinit_posture(lists))
+                if self.config.fingerprints:
+                    from .fingerprints import hassh
+                    self.fingerprints = (("hassh", hassh(lists[0], lists[2], lists[4], lists[6]), "kexinit"),)
+                self.refined = True
                 self.kexinit = None
                 self.continues = False
             return consumed
@@ -105,12 +110,13 @@ class LineParser:
                 raise ParseError("Invalid or unsupported SSH identification")
             self.protocol_name = "ssh"
             self.done = True
-            self.reason = "SSH identification validated; key exchange not inspected"
+            self.reason = "SSH identification validated; key exchange offers classified, nothing negotiated or verified"
             self.extra_evidence = (("ssh_version", line.split(b"-", 2)[1].decode("ascii"), "banner", "structural"),)
-            if self.config.fingerprints:
-                # Keep reading one KEXINIT packet for the HASSH fingerprint; identification stands either way.
-                self.kexinit = KexInit(self.config)
-                self.continues = True
+            # Keep reading one KEXINIT packet (v0.58: always, for the posture classes; HASSH only with
+            # fingerprints). The identification stands whatever the packet holds.
+            self.kexinit = KexInit(self.config)
+            self.continues = True
+            self.refined = False
             return
         if self.first:
             self.first = False
@@ -210,15 +216,18 @@ class LineParser:
                     self.extra_evidence += (("http_accept", "dns", "headers", "asserted"),)
         elif name in (b"authorization", b"proxy-authorization"):
             # Only the scheme token is classified (v0.56); the credential bytes are never read beyond it.
-            if not self.auth_seen:
-                self.auth_seen = True
-                self.extra_evidence += (("http_auth_scheme", auth_scheme_class(value), "headers", "asserted"),)
-        elif name in (b"www-authenticate", b"proxy-authenticate"):
-            # Every distinct scheme offered is reported (a 401 commonly lists Negotiate and NTLM); labels only.
+            # Every occurrence counts (review round 1): a later header must not hide Basic or NTLM.
             label = auth_scheme_class(value)
-            if label not in self.challenges:
-                self.challenges += (label,)
-                self.extra_evidence += (("http_auth_challenge", label, "headers", "asserted"),)
+            if label not in self.auth_schemes:
+                self.auth_schemes += (label,)
+                self.extra_evidence += (("http_auth_scheme", label, "headers", "asserted"),)
+        elif name in (b"www-authenticate", b"proxy-authenticate"):
+            # Every distinct scheme offered is reported, across repeated headers and within one
+            # comma-separated challenge list (review round 1); labels only.
+            for label in challenge_scheme_classes(value):
+                if label not in self.challenges:
+                    self.challenges += (label,)
+                    self.extra_evidence += (("http_auth_challenge", label, "headers", "asserted"),)
         elif name == b"content-length":
             # Conservative policy: duplicate CL is not accepted, even if identical.
             if self.content_length is not None or not re.fullmatch(rb"[0-9]{1,20}", value):
@@ -294,6 +303,9 @@ class LineParser:
                 self.shift = ("h2c-upgrade", "http2-server")  # server frames follow without a preface
 
 
+_SSH_NAME_BYTES = bytes(range(0x21, 0x7f))   # printable ASCII without space (RFC 4251 5 name-list)
+
+
 class KexInit:
     """One SSH_MSG_KEXINIT binary packet after the identification line (RFC 4253 7.1).
 
@@ -346,7 +358,7 @@ class KexInit:
             if pos + size > payload_end or size > 4096:
                 raise ParseError("SSH KEXINIT name-list exceeds packet or profile")
             value = packet[pos:pos + size]
-            if any(byte < 0x21 or byte > 0x7e for byte in value):
+            if value.translate(None, _SSH_NAME_BYTES):      # same rule as a per-byte check, at C speed (v0.58)
                 raise ParseError("SSH KEXINIT name-list must be printable ASCII")
             lists.append(value)
             pos += size

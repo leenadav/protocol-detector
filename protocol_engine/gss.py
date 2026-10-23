@@ -20,6 +20,9 @@ _MECHANISMS = {OID_KRB5: "kerberos", OID_MS_KRB5: "kerberos", OID_KRB5_USER_TO_U
 NTLMSSP_SIGNATURE = b"NTLMSSP\x00"
 _NTLM_MESSAGES = {1: "negotiate", 2: "challenge", 3: "authenticate"}
 _NEG_STATES = ("accept-completed", "accept-incomplete", "reject", "request-mic")
+# RFC 4121 4.1 / RFC 1964 1.1 TOK_ID and the Kerberos message each one frames: AP-REQ [APPLICATION 14],
+# AP-REP [APPLICATION 15], KRB-ERROR [APPLICATION 30]; user-to-user TGT-REQ is a SEQUENCE.
+_KERBEROS_TOKENS = {b"\x01\x00": 0x6e, b"\x02\x00": 0x6f, b"\x03\x00": 0x7e, b"\x04\x00": 0x30}
 MAX_TOKEN = 4096
 MAX_MECHANISMS = 8
 
@@ -39,15 +42,140 @@ def _ntlm_message(blob):
     return _NTLM_MESSAGES[kind]
 
 
+MAX_PRINCIPAL_PARTS = 8
+
+
+def _fields(sequence, allowed, required, what):
+    """Context-tagged fields [n] of a Kerberos SEQUENCE, strictly increasing (so at most len(allowed))."""
+    pos, last, found = 0, -1, {}
+    while pos < len(sequence):
+        tag = sequence[pos]
+        number = tag & 0x1f
+        if tag & 0xe0 != 0xa0 or number <= last or number not in allowed:
+            raise ParseError(what + " fields out of order or outside the message definition")
+        found[number], pos = ber_field(sequence, pos, len(sequence), tag)
+        last = number
+    if not required <= found.keys():
+        raise ParseError(what + " lacks a required field")
+    return found
+
+
+def _only(value, tag, what):
+    """The single element of an explicitly tagged field, which must fill it."""
+    inner, end = ber_field(value, 0, len(value), tag)
+    if end != len(value):
+        raise ParseError(what + " framing invalid")
+    return inner
+
+
+def _small_integer(value, what, expected=None, width=4):
+    number = _only(value, 0x02, what)
+    if not 1 <= len(number) <= width or (expected is not None and number != bytes((expected,))):
+        raise ParseError(what + " outside the Kerberos profile")
+
+
+def _encrypted_data(value, what):
+    """EncryptedData ::= SEQUENCE { etype [0] Int32, kvno [1] UInt32 OPTIONAL, cipher [2] OCTET STRING }."""
+    found = _fields(_only(value, 0x30, what), (0, 1, 2), {0, 2}, what)
+    _small_integer(found[0], what + " etype")
+    if 1 in found:
+        _small_integer(found[1], what + " kvno", width=5)
+    if not _only(found[2], 0x04, what + " cipher"):
+        raise ParseError(what + " cipher must not be empty")
+
+
+def _principal(value, what):
+    """PrincipalName ::= SEQUENCE { name-type [0] Int32, name-string [1] SEQUENCE OF KerberosString }; framing only."""
+    found = _fields(_only(value, 0x30, what), (0, 1), {0, 1}, what)
+    _small_integer(found[0], what + " name-type")
+    names, pos, count = _only(found[1], 0x30, what), 0, 0
+    while pos < len(names):
+        count += 1
+        if count > MAX_PRINCIPAL_PARTS:
+            raise ParseError(what + " exceeds the name component budget")
+        _, pos = ber_field(names, pos, len(names), 0x1b)
+    if not count:
+        raise ParseError(what + " has no name component")
+
+
+def _realm(value, what):
+    if not _only(value, 0x1b, what):
+        raise ParseError(what + " must be a non-empty GeneralString")
+
+
+def _ticket(value):
+    """Ticket ::= [APPLICATION 1] SEQUENCE { tkt-vno [0] 5, realm [1], sname [2], enc-part [3] EncryptedData }."""
+    found = _fields(_only(_only(value, 0x61, "Ticket"), 0x30, "Ticket"), (0, 1, 2, 3), {0, 1, 2, 3}, "Ticket")
+    _small_integer(found[0], "Ticket tkt-vno", 5)
+    _realm(found[1], "Ticket realm")
+    _principal(found[2], "Ticket sname")
+    _encrypted_data(found[3], "Ticket enc-part")
+
+
+def _kerberos_flags(bits, what):
+    """KerberosFlags ::= BIT STRING (SIZE (32..MAX)) under DER (review round 3): at least 32 significant
+    bits, an unused-bit count of 0..7 (0 when there are no data octets), and zero padding bits."""
+    unused = bits[0] if bits else 8
+    if unused > 7 or (len(bits) - 1) * 8 - unused < 32 or (unused and bits[-1] & ((1 << unused) - 1)):
+        raise ParseError(what + " must be a DER KerberosFlags BIT STRING of at least 32 bits")
+
+
+def _kerberos_message(message, tag):
+    """RFC 4120 5.5.1 AP-REQ, 5.5.2 AP-REP, 5.9.1 KRB-ERROR, user-to-user TGT-REQ: bounded envelopes, nothing kept."""
+    if tag == 0x7e:
+        from .windows import _kerberos_body
+        _kerberos_body(message, len(message), None)        # the Kerberos family's KRB-ERROR profile
+        return
+    body = _only(message, tag, "Kerberos message")
+    if tag == 0x30:                                        # KERB-TGT-REQUEST: pvno, msg-type 16, optional server-name and realm
+        found = _fields(body, (0, 1, 2, 3), {0, 1}, "TGT-REQ")
+        _small_integer(found[0], "TGT-REQ pvno", 5)
+        _small_integer(found[1], "TGT-REQ msg-type", 16)
+        if 2 in found:
+            _principal(found[2], "TGT-REQ server-name")
+        if 3 in found:
+            _realm(found[3], "TGT-REQ realm")
+        return
+    sequence = _only(body, 0x30, "Kerberos message")
+    if tag == 0x6e:
+        found = _fields(sequence, (0, 1, 2, 3, 4), {0, 1, 2, 3, 4}, "AP-REQ")
+        _small_integer(found[0], "AP-REQ pvno", 5)
+        _small_integer(found[1], "AP-REQ msg-type", 14)
+        _kerberos_flags(_only(found[2], 0x03, "AP-REQ ap-options"), "AP-REQ ap-options")
+        _ticket(found[3])
+        _encrypted_data(found[4], "AP-REQ authenticator")
+    else:
+        found = _fields(sequence, (0, 1, 2), {0, 1, 2}, "AP-REP")
+        _small_integer(found[0], "AP-REP pvno", 5)
+        _small_integer(found[1], "AP-REP msg-type", 15)
+        _encrypted_data(found[2], "AP-REP enc-part")
+
+
+def _kerberos_token(blob, pos, limit):
+    """After a Kerberos mechanism OID: a known TOK_ID, then exactly the Kerberos message it names (review rounds 1 and 2)."""
+    expected = _KERBEROS_TOKENS.get(bytes(blob[pos:pos + 2]))
+    if expected is None:
+        raise ParseError("Kerberos GSS token needs a known TOK_ID")
+    _, end = ber_field(blob, pos + 2, limit, expected)
+    if end != limit:
+        raise ParseError("Kerberos GSS token has bytes after its message")
+    _kerberos_message(bytes(blob[pos + 2:limit]), expected)
+
+
 def _inner(blob, limit):
-    """Mechanism of a mechToken/responseToken: NTLMSSP, a Kerberos GSS token, or other."""
+    """Mechanism of a mechToken/responseToken: NTLMSSP, a Kerberos GSS token, or other.
+
+    A token that names a Kerberos OID must pass the same validator as a direct
+    Kerberos token (review round 1); otherwise the blob is malformed.
+    """
     if blob.startswith(NTLMSSP_SIGNATURE):
         return "ntlm", _ntlm_message(blob)
     if blob[:1] == b"\x60":
         size, start = ber_length(blob, 1, limit)
         if start + size == limit and blob[start:start + 1] == b"\x06":
-            oid, _ = ber_field(blob, start, limit, 0x06)
-            if oid in _MECHANISMS and _MECHANISMS[oid] == "kerberos":
+            oid, pos = ber_field(blob, start, limit, 0x06)
+            if _MECHANISMS.get(oid) == "kerberos":
+                _kerberos_token(blob, pos, limit)
                 return "kerberos", None
     return "other", None
 
@@ -71,9 +199,8 @@ def classify_token(blob):
             if pos >= limit or blob[pos] != 0xa0:
                 raise ParseError("SPNEGO initial token requires NegTokenInit")
             return _neg_token_init(blob, pos, limit)
-        if oid in _MECHANISMS and _MECHANISMS[oid] == "kerberos":
-            if limit - pos < 2 or blob[pos:pos + 2] not in (b"\x01\x00", b"\x02\x00", b"\x03\x00", b"\x04\x00"):
-                raise ParseError("Kerberos GSS token needs a known TOK_ID")
+        if _MECHANISMS.get(oid) == "kerberos":
+            _kerberos_token(blob, pos, limit)
             return GssToken("kerberos", "kerberos", None, None)
         return GssToken("gss-other", "other", None, None)
     if tag == 0xa1:

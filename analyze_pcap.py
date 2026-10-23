@@ -13,9 +13,24 @@ from protocol_engine.policy import Policy, PolicyError
 from protocol_engine.registry import PARSERS
 from protocol_engine.datagram import VALIDATORS
 from protocol_engine.quic import QuicAssembler
+from protocol_engine.x509 import validity
 from sessions import MODULUS, SessionManager, StreamError
 
 SYN, ACK, FIN, RST, URG = 2, 16, 1, 4, 32
+
+
+def certificate_fields(observations, at):
+    """Certificate structure labels from the observations, plus validity at capture time `at` (v0.57).
+
+    `at` is the capture timestamp (POSIX seconds) of the session's first packet or
+    of the live event; validity is never judged against the analysis run's clock.
+    """
+    certificate = {evidence.field[16:]: evidence.value for obs in observations if obs is not None
+                   for evidence in obs.evidence if evidence.field.startswith("tls_certificate_")}
+    label = validity(certificate.get("not_before"), certificate.get("not_after"), at)
+    if label is not None:
+        certificate["validity"] = label
+    return certificate
 
 
 class Analyzer:
@@ -90,8 +105,7 @@ class Analyzer:
                         for evidence in obs.evidence if evidence.strength == "derived"}
         if fingerprints:
             record["fingerprints"] = fingerprints
-        certificate = {evidence.field[16:]: evidence.value for obs in observations if obs is not None
-                       for evidence in obs.evidence if evidence.field.startswith("tls_certificate_")}
+        certificate = certificate_fields(observations, state["start"])
         if certificate:
             record["certificate"] = certificate  # structure labels only (v0.39): no names, serials or keys
         if self.include_hostnames:
@@ -200,7 +214,8 @@ class Analyzer:
             client_obs = connection["directions"][client].inspector.observation
             server_obs = connection["directions"][server].inspector.observation
         verdict = session_verdict(client_obs, server_obs, "tcp", server[1], state["bytes"].get(client, 0),
-                                  state["bytes"].get(server, 0), handshake_complete=state["ready"], signatures=self.signatures)
+                                  state["bytes"].get(server, 0), handshake_complete=state["ready"], signatures=self.signatures,
+                                  at=state["start"])
         self._record("tcp", client, server, state, verdict, reason, (client_obs, server_obs))
 
     def _udp_session(self, key, flow, reason):
@@ -538,7 +553,7 @@ def main():
     parser.add_argument("--fingerprints", action="store_true", help="Derive JA3/JA4/JA3S/JA4S/HASSH/HTTP2 fingerprints (FINGERPRINTS.md)")
     parser.add_argument("--heuristics", action="store_true", help="Profile unknown payload prefixes and DNS name shape; advisory evidence only (RISKS.md)")
     parser.add_argument("--policy", help="JSON policy evaluated on every session record (POLICY.md); implies --sessions")
-    parser.add_argument("--certificates", action="store_true", help="Read the leaf certificate structure after a TLS 1.2 ServerHello: key, signature, lifetime, self-issued (no names)")
+    parser.add_argument("--certificates", action="store_true", help="Read the leaf certificate structure after a TLS 1.2 ServerHello: key, signature, lifetime, self-issued, CA flag, key usage, alternative-name presence, validity at capture time (no names)")
     parser.add_argument("--udp-hint", choices=sorted(VALIDATORS), help="Restrict UDP validation to one candidate")
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to one validated candidate")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')

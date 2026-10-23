@@ -166,7 +166,7 @@ def _outcome(name, transport, status, reasons, client=None, server=None):
                    application.characteristics, None, (), "unknown", status, None, None, None, tuple(reasons))
 
 
-def classify(observation, transport=None, server_port=None, payload_bytes=None, signatures=None):
+def classify(observation, transport=None, server_port=None, payload_bytes=None, signatures=None, at=None):
     """Verdict for one direction or one datagram.
 
     transport defaults to the observation's own transport. payload_bytes
@@ -176,14 +176,17 @@ def classify(observation, transport=None, server_port=None, payload_bytes=None, 
     """
     if not isinstance(observation, Observation):
         raise TypeError("classify expects an Observation")
-    return session_verdict(observation, None, transport or observation.transport, server_port, payload_bytes, None, True, signatures)
+    return session_verdict(observation, None, transport or observation.transport, server_port, payload_bytes, None, True, signatures, at)
 
 
 def session_verdict(client, server, transport="tcp", server_port=None, client_bytes=None, server_bytes=None,
-                    handshake_complete=True, signatures=None):
-    """Combine both directions of one session into a single verdict, with flow risks attached."""
+                    handshake_complete=True, signatures=None, at=None):
+    """Combine both directions of one session into a single verdict, with flow risks attached.
+
+    `at` is the capture time in POSIX seconds; only certificate validity reads it.
+    """
     verdict = _session_verdict(client, server, transport, server_port, client_bytes, server_bytes, handshake_complete, signatures)
-    risks = flow_risks(verdict, client, server)
+    risks = flow_risks(verdict, client, server, at)
     return verdict._replace(risks=risks) if risks else verdict
 
 

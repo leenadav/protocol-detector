@@ -17,7 +17,7 @@ import sys
 import time
 import weakref
 from collections import Counter
-from analyze_pcap import Analyzer
+from analyze_pcap import Analyzer, certificate_fields
 from capture_stream import PcapStreamDecoder
 from link_packets import decode_frame
 from packets import CaptureError, PacketError, UDPPacket
@@ -138,9 +138,8 @@ class CaptureMonitor:
         if self.all_events or observation.status in ("identified", "invalidated"):
             # No payload, community, credentials, HTTP path, or hostname output.
             derived = {evidence.field: evidence.value for evidence in observation.evidence if evidence.strength == "derived"}
-            certificate = {evidence.field[16:]: evidence.value for evidence in observation.evidence
-                           if evidence.field.startswith("tls_certificate_")}
-            verdict = classify(observation, transport, server[1] if server else None, None, self.analyzer.signatures)
+            certificate = certificate_fields((observation,), timestamp)
+            verdict = classify(observation, transport, server[1] if server else None, None, self.analyzer.signatures, at=timestamp)
             self.emit({"type": "classification", "timestamp": timestamp,
                        "source": source, "destination": destination,
                        "transport": transport, "status": observation.status,
@@ -381,7 +380,7 @@ def main():
     parser.add_argument("--fingerprints", action="store_true", help="Derive JA3/JA4/JA3S/JA4S/HASSH/HTTP2 fingerprints (FINGERPRINTS.md)")
     parser.add_argument("--heuristics", action="store_true", help="Profile unknown payload prefixes and DNS name shape; advisory evidence only (RISKS.md)")
     parser.add_argument("--policy", help="JSON policy evaluated on every session record and classification (POLICY.md)")
-    parser.add_argument("--certificates", action="store_true", help="Read the leaf certificate structure after a TLS 1.2 ServerHello: key, signature, lifetime, self-issued (no names)")
+    parser.add_argument("--certificates", action="store_true", help="Read the leaf certificate structure after a TLS 1.2 ServerHello: key, signature, lifetime, self-issued, CA flag, key usage, alternative-name presence, validity at capture time (no names)")
     parser.add_argument("--json", action="store_true", help="JSON Lines metadata; no payload output")
     args = parser.parse_args()
     if (not math.isfinite(args.duration) or args.duration < 0 or args.max_packets < 0

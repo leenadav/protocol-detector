@@ -311,7 +311,8 @@ def _kerberos_body(data, limit, config):
                 raise ParseError("Kerberos time must be a GeneralizedTime in UTC")
         elif number in (3, 5):
             usec = _krb_inner(value, 2, "microseconds")
-            if not 1 <= len(usec) <= 3 or int.from_bytes(usec, "big", signed=True) < 0:
+            # RFC 4120 Microseconds ::= INTEGER (0..999999); three octets alone would allow 8,388,607 (review round 3).
+            if not 1 <= len(usec) <= 3 or not 0 <= int.from_bytes(usec, "big", signed=True) <= 999999:
                 raise ParseError("Kerberos microseconds outside range")
         elif number == 6:
             raw = _krb_inner(value, 2, "error-code")

@@ -1,10 +1,45 @@
 """Bounded media-type classes for content-type and accept headers, and the HTTP method vocabulary; values are never emitted."""
+import re
 
 STANDARD_METHODS = frozenset((b"GET", b"HEAD", b"POST", b"PUT", b"DELETE", b"CONNECT", b"OPTIONS", b"TRACE", b"PATCH"))
 WEBDAV_METHODS = frozenset((b"PROPFIND", b"PROPPATCH", b"MKCOL", b"COPY", b"MOVE", b"LOCK", b"UNLOCK", b"REPORT", b"SEARCH"))
 RPC_HTTP_METHODS = frozenset((b"RPC_CONNECT", b"RPC_IN_DATA", b"RPC_OUT_DATA"))   # MS-RPCH 2.1.2 (Outlook Anywhere / RPC over HTTP)
 METHODS = STANDARD_METHODS | WEBDAV_METHODS | RPC_HTTP_METHODS
 _AUTH_SCHEMES = {b"basic": "basic", b"bearer": "bearer", b"digest": "digest", b"negotiate": "negotiate", b"ntlm": "ntlm"}
+
+
+MAX_AUTH_ELEMENTS = 32     # list elements classified per WWW-Authenticate/Proxy-Authenticate value
+# One list element: quoted strings (with escapes, unterminated tolerated) or any byte but comma and quote.
+_LIST_ELEMENT = re.compile(rb'(?:"(?:[^"\\]|\\.)*"?|[^,"])+')
+_ELEMENT_HEAD = re.compile(rb"[ \t]*([!#$%&'*+.^_`|~0-9A-Za-z-]*)[ \t]*(=?)")
+
+
+def challenge_scheme_classes(value):
+    """Closed labels of every challenge in a WWW-Authenticate/Proxy-Authenticate value (RFC 9110 11.6.1).
+
+    The value is a comma-separated list mixing challenges and their auth-params;
+    an element whose leading token is followed by "=" is an auth-param, any other
+    non-empty element starts a challenge (scheme, then token68 or parameters).
+    Commas inside quoted strings do not split. At most MAX_AUTH_ELEMENTS elements
+    are examined; only scheme tokens are read. Returns distinct labels in order.
+    """
+    labels = []
+    for count, match in enumerate(_LIST_ELEMENT.finditer(value)):
+        if count == MAX_AUTH_ELEMENTS:
+            break
+        head = _ELEMENT_HEAD.match(match.group())
+        token, equals = head.group(1), head.group(2)
+        if not token and head.end() == len(match.group()):
+            continue                                      # empty list element (only whitespace)
+        if token and equals:
+            if labels:
+                continue                                  # auth-param of the current challenge
+            label = "other"                               # a parameter before any scheme: not a recognised challenge
+        else:
+            label = _AUTH_SCHEMES.get(token.lower(), "other") if token else "other"
+        if label not in labels:
+            labels.append(label)
+    return tuple(labels) or ("empty",)
 
 
 def auth_scheme_class(value):

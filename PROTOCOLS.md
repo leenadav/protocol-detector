@@ -29,7 +29,7 @@ closed set reviewers should expect in records.
 | diameter | tcp | yes | yes | `diameter_message`, `diameter_result` |
 | dnp3 | tcp | yes | same shape | - |
 | dns | tcp/udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode` |
-| dtls | udp | yes | yes | `handshake`, `offered_dtls_version`, `selected_cipher`, `selected_dtls_version` |
+| dtls | udp | yes | yes | `handshake`, `offered_dtls_version`, `selected_cipher`, `selected_cipher_mode`, `selected_dtls_version`, `selected_key_exchange` |
 | ethernet-ip | tcp/udp | yes | same shape | `enip_command` |
 | fastcgi | tcp | yes | yes | `fastcgi_record`, `fastcgi_role` |
 | fins | tcp | yes | yes | `fins_frame`, `fins_message` |
@@ -86,7 +86,7 @@ closed set reviewers should expect in records.
 | socks5 | tcp | yes | yes | `socks_command`, `socks_method`, `socks_port`, `socks_reply`, `socks_target` |
 | spice | tcp | yes | yes | `spice_channel`, `spice_link_error`, `spice_message` |
 | ssdp | udp | yes | same shape | - |
-| ssh | tcp | yes | same shape | `ssh_version` |
+| ssh | tcp | yes | same shape | `ssh_kex_class`, `ssh_terrapin`, `ssh_version`, `ssh_weak_algorithm` |
 | stomp | tcp | yes | yes | - |
 | stun | tcp/udp | yes | same shape | `stun_class`, `stun_method` |
 | syslog | udp/tcp | yes | n/a (one-way) | `syslog_framing` |
@@ -94,7 +94,7 @@ closed set reviewers should expect in records.
 | tds | tcp | yes | yes | `tds_encryption`, `tds_federated_auth`, `tds_mars` |
 | telnet | tcp | yes | same shape | - |
 | tftp | udp | yes | yes | `tftp_packet` |
-| tls | tcp | yes | yes | `hostname`, `offered_alpn`, `requested_group`, `selected_alpn`, `selected_cipher`, `selected_group`, `selected_tls_version`, `tls_certificate_chain`, `tls_certificate_key`, `tls_certificate_lifetime_days`, `tls_certificate_self_issued`, `tls_certificate_signature`, `tls_certificate_version`, `tls_ech`, `tls_handshake`, `tls_offered_max_version` |
+| tls | tcp | yes | yes | `hostname`, `offered_alpn`, `requested_group`, `selected_alpn`, `selected_cipher`, `selected_cipher_mode`, `selected_group`, `selected_key_exchange`, `selected_tls_version`, `tls_certificate_ca`, `tls_certificate_chain`, `tls_certificate_eku`, `tls_certificate_key`, `tls_certificate_lifetime_days`, `tls_certificate_not_after`, `tls_certificate_not_before`, `tls_certificate_san`, `tls_certificate_self_issued`, `tls_certificate_signature`, `tls_certificate_version`, `tls_ech`, `tls_handshake`, `tls_offered_max_version` |
 | tns | tcp | yes | yes | `tns_connect_data`, `tns_response`, `tns_version` |
 | websocket | tcp | yes | yes | `websocket_masked`, `websocket_opcode` |
 | wireguard | udp | yes | yes | `message_type` |
@@ -557,8 +557,18 @@ as a closed label; credentials, principals, domains, challenges, tickets and
 MICs are never decoded. `protocol_engine/gss.py` classifies the token layouts
 these messages carry (RFC 2743 InitialContextToken, RFC 4178 SPNEGO
 NegTokenInit/NegTokenResp, MS-NLMP NTLMSSP): `gss_mechanism` is `kerberos`
-(the krb5, MS krb5 or user-to-user OID, or a Kerberos GSS token with a known
-TOK_ID), `ntlm` (the NTLMSSP OID or an NTLMSSP mechToken/responseToken),
+(the krb5, MS krb5 or user-to-user OID, or a Kerberos GSS token whose TOK_ID
+01 00, 02 00, 03 00 or 04 00 is followed by exactly the AP-REQ, AP-REP,
+KRB-ERROR or TGT-REQ it names, whether the token stands alone or is carried as
+a mechToken/responseToken; the message must pass its RFC 4120 envelope: pvno 5,
+the msg-type of its TOK_ID, the required context fields in increasing order,
+AP-REQ ap-options as a DER KerberosFlags BIT STRING (at least 32 significant
+bits, unused-bit count 0..7, padding bits zero), a Ticket
+[APPLICATION 1] with tkt-vno 5, a non-empty realm, a PrincipalName of 1..8
+components and EncryptedData, EncryptedData with an Int32 etype, optional kvno
+and non-empty cipher, KRB-ERROR through the Kerberos family's own profile
+(whose ctime/stime microseconds must lie in RFC 4120's 0..999999);
+names, realms and ciphertext are framed only), `ntlm` (the NTLMSSP OID or an NTLMSSP mechToken/responseToken),
 `negoex`, `spnego-other` (SPNEGO without a known preferred mechanism) or
 `other` (a non-SPNEGO GSS OID); `ntlm_message` is `negotiate`, `challenge` or
 `authenticate`. A NegTokenInit names the first listed mechType unless its
@@ -576,10 +586,18 @@ STATUS_SUCCESS or STATUS_MORE_PROCESSING_REQUIRED, SessionFlags within
 guest/null/encrypt, buffer at 72) adds `smb_message=session-setup-response`,
 `smb_session` (`continuing`, `guest`, `anonymous`, `encrypted`,
 `authenticated`) and the token labels. The NEGOTIATE request now also carries
-`smb_signing` (`enabled`/`required`) like the response. Any other command, a
-compounded or signed frame, a status outside the two, or a buffer that does
-not fill the frame leaves the NEGOTIATE identification as published (a
-non-SMB frame is not consumed at all); the watch never reads a third frame.
+`smb_signing` (`enabled`/`required`) like the response. The SMB2 header flags
+must fit the direction without relying on a negotiated dialect, which this
+one-direction watch never learns: a request carries no flags (the SMB 3.1.1
+priority value and the signed session-binding request are dialect-dependent
+and end the watch); a response carries SERVER_TO_REDIR and, only on the final
+STATUS_SUCCESS response that every dialect may sign, SIGNED; the signature is
+never verified; an unsigned frame must carry a zero signature field; ASYNC,
+RELATED_OPERATIONS, DFS, REPLAY and reserved bits are rejected. Any
+other command, a compounded frame, a signed frame elsewhere, a status outside
+the two, or a buffer that does not fill the frame leaves the NEGOTIATE
+identification as published (a non-SMB frame is not consumed at all); the
+watch never reads a third frame.
 
 `smb1`: after a NEGOTIATE in either direction, one SESSION_SETUP_ANDX
 (0x73): the 12-word extended-security request classifies its security blob;
@@ -598,12 +616,130 @@ with credentials adds the token's `gss_mechanism`/`ntlm_message`. The
 mechanism string itself is never emitted.
 
 `http`: HTTP/1 and HTTP/2 requests report `http_auth_scheme`
-(`http2_auth_scheme`) from the first `Authorization`/`Proxy-Authorization`
-header, responses `http_auth_challenge` (`http2_auth_challenge`) for every
-distinct scheme offered by `WWW-Authenticate`/`Proxy-Authenticate` headers:
-`basic`, `bearer`, `digest`, `negotiate`, `ntlm`, `other`, `empty`. Only the
-scheme token before the first space or comma is read.
+(`http2_auth_scheme`) for every distinct scheme across all
+`Authorization`/`Proxy-Authorization` headers (one credential per header, so
+only its first token is read), responses `http_auth_challenge`
+(`http2_auth_challenge`) for every distinct challenge across all
+`WWW-Authenticate`/`Proxy-Authenticate` headers and within each
+comma-separated list: an element whose leading token is followed by `=` is an
+auth-param, any other element starts a challenge, commas inside quoted strings
+do not split, and at most 32 list elements per header are examined. Labels:
+`basic`, `bearer`, `digest`, `negotiate`, `ntlm`, `other`, `empty`. Only scheme
+tokens are read.
 
 Risks (RISKS.md): `ntlm-authentication`, `http-basic-authentication`,
 `smb-guest-or-anonymous-session`; `cleartext-credential-protocol` clears on
 LDAP binds whose mechanism never carries the password.
+
+Review round 1 repairs: a Kerberos token carried inside SPNEGO now passes the
+same TOK_ID validator as a direct one (a bad TOK_ID makes the whole token
+malformed instead of yielding `kerberos`); the SMB2 SESSION_SETUP header flags
+are checked as above (previously a signed or async frame was accepted against
+this section's own rule); repeated credential headers and challenge lists no
+longer hide a later Basic or NTLM scheme. Round 2 repairs: the Kerberos
+message after the TOK_ID must pass its envelope (an empty or arbitrary
+application body no longer yields `kerberos`), and the dialect-dependent
+request flags (priority, signed binding) now end the watch instead of being
+taken as proof of SMB 3.x. Round 3 repairs (carried into the v0.57 request,
+the round limit being reached): ap-options must carry at least 32 significant
+bits with zero padding, and the shared KRB-ERROR validator rejects cusec/susec
+outside 0..999999, which also tightens the standalone Kerberos family.
+
+## TLS posture: server key exchange, leaf certificate purpose and validity (v0.57)
+
+No new family. The ServerHello and the opt-in leaf certificate watch (v0.39)
+gain posture labels drawn from closed sets; nothing is verified and nothing
+names the server.
+
+Server selections (`protocol_engine/tls_server.py`, TLS 1.2, TLS 1.3 and
+DTLS 1.2 ServerHello; a HelloRetryRequest selects nothing and carries neither):
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `selected_key_exchange` | `ecdhe`, `dhe`, `static-ecdh`, `static-rsa`, `psk` | TLS 1.2 from the suite: `TLS_RSA_*` (0x002f) is `static-rsa`; `TLS_ECDH_*` (0xc025, 0xc026, 0xc029, 0xc02a, 0xc02d, 0xc02e, 0xc031, 0xc032) use the certificate's static key and are `static-ecdh`; `TLS_ECDHE_*` are `ecdhe`. TLS 1.3 from the extensions: a `key_share` names `ecdhe` (x25519, x448, P-256/384/521) or `dhe` (ffdhe2048..8192), with or without `pre_shared_key`; `pre_shared_key` alone is `psk` (psk_ke resumption, RFC 8446 4.2.9) |
+| `selected_cipher_mode` | `aead`, `cbc` | GCM suites and every TLS 1.3 suite are `aead`; the CBC suites (0x002f, 0xc023..0xc02a) are `cbc` |
+
+Both are `asserted`: the server's selection, unauthenticated, with handshake
+completion unverified. Risk `tls-no-forward-secrecy` (`static-rsa`,
+`static-ecdh`, `psk`).
+
+Leaf certificate (`protocol_engine/x509.py`, `--certificates`): the extension
+walk keeps checking every extension's framing as before and now interprets
+exactly three of them; any other extension is never read beyond its framing.
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `tls_certificate_ca` | `yes`, `no` | basicConstraints (2.5.29.19) `cA`. DER omits the FALSE default, so an encoded FALSE (or any BOOLEAN other than 0xff) is malformed; `pathLenConstraint` only with cA TRUE (RFC 5280 4.2.1.9), a 1..4-octet non-negative minimally encoded INTEGER; any other field is malformed. Absent extension: `no` |
+| `tls_certificate_eku` | `server-auth`, `any`, `other`, `absent` | extendedKeyUsage (2.5.29.37), 1..16 key purposes: `server-auth` when id-kp-serverAuth is listed, else `any` for anyExtendedKeyUsage, else `other` |
+| `tls_certificate_san` | `present`, `absent` | subjectAltName (2.5.29.17): a non-empty SEQUENCE of 1..256 GeneralName choices, each in its DER form (otherName [0], x400Address [3], directoryName [4] and ediPartyName [5] constructed; rfc822Name [1], dNSName [2], URI [6], iPAddress [7] and registeredID [8] primitive) with its inner framing (non-empty IA5 text names, a 4- or 16-octet address, a DER registeredID, an otherName OID plus a [0] holding exactly one element, 1..32 complete elements in an x400Address, one Name in a directoryName, an ediPartyName of optional [0] and required [1] each holding exactly one element); bytes are checked, never read into output |
+| `tls_certificate_not_before`, `tls_certificate_not_after` | `YYYY-MM-DD` | The validity window at calendar-day granularity (the time of day is dropped so the window is a coarse posture fact rather than a fingerprint) |
+
+`ca`, `eku` and `san` appear only for v3 certificates (v1 and v2 cannot carry
+extensions). The same extension OID twice is malformed (RFC 5280 4.2), and so
+is an encoded `critical` FALSE on any extension (DER omits the default; review
+round 1, the same rule as cA). Before v0.57 an explicit FALSE was accepted, so
+such leaves now end the watch without certificate labels. Every object
+identifier in the walk (algorithms, attribute types, extensions, key purposes,
+registeredID, otherName and, since the round-3 repair carried into v0.58, the
+EC named-curve parameter) must be DER: minimally encoded arcs and a complete
+last arc, one OID filling the curve parameters (review rounds 2 and 3). As in
+v0.39, any deviation ends the watch with no certificate evidence and keeps the
+ServerHello identification.
+
+Validity at capture time: the engine has no clock. The hosts pass the capture
+time (`classify(..., at=)`, `session_verdict(..., at=)`): `analyze_pcap` the
+session's first packet, `live_capture` the packet that produced the event.
+Session records and live events add `certificate.validity` (`current`,
+`expired`, `not-yet-valid`) and the risk `tls-certificate-outside-validity`.
+Boundary days count as inside, and a session is judged at its start, so the
+comparison errs towards not flagging. A capture clock before 2000-01-01 (zeroed
+or synthetic timestamps) or beyond year 9999 is treated as unset: no validity,
+no risk. The wall clock of the analysis run is never read, so replaying an old
+capture judges certificates as they were at capture time.
+
+Risks: `tls-no-forward-secrecy`, `tls-ca-certificate-as-leaf`,
+`tls-certificate-not-for-server-auth`, `tls-certificate-without-san`,
+`tls-certificate-outside-validity` (RISKS.md). Still out of scope: chain
+building, signature and name verification, revocation, keyUsage bits, name
+constraints, policies, and TLS 1.3 certificates (encrypted).
+
+Behaviour diff against v0.56: `tools/compare_engine.py` covers the DTLS
+ServerHello (176 of its inputs gain the two selection rows, nothing else
+changes); its fixture set has no TLS server flight, so a supplementary run fed
+identical TLS 1.2, TLS 1.3, HelloRetryRequest and certificate flights (with
+seeded mutations, certificates on and off) to both trees: no status, protocol
+or reason changes; ServerHellos gain the selection rows, certificate flights
+the posture rows, and 2 of 410 mutated certificate flights now end the watch
+without certificate evidence because the mutation fell inside an extension
+v0.57 interprets.
+
+## SSH algorithm posture from KEXINIT (v0.58)
+
+No new family. After the banner the SSH parser now always reads the one
+SSH_MSG_KEXINIT it already validated for HASSH (same RFC 4253 7.1 profile and
+budgets: packet 17..35000 bytes within `max_bytes`, ten printable name-lists of
+at most 4096 bytes, a valid trailer, nothing after it) and publishes a
+`refined` event with closed-set classes. Algorithm names, the cookie and the
+lists are never emitted. A KEXINIT is each side's offer: nothing is negotiated,
+selected or verified, so the classes describe what a side is willing to use.
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `ssh_kex_class` | `pq-hybrid`, `ecdh`, `dh-sha2`, `dh-sha1`, `other` | The strongest family among the offered key exchange names: sntrup761x25519 / mlkem768x25519 / mlkem768nistp256 / mlkem1024nistp384 (`pq-hybrid`); curve25519, curve448, ecdh-sha2-nistp* (`ecdh`); diffie-hellman group14-sha256, group15..18-sha512, group-exchange-sha256 (`dh-sha2`); group1-sha1, group14-sha1, group-exchange-sha1 (`dh-sha1`); anything else, including only pseudo-algorithms, is `other` |
+| `ssh_weak_algorithm` | `kex-sha1`, `hostkey-dss`, `hostkey-rsa-sha1`, `cipher-none`, `cipher-rc4`, `cipher-3des-or-64-bit-block`, `cipher-cbc`, `mac-none`, `mac-md5`, `mac-truncated` | One row per weak class offered in either direction's list (exact, case-sensitive names; empty names ignored) |
+| `ssh_terrapin` | `strict`, `exposed`, `not-applicable` | `strict` when kex-strict-c-v00@openssh.com or kex-strict-s-v00@openssh.com is offered; otherwise `exposed` when chacha20-poly1305@openssh.com, or an `-etm@openssh.com` MAC together with a CBC or 64-bit-block cipher, is offered (CVE-2023-48795); otherwise `not-applicable` |
+
+Risks (RISKS.md): `ssh-weak-algorithm-offered` (every weak class except
+`hostkey-rsa-sha1`, which many clients still offer for compatibility, and
+`cipher-none`, which has its own risk), `ssh-none-cipher-offered`,
+`ssh-terrapin-exposed`. Both directions are inspected; the session verdict
+carries each risk once.
+
+Behaviour change: an SSH stream now consumes its KEXINIT without
+`--fingerprints` (one more bounded packet per direction) and publishes a
+`refined` event. A banner without a KEXINIT, a malformed packet, the byte
+budget or EOF end the continuation with the identification unchanged and no
+classes. `tools/compare_engine.py` has no banner-plus-KEXINIT fixture in its
+generic stream list (those identify before their last byte), so the new
+fixtures `SSH_MODERN_STREAM` and `SSH_LEGACY_STREAM` are registered in the
+coverage matrix extras and exercised by `test_v058.py`.

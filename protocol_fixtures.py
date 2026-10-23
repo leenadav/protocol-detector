@@ -348,16 +348,40 @@ def _x509_key(kind):
     raise ValueError(kind)
 
 
+SERVER_AUTH_OID = bytes.fromhex('2b06010505070301')     # 1.3.6.1.5.5.7.3.1 id-kp-serverAuth
+CLIENT_AUTH_OID = bytes.fromhex('2b06010505070302')     # 1.3.6.1.5.5.7.3.2 id-kp-clientAuth
+ANY_KEY_USAGE_OID = bytes.fromhex('551d2500')           # 2.5.29.37.0 anyExtendedKeyUsage
+
+
+def x509_extension(oid, value, critical=False):
+    return _ber(0x30, _ber(6, oid) + (_ber(1, b'\xff') if critical else b'') + _ber(4, value))
+
+
 def x509(issuer=b'Placeholder CA', subject=b'placeholder', key='rsa-2048', signature=SHA256_RSA,
-         not_before=b'240101000000Z', not_after=b'241231235959Z', version=3, extensions=True, serial=b'\x01\x02\x03'):
-    """Build one DER certificate with placeholder bytes; `extensions` adds basicConstraints."""
+         not_before=b'240101000000Z', not_after=b'241231235959Z', version=3, extensions=True, serial=b'\x01\x02\x03',
+         ca=False, path_len=None, eku=(SERVER_AUTH_OID,), san=(b'placeholder.example',), extra=(), constraints=None, spki=None):
+    """Build one DER certificate with placeholder bytes.
+
+    `extensions` adds basicConstraints (cA TRUE when `ca`, optional raw `path_len` INTEGER
+    contents), extendedKeyUsage from the `eku` OIDs (None omits it), subjectAltName with
+    dNSName placeholders (None omits it) and any `extra` encoded Extension elements.
+    `constraints` replaces the basicConstraints SEQUENCE contents with raw bytes; `spki` replaces the
+    SubjectPublicKeyInfo with raw bytes.
+    """
     algorithm = _ber(0x30, _ber(6, signature) + (_ber(5, b'') if signature != ED25519_OID else b''))
     tbs = (_ber(0xa0, _ber(2, bytes([version - 1]))) if version > 1 else b'') + _ber(2, serial) + algorithm
     tbs += _x509_name(issuer)
     tbs += _ber(0x30, _ber(0x17 if len(not_before) == 13 else 0x18, not_before) + _ber(0x17 if len(not_after) == 13 else 0x18, not_after))
-    tbs += _x509_name(subject) + _x509_key(key)
+    tbs += _x509_name(subject) + (spki if spki is not None else _x509_key(key))
     if extensions:
-        tbs += _ber(0xa3, _ber(0x30, _ber(0x30, _ber(6, b'\x55\x1d\x13') + _ber(1, b'\xff') + _ber(4, _ber(0x30, b'')))))
+        if constraints is None:
+            constraints = (_ber(1, b'\xff') if ca else b'') + (_ber(2, path_len) if path_len is not None else b'')
+        items = [x509_extension(b'\x55\x1d\x13', _ber(0x30, constraints), critical=True)]
+        if eku is not None:
+            items.append(x509_extension(b'\x55\x1d\x25', _ber(0x30, b''.join(_ber(6, oid) for oid in eku))))
+        if san is not None:
+            items.append(x509_extension(b'\x55\x1d\x11', _ber(0x30, b''.join(_ber(0x82, name) for name in san))))
+        tbs += _ber(0xa3, _ber(0x30, b''.join(items) + b''.join(extra)))
     return _ber(0x30, _ber(0x30, tbs) + algorithm + _ber(3, b'\x00' + b'\x44' * 64))
 
 
@@ -373,7 +397,7 @@ def tls_record(payload, kind=22):
 
 
 LEAF_CERTIFICATE = x509()
-CA_CERTIFICATE = x509(subject=b'Placeholder CA', key='rsa-4096', not_after=b'20491231235959Z')
+CA_CERTIFICATE = x509(subject=b'Placeholder CA', key='rsa-4096', not_after=b'20491231235959Z', ca=True, eku=None, san=None)
 TLS_SERVER12_CERTIFICATE = TLS_SERVER12 + tls_record(certificate_message(LEAF_CERTIFICATE, CA_CERTIFICATE))
 
 
@@ -1071,8 +1095,41 @@ def spnego_resp(state=1, mech=OID_NTLMSSP, token=None):
     return der(0xa1, der(0x30, fields))
 
 
+def krb5_encrypted(size=40, kvno=True):
+    """EncryptedData with placeholder ciphertext (zeros): etype 18, optional kvno, cipher."""
+    return _ber(0x30, _ber(0xa0, _ber(2, b"\x12")) + (_ber(0xa1, _ber(2, b"\x02")) if kvno else b"") + _ber(0xa2, _ber(4, bytes(size))))
+
+
+def krb5_ticket(size=40):
+    return _ber(0x61, _ber(0x30, _ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(0x1b, b"EXAMPLE.ORG"))
+                           + _ber(0xa2, _krb_principal(b"cifs")) + _ber(0xa3, krb5_encrypted(size))))
+
+
+def krb5_ap_req_message(size=40, fields=None):
+    """RFC 4120 5.5.1 AP-REQ with placeholder ticket and authenticator ciphertext."""
+    if fields is None:
+        fields = (_ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x0e")) + _ber(0xa2, _ber(3, b"\x00\x20\x00\x00\x00"))
+                  + _ber(0xa3, krb5_ticket(size)) + _ber(0xa4, krb5_encrypted(size, kvno=False)))
+    return _ber(0x6e, _ber(0x30, fields))
+
+
+def krb5_ap_rep_message(size=24):
+    return _ber(0x6f, _ber(0x30, _ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x0f")) + _ber(0xa2, krb5_encrypted(size, kvno=False))))
+
+
+def krb5_tgt_req_message(server=True, realm=True):
+    """User-to-user KERB-TGT-REQUEST (TOK_ID 04 00): pvno 5, msg-type 16, optional server-name and realm."""
+    return _ber(0x30, _ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, b"\x10"))
+                + (_ber(0xa2, _krb_principal(b"host")) if server else b"") + (_ber(0xa3, _ber(0x1b, b"EXAMPLE.ORG")) if realm else b""))
+
+
+def krb5_gss(message, tok_id=b"\x01\x00", oid=OID_KRB5):
+    """RFC 4121 InitialContextToken: mechanism OID, TOK_ID, Kerberos message."""
+    return _ber(0x60, _ber(0x06, oid) + tok_id + message)
+
+
 def krb5_ap_req(size=40):
-    return der(0x60, der(0x06, OID_KRB5) + b"\x01\x00" + der(0x6e, bytes(size)))
+    return krb5_gss(krb5_ap_req_message(size))
 
 
 SPNEGO_NTLM_INIT = spnego_init(token=ntlmssp(1))
@@ -1160,3 +1217,28 @@ def ldap_sasl_bind(mechanism, credentials):
 LDAP_SPNEGO_BIND = ldap_sasl_bind(b"GSS-SPNEGO", SPNEGO_NTLM_INIT)
 STREAM_CASES += ((HTTP_BASIC_AUTH, 'http/1.1'), (HTTP_NTLM_CHALLENGE, 'http/1.1'), (LDAP_SPNEGO_BIND, 'ldap/3'))
 
+
+
+# v0.58: SSH banner plus one SSH_MSG_KEXINIT (RFC 4253 7.1). Cookie bytes are a placeholder.
+def ssh_kexinit(kex=b"curve25519-sha256", hostkeys=b"ssh-ed25519", ciphers=b"aes128-ctr", macs=b"hmac-sha2-256",
+                compression=b"none", first_follows=0, msg=20):
+    lists = (kex, hostkeys, ciphers, ciphers, macs, macs, compression, compression, b"", b"")
+    payload = bytes([msg]) + bytes(range(16)) + b"".join(len(value).to_bytes(4, "big") + value for value in lists)
+    payload += bytes([first_follows]) + bytes(4)
+    padding = 8 - ((len(payload) + 5) % 8)
+    padding = padding + 8 if padding < 4 else padding
+    return (len(payload) + 1 + padding).to_bytes(4, "big") + bytes([padding]) + payload + bytes(padding)
+
+
+SSH_KEXINIT_MODERN = ssh_kexinit(kex=b"mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com,curve25519-sha256,ext-info-c,kex-strict-c-v00@openssh.com",
+                                 hostkeys=b"ssh-ed25519,rsa-sha2-512,rsa-sha2-256",
+                                 ciphers=b"chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-ctr",
+                                 macs=b"umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-256")
+SSH_KEXINIT_LEGACY = ssh_kexinit(kex=b"diffie-hellman-group14-sha1,diffie-hellman-group1-sha1",
+                                 hostkeys=b"ssh-rsa,ssh-dss",
+                                 ciphers=b"aes128-cbc,3des-cbc,aes128-ctr",
+                                 macs=b"hmac-sha1-etm@openssh.com,hmac-md5,hmac-sha1")
+SSH_MODERN_STREAM = b"SSH-2.0-OpenSSH_9.9\r\n" + SSH_KEXINIT_MODERN
+SSH_LEGACY_STREAM = b"SSH-2.0-LegacySSH_1.0\r\n" + SSH_KEXINIT_LEGACY
+# Banner-then-continuation streams identify before their last byte, so they are registered in
+# tools/coverage_matrix.py EXTRA (like the SMB session streams), not in STREAM_CASES.

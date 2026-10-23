@@ -1,4 +1,4 @@
-.PHONY: test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift
+.PHONY: test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift workflow-policy
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -48,7 +48,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix docs-counts
+check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 docs-counts:
@@ -79,6 +79,11 @@ lint:
 
 pins:
 	$(PYTHON) -B tools/check_action_pins.py .github/workflows
+
+# The ci gate lists every ci job; the drift workflow triggers on every workflow file.
+workflow-policy:
+	$(PYTHON) -B tools/check_workflow_policy.py --self-test
+	$(PYTHON) -B tools/check_workflow_policy.py
 
 requirements:
 	$(PYTHON) -B tools/check_security_requirements.py
