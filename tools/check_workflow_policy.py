@@ -2214,7 +2214,7 @@ def self_test():
     gate_header = "    name: release gate (provenance, release checks)\n"
     for label, text in {
         "glob shadow step": controller.replace(setup, '          python-version: "3.13"\n' + glob_shadow + provenance_step, 1),
-        "step dropped": controller.replace("      - name: Set up Python\n        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0\n"
+        "step dropped": controller.replace("      - name: Set up Python\n        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0\n"
                                         '        with:\n          python-version: "3.13"\n', "", 1),
         "setup-python cache": controller.replace(setup, '          python-version: "3.13"\n          cache: pip\n' + provenance_step, 1),
         "step env added": controller.replace(setup, setup + "        working-directory: tools\n", 1),
