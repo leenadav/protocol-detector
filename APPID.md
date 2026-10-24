@@ -30,6 +30,7 @@ A verdict names either a catalog application or a session outcome.
 | `web-browsing` | HTTP/1.x or HTTP/2 initial message validated, no configured mapping | web-browsing |
 | `ssl` | TLS ClientHello/ServerHello validated; SNI/ALPN are offers | ssl |
 | `quic` | QUIC Initial validated; ClientHello recovered from Initial protection when possible, `h3` ALPN is an offer | quic |
+| catalog application by server name (v0.65) | The built-in server-name catalog (53 services, `host_apps.py`) refines `ssl`/`quic`/`web-browsing` from the SNI or Host by label-boundary suffix; `base_app` and `implicitly_uses` name the carrier; never for an outer ECH name; configured rules and signatures win | youtube, ms-teams, slack, ... |
 | `<configured name>` | `RuleIndex` exact-host mapping on `tls_sni`/`http_host`; `base_app` names the carrier (`ssl`/`web-browsing`), `implicitly_uses` lists it | specific app implicitly using ssl/web-browsing |
 | `<signature name>` | Custom signature matched (SIGNATURES.md); category/risk come from the signature, `base_app` is its `parent` or the family that exposed the contexts, including `unknown-tcp`/`unknown-udp` | custom App-ID |
 | `ssh`, `dns`, `smb`, `rdp`, … | The family's structural profile passed (see catalog aliases for vendor names) | same |

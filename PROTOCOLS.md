@@ -918,3 +918,92 @@ Risks (RISKS.md): `tls-prohibited-cipher-offered` (any MUST NOT class) and
 Behaviour diff against v0.63 (84264 inputs): no difference, since no fixture
 ClientHello or seeded mutation offers one of these suites; the new rows and
 risks are exercised by `test_v064`.
+
+## Built-in server-name application catalog (v0.65)
+
+No new family and no change to any observation: the engine's evidence is
+byte-identical. The verdict layer (`appid.py`) now refines the generic carriers
+`ssl`, `quic` and `web-browsing` to a named application when the session's
+server name (TLS SNI, QUIC SNI or HTTP Host) falls under a domain one service
+operates. 53 applications, 158 domains (`protocol_engine/host_apps.py`).
+
+Rules:
+- Matching is on DNS label boundaries with the longest suffix winning:
+  `teams.microsoft.com` maps to `ms-teams` before `microsoft.com` is
+  considered, and `notyoutube.com` never matches `youtube.com`. One dictionary
+  probe per label of a name already bounded to 253 bytes.
+- Configured `RuleIndex` rules and custom signatures win over the catalog.
+- Structural refinements win: `dns-over-https`, `grpc`, `webdav`,
+  `ms-rpc-over-http`, `http-proxy` (CONNECT) and the content applications keep
+  their names.
+- A ClientHello with an outer `encrypted_client_hello` (`tls_ech=outer`) is
+  never mapped: its visible SNI is the provider's public front name.
+- The name is a client assertion, not authenticated identity (domain fronting
+  exists): the verdict adds the reason "Application named by the built-in
+  server-name catalog from a client-asserted server name (not authenticated)";
+  the hostname itself is never placed in reasons.
+- The verdict keeps the carrier: `base_app` and `implicitly_uses` name `ssl`,
+  `quic` or `web-browsing`, and port usage is judged against the carrier's
+  ports.
+- Shared CDNs and cloud hosting (cloudfront.net, akamaized.net, amazonaws.com,
+  azureedge.net, fastly.net, cloudflare.com, ...) name no application and are
+  absent.
+
+| Application | Domains |
+|---|---|
+| `youtube` | `youtube.com`, `youtu.be`, `googlevideo.com`, `ytimg.com`, `youtube-nocookie.com` |
+| `netflix` | `netflix.com`, `nflxvideo.net`, `nflximg.net`, `nflxext.com`, `nflxso.net` |
+| `twitch` | `twitch.tv`, `ttvnw.net`, `jtvnw.net` |
+| `disney-plus` | `disneyplus.com`, `dssott.com`, `bamgrid.com` |
+| `hulu` | `hulu.com`, `hulustream.com` |
+| `amazon-prime-video` | `primevideo.com`, `aiv-cdn.net`, `aiv-delivery.net` |
+| `vimeo` | `vimeo.com`, `vimeocdn.com` |
+| `tiktok` | `tiktok.com`, `tiktokcdn.com`, `tiktokv.com`, `tiktokcdn-us.com` |
+| `spotify` | `spotify.com`, `scdn.co`, `spotifycdn.com`, `spotify.design` |
+| `steam` | `steampowered.com`, `steamcommunity.com`, `steamcontent.com`, `steamstatic.com` |
+| `facebook` | `facebook.com`, `fbcdn.net`, `fb.com`, `facebook.net`, `fbsbx.com` |
+| `instagram` | `instagram.com`, `cdninstagram.com` |
+| `twitter` | `twitter.com`, `x.com`, `twimg.com`, `t.co` |
+| `linkedin` | `linkedin.com`, `licdn.com` |
+| `reddit` | `reddit.com`, `redd.it`, `redditmedia.com`, `redditstatic.com` |
+| `pinterest` | `pinterest.com`, `pinimg.com` |
+| `snapchat` | `snapchat.com`, `sc-cdn.net`, `snap-dev.net` |
+| `whatsapp` | `whatsapp.com`, `whatsapp.net` |
+| `telegram` | `telegram.org`, `t.me`, `telegram.me`, `telesco.pe` |
+| `signal` | `signal.org`, `signal.art`, `whispersystems.org` |
+| `discord` | `discord.com`, `discord.gg`, `discordapp.com`, `discordapp.net`, `discord.media` |
+| `slack` | `slack.com`, `slack-edge.com`, `slack-msgs.com`, `slack-files.com` |
+| `zoom` | `zoom.us`, `zoom.com`, `zoomgov.com` |
+| `ms-teams` | `teams.microsoft.com`, `teams.live.com`, `teams.cdn.office.net` |
+| `skype` | `skype.com`, `skypeassets.com` |
+| `webex` | `webex.com`, `wbx2.com` |
+| `google-meet` | `meet.google.com` |
+| `gmail` | `mail.google.com`, `gmail.com` |
+| `outlook-web` | `outlook.office365.com`, `outlook.office.com`, `outlook.live.com`, `outlook.com` |
+| `ms-office365` | `office.com`, `office365.com`, `office.net`, `officeapps.live.com` |
+| `sharepoint-online` | `sharepoint.com` |
+| `ms-onedrive` | `onedrive.live.com`, `onedrive.com`, `1drv.com`, `1drv.ms` |
+| `azure-ad` | `login.microsoftonline.com`, `microsoftonline.com`, `login.live.com` |
+| `ms-update` | `windowsupdate.com`, `update.microsoft.com`, `delivery.mp.microsoft.com` |
+| `google-drive` | `drive.google.com`, `docs.google.com`, `drive.usercontent.google.com` |
+| `google-base` | `google.com`, `gstatic.com`, `googleapis.com`, `googleusercontent.com`, `gvt1.com`, `gvt2.com` |
+| `dropbox` | `dropbox.com`, `dropboxapi.com`, `dropboxusercontent.com`, `dropboxstatic.com` |
+| `box` | `box.com`, `boxcloud.com`, `box.net` |
+| `icloud` | `icloud.com`, `icloud-content.com` |
+| `github` | `github.com`, `githubusercontent.com`, `githubassets.com`, `github.io` |
+| `gitlab` | `gitlab.com` |
+| `atlassian` | `atlassian.net`, `atlassian.com`, `bitbucket.org` |
+| `salesforce` | `salesforce.com`, `force.com` |
+| `notion` | `notion.so`, `notion.site` |
+| `openai-chatgpt` | `openai.com`, `chatgpt.com`, `oaiusercontent.com`, `oaistatic.com` |
+| `anthropic-claude` | `claude.ai`, `anthropic.com`, `claude.com` |
+| `google-gemini` | `gemini.google.com` |
+| `teamviewer` | `teamviewer.com` |
+| `anydesk` | `anydesk.com`, `net.anydesk.com` |
+| `amazon` | `amazon.com`, `media-amazon.com`, `ssl-images-amazon.com` |
+| `ebay` | `ebay.com`, `ebayimg.com`, `ebaystatic.com` |
+| `paypal` | `paypal.com`, `paypalobjects.com` |
+| `wikipedia` | `wikipedia.org`, `wikimedia.org` |
+
+Behaviour diff against v0.64 (84264 inputs): no difference (observations are
+unchanged; only verdicts with a catalog name change).

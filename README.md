@@ -13,7 +13,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Area | What exists | Where to read |
 |---|---|---|
 | Protocol profiles | 85 families (76 automatic, 9 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
-| Application verdicts | App-ID style vocabulary: 99 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
+| Application verdicts | App-ID style vocabulary: 152 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
 | Application shift | CONNECT, WebSocket/h2c upgrade, STARTTLS/STLS/AUTH TLS, PostgreSQL/MySQL SSLRequest, RDP negotiation: the phase after the boundary is inspected and the carrier is kept as `shifted_from` | PROTOCOLS.md (v0.28) |
 | Custom signatures | JSON rules over bounded parser contexts (host, SNI, ALPN, banner, query name, payload prefix) with a safe regex subset | [SIGNATURES.md](SIGNATURES.md) |
 | Fingerprints | JA3/JA4/JA3S/JA4S/HASSH/HTTP2 SETTINGS, opt-in, derived evidence only | [FINGERPRINTS.md](FINGERPRINTS.md) |
@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 650 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 655 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -69,6 +69,16 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.65 — Applications by server name
+
+HTTPS, QUIC and HTTP sessions are no longer just `ssl` or `web-browsing` when
+the server name identifies the service: a built-in catalog of 53
+applications (YouTube, Netflix, Teams, Zoom, Slack, WhatsApp, ChatGPT, GitHub,
+Office 365, ...) maps the SNI or Host by DNS label suffix. The name is a client
+assertion and the verdict says so; configured rules win, and encrypted
+ClientHello front names are never mapped.
+85 families, 76 automatic, 152 applications, 655 tests.
 
 ## New in v0.64 — Weak cipher suites in TLS offers
 

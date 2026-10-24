@@ -8,13 +8,16 @@ used by application-aware firewalls so that policies written in that vocabulary
 can be evaluated against this engine's output.
 """
 from dataclasses import dataclass
+from functools import lru_cache
 from types import MappingProxyType
 from typing import Optional, Tuple
 
+from .host_apps import catalog_entries
+
 CATEGORIES = MappingProxyType({
-    "business-systems": ("auth-service", "database", "general-business", "ics-protocol", "management",
-                         "software-development", "storage-backup"),
-    "collaboration": ("email", "instant-messaging", "voip-video", "web-posting"),
+    "business-systems": ("auth-service", "database", "general-business", "generative-ai", "ics-protocol", "management",
+                         "office-programs", "software-development", "storage-backup"),
+    "collaboration": ("email", "instant-messaging", "social-networking", "voip-video", "web-posting"),
     "general-internet": ("file-sharing", "internet-utility"),
     "media": ("audio-streaming", "gaming", "photo-video"),
     "networking": ("encrypted-tunnel", "infrastructure", "ip-protocol", "proxy", "remote-access", "routing"),
@@ -323,6 +326,8 @@ def _validate(entries):
     return MappingProxyType({entry.name: entry for entry in entries}), MappingProxyType(aliases)
 
 
+# v0.65: services named by the built-in server-name catalog (host_apps.py).
+_ENTRIES += catalog_entries(_app)
 APPLICATIONS, ALIASES = _validate(_ENTRIES)
 
 
@@ -342,6 +347,18 @@ def lookup(name):
         return APPLICATIONS[name]
     canonical = ALIASES.get(name)
     return APPLICATIONS[canonical] if canonical else None
+
+
+@lru_cache(maxsize=None)     # at most one entry per catalog application and carrier (ssl, quic, web-browsing)
+def host_application(name, container):
+    """Built-in server-name catalog entry (v0.65) carried over this session's container.
+
+    The catalog metadata stays; ports, implicitly_uses and the container come from
+    the carrier (ssl, quic or web-browsing), like a configured mapping.
+    """
+    entry, base = APPLICATIONS[name], APPLICATIONS[container]
+    return Application(entry.name, entry.category, entry.subcategory, entry.technology, entry.risk, entry.description,
+                       entry.characteristics, base.standard_ports, base.secure_ports, (container,), (), container, ())
 
 
 def custom_application(name, container):
