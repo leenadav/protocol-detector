@@ -3,19 +3,23 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import subprocess
 import struct
 import sys
 import tempfile
 import time
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
 ENGINE = ROOT.parent                    # the one engine source: the repository root (stage 1b, A01)
 sys.path.insert(0, str(ENGINE))         # registers protocol_adapters and protocol_engine for an unpacked checkout
 import protocol_adapters                 # noqa: E402,F401 - resolves the root adapters once; no other path hack
+from jobs import AdmissionError, JobRunner  # noqa: E402
 MAX_UPLOAD = 8 * 1024 * 1024
+MAX_HANDLERS = 8                        # stage 6 (A08): bounded concurrent request handlers, never one thread per request
+WORKER_SECONDS = 25
 MAX_FRAMES = 20000
 MAX_SESSIONS = 500
 MAX_EVENTS = 4000
@@ -149,46 +153,117 @@ def catalog_data():
             "sessions": MAX_SESSIONS, "worker_seconds": 25}}
 
 
-def run_worker(data=None):
-    command = [sys.executable, "-B", str(ROOT / "server.py"), "--worker"]
-    if data is None:
-        command.append("--demo")
+def limit_worker_cpu(resource, seconds=22):
+    """A CPU budget for one worker process; never raises an inherited hard limit."""
+    soft, hard = resource.getrlimit(resource.RLIMIT_CPU)
+    cap = (lambda value: value) if hard == resource.RLIM_INFINITY else (lambda value: min(value, hard))
     try:
-        result = subprocess.run(command, input=data or b"", capture_output=True, timeout=25, cwd=str(ROOT))
-    except subprocess.TimeoutExpired:
-        raise ValueError("Analysis exceeded 25 seconds. Use a smaller capture.") from None
-    if result.returncode:
-        raise ValueError("The analysis worker could not finish this capture.")
-    payload = json.loads(result.stdout)
-    if "error" in payload:
-        raise ValueError(payload["error"])
-    return payload
+        resource.setrlimit(resource.RLIMIT_CPU, (cap(seconds), cap(seconds + 1)))
+    except (ValueError, OSError):
+        pass
 
 
-def run_decryption_worker(data, demo=False):
-    command = [sys.executable, '-B', str(ROOT / 'server.py'), '--decrypt-worker']
-    if demo:
-        command.append('--demo')
+def worker_command(kind, payload):
+    """argv and stdin for one bounded worker subprocess; the only place worker kinds are defined."""
+    if kind in ("analyze", "demo"):
+        command = [sys.executable, "-B", str(ROOT / "server.py"), "--worker"] + (["--demo"] if kind == "demo" else [])
+        return command, payload if kind == "analyze" else b""
+    if kind in ("decrypt", "decrypt-demo"):
+        command = [sys.executable, "-B", str(ROOT / "server.py"), "--decrypt-worker"] + (["--demo"] if kind == "decrypt-demo" else [])
+        return command, payload if kind == "decrypt" else b""
+    raise ValueError("unknown worker kind")
+
+
+def new_runner():
+    return JobRunner(worker_command, max_running=2, max_queued=4, lifetime=WORKER_SECONDS)
+
+
+_DEFAULT_RUNNER = []
+
+
+def default_runner():
+    """The runner for direct calls outside a server (tests, scripts); a LocalServer owns its own."""
+    if not _DEFAULT_RUNNER:
+        _DEFAULT_RUNNER.append(new_runner())
+    return _DEFAULT_RUNNER[0]
+
+
+def run_job(kind, payload=b"", timeout=WORKER_SECONDS + 2, runner=None):
+    """Submit through the bounded runner and wait for the outcome (the synchronous endpoints and tests)."""
+    runner = runner or default_runner()
     try:
-        result = subprocess.run(command, input=data, capture_output=True, timeout=25, cwd=str(ROOT))
-    except subprocess.TimeoutExpired:
-        raise ValueError('Decryption exceeded the 25-second limit.') from None
-    if result.returncode:
-        raise ValueError('Decryption worker failed; no decrypted result published.')
-    payload = json.loads(result.stdout)
-    if 'error' in payload:
-        raise ValueError(payload['error'])
-    return payload
+        job = runner.submit(kind, payload)
+    except AdmissionError as error:
+        raise BusyError(str(error)) from None
+    job = runner.wait(job["id"], timeout)
+    if job is None or job["state"] in ("queued", "running"):
+        runner.cancel(job["id"] if job else None)
+        raise ValueError("Analysis exceeded %d seconds. Use a smaller capture." % WORKER_SECONDS)
+    if job["state"] != "done":
+        if job["state"] == "expired":
+            raise ValueError("Analysis exceeded %d seconds. Use a smaller capture." % WORKER_SECONDS)
+        raise ValueError(job["reason"] if job["state"] == "failed" and job["reason"] and not job["reason"].startswith("worker")
+                         else ("The analysis worker could not finish this capture." if kind in ("analyze", "demo")
+                               else "Decryption worker failed; no decrypted result published."))
+    return job["result"]
 
 
-class LocalServer(HTTPServer):
+class BusyError(ValueError):
+    pass
+
+
+def run_worker(data=None, runner=None):
+    return run_job("demo" if data is None else "analyze", data or b"", runner=runner)
+
+
+def run_decryption_worker(data, demo=False, runner=None):
+    return run_job("decrypt-demo" if demo else "decrypt", data, runner=runner)
+
+
+class LocalServer(ThreadingMixIn, HTTPServer):
+    """Loopback server with a bounded handler pool (stage 6, A08).
+
+    Control requests (status, stop, heartbeat, job reads) are cheap and never wait for a worker; uploads and
+    analyses go through the JobRunner's admission control. At most MAX_HANDLERS requests are served at once;
+    beyond that the accept loop answers 503 immediately instead of queueing or spawning more threads.
+    """
+    daemon_threads = True
+    block_on_close = False
+
     def __init__(self, *args, **kwargs):
         from live_manager import LiveManager
         self.live = LiveManager()
+        self.jobs = new_runner()
+        self.slots = threading.BoundedSemaphore(MAX_HANDLERS)
+        self.rejected = 0
         super().__init__(*args, **kwargs)
+
+    def process_request(self, request, client_address):
+        if not self.slots.acquire(blocking=False):
+            self.rejected += 1
+            body = b'{"error": "Too many concurrent requests; retry shortly."}'
+            try:
+                request.sendall(b"HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nContent-Length: "
+                                + str(len(body)).encode() + b"\r\nRetry-After: 1\r\nConnection: close\r\n\r\n" + body)
+            except OSError:
+                pass
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except Exception:
+            self.slots.release()
+            raise
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self.slots.release()
 
     def server_close(self):
         self.live.stop()
+        self.jobs.shutdown()
         super().server_close()
 
     def get_request(self):
@@ -201,6 +276,12 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
+    def handle(self):
+        try:
+            super().handle()
+        except (BrokenPipeError, ConnectionResetError, TimeoutError):
+            pass                                  # aborted or stalled client connections end quietly
+
     def respond(self, code, data, kind="application/json; charset=utf-8"):
         body = json.dumps(data, allow_nan=False).encode() if kind.startswith("application/json") else data
         self.send_response(code)
@@ -210,8 +291,11 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass                                  # the client went away; nothing to report to it
 
     def local_request(self):
         expected = "127.0.0.1:{}".format(self.server.server_port)
@@ -240,11 +324,18 @@ class Handler(BaseHTTPRequestHandler):
                 return self.respond(200, self.server.live.events_since(cursor, limit))
             except ValueError:
                 return self.respond(400, {"error": "cursor and limit must be non-negative integers within bounds"})
+        if path.startswith("/api/jobs/"):
+            job = self.server.jobs.get(path[len("/api/jobs/"):])
+            return self.respond(404, {"error": "Unknown or expired job."}) if job is None else self.respond(200, job)
+        if path == "/api/server":
+            return self.respond(200, {"jobs": self.server.jobs.status(), "handlers": MAX_HANDLERS,
+                                      "rejected_requests": self.server.rejected, "live": self.server.live.snapshot()["state"]})
         if path == "/api/catalog":
             return self.respond(200, catalog_data())
         if path == "/api/sample":
             return self.respond(200, demo_bytes(), "application/vnd.tcpdump.pcap")
         files = {"/": ("index.html", "text/html; charset=utf-8"),
+                 "/store.js": ("store.js", "text/javascript; charset=utf-8"),
                  "/live.js": ("live.js", "text/javascript; charset=utf-8"),
                  "/decrypt.js": ("decrypt.js", "text/javascript; charset=utf-8"),
                  "/app.js": ("app.js", "text/javascript; charset=utf-8"),
@@ -268,10 +359,41 @@ class Handler(BaseHTTPRequestHandler):
                 data = self.rfile.read(length)
                 if len(data) != length:
                     raise ValueError('Incomplete upload.')
-                return self.respond(200, run_decryption_worker(data, path.endswith('/demo')))
+                return self.respond(200, run_decryption_worker(data, path.endswith('/demo'), runner=self.server.jobs))
+            except BusyError as error:
+                return self.respond(429, {'error': str(error)})
             except (ValueError, OSError) as error:
                 return self.respond(400, {'error': str(error)})
-        if path in ("/api/live/start", "/api/live/stop"):
+        if path.startswith("/api/jobs"):
+            # Stage 6 (A08): asynchronous, admission-controlled jobs. POST /api/jobs {kind} with the upload as the
+            # body for analyze/decrypt (decrypt bodies are the same JSON the synchronous endpoint takes);
+            # POST /api/jobs/<id>/cancel is idempotent. The handler never waits for a worker.
+            if self.headers.get('X-Live-Token') != self.server.live.token:
+                return self.respond(403, {'error': 'Reload the dashboard before starting a job.'})
+            if path.endswith("/cancel"):
+                job = self.server.jobs.cancel(path[len("/api/jobs/"):-len("/cancel")])
+                return self.respond(404, {"error": "Unknown or expired job."}) if job is None else self.respond(200, job)
+            if path != "/api/jobs":
+                return self.respond(404, {"error": "Not found"})
+            kind = urlsplit(self.path).query.replace("kind=", "", 1) if urlsplit(self.path).query.startswith("kind=") else self.headers.get("X-Job-Kind", "")
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                limit = 12 * 1024 * 1024 if kind.startswith("decrypt") else MAX_UPLOAD
+                if not 0 <= length <= limit or self.headers.get("Transfer-Encoding"):
+                    return self.respond(413, {"error": "Upload exceeds its limit."})
+                data = self.rfile.read(length)
+                if len(data) != length:
+                    raise ValueError("Incomplete upload.")
+                if kind not in ("analyze", "demo", "decrypt", "decrypt-demo"):
+                    raise ValueError("Unknown job kind.")
+                if kind == "analyze" and not data:
+                    raise ValueError("Choose a non-empty PCAP or PCAPNG file.")
+                return self.respond(202, self.server.jobs.submit(kind, data))
+            except AdmissionError as error:
+                return self.respond(429, {"error": str(error)})
+            except (ValueError, OSError) as error:
+                return self.respond(400, {"error": str(error)})
+        if path in ("/api/live/start", "/api/live/stop", "/api/live/heartbeat"):
             if self.headers.get('X-Live-Token') != self.server.live.token:
                 return self.respond(403, {'error': 'Reload the dashboard before starting capture.'})
             try:
@@ -279,13 +401,17 @@ class Handler(BaseHTTPRequestHandler):
                 if not 0 <= length <= 1024 or self.headers.get('Transfer-Encoding'):
                     raise ValueError('Invalid live control request.')
                 data = self.rfile.read(length)
+                options = json.loads(data) if data else {}
+                if not isinstance(options, dict):
+                    raise ValueError('Invalid live options.')
                 if path.endswith('/start'):
-                    options = json.loads(data)
-                    if not isinstance(options, dict):
-                        raise ValueError('Invalid live options.')
                     result = self.server.live.start(options.get('interface'), options.get('duration', 120), options.get('scope', 'all'), options.get('keylog_path'))
+                elif path.endswith('/heartbeat'):
+                    # Stage 6 (A08): the only call that keeps a run alive, scoped to the run id it names.
+                    renewed = self.server.live.heartbeat(options.get('run_id'))
+                    result = dict(self.server.live.snapshot(), renewed=renewed)
                 else:
-                    self.server.live.stop()
+                    self.server.live.stop(run_id=options.get('run_id'))      # idempotent
                     result = self.server.live.snapshot()
                 return self.respond(200, result)
             except (ValueError, OSError) as error:
@@ -304,9 +430,11 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError("Incomplete upload.")
             if path == "/api/analyze" and not data:
                 raise ValueError("Choose a non-empty PCAP or PCAPNG file.")
-            result = run_worker(None if path == "/api/demo" else data)
+            result = run_worker(None if path == "/api/demo" else data, runner=self.server.jobs)
             result["meta"]["synthetic"] = path == "/api/demo"
             self.respond(200, result)
+        except BusyError as error:
+            self.respond(429, {"error": str(error)})
         except (ValueError, OSError, json.JSONDecodeError) as error:
             self.respond(400, {"error": str(error)})
 
@@ -321,7 +449,7 @@ def main():
     if args.decrypt_worker:
         import base64
         import resource
-        resource.setrlimit(resource.RLIMIT_CPU, (22, 23))
+        limit_worker_cpu(resource)
         try:
             from poc_decryption.capture import analyze_capture
             if args.demo:
@@ -344,7 +472,7 @@ def main():
     if args.worker:
         try:
             import resource
-            resource.setrlimit(resource.RLIMIT_CPU, (22, 23))
+            limit_worker_cpu(resource)
             payload = demo_bytes() if args.demo else sys.stdin.buffer.read(MAX_UPLOAD + 1)
             if len(payload) > MAX_UPLOAD:
                 raise ValueError("Capture exceeds 8 MB.")

@@ -15,6 +15,7 @@ import time
 
 ROOT = Path(__file__).resolve().parent
 ENGINE = ROOT.parent     # one engine source (stage 1b)
+MAX_RUN_SECONDS = 600    # stage 6 (A08): no run outlives this, whatever the client asked or did
 
 
 class LiveManager:
@@ -145,7 +146,7 @@ class LiveManager:
                 self.state = 'failed' if self.error else 'stopped'
 
     def _watch(self, process, duration):
-        deadline = time.monotonic() + duration + 5
+        deadline = time.monotonic() + min(duration, MAX_RUN_SECONDS) + 5     # server-enforced maximum lifetime
         while process.poll() is None:
             time.sleep(1)
             with self.lock:
@@ -154,10 +155,13 @@ class LiveManager:
                 self.stop(process)
                 return
 
-    def stop(self, expected=None):
+    def stop(self, expected=None, run_id=None):
+        """Idempotent (stage 6): stopping an already stopped run, or naming another run, changes nothing."""
         with self.lock:
             process = self.process
             if expected is not None and process is not expected:
+                return
+            if run_id is not None and run_id != self.capture_id:
                 return
             if process is None or process.poll() is not None:
                 return
@@ -177,10 +181,23 @@ class LiveManager:
                 pass
             process.wait(timeout=2)
 
-    def snapshot(self):
+    def heartbeat(self, run_id):
+        """Stage 6 (A08): the one place that renews the dashboard lease, scoped to the run it names.
+
+        Reading status no longer keeps a capture alive; a client that wants the run to continue sends the
+        run id it is watching. A heartbeat for another run (an older tab) changes nothing.
+        """
         with self.lock:
-            self.lease = time.monotonic()
-            return {'state': self.state, 'interface': self.interface, 'error': self.error,
+            if run_id is not None and run_id == self.capture_id and self.process is not None and self.process.poll() is None:
+                self.lease = time.monotonic()
+                return True
+            return False
+
+    def snapshot(self):
+        """Side-effect free (stage 6): no lease renewal, no scheduling; safe to poll from any client."""
+        with self.lock:
+            return {'state': self.state, 'interface': self.interface, 'error': self.error, 'run_id': self.capture_id,
+                    'lease_seconds_left': max(0, int(30 - (time.monotonic() - self.lease))) if self.state == 'running' else None,
                     'decryption': self.decryption,
                     'events': list(self.events), 'sessions': list(self.sessions),
                     'summary': self.summary, 'events_total': self.sequence,

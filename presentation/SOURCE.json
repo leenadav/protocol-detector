@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.65.0",
-  "commit": "24172147a4a26b835c287b68258ea5f3c6ad1652",
+  "commit": "53a1c9767b1a6db715791b54f7c0150e25ede9b6",
   "branch": "work/v065-stage0",
-  "build_digest": "5294ee453375e52b460e3733a966627a58cd30befcc91ec0ee1a03d862911d36",
+  "build_digest": "130900818129b36777a63c413feb6c0bea1beaf0c73ac614aee1a2ff55e12286",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -18,7 +18,7 @@
     "presentation": {
       "root": "presentation",
       "version": "0.65.0",
-      "files": 17
+      "files": 19
     },
     "schemas": {
       "root": "schemas",
@@ -488,6 +488,11 @@
       "sha256": "3f61af047eeb70344bda25bfe21ac07d7f2d2e6e9cbd212f29322501dbc361c8"
     },
     {
+      "path": "presentation/jobs.py",
+      "component": "presentation",
+      "sha256": "7ff1e60c7336073e76508f6b7cf41aacf264ab4875c7e637ef975a6464e1e394"
+    },
+    {
       "path": "presentation/launch.py",
       "component": "presentation",
       "sha256": "a11fa019529eb17cc4066c8301d009a5b9e066731df5179c95b0bc109e26f34c"
@@ -495,7 +500,7 @@
     {
       "path": "presentation/live_manager.py",
       "component": "presentation",
-      "sha256": "53f269e00f440b244450d9465b038cad7bffb1495ce27402c2b8902fb610d406"
+      "sha256": "00177f553d0f0137b383334c60c8e13a7488f23c7453493cf839470395fbe192"
     },
     {
       "path": "presentation/live_smoke_check.py",
@@ -505,7 +510,7 @@
     {
       "path": "presentation/server.py",
       "component": "presentation",
-      "sha256": "5c058c1b2e11536ee0f0dd50c8993ec2bc53eabfe21eed650c702c62afe88ada"
+      "sha256": "3f5764caf02b6ac0842e428e0eac6574278ffae4e9f1afa6c040d9e173da2b4f"
     },
     {
       "path": "presentation/poc_decryption/__init__.py",
@@ -535,7 +540,7 @@
     {
       "path": "presentation/poc_decryption/live.py",
       "component": "presentation",
-      "sha256": "c71a0450cef85d996f4bc146557950ce0d53713d62bc5ce43aaf1b57506703ed"
+      "sha256": "126e20e40e1264f1e060cc7776e21d602093c14b8607f57423e55b23882edffe"
     },
     {
       "path": "presentation/poc_decryption/tls12.py",
@@ -545,22 +550,27 @@
     {
       "path": "presentation/web/app.js",
       "component": "presentation",
-      "sha256": "c8779866b7de1e22249a42607bad93537d7863d99a551965d0f8e8449ee9b6e5"
+      "sha256": "4075ee69af23eb46a3b439ca73aa3f33387f988d4387008ce5a08a6e5fe62f77"
     },
     {
       "path": "presentation/web/decrypt.js",
       "component": "presentation",
-      "sha256": "4350a037411506d9dc3e5f763be89c57a3577808f0515c53c500526650775f6b"
+      "sha256": "dc654312744d3c2fbdbd16232772d10d16205cdbc002ea3f46621c6d5d287d98"
     },
     {
       "path": "presentation/web/index.html",
       "component": "presentation",
-      "sha256": "093dcc3ad885ac41009e44d3ad37f333e48e66a80acb59c79506b2474381e264"
+      "sha256": "a40aec34ad51f9042e9b4f3763b16e075854cc91953870eb2b8c70f72ed72ce1"
     },
     {
       "path": "presentation/web/live.js",
       "component": "presentation",
-      "sha256": "776e6a5498402c32904333dc991fc5ae2070af4421bc510a3419a73a6ea00737"
+      "sha256": "3d4fc15e6e2844181caa32e55ad609c8232f42e179ffc2d2c7992026b5579d70"
+    },
+    {
+      "path": "presentation/web/store.js",
+      "component": "presentation",
+      "sha256": "ce68765ea7aa37e3063fca7e6bb710640fc3806b014c11e0da04d8f769873cbb"
     },
     {
       "path": "presentation/web/styles.css",

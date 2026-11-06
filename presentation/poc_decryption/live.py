@@ -148,15 +148,21 @@ def emit(event):
 
 
 def limit_cpu(seconds):
-    """Mirror the offline worker: a CPU budget, not only a supervisor wall-clock timeout (A07)."""
+    """Mirror the offline worker: a CPU budget, not only a supervisor wall-clock timeout (A07).
+
+    Only ever lowers the limit of the worker process it runs in (never raises a hard limit, never applied
+    when main() is driven in-process by a test).
+    """
     try:
         import resource
-        resource.setrlimit(resource.RLIMIT_CPU, (seconds, seconds + 5))
+        soft, hard = resource.getrlimit(resource.RLIMIT_CPU)
+        cap = lambda value: value if hard == resource.RLIM_INFINITY else min(value, hard)   # noqa: E731
+        resource.setrlimit(resource.RLIMIT_CPU, (cap(seconds), cap(seconds + 5)))
     except (ImportError, ValueError, OSError):
         pass
 
 
-def main():
+def main(apply_limits=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--interface', required=True)
     parser.add_argument('--filter', required=True)
@@ -174,7 +180,8 @@ def main():
         stopped = True
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
-    limit_cpu(max(10, args.duration // 2 + 10))
+    if apply_limits:
+        limit_cpu(max(10, args.duration // 2 + 10))
     error = None
     try:
         # Path goes through stdin, not the process argument list.
@@ -252,4 +259,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main(apply_limits=True))

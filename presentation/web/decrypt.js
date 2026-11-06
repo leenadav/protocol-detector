@@ -16,13 +16,14 @@ async function decryptCapture(demo) {
       for (let i=0;i<bytes.length;i+=32768) binary += String.fromCharCode(...bytes.subarray(i,i+32768));
       body = JSON.stringify({capture:btoa(binary),keylog:await keys.text()});
     }
-    const token = (await api('/api/live/interfaces')).token;
-    const data = await api(demo?'/api/decrypt/demo':'/api/decrypt',{method:'POST',headers:{'Content-Type':'application/json','X-Live-Token':token},body});
+    const runId = demo ? beginRun('decrypt-demo', 'Encrypted application demo') : store.getState().runId;
+    const data = await runJob(demo?'decrypt-demo':'decrypt', body, {'Content-Type':'application/json'});
+    if (!isCurrentRun(runId)) { store.dispatch({type:'run/result', runId, result:{sessions:[]}}); return; }
     showDecryption(data);
     if (demo) {
       stopReplay();
       state.result={sessions:data.connections.map((row,index)=>({id:'D-'+index,app:row.application || 'unknown-tcp',client:row.client,server:row.server,transport:'tcp',category:row.category || 'unknown',encryption:'tls',client_protocol:row.inner_protocol,port_usage:'not evaluated',risks:[],client_bytes:row.client_plaintext_bytes || 0,server_bytes:row.server_plaintext_bytes || 0,reasons:row.reasons || [row.reason],events:[],engine_status:row.status,decrypted_log:'TLS-'+JSON.stringify([row.client,row.server])})),meta:{synthetic:true,frames:data.frames,skipped:data.skipped,timeline:[],processing_ms:0}};
-      state.visible=data.connections.length;
+      store.dispatch({type:'run/result', runId, result:state.result, sourceName:'Encrypted application demo'});
       render();
       setView('overview');
       $('live-events-panel').hidden = false;
