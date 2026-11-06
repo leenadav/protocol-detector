@@ -1,4 +1,4 @@
-.PHONY: test presentation-test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
+.PHONY: test presentation-test presentation-check manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -53,8 +53,17 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix docs-counts
+check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
+
+manifest:
+	$(PYTHON) -B tools/build_manifest.py --check presentation/SOURCE.json
+
+# Runs the presentation suite when the optional decryption extra is importable, and says so when it is not,
+# instead of silently passing: the canonical CI job installs the extra and always runs it.
+presentation-check:
+	@$(PYTHON) -c "import cryptography" 2>/dev/null && $(MAKE) --no-print-directory presentation-test PYTHON=$(PYTHON) \
+	|| echo "presentation-check: skipped here (install .[decryption] to run it); CI runs it unconditionally"
 
 docs-counts:
 	$(PYTHON) -B tools/check_docs_counts.py
