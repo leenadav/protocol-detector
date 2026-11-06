@@ -1,0 +1,147 @@
+{
+  "cases": {
+    "in_order_1400": {
+      "current": {
+        "p50_us": 1.833,
+        "p95_us": 1.917,
+        "p99_us": 2.0
+      },
+      "baseline": {
+        "p50_us": 1.833,
+        "p95_us": 1.916,
+        "p99_us": 1.959
+      }
+    },
+    "duplicate_1400": {
+      "current": {
+        "p50_us": 1.833,
+        "p95_us": 1.917,
+        "p99_us": 2.041
+      },
+      "baseline": {
+        "p50_us": 202.708,
+        "p95_us": 222.541,
+        "p99_us": 229.666
+      }
+    },
+    "duplicate_64k": {
+      "current": {
+        "p50_us": 35.0,
+        "p95_us": 35.292,
+        "p99_us": 37.959
+      },
+      "baseline": {
+        "p50_us": 9357.188,
+        "p95_us": 10532.459,
+        "p99_us": 10762.958
+      }
+    },
+    "pending_duplicate_1400": {
+      "current": {
+        "p50_us": 1.833,
+        "p95_us": 1.917,
+        "p99_us": 1.959
+      },
+      "baseline": {
+        "p50_us": 197.688,
+        "p95_us": 223.541,
+        "p99_us": 227.25
+      }
+    },
+    "two_reverse_segments_1400": {
+      "current": {
+        "p50_us": 5.625,
+        "p95_us": 5.959,
+        "p99_us": 6.208
+      },
+      "baseline": {
+        "p50_us": 533.188,
+        "p95_us": 572.583,
+        "p99_us": 604.208
+      }
+    },
+    "fill_one_byte_gap_64k": {
+      "current": {
+        "p50_us": 9.584,
+        "p95_us": 10.583,
+        "p99_us": 10.708
+      },
+      "baseline": {
+        "p50_us": 9758.021,
+        "p95_us": 10470.667,
+        "p99_us": 10696.292
+      }
+    },
+    "partial_overlap_1400": {
+      "current": {
+        "p50_us": 101.021,
+        "p95_us": 114.375,
+        "p99_us": 120.875
+      },
+      "baseline": {
+        "p50_us": 359.938,
+        "p95_us": 384.75,
+        "p99_us": 395.958
+      }
+    },
+    "alternating_holes_64k": {
+      "current": {
+        "p50_us": 4567.792,
+        "p95_us": 5311.375,
+        "p99_us": 6035.417
+      },
+      "baseline": {
+        "p50_us": 21249.125,
+        "p95_us": 22780.791,
+        "p99_us": 23478.667
+      }
+    },
+    "duplicate_conflict_first_64k": {
+      "current": {
+        "p50_us": 32.708,
+        "p95_us": 33.0,
+        "p99_us": 37.959
+      },
+      "baseline": {
+        "p50_us": 1.25,
+        "p95_us": 1.333,
+        "p99_us": 1.417
+      }
+    },
+    "duplicate_conflict_last_64k": {
+      "current": {
+        "p50_us": 35.208,
+        "p95_us": 35.542,
+        "p99_us": 39.084
+      },
+      "baseline": {
+        "p50_us": 6009.188,
+        "p95_us": 6601.334,
+        "p99_us": 6794.459
+      }
+    },
+    "mixed_conflict_last_64k": {
+      "current": {
+        "p50_us": 3275.291,
+        "p95_us": 3616.375,
+        "p99_us": 3743.417
+      },
+      "baseline": {
+        "p50_us": 3240.959,
+        "p95_us": 3709.792,
+        "p99_us": 3777.542
+      }
+    }
+  },
+  "source_sha256": {
+    "current": "78b448b12abc1064aec0199178f6fe2611d6e3503cdaedf12036b474148cc431",
+    "baseline": "ed2799d720e636e20b1f81bfb944055ba8de059258e2c655cdf541b963aaa999"
+  },
+  "iterations": 200,
+  "rounds": 5,
+  "python": "3.9.6 (default, May 22 2026, 11:13:45) \n[Clang 21.0.0 (clang-2100.1.1.101)]",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "scope": "Stream.feed only with counter inspector; preparation/copy/assertions excluded; GC enabled",
+  "benchmark_sha256": "603de98f540f0b89f6c3ea316d550eb11ac19db809f2e762a7a59e3c08f897d2",
+  "fixture_sha256": "de2da4f550acb4b5c8c2dec7cb12901312251ed039b050995a4d2be1d12b938b"
+}

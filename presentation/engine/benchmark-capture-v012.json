@@ -1,0 +1,132 @@
+{
+  "cases": {
+    "http_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 37.833,
+          "p95_us": 43.542,
+          "p99_us": 63.584
+        },
+        "status": "identified",
+        "packets": 3
+      },
+      "current": {
+        "flow": {
+          "p50_us": 38.417,
+          "p95_us": 43.917,
+          "p99_us": 59.791
+        },
+        "status": "identified",
+        "packets": 3
+      }
+    },
+    "partial_fin": {
+      "baseline": {
+        "flow": {
+          "p50_us": 28.042,
+          "p95_us": 33.834,
+          "p99_us": 44.917
+        },
+        "status": "incomplete",
+        "packets": 3
+      },
+      "current": {
+        "flow": {
+          "p50_us": 28.292,
+          "p95_us": 33.417,
+          "p99_us": 45.917
+        },
+        "status": "incomplete",
+        "packets": 3
+      }
+    },
+    "dns_datagram": {
+      "baseline": {
+        "flow": {
+          "p50_us": 9.0,
+          "p95_us": 10.667,
+          "p99_us": 13.083
+        },
+        "status": "identified",
+        "packets": 1
+      },
+      "current": {
+        "flow": {
+          "p50_us": 8.917,
+          "p95_us": 9.917,
+          "p99_us": 14.917
+        },
+        "status": "identified",
+        "packets": 1
+      }
+    },
+    "reordered_http": {
+      "baseline": {
+        "flow": {
+          "p50_us": 45.625,
+          "p95_us": 52.125,
+          "p99_us": 65.833
+        },
+        "status": "identified",
+        "packets": 4
+      },
+      "current": {
+        "flow": {
+          "p50_us": 46.334,
+          "p95_us": 53.875,
+          "p99_us": 70.042
+        },
+        "status": "identified",
+        "packets": 4
+      }
+    },
+    "leading_duplicate": {
+      "baseline": {
+        "flow": {
+          "p50_us": 44.042,
+          "p95_us": 50.541,
+          "p99_us": 67.208
+        },
+        "status": "identified",
+        "packets": 4
+      },
+      "current": {
+        "flow": {
+          "p50_us": 45.042,
+          "p95_us": 51.75,
+          "p99_us": 66.792
+        },
+        "status": "identified",
+        "packets": 4
+      }
+    },
+    "leading_conflict": {
+      "baseline": {
+        "flow": {
+          "p50_us": 43.959,
+          "p95_us": 52.333,
+          "p99_us": 70.958
+        },
+        "status": "identified",
+        "packets": 4
+      },
+      "current": {
+        "flow": {
+          "p50_us": 51.666,
+          "p95_us": 62.167,
+          "p99_us": 124.5
+        },
+        "status": "invalidated",
+        "packets": 4
+      }
+    }
+  },
+  "source_sha256": {
+    "baseline": "76e5b6c552828bf6ae974f81c0900aacf5dd29b44e1084c54580c0fc208afaa7",
+    "current": "3cad5f07f21a2ae4efa084ed689e42e5bf8f8930452638e7a97f3d5517295e43"
+  },
+  "iterations": 500,
+  "rounds": 5,
+  "scope": "Decoded synthetic packets to events, excludes construction/capture/output; leading-conflict baseline remains wrongly identified",
+  "benchmark_sha256": "99db1ee0b839d728ef4b3ea30a5e991bd09d63d5855deea4f20758adec17371b"
+}

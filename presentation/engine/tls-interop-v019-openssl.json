@@ -1,0 +1,40 @@
+{
+  "parser_python": "3.9.6",
+  "cases": [
+    {
+      "version": "1.2",
+      "status": "passed",
+      "flight_bytes": 1379,
+      "hello_bytes_inspected": 79,
+      "scope": "server_hello",
+      "selected_cipher": "0xc02f",
+      "selected_alpn": "h2"
+    },
+    {
+      "version": "1.3",
+      "status": "passed",
+      "flight_bytes": 1804,
+      "hello_bytes_inspected": 160,
+      "scope": "server_hello",
+      "selected_cipher": "0x1302",
+      "selected_alpn": null
+    },
+    {
+      "version": "1.3",
+      "status": "passed",
+      "flight_bytes": 1897,
+      "hello_bytes_inspected": 93,
+      "scope": "hello_retry_request",
+      "selected_cipher": "0x1302",
+      "selected_alpn": null
+    }
+  ],
+  "status": "passed",
+  "generator_python": "3.12.14",
+  "tls_library": "OpenSSL 3.5.8 25 Aug 2026",
+  "network": "none; MemoryBIO only",
+  "key_exchange_profile": "secp256r1",
+  "tls13_supported": true,
+  "script_sha256": "80876a9985c82b667418f3f656c982743ba190fcb0100b635bbe91a27441d8b1",
+  "source_sha256": "957f2846464905097bbe031520c5be2b4c4d8bad75931268996520306004452b"
+}

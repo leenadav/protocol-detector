@@ -1,0 +1,72 @@
+{
+  "cases": {
+    "http_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 80.709,
+          "p95_us": 144.167,
+          "p99_us": 162.709
+        },
+        "status": "identified",
+        "packets": 3
+      },
+      "current": {
+        "flow": {
+          "p50_us": 78.208,
+          "p95_us": 83.083,
+          "p99_us": 88.209
+        },
+        "status": "identified",
+        "packets": 3
+      }
+    },
+    "partial_fin": {
+      "baseline": {
+        "flow": {
+          "p50_us": 409.958,
+          "p95_us": 475.709,
+          "p99_us": 516.875
+        },
+        "status": "detecting",
+        "packets": 3
+      },
+      "current": {
+        "flow": {
+          "p50_us": 58.042,
+          "p95_us": 61.042,
+          "p99_us": 66.042
+        },
+        "status": "incomplete",
+        "packets": 3
+      }
+    },
+    "dns_datagram": {
+      "baseline": {
+        "flow": {
+          "p50_us": 18.459,
+          "p95_us": 19.333,
+          "p99_us": 66.292
+        },
+        "status": "identified",
+        "packets": 1
+      },
+      "current": {
+        "flow": {
+          "p50_us": 18.25,
+          "p95_us": 18.708,
+          "p99_us": 19.542
+        },
+        "status": "identified",
+        "packets": 1
+      }
+    }
+  },
+  "source_sha256": {
+    "baseline": "35008b5a9cbf7ea9325e7bba9882f755c5dbaa6c181e91f0789439750aaaec9d",
+    "current": "b4c38d3f1b01be7324777eb06d8ab07ab6e9e2aab4c5f559b127ac64ce8f0e8f"
+  },
+  "iterations": 500,
+  "rounds": 5,
+  "scope": "Decoded synthetic packets to events, excludes construction/capture/output; FIN baseline may remain detecting",
+  "benchmark_sha256": "43eb87d4746b37a5fc65e0dc63e7f3cb8d19526235bc572f9dc4420826acc9d5"
+}

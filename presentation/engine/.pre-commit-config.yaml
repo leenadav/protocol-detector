@@ -1,0 +1,25 @@
+# Local SSDLC hooks mirroring the CI gates. Install: pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff (correctness + security rules)
+        entry: ruff check
+        language: system
+        types: [python]
+      - id: unittest
+        name: unit tests
+        entry: python3 -B -m unittest discover -q
+        language: system
+        pass_filenames: false
+      - id: action-pins
+        name: GitHub Actions pinned to commit SHAs
+        entry: python3 -B tools/check_action_pins.py .github/workflows
+        language: system
+        pass_filenames: false
+        files: ^\.github/workflows/
+      - id: security-requirements
+        name: security requirements reference existing tests
+        entry: python3 -B tools/check_security_requirements.py
+        language: system
+        pass_filenames: false

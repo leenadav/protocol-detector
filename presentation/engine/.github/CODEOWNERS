@@ -1,0 +1,6 @@
+# Changes to parsing, capture handling and security policy require owner review.
+*                       @leenadav
+/protocol_engine/       @leenadav
+/.github/               @leenadav
+SECURITY.md             @leenadav
+THREAT-MODEL.md         @leenadav

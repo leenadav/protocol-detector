@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "client": "LibreSSL 3.3.6",
+  "python": "3.9.6",
+  "scope": "Canonical DTLS1.2 client to synthetic IPv4 loopback cookie responder; no completed/authenticated handshake",
+  "source_sha256": "09cbe5fe14e5062e89bbd6e36b54b633fa699fbae723b372ecfa0949c30e9f31",
+  "script_sha256": "4ff00b85141faffac16742d471e946655683caae3b1e261fbcf36521625905f8",
+  "cases": [
+    {
+      "stage": "initial",
+      "wire_bytes": 161,
+      "record_version_hex": "fefd",
+      "message_sequence": 0,
+      "status": "identified",
+      "encryption": "dtls",
+      "inner_protocol": null
+    },
+    {
+      "stage": "cookie_retry",
+      "wire_bytes": 182,
+      "record_version_hex": "fefd",
+      "message_sequence": 1,
+      "status": "identified",
+      "encryption": "dtls",
+      "inner_protocol": null
+    }
+  ]
+}

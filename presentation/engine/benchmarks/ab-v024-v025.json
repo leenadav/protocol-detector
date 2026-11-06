@@ -1,0 +1,28 @@
+{
+  "method": "min over alternations x repeat of mean per-flow time, constructor subtracted; microseconds",
+  "alternations": 3,
+  "flows": 400,
+  "repeat": 7,
+  "fingerprints": false,
+  "results": {
+    "current": {
+      "http_flow": 102.8,
+      "tls_flow": 122.1,
+      "tls_server13": 99.9,
+      "ssh_flow": 76.0,
+      "dns_datagram": 38.5,
+      "dtls_datagram": 40.3,
+      "udp_unknown": 18.5,
+      "quic_initial": 2034.9
+    },
+    "baseline": {
+      "http_flow": 99.5,
+      "tls_flow": 122.2,
+      "tls_server13": 96.7,
+      "ssh_flow": 81.8,
+      "dns_datagram": 33.2,
+      "dtls_datagram": 39.3,
+      "udp_unknown": 16.9
+    }
+  }
+}
