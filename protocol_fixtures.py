@@ -1245,3 +1245,46 @@ SSH_MODERN_STREAM = b"SSH-2.0-OpenSSH_9.9\r\n" + SSH_KEXINIT_MODERN
 SSH_LEGACY_STREAM = b"SSH-2.0-LegacySSH_1.0\r\n" + SSH_KEXINIT_LEGACY
 # Banner-then-continuation streams identify before their last byte, so they are registered in
 # tools/coverage_matrix.py EXTRA (like the SMB session streams), not in STREAM_CASES.
+
+
+# v0.59: smart-home LAN datagrams found unidentified in local captures, rebuilt here from the public specifications.
+def lifx(kind, payload=b"", tagged=False, target=bytes(6), flags=1, sequence=7, source=0x01020304):
+    word = 1024 | 0x1000 | (0x2000 if tagged else 0)
+    return ((36 + len(payload)).to_bytes(2, "little") + word.to_bytes(2, "little") + source.to_bytes(4, "little")
+            + target + b"\x00\x00" + bytes(6) + bytes((flags, sequence)) + bytes(8) + kind.to_bytes(2, "little")
+            + b"\x00\x00" + payload)
+
+
+def tuya(command, payload, sequence=0):
+    import zlib
+    body = sequence.to_bytes(4, "big") + command.to_bytes(4, "big") + (len(payload) + 8).to_bytes(4, "big") + payload
+    head = b"\x00\x00\x55\xaa" + body
+    return head + zlib.crc32(head).to_bytes(4, "big") + b"\x00\x00\xaa\x55"
+
+
+def kasa(text, key=171):
+    out = bytearray()
+    for byte in text:
+        key ^= byte
+        out.append(key)
+    return bytes(out)
+
+
+LIFX_GET_SERVICE = lifx(2, tagged=True)
+LIFX_STATE_SERVICE = lifx(3, b"\x01" + (56700).to_bytes(4, "little"), target=bytes((0xd0, 0x73, 0xd5, 0, 0, 1)), flags=0)
+LIFX_GET_VERSION = lifx(32, tagged=True)
+TUYA_UDP_NEW = tuya(0x13, b"\x00\x00\x00\x00" + bytes(range(16)) * 4)
+KASA_SYSINFO = kasa(b'{"system":{"get_sysinfo":{}},"emeter":{"get_realtime":{}}}')
+KASA_REPLY = kasa(b'{"system":{"get_sysinfo":{"alias":"placeholder","err_code":0}}}')
+# mDNS response whose PTR answer compresses against an SRV target (RFC 2782 RDATA name), the layout v0.58 rejected.
+MDNS_SRV_POINTER = (b"\x00\x00\x84\x00\x00\x00\x00\x02\x00\x00\x00\x00"
+                    b"\x04demo\x05_http\x04_tcp\x05local\x00" b"\x00\x21\x80\x01\x00\x00\x00\x78\x00\x0d"
+                    b"\x00\x00\x00\x00\x00\x50" b"\x04host\xc0\x1c"
+                    b"\xc0\x11\x00\x0c\x80\x01\x00\x00\x00\x78\x00\x02\xc0\x33")
+MDNS_QUERY_AA = (b"\x00\x00\x04\x00\x00\x01\x00\x00\x00\x00\x00\x00" b"\x05_http\x04_tcp\x05local\x00\x00\x0c\x00\x01")
+MDNS_REVERSE_PROBE = (b"\x00\x00\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00"
+                      b"\x0210\x010\x011\x03192\x07in-addr\x04arpa\x00\x00\xff\x00\x01"
+                      b"\xc0\x0c\x00\x0c\x00\x01\x00\x00\x00\x78\x00\x0c\x04host\x05local\x00")
+DATAGRAM_CASES += ((LIFX_GET_SERVICE, 'lifx-lan'), (LIFX_STATE_SERVICE, 'lifx-lan'), (LIFX_GET_VERSION, 'lifx-lan'),
+                   (TUYA_UDP_NEW, 'tuya-lan'), (KASA_SYSINFO, 'tplink-smarthome'), (KASA_REPLY, 'tplink-smarthome'),
+                   (MDNS_SRV_POINTER, 'mdns'), (MDNS_QUERY_AA, 'mdns'), (MDNS_REVERSE_PROBE, 'mdns'))

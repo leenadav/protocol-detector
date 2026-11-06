@@ -12,8 +12,8 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 
 | Area | What exists | Where to read |
 |---|---|---|
-| Protocol profiles | 85 families (76 automatic, 9 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
-| Application verdicts | App-ID style vocabulary: 99 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
+| Protocol profiles | 88 families (79 automatic, 9 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
+| Application verdicts | App-ID style vocabulary: 102 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
 | Application shift | CONNECT, WebSocket/h2c upgrade, STARTTLS/STLS/AUTH TLS, PostgreSQL/MySQL SSLRequest, RDP negotiation: the phase after the boundary is inspected and the carrier is kept as `shifted_from` | PROTOCOLS.md (v0.28) |
 | Custom signatures | JSON rules over bounded parser contexts (host, SNI, ALPN, banner, query name, payload prefix) with a safe regex subset | [SIGNATURES.md](SIGNATURES.md) |
 | Fingerprints | JA3/JA4/JA3S/JA4S/HASSH/HTTP2 SETTINGS, opt-in, derived evidence only | [FINGERPRINTS.md](FINGERPRINTS.md) |
@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 622 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 635 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -70,6 +70,16 @@ If capture permission is denied, grant permission to the capture helper accordin
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
 
+## New in v0.59 — Smart-home LAN families and multicast DNS repairs
+
+Triage of the unidentified flows in local captures led to three new UDP
+families: LIFX LAN (`lifx-lan`), Tuya LAN 3.3 discovery (`tuya-lan`) and
+TP-Link Smart Home (`tplink-smarthome`), each with a structural profile and
+fixed-vocabulary evidence only. The DNS layout no longer rejects multicast DNS
+responses that compress against an SRV target or NSEC next name, ignores the AA
+bit on mDNS queries as RFC 6762 18.4 requires, and recognises reverse-mapping
+probes. 88 families, 79 automatic, 102 applications, 635 tests.
+
 ## New in v0.58 — SSH algorithm posture
 
 The SSH key exchange offer (KEXINIT) is now read after every SSH banner, with
@@ -79,7 +89,7 @@ SHA-2 or SHA-1 Diffie-Hellman), the weak algorithm classes offered (SHA-1 key
 exchange, DSA or SHA-1 RSA host keys, RC4, 3DES, CBC, MD5 or truncated MACs,
 none) and whether the side is exposed to Terrapin or offers strict key
 exchange. New risks: `ssh-weak-algorithm-offered`, `ssh-none-cipher-offered`,
-`ssh-terrapin-exposed`. 85 families, 76 automatic, 99 applications, 622 tests.
+`ssh-terrapin-exposed`. 88 families, 79 automatic, 102 applications, 635 tests.
 
 ## New in v0.57 — TLS posture
 
@@ -91,7 +101,7 @@ its CA flag, extended key usage class, whether it carries alternative names
 and live events judge that window at the capture time, never the analysis
 clock. New risks: `tls-no-forward-secrecy`, `tls-ca-certificate-as-leaf`,
 `tls-certificate-not-for-server-auth`, `tls-certificate-without-san`,
-`tls-certificate-outside-validity`. 85 families, 76 automatic, 99
+`tls-certificate-outside-validity`. 88 families, 79 automatic, 99
 applications, 616 tests.
 
 ## New in v0.56 — Authentication mechanism evidence
@@ -103,8 +113,8 @@ LDAP bind mechanisms (simple, SASL GSSAPI/GSS-SPNEGO/PLAIN/DIGEST/SCRAM/
 EXTERNAL and more), HTTP/1 and HTTP/2 Authorization and WWW-Authenticate
 scheme classes. New risks: `ntlm-authentication`, `http-basic-authentication`,
 `smb-guest-or-anonymous-session`; the cleartext-credential risk clears on
-LDAP binds whose mechanism never carries the password. 85 families, 76
-automatic, 99 applications, 603 tests.
+LDAP binds whose mechanism never carries the password. 88 families, 76
+automatic, 102 applications, 603 tests.
 
 ## New in v0.55 — Name services on the DNS layout
 
@@ -114,7 +124,7 @@ registrations, releases, refreshes, WACK and responses) become their own UDP
 families, told from unicast DNS by structure; LLMNR joins as a hint-only
 family because its bytes equal a unicast DNS query. The DNS-layout candidate
 rule admits the rarer layouts only under a plausibility check so RIP and DTLS
-bytes never compete. 85 families, 76 automatic, 99 applications, 587 tests.
+bytes never compete. 88 families, 79 automatic, 102 applications, 587 tests.
 
 ## New in v0.54 — LDAP StartTLS, IRC, TURN, NetBIOS name service and RPC over HTTP
 

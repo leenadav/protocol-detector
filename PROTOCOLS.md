@@ -48,6 +48,7 @@ closed set reviewers should expect in records.
 | kerberos | tcp/udp | yes | yes | `kerberos_error`, `kerberos_message` |
 | l2tp | udp | yes | yes | `l2tp_message` |
 | ldap | tcp | yes | yes | `gss_mechanism`, `ldap_bind`, `ldap_extended`, `ldap_message`, `ldap_result`, `ntlm_message` |
+| lifx-lan | udp | yes | yes | `lifx_message`, `lifx_tagged` |
 | llmnr | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `llmnr_flags` |
 | mdns | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `mdns_profile` |
 | memcached | tcp | yes | yes | `memcached_message`, `memcached_status` |
@@ -96,13 +97,15 @@ closed set reviewers should expect in records.
 | tftp | udp | yes | yes | `tftp_packet` |
 | tls | tcp | yes | yes | `hostname`, `offered_alpn`, `requested_group`, `selected_alpn`, `selected_cipher`, `selected_cipher_mode`, `selected_group`, `selected_key_exchange`, `selected_tls_version`, `tls_certificate_ca`, `tls_certificate_chain`, `tls_certificate_eku`, `tls_certificate_key`, `tls_certificate_lifetime_days`, `tls_certificate_not_after`, `tls_certificate_not_before`, `tls_certificate_san`, `tls_certificate_self_issued`, `tls_certificate_signature`, `tls_certificate_version`, `tls_ech`, `tls_handshake`, `tls_offered_max_version` |
 | tns | tcp | yes | yes | `tns_connect_data`, `tns_response`, `tns_version` |
+| tplink-smarthome | udp | yes | same shape | `tplink_module`, `tplink_modules` |
+| tuya-lan | udp | yes | n/a (one-way) | `tuya_command` |
 | websocket | tcp | yes | yes | `websocket_masked`, `websocket_opcode` |
 | wireguard | udp | yes | yes | `message_type` |
 | x11 | tcp | yes | yes | `x11_authorization`, `x11_byte_order`, `x11_message` |
 | xmpp | tcp | yes | yes | `hostname`, `xmpp_namespace`, `xmpp_stream`, `xmpp_version` |
 | zmtp | tcp | yes | yes | `zmtp_mechanism`, `zmtp_role` |
 
-85 families in the catalog, 85 with fixtures, 72 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, irc, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
+88 families in the catalog, 88 with fixtures, 74 proven on both sides (or symmetric), 5 one-way; server side still unproven: ftp, irc, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
 <!-- coverage-matrix:end -->
 
 ## Direction evidence and remaining replies (v0.49)
@@ -712,6 +715,32 @@ or reason changes; ServerHellos gain the selection rows, certificate flights
 the posture rows, and 2 of 410 mutated certificate flights now end the watch
 without certificate evidence because the mutation fell inside an extension
 v0.57 interprets.
+
+## Smart-home LAN datagrams and multicast DNS repairs (v0.59)
+
+Found unidentified in local captures (first bytes `24000034`, `000055aa`,
+`d0f2`): three new automatic UDP families.
+
+- `lifx-lan`: 36-byte little-endian header; size equals the datagram,
+  protocol 1024, addressable 1, origin 0, reserved bits and the word after the
+  type zero, target ends in two zero bytes and is all zero when tagged; known
+  message types must carry their documented payload size. Evidence
+  `lifx_message` (named type or `other`), `lifx_tagged`.
+- `tuya-lan`: protocol 3.3 frame, prefix `000055AA`, length counting the rest,
+  CRC32 over header and payload, suffix `0000AA55`. Evidence `tuya_command`.
+  Excluded: 3.4 HMAC trailers, 3.5 `00006699` GCM framing, TCP 6668 control.
+- `tplink-smarthome`: UDP datagram under the published XOR autokey (171);
+  plaintext printable ASCII, nesting <= 8, one JSON object of objects whose
+  keys are documented module names. Evidence `tplink_module`, `tplink_modules`.
+  Excluded: the TCP variant with its 4-byte length prefix, KLAP/TPAP devices.
+
+DNS layout: SRV target and NSEC next-domain names are parsed, so later
+compression pointers into them are valid; the AA bit is ignored on multicast
+DNS queries (RFC 6762 18.4); a type-ANY query with Authority records is an
+mDNS probe (RFC 6762 8.1) even for reverse-mapping names. Still rejected on
+purpose: trailing bytes after the last section and AA on a unicast DNS query.
+QUIC short-header packets without an observed Initial remain unknown: one
+fixed bit is not a structural profile.
 
 ## SSH algorithm posture from KEXINIT (v0.58)
 

@@ -7,6 +7,7 @@ from types import MappingProxyType
 from .datagram_result import DatagramMatch
 from .rpc import onc_rpc
 from .rip import rip, rtcp
+from .smarthome import kasa, kasa_probe, lifx, lifx_probe, tuya, tuya_probe
 from .dtls import dtls
 from .ikev2 import ikev2, ike_probe
 from .quic import QuicAssembler, quic, quic_probe
@@ -83,7 +84,8 @@ def dns_name_shape(qname):
 
 VALIDATORS = MappingProxyType({"quic": quic, "wireguard": wireguard, "openvpn": openvpn, "l2tp": l2tp, "ssdp": ssdp, "netflow": netflow,
                                "sflow": sflow, "bacnet": bacnet, "kerberos": kerberos, "ethernet-ip": enip_datagram, "rtp": rtp,
-                               "ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "mdns": dns_with_contexts, "netbios-ns": dns_with_contexts, "llmnr": llmnr, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog, "onc-rpc": onc_rpc, "rip": rip, "rtcp": rtcp})
+                               "ikev2": ikev2, "dtls": dtls, "radius": radius, "ntp": ntp, "snmp": snmp, "tftp": tftp, "dns": dns_with_contexts, "mdns": dns_with_contexts, "netbios-ns": dns_with_contexts, "llmnr": llmnr, "stun": stun, "dhcp": dhcp, "coap": coap, "sip": sip, "syslog": syslog, "onc-rpc": onc_rpc, "rip": rip, "rtcp": rtcp,
+                               "lifx-lan": lifx, "tuya-lan": tuya, "tplink-smarthome": kasa})
 
 
 class DatagramInspector:
@@ -185,6 +187,12 @@ class DatagramInspector:
                 candidates.append("onc-rpc")   # CALL with RPC version 2, or a REPLY with a valid reply_stat (v0.51)
             if len(data) >= 24 and data[0] in (1, 2) and data[1] in (1, 2) and data[2:4] == b"\x00\x00" and (len(data) - 4) % 20 == 0:
                 candidates.append("rip")
+            if lifx_probe(data):
+                candidates.append("lifx-lan")      # size field equals the datagram and protocol 1024 (v0.59)
+            if tuya_probe(data):
+                candidates.append("tuya-lan")      # 0x000055AA prefix and 0x0000AA55 suffix (v0.59)
+            if kasa_probe(data):
+                candidates.append("tplink-smarthome")
         # SPI bytes are arbitrary and may also satisfy a different protocol's
         # probe. Keep that competitor; at most one extra fixed-position route.
         if not protocol_hint and ike_probe(data):

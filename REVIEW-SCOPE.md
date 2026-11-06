@@ -1,11 +1,18 @@
-# Review scope: protocol detector v0.58
+# Review scope: protocol detector v0.59
 
-Python3.9-compatible IPv4 passive classification: 85 families, 76 automatic.
+Python3.9-compatible IPv4 passive classification: 88 families, 79 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
 
-New focus (v0.58): `protocol_engine/ssh_posture.py` (`kexinit_posture`:
+New focus (v0.59): `protocol_engine/smarthome.py` (LIFX header rules,
+Tuya CRC32 framing, the TP-Link autokey pass with its printable/depth checks
+before `json.loads`), the three probes in `datagram.py`, and the DNS changes
+in `wire.py` (SRV/NSEC RDATA names, mDNS AA, the probe marker). Trace: no
+decoded TP-Link value reaches evidence; the JSON pass is O(n) and bounded by
+`max_bytes` and depth 8; truncations fail closed. 635 tests pass.
+
+Previous focus (v0.58): `protocol_engine/ssh_posture.py` (`kexinit_posture`:
 fixed name tables for key exchange families and weak classes, the Terrapin
 rule, nothing but classes returned), the SSH continuation in
 `protocol_engine/parsers.py` (KEXINIT now read without fingerprints,
@@ -13,7 +20,7 @@ rule, nothing but classes returned), the SSH continuation in
 risks in `risks.py` (`hostkey-rsa-sha1` reported but exempt). Trace: no
 algorithm name or cookie byte reaches evidence or reasons; a malformed
 KEXINIT, the budget or EOF keep the identification with no classes; bytes
-after the KEXINIT are not consumed. 622 tests pass.
+after the KEXINIT are not consumed. 622 tests passed at v0.58.
 
 Previous focus (v0.57): `protocol_engine/tls_server.py` key exchange and cipher
 mode labels (the TLS 1.2 suite table, static ECDH versus ECDHE, TLS 1.3
