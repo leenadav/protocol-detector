@@ -33,8 +33,10 @@ class Stream:
         self.prefix_only = prefix_only
         self.first_sequence = first_sequence
         self.limit = limit
-        self.buffer = bytearray(limit)
-        self.present = bytearray(limit)
+        # Stage 4 (A07): both arrays grow on demand up to limit, never allocated at limit up front, so an
+        # idle or short connection costs what it stored and a SYN flood allocates nothing per direction.
+        self.buffer = bytearray()
+        self.present = bytearray()
         self.contiguous = 0
         self.stored = 0
         self.highest_end = 0  # Exclusive end of the highest retained payload byte.
@@ -56,6 +58,18 @@ class Stream:
         delta = StreamDelta(self.delivered, bytes(self.buffer[self.delivered:self.contiguous]))
         self.delivered = self.contiguous
         return delta
+
+    @property
+    def allocated(self):
+        """Bytes this direction currently holds for its arrays (A07 accounting; never above 2 * limit)."""
+        return len(self.buffer) + len(self.present)
+
+    def _reserve(self, end):
+        """Grow both arrays to cover [0, end); callers have already checked end <= limit."""
+        grow = end - len(self.buffer)
+        if grow > 0:
+            self.buffer.extend(bytes(grow))
+            self.present.extend(bytes(grow))
 
     def _compat_results(self):
         if not self.compatibility:
@@ -148,6 +162,7 @@ class Stream:
         # Common in-order case: copy slices once, no byte-by-byte Python loops.
         if offset == self.contiguous and self.stored == self.contiguous:
             end = offset + len(payload)
+            self._reserve(end)
             self.buffer[offset:end] = payload
             self.present[offset:end] = b"\x01" * len(payload)
             self.stored = self.contiguous = end
@@ -158,7 +173,9 @@ class Stream:
         end = offset + len(payload)
         # Count in C without allocating a bitmap slice. Fully absent and fully
         # present ranges cover ordinary reordering and retransmission cheaply.
-        missing = self.present.count(0, offset, end)
+        # Bytes beyond the allocated arrays are absent by definition (lazy allocation, A07).
+        allocated = len(self.present)
+        missing = self.present.count(0, offset, min(end, allocated)) + max(0, end - max(offset, allocated))
         if missing == 0:
             conflict = self.buffer[offset:end] != payload
         elif missing == len(payload):
@@ -168,7 +185,7 @@ class Stream:
             # occupied byte BEFORE writing anything: a late conflict must not
             # admit earlier new bytes or feed them into the inspector.
             conflict = False
-            for index, value in enumerate(payload, offset):
+            for index, value in enumerate(payload[:max(0, allocated - offset)], offset):
                 if self.present[index] and self.buffer[index] != value:
                     conflict = True
                     break
@@ -179,6 +196,7 @@ class Stream:
             raise StreamError(self.error)
         if missing == 0:
             return  # Identical duplicate: never feed the inspector twice.
+        self._reserve(end)
         self.buffer[offset:end] = payload
         self.present[offset:end] = b"\x01" * len(payload)
         self.stored += missing

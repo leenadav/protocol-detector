@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.65.0",
-  "commit": "9e3bcebd809a4ea72785bfbe62870ce9b3599e03",
+  "commit": "87e7b58581b017424ed137933167f6839dc906db",
   "branch": "work/v065-stage0",
-  "build_digest": "aeb75626f6d57d2cbd4b420420155873f857b44748cd0235104988016432365b",
+  "build_digest": "81623cecdc65c436c3f355af0c104a19b272604da3b130aba441acd0248504af",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -18,7 +18,7 @@
     "presentation": {
       "root": "presentation",
       "version": "0.65.0",
-      "files": 15
+      "files": 17
     },
     "schemas": {
       "root": "schemas",
@@ -380,7 +380,7 @@
     {
       "path": "protocol_adapters/coordinator.py",
       "component": "adapters",
-      "sha256": "e0559208b31fb6d204046db6a087d312373dc352dd2d55a99609df26dc5ccb0f"
+      "sha256": "facab74a908d0eaa73c7a1ce055efd7128649e63b7cf8538704d612e75a28801"
     },
     {
       "path": "protocol_adapters/detectors.py",
@@ -400,7 +400,7 @@
     {
       "path": "protocol_adapters/live_capture.py",
       "component": "adapters",
-      "sha256": "aa68e019b91f0954c140e7cf0c9e45ef236b178b02b0af11fea94fb0b60b3e1d"
+      "sha256": "20be05633f1d2a3c4cb9d22cff56b4453e79d815850f42dba7907a4e277e39e8"
     },
     {
       "path": "protocol_adapters/make_sample_pcap.py",
@@ -425,7 +425,7 @@
     {
       "path": "protocol_adapters/sessions.py",
       "component": "adapters",
-      "sha256": "eb941054ec389ca29f9e8b48801992ea3cb8dfccfcae7f845d8cb545f0a0eb93"
+      "sha256": "85f2af73b5830da9ebc0ac8820b5ec4cd1d57283fd14f38cd2661ab6aee2e4ee"
     },
     {
       "path": "packets.py",
@@ -505,12 +505,17 @@
     {
       "path": "presentation/poc_decryption/__init__.py",
       "component": "presentation",
-      "sha256": "e5a098e7eb9ff174c44fa6392d52eb3a3c5183c4bb6e98f2c55e7343b1b018ed"
+      "sha256": "31067c50c1ba4a70d3fbb9011a2f02315eb4dd681744d9d7ba67b6e22c0d6808"
     },
     {
       "path": "presentation/poc_decryption/capture.py",
       "component": "presentation",
-      "sha256": "888edd892ea76cc528308cf6ad124d107dbe4bb7db67beedab5a53bc4ff24946"
+      "sha256": "42d95e6083151fb7391c561d2a7a9ce9a89bb2e1ddd8f4af922cfa060ed9a212"
+    },
+    {
+      "path": "presentation/poc_decryption/decryptor.py",
+      "component": "presentation",
+      "sha256": "3d8ae6381b0214dc048bdeb848ef3263bbd2a1132a0b89873625a6b48c98a8ab"
     },
     {
       "path": "presentation/poc_decryption/demo.py",
@@ -518,14 +523,19 @@
       "sha256": "6597847f21918e548ad8549ca0383646b95fb1571e2b67ffa5b06dfcd66a78b1"
     },
     {
+      "path": "presentation/poc_decryption/engine.py",
+      "component": "presentation",
+      "sha256": "f08a621ca3574e02b4c7db096da032fbd7045be9c944f878e088e28062699d1f"
+    },
+    {
       "path": "presentation/poc_decryption/live.py",
       "component": "presentation",
-      "sha256": "b9221bd5d92ed2f7e821673d5b1b891fe7183a32805645db46a25ea67921b707"
+      "sha256": "c71a0450cef85d996f4bc146557950ce0d53713d62bc5ce43aaf1b57506703ed"
     },
     {
       "path": "presentation/poc_decryption/tls12.py",
       "component": "presentation",
-      "sha256": "bb7ef4a8a3a9f8334ca2ad1c7a8e81a5ba0c09b04b0a18c496c4e13275067721"
+      "sha256": "80f46f338ae644b72e3466ba0594517531c613ccff802270ae9d9ad7f8752890"
     },
     {
       "path": "presentation/web/app.js",
@@ -565,7 +575,7 @@
     {
       "path": "schemas/live-event.schema.json",
       "component": "schemas",
-      "sha256": "a61dc67eb1dd5c649c10c8b71af3bd52071665814a73a9d0c4d9de79e6ef2ad4"
+      "sha256": "cd3dc4905dd7264db018b766d5213444ec2f56dcd16553f47c607ecb7e91fcb5"
     },
     {
       "path": "schemas/offline-row.schema.json",

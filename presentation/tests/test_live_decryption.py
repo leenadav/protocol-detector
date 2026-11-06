@@ -12,40 +12,78 @@ class LiveDecryptionTests(unittest.TestCase):
         capture, keys, _, _ = fixture()
         decoder = LiveDecoder()
         for offset in range(0, len(capture), 37):
-            decoder.feed(capture[offset:offset+37])
-        self.assertEqual(decoder.snapshot('')['decrypted'], 0)
-        self.assertEqual(decoder.snapshot(keys)['connections'][0]['application'], 'webdav')
+            decoder.feed(capture[offset:offset+37], now=1.0)
+        decoder.advance('')
+        self.assertEqual(decoder.snapshot()['decrypted'], 0)
+        self.assertEqual(decoder.snapshot()['connections'][0]['status'], 'awaiting_keys')
+        decoder.advance(keys)                                  # late keys wake only the waiting connection
+        self.assertEqual(decoder.snapshot()['connections'][0]['application'], 'webdav')
+        self.assertEqual(decoder.snapshot()['decrypted'], 1)
         decoder.decoder.end()
 
     def test_incomplete_pipe_frame_not_interpreted(self):
         capture, keys, _, _ = fixture()
         decoder = LiveDecoder()
-        decoder.feed(capture[:31])
-        self.assertEqual(decoder.snapshot(keys)['frames'], 0)
-        decoder.feed(capture[31:])
-        self.assertEqual(decoder.snapshot(keys)['decrypted'], 1)
+        decoder.feed(capture[:31], now=1.0)
+        self.assertEqual(decoder.snapshot()['frames'], 0)
+        decoder.feed(capture[31:], now=1.0)
+        decoder.advance(keys)
+        self.assertEqual(decoder.snapshot()['decrypted'], 1)
 
-    def test_key_log_growth_partial_lines_and_symlink(self):
+    def test_status_reads_do_no_work_and_new_records_are_decrypted_once(self):
+        """Stage 4 (A02): unchanged input + repeated snapshots = zero additional authentication."""
+        capture, keys, _, _ = fixture()
+        decoder = LiveDecoder()
+        decoder.feed(capture, now=1.0)
+        decoder.advance(keys)
+        authenticated = decoder.decryptor.counts['records_authenticated']
+        self.assertGreater(authenticated, 2)
+        for _ in range(5):
+            decoder.snapshot()
+            decoder.advance(keys)                              # same key text again: nothing new to index
+        self.assertEqual(decoder.decryptor.counts['records_authenticated'], authenticated)
+        self.assertEqual(decoder.keys.version, 1)
+
+    def test_key_log_growth_partial_lines_truncation_rotation_and_symlink(self):
         with tempfile.TemporaryDirectory() as directory:
             path = os.path.join(directory, 'keys')
             with open(path, 'w') as f:
                 f.write('# initial\npartial')
             reader = KeyLog(path)
             try:
-                self.assertEqual(reader.read(), '# initial\n')
+                self.assertEqual(reader.read(), '# initial\n')             # the partial line waits
+                self.assertEqual(reader.read(), '')                        # nothing new: nothing re-read
                 with open(path, 'a') as f:
                     f.write(' line\n')
-                self.assertEqual(reader.read(), '# initial\npartial line\n')
+                self.assertEqual(reader.read(), 'partial line\n')         # append-only: new bytes only
                 with open(path, 'a') as f:
                     f.write('x'*262145)
                 with self.assertRaises(ValueError): reader.read()
+            finally: reader.close()
+            with open(path, 'w') as f:
+                f.write('A B C\nD E F\n')
+            reader = KeyLog(path)
+            try:
+                self.assertEqual(reader.read(), 'A B C\nD E F\n')
+                with open(path, 'w') as f:
+                    f.write('short\n')                                     # truncated in place
+                with self.assertRaisesRegex(ValueError, 'truncated'): reader.read()
+            finally: reader.close()
+            reader = KeyLog(path)
+            try:
+                reader.read()
+                os.replace(path + '.new', path) if os.path.exists(path + '.new') else None
+                with open(path + '.new', 'w') as f:
+                    f.write('rotated\n')
+                os.replace(path + '.new', path)                            # rotation: a different inode
+                with self.assertRaisesRegex(ValueError, 'rotated'): reader.read()
             finally: reader.close()
             os.symlink(path, path+'link')
             with self.assertRaises(OSError): KeyLog(path+'link')
 
     def test_budget_and_revocation(self):
         decoder = LiveDecoder()
-        decoder.data = bytearray(LIMIT)
+        decoder.consumed = LIMIT
         with self.assertRaises(ValueError): decoder.feed(b'x')
         manager = LiveManager()
         manager.ingest({'type':'decryption','report':{'connections':[{'application':'webdav'}]}})
@@ -96,13 +134,24 @@ class LiveShutdownWiringTests(unittest.TestCase):
         return code, emitted
 
     def test_run_ends_cleanly_and_emits_final_decryption_report(self):
+        import json, sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools'))
+        import schema_check
         capture, keylog, _, _ = fixture()
         code, emitted = self.run_live(capture, keylog)
         self.assertEqual(code, 0, [e for e in emitted if e.get('type') == 'error'])
         final = [e for e in emitted if e.get('type') == 'decryption' and e.get('provisional') is False]
         self.assertEqual(len(final), 1)
         self.assertEqual(final[0]['report']['decrypted'], 1)
+        self.assertEqual(final[0]['report']['connections'][0]['application'], 'webdav')
         self.assertTrue(any(e.get('type') == 'summary' for e in emitted))
+        schema = schema_check.load('live-event')
+        for event in emitted:                                   # stage 4: decryption events conform too
+            self.assertEqual(schema_check.validate(json.loads(json.dumps(event)), schema), [], event.get('type'))
+        encoded = json.dumps(emitted)
+        for forbidden in ('/documents', 'demo.invalid', keylog.splitlines()[-1].split()[-1]):
+            self.assertNotIn(forbidden, encoded)
 
     def test_no_fin_connection_gets_a_final_session_at_stop(self):
         from protocol_adapters.make_sample_pcap import frame, pcap_bytes

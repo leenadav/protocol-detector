@@ -44,7 +44,7 @@ def capture_command(interface, bpf, executable=None):
 class CaptureMonitor:
     def __init__(self, emit, max_connections=128, byte_limit=65536, idle_timeout=60,
                  all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096, include_hostnames=False,
-                 signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False):
+                 signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False, retain=None):
         self.emit = emit
         reference = weakref.ref(self)
         def retired(source, destination, event):
@@ -62,7 +62,9 @@ class CaptureMonitor:
                                  heuristics=heuristics, policy=policy, certificates=certificates)
         # Stage 3 (A03/A04): the coordinator is the one lifecycle owner for every capture path. It wraps
         # this analyzer, stamps sessions with capture_id/session_id/generation and dedupes finalization.
-        self.coordinator = SessionCoordinator(self.analyzer, emit=None)
+        # Stage 4 (A03/A07): `retain` (a RetentionBudget) adds the retained reassembly tier a second consumer
+        # reads through coordinator.drain(); the plain live path passes None and retains nothing extra.
+        self.coordinator = SessionCoordinator(self.analyzer, emit=None, retain=retain, idle_timeout=idle_timeout)
         self.tcp_hint, self.udp_hint = tcp_hint, udp_hint
         self.counts = Counter()
         self.protocols = Counter()

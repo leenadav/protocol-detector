@@ -124,3 +124,107 @@ class CoordinatorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+SYN, FIN, ACK = 2, 1, 16
+
+
+def tcp(source, destination, sequence, acknowledgement, flags, payload=b""):
+    """One decoded TCP packet (Ethernet/IPv4 frame from the sample builder)."""
+    return decode_frame(frame(source, destination, sequence, acknowledgement, flags, payload), 1)
+
+
+class RetainedTierTests(unittest.TestCase):
+    """Stage 4 (A03, A07): the retained reassembly tier a second consumer reads from the one owner."""
+
+    def coordinator(self, **budget):
+        from protocol_adapters.coordinator import RetentionBudget, SessionCoordinator
+        options = dict(per_direction=4096, aggregate=16384, connections=4, pending=64)
+        options.update(budget)
+        return SessionCoordinator(retain=RetentionBudget(**options), max_connections=8, byte_limit=1024, compact=True)
+
+    def handshake(self, coordinator, client, server=SERVER, now=0.0):
+        coordinator.accept(tcp(client, server, 999, 0, SYN), now)
+        coordinator.accept(tcp(server, client, 8999, 1000, SYN | ACK), now)
+
+    def test_syn_flood_allocates_nothing_and_rejections_are_counted(self):
+        coordinator = self.coordinator(connections=4)
+        for port in range(50000, 50010):
+            self.handshake(coordinator, ("192.0.2.1", port))
+        self.assertEqual(len(coordinator.retained), 4)
+        self.assertEqual(coordinator.counts["retained_rejected_connections"], 6)
+        self.assertEqual(coordinator.retained_bytes(), 0)                 # lazy allocation: handshakes cost nothing
+        opened = [item for item in coordinator.drain() if item[0] == "open"]
+        self.assertEqual(len(opened), 4)
+
+    def test_deltas_are_delivered_once_and_the_aggregate_budget_isolates_connections(self):
+        coordinator = self.coordinator(per_direction=4096, aggregate=6000)
+        a, b = ("192.0.2.1", 50001), ("192.0.2.1", 50002)
+        self.handshake(coordinator, a)
+        self.handshake(coordinator, b)
+        coordinator.accept(tcp(a, SERVER, 1000, 9000, ACK, b"A" * 2000), 1.0)
+        coordinator.accept(tcp(b, SERVER, 1000, 9000, ACK, b"B" * 500), 1.0)
+        events = coordinator.drain()
+        data = [(item[1], item[2], item[3].data) for item in events if item[0] == "data"]
+        self.assertEqual([len(d) for _, _, d in data], [2000, 500])
+        self.assertEqual(coordinator.drain(), [])                          # nothing is handed out twice
+        # a would need 4000 more bytes of arrays: over the aggregate budget. Only a is rejected; b keeps going.
+        coordinator.accept(tcp(a, SERVER, 3000, 9000, ACK, b"A" * 2000), 2.0)
+        coordinator.accept(tcp(b, SERVER, 1500, 9000, ACK, b"B" * 500), 2.0)
+        events = coordinator.drain()
+        kinds = [(item[0], item[1]) for item in events]
+        key_a, key_b = coordinator.analyzer.manager.key(a, SERVER), coordinator.analyzer.manager.key(b, SERVER)
+        self.assertIn(("error", key_a), kinds)
+        self.assertIn(("data", key_b), kinds)
+        self.assertEqual(coordinator.counts["retained_rejected_bytes"], 2000)
+        self.assertLessEqual(coordinator.retained_bytes(), 6000)
+
+    def test_late_conflicting_overlap_after_both_fins_retracts(self):
+        coordinator = self.coordinator()
+        a = ("192.0.2.1", 50001)
+        self.handshake(coordinator, a)
+        coordinator.accept(tcp(a, SERVER, 1000, 9000, ACK, b"GET / HTTP/1.1\r\n\r\n"), 1.0)
+        coordinator.accept(tcp(SERVER, a, 9000, 1018, ACK, b"HTTP/1.1 200 OK\r\n\r\n"), 1.0)
+        coordinator.accept(tcp(a, SERVER, 1018, 9019, ACK | FIN), 1.1)
+        coordinator.accept(tcp(SERVER, a, 9019, 1019, ACK | FIN), 1.1)
+        kinds = [item[0] for item in coordinator.drain()]
+        self.assertEqual(kinds, ["open", "data", "data", "fin"])
+        self.assertEqual(len(coordinator.retained), 1)                     # retained past FIN for overlap checks
+        coordinator.accept(tcp(a, SERVER, 1000, 9000, ACK, b"GET /x HTTP/1.1\r\n\r\n"), 1.2)
+        events = coordinator.drain()
+        self.assertEqual(events[0][0], "error")
+        self.assertIn("Conflicting", events[0][2])
+        coordinator.tick(100.0)                                             # idle: the owner releases it
+        self.assertEqual([item[0] for item in coordinator.drain()], ["close"])
+        self.assertFalse(coordinator.retained)
+
+    def test_gap_and_end_close_retained_connections_and_name_them(self):
+        emitted = []
+        from protocol_adapters.coordinator import RetentionBudget, SessionCoordinator
+        coordinator = SessionCoordinator(emit=emitted.append, retain=RetentionBudget(connections=4), max_connections=8,
+                                         byte_limit=1024, compact=True)
+        a = ("192.0.2.1", 50001)
+        self.handshake(coordinator, a)
+        coordinator.accept(tcp(a, SERVER, 1000, 9000, ACK, b"\x16\x03\x01\x00\x05hello"), 1.0)
+        coordinator.drain()
+        coordinator.gap("Capture truncation")
+        gap = next(e for e in emitted if e.get("type") == "capture_gap")
+        self.assertEqual(gap["session_ids"], [session_identity("tcp", a, SERVER)])
+        kinds = [item[0] for item in coordinator.drain()]
+        self.assertEqual(kinds, ["error", "close"])
+        self.assertFalse(coordinator.retained)
+        self.handshake(coordinator, a, now=2.0)
+        coordinator.drain()
+        self.assertTrue(coordinator.end("stop"))
+        self.assertEqual([item[0] for item in coordinator.drain()], ["close"])
+        self.assertFalse(coordinator.end("again"))
+
+    def test_consumer_queue_is_bounded(self):
+        from protocol_adapters.sessions import StreamError
+        coordinator = self.coordinator(pending=16)
+        a = ("192.0.2.1", 50001)
+        self.handshake(coordinator, a)
+        with self.assertRaises(StreamError):
+            for index in range(40):
+                coordinator.accept(tcp(a, SERVER, 1000 + index, 9000, ACK, b"x"), 1.0)
+        self.assertEqual(coordinator.counts["pending_overflow"], 1)

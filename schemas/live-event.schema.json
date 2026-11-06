@@ -21,6 +21,9 @@
     },
     {
       "$ref": "#/$defs/error"
+    },
+    {
+      "$ref": "#/$defs/decryption"
     }
   ],
   "$defs": {
@@ -829,6 +832,209 @@
         },
         "reason": {
           "type": "string"
+        },
+        "code": {
+          "enum": [
+            "capture_failed",
+            "capture_loss",
+            "key_log",
+            "budget",
+            "internal"
+          ],
+          "description": "Stage 4: sanitized failure class of the decryption worker."
+        }
+      }
+    },
+    "decryption_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "client",
+        "server",
+        "status"
+      ],
+      "properties": {
+        "client": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "server": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 16
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "enum": [
+            "decrypted",
+            "decrypting",
+            "awaiting_hello",
+            "awaiting_keys",
+            "unavailable"
+          ]
+        },
+        "reason_code": {
+          "enum": [
+            "awaiting_hello",
+            "awaiting_keys",
+            "awaiting_bytes",
+            "unsupported_profile",
+            "authentication_failed",
+            "gap",
+            "budget_exhausted",
+            "incomplete",
+            "complete"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "outer_protocol": {
+          "const": "tls"
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cipher_suite": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "authenticated_records": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "client_plaintext_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "server_plaintext_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "type": "string"
+        },
+        "application": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "inner_protocol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "app_status": {
+          "type": "string"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "decryption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "report"
+      ],
+      "properties": {
+        "type": {
+          "const": "decryption"
+        },
+        "provisional": {
+          "type": "boolean"
+        },
+        "capture_stats": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "capture_quality": {
+          "type": "string"
+        },
+        "report": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "connections",
+            "decrypted",
+            "frames"
+          ],
+          "properties": {
+            "connections": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/decryption_row"
+              }
+            },
+            "decrypted": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "frames": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "skipped": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "profile": {
+              "type": "string"
+            },
+            "counts": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer"
+              }
+            },
+            "budget": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer"
+              }
+            }
+          }
         }
       }
     }

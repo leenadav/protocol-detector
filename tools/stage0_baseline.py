@@ -15,7 +15,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "presentation"), str(ROOT)]
 
-import poc_decryption.capture as capture_module  # noqa: E402
 from live_capture import CaptureMonitor  # noqa: E402
 from make_sample_pcap import frame, pcap_bytes  # noqa: E402
 from poc_decryption.demo import fixture  # noqa: E402
@@ -23,52 +22,31 @@ from poc_decryption.live import KeyLog, LiveDecoder  # noqa: E402
 from sessions import Stream  # noqa: E402
 
 
-def counting_decrypt():
-    calls = {"decrypt_streams": 0, "bytes_analyzed": 0}
-    real_decrypt, real_analyze = capture_module.decrypt_streams, capture_module.analyze_capture
-
-    def decrypt(*args, **kwargs):
-        calls["decrypt_streams"] += 1
-        return real_decrypt(*args, **kwargs)
-
-    def analyze(data, keylog):
-        calls["bytes_analyzed"] += len(data)
-        return real_analyze(data, keylog)
-    return calls, decrypt, analyze
-
-
 def a02_unchanged_snapshots(capture, keylog, snapshots=5):
-    import poc_decryption.live as live_module
-    calls, decrypt, analyze = counting_decrypt()
-    capture_module.decrypt_streams, live_module.analyze_capture = decrypt, analyze
-    try:
-        decoder = LiveDecoder()
-        decoder.feed(capture)
-        for _ in range(snapshots):
-            decoder.snapshot(keylog)
-    finally:
-        import importlib
-        importlib.reload(capture_module)
-        importlib.reload(live_module)
-    return calls
+    """Stage 4: records authenticated and plaintext bytes released, before vs after 5 unchanged status reads."""
+    decoder = LiveDecoder()
+    decoder.feed(capture, now=1.0)
+    decoder.advance(keylog)
+    before = dict(decoder.decryptor.counts)
+    for _ in range(snapshots):
+        decoder.snapshot()
+        decoder.advance(keylog)
+    after = decoder.decryptor.counts
+    return {"decrypt_streams": after["records_authenticated"] - before["records_authenticated"],
+            "bytes_analyzed": after["plaintext_bytes"] - before["plaintext_bytes"],
+            "first_pass_records": before["records_authenticated"]}
 
 
 def a02_growth(capture, keylog, steps=10):
-    """Feed the same capture in `steps` chunks with one snapshot after each: bytes re-analyzed vs bytes fed."""
-    import poc_decryption.live as live_module
-    calls, decrypt, analyze = counting_decrypt()
-    capture_module.decrypt_streams, live_module.analyze_capture = decrypt, analyze
-    try:
-        decoder = LiveDecoder()
-        size = -(-len(capture) // steps)
-        for offset in range(0, len(capture), size):
-            decoder.feed(capture[offset:offset + size])
-            decoder.snapshot(keylog)
-    finally:
-        import importlib
-        importlib.reload(capture_module)
-        importlib.reload(live_module)
-    return len(capture), calls["bytes_analyzed"], calls["decrypt_streams"]
+    """Feed the same capture in `steps` chunks with one snapshot after each: plaintext re-released vs released once."""
+    decoder = LiveDecoder()
+    size = -(-len(capture) // steps)
+    for offset in range(0, len(capture), size):
+        decoder.feed(capture[offset:offset + size], now=1.0)
+        decoder.advance(keylog)
+        decoder.snapshot()
+    counts = decoder.decryptor.counts
+    return len(capture), counts["plaintext_bytes"], counts["records_authenticated"]
 
 
 def a02_keylog_rereads(keylog, ticks=5):
@@ -97,7 +75,9 @@ def a04_no_fin_finalization():
     for name, stop in (("live_capture (coordinator.end)", "end"), ("poc_decryption.live (coordinator.end)", "end"),
                        ("no lifecycle call (pre-stage-3 decryption path)", None)):
         emitted = []
-        monitor = CaptureMonitor(emitted.append, max_connections=64, byte_limit=16384, all_events=True)
+        from protocol_adapters.coordinator import RetentionBudget
+        monitor = CaptureMonitor(emitted.append, max_connections=64, byte_limit=16384, all_events=True,
+                                 retain=RetentionBudget(connections=64))
         decoder = LiveDecoder(monitor)
         decoder.feed(data)
         if stop == "end":
@@ -108,7 +88,7 @@ def a04_no_fin_finalization():
 
 def a07_stream_allocation(limit=256 * 1024, flows=64):
     stream = Stream(0, limit)
-    per_direction = len(stream.buffer) + len(stream.present)
+    per_direction = stream.allocated
     tracemalloc.start()
     streams = [Stream(0, limit) for _ in range(2 * flows)]
     current, _ = tracemalloc.get_traced_memory()
@@ -120,10 +100,10 @@ def a07_stream_allocation(limit=256 * 1024, flows=64):
 def main():
     capture, keylog, _, _ = fixture()
     calls = a02_unchanged_snapshots(capture, keylog)
-    print("A02 five unchanged snapshots: decrypt_streams calls = %d, bytes re-analyzed = %d (capture %d bytes)"
-          % (calls["decrypt_streams"], calls["bytes_analyzed"], len(capture)))
+    print("A02 five unchanged snapshots: records re-authenticated = %d, plaintext re-released = %d bytes (first pass %d records, capture %d bytes)"
+          % (calls["decrypt_streams"], calls["bytes_analyzed"], calls["first_pass_records"], len(capture)))
     fed, analyzed, decrypts = a02_growth(capture, keylog)
-    print("A02 growth, 10 chunks with a snapshot after each: %d bytes fed, %d bytes analyzed (%.1fx), %d decrypt calls"
+    print("A02 growth, 10 chunks with a snapshot after each: %d bytes fed, %d plaintext bytes released in total (%.2fx of the wire), %d records authenticated"
           % (fed, analyzed, analyzed / fed, decrypts))
     size, read = a02_keylog_rereads(keylog)
     print("A02 key log: %d-byte file, 5 ticks read %d bytes (%.0fx)" % (size, read, read / size))
