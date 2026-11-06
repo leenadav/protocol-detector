@@ -150,3 +150,14 @@ make apps
 - Risk and characteristics are catalog metadata; they are not derived from traffic.
 - UDP flows are keyed by endpoint pair only; there is no transaction matching
   or spoofing resistance.
+
+## New in v0.66 — Smart-home LAN families and multicast DNS repairs (ported from v0.59)
+
+The Mac v0.59 triage of unidentified local flows added three UDP families: LIFX LAN (`lifx-lan`), Tuya
+LAN 3.3 discovery (`tuya-lan`) and TP-Link Smart Home (`tplink-smarthome`), each with a structural profile
+and fixed-vocabulary evidence only, as catalog applications `lifx-lan`, `tuya-lan` and `tplink-smarthome`.
+The DNS layout no longer rejects multicast DNS responses that compress against an SRV target or NSEC next
+name, ignores the AA bit on mDNS queries as RFC 6762 18.4 requires, and recognises reverse-mapping probes.
+Ported onto the v0.65 architecture as a distinct version: 88 families, 79 automatic, 155 applications,
+719 tests; the behaviour diff against v0.65 lists exactly the inputs these profiles now classify
+(docs/BEHAVIOUR-DIFF-V066.md).

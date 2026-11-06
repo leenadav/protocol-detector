@@ -1,28 +1,28 @@
 {
   "repository": "leenadav/protocol-detector",
-  "version": "0.65.0",
-  "commit": "22b1ffc0553837e1b425432100ec60bf47f53db2",
+  "version": "0.66.0",
+  "commit": "81b15942efa9b12b2090eb6c98e1b4239ca74f4a",
   "branch": "work/v065-stage0",
-  "build_digest": "17349766a361cab03d23a26374eacc0edc28a4a72291fe4423a4ef917ace1799",
+  "build_digest": "aca0f12e0cb9eb07f7dc7b6c95389ca82b255c396c9d1b3f3a609d642ec582d7",
   "components": {
     "engine": {
       "root": "protocol_engine",
-      "version": "0.65.0",
-      "files": 68
+      "version": "0.66.0",
+      "files": 69
     },
     "adapters": {
       "root": "protocol_adapters",
-      "version": "0.65.0",
+      "version": "0.66.0",
       "files": 26
     },
     "presentation": {
       "root": "presentation",
-      "version": "0.65.0",
+      "version": "0.66.0",
       "files": 19
     },
     "schemas": {
       "root": "schemas",
-      "version": "0.65.0",
+      "version": "0.66.0",
       "files": 4
     }
   },
@@ -50,7 +50,7 @@
     {
       "path": "protocol_engine/applications.py",
       "component": "engine",
-      "sha256": "d0d523b96dd536bca5b3e38ce4e2847baa27df2ba6e5766dbf4c34225b8d79d5"
+      "sha256": "271de20467477c3b22e19be08a28278e68ae8bd8fc474b339baef48154a7bf26"
     },
     {
       "path": "protocol_engine/binary.py",
@@ -65,7 +65,7 @@
     {
       "path": "protocol_engine/catalog.py",
       "component": "engine",
-      "sha256": "23c41ddf41920ded519d5a1e226cebad2fb7624e48ffc433d757bf07887fc865"
+      "sha256": "dafef4ed1e7ae2fd9ef569e413acfc1a1b9e2f7e4e1d77df51de3016f89d3a5c"
     },
     {
       "path": "protocol_engine/cdr.py",
@@ -85,7 +85,7 @@
     {
       "path": "protocol_engine/datagram.py",
       "component": "engine",
-      "sha256": "3fe1d2af6bb42a893637dc8c01d73e9e97c8eb0f0c0c0e8938b4db9d00103f90"
+      "sha256": "4e3ece66f35ad5771d7c401aaf51ac7c3b6a6eb9038b0213cbe42d9ea06f76db"
     },
     {
       "path": "protocol_engine/datagram_result.py",
@@ -308,6 +308,11 @@
       "sha256": "9746d50fb37515b4ca63dbfebdf141e4a568e88c15f8292b731b199200e2bae0"
     },
     {
+      "path": "protocol_engine/smarthome.py",
+      "component": "engine",
+      "sha256": "a7a9b4b1e894f2643d851022494b7315c9f72f37e39b671424aa1447c19b2423"
+    },
+    {
       "path": "protocol_engine/ssh_posture.py",
       "component": "engine",
       "sha256": "fa4570610a2ea192423d5ce5d46dd35cfecad5f55e9cc341f674093153e81ab8"
@@ -355,7 +360,7 @@
     {
       "path": "protocol_engine/wire.py",
       "component": "engine",
-      "sha256": "7a715bb239540a54866548b7607799ee0df09689713d780946e2cabfa71b023a"
+      "sha256": "3aa07c20d0aa5c28679cce9da29ff8b917c88160dcb2b42a26ff8a7308ef5730"
     },
     {
       "path": "protocol_engine/x509.py",
@@ -430,7 +435,7 @@
     {
       "path": "protocol_adapters/protocol_fixtures.py",
       "component": "adapters",
-      "sha256": "9cb392a3e2b30e93c35d78bd0864a6060e5cc7ead4c29a5dbc4b98dcc1d34654"
+      "sha256": "648f1731eace4d2fe8047657e787984697d9a670309d4dacfce71ef0b86ae368"
     },
     {
       "path": "protocol_adapters/proxy_demo.py",

@@ -19,7 +19,7 @@ spending limit, which Lee will not raise), so no Actions result is claimed anywh
 | 5 | `claude/v065-stage5` `53a1c97` | layered App-ID view from one reducer; decoder rows join their session view; identity basis and claims | A05/A13 rows |
 | 6 | `claude/v065-stage6` `da26f8b` | bounded asynchronous jobs with admission control, bounded handler pool, side-effect-free status with a run-scoped heartbeat, idempotent stop; frontend store with run identity, stale-response rejection, resume after refresh, browser tests | A08/A14 rows |
 | 7 | `claude/v065-stage7` `22b1ffc` | signature indexes with measured budgets, protocol descriptors and inventory check, telemetry counters/histograms, labelled-corpus report | A11/A12/A15 rows |
-| 8 | `claude/v065-stage8` (this commit) | key-provider lifetime, canary and path/privilege/API security tests, build identity and key-log guards, synthetic soak, installed-artifact check, release gate | A10/A16 rows; docs/RELEASE-GATE-V065.md |
+| 8 | `claude/v065-stage8` `81b1594` | key-provider lifetime, canary and path/privilege/API security tests, build identity and key-log guards, synthetic soak, installed-artifact check, release gate | A10/A16 rows; docs/RELEASE-GATE-V065.md |
 
 Reproducible gate for every checkpoint from a clean checkout (needs the optional extra for the presentation):
 
@@ -54,8 +54,17 @@ python3 -B tools/stage0_baseline.py          # the A02/A04/A07 numbers; compare 
 | A15 boundary measurement | **done (stage 7)** | `protocol_adapters/observability.py` (`Telemetry`, `Histogram`: fixed buckets, bounded series) wired into the Analyzer (time-to-verdict histogram, bytes.new/replayed, signature candidates, sessions by status), the coordinator (capture.gaps, events.dropped, bytes.retained, queue.depth, tick stage), the CaptureMonitor (packet stage) and the Decryptor (bytes.decrypted, keys.pending, decryption.auth_failures, decrypt and report stages); live `summary`/`progress` events carry `telemetry` (schema `$defs/telemetry`); `tools/corpus_report.py` → docs/CORPUS-REPORT-V065.md: per-family TP/FN/explicit/FP over intact, truncated and mutated synthetic fixtures (TP 1593, FN 0, explicit 4431, FP 28 across 71 families; the FPs are mutations crossing into sibling layouts such as netbios-ns→dns and are listed by family) | docs/OBSERVABILITY-V065.md; `test_live`/`test_schema` validate summaries with telemetry; stage-0 baseline numbers recorded before the refactor and re-measured after stage 4 | hardware/workload/SLO agreement for capacity claims is out of scope (documented); sampled tracing is not implemented |
 | A16 identify and secure the complete build | **done (1b, 1c, 8)** | `tools/build_manifest.py` writes `presentation/SOURCE.json` with version, commit, per-file sha256 for engine/adapters/presentation/schemas and a `build_digest`; `/api/catalog` reports it; the launcher reuses a running server only on a matching build digest | `build_manifest.py --check` ok; `test_build_manifest_matches_the_tree` (checkout and installed-artifact modes); `test_launcher_reuses_only_a_matching_build_and_health_reports_the_digest`; `tools/check_no_keylogs.py` in `make check` and the gitleaks `nss-key-log` rule; `tools/installed_check.py` builds the wheel, installs it with the hash-pinned extra into an empty environment and runs the presentation suite from a copy with no checkout beside it (the run found and fixed two checkout-only imports inside the adapters package); `tools/soak.py` and `make release-gate` (docs/RELEASE-GATE-V065.md) | SBOM generation and attestation live in the release workflow owned by the CI/CD lane: the lock file must be added to the SBOM input there (notified); GitHub Actions does not run on this repository, so no Actions result is claimed |
 
-## Divergent Mac v0.59 work
+## Divergent Mac v0.59 work: ported as v0.66
 
-`claude/v059-unknowns-catalog-keylog` (`190e011`, smart-home LIFX/Tuya/TP-Link + mDNS repairs) is not in v0.65.
-Inventory in docs/STAGE0-BASELINE-V065.md. It will be ported as its own version after the refactor stages, with
-renamed test/benchmark files, a full gate and behaviour diff. Nothing from it is dropped or overwritten.
+`claude/v059-unknowns-catalog-keylog` (`190e011`, smart-home LIFX/Tuya/TP-Link + mDNS repairs) was not in
+v0.65. It is now ported onto the finished architecture as its own version on branch `claude/v066-smarthome`
+(pyproject `0.66.0`): `protocol_engine/smarthome.py` unchanged, the `applications.py`/`catalog.py`/
+`datagram.py`/`wire.py` diffs applied with three-way merges, the fixtures into `protocol_adapters/
+protocol_fixtures.py` (one conflict with the v0.65 SMB 3.1.1 fixtures, both kept), `test_v059.py` renamed
+`test_v066.py`, `BENCHMARK-V059.md` superseded by `BENCHMARK-V066.md` (re-measured here), `test_v055.py`'s
+AA-on-query case moved as in v0.59, coverage matrix regenerated, SR-57 added, PROTOCOLS/APPID/RISKS/README/
+REVIEW-SCOPE/START-HERE/SESSION-SUMMARY/ROADMAP updated with the real counts (88 families, 79 automatic,
+155 applications, 719 tests). Verification: engine suite, inventory check (88 families, 81 datagram
+fixtures), protocol templates, corpus report, fuzz, behaviour diff against v0.65 with every difference
+explained in docs/BEHAVIOUR-DIFF-V066.md (60 inputs, all within the three new profiles and the repaired mDNS
+layouts). Nothing from the Mac branch was dropped; the branch itself stays as published.
