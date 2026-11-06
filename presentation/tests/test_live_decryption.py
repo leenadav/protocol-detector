@@ -1,7 +1,7 @@
 import os
 import tempfile
 import unittest
-import server
+import server  # noqa: F401 - puts the embedded engine on sys.path; removed with package imports (stage 1b)
 from poc_decryption.demo import fixture
 from poc_decryption.live import KeyLog, LiveDecoder, LIMIT
 from live_manager import LiveManager

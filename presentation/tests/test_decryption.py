@@ -56,9 +56,21 @@ class DecryptionTests(unittest.TestCase):
     def test_missing_and_conflicting_tcp_segments(self):
         from capture_stream import PcapStreamDecoder
         from make_sample_pcap import pcap_bytes
+        from link_packets import decode_frame
         decoder = PcapStreamDecoder()
-        frames = [record.data for record in decoder.feed(self.capture)]
-        missing = analyze_capture(pcap_bytes(frames[:3] + frames[4:]), self.keylog)
+        records_ = list(decoder.feed(self.capture))
+        frames = [record.data for record in records_]
+        # Drop the first data segment of a direction that has more than one, so the gap is real whatever
+        # the local OpenSSL's flight sizes are (a fixed index hit the client FIN with a 429-byte ClientHello).
+        pieces = {}
+        for index, record in enumerate(records_):
+            packet = decode_frame(record.data, record.linktype)
+            if packet.payload:
+                pieces.setdefault(packet.source, []).append((packet.sequence, index))
+        split = [sorted(found) for found in pieces.values() if len(found) > 1]
+        self.assertTrue(split, 'fixture must split at least one direction into several segments')
+        dropped = split[0][0][1]
+        missing = analyze_capture(pcap_bytes(frames[:dropped] + frames[dropped + 1:]), self.keylog)
         self.assertEqual(missing['decrypted'], 0)
         conflict = bytearray(frames[2]); conflict[-1] ^= 1
         bad = analyze_capture(pcap_bytes(frames + [bytes(conflict)]), self.keylog)

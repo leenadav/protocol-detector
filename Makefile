@@ -1,10 +1,15 @@
-.PHONY: test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
+.PHONY: test presentation-test demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
 
 test:
 	$(PYTHON) -B -m unittest discover -v
+
+# The presentation application (frontend, server, live bridge, TLS POC) needs the optional decryption extra:
+# $(PYTHON) -m pip install -r presentation/requirements-decryption.txt. The core engine stays dependency-free.
+presentation-test:
+	cd presentation && $(PYTHON) -B -m unittest discover -s tests -v
 
 demo:
 	$(PYTHON) -B protocol_demo.py

@@ -1,5 +1,4 @@
 """TLS 1.2 ECDHE-RSA AES-GCM records using NSS CLIENT_RANDOM secrets."""
-import hashlib
 import hmac
 from . import DecryptionError, MAX_STREAM
 
