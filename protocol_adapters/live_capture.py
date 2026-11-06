@@ -18,6 +18,7 @@ import time
 import weakref
 from collections import Counter
 from .analyze_pcap import Analyzer, certificate_fields
+from .coordinator import SessionCoordinator
 from .capture_stream import PcapStreamDecoder
 from .link_packets import decode_frame
 from .packets import CaptureError, PacketError, UDPPacket
@@ -59,6 +60,9 @@ class CaptureMonitor:
                                  crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, on_session=session,
                                  include_hostnames=include_hostnames, signatures=signatures, fingerprints=fingerprints,
                                  heuristics=heuristics, policy=policy, certificates=certificates)
+        # Stage 3 (A03/A04): the coordinator is the one lifecycle owner for every capture path. It wraps
+        # this analyzer, stamps sessions with capture_id/session_id/generation and dedupes finalization.
+        self.coordinator = SessionCoordinator(self.analyzer, emit=None)
         self.tcp_hint, self.udp_hint = tcp_hint, udp_hint
         self.counts = Counter()
         self.protocols = Counter()
@@ -109,7 +113,7 @@ class CaptureMonitor:
             return
         transport = "udp" if isinstance(packet, UDPPacket) else "tcp"
         self.counts[transport] += 1
-        message = self.analyzer.process(now, packet)
+        message = self.coordinator.accept(packet, now)
         if message.startswith("SKIP"):
             self.counts["tcp_without_start" if packet.payload else "tcp_control_without_state"] += 1
         elif message.startswith("LIMIT"):
@@ -159,12 +163,9 @@ class CaptureMonitor:
             from .events import session_identity
             retracted = sorted({session_identity("tcp", state["client"], state["server"]) for state in self.analyzer.tracked.values()})
             self.emit({"type": "capture_gap", "active_connections": active, "scope": scope, "reason": reason,
-                       "session_ids": retracted})
+                       "session_ids": retracted, "capture_id": self.coordinator.capture_id})
         self.counts["connections_discarded_after_gap"] += active
-        self.analyzer.tracked.clear()
-        self.analyzer.udp_flows.clear()
-        self.analyzer.quic_assembler.clear()
-        self.analyzer.manager.connections.clear()
+        self.coordinator.gap(reason, scope)      # drops tracked state and marks those generations retracted
 
     def summary(self, elapsed, final=False, capture_stats=None):
         return {"type": "summary" if final else "progress", "elapsed_seconds": round(elapsed, 3),
@@ -276,7 +277,7 @@ def run_capture(stream, emit, duration=60, max_packets=0, stats_interval=10, pro
             if max_packets and monitor.counts["packets"] >= max_packets:
                 stopped = True
                 break
-            monitor.analyzer.expire(now)
+            monitor.coordinator.tick(now)
             if stats_interval and now >= next_stats:
                 emit(monitor.summary(now - start))
                 next_stats = now + stats_interval
@@ -352,7 +353,7 @@ def run_capture(stream, emit, duration=60, max_packets=0, stats_interval=10, pro
     if error:
         monitor.invalidate_all("Capture failed; observations may be incomplete", "all_observations_this_capture")
         emit({"type": "error", "reason": error})
-    monitor.analyzer.finish("Capture input EOF before initial message completed" if natural_eof else
+    monitor.coordinator.end("Capture input EOF before initial message completed" if natural_eof else
                             "Capture stopped before initial message completed")
     summary = monitor.summary(time.monotonic() - start, True, diagnostics.stats or None)
     summary["capture_quality"] = ("failed" if error else "loss_reported" if drops else

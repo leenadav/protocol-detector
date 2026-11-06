@@ -409,6 +409,23 @@
         },
         "policy": {
           "$ref": "#/$defs/policy"
+        },
+        "capture_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Stage 3 (A03/A04): the capture run that produced this session (SessionCoordinator)."
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 16,
+          "description": "Hashed, direction-independent identity (protocol_adapters.events.session_identity); never an address."
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Bumped when the same 5-tuple starts a new connection; identity is (session_id, generation)."
         }
       },
       "required": [
@@ -790,6 +807,12 @@
             "maxLength": 16
           },
           "description": "Stage 2 (A06): hashed ids of the sessions this gap retracts (protocol_adapters.events.session_identity); never addresses."
+        },
+        "capture_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Stage 3: the capture run whose sessions this gap retracts (SessionCoordinator.gap)."
         }
       }
     },

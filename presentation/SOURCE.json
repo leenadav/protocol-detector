@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.65.0",
-  "commit": "19e7219a0da6cdd7a7c858a2b4baf8970886b19a",
+  "commit": "9e3bcebd809a4ea72785bfbe62870ce9b3599e03",
   "branch": "work/v065-stage0",
-  "build_digest": "33037063900c2f40a9eb10c2093ffc6124a9cb1bf41cac7e3d3c34c8a70122d3",
+  "build_digest": "aeb75626f6d57d2cbd4b420420155873f857b44748cd0235104988016432365b",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -13,7 +13,7 @@
     "adapters": {
       "root": "protocol_adapters",
       "version": "0.65.0",
-      "files": 23
+      "files": 24
     },
     "presentation": {
       "root": "presentation",
@@ -378,6 +378,11 @@
       "sha256": "9aef88cca94f43c146912a0105c64bc103d6ecf5fcb28a89eb978ffb16243916"
     },
     {
+      "path": "protocol_adapters/coordinator.py",
+      "component": "adapters",
+      "sha256": "e0559208b31fb6d204046db6a087d312373dc352dd2d55a99609df26dc5ccb0f"
+    },
+    {
       "path": "protocol_adapters/detectors.py",
       "component": "adapters",
       "sha256": "44278efdc5cc2c0e8550c9695854d9b16836536365de1a071e473d9ae7e6a463"
@@ -395,7 +400,7 @@
     {
       "path": "protocol_adapters/live_capture.py",
       "component": "adapters",
-      "sha256": "9f730ce98719e13097d05cfb1b4cfb7c0537b5ebf923a0e7c4cbfd3346781f87"
+      "sha256": "aa68e019b91f0954c140e7cf0c9e45ef236b178b02b0af11fea94fb0b60b3e1d"
     },
     {
       "path": "protocol_adapters/make_sample_pcap.py",
@@ -420,7 +425,7 @@
     {
       "path": "protocol_adapters/sessions.py",
       "component": "adapters",
-      "sha256": "a9700382456857c24b28996c6262c943f91f317245ee7bbf15a4b9f21fb6b0ac"
+      "sha256": "eb941054ec389ca29f9e8b48801992ea3cb8dfccfcae7f845d8cb545f0a0eb93"
     },
     {
       "path": "packets.py",
@@ -515,7 +520,7 @@
     {
       "path": "presentation/poc_decryption/live.py",
       "component": "presentation",
-      "sha256": "b24ae81e66ec3ce91c4233d47c160807e90326583760fc2a7cebf7b51f7bedfa"
+      "sha256": "b9221bd5d92ed2f7e821673d5b1b891fe7183a32805645db46a25ea67921b707"
     },
     {
       "path": "presentation/poc_decryption/tls12.py",
@@ -560,7 +565,7 @@
     {
       "path": "schemas/live-event.schema.json",
       "component": "schemas",
-      "sha256": "76b9c2f6b0a9f41a2402c6f8e48381773265344d9d72e66b3ce9713abfd937e2"
+      "sha256": "a61dc67eb1dd5c649c10c8b71af3bd52071665814a73a9d0c4d9de79e6ef2ad4"
     },
     {
       "path": "schemas/offline-row.schema.json",

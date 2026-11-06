@@ -60,7 +60,8 @@ class LiveShutdownWiringTests(unittest.TestCase):
     Stage 1c regression for review finding A04: the decryption live path never calls analyzer.expire or
     analyzer.finish, so a connection that never sends FIN gets no final session when the run stops. The
     component-level reproduction is in tools/stage0_baseline.py; this one goes through the actual wiring.
-    Marked expectedFailure until stage 3 unifies the lifecycle; it then becomes a plain passing test.
+    Stage 3 made the decryption path drive the shared SessionCoordinator (tick each second, end at stop), so the
+    no-FIN test below is a plain passing regression now; it was an expectedFailure from stage 1c until then.
     """
 
     def run_live(self, capture, keylog, duration=1):
@@ -103,7 +104,6 @@ class LiveShutdownWiringTests(unittest.TestCase):
         self.assertEqual(final[0]['report']['decrypted'], 1)
         self.assertTrue(any(e.get('type') == 'summary' for e in emitted))
 
-    @unittest.expectedFailure
     def test_no_fin_connection_gets_a_final_session_at_stop(self):
         from protocol_adapters.make_sample_pcap import frame, pcap_bytes
         client, peer = ('192.0.2.10', 52000), ('198.51.100.20', 80)

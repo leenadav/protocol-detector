@@ -38,10 +38,24 @@ class Stream:
         self.contiguous = 0
         self.stored = 0
         self.highest_end = 0  # Exclusive end of the highest retained payload byte.
+        self.delivered = 0    # Contiguous bytes already handed out by deltas() (stage 3).
         self.error = None
         self.inspector = inspector_factory()
         self.events = ()
         self.results = self._compat_results()
+
+    def deltas(self):
+        """The contiguous bytes not yet returned by a previous call, as one StreamDelta, or None.
+
+        Application-agnostic: this is the transport reassembler's output. The inspector attached to this
+        stream consumes the same bytes through feed(); a second consumer (the TLS decoder) reads them here
+        instead of reaching into the buffer, so both get exactly-once delivery from one owner.
+        """
+        if self.delivered >= self.contiguous:
+            return None
+        delta = StreamDelta(self.delivered, bytes(self.buffer[self.delivered:self.contiguous]))
+        self.delivered = self.contiguous
+        return delta
 
     def _compat_results(self):
         if not self.compatibility:
@@ -177,6 +191,18 @@ class Stream:
         if self.contiguous != old_length:
             self.events = self.inspector.feed(bytes(self.buffer[old_length:self.contiguous]))
             self.results = self._compat_results()
+
+
+@dataclass(frozen=True)
+class StreamDelta:
+    """Newly contiguous bytes of one direction, in order (stage 3, A03).
+
+    A consumer that reads deltas sees each contiguous byte exactly once, in stream order, and never sees
+    a byte that a later conflicting overlap would have invalidated: Stream.feed raises before admitting
+    such bytes. offset is the stream offset of data[0] (0 = first payload byte after the SYN).
+    """
+    offset: int
+    data: bytes
 
 
 @dataclass(frozen=True)

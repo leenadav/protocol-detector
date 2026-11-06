@@ -90,13 +90,18 @@ def a04_no_fin_finalization():
     data = pcap_bytes([frame(client, server, 999, 0, 2), frame(server, client, 4999, 1000, 18),
                        frame(client, server, 1000, 5000, 24, request)])
     results = {}
-    for name, finishes in (("live_capture (calls analyzer.finish)", True), ("poc_decryption.live (no finish)", False)):
+    # Stage 3: both live paths stop through SessionCoordinator.end (live_capture.main and
+    # poc_decryption.live.main); the last line keeps the pre-stage-3 number (no lifecycle call at all).
+    # The real stop path of the decryption POC is driven end to end by
+    # presentation/tests/test_live_decryption.py::LiveShutdownWiringTests.
+    for name, stop in (("live_capture (coordinator.end)", "end"), ("poc_decryption.live (coordinator.end)", "end"),
+                       ("no lifecycle call (pre-stage-3 decryption path)", None)):
         emitted = []
         monitor = CaptureMonitor(emitted.append, max_connections=64, byte_limit=16384, all_events=True)
         decoder = LiveDecoder(monitor)
         decoder.feed(data)
-        if finishes:
-            monitor.analyzer.finish("Capture input EOF before initial message completed")
+        if stop == "end":
+            monitor.coordinator.end("Capture input EOF before initial message completed")
         results[name] = sum(1 for event in emitted if event.get("type") != "classification" and "app" in event)
     return results
 

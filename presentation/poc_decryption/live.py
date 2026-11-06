@@ -126,12 +126,16 @@ def main():
                     else:
                         diagnostics.feed(chunk)
                 if now >= tick:
+                    monitor.coordinator.tick(now)       # stage 3 (A04): idle expiry happens here, as on the plain path
                     emit(monitor.summary(now-started))
                     emit(dict(type='decryption', report=decoder.snapshot(keys.read()), provisional=True))
                     tick = time.monotonic() + 1
             process.wait(timeout=3)
         decoder.decoder.end()
         diagnostics.end()
+        # Stage 3 (A04): finalize every connection still tracked, exactly once, before the final report, so a
+        # connection that never sent FIN gets its session when the run stops (the plain live path already did).
+        monitor.coordinator.end('Capture stopped before initial message completed')
         drops = sum(diagnostics.stats.get(k, 0) for k in ('dropped_by_kernel', 'dropped_by_interface'))
         if process.returncode != 0:
             raise ValueError('Capture failed; check tcpdump permission and selected interface.')
