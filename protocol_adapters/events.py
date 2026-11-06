@@ -241,6 +241,22 @@ def reduce(envelopes, state=None):
             seen.add(e["sequence"])
             state["last_sequence"] = max(state["last_sequence"], e["sequence"])
         kind, sid = e["kind"], e["session_id"]
+        if kind == "decryption" and sid is None and isinstance(e["payload"].get("report"), dict):
+            # Stage 5 (A05): a decoder report is one event with many rows; each row carries its session id and
+            # generation (stage 4), so the inner layer lands on the session view it belongs to.
+            for row in e["payload"]["report"].get("connections") or ():
+                row_sid = row.get("session_id")
+                if not row_sid:
+                    continue
+                view = sessions.get(row_sid)
+                generation = row.get("generation", 0)
+                if view is None or generation > view["generation"]:
+                    view = sessions[row_sid] = _new_view(generation)
+                elif generation < view["generation"] or view["status"] == "retracted":
+                    continue
+                view["decryption"] = row
+                _effective(view)
+            continue
         if kind in ("summary", "progress"):
             state["summary"] = e["payload"]
         elif kind == "error":
@@ -256,12 +272,12 @@ def reduce(envelopes, state=None):
                 view["status"] = "retracted"
                 view["retracted_by"] = {"sequence": e["sequence"], "reason_code": e["reason_code"]}
                 view["decryption"] = None       # inner evidence cannot outlive the capture it depended on
+                _effective(view)
         elif sid is not None:
             view = sessions.get(sid)
             if view is None or e["generation"] > view["generation"]:
                 # A new generation (tuple reuse) starts a fresh view; its revisions count from 1 again.
-                view = sessions[sid] = {"generation": e["generation"], "revision": 0, "status": "open",
-                                        "session": None, "classifications": [], "decryption": None, "retracted_by": None}
+                view = sessions[sid] = _new_view(e["generation"])
             elif e["generation"] < view["generation"]:
                 continue                        # an older generation never overwrites the current one
             elif e["revision"] <= view["revision"]:
@@ -276,7 +292,38 @@ def reduce(envelopes, state=None):
                 view["classifications"].append(e["payload"])
             elif kind == "decryption":
                 view["decryption"] = e["payload"]
+            _effective(view)
     return state
+
+
+def _new_view(generation):
+    return {"generation": generation, "revision": 0, "status": "open", "session": None, "classifications": [],
+            "decryption": None, "retracted_by": None, "effective": None}
+
+
+def _effective(view):
+    """Stage 5 (A05): the one answer for a session, from the layered view of its deepest intact layer.
+
+    The decoder's row wins while it holds a layered view (it includes the wire layers); otherwise the
+    session record's own layered view; otherwise the flat session verdict. Logs, tables and exports that
+    read `effective` therefore agree on e.g. tls -> http/1.1 -> webdav.
+    """
+    source = None
+    for candidate in (view.get("decryption"), view.get("session")):
+        if isinstance(candidate, dict) and isinstance(candidate.get("layers"), dict):
+            source = candidate["layers"]
+            break
+    if source is not None:
+        view["effective"] = {"app": source["application"]["name"], "basis": source["application"]["basis"],
+                             "chain": list(source["chain"]), "status": source["application"]["status"], "from": "layers"}
+    elif isinstance(view.get("session"), dict):
+        session = view["session"]
+        chain = [x for x in (session.get("encryption"), session.get("client_protocol") or session.get("server_protocol"), session.get("app")) if x]
+        view["effective"] = {"app": session.get("app"), "basis": None, "chain": list(dict.fromkeys(chain)),
+                             "status": session.get("engine_status"), "from": "session"}
+    else:
+        view["effective"] = None
+    return view["effective"]
 
 
 def public_state(state):

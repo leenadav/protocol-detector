@@ -24,6 +24,12 @@ class DecryptionTests(unittest.TestCase):
         for forbidden in ('/documents', 'demo.invalid', self.keylog.splitlines()[-1].split()[-1]):
             self.assertNotIn(forbidden, encoded)
         self.assertTrue(any(e['source'].startswith('decrypted') for e in connection['evidence']))
+        # Stage 5 (A05): the row carries the layered view; logs, tables and exports read the same chain.
+        layers = connection['layers']
+        self.assertEqual(layers['chain'], ['tls', 'http/1.1', 'webdav'])
+        self.assertEqual((layers['application']['name'], layers['application']['basis']), ('webdav', 'authenticated_plaintext'))
+        self.assertEqual((layers['outer']['app'], layers['inner']['app'], layers['encryption']['version']), ('ssl', 'webdav', 'TLS 1.3'))
+        self.assertNotIn('demo.invalid', json.dumps(layers))
 
     def test_wrong_keys_missing_keys_and_tampering_fail_closed(self):
         keys = read_keys(self.keylog)
@@ -37,6 +43,10 @@ class DecryptionTests(unittest.TestCase):
         result = analyze_capture(self.capture, '')
         self.assertEqual(result['decrypted'], 0)
         self.assertNotIn('application', result['connections'][0])
+        # Without plaintext the wire layer still stands: TLS identified, nothing inner, basis structural.
+        layers = result['connections'][0]['layers']
+        self.assertEqual((layers['chain'], layers['inner'], layers['application']['basis']), (['tls', 'ssl'], None, 'structural'))
+        self.assertEqual(layers['decryption']['reason_code'], 'awaiting_keys')
 
     def test_record_truncation_and_malformed_lengths(self):
         for data in (self.client[:-1], b'\x17\x03\x03\xff\xff', b'\x17\x03'):

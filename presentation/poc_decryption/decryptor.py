@@ -9,8 +9,8 @@ slices so one connection cannot monopolize the capture loop (A07).
 """
 from dataclasses import asdict, replace
 
+from protocol_adapters.layers import layered_view
 from protocol_engine import Inspector
-from protocol_engine.appid import session_verdict
 
 from . import DecryptionError, KeyProvider
 from .engine import TlsConnection
@@ -81,9 +81,14 @@ class _Connection:
         tls = self.tls
         if tls.state == 'failed':
             row.update(tls.metadata(), status='unavailable', reason=tls.reason, reason_code=tls.reason_code)
+            observations = [self.outer[e].observation for e in (self.client, self.server)]
+            row['layers'] = layered_view('tcp', observations[0], observations[1], None, self.server[1],
+                                         decryption=tls.metadata(), capture_quality='intact' if self.closed else 'provisional')[0]
+            self.inner.clear()                     # dependent inner evidence does not survive a failed decryption
             self.row = row
             return row
         row.update(tls.metadata())
+        row.pop('state', None)
         if tls.state == 'complete':
             row['status'] = 'decrypted'
         elif tls.state == 'decrypting':
@@ -92,28 +97,21 @@ class _Connection:
         else:
             row['status'] = tls.state
             row['reason_code'] = tls.state
+        # Stage 5 (A05): one reducer for every layer; nothing is rewritten to obtain the inner verdict.
+        observations = [self.observation(e) if e in self.inner else self.outer[e].observation for e in (self.client, self.server)]
+        layers, effective = layered_view('tcp', observations[0], observations[1], None, self.server[1],
+                                         tls.plaintext[self.client], tls.plaintext[self.server], decryption=tls.metadata(),
+                                         capture_quality='provisional' if not self.closed else 'intact')
+        row['layers'] = layers
         if self.inner:
-            observations = [self.observation(e) for e in (self.client, self.server)]
-            stripped = [replace(o, encryption=None, application=None,
-                                evidence=tuple(e for e in o.evidence if e.source.startswith('decrypted')))
-                        if o is not None else None for o in observations]
-            if all(o is not None for o in stripped):
-                verdict = session_verdict(stripped[0], stripped[1], 'tcp', self.server[1],
-                                          tls.plaintext[self.client], tls.plaintext[self.server])
-            else:
-                present = next(o for o in stripped if o is not None)
-                other = replace(present, status='unknown', application_protocol=None, evidence=())
-                pair = (present, other) if stripped[0] is not None else (other, present)
-                verdict = session_verdict(pair[0], pair[1], 'tcp', self.server[1],
-                                          tls.plaintext[self.client], tls.plaintext[self.server])
             # No raw payload, key material, hostname, URL or credentials leave this adapter.
             evidence = []
             for endpoint in (self.client, self.server):
                 target = self.inner.get(endpoint)
                 if target is not None:
                     evidence.extend(asdict(e) for e in target.observation.evidence if e.field in SAFE_EVIDENCE)
-            row.update(application=verdict.app, inner_protocol=verdict.client_protocol or verdict.server_protocol,
-                       category=verdict.category, app_status=verdict.status, reasons=list(verdict.reasons),
+            row.update(application=effective.app, inner_protocol=layers['inner']['protocol'] if layers['inner'] else None,
+                       category=effective.category, app_status=effective.status, reasons=list(effective.reasons),
                        evidence=evidence, note=NOTE)
         self.row = row
         return row

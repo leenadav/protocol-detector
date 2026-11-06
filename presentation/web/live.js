@@ -31,7 +31,7 @@ function renderLive(data) {
   $('live-events-panel').hidden = false;
   renderLiveLogs(data);
   if (!state.catalog) return;
-  state.result = {sessions:data.sessions, meta:{live:true, synthetic:false, frames:counts.packets || 0, skipped:counts.unsupported_or_malformed_packets || 0, timeline:[], processing_ms:0, capture_quality:summary.capture_quality || 'pending', capture_stats:drops || null}};
+  state.result = {sessions:mergeDecryption(data.sessions, data.decryption), meta:{live:true, synthetic:false, frames:counts.packets || 0, skipped:counts.unsupported_or_malformed_packets || 0, timeline:[], processing_ms:0, capture_quality:summary.capture_quality || 'pending', capture_stats:drops || null}};
   state.visible = data.sessions.length;
   state.sourceName = 'Live capture · '+data.interface;
   render();
@@ -93,15 +93,40 @@ function openLiveDetail(sequence) {
   $('close-detail').onclick = closeDetail;
   $('close-detail').focus();
 }
+function chainOf(record) {
+  // Stage 5 (A05): the layered view is the one source for the protocol chain and the identity basis.
+  const layers = record && record.layers;
+  if (layers && layers.chain && layers.chain.length) return layers.chain.join(' → ');
+  return [record.encryption, record.client_protocol || record.server_protocol || record.inner_protocol].filter(Boolean).join(' → ');
+}
+function basisOf(record) {
+  const basis = record && record.layers && record.layers.application && record.layers.application.basis;
+  return basis ? basis.replace(/_/g, ' ') : '';
+}
+function mergeDecryption(sessions, decryption) {
+  // One session view: a decoder row joins its session by session_id (stage 4 ids); the session's app
+  // becomes the layered effective application, never a second independent label.
+  const rows = decryption && decryption.report ? decryption.report.connections : [];
+  const bySession = new Map(rows.filter(r => r.session_id).map(r => [r.session_id, r]));
+  return sessions.map(s => {
+    const row = s.session_id && bySession.get(s.session_id);
+    if (!row || !row.layers) return s;
+    const merged = {...s, layers: row.layers, decrypted_log: 'TLS-'+JSON.stringify([row.client,row.server])};
+    if (row.layers.application && row.layers.application.name) merged.app = row.layers.application.name;
+    if (row.layers.inner && row.layers.inner.protocol) merged.client_protocol = row.layers.inner.protocol;
+    if (row.layers.application && row.layers.application.category) merged.category = row.layers.application.category;
+    return merged;
+  });
+}
 function renderLiveLogs(data) {
   const decrypted = data.decryption ? data.decryption.report.connections : [];
-  const rows = decrypted.map(row => ({...row,sequence:'TLS-'+JSON.stringify([row.client,row.server]),type:'decryption',event:(row.version || 'TLS')+' decryption',source:row.client,destination:row.server,app:row.application || 'Not determined',protocol:row.inner_protocol || 'tls',reason:row.reason || (row.reasons || []).join(' · ')}));
+  const rows = decrypted.map(row => ({...row,sequence:'TLS-'+JSON.stringify([row.client,row.server]),type:'decryption',event:(row.version || 'TLS')+' decryption',source:row.client,destination:row.server,app:(row.layers && row.layers.application && row.layers.application.name) || row.application || 'Not determined',protocol:chainOf(row) || 'tls',basis:basisOf(row),reason:row.reason || (row.reasons || []).join(' · ')}));
   live.events = rows.concat(data.events.slice().reverse());
   syncApplicationFilter($('live-app-filter'),live.events.map(e=>e.app || e.protocol || 'Not determined'));
   const app=$('live-app-filter').value;
   const visible=live.events.filter(e=>app==='all'||(e.app || e.protocol || 'Not determined')===app);
   $('live-log-count').textContent='Showing '+visible.length+' of '+live.events.length+' logs'+(data.decryption?' · '+data.decryption.report.decrypted+' decrypted connections · '+(data.decryption.provisional?'provisional':data.decryption.capture_quality || 'quality unverified'):'');
-  updateRows($('live-events'),visible.map(e=>'<tr tabindex="0" role="button" title="Open event details" data-live-event="'+esc(e.sequence)+'" aria-label="Inspect live log"><td>'+esc(e.event || e.type)+'<br>'+esc(e.status || '')+'</td><td>'+esc(e.source?e.source.join(':')+' → '+e.destination.join(':'):'Capture-wide')+'</td><td><strong>'+esc(e.app || 'Not determined')+'</strong><br>'+esc(e.protocol || '—')+'</td><td>'+esc(e.reason || '')+'</td></tr>').join(''),'data-live-event');
+  updateRows($('live-events'),visible.map(e=>'<tr tabindex="0" role="button" title="Open event details" data-live-event="'+esc(e.sequence)+'" aria-label="Inspect live log"><td>'+esc(e.event || e.type)+'<br>'+esc(e.status || '')+'</td><td>'+esc(e.source?e.source.join(':')+' → '+e.destination.join(':'):'Capture-wide')+'</td><td><strong>'+esc(e.app || 'Not determined')+'</strong><br>'+esc(e.protocol || '—')+(e.basis?'<br><small>'+esc(e.basis)+'</small>':'')+'</td><td>'+esc(e.reason || '')+'</td></tr>').join(''),'data-live-event');
 }
 $('live-app-filter').onchange=()=>{if(live.latest)renderLiveLogs(live.latest);};
 $('live-keylog').oninput=()=>{$('live-start').textContent=$('live-keylog').value.trim()?'Start capture + decryption':'Start capture';};

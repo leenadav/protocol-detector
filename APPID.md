@@ -114,6 +114,16 @@ counted, not tracked):
  "policy": {"action": "deny", "rule": "deny-cleartext", "reasons": ["rule 'deny-cleartext' matched web-browsing"]}}
 ```
 
+`layers` (stage 5, A05/A13) separates what was known at each layer from the
+effective answer: `outer` (wire protocol and verdict), `encryption`, `inner`
+(authenticated plaintext, only with decryption), `application` with its
+identity `basis` (`authenticated_plaintext`, `structural`, `configured_rule`,
+`client_assertion`, `none`), the display `chain` and the `claims` (asserted
+names, offered ALPN, derived fingerprints: provenance only, never identity).
+The same reducer (`protocol_adapters/layers.py`) builds it for session records
+and for the decryption adapter's rows, so a TLS session whose plaintext was
+authenticated reads `tls -> http/1.1 -> webdav` everywhere, and an
+authentication failure keeps the TLS layer while withdrawing the inner one.
 `risks` lists the RISKS.md flow risks derived from the verdict and both
 directions' evidence (sorted, possibly empty). `policy` appears only when a
 policy file was given (POLICY.md).

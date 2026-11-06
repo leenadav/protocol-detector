@@ -8,6 +8,7 @@ from functools import partial
 from .link_packets import decode_frame
 from .packets import CaptureError, PacketError, UDPPacket, read_pcap_records
 from protocol_engine import Config, DatagramInspector, Event, Inspector, SignatureSet
+from .layers import layered_view
 from protocol_engine.appid import classify, session_verdict, verdict_fields
 from protocol_engine.policy import Policy, PolicyError
 from protocol_engine.registry import PARSERS
@@ -99,6 +100,9 @@ class Analyzer:
                   "client_bytes": state["bytes"].get(client, 0), "server_bytes": state["bytes"].get(server, 0),
                   "end_reason": reason}
         record.update(verdict_fields(verdict))
+        # Stage 5 (A05/A13): the layered view, from the same observations and verdict; labels only.
+        record["layers"] = layered_view(transport, observations[0], observations[1], verdict, server[1],
+                                        state["bytes"].get(client, 0), state["bytes"].get(server, 0))[0]
         if self.policy is not None:
             record["policy"] = self.policy.evaluate(verdict, transport, server[1]).fields()
         fingerprints = {evidence.field: evidence.value for obs in observations if obs is not None
