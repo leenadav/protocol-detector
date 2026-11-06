@@ -147,6 +147,7 @@ class SessionCoordinator:
     def _queue(self, item):
         if len(self._pending) >= self.retain.pending:
             self.counts["pending_overflow"] += 1
+            self.analyzer.telemetry.add("events.dropped")
             raise StreamError("Retained consumer queue exhausted; the consumer must drain between packets")
         self._pending.append(item)
 
@@ -258,7 +259,10 @@ class SessionCoordinator:
             return
         self.now = max(self.now, now)
         self.counts["ticks"] += 1
-        self.analyzer.expire(self.now)
+        with self.analyzer.telemetry.stage("tick"):
+            self.analyzer.expire(self.now)
+        self.analyzer.telemetry.set("bytes.retained", self.retained_allocated)
+        self.analyzer.telemetry.set("queue.depth", len(self._pending))
         for key, state in list(self.retained.items()):
             if self.now - state["time"] >= self.idle_timeout:
                 self._retained_close(key, "Idle timeout; retained stream ended")
@@ -266,6 +270,7 @@ class SessionCoordinator:
     def gap(self, reason, scope="active_connections"):
         """Capture loss or truncation: name and retract every active session, then drop their state."""
         self.counts["gaps"] += 1
+        self.analyzer.telemetry.add("capture.gaps")
         retracted = sorted({session_identity("tcp", s["client"], s["server"]) for s in self.analyzer.tracked.values()}
                            | {s["sid"] for s in self.retained.values()})
         if self.emit is not None and (retracted or scope == "all_observations_this_capture"):

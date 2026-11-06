@@ -115,7 +115,8 @@ class CaptureMonitor:
             return
         transport = "udp" if isinstance(packet, UDPPacket) else "tcp"
         self.counts[transport] += 1
-        message = self.coordinator.accept(packet, now)
+        with self.analyzer.telemetry.stage("packet"):
+            message = self.coordinator.accept(packet, now)
         if message.startswith("SKIP"):
             self.counts["tcp_without_start" if packet.payload else "tcp_control_without_state"] += 1
         elif message.startswith("LIMIT"):
@@ -174,6 +175,7 @@ class CaptureMonitor:
                 "counts": dict(self.counts), "protocols": dict(self.protocols), "apps": dict(self.apps), "risks": dict(self.risks), "policy": dict(self.policy_counts),
                 "active_connections": len(self.analyzer.tracked), "active_udp_flows": len(self.analyzer.udp_flows),
                 "capture_stats": capture_stats,
+                "telemetry": self.analyzer.telemetry.render(),      # stage 7 (A15): counters and histograms, no payload
                 "scope": "Initial messages only; capture loss may be reported at shutdown"}
 
 

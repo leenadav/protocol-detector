@@ -53,7 +53,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check
+check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -97,3 +97,6 @@ fuzz:
 sbom:
 	cyclonedx-py environment --output-format json --output-file sbom.cdx.json
 	$(PYTHON) -B tools/sbom_summary.py sbom.cdx.json
+
+inventory:
+	python3 -B tools/check_inventory.py

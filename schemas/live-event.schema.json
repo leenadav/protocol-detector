@@ -432,6 +432,12 @@
         },
         "layers": {
           "$ref": "#/$defs/layers"
+        },
+        "signature_set": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 16,
+          "description": "Stage 7: digest of the custom signature set this verdict was classified with."
         }
       },
       "required": [
@@ -774,6 +780,9 @@
             "limit_or_interrupt",
             "eof"
           ]
+        },
+        "telemetry": {
+          "$ref": "#/$defs/telemetry"
         }
       }
     },
@@ -1256,6 +1265,85 @@
         },
         "note": {
           "type": "string"
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "counters",
+        "histograms"
+      ],
+      "properties": {
+        "counters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "histograms": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "count",
+              "sum",
+              "min",
+              "max",
+              "p50",
+              "p95",
+              "p99",
+              "buckets"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer"
+              },
+              "sum": {
+                "type": "number"
+              },
+              "min": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "max": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "p50": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "p95": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "p99": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "buckets": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              }
+            }
+          }
         }
       }
     }

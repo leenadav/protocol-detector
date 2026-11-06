@@ -69,6 +69,7 @@ class Metrics:
     parser_calls: int = 0
     candidates_selected: int = 0
     events_emitted: int = 0
+    signature_candidates: int = 0   # stage 7 (A11): custom signatures evaluated for this direction
 
 
 def normalize_hostname(value):

@@ -9,6 +9,7 @@ from .link_packets import decode_frame
 from .packets import CaptureError, PacketError, UDPPacket, read_pcap_records
 from protocol_engine import Config, DatagramInspector, Event, Inspector, SignatureSet
 from .layers import layered_view
+from .observability import Telemetry
 from protocol_engine.appid import classify, session_verdict, verdict_fields
 from protocol_engine.policy import Policy, PolicyError
 from protocol_engine.registry import PARSERS
@@ -92,6 +93,7 @@ class Analyzer:
         self.quic_assembler.max_connections = max(1, min(self.max_udp_flows, 1024))
         self.udp_flows = {}
         self.counts = Counter()
+        self.telemetry = Telemetry()      # stage 7 (A15): one registry per capture path, shared with its owners
 
     # ----- session records -------------------------------------------------
     def _record(self, transport, client, server, state, verdict, reason, observations):
@@ -103,6 +105,10 @@ class Analyzer:
         # Stage 5 (A05/A13): the layered view, from the same observations and verdict; labels only.
         record["layers"] = layered_view(transport, observations[0], observations[1], verdict, server[1],
                                         state["bytes"].get(client, 0), state["bytes"].get(server, 0))[0]
+        if self.signatures is not None:
+            record["signature_set"] = self.signatures.digest      # stage 7 (A11): the rule set this verdict used
+        self.telemetry.observe("time_to_verdict_seconds", max(0.0, self.now - state["start"]))
+        self.telemetry.add("sessions." + verdict.status)
         if self.policy is not None:
             record["policy"] = self.policy.evaluate(verdict, transport, server[1]).fields()
         fingerprints = {evidence.field: evidence.value for obs in observations if obs is not None
@@ -217,6 +223,12 @@ class Analyzer:
         if connection is not None:
             client_obs = connection["directions"][client].inspector.observation
             server_obs = connection["directions"][server].inspector.observation
+            seen = sum(state["bytes"].values())
+            unique = sum(stream.stored for stream in connection["directions"].values())
+            self.telemetry.add("bytes.new", min(seen, unique))
+            self.telemetry.add("bytes.replayed", max(0, seen - unique))
+            self.telemetry.add("signatures.candidates", sum(stream.inspector.metrics.signature_candidates
+                                                            for stream in connection["directions"].values()))
         verdict = session_verdict(client_obs, server_obs, "tcp", server[1], state["bytes"].get(client, 0),
                                   state["bytes"].get(server, 0), handshake_complete=state["ready"], signatures=self.signatures,
                                   at=state["start"])

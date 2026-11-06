@@ -1,19 +1,19 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.65.0",
-  "commit": "53a1c9767b1a6db715791b54f7c0150e25ede9b6",
+  "commit": "da26f8b88b6bac617fcab0ce34bbf1c2d88f126b",
   "branch": "work/v065-stage0",
-  "build_digest": "130900818129b36777a63c413feb6c0bea1beaf0c73ac614aee1a2ff55e12286",
+  "build_digest": "a5561b82936cb6fe3c849423a9f31b2dc5ac202458798502e5c60d133d2a1820",
   "components": {
     "engine": {
       "root": "protocol_engine",
       "version": "0.65.0",
-      "files": 67
+      "files": 68
     },
     "adapters": {
       "root": "protocol_adapters",
       "version": "0.65.0",
-      "files": 25
+      "files": 26
     },
     "presentation": {
       "root": "presentation",
@@ -103,6 +103,11 @@
       "sha256": "3e3c64b35aeeaee5059c6c82b36c5d6e6a3f19f506968f0120c4f86a116b2ead"
     },
     {
+      "path": "protocol_engine/descriptors.py",
+      "component": "engine",
+      "sha256": "5af6c5a8c4a32cc72401f710cc722d6dcff1c3e6397707750897a8991212d116"
+    },
+    {
       "path": "protocol_engine/desktop.py",
       "component": "engine",
       "sha256": "217a840c378fc5eded0dba4e6f69963a85a893f4e7e6e1d16c73c5e3032d9a91"
@@ -125,7 +130,7 @@
     {
       "path": "protocol_engine/engine.py",
       "component": "engine",
-      "sha256": "08a35ea40e0b30dd4956feb6f82cc5f165ff805746e22d248c9757d12d711254"
+      "sha256": "6427dcb3936062c12073dd7083142e5869d2eaaa599a1f2ce32fa1fc1d838970"
     },
     {
       "path": "protocol_engine/enterprise_db.py",
@@ -220,7 +225,7 @@
     {
       "path": "protocol_engine/model.py",
       "component": "engine",
-      "sha256": "2ba94ffaa45c854459865fff7cd3beae981989e74b093132d5d6e5c663e66e4e"
+      "sha256": "2afe114233aa6a2ce915de3e8ce372acf6762f58bd326639ea1aa2f396a2d7d3"
     },
     {
       "path": "protocol_engine/network.py",
@@ -300,7 +305,7 @@
     {
       "path": "protocol_engine/signatures.py",
       "component": "engine",
-      "sha256": "4fe8dc967e40d2a74b88c72d3dead89a8f54cac1764671d535f4524e8a0c46c0"
+      "sha256": "9746d50fb37515b4ca63dbfebdf141e4a568e88c15f8292b731b199200e2bae0"
     },
     {
       "path": "protocol_engine/ssh_posture.py",
@@ -370,7 +375,7 @@
     {
       "path": "protocol_adapters/analyze_pcap.py",
       "component": "adapters",
-      "sha256": "f790c4ecba21ba9628d60fafbd1e903864ae9a398eb0f110e03e4f1f879a2f4f"
+      "sha256": "59f6d2938bf0fb636fb85f9b80ad9b717b6821ea7b9fc6f3eec011b6122bc61a"
     },
     {
       "path": "protocol_adapters/capture_stream.py",
@@ -380,7 +385,7 @@
     {
       "path": "protocol_adapters/coordinator.py",
       "component": "adapters",
-      "sha256": "facab74a908d0eaa73c7a1ce055efd7128649e63b7cf8538704d612e75a28801"
+      "sha256": "e5ea4d6960656f1b51d408d7eb0e73ec9fd7c7eeb64e6cd7dd620f96b9edb599"
     },
     {
       "path": "protocol_adapters/detectors.py",
@@ -405,12 +410,17 @@
     {
       "path": "protocol_adapters/live_capture.py",
       "component": "adapters",
-      "sha256": "20be05633f1d2a3c4cb9d22cff56b4453e79d815850f42dba7907a4e277e39e8"
+      "sha256": "e55e0958d866f95c9cf1dc5d8d5f947a069e287a2eff1e5492793fb889059f0a"
     },
     {
       "path": "protocol_adapters/make_sample_pcap.py",
       "component": "adapters",
       "sha256": "ed6fe3189fc40aba31dc597950c243713b81aad329ab9de6ed218d4cac20c2dc"
+    },
+    {
+      "path": "protocol_adapters/observability.py",
+      "component": "adapters",
+      "sha256": "e6dd1bf7710793d64662be4490e5d2e3ef9979e808da7d20a31e23de57b93fbb"
     },
     {
       "path": "protocol_adapters/packets.py",
@@ -525,7 +535,7 @@
     {
       "path": "presentation/poc_decryption/decryptor.py",
       "component": "presentation",
-      "sha256": "f1072074fe41cea55a4fc70824fe78c9e7743929ffc68a91a19973439dfcb4cb"
+      "sha256": "b81e3b314373408310944510f4ef8977ad7c8c31f168c4260fb8ac3f5dee7a3e"
     },
     {
       "path": "presentation/poc_decryption/demo.py",
@@ -590,17 +600,17 @@
     {
       "path": "schemas/live-event.schema.json",
       "component": "schemas",
-      "sha256": "654c4da741316904ffd03066d964e5c1a994a78685b97ce3dd892cf9da4a12a6"
+      "sha256": "097e8770843695a8ffa909d7b34626f7c7ad69ec1579ac052cdf33d6fcf6166d"
     },
     {
       "path": "schemas/offline-row.schema.json",
       "component": "schemas",
-      "sha256": "3d73a6b089e88557e17e5578dba2c25136baea2a6af138c6d0dfe94f056637a3"
+      "sha256": "afe2b23b8b3d8f9bdea4c1e5dc3580a77961c04a692930f05d04af06a2263bd0"
     },
     {
       "path": "schemas/session.schema.json",
       "component": "schemas",
-      "sha256": "6dbcda1d7ef42de77f74115d5630a1b855ad9618fd72b6225d3d2bba014e5f08"
+      "sha256": "f46020d77731b6715027da26fe8514a17eeccf74ac738c158f220e7ead9bb691"
     }
   ]
 }

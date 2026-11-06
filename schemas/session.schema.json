@@ -393,6 +393,12 @@
         },
         "layers": {
           "$ref": "#/$defs/layers"
+        },
+        "signature_set": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 16,
+          "description": "Stage 7: digest of the custom signature set this verdict was classified with."
         }
       },
       "required": [

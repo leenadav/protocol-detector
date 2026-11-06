@@ -189,13 +189,22 @@ class Decryptor:
         connection.dirty = True
 
     # ----- bounded work -------------------------------------------------------------
+    @property
+    def telemetry(self):
+        return self.coordinator.analyzer.telemetry
+
     def _work_one(self, connection, quantum):
         before = connection.tls.records_authenticated
-        deltas = connection.tls.advance(quantum if quantum is not None else 1 << 20)
+        was_failed = connection.tls.state == 'failed'
+        with self.telemetry.stage('decrypt'):
+            deltas = connection.tls.advance(quantum if quantum is not None else 1 << 20)
         for delta in deltas:
             connection.plaintext(delta)
             self.counts['plaintext_bytes'] += len(delta.data)
+            self.telemetry.add('bytes.decrypted', len(delta.data))
         self.counts['records_authenticated'] += connection.tls.records_authenticated - before
+        if not was_failed and connection.tls.state == 'failed' and connection.tls.reason_code == 'authentication_failed':
+            self.telemetry.add('decryption.auth_failures')
         return bool(deltas) or connection.tls.records_authenticated != before
 
     def work(self, quantum=64, rounds=16):
@@ -214,6 +223,7 @@ class Decryptor:
                 break
         if did:
             self._report = None
+        self.telemetry.set('keys.pending', self.awaiting_keys())
         return did
 
     def pending(self):
@@ -235,7 +245,8 @@ class Decryptor:
     def report(self, frames=0, skipped=0):
         self.counts['report_calls'] += 1
         if self._report is None or self._report.get('frames') != frames:
-            rows = self.rows()
+            with self.telemetry.stage('report'):
+                rows = self.rows()
             self._report = {'connections': rows, 'frames': frames, 'skipped': skipped,
                             'decrypted': sum(r['status'] == 'decrypted' for r in rows), 'profile': PROFILE,
                             'counts': dict(self.counts, awaiting_keys=self.awaiting_keys(), active=len(self.connections)),
