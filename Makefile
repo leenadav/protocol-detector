@@ -8,8 +8,11 @@ test:
 
 # The presentation application (frontend, server, live bridge, TLS POC) needs the optional decryption extra:
 # $(PYTHON) -m pip install -r presentation/requirements-decryption.txt. The core engine stays dependency-free.
+# The interpreter is resolved before the directory change, so `PYTHON=.venv/bin/python` (a path relative to the
+# repository root) works as documented; a bare command name is left to PATH.
 presentation-test:
-	cd presentation && $(PYTHON) -B -m unittest discover -s tests -v
+	@PY="$(PYTHON)"; case "$$PY" in /*) ;; */*) PY="$$PWD/$$PY";; esac; \
+	cd presentation && "$$PY" -B -m unittest discover -s tests -v
 
 demo:
 	$(PYTHON) -B protocol_demo.py
@@ -61,9 +64,14 @@ manifest:
 
 # Runs the presentation suite when the optional decryption extra is importable, and says so when it is not,
 # instead of silently passing: the canonical CI job installs the extra and always runs it.
+# Explicit dependency detection: the suite's own exit status is the target's exit status (a failing suite can
+# never read as "skipped"); only a missing `cryptography` skips, and says so.
 presentation-check:
-	@$(PYTHON) -c "import cryptography" 2>/dev/null && $(MAKE) --no-print-directory presentation-test PYTHON=$(PYTHON) \
-	|| echo "presentation-check: skipped here (install .[decryption] to run it); CI runs it unconditionally"
+	@if $(PYTHON) -c "import cryptography" 2>/dev/null; then \
+	  $(MAKE) --no-print-directory presentation-test PYTHON=$(PYTHON); \
+	else \
+	  echo "presentation-check: skipped here (install .[decryption] to run it); CI runs it unconditionally"; \
+	fi
 
 docs-counts:
 	$(PYTHON) -B tools/check_docs_counts.py

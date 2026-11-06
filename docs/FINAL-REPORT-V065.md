@@ -25,12 +25,14 @@ docs/PROGRESS-V065.md; this report is the consolidated view.
 
 ## Findings
 
-All sixteen findings are implemented and verified against their acceptance criteria; the honest limits are
-listed with each in docs/PROGRESS-V065.md and summarized here.
+Fourteen findings meet their acceptance criteria; A01 and A14 carry explicit open acceptance gaps (below and in
+docs/PROGRESS-V065.md). A Codex checkpoint on stage 6 (da26f8b) confirmed the baseline reproduction numbers and found a
+Makefile gate bug (a failing presentation suite exited 0 as "skipped"); it is fixed with a regression test.
 
 - **A01** one source: engine and adapters in one package, the application imports it, a clean install runs
-  replay, frontend contract and decryption from the wheel (stage 8 installed check). Limit: the application
-  directory is shipped beside the wheel, not as a second distribution.
+  replay, frontend contract and decryption from the wheel (stage 8 installed check). **Open acceptance gap:**
+  the presentation UI and decryption package are not in the wheel; one installable artifact for the whole
+  product is not yet produced.
 - **A02** incremental decryption: 0 records re-authenticated across unchanged status reads (was 5 full
   decryptions), key log read once (was 5×); late keys wake only waiting connections.
 - **A03/A04** one owner: the coordinator owns reassembly deltas and lifecycle on every path; a no-FIN
@@ -51,7 +53,8 @@ listed with each in docs/PROGRESS-V065.md and summarized here.
 - **A12** protocol descriptors derived from the tables with a build-time inventory check and a standard
   per-family test template.
 - **A14** one frontend store with run identity; a late response for an older run is dropped; refresh
-  resumes; nothing in localStorage; hostile strings never execute (real-browser tests).
+  resumes; nothing in localStorage; hostile strings never execute (real-browser tests). **Open acceptance
+  gap:** the live view still polls the legacy snapshot instead of the cursor log.
 - **A15** counters and histograms across the component boundaries, time-to-verdict and stage timings,
   labelled-corpus report by family and input class, synthetic soak.
 - **A16** whole-build digest in the manifest, health and launcher reuse check, key-log guards (make check +
@@ -66,7 +69,7 @@ bundled Chromium); synthetic in-memory traffic only; GitHub Actions does not sta
 
 | check | result |
 |---|---|
-| engine suite (`python3 -B -m unittest discover -q`) | 719 tests OK |
+| engine suite (`python3 -B -m unittest discover -q`) | 721 tests OK |
 | presentation suite (`make presentation-test`) | 59 tests OK, browser tests included |
 | `make check` (ruff, tests, pins, policy lint, coverage matrix, docs counts, manifest, presentation, inventory, key logs) | OK |
 | Python 3.9 on the new modules (coordinator, events, layers, signature index, descriptors, template, v0.66) | OK |

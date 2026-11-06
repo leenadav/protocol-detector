@@ -1,7 +1,7 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "81b15942efa9b12b2090eb6c98e1b4239ca74f4a",
+  "commit": "5d2deb2533ee17dcd837e64396aee2b4951a1ba7",
   "branch": "work/v065-stage0",
   "build_digest": "aca0f12e0cb9eb07f7dc7b6c95389ca82b255c396c9d1b3f3a609d642ec582d7",
   "components": {
