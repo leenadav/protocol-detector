@@ -232,6 +232,14 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(200, self.server.live.interfaces())
         if path == "/api/live/status":
             return self.respond(200, self.server.live.snapshot())
+        if path == "/api/live/events":
+            # Stage 2 (A06): cursor read of the versioned event log; bounded and side-effect free.
+            query = dict(part.split("=", 1) for part in urlsplit(self.path).query.split("&") if "=" in part)
+            try:
+                cursor, limit = int(query.get("cursor", "0")), int(query.get("limit", "500"))
+                return self.respond(200, self.server.live.events_since(cursor, limit))
+            except ValueError:
+                return self.respond(400, {"error": "cursor and limit must be non-negative integers within bounds"})
         if path == "/api/catalog":
             return self.respond(200, catalog_data())
         if path == "/api/sample":

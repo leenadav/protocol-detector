@@ -39,7 +39,7 @@ class ValidatorTests(unittest.TestCase):
         self.assertEqual(schema_check.validate("x", {"oneOf": [{"type": "string"}, {"const": "x"}]}), ["$: 2 oneOf branches matched"])
         with self.assertRaises(ValueError):
             schema_check.validate(1, {"$ref": "http://elsewhere/x"})
-        self.assertEqual(schema_check.names(), ["live-event", "offline-row", "session"])
+        self.assertEqual(schema_check.names(), ["event-envelope", "live-event", "offline-row", "session"])
         for name in schema_check.names():
             schema = schema_check.load(name)
             self.assertEqual(schema["$schema"], "http://json-schema.org/draft-07/schema#")
@@ -103,7 +103,7 @@ class OutputConformanceTests(unittest.TestCase):
             self.assertEqual(code, 1)
             self.assertTrue(any("invalid JSON" in line for line in lines))
         code, lines = run_json("protodetect.py", "schema")
-        self.assertEqual((code, lines), (0, ["live-event", "offline-row", "session"]))
+        self.assertEqual((code, lines), (0, ["event-envelope", "live-event", "offline-row", "session"]))
         code, lines = run_json("protodetect.py", "schema", "session")
         self.assertEqual((code, json.loads("\n".join(lines))["title"]), (0, "Session record"))
         self.assertEqual(run_json("protodetect.py", "schema", "nope")[0], 1)

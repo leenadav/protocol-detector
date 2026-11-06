@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.65.0",
-  "commit": "e7d84ce881e1c8385c7bfb761d0a5270f33a404e",
+  "commit": "19e7219a0da6cdd7a7c858a2b4baf8970886b19a",
   "branch": "work/v065-stage0",
-  "build_digest": "b6f91c6b830aa39eb7e4c896cc1aeb20fdcbc4184e19b00d921843774ff2f779",
+  "build_digest": "33037063900c2f40a9eb10c2093ffc6124a9cb1bf41cac7e3d3c34c8a70122d3",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -13,7 +13,7 @@
     "adapters": {
       "root": "protocol_adapters",
       "version": "0.65.0",
-      "files": 22
+      "files": 23
     },
     "presentation": {
       "root": "presentation",
@@ -23,7 +23,7 @@
     "schemas": {
       "root": "schemas",
       "version": "0.65.0",
-      "files": 3
+      "files": 4
     }
   },
   "files": [
@@ -383,6 +383,11 @@
       "sha256": "44278efdc5cc2c0e8550c9695854d9b16836536365de1a071e473d9ae7e6a463"
     },
     {
+      "path": "protocol_adapters/events.py",
+      "component": "adapters",
+      "sha256": "fe75efc02261eb24657ff9531c7848d6c91e3f1eae1160a4ae39b2323e505511"
+    },
+    {
       "path": "protocol_adapters/link_packets.py",
       "component": "adapters",
       "sha256": "caedb1fcc51f31385dfef8b3c98014e3aa0d8f12c82aa873297ecaa3801b02f2"
@@ -390,7 +395,7 @@
     {
       "path": "protocol_adapters/live_capture.py",
       "component": "adapters",
-      "sha256": "0e22da57d9228560f503c36bee9f28af2501bccbaac4dc8b4931da8265c92cec"
+      "sha256": "9f730ce98719e13097d05cfb1b4cfb7c0537b5ebf923a0e7c4cbfd3346781f87"
     },
     {
       "path": "protocol_adapters/make_sample_pcap.py",
@@ -480,7 +485,7 @@
     {
       "path": "presentation/live_manager.py",
       "component": "presentation",
-      "sha256": "bad2a488b0b5a57ae2b92774c3ea14a5b0351cd80903fe61c57b2f24e2110dfa"
+      "sha256": "53f269e00f440b244450d9465b038cad7bffb1495ce27402c2b8902fb610d406"
     },
     {
       "path": "presentation/live_smoke_check.py",
@@ -490,7 +495,7 @@
     {
       "path": "presentation/server.py",
       "component": "presentation",
-      "sha256": "87633342a5d4a25d19b00d56c29d4d3db025f6d9e525ad49137768e2e57f4f1e"
+      "sha256": "5c058c1b2e11536ee0f0dd50c8993ec2bc53eabfe21eed650c702c62afe88ada"
     },
     {
       "path": "presentation/poc_decryption/__init__.py",
@@ -548,9 +553,14 @@
       "sha256": "8b5c18678b29b5e8e0fb586a35ac1dce3ccd9da321e8f12ace0e118350b4e568"
     },
     {
+      "path": "schemas/event-envelope.schema.json",
+      "component": "schemas",
+      "sha256": "6a63ef7d374185b2ae0c5e921e04fab0076a9b35dc8bbfdf0e0340fa409482c9"
+    },
+    {
       "path": "schemas/live-event.schema.json",
       "component": "schemas",
-      "sha256": "aca35ea2893652183db3652a46d5891eff1280f01f6a620e469b20ed451ba6dd"
+      "sha256": "76b9c2f6b0a9f41a2402c6f8e48381773265344d9d72e66b3ce9713abfd937e2"
     },
     {
       "path": "schemas/offline-row.schema.json",

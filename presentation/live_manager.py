@@ -2,6 +2,7 @@
 from collections import deque
 import json
 from pathlib import Path
+from protocol_adapters.events import EventLog, public_state, reduce
 import re
 import secrets
 import shutil
@@ -29,6 +30,8 @@ class LiveManager:
         self.error = None
         self.sequence = 0
         self.session_count = 0
+        self.capture_id = None
+        self.log = None          # stage 2 (A06): the versioned, bounded event log of the current run
         self.lease = 0
         self.interface = None
         self.decryption = None
@@ -77,6 +80,8 @@ class LiveManager:
             self.decryption = None
             self.error = None
             self.sequence = self.session_count = 0
+            self.capture_id = secrets.token_hex(8)
+            self.log = EventLog(self.capture_id)
             self.interface = interface
             self.lease = time.monotonic()
             self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
@@ -94,6 +99,11 @@ class LiveManager:
     def ingest(self, event):
         with self.lock:
             kind = event.get('type')
+            if self.log is not None and kind in ('session', 'classification', 'capture_gap', 'error', 'summary', 'decryption'):
+                try:
+                    self.log.wrap_and_append(event)
+                except ValueError:
+                    pass                      # a malformed worker line never breaks the legacy path below
             if kind == 'decryption':
                 self.decryption = event
             elif kind in ('progress', 'summary'):
@@ -174,4 +184,30 @@ class LiveManager:
                     'decryption': self.decryption,
                     'events': list(self.events), 'sessions': list(self.sessions),
                     'summary': self.summary, 'events_total': self.sequence,
-                    'sessions_total': self.session_count, 'retained_sessions': len(self.sessions)}
+                    'sessions_total': self.session_count, 'retained_sessions': len(self.sessions),
+                    'capture_id': self.capture_id, 'cursor': self.log.snapshot()['cursor'] if self.log else 0}
+
+    def events_since(self, cursor=0, limit=500):
+        """Stage 2 (A06): cursor read of the versioned log plus the reduced session view.
+
+        Re-polling the same cursor repeats nothing new; a cursor older than what is retained returns
+        reset_required so the client rebuilds from the full read instead of showing a window with a hole.
+        """
+        with self.lock:
+            if self.log is None:
+                return {'capture_id': None, 'events': [], 'cursor': 0, 'reset_required': False, 'view': None}
+            page = self.log.read(cursor, limit)
+            page['capture_id'] = self.capture_id
+            page['view'] = self.view()
+            return page
+
+    def view(self):
+        """The session view reduced from the whole retained log; identical whether built live or replayed."""
+        if self.log is None:
+            return None
+        state = public_state(reduce(self.log.snapshot()['events']))
+        return {'quality': state['quality'], 'retracted_total': state['retracted_total'],
+                'sessions': [dict(id=sid, **{k: v for k, v in view.items() if k != 'classifications'},
+                                  classifications=len(view['classifications']))
+                             for sid, view in state['sessions'].items()],
+                'errors': state['errors'], 'last_sequence': state['last_sequence']}

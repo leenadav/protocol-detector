@@ -780,6 +780,16 @@
         "frame": {
           "type": "integer",
           "minimum": 1
+        },
+        "session_ids": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 16
+          },
+          "description": "Stage 2 (A06): hashed ids of the sessions this gap retracts (protocol_adapters.events.session_identity); never addresses."
         }
       }
     },

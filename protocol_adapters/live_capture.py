@@ -154,7 +154,12 @@ class CaptureMonitor:
     def invalidate_all(self, reason, scope="active_connections"):
         active = len(self.analyzer.tracked)
         if active or scope == "all_observations_this_capture":
-            self.emit({"type": "capture_gap", "active_connections": active, "scope": scope, "reason": reason})
+            # Stage 2 (A06): name the sessions this gap retracts, so a consumer can withdraw exactly those
+            # verdicts instead of clearing everything it has ever shown. Ids are hashes, not addresses.
+            from .events import session_identity
+            retracted = sorted({session_identity("tcp", state["client"], state["server"]) for state in self.analyzer.tracked.values()})
+            self.emit({"type": "capture_gap", "active_connections": active, "scope": scope, "reason": reason,
+                       "session_ids": retracted})
         self.counts["connections_discarded_after_gap"] += active
         self.analyzer.tracked.clear()
         self.analyzer.udp_flows.clear()
