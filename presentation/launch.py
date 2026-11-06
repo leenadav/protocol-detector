@@ -14,13 +14,13 @@ def matching_server(url, expected):
     try:
         with urlopen(url + "/api/catalog", timeout=1) as response:
             catalog = json.load(response)
-        return catalog.get("source", {}).get("commit") == expected
+        return catalog.get("source", {}).get("build_digest") == expected
     except (OSError, ValueError):
         return False
 
 
 def main():
-    expected = json.loads((ROOT / "SOURCE.json").read_text())["commit"]
+    expected = json.loads((ROOT / "SOURCE.json").read_text())["build_digest"]   # whole build, not only the engine commit
     for port in range(8765, 8776):
         url = "http://127.0.0.1:{}".format(port)
         if matching_server(url, expected):

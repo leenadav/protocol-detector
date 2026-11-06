@@ -54,9 +54,9 @@ class DecryptionTests(unittest.TestCase):
             read_keys('CLIENT_TRAFFIC_SECRET_0 invalid invalid')
 
     def test_missing_and_conflicting_tcp_segments(self):
-        from capture_stream import PcapStreamDecoder
-        from make_sample_pcap import pcap_bytes
-        from link_packets import decode_frame
+        from protocol_adapters.capture_stream import PcapStreamDecoder
+        from protocol_adapters.make_sample_pcap import pcap_bytes
+        from protocol_adapters.link_packets import decode_frame
         decoder = PcapStreamDecoder()
         records_ = list(decoder.feed(self.capture))
         frames = [record.data for record in records_]

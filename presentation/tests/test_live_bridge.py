@@ -30,7 +30,7 @@ class LiveBridgeTests(unittest.TestCase):
             spawn.assert_not_called()
 
     def test_pinned_live_engine_stream_contract(self):
-        result = subprocess.run([sys.executable, '-B', str(ROOT / 'engine/live_capture.py'),
+        result = subprocess.run([sys.executable, '-B', str(ROOT.parent / 'live_capture.py'),
                                  '--stdin', '--json', '--all-events', '--fingerprints'],
                                 input=server.demo_bytes(), capture_output=True, timeout=10)
         self.assertEqual(result.returncode, 0, result.stderr)

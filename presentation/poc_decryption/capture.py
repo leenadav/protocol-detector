@@ -4,10 +4,10 @@ from . import MAX_STREAM, DecryptionError, decrypt_streams, read_keys
 
 
 def analyze_capture(data, keylog):
-    from capture_stream import PcapStreamDecoder
-    from link_packets import decode_frame
-    from packets import TCPPacket, PacketError
-    from sessions import Stream, StreamError
+    from protocol_adapters.capture_stream import PcapStreamDecoder
+    from protocol_adapters.link_packets import decode_frame
+    from protocol_adapters.packets import TCPPacket, PacketError
+    from protocol_adapters.sessions import Stream, StreamError
     from protocol_engine import Inspector
     from protocol_engine.appid import session_verdict
     if len(data) > 8 * 1024 * 1024:

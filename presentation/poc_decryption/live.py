@@ -15,10 +15,10 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'engine'))
-sys.path.insert(0, str(ROOT))
-from capture_stream import PcapStreamDecoder
-from live_capture import CaptureDiagnostics, CaptureMonitor, capture_command
+sys.path.insert(0, str(ROOT))                    # this script runs as a worker: make the presentation package importable
+sys.path.insert(0, str(ROOT.parent))             # and the one engine source
+from protocol_adapters.capture_stream import PcapStreamDecoder
+from protocol_adapters.live_capture import CaptureDiagnostics, CaptureMonitor, capture_command
 from poc_decryption.capture import analyze_capture
 
 LIMIT = 2 * 1024 * 1024

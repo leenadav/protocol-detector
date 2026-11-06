@@ -13,6 +13,7 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parent
+ENGINE = ROOT.parent     # one engine source (stage 1b)
 
 
 class LiveManager:
@@ -62,7 +63,7 @@ class LiveManager:
             bpf = '(tcp or udp) and not (host 127.0.0.1 and tcp portrange 8765-8775)'
             if scope == 'synthetic':
                 bpf = 'host 127.0.0.1 and tcp port 45991'
-            command = [sys.executable, '-B', str(ROOT / 'engine/live_capture.py'),
+            command = [sys.executable, '-B', str(ENGINE / 'live_capture.py'),
                        '--interface', interface, '--filter', bpf, '--duration', str(duration),
                        '--max-packets', '100000', '--max-connections', '128',
                        '--byte-limit', '16384', '--idle-timeout', '15',

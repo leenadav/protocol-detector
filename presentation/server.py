@@ -12,8 +12,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
-ENGINE = ROOT / "engine"
-sys.path.insert(0, str(ENGINE))
+ENGINE = ROOT.parent                    # the one engine source: the repository root (stage 1b, A01)
+sys.path.insert(0, str(ENGINE))         # registers protocol_adapters and protocol_engine for an unpacked checkout
+import protocol_adapters                 # noqa: E402,F401 - resolves the root adapters once; no other path hack
 MAX_UPLOAD = 8 * 1024 * 1024
 MAX_FRAMES = 20000
 MAX_SESSIONS = 500
@@ -22,9 +23,9 @@ MAX_EVENTS = 4000
 
 def demo_bytes():
     """Locally generated fixtures: never send a packet or collect real traffic."""
-    from make_sample_pcap import frame, udp_frame
-    import protocol_fixtures as f
-    from proxy_demo import client_hello
+    from protocol_adapters.make_sample_pcap import frame, udp_frame
+    from protocol_adapters import protocol_fixtures as f
+    from protocol_adapters.proxy_demo import client_hello
     hello = client_hello()
     cases = [
         ("tcp", 443, hello, b""),
@@ -142,7 +143,7 @@ def catalog_data():
     from protocol_engine.applications import APPLICATIONS, OUTCOMES
     source = json.loads((ROOT / "SOURCE.json").read_text())
     protocols = [asdict(p) for p in supported_protocols()]
-    return {"source": {k: source[k] for k in ("version", "branch", "commit", "repository")},
+    return {"source": {k: source.get(k) for k in ("version", "branch", "commit", "repository", "build_digest", "components")},
             "protocols": protocols, "applications": [asdict(a) for a in APPLICATIONS.values()],
             "outcomes": OUTCOMES, "limits": {"upload_mb": 8, "frames": MAX_FRAMES,
             "sessions": MAX_SESSIONS, "worker_seconds": 25}}

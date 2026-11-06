@@ -9,8 +9,12 @@ description = "Bounded incremental protocol classification for TCP streams and U
 requires-python = ">=3.9"
 dependencies = []
 
+[project.optional-dependencies]
+# The presentation application's TLS POC decrypts records with cryptography's AEADs; the core needs nothing.
+decryption = ["cryptography==50.0.2"]
+
 [tool.setuptools]
-packages = ["protocol_engine"]
+packages = ["protocol_engine", "protocol_adapters"]
 
 [tool.ruff]
 line-length = 160
@@ -32,6 +36,7 @@ ignore = [
 "test_*.py" = ["S", "B"]
 "live_capture.py" = ["S603", "S404", "S607"]   # argv-only subprocess with resolved executable, reviewed
 "tools/compare_engine.py" = ["S603"]        # sys.executable with argv-only arguments, reviewed
+"tools/build_manifest.py" = ["S603", "S607"]  # fixed argv `git rev-parse` for manifest provenance only
 "live_smoke.py" = ["S603", "S404", "S607", "S104"]
 "*interop*.py" = ["S603", "S404", "S607"]
 "benchmark*.py" = ["S603", "S404", "S607"]
