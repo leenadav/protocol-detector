@@ -57,7 +57,7 @@ def read_pcap_records(path):
 
     Frames keep their link type; supported types are those of capture_stream.LINK_TYPES.
     """
-    from capture_stream import PcapStreamDecoder
+    from .capture_stream import PcapStreamDecoder
     decoder = PcapStreamDecoder()
     with open(path, "rb") as capture:
         while True:

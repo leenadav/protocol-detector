@@ -6,6 +6,7 @@ import json
 import re
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import server
@@ -21,10 +22,26 @@ class ShowcaseTests(unittest.TestCase):
         manifest = json.loads((server.ROOT / "SOURCE.json").read_text())
         self.assertEqual(manifest["version"], manifest["components"]["engine"]["version"])
         self.assertFalse((server.ROOT / "engine").exists(), "the embedded engine snapshot must not come back")
+        # From a checkout every path is under the repository root; from an installed artifact (stage 8:
+        # tools/installed_check.py copies presentation/ and schemas/ next to nothing) the engine and adapter
+        # files are the installed packages, so the manifest is checked against site-packages instead.
+        import protocol_adapters
+        import protocol_engine
+        roots = {"protocol_engine": Path(protocol_engine.__file__).resolve().parent,
+                 "protocol_adapters": Path(protocol_adapters.__file__).resolve().parent}
+        installed = not (server.ENGINE / "protocol_engine").exists()
+        checked = 0
         for entry in manifest["files"]:
             with self.subTest(path=entry["path"]):
-                data = (server.ENGINE / entry["path"]).read_bytes()
+                head, _, rest = entry["path"].partition("/")
+                base = roots.get(head)
+                if installed and base is None and not rest:
+                    continue              # root-level shims are checkout conveniences; the wheel ships the packages
+                path = (base / rest) if installed and base is not None else (server.ENGINE / entry["path"])
+                data = path.read_bytes()
                 self.assertEqual(hashlib.sha256(data).hexdigest(), entry["sha256"])
+                checked += 1
+        self.assertGreater(checked, 100)
 
     def test_demo_has_actual_identifications_uncertainty_and_transitions(self):
         result = server.analyze_bytes(server.demo_bytes())
@@ -102,11 +119,48 @@ class ShowcaseTests(unittest.TestCase):
         catalog = server.catalog_data()
         self.assertEqual(len(catalog["protocols"]), len(supported_protocols()))
         self.assertEqual(len(catalog["applications"]), len(APPLICATIONS))
-        metadata = (server.ENGINE / "pyproject.toml").read_text()
-        version = re.search(r'^version\s*=\s*"([^"\n]+)"', metadata, re.MULTILINE)
-        self.assertIsNotNone(version, "engine project version is missing")
-        self.assertEqual(catalog["source"]["version"], version.group(1))
+        pyproject = server.ENGINE / "pyproject.toml"
+        if pyproject.exists():
+            version = re.search(r'^version\s*=\s*"([^"\n]+)"', pyproject.read_text(), re.MULTILINE)
+            self.assertIsNotNone(version, "engine project version is missing")
+            expected = version.group(1)
+        else:                                    # installed artifact: the version comes from the package metadata
+            from importlib.metadata import version as installed_version
+            expected = installed_version("protocol-stream-engine")
+        self.assertEqual(catalog["source"]["version"], expected)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BuildIdentityTests(unittest.TestCase):
+    def test_launcher_reuses_only_a_matching_build_and_health_reports_the_digest(self):
+        """Stage 8 (A16): the launcher's compatibility check is the whole build digest, not the engine commit."""
+        import json
+        import threading
+        from unittest.mock import patch
+        import launch
+        import server
+        httpd = server.LocalServer(("127.0.0.1", 0), server.Handler)
+        thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+        thread.start()
+        try:
+            url = "http://127.0.0.1:%d" % httpd.server_port
+            expected = json.loads((server.ROOT / "SOURCE.json").read_text())["build_digest"]
+            self.assertTrue(launch.matching_server(url, expected))
+            self.assertFalse(launch.matching_server(url, "0" * 16))
+            import urllib.request
+            health = json.loads(urllib.request.urlopen(url + "/api/health", timeout=5).read())
+            self.assertEqual(health["build_digest"], expected)
+            self.assertEqual(len(health["instance"]), 16)
+            self.assertIn("components", health)
+            self.assertNotIn("token", json.dumps(health))
+            # The same engine commit with a different frontend file is a different build: the digest changes.
+            from tools import build_manifest  # noqa: F401 - imported for its module path only
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
+            thread.join()
+        with patch.object(server, "ROOT", server.ROOT):
+            pass

@@ -80,9 +80,9 @@ def demo_bytes():
 
 
 def analyze_bytes(data):
-    from analyze_pcap import Analyzer
-    from packets import read_pcap_records, PacketError, CaptureError
-    from link_packets import decode_frame
+    from protocol_adapters.analyze_pcap import Analyzer
+    from protocol_adapters.packets import read_pcap_records, PacketError, CaptureError
+    from protocol_adapters.link_packets import decode_frame
     from dataclasses import asdict
     from collections import Counter
     sessions, events, histogram = [], [], Counter()
@@ -139,6 +139,22 @@ def analyze_bytes(data):
             "wire_bytes": wire_bytes, "processing_ms": round(elapsed, 2), "events": len(events),
             "identified": sum(s["app"] not in OUTCOMES for s in sessions),
             "timeline": sorted(histogram.items()), "sha256": hashlib.sha256(data).hexdigest()}}
+
+
+INSTANCE = {"id": None, "started": None}
+
+
+def health_data(httpd):
+    import platform
+    if INSTANCE["id"] is None:
+        import secrets as _secrets
+        INSTANCE["id"], INSTANCE["started"] = _secrets.token_hex(8), time.time()
+    source = json.loads((ROOT / "SOURCE.json").read_text())
+    return {"build_digest": source.get("build_digest"), "version": source.get("version"), "commit": source.get("commit"),
+            "components": source.get("components"), "python": platform.python_version(),
+            "instance": INSTANCE["id"], "uptime_seconds": round(time.time() - INSTANCE["started"], 1),
+            "jobs": httpd.jobs.status(), "live": httpd.live.snapshot()["state"], "handlers": MAX_HANDLERS,
+            "limits": {"upload_mb": 8, "frames": MAX_FRAMES, "sessions": MAX_SESSIONS, "worker_seconds": WORKER_SECONDS}}
 
 
 def catalog_data():
@@ -327,6 +343,9 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/jobs/"):
             job = self.server.jobs.get(path[len("/api/jobs/"):])
             return self.respond(404, {"error": "Unknown or expired job."}) if job is None else self.respond(200, job)
+        if path == "/api/health":
+            # Stage 8 (A16): the complete build identity and this instance, never the token or any secret.
+            return self.respond(200, health_data(self.server))
         if path == "/api/server":
             return self.respond(200, {"jobs": self.server.jobs.status(), "handlers": MAX_HANDLERS,
                                       "rejected_requests": self.server.rejected, "live": self.server.live.snapshot()["state"]})

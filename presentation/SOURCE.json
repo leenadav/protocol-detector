@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.65.0",
-  "commit": "da26f8b88b6bac617fcab0ce34bbf1c2d88f126b",
+  "commit": "22b1ffc0553837e1b425432100ec60bf47f53db2",
   "branch": "work/v065-stage0",
-  "build_digest": "a5561b82936cb6fe3c849423a9f31b2dc5ac202458798502e5c60d133d2a1820",
+  "build_digest": "17349766a361cab03d23a26374eacc0edc28a4a72291fe4423a4ef917ace1799",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -410,7 +410,7 @@
     {
       "path": "protocol_adapters/live_capture.py",
       "component": "adapters",
-      "sha256": "e55e0958d866f95c9cf1dc5d8d5f947a069e287a2eff1e5492793fb889059f0a"
+      "sha256": "a26483229f5f66d8d9e342fd0b6aba64ffa226a1b9b76c88e9764202498dd9a6"
     },
     {
       "path": "protocol_adapters/make_sample_pcap.py",
@@ -425,7 +425,7 @@
     {
       "path": "protocol_adapters/packets.py",
       "component": "adapters",
-      "sha256": "7710e5955ccaaa49e8e11dc55c2f22a966358630ba0ab5b02dc7f4d950eb402c"
+      "sha256": "e43bc3f8aa94ccbcc305e84ad17b238a175f967311a9027e2cbdff2c7851f6b2"
     },
     {
       "path": "protocol_adapters/protocol_fixtures.py",
@@ -510,7 +510,7 @@
     {
       "path": "presentation/live_manager.py",
       "component": "presentation",
-      "sha256": "00177f553d0f0137b383334c60c8e13a7488f23c7453493cf839470395fbe192"
+      "sha256": "f27a5c1df2cb71283b766af4728d175148c34a4bd6403f159cce13ffe2715b5a"
     },
     {
       "path": "presentation/live_smoke_check.py",
@@ -520,12 +520,12 @@
     {
       "path": "presentation/server.py",
       "component": "presentation",
-      "sha256": "3f5764caf02b6ac0842e428e0eac6574278ffae4e9f1afa6c040d9e173da2b4f"
+      "sha256": "ba62c72b688593ed33b3c1ea9e09f4a126320e8afa2d90a0e5cf365785be26a9"
     },
     {
       "path": "presentation/poc_decryption/__init__.py",
       "component": "presentation",
-      "sha256": "31067c50c1ba4a70d3fbb9011a2f02315eb4dd681744d9d7ba67b6e22c0d6808"
+      "sha256": "d7b47a54764d4900a4c650bf19cf840519c48fd140b264e431de2b2d65f4596b"
     },
     {
       "path": "presentation/poc_decryption/capture.py",
@@ -550,7 +550,7 @@
     {
       "path": "presentation/poc_decryption/live.py",
       "component": "presentation",
-      "sha256": "126e20e40e1264f1e060cc7776e21d602093c14b8607f57423e55b23882edffe"
+      "sha256": "85a7262abb6e26d7af20ce4442004d07ae56739466c11bbdebeb099d605e2fca"
     },
     {
       "path": "presentation/poc_decryption/tls12.py",

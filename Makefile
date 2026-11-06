@@ -53,7 +53,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory
+check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -100,3 +100,25 @@ sbom:
 
 inventory:
 	python3 -B tools/check_inventory.py
+
+keylogs:
+	python3 -B tools/check_no_keylogs.py
+
+# Stage 8: synthetic soak (overload, sparse gaps, late keys, slow consumer, worker crashes); needs the decryption extra.
+soak:
+	$(PYTHON) -B tools/soak.py --write docs/SOAK-V065.json
+
+# Stage 8: build the wheel, install it with the decryption extra into an empty environment, run the presentation suite from it.
+installed-check:
+	$(PYTHON) -B tools/installed_check.py
+
+# Stage 8: the corpus report must show no intact false negatives.
+corpus:
+	$(PYTHON) -B tools/corpus_report.py --write docs/CORPUS-REPORT-V065.md
+
+# Stage 8 release gate: everything a tag must pass locally, in one target (docs/RELEASE-GATE-V065.md).
+release-gate: check presentation-test fuzz-smoke corpus soak dist installed-check
+	@echo "release gate passed"
+
+fuzz-smoke:
+	$(PYTHON) -B tools/fuzz_fixtures.py --iterations 200 --seed 80

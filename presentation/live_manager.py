@@ -18,6 +18,17 @@ ENGINE = ROOT.parent     # one engine source (stage 1b)
 MAX_RUN_SECONDS = 600    # stage 6 (A08): no run outlives this, whatever the client asked or did
 
 
+def engine_command(module):
+    """argv prefix that runs an engine module: the checkout's package when one is beside the app, else the
+    installed package (stage 8, installed-artifact parity). Always `-m`, never a path that may not exist."""
+    return [sys.executable, '-B', '-m', module]
+
+
+def engine_cwd():
+    """Working directory for engine workers: the checkout root when present so `-m` resolves its packages."""
+    return str(ENGINE) if (ENGINE / 'protocol_adapters').exists() else None
+
+
 class LiveManager:
     def __init__(self):
         self.token = secrets.token_urlsafe(32)
@@ -67,7 +78,7 @@ class LiveManager:
             bpf = '(tcp or udp) and not (host 127.0.0.1 and tcp portrange 8765-8775)'
             if scope == 'synthetic':
                 bpf = 'host 127.0.0.1 and tcp port 45991'
-            command = [sys.executable, '-B', str(ENGINE / 'live_capture.py'),
+            command = engine_command('protocol_adapters.live_capture') + [
                        '--interface', interface, '--filter', bpf, '--duration', str(duration),
                        '--max-packets', '100000', '--max-connections', '128',
                        '--byte-limit', '16384', '--idle-timeout', '15',
@@ -87,7 +98,7 @@ class LiveManager:
             self.lease = time.monotonic()
             self.process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                             stdin=subprocess.PIPE if keylog_path is not None else subprocess.DEVNULL,
-                                            start_new_session=True, bufsize=65536)
+                                            start_new_session=True, bufsize=65536, cwd=engine_cwd())
             if keylog_path is not None:
                 self.process.stdin.write((json.dumps({'keylog_path': keylog_path})+'\n').encode())
                 self.process.stdin.close()

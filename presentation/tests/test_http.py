@@ -6,7 +6,7 @@ import threading
 import unittest
 
 import server
-from make_sample_pcap import pcap_bytes, sample_frames
+from protocol_adapters.make_sample_pcap import pcap_bytes, sample_frames
 
 
 class HTTPTests(unittest.TestCase):

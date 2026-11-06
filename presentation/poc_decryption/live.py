@@ -255,6 +255,7 @@ def main(apply_limits=False):
             process.stderr.close()
         if keys is not None:
             keys.close()
+        decoder.keys.release()                 # stage 8 (A10): secret references end with the run
     return 1 if error else 0
 
 

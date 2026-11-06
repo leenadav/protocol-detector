@@ -224,7 +224,7 @@ def readable(event):
         print("{:<12} {:<13} {:<17} {} -> {}{}".format(event["status"].upper(), event["protocol"] or "unknown",
                                                    event.get("app") or "-", endpoint(event["source"]), endpoint(event["destination"]), suffix), flush=True)
     elif kind == "session":
-        from analyze_pcap import readable_session
+        from .analyze_pcap import readable_session
         print(readable_session(event), flush=True)
     elif kind in ("summary", "progress"):
         counts = event["counts"]

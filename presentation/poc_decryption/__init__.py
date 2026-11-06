@@ -33,13 +33,50 @@ class KeyProvider:
     `version` increases whenever a new secret is indexed, so a connection waiting for keys asks again only
     when something changed (A02). Bounds: 256 KiB of appended text and 1024 indexed entries in total.
     """
-    def __init__(self):
+    def __init__(self, max_age=None, clock=None):
         self.keys = {}
         self.randoms = set()
         self.version = 0
         self.consumed = 0
+        self.released = False
+        self.max_age = max_age            # seconds a secret stays usable after it was indexed (None: the run)
+        self.clock = clock
+        self._indexed_at = {}
+
+    def __repr__(self):
+        # Secrets never appear in reprs, logs, exceptions or crash artifacts; only counts do.
+        return '<KeyProvider entries=%d randoms=%d version=%d released=%s>' % (len(self.keys), len(self.randoms), self.version, self.released)
+
+    def release(self):
+        """Drop every reference to secret material (stage 8, A10). Idempotent; the provider is unusable after.
+
+        Python cannot promise memory zeroization; this releases references so the interpreter can reclaim
+        them and makes later use an explicit error instead of a stale success.
+        """
+        self.keys.clear()
+        self.randoms.clear()
+        self._indexed_at.clear()
+        self.released = True
+
+    def expire(self, now=None):
+        """Forget secrets older than max_age (no-op without max_age); returns how many were dropped."""
+        if self.max_age is None:
+            return 0
+        now = self.clock() if now is None and self.clock is not None else now
+        if now is None:
+            return 0
+        stale = [key for key, at in self._indexed_at.items() if now - at > self.max_age]
+        for key in stale:
+            self.keys.pop(key, None)
+            self._indexed_at.pop(key, None)
+        self.randoms = {random for (_, random) in self.keys}
+        if stale:
+            self.version += 1
+        return len(stale)
 
     def append(self, text):
+        if self.released:
+            raise DecryptionError('Key provider was released.', 'budget_exhausted')
         if not isinstance(text, str):
             raise DecryptionError('Key log must be text.', 'unsupported_profile')
         self.consumed += len(text)
@@ -74,12 +111,16 @@ class KeyProvider:
                 raise DecryptionError('Too many key-log entries.', 'budget_exhausted')
             self.keys[key] = secret
             self.randoms.add(random)
+            if self.clock is not None:
+                self._indexed_at[key] = self.clock()
             added += 1
         if added:
             self.version += 1
         return added
 
     def get(self, key, default=None):
+        if self.released:
+            raise DecryptionError('Key provider was released.', 'budget_exhausted')
         return self.keys.get(key, default)
 
     def has(self, random):

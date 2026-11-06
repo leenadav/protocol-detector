@@ -1,11 +1,10 @@
 import json
 import subprocess
-import sys
 import unittest
 from unittest.mock import patch
 
 import server
-from live_manager import LiveManager, ROOT
+from live_manager import LiveManager
 
 
 class LiveBridgeTests(unittest.TestCase):
@@ -30,9 +29,9 @@ class LiveBridgeTests(unittest.TestCase):
             spawn.assert_not_called()
 
     def test_pinned_live_engine_stream_contract(self):
-        result = subprocess.run([sys.executable, '-B', str(ROOT.parent / 'live_capture.py'),
-                                 '--stdin', '--json', '--all-events', '--fingerprints'],
-                                input=server.demo_bytes(), capture_output=True, timeout=10)
+        from live_manager import engine_command, engine_cwd
+        result = subprocess.run(engine_command('protocol_adapters.live_capture') + ['--stdin', '--json', '--all-events', '--fingerprints'],
+                                input=server.demo_bytes(), capture_output=True, timeout=10, cwd=engine_cwd())
         self.assertEqual(result.returncode, 0, result.stderr)
         manager = LiveManager()
         for line in result.stdout.splitlines():
