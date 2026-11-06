@@ -1,0 +1,188 @@
+{
+  "cases": {
+    "http_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 41.208,
+          "p95_us": 44.792,
+          "p99_us": 50.625
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 40.416,
+          "p95_us": 43.25,
+          "p99_us": 46.917
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "partial_fin": {
+      "baseline": {
+        "flow": {
+          "p50_us": 30.459,
+          "p95_us": 33.375,
+          "p99_us": 36.625
+        },
+        "status": "incomplete",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 29.834,
+          "p95_us": 32.0,
+          "p99_us": 35.458
+        },
+        "status": "incomplete",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "dns_datagram": {
+      "baseline": {
+        "flow": {
+          "p50_us": 9.625,
+          "p95_us": 10.083,
+          "p99_us": 12.334
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 9.5,
+          "p95_us": 9.958,
+          "p99_us": 12.292
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "reordered_http": {
+      "baseline": {
+        "flow": {
+          "p50_us": 48.834,
+          "p95_us": 53.75,
+          "p99_us": 57.417
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 49.333,
+          "p95_us": 53.958,
+          "p99_us": 58.208
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      }
+    },
+    "leading_duplicate": {
+      "baseline": {
+        "flow": {
+          "p50_us": 48.208,
+          "p95_us": 52.125,
+          "p99_us": 55.209
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 48.625,
+          "p95_us": 52.959,
+          "p99_us": 56.417
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      }
+    },
+    "pre_origin_fin": {
+      "baseline": {
+        "flow": {
+          "p50_us": 47.875,
+          "p95_us": 49.833,
+          "p99_us": 53.541
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 29.667,
+          "p95_us": 31.542,
+          "p99_us": 33.916
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      }
+    },
+    "control_rejection": {
+      "baseline": {
+        "flow": {
+          "p50_us": 57.291,
+          "p95_us": 61.375,
+          "p99_us": 64.792
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      },
+      "current": {
+        "flow": {
+          "p50_us": 56.417,
+          "p95_us": 60.791,
+          "p99_us": 64.542
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      }
+    },
+    "leading_conflict": {
+      "baseline": {
+        "flow": {
+          "p50_us": 55.125,
+          "p95_us": 59.292,
+          "p99_us": 63.083
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      },
+      "current": {
+        "flow": {
+          "p50_us": 54.917,
+          "p95_us": 59.542,
+          "p99_us": 63.875
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      }
+    }
+  },
+  "source_sha256": {
+    "baseline": "79fc83d2a5009e17c26e9521d94d4ba0e9280d41d702afc2956fb93d0417d449",
+    "current": "56552b5be4a08163c4efee1e46b835120aeb06d2dc0b8d1efe3e0e5f437e3ad1"
+  },
+  "iterations": 1000,
+  "rounds": 5,
+  "scope": "Decoded synthetic packets to events, excludes construction/capture/output; pre-origin FIN baseline wrongly accepts later data; current rejects ambiguous FIN before classification",
+  "benchmark_sha256": "49206aafbe06eaeddb143fa9cc4eff768ee75442801d0cce316abab4dd171569"
+}

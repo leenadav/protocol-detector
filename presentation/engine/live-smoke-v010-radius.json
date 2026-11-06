@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "traffic": "local synthetic TCP/UDP over real loopback capture",
+  "protocols": [
+    "radius"
+  ],
+  "candidate_hint": "radius",
+  "ipv4_only": true,
+  "summary": {
+    "type": "summary",
+    "elapsed_seconds": 2.004,
+    "counts": {
+      "packets": 1,
+      "captured_bytes": 88,
+      "udp": 1,
+      "identified": 1
+    },
+    "protocols": {
+      "radius": 1
+    },
+    "active_connections": 0,
+    "capture_stats": {
+      "captured": 1,
+      "received_by_filter": 3,
+      "dropped_by_kernel": 0
+    },
+    "scope": "Initial messages only; capture loss may be reported at shutdown",
+    "capture_quality": "no_kernel_drops_reported",
+    "stop_reason": "limit_or_interrupt"
+  }
+}

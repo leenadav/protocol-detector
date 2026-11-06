@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "traffic": "local synthetic TCP/UDP over real loopback capture",
+  "protocols": [
+    "mysql"
+  ],
+  "candidate_hint": "mysql",
+  "ipv4_only": true,
+  "summary": {
+    "type": "summary",
+    "elapsed_seconds": 2.003,
+    "counts": {
+      "packets": 10,
+      "captured_bytes": 667,
+      "tcp": 10,
+      "identified": 1,
+      "tcp_control_without_state": 1
+    },
+    "protocols": {
+      "mysql": 1
+    },
+    "active_connections": 0,
+    "capture_stats": {
+      "captured": 10,
+      "received_by_filter": 12,
+      "dropped_by_kernel": 0
+    },
+    "scope": "Initial messages only; capture loss may be reported at shutdown",
+    "capture_quality": "no_kernel_drops_reported",
+    "stop_reason": "limit_or_interrupt"
+  }
+}

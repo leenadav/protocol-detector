@@ -1,0 +1,22 @@
+{
+  "parser_python": "3.9.6",
+  "cases": [
+    {
+      "version": "1.2",
+      "status": "passed",
+      "flight_bytes": 1377,
+      "hello_bytes_inspected": 77,
+      "scope": "server_hello",
+      "selected_cipher": "0xc02f",
+      "selected_alpn": "h2"
+    }
+  ],
+  "status": "passed",
+  "generator_python": "3.9.6",
+  "tls_library": "LibreSSL 2.8.3",
+  "network": "none; MemoryBIO only",
+  "key_exchange_profile": "secp256r1",
+  "tls13_supported": false,
+  "script_sha256": "80876a9985c82b667418f3f656c982743ba190fcb0100b635bbe91a27441d8b1",
+  "source_sha256": "957f2846464905097bbe031520c5be2b4c4d8bad75931268996520306004452b"
+}

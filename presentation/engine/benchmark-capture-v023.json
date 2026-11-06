@@ -1,0 +1,888 @@
+{
+  "cases": {
+    "tls_server12": {
+      "baseline": {
+        "flow": {
+          "p50_us": 128.729,
+          "p95_us": 195.127,
+          "p99_us": 240.011
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 90.485,
+          "p95_us": 178.409,
+          "p99_us": 233.12
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "tls_server13": {
+      "baseline": {
+        "flow": {
+          "p50_us": 128.641,
+          "p95_us": 202.175,
+          "p99_us": 247.869
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 98.525,
+          "p95_us": 189.119,
+          "p99_us": 235.344
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "tls_retry": {
+      "baseline": {
+        "flow": {
+          "p50_us": 111.823,
+          "p95_us": 193.165,
+          "p99_us": 228.372
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 115.171,
+          "p95_us": 187.458,
+          "p99_us": 236.857
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "dcerpc_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 97.454,
+          "p95_us": 167.196,
+          "p99_us": 199.993
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 78.7,
+          "p95_us": 166.55,
+          "p99_us": 237.678
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "socks_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 104.888,
+          "p95_us": 174.931,
+          "p99_us": 205.761
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 80.124,
+          "p95_us": 161.528,
+          "p99_us": 208.798
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "giop_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 104.599,
+          "p95_us": 172.267,
+          "p99_us": 251.809
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 70.643,
+          "p95_us": 139.112,
+          "p99_us": 197.062
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "http_giop_method": {
+      "baseline": {
+        "flow": {
+          "p50_us": 144.44,
+          "p95_us": 232.191,
+          "p99_us": 293.171
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 98.219,
+          "p95_us": 200.109,
+          "p99_us": 304.515
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "git_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 133.472,
+          "p95_us": 226.117,
+          "p99_us": 294.988
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 128.396,
+          "p95_us": 209.548,
+          "p99_us": 262.021
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "http_git_method": {
+      "baseline": {
+        "flow": {
+          "p50_us": 153.659,
+          "p95_us": 231.228,
+          "p99_us": 271.215
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 121.674,
+          "p95_us": 214.767,
+          "p99_us": 266.154
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "tls_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 169.073,
+          "p95_us": 248.483,
+          "p99_us": 298.545
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 119.451,
+          "p95_us": 233.573,
+          "p99_us": 284.728
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "ssh_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 115.966,
+          "p95_us": 180.321,
+          "p99_us": 228.85
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 76.182,
+          "p95_us": 150.829,
+          "p99_us": 193.177
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "http_flow": {
+      "baseline": {
+        "flow": {
+          "p50_us": 150.811,
+          "p95_us": 227.392,
+          "p99_us": 269.45
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 98.324,
+          "p95_us": 200.664,
+          "p99_us": 249.422
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "partial_fin": {
+      "baseline": {
+        "flow": {
+          "p50_us": 96.486,
+          "p95_us": 152.841,
+          "p99_us": 195.113
+        },
+        "status": "incomplete",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 63.983,
+          "p95_us": 132.113,
+          "p99_us": 183.269
+        },
+        "status": "incomplete",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "dns_datagram": {
+      "baseline": {
+        "flow": {
+          "p50_us": 46.306,
+          "p95_us": 72.891,
+          "p99_us": 104.712
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 32.163,
+          "p95_us": 64.588,
+          "p99_us": 107.683
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "reordered_http": {
+      "baseline": {
+        "flow": {
+          "p50_us": 170.504,
+          "p95_us": 249.343,
+          "p99_us": 293.134
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 112.158,
+          "p95_us": 228.777,
+          "p99_us": 310.338
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      }
+    },
+    "leading_duplicate": {
+      "baseline": {
+        "flow": {
+          "p50_us": 166.457,
+          "p95_us": 258.403,
+          "p99_us": 310.802
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 125.76,
+          "p95_us": 233.005,
+          "p99_us": 308.905
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      }
+    },
+    "old_payload_after_fin": {
+      "baseline": {
+        "flow": {
+          "p50_us": 168.502,
+          "p95_us": 277.036,
+          "p99_us": 322.6
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 163.305,
+          "p95_us": 257.595,
+          "p99_us": 325.805
+        },
+        "status": "identified",
+        "packets": 4,
+        "invalidations_counted": 0
+      }
+    },
+    "pre_origin_fin": {
+      "baseline": {
+        "flow": {
+          "p50_us": 104.463,
+          "p95_us": 172.355,
+          "p99_us": 215.31
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      },
+      "current": {
+        "flow": {
+          "p50_us": 98.088,
+          "p95_us": 164.073,
+          "p99_us": 228.238
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      }
+    },
+    "control_rejection": {
+      "baseline": {
+        "flow": {
+          "p50_us": 175.06,
+          "p95_us": 292.262,
+          "p99_us": 354.549
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      },
+      "current": {
+        "flow": {
+          "p50_us": 182.234,
+          "p95_us": 289.897,
+          "p99_us": 357.628
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      }
+    },
+    "leading_conflict": {
+      "baseline": {
+        "flow": {
+          "p50_us": 159.911,
+          "p95_us": 287.535,
+          "p99_us": 374.952
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      },
+      "current": {
+        "flow": {
+          "p50_us": 176.7,
+          "p95_us": 279.166,
+          "p99_us": 337.244
+        },
+        "status": "invalidated",
+        "packets": 4,
+        "invalidations_counted": 1
+      }
+    },
+    "dtls_datagram": {
+      "baseline": {
+        "flow": {
+          "p50_us": 36.133,
+          "p95_us": 74.188,
+          "p99_us": 108.634
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 40.145,
+          "p95_us": 82.893,
+          "p99_us": 119.421
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_unknown": {
+      "baseline": {
+        "flow": {
+          "p50_us": 20.005,
+          "p95_us": 33.579,
+          "p99_us": 67.455
+        },
+        "status": "unknown",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 19.609,
+          "p95_us": 33.246,
+          "p99_us": 65.291
+        },
+        "status": "unknown",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_dns": {
+      "baseline": {
+        "flow": {
+          "p50_us": 35.261,
+          "p95_us": 64.814,
+          "p99_us": 99.93
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 34.559,
+          "p95_us": 64.797,
+          "p99_us": 102.978
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_stun": {
+      "baseline": {
+        "flow": {
+          "p50_us": 31.391,
+          "p95_us": 55.003,
+          "p99_us": 83.918
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 28.39,
+          "p95_us": 52.837,
+          "p99_us": 89.194
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_dhcp_4": {
+      "baseline": {
+        "flow": {
+          "p50_us": 33.825,
+          "p95_us": 63.609,
+          "p99_us": 103.272
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 35.514,
+          "p95_us": 62.567,
+          "p99_us": 164.251
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_coap": {
+      "baseline": {
+        "flow": {
+          "p50_us": 31.829,
+          "p95_us": 59.24,
+          "p99_us": 89.624
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 36.339,
+          "p95_us": 59.698,
+          "p99_us": 88.478
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_syslog_5424": {
+      "baseline": {
+        "flow": {
+          "p50_us": 45.856,
+          "p95_us": 84.364,
+          "p99_us": 115.575
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 54.55,
+          "p95_us": 84.041,
+          "p99_us": 121.887
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_sip_2.0": {
+      "baseline": {
+        "flow": {
+          "p50_us": 86.448,
+          "p95_us": 159.611,
+          "p99_us": 289.912
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 102.277,
+          "p95_us": 154.842,
+          "p99_us": 188.131
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_snmp_2c": {
+      "baseline": {
+        "flow": {
+          "p50_us": 51.38,
+          "p95_us": 86.519,
+          "p99_us": 119.255
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 40.952,
+          "p95_us": 76.387,
+          "p99_us": 112.273
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_tftp": {
+      "baseline": {
+        "flow": {
+          "p50_us": 45.322,
+          "p95_us": 80.17,
+          "p99_us": 113.908
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 34.713,
+          "p95_us": 67.326,
+          "p99_us": 116.942
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "ike_datagram": {
+      "baseline": {
+        "flow": {
+          "p50_us": 57.867,
+          "p95_us": 111.567,
+          "p99_us": 168.931
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 62.349,
+          "p95_us": 108.659,
+          "p99_us": 181.422
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "ike_marker": {
+      "baseline": {
+        "flow": {
+          "p50_us": 64.192,
+          "p95_us": 104.09,
+          "p99_us": 143.924
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 50.555,
+          "p95_us": 102.257,
+          "p99_us": 136.053
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "ike_coap_ambiguous": {
+      "baseline": {
+        "flow": {
+          "p50_us": 48.712,
+          "p95_us": 87.798,
+          "p99_us": 129.615
+        },
+        "status": "unknown",
+        "packets": 1,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 40.007,
+          "p95_us": 87.933,
+          "p99_us": 122.984
+        },
+        "status": "unknown",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "tls_rsa_ec_invalid": {
+      "baseline": {
+        "flow": {
+          "p50_us": 78.213,
+          "p95_us": 144.741,
+          "p99_us": 191.568
+        },
+        "status": "malformed",
+        "packets": 3,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 72.974,
+          "p95_us": 143.428,
+          "p99_us": 189.661
+        },
+        "status": "malformed",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "full_session": {
+      "baseline": {
+        "flow": {
+          "p50_us": 241.068,
+          "p95_us": 407.19,
+          "p99_us": 518.317
+        },
+        "status": "identified",
+        "packets": 6,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 256.425,
+          "p95_us": 436.721,
+          "p99_us": 585.228
+        },
+        "status": "identified",
+        "packets": 6,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_flow_pair": {
+      "baseline": {
+        "flow": {
+          "p50_us": 73.399,
+          "p95_us": 127.356,
+          "p99_us": 163.037
+        },
+        "status": "identified",
+        "packets": 2,
+        "invalidations_counted": 0
+      },
+      "current": {
+        "flow": {
+          "p50_us": 78.552,
+          "p95_us": 135.733,
+          "p99_us": 183.342
+        },
+        "status": "identified",
+        "packets": 2,
+        "invalidations_counted": 0
+      }
+    },
+    "http_flow_sig": {
+      "current": {
+        "flow": {
+          "p50_us": 143.243,
+          "p95_us": 234.332,
+          "p99_us": 305.359
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "tls_flow_sig": {
+      "current": {
+        "flow": {
+          "p50_us": 213.627,
+          "p95_us": 323.948,
+          "p99_us": 379.732
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "dns_datagram_sig": {
+      "current": {
+        "flow": {
+          "p50_us": 50.87,
+          "p95_us": 87.275,
+          "p99_us": 119.242
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    },
+    "http_intranet_sig": {
+      "current": {
+        "flow": {
+          "p50_us": 133.296,
+          "p95_us": 263.657,
+          "p99_us": 388.879
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "unknown_sig_match": {
+      "current": {
+        "flow": {
+          "p50_us": 95.091,
+          "p95_us": 161.718,
+          "p99_us": 196.238
+        },
+        "status": "identified",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "unknown_sig_miss": {
+      "current": {
+        "flow": {
+          "p50_us": 79.811,
+          "p95_us": 140.442,
+          "p99_us": 177.227
+        },
+        "status": "unknown",
+        "packets": 3,
+        "invalidations_counted": 0
+      }
+    },
+    "udp_beacon_sig": {
+      "current": {
+        "flow": {
+          "p50_us": 35.321,
+          "p95_us": 70.96,
+          "p99_us": 106.488
+        },
+        "status": "identified",
+        "packets": 1,
+        "invalidations_counted": 0
+      }
+    }
+  },
+  "source_sha256": {
+    "baseline": "19328cb7520707b72e943621c14a1876e1f400c62aca21bfa948cac8aa68cc22",
+    "current": "37ff0154470cf85e38445d2b5f7613d41b9b6ad09e1a09712ce552d0b481f07c"
+  },
+  "iterations": 200,
+  "rounds": 10,
+  "scope": "Decoded synthetic packets to events, excludes construction/capture/output; _sig cases run with the example signature set and context retention; unsuffixed cases keep retention off",
+  "benchmark_sha256": "ce7ddd226f7fe3cf154089a1272dbb2c93eeb77df33ee0564e9bb07bdab8ea36"
+}
