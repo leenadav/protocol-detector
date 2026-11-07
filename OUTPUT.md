@@ -28,6 +28,11 @@ source and strength, never by value. A failed decryption withdraws `inner`
 (`authenticated: false`) and keeps the wire layer; record authentication is
 never presented as peer or product identity verification (`note`).
 
+Every `session` record, the offline summary and the live `started`,
+`progress` and `summary` events carry `content: {version, digest}` (D08): the
+detection content release in force and its digest, so records classified by
+different catalogs can be told apart (docs/CONTENT-GOVERNANCE.md).
+
 With `--continuation BYTES` (D07) a `session` record may also carry
 `continuation`: per direction (`client`, `server`) the counts and classes the
 budgeted continuation framed after the identification (`http_messages`,

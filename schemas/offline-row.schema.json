@@ -693,6 +693,9 @@
             }
           },
           "description": "D07: what the budgeted continuation framed after each direction's identification (counts and classes only; absent when Config.continuation is 0 or nothing followed). `ended` names why it stopped: budget, messages, records, framing, close-delimited or shift; absent when the direction ended first."
+        },
+        "content": {
+          "$ref": "#/$defs/content"
         }
       },
       "required": [
@@ -875,6 +878,9 @@
         },
         "input_quality": {
           "$ref": "#/$defs/input_quality"
+        },
+        "content": {
+          "$ref": "#/$defs/content"
         }
       }
     },
@@ -1164,6 +1170,25 @@
           "type": "string"
         }
       }
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "digest"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[0-9]+$"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        }
+      },
+      "description": "D08: the detection content release (built-in catalogs and risk table) this output was produced with, and its digest; protodetect content lists releases."
     }
   }
 }

@@ -129,16 +129,43 @@ _HOST_APPS = (
 # `domains` affiliate a server name with the provider's service; `web_fronts` are exact names of the provider's
 # public web presence (marketing, documentation): they affiliate with the provider but never assert that the
 # service's application traffic was observed (D03). A web front wins over the domain it sits in.
-APP_DOMAINS = MappingProxyType({entry[0]: entry[7] for entry in _HOST_APPS})
-WEB_FRONTS = MappingProxyType({front: entry[0] for entry in _HOST_APPS for front in (entry[8] if len(entry) > 8 else ())})
-_SUFFIXES = {}
-for _entry in _HOST_APPS:
-    for _domain in _entry[7]:
-        if _domain in _SUFFIXES:
-            raise ValueError("Duplicate host-catalog domain " + _domain)
-        _SUFFIXES[_domain] = _entry[0]
+_APP_DOMAINS, _WEB_FRONTS, _SUFFIXES = {}, {}, {}
+APP_DOMAINS = MappingProxyType(_APP_DOMAINS)
+WEB_FRONTS = MappingProxyType(_WEB_FRONTS)
 HOST_SUFFIXES = MappingProxyType(_SUFFIXES)
-del _entry, _domain, _SUFFIXES
+
+
+def build_tables(entries):
+    """(app_domains, web_fronts, suffixes) for catalog entries given as tuples or dicts; duplicates are errors."""
+    domains, fronts, suffixes = {}, {}, {}
+    for entry in entries:
+        if isinstance(entry, dict):
+            name, entry_domains, entry_fronts = entry["name"], entry["domains"], entry.get("web_fronts", ())
+        else:
+            name, entry_domains, entry_fronts = entry[0], entry[7], entry[8] if len(entry) > 8 else ()
+        if name in domains:
+            raise ValueError("Duplicate host-catalog entry " + name)
+        domains[name] = tuple(entry_domains)
+        for front in entry_fronts:
+            if front in fronts:
+                raise ValueError("Duplicate host-catalog web front " + front)
+            fronts[front] = name
+        for domain in entry_domains:
+            if domain in suffixes:
+                raise ValueError("Duplicate host-catalog domain " + domain)
+            suffixes[domain] = name
+    return domains, fronts, suffixes
+
+
+def rebuild(entries):
+    """D08: run the lookup tables from another release's entries (content.select); the proxies above follow."""
+    domains, fronts, suffixes = build_tables(entries)
+    for table, values in ((_APP_DOMAINS, domains), (_WEB_FRONTS, fronts), (_SUFFIXES, suffixes)):
+        table.clear()
+        table.update(values)
+
+
+rebuild(_HOST_APPS)
 KINDS = ("service", "provider-web")
 
 

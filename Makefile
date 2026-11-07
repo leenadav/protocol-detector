@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
+.PHONY: test presentation-test presentation-check content manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -56,7 +56,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs
+check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -111,6 +111,9 @@ inventory:
 
 keylogs:
 	python3 -B tools/check_no_keylogs.py
+
+content:
+	python3 -B tools/check_content.py
 
 # Stage 8: synthetic soak (overload, sparse gaps, late keys, slow consumer, worker crashes); needs the decryption extra.
 soak:

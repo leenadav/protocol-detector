@@ -28,6 +28,7 @@ from protocol_engine.policy import Policy
 from protocol_engine.appid import classify
 from protocol_engine.datagram import VALIDATORS
 from protocol_engine.registry import PARSERS
+from protocol_engine import content as detection_content
 
 
 def capture_command(interface, bpf, executable=None):
@@ -190,6 +191,7 @@ class CaptureMonitor:
                 "capture_stats": capture_stats,
                 "telemetry": self.analyzer.telemetry.render(),      # stage 7 (A15): counters and histograms, no payload
                 "input_quality": self.quality.render(),             # D06: rejected input by kind, checksum policy, unsupported list
+                "content": self.analyzer.content,                   # D08: the content release in force
                 "scope": "Initial messages only; capture loss may be reported at shutdown"}
 
 
@@ -412,6 +414,8 @@ def main():
                         help="D06: ignore (default; host captures precede offload), audit (count failures, still inspect) or verify (skip failing packets, mark flows)")
     parser.add_argument("--continuation", type=int, default=0, metavar="BYTES",
                         help="D07: after an HTTP/1 or TLS identification keep framing up to BYTES new bytes per direction; 0 (default) stops at the first message")
+    parser.add_argument("--content-version", choices=[item.version for item in detection_content.releases()], default=None,
+                        help="D08: run the built-in server-name catalog as of an earlier content release (rollback); records pin the version used")
     parser.add_argument("--json", action="store_true", help="JSON Lines metadata; no payload output")
     args = parser.parse_args()
     if (not math.isfinite(args.duration) or args.duration < 0 or args.max_packets < 0
@@ -423,6 +427,8 @@ def main():
     emit = (lambda event: print(json.dumps(event), flush=True)) if args.json else readable
     process = None
     try:
+        if args.content_version:
+            detection_content.select(args.content_version)
         signatures = SignatureSet.from_path(args.signatures) if args.signatures else None
         policy = Policy.from_path(args.policy) if args.policy else None
         if args.interfaces:
@@ -440,7 +446,8 @@ def main():
               "interface": args.interface, "filter": command[-1] if args.interface else None,
               "tcp_hint": args.tcp_hint, "udp_hint": args.udp_hint, "signatures": len(signatures) if signatures else 0,
               "crc32c_byte_limit": args.crc32c_byte_limit,
-              "max_reassembly_buffer_bytes": 4 * args.byte_limit * args.max_connections})
+              "max_reassembly_buffer_bytes": 4 * args.byte_limit * args.max_connections,
+              "content": detection_content.pinned()})
         return run_capture(stream, emit, args.duration, args.max_packets, args.stats_interval, process,
                            args.max_connections, args.byte_limit, args.idle_timeout, args.all_events, args.udp_hint, args.tcp_hint,
                            args.crc32c_byte_limit, args.hostnames, signatures, args.fingerprints, args.heuristics, policy,

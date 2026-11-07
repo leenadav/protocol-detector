@@ -10,6 +10,7 @@ from .packets import CaptureError, PacketError, UDPPacket, read_pcap_records
 from protocol_engine import Config, DatagramInspector, Event, Inspector, SignatureSet
 from .layers import layered_view
 from protocol_engine.continuation import continuation_summary
+from protocol_engine import content as detection_content
 from .observability import Telemetry
 from .quality import InputQuality
 from protocol_engine.appid import classify, midstream_outcome, session_verdict, unobserved_start_outcome, verdict_fields
@@ -74,6 +75,7 @@ class Analyzer:
                                         retain_contexts=self.signatures is not None, fingerprints=bool(fingerprints),
                                         heuristics=bool(heuristics), certificates=bool(certificates),
                                         continuation=int(continuation))
+        self.content = detection_content.pinned()       # D08: the content release every record of this run names
         self.quic_assembler = QuicAssembler(idle_seconds=idle_timeout)   # D01: scoped per flow, expires with the flow table
         self.udp = DatagramInspector(self.inspection_config, self.signatures, self.quic_assembler)
         self.udp_revision = 0
@@ -110,6 +112,7 @@ class Analyzer:
                   "client_bytes": state["bytes"].get(client, 0), "server_bytes": state["bytes"].get(server, 0),
                   "end_reason": reason}
         record.update(verdict_fields(verdict))
+        record["content"] = self.content
         # D05: how the connection was observed. Roles are assumed from the first segment in midstream mode.
         record["observation"] = {"mode": state.get("mode", "handshake" if transport == "tcp" else "datagram"),
                                  "handshake_observed": transport == "tcp" and state.get("mode", "handshake") == "handshake" and bool(state.get("ready")),
@@ -670,7 +673,7 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
         raise
     analyzer.finish("Capture input EOF before initial message completed")
     counts["sessions"] = analyzer.counts["sessions"]
-    print(json.dumps({"summary": dict(counts), "input_quality": quality.render()}) if json_output else
+    print(json.dumps({"summary": dict(counts), "input_quality": quality.render(), "content": analyzer.content}) if json_output else
           "\nFrames: {frames}; TCP: {tcp}; UDP: {udp}; skipped: {skipped}; sessions: {sessions}".format(
               frames=counts["frames"], tcp=counts["tcp"], udp=counts["udp"], skipped=counts["skipped"], sessions=counts["sessions"]))
     return counts
@@ -694,11 +697,15 @@ def main():
                         help="D06: ignore (default; host captures precede offload), audit (compute and count, still inspect) or verify (skip failing packets, mark their flows)")
     parser.add_argument("--continuation", type=int, default=0, metavar="BYTES",
                         help="D07: after an HTTP/1 or TLS identification keep framing up to BYTES new bytes per direction (later HTTP messages, TLS record kinds); 0 (default) stops at the first message")
+    parser.add_argument("--content-version", choices=[item.version for item in detection_content.releases()], default=None,
+                        help="D08: run the built-in server-name catalog as of an earlier content release (rollback); records pin the version used")
     parser.add_argument("--udp-hint", choices=sorted(VALIDATORS), help="Restrict UDP validation to one candidate")
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to one validated candidate")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
     args = parser.parse_args()
     try:
+        if args.content_version:
+            detection_content.select(args.content_version)
         signatures = SignatureSet.from_path(args.signatures) if args.signatures else None
         policy = Policy.from_path(args.policy) if args.policy else None
         analyze(args.capture, json_output=args.json, events_only=args.events_only, tcp_hint=args.tcp_hint,

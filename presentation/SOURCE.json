@@ -1,14 +1,14 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "9cbc4a9fef4e663c775b6526e06cff69a381fd32",
+  "commit": "855442b64bbba70d961573f0ba93cbce726f489e",
   "branch": "work/v065-stage0",
-  "build_digest": "46d454d191e953b3e62f71a6266e22073d0a88d784ce22b1120a6059a0a6f318",
+  "build_digest": "447d6128b45a76f5e0ffcecb590abf47132647e8fb2b0cdfaf41260b3fd8478d",
   "components": {
     "engine": {
       "root": "protocol_engine",
       "version": "0.66.0",
-      "files": 70
+      "files": 71
     },
     "adapters": {
       "root": "protocol_adapters",
@@ -71,6 +71,11 @@
       "path": "protocol_engine/cdr.py",
       "component": "engine",
       "sha256": "b171d83c07b2f203794259dfd81b3288e695e49b6071b295670215c7fd155be1"
+    },
+    {
+      "path": "protocol_engine/content.py",
+      "component": "engine",
+      "sha256": "60563d8f77889e8aff19ce4f2b0ce911ee8ad09262a32298c694a064b19bb1b0"
     },
     {
       "path": "protocol_engine/continuation.py",
@@ -195,7 +200,7 @@
     {
       "path": "protocol_engine/host_apps.py",
       "component": "engine",
-      "sha256": "5fb861ddb3a135c6056a1a1dc49dccc64a67e14d713b66694eb8e8ec6595ad6b"
+      "sha256": "6b37dad14d2464547ccfec02b08b87ceb8ec0378940c09de60d33e8df1724857"
     },
     {
       "path": "protocol_engine/hpack.py",
@@ -385,7 +390,7 @@
     {
       "path": "protocol_adapters/analyze_pcap.py",
       "component": "adapters",
-      "sha256": "faa13d33ca50f6125ba243bf9805608b5f732aaee376e9eaed80401c9096d564"
+      "sha256": "5bd74b0c674311e718184eae0a87432252d7065584a2d2b5e6899ee475fba889"
     },
     {
       "path": "protocol_adapters/capture_stream.py",
@@ -420,7 +425,7 @@
     {
       "path": "protocol_adapters/live_capture.py",
       "component": "adapters",
-      "sha256": "ed38fbf4a570da097b6ae9d94af62e0eaee048a6bcc1e97824f5ed148851dd8a"
+      "sha256": "73fa3017a70702e8d6ced3edbedd973203c63bdc4a6952557ee156f47f639af2"
     },
     {
       "path": "protocol_adapters/make_sample_pcap.py",
@@ -505,7 +510,7 @@
     {
       "path": "protodetect.py",
       "component": "adapters",
-      "sha256": "31109d769a6976a6dc8f068d75b8901946ae64d16d84bae4550c22c45c8b780a"
+      "sha256": "c536354139fa2c7eaa0c12ad87fe89f7c7113332a5aa60841eed3358acdc07d8"
     },
     {
       "path": "detectors.py",
@@ -615,17 +620,17 @@
     {
       "path": "schemas/live-event.schema.json",
       "component": "schemas",
-      "sha256": "557d31ff167121e82407517396de19328521d742bc2ee261cb3209c121a58b16"
+      "sha256": "1a883487ec634e489ccb100c6d648f040171bb82547d037d394f6237e8f46398"
     },
     {
       "path": "schemas/offline-row.schema.json",
       "component": "schemas",
-      "sha256": "0845b8d70e3864347e7e7e7301cdfd769b9e73c4594f86122b563b92a6f17b7e"
+      "sha256": "f016a18f8070a5adb8fff4feac960cf1e5134045e2c2141c2aa204dc652a48ae"
     },
     {
       "path": "schemas/session.schema.json",
       "component": "schemas",
-      "sha256": "9a83aba0c8185c35b4daf6cb0eb0819b69ee52fa4c9bf21349724f68d25401b6"
+      "sha256": "4a2e4590321a6364d1dcad3f8de005376dd797b769f66f4e46676c4227520b1d"
     }
   ]
 }
