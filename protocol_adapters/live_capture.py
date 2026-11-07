@@ -436,6 +436,7 @@ def main():
             if not executable:
                 raise CaptureError("tcpdump not found")
             return subprocess.run([executable, "-D"], timeout=10).returncode
+        command = None                      # bound before the branch: --stdin and --interface are mutually exclusive
         if args.stdin:
             stream = sys.stdin.buffer
         else:
@@ -443,7 +444,7 @@ def main():
             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
             stream = process.stdout
         emit({"type": "started", "reason": "Passive initial-message inspection; no payload storage or TLS decryption",
-              "interface": args.interface, "filter": command[-1] if args.interface else None,
+              "interface": args.interface, "filter": command[-1] if command is not None else None,
               "tcp_hint": args.tcp_hint, "udp_hint": args.udp_hint, "signatures": len(signatures) if signatures else 0,
               "crc32c_byte_limit": args.crc32c_byte_limit,
               "max_reassembly_buffer_bytes": 4 * args.byte_limit * args.max_connections,

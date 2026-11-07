@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "865323133e85444679ea77f4006e8b5ef106fc2b",
+  "commit": "6ddc3eabf472e31bc102d72b0da189315836b091",
   "branch": "work/v065-stage0",
-  "build_digest": "1bca57d4d72587a478bbd51345b6d5eb5dd8a53a278f811ef01f12c5b5deb0c2",
+  "build_digest": "31d4a5f0cbc68d1aa0a655f8676239702a784b01cddce9b506ab7ebde5d68733",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -75,7 +75,7 @@
     {
       "path": "protocol_engine/content.py",
       "component": "engine",
-      "sha256": "1cf39862575ca8dfdc9b855c7df3ba1b3e1dfce1c4db841d2bb8a1943aa89ead"
+      "sha256": "7d511d6e07ccead8725b15cf44b0ead0861f58cfb18c7bb6452d843515d686d0"
     },
     {
       "path": "protocol_engine/continuation.py",
@@ -260,7 +260,7 @@
     {
       "path": "protocol_engine/quic.py",
       "component": "engine",
-      "sha256": "379e3e58f03827891b771e7faa1fa0726bf5f64c4aedc003d970b251f09118f8"
+      "sha256": "79ae3d97dafbbf731f7401ed95024cfb75c19184fb6ff321a567e89d056305a4"
     },
     {
       "path": "protocol_engine/radius.py",
@@ -395,7 +395,7 @@
     {
       "path": "protocol_adapters/analyze_pcap.py",
       "component": "adapters",
-      "sha256": "454361158371ae6468d16ede559258c03a0fdab1d23c2a1864eafe9b2e71c660"
+      "sha256": "80e25b871d8bb3b45cc77417300d6b31008d44a911cb3fb76757d5d7062a729e"
     },
     {
       "path": "protocol_adapters/capture_stream.py",
@@ -430,7 +430,7 @@
     {
       "path": "protocol_adapters/live_capture.py",
       "component": "adapters",
-      "sha256": "73fa3017a70702e8d6ced3edbedd973203c63bdc4a6952557ee156f47f639af2"
+      "sha256": "ab10539b863e1556aabd13c7b26607ee8a603f3f495b1e78f71d76e02329e15d"
     },
     {
       "path": "protocol_adapters/make_sample_pcap.py",

@@ -11,6 +11,7 @@ engine-only part offline).
 """
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -97,11 +98,19 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--python", default=sys.executable)
     parser.add_argument("--no-extra", action="store_true", help="engine-only: no cryptography, presentation suite skipped")
+    parser.add_argument("--wheel", help="check this prebuilt wheel (the exact CI/release artifact) instead of building one")
+    parser.add_argument("--require-all", action="store_true",
+                        help="fail when any presentation test was skipped (a missing Node, Playwright or extra never counts as a pass)")
     args = parser.parse_args(argv)
     with tempfile.TemporaryDirectory() as temp:
         work = Path(temp)
         dist = work / "dist"
-        run([args.python, "-m", "build", "--wheel", "--outdir", str(dist), str(ROOT)], stdout=subprocess.DEVNULL)
+        if args.wheel:
+            dist.mkdir()
+            shutil.copy(args.wheel, dist / Path(args.wheel).name)
+            print("using prebuilt wheel " + args.wheel)
+        else:
+            run([args.python, "-m", "build", "--wheel", "--outdir", str(dist), str(ROOT)], stdout=subprocess.DEVNULL)
         wheel = next(dist.glob("*.whl"))
         run([args.python, "-B", str(ROOT / "tools/check_wheel.py"), str(wheel)])
         env_dir = work / "venv"
@@ -132,10 +141,16 @@ def main(argv=None):
         (work / "app" / "tools").mkdir()
         for name in ("schema_check.py", "build_manifest.py"):
             shutil.copy(ROOT / "tools" / name, work / "app" / "tools" / name)
-        result = subprocess.run([str(python), "-B", "-m", "unittest", "discover", "-s", "tests", "-q"], cwd=str(copy),  # noqa: S603
+        result = subprocess.run([str(python), "-B", "-m", "unittest", "discover", "-s", "tests", "-v" if args.require_all else "-q"], cwd=str(copy),  # noqa: S603
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=900)
         lines = result.stdout.splitlines()
         print("\n".join(lines[-6:]))
+        skipped = re.search(r"skipped=(\d+)", lines[-1] if lines else "")
+        if args.require_all and skipped and int(skipped.group(1)):
+            reasons = [line for line in lines if "skipped" in line and "..." in line]
+            print("installed check FAILED: {} presentation test(s) skipped under --require-all".format(skipped.group(1)))
+            print("\n".join(reasons[:10]))
+            return 1
         if result.returncode:
             import collections
             heads = collections.Counter(line.split(" (")[0] for line in lines if line.startswith(("ERROR:", "FAIL:")))

@@ -87,6 +87,18 @@ class QuicAssembler:
                 del self.entries[key]
                 self.counts["expired"] += 1
 
+    def conflicted(self, dcid, scope=None, version=None, now=None):
+        """True while this connection carries a conflict marker (review round 2: the marker binds every later
+        datagram of the connection, CRYPTO or not, until reset or expiry)."""
+        if now is not None:
+            self.expire(now)
+        entry = self.entries.get((scope, version, dcid))
+        if entry is None or not entry["conflict"]:
+            return False
+        if now is not None:
+            entry["last"] = now
+        return True
+
     def add(self, dcid, fragments, scope=None, version=None, now=None):
         """Merge fragments for one connection; returns (status, data) with status in
         complete | partial | conflict | exhausted (data only with complete)."""
@@ -283,6 +295,12 @@ def quic(data, config, assembler=None, scope=None, now=None):
                      Evidence("packet_type", "initial", "wire", "structural")))
     if token_length:
         evidence.append(Evidence("initial_token", "present", "wire", "structural"))
+    if assembler is not None and assembler.conflicted(bytes(dcid), scope, version, now):
+        # A contradiction already invalidated this connection: every further Initial of it (PING, ACK,
+        # PADDING or CRYPTO, opened or not) keeps the invalidation until the host resets the flow.
+        evidence.append(Evidence("crypto_assembly", "conflict", "wire", "structural"))
+        return DatagramMatch(encryption="quic", evidence=tuple(evidence), retracts=True,
+                             reason="QUIC connection invalidated by an earlier CRYPTO contradiction; later datagrams of it stay withdrawn")
     if not config.quic_decrypt:
         evidence.append(Evidence("initial_protection", "skipped", "wire", "context"))
         return DatagramMatch(encryption="quic", evidence=tuple(evidence),

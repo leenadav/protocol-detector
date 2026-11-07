@@ -401,6 +401,11 @@ class Analyzer:
                 # D02: a contradiction in this direction withdraws the identification it had established.
                 flow["observation"] = latest
                 flow["observations"][packet.source] = latest
+            elif flow["observation"].status == "invalidated" or flow["observations"].get(packet.source, latest).status == "invalidated":
+                # Review round 2: nothing after an invalidation revives the flow; a later identified datagram
+                # (PING-only Initial, a different family on the tuple) is reported as an event but never
+                # replaces the withdrawn verdict until the flow ends and the tuple starts a new flow.
+                pass
             else:
                 # Keep the first identification; otherwise the latest outcome describes the flow.
                 if flow["observation"].status != "identified":
@@ -409,7 +414,7 @@ class Analyzer:
                 previous = flow["observations"].get(packet.source)
                 if previous is None or previous.status != "identified":
                     flow["observations"][packet.source] = latest
-            if latest.status == "identified":
+            if latest.status == "identified" and flow["observation"].status != "invalidated":
                 self._decided(flow, (latest.application_protocol or latest.encryption, latest.application))
         self.last_server = flow["server"] if flow is not None else packet.destination
         result = self.last_classification
