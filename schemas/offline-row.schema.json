@@ -696,6 +696,22 @@
         },
         "content": {
           "$ref": "#/$defs/content"
+        },
+        "unknown": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "session": {
+              "$ref": "#/$defs/unknown_reason"
+            },
+            "client": {
+              "$ref": "#/$defs/unknown_reason"
+            },
+            "server": {
+              "$ref": "#/$defs/unknown_reason"
+            }
+          },
+          "description": "D12: why this session is not an identification, per direction (and per session for lifecycle outcomes); absent on identifications. Codes are a reporting vocabulary (docs/UNKNOWN-REASONS.md) and never influence the verdict."
         }
       },
       "required": [
@@ -1189,6 +1205,59 @@
         }
       },
       "description": "D08: the detection content release (built-in catalogs and risk table) this output was produced with, and its digest; protodetect content lists releases."
+    },
+    "unknown_reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "stage",
+        "family",
+        "detail"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "no-dispatch",
+            "ambiguous",
+            "profile-unsupported",
+            "malformed",
+            "budget",
+            "no-payload",
+            "incomplete",
+            "no-handshake",
+            "midstream",
+            "invalidated"
+          ]
+        },
+        "stage": {
+          "enum": [
+            "dispatch",
+            "profile",
+            "budget",
+            "lifecycle",
+            "integrity"
+          ]
+        },
+        "family": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     }
   }
 }

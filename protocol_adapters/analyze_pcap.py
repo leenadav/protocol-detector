@@ -11,6 +11,7 @@ from protocol_engine import Config, DatagramInspector, Event, Inspector, Signatu
 from .layers import layered_view
 from protocol_engine.continuation import continuation_summary
 from protocol_engine import content as detection_content
+from protocol_engine.unknown import session_unknown
 from .observability import Telemetry
 from .quality import InputQuality
 from protocol_engine.appid import classify, midstream_outcome, session_verdict, unobserved_start_outcome, verdict_fields
@@ -106,13 +107,17 @@ class Analyzer:
         self.telemetry = Telemetry()      # stage 7 (A15): one registry per capture path, shared with its owners
 
     # ----- session records -------------------------------------------------
-    def _record(self, transport, client, server, state, verdict, reason, observations):
+    def _record(self, transport, client, server, state, verdict, reason, observations, inspectors=(None, None)):
         record = {"type": "session", "transport": transport, "client": client, "server": server,
                   "start": state["start"], "end": self.now, "packets": state["packets"],
                   "client_bytes": state["bytes"].get(client, 0), "server_bytes": state["bytes"].get(server, 0),
                   "end_reason": reason}
         record.update(verdict_fields(verdict))
         record["content"] = self.content
+        unknown = session_unknown(verdict, observations[0], observations[1], inspectors[0], inspectors[1],
+                                  mode=state.get("mode", "handshake"), handshake=transport != "tcp" or bool(state.get("ready")))
+        if unknown:
+            record["unknown"] = unknown                                 # D12: why this was not an identification, per direction
         # D05: how the connection was observed. Roles are assumed from the first segment in midstream mode.
         record["observation"] = {"mode": state.get("mode", "handshake" if transport == "tcp" else "datagram"),
                                  "handshake_observed": transport == "tcp" and state.get("mode", "handshake") == "handshake" and bool(state.get("ready")),
@@ -275,7 +280,9 @@ class Analyzer:
             return
         client, server = state["client"], state["server"]
         client_obs = server_obs = None
+        inspectors = (None, None)
         if connection is not None:
+            inspectors = (connection["directions"][client].inspector, connection["directions"][server].inspector)
             client_obs = connection["directions"][client].inspector.observation
             server_obs = connection["directions"][server].inspector.observation
             seen = sum(state["bytes"].values())
@@ -296,7 +303,7 @@ class Analyzer:
                     verdict = midstream_outcome("tcp", family or verdict.app)
             elif verdict.app in ("unknown-tcp", "incomplete", "insufficient-data"):
                 verdict = unobserved_start_outcome("tcp", verdict.reasons[0] if verdict.reasons else "no reason")
-        self._record("tcp", client, server, state, verdict, reason, (client_obs, server_obs))
+        self._record("tcp", client, server, state, verdict, reason, (client_obs, server_obs), inspectors)
 
     def _udp_session(self, key, flow, reason):
         self.quic_assembler.reset((flow["client"], flow["server"]))     # D01: the flow's CRYPTO state ends with it
