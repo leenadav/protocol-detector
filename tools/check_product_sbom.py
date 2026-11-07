@@ -7,7 +7,10 @@ that product (the wheel, the lock's packages, pip removed), so it must name:
   - as its components exactly the packages the lock pins, each at its pinned version with a
     `pkg:pypi/<name>@<version>` purl: a package missing (the extra was not installed) or extra (a
     build tool, pip, or an unpinned transitive dependency) fails.
-Names compare in PEP 503 normalised form. Standard library only, Python 3.9 syntax. Usage:
+Names compare in PEP 503 normalised form. A package listed more than once in the SBOM fails
+whatever the order and spelling of its entries, and so does a package the lock pins more than
+once (environment markers are not evaluated, so split per-interpreter pins need one lock per
+interpreter or an extension of this check). Standard library only, Python 3.9 syntax. Usage:
   check_product_sbom.py SBOM --lock FILE --pyproject FILE --wheel FILE [--summary FILE]
   check_product_sbom.py --self-test
 """
@@ -26,7 +29,12 @@ def normalise(name):
 
 
 def lock_pins(text):
-    return {normalise(match.group(1)): match.group(2) for match in map(PIN.match, text.splitlines()) if match}
+    """{normalised name: [versions in lock order]}: more than one version is reported by decide()."""
+    pins = {}
+    for match in map(PIN.match, text.splitlines()):
+        if match:
+            pins.setdefault(normalise(match.group(1)), []).append(match.group(2))
+    return pins
 
 
 def project_of(pyproject_text):
@@ -50,26 +58,36 @@ def decide(document, pins, project, wheel_name):
     root = document.get("metadata", {}).get("component") or {}
     if (normalise(root.get("name", "")), root.get("version")) != (name, version):
         problems.append("root component {} {} is not {} {}".format(root.get("name"), root.get("version"), name, version))
+    pinned = {}
+    for key, versions in pins.items():
+        if len(versions) > 1:
+            problems.append("{} is pinned more than once by the lock ({}): one pin per package is required".format(key, ", ".join(versions)))
+        pinned[key] = versions[0]
     found = {}
     for component in document.get("components", []):
         key = normalise(component.get("name", ""))
-        found[key] = component.get("version")
+        found.setdefault(key, []).append(component.get("version"))
         purl = "pkg:pypi/{}@{}".format(key, component.get("version"))
         if normalise(component.get("purl", "")) != normalise(purl):
             problems.append("{} {} has purl {} (expected {})".format(key, component.get("version"), component.get("purl"), purl))
-    for key in sorted(set(pins) - set(found)):
-        problems.append("{}=={} is pinned by the lock but missing from the SBOM".format(key, pins[key]))
-    for key in sorted(set(found) - set(pins)):
-        problems.append("{} {} is in the SBOM but not pinned by the lock".format(key, found[key]))
-    for key in sorted(set(pins) & set(found)):
-        if pins[key] != found[key]:
-            problems.append("{} is {} in the SBOM but {} in the lock".format(key, found[key], pins[key]))
+    for key in sorted(found):
+        if len(found[key]) > 1:
+            problems.append("{} is listed {} times in the SBOM ({}): each package must appear once".format(
+                key, len(found[key]), ", ".join(str(version) for version in found[key])))
+    for key in sorted(set(pinned) - set(found)):
+        problems.append("{}=={} is pinned by the lock but missing from the SBOM".format(key, pinned[key]))
+    for key in sorted(set(found) - set(pinned)):
+        problems.append("{} {} is in the SBOM but not pinned by the lock".format(key, ", ".join(str(v) for v in found[key])))
+    for key in sorted(set(pinned) & set(found)):
+        for version in found[key]:
+            if version != pinned[key]:
+                problems.append("{} is {} in the SBOM but {} in the lock".format(key, version, pinned[key]))
     return problems
 
 
 def self_test():
     pins = lock_pins("# comment\ncffi==2.1.1 \\\n    --hash=sha256:aa\ncryptography==50.0.2 \\\npycparser==3.12 ; python_version >= '3.10'\n")
-    assert pins == {"cffi": "2.1.1", "cryptography": "50.0.2", "pycparser": "3.12"}, pins
+    assert pins == {"cffi": ["2.1.1"], "cryptography": ["50.0.2"], "pycparser": ["3.12"]}, pins
     project = project_of('[build-system]\nrequires = ["x"]\n\n[project]\nname = "protocol-stream-engine"\nversion = "0.66.0"\n\n[tool.ruff]\nversion = "9"\n')
     assert project == ("protocol-stream-engine", "0.66.0"), project
     wheel = "protocol_stream_engine-0.66.0-py3-none-any.whl"
@@ -90,6 +108,18 @@ def self_test():
     for label, (document, wheel_name, expected) in cases.items():
         found = decide(document, pins, project, wheel_name)
         assert any(expected in problem for problem in found), (label, found)
+    # item 25 round 1: a conflicting duplicate must fail in either order and under an aliased spelling
+    for components in ([("cffi", "UNPINNED"), ("cffi", "2.1.1")], [("cffi", "2.1.1"), ("cffi", "UNPINNED")],
+                       [("cffi", "2.1.1"), ("CFFI", "2.1.1")], [("Cffi", "2.1.1"), ("cffi", "2.1.1")]):
+        found = decide(bom(components + good[1:]), pins, project, wheel)
+        assert any("listed 2 times" in problem for problem in found), (components, found)
+    alias_pins = lock_pins("typing_extensions==4.16.0 \\\n")
+    assert decide(bom([("typing-extensions", "4.16.0")]), alias_pins, project, wheel) == []
+    assert any("listed 2 times" in problem for problem in decide(
+        bom([("typing-extensions", "4.16.0"), ("typing_extensions", "4.16.0")]), alias_pins, project, wheel))
+    split = lock_pins('cffi==2.0.0 ; python_version < "3.10"\ncffi==2.1.1 ; python_version >= "3.10"\n')
+    assert split == {"cffi": ["2.0.0", "2.1.1"]}, split
+    assert any("pinned more than once" in problem for problem in decide(bom([("cffi", "2.1.1")]), split, project, wheel))
     bad_purl = bom(good)
     bad_purl["components"][0]["purl"] = "pkg:pypi/evil@2.1.1"
     assert any("has purl" in problem for problem in decide(bad_purl, pins, project, wheel))
