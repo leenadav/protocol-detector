@@ -56,7 +56,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences capabilities
+check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences capabilities parity
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -118,6 +118,10 @@ content:
 # Migration M0: the per-family capability inventory must match the registry (Go statuses are kept as recorded)
 capabilities:
 	python3 -B tools/capabilities.py --check migration/CAPABILITIES.json
+
+# Migration M1: the Python reference must match the committed differential cases exactly (migration/CONTRACTS.md)
+parity:
+	python3 -B migration/parity/compare.py --backend python
 
 # D11: separated performance measurements (CPU by layer, bytes to identification, queue wait, memory); local numbers only
 perf-profile:
