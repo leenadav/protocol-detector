@@ -561,9 +561,13 @@ never produces an error status: the structural identification stands and the
 evidence says `initial_protection=unverified`, so a damaged datagram cannot be
 turned into a false negative or a different protocol.
 
-`QuicAssembler` is host-owned, bounded (LRU over Destination Connection IDs,
-8 fragments and 16 KiB per entry) and cleared on capture gaps; DatagramInspector
-itself still retains no input. Analyzer sizes it from the UDP flow limit.
+`QuicAssembler` is host-owned and bounded (LRU, 8 fragments and 16 KiB per entry) and
+cleared on capture gaps; DatagramInspector itself still retains no input. Entries are
+keyed by the host's flow scope (the Analyzer passes source and destination endpoints,
+so direction is part of the key), the QUIC version and the DCID (D01), expire with the
+flow table and are reset when the flow ends; every overlapping fragment pair is compared
+byte for byte and a contradiction withdraws the connection's ClientHello evidence as an
+`invalidated` observation (D02). Analyzer sizes it from the UDP flow limit.
 `DatagramMatch` carries optional signature contexts with a family so that the
 tls-family `ssl-req-*` signatures apply to QUIC ClientHellos; contexts remain
 internal. Per-Initial cost is about 2 ms (AES-CTR of 75 blocks dominates);

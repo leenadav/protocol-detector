@@ -100,6 +100,10 @@ def layered_view(transport, client, server, verdict=None, server_port=None, clie
     inner_identified = inner is not None and inner.identified and decryption_ok
     effective = inner if inner_identified else outer
     encryption = next((obs.encryption for obs in (outer_client, outer_server) if obs is not None and obs.encryption), None)
+    # D03/D04: affiliation comes from whichever layer carried the server name (usually the outer SNI); activity is
+    # what was observed at the deepest intact layer, so an authenticated inner identification is the activity.
+    attribution = effective.attribution or outer.attribution or (inner.attribution if inner is not None else None)
+    activity = "authenticated-plaintext" if inner_identified else (attribution["activity"] if attribution else None)
     outer_protocol = _protocol(outer)
     inner_protocol = _protocol(inner) if inner_identified else None
     chain = []
@@ -119,7 +123,11 @@ def layered_view(transport, client, server, verdict=None, server_port=None, clie
         "inner": None if inner is None else {"protocol": _protocol(inner), "app": inner.app, "status": inner.status,
                                              "source": "decrypted", "authenticated": bool(decryption_ok)},
         "application": {"name": effective.app, "category": effective.category, "status": effective.status,
-                        "basis": identity_basis(effective, inner_identified, (outer_client, outer_server))},
+                        "basis": identity_basis(effective, inner_identified, (outer_client, outer_server)),
+                        # D03: affiliation, family and activity stay separate fields; none of them is identity.
+                        "provider": attribution["provider"] if attribution else None,
+                        "affiliation": attribution["kind"] if attribution else None,
+                        "activity": activity},
         "decryption": None if decryption is None else {key: decryption.get(key) for key in ("state", "reason_code", "authenticated_records")},
         "capture_quality": capture_quality,
         "chain": chain,

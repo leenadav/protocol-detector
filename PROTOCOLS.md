@@ -995,16 +995,17 @@ Rules:
 | `dropbox` | `dropbox.com`, `dropboxapi.com`, `dropboxusercontent.com`, `dropboxstatic.com` |
 | `box` | `box.com`, `boxcloud.com`, `box.net` |
 | `icloud` | `icloud.com`, `icloud-content.com` |
-| `github` | `github.com`, `githubusercontent.com`, `githubassets.com`, `github.io` |
+| `github` | `github.com`, `githubusercontent.com`, `githubassets.com` (github.io is tenant hosting and names nobody) |
 | `gitlab` | `gitlab.com` |
 | `atlassian` | `atlassian.net`, `atlassian.com`, `bitbucket.org` |
 | `salesforce` | `salesforce.com`, `force.com` |
 | `notion` | `notion.so`, `notion.site` |
-| `openai-chatgpt` | `openai.com`, `chatgpt.com`, `oaiusercontent.com`, `oaistatic.com` |
+| `openai-chatgpt` | `chatgpt.com`, `chat.openai.com`, `oaiusercontent.com`, `oaistatic.com`; web fronts `openai.com`, `www.openai.com` (provider affiliation only) |
+| `openai-platform` | `api.openai.com`, `platform.openai.com` |
 | `anthropic-claude` | `claude.ai`, `anthropic.com`, `claude.com` |
 | `google-gemini` | `gemini.google.com` |
-| `teamviewer` | `teamviewer.com` |
-| `anydesk` | `anydesk.com`, `net.anydesk.com` |
+| `teamviewer` | `teamviewer.com`; web fronts `teamviewer.com`, `www.teamviewer.com` (provider affiliation only, no remote-control activity asserted) |
+| `anydesk` | `anydesk.com`, `net.anydesk.com`; web fronts `anydesk.com`, `www.anydesk.com` |
 | `amazon` | `amazon.com`, `media-amazon.com`, `ssl-images-amazon.com` |
 | `ebay` | `ebay.com`, `ebayimg.com`, `ebaystatic.com` |
 | `paypal` | `paypal.com`, `paypalobjects.com` |
@@ -1037,3 +1038,64 @@ valid; the AA bit is ignored on multicast DNS queries (RFC 6762 18.4); a type-AN
 records is an mDNS probe (RFC 6762 8.1) even for reverse-mapping names. Still rejected on purpose: trailing
 bytes after the last section and AA on a unicast DNS query. QUIC short-header packets without an observed
 Initial remain unknown: one fixed bit is not a structural profile.
+
+## Observation modes (D05)
+
+Every TCP profile in this document was written for the connection's initial message after an observed
+handshake. The Analyzer therefore has three explicit observation modes (`--observation`), and every session
+record states which one produced it (`observation.mode`, `handshake_observed`, `directions_seen`, `roles`):
+
+- `handshake` (default): SYN and SYN-ACK must be observed; data without them is skipped and counted
+  (`tcp_without_start`). Unchanged behaviour.
+- `asymmetric`: for one-direction captures (a SPAN of one side). The client's SYN and data are observed, the
+  server side never. The client direction is inspected exactly as after a handshake; the server direction's
+  origin is the client's acknowledgement number. A real SYN-ACK is still validated against the client's ISN, a
+  server segment before any client data is still skipped, and nothing is relaxed for connections whose
+  handshake is observed.
+- `midstream`: for captures that start inside connections. The first data segment's sender is taken as the
+  client (`roles: assumed-from-first-segment`), its sequence is that direction's origin and its acknowledgement
+  number the peer's origin. Recognition is deliberately conservative: a family is identified midstream only
+  when its profile checks a self-delimiting message layout that recurs at every message boundary
+  (`MIDSTREAM_FAMILIES`: http, dns, syslog, modbus, dnp3, iec-104, resp, memcached, sip, rtsp), so a segment
+  starting on a boundary is structurally indistinguishable from an initial message. Any other profile that
+  matches midstream, and any segment that matches nothing, ends as the outcome `incomplete` with engine status
+  `midstream` and a reason that says the start was not observed. An unsupported protocol and an unobserved
+  start are not told apart there, and the record says so instead of claiming `unknown-tcp`. A SYN on a tuple
+  under midstream observation ends that observation and starts an ordinary handshake observation (new
+  generation).
+
+Datagram profiles are per message and carry `observation.mode = datagram`. Policies can require a mode with
+the `observation` predicate (POLICY.md).
+
+## Budgeted continuation after identification (D07)
+
+Every profile above decides on the initial message, and by default inspection stops there: later bytes of a
+direction are neither parsed nor retained. `Config(continuation=BYTES)` (`--continuation BYTES` on both
+CLIs, 0 by default) lets two parsers keep framing the new bytes that arrive after their identification, up
+to that budget per direction and never beyond `max_bytes`, and adds bounded structural evidence from the
+source `continuation`:
+
+- HTTP/1: later messages of the same direction. Bodies are skipped by their declared framing
+  (`Content-Length`, chunked with extensions and trailers, none for requests and for 1xx/204/304); a
+  response without declared framing is close-delimited and ends the continuation. Each later start-line and
+  header block is validated with the same rules as a first message. Evidence: `http_messages` (count
+  including the first), `http_methods` (distinct known methods or `extension`, at most eight),
+  `http_status_classes` (`2xx`, `4xx`, ...), `http_host_variation=observed` when a later Host differs from
+  the identifying one (the hostname of the identification never changes). A later CONNECT or Upgrade
+  shifts the stream exactly as a first-message one would, with the carrier identification republished first.
+  `max_transactions` (16) caps the messages counted.
+- TLS: record-layer framing after the ClientHello or ServerHello, after the certificate watch when
+  `certificates` is on. Headers are validated (content type, version 3.x, length <= 16640); nothing inside a
+  record is read. Evidence: `tls_records` (`handshake=…,ccs=…,alert=…,application_data=…`),
+  `tls_application_data=observed`, `tls_alert=observed`; at most 256 records.
+
+The continuation can only add evidence to a `refined` event; the identification published before it, the
+application verdict and the decision time stand. It ends with a `continuation` evidence value naming why:
+`budget`, `messages`, `records`, `framing` (a later message or record header did not validate; the
+identification is kept, nothing after it is read), `close-delimited` or `shift`; a direction that ends
+first carries no such value. Session records summarise it per direction under `continuation`.
+
+This is one vertical slice, not a session parser: responses to HEAD, pipelined requests interleaved with
+the other direction, HTTP/1.0 keep-alive without `Content-Length`, trailers' names, record contents and
+anything after a framing error are not modelled. The default path is unchanged (behaviour diff and the
+per-flow cost are the same with the option off).

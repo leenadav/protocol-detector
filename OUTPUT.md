@@ -28,6 +28,20 @@ source and strength, never by value. A failed decryption withdraws `inner`
 (`authenticated: false`) and keeps the wire layer; record authentication is
 never presented as peer or product identity verification (`note`).
 
+Every `session` record, the offline summary and the live `started`,
+`progress` and `summary` events carry `content: {version, digest}` (D08): the
+detection content release in force and its digest, so records classified by
+different catalogs can be told apart (docs/CONTENT-GOVERNANCE.md).
+
+With `--continuation BYTES` (D07) a `session` record may also carry
+`continuation`: per direction (`client`, `server`) the counts and classes the
+budgeted continuation framed after the identification (`http_messages`,
+`http_methods`, `http_status_classes`, `http_host_variation`, `tls_records`,
+`tls_application_data`, `tls_alert`) and `ended` (`budget`, `messages`,
+`records`, `framing`, `close-delimited`, `shift`; absent when the direction
+ended first). It is absent when the option is off or nothing followed; the
+verdict, `decision` and hostname are never changed by it (PROTOCOLS.md).
+
 Schemas set `additionalProperties: false` on every object the tools build, so a
 new field is a schema change and a review item. Values that could carry
 payload are structurally excluded: `evidence[].value` is a short string from a

@@ -191,6 +191,81 @@
           "items": {
             "type": "string"
           }
+        },
+        "predicates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "identity_basis",
+            "activity",
+            "affiliation",
+            "decryption",
+            "capture_quality",
+            "engine_status",
+            "directions",
+            "observation"
+          ],
+          "properties": {
+            "identity_basis": {
+              "enum": [
+                "authenticated_plaintext",
+                "structural",
+                "configured_rule",
+                "client_assertion",
+                "none"
+              ]
+            },
+            "activity": {
+              "enum": [
+                "unobserved",
+                "http-request",
+                "authenticated-plaintext",
+                "none"
+              ]
+            },
+            "affiliation": {
+              "enum": [
+                "service",
+                "provider-web",
+                "none"
+              ]
+            },
+            "decryption": {
+              "enum": [
+                "none",
+                "awaiting_hello",
+                "awaiting_keys",
+                "decrypting",
+                "complete",
+                "failed"
+              ]
+            },
+            "capture_quality": {
+              "enum": [
+                "intact",
+                "degraded",
+                "provisional"
+              ]
+            },
+            "engine_status": {
+              "type": "string"
+            },
+            "directions": {
+              "enum": [
+                "consistent",
+                "conflicting",
+                "one-direction"
+              ]
+            },
+            "observation": {
+              "enum": [
+                "handshake",
+                "asymmetric",
+                "midstream",
+                "datagram"
+              ]
+            }
+          }
         }
       }
     },
@@ -399,6 +474,209 @@
           "minLength": 16,
           "maxLength": 16,
           "description": "Stage 7: digest of the custom signature set this verdict was classified with."
+        },
+        "decision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "first_seconds",
+            "stable_seconds"
+          ],
+          "properties": {
+            "first_seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "stable_seconds": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "description": "Seconds from the first packet to the first identification and to the last label change (decision latency, not lifetime)."
+        },
+        "attribution": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "provider",
+            "kind",
+            "family",
+            "activity",
+            "asserted_by"
+          ],
+          "properties": {
+            "provider": {
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "service",
+                "provider-web"
+              ]
+            },
+            "family": {
+              "type": "string"
+            },
+            "activity": {
+              "enum": [
+                "unobserved",
+                "http-request",
+                "authenticated-plaintext"
+              ]
+            },
+            "asserted_by": {
+              "const": "client-server-name"
+            }
+          },
+          "description": "D03: provider affiliation from the client-asserted server name, the provider's application family, and the activity actually observed; affiliation is never activity or identity."
+        },
+        "observation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "handshake_observed",
+            "directions_seen",
+            "roles"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "handshake",
+                "asymmetric",
+                "midstream",
+                "datagram"
+              ]
+            },
+            "handshake_observed": {
+              "type": "boolean"
+            },
+            "directions_seen": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "client",
+                  "server"
+                ]
+              }
+            },
+            "roles": {
+              "enum": [
+                "observed",
+                "assumed-from-first-segment"
+              ]
+            }
+          },
+          "description": "D05: how the connection was observed; identifications made midstream or on one side only are marked, never silently equal to a handshake observation."
+        },
+        "input_quality": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "description": "D06: rejected or suspect packets of this flow by kind; the flow was not fully inspected."
+        },
+        "continuation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "client": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "http_messages": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "http_methods": {
+                  "type": "string"
+                },
+                "http_status_classes": {
+                  "type": "string"
+                },
+                "http_host_variation": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "tls_records": {
+                  "type": "string"
+                },
+                "tls_application_data": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "tls_alert": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "ended": {
+                  "enum": [
+                    "budget",
+                    "messages",
+                    "records",
+                    "framing",
+                    "close-delimited",
+                    "shift"
+                  ]
+                }
+              }
+            },
+            "server": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "http_messages": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "http_methods": {
+                  "type": "string"
+                },
+                "http_status_classes": {
+                  "type": "string"
+                },
+                "http_host_variation": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "tls_records": {
+                  "type": "string"
+                },
+                "tls_application_data": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "tls_alert": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "ended": {
+                  "enum": [
+                    "budget",
+                    "messages",
+                    "records",
+                    "framing",
+                    "close-delimited",
+                    "shift"
+                  ]
+                }
+              }
+            }
+          },
+          "description": "D07: what the budgeted continuation framed after each direction's identification (counts and classes only; absent when Config.continuation is 0 or nothing followed). `ended` names why it stopped: budget, messages, records, framing, close-delimited or shift; absent when the direction ended first."
+        },
+        "content": {
+          "$ref": "#/$defs/content"
         }
       },
       "required": [
@@ -553,7 +831,10 @@
             "name",
             "category",
             "status",
-            "basis"
+            "basis",
+            "provider",
+            "affiliation",
+            "activity"
           ],
           "properties": {
             "name": {
@@ -572,6 +853,27 @@
                 "configured_rule",
                 "client_assertion",
                 "none"
+              ]
+            },
+            "provider": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "affiliation": {
+              "enum": [
+                "service",
+                "provider-web",
+                null
+              ]
+            },
+            "activity": {
+              "enum": [
+                "unobserved",
+                "http-request",
+                "authenticated-plaintext",
+                null
               ]
             }
           }
@@ -644,6 +946,73 @@
           "type": "string"
         }
       }
+    },
+    "input_quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter",
+        "checksums",
+        "rejected",
+        "flows_marked",
+        "unsupported",
+        "checksums_note"
+      ],
+      "properties": {
+        "adapter": {
+          "enum": [
+            "recorded",
+            "host",
+            "reassembled"
+          ]
+        },
+        "checksums": {
+          "enum": [
+            "ignore",
+            "audit",
+            "verify"
+          ]
+        },
+        "rejected": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "flows_marked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unsupported": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "checksums_note": {
+          "type": "string"
+        }
+      }
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "digest"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]{4}\\.[0-9]{2}\\.[0-9]+$"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        }
+      },
+      "description": "D08: the detection content release (built-in catalogs and risk table) this output was produced with, and its digest; protodetect content lists releases."
     }
   }
 }

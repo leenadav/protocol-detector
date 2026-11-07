@@ -537,7 +537,7 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
 ## Local commands
 
 ```bash
-make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint, coverage matrix, docs numbers
+make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint, coverage matrix, docs numbers, manifest, inventory, key logs, content lock (D08)
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories (dev tools installed)
 (mkdir -p /tmp/scanners && cp tools/scanners/go.mod tools/scanners/go.sum /tmp/scanners/ && cd /tmp/scanners && GOFLAGS=-mod=readonly GOWORK=off GOTOOLCHAIN=go1.27.3 GOBIN=/tmp/scanners/bin go install tool && bin/govulncheck -mode=binary bin/gitleaks)   # Go scanner advisories (needs Go)
 make ci-local       # make check plus extended fuzzing and the offline replay/schema validation CI runs
@@ -546,6 +546,8 @@ make workflow-lint  # actionlint (needs a local actionlint and shellcheck, which
 make pin-drift      # pinned action SHAs still match the tags in their comments (network; the weekly supply-chain-drift workflow runs the same check)
 make go-drift       # the Go that builds the pinned scanners is a supported line on its newest patch (network; weekly in supply-chain-drift)
 make fuzz           # extended seeded fuzzing
+make sequences-extended   # D10 metamorphic packet-sequence relations, two seeds x 8 transformations per fixture
 python3 -B tools/compare_engine.py ../previous-checkout --report diff.md   # behaviour diff against another tree
 make sbom           # CycloneDX SBOM of the environment (requires dev tools)
+python3 -B tools/check_content.py --update   # after adding a Release to protocol_engine/content.py (docs/CONTENT-GOVERNANCE.md)
 ```

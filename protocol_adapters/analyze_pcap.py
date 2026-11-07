@@ -5,12 +5,16 @@ import weakref
 from dataclasses import asdict, replace
 from collections import Counter
 from functools import partial
-from .link_packets import decode_frame
+from .link_packets import CHECKSUM_POLICIES, decode_frame
 from .packets import CaptureError, PacketError, UDPPacket, read_pcap_records
 from protocol_engine import Config, DatagramInspector, Event, Inspector, SignatureSet
 from .layers import layered_view
+from protocol_engine.continuation import continuation_summary
+from protocol_engine import content as detection_content
 from .observability import Telemetry
-from protocol_engine.appid import classify, session_verdict, verdict_fields
+from .quality import InputQuality
+from protocol_engine.appid import classify, midstream_outcome, session_verdict, unobserved_start_outcome, verdict_fields
+from protocol_engine.descriptors import MIDSTREAM_FAMILIES, OBSERVATION_MODES
 from protocol_engine.policy import Policy, PolicyError
 from protocol_engine.registry import PARSERS
 from protocol_engine.datagram import VALIDATORS
@@ -45,7 +49,11 @@ class Analyzer:
     """
     def __init__(self, max_connections=32, byte_limit=65536, idle_timeout=60, compact=False, udp_hint=None, tcp_hint=None,
                  crc32c_byte_limit=4096, on_retire=None, on_session=None, max_udp_flows=None, include_hostnames=False,
-                 signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False):
+                 signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False, observation="handshake",
+                 continuation=0):
+        if observation not in OBSERVATION_MODES:
+            raise ValueError("observation must be one of " + ", ".join(OBSERVATION_MODES))
+        self.observation = observation      # D05: handshake (default), asymmetric or midstream
         for callback in (on_retire, on_session):
             if callback is not None and not callable(callback):
                 raise TypeError("Analyzer callbacks must be callable")
@@ -65,8 +73,10 @@ class Analyzer:
         self.policy = policy
         self.inspection_config = Config(max_bytes=byte_limit, max_crc32c_bytes=crc32c_byte_limit,
                                         retain_contexts=self.signatures is not None, fingerprints=bool(fingerprints),
-                                        heuristics=bool(heuristics), certificates=bool(certificates))
-        self.quic_assembler = QuicAssembler()
+                                        heuristics=bool(heuristics), certificates=bool(certificates),
+                                        continuation=int(continuation))
+        self.content = detection_content.pinned()       # D08: the content release every record of this run names
+        self.quic_assembler = QuicAssembler(idle_seconds=idle_timeout)   # D01: scoped per flow, expires with the flow table
         self.udp = DatagramInspector(self.inspection_config, self.signatures, self.quic_assembler)
         self.udp_revision = 0
         self.now = 0
@@ -102,15 +112,37 @@ class Analyzer:
                   "client_bytes": state["bytes"].get(client, 0), "server_bytes": state["bytes"].get(server, 0),
                   "end_reason": reason}
         record.update(verdict_fields(verdict))
+        record["content"] = self.content
+        # D05: how the connection was observed. Roles are assumed from the first segment in midstream mode.
+        record["observation"] = {"mode": state.get("mode", "handshake" if transport == "tcp" else "datagram"),
+                                 "handshake_observed": transport == "tcp" and state.get("mode", "handshake") == "handshake" and bool(state.get("ready")),
+                                 "directions_seen": sorted(["client" if endpoint == client else "server" for endpoint in state["bytes"] if state["bytes"].get(endpoint)]),
+                                 "roles": "assumed-from-first-segment" if state.get("mode") == "midstream" else "observed"}
+        continuation = continuation_summary(observations[0], observations[1])
+        if continuation:
+            record["continuation"] = continuation                   # D07: what followed the identification, per direction
+        quality = "intact"
+        if state.get("input"):
+            record["input_quality"] = dict(state["input"])          # D06: this flow was not fully inspected
+            quality = "degraded"
         # Stage 5 (A05/A13): the layered view, from the same observations and verdict; labels only.
         record["layers"] = layered_view(transport, observations[0], observations[1], verdict, server[1],
-                                        state["bytes"].get(client, 0), state["bytes"].get(server, 0))[0]
+                                        state["bytes"].get(client, 0), state["bytes"].get(server, 0), capture_quality=quality)[0]
         if self.signatures is not None:
             record["signature_set"] = self.signatures.digest      # stage 7 (A11): the rule set this verdict used
-        self.telemetry.observe("time_to_verdict_seconds", max(0.0, self.now - state["start"]))
+        # Latency telemetry (P2 of the stage-6 review): the session's lifetime is not its decision time.
+        self.telemetry.observe("session_lifetime_seconds", max(0.0, self.now - state["start"]))
+        if state.get("first_decision") is not None:
+            self.telemetry.observe("time_to_first_decision_seconds", max(0.0, state["first_decision"] - state["start"]))
+            self.telemetry.observe("time_to_stable_verdict_seconds", max(0.0, state["stable_at"] - state["start"]))
+            record["decision"] = {"first_seconds": round(state["first_decision"] - state["start"], 6),
+                                  "stable_seconds": round(state["stable_at"] - state["start"], 6)}
         self.telemetry.add("sessions." + verdict.status)
         if self.policy is not None:
-            record["policy"] = self.policy.evaluate(verdict, transport, server[1]).fields()
+            # D04: the decision sees the typed evidence contract (identity basis, activity, affiliation,
+            # decryption state, capture quality), never a confidence number.
+            record["policy"] = self.policy.evaluate(verdict, transport, server[1], layers=record["layers"],
+                                                    observation=record["observation"]["mode"]).fields()
         fingerprints = {evidence.field: evidence.value for obs in observations if obs is not None
                         for evidence in obs.evidence if evidence.strength == "derived"}
         if fingerprints:
@@ -122,6 +154,29 @@ class Analyzer:
             record["hostname"] = next((obs.hostname for obs in observations if obs is not None and obs.hostname), None)
         self.counts["sessions"] += 1
         self.on_session(record)
+
+    def note_input(self, kind, endpoints):
+        """D06: a packet of this flow was rejected or suspect (fragment, length, checksum, truncated). The flow is
+        marked so its record never reads as fully inspected; a truncated TCP record ends the connection, since
+        bytes are missing from the stream. Returns True when a tracked flow was marked."""
+        if endpoints is None:
+            return False
+        key = self.manager.key(*endpoints)
+        state = self.tracked.get(key) or self.udp_flows.get(key)
+        if state is None:
+            return False
+        state.setdefault("input", {})
+        state["input"][kind] = state["input"].get(kind, 0) + 1
+        if kind == "truncated" and key in self.tracked:
+            self.drop(key, "Capture record truncated; stream bytes missing")
+        return True
+
+    def _decided(self, state, label):
+        """Record when a flow or connection was first identified and when its label last changed."""
+        if state.get("first_decision") is None:
+            state["first_decision"] = self.now
+        if state.get("label") != label:
+            state["label"], state["stable_at"] = label, self.now
 
     def _open_shift(self, state, endpoint, boundary, expected=None):
         """Open a peer-decided phase on one direction's stream and keep the events its replay published."""
@@ -232,9 +287,19 @@ class Analyzer:
         verdict = session_verdict(client_obs, server_obs, "tcp", server[1], state["bytes"].get(client, 0),
                                   state["bytes"].get(server, 0), handshake_complete=state["ready"], signatures=self.signatures,
                                   at=state["start"])
+        if state.get("mode") == "midstream":
+            # D05: midstream recognition is conservative. Only families whose profile recurs at every message
+            # boundary may be identified; anything else is an incomplete observation, never unknown-tcp.
+            if verdict.identified:
+                family = (verdict.client_protocol or verdict.server_protocol or "").split("/", 1)[0]
+                if family not in MIDSTREAM_FAMILIES:
+                    verdict = midstream_outcome("tcp", family or verdict.app)
+            elif verdict.app in ("unknown-tcp", "incomplete", "insufficient-data"):
+                verdict = unobserved_start_outcome("tcp", verdict.reasons[0] if verdict.reasons else "no reason")
         self._record("tcp", client, server, state, verdict, reason, (client_obs, server_obs))
 
     def _udp_session(self, key, flow, reason):
+        self.quic_assembler.reset((flow["client"], flow["server"]))     # D01: the flow's CRYPTO state ends with it
         if self.on_session is None:
             return
         # v0.43: both directions contribute. The client datagram decides as before; a server
@@ -307,7 +372,7 @@ class Analyzer:
         self.manager.expire()
 
     def _udp(self, packet):
-        self.last_classification = self.udp.inspect(packet.payload, self.udp_hint)
+        self.last_classification = self.udp.inspect(packet.payload, self.udp_hint, scope=(packet.source, packet.destination), now=self.now)
         self.udp_revision += 1
         self.last_events = (Event(self.udp_revision, "datagram", self.last_classification),)
         key = self.manager.key(packet.source, packet.destination)
@@ -318,18 +383,27 @@ class Analyzer:
             else:
                 flow = self.udp_flows[key] = {"client": packet.source, "server": packet.destination, "start": self.now,
                                               "time": self.now, "packets": 0, "bytes": {}, "ready": True,
-                                              "observation": self.last_classification, "observations": {}}
+                                              "observation": self.last_classification, "observations": {},
+                                              "first_decision": None, "stable_at": None, "label": None}
         if flow is not None:
             flow["time"] = self.now
             flow["packets"] += 1
             flow["bytes"][packet.source] = flow["bytes"].get(packet.source, 0) + len(packet.payload)
-            # Keep the first identification; otherwise the latest outcome describes the flow.
-            if flow["observation"].status != "identified":
-                flow["observation"] = self.last_classification
-            # Per direction, the same rule: the first identified datagram of each side is kept.
-            previous = flow["observations"].get(packet.source)
-            if previous is None or previous.status != "identified":
-                flow["observations"][packet.source] = self.last_classification
+            latest = self.last_classification
+            if latest.status == "invalidated":
+                # D02: a contradiction in this direction withdraws the identification it had established.
+                flow["observation"] = latest
+                flow["observations"][packet.source] = latest
+            else:
+                # Keep the first identification; otherwise the latest outcome describes the flow.
+                if flow["observation"].status != "identified":
+                    flow["observation"] = latest
+                # Per direction, the same rule: the first identified datagram of each side is kept.
+                previous = flow["observations"].get(packet.source)
+                if previous is None or previous.status != "identified":
+                    flow["observations"][packet.source] = latest
+            if latest.status == "identified":
+                self._decided(flow, (latest.application_protocol or latest.encryption, latest.application))
         self.last_server = flow["server"] if flow is not None else packet.destination
         result = self.last_classification
         return "UDP {}:{} -> {}:{} | {} | {} | {}".format(
@@ -372,14 +446,37 @@ class Analyzer:
                 return "LIMIT: too many tracked connections"
             self.tracked[key] = {"client": source, "server": destination, "isn": packet.sequence,
                                  "time": self.now, "start": self.now, "packets": 1, "bytes": {},
-                                 "ready": False, "fin": {}, "reported": {}}
+                                 "ready": False, "fin": {}, "reported": {},
+                                 "first_decision": None, "stable_at": None, "label": None}
             self.last_server = destination
             return "SYN: waiting for SYN-ACK"
         if state is None:
-            return "SKIP: connection beginning not observed"
+            if self.observation != "midstream" or not packet.payload or flags & SYN or not flags & ACK or flags & URG:
+                return "SKIP: connection beginning not observed"
+            # D05 midstream: no start observed. The first data segment's sender is taken as the client (a role
+            # assumption, recorded as such); its sequence is this direction's origin and its acknowledgement
+            # number is, by TCP semantics, the next byte expected from the peer, hence the peer's origin.
+            if len(self.tracked) >= self.manager.max_connections:
+                return "LIMIT: too many tracked connections"
+            try:
+                self.manager.open_connection(source, destination, packet.sequence, packet.acknowledgement)
+            except (StreamError, ValueError) as error:
+                return "INVALIDATED: " + str(error)
+            state = self.tracked[key] = {"client": source, "server": destination, "isn": None, "time": self.now, "start": self.now,
+                                         "packets": 0, "bytes": {}, "ready": True, "fin": {}, "reported": {},
+                                         "first_decision": None, "stable_at": None, "label": None, "mode": "midstream"}
+            state["packets"] += 1
+            state["bytes"][source] = len(packet.payload)
+            self.last_server = destination
+            self.counts["midstream_connections"] += 1
         state["time"] = self.now
         if key in self.manager.connections:
             self.manager.connections[key]["last_seen"] = self.now
+        if flags & SYN and state.get("mode") == "midstream":
+            # A SYN on a midstream-tracked tuple is a new connection: the coordinator renews the generation and
+            # the ordinary handshake path takes over; the midstream view ends here, explicitly.
+            self.drop(key, "Connection restarted with an observed SYN after a midstream observation")
+            return self.process(self.now, packet)
         if flags & SYN:
             if (source == state["client"] or not flags & ACK or flags & FIN
                     or packet.acknowledgement != (state["isn"] + 1) % MODULUS or packet.payload):
@@ -398,7 +495,19 @@ class Analyzer:
             state["server_isn"] = packet.sequence
             return "Tracking both directions (SYN/SYN-ACK observed)"
         if not state["ready"]:
-            return "SKIP: SYN-ACK not observed"
+            if self.observation != "asymmetric" or source != state["client"] or not packet.payload or not flags & ACK:
+                return "SKIP: SYN-ACK not observed"
+            # D05 asymmetric: the client's SYN and data were observed, the server's SYN-ACK never (one-direction
+            # capture). The client direction is inspected exactly as after a handshake; the server origin is the
+            # client's acknowledgement number. Handshake validation is not relaxed: a later SYN-ACK is still
+            # checked against the client's ISN, and a server segment before any client data is still skipped.
+            try:
+                self.manager.open_connection(source, destination, (state["isn"] + 1) % MODULUS, packet.acknowledgement)
+            except (StreamError, ValueError) as error:
+                self.drop(key)
+                return "INVALIDATED: " + str(error)
+            state["ready"], state["mode"], state["server_isn"] = True, "asymmetric", (packet.acknowledgement - 1) % MODULUS
+            self.counts["asymmetric_connections"] += 1
         if flags & URG or not flags & ACK:
             return self.reject(key, source, "urgent data or missing ACK unsupported")
         # FIN marks the end of one direction; retain state while any gap remains.
@@ -430,6 +539,9 @@ class Analyzer:
             self.drop(key)
             return "INVALIDATED: " + str(error)
         self.last_events = snapshot.events
+        for event in snapshot.events:
+            if event.observation.status == "identified":
+                self._decided(state, (event.observation.application_protocol or event.observation.encryption, event.observation.application))
         if any(event.observation.status == "identified" for event in snapshot.events):
             self._correlate_connect(key, state)
             self._correlate_ldap(key, state)
@@ -480,7 +592,7 @@ def readable_session(record):
 
 def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_byte_limit=4096, udp_hint=None,
             sessions=False, include_hostnames=False, signatures=None, fingerprints=False, heuristics=False, policy=None,
-            certificates=False):
+            certificates=False, observation="handshake", checksums="ignore", continuation=0):
     def retired(source, destination, event):
         if json_output:
             print(json.dumps({'type': 'stream_end', 'source': source, 'destination': destination,
@@ -494,7 +606,9 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
 
     analyzer = Analyzer(tcp_hint=tcp_hint, crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, udp_hint=udp_hint,
                         on_session=session if sessions else None, include_hostnames=include_hostnames, signatures=signatures,
-                        fingerprints=fingerprints, heuristics=heuristics, policy=policy, certificates=certificates)
+                        fingerprints=fingerprints, heuristics=heuristics, policy=policy, certificates=certificates, observation=observation,
+                        continuation=continuation)
+    quality = InputQuality("recorded", checksums)          # D06 input-quality contract of the recorded adapter
     counts = Counter()
     def capture_gap(reason, scope="active_connections", number=None):
         active = len(analyzer.tracked)
@@ -521,16 +635,23 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
             if record.truncated:
                 counts["truncated"] += 1
                 counts["skipped"] += 1
+                quality.truncated()
                 capture_gap("Capture truncation; active stream observations invalidated", number=number)
                 continue
             try:
-                packet = decode_frame(frame, record.linktype)
+                packet = decode_frame(frame, record.linktype, checksums)
             except PacketError as error:
                 counts["skipped"] += 1
+                if quality.rejected(error) is not None and analyzer.note_input(error.kind, error.endpoints):
+                    quality.flows_marked += 1
                 if not events_only:
-                    print(json.dumps({"frame": number, "status": "skipped", "reason": str(error)})
-                          if json_output else "#{} SKIP: {}".format(number, error))
+                    print(json.dumps({"frame": number, "status": "skipped", "reason": str(error), "kind": error.kind})
+                          if json_output else "#{} SKIP ({}): {}".format(number, error.kind, error))
                 continue
+            if packet.checksum_failures:
+                quality.audited(packet.checksum_failures)
+                if analyzer.note_input("checksum", (packet.source, packet.destination)):
+                    quality.flows_marked += 1
             counts["udp" if isinstance(packet, UDPPacket) else "tcp"] += 1
             message = analyzer.process(timestamp, packet)
             if not events_only or analyzer.last_events:
@@ -552,7 +673,7 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
         raise
     analyzer.finish("Capture input EOF before initial message completed")
     counts["sessions"] = analyzer.counts["sessions"]
-    print(json.dumps({"summary": dict(counts)}) if json_output else
+    print(json.dumps({"summary": dict(counts), "input_quality": quality.render(), "content": analyzer.content}) if json_output else
           "\nFrames: {frames}; TCP: {tcp}; UDP: {udp}; skipped: {skipped}; sessions: {sessions}".format(
               frames=counts["frames"], tcp=counts["tcp"], udp=counts["udp"], skipped=counts["skipped"], sessions=counts["sessions"]))
     return counts
@@ -570,17 +691,28 @@ def main():
     parser.add_argument("--heuristics", action="store_true", help="Profile unknown payload prefixes and DNS name shape; advisory evidence only (RISKS.md)")
     parser.add_argument("--policy", help="JSON policy evaluated on every session record (POLICY.md); implies --sessions")
     parser.add_argument("--certificates", action="store_true", help="Read the leaf certificate structure after a TLS 1.2 ServerHello: key, signature, lifetime, self-issued, CA flag, key usage, alternative-name presence, validity at capture time (no names)")
+    parser.add_argument("--observation", choices=OBSERVATION_MODES, default="handshake",
+                        help="D05: handshake (default: SYN and SYN-ACK required), asymmetric (client side only captured), midstream (no start captured; conservative)")
+    parser.add_argument("--checksums", choices=CHECKSUM_POLICIES, default="ignore",
+                        help="D06: ignore (default; host captures precede offload), audit (compute and count, still inspect) or verify (skip failing packets, mark their flows)")
+    parser.add_argument("--continuation", type=int, default=0, metavar="BYTES",
+                        help="D07: after an HTTP/1 or TLS identification keep framing up to BYTES new bytes per direction (later HTTP messages, TLS record kinds); 0 (default) stops at the first message")
+    parser.add_argument("--content-version", choices=[item.version for item in detection_content.releases()], default=None,
+                        help="D08: run the built-in server-name catalog as of an earlier content release (rollback); records pin the version used")
     parser.add_argument("--udp-hint", choices=sorted(VALIDATORS), help="Restrict UDP validation to one candidate")
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to one validated candidate")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
     args = parser.parse_args()
     try:
+        if args.content_version:
+            detection_content.select(args.content_version)
         signatures = SignatureSet.from_path(args.signatures) if args.signatures else None
         policy = Policy.from_path(args.policy) if args.policy else None
         analyze(args.capture, json_output=args.json, events_only=args.events_only, tcp_hint=args.tcp_hint,
                 crc32c_byte_limit=args.crc32c_byte_limit, udp_hint=args.udp_hint, sessions=args.sessions or policy is not None,
                 include_hostnames=args.hostnames, signatures=signatures, fingerprints=args.fingerprints,
-                heuristics=args.heuristics, policy=policy, certificates=args.certificates)
+                heuristics=args.heuristics, policy=policy, certificates=args.certificates, observation=args.observation, checksums=args.checksums,
+                continuation=args.continuation)
     except (OSError, CaptureError, ValueError, PolicyError) as error:
         parser.exit(1, "Capture error: {}\n".format(error))
 

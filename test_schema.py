@@ -64,7 +64,7 @@ class OutputConformanceTests(unittest.TestCase):
                 self.check("session", [json.dumps(row) for row in sessions], 10)
                 if "--policy" in options:
                     self.assertTrue(all("policy" in row for row in sessions))
-            self.assertEqual(list(rows[-1]), ["summary"])
+            self.assertEqual(list(rows[-1]), ["summary", "input_quality", "content"])      # D06 input quality, D08 content pin
 
     def test_live_events_under_every_option(self):
         data = SAMPLE.read_bytes()

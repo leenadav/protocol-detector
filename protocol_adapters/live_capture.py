@@ -19,14 +19,16 @@ import weakref
 from collections import Counter
 from .analyze_pcap import Analyzer, certificate_fields
 from .coordinator import SessionCoordinator
+from .quality import InputQuality
 from .capture_stream import PcapStreamDecoder
-from .link_packets import decode_frame
+from .link_packets import CHECKSUM_POLICIES, decode_frame
 from .packets import CaptureError, PacketError, UDPPacket
 from protocol_engine import SignatureSet
 from protocol_engine.policy import Policy
 from protocol_engine.appid import classify
 from protocol_engine.datagram import VALIDATORS
 from protocol_engine.registry import PARSERS
+from protocol_engine import content as detection_content
 
 
 def capture_command(interface, bpf, executable=None):
@@ -44,8 +46,12 @@ def capture_command(interface, bpf, executable=None):
 class CaptureMonitor:
     def __init__(self, emit, max_connections=128, byte_limit=65536, idle_timeout=60,
                  all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096, include_hostnames=False,
-                 signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False, retain=None):
+                 signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False, retain=None,
+                 observation="handshake", checksums="ignore", continuation=0):
         self.emit = emit
+        self.quality = InputQuality("host", checksums)      # D06: the host adapter's input-quality contract (validates the policy)
+        if checksums not in CHECKSUM_POLICIES:
+            raise ValueError("checksums must be one of " + ", ".join(CHECKSUM_POLICIES))
         reference = weakref.ref(self)
         def retired(source, destination, event):
             # Analyzer must not retain its owner through a bound-method cycle.
@@ -59,7 +65,8 @@ class CaptureMonitor:
         self.analyzer = Analyzer(max_connections, byte_limit, idle_timeout, compact=True, udp_hint=udp_hint, tcp_hint=tcp_hint,
                                  crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, on_session=session,
                                  include_hostnames=include_hostnames, signatures=signatures, fingerprints=fingerprints,
-                                 heuristics=heuristics, policy=policy, certificates=certificates)
+                                 heuristics=heuristics, policy=policy, certificates=certificates, observation=observation,
+                                 continuation=continuation)
         # Stage 3 (A03/A04): the coordinator is the one lifecycle owner for every capture path. It wraps
         # this analyzer, stamps sessions with capture_id/session_id/generation and dedupes finalization.
         # Stage 4 (A03/A07): `retain` (a RetentionBudget) adds the retained reassembly tier a second consumer
@@ -104,15 +111,22 @@ class CaptureMonitor:
         self.counts["captured_bytes"] += len(record.data)
         if record.truncated:
             self.counts["truncated"] += 1
+            self.quality.truncated()
             # Cannot safely associate a truncated packet with one flow: discard
             # all partial state, require new handshakes, retract prior active labels.
             self.invalidate_all("Capture truncation; active stream observations invalidated")
             return
         try:
-            packet = decode_frame(record.data, record.linktype)
-        except PacketError:
+            packet = decode_frame(record.data, record.linktype, self.quality.checksums)
+        except PacketError as error:
             self.counts["unsupported_or_malformed_packets"] += 1
+            if self.quality.rejected(error) is not None and self.analyzer.note_input(error.kind, error.endpoints):
+                self.quality.flows_marked += 1          # D06: the flow never reads as fully inspected
             return
+        if packet.checksum_failures:
+            self.quality.audited(packet.checksum_failures)
+            if self.analyzer.note_input("checksum", (packet.source, packet.destination)):
+                self.quality.flows_marked += 1
         transport = "udp" if isinstance(packet, UDPPacket) else "tcp"
         self.counts[transport] += 1
         with self.analyzer.telemetry.stage("packet"):
@@ -176,6 +190,8 @@ class CaptureMonitor:
                 "active_connections": len(self.analyzer.tracked), "active_udp_flows": len(self.analyzer.udp_flows),
                 "capture_stats": capture_stats,
                 "telemetry": self.analyzer.telemetry.render(),      # stage 7 (A15): counters and histograms, no payload
+                "input_quality": self.quality.render(),             # D06: rejected input by kind, checksum policy, unsupported list
+                "content": self.analyzer.content,                   # D08: the content release in force
                 "scope": "Initial messages only; capture loss may be reported at shutdown"}
 
 
@@ -249,10 +265,11 @@ def readable(event):
 def run_capture(stream, emit, duration=60, max_packets=0, stats_interval=10, process=None,
                 max_connections=128, byte_limit=65536, idle_timeout=60, all_events=False, udp_hint=None, tcp_hint=None,
                 crc32c_byte_limit=4096, include_hostnames=False, signatures=None, fingerprints=False, heuristics=False, policy=None,
-                certificates=False):
+                certificates=False, observation="handshake", checksums="ignore", continuation=0):
     decoder = PcapStreamDecoder()
     monitor = CaptureMonitor(emit, max_connections, byte_limit, idle_timeout, all_events, udp_hint, tcp_hint, crc32c_byte_limit,
-                             include_hostnames, signatures, fingerprints, heuristics, policy, certificates)
+                             include_hostnames, signatures, fingerprints, heuristics, policy, certificates, observation=observation, continuation=continuation,
+                             checksums=checksums)
     diagnostics = CaptureDiagnostics()
     selector = selectors.DefaultSelector()
     start = time.monotonic()
@@ -391,17 +408,27 @@ def main():
     parser.add_argument("--heuristics", action="store_true", help="Profile unknown payload prefixes and DNS name shape; advisory evidence only (RISKS.md)")
     parser.add_argument("--policy", help="JSON policy evaluated on every session record and classification (POLICY.md)")
     parser.add_argument("--certificates", action="store_true", help="Read the leaf certificate structure after a TLS 1.2 ServerHello: key, signature, lifetime, self-issued, CA flag, key usage, alternative-name presence, validity at capture time (no names)")
+    parser.add_argument("--observation", choices=("handshake", "asymmetric", "midstream"), default="handshake",
+                        help="D05: handshake (default), asymmetric (one side captured) or midstream (no start captured; conservative)")
+    parser.add_argument("--checksums", choices=CHECKSUM_POLICIES, default="ignore",
+                        help="D06: ignore (default; host captures precede offload), audit (count failures, still inspect) or verify (skip failing packets, mark flows)")
+    parser.add_argument("--continuation", type=int, default=0, metavar="BYTES",
+                        help="D07: after an HTTP/1 or TLS identification keep framing up to BYTES new bytes per direction; 0 (default) stops at the first message")
+    parser.add_argument("--content-version", choices=[item.version for item in detection_content.releases()], default=None,
+                        help="D08: run the built-in server-name catalog as of an earlier content release (rollback); records pin the version used")
     parser.add_argument("--json", action="store_true", help="JSON Lines metadata; no payload output")
     args = parser.parse_args()
     if (not math.isfinite(args.duration) or args.duration < 0 or args.max_packets < 0
             or not math.isfinite(args.stats_interval) or args.stats_interval < 0
             or not math.isfinite(args.idle_timeout) or args.idle_timeout <= 0
             or not 1 <= args.max_connections <= 1024 or not 64 <= args.byte_limit <= 65536
-            or not 0 <= args.crc32c_byte_limit <= 1048576):
-        parser.error("Invalid limits: connections 1..1024, bytes 64..65536, CRC-32C bytes 0..1048576, finite nonnegative times, idle timeout >0")
+            or not 0 <= args.crc32c_byte_limit <= 1048576 or not 0 <= args.continuation <= args.byte_limit):
+        parser.error("Invalid limits: connections 1..1024, bytes 64..65536, CRC-32C bytes 0..1048576, continuation 0..bytes, finite nonnegative times, idle timeout >0")
     emit = (lambda event: print(json.dumps(event), flush=True)) if args.json else readable
     process = None
     try:
+        if args.content_version:
+            detection_content.select(args.content_version)
         signatures = SignatureSet.from_path(args.signatures) if args.signatures else None
         policy = Policy.from_path(args.policy) if args.policy else None
         if args.interfaces:
@@ -419,11 +446,12 @@ def main():
               "interface": args.interface, "filter": command[-1] if args.interface else None,
               "tcp_hint": args.tcp_hint, "udp_hint": args.udp_hint, "signatures": len(signatures) if signatures else 0,
               "crc32c_byte_limit": args.crc32c_byte_limit,
-              "max_reassembly_buffer_bytes": 4 * args.byte_limit * args.max_connections})
+              "max_reassembly_buffer_bytes": 4 * args.byte_limit * args.max_connections,
+              "content": detection_content.pinned()})
         return run_capture(stream, emit, args.duration, args.max_packets, args.stats_interval, process,
                            args.max_connections, args.byte_limit, args.idle_timeout, args.all_events, args.udp_hint, args.tcp_hint,
                            args.crc32c_byte_limit, args.hostnames, signatures, args.fingerprints, args.heuristics, policy,
-                           args.certificates)
+                           args.certificates, args.observation, args.checksums, continuation=args.continuation)
     except BrokenPipeError:
         return 0
     except (OSError, ValueError, subprocess.SubprocessError) as exc:

@@ -22,8 +22,9 @@ PROFILE = 'TLS 1.2 ECDHE-RSA AES-GCM / TLS 1.3 AEAD key-log POC; no CBC, QUIC, 0
 
 
 class _Connection:
-    def __init__(self, key, client, server, sid, generation, keys):
+    def __init__(self, key, client, server, sid, generation, keys, policy_owner=None):
         self.key, self.client, self.server = key, client, server
+        self.policy_owner = policy_owner
         self.sid, self.generation = sid, generation
         self.tls = TlsConnection(keys, client, server)
         self.outer = {client: Inspector(), server: Inspector()}
@@ -113,6 +114,11 @@ class _Connection:
             row.update(application=effective.app, inner_protocol=layers['inner']['protocol'] if layers['inner'] else None,
                        category=effective.category, app_status=effective.status, reasons=list(effective.reasons),
                        evidence=evidence, note=NOTE)
+        policy = getattr(getattr(self, 'policy_owner', None), 'policy', None)
+        if policy is not None:
+            # D04: the decrypted row's decision is taken on the layered effective verdict with its real
+            # decryption state and identity basis (authenticated plaintext is not peer identity).
+            row['policy'] = policy.evaluate(effective, 'tcp', self.server[1], layers=layers).fields()
         self.row = row
         return row
 
@@ -134,7 +140,7 @@ class Decryptor:
             kind, key = item[0], item[1]
             if kind == 'open':
                 _, _, client, server, sid, generation = item
-                self.connections[key] = _Connection(key, client, server, sid, generation, self.keys)
+                self.connections[key] = _Connection(key, client, server, sid, generation, self.keys, self.coordinator.analyzer)
                 self.counts['opened'] += 1
             elif kind == 'data':
                 connection = self.connections.get(key)

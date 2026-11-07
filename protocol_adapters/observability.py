@@ -9,7 +9,9 @@ Names (the ones the review asks for are all present):
     bytes.new, bytes.replayed, bytes.decrypted, keys.pending, signatures.candidates,
     decryption.auth_failures, capture.gaps, events.dropped, queue.depth, bytes.retained
 Histograms:
-    time_to_verdict_seconds   capture time from first packet to the session record
+    session_lifetime_seconds        capture time from the first packet to the session record (retirement)
+    time_to_first_decision_seconds  capture time from the first packet to the first identification
+    time_to_stable_verdict_seconds  capture time from the first packet to the last label change
     stage_seconds.<name>      wall time of one bounded work stage (packet, tick, decrypt, report)
 """
 import time

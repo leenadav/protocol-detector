@@ -94,6 +94,34 @@ def _signatures_lint(path):
     return 0
 
 
+def _content(as_json):
+    from protocol_engine import content
+    import json as _json
+    current = content.description()
+    problems = content.check()
+    report = {"current": current, "selected": content.selected(),
+              "releases": [item._asdict() for item in content.releases()],
+              "host_provenance": {name: dict(value) for name, value in content.host_provenance().items()},
+              "lock": "ok" if not problems else problems}
+    if as_json:
+        print(_json.dumps(report, indent=2, sort_keys=True))
+        return 0 if not problems else 1
+    print("content release {} (released {}, reviewed {}) digest {}".format(current["version"], current["released"], current["reviewed"], current["digest"]))
+    print("review: " + current["review"])
+    print("components: " + ", ".join("{}={}".format(name, value[:12]) for name, value in sorted(current["components"].items())))
+    print("releases:")
+    for item in content.releases():
+        print("  {} released {} reviewed {}: {}".format(item.version, item.released, item.reviewed, item.note))
+    print("host entries: {} ({}; {})".format(current["host_entries"], content.HOST_BASIS, content.HOST_SOURCE))
+    since = {}
+    for name, value in content.host_provenance().items():
+        since.setdefault(value["since"], []).append(name)
+    for version in sorted(since):
+        print("  since {}: {}".format(version, ", ".join(since[version])))
+    print("lock: " + ("ok" if not problems else "; ".join(problems)))
+    return 0 if not problems else 1
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="protodetect", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -106,6 +134,7 @@ def main(argv=None):
     commands.add_parser("risks", help="Print the flow risk table").add_argument("--json", action="store_true")
     commands.add_parser("demo", help="Offline fixture walk-through").add_argument("--json", action="store_true")
     commands.add_parser("version", help="Print the engine version")
+    commands.add_parser("content", help="Print the detection content releases, provenance and lock state (D08)").add_argument("--json", action="store_true")
     policy = commands.add_parser("policy", help="Validate or evaluate a policy file (POLICY.md)")
     policy_commands = policy.add_subparsers(dest="policy_command", required=True)
     lint = policy_commands.add_parser("lint")
@@ -144,6 +173,8 @@ def main(argv=None):
         match = re.search(r'^version = "([^"]+)"', Path(__file__).with_name("pyproject.toml").read_text(), re.M)
         print("protocol-detector {}".format(match.group(1) if match else "unknown"))
         return 0
+    if args.command == "content":
+        return _content(args.json)
     if args.command == "policy":
         return _policy_lint(args.file, args.strict) if args.policy_command == "lint" else _policy_test(args)
     if args.command == "signatures":
