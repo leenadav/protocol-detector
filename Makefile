@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
+.PHONY: test presentation-test presentation-check content evaluate manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -114,6 +114,10 @@ keylogs:
 
 content:
 	python3 -B tools/check_content.py
+
+# D09: evaluate an independently labelled capture corpus (docs/CORPUS-EVALUATION.md); CORPUS=dir
+evaluate:
+	$(PYTHON) -B tools/evaluate_corpus.py $(CORPUS) --write $(CORPUS)/REPORT.md --json $(CORPUS)/report.json
 
 # Stage 8: synthetic soak (overload, sparse gaps, late keys, slow consumer, worker crashes); needs the decryption extra.
 soak:
