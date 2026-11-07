@@ -475,7 +475,16 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    - **Open (engine lane):** `presentation/requirements-decryption.lock.txt` pins `cffi==2.1.1`,
      which has no Python 3.9 release, so the 3.9 leg fails until the lock carries 3.9 pins
      (cryptography 50.0.2 itself supports 3.9) or the presentation is declared 3.10+.
-   Verified in the cloud sandbox only (Actions billing): see the review request in issue #7.
+   Verified in the cloud sandbox first; GitHub Actions then started jobs again (2026-11-07, run
+   42363643395 on `70eeab3`, real hosted runners). On that run `tests (python 3.9)` failed at the
+   lock install exactly as above (`cffi` 2.1.0 and 2.1.1 require Python >=3.10), after its 721
+   engine tests and the product-integrity step passed. `toolchain-audit` failed on two advisories
+   published after the scanner pins were reviewed and reachable from the pinned gitleaks build:
+   GO-2026-6888 (`andybalholm/brotli`, fixed in v1.2.7) and GO-2026-6865 (`klauspost/compress`,
+   fixed in v1.20.2). Both modules are raised to those releases in `tools/scanners/go.mod` (rule 16
+   refused the change until the scanner lock advanced); govulncheck then reports no reachable
+   vulnerability in either binary, `go mod verify` and `go mod tidy -diff` are clean, and the
+   rebuilt gitleaks still scans the full history clean.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
