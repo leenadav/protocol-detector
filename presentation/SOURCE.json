@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "12cbf6cc3f250dd45103a0c9650932fa53b15da0",
+  "commit": "865323133e85444679ea77f4006e8b5ef106fc2b",
   "branch": "work/v065-stage0",
-  "build_digest": "6852cf798184528c9769d3c4c375151d1b7cb7eb26664dca1251350e35360ec1",
+  "build_digest": "1bca57d4d72587a478bbd51345b6d5eb5dd8a53a278f811ef01f12c5b5deb0c2",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -18,7 +18,7 @@
     "presentation": {
       "root": "presentation",
       "version": "0.66.0",
-      "files": 19
+      "files": 20
     },
     "schemas": {
       "root": "schemas",
@@ -523,6 +523,11 @@
       "sha256": "3f61af047eeb70344bda25bfe21ac07d7f2d2e6e9cbd212f29322501dbc361c8"
     },
     {
+      "path": "presentation/__init__.py",
+      "component": "presentation",
+      "sha256": "c58e150c25a2c411355c46ca1aa598df0af00035fa46a338e44ea2cd90894b20"
+    },
+    {
       "path": "presentation/jobs.py",
       "component": "presentation",
       "sha256": "7ff1e60c7336073e76508f6b7cf41aacf264ab4875c7e637ef975a6464e1e394"
@@ -535,7 +540,7 @@
     {
       "path": "presentation/live_manager.py",
       "component": "presentation",
-      "sha256": "f27a5c1df2cb71283b766af4728d175148c34a4bd6403f159cce13ffe2715b5a"
+      "sha256": "fc4fca57900cc314b7a001897f8cb8ea97bdd7d9ead2477f6072949df1b39b09"
     },
     {
       "path": "presentation/live_smoke_check.py",
@@ -545,7 +550,7 @@
     {
       "path": "presentation/server.py",
       "component": "presentation",
-      "sha256": "ba62c72b688593ed33b3c1ea9e09f4a126320e8afa2d90a0e5cf365785be26a9"
+      "sha256": "279cb710626ead22fe1de9cce08901ba10b2c21771bc6c6d88bbef3868ef29b8"
     },
     {
       "path": "presentation/poc_decryption/__init__.py",
@@ -600,12 +605,12 @@
     {
       "path": "presentation/web/live.js",
       "component": "presentation",
-      "sha256": "3d4fc15e6e2844181caa32e55ad609c8232f42e179ffc2d2c7992026b5579d70"
+      "sha256": "e9fb90d74abe40e771e28dabfa5c961fe78dbd681e80038fb627d0cccede0221"
     },
     {
       "path": "presentation/web/store.js",
       "component": "presentation",
-      "sha256": "ce68765ea7aa37e3063fca7e6bb710640fc3806b014c11e0da04d8f769873cbb"
+      "sha256": "89ef0fb4b2e6a4b410f30cf99d153a2d373d37ff8c988656e1d50df92f323613"
     },
     {
       "path": "presentation/web/styles.css",

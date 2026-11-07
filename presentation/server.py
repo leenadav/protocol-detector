@@ -15,6 +15,8 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parent
 ENGINE = ROOT.parent                    # the one engine source: the repository root (stage 1b, A01)
 sys.path.insert(0, str(ENGINE))         # registers protocol_adapters and protocol_engine for an unpacked checkout
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))       # A01: `jobs`, `live_manager`, `poc_decryption` by plain name when run as `-m protocol_observatory.server`
 import protocol_adapters                 # noqa: E402,F401 - resolves the root adapters once; no other path hack
 from jobs import AdmissionError, JobRunner  # noqa: E402
 MAX_UPLOAD = 8 * 1024 * 1024
@@ -332,6 +334,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(200, self.server.live.interfaces())
         if path == "/api/live/status":
             return self.respond(200, self.server.live.snapshot())
+        if path == "/api/live/state":
+            # A14: control state only; the page reads the event log through /api/live/events cursors.
+            return self.respond(200, self.server.live.state_view())
         if path == "/api/live/events":
             # Stage 2 (A06): cursor read of the versioned event log; bounded and side-effect free.
             query = dict(part.split("=", 1) for part in urlsplit(self.path).query.split("&") if "=" in part)

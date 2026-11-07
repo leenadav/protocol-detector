@@ -331,6 +331,17 @@ deferred. Instance names, connect descriptors, thread and trace identifiers
 are never emitted. Catalog applications `mssql-db` (tcp/1433) and `oracle`
 (tcp/1521). 69 families, 62 automatic, 73 applications, 442 tests.
 
+## A01 / A14 — one installable product, cursor-driven live view
+
+`pip install ".[decryption]"` now installs the engine, the adapters and the Protocol Observatory application
+(`protocol_observatory`, with its web assets) from one wheel; `protocol-observatory` starts the loopback
+server and opens the page, `python -m protocol_observatory.server --port 8765` runs it headless.
+`tools/installed_check.py` proves it: a fresh environment, the wheel, no checkout nearby, then health, the
+page, the demo replay (18 sessions) and the decryption demo (3 decrypted connections) from the installed
+artifact. The live view reads `/api/live/state` and the versioned event log by cursor
+(`/api/live/events?cursor=`), rebuilding from zero on `reset_required` or a new capture id; the legacy
+snapshot endpoint stays for compatibility.
+
 ## D12 — structured unknown reasons and minimized examples
 
 A session that is not an identification now carries `unknown`: per direction a closed code

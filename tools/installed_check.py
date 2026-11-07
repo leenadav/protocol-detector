@@ -1,5 +1,7 @@
-"""Installed-artifact check (stage 8, A16): build the wheel, install it into an empty environment with the
-decryption extra from the hash-pinned lock, and run the presentation suite against the installed engine.
+"""Installed-artifact check (stage 8, A16; A01): build the wheel, install it into an empty environment with
+the decryption extra from the hash-pinned lock, run the presentation suite against the installed engine, and
+start the installed application itself (`python -m protocol_observatory.server`) from a directory with no
+checkout to prove replay, the frontend and decryption all come from the one artifact.
 
 The presentation directory is copied to a temporary location whose parent holds no checkout, so `server.py`'s
 root registration finds nothing and every `protocol_engine`/`protocol_adapters` import must come from the
@@ -22,6 +24,73 @@ ROOT = Path(__file__).resolve().parents[1]
 def run(command, **kwargs):
     print("$ " + " ".join(str(c) for c in command), flush=True)
     return subprocess.run(command, check=True, **kwargs)  # noqa: S603 - fixed argv built here
+
+
+def product_check(python, env_dir, work):
+    import http.client
+    import json
+    import socket
+    import time
+    probe = ("import protocol_observatory, protocol_observatory.server as s; from pathlib import Path;"
+             "assert 'site-packages' in protocol_observatory.__file__, protocol_observatory.__file__;"
+             "assert (Path(s.__file__).parent / 'web' / 'index.html').is_file(); print('installed application ok:', protocol_observatory.__file__)")
+    run([str(python), "-I", "-c", probe], cwd=str(work))
+    scripts = env_dir / ("Scripts" if os.name == "nt" else "bin")
+    launcher = scripts / ("protocol-observatory.exe" if os.name == "nt" else "protocol-observatory")
+    if not launcher.exists():
+        raise SystemExit("console script protocol-observatory was not installed")
+    with socket.socket() as probe_socket:
+        probe_socket.bind(("127.0.0.1", 0))
+        port = probe_socket.getsockname()[1]
+    empty = work / "empty"
+    empty.mkdir(exist_ok=True)
+    server = subprocess.Popen([str(python), "-I", "-m", "protocol_observatory.server", "--port", str(port)],  # noqa: S603
+                              cwd=str(empty), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+    def request(method, path, body=None, headers=None):
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=60)
+        try:
+            connection.request(method, path, body=body, headers=headers or {})
+            response = connection.getresponse()
+            return response.status, response.read()
+        finally:
+            connection.close()
+    try:
+        deadline = time.time() + 30
+        while True:
+            try:
+                status, body = request("GET", "/api/health")
+                if status == 200:
+                    break
+            except OSError:
+                pass
+            if server.poll() is not None or time.time() > deadline:
+                raise SystemExit("installed server did not come up: " + (server.stdout.read() if server.stdout else ""))
+            time.sleep(0.2)
+        health = json.loads(body)
+        status, page = request("GET", "/")
+        assert status == 200 and b"Protocol Observatory" in page, "frontend not served from the installed package"
+        catalog = json.loads(request("GET", "/api/catalog")[1])
+        assert catalog["source"]["build_digest"] == health["build_digest"], "catalog and health disagree on the build"
+        token = json.loads(request("GET", "/api/live/interfaces")[1])["token"]
+        job = json.loads(request("POST", "/api/jobs?kind=demo", headers={"X-Live-Token": token})[1])
+        for _ in range(300):
+            job = json.loads(request("GET", "/api/jobs/" + job["id"])[1])
+            if job["state"] not in ("queued", "running"):
+                break
+            time.sleep(0.2)
+        assert job["state"] == "done" and len(job["result"]["sessions"]) == 18, "demo replay from the installed artifact: " + json.dumps(job)[:300]
+        decrypt = json.loads(request("POST", "/api/decrypt/demo", headers={"X-Live-Token": token})[1])
+        decrypted = decrypt.get("decrypted", (decrypt.get("report") or {}).get("decrypted", 0))
+        assert decrypted >= 1 and "error" not in decrypt, "decryption demo from the installed artifact: " + json.dumps(decrypt)[:300]
+        print("installed product ok: server, frontend, demo replay (18 sessions) and decryption demo ({} decrypted) from the wheel; launcher {}".format(
+            decrypted, launcher.name))
+    finally:
+        server.terminate()
+        try:
+            server.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            server.kill()
 
 
 def main(argv=None):
@@ -53,7 +122,10 @@ def main(argv=None):
         if args.no_extra:
             print("installed check ok (engine only)")
             return 0
-        # 2. The presentation suite against the installed engine (no checkout next to the copy).
+        # 2. A01: the whole product from the installed artifact: the server module, its web assets, the demo
+        #    analysis job, the decryption demo and the console script, from a directory holding no checkout.
+        product_check(python, env_dir, work)
+        # 3. The presentation suite against the installed engine (no checkout next to the copy).
         copy = work / "app" / "presentation"
         shutil.copytree(ROOT / "presentation", copy, ignore=shutil.ignore_patterns("__pycache__", "tests/ui/node_modules"))
         shutil.copytree(ROOT / "schemas", work / "app" / "schemas")

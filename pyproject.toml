@@ -13,8 +13,21 @@ dependencies = []
 # The presentation application's TLS POC decrypts records with cryptography's AEADs; the core needs nothing.
 decryption = ["cryptography==50.0.2"]
 
+[project.scripts]
+# A01: the whole product from one artifact. `protocol-observatory` starts the loopback server and opens the page.
+protocol-observatory = "protocol_observatory.launch:main"
+
 [tool.setuptools]
-packages = ["protocol_engine", "protocol_adapters"]
+# A01: engine, adapters and the presentation application (as `protocol_observatory`) ship in one wheel; the
+# presentation directory keeps its name in the tree and its tests stay out of the artifact.
+packages = ["protocol_engine", "protocol_adapters", "protocol_observatory", "protocol_observatory.poc_decryption"]
+
+[tool.setuptools.package-dir]
+protocol_observatory = "presentation"
+"protocol_observatory.poc_decryption" = "presentation/poc_decryption"
+
+[tool.setuptools.package-data]
+protocol_observatory = ["web/*", "SOURCE.json", "requirements-decryption.txt", "requirements-decryption.lock.txt", "DECRYPTION.md"]
 
 [tool.ruff]
 line-length = 160
