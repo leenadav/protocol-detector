@@ -83,12 +83,13 @@ request:
 
 | Workflow | Job name | Gate |
 |---|---|---|
-| ci | `tests (python 3.9)`, `tests (python 3.11)`, `tests (python 3.13)` | compile, unit/fuzz/property tests, docs numbers, offline replay, coverage matrix |
+| ci | `tests (python 3.9)`, `tests (python 3.11)`, `tests (python 3.13)` | compile, unit/fuzz/property tests, docs numbers, product integrity (build manifest, protocol inventory, no tracked key logs), the presentation suite with the decryption extra under `tools/run_tests_strict.py` (any skip but the two named UI tests fails), offline replay, coverage matrix |
+| ci | `presentation with Node and a real browser (no test may skip)` | the presentation suite with Node 22.22.0 and the lock-pinned Playwright 1.56.1 with Chromium, zero skips allowed; the installed whole-product check (`tools/installed_check.py`) |
 | ci | `behaviour diff against the previous commit` | `tools/compare_engine.py` against the parent (and the pull request base) |
 | ci | `per-commit mutation smoke (second seed, python 3.9)` | second-seed mutation diff and a 100-mutation fuzz pass |
 | ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, and gitleaks 8.30.1 (built from the Go module proxy, verified against the Go checksum database) over the full history with inline allows ignored |
-| ci | `supply chain (SBOM, licence, pins)` | action pins, CycloneDX SBOM, zero-runtime-dependency contract |
-| ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py`, wheel smoke under 3.13 and 3.9 |
+| ci | `supply chain (SBOM, licence, pins)` | action pins, CycloneDX SBOM of the development toolchain, zero-runtime-dependency contract |
+| ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py` (engine and adapter packages, only the `decryption` extra), wheel smoke under 3.13 and 3.9, the complete-product SBOM checked by `tools/check_product_sbom.py` |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
 | ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds |
 | ci | `security requirements gate` | every SR row names an existing test |
@@ -447,6 +448,34 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    verify` reports all modules verified, and `go list -m -u` shows the
    updates Dependabot would propose today (govulncheck v1.9.0, xz v0.5.17).
    Needs GitHub: the Dependabot run itself.
+25. Whole-product integration with the engine/presentation lane (Lee, 2026-11-07; engine
+   v0.65 stages 0-8 and v0.66, merged forward from `e7af436` on `claude/v066-smarthome`, PR #18).
+   - **No silent skip.** `python -m unittest` passes a skipped test (`OK (skipped=2)`, exit 0,
+     reproduced without Node or Playwright), so the presentation suite runs under
+     `tools/run_tests_strict.py`: a skip fails unless its test id is named with `--allow-skip`,
+     and a named test the suite no longer contains fails too. The `tests (python …)` jobs name
+     only the two UI tests; the new `presentation-ui` job installs Node (`actions/setup-node`
+     v6.5.0, `package-manager-cache: false`) and Playwright 1.56.1 from
+     `tools/ui-test-deps/package-lock.json` (sha512 integrity, `npm ci --ignore-scripts`) with
+     its Chromium, and allows no skip. Dependabot's `npm` entry keeps that lock current.
+   - **Product checks in CI and the release gate.** The build manifest, the protocol inventory
+     and the key-log check run in every `tests (python …)` job and in the release build's gate;
+     gitleaks reads the engine's `nss-key-log` rule (scanner lock advanced).
+   - **Complete-product SBOM and provenance.** The `package` job and the release build install
+     the wheel and the hash-pinned decryption lock into an empty environment, remove pip, and
+     generate `product-sbom.cdx.json` from it; `tools/check_product_sbom.py` requires its root
+     to be the project at the wheel's version and its components to be exactly the lock's pins.
+     The release ships that SBOM and `requirements-decryption.lock.txt` in `dist/`, so the
+     checksums and the provenance attestation cover them. `sbom.cdx.json` stays the toolchain's.
+   - **Installed whole-product gate.** `presentation-ui` runs the engine lane's
+     `tools/installed_check.py` with the browser prerequisites present. Open (engine lane): it
+     builds its own wheel rather than taking the package job's, and judges the copied suite by
+     exit status, so a skip there still passes; with `--wheel` and a fail-on-skip mode, the step
+     moves onto the exact distribution the release attests.
+   - **Open (engine lane):** `presentation/requirements-decryption.lock.txt` pins `cffi==2.1.1`,
+     which has no Python 3.9 release, so the 3.9 leg fails until the lock carries 3.9 pins
+     (cryptography 50.0.2 itself supports 3.9) or the presentation is declared 3.10+.
+   Verified in the cloud sandbox only (Actions billing): see the review request in issue #7.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
