@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "6ddc3eabf472e31bc102d72b0da189315836b091",
+  "commit": "9bbc9f482f5b9932ac74cc92126c6edc469b545a",
   "branch": "work/v065-stage0",
-  "build_digest": "31d4a5f0cbc68d1aa0a655f8676239702a784b01cddce9b506ab7ebde5d68733",
+  "build_digest": "0c8c9f21f19cdc856468d1e4c45c8f45553b78b67473858f8d397315bb184f53",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -465,7 +465,7 @@
     {
       "path": "protocol_adapters/sessions.py",
       "component": "adapters",
-      "sha256": "85f2af73b5830da9ebc0ac8820b5ec4cd1d57283fd14f38cd2661ab6aee2e4ee"
+      "sha256": "b92517411db1f57a286a49703ea05b2fb517ff0e6b7f1b520289c25aa820186d"
     },
     {
       "path": "packets.py",
@@ -605,12 +605,12 @@
     {
       "path": "presentation/web/live.js",
       "component": "presentation",
-      "sha256": "e9fb90d74abe40e771e28dabfa5c961fe78dbd681e80038fb627d0cccede0221"
+      "sha256": "3e04b82702c6699655d18ea7a69a2ba21d17162d4bbe710531f3d2153aa640c5"
     },
     {
       "path": "presentation/web/store.js",
       "component": "presentation",
-      "sha256": "89ef0fb4b2e6a4b410f30cf99d153a2d373d37ff8c988656e1d50df92f323613"
+      "sha256": "2c47407a8d6814f7318577fc1ed67e54a64893a85cfae9d0ede771e41b19ba7f"
     },
     {
       "path": "presentation/web/styles.css",

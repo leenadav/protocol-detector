@@ -47,6 +47,7 @@
         const sessions = mergeDecryption(snapshot.sessions || [], snapshot.decryption);
         const retraction = (snapshot.events || []).some(function (e) { return e.type === 'capture_gap'; });
         return Object.assign({}, state, {live: snapshot, decryption: snapshot.decryption || null,
+                                          busy: liveBusy(snapshot.state, state.busy),
                                           quality: retraction ? 'degraded' : state.quality,
                                           retracted: retraction ? state.retracted + 1 : state.retracted,
                                           result: {sessions: sessions, meta: liveMeta(snapshot)}, visible: sessions.length});
@@ -75,6 +76,7 @@
                                          rows.length ? {report: {connections: rows}} : null);
         const summary = (view && view.summary) || control.summary || {};
         return Object.assign({}, state, {live: Object.assign({}, control, {cursor: page.cursor, capture_id: page.capture_id}),
+                                          busy: liveBusy(control.state, state.busy),
                                           liveLog: log, liveCaptureId: page.capture_id === undefined ? state.liveCaptureId : page.capture_id,
                                           liveCursor: page.cursor === undefined ? state.liveCursor : page.cursor,
                                           decryption: decryption,
@@ -90,6 +92,14 @@
       default:
         throw new Error('unknown action ' + action.type);
     }
+  }
+
+  function liveBusy(liveState, current) {
+    // A live run holds `busy` only while it is running or stopping; a stopped or failed run releases it so
+    // the next start (or another mode) is not blocked. An unknown state leaves the flag as it is.
+    if (liveState === 'running' || liveState === 'stopping') return true;
+    if (liveState === 'stopped' || liveState === 'failed' || liveState === 'idle') return false;
+    return current;
   }
 
   function liveMeta(snapshot) {

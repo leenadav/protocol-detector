@@ -96,7 +96,11 @@ $('live-start').onclick = async () => {
     $('live-events-panel').open = true;
     live.shown = true;
     await pollLive();
-  } catch (e) { showError(e.message); $('live-start').disabled = false; }
+  } catch (e) {
+    // A refused or failed start ends the run it began, so the store's busy flag never blocks a retry.
+    if (live.runId !== null) { store.dispatch({type:'run/error', runId: live.runId}); live.runId = null; }
+    showError(e.message); $('live-start').disabled = false;
+  }
   finally { live.busy = false; }
 };
 $('live-stop').onclick = async () => {

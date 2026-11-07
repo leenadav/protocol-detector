@@ -6,11 +6,11 @@
 
 | flow | frames | payload | decode | engine | adapter path | adapter overhead p50 | CPU share decode/engine/adapter |
 |---|---|---|---|---|---|---|---|
-| http_small | 5 | 81 | 17.7 / 24.2 / 38.9 | 48.5 / 66.8 / 75.8 | 274.2 / 342.5 / 389.4 | 208.1 | 0.055 / 0.145 / 0.8 |
-| http_fragmented_32 | 194 | 6051 | 523.9 / 871.7 / 1162.1 | 538.7 / 830.0 / 979.6 | 12202.8 / 15094.7 / 18880.8 | 11140.2 | 0.041 / 0.042 / 0.917 |
-| tls_client_hello | 5 | 77 | 17.5 / 32.6 / 67.4 | 34.5 / 52.6 / 102.3 | 260.4 / 373.5 / 4387.2 | 208.4 | 0.06 / 0.115 / 0.825 |
-| tls_client_hello_16 | 9 | 77 | 31.1 / 50.7 / 61.9 | 42.5 / 49.5 / 63.9 | 586.5 / 618.4 / 641.9 | 512.9 | 0.051 / 0.066 / 0.883 |
-| unknown_payload | 5 | 224 | 19.2 / 25.1 / 40.5 | 6.0 / 7.2 / 11.6 | 221.5 / 261.9 / 286.7 | 196.4 | 0.081 / 0.027 / 0.892 |
+| http_small | 5 | 81 | 13.7 / 21.3 / 42.3 | 38.1 / 58.8 / 76.8 | 220.8 / 278.6 / 320.1 | 169.0 | 0.054 / 0.147 / 0.799 |
+| http_fragmented_32 | 194 | 6051 | 475.0 / 570.4 / 674.9 | 497.2 / 579.4 / 715.8 | 11426.8 / 13264.4 / 14405.8 | 10454.6 | 0.04 / 0.041 / 0.919 |
+| tls_client_hello | 5 | 77 | 13.5 / 18.3 / 30.9 | 26.7 / 42.3 / 60.9 | 206.1 / 286.2 / 343.0 | 165.9 | 0.058 / 0.114 / 0.828 |
+| tls_client_hello_16 | 9 | 77 | 27.8 / 46.0 / 58.5 | 41.2 / 72.1 / 121.7 | 531.2 / 817.9 / 920.1 | 462.2 | 0.048 / 0.073 / 0.879 |
+| unknown_payload | 5 | 224 | 17.0 / 33.2 / 78.4 | 5.4 / 7.5 / 22.4 | 197.5 / 327.8 / 419.3 | 175.2 | 0.086 / 0.027 / 0.888 |
 
 The adapter path includes the engine and reassembly; its overhead is the difference of medians and is a property of the Python adapter, not of the parsers.
 
@@ -81,9 +81,9 @@ The shortest prefix is the engine's own earliest identification of each fixture;
 
 | drain every | packets | events drained | depth max | wait p50 / p99 / max (capture s) | µs per packet |
 |---|---|---|---|---|---|
-| 1 | 1500 | 600 | 1 | 0.0001 / 0.0001 / 0.0 | 43.0 |
-| 25 | 1500 | 600 | 10 | 0.01 / 0.05 / 0.012 | 39.9 |
-| 250 | 1500 | 600 | 100 | 0.1 / 0.5 / 0.1245 | 40.1 |
+| 1 | 1500 | 600 | 1 | 0.0001 / 0.0001 / 0.0 | 41.6 |
+| 25 | 1500 | 600 | 10 | 0.01 / 0.05 / 0.012 | 36.2 |
+| 250 | 1500 | 600 | 100 | 0.1 / 0.5 / 0.1245 | 32.0 |
 
 Wait is measured on the capture clock between enqueue and drain (`queue.wait_seconds`); it grows with the consumer's cadence while the per-packet CPU does not.
 
@@ -92,10 +92,10 @@ Wait is measured on the capture clock between enqueue and drain (`queue.wait_sec
 | state | connections | held bytes / connection | peak bytes / connection |
 |---|---|---|---|
 | syn_only | 1000 | 1012 | 1020 |
-| identified_closed_both_ways | 1000 | 42 | 82 |
-| identified_half_closed | 1000 | 25554 | 25565 |
-| half_message_retained | 1000 | 26526 | 26537 |
-| udp_flow_identified | 1000 | 38 | — |
+| identified_closed_both_ways | 1000 | 42 | 68 |
+| identified_half_closed | 1000 | 6074 | 6095 |
+| half_message_retained | 1000 | 6996 | 7013 |
+| udp_flow_identified | 1000 | 36 | — |
 
 Held bytes are what stays allocated while the connection is tracked; retired connections hold their session record only until the sink consumes it.
 
@@ -103,14 +103,14 @@ Held bytes are what stays allocated while the connection is tracked; retired con
 
 | function | calls / flow | cumulative µs / flow | share |
 |---|---|---|---|
-| sessions.py:_compat_results | 3.0 | 292.2 | 0.416 |
-| sessions.py:feed | 3.0 | 275.3 | 0.392 |
-| sessions.py:feed | 3.0 | 254.5 | 0.362 |
-| sessions.py:open_connection | 1.0 | 211.7 | 0.301 |
-| sessions.py:__init__ | 2.0 | 205.3 | 0.292 |
-| engine.py:feed | 1.0 | 141.3 | 0.201 |
-| analyze_pcap.py:drop | 2.0 | 134.5 | 0.191 |
-| analyze_pcap.py:_tcp_session | 1.0 | 120.7 | 0.172 |
+| sessions.py:_materialize | 3.0 | 306.3 | 0.391 |
+| sessions.py:_compat_rows | 3.0 | 303.3 | 0.387 |
+| sessions.py:__eq__ | 1.0 | 224.7 | 0.287 |
+| sessions.py:feed | 3.0 | 190.6 | 0.243 |
+| sessions.py:feed | 3.0 | 170.1 | 0.217 |
+| engine.py:feed | 1.0 | 159.5 | 0.204 |
+| analyze_pcap.py:drop | 2.0 | 146.7 | 0.187 |
+| analyze_pcap.py:_tcp_session | 1.0 | 131.7 | 0.168 |
 
 Cumulative shares overlap (callers include callees); profiling overhead inflates absolute numbers, the ranking is the point.
 
