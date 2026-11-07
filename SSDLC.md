@@ -458,15 +458,22 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      v6.5.0, `package-manager-cache: false`) and Playwright 1.56.1 from
      `tools/ui-test-deps/package-lock.json` (sha512 integrity, `npm ci --ignore-scripts`) with
      its Chromium, and allows no skip. Dependabot's `npm` entry keeps that lock current.
-   - **Product checks in CI and the release gate.** The build manifest, the protocol inventory
-     and the key-log check run in every `tests (python …)` job and in the release build's gate;
-     gitleaks reads the engine's `nss-key-log` rule (scanner lock advanced).
+   - **Product checks in CI and the release gate.** The build manifest, the protocol inventory,
+     the key-log check, and (since the merge of engine `af91747`) the content lock
+     (`tools/check_content.py`, D08) and the metamorphic sequence relations
+     (`tools/sequence_check.py --iterations 1`, D10) run in every `tests (python …)` job and in
+     the release build's gate, as `make check` runs them; gitleaks reads the engine's
+     `nss-key-log` rule (scanner lock advanced).
    - **Complete-product SBOM and provenance.** The `package` job and the release build install
      the wheel and the hash-pinned decryption lock into an empty environment, remove pip, and
      generate `product-sbom.cdx.json` from it; `tools/check_product_sbom.py` requires its root
      to be the project at the wheel's version and its components to be exactly the lock's pins.
      The release ships that SBOM and `requirements-decryption.lock.txt` in `dist/`, so the
      checksums and the provenance attestation cover them. `sbom.cdx.json` stays the toolchain's.
+     Round 1 found the check accepted conflicting duplicates (the last entry per name won, so
+     `cffi@UNPINNED` then `cffi@2.1.1` passed); a package listed more than once in the SBOM,
+     in any order or spelling, and a package the lock pins more than once (markers are not
+     evaluated) now fail.
    - **Installed whole-product gate.** `presentation-ui` runs the engine lane's
      `tools/installed_check.py` with the browser prerequisites present. Open (engine lane): it
      builds its own wheel rather than taking the package job's, and judges the copied suite by

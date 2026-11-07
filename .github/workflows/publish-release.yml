@@ -137,6 +137,8 @@ jobs:
           python -B tools/build_manifest.py --check presentation/SOURCE.json
           python -B tools/check_inventory.py
           python -B tools/check_no_keylogs.py
+          python -B tools/check_content.py
+          python -B tools/sequence_check.py --iterations 1
       - name: The reported version must equal pyproject.toml, and the tag when there is one
         env:
           REF_TYPE: ${{ github.ref_type }}
