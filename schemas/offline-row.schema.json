@@ -437,6 +437,45 @@
             }
           },
           "description": "Seconds from the first packet to the first identification and to the last label change (decision latency, not lifetime)."
+        },
+        "attribution": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "provider",
+            "kind",
+            "family",
+            "activity",
+            "asserted_by"
+          ],
+          "properties": {
+            "provider": {
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "service",
+                "provider-web"
+              ]
+            },
+            "family": {
+              "type": "string"
+            },
+            "activity": {
+              "enum": [
+                "unobserved",
+                "http-request",
+                "authenticated-plaintext"
+              ]
+            },
+            "asserted_by": {
+              "const": "client-server-name"
+            }
+          },
+          "description": "D03: provider affiliation from the client-asserted server name, the provider's application family, and the activity actually observed; affiliation is never activity or identity."
         }
       },
       "required": [
@@ -730,7 +769,10 @@
             "name",
             "category",
             "status",
-            "basis"
+            "basis",
+            "provider",
+            "affiliation",
+            "activity"
           ],
           "properties": {
             "name": {
@@ -749,6 +791,27 @@
                 "configured_rule",
                 "client_assertion",
                 "none"
+              ]
+            },
+            "provider": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "affiliation": {
+              "enum": [
+                "service",
+                "provider-web",
+                null
+              ]
+            },
+            "activity": {
+              "enum": [
+                "unobserved",
+                "http-request",
+                "authenticated-plaintext",
+                null
               ]
             }
           }

@@ -119,7 +119,11 @@ def layered_view(transport, client, server, verdict=None, server_port=None, clie
         "inner": None if inner is None else {"protocol": _protocol(inner), "app": inner.app, "status": inner.status,
                                              "source": "decrypted", "authenticated": bool(decryption_ok)},
         "application": {"name": effective.app, "category": effective.category, "status": effective.status,
-                        "basis": identity_basis(effective, inner_identified, (outer_client, outer_server))},
+                        "basis": identity_basis(effective, inner_identified, (outer_client, outer_server)),
+                        # D03: affiliation, family and activity stay separate fields; none of them is identity.
+                        "provider": effective.attribution["provider"] if effective.attribution else None,
+                        "affiliation": effective.attribution["kind"] if effective.attribution else None,
+                        "activity": effective.attribution["activity"] if effective.attribution else None},
         "decryption": None if decryption is None else {key: decryption.get(key) for key in ("state", "reason_code", "authenticated_records")},
         "capture_quality": capture_quality,
         "chain": chain,

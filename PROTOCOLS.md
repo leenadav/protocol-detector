@@ -995,16 +995,17 @@ Rules:
 | `dropbox` | `dropbox.com`, `dropboxapi.com`, `dropboxusercontent.com`, `dropboxstatic.com` |
 | `box` | `box.com`, `boxcloud.com`, `box.net` |
 | `icloud` | `icloud.com`, `icloud-content.com` |
-| `github` | `github.com`, `githubusercontent.com`, `githubassets.com`, `github.io` |
+| `github` | `github.com`, `githubusercontent.com`, `githubassets.com` (github.io is tenant hosting and names nobody) |
 | `gitlab` | `gitlab.com` |
 | `atlassian` | `atlassian.net`, `atlassian.com`, `bitbucket.org` |
 | `salesforce` | `salesforce.com`, `force.com` |
 | `notion` | `notion.so`, `notion.site` |
-| `openai-chatgpt` | `openai.com`, `chatgpt.com`, `oaiusercontent.com`, `oaistatic.com` |
+| `openai-chatgpt` | `chatgpt.com`, `chat.openai.com`, `oaiusercontent.com`, `oaistatic.com`; web fronts `openai.com`, `www.openai.com` (provider affiliation only) |
+| `openai-platform` | `api.openai.com`, `platform.openai.com` |
 | `anthropic-claude` | `claude.ai`, `anthropic.com`, `claude.com` |
 | `google-gemini` | `gemini.google.com` |
-| `teamviewer` | `teamviewer.com` |
-| `anydesk` | `anydesk.com`, `net.anydesk.com` |
+| `teamviewer` | `teamviewer.com`; web fronts `teamviewer.com`, `www.teamviewer.com` (provider affiliation only, no remote-control activity asserted) |
+| `anydesk` | `anydesk.com`, `net.anydesk.com`; web fronts `anydesk.com`, `www.anydesk.com` |
 | `amazon` | `amazon.com`, `media-amazon.com`, `ssl-images-amazon.com` |
 | `ebay` | `ebay.com`, `ebayimg.com`, `ebaystatic.com` |
 | `paypal` | `paypal.com`, `paypalobjects.com` |

@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "e7af436ea35e6303533e957e87f7a30a657f1373",
+  "commit": "0b20ff3447b9952f48e1368204a70d9208836ed9",
   "branch": "work/v065-stage0",
-  "build_digest": "25825395f0bcf90a77dddfcb96f8424a3e65d4b3ab3f035f45a19e1da31b8e9e",
+  "build_digest": "d6bd700430e50e4062ff37ee760c227805903f72e50cb3900a5fc9c2ae7a42af",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -45,7 +45,7 @@
     {
       "path": "protocol_engine/appid.py",
       "component": "engine",
-      "sha256": "9cbaa63d9af82b0f8fa56c8b133592483792631c35b1156824f2bfc4f0069a9e"
+      "sha256": "f5c83b9f406b70b5b244fecdb6ffd18a604b3bca2d5525d36a74758888ae8626"
     },
     {
       "path": "protocol_engine/applications.py",
@@ -190,7 +190,7 @@
     {
       "path": "protocol_engine/host_apps.py",
       "component": "engine",
-      "sha256": "26e1325a9a2cd7642ac08398d9944ea3027b3914a2e5221756026d50135f2ada"
+      "sha256": "5fb861ddb3a135c6056a1a1dc49dccc64a67e14d713b66694eb8e8ec6595ad6b"
     },
     {
       "path": "protocol_engine/hpack.py",
@@ -405,7 +405,7 @@
     {
       "path": "protocol_adapters/layers.py",
       "component": "adapters",
-      "sha256": "27dc24ac43576f33700f92948c80444978ad5a6bc4b4b6418f72a9009bba36b5"
+      "sha256": "6eed82e48c8a76894b696d21a3c087e908068c8fe5e2abbcfa88b1af5741097b"
     },
     {
       "path": "protocol_adapters/link_packets.py",
@@ -605,17 +605,17 @@
     {
       "path": "schemas/live-event.schema.json",
       "component": "schemas",
-      "sha256": "1e70389d233746f361f03ce5b7caf896179b50f28d5762c9f13777dc8cbb8175"
+      "sha256": "e028e018a46d41d9763d6e714deed11e65ae6136d44927177966fd3952312853"
     },
     {
       "path": "schemas/offline-row.schema.json",
       "component": "schemas",
-      "sha256": "8aab4bba62ed468287941e83c89335f417d9efd5fa3bfdd893866e6c8eee67e8"
+      "sha256": "52e9cf45c49a846187f979102adb919a0ff96088fe61998e1bb64e4b1f4618fd"
     },
     {
       "path": "schemas/session.schema.json",
       "component": "schemas",
-      "sha256": "9f552e7457638744ca8959e8e33f2601f2f30a6a4010b079e188f64c35dba1da"
+      "sha256": "87999b6c9e62f0f6f4dcb7a0cf82bb8b8d18c8ded2cbfd0f8e2941b84f545d69"
     }
   ]
 }

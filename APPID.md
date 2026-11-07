@@ -158,6 +158,31 @@ LAN 3.3 discovery (`tuya-lan`) and TP-Link Smart Home (`tplink-smarthome`), each
 and fixed-vocabulary evidence only, as catalog applications `lifx-lan`, `tuya-lan` and `tplink-smarthome`.
 The DNS layout no longer rejects multicast DNS responses that compress against an SRV target or NSEC next
 name, ignores the AA bit on mDNS queries as RFC 6762 18.4 requires, and recognises reverse-mapping probes.
-Ported onto the v0.65 architecture as a distinct version: 88 families, 79 automatic, 155 applications,
-731 tests; the behaviour diff against v0.65 lists exactly the inputs these profiles now classify
+Ported onto the v0.65 architecture as a distinct version: 88 families, 79 automatic, 156 applications,
+736 tests; the behaviour diff against v0.65 lists exactly the inputs these profiles now classify
 (docs/BEHAVIOUR-DIFF-V066.md).
+
+## Affiliation, family and activity are three facts (D03)
+
+A client-asserted server name (TLS/QUIC SNI, HTTP Host) can affiliate a session with a provider; it cannot
+show that the provider's service was used. Every verdict therefore carries `attribution` beside `app`:
+
+- `provider`: the catalog provider the name affiliates with (or the whole field is null when the name is
+  under no provider domain: unknown subdomains, shared hosting and tenant domains such as `github.io` name
+  nobody);
+- `kind`: `service` (a name under the provider's service domains; the verdict app is the provider's
+  application, as before) or `provider-web` (an exact public web-front name such as `www.teamviewer.com` or
+  `www.openai.com`: the verdict app stays the carrier, `ssl`/`quic`/`web-browsing`, with the carrier's own
+  characteristics, and the reasons say that no service activity is asserted);
+- `family`: the provider's application subcategory (e.g. `remote-access`, `generative-ai`);
+- `activity`: what was observed on this direction regardless of the name: `unobserved` (a handshake to the
+  name), `http-request` (a plaintext HTTP request to it) or `authenticated-plaintext` (an inner protocol
+  identified in plaintext authenticated with supplied secrets, which is still not peer or product identity);
+- `asserted_by`: always `client-server-name`.
+
+The layered view (`layers.application`) repeats `provider`, `affiliation` and `activity` next to `basis`.
+Configured rules keep precedence (the affiliation is still reported under a configured name), ECH outer
+names are never mapped, and label boundaries are unchanged. OpenAI is three entries since D03: `openai-chatgpt`
+(`chatgpt.com`, `chat.openai.com`, assets), `openai-platform` (`api.openai.com`, `platform.openai.com`) and the
+web front `openai.com`/`www.openai.com` (affiliation only), so neither the platform nor the marketing site
+implies ChatGPT usage.
