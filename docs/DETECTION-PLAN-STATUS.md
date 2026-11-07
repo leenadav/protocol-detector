@@ -3,8 +3,13 @@
 Companion to the "Detection Engine: Correctness, Security and Product Maturity Plan" handed over on PR #18
 (draft, branch `claude/v066-smarthome`). Every row names the commits, the tests, the measurements and the
 limits that remain. States: open, in progress, done (acceptance met), blocked (acceptance input unavailable).
-All verification is Claude-executed on the cloud container with synthetic traffic; GitHub Actions does not
-run on this repository.
+All verification below is Claude-executed on the cloud container with synthetic traffic. GitHub Actions did
+not start jobs on this repository while the program ran; since 2026-11-07 hosted runs do start again, and the
+CI/CD lane reported the integration branch `claude/cicd-next` (b70c56a, which merges engine head 726007d)
+fully green: 13 ci jobs, Python 3.9/3.11/3.13, package, CodeQL, installed check on the exact wheel. That run
+is evidence for the commits it contains, not for later engine commits; the engine branch's own `ci.yml` still
+carries the pre-rewrite stage-1c step that the CI/CD lane's workflow lint rejects (`||` in a run step), which
+the CI/CD lane owns and will rewrite on the engine branch.
 
 | item | state | implementation | verification | remaining |
 |---|---|---|---|---|
@@ -63,7 +68,22 @@ unchanged by the whole program; new facts live in records, telemetry and tools).
 proved the installed artifact after A01.
 
 What this program does not claim: no independent accuracy figure (D09 blocked), no production latency,
-throughput, capacity or long-run soak claim (D11 numbers are local; docs/SOAK-V065.md is a bounded synthetic
-soak), no GitHub Actions run (Actions does not run on this repository), and the D11 findings
-(`sessions._compat_results`, per-direction stream setup) are recorded, not yet acted on. The independent
-review of the current content release and of these commits is pending (PR #18, issue #2).
+throughput, capacity, SLO or long-run soak claim (D11 numbers are local; docs/SOAK-V065.md is a bounded
+synthetic soak), and no hosted-CI claim for commits after the ones the integration branch merged (see the
+header). The D11 findings were acted on in `9bbc9f4` (the follow-up section above); the remaining per-flow
+adapter cost is reassembly and lifecycle work in Python, measured, not optimized. The independent review of
+the current content release and of the whole range is pending (PR #18, issue #2); the follow-up review of
+2026-11-07 on `9bbc9f4` found the live-restart P2 that the next section records.
+
+## Follow-up review of 2026-11-07 on 9bbc9f4
+
+- P2 (live capture cannot restart after completion): `run/start` set `busy` and neither `live/events` nor
+  `live/snapshot` released it on `stopped`/`failed`, and a refused start never dispatched `run/error`. Fixed:
+  the store's `liveBusy()` ties `busy` to the live run's state on both paths (running/stopping hold it,
+  stopped/failed/idle release it, an unknown state leaves it, a page for an older run changes nothing) and
+  `live.js` dispatches `run/error` when a start fails. `tests/ui/store.test.js` case 6 holds the reviewer's
+  reproduction, the retry, the failed start and the legacy snapshot path.
+- Not in this head: the Mac checkout's "Clear sessions & reset capture" control and the frontend-only
+  unknown-to-port/transport labels. That checkout was not pushed to this repository, so they could not be
+  ported here; once pushed (or described), they are to be integrated on top of the cursor path with the
+  local log reset on a new capture id (`liveCaptureId`/`liveCursor` in the store).

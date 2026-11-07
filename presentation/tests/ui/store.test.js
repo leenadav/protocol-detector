@@ -120,4 +120,32 @@ function freshStore() {
   assert.strictEqual(store.getState().liveLog.length, 1);
   void demo;
 }
+// 6. A completed or failed live run releases `busy` on both the cursor path and the snapshot path, so a
+//    retry is possible; a running run keeps it; a page for an older run changes nothing; a failed start
+//    (run/error) releases it too.
+{
+  const page = (state, cursor) => ({capture_id: 'demo', cursor: cursor, reset_required: false, events: [],
+                                    view: {sessions: [], quality: 'intact', retracted_total: 0, summary: {}}});
+  const store = freshStore();
+  let runId = store.dispatch({type: 'run/start', mode: 'live'}).runId;
+  assert.strictEqual(store.getState().busy, true);
+  store.dispatch({type: 'live/events', runId, control: {state: 'running'}, page: page('running', 1)});
+  assert.strictEqual(store.getState().busy, true);
+  store.dispatch({type: 'live/events', runId, control: {state: 'stopped'}, page: page('stopped', 2)});
+  assert.strictEqual(store.getState().busy, false);                      // the reviewer's reproduction
+  runId = store.dispatch({type: 'run/start', mode: 'live'}).runId;        // retry is accepted
+  store.dispatch({type: 'live/events', runId, control: {state: 'failed', error: 'tcpdump exited'}, page: page('failed', 1)});
+  assert.strictEqual(store.getState().busy, false);
+  runId = store.dispatch({type: 'run/start', mode: 'live'}).runId;
+  store.dispatch({type: 'live/events', runId: runId - 1, control: {state: 'stopped'}, page: page('stopped', 9)});
+  assert.strictEqual(store.getState().busy, true);                       // a stale page never releases the new run
+  store.dispatch({type: 'run/error', runId});                             // a refused start
+  assert.strictEqual(store.getState().busy, false);
+  const legacy = freshStore();
+  const legacyRun = legacy.dispatch({type: 'run/start', mode: 'live'}).runId;
+  legacy.dispatch({type: 'live/snapshot', runId: legacyRun, snapshot: {state: 'running', sessions: [], events: [], summary: {}}});
+  assert.strictEqual(legacy.getState().busy, true);
+  legacy.dispatch({type: 'live/snapshot', runId: legacyRun, snapshot: {state: 'stopped', sessions: [], events: [], summary: {}}});
+  assert.strictEqual(legacy.getState().busy, false);
+}
 console.log('store tests ok');
