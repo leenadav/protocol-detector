@@ -16,8 +16,10 @@
   function initialState() {
     return {catalog: null, mode: 'idle', runId: 0, result: null, visible: 0, view: 'overview', filter: 'all',
             timer: null, busy: false, selected: null, lastFocus: null, sourceName: 'Synthetic demonstration',
-            live: null, decryption: null, stale: 0, retracted: 0, quality: 'intact'};
+            live: null, decryption: null, stale: 0, retracted: 0, quality: 'intact',
+            liveLog: [], liveCaptureId: null, liveCursor: 0};
   }
+  const LIVE_LOG_LIMIT = 4000;
 
   function reducer(state, action) {
     switch (action.type) {
@@ -48,6 +50,37 @@
                                           quality: retraction ? 'degraded' : state.quality,
                                           retracted: retraction ? state.retracted + 1 : state.retracted,
                                           result: {sessions: sessions, meta: liveMeta(snapshot)}, visible: sessions.length});
+      }
+      case 'live/events': {
+        // A14: the live view is built from the versioned event log read by cursor and the server's reduced
+        // session view (identical whether built live or replayed), never from the legacy snapshot. A page for
+        // another run is stale; a new capture id or reset_required empties the local log before applying.
+        if (action.runId !== state.runId) return Object.assign({}, state, {stale: state.stale + 1});
+        const page = action.page || {}, control = action.control || {}, view = page.view || null;
+        const fresh = page.capture_id !== state.liveCaptureId || page.reset_required;
+        let log = fresh ? [] : state.liveLog;
+        const incoming = (page.events || []).map(function (e) {
+          return Object.assign({sequence: e.sequence, type: e.kind, quality: e.quality, reason_code: e.reason_code}, e.payload || {});
+        });
+        if (incoming.length) {
+          log = log.concat(incoming);
+          if (log.length > LIVE_LOG_LIMIT) log = log.slice(log.length - LIVE_LOG_LIMIT);
+        }
+        const latestDecryption = incoming.filter(function (e) { return e.type === 'decryption'; }).pop();
+        const decryption = latestDecryption || (fresh ? null : state.decryption);
+        const views = view ? view.sessions : [];
+        const rows = views.map(function (v) { return v.decryption; }).filter(Boolean);
+        const sessions = mergeDecryption(views.filter(function (v) { return v.session && v.status !== 'retracted'; })
+                                              .map(function (v) { return Object.assign({id: v.id}, v.session); }),
+                                         rows.length ? {report: {connections: rows}} : null);
+        const summary = (view && view.summary) || control.summary || {};
+        return Object.assign({}, state, {live: Object.assign({}, control, {cursor: page.cursor, capture_id: page.capture_id}),
+                                          liveLog: log, liveCaptureId: page.capture_id === undefined ? state.liveCaptureId : page.capture_id,
+                                          liveCursor: page.cursor === undefined ? state.liveCursor : page.cursor,
+                                          decryption: decryption,
+                                          quality: view ? view.quality : state.quality,
+                                          retracted: view ? view.retracted_total : state.retracted,
+                                          result: {sessions: sessions, meta: liveMeta({summary: summary})}, visible: sessions.length});
       }
       case 'set': {
         const next = Object.assign({}, state);

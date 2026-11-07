@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content evaluate sequences sequences-extended manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy
+.PHONY: test presentation-test presentation-check content evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -144,6 +144,10 @@ keylogs:
 
 content:
 	python3 -B tools/check_content.py
+
+# D11: separated performance measurements (CPU by layer, bytes to identification, queue wait, memory); local numbers only
+perf-profile:
+	$(PYTHON) -B tools/perf_profile.py --write docs/PERF-PROFILE-V066.md --json docs/PERF-PROFILE-V066.json
 
 # D10: metamorphic sequence relations over the Analyzer (segmentation, reordering, conflicts, interleaving, FIN order, reuse, expiry)
 sequences:

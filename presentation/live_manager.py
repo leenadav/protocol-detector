@@ -215,6 +215,20 @@ class LiveManager:
                     'sessions_total': self.session_count, 'retained_sessions': len(self.sessions),
                     'capture_id': self.capture_id, 'cursor': self.log.snapshot()['cursor'] if self.log else 0}
 
+    def state_view(self):
+        """A14: the control state alone (no events, sessions or reports); side-effect free, cheap to poll.
+
+        The live page combines it with cursor reads of the event log (`events_since`); the legacy `snapshot`
+        stays for compatibility and tests.
+        """
+        with self.lock:
+            return {'state': self.state, 'interface': self.interface, 'error': self.error, 'run_id': self.capture_id,
+                    'capture_id': self.capture_id,
+                    'lease_seconds_left': max(0, int(30 - (time.monotonic() - self.lease))) if self.state == 'running' else None,
+                    'summary': self.summary, 'events_total': self.sequence, 'sessions_total': self.session_count,
+                    'cursor': self.log.snapshot()['cursor'] if self.log else 0,
+                    'decryption_summary': ({k: self.decryption.get(k) for k in ('provisional', 'capture_quality')} | {'decrypted': (self.decryption.get('report') or {}).get('decrypted')}) if isinstance(self.decryption, dict) else None}
+
     def events_since(self, cursor=0, limit=500):
         """Stage 2 (A06): cursor read of the versioned log plus the reduced session view.
 
@@ -238,4 +252,4 @@ class LiveManager:
                 'sessions': [dict(id=sid, **{k: v for k, v in view.items() if k != 'classifications'},
                                   classifications=len(view['classifications']))
                              for sid, view in state['sessions'].items()],
-                'errors': state['errors'], 'last_sequence': state['last_sequence']}
+                'errors': state['errors'], 'last_sequence': state['last_sequence'], 'summary': state.get('summary')}

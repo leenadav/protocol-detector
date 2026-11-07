@@ -139,6 +139,51 @@ class PublicPathTests(unittest.TestCase):
         self.assertIsNone(record.get("hostname"))
         self.assertNotIn("fingerprints", record)
 
+    def test_invalidation_binds_every_later_datagram_of_the_connection(self):
+        """Review round 2 (P1): a PING/ACK/PADDING-only Initial, an unopenable Initial or another family on the tuple
+        never revives a connection a CRYPTO contradiction invalidated; the record stays invalidated."""
+        from protocol_adapters.protocol_fixtures import DNS
+        analyzer, records, _ = analyzer_with_records()
+        feed(analyzer, 0.0, A, initial(0))
+        feed(analyzer, 0.1, A, initial(1))
+        changed = bytearray(CLIENT_HELLO)
+        changed[CUT + 3] ^= 0x55
+        self.assertEqual(feed(analyzer, 0.2, A, initial(1, pieces=crypto_frames(bytes(changed), (CUT,)))).status, "invalidated")
+        ping = feed(analyzer, 0.3, A, protect(V1, DCID, b"", b"\x01"))                       # PING only, no CRYPTO
+        self.assertEqual((ping.status, ping.hostname), ("invalidated", None))
+        self.assertEqual({e.field: e.value for e in ping.evidence}["crypto_assembly"], "conflict")
+        self.assertEqual(feed(analyzer, 0.4, A, protect(V1, DCID, b"", b"\x02\x00\x00\x00\x00")).status, "invalidated")   # ACK only
+        self.assertEqual(feed(analyzer, 0.5, A, protect(V1, DCID, b"", b"\x00" * 8)).status, "invalidated")                  # PADDING only
+        damaged = bytearray(initial(0))
+        damaged[-1] ^= 0xff                                                                   # AEAD tag broken: cannot be opened
+        self.assertEqual(feed(analyzer, 0.6, A, bytes(damaged)).status, "invalidated")
+        other = feed(analyzer, 0.7, A, DNS)                                                   # another family on the same tuple
+        self.assertEqual(other.status, "identified")                                          # reported as an event ...
+        analyzer.finish("eof")
+        record = records[0]
+        self.assertEqual((record["engine_status"], record["app"]), ("invalidated", "not-applicable"))   # ... never as the verdict
+        self.assertIsNone(record.get("hostname"))
+        # A fresh flow on the tuple after the first ended starts clean.
+        analyzer2, records2, _ = analyzer_with_records()
+        feed(analyzer2, 0.0, A, initial(0))
+        feed(analyzer2, 0.1, A, initial(1, pieces=crypto_frames(bytes(changed), (CUT,))))
+        analyzer2.finish("eof")
+        clean = feed(analyzer2, 1.0, A, protect(V1, DCID, b"", b"\x01"))
+        self.assertEqual(clean.status, "identified")
+
+    def test_assembler_conflict_marker_query(self):
+        store = QuicAssembler()
+        self.assertFalse(store.conflicted(DCID, "s", V1, 0.0))
+        store.add(DCID, [(0, CLIENT_HELLO[:CUT])], "s", V1, 0.0)
+        changed = bytearray(CLIENT_HELLO[:CUT])
+        changed[3] ^= 0x55
+        self.assertEqual(store.add(DCID, [(0, bytes(changed))], "s", V1, 0.1)[0], "conflict")
+        self.assertTrue(store.conflicted(DCID, "s", V1, 0.2))
+        self.assertFalse(store.conflicted(DCID, "other", V1, 0.2))                            # another scope is untouched
+        self.assertTrue(store.conflicted(DCID, "s", V1, 50.0))                                # touched: still inside the idle window
+        store.reset("s")
+        self.assertFalse(store.conflicted(DCID, "s", V1, 50.1))                               # the host ended the flow
+
     def test_tuple_reuse_after_expiry_starts_clean(self):
         analyzer, records, _ = analyzer_with_records()
         self.assertEqual(feed(analyzer, 0.0, A, initial(0)).hostname, None)

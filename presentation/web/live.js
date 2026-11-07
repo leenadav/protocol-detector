@@ -1,5 +1,5 @@
 'use strict';
-const live = {token:null, timer:null, shown:false, busy:false, runId:null};
+const live = {token:null, timer:null, shown:false, busy:false, runId:null, cursor:0, captureId:null, latest:null, events:[]};
 async function liveInterfaces() {
   try {
     const info = await api('/api/live/interfaces');
@@ -10,20 +10,34 @@ async function liveInterfaces() {
     $('live-start').disabled = !info.available || !info.interfaces.length;
     if (!info.available) $('live-note').textContent = 'tcpdump was not found. Install it before using live capture.';
     await initialization;
-    const current = await api('/api/live/status');
+    const current = await api('/api/live/state');
     if (current.interface) {
       clearTimeout(live.timer);
       await pollLive();
     }
   } catch (e) { $('live-note').textContent = e.message; }
 }
-function renderLive(data) {
-  // Stage 6 (A14): the snapshot is applied through the store under the live run's identity; a snapshot
-  // that arrives after another run started is counted as stale and never rendered.
+async function readLivePage() {
+  // A14: cursor read of the versioned event log; a reset_required answer (events no longer retained) or a
+  // new capture id starts again from cursor 0 so the page never shows a window with a hole.
+  let page = await api('/api/live/events?cursor='+live.cursor+'&limit=500');
+  if (page.reset_required || (live.captureId !== null && page.capture_id !== live.captureId)) {
+    live.cursor = 0;
+    page = await api('/api/live/events?cursor=0&limit=500');
+    page.reset_required = true;
+  }
+  live.captureId = page.capture_id;
+  live.cursor = page.cursor || 0;
+  return page;
+}
+function renderLive(control, page) {
+  // A14: control state and the cursor page are applied through the store under the live run's identity;
+  // a page that arrives after another run started is counted as stale and never rendered.
   if (live.runId === null) live.runId = beginRun('live', 'Live capture');
   const before = store.getState().stale;
-  store.dispatch({type:'live/snapshot', runId: live.runId, snapshot: data});
+  store.dispatch({type:'live/events', runId: live.runId, control: control, page: page});
   if (store.getState().stale !== before) return;
+  const data = Object.assign({}, control, {events: store.getState().liveLog, decryption: store.getState().decryption});
   live.latest = data;
   const running = ['running','stopping'].includes(data.state);
   $('live-status').textContent = data.state;
@@ -52,13 +66,14 @@ function renderLive(data) {
 }
 async function pollLive() {
   try {
-    const data = await api('/api/live/status');
-    if (['running','stopping'].includes(data.state) && data.run_id && live.token) {
-      // Stage 6 (A08): reading status keeps nothing alive; the heartbeat names the run this tab watches.
-      api('/api/live/heartbeat',{method:'POST',headers:{'Content-Type':'application/json','X-Live-Token':live.token},body:JSON.stringify({run_id:data.run_id})}).catch(()=>{});
+    const control = await api('/api/live/state');
+    if (['running','stopping'].includes(control.state) && control.run_id && live.token) {
+      // Stage 6 (A08): reading state keeps nothing alive; the heartbeat names the run this tab watches.
+      api('/api/live/heartbeat',{method:'POST',headers:{'Content-Type':'application/json','X-Live-Token':live.token},body:JSON.stringify({run_id:control.run_id})}).catch(()=>{});
     }
-    renderLive(data);
-    if (['running','stopping'].includes(data.state)) live.timer = setTimeout(pollLive,1000);
+    const page = await readLivePage();
+    renderLive(control, page);
+    if (['running','stopping'].includes(control.state)) live.timer = setTimeout(pollLive,1000);
   } catch (e) {
     showError('Live status unavailable. Capture stops automatically after 30 seconds without polling. '+e.message);
     live.timer = setTimeout(pollLive,2000);
@@ -75,6 +90,7 @@ $('live-start').onclick = async () => {
     const duration = Number($('live-duration').value);
     if(keylog && duration > 120) throw new Error('Capture with decryption supports up to 2 minutes. Select a shorter duration.');
     live.runId = beginRun('live', 'Live capture');
+    live.cursor = 0; live.captureId = null;
     await api('/api/live/start',{method:'POST',headers:{'Content-Type':'application/json','X-Live-Token':live.token},body:JSON.stringify({interface:$('live-interface').value,duration,scope:$('live-scope').value,...(keylog?{keylog_path:keylog}:{})})});
     $('error').hidden = true;
     $('live-events-panel').open = true;
@@ -105,9 +121,9 @@ function openLiveDetail(sequence) {
 const chainOf = record => Store.selectors.chain(record).join(' → ');
 const basisOf = record => Store.selectors.basis(record);
 function renderLiveLogs(data) {
-  const decrypted = data.decryption ? data.decryption.report.connections : [];
+  const decrypted = data.decryption && data.decryption.report ? data.decryption.report.connections : [];
   const rows = decrypted.map(row => ({...row,sequence:'TLS-'+JSON.stringify([row.client,row.server]),type:'decryption',event:(row.version || 'TLS')+' decryption',source:row.client,destination:row.server,app:(row.layers && row.layers.application && row.layers.application.name) || row.application || 'Not determined',protocol:chainOf(row) || 'tls',basis:basisOf(row),reason:row.reason || (row.reasons || []).join(' · ')}));
-  live.events = rows.concat(data.events.slice().reverse());
+  live.events = rows.concat((data.events || []).filter(e => e.type !== 'session' && e.type !== 'summary' && e.type !== 'decryption').slice().reverse());
   syncApplicationFilter($('live-app-filter'),live.events.map(e=>e.app || e.protocol || 'Not determined'));
   const app=$('live-app-filter').value;
   const visible=live.events.filter(e=>app==='all'||(e.app || e.protocol || 'Not determined')===app);

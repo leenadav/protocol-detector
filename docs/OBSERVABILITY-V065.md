@@ -17,6 +17,8 @@ byte totals and durations.
 | `capture.gaps` | counter | coordinator | capture loss/truncation events |
 | `events.dropped` | counter | coordinator | consumer-queue overflows (bounded queue) |
 | `queue.depth` | gauge | coordinator (per tick) | consumer events waiting to be drained |
+| `queue.wait_seconds` | histogram | coordinator (per drained event) | D11: capture-clock time an event waited between enqueue and the consumer's drain; a property of the consumer's cadence, separate from engine CPU |
+| `queue.drained` | counter | coordinator | D11: consumer events handed out |
 | `sessions.<status>` | counter | Analyzer | session records by verdict status |
 | `session_lifetime_seconds` | histogram | Analyzer | capture time from the first packet to the session record (retirement); this is lifetime, not decision latency |
 | `time_to_first_decision_seconds` | histogram | Analyzer | capture time from the first packet to the first identification (TCP: first identified event; UDP: first identified datagram); session records carry `decision.first_seconds` |

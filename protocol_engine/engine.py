@@ -46,6 +46,7 @@ class Inspector:
         self._prefix = bytearray()
         self._parser = None
         self._candidate = None
+        self._resolved_family = None   # D12: family a text/TPKT route resolved to before it finished
         self._terminal = False
         self.correlation = None   # the identifying parser's private correlation metadata (e.g. an LDAP message id); never emitted
         self.boundary = None      # stream offset where a terminal identified message ended; hosts that retain bytes replay from here
@@ -59,6 +60,13 @@ class Inspector:
 
     @property
     def candidate(self):
+        return self._candidate
+
+    @property
+    def resolved_family(self):
+        """D12: the family behind this direction's outcome: the candidate, or what a text/TPKT route resolved to."""
+        if self._candidate in ("text", "git_text", "tpkt"):
+            return self._resolved_family if self._resolved_family not in (None, "text") else None
         return self._candidate
 
     def _signature(self, family, contexts):
@@ -107,6 +115,9 @@ class Inspector:
     def _finish(self, observation, kind="updated"):
         self._terminal = True
         self._continuing = False
+        if self._parser is not None and self._candidate in ("text", "git_text", "tpkt"):
+            # D12: remember the family a text/TPKT route resolved to, so a structured reason can name it.
+            self._resolved_family = getattr(self._parser, "family", None)
         self._parser = None
         self._prefix.clear()
         return self._publish(observation, kind)

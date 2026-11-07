@@ -76,6 +76,17 @@ class HTTPTests(unittest.TestCase):
         self.assertIn(b"Protocol Observatory", body)
         self.assertIn("frame-ancestors 'none'", headers["Content-Security-Policy"])
 
+    def test_live_state_and_event_log_are_served_without_a_token(self):
+        status, _, body = self.request('GET', '/api/live/state')
+        self.assertEqual(status, 200)
+        control = json.loads(body)
+        self.assertEqual(control['state'], 'idle')
+        self.assertNotIn('events', control)
+        status, _, body = self.request('GET', '/api/live/events?cursor=0&limit=10')
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)['events'], [])
+        self.assertEqual(self.request('GET', '/api/live/events?cursor=abc')[0], 400)
+
     def test_live_controls_require_token_and_validate_interface(self):
         self.assertEqual(self.request('POST', '/api/live/start', b'{}')[0], 403)
         status, _, body = self.request('GET', '/api/live/interfaces')

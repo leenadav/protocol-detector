@@ -135,9 +135,17 @@ def component_digests(version=None):
     })
 
 
+_DIGESTS = {}
+
+
 def digest(version=None):
-    components = component_digests(version)
-    return _hash([components[name] for name in sorted(components)])[:16]
+    """Content digest for a release; cached per process (the tables of a release never change at run time)."""
+    version = CURRENT if version is None else version
+    cached = _DIGESTS.get(version)
+    if cached is None:
+        components = component_digests(version)
+        cached = _DIGESTS[version] = _hash([components[name] for name in sorted(components)])[:16]
+    return cached
 
 
 def description(version=None):
@@ -225,4 +233,8 @@ def check(path=LOCK_PATH):
         changed = sorted(name for name, value in current["components"].items() if lock.get("components", {}).get(name) != value)
         problems.append("content changed ({}) without a new release entry: add a Release to protocol_engine/content.py HISTORY, "
                         "then run tools/check_content.py --update".format(", ".join(changed) or "digest"))
+    elif lock.get("components") != current["components"] or lock.get("host_entries") != current["host_entries"]:
+        # The aggregate agrees but the lock's own metadata does not: a hand-edited or stale lock file.
+        problems.append("content lock metadata is inconsistent with the tables (per-component digests or host_entries differ while "
+                        "the aggregate digest matches): regenerate it with tools/check_content.py --update")
     return problems

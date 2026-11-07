@@ -70,4 +70,54 @@ function freshStore() {
   assert.throws(() => store.dispatch({type: 'run/start', mode: 'bogus'}));
   assert.throws(() => store.dispatch({type: 'nope'}));
 }
+// 5. A14: the live view is built from cursor pages of the event log and the server's reduced view.
+{
+  const envelope = (sequence, kind, payload, extra) => Object.assign({sequence, kind, payload, quality: 'intact', reason_code: null}, extra || {});
+  const view = (over) => Object.assign({quality: 'intact', retracted_total: 0, errors: [], last_sequence: 2, summary: {counts: {packets: 7}},
+    sessions: [{id: 'abc', status: 'final', generation: 0, revision: 1, session: session(), classifications: 1, decryption: null, retracted_by: null}]}, over || {});
+  const store = freshStore();
+  const run = store.dispatch({type: 'run/start', mode: 'live'}).runId;
+  store.dispatch({type: 'live/events', runId: run, control: {state: 'running', run_id: 'cap1', summary: {counts: {packets: 7}}},
+                  page: {capture_id: 'cap1', cursor: 2, reset_required: false, view: view(),
+                         events: [envelope(1, 'classification', {status: 'identified', app: 'ssl'}), envelope(2, 'session', session())]}});
+  let state = store.getState();
+  assert.strictEqual(state.liveLog.length, 2);
+  assert.strictEqual(state.liveCursor, 2);
+  assert.strictEqual(Store.selectors.metrics(state).sessions, 1);
+  assert.strictEqual(state.result.meta.frames, 7);
+  // the next page appends; a re-polled page is applied by sequence (the server never repeats a cursor window)
+  store.dispatch({type: 'live/events', runId: run, control: {state: 'running', run_id: 'cap1'},
+                  page: {capture_id: 'cap1', cursor: 3, reset_required: false, view: view({last_sequence: 3}), events: [envelope(3, 'classification', {status: 'malformed'})]}});
+  assert.strictEqual(store.getState().liveLog.length, 3);
+  // a decoder row in the reduced view joins its session (one view); the latest decryption event is kept
+  const row = {client: ['192.0.2.1', 50000], server: ['198.51.100.2', 443], status: 'decrypted', session_id: 'abc', generation: 0,
+               layers: {chain: ['tls', 'http/1.1', 'webdav'], application: {name: 'webdav', basis: 'authenticated_plaintext', category: 'collaboration'}, inner: {protocol: 'http/1.1'}}};
+  store.dispatch({type: 'live/events', runId: run, control: {state: 'running', run_id: 'cap1'},
+                  page: {capture_id: 'cap1', cursor: 4, reset_required: false, view: view({sessions: [Object.assign(view().sessions[0], {decryption: row})]}),
+                         events: [envelope(4, 'decryption', {report: {connections: [row], decrypted: 1}})]}});
+  state = store.getState();
+  assert.strictEqual(Store.selectors.sessions(state)[0].app, 'webdav');
+  assert.strictEqual(state.decryption.report.decrypted, 1);
+  // reset_required empties the local log before applying; a retracted view session is gone and quality degrades
+  store.dispatch({type: 'live/events', runId: run, control: {state: 'running', run_id: 'cap1'},
+                  page: {capture_id: 'cap1', cursor: 6, reset_required: true,
+                         view: view({quality: 'degraded', retracted_total: 1, sessions: [Object.assign(view().sessions[0], {status: 'retracted'})]}),
+                         events: [envelope(5, 'capture_gap', {reason: 'loss'}, {quality: 'degraded'}), envelope(6, 'classification', {status: 'unknown'})]}});
+  state = store.getState();
+  assert.strictEqual(state.liveLog.length, 2);
+  assert.strictEqual(state.quality, 'degraded');
+  assert.strictEqual(state.retracted, 1);
+  assert.strictEqual(Store.selectors.metrics(state).sessions, 0);
+  assert.strictEqual(state.decryption, null);
+  // a new capture id starts a fresh log; a page for an older run is counted stale and changes nothing
+  store.dispatch({type: 'live/events', runId: run, control: {state: 'running', run_id: 'cap2'},
+                  page: {capture_id: 'cap2', cursor: 1, reset_required: false, view: view({sessions: []}), events: [envelope(1, 'classification', {status: 'identified'})]}});
+  assert.strictEqual(store.getState().liveLog.length, 1);
+  assert.strictEqual(store.getState().liveCaptureId, 'cap2');
+  const demo = store.dispatch({type: 'run/start', mode: 'demo'}).runId;
+  store.dispatch({type: 'live/events', runId: run, control: {}, page: {capture_id: 'cap2', cursor: 2, events: [envelope(2, 'classification', {})], view: view()}});
+  assert.strictEqual(store.getState().stale, 1);
+  assert.strictEqual(store.getState().liveLog.length, 1);
+  void demo;
+}
 console.log('store tests ok');

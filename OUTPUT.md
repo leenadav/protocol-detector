@@ -33,6 +33,15 @@ Every `session` record, the offline summary and the live `started`,
 detection content release in force and its digest, so records classified by
 different catalogs can be told apart (docs/CONTENT-GOVERNANCE.md).
 
+A `session` record that is not an identification carries `unknown` (D12): per
+direction (and per session for lifecycle outcomes) a closed `code`
+(`no-dispatch`, `ambiguous`, `profile-unsupported`, `malformed`, `budget`,
+`no-payload`, `incomplete`, `no-handshake`, `midstream`, `invalidated`), the
+`stage` that produced it, the `family` whose parser spoke when one was selected,
+the engine's sentence as `detail` and, for ambiguity, the `candidates`
+(docs/UNKNOWN-REASONS.md). `protodetect explain` turns one payload into that
+structure and can minimize it to the shortest input with the same outcome.
+
 With `--continuation BYTES` (D07) a `session` record may also carry
 `continuation`: per direction (`client`, `server`) the counts and classes the
 budgeted continuation framed after the identification (`http_messages`,

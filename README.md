@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 796 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 812 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -78,7 +78,7 @@ applications (YouTube, Netflix, Teams, Zoom, Slack, WhatsApp, ChatGPT, GitHub,
 Office 365, ...) maps the SNI or Host by DNS label suffix. The name is a client
 assertion and the verdict says so; configured rules win, and encrypted
 ClientHello front names are never mapped.
-88 families, 79 automatic, 156 applications, 796 tests.
+88 families, 79 automatic, 156 applications, 812 tests.
 
 ## New in v0.64 — Weak cipher suites in TLS offers
 
@@ -330,6 +330,39 @@ descriptor) and reports the version and whether the descriptor is inline or
 deferred. Instance names, connect descriptors, thread and trace identifiers
 are never emitted. Catalog applications `mssql-db` (tcp/1433) and `oracle`
 (tcp/1521). 69 families, 62 automatic, 73 applications, 442 tests.
+
+## A01 / A14 — one installable product, cursor-driven live view
+
+`pip install ".[decryption]"` now installs the engine, the adapters and the Protocol Observatory application
+(`protocol_observatory`, with its web assets) from one wheel; `protocol-observatory` starts the loopback
+server and opens the page, `python -m protocol_observatory.server --port 8765` runs it headless.
+`tools/installed_check.py` proves it: a fresh environment, the wheel, no checkout nearby, then health, the
+page, the demo replay (18 sessions) and the decryption demo (3 decrypted connections) from the installed
+artifact. The live view reads `/api/live/state` and the versioned event log by cursor
+(`/api/live/events?cursor=`), rebuilding from zero on `reset_required` or a new capture id; the legacy
+snapshot endpoint stays for compatibility.
+
+## D12 — structured unknown reasons and minimized examples
+
+A session that is not an identification now carries `unknown`: per direction a closed code
+(`no-dispatch`, `ambiguous` with candidates, `profile-unsupported`, `malformed`, `budget`, `no-payload`,
+`incomplete`, `no-handshake`, `midstream`, `invalidated`), the stage that produced it, the family whose
+parser spoke and the engine's sentence; derived after the fact, never part of the verdict. `protodetect
+explain --hex … [--minimize]` prints that structure for one payload and shrinks it to the smallest input
+with the same outcome (status, code, family and sentence), ready to paste into a report or a fixture.
+docs/UNKNOWN-REASONS.md.
+
+## D11 — separated performance measurement
+
+`tools/perf_profile.py` (`make perf-profile`, docs/PERF-PROFILE-V066.md) reports four measurements apart
+instead of one blended number: CPU per flow by layer (frame decode, engine, whole adapter path, with the
+adapter overhead as the difference), bytes to identification per family (the engine's shortest identifying
+prefix of every fixture: median 36 bytes, maximum 247), consumer-queue wait by drain cadence on the new
+`queue.wait_seconds` histogram, and tracemalloc bytes per tracked connection state, plus a cProfile
+breakdown of where the adapter path spends its time. Local single-process numbers on the named host; no
+capacity, SWG latency or long-run claim. On this host the Python adapter, not the parsers, carries about
+80 % of the CPU of a small flow (the legacy per-feed compatibility text and per-direction stream setup lead
+the breakdown), and a half-closed identified connection holds about 25 KB until the other direction ends.
 
 ## D10 — metamorphic packet-sequence relations
 

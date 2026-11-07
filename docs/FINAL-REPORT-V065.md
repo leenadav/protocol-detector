@@ -97,3 +97,13 @@ bundled Chromium); synthetic in-memory traffic only; GitHub Actions does not sta
 Packaging the application directory as its own distribution; SBOM/attestation changes in the release
 workflow (CI/CD lane); any production capacity or latency claim (needs agreed hardware and SLOs); a
 multi-user management plane (would need real authentication); sampled tracing.
+
+## Update: the two acceptance gaps were closed on the detection-plan branch
+
+On `claude/v066-smarthome` (PR #18) the A01 and A14 gaps named above are closed; docs/DETECTION-PLAN-STATUS.md
+holds the evidence rows. A01: the wheel now ships the presentation application as `protocol_observatory`
+with its web assets and the `protocol-observatory` console script, and `tools/installed_check.py` starts the
+installed server from a directory with no checkout and runs the demo replay and the decryption demo against
+it before the presentation suite. A14: the live view reads `/api/live/state` and the versioned event log by
+cursor through the store's `live/events` action, with `reset_required` and new-capture handling; the legacy
+snapshot endpoint remains only for compatibility.
