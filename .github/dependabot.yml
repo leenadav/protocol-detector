@@ -23,6 +23,9 @@ updates:
       dev-tools:
         patterns: ["*"]
     # requirements-dev.txt is the only pip input; the package has no runtime dependencies.
+    # presentation/requirements-decryption.lock.txt is deliberately not managed here: it is a uv universal
+    # lock with per-interpreter environment markers (Python 3.9 pins included), which Dependabot's pip
+    # updater would rewrite as single pins. Regenerate it with the command in its header (engine lane).
   - package-ecosystem: gomod
     directory: /tools/scanners
     schedule:

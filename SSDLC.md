@@ -474,14 +474,20 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      `cffi@UNPINNED` then `cffi@2.1.1` passed); a package listed more than once in the SBOM,
      in any order or spelling, and a package the lock pins more than once (markers are not
      evaluated) now fail.
-   - **Installed whole-product gate.** `presentation-ui` runs the engine lane's
-     `tools/installed_check.py` with the browser prerequisites present. Open (engine lane): it
-     builds its own wheel rather than taking the package job's, and judges the copied suite by
-     exit status, so a skip there still passes; with `--wheel` and a fail-on-skip mode, the step
-     moves onto the exact distribution the release attests.
-   - **Open (engine lane):** `presentation/requirements-decryption.lock.txt` pins `cffi==2.1.1`,
-     which has no Python 3.9 release, so the 3.9 leg fails until the lock carries 3.9 pins
-     (cryptography 50.0.2 itself supports 3.9) or the presentation is declared 3.10+.
+   - **Installed whole-product gate.** `presentation-ui` needs `package`, downloads its
+     `dist-<sha>` artifact and runs the engine lane's `tools/installed_check.py --wheel <that
+     wheel> --require-all` with the browser prerequisites present: the exact wheel this run
+     built and uploaded is installed with the extra into an empty environment, its server and
+     demos run, and the copied presentation suite fails on any skip (engine `726007d`, A01).
+   - **Universal decryption lock (engine `726007d`).** The lock now carries per-interpreter pins
+     under environment markers (Python 3.9: `cffi` 2.0.0, `pycparser` 2.23, `typing-extensions`
+     4.16.0), so `tests (python 3.9)` can install it. `check_product_sbom.py --python
+     <product interpreter>` evaluates those markers with `packaging.markers` (hash-pinned in
+     `requirements-dev.txt`) against the interpreter's own PEP 508 environment: exactly one pin
+     must apply to each listed package, and a package with none must be absent. Markers without
+     `--python`, an invalid marker or a missing `packaging` fail closed. Dependabot does not
+     manage this lock (its pip updater would drop the markers); it is regenerated with the
+     command in its header.
    Verified in the cloud sandbox first; GitHub Actions then started jobs again (2026-11-07, run
    42363643395 on `70eeab3`, real hosted runners). On that run `tests (python 3.9)` failed at the
    lock install exactly as above (`cffi` 2.1.0 and 2.1.1 require Python >=3.10), after its 721
