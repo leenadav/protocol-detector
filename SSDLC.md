@@ -485,6 +485,19 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    refused the change until the scanner lock advanced); govulncheck then reports no reachable
    vulnerability in either binary, `go mod verify` and `go mod tidy -diff` are clean, and the
    rebuilt gitleaks still scans the full history clean.
+   - **CodeQL gate repair.** That run's SARIF (artifact of codeql run 42363645288) holds one
+     error-level result, `py/uninitialized-local-variable` at `protocol_adapters/live_capture.py:419`,
+     yet `CodeQL (python, security-extended)` passed: `tools/codeql_gate.py` looked rules up only in
+     `tool.driver`, while CodeQL lists them under `tool.extensions` and references each through
+     `rule.toolComponent.index`, so every default-level result read as a warning and the gate could
+     never fail. The gate now resolves the rule by component and index, then by id across the driver
+     and every extension, and counts an unresolvable result as an error; `--self-test` (also in
+     `make workflow-policy` and `workflow-lint`) covers that shape. On the real SARIF the old gate
+     exits 0 and the repaired one 1. The finding itself is engine-lane code: `--interface` and
+     `--stdin` are mutually exclusive in argparse, so `command` is always bound when it is read and
+     the result is a false positive, but CodeQL cannot see that; initialising `command = None` before
+     the branch clears it. No suppression is added (rule 16), so the CodeQL job stays red until the
+     engine lane lands that line.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
