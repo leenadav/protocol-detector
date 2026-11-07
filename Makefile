@@ -123,6 +123,15 @@ capabilities:
 parity:
 	python3 -B migration/parity/compare.py --backend python
 
+# Migration M2: the Go module's own gate (pinned toolchain from go/go.mod; separate from `check` until the CI/CD lane wires it)
+GO_TOOLCHAIN := $(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod)
+go-check:
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) sh -c 'test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }'
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go vet ./...
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test -race ./...
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/buffer -run NONE -fuzz FuzzAppendNeverExceedsLimits -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/contracts -run NONE -fuzz FuzzObservationJSONNeverPanics -fuzztime 10s
+
 # D11: separated performance measurements (CPU by layer, bytes to identification, queue wait, memory); local numbers only
 perf-profile:
 	$(PYTHON) -B tools/perf_profile.py --write docs/PERF-PROFILE-V066.md --json docs/PERF-PROFILE-V066.json

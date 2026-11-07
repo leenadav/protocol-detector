@@ -48,9 +48,33 @@ pending. D09 and SLOs stay documented blockers for release, not for M1/M2.
 M1 exit assessment: the contract matrix, the fixtures and the comparator exist and the comparator is proven
 to detect the five regression shapes; Go has produced no results yet, so every contract is `pending`.
 
-## M2 — Go foundation
+## M2 — Go foundation (minimal skeleton)
 
-Not started (next): module skeleton, typed contracts, bounded buffers, deterministic clock, structured errors, ADR 0001 on ownership and resources, basic fuzz; on a dedicated migration branch once this baseline is stable.
+Branch: `claude/go-migration`, created from the M1 head `1b2b218` of `claude/v066-smarthome`; Go work stays here and
+never edits the engine branch's snapshot. No migration PR is opened until authorized (plan §1).
+
+| item | state | evidence |
+|---|---|---|
+| Toolchain | implemented | `go/go.mod` pins `go 1.26.10` (supported releases on 2026-11-07: 1.27.3, 1.26.10; the container's 1.24.7 is out of support and unused). Pure Go, standard library only; ADR 0002. |
+| Typed contracts | implemented | `go/internal/contracts`: Status/Kind closed vocabularies, Evidence as the 4-tuple array, nullable fields, `Initial()` defaults, `Config` decoding over the Python defaults with unknown-field and non-positive-limit rejection. Tests: round trip of the Python shape, null lists never emitted, vocabularies closed, defaults; fuzz `FuzzObservationJSONNeverPanics`. |
+| Fixture contract proof | implemented | `go/internal/parity` loads `migration/fixtures/cases.json` (bounded size, schema check, unique ids, cancellation between cases, fail-closed on bad expectations) and the test re-encodes every stream and datagram expectation (1140 cases) through the Go types with structural equality to the Python output. `protodetect cases` does the same from the CLI. |
+| Bounded buffer primitives | implemented | `go/internal/buffer`: `Bounded` (per-direction limit, copies input, zeroes on discard/release) charging an `Account` (aggregate limit with a stated scope). Tests: input mutation after the call, per-buffer limit with scope and limit in the error, aggregate limit across buffers, discard/release accounting, zeroed tails; fuzz `FuzzAppendNeverExceedsLimits`. |
+| Deterministic clock | implemented | `go/internal/clock`: `Clock` interface, `Real`, `Fake` (monotonic, settable). |
+| Structured errors | implemented | `go/internal/errs`: codes malformed / budget / unsupported / invalid / cancelled, scopes direction / flow / capture / worker / process, limits named in budget errors, no input in details. |
+| Cancellation | implemented (loader) | `parity.Load` honours context cancellation; the CLI wires SIGINT to the context. Engine-level cancellation arrives with M3. |
+| Ownership/resource ADR | implemented | `migration/adr/0001-ownership-and-resources.md`; layout, toolchain and dependency policy in `0002-toolchain-layout-dependencies.md`. |
+| Gate | implemented (local) | `make go-check`: gofmt, vet, `go test -race ./...` (6 packages OK), fuzz runs of both targets (15 s each locally, no failures). Hosted Go CI is the CI/CD lane's M10 work; not wired yet. |
+| Not claimed | — | no detection capability exists in Go (`protodetect version` says so); `CAPABILITIES.json` keeps every Go status `pending`. |
+
+M2 exit assessment: contract serialization, bounded allocation, input-mutation, cancellation and basic fuzz
+tests pass; nothing panics on malformed input in the fuzzed surfaces. Pooling and concurrency are
+deliberately absent (ADR 0001).
+
+## M3/M4 — first vertical slice
+
+Next: trivial test inspector proving exactly-once contiguous delivery through Go reassembly (M3), then
+bounded dispatch with HTTP/1, TLS handshake metadata and DNS (M4) replayed through `protodetect` into
+`compare.py --results`.
 
 ## Open decisions and blockers
 
@@ -58,4 +82,4 @@ Not started (next): module skeleton, typed contracts, bounded buffers, determini
 - Codex round-3 result on `726007d`: pending (issue #2).
 - Independent labelled corpus (D09): blocked on input.
 - Release thresholds (latency, throughput, memory): unspecified by design; relative results only.
-- Dedicated migration PR: to be opened only when authorized in the working session (plan §1).
+- Dedicated migration PR: to be opened only when authorized in the working session (plan §1); the branch `claude/go-migration` exists and is pushed.
