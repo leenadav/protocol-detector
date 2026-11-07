@@ -610,6 +610,14 @@
             }
           },
           "description": "D05: how the connection was observed; identifications made midstream or on one side only are marked, never silently equal to a handshake observation."
+        },
+        "input_quality": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "description": "D06: rejected or suspect packets of this flow by kind; the flow was not fully inspected."
         }
       },
       "required": [
@@ -955,6 +963,9 @@
         },
         "telemetry": {
           "$ref": "#/$defs/telemetry"
+        },
+        "input_quality": {
+          "$ref": "#/$defs/input_quality"
         }
       }
     },
@@ -1543,6 +1554,54 @@
               }
             }
           }
+        }
+      }
+    },
+    "input_quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter",
+        "checksums",
+        "rejected",
+        "flows_marked",
+        "unsupported",
+        "checksums_note"
+      ],
+      "properties": {
+        "adapter": {
+          "enum": [
+            "recorded",
+            "host",
+            "reassembled"
+          ]
+        },
+        "checksums": {
+          "enum": [
+            "ignore",
+            "audit",
+            "verify"
+          ]
+        },
+        "rejected": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "flows_marked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unsupported": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "checksums_note": {
+          "type": "string"
         }
       }
     }

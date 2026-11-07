@@ -69,7 +69,7 @@ bundled Chromium); synthetic in-memory traffic only; GitHub Actions does not sta
 
 | check | result |
 |---|---|
-| engine suite (`python3 -B -m unittest discover -q`) | 748 tests OK |
+| engine suite (`python3 -B -m unittest discover -q`) | 754 tests OK |
 | presentation suite (`make presentation-test`) | 59 tests OK, browser tests included |
 | `make check` (ruff, tests, pins, policy lint, coverage matrix, docs counts, manifest, presentation, inventory, key logs) | OK |
 | Python 3.9 on the new modules (coordinator, events, layers, signature index, descriptors, template, v0.66) | OK |

@@ -65,7 +65,7 @@ protocol_fixtures.py` (one conflict with the v0.65 SMB 3.1.1 fixtures, both kept
 `test_v066.py`, `BENCHMARK-V059.md` superseded by `BENCHMARK-V066.md` (re-measured here), `test_v055.py`'s
 AA-on-query case moved as in v0.59, coverage matrix regenerated, SR-64 added, PROTOCOLS/APPID/RISKS/README/
 REVIEW-SCOPE/START-HERE/SESSION-SUMMARY/ROADMAP updated with the real counts (88 families, 79 automatic,
-156 applications, 748 tests). Verification: engine suite, inventory check (88 families, 81 datagram
+156 applications, 754 tests). Verification: engine suite, inventory check (88 families, 81 datagram
 fixtures), protocol templates, corpus report, fuzz, behaviour diff against v0.65 with every difference
 explained in docs/BEHAVIOUR-DIFF-V066.md (60 inputs, all within the three new profiles and the repaired mDNS
 layouts). Nothing from the Mac branch was dropped; the branch itself stays as published.

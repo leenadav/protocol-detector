@@ -19,8 +19,9 @@ import weakref
 from collections import Counter
 from .analyze_pcap import Analyzer, certificate_fields
 from .coordinator import SessionCoordinator
+from .quality import InputQuality
 from .capture_stream import PcapStreamDecoder
-from .link_packets import decode_frame
+from .link_packets import CHECKSUM_POLICIES, decode_frame
 from .packets import CaptureError, PacketError, UDPPacket
 from protocol_engine import SignatureSet
 from protocol_engine.policy import Policy
@@ -45,8 +46,11 @@ class CaptureMonitor:
     def __init__(self, emit, max_connections=128, byte_limit=65536, idle_timeout=60,
                  all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096, include_hostnames=False,
                  signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False, retain=None,
-                 observation="handshake"):
+                 observation="handshake", checksums="ignore"):
         self.emit = emit
+        self.quality = InputQuality("host", checksums)      # D06: the host adapter's input-quality contract (validates the policy)
+        if checksums not in CHECKSUM_POLICIES:
+            raise ValueError("checksums must be one of " + ", ".join(CHECKSUM_POLICIES))
         reference = weakref.ref(self)
         def retired(source, destination, event):
             # Analyzer must not retain its owner through a bound-method cycle.
@@ -105,15 +109,22 @@ class CaptureMonitor:
         self.counts["captured_bytes"] += len(record.data)
         if record.truncated:
             self.counts["truncated"] += 1
+            self.quality.truncated()
             # Cannot safely associate a truncated packet with one flow: discard
             # all partial state, require new handshakes, retract prior active labels.
             self.invalidate_all("Capture truncation; active stream observations invalidated")
             return
         try:
-            packet = decode_frame(record.data, record.linktype)
-        except PacketError:
+            packet = decode_frame(record.data, record.linktype, self.quality.checksums)
+        except PacketError as error:
             self.counts["unsupported_or_malformed_packets"] += 1
+            if self.quality.rejected(error) is not None and self.analyzer.note_input(error.kind, error.endpoints):
+                self.quality.flows_marked += 1          # D06: the flow never reads as fully inspected
             return
+        if packet.checksum_failures:
+            self.quality.audited(packet.checksum_failures)
+            if self.analyzer.note_input("checksum", (packet.source, packet.destination)):
+                self.quality.flows_marked += 1
         transport = "udp" if isinstance(packet, UDPPacket) else "tcp"
         self.counts[transport] += 1
         with self.analyzer.telemetry.stage("packet"):
@@ -177,6 +188,7 @@ class CaptureMonitor:
                 "active_connections": len(self.analyzer.tracked), "active_udp_flows": len(self.analyzer.udp_flows),
                 "capture_stats": capture_stats,
                 "telemetry": self.analyzer.telemetry.render(),      # stage 7 (A15): counters and histograms, no payload
+                "input_quality": self.quality.render(),             # D06: rejected input by kind, checksum policy, unsupported list
                 "scope": "Initial messages only; capture loss may be reported at shutdown"}
 
 
@@ -250,10 +262,11 @@ def readable(event):
 def run_capture(stream, emit, duration=60, max_packets=0, stats_interval=10, process=None,
                 max_connections=128, byte_limit=65536, idle_timeout=60, all_events=False, udp_hint=None, tcp_hint=None,
                 crc32c_byte_limit=4096, include_hostnames=False, signatures=None, fingerprints=False, heuristics=False, policy=None,
-                certificates=False, observation="handshake"):
+                certificates=False, observation="handshake", checksums="ignore"):
     decoder = PcapStreamDecoder()
     monitor = CaptureMonitor(emit, max_connections, byte_limit, idle_timeout, all_events, udp_hint, tcp_hint, crc32c_byte_limit,
-                             include_hostnames, signatures, fingerprints, heuristics, policy, certificates, observation=observation)
+                             include_hostnames, signatures, fingerprints, heuristics, policy, certificates, observation=observation,
+                             checksums=checksums)
     diagnostics = CaptureDiagnostics()
     selector = selectors.DefaultSelector()
     start = time.monotonic()
@@ -394,6 +407,8 @@ def main():
     parser.add_argument("--certificates", action="store_true", help="Read the leaf certificate structure after a TLS 1.2 ServerHello: key, signature, lifetime, self-issued, CA flag, key usage, alternative-name presence, validity at capture time (no names)")
     parser.add_argument("--observation", choices=("handshake", "asymmetric", "midstream"), default="handshake",
                         help="D05: handshake (default), asymmetric (one side captured) or midstream (no start captured; conservative)")
+    parser.add_argument("--checksums", choices=CHECKSUM_POLICIES, default="ignore",
+                        help="D06: ignore (default; host captures precede offload), audit (count failures, still inspect) or verify (skip failing packets, mark flows)")
     parser.add_argument("--json", action="store_true", help="JSON Lines metadata; no payload output")
     args = parser.parse_args()
     if (not math.isfinite(args.duration) or args.duration < 0 or args.max_packets < 0
@@ -426,7 +441,7 @@ def main():
         return run_capture(stream, emit, args.duration, args.max_packets, args.stats_interval, process,
                            args.max_connections, args.byte_limit, args.idle_timeout, args.all_events, args.udp_hint, args.tcp_hint,
                            args.crc32c_byte_limit, args.hostnames, signatures, args.fingerprints, args.heuristics, policy,
-                           args.certificates, args.observation)
+                           args.certificates, args.observation, args.checksums)
     except BrokenPipeError:
         return 0
     except (OSError, ValueError, subprocess.SubprocessError) as exc:

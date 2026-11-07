@@ -5,11 +5,12 @@ import weakref
 from dataclasses import asdict, replace
 from collections import Counter
 from functools import partial
-from .link_packets import decode_frame
+from .link_packets import CHECKSUM_POLICIES, decode_frame
 from .packets import CaptureError, PacketError, UDPPacket, read_pcap_records
 from protocol_engine import Config, DatagramInspector, Event, Inspector, SignatureSet
 from .layers import layered_view
 from .observability import Telemetry
+from .quality import InputQuality
 from protocol_engine.appid import classify, midstream_outcome, session_verdict, unobserved_start_outcome, verdict_fields
 from protocol_engine.descriptors import MIDSTREAM_FAMILIES, OBSERVATION_MODES
 from protocol_engine.policy import Policy, PolicyError
@@ -111,9 +112,13 @@ class Analyzer:
                                  "handshake_observed": transport == "tcp" and state.get("mode", "handshake") == "handshake" and bool(state.get("ready")),
                                  "directions_seen": sorted(["client" if endpoint == client else "server" for endpoint in state["bytes"] if state["bytes"].get(endpoint)]),
                                  "roles": "assumed-from-first-segment" if state.get("mode") == "midstream" else "observed"}
+        quality = "intact"
+        if state.get("input"):
+            record["input_quality"] = dict(state["input"])          # D06: this flow was not fully inspected
+            quality = "degraded"
         # Stage 5 (A05/A13): the layered view, from the same observations and verdict; labels only.
         record["layers"] = layered_view(transport, observations[0], observations[1], verdict, server[1],
-                                        state["bytes"].get(client, 0), state["bytes"].get(server, 0))[0]
+                                        state["bytes"].get(client, 0), state["bytes"].get(server, 0), capture_quality=quality)[0]
         if self.signatures is not None:
             record["signature_set"] = self.signatures.digest      # stage 7 (A11): the rule set this verdict used
         # Latency telemetry (P2 of the stage-6 review): the session's lifetime is not its decision time.
@@ -140,6 +145,22 @@ class Analyzer:
             record["hostname"] = next((obs.hostname for obs in observations if obs is not None and obs.hostname), None)
         self.counts["sessions"] += 1
         self.on_session(record)
+
+    def note_input(self, kind, endpoints):
+        """D06: a packet of this flow was rejected or suspect (fragment, length, checksum, truncated). The flow is
+        marked so its record never reads as fully inspected; a truncated TCP record ends the connection, since
+        bytes are missing from the stream. Returns True when a tracked flow was marked."""
+        if endpoints is None:
+            return False
+        key = self.manager.key(*endpoints)
+        state = self.tracked.get(key) or self.udp_flows.get(key)
+        if state is None:
+            return False
+        state.setdefault("input", {})
+        state["input"][kind] = state["input"].get(kind, 0) + 1
+        if kind == "truncated" and key in self.tracked:
+            self.drop(key, "Capture record truncated; stream bytes missing")
+        return True
 
     def _decided(self, state, label):
         """Record when a flow or connection was first identified and when its label last changed."""
@@ -562,7 +583,7 @@ def readable_session(record):
 
 def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_byte_limit=4096, udp_hint=None,
             sessions=False, include_hostnames=False, signatures=None, fingerprints=False, heuristics=False, policy=None,
-            certificates=False, observation="handshake"):
+            certificates=False, observation="handshake", checksums="ignore"):
     def retired(source, destination, event):
         if json_output:
             print(json.dumps({'type': 'stream_end', 'source': source, 'destination': destination,
@@ -577,6 +598,7 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
     analyzer = Analyzer(tcp_hint=tcp_hint, crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, udp_hint=udp_hint,
                         on_session=session if sessions else None, include_hostnames=include_hostnames, signatures=signatures,
                         fingerprints=fingerprints, heuristics=heuristics, policy=policy, certificates=certificates, observation=observation)
+    quality = InputQuality("recorded", checksums)          # D06 input-quality contract of the recorded adapter
     counts = Counter()
     def capture_gap(reason, scope="active_connections", number=None):
         active = len(analyzer.tracked)
@@ -603,16 +625,23 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
             if record.truncated:
                 counts["truncated"] += 1
                 counts["skipped"] += 1
+                quality.truncated()
                 capture_gap("Capture truncation; active stream observations invalidated", number=number)
                 continue
             try:
-                packet = decode_frame(frame, record.linktype)
+                packet = decode_frame(frame, record.linktype, checksums)
             except PacketError as error:
                 counts["skipped"] += 1
+                if quality.rejected(error) is not None and analyzer.note_input(error.kind, error.endpoints):
+                    quality.flows_marked += 1
                 if not events_only:
-                    print(json.dumps({"frame": number, "status": "skipped", "reason": str(error)})
-                          if json_output else "#{} SKIP: {}".format(number, error))
+                    print(json.dumps({"frame": number, "status": "skipped", "reason": str(error), "kind": error.kind})
+                          if json_output else "#{} SKIP ({}): {}".format(number, error.kind, error))
                 continue
+            if packet.checksum_failures:
+                quality.audited(packet.checksum_failures)
+                if analyzer.note_input("checksum", (packet.source, packet.destination)):
+                    quality.flows_marked += 1
             counts["udp" if isinstance(packet, UDPPacket) else "tcp"] += 1
             message = analyzer.process(timestamp, packet)
             if not events_only or analyzer.last_events:
@@ -634,7 +663,7 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
         raise
     analyzer.finish("Capture input EOF before initial message completed")
     counts["sessions"] = analyzer.counts["sessions"]
-    print(json.dumps({"summary": dict(counts)}) if json_output else
+    print(json.dumps({"summary": dict(counts), "input_quality": quality.render()}) if json_output else
           "\nFrames: {frames}; TCP: {tcp}; UDP: {udp}; skipped: {skipped}; sessions: {sessions}".format(
               frames=counts["frames"], tcp=counts["tcp"], udp=counts["udp"], skipped=counts["skipped"], sessions=counts["sessions"]))
     return counts
@@ -654,6 +683,8 @@ def main():
     parser.add_argument("--certificates", action="store_true", help="Read the leaf certificate structure after a TLS 1.2 ServerHello: key, signature, lifetime, self-issued, CA flag, key usage, alternative-name presence, validity at capture time (no names)")
     parser.add_argument("--observation", choices=OBSERVATION_MODES, default="handshake",
                         help="D05: handshake (default: SYN and SYN-ACK required), asymmetric (client side only captured), midstream (no start captured; conservative)")
+    parser.add_argument("--checksums", choices=CHECKSUM_POLICIES, default="ignore",
+                        help="D06: ignore (default; host captures precede offload), audit (compute and count, still inspect) or verify (skip failing packets, mark their flows)")
     parser.add_argument("--udp-hint", choices=sorted(VALIDATORS), help="Restrict UDP validation to one candidate")
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to one validated candidate")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
@@ -664,7 +695,7 @@ def main():
         analyze(args.capture, json_output=args.json, events_only=args.events_only, tcp_hint=args.tcp_hint,
                 crc32c_byte_limit=args.crc32c_byte_limit, udp_hint=args.udp_hint, sessions=args.sessions or policy is not None,
                 include_hostnames=args.hostnames, signatures=signatures, fingerprints=args.fingerprints,
-                heuristics=args.heuristics, policy=policy, certificates=args.certificates, observation=args.observation)
+                heuristics=args.heuristics, policy=policy, certificates=args.certificates, observation=args.observation, checksums=args.checksums)
     except (OSError, CaptureError, ValueError, PolicyError) as error:
         parser.exit(1, "Capture error: {}\n".format(error))
 

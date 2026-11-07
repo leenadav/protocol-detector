@@ -9,7 +9,17 @@ class CaptureError(ValueError):
 
 
 class PacketError(ValueError):
-    pass
+    """A frame this adapter does not decode. `kind` is a closed class (D06) and `endpoints` the (source,
+    destination) pair when the headers were readable, so the owner can mark the affected flow:
+      link, network, fragment, length, transport, truncated, checksum, malformed."""
+    KINDS = ("link", "network", "fragment", "length", "transport", "truncated", "checksum", "malformed")
+
+    def __init__(self, message, kind="malformed", endpoints=None):
+        super().__init__(message)
+        if kind not in self.KINDS:
+            raise ValueError("unknown PacketError kind " + repr(kind))
+        self.kind = kind
+        self.endpoints = endpoints
 
 
 @dataclass(frozen=True)
@@ -20,6 +30,7 @@ class TCPPacket:
     acknowledgement: int
     flags: int
     payload: bytes
+    checksum_failures: tuple = ()      # D06: filled only under the audit checksum policy
 
 
 @dataclass(frozen=True)
@@ -27,6 +38,7 @@ class UDPPacket:
     source: tuple
     destination: tuple
     payload: bytes
+    checksum_failures: tuple = ()      # D06: filled only under the audit checksum policy
 
 
 @dataclass(frozen=True)
