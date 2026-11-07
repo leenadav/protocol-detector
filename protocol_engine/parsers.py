@@ -57,8 +57,23 @@ class LineParser:
         self.websocket_version = False
         self.websocket_accept = False
         self.h2_settings = False
+        self.continuation = None   # D07: HttpContinuation reading later messages within Config.continuation
+        self.subordinate = False   # a per-message parser owned by a continuation never starts one itself
+        self._base_evidence = ()
+        self.refined = True
 
     def feed(self, data):
+        if self.continuation is not None:
+            consumed = self.continuation.feed(data)
+            self._continuation_evidence()
+            if self.continuation.done:
+                if self.continuation.shift is not None:
+                    self.shift = self.continuation.shift
+                    self.scope = self.continuation.scope or "initial_message"
+                    self.correlation = self.continuation.correlation
+                self.continuation = None
+                self.continues = False
+            return consumed
         if self.continues and self.kexinit is not None:
             consumed = self.kexinit.feed(data)
             if self.kexinit.done:
@@ -164,6 +179,17 @@ class LineParser:
                     self.contexts["http-req-host-header"] = self.host.encode("ascii")
                 if self.content_length is not None:
                     self.contexts["http-req-content-length"] = self.content_length
+            if self.shift is None and self.config.continuation and not self.subordinate:
+                # D07: keep reading later messages of this direction within the continuation budget.
+                from .continuation import HttpContinuation
+                self._base_evidence = self.extra_evidence
+                self.continuation = HttpContinuation(self.config, self, self._message_parser)
+                self.reason = "HTTP start-line and headers validated; later messages framed within the continuation budget"
+                self.refined = False
+                self.continues = not self.continuation.done
+                if not self.continues:
+                    self._continuation_evidence()
+                    self.continuation = None
             return
         self.headers += 1
         if self.headers > self.config.max_headers:
@@ -261,6 +287,15 @@ class LineParser:
             if self.h2_settings or not re.fullmatch(rb"[A-Za-z0-9_\-]{0,1024}", value):
                 raise ParseError("Invalid or duplicate HTTP2-Settings")
             self.h2_settings = True
+
+    def _message_parser(self):
+        parser = LineParser(self.config, "http")
+        parser.subordinate = True
+        return parser
+
+    def _continuation_evidence(self):
+        self.extra_evidence = self._base_evidence + self.continuation.evidence()
+        self.refined = True
 
     def _shift_boundary(self):
         """Decide whether the bytes after this header block belong to another protocol.
@@ -634,17 +669,41 @@ class TLSParser:
         self.continues = False
         self.watch = None          # CertificateWatch after a TLS 1.2 ServerHello when configured
         self.consumed = 0          # bytes accepted so far; the watch inherits the remaining byte budget
+        self.continuation = None   # D07: TlsContinuation framing records after the hello
+        self.refined = True
+        self._base_evidence = ()
         self.reason = "Waiting for complete TLS hello"
 
+    def _start_continuation(self, record_remaining):
+        from .continuation import TlsContinuation
+        self._base_evidence = self.extra_evidence
+        self.continuation = TlsContinuation(self.config, record_remaining)
+        self.refined = False
+        self.continues = True
+
     def feed(self, data):
+        if self.continuation is not None:
+            consumed = self.continuation.feed(data)
+            self.extra_evidence = self._base_evidence + self.continuation.evidence()
+            self.refined = True
+            if self.continuation.done:
+                self.continuation = None
+                self.continues = False
+            return consumed
         if self.watch is not None:
             # Post-identification continuation: the leaf certificate adds asserted evidence
             # or the watch ends quietly; the ServerHello identification stands either way.
             consumed = self.watch.feed(data)
             if self.watch.done:
                 self.extra_evidence += self.watch.evidence
+                remaining = self.watch.record_remaining
                 self.watch = None
                 self.continues = False
+                if self.config.continuation and remaining is not None:
+                    # D07: records after the certificate flight are framed within the continuation budget.
+                    self._start_continuation(remaining)
+                    if consumed < len(data):
+                        consumed += self.feed(data[consumed:])
             return consumed
         pos = 0
         while pos < len(data) and not self.done:
@@ -714,5 +773,7 @@ class TLSParser:
                         self.continues = True
                 self.handshake.clear()
                 self.done = True
+                if self.watch is None and self.config.continuation:
+                    self._start_continuation(self.record_remaining)
         self.consumed += pos
         return pos

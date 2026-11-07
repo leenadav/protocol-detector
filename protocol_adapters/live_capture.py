@@ -46,7 +46,7 @@ class CaptureMonitor:
     def __init__(self, emit, max_connections=128, byte_limit=65536, idle_timeout=60,
                  all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096, include_hostnames=False,
                  signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False, retain=None,
-                 observation="handshake", checksums="ignore"):
+                 observation="handshake", checksums="ignore", continuation=0):
         self.emit = emit
         self.quality = InputQuality("host", checksums)      # D06: the host adapter's input-quality contract (validates the policy)
         if checksums not in CHECKSUM_POLICIES:
@@ -64,7 +64,8 @@ class CaptureMonitor:
         self.analyzer = Analyzer(max_connections, byte_limit, idle_timeout, compact=True, udp_hint=udp_hint, tcp_hint=tcp_hint,
                                  crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, on_session=session,
                                  include_hostnames=include_hostnames, signatures=signatures, fingerprints=fingerprints,
-                                 heuristics=heuristics, policy=policy, certificates=certificates, observation=observation)
+                                 heuristics=heuristics, policy=policy, certificates=certificates, observation=observation,
+                                 continuation=continuation)
         # Stage 3 (A03/A04): the coordinator is the one lifecycle owner for every capture path. It wraps
         # this analyzer, stamps sessions with capture_id/session_id/generation and dedupes finalization.
         # Stage 4 (A03/A07): `retain` (a RetentionBudget) adds the retained reassembly tier a second consumer
@@ -262,10 +263,10 @@ def readable(event):
 def run_capture(stream, emit, duration=60, max_packets=0, stats_interval=10, process=None,
                 max_connections=128, byte_limit=65536, idle_timeout=60, all_events=False, udp_hint=None, tcp_hint=None,
                 crc32c_byte_limit=4096, include_hostnames=False, signatures=None, fingerprints=False, heuristics=False, policy=None,
-                certificates=False, observation="handshake", checksums="ignore"):
+                certificates=False, observation="handshake", checksums="ignore", continuation=0):
     decoder = PcapStreamDecoder()
     monitor = CaptureMonitor(emit, max_connections, byte_limit, idle_timeout, all_events, udp_hint, tcp_hint, crc32c_byte_limit,
-                             include_hostnames, signatures, fingerprints, heuristics, policy, certificates, observation=observation,
+                             include_hostnames, signatures, fingerprints, heuristics, policy, certificates, observation=observation, continuation=continuation,
                              checksums=checksums)
     diagnostics = CaptureDiagnostics()
     selector = selectors.DefaultSelector()
@@ -409,14 +410,16 @@ def main():
                         help="D05: handshake (default), asymmetric (one side captured) or midstream (no start captured; conservative)")
     parser.add_argument("--checksums", choices=CHECKSUM_POLICIES, default="ignore",
                         help="D06: ignore (default; host captures precede offload), audit (count failures, still inspect) or verify (skip failing packets, mark flows)")
+    parser.add_argument("--continuation", type=int, default=0, metavar="BYTES",
+                        help="D07: after an HTTP/1 or TLS identification keep framing up to BYTES new bytes per direction; 0 (default) stops at the first message")
     parser.add_argument("--json", action="store_true", help="JSON Lines metadata; no payload output")
     args = parser.parse_args()
     if (not math.isfinite(args.duration) or args.duration < 0 or args.max_packets < 0
             or not math.isfinite(args.stats_interval) or args.stats_interval < 0
             or not math.isfinite(args.idle_timeout) or args.idle_timeout <= 0
             or not 1 <= args.max_connections <= 1024 or not 64 <= args.byte_limit <= 65536
-            or not 0 <= args.crc32c_byte_limit <= 1048576):
-        parser.error("Invalid limits: connections 1..1024, bytes 64..65536, CRC-32C bytes 0..1048576, finite nonnegative times, idle timeout >0")
+            or not 0 <= args.crc32c_byte_limit <= 1048576 or not 0 <= args.continuation <= args.byte_limit):
+        parser.error("Invalid limits: connections 1..1024, bytes 64..65536, CRC-32C bytes 0..1048576, continuation 0..bytes, finite nonnegative times, idle timeout >0")
     emit = (lambda event: print(json.dumps(event), flush=True)) if args.json else readable
     process = None
     try:
@@ -441,7 +444,7 @@ def main():
         return run_capture(stream, emit, args.duration, args.max_packets, args.stats_interval, process,
                            args.max_connections, args.byte_limit, args.idle_timeout, args.all_events, args.udp_hint, args.tcp_hint,
                            args.crc32c_byte_limit, args.hostnames, signatures, args.fingerprints, args.heuristics, policy,
-                           args.certificates, args.observation, args.checksums)
+                           args.certificates, args.observation, args.checksums, continuation=args.continuation)
     except BrokenPipeError:
         return 0
     except (OSError, ValueError, subprocess.SubprocessError) as exc:

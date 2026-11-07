@@ -1066,3 +1066,36 @@ record states which one produced it (`observation.mode`, `handshake_observed`, `
 
 Datagram profiles are per message and carry `observation.mode = datagram`. Policies can require a mode with
 the `observation` predicate (POLICY.md).
+
+## Budgeted continuation after identification (D07)
+
+Every profile above decides on the initial message, and by default inspection stops there: later bytes of a
+direction are neither parsed nor retained. `Config(continuation=BYTES)` (`--continuation BYTES` on both
+CLIs, 0 by default) lets two parsers keep framing the new bytes that arrive after their identification, up
+to that budget per direction and never beyond `max_bytes`, and adds bounded structural evidence from the
+source `continuation`:
+
+- HTTP/1: later messages of the same direction. Bodies are skipped by their declared framing
+  (`Content-Length`, chunked with extensions and trailers, none for requests and for 1xx/204/304); a
+  response without declared framing is close-delimited and ends the continuation. Each later start-line and
+  header block is validated with the same rules as a first message. Evidence: `http_messages` (count
+  including the first), `http_methods` (distinct known methods or `extension`, at most eight),
+  `http_status_classes` (`2xx`, `4xx`, ...), `http_host_variation=observed` when a later Host differs from
+  the identifying one (the hostname of the identification never changes). A later CONNECT or Upgrade
+  shifts the stream exactly as a first-message one would, with the carrier identification republished first.
+  `max_transactions` (16) caps the messages counted.
+- TLS: record-layer framing after the ClientHello or ServerHello, after the certificate watch when
+  `certificates` is on. Headers are validated (content type, version 3.x, length <= 16640); nothing inside a
+  record is read. Evidence: `tls_records` (`handshake=…,ccs=…,alert=…,application_data=…`),
+  `tls_application_data=observed`, `tls_alert=observed`; at most 256 records.
+
+The continuation can only add evidence to a `refined` event; the identification published before it, the
+application verdict and the decision time stand. It ends with a `continuation` evidence value naming why:
+`budget`, `messages`, `records`, `framing` (a later message or record header did not validate; the
+identification is kept, nothing after it is read), `close-delimited` or `shift`; a direction that ends
+first carries no such value. Session records summarise it per direction under `continuation`.
+
+This is one vertical slice, not a session parser: responses to HEAD, pipelined requests interleaved with
+the other direction, HTTP/1.0 keep-alive without `Content-Length`, trailers' names, record contents and
+anything after a framing error are not modelled. The default path is unchanged (behaviour diff and the
+per-flow cost are the same with the option off).

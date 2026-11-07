@@ -9,6 +9,7 @@ from .link_packets import CHECKSUM_POLICIES, decode_frame
 from .packets import CaptureError, PacketError, UDPPacket, read_pcap_records
 from protocol_engine import Config, DatagramInspector, Event, Inspector, SignatureSet
 from .layers import layered_view
+from protocol_engine.continuation import continuation_summary
 from .observability import Telemetry
 from .quality import InputQuality
 from protocol_engine.appid import classify, midstream_outcome, session_verdict, unobserved_start_outcome, verdict_fields
@@ -47,7 +48,8 @@ class Analyzer:
     """
     def __init__(self, max_connections=32, byte_limit=65536, idle_timeout=60, compact=False, udp_hint=None, tcp_hint=None,
                  crc32c_byte_limit=4096, on_retire=None, on_session=None, max_udp_flows=None, include_hostnames=False,
-                 signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False, observation="handshake"):
+                 signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False, observation="handshake",
+                 continuation=0):
         if observation not in OBSERVATION_MODES:
             raise ValueError("observation must be one of " + ", ".join(OBSERVATION_MODES))
         self.observation = observation      # D05: handshake (default), asymmetric or midstream
@@ -70,7 +72,8 @@ class Analyzer:
         self.policy = policy
         self.inspection_config = Config(max_bytes=byte_limit, max_crc32c_bytes=crc32c_byte_limit,
                                         retain_contexts=self.signatures is not None, fingerprints=bool(fingerprints),
-                                        heuristics=bool(heuristics), certificates=bool(certificates))
+                                        heuristics=bool(heuristics), certificates=bool(certificates),
+                                        continuation=int(continuation))
         self.quic_assembler = QuicAssembler(idle_seconds=idle_timeout)   # D01: scoped per flow, expires with the flow table
         self.udp = DatagramInspector(self.inspection_config, self.signatures, self.quic_assembler)
         self.udp_revision = 0
@@ -112,6 +115,9 @@ class Analyzer:
                                  "handshake_observed": transport == "tcp" and state.get("mode", "handshake") == "handshake" and bool(state.get("ready")),
                                  "directions_seen": sorted(["client" if endpoint == client else "server" for endpoint in state["bytes"] if state["bytes"].get(endpoint)]),
                                  "roles": "assumed-from-first-segment" if state.get("mode") == "midstream" else "observed"}
+        continuation = continuation_summary(observations[0], observations[1])
+        if continuation:
+            record["continuation"] = continuation                   # D07: what followed the identification, per direction
         quality = "intact"
         if state.get("input"):
             record["input_quality"] = dict(state["input"])          # D06: this flow was not fully inspected
@@ -583,7 +589,7 @@ def readable_session(record):
 
 def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_byte_limit=4096, udp_hint=None,
             sessions=False, include_hostnames=False, signatures=None, fingerprints=False, heuristics=False, policy=None,
-            certificates=False, observation="handshake", checksums="ignore"):
+            certificates=False, observation="handshake", checksums="ignore", continuation=0):
     def retired(source, destination, event):
         if json_output:
             print(json.dumps({'type': 'stream_end', 'source': source, 'destination': destination,
@@ -597,7 +603,8 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
 
     analyzer = Analyzer(tcp_hint=tcp_hint, crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, udp_hint=udp_hint,
                         on_session=session if sessions else None, include_hostnames=include_hostnames, signatures=signatures,
-                        fingerprints=fingerprints, heuristics=heuristics, policy=policy, certificates=certificates, observation=observation)
+                        fingerprints=fingerprints, heuristics=heuristics, policy=policy, certificates=certificates, observation=observation,
+                        continuation=continuation)
     quality = InputQuality("recorded", checksums)          # D06 input-quality contract of the recorded adapter
     counts = Counter()
     def capture_gap(reason, scope="active_connections", number=None):
@@ -685,6 +692,8 @@ def main():
                         help="D05: handshake (default: SYN and SYN-ACK required), asymmetric (client side only captured), midstream (no start captured; conservative)")
     parser.add_argument("--checksums", choices=CHECKSUM_POLICIES, default="ignore",
                         help="D06: ignore (default; host captures precede offload), audit (compute and count, still inspect) or verify (skip failing packets, mark their flows)")
+    parser.add_argument("--continuation", type=int, default=0, metavar="BYTES",
+                        help="D07: after an HTTP/1 or TLS identification keep framing up to BYTES new bytes per direction (later HTTP messages, TLS record kinds); 0 (default) stops at the first message")
     parser.add_argument("--udp-hint", choices=sorted(VALIDATORS), help="Restrict UDP validation to one candidate")
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to one validated candidate")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
@@ -695,7 +704,8 @@ def main():
         analyze(args.capture, json_output=args.json, events_only=args.events_only, tcp_hint=args.tcp_hint,
                 crc32c_byte_limit=args.crc32c_byte_limit, udp_hint=args.udp_hint, sessions=args.sessions or policy is not None,
                 include_hostnames=args.hostnames, signatures=signatures, fingerprints=args.fingerprints,
-                heuristics=args.heuristics, policy=policy, certificates=args.certificates, observation=args.observation, checksums=args.checksums)
+                heuristics=args.heuristics, policy=policy, certificates=args.certificates, observation=args.observation, checksums=args.checksums,
+                continuation=args.continuation)
     except (OSError, CaptureError, ValueError, PolicyError) as error:
         parser.exit(1, "Capture error: {}\n".format(error))
 

@@ -579,6 +579,101 @@
             "minimum": 1
           },
           "description": "D06: rejected or suspect packets of this flow by kind; the flow was not fully inspected."
+        },
+        "continuation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "client": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "http_messages": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "http_methods": {
+                  "type": "string"
+                },
+                "http_status_classes": {
+                  "type": "string"
+                },
+                "http_host_variation": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "tls_records": {
+                  "type": "string"
+                },
+                "tls_application_data": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "tls_alert": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "ended": {
+                  "enum": [
+                    "budget",
+                    "messages",
+                    "records",
+                    "framing",
+                    "close-delimited",
+                    "shift"
+                  ]
+                }
+              }
+            },
+            "server": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "http_messages": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "http_methods": {
+                  "type": "string"
+                },
+                "http_status_classes": {
+                  "type": "string"
+                },
+                "http_host_variation": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "tls_records": {
+                  "type": "string"
+                },
+                "tls_application_data": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "tls_alert": {
+                  "enum": [
+                    "observed"
+                  ]
+                },
+                "ended": {
+                  "enum": [
+                    "budget",
+                    "messages",
+                    "records",
+                    "framing",
+                    "close-delimited",
+                    "shift"
+                  ]
+                }
+              }
+            }
+          },
+          "description": "D07: what the budgeted continuation framed after each direction's identification (counts and classes only; absent when Config.continuation is 0 or nothing followed). `ended` names why it stopped: budget, messages, records, framing, close-delimited or shift; absent when the direction ended first."
         }
       },
       "required": [
