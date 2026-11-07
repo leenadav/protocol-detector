@@ -12,31 +12,31 @@
       "frames": 5,
       "payload_bytes": 81,
       "decode": {
-        "p50_us": 17.7,
-        "p95_us": 24.21,
-        "p99_us": 38.87,
-        "mean_us": 18.95,
+        "p50_us": 13.69,
+        "p95_us": 21.29,
+        "p99_us": 42.28,
+        "mean_us": 15.11,
         "samples": 200
       },
       "engine": {
-        "p50_us": 48.47,
-        "p95_us": 66.81,
-        "p99_us": 75.84,
-        "mean_us": 51.08,
+        "p50_us": 38.08,
+        "p95_us": 58.82,
+        "p99_us": 76.75,
+        "mean_us": 41.53,
         "samples": 200
       },
       "adapter_path": {
-        "p50_us": 274.23,
-        "p95_us": 342.52,
-        "p99_us": 389.4,
-        "mean_us": 284.27,
+        "p50_us": 220.76,
+        "p95_us": 278.57,
+        "p99_us": 320.12,
+        "mean_us": 228.43,
         "samples": 200
       },
-      "adapter_overhead_us_p50": 208.06,
+      "adapter_overhead_us_p50": 168.99,
       "cpu_share": {
-        "decode": 0.055,
-        "engine": 0.145,
-        "adapter_path": 0.8
+        "decode": 0.054,
+        "engine": 0.147,
+        "adapter_path": 0.799
       },
       "engine_bytes_inspected": 81
     },
@@ -44,31 +44,31 @@
       "frames": 194,
       "payload_bytes": 6051,
       "decode": {
-        "p50_us": 523.9,
-        "p95_us": 871.72,
-        "p99_us": 1162.09,
-        "mean_us": 563.16,
+        "p50_us": 475.03,
+        "p95_us": 570.4,
+        "p99_us": 674.93,
+        "mean_us": 465.83,
         "samples": 200
       },
       "engine": {
-        "p50_us": 538.72,
-        "p95_us": 830.05,
-        "p99_us": 979.58,
-        "mean_us": 577.46,
+        "p50_us": 497.19,
+        "p95_us": 579.44,
+        "p99_us": 715.83,
+        "mean_us": 483.0,
         "samples": 200
       },
       "adapter_path": {
-        "p50_us": 12202.78,
-        "p95_us": 15094.7,
-        "p99_us": 18880.83,
-        "mean_us": 12579.51,
+        "p50_us": 11426.81,
+        "p95_us": 13264.36,
+        "p99_us": 14405.83,
+        "mean_us": 10852.69,
         "samples": 200
       },
-      "adapter_overhead_us_p50": 11140.16,
+      "adapter_overhead_us_p50": 10454.59,
       "cpu_share": {
-        "decode": 0.041,
-        "engine": 0.042,
-        "adapter_path": 0.917
+        "decode": 0.04,
+        "engine": 0.041,
+        "adapter_path": 0.919
       },
       "engine_bytes_inspected": 6051
     },
@@ -76,31 +76,31 @@
       "frames": 5,
       "payload_bytes": 77,
       "decode": {
-        "p50_us": 17.52,
-        "p95_us": 32.61,
-        "p99_us": 67.44,
-        "mean_us": 22.95,
+        "p50_us": 13.51,
+        "p95_us": 18.3,
+        "p99_us": 30.94,
+        "mean_us": 15.18,
         "samples": 200
       },
       "engine": {
-        "p50_us": 34.51,
-        "p95_us": 52.6,
-        "p99_us": 102.26,
-        "mean_us": 38.26,
+        "p50_us": 26.67,
+        "p95_us": 42.31,
+        "p99_us": 60.92,
+        "mean_us": 30.02,
         "samples": 200
       },
       "adapter_path": {
-        "p50_us": 260.39,
-        "p95_us": 373.49,
-        "p99_us": 4387.24,
-        "mean_us": 383.4,
+        "p50_us": 206.1,
+        "p95_us": 286.19,
+        "p99_us": 342.96,
+        "mean_us": 221.12,
         "samples": 200
       },
-      "adapter_overhead_us_p50": 208.36,
+      "adapter_overhead_us_p50": 165.92,
       "cpu_share": {
-        "decode": 0.06,
-        "engine": 0.115,
-        "adapter_path": 0.825
+        "decode": 0.058,
+        "engine": 0.114,
+        "adapter_path": 0.828
       },
       "engine_bytes_inspected": 77
     },
@@ -108,31 +108,31 @@
       "frames": 9,
       "payload_bytes": 77,
       "decode": {
-        "p50_us": 31.09,
-        "p95_us": 50.66,
-        "p99_us": 61.94,
-        "mean_us": 32.87,
+        "p50_us": 27.75,
+        "p95_us": 45.98,
+        "p99_us": 58.54,
+        "mean_us": 31.51,
         "samples": 200
       },
       "engine": {
-        "p50_us": 42.49,
-        "p95_us": 49.52,
-        "p99_us": 63.92,
-        "mean_us": 43.38,
+        "p50_us": 41.18,
+        "p95_us": 72.11,
+        "p99_us": 121.65,
+        "mean_us": 48.28,
         "samples": 200
       },
       "adapter_path": {
-        "p50_us": 586.46,
-        "p95_us": 618.37,
-        "p99_us": 641.86,
-        "mean_us": 584.73,
+        "p50_us": 531.17,
+        "p95_us": 817.94,
+        "p99_us": 920.07,
+        "mean_us": 584.79,
         "samples": 200
       },
-      "adapter_overhead_us_p50": 512.88,
+      "adapter_overhead_us_p50": 462.24,
       "cpu_share": {
-        "decode": 0.051,
-        "engine": 0.066,
-        "adapter_path": 0.883
+        "decode": 0.048,
+        "engine": 0.073,
+        "adapter_path": 0.879
       },
       "engine_bytes_inspected": 77
     },
@@ -140,31 +140,31 @@
       "frames": 5,
       "payload_bytes": 224,
       "decode": {
-        "p50_us": 19.22,
-        "p95_us": 25.14,
-        "p99_us": 40.47,
-        "mean_us": 20.41,
+        "p50_us": 16.97,
+        "p95_us": 33.19,
+        "p99_us": 78.39,
+        "mean_us": 20.54,
         "samples": 200
       },
       "engine": {
-        "p50_us": 5.96,
-        "p95_us": 7.22,
-        "p99_us": 11.62,
-        "mean_us": 6.3,
+        "p50_us": 5.37,
+        "p95_us": 7.51,
+        "p99_us": 22.36,
+        "mean_us": 6.05,
         "samples": 200
       },
       "adapter_path": {
-        "p50_us": 221.54,
-        "p95_us": 261.93,
-        "p99_us": 286.72,
-        "mean_us": 231.25,
+        "p50_us": 197.54,
+        "p95_us": 327.75,
+        "p99_us": 419.31,
+        "mean_us": 217.87,
         "samples": 200
       },
-      "adapter_overhead_us_p50": 196.36,
+      "adapter_overhead_us_p50": 175.2,
       "cpu_share": {
-        "decode": 0.081,
+        "decode": 0.086,
         "engine": 0.027,
-        "adapter_path": 0.892
+        "adapter_path": 0.888
       },
       "engine_bytes_inspected": 24
     }
@@ -564,8 +564,8 @@
       "wait_p50_s": 0.0001,
       "wait_p99_s": 0.0001,
       "wait_max_s": 0.0,
-      "wall_ms": 64.5,
-      "us_per_packet": 42.99
+      "wall_ms": 62.4,
+      "us_per_packet": 41.63
     },
     "drain_every_25": {
       "packets": 1500,
@@ -574,8 +574,8 @@
       "wait_p50_s": 0.01,
       "wait_p99_s": 0.05,
       "wait_max_s": 0.012,
-      "wall_ms": 59.8,
-      "us_per_packet": 39.87
+      "wall_ms": 54.2,
+      "us_per_packet": 36.16
     },
     "drain_every_250": {
       "packets": 1500,
@@ -584,8 +584,8 @@
       "wait_p50_s": 0.1,
       "wait_p99_s": 0.5,
       "wait_max_s": 0.1245,
-      "wall_ms": 60.2,
-      "us_per_packet": 40.13
+      "wall_ms": 48.1,
+      "us_per_packet": 32.04
     }
   },
   "memory": {
@@ -599,77 +599,77 @@
       "connections": 1000,
       "tracked_now": 0,
       "bytes_per_connection_held": 42,
-      "peak_bytes_per_connection": 82
+      "peak_bytes_per_connection": 68
     },
     "identified_half_closed": {
       "connections": 1000,
       "tracked_now": 1000,
-      "bytes_per_connection_held": 25554,
-      "peak_bytes_per_connection": 25565
+      "bytes_per_connection_held": 6074,
+      "peak_bytes_per_connection": 6095
     },
     "half_message_retained": {
       "connections": 1000,
       "tracked_now": 1000,
-      "bytes_per_connection_held": 26526,
-      "peak_bytes_per_connection": 26537
+      "bytes_per_connection_held": 6996,
+      "peak_bytes_per_connection": 7013
     },
     "udp_flow_identified": {
       "connections": 1000,
       "flows_now": 32,
-      "bytes_per_connection_held": 38
+      "bytes_per_connection_held": 36
     }
   },
   "breakdown": {
     "flows": 300,
-    "total_us_per_flow": 702.3,
+    "total_us_per_flow": 783.1,
     "top": [
       {
-        "function": "sessions.py:_compat_results",
+        "function": "sessions.py:_materialize",
         "calls_per_flow": 3.0,
-        "cumulative_us_per_flow": 292.2,
-        "share": 0.416
+        "cumulative_us_per_flow": 306.3,
+        "share": 0.391
       },
       {
-        "function": "sessions.py:feed",
+        "function": "sessions.py:_compat_rows",
         "calls_per_flow": 3.0,
-        "cumulative_us_per_flow": 275.3,
-        "share": 0.392
+        "cumulative_us_per_flow": 303.3,
+        "share": 0.387
       },
       {
-        "function": "sessions.py:feed",
-        "calls_per_flow": 3.0,
-        "cumulative_us_per_flow": 254.5,
-        "share": 0.362
-      },
-      {
-        "function": "sessions.py:open_connection",
+        "function": "sessions.py:__eq__",
         "calls_per_flow": 1.0,
-        "cumulative_us_per_flow": 211.7,
-        "share": 0.301
+        "cumulative_us_per_flow": 224.7,
+        "share": 0.287
       },
       {
-        "function": "sessions.py:__init__",
-        "calls_per_flow": 2.0,
-        "cumulative_us_per_flow": 205.3,
-        "share": 0.292
+        "function": "sessions.py:feed",
+        "calls_per_flow": 3.0,
+        "cumulative_us_per_flow": 190.6,
+        "share": 0.243
+      },
+      {
+        "function": "sessions.py:feed",
+        "calls_per_flow": 3.0,
+        "cumulative_us_per_flow": 170.1,
+        "share": 0.217
       },
       {
         "function": "engine.py:feed",
         "calls_per_flow": 1.0,
-        "cumulative_us_per_flow": 141.3,
-        "share": 0.201
+        "cumulative_us_per_flow": 159.5,
+        "share": 0.204
       },
       {
         "function": "analyze_pcap.py:drop",
         "calls_per_flow": 2.0,
-        "cumulative_us_per_flow": 134.5,
-        "share": 0.191
+        "cumulative_us_per_flow": 146.7,
+        "share": 0.187
       },
       {
         "function": "analyze_pcap.py:_tcp_session",
         "calls_per_flow": 1.0,
-        "cumulative_us_per_flow": 120.7,
-        "share": 0.172
+        "cumulative_us_per_flow": 131.7,
+        "share": 0.168
       }
     ]
   }

@@ -24,6 +24,79 @@ class StreamError(ValueError):
     pass
 
 
+class CompatResults:
+    """The legacy per-family MATCH/NO_MATCH table of one feed, built only when a reader asks for it (D11).
+
+    It captures the frozen observation and the dispatch candidate at feed time, so a later feed never
+    changes what an earlier snapshot reports; the rows are a pure function of that captured state and are
+    rebuilt on each read rather than cached, so a connection never holds 63 Result objects per direction
+    for its lifetime. Live capture (compatibility off) never builds them, and the Analyzer's compact path
+    never reads them.
+    """
+    __slots__ = ("_observation", "_candidate")
+
+    def __init__(self, observation, candidate):
+        self._observation, self._candidate = observation, candidate
+
+    def _materialize(self):
+        return tuple(_compat_rows(self._observation, self._candidate))
+
+    def __iter__(self):
+        return iter(self._materialize())
+
+    def __len__(self):
+        return len(self._materialize())
+
+    def __getitem__(self, index):
+        return self._materialize()[index]
+
+    def __eq__(self, other):
+        if isinstance(other, CompatResults):
+            return self._materialize() == other._materialize()
+        return self._materialize() == tuple(other) if isinstance(other, (list, tuple)) else NotImplemented
+
+    def __hash__(self):
+        return hash(self._materialize())
+
+    def __repr__(self):
+        return repr(self._materialize())
+
+
+def _compat_rows(observation, candidate):
+    if candidate == "git_text":
+        candidate = "text"  # Shared routing scope before a structural discriminator.
+    if candidate == "tpkt":
+        candidate = "rdp"
+    matched = "tls" if observation.encryption == "tls" else observation.application_protocol
+    if matched == "http/2":
+        matched = "http2"
+    elif matched and matched.startswith("http/"):
+        matched = "http"
+    if matched and matched.startswith("mqtt/"):
+        matched = "mqtt"
+    if matched and matched.startswith("amqp/"):
+        matched = "amqp"
+    if matched and "/" in matched:
+        matched = matched.split("/", 1)[0]
+    candidates = {candidate} if candidate != "text" else {"http", "ssh", "smtp", "sip", "rtsp", "nats", "imap", "git"}
+    results = []
+    for name in TCP_FAMILIES:
+        status = "NO_MATCH"
+        if observation.status == "identified" and matched == name:
+            status = "MATCH"
+        elif observation.status == "detecting" and (candidate is None or name in candidates):
+            status = "NEED_MORE"
+        elif observation.status == "unknown" and (candidate is None or name in candidates):
+            status = "UNKNOWN"
+        elif observation.status in ("budget_exhausted", "incomplete", "invalidated") and (candidate is None or name in candidates):
+            status = observation.status.upper()
+        # A shifted phase (v0.28) identifies a family the first prefix never routed to; its
+        # reason explains the boundary and must not read as a dispatch exclusion.
+        results.append(Result(name.upper(), status, observation.reason if candidate is None or name in candidates or status == "MATCH"
+                              else "Excluded by prefix dispatch"))
+    return results
+
+
 class Stream:
     """Keep one direction's first bytes, including bytes beyond a gap."""
     def __init__(self, first_sequence, limit, inspector_factory=Inspector, compatibility=True, prefix_only=False):
@@ -73,41 +146,8 @@ class Stream:
 
     def _compat_results(self):
         if not self.compatibility:
-            return []
-        observation = self.inspector.observation
-        candidate = self.inspector.candidate
-        if candidate == "git_text":
-            candidate = "text"  # Shared routing scope before a structural discriminator.
-        if candidate == "tpkt":
-            candidate = "rdp"
-        matched = "tls" if observation.encryption == "tls" else observation.application_protocol
-        if matched == "http/2":
-            matched = "http2"
-        elif matched and matched.startswith("http/"):
-            matched = "http"
-        results = []
-        if matched and matched.startswith("mqtt/"):
-            matched = "mqtt"
-        if matched and matched.startswith("amqp/"):
-            matched = "amqp"
-        if matched and "/" in matched:
-            matched = matched.split("/", 1)[0]
-        candidates = {candidate} if candidate != "text" else {"http", "ssh", "smtp", "sip", "rtsp", "nats", "imap", "git"}
-        for name in TCP_FAMILIES:
-            status = "NO_MATCH"
-            if observation.status == "identified" and matched == name:
-                status = "MATCH"
-            elif observation.status == "detecting" and (candidate is None or name in candidates):
-                status = "NEED_MORE"
-            elif observation.status == "unknown" and (candidate is None or name in candidates):
-                status = "UNKNOWN"
-            elif observation.status in ("budget_exhausted", "incomplete", "invalidated") and (candidate is None or name in candidates):
-                status = observation.status.upper()
-            # A shifted phase (v0.28) identifies a family the first prefix never routed to; its
-            # reason explains the boundary and must not read as a dispatch exclusion.
-            results.append(Result(name.upper(), status, observation.reason if candidate is None or name in candidates or status == "MATCH"
-                                  else "Excluded by prefix dispatch"))
-        return results
+            return ()
+        return CompatResults(self.inspector.observation, self.inspector.candidate)
 
     def open_shift(self, boundary, expected=None):
         """Host-driven shift on this direction (the peer decided it); replays retained bytes after the carrier.
@@ -157,7 +197,7 @@ class Stream:
             else:
                 self.error = "Data lies outside the bounded initial stream window"
                 self.events = self.inspector.invalidate(self.error)
-                self.results = []
+                self.results = ()
                 raise StreamError(self.error)
         # Common in-order case: copy slices once, no byte-by-byte Python loops.
         if offset == self.contiguous and self.stored == self.contiguous:
@@ -192,7 +232,7 @@ class Stream:
         if conflict:
             self.error = "Conflicting overlapping bytes; classification invalidated"
             self.events = self.inspector.invalidate(self.error)
-            self.results = []
+            self.results = ()
             raise StreamError(self.error)
         if missing == 0:
             return  # Identical duplicate: never feed the inspector twice.
@@ -228,7 +268,7 @@ class Snapshot:
     contiguous_bytes: int
     pending_bytes: int
     next_sequence: int
-    results: tuple
+    results: object                 # tuple, or a CompatResults computed on first read (D11)
     classification: Optional[Observation] = None
     events: tuple = field(default=(), compare=False)
 
@@ -294,7 +334,7 @@ class SessionManager:
         return Snapshot(
             stream.contiguous, stream.stored - stream.contiguous,
             (stream.first_sequence + stream.contiguous) % MODULUS,
-            tuple(stream.results),
+            stream.results,
             stream.inspector.observation, stream.events,
         )
 
@@ -313,4 +353,4 @@ class SessionManager:
             stream.results = stream._compat_results()
         return Snapshot(stream.contiguous, stream.stored - stream.contiguous,
                         (stream.first_sequence + stream.contiguous) % MODULUS,
-                        tuple(stream.results), stream.inspector.observation, events)
+                        stream.results, stream.inspector.observation, events)
