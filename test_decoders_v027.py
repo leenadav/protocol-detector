@@ -268,7 +268,9 @@ class RobustnessTests(unittest.TestCase):
         for base in self.STREAMS:
             result = stream(base)
             self.assertEqual(result.status, 'identified', result)
-            self.assertTrue(all(e.strength == 'structural' for e in result.evidence), result)
+            # v0.63: a KDC request's etype list is the client's offer, so its rows carry `offered`; nothing else may.
+            self.assertTrue(all(e.strength == 'structural' or (e.strength == 'offered' and e.field in ('kerberos_etype_offered', 'kerberos_etype_preferred'))
+                                for e in result.evidence), result)
         for base in self.DATAGRAMS:
             result = datagram(base, 'rtp' if base is RTP else None)
             self.assertEqual(result.status, 'identified', result)

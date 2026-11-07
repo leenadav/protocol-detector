@@ -65,7 +65,9 @@ class Inspector:
         """First matching custom signature for a completed parser family, or None."""
         if self.signatures is None or contexts is None or not self.signatures.wants(family):
             return None
-        return self.signatures.match(family, contexts)
+        signature, evaluated = self.signatures.match_counted(family, contexts)
+        self.metrics.signature_candidates += evaluated
+        return signature
 
     def _unknown_observation(self, reason, final=True, data=None):
         """Unknown prefix: consult unknown-payload signatures over the bounded buffer.

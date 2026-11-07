@@ -149,7 +149,9 @@ class DatabaseReplyTests(unittest.TestCase):
         self.assert_identified(mysql_handshake_response(attrs=((b"k", b"v"),) * 16), "mysql", "authentication_request", hint="mysql")
         verdict = session_verdict(stream(MYSQL_HANDSHAKE_RESPONSE, "mysql").observation, stream(MYSQL, "mysql").observation, "tcp", 3306, 117, 83, True, None)
         self.assertEqual((verdict.app, verdict.port_usage), ("mysql", "standard"))
-        self.assertEqual(classify(stream(mysql_handshake_response(plugin=b"mysql_clear_password"), "mysql").observation, "tcp", 3306).risks, ())
+        # v0.61: a HandshakeResponse41 on the wire means no TLS; mysql_clear_password puts the password in it.
+        self.assertEqual(classify(stream(mysql_handshake_response(plugin=b"mysql_clear_password"), "mysql").observation, "tcp", 3306).risks,
+                         ("cleartext-credential-protocol", "database-session-unencrypted"))
         rejected = [
             mysql_handshake_response(capabilities=0x0fa00f),                            # CLIENT_PROTOCOL_41 missing
             mysql_handshake_response(capabilities=0x3faa0f),                            # CLIENT_SSL without an SSLRequest

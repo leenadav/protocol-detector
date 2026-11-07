@@ -12,7 +12,8 @@ profile, never an authenticated product identity.
 """
 from typing import NamedTuple, Optional, Tuple
 from types import MappingProxyType
-from .applications import APPLICATIONS, OUTCOMES, Application, application_name, custom_application
+from .applications import APPLICATIONS, OUTCOMES, Application, application_name, custom_application, host_application
+from .host_apps import APP_DOMAINS, application_for_host
 from .media import RPC_HTTP_METHOD_NAMES, WEBDAV_METHOD_NAMES
 from .model import Observation
 from .risks import flow_risks
@@ -108,7 +109,18 @@ def _application(observation, transport, signatures=None):
         return custom_application(observation.application, base)
     if base is None:
         return None
+    if base in _HOST_CARRIERS and observation.hostname:
+        # v0.65: the built-in server-name catalog refines a generic carrier. The name is a client assertion;
+        # with an outer encrypted_client_hello it is only the provider's public front and is never mapped.
+        name = application_for_host(observation.hostname)
+        if name is not None and _evidence(observation, "tls_ech") != "outer":
+            return host_application(name, base)
     return APPLICATIONS[base]
+
+
+_HOST_CARRIERS = frozenset(("ssl", "quic", "web-browsing"))
+# The hostname itself is never put in reasons (it is emitted only when hostnames are enabled).
+_HOST_REASON = "Application named by the built-in server-name catalog from a client-asserted server name (not authenticated)"
 
 
 _CONTENT_APPLICATIONS = MappingProxyType({"ipp": "ipp", "ocsp": "ocsp", "soap": "soap"})
@@ -217,6 +229,8 @@ def _session_verdict(client, server, transport, server_port, client_bytes, serve
             if other is not None and other.name != application.name and other.name not in application.implicitly_uses:
                 reasons.append("Server direction identified as " + other.name)
         reasons.append(chosen.reason)
+        if application.name in APP_DOMAINS and application.container is not None:
+            reasons.append(_HOST_REASON)
         for obs in (client, server):
             if obs is not None and obs.status == "invalidated":
                 reasons.append("One direction was invalidated: " + obs.reason)

@@ -30,6 +30,7 @@ A verdict names either a catalog application or a session outcome.
 | `web-browsing` | HTTP/1.x or HTTP/2 initial message validated, no configured mapping | web-browsing |
 | `ssl` | TLS ClientHello/ServerHello validated; SNI/ALPN are offers | ssl |
 | `quic` | QUIC Initial validated; ClientHello recovered from Initial protection when possible, `h3` ALPN is an offer | quic |
+| catalog application by server name (v0.65) | The built-in server-name catalog (53 services, `host_apps.py`) refines `ssl`/`quic`/`web-browsing` from the SNI or Host by label-boundary suffix; `base_app` and `implicitly_uses` name the carrier; never for an outer ECH name; configured rules and signatures win | youtube, ms-teams, slack, ... |
 | `<configured name>` | `RuleIndex` exact-host mapping on `tls_sni`/`http_host`; `base_app` names the carrier (`ssl`/`web-browsing`), `implicitly_uses` lists it | specific app implicitly using ssl/web-browsing |
 | `<signature name>` | Custom signature matched (SIGNATURES.md); category/risk come from the signature, `base_app` is its `parent` or the family that exposed the contexts, including `unknown-tcp`/`unknown-udp` | custom App-ID |
 | `ssh`, `dns`, `smb`, `rdp`, … | The family's structural profile passed (see catalog aliases for vendor names) | same |
@@ -46,6 +47,12 @@ A verdict names either a catalog application or a session outcome.
 | `llmnr` | LLMNR family with the `llmnr` hint only (v0.55): the bytes equal a unicast DNS query, so without the hint the verdict is `dns` | llmnr |
 | `irc` | Client registration line (NICK, CAP) or `:`-prefixed server opening line (v0.54); USER with four parameters is ambiguous with FTP and PASS with FTP/POP3, both resolved by the session merge | irc |
 | `ms-rpc-over-http` | HTTP/1.x request with the RPC_CONNECT, RPC_IN_DATA or RPC_OUT_DATA method (MS-RPCH, v0.54); `implicitly_uses` web-browsing | msrpc-over-http |
+| `mysql`, `mssql-db`, `postgresql` with transport protection | The handshake (v0.61): `mysql_tls_supported`, `mysql_client_ssl`, `tds_session_encryption`, `postgresql_message=startup` feed `database-encryption-unavailable` and `database-session-unencrypted`; the verdict is unchanged | mysql, tds, postgresql |
+| `snmp` (v3) with security level | Every SNMPv3 message (v0.62): `snmp_security_level` and `snmp_usm_discovery` feed `snmpv3-unauthenticated` and `snmpv3-no-privacy`; the verdict stays `snmp` | snmp |
+| `kerberos` with encryption types | KDC requests and replies (v0.63): `kerberos_etype_preferred`, `kerberos_etype_offered`, `kerberos_reply_etype`, `kerberos_ticket_etype` feed `kerberos-weak-etype-offered` and `kerberos-weak-etype-selected`; the verdict stays `kerberos` | kerberos |
+| `ssl` with weak cipher offers | The ClientHello (v0.64): `tls_weak_cipher_offered` (RFC 9325 classes from the IANA registry) feeds `tls-prohibited-cipher-offered` and `tls-64-bit-block-cipher-offered`; the verdict is unchanged | ssl |
+| `rdp` with security posture | The X.224 negotiation (v0.60): `rdp_offered_security`, `rdp_credential_mode`, `rdp_selected_security`, `rdp_server_supports`, `rdp_failure`; the selection feeds `rdp-nla-not-negotiated`; the verdict stays `rdp` (or `ssl` with `shifted_from` once the TLS phase is inspected) | rdp |
+| `smb` with transport protection posture | The NEGOTIATE response (v0.59): `smb_signing`, `smb_encryption`, `smb_encryption_cipher`, `smb_signing_algorithm` feed the `smb-signing-not-required` and `smb-encryption-unavailable` risks; the verdict stays `smb` | smb |
 | `ssh` with algorithm posture | The KEXINIT after the banner (v0.58, both directions): `ssh_kex_class`, `ssh_weak_algorithm`, `ssh_terrapin` feed the `ssh-weak-algorithm-offered`, `ssh-none-cipher-offered` and `ssh-terrapin-exposed` risks; the verdict stays `ssh` | ssh |
 | `ssl` with TLS posture | ServerHello `selected_key_exchange`/`selected_cipher_mode` and, with `--certificates`, leaf `tls_certificate_ca`/`_eku`/`_san` and the validity window judged at capture time (v0.57) feed the `tls-no-forward-secrecy`, `tls-ca-certificate-as-leaf`, `tls-certificate-not-for-server-auth`, `tls-certificate-without-san` and `tls-certificate-outside-validity` risks; the verdict stays `ssl` | ssl |
 | `smb` with authentication posture | SMB2/SMB1 NEGOTIATE then one SESSION_SETUP (v0.56): `gss_mechanism`, `ntlm_message`, `smb_session`, `smb_signing` feed the `ntlm-authentication` and `smb-guest-or-anonymous-session` risks; the verdict stays `smb` | smb |
@@ -107,6 +114,16 @@ counted, not tracked):
  "policy": {"action": "deny", "rule": "deny-cleartext", "reasons": ["rule 'deny-cleartext' matched web-browsing"]}}
 ```
 
+`layers` (stage 5, A05/A13) separates what was known at each layer from the
+effective answer: `outer` (wire protocol and verdict), `encryption`, `inner`
+(authenticated plaintext, only with decryption), `application` with its
+identity `basis` (`authenticated_plaintext`, `structural`, `configured_rule`,
+`client_assertion`, `none`), the display `chain` and the `claims` (asserted
+names, offered ALPN, derived fingerprints: provenance only, never identity).
+The same reducer (`protocol_adapters/layers.py`) builds it for session records
+and for the decryption adapter's rows, so a TLS session whose plaintext was
+authenticated reads `tls -> http/1.1 -> webdav` everywhere, and an
+authentication failure keeps the TLS layer while withdrawing the inner one.
 `risks` lists the RISKS.md flow risks derived from the verdict and both
 directions' evidence (sorted, possibly empty). `policy` appears only when a
 policy file was given (POLICY.md).
@@ -133,3 +150,14 @@ make apps
 - Risk and characteristics are catalog metadata; they are not derived from traffic.
 - UDP flows are keyed by endpoint pair only; there is no transaction matching
   or spoofing resistance.
+
+## New in v0.66 — Smart-home LAN families and multicast DNS repairs (ported from v0.59)
+
+The Mac v0.59 triage of unidentified local flows added three UDP families: LIFX LAN (`lifx-lan`), Tuya
+LAN 3.3 discovery (`tuya-lan`) and TP-Link Smart Home (`tplink-smarthome`), each with a structural profile
+and fixed-vocabulary evidence only, as catalog applications `lifx-lan`, `tuya-lan` and `tplink-smarthome`.
+The DNS layout no longer rejects multicast DNS responses that compress against an SRV target or NSEC next
+name, ignores the AA bit on mDNS queries as RFC 6762 18.4 requires, and recognises reverse-mapping probes.
+Ported onto the v0.65 architecture as a distinct version: 88 families, 79 automatic, 155 applications,
+721 tests; the behaviour diff against v0.65 lists exactly the inputs these profiles now classify
+(docs/BEHAVIOUR-DIFF-V066.md).

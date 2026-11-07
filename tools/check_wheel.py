@@ -1,8 +1,10 @@
-"""Fail when a built wheel carries anything but the engine package, or misses a module of it.
+"""Fail when a built wheel carries anything but the shipped packages, or misses a module of them.
 
 Release gate: the wheel must contain exactly the modules under protocol_engine/
-in the tree (no tests, fixtures, captures, tools or benchmarks) plus its
-dist-info, and declare no runtime dependencies. Usage:
+and protocol_adapters/ in the tree (no tests, captures, tools or benchmarks)
+plus its dist-info, and declare no unconditional runtime dependency. Since
+stage 1b the only dependency is the optional `decryption` extra (cryptography)
+used by the presentation's TLS POC; the core stays dependency-free. Usage:
 tools/check_wheel.py dist/*.whl
 """
 import glob
@@ -23,15 +25,21 @@ def main(paths):
         metadata = next((name for name in names if name.endswith(".dist-info/METADATA")), None)
         requires = [line for line in archive.read(metadata).decode("utf-8").splitlines() if line.startswith("Requires-Dist:")] if metadata else ["missing"]
     failures = []
-    packaged = {name for name in names if name.startswith("protocol_engine/") and name.endswith(".py")}
-    expected = {"protocol_engine/" + os.path.basename(path) for path in glob.glob(os.path.join(ROOT, "protocol_engine", "*.py"))}
-    foreign = [name for name in names if not name.startswith("protocol_engine/") and ".dist-info/" not in name]
+    packages = ("protocol_engine", "protocol_adapters")
+    packaged = {name for name in names if name.startswith(tuple(p + "/" for p in packages)) and name.endswith(".py")}
+    expected = {package + "/" + os.path.basename(path) for package in packages
+                for path in glob.glob(os.path.join(ROOT, package, "*.py"))}
+    foreign = [name for name in names if not name.startswith(tuple(p + "/" for p in packages)) and ".dist-info/" not in name]
     if foreign:
-        failures.append("files outside the engine package: " + ", ".join(sorted(foreign)[:10]))
+        failures.append("files outside the shipped packages: " + ", ".join(sorted(foreign)[:10]))
     if packaged != expected:
         failures.append("module set differs from the tree: missing {} extra {}".format(sorted(expected - packaged), sorted(packaged - expected)))
-    if requires:
-        failures.append("runtime dependencies declared: " + "; ".join(requires))
+    unconditional = [line for line in requires if "; extra ==" not in line]
+    if unconditional:
+        failures.append("runtime dependencies declared: " + "; ".join(unconditional))
+    extras = [line for line in requires if "; extra ==" in line]
+    if extras != ['Requires-Dist: cryptography==50.0.2; extra == "decryption"']:
+        failures.append("optional extras differ from the documented decryption extra: " + "; ".join(extras))
     for failure in failures:
         print("check_wheel:", failure)
     print("check_wheel:", ("ok" if not failures else "{} problem(s)".format(len(failures))), "({} entries, {} modules)".format(len(names), len(packaged)))

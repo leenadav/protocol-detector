@@ -390,6 +390,15 @@
         },
         "policy": {
           "$ref": "#/$defs/policy"
+        },
+        "layers": {
+          "$ref": "#/$defs/layers"
+        },
+        "signature_set": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 16,
+          "description": "Stage 7: digest of the custom signature set this verdict was classified with."
         }
       },
       "required": [
@@ -420,6 +429,221 @@
         "shifted_from",
         "risks"
       ]
+    },
+    "layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "transport",
+        "outer",
+        "encryption",
+        "inner",
+        "application",
+        "decryption",
+        "capture_quality",
+        "chain",
+        "claims"
+      ],
+      "description": "Stage 5 (A05/A13): per-layer knowledge and the effective application with its identity basis; labels only.",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        },
+        "outer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "protocol",
+            "app",
+            "status"
+          ],
+          "properties": {
+            "protocol": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "app": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            }
+          }
+        },
+        "encryption": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "protocol",
+            "offered_alpn",
+            "server_name_asserted",
+            "version"
+          ],
+          "properties": {
+            "protocol": {
+              "type": "string"
+            },
+            "offered_alpn": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "server_name_asserted": {
+              "type": "boolean"
+            },
+            "version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "inner": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "protocol",
+            "app",
+            "status",
+            "source",
+            "authenticated"
+          ],
+          "properties": {
+            "protocol": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "app": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "source": {
+              "const": "decrypted"
+            },
+            "authenticated": {
+              "type": "boolean"
+            }
+          }
+        },
+        "application": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "category",
+            "status",
+            "basis"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "basis": {
+              "enum": [
+                "authenticated_plaintext",
+                "structural",
+                "configured_rule",
+                "client_assertion",
+                "none"
+              ]
+            }
+          }
+        },
+        "decryption": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "reason_code": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "authenticated_records": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        },
+        "capture_quality": {
+          "type": "string"
+        },
+        "chain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "field",
+              "source",
+              "strength"
+            ],
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "strength": {
+                "enum": [
+                  "asserted",
+                  "offered",
+                  "derived"
+                ]
+              }
+            }
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      }
     }
   }
 }

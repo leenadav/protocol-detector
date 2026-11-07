@@ -81,7 +81,7 @@ class MulticastDNSTests(unittest.TestCase):
         malformed = (
             dns_message(0, 0x8000, answers=(dns_record(dns_name(b"laptop", b"local"), 1, 1, 120, bytes(4)),)),   # response without AA
             dns_message(0, 0x8403, answers=(dns_record(dns_name(b"laptop", b"local"), 1, 0x8001, 120, bytes(4)),)),   # rcode on a response
-            dns_message(0, 0x0400, questions=(LOCAL_A,)),                                              # AA on a query
+            # v0.59: AA on a query is ignored on reception (RFC 6762 18.4); test_v059 asserts it identifies.
             dns_message(0, 0x0003, questions=(LOCAL_A,)),                                              # rcode on a query
             dns_message(0, 0x8400, answers=(dns_record(dns_name(b"laptop", b"example"), 1, 1, 120, bytes(4)),)),   # no question, no marker
             dns_message(0, 0x8400, answers=(dns_record(dns_name(b"laptop", b"local"), 1, 0x8001, 120, bytes(3)),)),   # bad A size

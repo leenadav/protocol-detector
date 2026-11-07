@@ -24,10 +24,17 @@
    "\"tools/check_pin_drift.py\" = [\"S603\"]       # resolved git executable with argv-only arguments, reviewed",
    "\"tools/check_release_exposure.py\" = [\"S603\"]   # resolved git executable with argv-only arguments, reviewed",
    "\"tools/check_workflow_policy.py\" = [\"S603\"]    # resolved git executable with argv-only arguments, reviewed",
+   "\"tools/build_manifest.py\" = [\"S603\", \"S607\"]  # fixed argv `git rev-parse` for manifest provenance only",
    "\"live_smoke.py\" = [\"S603\", \"S404\", \"S607\", \"S104\"]",
    "\"*interop*.py\" = [\"S603\", \"S404\", \"S607\"]",
    "\"benchmark*.py\" = [\"S603\", \"S404\", \"S607\"]",
-   "\"ike_decoder_check.py\" = [\"S603\", \"S404\", \"S607\"]"
+   "\"ike_decoder_check.py\" = [\"S603\", \"S404\", \"S607\"]",
+   "# Presentation application (stage 1a): argv-only subprocess calls, no shell. The workers run sys.executable on the",
+   "# app's own scripts; tcpdump comes from live_capture.capture_command, which validates interface and filter.",
+   "\"presentation/server.py\" = [\"S603\"]",
+   "\"presentation/live_manager.py\" = [\"S603\"]",
+   "\"presentation/poc_decryption/live.py\" = [\"S603\"]",
+   "\"presentation/launch.py\" = [\"S603\", \"S310\"]   # S310: urlopen only of http://127.0.0.1:<port> built in main()"
   ],
   "bandit.yaml": [
    "# Bandit configuration (SSDLC static analysis gate).",
@@ -63,7 +70,16 @@
    "  # The SSH post-quantum key exchange name in the PROTOCOLS.md v0.58 table (\"key exchange names:",
    "  # sntrup761x25519\") matches generic-api-key; exact token only, so a real key next to it still flags.",
    "  '''^sntrup761x25519$''',",
-   "]"
+   "]",
+   "",
+   "# Stage 8 (A16/A10): an NSS key log (SSLKEYLOGFILE) must never be committed. Secrets and client randoms are",
+   "# 32 or 48 bytes of hex; placeholder vectors in tests are all-zero or repeated bytes and are allowlisted by",
+   "# the paths above only when they are such placeholders (tools/check_no_keylogs.py enforces that part).",
+   "[[rules]]",
+   "id = \"nss-key-log\"",
+   "description = \"TLS key-log line (CLIENT_RANDOM / TRAFFIC_SECRET with hex secrets)\"",
+   "regex = '''(?m)^(CLIENT_RANDOM|(?:CLIENT|SERVER)_(?:HANDSHAKE_)?TRAFFIC_SECRET_?0?|EXPORTER_SECRET)\\s+[0-9a-fA-F]{64}\\s+[0-9a-fA-F]{64,96}\\s*$'''",
+   "keywords = [\"CLIENT_RANDOM\", \"TRAFFIC_SECRET\", \"EXPORTER_SECRET\"]"
   ],
   "tools/scanners/go.mod": [
    "module protocol-detector/tools/scanners",

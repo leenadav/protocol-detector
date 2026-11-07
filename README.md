@@ -12,8 +12,8 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 
 | Area | What exists | Where to read |
 |---|---|---|
-| Protocol profiles | 85 families (76 automatic, 9 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
-| Application verdicts | App-ID style vocabulary: 99 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
+| Protocol profiles | 88 families (79 automatic, 9 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
+| Application verdicts | App-ID style vocabulary: 155 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
 | Application shift | CONNECT, WebSocket/h2c upgrade, STARTTLS/STLS/AUTH TLS, PostgreSQL/MySQL SSLRequest, RDP negotiation: the phase after the boundary is inspected and the carrier is kept as `shifted_from` | PROTOCOLS.md (v0.28) |
 | Custom signatures | JSON rules over bounded parser contexts (host, SNI, ALPN, banner, query name, payload prefix) with a safe regex subset | [SIGNATURES.md](SIGNATURES.md) |
 | Fingerprints | JA3/JA4/JA3S/JA4S/HASSH/HTTP2 SETTINGS, opt-in, derived evidence only | [FINGERPRINTS.md](FINGERPRINTS.md) |
@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 622 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 721 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -69,6 +69,71 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.65 — Applications by server name
+
+HTTPS, QUIC and HTTP sessions are no longer just `ssl` or `web-browsing` when
+the server name identifies the service: a built-in catalog of 53
+applications (YouTube, Netflix, Teams, Zoom, Slack, WhatsApp, ChatGPT, GitHub,
+Office 365, ...) maps the SNI or Host by DNS label suffix. The name is a client
+assertion and the verdict says so; configured rules win, and encrypted
+ClientHello front names are never mapped.
+88 families, 79 automatic, 155 applications, 721 tests.
+
+## New in v0.64 — Weak cipher suites in TLS offers
+
+ClientHellos now report which RFC 9325 weak classes they offer (NULL, export,
+anonymous, RC4, single DES, and 3DES/IDEA 64-bit blocks), from a table derived
+from the IANA cipher-suite registry by a checked-in tool. New risks:
+`tls-prohibited-cipher-offered` and `tls-64-bit-block-cipher-offered`.
+85 families, 76 automatic, 99 applications, 650 tests.
+
+## New in v0.63 — Kerberos encryption types
+
+Kerberos requests now report which encryption types the client offers and
+prefers, and replies which ones the KDC used for the reply key and the ticket
+(AES-SHA2, AES-SHA1, Camellia, 3DES, RC4, DES). New risks:
+`kerberos-weak-etype-offered` and `kerberos-weak-etype-selected` (an RC4
+service ticket is the Kerberoasting case).
+85 families, 76 automatic, 99 applications, 646 tests.
+
+## New in v0.62 — SNMPv3 security level
+
+Every SNMPv3 message now carries its security level (`no-auth-no-priv`,
+`auth-no-priv`, `auth-priv`) and marks engine-discovery requests. New risks:
+`snmpv3-unauthenticated` and `snmpv3-no-privacy`, never raised for discovery
+requests or Report PDUs, which the protocol sends at a lower level by design.
+85 families, 76 automatic, 99 applications, 640 tests.
+
+## New in v0.61 — Database transport protection
+
+Database handshakes now say whether the session is encrypted. A TDS (MSSQL)
+PRELOGIN response is labelled `full`, `login-only` or `none`; a PostgreSQL
+StartupMessage or MySQL HandshakeResponse41 seen in the clear marks the session
+unencrypted; a MySQL greeting without CLIENT_SSL means the server cannot
+encrypt. New risks: `database-encryption-unavailable` and
+`database-session-unencrypted`; `mysql_clear_password` now raises
+`cleartext-credential-protocol`.
+85 families, 76 automatic, 99 applications, 637 tests.
+
+## New in v0.60 — RDP security posture
+
+The RDP negotiation now carries readable labels: which security protocols the
+client offers (standard RDP, TLS, CredSSP, CredSSP with early user
+authorization, RDSTLS, Azure AD), whether it asks for restricted admin or
+remote credential guard, what the server selects and supports, and the named
+reason when negotiation fails. New risk: `rdp-nla-not-negotiated` (the server
+selects standard RDP security or TLS without CredSSP).
+85 families, 76 automatic, 99 applications, 633 tests.
+
+## New in v0.59 — SMB transport protection posture
+
+The SMB2/3 NEGOTIATE response now says what the selected dialect can protect:
+whether SMB encryption is available, supported or not, the cipher a 3.1.1
+server selects (AES-128/256 CCM/GCM) and its signing algorithm (HMAC-SHA256,
+AES-CMAC, AES-GMAC). New risks: `smb-signing-not-required` (the server only
+enables signing, the classic relay exposure) and `smb-encryption-unavailable`.
+85 families, 76 automatic, 99 applications, 627 tests.
 
 ## New in v0.58 — SSH algorithm posture
 

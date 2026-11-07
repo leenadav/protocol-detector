@@ -8,13 +8,16 @@ used by application-aware firewalls so that policies written in that vocabulary
 can be evaluated against this engine's output.
 """
 from dataclasses import dataclass
+from functools import lru_cache
 from types import MappingProxyType
 from typing import Optional, Tuple
 
+from .host_apps import catalog_entries
+
 CATEGORIES = MappingProxyType({
-    "business-systems": ("auth-service", "database", "general-business", "ics-protocol", "management",
-                         "software-development", "storage-backup"),
-    "collaboration": ("email", "instant-messaging", "voip-video", "web-posting"),
+    "business-systems": ("auth-service", "database", "general-business", "generative-ai", "ics-protocol", "management",
+                         "office-programs", "software-development", "storage-backup"),
+    "collaboration": ("email", "instant-messaging", "social-networking", "voip-video", "web-posting"),
     "general-internet": ("file-sharing", "internet-utility"),
     "media": ("audio-streaming", "gaming", "photo-video"),
     "networking": ("encrypted-tunnel", "infrastructure", "ip-protocol", "proxy", "remote-access", "routing"),
@@ -199,6 +202,13 @@ _ENTRIES = (
          ("prone-to-misuse",), ("udp/123",)),
     _app("dhcp", "networking", "infrastructure", "network-protocol", 2, "DHCPv4 message", ("widely-used",), ("udp/67", "udp/68")),
     _app("coap", "networking", "infrastructure", "client-server", 2, "CoAP v1 message", (), ("udp/5683",), ("udp/5684",)),
+    _app("lifx-lan", "general-internet", "internet-utility", "client-server", 2, "LIFX LAN smart-lighting discovery and control message",
+         (), ("udp/56700",)),
+    _app("tuya-lan", "general-internet", "internet-utility", "client-server", 2, "Tuya smart-home LAN discovery or control frame (protocol 3.3)",
+         (), ("udp/6666", "udp/6667", "tcp/6668")),
+    _app("tplink-smarthome", "general-internet", "internet-utility", "client-server", 3,
+         "TP-Link Smart Home (Kasa) local discovery/control JSON; XOR obfuscation, not encryption",
+         ("prone-to-misuse",), ("udp/9999", "tcp/9999")),
     _app("syslog", "business-systems", "management", "client-server", 2, "RFC 5424 syslog message", (), ("udp/514", "tcp/514"), ("tcp/6514",)),
     _app("fastcgi", "business-systems", "general-business", "client-server", 2, "FastCGI BEGIN_REQUEST and PARAMS", (), ("tcp/9000",)),
     _app("rsync", "business-systems", "storage-backup", "client-server", 3, "rsync daemon greeting", ("transfers-files",), ("tcp/873",)),
@@ -323,6 +333,8 @@ def _validate(entries):
     return MappingProxyType({entry.name: entry for entry in entries}), MappingProxyType(aliases)
 
 
+# v0.65: services named by the built-in server-name catalog (host_apps.py).
+_ENTRIES += catalog_entries(_app)
 APPLICATIONS, ALIASES = _validate(_ENTRIES)
 
 
@@ -342,6 +354,18 @@ def lookup(name):
         return APPLICATIONS[name]
     canonical = ALIASES.get(name)
     return APPLICATIONS[canonical] if canonical else None
+
+
+@lru_cache(maxsize=None)     # at most one entry per catalog application and carrier (ssl, quic, web-browsing)
+def host_application(name, container):
+    """Built-in server-name catalog entry (v0.65) carried over this session's container.
+
+    The catalog metadata stays; ports, implicitly_uses and the container come from
+    the carrier (ssl, quic or web-browsing), like a configured mapping.
+    """
+    entry, base = APPLICATIONS[name], APPLICATIONS[container]
+    return Application(entry.name, entry.category, entry.subcategory, entry.technology, entry.risk, entry.description,
+                       entry.characteristics, base.standard_ports, base.secure_ports, (container,), (), container, ())
 
 
 def custom_application(name, container):

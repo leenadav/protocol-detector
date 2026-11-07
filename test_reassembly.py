@@ -30,13 +30,15 @@ class ReassemblyTests(unittest.TestCase):
         self.assertEqual(stream.stored, len(expected))
         self.assertEqual(stream.contiguous, ready)
         self.assertEqual(stream.highest_end, max(expected, default=-1) + 1)
-        self.assertEqual(bytes(stream.present), bytes(int(i in expected) for i in range(stream.limit)))
+        # Stage 4 (A07): arrays are allocated lazily up to the highest retained byte, never at the limit.
+        self.assertEqual(bytes(stream.present), bytes(int(i in expected) for i in range(stream.highest_end)))
         for i, value in expected.items():
             self.assertEqual(stream.buffer[i], value)
         self.assertEqual(b''.join(stream.inspector.chunks), bytes(expected[i] for i in range(ready)))
         self.assertTrue(all(stream.inspector.chunks))
-        self.assertEqual(len(stream.buffer), stream.limit)
-        self.assertEqual(len(stream.present), stream.limit)
+        self.assertEqual(len(stream.buffer), stream.highest_end)
+        self.assertEqual(len(stream.present), stream.highest_end)
+        self.assertLessEqual(stream.allocated, 2 * stream.limit)
 
     def test_exhaustive_small_window_presence_and_all_intervals(self):
         # All 256 arrangements of holes, every nonempty interval. The oracle

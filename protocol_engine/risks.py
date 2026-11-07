@@ -8,7 +8,9 @@ beyond what the parsers already validated. RISKS.md documents every entry.
 from types import MappingProxyType
 
 from .ssh_posture import RISK_EXEMPT as _SSH_RISK_EXEMPT
+from .tls_ciphers import PROHIBITED as _PROHIBITED_CIPHERS
 from .tls_server import NO_FORWARD_SECRECY
+from .windows import WEAK_ETYPE_CLASSES
 from .x509 import WEAK_SIGNATURES, validity, weak_key
 
 RISKS = MappingProxyType({
@@ -38,9 +40,20 @@ RISKS = MappingProxyType({
     "tls-ca-certificate-as-leaf": ("medium", "TLS 1.2 server leaf certificate asserts basicConstraints cA TRUE (a CA certificate presented as the end entity)"),
     "tls-certificate-not-for-server-auth": ("medium", "TLS 1.2 server leaf certificate restricts its extended key usage to purposes other than serverAuth"),
     "tls-certificate-without-san": ("low", "TLS 1.2 server v3 leaf certificate without a subjectAltName extension (subject-CN-only names are rejected by current clients)"),
+    "smb-signing-not-required": ("medium", "SMB2/3 server NEGOTIATE response enables but does not require signing: sessions can be relayed or tampered with unless the client requires signing"),
+    "smb-encryption-unavailable": ("low", "SMB2/3 server NEGOTIATE response selects a dialect or cipher without SMB encryption (2.0.2/2.1, no encryption capability, or no common cipher)"),
     "ssh-weak-algorithm-offered": ("medium", "SSH KEXINIT offers a weak algorithm class: SHA-1 key exchange, DSA host keys, RC4, 3DES or 64-bit block ciphers, CBC mode, MD5 or truncated MACs, or no MAC"),
     "ssh-none-cipher-offered": ("high", "SSH KEXINIT offers the none cipher (no encryption)"),
     "ssh-terrapin-exposed": ("medium", "SSH KEXINIT offers ChaCha20-Poly1305 or an encrypt-then-MAC MAC with a CBC-mode cipher without the strict key exchange marker (Terrapin, CVE-2023-48795)"),
+    "rdp-nla-not-negotiated": ("medium", "RDP server Connection Confirm selects standard RDP security or TLS without CredSSP: no network level authentication, so the logon happens inside the session"),
+    "database-encryption-unavailable": ("medium", "Database server cannot encrypt the session: MySQL greeting without CLIENT_SSL, or a TDS PRELOGIN response that does not support encryption (the login is protected only by TDS's reversible password obfuscation)"),
+    "database-session-unencrypted": ("medium", "Database session proceeds without transport encryption: a MySQL HandshakeResponse41 or PostgreSQL StartupMessage seen in the clear, or a TDS PRELOGIN response that encrypts only the login packet or nothing"),
+    "snmpv3-unauthenticated": ("medium", "SNMPv3 message at noAuthNoPriv other than an engine-discovery request or a Report: operations and values are neither authenticated nor encrypted"),
+    "snmpv3-no-privacy": ("low", "SNMPv3 message at authNoPriv other than a Report: authenticated, but the scoped PDU (OIDs and values) travels in cleartext"),
+    "kerberos-weak-etype-offered": ("low", "Kerberos AS-REQ or TGS-REQ offers RC4-HMAC, DES or 3DES (deprecated by RFC 6649 and RFC 8429)"),
+    "kerberos-weak-etype-selected": ("high", "Kerberos AS-REP or TGS-REP encrypted with RC4-HMAC, DES or 3DES: the reply key or the ticket is open to offline cracking (an RC4 service ticket is the Kerberoasting case)"),
+    "tls-prohibited-cipher-offered": ("medium", "ClientHello offers a cipher suite RFC 9325 forbids negotiating: NULL encryption, anonymous key exchange, export-grade, RC4 or single DES"),
+    "tls-64-bit-block-cipher-offered": ("low", "ClientHello offers a 3DES or IDEA suite (64-bit block, Sweet32; RFC 9325 says SHOULD NOT negotiate)"),
     "tls-certificate-outside-validity": ("medium", "TLS 1.2 server leaf certificate expired or not yet valid at the capture time (evaluated only when the host supplies a capture clock)"),
 })
 MAX_CERTIFICATE_LIFETIME_DAYS = 398   # CA/Browser Forum baseline since September 2020
@@ -54,7 +67,11 @@ _FIELDS = frozenset(("ssh_version", "selected_tls_version", "rdp_security_flags"
                      "tls_certificate_key", "tls_certificate_signature", "tls_certificate_lifetime_days", "tls_ech", "dns_rcode", "kerberos_error", "radius_code", "modbus_pdu", "zmtp_mechanism", "rip_authentication", "gss_mechanism", "ldap_bind", "smb_session",
                      "http_auth_scheme", "http_auth_challenge", "http2_auth_scheme", "http2_auth_challenge",
                      "selected_key_exchange", "tls_certificate_ca", "tls_certificate_eku", "tls_certificate_san",
-                     "tls_certificate_not_before", "tls_certificate_not_after", "ssh_weak_algorithm", "ssh_terrapin"))
+                     "tls_certificate_not_before", "tls_certificate_not_after", "ssh_weak_algorithm", "ssh_terrapin",
+                     "smb_signing", "smb_encryption", "rdp_selected_security",
+                     "mysql_tls_supported", "mysql_client_ssl", "mysql_auth_plugin", "tds_session_encryption", "postgresql_message",
+                     "snmp_security_level", "snmp_usm_discovery", "snmp_pdu",
+                     "kerberos_etype_offered", "kerberos_reply_etype", "kerberos_ticket_etype", "tls_weak_cipher_offered"))
 _OBSOLETE_PROTOCOLS = frozenset(("smb1", "telnet"))
 # Protocol versions whose credentials never travel in cleartext even though the
 # application family lists `cleartext-credentials` for its older versions.
@@ -176,6 +193,13 @@ def flow_risks(verdict, client, server, at=None):
                 # credentials and CURVE/GSSAPI authenticate cryptographically.
                 if value != "plain" and "cleartext-credential-protocol" in found:
                     found.remove("cleartext-credential-protocol")
+            elif field == "smb_signing":
+                # Only the server's NEGOTIATE response decides; a client's "enabled" is not a weakness on its own.
+                if value == "enabled" and evidence.source.endswith("negotiate_response"):
+                    found.append("smb-signing-not-required")
+            elif field == "smb_encryption":
+                if value in ("unavailable", "not-supported"):
+                    found.append("smb-encryption-unavailable")
             elif field == "ssh_weak_algorithm":
                 if value == "cipher-none":
                     found.append("ssh-none-cipher-offered")
@@ -184,6 +208,38 @@ def flow_risks(verdict, client, server, at=None):
             elif field == "ssh_terrapin":
                 if value == "exposed":
                     found.append("ssh-terrapin-exposed")
+            elif field == "rdp_selected_security":
+                # Only the server's selection decides; RDSTLS and AAD authenticate before the session as well (v0.60).
+                if value in ("standard-rdp", "tls"):
+                    found.append("rdp-nla-not-negotiated")
+            elif field == "mysql_tls_supported":
+                if value == "false":
+                    found.append("database-encryption-unavailable")
+            elif field == "mysql_client_ssl":
+                # A HandshakeResponse41 on the wire means no SSLRequest started TLS before it (v0.61). Bytes a host
+                # decrypted (feed_decrypted, Inspector(source="decrypted")) were protected, so only wire rows count.
+                if value == "not-requested" and evidence.source.startswith("wire"):
+                    found.append("database-session-unencrypted")
+            elif field == "mysql_auth_plugin":
+                # mysql_clear_password puts the password itself in a HandshakeResponse41 sent on the wire.
+                if value == "cleartext" and evidence.source.startswith("wire") and "cleartext-credential-protocol" not in found:
+                    found.append("cleartext-credential-protocol")
+            elif field == "tds_session_encryption":
+                if value == "none":
+                    found.append("database-encryption-unavailable")
+                if value in ("none", "login-only"):
+                    found.append("database-session-unencrypted")
+            elif field == "postgresql_message":
+                if value == "startup" and evidence.source.startswith("wire"):
+                    found.append("database-session-unencrypted")
+            elif field == "kerberos_etype_offered":
+                if value in WEAK_ETYPE_CLASSES:
+                    found.append("kerberos-weak-etype-offered")
+            elif field in ("kerberos_reply_etype", "kerberos_ticket_etype"):
+                if value in WEAK_ETYPE_CLASSES:
+                    found.append("kerberos-weak-etype-selected")
+            elif field == "tls_weak_cipher_offered":
+                found.append("tls-prohibited-cipher-offered" if value in _PROHIBITED_CIPHERS else "tls-64-bit-block-cipher-offered")
             elif field == "selected_key_exchange":
                 if value in NO_FORWARD_SECRECY:
                     found.append("tls-no-forward-secrecy")
@@ -196,7 +252,7 @@ def flow_risks(verdict, client, server, at=None):
             elif field == "tls_certificate_san":
                 if value == "absent":
                     found.append("tls-certificate-without-san")
-            elif field in ("tls_certificate_not_before", "tls_certificate_not_after"):
+            elif field in ("tls_certificate_not_before", "tls_certificate_not_after", "snmp_security_level", "snmp_usm_discovery", "snmp_pdu"):
                 window[field] = value
             elif field == "tls_certificate_lifetime_days":
                 if value.isdigit() and int(value) > MAX_CERTIFICATE_LIFETIME_DAYS:
@@ -205,8 +261,17 @@ def flow_risks(verdict, client, server, at=None):
                     or (field in ("rdp_security_flags", "rdp_selected_protocol") and value == "0"):
                 if "obsolete-protocol" not in found:
                     found.append("obsolete-protocol")
-        if window and validity(window.get("tls_certificate_not_before"), window.get("tls_certificate_not_after"), at) in ("expired", "not-yet-valid"):
-            found.append("tls-certificate-outside-validity")
+        if window:
+            if ("tls_certificate_not_before" in window or "tls_certificate_not_after" in window) and \
+                    validity(window.get("tls_certificate_not_before"), window.get("tls_certificate_not_after"), at) in ("expired", "not-yet-valid"):
+                found.append("tls-certificate-outside-validity")
+            level = window.get("snmp_security_level")
+            # Discovery requests and Reports (RFC 3414 4, 3.1.1) are sent below the session's level by design (v0.62).
+            if level is not None and window.get("snmp_pdu") != "report" and "snmp_usm_discovery" not in window:
+                if level == "no-auth-no-priv":
+                    found.append("snmpv3-unauthenticated")
+                elif level == "auth-no-priv":
+                    found.append("snmpv3-no-privacy")
     if not found:
         return _NO_RISKS
     return tuple(sorted(set(found)))

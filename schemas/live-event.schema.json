@@ -21,6 +21,9 @@
     },
     {
       "$ref": "#/$defs/error"
+    },
+    {
+      "$ref": "#/$defs/decryption"
     }
   ],
   "$defs": {
@@ -409,6 +412,32 @@
         },
         "policy": {
           "$ref": "#/$defs/policy"
+        },
+        "capture_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Stage 3 (A03/A04): the capture run that produced this session (SessionCoordinator)."
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 16,
+          "description": "Hashed, direction-independent identity (protocol_adapters.events.session_identity); never an address."
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Bumped when the same 5-tuple starts a new connection; identity is (session_id, generation)."
+        },
+        "layers": {
+          "$ref": "#/$defs/layers"
+        },
+        "signature_set": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 16,
+          "description": "Stage 7: digest of the custom signature set this verdict was classified with."
         }
       },
       "required": [
@@ -751,6 +780,9 @@
             "limit_or_interrupt",
             "eof"
           ]
+        },
+        "telemetry": {
+          "$ref": "#/$defs/telemetry"
         }
       }
     },
@@ -780,6 +812,22 @@
         "frame": {
           "type": "integer",
           "minimum": 1
+        },
+        "session_ids": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 16
+          },
+          "description": "Stage 2 (A06): hashed ids of the sessions this gap retracts (protocol_adapters.events.session_identity); never addresses."
+        },
+        "capture_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Stage 3: the capture run whose sessions this gap retracts (SessionCoordinator.gap)."
         }
       }
     },
@@ -796,6 +844,506 @@
         },
         "reason": {
           "type": "string"
+        },
+        "code": {
+          "enum": [
+            "capture_failed",
+            "capture_loss",
+            "key_log",
+            "budget",
+            "internal"
+          ],
+          "description": "Stage 4: sanitized failure class of the decryption worker."
+        }
+      }
+    },
+    "decryption_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "client",
+        "server",
+        "status"
+      ],
+      "properties": {
+        "client": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "server": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 16
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "enum": [
+            "decrypted",
+            "decrypting",
+            "awaiting_hello",
+            "awaiting_keys",
+            "unavailable"
+          ]
+        },
+        "reason_code": {
+          "enum": [
+            "awaiting_hello",
+            "awaiting_keys",
+            "awaiting_bytes",
+            "unsupported_profile",
+            "authentication_failed",
+            "gap",
+            "budget_exhausted",
+            "incomplete",
+            "complete"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "outer_protocol": {
+          "const": "tls"
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cipher_suite": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "authenticated_records": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "client_plaintext_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "server_plaintext_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "type": "string"
+        },
+        "application": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "inner_protocol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "app_status": {
+          "type": "string"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "note": {
+          "type": "string"
+        },
+        "layers": {
+          "$ref": "#/$defs/layers"
+        }
+      }
+    },
+    "decryption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "report"
+      ],
+      "properties": {
+        "type": {
+          "const": "decryption"
+        },
+        "provisional": {
+          "type": "boolean"
+        },
+        "capture_stats": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "capture_quality": {
+          "type": "string"
+        },
+        "report": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "connections",
+            "decrypted",
+            "frames"
+          ],
+          "properties": {
+            "connections": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/decryption_row"
+              }
+            },
+            "decrypted": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "frames": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "skipped": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "profile": {
+              "type": "string"
+            },
+            "counts": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer"
+              }
+            },
+            "budget": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "transport",
+        "outer",
+        "encryption",
+        "inner",
+        "application",
+        "decryption",
+        "capture_quality",
+        "chain",
+        "claims"
+      ],
+      "description": "Stage 5 (A05/A13): per-layer knowledge and the effective application with its identity basis; labels only.",
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "transport": {
+          "enum": [
+            "tcp",
+            "udp"
+          ]
+        },
+        "outer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "protocol",
+            "app",
+            "status"
+          ],
+          "properties": {
+            "protocol": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "app": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            }
+          }
+        },
+        "encryption": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "protocol",
+            "offered_alpn",
+            "server_name_asserted",
+            "version"
+          ],
+          "properties": {
+            "protocol": {
+              "type": "string"
+            },
+            "offered_alpn": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "server_name_asserted": {
+              "type": "boolean"
+            },
+            "version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "inner": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "protocol",
+            "app",
+            "status",
+            "source",
+            "authenticated"
+          ],
+          "properties": {
+            "protocol": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "app": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "source": {
+              "const": "decrypted"
+            },
+            "authenticated": {
+              "type": "boolean"
+            }
+          }
+        },
+        "application": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "category",
+            "status",
+            "basis"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "basis": {
+              "enum": [
+                "authenticated_plaintext",
+                "structural",
+                "configured_rule",
+                "client_assertion",
+                "none"
+              ]
+            }
+          }
+        },
+        "decryption": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "reason_code": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "authenticated_records": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        },
+        "capture_quality": {
+          "type": "string"
+        },
+        "chain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "field",
+              "source",
+              "strength"
+            ],
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "strength": {
+                "enum": [
+                  "asserted",
+                  "offered",
+                  "derived"
+                ]
+              }
+            }
+          }
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "counters",
+        "histograms"
+      ],
+      "properties": {
+        "counters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "histograms": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "count",
+              "sum",
+              "min",
+              "max",
+              "p50",
+              "p95",
+              "p99",
+              "buckets"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer"
+              },
+              "sum": {
+                "type": "number"
+              },
+              "min": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "max": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "p50": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "p95": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "p99": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "buckets": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              }
+            }
+          }
         }
       }
     }

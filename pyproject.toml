@@ -4,13 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "protocol-stream-engine"
-version = "0.58.0"
+version = "0.66.0"
 description = "Bounded incremental protocol classification for TCP streams and UDP datagrams"
 requires-python = ">=3.9"
 dependencies = []
 
+[project.optional-dependencies]
+# The presentation application's TLS POC decrypts records with cryptography's AEADs; the core needs nothing.
+decryption = ["cryptography==50.0.2"]
+
 [tool.setuptools]
-packages = ["protocol_engine"]
+packages = ["protocol_engine", "protocol_adapters"]
 
 [tool.ruff]
 line-length = 160
@@ -35,7 +39,14 @@ ignore = [
 "tools/check_pin_drift.py" = ["S603"]       # resolved git executable with argv-only arguments, reviewed
 "tools/check_release_exposure.py" = ["S603"]   # resolved git executable with argv-only arguments, reviewed
 "tools/check_workflow_policy.py" = ["S603"]    # resolved git executable with argv-only arguments, reviewed
+"tools/build_manifest.py" = ["S603", "S607"]  # fixed argv `git rev-parse` for manifest provenance only
 "live_smoke.py" = ["S603", "S404", "S607", "S104"]
 "*interop*.py" = ["S603", "S404", "S607"]
 "benchmark*.py" = ["S603", "S404", "S607"]
 "ike_decoder_check.py" = ["S603", "S404", "S607"]
+# Presentation application (stage 1a): argv-only subprocess calls, no shell. The workers run sys.executable on the
+# app's own scripts; tcpdump comes from live_capture.capture_command, which validates interface and filter.
+"presentation/server.py" = ["S603"]
+"presentation/live_manager.py" = ["S603"]
+"presentation/poc_decryption/live.py" = ["S603"]
+"presentation/launch.py" = ["S603", "S310"]   # S310: urlopen only of http://127.0.0.1:<port> built in main()
