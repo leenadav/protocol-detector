@@ -66,7 +66,7 @@ class Analyzer:
         self.inspection_config = Config(max_bytes=byte_limit, max_crc32c_bytes=crc32c_byte_limit,
                                         retain_contexts=self.signatures is not None, fingerprints=bool(fingerprints),
                                         heuristics=bool(heuristics), certificates=bool(certificates))
-        self.quic_assembler = QuicAssembler()
+        self.quic_assembler = QuicAssembler(idle_seconds=idle_timeout)   # D01: scoped per flow, expires with the flow table
         self.udp = DatagramInspector(self.inspection_config, self.signatures, self.quic_assembler)
         self.udp_revision = 0
         self.now = 0
@@ -107,7 +107,13 @@ class Analyzer:
                                         state["bytes"].get(client, 0), state["bytes"].get(server, 0))[0]
         if self.signatures is not None:
             record["signature_set"] = self.signatures.digest      # stage 7 (A11): the rule set this verdict used
-        self.telemetry.observe("time_to_verdict_seconds", max(0.0, self.now - state["start"]))
+        # Latency telemetry (P2 of the stage-6 review): the session's lifetime is not its decision time.
+        self.telemetry.observe("session_lifetime_seconds", max(0.0, self.now - state["start"]))
+        if state.get("first_decision") is not None:
+            self.telemetry.observe("time_to_first_decision_seconds", max(0.0, state["first_decision"] - state["start"]))
+            self.telemetry.observe("time_to_stable_verdict_seconds", max(0.0, state["stable_at"] - state["start"]))
+            record["decision"] = {"first_seconds": round(state["first_decision"] - state["start"], 6),
+                                  "stable_seconds": round(state["stable_at"] - state["start"], 6)}
         self.telemetry.add("sessions." + verdict.status)
         if self.policy is not None:
             record["policy"] = self.policy.evaluate(verdict, transport, server[1]).fields()
@@ -122,6 +128,13 @@ class Analyzer:
             record["hostname"] = next((obs.hostname for obs in observations if obs is not None and obs.hostname), None)
         self.counts["sessions"] += 1
         self.on_session(record)
+
+    def _decided(self, state, label):
+        """Record when a flow or connection was first identified and when its label last changed."""
+        if state.get("first_decision") is None:
+            state["first_decision"] = self.now
+        if state.get("label") != label:
+            state["label"], state["stable_at"] = label, self.now
 
     def _open_shift(self, state, endpoint, boundary, expected=None):
         """Open a peer-decided phase on one direction's stream and keep the events its replay published."""
@@ -235,6 +248,7 @@ class Analyzer:
         self._record("tcp", client, server, state, verdict, reason, (client_obs, server_obs))
 
     def _udp_session(self, key, flow, reason):
+        self.quic_assembler.reset((flow["client"], flow["server"]))     # D01: the flow's CRYPTO state ends with it
         if self.on_session is None:
             return
         # v0.43: both directions contribute. The client datagram decides as before; a server
@@ -307,7 +321,7 @@ class Analyzer:
         self.manager.expire()
 
     def _udp(self, packet):
-        self.last_classification = self.udp.inspect(packet.payload, self.udp_hint)
+        self.last_classification = self.udp.inspect(packet.payload, self.udp_hint, scope=(packet.source, packet.destination), now=self.now)
         self.udp_revision += 1
         self.last_events = (Event(self.udp_revision, "datagram", self.last_classification),)
         key = self.manager.key(packet.source, packet.destination)
@@ -318,18 +332,27 @@ class Analyzer:
             else:
                 flow = self.udp_flows[key] = {"client": packet.source, "server": packet.destination, "start": self.now,
                                               "time": self.now, "packets": 0, "bytes": {}, "ready": True,
-                                              "observation": self.last_classification, "observations": {}}
+                                              "observation": self.last_classification, "observations": {},
+                                              "first_decision": None, "stable_at": None, "label": None}
         if flow is not None:
             flow["time"] = self.now
             flow["packets"] += 1
             flow["bytes"][packet.source] = flow["bytes"].get(packet.source, 0) + len(packet.payload)
-            # Keep the first identification; otherwise the latest outcome describes the flow.
-            if flow["observation"].status != "identified":
-                flow["observation"] = self.last_classification
-            # Per direction, the same rule: the first identified datagram of each side is kept.
-            previous = flow["observations"].get(packet.source)
-            if previous is None or previous.status != "identified":
-                flow["observations"][packet.source] = self.last_classification
+            latest = self.last_classification
+            if latest.status == "invalidated":
+                # D02: a contradiction in this direction withdraws the identification it had established.
+                flow["observation"] = latest
+                flow["observations"][packet.source] = latest
+            else:
+                # Keep the first identification; otherwise the latest outcome describes the flow.
+                if flow["observation"].status != "identified":
+                    flow["observation"] = latest
+                # Per direction, the same rule: the first identified datagram of each side is kept.
+                previous = flow["observations"].get(packet.source)
+                if previous is None or previous.status != "identified":
+                    flow["observations"][packet.source] = latest
+            if latest.status == "identified":
+                self._decided(flow, (latest.application_protocol or latest.encryption, latest.application))
         self.last_server = flow["server"] if flow is not None else packet.destination
         result = self.last_classification
         return "UDP {}:{} -> {}:{} | {} | {} | {}".format(
@@ -372,7 +395,8 @@ class Analyzer:
                 return "LIMIT: too many tracked connections"
             self.tracked[key] = {"client": source, "server": destination, "isn": packet.sequence,
                                  "time": self.now, "start": self.now, "packets": 1, "bytes": {},
-                                 "ready": False, "fin": {}, "reported": {}}
+                                 "ready": False, "fin": {}, "reported": {},
+                                 "first_decision": None, "stable_at": None, "label": None}
             self.last_server = destination
             return "SYN: waiting for SYN-ACK"
         if state is None:
@@ -430,6 +454,9 @@ class Analyzer:
             self.drop(key)
             return "INVALIDATED: " + str(error)
         self.last_events = snapshot.events
+        for event in snapshot.events:
+            if event.observation.status == "identified":
+                self._decided(state, (event.observation.application_protocol or event.observation.encryption, event.observation.application))
         if any(event.observation.status == "identified" for event in snapshot.events):
             self._correlate_connect(key, state)
             self._correlate_ldap(key, state)

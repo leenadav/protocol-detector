@@ -18,7 +18,9 @@ byte totals and durations.
 | `events.dropped` | counter | coordinator | consumer-queue overflows (bounded queue) |
 | `queue.depth` | gauge | coordinator (per tick) | consumer events waiting to be drained |
 | `sessions.<status>` | counter | Analyzer | session records by verdict status |
-| `time_to_verdict_seconds` | histogram | Analyzer | capture time from first packet to the session record |
+| `session_lifetime_seconds` | histogram | Analyzer | capture time from the first packet to the session record (retirement); this is lifetime, not decision latency |
+| `time_to_first_decision_seconds` | histogram | Analyzer | capture time from the first packet to the first identification (TCP: first identified event; UDP: first identified datagram); session records carry `decision.first_seconds` |
+| `time_to_stable_verdict_seconds` | histogram | Analyzer | capture time from the first packet to the last change of the identified label (`decision.stable_seconds`) |
 | `stage_seconds.packet` | histogram | CaptureMonitor | one packet through the coordinator |
 | `stage_seconds.tick` | histogram | coordinator | one idle-expiry pass |
 | `stage_seconds.decrypt` | histogram | Decryptor | one bounded decryption slice |

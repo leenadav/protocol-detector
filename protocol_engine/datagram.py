@@ -130,7 +130,9 @@ class DatagramInspector:
             return None
         return match.name, (Evidence("application", match.name, "signature:" + family, "configured_signature"),)
 
-    def inspect(self, data, protocol_hint=None):
+    def inspect(self, data, protocol_hint=None, scope=None, now=None):
+        """Classify one datagram. `scope` names its flow for cross-datagram state (the QUIC CRYPTO store):
+        the host passes its flow identity (endpoints, hence direction); `now` drives idle expiry."""
         if not isinstance(data, bytes):
             raise TypeError("inspect expects one complete UDP payload as bytes")
         if protocol_hint is not None and protocol_hint not in VALIDATORS:
@@ -206,7 +208,7 @@ class DatagramInspector:
             self.metrics.parser_calls += 1
             try:
                 if candidate == "quic":
-                    matches.append(quic(data, self.config, self.quic_assembler))
+                    matches.append(quic(data, self.config, self.quic_assembler, scope, now))
                 else:
                     matches.append(VALIDATORS[candidate](data, self.config))
             except BudgetError as error:
@@ -221,6 +223,10 @@ class DatagramInspector:
             return Observation(status="budget_exhausted", reason="A competing datagram candidate exhausted its budget", **base)
         if matches:
             match = matches[0]
+            if isinstance(match, DatagramMatch) and match.retracts:
+                # D02: a contradiction withdraws what this connection asserted; nothing new is derived.
+                return Observation(status="invalidated", encryption=match.encryption, evidence=match.evidence,
+                                   reason=match.reason, **base)
             if isinstance(match, DatagramMatch):
                 application, extra = None, ()
                 if match.contexts is not None and match.signature_family and self.signatures is not None:

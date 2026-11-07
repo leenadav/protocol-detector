@@ -418,6 +418,25 @@
           "minLength": 16,
           "maxLength": 16,
           "description": "Stage 7: digest of the custom signature set this verdict was classified with."
+        },
+        "decision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "first_seconds",
+            "stable_seconds"
+          ],
+          "properties": {
+            "first_seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "stable_seconds": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "description": "Seconds from the first packet to the first identification and to the last label change (decision latency, not lifetime)."
         }
       },
       "required": [

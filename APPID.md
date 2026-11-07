@@ -159,5 +159,5 @@ and fixed-vocabulary evidence only, as catalog applications `lifx-lan`, `tuya-la
 The DNS layout no longer rejects multicast DNS responses that compress against an SRV target or NSEC next
 name, ignores the AA bit on mDNS queries as RFC 6762 18.4 requires, and recognises reverse-mapping probes.
 Ported onto the v0.65 architecture as a distinct version: 88 families, 79 automatic, 155 applications,
-721 tests; the behaviour diff against v0.65 lists exactly the inputs these profiles now classify
+731 tests; the behaviour diff against v0.65 lists exactly the inputs these profiles now classify
 (docs/BEHAVIOUR-DIFF-V066.md).
