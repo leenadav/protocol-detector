@@ -196,8 +196,11 @@ def _tls_record(data, version=b"\x03\x03"):
     return b"\x16" + version + len(data).to_bytes(2, "big") + data
 
 
-def _server_hello(extensions=None, cipher=0xc02f, session=b"", compression=0, version=b"\x03\x03", random_value=bytes(range(32))):
-    body = version + random_value + bytes([len(session)]) + session + cipher.to_bytes(2, "big") + bytes([compression])
+_SERVER_RANDOM = bytes(range(32))
+
+
+def _server_hello(extensions=None, cipher=0xc02f, session=b"", compression=0, version=b"\x03\x03", random_value=None):
+    body = version + (_SERVER_RANDOM if random_value is None else random_value) + bytes([len(session)]) + session + cipher.to_bytes(2, "big") + bytes([compression])
     if extensions is not None:
         values = b"".join(_tls_ext(k, v) for k, v in extensions)
         body += len(values).to_bytes(2, "big") + values

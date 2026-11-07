@@ -5,7 +5,7 @@ Status: accepted for M2 (2026-11-07).
 ## Toolchain
 
 - Supported Go releases at execution time (go.dev/dl, 2026-11-07): 1.27.3 and 1.26.10. The module pins
-  `go 1.26.10` in `go/go.mod`; the Go toolchain mechanism downloads that exact version when the
+  `go 1.27.3` in `go/go.mod`; the Go toolchain mechanism downloads that exact version when the
   installed `go` is older (the cloud container ships 1.24.7, which is out of support and is not used
   for any result). CI (M10, CI/CD lane) must use the same pinned version via `setup-go` with
   `go-version-file: go/go.mod`, not "latest".

@@ -143,6 +143,10 @@ parity-go:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go run ./cmd/protodetect replay --cases ../migration/fixtures/cases.json --out ../migration/parity/go-results.json
 	python3 -B migration/parity/compare.py --results migration/parity/go-results.json --families $(GO_FAMILIES) --ignore '$$.records' --report migration/parity/go-report.json
 
+# Migration M4/M9: Python vs Go engine feed loop on identical bytes, alternating rounds (not part of `check`)
+bench-compare:
+	BENCH_SCRATCH=$${TMPDIR:-/tmp} python3 -B migration/benchmarks/bench_compare.py --iterations 300 --rounds 5
+
 # D11: separated performance measurements (CPU by layer, bytes to identification, queue wait, memory); local numbers only
 perf-profile:
 	$(PYTHON) -B tools/perf_profile.py --write docs/PERF-PROFILE-V066.md --json docs/PERF-PROFILE-V066.json

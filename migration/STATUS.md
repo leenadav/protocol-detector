@@ -55,7 +55,7 @@ never edits the engine branch's snapshot. No migration PR is opened until author
 
 | item | state | evidence |
 |---|---|---|
-| Toolchain | implemented | `go/go.mod` pins `go 1.26.10` (supported releases on 2026-11-07: 1.27.3, 1.26.10; the container's 1.24.7 is out of support and unused). Pure Go, standard library only; ADR 0002. |
+| Toolchain | implemented | `go/go.mod` pins `go 1.27.3` (supported releases on 2026-11-07: 1.27.3, 1.26.10; the container's 1.24.7 is out of support and unused). Pure Go, standard library only; ADR 0002. |
 | Typed contracts | implemented | `go/internal/contracts`: Status/Kind closed vocabularies, Evidence as the 4-tuple array, nullable fields, `Initial()` defaults, `Config` decoding over the Python defaults with unknown-field and non-positive-limit rejection. Tests: round trip of the Python shape, null lists never emitted, vocabularies closed, defaults; fuzz `FuzzObservationJSONNeverPanics`. |
 | Fixture contract proof | implemented | `go/internal/parity` loads `migration/fixtures/cases.json` (bounded size, schema check, unique ids, cancellation between cases, fail-closed on bad expectations) and the test re-encodes every stream and datagram expectation (1140 cases) through the Go types with structural equality to the Python output. `protodetect cases` does the same from the CLI. |
 | Bounded buffer primitives | implemented | `go/internal/buffer`: `Bounded` (per-direction limit, copies input, zeroes on discard/release) charging an `Account` (aggregate limit with a stated scope). Tests: input mutation after the call, per-buffer limit with scope and limit in the error, aggregate limit across buffers, discard/release accounting, zeroed tails; fuzz `FuzzAppendNeverExceedsLimits`. |
@@ -104,10 +104,12 @@ windows zeroed). Retained-memory limits under many short/half-open flows are mea
 | Capability statuses | implemented | `migration/CAPABILITIES.json`: Go `experimental` for http, tls, dns, mdns, netbios-ns, llmnr with the matched counts and the named gaps; every other family stays `pending`. |
 | Not claimed | — | no verdict/App-ID/record layer (M6); no pcap file reading or live capture (M8); UDP flows inside session replay (datagram flow state) are M6; continuation, fingerprints, certificates, signatures, heuristics are named gaps; zero-payload FIN messages are now compared for the ported families (they depend on the inspector) and skipped only through `unsupported`. |
 
+| Feed-loop benchmark (engine only) | implemented (local, this host) | `migration/benchmarks/bench_compare.py --iterations 300 --rounds 5` writes `workloads.json` (the exact `benchmark_engine.py` bytes the Go backend answers), builds `protodetect`, and alternates Python and Go rounds (seed 402) on the same host; result `migration/benchmarks/engine-go-vs-python-1113a91.json`. Medians per flow, Python 3.13.16 vs Go 1.26.10, 4 vCPU container: http_small 45.5 µs vs 3.5 µs (13×); http_fragmented (6050 B in 190 chunks) 485.9 µs vs 19.8 µs (24×); tls_whole 57.0 µs vs 3.4 µs (17×); tls_fragmented 59.1 µs vs 3.0 µs (20×); http_after_identification (64 × 1 KiB after the request) 50.4 µs vs 2.3 µs (22×). Go allocations per flow: 26–39, 2.7–34 KB (the fragmented HTTP case copies its growing prefix; no pooling by ADR 0001). Scope: engine feed loop only, correctness asserted on every flow, no capture/reassembly/output, not SWG latency; relative numbers, no target claimed (plan M9). |
+
 M4 exit assessment: positive, negative, ambiguity, budget and fragmentation parity holds on every answered case
-of the claimed families, and the backend never advertises an unported profile as available. The benchmark
-suite does not run end-to-end in Go yet (replay CLI only reads the JSON cases; pcap input is M8), so the
-CPU/allocation comparison is still owed before further optimization work.
+of the claimed families, and the backend never advertises an unported profile as available. The engine
+feed-loop benchmark runs on identical bytes in both languages (above); the adapter-level benchmark through
+pcap input is M8/M9 work, so end-to-end CPU and memory remain unmeasured.
 
 ## M5+ — next
 

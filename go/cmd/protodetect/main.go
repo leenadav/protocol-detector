@@ -17,9 +17,11 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"sort"
 	"strings"
 
+	"github.com/leenadav/protocol-detector/go/internal/bench"
 	"github.com/leenadav/protocol-detector/go/internal/engine"
 	"github.com/leenadav/protocol-detector/go/internal/parity"
 	"github.com/leenadav/protocol-detector/go/internal/replay"
@@ -99,6 +101,42 @@ func run(args []string) int {
 			}
 		}
 		fmt.Printf("replay: %d cases, %d answered, %d unsupported -> %s\n", len(doc.Cases), len(doc.Cases)-unsupported, unsupported, *out)
+		return 0
+	case "bench":
+		fs := flag.NewFlagSet("bench", flag.ContinueOnError)
+		workloads := fs.String("workloads", "migration/benchmarks/workloads.json", "shared benchmark workloads")
+		iterations := fs.Int("iterations", 300, "timed flows per round")
+		rounds := fs.Int("rounds", 5, "rounds")
+		warmup := fs.Int("warmup", 50, "untimed flows per workload")
+		only := fs.String("only", "", "run one workload")
+		if err := fs.Parse(args[1:]); err != nil || *iterations < 10 || *iterations > 10000 || *rounds < 1 || *rounds > 20 {
+			fmt.Fprintln(os.Stderr, "bench: use 10..10000 iterations and 1..20 rounds")
+			return 2
+		}
+		list, err := bench.Load(*workloads)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "bench:", err)
+			return 1
+		}
+		if *only != "" {
+			var kept []bench.Workload
+			for _, w := range list {
+				if w.Name == *only {
+					kept = append(kept, w)
+				}
+			}
+			list = kept
+		}
+		results, err := bench.Run(list, *iterations, *rounds, *warmup)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "bench:", err)
+			return 1
+		}
+		doc := map[string]interface{}{"backend": "go", "go": runtime.Version(), "goos": runtime.GOOS, "goarch": runtime.GOARCH,
+			"iterations_per_round": *iterations, "rounds": *rounds, "warmup": *warmup,
+			"scope": "Feed loop including events; excludes Inspector construction, capture, TCP, output and concurrency", "cases": results}
+		data, _ := json.MarshalIndent(doc, "", " ")
+		fmt.Println(string(data))
 		return 0
 	}
 	fmt.Fprintln(os.Stderr, "unknown command", args[0])
