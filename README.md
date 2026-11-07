@@ -331,6 +331,15 @@ deferred. Instance names, connect descriptors, thread and trace identifiers
 are never emitted. Catalog applications `mssql-db` (tcp/1433) and `oracle`
 (tcp/1521). 69 families, 62 automatic, 73 applications, 442 tests.
 
+## M0 — stabilized baseline for the Go migration plan
+
+The live view gained "Clear sessions & reset capture" (`POST /api/live/reset {run_id}`: stops the named run and
+clears its retained results; a stale tab never resets a replacement run; key-log files are never touched) and
+frontend-only fallback labels for unidentified sessions (`8081 tcp`: destination port and transport, shown
+beside the raw outcome; verdicts, filters and exports are unchanged). `tools/capabilities.py` writes
+`migration/CAPABILITIES.json`, the per-family inventory counted from the registry; `migration/STATUS.md` is the
+migration ledger. docs/DETECTION-PLAN-STATUS.md records what the Python baseline claims and what it does not.
+
 ## A01 / A14 — one installable product, cursor-driven live view
 
 `pip install ".[decryption]"` now installs the engine, the adapters and the Protocol Observatory application

@@ -6,7 +6,7 @@ const Store = require('../../web/store.js');
 const session = (over) => Object.assign({id: 'S-1', app: 'ssl', client: ['192.0.2.1', 50000], server: ['198.51.100.2', 443],
   transport: 'tcp', category: 'networking', encryption: 'tls', client_protocol: null, server_protocol: null,
   port_usage: 'standard', risks: [], client_bytes: 10, server_bytes: 20, session_id: 'abc', reasons: []}, over || {});
-const catalog = {outcomes: ['unknown-tcp', 'insufficient-data'], source: {version: 'x'}};
+const catalog = {outcomes: ['unknown-tcp', 'unknown-udp', 'incomplete', 'insufficient-data', 'not-applicable'], source: {version: 'x'}};
 
 function freshStore() {
   const store = Store.createStore();
@@ -147,5 +147,35 @@ function freshStore() {
   assert.strictEqual(legacy.getState().busy, true);
   legacy.dispatch({type: 'live/snapshot', runId: legacyRun, snapshot: {state: 'stopped', sessions: [], events: [], summary: {}}});
   assert.strictEqual(legacy.getState().busy, false);
+}
+// 7. M0: reset clears retained results only for the run that asked; port/transport labels are display only.
+{
+  const page = (cursor) => ({capture_id: 'demo', cursor: cursor, reset_required: false, events: [],
+                             view: {sessions: [{id: 'abc', status: 'final', generation: 0, revision: 1, session: session(), classifications: 1, decryption: null, retracted_by: null}],
+                                    quality: 'intact', retracted_total: 0, summary: {counts: {packets: 3}}}});
+  const store = freshStore();
+  const run = store.dispatch({type: 'run/start', mode: 'live'}).runId;
+  store.dispatch({type: 'live/events', runId: run, control: {state: 'running', run_id: 'cap1'}, page: page(1)});
+  assert.strictEqual(Store.selectors.metrics(store.getState()).sessions, 1);
+  store.dispatch({type: 'live/reset', runId: run - 1, control: {state: 'stopped'}});    // a stale tab's reset
+  assert.strictEqual(Store.selectors.metrics(store.getState()).sessions, 1);
+  assert.strictEqual(store.getState().stale, 1);
+  store.dispatch({type: 'live/reset', runId: run, control: {state: 'stopped', run_id: null}});
+  const state = store.getState();
+  assert.strictEqual(Store.selectors.metrics(state).sessions, 0);
+  assert.deepStrictEqual([state.liveLog.length, state.liveCaptureId, state.liveCursor, state.busy, state.decryption], [0, null, 0, false, null]);
+  const unknown = session({app: 'unknown-udp', transport: 'udp', server: ['198.51.100.9', 8789]});
+  assert.strictEqual(Store.selectors.displayLabel(state, unknown), '8789 udp');
+  assert.strictEqual(Store.selectors.displayLabel(state, session({app: 'insufficient-data', transport: 'tcp', server: ['198.51.100.9', 8081]})), '8081 tcp');
+  assert.strictEqual(Store.selectors.displayLabel(state, session()), 'ssl');                      // an identification keeps its name
+  assert.strictEqual(unknown.app, 'unknown-udp');                                                  // the verdict is untouched
+  const r2 = store.dispatch({type: 'run/start', mode: 'live'}).runId;
+  store.dispatch({type: 'live/events', runId: r2, control: {state: 'running', run_id: 'cap2'},
+                  page: {capture_id: 'cap2', cursor: 1, reset_required: false, events: [],
+                         view: {sessions: [{id: 'u', status: 'final', generation: 0, revision: 1, session: unknown, classifications: 0, decryption: null, retracted_by: null}],
+                                quality: 'intact', retracted_total: 0, summary: {}}}});
+  assert.strictEqual(Store.selectors.filtered(store.getState(), {application: 'unknown-udp'}).length, 1);   // filters use the verdict
+  assert.strictEqual(Store.selectors.filtered(store.getState(), {application: '8789 udp'}).length, 0);      // never the label
+  assert.strictEqual(Store.selectors.exportData(store.getState()).sessions[0].app, 'unknown-udp');          // exports keep the verdict
 }
 console.log('store tests ok');

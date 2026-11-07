@@ -89,6 +89,40 @@ class LiveBridgeTests(unittest.TestCase):
         self.assertTrue(small.events_since(1, 50)['reset_required'])
         self.assertFalse(small.events_since(small.events_since(0, 50)['cursor'], 50)['reset_required'])
 
+    def test_reset_is_scoped_to_the_run_it_names(self):
+        """M0: reset stops the named run and clears its retained results; a stale or absent run id changes nothing."""
+        manager = LiveManager()
+        self.assertEqual(manager.reset(None), {'reset': False, 'reason': 'no_run', 'run_id': None})
+        from protocol_adapters.events import EventLog
+        manager.capture_id = 'run-1'
+        manager.log = EventLog('run-1')
+        manager.state = 'running'
+        manager.interface = 'lo'
+        for i in range(5):
+            manager.ingest({'type': 'classification', 'status': 'identified', 'app': 'x%d' % i})
+            manager.ingest({'type': 'session', 'app': 'ssh'})
+        manager.ingest({'type': 'decryption', 'report': {'connections': [], 'decrypted': 0}})
+        self.assertEqual(manager.reset('run-0'), {'reset': False, 'reason': 'stale', 'run_id': 'run-1'})   # an older tab
+        self.assertEqual(len(manager.snapshot()['sessions']), 5)                                        # nothing was cleared
+        with patch.object(manager, 'stop') as stop:
+            manager.process = None                                                                       # no live process to stop
+            self.assertEqual(manager.reset('run-1'), {'reset': True, 'reason': 'cleared', 'run_id': None})
+            stop.assert_not_called()
+        control = manager.state_view()
+        self.assertEqual((control['state'], control['run_id'], control['sessions_total'], control['events_total'], control['cursor']),
+                         ('stopped', None, 0, 0, 0))
+        self.assertEqual(manager.snapshot()['sessions'], [])
+        self.assertIsNone(manager.decryption)
+        self.assertEqual(manager.events_since(0, 10)['events'], [])
+        # A running process is stopped through the same run-scoped stop before clearing.
+        manager.capture_id = 'run-2'
+        manager.log = EventLog('run-2')
+        fake = type('P', (), {'poll': lambda self: None})()
+        manager.process = fake
+        with patch.object(manager, 'stop') as stop:
+            self.assertTrue(manager.reset('run-2')['reset'])
+            stop.assert_called_once_with(run_id='run-2')
+
     def test_watchdog_cannot_stop_replacement_process(self):
         manager = LiveManager()
         with patch('live_manager.subprocess.Popen') as process:

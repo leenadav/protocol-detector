@@ -1,0 +1,2530 @@
+{
+  "applications": {
+    "host_named": 54,
+    "outcomes": [
+      "incomplete",
+      "insufficient-data",
+      "not-applicable",
+      "unknown-tcp",
+      "unknown-udp"
+    ],
+    "total": 156
+  },
+  "content_digest": "991c007668d263d1",
+  "content_release": "2026.11.0",
+  "counts": {
+    "families": 88,
+    "hint_only": 9,
+    "midstream_capable": 10,
+    "tcp": 63,
+    "udp": 33
+  },
+  "families": {
+    "afp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "DSI GetStatus and OpenSession requests and replies (header fields, option types and lengths); AFP commands not inspected",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/negotiation_response",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "amqp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Plain 0-9-1/1.0 version header only; broker Connection.Start frame (properties, mechanisms and locales framed, not emitted)",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "bacnet": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "BVLC function/length and NPDU version/control framing",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "bgp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "BGPv4 OPEN, standard optional lengths and capability framing",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "bittorrent": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "68-byte peer handshake; encrypted transport unsupported",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "bolt": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Neo4j Bolt handshake (magic, four version ranges) automatically; the four-byte server version response with the bolt hint",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/negotiation_response",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "coap": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "CoAP v1 framing, token <=8; tiny messages require coap hint",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "cql": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Cassandra native protocol v4 STARTUP/OPTIONS requests and ERROR/READY/AUTHENTICATE/SUPPORTED responses",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "dcerpc": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Connection-oriented v5.0 unfragmented Bind, Bind_ack (result list, accepted NDR 2.0/NDR64 1.0) and Bind_nak; no authentication, stub decoding or product identity",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "bind_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "dhcp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "DHCPv4 types 1..8, no overloaded options; operation and message type reported",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "diameter": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Capabilities-Exchange-Request/Answer on the base application: header flags, every AVP header, mandatory AVPs, Result-Code class; identities and product name not emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request/negotiation_response",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "dnp3": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": true,
+      "observation_modes": [
+        "handshake",
+        "asymmetric",
+        "midstream"
+      ],
+      "profile": "Data link frame with header and block CRCs verified",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "dns": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": true,
+      "observation_modes": [
+        "handshake",
+        "asymmetric",
+        "midstream"
+      ],
+      "profile": "Query or response with QUERY opcode and one question, bounded record walk; message kind, rcode and question type class reported; TCP length prefixes >=512 require dns hint; multicast markers and NetBIOS questions over TCP keep the dns family with their evidence rows",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/datagram",
+      "selection": {
+        "tcp": "prefix",
+        "udp": "datagram"
+      },
+      "transports": [
+        "tcp",
+        "udp"
+      ]
+    },
+    "dtls": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "DTLS1.2 complete epoch-zero ClientHello, HelloVerifyRequest or ServerHello in one record/datagram; bounded extensions, assertions only; no fragments, encrypted epochs or decryption",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "ethernet-ip": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Encapsulation header with RegisterSession/list/data commands; CIP not decoded",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header/datagram",
+      "selection": {
+        "tcp": "prefix",
+        "udp": "datagram"
+      },
+      "transports": [
+        "tcp",
+        "udp"
+      ]
+    },
+    "fastcgi": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "v1 BEGIN_REQUEST plus complete PARAMS stream; one request, zero reserved fields, no response/body semantics; application-server STDOUT/STDERR/END_REQUEST records, record kind reported",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_params",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "fins": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Omron FINS/TCP node address request and reply, and the first FINS frame header (ICF, gateway count, address ranges); data not read",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/negotiation_response/response_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "ftp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Client command line (FTP-only verbs); shared USER/PASS/QUIT verbs are ambiguous with POP3 and resolved by session correlation with a 220 greeting",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "text"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "giop": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "GIOP 1.2 unfragmented KeyAddr Request/LocateRequest and Reply/LocateReply (status reported); bounded CDR, opaque arguments, bodies and service contexts; no object identity",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "request_header/locate_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "git": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Native Git pkt-line service request; bounded pathname, optional DNS/IPv4 host and extra parameters; no packfile, server or negotiated-version validation; server ref advertisement (object id, refname, capabilities framed) or protocol v2 banner, message kind reported",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "service_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "http": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": true,
+      "observation_modes": [
+        "handshake",
+        "asymmetric",
+        "midstream"
+      ],
+      "profile": "HTTP/1.0 and 1.1 start-line/headers; method, content-type class and a dns-message accept reported",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "text"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "http2": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Client preface plus initial SETTINGS, then the first HEADERS block (HPACK decoded: method, scheme, authority host, content-type class; server :status)",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "iec-104": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": true,
+      "observation_modes": [
+        "handshake",
+        "asymmetric",
+        "midstream"
+      ],
+      "profile": "APCI U-format start frames automatically; I/S formats with a hint",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "ikev2": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "IKE_SA_INIT initiator or responder: bounded SA/KE/nonce, AES-CBC/GCM and MODP14..18 offers or the single selected proposal, optional CERTREQ and non-ESP marker; no authentication or established IPsec claim",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "imap": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Server CAPABILITY or OK/PREAUTH with explicit IMAP4rev1/2 capability; no commands/authentication",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "text"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "ipfix": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "IPFIX (RFC 7011) message header and set framing, validated by the shared flow-export validator",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "irc": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Client registration lines (NICK with nickname grammar, CAP subcommands; USER with its four parameters is ambiguous with FTP and PASS with FTP/POP3) and server opening lines (':'-prefixed numeric replies, NOTICE, PING, CAP; unprefixed NOTICE AUTH/* and PING); message class reported, nicknames, hosts, channels and text never emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/protocol_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "iso-tsap": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "TPKT/X.224 connection request with TSAP parameters (RFC 1006); shares the TPKT route with RDP",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "kafka": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Request header for ApiVersions/Metadata/Produce/Fetch/SaslHandshake and similar first requests",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "request_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "kerberos": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "KDC AS/TGS-REQ, AS/TGS-REP and KRB-ERROR ASN.1 framing (pvno 5, msg-type per tag, ordered fields, error code reported); principals, tickets and pre-authentication unverified and never emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/datagram",
+      "selection": {
+        "tcp": "prefix",
+        "udp": "datagram"
+      },
+      "transports": [
+        "tcp",
+        "udp"
+      ]
+    },
+    "l2tp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "L2TPv2 SCCRQ control message with Message Type AVP first; SCCRP with the peer's tunnel id, message kind reported",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "ldap": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "LDAPv3 BindRequest, simple/SASL, BindResponse, ExtendedRequest and ExtendedResponse (result code and extended operation class reported; a named StartTLS success response announces the ldap-starttls shift to TLS, the client direction is opened by host correlation on the same message id; DN, diagnostic, SASL credentials and extended values not emitted); no controls or searches",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "lifx-lan": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "LIFX LAN header: size equals datagram, protocol 1024, addressable, origin 0, target layout, payload size of known message types",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "llmnr": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "LLMNR (RFC 4795) with the llmnr hint only: opcode zero, one question, zero Z field, C/T flag semantics (conflict/tentative reported); the bytes are otherwise indistinguishable from a unicast DNS query; names never emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": true,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram-hint"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "mdns": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "Multicast DNS (RFC 6762) in the DNS layout: a .local name, a QU or cache-flush bit, several questions or an announcement without questions; queries may carry known answers and probe authority records, responses carry AA with rcode zero; profile reported (announcement, probe, known-answer, unicast-requested, plain); names and records never emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "memcached": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": true,
+      "observation_modes": [
+        "handshake",
+        "asymmetric",
+        "midstream"
+      ],
+      "profile": "Selected binary request commands 0x00..0x10; no SASL/text/meta; binary responses (status and sizes consistent with the command, status reported)",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "modbus": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": true,
+      "observation_modes": [
+        "handshake",
+        "asymmetric",
+        "midstream"
+      ],
+      "profile": "MBAP header with public function request PDU shapes, normal response shapes (byte count and data) and exception responses (code reported); transaction ids above 0x01ff need a hint",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "request_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "mongodb": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Hint required: uncompressed OP_MSG body/sequences, bounded BSON and CRC-32C; no telemetry or command semantics; request/reply direction reported from responseTo",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": true,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "hint"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "mqtt": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "3.1.1/5.0 CONNECT; MQTT5 CONNECT/Will property validation",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "mysql": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Hint required: server HandshakeV10 (21-byte challenge, native/caching_sha2/sha256 plugin), client SSLRequest or HandshakeResponse41 (capabilities, bounded user/database/plugin/attributes, plugin reported, names not emitted)",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": true,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "hint"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "nats": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "INFO/CONNECT with required typed JSON fields; bounded extensions, no message bodies",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "text"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "netbios-ns": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "NetBIOS name service (RFC 1002): NB/NBSTAT questions with the 32-byte first-level encoded name, registration, release and refresh requests with one additional NB record, WACK and positive/negative responses; opcode, message kind, rcode and question type reported; names, addresses and node status never emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "netbios-ss": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "NetBIOS session request with two first-level encoded names; names not emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "netflow": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "NetFlow v5 record framing and NetFlow v9 flowsets (reported as netflow/5, netflow/9)",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "ntp": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "Hint required: v3/v4 base client/server header, no extensions/authentication; mode (client/server) reported",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": true,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram-hint"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "onc-rpc": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "ONC RPC v2 CALL (program label, version, credential flavor; AUTH_NONE/AUTH_SYS structure) and REPLY (accept or reject status) over TCP last-fragment records or UDP; arguments and results not decoded",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/response_header/datagram",
+      "selection": {
+        "tcp": "prefix",
+        "udp": "datagram"
+      },
+      "transports": [
+        "tcp",
+        "udp"
+      ]
+    },
+    "opcua": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "OPC UA TCP connection messages Hello, Acknowledge, Error and ReverseHello: little-endian size, buffer minimums, bounded printable opc.tcp URLs and reasons (not emitted); no secure channel",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request/negotiation_response",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "openvpn": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Client or server hard-reset control packet (plain or tls-auth layout, server acknowledgement array and remote session id); no key exchange claim",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/datagram",
+      "selection": {
+        "tcp": "prefix",
+        "udp": "datagram"
+      },
+      "transports": [
+        "tcp",
+        "udp"
+      ]
+    },
+    "pop3": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Server +OK/-ERR status line or POP3-only client command; shared verbs resolved by correlation",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header/initial_message",
+      "selection": {
+        "tcp": "text"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "postgresql": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "v3.0..3.2 startup or SSL/GSS request (client); Authentication*, ErrorResponse and NegotiateProtocolVersion (server) with method, SQLSTATE class reported; salts, SASL data and messages not emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/negotiation_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "pptp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Start-Control-Connection-Request (156 bytes); names not emitted; Start-Control-Connection-Reply with result code reported",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "quic": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "QUIC v1/v2 Initial (client protection removed with public Initial keys; ClientHello SNI/ALPN as offers) and Version Negotiation; no handshake completion, server packets or 0-RTT",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "radius": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "Hint required: Access-Request PAP/CHAP/State, Access-Accept/Reject/Challenge with the attributes each code allows; code reported, no authenticator verification or EAP decoding",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": true,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram-hint"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "rdp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "TPKT/X.224 with RDP negotiation, optional cookie/correlation; no routing token or session",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "resp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": true,
+      "observation_modes": [
+        "handshake",
+        "asymmetric",
+        "midstream"
+      ],
+      "profile": "Non-null bulk-string request array; no product inference",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "rfb": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "RFB 3.3/3.7/3.8 banner; no VNC security exchange",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "rip": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "RIP v1/v2 request or response: zero field, 1..25 entries, address family, metric, v1 zero fields, v2 simple-password or MD5 authentication framing",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "rsync": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Daemon greeting, final protocols 27..32; version/digest offers, no authentication or transfer",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "rtcp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "Hint required: RTCP compound packet beginning with SR or RR, every packet length within the datagram",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": true,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram-hint"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "rtp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "Hint required: RTP v2 fixed header, CSRC and extension framing",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": true,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram-hint"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "rtsp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": true,
+      "observation_modes": [
+        "handshake",
+        "asymmetric",
+        "midstream"
+      ],
+      "profile": "RTSP/1.0 and 2.0 header framing; no RTP/media decoding",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_headers",
+      "selection": {
+        "tcp": "text"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "s7comm": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "One S7 PDU in a COTP data TPDU after the ISO-TSAP connection (reached by the cotp-connect shift or an explicit candidate): header, ROSCTR, public function codes, setup communication fields; addresses and values not decoded",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": true,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "hint"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "sflow": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "sFlow v5 datagram with IPv4 agent and bounded sample headers",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "sip": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": true,
+      "observation_modes": [
+        "handshake",
+        "asymmetric",
+        "midstream"
+      ],
+      "profile": "SIP/2.0 required header framing; no dialogue/body semantics",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_headers/datagram",
+      "selection": {
+        "tcp": "text",
+        "udp": "datagram"
+      },
+      "transports": [
+        "tcp",
+        "udp"
+      ]
+    },
+    "smb1": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "NetBIOS session header plus SMB_COM_NEGOTIATE request (dialect strings) or response (NT LM 0.12, LAN Manager or core layout; challenge and domain not emitted); maps to the smb application",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "smb2": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Direct TCP SMB2/3 NEGOTIATE request (offers) or response (selected dialect, signing mode, 3.1.1 contexts); security token not emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "smtp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "EHLO/HELO only; ambiguous 220 banners unknown",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "text"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "snmp": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "v1/v2c and v3 messages with every standard PDU kind (Get, GetNext, GetBulk, Set, Response, Trap, Inform, Report; v3 USM header and plaintext or encrypted scoped PDU); PDU kind reported, values never emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "socks5": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Client no-auth offer plus request, or server method selection plus reply; subnegotiation and tunnel unverified",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/negotiation_response",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "spice": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "SpiceLinkHeader 2.x with SpiceLinkMess (channel type, capability counts) or SpiceLinkReply (error, public key size, capability counts)",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/negotiation_response",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "ssdp": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "M-SEARCH/NOTIFY/response HTTPU header block with SSDP headers",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "ssh": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Leading SSH-2.0/1.99 identification",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "text"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "stomp": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "1.1/1.2 CONNECT/STOMP/CONNECTED, complete empty-body NUL-terminated frame",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "stun": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Binding method; attributes and optional fingerprint, no HMAC validation",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/datagram",
+      "selection": {
+        "tcp": "prefix",
+        "udp": "datagram"
+      },
+      "transports": [
+        "tcp",
+        "udp"
+      ]
+    },
+    "syslog": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": true,
+      "observation_modes": [
+        "handshake",
+        "asymmetric",
+        "midstream"
+      ],
+      "profile": "RFC5424 version 1 header/structured data; no RFC3164; over TCP one RFC 6587 octet-counting or non-transparent frame",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram/initial_message",
+      "selection": {
+        "tcp": "prefix",
+        "udp": "datagram"
+      },
+      "transports": [
+        "tcp",
+        "udp"
+      ]
+    },
+    "tacacs-plus": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "TACACS+ header for the first two packets of a session (START seq 1, REPLY seq 2); body lengths and status codes checked when unencrypted, never emitted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "protocol_header",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "tds": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "MSSQL TDS 7.x PRELOGIN packet (client) or its response (server): header, option table, VERSION/ENCRYPTION mandatory, fixed option lengths; instance names, thread, trace and nonce bytes not emitted; no LOGIN7 or query stream",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request/negotiation_response",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "telnet": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Two complete IAC option negotiation commands; terminal data not inspected",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "tftp": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "RRQ/WRQ with bounded options; no transfer state; server OACK with the standard numeric options, ERROR with the tftp hint only (DATA/ACK too weak to identify), packet kind reported",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "tls": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "ClientHello plus bounded TLS1.2/1.3 server hello/retry profiles; optional leaf-certificate structure after a TLS 1.2 ServerHello (`certificates`); encrypted_client_hello extension structure reported as `tls_ech`; selections unauthenticated, no decryption",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/server_hello/hello_retry_request",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "tns": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Oracle Net CONNECT (client) or ACCEPT/REFUSE/RESEND (server) packet: header checksums zero, versions 308..319, connect data offset/length consistency, printable descriptor; descriptor contents not emitted; no DATA packets or authentication",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "negotiation_request/negotiation_response",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "tplink-smarthome": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "TP-Link Smart Home: XOR autokey 171 printable JSON object, nesting <= 8, documented module names only",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "tuya-lan": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "Tuya LAN 3.3 frame: 0x000055AA prefix, length, CRC32 over header and payload, 0x0000AA55 suffix; payload not decrypted",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "websocket": {
+      "directions": [
+        "client"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "One frame header after an HTTP Upgrade boundary (reached by the websocket-upgrade shift or an explicit candidate); payload not decoded",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": true,
+      "scope": "frame_header",
+      "selection": {
+        "tcp": "hint"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "wireguard": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "datagram"
+      ],
+      "profile": "Handshake initiation/response/cookie message sizes and reserved bytes; no key or tunnel claim; message type reported for both directions",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "datagram",
+      "selection": {
+        "udp": "datagram"
+      },
+      "transports": [
+        "udp"
+      ]
+    },
+    "x11": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "Client connection setup (byte order, protocol 11.0, bounded authorization name and data lengths; cookie never emitted); the server setup reply with the x11-server hint",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/negotiation_response",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "xmpp": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "RFC 6120 stream header in either direction (optional XML declaration, client/server/component namespace, version, to/from domain as hostname); features, STARTTLS and stanzas not inspected",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message/negotiation_response",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    },
+    "zmtp": {
+      "directions": [
+        "client",
+        "server"
+      ],
+      "go": {
+        "notes": null,
+        "parity": null,
+        "status": "pending"
+      },
+      "midstream": false,
+      "observation_modes": [
+        "handshake",
+        "asymmetric"
+      ],
+      "profile": "ZMTP 3.0/3.1 64-byte greeting (signature, version, mechanism, as-server flag, zero filler); mechanism and role reported",
+      "python": {
+        "fixtures": "labelled, inventory-checked (tools/check_inventory.py)",
+        "status": "supported"
+      },
+      "requires_hint": false,
+      "scope": "initial_message",
+      "selection": {
+        "tcp": "prefix"
+      },
+      "transports": [
+        "tcp"
+      ]
+    }
+  },
+  "go_status_vocabulary": [
+    "pending",
+    "experimental",
+    "parity-verified"
+  ],
+  "schema": 1
+}
