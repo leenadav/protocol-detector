@@ -149,7 +149,7 @@ class SessionCoordinator:
             self.counts["pending_overflow"] += 1
             self.analyzer.telemetry.add("events.dropped")
             raise StreamError("Retained consumer queue exhausted; the consumer must drain between packets")
-        self._pending.append(item)
+        self._pending.append((item, self.now))      # D11: enqueue time, so drain can measure queue wait
 
     def _retained_error(self, key, state, reason):
         if state["error"] is None:
@@ -245,8 +245,14 @@ class SessionCoordinator:
 
     def drain(self):
         """Consumer events queued since the last call, in order; each delta is handed out exactly once."""
-        items = list(self._pending)
+        items = []
+        telemetry = self.analyzer.telemetry
+        for item, queued_at in self._pending:
+            telemetry.observe("queue.wait_seconds", max(0.0, self.now - queued_at))   # D11: capture-clock wait per event
+            items.append(item)
         self._pending.clear()
+        if items:
+            telemetry.add("queue.drained", len(items))
         return items
 
     def retained_bytes(self):

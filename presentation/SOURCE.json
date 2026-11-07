@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "4bcb8e4e02164b24f885eeb5c2425c84abc9264a",
+  "commit": "af91747eb42a58fddd626efcd629d684a0c34661",
   "branch": "work/v065-stage0",
-  "build_digest": "447d6128b45a76f5e0ffcecb590abf47132647e8fb2b0cdfaf41260b3fd8478d",
+  "build_digest": "a144e00cd36a9352fc73668a33a119c6809a9b61e1ee600b121d374f4383f8e4",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -75,7 +75,7 @@
     {
       "path": "protocol_engine/content.py",
       "component": "engine",
-      "sha256": "60563d8f77889e8aff19ce4f2b0ce911ee8ad09262a32298c694a064b19bb1b0"
+      "sha256": "1cf39862575ca8dfdc9b855c7df3ba1b3e1dfce1c4db841d2bb8a1943aa89ead"
     },
     {
       "path": "protocol_engine/continuation.py",
@@ -400,7 +400,7 @@
     {
       "path": "protocol_adapters/coordinator.py",
       "component": "adapters",
-      "sha256": "e5ea4d6960656f1b51d408d7eb0e73ec9fd7c7eeb64e6cd7dd620f96b9edb599"
+      "sha256": "c41225fda090cb1d991a6ce5de80c350414253e8688fe21f348e068cb404d04d"
     },
     {
       "path": "protocol_adapters/detectors.py",

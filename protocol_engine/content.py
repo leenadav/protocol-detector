@@ -135,9 +135,17 @@ def component_digests(version=None):
     })
 
 
+_DIGESTS = {}
+
+
 def digest(version=None):
-    components = component_digests(version)
-    return _hash([components[name] for name in sorted(components)])[:16]
+    """Content digest for a release; cached per process (the tables of a release never change at run time)."""
+    version = CURRENT if version is None else version
+    cached = _DIGESTS.get(version)
+    if cached is None:
+        components = component_digests(version)
+        cached = _DIGESTS[version] = _hash([components[name] for name in sorted(components)])[:16]
+    return cached
 
 
 def description(version=None):
