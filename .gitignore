@@ -21,3 +21,5 @@ venv/
 build/
 dist/
 *.egg-info/
+migration/parity/go-results.json
+migration/parity/go-report.json

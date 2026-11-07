@@ -20,7 +20,11 @@ import (
 type Sink interface {
 	Feed(delta []byte) (changed bool)
 	Invalidate(reason string) (changed bool)
+	// End: the direction ended at a trusted boundary (contiguous FIN); its events belong to the packet.
 	End(reason string) (changed bool)
+	// Retire: tracking of the connection ends (RST, idle, limits, capture end); the direction is ended
+	// with the reason, but its events are retirement events, not the packet's (Python on_retire).
+	Retire(reason string) (changed bool)
 }
 
 // Key identifies a connection or flow irrespective of direction (Python: sorted endpoint tuple).
@@ -127,6 +131,11 @@ func (m *Manager) Feed(source, destination transport.Endpoint, sequence uint32, 
 	delta, err := d.Stream.Feed(sequence, payload)
 	c.LastSeen = now
 	if err != nil {
+		// A conflicting overlap or an out-of-window segment withdraws this direction's observation before
+		// the owner releases the connection (Python Stream.feed: inspector.invalidate(self.error)).
+		if e, ok := err.(*errs.Error); ok {
+			d.Sink.Invalidate(e.Detail)
+		}
 		return false, err
 	}
 	if delta == nil {

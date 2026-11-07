@@ -133,6 +133,15 @@ go-check:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/contracts -run NONE -fuzz FuzzObservationJSONNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/reassembly -run NONE -fuzz FuzzFeedInvariants -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/transport -run NONE -fuzz FuzzDecodeNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzInspectorNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzSelectNeverPanics -fuzztime 5s
+	$(MAKE) parity-go
+
+# Migration M4: the Go backend's results against the Python reference (families it claims; records are M6)
+GO_FAMILIES := http,tls,dns,mdns,netbios-ns,llmnr
+parity-go:
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go run ./cmd/protodetect replay --cases ../migration/fixtures/cases.json --out ../migration/parity/go-results.json
+	python3 -B migration/parity/compare.py --results migration/parity/go-results.json --families $(GO_FAMILIES) --ignore '$$.records' --report migration/parity/go-report.json
 
 # D11: separated performance measurements (CPU by layer, bytes to identification, queue wait, memory); local numbers only
 perf-profile:

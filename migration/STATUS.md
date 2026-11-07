@@ -88,10 +88,31 @@ conflicting segment is admitted or delivered; all state is released on retiremen
 windows zeroed). Retained-memory limits under many short/half-open flows are measurable through
 `Allocated()` but the aggregate account is not yet enforced in this layer (see deferred).
 
-## M4 — first vertical slice
+## M4 — first vertical slice (Go)
 
-Next: bounded dispatch with HTTP/1, TLS handshake metadata and DNS attached as the Sink, `protodetect replay`
-writing results for `compare.py --results`, and the remaining zero-payload FIN messages compared.
+| item | state | evidence |
+|---|---|---|
+| Bounded dispatch | implemented | `go/internal/engine/dispatch.go` ports `dispatch.select` completely (every first-byte route and probe). `migration/parity/dispatch_cases.py` exports the Python decisions for every prefix length of every labelled stream fixture plus seeded mutations (`migration/fixtures/dispatch.json`, 10,621 prefixes); `TestSelectMatchesThePythonDecisionTable`: 0 differences. |
+| Inspector | implemented (ported paths) | `go/internal/engine/inspector.go`: feed/end/invalidate with the Python metrics accounting, candidate selection, hint handling (selects, never establishes), structural shifts (CONNECT/Upgrade carrier → inner phase → merged `shifted` events). Not ported, explicit as `NotPorted`: signature/heuristic unknown buffering, post-identification continuation (SSH KEXINIT, STARTTLS watch, D07 continuation), fingerprints, certificate watch, decrypted-plaintext path. |
+| HTTP/1 | implemented | `go/internal/protocols/httpx`: the text route's first-line dispatch (HTTP recognised; other text families end in `NotPorted` after the same gating checks, the 220 ambiguity and the POP3/IMAP/command syntax errors reproduced), start-line, header rules, Host authority, content-type/accept classes, auth scheme and challenge classes, Upgrade/WebSocket/h2c/CONNECT boundaries. |
+| TLS hellos | implemented | `go/internal/protocols/tlsx`: ClientHello (SNI, ALPN, supported_versions, ECH outer/inner structure, weak-suite classes), TLS 1.2 and 1.3 ServerHello and HelloRetryRequest profiles with the Python unsupported/malformed sentences. 32 new hello vectors in `cases.py tls_cases()` (whole / 1-byte / 7-byte / truncated). |
+| DNS layout | implemented | `go/internal/protocols/dnsx`: probe, the full `dns_details` validator (names with pointer rules, record walks, EDNS/TXT/SOA/MX/SRV/NSEC checks, NetBIOS record data, mDNS profiles, LLMNR flags) and the TCP framing parser. |
+| Datagram inspector | implemented (DNS validators) | `go/internal/engine/datagram.go` ports the candidate preselection chain; a payload that selects any validator the Go backend lacks is `NotPorted` (the Python outcome cannot be known), never guessed. |
+| Replay | implemented | `protodetect replay --cases … --out …` writes `{"backend": "go", "results": {...}}`; unanswerable cases are `{"unsupported": reason}`. Sessions run the tracker with the engine as the Sink (events per packet, windows, tables); records are M6. |
+| Differential result | implemented | `make parity-go` → `compare.py --families http,tls,dns,mdns,netbios-ns,llmnr --ignore $.records`: **369 compared, 369 matched, 0 mismatched, 0 gaps in the claimed families; 1,125 unsupported with a named gap**. Matched by kind/family: stream http 55, tls 128, dns 6; datagram dns 12, mdns 25, netbios-ns 16, llmnr 9; session http 10, dns 4; plus every unported-family case whose outcome the dispatcher alone decides (unknown/incomplete/ambiguous) matched exactly. `go/internal/replay` runs the same comparison as a Go test. |
+| Unit and fuzz | implemented | input not retained by the inspector, hint never establishes, unported options refused up front; `FuzzInspectorNeverPanics` (chunked feeds, metrics bounds, terminal invariants, datagram path), `FuzzSelectNeverPanics`. |
+| Capability statuses | implemented | `migration/CAPABILITIES.json`: Go `experimental` for http, tls, dns, mdns, netbios-ns, llmnr with the matched counts and the named gaps; every other family stays `pending`. |
+| Not claimed | — | no verdict/App-ID/record layer (M6); no pcap file reading or live capture (M8); UDP flows inside session replay (datagram flow state) are M6; continuation, fingerprints, certificates, signatures, heuristics are named gaps; zero-payload FIN messages are now compared for the ported families (they depend on the inspector) and skipped only through `unsupported`. |
+
+M4 exit assessment: positive, negative, ambiguity, budget and fragmentation parity holds on every answered case
+of the claimed families, and the backend never advertises an unported profile as available. The benchmark
+suite does not run end-to-end in Go yet (replay CLI only reads the JSON cases; pcap input is M8), so the
+CPU/allocation comparison is still owed before further optimization work.
+
+## M5+ — next
+
+Batches of protocol profiles derived from the registry (M5) after the record/verdict layer (M6) makes
+session records comparable; benchmark replay through the Go adapter before any optimization.
 
 ## Open decisions and blockers
 

@@ -37,6 +37,7 @@ func (r *recorder) End(reason string) bool {
 	r.ended, r.terminal = reason, true
 	return true
 }
+func (r *recorder) Retire(reason string) bool { return r.End(reason) }
 
 type harness struct {
 	t        *testing.T

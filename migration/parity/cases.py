@@ -181,9 +181,76 @@ def stream_cases(seed=11, limit=None):
                   "hint": None, "config": {"continuation": 4096}, "end": "fin"})
     cases.append({"id": "stream/options/byte-budget", "kind": "stream", "label": "http", "chunks": [(b"GET /" + b"a" * 200).hex()],
                   "hint": None, "config": {"max_bytes": 64}, "end": None})
+    cases.extend(tls_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
+    return cases
+
+
+def _tls_ext(kind, value):
+    return kind.to_bytes(2, "big") + len(value).to_bytes(2, "big") + value
+
+
+def _tls_record(data, version=b"\x03\x03"):
+    return b"\x16" + version + len(data).to_bytes(2, "big") + data
+
+
+def _server_hello(extensions=None, cipher=0xc02f, session=b"", compression=0, version=b"\x03\x03", random_value=bytes(range(32))):
+    body = version + random_value + bytes([len(session)]) + session + cipher.to_bytes(2, "big") + bytes([compression])
+    if extensions is not None:
+        values = b"".join(_tls_ext(k, v) for k, v in extensions)
+        body += len(values).to_bytes(2, "big") + values
+    return b"\x02" + len(body).to_bytes(3, "big") + body
+
+
+def tls_cases():
+    """TLS hello vectors (the labelled fixture tables carry none): ClientHello variants with SNI, ALPN,
+    supported_versions, ECH, weak suites, GREASE-free lists and malformed structures; ServerHello 1.2/1.3 and
+    HelloRetryRequest; each as whole / 1-byte / 7-byte / truncated chunkings."""
+    from protocol_adapters.protocol_fixtures import TLS_ECH_HELLO, ech_outer
+    from test_tls_server import RETRY
+    hellos = [
+        ("plain", client_hello_with([])),
+        ("sni", client_hello_with([(0, b"\x00\x12\x00\x00\x0fwww.example.com")])),
+        ("sni-alpn-h2", client_hello_with([(0, b"\x00\x12\x00\x00\x0fwww.example.com"), (16, b"\x00\x0c\x02h2\x08http/1.1")])),
+        ("supported-versions-13", client_hello_with([(0, b"\x00\x12\x00\x00\x0fwww.example.com"), (43, b"\x04\x03\x04\x03\x03")])),
+        ("tls10-legacy", _tls_record(b"\x01" + (len(b"\x03\x01" + bytes(32) + b"\x00\x00\x04\x00\x2f\x00\x35\x01\x00")).to_bytes(3, "big") + b"\x03\x01" + bytes(32) + b"\x00\x00\x04\x00\x2f\x00\x35\x01\x00", b"\x03\x01")),
+        ("weak-suites", client_hello_with([], ciphers=(0x0004, 0x002f, 0x0000, 0x0018))),
+        ("ech", TLS_ECH_HELLO),
+        ("ech-inner", client_hello_with([(0, b"\x00\x12\x00\x00\x0fwww.example.com"), (0xfe0d, b"\x01")])),
+        ("ech-bad-kdf", client_hello_with([(0xfe0d, ech_outer(kdf=0x0009))])),
+        ("alpn-binary", client_hello_with([(16, b"\x00\x04\x03\x00\xff\x01")])),
+        ("sni-ip-literal", client_hello_with([(0, b"\x00\x0e\x00\x00\x0b192.0.2.1xx")])),
+        ("sni-upper", client_hello_with([(0, b"\x00\x12\x00\x00\x0fWWW.Example.COM")])),
+        ("duplicate-ext", client_hello_with([(16, b"\x00\x03\x02h2"), (16, b"\x00\x03\x02h2")])),
+        ("bad-session-id", _tls_record(b"\x01\x00\x00\x2c" + b"\x03\x03" + bytes(32) + b"\x21" + bytes(5) + b"\x00\x02\x13\x01\x01\x00")),
+        ("odd-ciphers", _tls_record(b"\x01\x00\x00\x29" + b"\x03\x03" + bytes(32) + b"\x00" + b"\x00\x03\x13\x01\x13" + b"\x01\x00")),
+        ("no-null-compression", _tls_record(b"\x01\x00\x00\x28" + b"\x03\x03" + bytes(32) + b"\x00" + b"\x00\x02\x13\x01" + b"\x01\x01")),
+        ("ssl3-record", client_hello_with([])[:1] + b"\x03\x00" + client_hello_with([])[3:]),
+        ("not-handshake", b"\x17\x03\x03\x00\x05hello"),
+        ("short-hello-length", _tls_record(b"\x01\x00\x00\x10" + bytes(16))),
+        ("huge-record", b"\x16\x03\x03\xff\xff" + b"\x01"),
+        ("sni-then-many-ext", client_hello_with([(0, b"\x00\x12\x00\x00\x0fwww.example.com")] + [(k, b"") for k in range(100, 150)])),
+        ("server12-plain", _tls_record(_server_hello())),
+        ("server12-ext", _tls_record(_server_hello(((0, b""), (5, b""), (23, b""), (35, b""), (65281, b"\0"), (11, b"\x03\x00\x01\x02"), (16, b"\x00\x03\x02h2"))))),
+        ("server12-unknown-ext", _tls_record(_server_hello(((99, b"\x01"),)))),
+        ("server12-bad-cipher", _tls_record(_server_hello(cipher=0x0004))),
+        ("server13-keyshare", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x00\x1d\x00\x20" + bytes(32))), cipher=0x1301))),
+        ("server13-psk", _tls_record(_server_hello(((43, b"\x03\x04"), (41, b"\x00\x01")), cipher=0x1302))),
+        ("server13-bad-group", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x00\x63\x00\x04" + bytes(4))), cipher=0x1301))),
+        ("hrr-cookie", _tls_record(_server_hello(((43, b"\x03\x04"), (44, b"\x00\x02ab")), cipher=0x1301, random_value=RETRY))),
+        ("hrr-no-change", _tls_record(_server_hello(((43, b"\x03\x04"),), cipher=0x1301, random_value=RETRY))),
+        ("server-compression", _tls_record(_server_hello(compression=1))),
+        ("server-legacy-version", _tls_record(_server_hello(version=b"\x03\x01"))),
+    ]
+    cases = []
+    for number, (name, data) in enumerate(hellos):
+        base = "stream/tls-%02d-%s" % (number, name)
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": "tls", "chunks": chunks, "hint": None, "config": {}, "end": end})
     return cases
 
 

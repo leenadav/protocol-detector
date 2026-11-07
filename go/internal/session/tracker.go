@@ -142,7 +142,7 @@ func (t *Tracker) Drop(key Key, reason string) {
 	if connection != nil {
 		delivered = map[transport.Endpoint]int{}
 		for endpoint, d := range connection.Directions {
-			d.Sink.End(reason)
+			d.Sink.Retire(reason)
 			delivered[endpoint] = d.Stream.Delivered()
 		}
 		t.manager.release(key)

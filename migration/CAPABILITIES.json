@@ -362,9 +362,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M4: DNS layout over UDP and TCP; 12 datagram, 6 stream, 4 session cases matched; competing datagram candidates not ported",
+        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "status": "experimental"
       },
       "midstream": true,
       "observation_modes": [
@@ -593,9 +593,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M4: HTTP/1 start-line/headers through the text route; 55 stream, 10 session cases matched; continuation option not ported",
+        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "status": "experimental"
       },
       "midstream": true,
       "observation_modes": [
@@ -961,9 +961,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M4: hint-only LLMNR header semantics in the shared validator; 9 datagram cases matched",
+        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -989,9 +989,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M4: multicast DNS markers in the shared validator; 25 datagram cases matched",
+        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -1191,9 +1191,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M4: NetBIOS name service opcodes and NB/NBSTAT records in the shared validator; 16 datagram cases matched",
+        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -2271,9 +2271,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M4: ClientHello and TLS 1.2/1.3 ServerHello/HRR profiles; 128 stream cases matched; fingerprints, certificates, continuation not ported",
+        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
