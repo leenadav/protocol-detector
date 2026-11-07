@@ -37,7 +37,17 @@ type Case struct {
 	Chunks   []string         `json:"chunks"`
 	Payload  string           `json:"payload"`
 	End      *string          `json:"end"`
+	Options  json.RawMessage  `json:"options"`
+	Finish   string           `json:"finish"`
+	Packets  []Packet         `json:"packets"`
 	Expected json.RawMessage  `json:"expected"`
+}
+
+// Packet is one captured frame of a session case with its capture timestamp.
+type Packet struct {
+	T        float64 `json:"t"`
+	Linktype int     `json:"linktype"`
+	Frame    string  `json:"frame"`
 }
 
 // StreamExpectation is the typed expectation of a stream case.

@@ -101,16 +101,34 @@ def run_datagram(case):
     return {"observation": observation_dict(observation), "metrics": metrics_dict(inspector.metrics)}
 
 
+def stream_state(analyzer, packet):
+    """M3 reassembly parity target: per direction of the packet's connection, the retained window after this
+    packet (contiguous prefix length, stored bytes, highest retained end, digest of the contiguous prefix), or
+    None once the connection is gone. Transport-level only: no observation enters this value."""
+    import hashlib
+    connection = analyzer.manager.connections.get(analyzer.manager.key(packet.source, packet.destination))
+    if connection is None:
+        return None
+    out = {}
+    for endpoint, stream in connection["directions"].items():
+        out["{}:{}".format(*endpoint)] = {"contiguous": stream.contiguous, "stored": stream.stored, "highest_end": stream.highest_end,
+                                         "digest": hashlib.sha256(bytes(stream.buffer[:stream.contiguous])).hexdigest()[:16]}
+    return out
+
+
 def run_session(case):
     records = []
     options = dict(case.get("options") or {})
     analyzer = Analyzer(on_session=records.append, idle_timeout=options.pop("idle_timeout", 60), **options)
     packets = []
     for index, packet in enumerate(case["packets"]):
-        message = analyzer.process(packet["t"], decode_frame(bytes.fromhex(packet["frame"]), packet.get("linktype", 1)))
+        decoded = decode_frame(bytes.fromhex(packet["frame"]), packet.get("linktype", 1))
+        message = analyzer.process(packet["t"], decoded)
         packets.append({"index": index, "message": message.split(" | ")[0] if message else message,
                         "events": [event_dict(e) for e in analyzer.last_events],
-                        "peer_events": [[list(src), list(dst), event_dict(e)] for src, dst, e in getattr(analyzer, "peer_events", ())]})
+                        "peer_events": [[list(src), list(dst), event_dict(e)] for src, dst, e in getattr(analyzer, "peer_events", ())],
+                        "streams": stream_state(analyzer, decoded),
+                        "tables": [len(analyzer.tracked), len(analyzer.manager.connections), len(analyzer.udp_flows)]})
     analyzer.finish(case.get("finish") or "eof")
     return {"packets": packets, "records": [record_dict(r) for r in records]}
 

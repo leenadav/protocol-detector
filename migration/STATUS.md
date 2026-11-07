@@ -70,11 +70,28 @@ M2 exit assessment: contract serialization, bounded allocation, input-mutation, 
 tests pass; nothing panics on malformed input in the fuzzed surfaces. Pooling and concurrency are
 deliberately absent (ADR 0001).
 
-## M3/M4 — first vertical slice
+## M3 — session and reassembly infrastructure (Go)
 
-Next: trivial test inspector proving exactly-once contiguous delivery through Go reassembly (M3), then
-bounded dispatch with HTTP/1, TLS handshake metadata and DNS (M4) replayed through `protodetect` into
-`compare.py --results`.
+| item | state | evidence |
+|---|---|---|
+| Frame decoding | implemented | `go/internal/transport`: Ethernet (≤2 VLAN tags), BSD/OpenBSD loopback, Linux cooked v1/v2, raw IPv4 → IPv4 TCP/UDP with the Python reject kinds (link, network, fragment, length, transport, checksum) and endpoints on a readable first fragment; checksum policies ignore/audit/verify. Tests: every reject kind, every link type, three-tag rejection, checksum policies, Python tuple ordering of endpoints, and all 1501 fixture frames decode under `verify`; fuzz `FuzzDecodeNeverPanics`. |
+| Per-direction reassembly | implemented | `go/internal/reassembly.Stream`: modulo-2^32 offsets, lazy window allocation (never above 2 × limit), byte-compared overlaps checked **before** any byte of the segment is admitted, identical duplicates deliver nothing, gap fill delivers the whole newly contiguous run once, permanent failure after a conflict or an out-of-window segment (reason sentences identical to Python), prefix-only (live) clipping, zeroing release. The stream owns no inspector: it returns owned deltas, so one reassembler can serve the engine and a second consumer. |
+| Exactly-once proof (trivial inspector) | implemented | `stream_test.go`: every split point in both orders, gap/fill/duplicates/consistent overlap, conflict before and after the gap (nothing admitted, stream unusable), wraparound, window limit, lazy allocation, input not retained, 300 seeded random permutations with consistent retransmits; fuzz `FuzzFeedInvariants` (delivered == contiguous ≤ stored ≤ highest_end ≤ limit, delivered bytes == retained prefix). |
+| Connection lifecycle | implemented | `go/internal/session`: `Manager` (bounded table, idle expiry, open/feed/finish/close with the Python error sentences) and `Tracker` (port of `Analyzer.process` for TCP and the UDP flow table: SYN / SYN retransmission / SYN-ACK validation and retransmission / Fast Open rejection / RST / URG or missing ACK / FIN consistency rules / half close / both-FIN close / tuple reuse / connection limit / idle timeout / truncated-record end / handshake, asymmetric and midstream modes / midstream restart). Each direction ends through its `Sink` with the same reason sentence as Python; the engine attaches as a Sink in M4. |
+| Differential proof against Python | implemented | `cases.json` session packets now carry `streams` (per direction: contiguous, stored, highest_end, SHA-256 prefix digest) and `tables` (tracked, connections, UDP flows) after every packet (`migration/parity/cases.py stream_state`). `TestSessionCasesMatchThePythonReassembly`: 226 session cases, 1501 packets; per-packet messages, both directions' windows and digests, and the three table sizes match Python exactly; the delivered bytes of every direction equal its retained prefix. 223 zero-payload FIN messages are left to the inspector (their wording depends on whether the observation changed) and are compared in M4. |
+| Required sequences (plan M3) | implemented | split at every byte, out of order, identical/contradictory retransmits, holes, overlap before/after delivery, SYN retransmit, tuple reuse, wraparound, FIN-before-data, half close, RST, EOF (`Finish`), idle timeout, connection-table eviction, truncated capture record (`NoteInput`), modes. Documented unsupported behaviour is unchanged: Fast Open, URG, IPv4 fragments, IPv6. |
+| Gate | implemented (local) | `go vet`, `go test -race ./...` (9 packages), fuzz targets for buffer, contracts, reassembly and transport in `make go-check`. |
+| Deferred, named | — | pcap/pcapng file reading (`capture_stream.py`) and the live coordinator/queue are M4/M8 work; `reassembly.Stream` exposes `Allocated()` but is not yet charged to a `buffer.Account` (wired when the flow table owner exists in M4); compact/prefix-only tracking is implemented but not differential-tested (the live path is M8); CONNECT/LDAP/HTTP2 peer correlation (`open_shift`, replay) needs the engine and is M4/M6; session records and verdicts are M6. |
+
+M3 exit assessment: public-adapter reassembly results match the baseline on every fixture packet; no byte of a
+conflicting segment is admitted or delivered; all state is released on retirement (tables return to zero,
+windows zeroed). Retained-memory limits under many short/half-open flows are measurable through
+`Allocated()` but the aggregate account is not yet enforced in this layer (see deferred).
+
+## M4 — first vertical slice
+
+Next: bounded dispatch with HTTP/1, TLS handshake metadata and DNS attached as the Sink, `protodetect replay`
+writing results for `compare.py --results`, and the remaining zero-payload FIN messages compared.
 
 ## Open decisions and blockers
 
