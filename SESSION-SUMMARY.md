@@ -108,4 +108,4 @@ Initial-message inspection, not a full session validator; IPv4 only; no
 decryption beyond QUIC Initial protection and host-supplied `feed_decrypted`
 plaintext; no port-based inference; no proprietary signature corpus or cloud
 lookup; benchmarks measure local CPU work, not gateway latency.
-| v0.66 | Port of the Mac v0.59 branch (`190e011`): UDP families `lifx-lan`, `tuya-lan`, `tplink-smarthome` (automatic probes, fixed-vocabulary evidence) and DNS layout repairs (SRV/NSEC RDATA names parsed, AA ignored on mDNS queries per RFC 6762 18.4, reverse-mapping probes), re-verified on the v0.65 architecture; 88 families, 79 automatic, 156 applications, 740 tests. |
+| v0.66 | Port of the Mac v0.59 branch (`190e011`): UDP families `lifx-lan`, `tuya-lan`, `tplink-smarthome` (automatic probes, fixed-vocabulary evidence) and DNS layout repairs (SRV/NSEC RDATA names parsed, AA ignored on mDNS queries per RFC 6762 18.4, reverse-mapping probes), re-verified on the v0.65 architecture; 88 families, 79 automatic, 156 applications, 748 tests. |

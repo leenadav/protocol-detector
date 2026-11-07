@@ -35,7 +35,8 @@ flow risks and application shifts.
        "decryption": ["none", "awaiting_hello", "awaiting_keys", "decrypting", "complete", "failed"],
        "capture_quality": ["intact", "degraded", "provisional"],
        "engine_status": ["identified", "correlated", "unknown", "budget_exhausted", "invalidated", "incomplete"],
-       "directions": ["consistent", "conflicting", "one-direction"]
+       "directions": ["consistent", "conflicting", "one-direction"],
+       "observation": ["handshake", "asymmetric", "midstream", "datagram"]
      }}
   ]
 }
@@ -77,6 +78,8 @@ verdict otherwise; the decision reports the values it saw under `predicates`.
   never identities).
 - `directions`: `conflicting` when the two directions identified different applications, `one-direction`
   when only one side was identified, `consistent` otherwise.
+- `observation` (D05): how the connection was observed (`handshake`, `asymmetric`, `midstream`, or
+  `datagram`); a rule can insist on an observed handshake before it allows anything.
 
 A rule that names a predicate never matches when the context is missing. When no rule matched because of
 predicates alone, the default decision's reasons name the first rule that would have matched and which

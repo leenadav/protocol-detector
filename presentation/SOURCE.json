@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "9f0918c997d560fab2a82fd3bfbb36e643dc9e28",
+  "commit": "c449d136a2ec686e7a2e839ab0fc20256e242c46",
   "branch": "work/v065-stage0",
-  "build_digest": "9a3f0848ab2f397ef62fa2955cbd6f088e528f27534a2db884340f493042da8d",
+  "build_digest": "1231140bf890074ccdfb31fd8393150e0791f935e3f298d0e0290070a5290cff",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -45,7 +45,7 @@
     {
       "path": "protocol_engine/appid.py",
       "component": "engine",
-      "sha256": "f5c83b9f406b70b5b244fecdb6ffd18a604b3bca2d5525d36a74758888ae8626"
+      "sha256": "31241726a9f41946fef50ea4ab734ab1ce94d0fa6003b3f1e51332a432256661"
     },
     {
       "path": "protocol_engine/applications.py",
@@ -105,7 +105,7 @@
     {
       "path": "protocol_engine/descriptors.py",
       "component": "engine",
-      "sha256": "5af6c5a8c4a32cc72401f710cc722d6dcff1c3e6397707750897a8991212d116"
+      "sha256": "110b8d292f60deea00f76e00594f1d9eb24f6c30c2beac898b1ce77ce8bd396b"
     },
     {
       "path": "protocol_engine/desktop.py",
@@ -245,7 +245,7 @@
     {
       "path": "protocol_engine/policy.py",
       "component": "engine",
-      "sha256": "7f17fe1d434af691789278ca136dc0d98f6288ca0d0f46b5c16719b4f81f71fe"
+      "sha256": "3dba03357ff3ea3a1875e8c50fb8e12211a59962f8192b02d3431130363df194"
     },
     {
       "path": "protocol_engine/quic.py",
@@ -380,7 +380,7 @@
     {
       "path": "protocol_adapters/analyze_pcap.py",
       "component": "adapters",
-      "sha256": "49769af8bf2b3d01f26150811784b2cd8dcb9e5fda16f055dcfbb6c1fc95d36a"
+      "sha256": "54544e4447c197f86c2651cfa4fab694dc51561f65eab4bb83e0e41b6e7cf489"
     },
     {
       "path": "protocol_adapters/capture_stream.py",
@@ -415,7 +415,7 @@
     {
       "path": "protocol_adapters/live_capture.py",
       "component": "adapters",
-      "sha256": "a26483229f5f66d8d9e342fd0b6aba64ffa226a1b9b76c88e9764202498dd9a6"
+      "sha256": "5de92eac4421982ba205a5cac87757a0e94d899e026e86bd0e41be3d98d673da"
     },
     {
       "path": "protocol_adapters/make_sample_pcap.py",
@@ -605,17 +605,17 @@
     {
       "path": "schemas/live-event.schema.json",
       "component": "schemas",
-      "sha256": "509b7e33e2091518fb11a03438fb9929d362ca1defcb49114bdced68ac6b6c58"
+      "sha256": "663cfb7c8bb9fa4211067dbe873da6b5056ab7ac29fe6c2fb88e3073ba9ea7f6"
     },
     {
       "path": "schemas/offline-row.schema.json",
       "component": "schemas",
-      "sha256": "ebbd12727e9075da72fdb94f09da51654f0c3f5d19f0fa5a5ddbdd477f8a30f1"
+      "sha256": "e9433031da05703ded92c0c81015450b151eab68206e922dd20aca15c02d445b"
     },
     {
       "path": "schemas/session.schema.json",
       "component": "schemas",
-      "sha256": "e8560e204ee704340fdc40008b8951672cee458f376c3d8e1ee1824d8cb9e6d8"
+      "sha256": "347cce9c5f06cbabed2f7d481d151b0691e7c5dceb146c2b5377013f286531e9"
     }
   ]
 }

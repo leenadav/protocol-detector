@@ -202,7 +202,8 @@
             "decryption",
             "capture_quality",
             "engine_status",
-            "directions"
+            "directions",
+            "observation"
           ],
           "properties": {
             "identity_basis": {
@@ -254,6 +255,14 @@
                 "consistent",
                 "conflicting",
                 "one-direction"
+              ]
+            },
+            "observation": {
+              "enum": [
+                "handshake",
+                "asymmetric",
+                "midstream",
+                "datagram"
               ]
             }
           }
@@ -523,6 +532,45 @@
             }
           },
           "description": "D03: provider affiliation from the client-asserted server name, the provider's application family, and the activity actually observed; affiliation is never activity or identity."
+        },
+        "observation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "handshake_observed",
+            "directions_seen",
+            "roles"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "handshake",
+                "asymmetric",
+                "midstream",
+                "datagram"
+              ]
+            },
+            "handshake_observed": {
+              "type": "boolean"
+            },
+            "directions_seen": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "client",
+                  "server"
+                ]
+              }
+            },
+            "roles": {
+              "enum": [
+                "observed",
+                "assumed-from-first-segment"
+              ]
+            }
+          },
+          "description": "D05: how the connection was observed; identifications made midstream or on one side only are marked, never silently equal to a handshake observation."
         }
       },
       "required": [

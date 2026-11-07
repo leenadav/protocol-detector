@@ -44,7 +44,8 @@ def capture_command(interface, bpf, executable=None):
 class CaptureMonitor:
     def __init__(self, emit, max_connections=128, byte_limit=65536, idle_timeout=60,
                  all_events=False, udp_hint=None, tcp_hint=None, crc32c_byte_limit=4096, include_hostnames=False,
-                 signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False, retain=None):
+                 signatures=None, fingerprints=False, heuristics=False, policy=None, certificates=False, retain=None,
+                 observation="handshake"):
         self.emit = emit
         reference = weakref.ref(self)
         def retired(source, destination, event):
@@ -59,7 +60,7 @@ class CaptureMonitor:
         self.analyzer = Analyzer(max_connections, byte_limit, idle_timeout, compact=True, udp_hint=udp_hint, tcp_hint=tcp_hint,
                                  crc32c_byte_limit=crc32c_byte_limit, on_retire=retired, on_session=session,
                                  include_hostnames=include_hostnames, signatures=signatures, fingerprints=fingerprints,
-                                 heuristics=heuristics, policy=policy, certificates=certificates)
+                                 heuristics=heuristics, policy=policy, certificates=certificates, observation=observation)
         # Stage 3 (A03/A04): the coordinator is the one lifecycle owner for every capture path. It wraps
         # this analyzer, stamps sessions with capture_id/session_id/generation and dedupes finalization.
         # Stage 4 (A03/A07): `retain` (a RetentionBudget) adds the retained reassembly tier a second consumer
@@ -249,10 +250,10 @@ def readable(event):
 def run_capture(stream, emit, duration=60, max_packets=0, stats_interval=10, process=None,
                 max_connections=128, byte_limit=65536, idle_timeout=60, all_events=False, udp_hint=None, tcp_hint=None,
                 crc32c_byte_limit=4096, include_hostnames=False, signatures=None, fingerprints=False, heuristics=False, policy=None,
-                certificates=False):
+                certificates=False, observation="handshake"):
     decoder = PcapStreamDecoder()
     monitor = CaptureMonitor(emit, max_connections, byte_limit, idle_timeout, all_events, udp_hint, tcp_hint, crc32c_byte_limit,
-                             include_hostnames, signatures, fingerprints, heuristics, policy, certificates)
+                             include_hostnames, signatures, fingerprints, heuristics, policy, certificates, observation=observation)
     diagnostics = CaptureDiagnostics()
     selector = selectors.DefaultSelector()
     start = time.monotonic()
@@ -391,6 +392,8 @@ def main():
     parser.add_argument("--heuristics", action="store_true", help="Profile unknown payload prefixes and DNS name shape; advisory evidence only (RISKS.md)")
     parser.add_argument("--policy", help="JSON policy evaluated on every session record and classification (POLICY.md)")
     parser.add_argument("--certificates", action="store_true", help="Read the leaf certificate structure after a TLS 1.2 ServerHello: key, signature, lifetime, self-issued, CA flag, key usage, alternative-name presence, validity at capture time (no names)")
+    parser.add_argument("--observation", choices=("handshake", "asymmetric", "midstream"), default="handshake",
+                        help="D05: handshake (default), asymmetric (one side captured) or midstream (no start captured; conservative)")
     parser.add_argument("--json", action="store_true", help="JSON Lines metadata; no payload output")
     args = parser.parse_args()
     if (not math.isfinite(args.duration) or args.duration < 0 or args.max_packets < 0
@@ -423,7 +426,7 @@ def main():
         return run_capture(stream, emit, args.duration, args.max_packets, args.stats_interval, process,
                            args.max_connections, args.byte_limit, args.idle_timeout, args.all_events, args.udp_hint, args.tcp_hint,
                            args.crc32c_byte_limit, args.hostnames, signatures, args.fingerprints, args.heuristics, policy,
-                           args.certificates)
+                           args.certificates, args.observation)
     except BrokenPipeError:
         return 0
     except (OSError, ValueError, subprocess.SubprocessError) as exc:

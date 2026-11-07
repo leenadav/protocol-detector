@@ -31,6 +31,17 @@ DIRECTION_FACTORIES = MappingProxyType({"http2-server": "http2", "x11-server": "
 # Datagram families validated by a sibling validator (same layout, discriminated inside it).
 VALIDATOR_ALIASES = MappingProxyType({"ipfix": "netflow"})
 SELECTIONS = ("prefix", "text", "hint", "peer", "datagram", "datagram-hint")
+# D05 observation modes a family's profile supports on TCP:
+#   handshake   both SYN and SYN-ACK were observed (the default and the only mode the profiles were written for)
+#   asymmetric  the client's SYN and data were observed, the server side never (one-direction capture); the
+#               client direction is inspected exactly as in handshake mode, the server origin comes from the
+#               client's acknowledgement number
+#   midstream   no connection start was observed; a family is accepted midstream only when its profile checks a
+#               self-delimiting message layout that recurs at every message boundary, so a segment that starts
+#               on a boundary is structurally indistinguishable from an initial message. Everything else that
+#               matches midstream is reported as an incomplete observation, never as an identification.
+OBSERVATION_MODES = ("handshake", "asymmetric", "midstream")
+MIDSTREAM_FAMILIES = frozenset(("http", "dns", "syslog", "modbus", "dnp3", "iec-104", "resp", "memcached", "sip", "rtsp"))
 
 
 @dataclass(frozen=True)
@@ -44,6 +55,7 @@ class ProtocolDescriptor:
     requires_hint: bool
     directions: Tuple[str, ...] = ("client",)
     evidence_fields: Tuple[str, ...] = field(default_factory=tuple)
+    observation: Tuple[str, ...] = ("handshake", "asymmetric")   # D05: modes in which this family may be identified
 
 
 def _prefix_families():
@@ -82,8 +94,11 @@ def build():
                 errors.append("unknown transport %r for %s" % (transport, entry.family))
         directions = ("client", "server") if any(DIRECTION_FACTORIES.get(name) == entry.family for name in FACTORIES) \
             or "response" in entry.profile.lower() or "both directions" in entry.profile.lower() or "server" in entry.profile.lower() else ("client",)
+        observation = ("handshake", "asymmetric", "midstream") if entry.family in MIDSTREAM_FAMILIES else ("handshake", "asymmetric")
+        if "tcp" not in entry.transports:
+            observation = ("datagram",)
         descriptors[entry.family] = ProtocolDescriptor(entry.family, tuple(entry.transports), tuple(selection), tuple(implementation),
-                                                       entry.scope, entry.profile, entry.requires_hint, directions)
+                                                       entry.scope, entry.profile, entry.requires_hint, directions, (), observation)
     inventory = set(descriptors)
     for name in PARSERS:
         if name not in inventory and DIRECTION_FACTORIES.get(name, name) not in inventory and name != "text":
@@ -97,6 +112,9 @@ def build():
     for name in FACTORIES:
         if name not in PARSERS and name not in DIRECTION_FACTORIES:
             errors.append("internal factory without a declared role: " + name)
+    for family in MIDSTREAM_FAMILIES:
+        if family not in inventory or "tcp" not in descriptors[family].transports:
+            errors.append("midstream allowance for a family that is not a TCP inventory family: " + family)
     if errors:
         raise InventoryError("; ".join(sorted(errors)))
     return MappingProxyType(descriptors)

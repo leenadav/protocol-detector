@@ -22,7 +22,7 @@ PORT_USAGE = ("standard", "nonstandard", "unknown")
 _MATCH_KEYS = frozenset(("apps", "categories", "subcategories", "technologies", "characteristics", "risks", "port_usage",
                          "transports", "server_ports", "encryption", "shifted_from", "risk_min", "risk_max",
                          # D04: typed predicates over the evidence contract, never over invented confidence numbers
-                         "identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions"))
+                         "identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions", "observation"))
 # Closed vocabularies of the D04 predicates. There is deliberately no ordering among identity bases: a rule that
 # requires ["structural", "authenticated_plaintext"] is not satisfied by a client assertion (SNI/Host), and
 # "authenticated_plaintext" means record AEAD with supplied secrets, not verified peer or product identity.
@@ -34,7 +34,8 @@ CAPTURE_QUALITIES = ("intact", "degraded", "provisional")
 ENGINE_STATUSES = ("identified", "correlated", "detecting", "incomplete", "unknown", "malformed", "budget_exhausted",
                    "invalidated", "no_handshake", "no_payload")
 DIRECTIONS = ("consistent", "conflicting", "one-direction")
-PREDICATE_KEYS = ("identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions")
+OBSERVATIONS = ("handshake", "asymmetric", "midstream", "datagram")     # D05 observation mode of the session
+PREDICATE_KEYS = ("identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions", "observation")
 _RULE_KEYS = frozenset(("name", "action", "match", "application_default", "description"))
 _SUBCATEGORIES = frozenset(sub for subs in CATEGORIES.values() for sub in subs)
 MAX_RULES = 1024
@@ -57,7 +58,7 @@ class Decision(NamedTuple):
         return out
 
 
-def policy_context(verdict, layers=None, capture_quality=None):
+def policy_context(verdict, layers=None, capture_quality=None, observation=None):
     """The D04 predicate values for one session, from its verdict and (when present) its layered view.
 
     identity_basis, activity, affiliation and decryption come from the layered view; without one the basis is
@@ -85,7 +86,8 @@ def policy_context(verdict, layers=None, capture_quality=None):
             "decryption": decryption,
             "capture_quality": capture_quality or (layers or {}).get("capture_quality") or "intact",
             "engine_status": verdict.status,
-            "directions": directions}
+            "directions": directions,
+            "observation": observation or "handshake"}
 
 
 def _names(value, label, allowed=None, resolve=None):
@@ -186,7 +188,7 @@ class Rule:
         self.shifted_from = _names(match["shifted_from"], "shifted_from", resolve=_resolve_app) if "shifted_from" in match else None
         vocabularies = {"identity_basis": IDENTITY_BASES, "activity": ACTIVITIES, "affiliation": AFFILIATIONS,
                         "decryption": DECRYPTION_STATES, "capture_quality": CAPTURE_QUALITIES,
-                        "engine_status": ENGINE_STATUSES, "directions": DIRECTIONS}
+                        "engine_status": ENGINE_STATUSES, "directions": DIRECTIONS, "observation": OBSERVATIONS}
         self.predicates = {key: _names(match[key], key, vocabulary) for key, vocabulary in vocabularies.items() if key in match}
         self.risk_min = self._risk_bound(match, "risk_min", name)
         self.risk_max = self._risk_bound(match, "risk_max", name)
@@ -291,7 +293,7 @@ class Policy:
     def __len__(self):
         return len(self.rules)
 
-    def evaluate(self, verdict, transport=None, server_port=None, layers=None, capture_quality=None):
+    def evaluate(self, verdict, transport=None, server_port=None, layers=None, capture_quality=None, observation=None):
         """First matching rule decides; otherwise the default. Linear in the rule count.
 
         `layers` is the session's layered view when the caller has one; with it the D04 predicates see the
@@ -299,7 +301,7 @@ class Policy:
         """
         if not isinstance(verdict, Verdict):
             raise TypeError("evaluate expects a Verdict")
-        context = policy_context(verdict, layers, capture_quality)
+        context = policy_context(verdict, layers, capture_quality, observation)
         for rule in self.rules:
             if rule.matches(verdict, transport, server_port, context):
                 reasons = ("rule '{}' matched {}".format(rule.name, verdict.app),)

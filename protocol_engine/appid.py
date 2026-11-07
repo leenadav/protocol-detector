@@ -304,6 +304,22 @@ def _session_verdict(client, server, transport, server_port, client_bytes, serve
                     ["No application payload observed"], client, server)
 
 
+def midstream_outcome(transport, family):
+    """D05: a midstream segment matched a family whose profile needs its initial message. That is an incomplete
+    observation of the connection, not an identification and not an unsupported protocol."""
+    return _outcome("incomplete", transport, "midstream",
+                    ["Connection observed midstream: the segment matched the {} layout, but that profile is written for the "
+                     "initial message and is not accepted without an observed start".format(family)])
+
+
+def unobserved_start_outcome(transport, reason):
+    """D05: a midstream connection whose bytes matched no profile. Unsupported protocol and unobserved start are
+    indistinguishable here, so the outcome says so instead of claiming unknown-{tcp,udp}."""
+    return _outcome("incomplete", transport, "midstream",
+                    ["Connection observed midstream and no message boundary matched a supported layout; an unsupported "
+                     "protocol cannot be told from an unobserved start (" + reason + ")"])
+
+
 def verdict_fields(verdict):
     """Flat JSON-friendly mapping, stable key order, no payload-derived values."""
     return {"app": verdict.app, "category": verdict.category, "subcategory": verdict.subcategory,

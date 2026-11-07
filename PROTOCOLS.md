@@ -1038,3 +1038,31 @@ valid; the AA bit is ignored on multicast DNS queries (RFC 6762 18.4); a type-AN
 records is an mDNS probe (RFC 6762 8.1) even for reverse-mapping names. Still rejected on purpose: trailing
 bytes after the last section and AA on a unicast DNS query. QUIC short-header packets without an observed
 Initial remain unknown: one fixed bit is not a structural profile.
+
+## Observation modes (D05)
+
+Every TCP profile in this document was written for the connection's initial message after an observed
+handshake. The Analyzer therefore has three explicit observation modes (`--observation`), and every session
+record states which one produced it (`observation.mode`, `handshake_observed`, `directions_seen`, `roles`):
+
+- `handshake` (default): SYN and SYN-ACK must be observed; data without them is skipped and counted
+  (`tcp_without_start`). Unchanged behaviour.
+- `asymmetric`: for one-direction captures (a SPAN of one side). The client's SYN and data are observed, the
+  server side never. The client direction is inspected exactly as after a handshake; the server direction's
+  origin is the client's acknowledgement number. A real SYN-ACK is still validated against the client's ISN, a
+  server segment before any client data is still skipped, and nothing is relaxed for connections whose
+  handshake is observed.
+- `midstream`: for captures that start inside connections. The first data segment's sender is taken as the
+  client (`roles: assumed-from-first-segment`), its sequence is that direction's origin and its acknowledgement
+  number the peer's origin. Recognition is deliberately conservative: a family is identified midstream only
+  when its profile checks a self-delimiting message layout that recurs at every message boundary
+  (`MIDSTREAM_FAMILIES`: http, dns, syslog, modbus, dnp3, iec-104, resp, memcached, sip, rtsp), so a segment
+  starting on a boundary is structurally indistinguishable from an initial message. Any other profile that
+  matches midstream, and any segment that matches nothing, ends as the outcome `incomplete` with engine status
+  `midstream` and a reason that says the start was not observed. An unsupported protocol and an unobserved
+  start are not told apart there, and the record says so instead of claiming `unknown-tcp`. A SYN on a tuple
+  under midstream observation ends that observation and starts an ordinary handshake observation (new
+  generation).
+
+Datagram profiles are per message and carry `observation.mode = datagram`. Policies can require a mode with
+the `observation` predicate (POLICY.md).
