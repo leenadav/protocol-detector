@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 790 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 796 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -78,7 +78,7 @@ applications (YouTube, Netflix, Teams, Zoom, Slack, WhatsApp, ChatGPT, GitHub,
 Office 365, ...) maps the SNI or Host by DNS label suffix. The name is a client
 assertion and the verdict says so; configured rules win, and encrypted
 ClientHello front names are never mapped.
-88 families, 79 automatic, 156 applications, 790 tests.
+88 families, 79 automatic, 156 applications, 796 tests.
 
 ## New in v0.64 — Weak cipher suites in TLS offers
 
@@ -330,6 +330,17 @@ descriptor) and reports the version and whether the descriptor is inline or
 deferred. Instance names, connect descriptors, thread and trace identifiers
 are never emitted. Catalog applications `mssql-db` (tcp/1433) and `oracle`
 (tcp/1521). 69 families, 62 automatic, 73 applications, 442 tests.
+
+## D10 — metamorphic packet-sequence relations
+
+`tools/sequence_check.py` (`make sequences`, in `make check`; `make sequences-extended`) sends every
+automatically identified stream fixture through the Analyzer after an observed handshake and checks seeded
+transformations against that plain delivery: any segmentation and any reordering with identical
+retransmissions give the same session record with each contiguous byte inspected once; a conflicting
+retransmission gives the same record or an explicit invalidation and never another family; interleaved
+connections and datagram flows give the records they give alone; a FIN before the last segment waits for
+the gap; a reused 5-tuple gets its own record; an idle half-message ends explicitly. 135 fixtures, three
+seeds × 6 transformations: 0 violations (about 95 % of conflicts were still retained and invalidated).
 
 ## D09 — independent corpus evaluation (infrastructure; acceptance blocked)
 

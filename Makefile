@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content evaluate manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
+.PHONY: test presentation-test presentation-check content evaluate sequences sequences-extended manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -56,7 +56,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content
+check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -77,7 +77,7 @@ docs-counts:
 	$(PYTHON) -B tools/check_docs_counts.py
 
 # Same checks the CI workflow runs, in one command, plus the extended fuzz pass.
-ci-local: check fuzz
+ci-local: check fuzz sequences-extended
 	$(PYTHON) -B analyze_pcap.py sample-expanded.pcap --events-only --sessions > /dev/null
 	$(PYTHON) -B protodetect.py analyze sample-expanded.pcap --json --sessions | $(PYTHON) -B protodetect.py schema offline-row --validate /dev/stdin
 
@@ -114,6 +114,14 @@ keylogs:
 
 content:
 	python3 -B tools/check_content.py
+
+# D10: metamorphic sequence relations over the Analyzer (segmentation, reordering, conflicts, interleaving, FIN order, reuse, expiry)
+sequences:
+	$(PYTHON) -B tools/sequence_check.py --iterations 1
+
+sequences-extended:
+	$(PYTHON) -B tools/sequence_check.py --iterations 8 --seed 1
+	$(PYTHON) -B tools/sequence_check.py --iterations 8 --seed 2
 
 # D09: evaluate an independently labelled capture corpus (docs/CORPUS-EVALUATION.md); CORPUS=dir
 evaluate:
