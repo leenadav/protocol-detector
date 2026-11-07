@@ -3,18 +3,128 @@
   "description": "Example policy: allow common applications on their standard ports, deny remote access and cleartext administration, alert on risky unknown traffic.",
   "default": "alert",
   "rules": [
-    {"name": "deny-remote-access", "action": "deny",
-     "match": {"apps": ["rdp", "vnc", "telnet", "ssh"], "port_usage": ["nonstandard"]},
-     "description": "Remote access hidden on unusual ports"},
-    {"name": "deny-obsolete", "action": "deny", "match": {"risks": ["obsolete-protocol"]}},
-    {"name": "allow-web", "action": "allow", "application_default": true,
-     "match": {"apps": ["web-browsing", "ssl", "quic", "websocket", "http-proxy"]}},
-    {"name": "allow-infrastructure", "action": "allow", "application_default": true,
-     "match": {"categories": ["networking"], "subcategories": ["infrastructure", "routing", "encrypted-tunnel"], "risk_max": 3}},
-    {"name": "allow-business", "action": "allow", "application_default": true,
-     "match": {"categories": ["business-systems", "collaboration"]}},
-    {"name": "alert-unknown-encrypted", "action": "alert",
-     "match": {"apps": ["unknown-tcp", "unknown-udp"], "risks": ["unknown-high-entropy-payload"]}},
-    {"name": "deny-unknown", "action": "deny", "match": {"apps": ["unknown-tcp", "unknown-udp"]}}
+    {
+      "name": "deny-remote-access",
+      "action": "deny",
+      "match": {
+        "apps": [
+          "rdp",
+          "vnc",
+          "telnet",
+          "ssh"
+        ],
+        "port_usage": [
+          "nonstandard"
+        ]
+      },
+      "description": "Remote access hidden on unusual ports"
+    },
+    {
+      "name": "alert-asserted-remote-access",
+      "action": "alert",
+      "match": {
+        "subcategories": [
+          "remote-access"
+        ],
+        "identity_basis": [
+          "client_assertion"
+        ],
+        "activity": [
+          "unobserved"
+        ]
+      },
+      "description": "A remote-access provider named only by a client-asserted server name, with no activity observed: review, do not treat as a session"
+    },
+    {
+      "name": "allow-decrypted-web",
+      "action": "allow",
+      "match": {
+        "categories": [
+          "general-internet",
+          "business-systems",
+          "collaboration"
+        ],
+        "identity_basis": [
+          "authenticated_plaintext"
+        ],
+        "decryption": [
+          "complete"
+        ]
+      },
+      "description": "Inner application identified in authenticated plaintext (record AEAD with supplied secrets, not peer identity)"
+    },
+    {
+      "name": "deny-obsolete",
+      "action": "deny",
+      "match": {
+        "risks": [
+          "obsolete-protocol"
+        ]
+      }
+    },
+    {
+      "name": "allow-web",
+      "action": "allow",
+      "application_default": true,
+      "match": {
+        "apps": [
+          "web-browsing",
+          "ssl",
+          "quic",
+          "websocket",
+          "http-proxy"
+        ]
+      }
+    },
+    {
+      "name": "allow-infrastructure",
+      "action": "allow",
+      "application_default": true,
+      "match": {
+        "categories": [
+          "networking"
+        ],
+        "subcategories": [
+          "infrastructure",
+          "routing",
+          "encrypted-tunnel"
+        ],
+        "risk_max": 3
+      }
+    },
+    {
+      "name": "allow-business",
+      "action": "allow",
+      "application_default": true,
+      "match": {
+        "categories": [
+          "business-systems",
+          "collaboration"
+        ]
+      }
+    },
+    {
+      "name": "alert-unknown-encrypted",
+      "action": "alert",
+      "match": {
+        "apps": [
+          "unknown-tcp",
+          "unknown-udp"
+        ],
+        "risks": [
+          "unknown-high-entropy-payload"
+        ]
+      }
+    },
+    {
+      "name": "deny-unknown",
+      "action": "deny",
+      "match": {
+        "apps": [
+          "unknown-tcp",
+          "unknown-udp"
+        ]
+      }
+    }
   ]
 }

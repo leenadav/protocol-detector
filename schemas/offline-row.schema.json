@@ -210,6 +210,72 @@
           "items": {
             "type": "string"
           }
+        },
+        "predicates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "identity_basis",
+            "activity",
+            "affiliation",
+            "decryption",
+            "capture_quality",
+            "engine_status",
+            "directions"
+          ],
+          "properties": {
+            "identity_basis": {
+              "enum": [
+                "authenticated_plaintext",
+                "structural",
+                "configured_rule",
+                "client_assertion",
+                "none"
+              ]
+            },
+            "activity": {
+              "enum": [
+                "unobserved",
+                "http-request",
+                "authenticated-plaintext",
+                "none"
+              ]
+            },
+            "affiliation": {
+              "enum": [
+                "service",
+                "provider-web",
+                "none"
+              ]
+            },
+            "decryption": {
+              "enum": [
+                "none",
+                "awaiting_hello",
+                "awaiting_keys",
+                "decrypting",
+                "complete",
+                "failed"
+              ]
+            },
+            "capture_quality": {
+              "enum": [
+                "intact",
+                "degraded",
+                "provisional"
+              ]
+            },
+            "engine_status": {
+              "type": "string"
+            },
+            "directions": {
+              "enum": [
+                "consistent",
+                "conflicting",
+                "one-direction"
+              ]
+            }
+          }
         }
       }
     },

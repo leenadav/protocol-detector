@@ -20,7 +20,21 @@ from .risks import RISKS
 ACTIONS = ("allow", "deny", "alert")
 PORT_USAGE = ("standard", "nonstandard", "unknown")
 _MATCH_KEYS = frozenset(("apps", "categories", "subcategories", "technologies", "characteristics", "risks", "port_usage",
-                         "transports", "server_ports", "encryption", "shifted_from", "risk_min", "risk_max"))
+                         "transports", "server_ports", "encryption", "shifted_from", "risk_min", "risk_max",
+                         # D04: typed predicates over the evidence contract, never over invented confidence numbers
+                         "identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions"))
+# Closed vocabularies of the D04 predicates. There is deliberately no ordering among identity bases: a rule that
+# requires ["structural", "authenticated_plaintext"] is not satisfied by a client assertion (SNI/Host), and
+# "authenticated_plaintext" means record AEAD with supplied secrets, not verified peer or product identity.
+IDENTITY_BASES = ("authenticated_plaintext", "structural", "configured_rule", "client_assertion", "none")
+ACTIVITIES = ("unobserved", "http-request", "authenticated-plaintext", "none")
+AFFILIATIONS = ("service", "provider-web", "none")
+DECRYPTION_STATES = ("none", "awaiting_hello", "awaiting_keys", "decrypting", "complete", "failed")
+CAPTURE_QUALITIES = ("intact", "degraded", "provisional")
+ENGINE_STATUSES = ("identified", "correlated", "detecting", "incomplete", "unknown", "malformed", "budget_exhausted",
+                   "invalidated", "no_handshake", "no_payload")
+DIRECTIONS = ("consistent", "conflicting", "one-direction")
+PREDICATE_KEYS = ("identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions")
 _RULE_KEYS = frozenset(("name", "action", "match", "application_default", "description"))
 _SUBCATEGORIES = frozenset(sub for subs in CATEGORIES.values() for sub in subs)
 MAX_RULES = 1024
@@ -34,9 +48,44 @@ class Decision(NamedTuple):
     action: str
     rule: Optional[str]         # matching rule name, None for the default
     reasons: Tuple[str, ...]
+    predicates: Optional[dict] = None   # D04: the typed context the rules were evaluated against (auditable)
 
     def fields(self):
-        return {"action": self.action, "rule": self.rule, "reasons": list(self.reasons)}
+        out = {"action": self.action, "rule": self.rule, "reasons": list(self.reasons)}
+        if self.predicates is not None:
+            out["predicates"] = dict(self.predicates)
+        return out
+
+
+def policy_context(verdict, layers=None, capture_quality=None):
+    """The D04 predicate values for one session, from its verdict and (when present) its layered view.
+
+    identity_basis, activity, affiliation and decryption come from the layered view; without one the basis is
+    derived from the verdict alone (configured rule, client assertion or structural) and decryption is "none".
+    Nothing here is a confidence score: every value is a closed label with a documented meaning.
+    """
+    application = (layers or {}).get("application") or {}
+    attribution = verdict.attribution or {}
+    basis = application.get("basis")
+    if basis is None:
+        if verdict.status not in ("identified", "correlated"):
+            basis = "none"
+        elif verdict.base_app is not None and verdict.category == "custom":
+            basis = "configured_rule"
+        elif attribution.get("kind") == "service":
+            basis = "client_assertion"
+        else:
+            basis = "structural"
+    decryption = ((layers or {}).get("decryption") or {}).get("state") or "none"
+    directions = "conflicting" if any(reason.startswith("Server direction identified as") for reason in verdict.reasons) else \
+        "one-direction" if verdict.client_protocol is None or verdict.server_protocol is None else "consistent"
+    return {"identity_basis": basis,
+            "activity": application.get("activity") or attribution.get("activity") or "none",
+            "affiliation": application.get("affiliation") or attribution.get("kind") or "none",
+            "decryption": decryption,
+            "capture_quality": capture_quality or (layers or {}).get("capture_quality") or "intact",
+            "engine_status": verdict.status,
+            "directions": directions}
 
 
 def _names(value, label, allowed=None, resolve=None):
@@ -97,7 +146,7 @@ class Rule:
     """One ordered policy rule with pre-resolved condition sets."""
     __slots__ = ("name", "action", "apps", "categories", "subcategories", "technologies", "characteristics", "risks",
                  "port_usage", "transports", "server_ports", "encryption", "shifted_from", "risk_min", "risk_max",
-                 "application_default", "description")
+                 "application_default", "description", "predicates")
 
     def __init__(self, document, index):
         if not isinstance(document, dict):
@@ -135,6 +184,10 @@ class Rule:
         self.server_ports = _ports(match["server_ports"]) if "server_ports" in match else None
         self.encryption = _names(match["encryption"], "encryption", ("none", "tls", "dtls", "quic", "wireguard", "openvpn")) if "encryption" in match else None
         self.shifted_from = _names(match["shifted_from"], "shifted_from", resolve=_resolve_app) if "shifted_from" in match else None
+        vocabularies = {"identity_basis": IDENTITY_BASES, "activity": ACTIVITIES, "affiliation": AFFILIATIONS,
+                        "decryption": DECRYPTION_STATES, "capture_quality": CAPTURE_QUALITIES,
+                        "engine_status": ENGINE_STATUSES, "directions": DIRECTIONS}
+        self.predicates = {key: _names(match[key], key, vocabulary) for key, vocabulary in vocabularies.items() if key in match}
         self.risk_min = self._risk_bound(match, "risk_min", name)
         self.risk_max = self._risk_bound(match, "risk_max", name)
         if self.risk_min is not None and self.risk_max is not None and self.risk_min > self.risk_max:
@@ -149,10 +202,20 @@ class Rule:
             raise PolicyError("Rule '{}' {} must be an integer 1..5".format(name, key))
         return value
 
-    def matches(self, verdict, transport, server_port):
-        """All present conditions must hold; list conditions hold when any entry matches."""
+    def matches(self, verdict, transport, server_port, context=None):
+        """All present conditions must hold; list conditions hold when any entry matches.
+
+        D04 predicates are evaluated against `context` (policy_context); a rule that names a predicate never
+        matches when the context is absent, so a stronger requirement is never satisfied by missing data.
+        """
         if self.apps is not None and verdict.app not in self.apps:
             return False
+        if self.predicates:
+            if context is None:
+                return False
+            for key, allowed in self.predicates.items():
+                if context.get(key) not in allowed:
+                    return False
         if self.categories is not None and verdict.category not in self.categories:
             return False
         if self.subcategories is not None and verdict.subcategory not in self.subcategories:
@@ -228,23 +291,36 @@ class Policy:
     def __len__(self):
         return len(self.rules)
 
-    def evaluate(self, verdict, transport=None, server_port=None):
-        """First matching rule decides; otherwise the default. Linear in the rule count."""
+    def evaluate(self, verdict, transport=None, server_port=None, layers=None, capture_quality=None):
+        """First matching rule decides; otherwise the default. Linear in the rule count.
+
+        `layers` is the session's layered view when the caller has one; with it the D04 predicates see the
+        real identity basis, activity, affiliation, decryption state and capture quality.
+        """
         if not isinstance(verdict, Verdict):
             raise TypeError("evaluate expects a Verdict")
+        context = policy_context(verdict, layers, capture_quality)
         for rule in self.rules:
-            if rule.matches(verdict, transport, server_port):
+            if rule.matches(verdict, transport, server_port, context):
                 reasons = ("rule '{}' matched {}".format(rule.name, verdict.app),)
                 if rule.application_default:
                     reasons += ("application-default: port usage {}".format(verdict.port_usage),)
-                return Decision(rule.action, rule.name, reasons)
+                if rule.predicates:
+                    reasons += ("predicates: " + ", ".join("{}={}".format(key, context[key]) for key in sorted(rule.predicates)),)
+                return Decision(rule.action, rule.name, reasons, context)
         reasons = ("no rule matched {}; policy default".format(verdict.app),)
         for rule in self.rules:
             if rule.application_default and rule.action == "allow" and verdict.port_usage == "nonstandard" \
-                    and rule.matches(verdict._replace(port_usage="standard"), transport, server_port):
+                    and rule.matches(verdict._replace(port_usage="standard"), transport, server_port, context):
                 reasons += ("rule '{}' would allow {} on its application-default ports only".format(rule.name, verdict.app),)
                 break
-        return Decision(self.default, None, reasons)
+        for rule in self.rules:
+            if rule.predicates and rule.matches(verdict, transport, server_port, dict(context, **{k: next(iter(v)) for k, v in rule.predicates.items()})):
+                missing = ", ".join("{} is {} (needs {})".format(key, context[key], "|".join(sorted(rule.predicates[key])))
+                                    for key in sorted(rule.predicates) if context[key] not in rule.predicates[key])
+                reasons += ("rule '{}' would match but its evidence requirements are not met: {}".format(rule.name, missing),)
+                break
+        return Decision(self.default, None, reasons, context)
 
     def dependency_warnings(self):
         """Allowed applications whose implicitly-used or depended-on applications this policy denies."""

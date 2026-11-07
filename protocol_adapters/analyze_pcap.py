@@ -116,7 +116,9 @@ class Analyzer:
                                   "stable_seconds": round(state["stable_at"] - state["start"], 6)}
         self.telemetry.add("sessions." + verdict.status)
         if self.policy is not None:
-            record["policy"] = self.policy.evaluate(verdict, transport, server[1]).fields()
+            # D04: the decision sees the typed evidence contract (identity basis, activity, affiliation,
+            # decryption state, capture quality), never a confidence number.
+            record["policy"] = self.policy.evaluate(verdict, transport, server[1], layers=record["layers"]).fields()
         fingerprints = {evidence.field: evidence.value for obs in observations if obs is not None
                         for evidence in obs.evidence if evidence.strength == "derived"}
         if fingerprints:

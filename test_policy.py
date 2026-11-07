@@ -31,7 +31,7 @@ def synthetic(app, port_usage="standard", risks=(), encryption=None, shifted_fro
 class LoadingTests(unittest.TestCase):
     def test_example_policy_loads_and_lints_clean(self):
         policy = Policy.from_path("policy-example.json")
-        self.assertEqual((len(policy), policy.default, policy.lint()), (7, "alert", ()))
+        self.assertEqual((len(policy), policy.default, policy.lint()), (9, "alert", ()))
 
     def test_validation_errors(self):
         bad = [
@@ -77,7 +77,9 @@ class EvaluationTests(unittest.TestCase):
             {"name": "b", "action": "allow", "match": {"categories": ["networking"]}},
         ]}))
         telnet = verdict_for(TELNET, 23)
-        self.assertEqual(policy.evaluate(telnet, "tcp", 23), Decision("alert", "a", ("rule 'a' matched telnet",)))
+        decision = policy.evaluate(telnet, "tcp", 23)
+        self.assertEqual(decision[:3], Decision("alert", "a", ("rule 'a' matched telnet",))[:3])
+        self.assertEqual(decision.predicates["identity_basis"], "structural")       # D04 context is always reported
         self.assertEqual(policy.evaluate(verdict_for(RDP, 3389), "tcp", 3389).rule, "b")
         modbus = policy.evaluate(verdict_for(MODBUS, 502), "tcp", 502)
         self.assertEqual((modbus.action, modbus.rule), ("deny", None))
@@ -163,7 +165,9 @@ class PipelineTests(unittest.TestCase):
                 analyze(path, json_output=True, events_only=True, sessions=True, policy=policy)
         session = [json.loads(line) for line in output.getvalue().splitlines() if '"type": "session"' in line][0]
         # The synthetic server port is 8080: telnet there is remote access on a nonstandard port (rule 1).
-        self.assertEqual(session["policy"], {"action": "deny", "rule": "deny-remote-access", "reasons": ["rule 'deny-remote-access' matched telnet"]})
+        self.assertEqual({k: session["policy"][k] for k in ("action", "rule", "reasons")},
+                         {"action": "deny", "rule": "deny-remote-access", "reasons": ["rule 'deny-remote-access' matched telnet"]})
+        self.assertEqual(session["policy"]["predicates"]["identity_basis"], "structural")
         self.assertIn("policy=deny(deny-remote-access)", readable_session(session))
         with self.assertRaises(TypeError):
             Analyzer(policy="policy-example.json")
