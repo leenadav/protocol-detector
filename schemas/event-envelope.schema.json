@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://protocol-detector/schemas/event-envelope.schema.json",
+  "title": "Versioned event envelope",
+  "description": "One event of a capture's bounded log (protocol_adapters.events, stage 2 / A06). The payload is a live-event document; the envelope adds identity, ordering, quality and retraction.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "sequence", "capture_id", "session_id", "generation", "layer", "revision", "kind", "source", "quality", "reason_code", "budget", "retracts", "payload"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1"},
+    "sequence": {"type": ["integer", "null"], "minimum": 1},
+    "capture_id": {"type": "string", "minLength": 1, "maxLength": 64},
+    "session_id": {"type": ["string", "null"], "minLength": 16, "maxLength": 16},
+    "generation": {"type": "integer", "minimum": 0},
+    "layer": {"type": "string", "enum": ["transport", "outer", "encryption", "inner", "application", "capture"]},
+    "revision": {"type": "integer", "minimum": 0},
+    "kind": {"type": "string", "enum": ["session", "classification", "capture_gap", "error", "summary", "started", "decryption", "progress"]},
+    "source": {"type": "string", "enum": ["wire", "decrypted", "capture", "control"]},
+    "quality": {"type": "string", "enum": ["intact", "provisional", "degraded"]},
+    "reason_code": {"type": ["string", "null"], "maxLength": 64},
+    "budget": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["exhausted", "scope"],
+      "properties": {"exhausted": {"type": "boolean"}, "scope": {"type": "string", "maxLength": 64}}
+    },
+    "retracts": {"type": "array", "maxItems": 1024, "items": {"type": "string", "maxLength": 16}},
+    "payload": {"type": "object"}
+  }
+}

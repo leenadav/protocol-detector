@@ -1,0 +1,15 @@
+{
+  "components": {
+    "application_catalog": "4e37559adfe72232473e05c2cf77ecc979ae3426b4a6cd5494ec3f17f4517195",
+    "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+    "host_catalog": "928b856e40db5873d64db50ba81dfac5e07e44eb3c5c86b8009340f5eca1f17c",
+    "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
+  },
+  "digest": "991c007668d263d1",
+  "host_entries": 54,
+  "note": "provider web fronts separated from service domains; OpenAI split into ChatGPT, platform and web front; github.io (tenant hosting) removed; TeamViewer/AnyDesk apex and www names are web fronts",
+  "released": "2026-11-07",
+  "review": "engine-lane self-review (D03); independent review pending on PR #18",
+  "reviewed": "2026-11-07",
+  "version": "2026.11.0"
+}

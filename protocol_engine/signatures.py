@@ -14,6 +14,7 @@ quantifiers or use backreferences/lookaround, and is only executed after the
 anchor was found with a plain substring search. Inputs are bounded by the
 parser budgets or by Config.signature_bytes for unknown payloads.
 """
+import hashlib
 import json
 import re
 from types import MappingProxyType
@@ -289,13 +290,40 @@ def _leaves(group):
             yield member
 
 
-class SignatureSet:
-    """Immutable, compiled once; evaluation touches only signatures indexed by family."""
+def _exact_key(signature):
+    """(context, value) that any match of this signature must satisfy, or None (stage 7, A11).
 
-    def __init__(self, signatures=()):
+    Only a top-level AND member that is a case-sensitive, non-negated equal-to on a text context qualifies:
+    such a signature can match only when contexts[context] == value, so an exact lookup on that value
+    selects it without changing which signatures can match. OR roots, negations, case-insensitive and
+    pattern conditions stay on the family's scan list. Priority (definition order) is preserved by
+    merging indexed candidates back into position order before evaluation.
+    """
+    root = signature.root
+    if root.operator != "and":
+        return None
+    for member in root.members:
+        if (isinstance(member, Condition) and member.operator == "equal-to" and member.kind == "text"
+                and not member.negate and not member.case_insensitive):
+            return member.context, member.value
+    return None
+
+
+class SignatureSet:
+    """Immutable, compiled once; evaluation touches only signatures indexed by family.
+
+    Stage 7 (A11): a name index (O(1) get/contains), a per-family exact-value index for signatures keyed by
+    an equal-to text condition, and a per-family scan list for the rest. match() evaluates only the scan
+    list plus the exact hits for the context values present, in definition order, first match wins; the
+    number of candidates evaluated is reported through match_counted(). `digest` identifies the rule set so
+    a session can pin the version it was classified with.
+    """
+
+    def __init__(self, signatures=(), version=1):
         by_family = {}
-        names = set()
+        names = {}
         count = 0
+        hasher = hashlib.sha256()
         for item in signatures:
             signature = item if isinstance(item, Signature) else Signature(item)
             count += 1
@@ -303,12 +331,32 @@ class SignatureSet:
                 raise SignatureError("Signature count exceeds {}".format(MAX_SIGNATURES))
             if signature.name in names:
                 raise SignatureError("Duplicate signature name: " + signature.name)
-            names.add(signature.name)
+            names[signature.name] = signature
+            hasher.update(json.dumps(item, sort_keys=True, default=str).encode("utf-8") if isinstance(item, dict)
+                          else signature.name.encode("utf-8"))
+            hasher.update(b"\0")
             for family in signature.families:
-                by_family.setdefault(family, []).append(signature)
-        self._by_family = MappingProxyType({family: tuple(items) for family, items in by_family.items()})
+                by_family.setdefault(family, []).append((count - 1, signature))
+        index = {}
+        for family, items in by_family.items():
+            exact, scan = {}, []
+            for position, signature in items:
+                key = _exact_key(signature)
+                if key is None:
+                    scan.append((position, signature))
+                else:
+                    exact.setdefault(key[0], {}).setdefault(key[1], []).append((position, signature))
+            index[family] = (MappingProxyType({context: MappingProxyType({value: tuple(hits) for value, hits in values.items()})
+                                               for context, values in exact.items()}), tuple(scan))
+        self._by_family = MappingProxyType({family: tuple(signature for _, signature in items) for family, items in by_family.items()})
+        self._index = MappingProxyType(index)
+        self._by_name = MappingProxyType(names)
         self._names = MappingProxyType({name: None for name in names})
         self.families = frozenset(by_family)
+        self.version = version
+        self.digest = hasher.hexdigest()[:16]
+        self.stats = {"indexed": sum(sum(len(hits) for values in exact.values() for hits in values.values()) for exact, _ in index.values()),
+                      "scanned": sum(len(scan) for _, scan in index.values())}
 
     @classmethod
     def from_json(cls, text):
@@ -316,13 +364,15 @@ class SignatureSet:
             document = json.loads(text)
         except ValueError as error:
             raise SignatureError("Invalid JSON: " + str(error)) from None
+        version = 1
         if isinstance(document, dict):
             if document.get("version", 1) != 1:
                 raise SignatureError("Unsupported signature file version")
+            version = document.get("version", 1)
             document = document.get("signatures", [])
         if not isinstance(document, list):
             raise SignatureError("Signature document must be a list or an object with 'signatures'")
-        return cls(document)
+        return cls(document, version)
 
     @classmethod
     def from_path(cls, path):
@@ -341,16 +391,43 @@ class SignatureSet:
     def wants(self, family):
         return family in self._by_family
 
+    def candidates(self, family, contexts):
+        """Signatures that can still match these contexts, in definition order (scan list + exact hits)."""
+        entry = self._index.get(family)
+        if entry is None:
+            return ()
+        exact, scan = entry
+        hits = []
+        for context, values in exact.items():
+            value = contexts.get(context)
+            if value is not None:
+                found = values.get(value)
+                if found:
+                    hits.extend(found)
+        if not hits:
+            return tuple(signature for _, signature in scan)
+        merged = sorted(hits + list(scan), key=lambda item: item[0])
+        return tuple(signature for _, signature in merged)
+
+    def match_counted(self, family, contexts):
+        """(first matching signature or None, candidates evaluated). Bounded by the family's candidate set."""
+        evaluated = 0
+        for signature in self.candidates(family, contexts):
+            evaluated += 1
+            if signature.root.evaluate(contexts):
+                return signature, evaluated
+        return None, evaluated
+
     def match(self, family, contexts):
-        """First matching signature for a parser family, or None. Bounded by signatures per family."""
+        """First matching signature for a parser family, or None. Priority and first-match semantics kept."""
+        return self.match_counted(family, contexts)[0]
+
+    def match_linear(self, family, contexts):
+        """Reference evaluation without the index (equivalence tests and benchmarks only)."""
         for signature in self._by_family.get(family, ()):
             if signature.root.evaluate(contexts):
                 return signature
         return None
 
     def get(self, name):
-        for signatures in self._by_family.values():
-            for signature in signatures:
-                if signature.name == name:
-                    return signature
-        return None
+        return self._by_name.get(name)

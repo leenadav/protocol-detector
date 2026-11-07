@@ -46,6 +46,7 @@ DIRECTION_RULES = (
     ("zmtp_role", lambda value: value == "server"),
     ("rpc_message", lambda value: value == "reply"),
     ("rip_command", lambda value: value == "response"),
+    ("lifx_message", lambda value: value.startswith("state") or value in ("lightstate", "lightstatepower", "acknowledgement", "echoresponse")),
 )
 HIDDEN_FIELDS = frozenset(("application_protocol", "encryption", "candidate_hint"))
 # Fixtures that live outside the generic case lists (name, hint, transport).
@@ -65,8 +66,8 @@ SERVER_FIXTURE_NAMES = ("TLS_SERVER12", "TLS_SERVER13", "TLS_RETRY", "TLS_SERVER
                         "STOMP_SERVER", "NATS_INFO", "POP3_SERVER", "MYSQL", "IMAP", "HTTP_RESPONSE")
 # Families whose initial message has the same shape in both directions (one fixture proves both),
 # and families that only ever flow one way (exporter to collector, client to broker).
-SYMMETRIC = frozenset(("bgp", "ssh", "telnet", "dnp3", "iec-104", "bacnet", "ethernet-ip", "stun", "sip", "rtsp", "ssdp", "rtp", "rtcp", "bittorrent", "coap", "rfb"))
-ONE_WAY = frozenset(("netflow", "ipfix", "sflow", "syslog"))
+SYMMETRIC = frozenset(("bgp", "ssh", "telnet", "dnp3", "iec-104", "bacnet", "ethernet-ip", "stun", "sip", "rtsp", "ssdp", "rtp", "rtcp", "bittorrent", "coap", "rfb", "tplink-smarthome"))
+ONE_WAY = frozenset(("netflow", "ipfix", "sflow", "syslog", "tuya-lan"))
 
 
 def family_of(observation):

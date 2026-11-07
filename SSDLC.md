@@ -60,12 +60,15 @@ workflow defect, never an engine finding.
 ## Local commands
 
 ```bash
-make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint, coverage matrix, docs numbers
+make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint, coverage matrix, docs numbers, manifest, inventory, key logs, content lock (D08)
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories (dev tools installed)
 make ci-local       # make check plus extended fuzzing and the offline replay/schema validation CI runs
 make package        # sdist and wheel plus the wheel-content gate (dev tools installed)
 make workflow-lint  # actionlint over .github/workflows (needs a local actionlint and shellcheck, which the hosted runner has; CI fetches a checksum-verified release)
 make fuzz           # extended seeded fuzzing
+make sequences-extended   # D10 metamorphic packet-sequence relations, two seeds x 8 transformations per fixture
+make perf-profile   # D11 separated local measurements: CPU by layer, bytes to identification, queue wait, memory (docs/PERF-PROFILE-V066.md)
 python3 -B tools/compare_engine.py ../previous-checkout --report diff.md   # behaviour diff against another tree
 make sbom           # CycloneDX SBOM of the environment (requires dev tools)
+python3 -B tools/check_content.py --update   # after adding a Release to protocol_engine/content.py (docs/CONTENT-GOVERNANCE.md)
 ```

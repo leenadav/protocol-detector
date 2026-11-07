@@ -1,0 +1,646 @@
+{
+  "repository": "leenadav/protocol-detector",
+  "version": "0.66.0",
+  "commit": "ca841c81deeca3268157bbddb1070c9342c1a5ba",
+  "branch": "work/v065-stage0",
+  "build_digest": "e7d15f286739d0a294e7b1cc63633e5f9828e956eadee29b263b0c436ca73f6e",
+  "components": {
+    "engine": {
+      "root": "protocol_engine",
+      "version": "0.66.0",
+      "files": 72
+    },
+    "adapters": {
+      "root": "protocol_adapters",
+      "version": "0.66.0",
+      "files": 27
+    },
+    "presentation": {
+      "root": "presentation",
+      "version": "0.66.0",
+      "files": 20
+    },
+    "schemas": {
+      "root": "schemas",
+      "version": "0.66.0",
+      "files": 4
+    }
+  },
+  "files": [
+    {
+      "path": "protocol_engine/__init__.py",
+      "component": "engine",
+      "sha256": "50b9eeefc794b76439c6a690902a1861577b3f026757fea9ba0cf96da3f05fda"
+    },
+    {
+      "path": "protocol_engine/aes.py",
+      "component": "engine",
+      "sha256": "16e1802c5b3f692d4db565336e0bf2591d22f02bc325bdeaa23c94ba4bc2c742"
+    },
+    {
+      "path": "protocol_engine/afp.py",
+      "component": "engine",
+      "sha256": "58f610b2382c46e176fc73de6056aa13a8ca8392914bf60025e56b384225b2c2"
+    },
+    {
+      "path": "protocol_engine/appid.py",
+      "component": "engine",
+      "sha256": "31241726a9f41946fef50ea4ab734ab1ce94d0fa6003b3f1e51332a432256661"
+    },
+    {
+      "path": "protocol_engine/applications.py",
+      "component": "engine",
+      "sha256": "271de20467477c3b22e19be08a28278e68ae8bd8fc474b339baef48154a7bf26"
+    },
+    {
+      "path": "protocol_engine/binary.py",
+      "component": "engine",
+      "sha256": "9b4dfae1c1c0ff968215d0493d37adc986b3759af7138a9734502a1021a74402"
+    },
+    {
+      "path": "protocol_engine/bson.py",
+      "component": "engine",
+      "sha256": "b730adbac15394cf569c2eb570005675460c586a61a522d2d73d7faffaaf5451"
+    },
+    {
+      "path": "protocol_engine/catalog.py",
+      "component": "engine",
+      "sha256": "dafef4ed1e7ae2fd9ef569e413acfc1a1b9e2f7e4e1d77df51de3016f89d3a5c"
+    },
+    {
+      "path": "protocol_engine/cdr.py",
+      "component": "engine",
+      "sha256": "b171d83c07b2f203794259dfd81b3288e695e49b6071b295670215c7fd155be1"
+    },
+    {
+      "path": "protocol_engine/content.py",
+      "component": "engine",
+      "sha256": "7d511d6e07ccead8725b15cf44b0ead0861f58cfb18c7bb6452d843515d686d0"
+    },
+    {
+      "path": "protocol_engine/continuation.py",
+      "component": "engine",
+      "sha256": "1b0135299d95926f2224511a28d58738dd08ce214e16021ecd504c2bb15abb83"
+    },
+    {
+      "path": "protocol_engine/control.py",
+      "component": "engine",
+      "sha256": "7e214539007fb8cbb87f6f08b05e9b92ae5e54e10a61387a35e8c06f84f992f9"
+    },
+    {
+      "path": "protocol_engine/database.py",
+      "component": "engine",
+      "sha256": "a39a9d5d790a738f91a3026d6d60ec0e4f32f767c43066f228f34bcd2f081206"
+    },
+    {
+      "path": "protocol_engine/datagram.py",
+      "component": "engine",
+      "sha256": "497c3c3091cfbc2d1d1ea57eaa7b021383cdde81ef96f57ca572c3c27692f70d"
+    },
+    {
+      "path": "protocol_engine/datagram_result.py",
+      "component": "engine",
+      "sha256": "a178aadac31cecb23f8d4cddde5b3ede8b329a6df6852c8dcbbf9539b4a2ad5a"
+    },
+    {
+      "path": "protocol_engine/datainfra.py",
+      "component": "engine",
+      "sha256": "6f4456a075d0a5709936e37a55591dd238aaf6527de9308b523d15f2b295ca40"
+    },
+    {
+      "path": "protocol_engine/dcerpc.py",
+      "component": "engine",
+      "sha256": "3e3c64b35aeeaee5059c6c82b36c5d6e6a3f19f506968f0120c4f86a116b2ead"
+    },
+    {
+      "path": "protocol_engine/descriptors.py",
+      "component": "engine",
+      "sha256": "110b8d292f60deea00f76e00594f1d9eb24f6c30c2beac898b1ce77ce8bd396b"
+    },
+    {
+      "path": "protocol_engine/desktop.py",
+      "component": "engine",
+      "sha256": "217a840c378fc5eded0dba4e6f69963a85a893f4e7e6e1d16c73c5e3032d9a91"
+    },
+    {
+      "path": "protocol_engine/diameter.py",
+      "component": "engine",
+      "sha256": "37585f4033f28e75c05ab7516d658eaf0b8763f0a8182dc3012b1fdee3a891a0"
+    },
+    {
+      "path": "protocol_engine/dispatch.py",
+      "component": "engine",
+      "sha256": "a971dc8f5b61fd75ea4e17958a85c29989a8786f177ee1a703392a83ceac688b"
+    },
+    {
+      "path": "protocol_engine/dtls.py",
+      "component": "engine",
+      "sha256": "7eea092103d14e027d241f68968219caea583229761272aa8d977e7d0def3147"
+    },
+    {
+      "path": "protocol_engine/engine.py",
+      "component": "engine",
+      "sha256": "53a1aafb762e1b40eefe1accc387ccca0eb1a78ec0fb6a582bd7b6351f821d2d"
+    },
+    {
+      "path": "protocol_engine/enterprise_db.py",
+      "component": "engine",
+      "sha256": "76c2d1e6eeb57c7bdc365606104e1bd369a5bb30c34c02e5039ef4b7accae157"
+    },
+    {
+      "path": "protocol_engine/extended.py",
+      "component": "engine",
+      "sha256": "eec19b7128143d7bff31af5ccd0c574c1477932a2aa38f2a6729f9213316cb10"
+    },
+    {
+      "path": "protocol_engine/fastcgi.py",
+      "component": "engine",
+      "sha256": "b413e581a0d07e814dea00cd3938047030704c89158e432ee58efffb7ae0319d"
+    },
+    {
+      "path": "protocol_engine/fingerprints.py",
+      "component": "engine",
+      "sha256": "91423371336417a00694566bbafc89662e02425722ccada9746ecb8ba640413c"
+    },
+    {
+      "path": "protocol_engine/fins.py",
+      "component": "engine",
+      "sha256": "9ece56c6d65c18a4d31fa4f9433756a72d2202390a0e66c5bd9e0b16ed2ceb19"
+    },
+    {
+      "path": "protocol_engine/framing.py",
+      "component": "engine",
+      "sha256": "7c544231cdbc591573ffc4142727bca3abf39038f2546e16000b71711a3b8432"
+    },
+    {
+      "path": "protocol_engine/giop.py",
+      "component": "engine",
+      "sha256": "1f076dfc89909f27aa01d9c8ead063c68c1c1549e8618d5dbe762d99d1933c30"
+    },
+    {
+      "path": "protocol_engine/git_transport.py",
+      "component": "engine",
+      "sha256": "7c8964f24f52b4fb5e98b31b85993f83c5eeeef554fc3da9c45bcea5a14cc21c"
+    },
+    {
+      "path": "protocol_engine/greetings.py",
+      "component": "engine",
+      "sha256": "ba8e89b8ca14e9c1277019056d72806434aa2c3724e491c75b065382ba497cc8"
+    },
+    {
+      "path": "protocol_engine/gss.py",
+      "component": "engine",
+      "sha256": "c1adaa7bcff84fe8832c3535f5384c9bc5dd3724bddbd1ce16e0167fd717f78d"
+    },
+    {
+      "path": "protocol_engine/heuristics.py",
+      "component": "engine",
+      "sha256": "870629723af29e6240b4616f2f1800bc4978f8cfc1b0beb864dc16c4cd7a8c85"
+    },
+    {
+      "path": "protocol_engine/host_apps.py",
+      "component": "engine",
+      "sha256": "6b37dad14d2464547ccfec02b08b87ceb8ec0378940c09de60d33e8df1724857"
+    },
+    {
+      "path": "protocol_engine/hpack.py",
+      "component": "engine",
+      "sha256": "f493d5f0b1a9657eda8c49f16084bcfd3422c0d87c200a8e896606e671fc006f"
+    },
+    {
+      "path": "protocol_engine/ics.py",
+      "component": "engine",
+      "sha256": "dd8f85b82cfb9b0939279729764d3cce17a6c629a66739836e6212bada11fb64"
+    },
+    {
+      "path": "protocol_engine/ikev2.py",
+      "component": "engine",
+      "sha256": "c740849123aefb19d45066b1befde9561da266f35615b24b7230d1b64208f50b"
+    },
+    {
+      "path": "protocol_engine/irc.py",
+      "component": "engine",
+      "sha256": "c27b99b06c767f52471c03d0912528da5cfc7ec2c6207fd955616a4ee7f79d30"
+    },
+    {
+      "path": "protocol_engine/media.py",
+      "component": "engine",
+      "sha256": "63931481f4dae86ff16410f79b46490a23da455ce3418bf34cab12f31e1a7770"
+    },
+    {
+      "path": "protocol_engine/messaging.py",
+      "component": "engine",
+      "sha256": "8215731dad56382e1c72983ee7213f6b132a1e1616691c129401c697fb086c2b"
+    },
+    {
+      "path": "protocol_engine/model.py",
+      "component": "engine",
+      "sha256": "96cd8b404650ef82fcfc650af89c5baf531a117df3a2309b6b06349ec0e0b8b1"
+    },
+    {
+      "path": "protocol_engine/network.py",
+      "component": "engine",
+      "sha256": "c4f699a325925de12a597d77d42008fc12557176cc580c9a96059fa0810c2928"
+    },
+    {
+      "path": "protocol_engine/opcua.py",
+      "component": "engine",
+      "sha256": "ed21ec4435d7302e0cba08f193d7b40d5bc69f8176b295c824d6a8d299e7c6bf"
+    },
+    {
+      "path": "protocol_engine/parsers.py",
+      "component": "engine",
+      "sha256": "5880fb3e9622c9df77791f8bff529b38d659c08716b0e25beeff266a1ef3f7b6"
+    },
+    {
+      "path": "protocol_engine/policy.py",
+      "component": "engine",
+      "sha256": "3dba03357ff3ea3a1875e8c50fb8e12211a59962f8192b02d3431130363df194"
+    },
+    {
+      "path": "protocol_engine/quic.py",
+      "component": "engine",
+      "sha256": "79ae3d97dafbbf731f7401ed95024cfb75c19184fb6ff321a567e89d056305a4"
+    },
+    {
+      "path": "protocol_engine/radius.py",
+      "component": "engine",
+      "sha256": "52da3604fd19160e8368121ababeda87563a818c7933ebc757b73c40af3d4092"
+    },
+    {
+      "path": "protocol_engine/registry.py",
+      "component": "engine",
+      "sha256": "a1368a0230262f98965012eba1c0a95f16466657753c1cf7e730dd5ef9489bd3"
+    },
+    {
+      "path": "protocol_engine/remote.py",
+      "component": "engine",
+      "sha256": "ceba98e0ee96dce86a57287d804a0bd401c739c8bdf64104d654939eef80bcfe"
+    },
+    {
+      "path": "protocol_engine/rip.py",
+      "component": "engine",
+      "sha256": "c7fef24f5c578a88011592574fd0947a0b68c0ccee78b882a8c3d25683fe5a62"
+    },
+    {
+      "path": "protocol_engine/risks.py",
+      "component": "engine",
+      "sha256": "5b87b24fa5fcf19300f01109bb75a58ae8d53ab80df080e81466f58845424f7d"
+    },
+    {
+      "path": "protocol_engine/rpc.py",
+      "component": "engine",
+      "sha256": "4593c9612e3abf4e3eb11617245831d902dce55081292d3c89e18b1b253250f6"
+    },
+    {
+      "path": "protocol_engine/rsync.py",
+      "component": "engine",
+      "sha256": "99e329984baffd26a4f97f5112f017e0e43513dd053d6ed67eeab4e77a8a7304"
+    },
+    {
+      "path": "protocol_engine/s7.py",
+      "component": "engine",
+      "sha256": "744302d0fa7e5fe1e3bb050b0d8c623247895f45b83559693b0ccb34c37bb574"
+    },
+    {
+      "path": "protocol_engine/service_text.py",
+      "component": "engine",
+      "sha256": "f46ef44e25007c6d09c13b20ea2ec75db41384d2600cd0415898a3cc81d78265"
+    },
+    {
+      "path": "protocol_engine/session_text.py",
+      "component": "engine",
+      "sha256": "1cfba0a3b0937b5307e00c4b6623f35f742fca479e5500bc18f33e96a976ab25"
+    },
+    {
+      "path": "protocol_engine/signatures.py",
+      "component": "engine",
+      "sha256": "9746d50fb37515b4ca63dbfebdf141e4a568e88c15f8292b731b199200e2bae0"
+    },
+    {
+      "path": "protocol_engine/smarthome.py",
+      "component": "engine",
+      "sha256": "a7a9b4b1e894f2643d851022494b7315c9f72f37e39b671424aa1447c19b2423"
+    },
+    {
+      "path": "protocol_engine/ssh_posture.py",
+      "component": "engine",
+      "sha256": "fa4570610a2ea192423d5ce5d46dd35cfecad5f55e9cc341f674093153e81ab8"
+    },
+    {
+      "path": "protocol_engine/stomp.py",
+      "component": "engine",
+      "sha256": "3c8be31bff49808c340450b8e4b51cf749681ee5ebca381a03ad5022fb0c4d62"
+    },
+    {
+      "path": "protocol_engine/syslog.py",
+      "component": "engine",
+      "sha256": "210dc53ca8ea6761fa000e3c81b3eb10d6d399da6f7eed8670ab315aad67686c"
+    },
+    {
+      "path": "protocol_engine/telemetry.py",
+      "component": "engine",
+      "sha256": "1822fdad0caa9820b552be30f9a8df8039552991430243461a34b0fde7c3f690"
+    },
+    {
+      "path": "protocol_engine/tls_ciphers.py",
+      "component": "engine",
+      "sha256": "870f5bcadda860deaf20e7fdda23ba4fc51cf8390c568f11f3a2b0d98948eed1"
+    },
+    {
+      "path": "protocol_engine/tls_server.py",
+      "component": "engine",
+      "sha256": "f229ade32457830f5e4895e8fec9d4f1987f41a3d1a6de6780f1fea1e2d67c77"
+    },
+    {
+      "path": "protocol_engine/unknown.py",
+      "component": "engine",
+      "sha256": "3ae7af0fe27c4b9b6876777e75345520a7550c225db81c8fd9808c50c43a3877"
+    },
+    {
+      "path": "protocol_engine/upgrade.py",
+      "component": "engine",
+      "sha256": "0703126ea2a6a72e7993fa6c367fa17f95f6c4d3098281a72776ed3739cd4d15"
+    },
+    {
+      "path": "protocol_engine/vpn.py",
+      "component": "engine",
+      "sha256": "3e898997036e37576fc2282797a3c21c1973c115022efe1e94de5c5a8b12107f"
+    },
+    {
+      "path": "protocol_engine/windows.py",
+      "component": "engine",
+      "sha256": "f81abc9debbd7881ad6ebf35f6c05da605c68931386ae518b8a446d9884c8f29"
+    },
+    {
+      "path": "protocol_engine/wire.py",
+      "component": "engine",
+      "sha256": "3aa07c20d0aa5c28679cce9da29ff8b917c88160dcb2b42a26ff8a7308ef5730"
+    },
+    {
+      "path": "protocol_engine/x509.py",
+      "component": "engine",
+      "sha256": "5de29b7be9eb3435cefe15734d306ade2ef9c0d0feccfa5960b741ca21639227"
+    },
+    {
+      "path": "protocol_engine/xmpp.py",
+      "component": "engine",
+      "sha256": "ac9ca9d5c7a0d723cabf15783ffdf14803ce5e57667d4a1e3947c1b198366830"
+    },
+    {
+      "path": "protocol_adapters/__init__.py",
+      "component": "adapters",
+      "sha256": "985053ff7013b8d88ee798a57275927ae6c54b3fb3ab6444ee18f97c02de7acc"
+    },
+    {
+      "path": "protocol_adapters/analyze_pcap.py",
+      "component": "adapters",
+      "sha256": "80e25b871d8bb3b45cc77417300d6b31008d44a911cb3fb76757d5d7062a729e"
+    },
+    {
+      "path": "protocol_adapters/capture_stream.py",
+      "component": "adapters",
+      "sha256": "9aef88cca94f43c146912a0105c64bc103d6ecf5fcb28a89eb978ffb16243916"
+    },
+    {
+      "path": "protocol_adapters/coordinator.py",
+      "component": "adapters",
+      "sha256": "c41225fda090cb1d991a6ce5de80c350414253e8688fe21f348e068cb404d04d"
+    },
+    {
+      "path": "protocol_adapters/detectors.py",
+      "component": "adapters",
+      "sha256": "44278efdc5cc2c0e8550c9695854d9b16836536365de1a071e473d9ae7e6a463"
+    },
+    {
+      "path": "protocol_adapters/events.py",
+      "component": "adapters",
+      "sha256": "985f6d9caa3670182239c746eeca7dd5a604bbf76cb2ec95eaf23d678eb31e88"
+    },
+    {
+      "path": "protocol_adapters/layers.py",
+      "component": "adapters",
+      "sha256": "ed67088e3c3056dee070e1a6c4bfe45a0a27cd9d204edf1674ed25003fae449a"
+    },
+    {
+      "path": "protocol_adapters/link_packets.py",
+      "component": "adapters",
+      "sha256": "786a9ce80f9c8bd820de6b371b924a0b98001a3d0e473c9b9f2f3e8ea38654a1"
+    },
+    {
+      "path": "protocol_adapters/live_capture.py",
+      "component": "adapters",
+      "sha256": "ab10539b863e1556aabd13c7b26607ee8a603f3f495b1e78f71d76e02329e15d"
+    },
+    {
+      "path": "protocol_adapters/make_sample_pcap.py",
+      "component": "adapters",
+      "sha256": "ed6fe3189fc40aba31dc597950c243713b81aad329ab9de6ed218d4cac20c2dc"
+    },
+    {
+      "path": "protocol_adapters/observability.py",
+      "component": "adapters",
+      "sha256": "c0c3d44a17680b3418381b6be10c69e9b00601450caa3764be41222a2e3a96e9"
+    },
+    {
+      "path": "protocol_adapters/packets.py",
+      "component": "adapters",
+      "sha256": "1cf27b64b49834cc7dac3baa5dc29e9a12cc345148370a7e522b2057453dc423"
+    },
+    {
+      "path": "protocol_adapters/protocol_fixtures.py",
+      "component": "adapters",
+      "sha256": "648f1731eace4d2fe8047657e787984697d9a670309d4dacfce71ef0b86ae368"
+    },
+    {
+      "path": "protocol_adapters/proxy_demo.py",
+      "component": "adapters",
+      "sha256": "76300e38334d29dbd0ab72e51b4ec9a4362a001ca8b1c487f774d98ccf8fa4fa"
+    },
+    {
+      "path": "protocol_adapters/quality.py",
+      "component": "adapters",
+      "sha256": "093acc519fc927d191f9d16b2881d25369de7779aa8a74245d75d615286c8a37"
+    },
+    {
+      "path": "protocol_adapters/sessions.py",
+      "component": "adapters",
+      "sha256": "b92517411db1f57a286a49703ea05b2fb517ff0e6b7f1b520289c25aa820186d"
+    },
+    {
+      "path": "packets.py",
+      "component": "adapters",
+      "sha256": "9f09c6ea5b2738a838b0aaf16cb8c06a8b93ec41c3b08da826e76060c3224f94"
+    },
+    {
+      "path": "link_packets.py",
+      "component": "adapters",
+      "sha256": "24163e9501f5fd90d39db77d91b88465c68f83f216ea84bdada3b0a08d518732"
+    },
+    {
+      "path": "capture_stream.py",
+      "component": "adapters",
+      "sha256": "0ade4d09ab944056dd9b2a3ecb10905212010bd3159ff7c70340244be7e82e2e"
+    },
+    {
+      "path": "sessions.py",
+      "component": "adapters",
+      "sha256": "3989d754a0f3a2a8dd08e1694c4eafe23a94066ba9eda431e14e9a2a3522cf70"
+    },
+    {
+      "path": "analyze_pcap.py",
+      "component": "adapters",
+      "sha256": "32f17b522e6303d3b37adf1547acb3c3152cf9163137cc75fb6c72cc033fd60d"
+    },
+    {
+      "path": "live_capture.py",
+      "component": "adapters",
+      "sha256": "8742aeaac51be077312ea295e5e6463a4e036c24c15d036341991038af6c8496"
+    },
+    {
+      "path": "make_sample_pcap.py",
+      "component": "adapters",
+      "sha256": "762edda2277ddab0379f4128e07af51d8c30ed652ed5df56ba3db2ba4d07df90"
+    },
+    {
+      "path": "protocol_fixtures.py",
+      "component": "adapters",
+      "sha256": "e23a9fa5fbcb0d5d25c58eb493ebf6d60d15e2524192b413afa594d6146075fc"
+    },
+    {
+      "path": "proxy_demo.py",
+      "component": "adapters",
+      "sha256": "6fcde6667e603934e64bf57a53622d068f75a9ef1866f469d05cdcf6a312f8c8"
+    },
+    {
+      "path": "protodetect.py",
+      "component": "adapters",
+      "sha256": "952a3af136b3d6956e641535228142fe95689e491b1a31d38b53a44c6dce2760"
+    },
+    {
+      "path": "detectors.py",
+      "component": "adapters",
+      "sha256": "3f61af047eeb70344bda25bfe21ac07d7f2d2e6e9cbd212f29322501dbc361c8"
+    },
+    {
+      "path": "presentation/__init__.py",
+      "component": "presentation",
+      "sha256": "c58e150c25a2c411355c46ca1aa598df0af00035fa46a338e44ea2cd90894b20"
+    },
+    {
+      "path": "presentation/jobs.py",
+      "component": "presentation",
+      "sha256": "7ff1e60c7336073e76508f6b7cf41aacf264ab4875c7e637ef975a6464e1e394"
+    },
+    {
+      "path": "presentation/launch.py",
+      "component": "presentation",
+      "sha256": "a11fa019529eb17cc4066c8301d009a5b9e066731df5179c95b0bc109e26f34c"
+    },
+    {
+      "path": "presentation/live_manager.py",
+      "component": "presentation",
+      "sha256": "704c967ad7cafa86b11b944446784d8092f4b2f81b2a7b018ecdc3ed3eb1a8de"
+    },
+    {
+      "path": "presentation/live_smoke_check.py",
+      "component": "presentation",
+      "sha256": "35ad69a66b2c5e5ae332d23c076d1bf99c3b03805395d0273dbd8c728d098cc1"
+    },
+    {
+      "path": "presentation/server.py",
+      "component": "presentation",
+      "sha256": "953bbf295577f64af7997a3d220a41d6d11c7768c123c6029a500de0c89738d4"
+    },
+    {
+      "path": "presentation/poc_decryption/__init__.py",
+      "component": "presentation",
+      "sha256": "d7b47a54764d4900a4c650bf19cf840519c48fd140b264e431de2b2d65f4596b"
+    },
+    {
+      "path": "presentation/poc_decryption/capture.py",
+      "component": "presentation",
+      "sha256": "42d95e6083151fb7391c561d2a7a9ce9a89bb2e1ddd8f4af922cfa060ed9a212"
+    },
+    {
+      "path": "presentation/poc_decryption/decryptor.py",
+      "component": "presentation",
+      "sha256": "785858af678218bd1879b9ab2411c814fc4a8cb27d80914491669a20bc62a87d"
+    },
+    {
+      "path": "presentation/poc_decryption/demo.py",
+      "component": "presentation",
+      "sha256": "6597847f21918e548ad8549ca0383646b95fb1571e2b67ffa5b06dfcd66a78b1"
+    },
+    {
+      "path": "presentation/poc_decryption/engine.py",
+      "component": "presentation",
+      "sha256": "f08a621ca3574e02b4c7db096da032fbd7045be9c944f878e088e28062699d1f"
+    },
+    {
+      "path": "presentation/poc_decryption/live.py",
+      "component": "presentation",
+      "sha256": "85a7262abb6e26d7af20ce4442004d07ae56739466c11bbdebeb099d605e2fca"
+    },
+    {
+      "path": "presentation/poc_decryption/tls12.py",
+      "component": "presentation",
+      "sha256": "80f46f338ae644b72e3466ba0594517531c613ccff802270ae9d9ad7f8752890"
+    },
+    {
+      "path": "presentation/web/app.js",
+      "component": "presentation",
+      "sha256": "925633ebe2db458b8bd07e4553afdf440edd9abb6e2dbff0731f5a7917ae35a0"
+    },
+    {
+      "path": "presentation/web/decrypt.js",
+      "component": "presentation",
+      "sha256": "dc654312744d3c2fbdbd16232772d10d16205cdbc002ea3f46621c6d5d287d98"
+    },
+    {
+      "path": "presentation/web/index.html",
+      "component": "presentation",
+      "sha256": "0003ecde165ca1e2c1d501529500061f839a955eff068df17eae38e5924d84b8"
+    },
+    {
+      "path": "presentation/web/live.js",
+      "component": "presentation",
+      "sha256": "cb515d2481a5b12b3bd2829c618edbea6ce9f49f57ea6c2e728626b6c39014f8"
+    },
+    {
+      "path": "presentation/web/store.js",
+      "component": "presentation",
+      "sha256": "b3dfd90c3dd7d33e8008e28ef70b9fe3d75d772e21f4fd98deaa975425ecddf2"
+    },
+    {
+      "path": "presentation/web/styles.css",
+      "component": "presentation",
+      "sha256": "52a65c6299e433ad98bd9c05cd1a274a0ad52dc06a5be69efbe6386a55e80f0f"
+    },
+    {
+      "path": "presentation/requirements-decryption.txt",
+      "component": "presentation",
+      "sha256": "8b5c18678b29b5e8e0fb586a35ac1dce3ccd9da321e8f12ace0e118350b4e568"
+    },
+    {
+      "path": "schemas/event-envelope.schema.json",
+      "component": "schemas",
+      "sha256": "6a63ef7d374185b2ae0c5e921e04fab0076a9b35dc8bbfdf0e0340fa409482c9"
+    },
+    {
+      "path": "schemas/live-event.schema.json",
+      "component": "schemas",
+      "sha256": "cd6cbad3fae4ab3c861e02d6a62e60ca25f67269376e5188e217294a4e18261d"
+    },
+    {
+      "path": "schemas/offline-row.schema.json",
+      "component": "schemas",
+      "sha256": "c46a5f74eea875f411d150c051f1b8f0d7f53f8212f3074b9c3133e357a76361"
+    },
+    {
+      "path": "schemas/session.schema.json",
+      "component": "schemas",
+      "sha256": "54c1cf06f9ce28e202197b1e95f09ad794e3f6fdc6faeeb38d4531b07c82707c"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+*.keys
+*.log
+*.pem
+*.key
+*.png
+.venv/
+
+# Local capture/key material and historical installation copies
+*.pcapng
+*.pcapng.zip
+*.keylog
+*.keylog.*
+*.keys.*
+.env
+.env.*
+engine.*-backup/
+.backups/
