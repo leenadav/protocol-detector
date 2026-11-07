@@ -27,6 +27,18 @@ type Sink interface {
 	Retire(reason string) (changed bool)
 }
 
+// Label is the (protocol or encryption, application) pair the Python Analyzer records a decision by.
+type Label struct {
+	Protocol    string
+	Application string
+	HasApp      bool
+}
+
+// Decider is an optional Sink capability: the identification labels its last Feed produced, in order.
+type Decider interface {
+	TakeIdentified() []Label
+}
+
 // Key identifies a connection or flow irrespective of direction (Python: sorted endpoint tuple).
 type Key [2]transport.Endpoint
 

@@ -7,13 +7,15 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"path/filepath"
 	"strings"
 
+	"github.com/leenadav/protocol-detector/go/internal/analyzer"
+	"github.com/leenadav/protocol-detector/go/internal/content"
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/engine"
 	"github.com/leenadav/protocol-detector/go/internal/errs"
 	"github.com/leenadav/protocol-detector/go/internal/parity"
-	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/session"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
 )
@@ -55,11 +57,6 @@ type Streams struct {
 	Stored     int    `json:"stored"`
 	HighestEnd int    `json:"highest_end"`
 	Digest     string `json:"digest"`
-}
-
-// SessionResult mirrors run_session minus records.
-type SessionResult struct {
-	Packets []PacketResult `json:"packets"`
 }
 
 func events(list []contracts.Event) []contracts.Event {
@@ -120,37 +117,20 @@ func Datagram(c *parity.Case) interface{} {
 	return DatagramResult{Observation: obs, Metrics: d.Metrics}
 }
 
-// inspectorSink adapts an engine.Inspector to the session.Sink interface and collects its events.
-type inspectorSink struct {
-	in      *engine.Inspector
-	pending []contracts.Event
+// SessionResult mirrors run_session.
+type SessionResultFull struct {
+	Packets []PacketResult           `json:"packets"`
+	Records []map[string]interface{} `json:"records"`
 }
 
-func (s *inspectorSink) Feed(delta []byte) bool {
-	ev := s.in.Feed(delta)
-	s.pending = append(s.pending, ev...)
-	return len(ev) > 0
-}
+// packPath overrides the content pack location; empty means content.json beside the cases file.
+var packPath = ""
 
-func (s *inspectorSink) Invalidate(reason string) bool {
-	ev := s.in.Invalidate(reason)
-	s.pending = append(s.pending, ev...)
-	return len(ev) > 0
-}
+// SetPackPath points the session replay at another content pack file.
+func SetPackPath(path string) { packPath = path }
 
-func (s *inspectorSink) End(reason string) bool {
-	ev := s.in.End(reason)
-	s.pending = append(s.pending, ev...)
-	return len(ev) > 0
-}
-
-// Retire ends the direction without reporting its events on the packet (Python routes them to on_retire).
-func (s *inspectorSink) Retire(reason string) bool {
-	return len(s.in.End(reason)) > 0
-}
-
-// Session runs one session case through the tracker with the engine attached as the sink.
-func Session(c *parity.Case) interface{} {
+// Session runs one session case through the analyzer (tracker + engine + record layer).
+func Session(pack *content.Pack, c *parity.Case) interface{} {
 	var options struct {
 		IdleTimeout  *float64 `json:"idle_timeout"`
 		Observation  string   `json:"observation"`
@@ -161,73 +141,38 @@ func Session(c *parity.Case) interface{} {
 			return Unsupported{"bad options"}
 		}
 	}
-	cfg := contracts.DefaultConfig()
-	cfg.Continuation = options.Continuation
-	opts := session.Options{MaxConnections: 32, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1, Observation: options.Observation}
+	opts := analyzer.Options{Continuation: options.Continuation,
+		Session: session.Options{MaxConnections: 32, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1, Observation: options.Observation}}
 	if options.IdleTimeout != nil {
-		opts.IdleTimeout = *options.IdleTimeout
+		opts.Session.IdleTimeout = *options.IdleTimeout
 	}
-	var sinks []*inspectorSink
-	var notPorted *parsing.NotPorted
-	tr, err := session.NewTracker(opts, func() session.Sink {
-		in, err := engine.New(cfg, "")
-		if err != nil {
-			if np, ok := err.(*parsing.NotPorted); ok {
-				notPorted = np
-			}
-			in, _ = engine.New(contracts.DefaultConfig(), "")
-		}
-		s := &inspectorSink{in: in}
-		sinks = append(sinks, s)
-		return s
-	}, nil)
+	an, err := analyzer.New(pack, opts)
 	if err != nil {
 		return Unsupported{err.Error()}
 	}
-	udp, err := engine.NewDatagram(cfg)
-	if err != nil {
-		return Unsupported{err.Error()}
-	}
-	result := SessionResult{Packets: []PacketResult{}}
+	result := SessionResultFull{Packets: []PacketResult{}}
 	for index, pk := range c.Packets {
 		frame, _ := hex.DecodeString(pk.Frame)
 		decoded, derr := transport.Decode(frame, pk.Linktype, transport.Ignore)
 		if derr != nil {
 			return Unsupported{"frame rejected: " + derr.Error()}
 		}
-		for _, s := range sinks {
-			s.pending = nil
+		message := an.Process(pk.T, decoded)
+		if an.NotPorted != nil {
+			return Unsupported{an.NotPorted.Error()}
 		}
-		var message string
 		var a, b transport.Endpoint
-		var packetEvents []contracts.Event
 		switch p := decoded.(type) {
 		case *transport.TCP:
-			message = tr.Process(pk.T, p)
 			a, b = p.Source, p.Destination
-			for _, s := range sinks {
-				if s.in.NotPorted != nil {
-					return Unsupported{s.in.NotPorted.Error()}
-				}
-				packetEvents = append(packetEvents, s.pending...)
-			}
 		case *transport.UDP:
-			message = tr.ProcessUDP(pk.T, p)
 			a, b = p.Source, p.Destination
-			obs, ierr := udp.Inspect(p.Payload, "")
-			if ierr != nil {
-				return Unsupported{ierr.Error()}
-			}
-			return Unsupported{"UDP flows in sessions need the datagram flow state (M6): " + obs.Reason}
-		}
-		if notPorted != nil {
-			return Unsupported{notPorted.Error()}
 		}
 		message, _, _ = strings.Cut(message, " | ") // the harness compares the first segment (cases.py)
-		pr := PacketResult{Index: index, Message: &message, Events: events(packetEvents), PeerEvents: []json.RawMessage{}}
-		tracked, conns, flows := tr.Tables()
+		pr := PacketResult{Index: index, Message: &message, Events: events(an.LastEvents), PeerEvents: []json.RawMessage{}}
+		tracked, conns, flows := an.Tracker.Tables()
 		pr.Tables = []int{tracked, conns, flows}
-		if conn := tr.Manager().Connections[session.KeyOf(a, b)]; conn != nil {
+		if conn := an.Tracker.Manager().Connections[session.KeyOf(a, b)]; conn != nil {
 			pr.Streams = map[string]Streams{}
 			for endpoint, d := range conn.Directions {
 				pr.Streams[endpoint.String()] = Streams{d.Stream.Contiguous(), d.Stream.Stored(), d.Stream.HighestEnd(), digest(d.Stream.Prefix())}
@@ -235,11 +180,30 @@ func Session(c *parity.Case) interface{} {
 		}
 		result.Packets = append(result.Packets, pr)
 	}
+	finish := c.Finish
+	if finish == "" {
+		finish = "eof"
+	}
+	if err := an.Finish(finish); err != nil {
+		return Unsupported{err.Error()}
+	}
+	if an.NotPorted != nil {
+		return Unsupported{an.NotPorted.Error()}
+	}
+	result.Records = an.Records
+	if result.Records == nil {
+		result.Records = []map[string]interface{}{}
+	}
 	return result
 }
 
 // Run executes every case and returns the results document; ctx cancels between cases.
 func Run(ctx context.Context, doc *parity.Document) (*parity.Results, error) {
+	path := packPath
+	if path == "" {
+		path = filepath.Join(doc.Dir, "content.json")
+	}
+	pack, perr := content.Load(path)
 	out := &parity.Results{Backend: Backend, Results: map[string]json.RawMessage{}}
 	for i := range doc.Cases {
 		if err := ctx.Err(); err != nil {
@@ -253,7 +217,11 @@ func Run(ctx context.Context, doc *parity.Document) (*parity.Results, error) {
 		case "datagram":
 			value = Datagram(c)
 		case "session":
-			value = Session(c)
+			if perr != nil {
+				value = Unsupported{"content pack: " + perr.Error()}
+			} else {
+				value = Session(pack, c)
+			}
 		default:
 			value = Unsupported{"case kind " + c.Kind}
 		}

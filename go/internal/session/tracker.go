@@ -2,7 +2,9 @@ package session
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/errs"
 	"github.com/leenadav/protocol-detector/go/internal/reassembly"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
@@ -44,7 +46,29 @@ type State struct {
 	Mode         string
 	Input        map[string]int
 	reportedSeen map[transport.Endpoint]snapshot
+	// Decision timing (P2): when the flow was first identified and when its label last changed.
+	FirstDecision float64
+	HasFirst      bool
+	StableAt      float64
+	Label         Label
+	HasLabel      bool
+	// UDP flows: the flow's observation and the first identified (or latest) observation per direction.
+	Observation  *contracts.Observation
+	Observations map[transport.Endpoint]*contracts.Observation
 }
+
+// Decided records an identification at the tracker's current time (Python Analyzer._decided).
+func (t *Tracker) Decided(state *State, label Label) {
+	if !state.HasFirst {
+		state.FirstDecision, state.HasFirst = t.now, true
+	}
+	if !state.HasLabel || state.Label != label {
+		state.Label, state.HasLabel, state.StableAt = label, true, t.now
+	}
+}
+
+// Now is the tracker's current capture time.
+func (t *Tracker) Now() float64 { return t.now }
 
 type snapshot struct {
 	contiguous, pending int
@@ -58,7 +82,8 @@ type Closed struct {
 	State     *State
 	Reason    string
 	End       float64
-	Delivered map[transport.Endpoint]int // contiguous bytes handed to each direction's sink
+	Delivered map[transport.Endpoint]int  // contiguous bytes handed to each direction's sink
+	Sinks     map[transport.Endpoint]Sink // the directions' sinks (nil when no connection was opened)
 }
 
 // Options configure a Tracker like the Python Analyzer's constructor arguments that concern tracking.
@@ -127,9 +152,9 @@ func (t *Tracker) Tracked(a, b transport.Endpoint) *State {
 	return t.udpFlows[KeyOf(a, b)]
 }
 
-func (t *Tracker) closed(state *State, reason string, delivered map[transport.Endpoint]int) {
+func (t *Tracker) closed(state *State, reason string, delivered map[transport.Endpoint]int, sinks map[transport.Endpoint]Sink) {
 	if t.onClosed != nil {
-		t.onClosed(Closed{State: state, Reason: reason, End: t.now, Delivered: delivered})
+		t.onClosed(Closed{State: state, Reason: reason, End: t.now, Delivered: delivered, Sinks: sinks})
 	}
 }
 
@@ -139,16 +164,19 @@ func (t *Tracker) Drop(key Key, reason string) {
 	state := t.tracked[key]
 	delete(t.tracked, key)
 	var delivered map[transport.Endpoint]int
+	var sinks map[transport.Endpoint]Sink
 	if connection != nil {
 		delivered = map[transport.Endpoint]int{}
+		sinks = map[transport.Endpoint]Sink{}
 		for endpoint, d := range connection.Directions {
 			d.Sink.Retire(reason)
 			delivered[endpoint] = d.Stream.Delivered()
+			sinks[endpoint] = d.Sink
 		}
 		t.manager.release(key)
 	}
 	if state != nil {
-		t.closed(state, reason, delivered)
+		t.closed(state, reason, delivered, sinks)
 	}
 }
 
@@ -170,7 +198,7 @@ func (t *Tracker) Finish(reason string) error {
 	}
 	for key, flow := range t.udpFlows {
 		delete(t.udpFlows, key)
-		t.closed(flow, reason, nil)
+		t.closed(flow, reason, nil, nil)
 	}
 	return nil
 }
@@ -195,7 +223,7 @@ func (t *Tracker) Expire(timestamp float64) {
 	for key, flow := range t.udpFlows {
 		if t.now-flow.Time >= t.opts.IdleTimeout {
 			delete(t.udpFlows, key)
-			t.closed(flow, ReasonIdleUDP, nil)
+			t.closed(flow, ReasonIdleUDP, nil, nil)
 		}
 	}
 	t.manager.Expire(t.now)
@@ -226,8 +254,9 @@ func (t *Tracker) NoteInput(kind string, endpoints *[2]transport.Endpoint) bool 
 	return true
 }
 
-// ProcessUDP counts a datagram on its flow; inspection belongs to the datagram engine (M4).
-func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP) string {
+// ProcessUDP ports Analyzer._udp: the caller inspected the datagram (obs may be nil when no engine runs);
+// the flow keeps the first identification, never revives after an invalidation, and records decisions.
+func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP, obs *contracts.Observation) string {
 	t.Expire(timestamp)
 	key := KeyOf(p.Source, p.Destination)
 	flow := t.udpFlows[key]
@@ -236,7 +265,7 @@ func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP) string {
 			t.Counts["udp_flow_limit"]++
 		} else {
 			flow = &State{Transport: "udp", Client: p.Source, Server: p.Destination, Start: t.now, Time: t.now, Ready: true,
-				Bytes: map[transport.Endpoint]int{}, Mode: "datagram"}
+				Bytes: map[transport.Endpoint]int{}, Mode: "", Observation: obs, Observations: map[transport.Endpoint]*contracts.Observation{}}
 			t.udpFlows[key] = flow
 		}
 	}
@@ -244,8 +273,49 @@ func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP) string {
 		flow.Time = t.now
 		flow.Packets++
 		flow.Bytes[p.Source] += len(p.Payload)
+		if obs != nil {
+			latest := obs
+			previous := flow.Observations[p.Source]
+			switch {
+			case latest.Status == contracts.Invalidated:
+				flow.Observation = latest
+				flow.Observations[p.Source] = latest
+			case flow.Observation != nil && flow.Observation.Status == contracts.Invalidated,
+				previous != nil && previous.Status == contracts.Invalidated:
+				// nothing after an invalidation revives the flow
+			default:
+				if flow.Observation == nil || flow.Observation.Status != contracts.Identified {
+					flow.Observation = latest
+				}
+				if previous == nil || previous.Status != contracts.Identified {
+					flow.Observations[p.Source] = latest
+				}
+			}
+			if latest.Status == contracts.Identified && flow.Observation.Status != contracts.Invalidated {
+				proto := ""
+				if latest.ApplicationProtocol != nil {
+					proto = *latest.ApplicationProtocol
+				} else if latest.Encryption != nil {
+					proto = *latest.Encryption
+				}
+				label := Label{Protocol: proto}
+				if latest.Application != nil {
+					label.Application, label.HasApp = *latest.Application, true
+				}
+				t.Decided(flow, label)
+			}
+		}
 	}
-	return fmt.Sprintf("UDP %s -> %s", p.Source, p.Destination)
+	status, proto, reason := "", "unidentified", ""
+	if obs != nil {
+		status, reason = string(obs.Status), obs.Reason
+		if obs.ApplicationProtocol != nil {
+			proto = *obs.ApplicationProtocol
+		} else if obs.Encryption != nil {
+			proto = *obs.Encryption
+		}
+	}
+	return fmt.Sprintf("UDP %s -> %s | %s | %s | %s", p.Source, p.Destination, strings.ToUpper(status), proto, reason)
 }
 
 func newState(client, server transport.Endpoint, now float64) *State {
@@ -378,6 +448,11 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 	if err != nil {
 		t.Drop(key, ReasonTrackingEnded)
 		return "INVALIDATED: " + detail(err)
+	}
+	if decider, ok := connection.Directions[source].Sink.(Decider); ok {
+		for _, label := range decider.TakeIdentified() {
+			t.Decided(state, label)
+		}
 	}
 	if final, ok := state.FIN[source]; ok && final <= stream.Limit() && stream.Contiguous() == final {
 		if t.manager.FinishDirection(source, destination, ReasonFIN) {

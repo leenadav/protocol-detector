@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/errs"
@@ -25,6 +26,7 @@ type Document struct {
 	Schema    int             `json:"schema"`
 	Reference json.RawMessage `json:"reference"`
 	Cases     []Case          `json:"cases"`
+	Dir       string          `json:"-"` // directory the file was read from (sibling fixtures such as content.json)
 }
 
 // Case is one input with its expectation (kept raw except for the typed stream/datagram parts).
@@ -90,6 +92,7 @@ func Load(ctx context.Context, path string) (*Document, error) {
 	if doc.Schema != 1 {
 		return nil, errs.New(errs.Unsupported, errs.ScopeProcess, fmt.Sprintf("cases schema %d", doc.Schema))
 	}
+	doc.Dir = filepath.Dir(path)
 	seen := make(map[string]bool, len(doc.Cases))
 	for i := range doc.Cases {
 		if err := ctx.Err(); err != nil {

@@ -69,6 +69,19 @@ def diff(expected, actual, path="$", out=None, limit=200):
     return out
 
 
+def canonicalize_result(value):
+    """Apply the expectation canonicalization (cases.py record_dict) to a backend result: content.digest is
+    an implementation detail until M6 fixes its definition for both languages, so records keep content.version."""
+    if isinstance(value, dict) and isinstance(value.get("records"), list):
+        records = []
+        for record in value["records"]:
+            if isinstance(record, dict) and isinstance(record.get("content"), dict):
+                record = dict(record, content={"version": record["content"].get("version")})
+            records.append(record)
+        value = dict(value, records=records)
+    return value
+
+
 def strip_ignored(value, ignored):
     """Remove ignored top-level paths ($.name) from an expectation or a result."""
     if not ignored or not isinstance(value, dict):
@@ -97,7 +110,7 @@ def compare(cases_doc, results_doc, deltas=None, families=(), ignored=()):
                 report["unsupported_in_required_family"].append({"id": cid, "reason": reason})
             continue
         report["compared"] += 1
-        differences = diff(strip_ignored(case["expected"], ignored), strip_ignored(result, ignored))
+        differences = diff(strip_ignored(case["expected"], ignored), strip_ignored(canonicalize_result(result), ignored))
         allowed = {item["path"] for item in deltas.get(cid, [])}
         kept = [d for d in differences if d[0] not in allowed]
         report["exempted"] += len(differences) - len(kept)

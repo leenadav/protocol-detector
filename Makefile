@@ -56,7 +56,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences capabilities parity
+check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences capabilities content-pack parity
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -119,6 +119,10 @@ content:
 capabilities:
 	python3 -B tools/capabilities.py --check migration/CAPABILITIES.json
 
+# Migration M6: the exported content pack both runtimes load must match the Python content (tools/export_content.py)
+content-pack:
+	python3 -B tools/export_content.py --check migration/fixtures/content.json
+
 # Migration M1: the Python reference must match the committed differential cases exactly (migration/CONTRACTS.md)
 parity:
 	python3 -B migration/parity/compare.py --backend python
@@ -141,7 +145,7 @@ go-check:
 GO_FAMILIES := http,tls,dns,mdns,netbios-ns,llmnr
 parity-go:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go run ./cmd/protodetect replay --cases ../migration/fixtures/cases.json --out ../migration/parity/go-results.json
-	python3 -B migration/parity/compare.py --results migration/parity/go-results.json --families $(GO_FAMILIES) --ignore '$$.records' --report migration/parity/go-report.json
+	python3 -B migration/parity/compare.py --results migration/parity/go-results.json --families $(GO_FAMILIES) --report migration/parity/go-report.json
 
 # Migration M4/M9: Python vs Go engine feed loop on identical bytes, alternating rounds (not part of `check`)
 bench-compare:

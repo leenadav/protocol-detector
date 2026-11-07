@@ -75,6 +75,22 @@ func diff(path string, want, got interface{}) string {
 	return ""
 }
 
+// canonicalizeRecords applies the harness rule to a Go result: content.digest is not compared (cases.py record_dict).
+func canonicalizeRecords(got interface{}) {
+	m, ok := got.(map[string]interface{})
+	if !ok {
+		return
+	}
+	records, _ := m["records"].([]interface{})
+	for _, r := range records {
+		if rec, ok := r.(map[string]interface{}); ok {
+			if c, ok := rec["content"].(map[string]interface{}); ok {
+				rec["content"] = map[string]interface{}{"version": c["version"]}
+			}
+		}
+	}
+}
+
 // The Go backend's results must equal the Python expectations on every case of a ported family that
 // uses only ported options; cases it cannot answer are reported as unsupported, never as a different
 // result. Session cases are compared without their records (M6).
@@ -110,7 +126,7 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 		json.Unmarshal(c.Expected, &want)
 		json.Unmarshal(raw, &got)
 		if c.Kind == "session" {
-			delete(want.(map[string]interface{}), "records")
+			canonicalizeRecords(got)
 		}
 		if d := diff("$", want, got); d != "" {
 			failures = append(failures, c.ID+": "+d)

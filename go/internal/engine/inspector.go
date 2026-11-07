@@ -49,6 +49,21 @@ type Inspector struct {
 	shift       string
 	shiftSource string
 	NotPorted   *parsing.NotPorted // set when the Go backend cannot give this direction's outcome
+	resolved    string             // family a text route resolved to before it finished (D12)
+}
+
+// familyResolver is implemented by routed parsers that learn their family from the first line.
+type familyResolver interface{ ResolvedFamily() string }
+
+// ResolvedFamily ports Inspector.resolved_family: the candidate, or what a text route resolved to ("" for none).
+func (in *Inspector) ResolvedFamily() string {
+	if in.candidate == "text" || in.candidate == "git_text" || in.candidate == "tpkt" {
+		if in.resolved == "" || in.resolved == "text" {
+			return ""
+		}
+		return in.resolved
+	}
+	return in.candidate
 }
 
 // New creates an inspector; options the Go backend lacks are rejected with NotPorted, a hint outside
@@ -83,6 +98,9 @@ func (in *Inspector) publish(obs contracts.Observation, kind contracts.Kind) []c
 
 func (in *Inspector) finish(obs contracts.Observation, kind contracts.Kind) []contracts.Event {
 	in.terminal = true
+	if fr, ok := in.parser.(familyResolver); ok && in.parser != nil {
+		in.resolved = fr.ResolvedFamily()
+	}
 	in.parser = nil
 	in.prefix = in.prefix[:0]
 	return in.publish(obs, kind)

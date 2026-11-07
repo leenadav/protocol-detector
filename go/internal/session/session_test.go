@@ -263,12 +263,12 @@ func TestFinishAndUDPFlows(t *testing.T) {
 	h.handshake(0, client, server, 1000, 9000)
 	u := testframes.UDP(client.Addr, 53001, server.Addr, 53, []byte("dns"))
 	p, _ := transport.Decode(u, 1, transport.Ignore)
-	if m := h.tracker.ProcessUDP(0.1, p.(*transport.UDP)); m != "UDP 192.0.2.10:53001 -> 198.51.100.20:53" {
+	if m := strings.SplitN(h.tracker.ProcessUDP(0.1, p.(*transport.UDP), nil), " | ", 2)[0]; m != "UDP 192.0.2.10:53001 -> 198.51.100.20:53" {
 		t.Fatal(m)
 	}
 	u2 := testframes.UDP(client.Addr, 53002, server.Addr, 53, []byte("dns"))
 	p2, _ := transport.Decode(u2, 1, transport.Ignore)
-	h.tracker.ProcessUDP(0.2, p2.(*transport.UDP))
+	h.tracker.ProcessUDP(0.2, p2.(*transport.UDP), nil)
 	if h.tracker.Counts["udp_flow_limit"] != 1 {
 		t.Fatal("UDP flow limit")
 	}
@@ -342,7 +342,7 @@ func TestSessionCasesMatchThePythonReassembly(t *testing.T) {
 				a, b = p.Source, p.Destination
 				inspectorDecides = len(p.Payload) == 0 && p.Flags&transport.FIN != 0
 			case *transport.UDP:
-				message = tr.ProcessUDP(pk.T, p)
+				message = tr.ProcessUDP(pk.T, p, nil)
 				a, b = p.Source, p.Destination
 			}
 			want := expected.Packets[i]

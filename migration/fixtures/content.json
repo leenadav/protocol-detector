@@ -1,0 +1,5011 @@
+{
+ "applications": [
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Apple Filing Protocol session opening over DSI",
+   "implicitly_uses": [],
+   "name": "afp",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/548"
+   ],
+   "subcategory": "storage-backup",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Amazon retail site",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "amazon",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Amazon Prime Video streaming",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "amazon-prime-video",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "photo-video",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "AMQP 0-9-1/1.0 version header",
+   "implicitly_uses": [],
+   "name": "amqp",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/5671"
+   ],
+   "standard_ports": [
+    "tcp/5672"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Anthropic Claude",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "anthropic-claude",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "generative-ai",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications",
+    "prone-to-misuse",
+    "used-by-malware"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "AnyDesk remote control",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "anydesk",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "remote-access",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Atlassian cloud (Jira, Confluence, Bitbucket)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "atlassian",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "software-development",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Microsoft Entra ID (Azure AD) sign-in",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "azure-ad",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "auth-service",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "BACnet/IP BVLC/NPDU",
+   "implicitly_uses": [],
+   "name": "bacnet",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/47808"
+   ],
+   "subcategory": "ics-protocol",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "BGPv4 OPEN",
+   "implicitly_uses": [],
+   "name": "bgp",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/179"
+   ],
+   "subcategory": "routing",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "evasive",
+    "excessive-bandwidth",
+    "transfers-files",
+    "used-by-malware",
+    "widely-used",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "BitTorrent peer handshake",
+   "implicitly_uses": [],
+   "name": "bittorrent",
+   "risk": 5,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/dynamic",
+    "udp/dynamic"
+   ],
+   "subcategory": "file-sharing",
+   "technology": "peer-to-peer"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Box content management",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "box",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "file-sharing",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "CoAP v1 message",
+   "implicitly_uses": [],
+   "name": "coap",
+   "risk": 2,
+   "secure_ports": [
+    "udp/5684"
+   ],
+   "standard_ports": [
+    "udp/5683"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "cassandra"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Cassandra native protocol v4 request",
+   "implicitly_uses": [],
+   "name": "cql",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/9042"
+   ],
+   "subcategory": "database",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "msrpc",
+    "msrpc-base",
+    "dcerpc"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "DCE/RPC 5.0 bind",
+   "implicitly_uses": [],
+   "name": "dce-rpc",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/135",
+    "tcp/dynamic"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "DHCPv4 message",
+   "implicitly_uses": [],
+   "name": "dhcp",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/67",
+    "udp/68"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Diameter capabilities exchange (CER/CEA) on the base application",
+   "implicitly_uses": [],
+   "name": "diameter",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/5868"
+   ],
+   "standard_ports": [
+    "tcp/3868"
+   ],
+   "subcategory": "auth-service",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Discord chat, voice and communities",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "discord",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "instant-messaging",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Disney+ video streaming",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "disney-plus",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "photo-video",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "DNP3 link frame",
+   "implicitly_uses": [],
+   "name": "dnp3",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/20000"
+   ],
+   "subcategory": "ics-protocol",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "widely-used",
+    "pervasive",
+    "tunnels-other-applications",
+    "used-by-malware",
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "DNS query/response framing",
+   "implicitly_uses": [],
+   "name": "dns",
+   "risk": 4,
+   "secure_ports": [
+    "tcp/853"
+   ],
+   "standard_ports": [
+    "udp/53",
+    "tcp/53"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [
+    "doh"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "evasive",
+    "tunnels-other-applications"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "DNS message carried in HTTP (application/dns-message content or accept header over HTTP/1.x or HTTP/2); an asserted header class",
+   "implicitly_uses": [
+    "web-browsing"
+   ],
+   "name": "dns-over-https",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/443"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Dropbox file sync and sharing",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "dropbox",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "file-sharing",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "DTLS 1.2 ClientHello over UDP; inner application not inferred",
+   "implicitly_uses": [],
+   "name": "dtls",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/443",
+    "udp/4433"
+   ],
+   "subcategory": "encrypted-tunnel",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "eBay marketplace",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ebay",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [
+    "enip",
+    "cip"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "EtherNet/IP encapsulation request",
+   "implicitly_uses": [],
+   "name": "ethernet-ip",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/44818",
+    "udp/44818",
+    "udp/2222"
+   ],
+   "subcategory": "ics-protocol",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Facebook social network",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "facebook",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "FastCGI BEGIN_REQUEST and PARAMS",
+   "implicitly_uses": [],
+   "name": "fastcgi",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/9000"
+   ],
+   "subcategory": "general-business",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "transfers-files",
+    "cleartext-credentials",
+    "widely-used",
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "FTP client command (or 220 greeting correlated with a client command)",
+   "implicitly_uses": [],
+   "name": "ftp",
+   "risk": 4,
+   "secure_ports": [
+    "tcp/990"
+   ],
+   "standard_ports": [
+    "tcp/21"
+   ],
+   "subcategory": "file-sharing",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "corba",
+    "iiop"
+   ],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "GIOP 1.2 request",
+   "implicitly_uses": [],
+   "name": "giop",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/dynamic"
+   ],
+   "subcategory": "general-business",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "git-base"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Native Git service request",
+   "implicitly_uses": [],
+   "name": "git",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/9418"
+   ],
+   "subcategory": "software-development",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "GitHub code hosting",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "github",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "software-development",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "GitLab code hosting",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "gitlab",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "software-development",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Gmail web mail",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "gmail",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "email",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "widely-used",
+    "pervasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Google services not mapped to a more specific application",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "google-base",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Google Drive and Docs",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "google-drive",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "file-sharing",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Google Gemini",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "google-gemini",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "generative-ai",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Google Meet video meetings",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "google-meet",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "voip-video",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used",
+    "tunnels-other-applications"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "gRPC request over a structurally validated HTTP/2 connection: POST with an application/grpc content-type (an asserted header)",
+   "implicitly_uses": [
+    "web-browsing"
+   ],
+   "name": "grpc",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/443"
+   ],
+   "standard_ports": [
+    "tcp/80"
+   ],
+   "subcategory": "general-business",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications",
+    "evasive",
+    "widely-used",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "HTTP CONNECT tunnel request to a forward proxy",
+   "implicitly_uses": [
+    "web-browsing"
+   ],
+   "name": "http-proxy",
+   "risk": 4,
+   "secure_ports": [
+    "tcp/443"
+   ],
+   "standard_ports": [
+    "tcp/8080",
+    "tcp/3128",
+    "tcp/8000"
+   ],
+   "subcategory": "proxy",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Hulu video streaming",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "hulu",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "photo-video",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Apple iCloud services",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "icloud",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "file-sharing",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "iec-60870-5-104"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "IEC 60870-5-104 APCI",
+   "implicitly_uses": [],
+   "name": "iec-104",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/2404"
+   ],
+   "subcategory": "ics-protocol",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "ikev2",
+    "ipsec-ike",
+    "isakmp"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "IKEv2 IKE_SA_INIT request",
+   "implicitly_uses": [],
+   "name": "ike",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/500",
+    "udp/4500"
+   ],
+   "subcategory": "encrypted-tunnel",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "transfers-files",
+    "widely-used",
+    "has-known-vulnerabilities",
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "IMAP4rev1/rev2 server capabilities",
+   "implicitly_uses": [],
+   "name": "imap",
+   "risk": 4,
+   "secure_ports": [
+    "tcp/993"
+   ],
+   "standard_ports": [
+    "tcp/143"
+   ],
+   "subcategory": "email",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "unknown",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Handshake not completed, or completed without any application payload",
+   "implicitly_uses": [],
+   "name": "incomplete",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "session-outcome",
+   "technology": "unknown"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Instagram photo and video sharing",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "instagram",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "unknown",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Payload observed but inspection ended before a profile could complete",
+   "implicitly_uses": [],
+   "name": "insufficient-data",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "session-outcome",
+   "technology": "unknown"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "IPFIX export message",
+   "implicitly_uses": [],
+   "name": "ipfix",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/4739"
+   ],
+   "subcategory": "management",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Internet Printing Protocol request or response carried in HTTP (application/ipp)",
+   "implicitly_uses": [
+    "web-browsing"
+   ],
+   "name": "ipp",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/631"
+   ],
+   "standard_ports": [
+    "tcp/631"
+   ],
+   "subcategory": "general-business",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "evasive",
+    "used-by-malware",
+    "transfers-files",
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "IRC registration lines (NICK, USER, CAP, PASS) and server opening lines (NOTICE, PING, numeric replies)",
+   "implicitly_uses": [],
+   "name": "irc",
+   "risk": 4,
+   "secure_ports": [
+    "tcp/6697"
+   ],
+   "standard_ports": [
+    "tcp/6667",
+    "tcp/6660",
+    "tcp/6661",
+    "tcp/6662",
+    "tcp/6663",
+    "tcp/6664",
+    "tcp/6665",
+    "tcp/6666",
+    "tcp/6668",
+    "tcp/6669"
+   ],
+   "subcategory": "instant-messaging",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "cotp"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "ISO transport over TCP connection request (carries S7comm among others)",
+   "implicitly_uses": [],
+   "name": "iso-tsap",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/102"
+   ],
+   "subcategory": "ics-protocol",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Kafka request header",
+   "implicitly_uses": [],
+   "name": "kafka",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/9093"
+   ],
+   "standard_ports": [
+    "tcp/9092"
+   ],
+   "subcategory": "general-business",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "kerberos-base"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Kerberos KDC AS-REQ/TGS-REQ",
+   "implicitly_uses": [],
+   "name": "kerberos",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/88",
+    "udp/88"
+   ],
+   "subcategory": "auth-service",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "L2TPv2 SCCRQ control message",
+   "implicitly_uses": [],
+   "name": "l2tp",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/1701"
+   ],
+   "subcategory": "encrypted-tunnel",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "LDAPv3 BindRequest, BindResponse, ExtendedRequest or ExtendedResponse (StartTLS announces a shift to TLS)",
+   "implicitly_uses": [],
+   "name": "ldap",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/636"
+   ],
+   "standard_ports": [
+    "tcp/389"
+   ],
+   "subcategory": "auth-service",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "LIFX LAN smart-lighting discovery and control message",
+   "implicitly_uses": [],
+   "name": "lifx-lan",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/56700"
+   ],
+   "subcategory": "internet-utility",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "LinkedIn professional network",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "linkedin",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "has-known-vulnerabilities",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Link-Local Multicast Name Resolution query or response (explicit candidate)",
+   "implicitly_uses": [],
+   "name": "llmnr",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/5355"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [
+    "bonjour",
+    "zeroconf"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "pervasive",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Multicast DNS query, probe, known-answer query, response or announcement (.local names, QU and cache-flush bits)",
+   "implicitly_uses": [],
+   "name": "mdns",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/5353"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "prone-to-misuse",
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Memcached binary request",
+   "implicitly_uses": [],
+   "name": "memcached",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/11211",
+    "udp/11211"
+   ],
+   "subcategory": "database",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Modbus/TCP request",
+   "implicitly_uses": [],
+   "name": "modbus",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/502"
+   ],
+   "subcategory": "ics-protocol",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "MongoDB OP_MSG (explicit candidate)",
+   "implicitly_uses": [],
+   "name": "mongodb",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/27017"
+   ],
+   "subcategory": "database",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "MQTT 3.1.1/5.0 CONNECT",
+   "implicitly_uses": [],
+   "name": "mqtt",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/8883"
+   ],
+   "standard_ports": [
+    "tcp/1883"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Microsoft 365 web applications",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ms-office365",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "office-programs",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Microsoft OneDrive file storage",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ms-onedrive",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "file-sharing",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "tunnels-other-applications"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "RPC over HTTP (RPC_CONNECT, RPC_IN_DATA, RPC_OUT_DATA methods; Outlook Anywhere) request",
+   "implicitly_uses": [
+    "web-browsing"
+   ],
+   "name": "ms-rpc-over-http",
+   "risk": 3,
+   "secure_ports": [
+    "tcp/443"
+   ],
+   "standard_ports": [
+    "tcp/80"
+   ],
+   "subcategory": "general-business",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Microsoft Teams chat and meetings",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ms-teams",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "voip-video",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used",
+    "transfers-files",
+    "excessive-bandwidth"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Windows Update and Microsoft software delivery",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ms-update",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "software-development",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "mssql",
+    "tds",
+    "sql-server",
+    "ms-sql"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files",
+    "has-known-vulnerabilities",
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "MSSQL TDS 7.x PRELOGIN exchange",
+   "implicitly_uses": [],
+   "name": "mssql-db",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/1433"
+   ],
+   "subcategory": "database",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files",
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "MySQL HandshakeV10 (explicit candidate)",
+   "implicitly_uses": [],
+   "name": "mysql",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/3306"
+   ],
+   "subcategory": "database",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "NATS INFO/CONNECT",
+   "implicitly_uses": [],
+   "name": "nats",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/4222"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "bolt"
+   ],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Neo4j Bolt handshake",
+   "implicitly_uses": [],
+   "name": "neo4j",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/7687"
+   ],
+   "subcategory": "database",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "nbns"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "has-known-vulnerabilities",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "NetBIOS name service query, registration, release, WACK or refresh in the DNS message layout",
+   "implicitly_uses": [],
+   "name": "netbios-ns",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/137"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [
+    "netbios-ssn"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "NetBIOS session service request",
+   "implicitly_uses": [],
+   "name": "netbios-ss",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/139"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth",
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Netflix video streaming",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "netflix",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "photo-video",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "NetFlow v5/v9 export datagram",
+   "implicitly_uses": [],
+   "name": "netflow",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/2055",
+    "udp/9995",
+    "udp/9996"
+   ],
+   "subcategory": "management",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files",
+    "has-known-vulnerabilities",
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [
+    "portmapper"
+   ],
+   "description": "NFS, mount, lock manager, status monitor or NFS ACL program over ONC RPC",
+   "implicitly_uses": [
+    "sun-rpc"
+   ],
+   "name": "nfs",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/2049",
+    "udp/2049",
+    "tcp/dynamic",
+    "udp/dynamic"
+   ],
+   "subcategory": "storage-backup",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "unknown",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Observation integrity lost or inspection not applicable; no identification is retained",
+   "implicitly_uses": [],
+   "name": "not-applicable",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "session-outcome",
+   "technology": "unknown"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Notion workspace",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "notion",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "office-programs",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "NTP v3/v4 header (explicit candidate)",
+   "implicitly_uses": [],
+   "name": "ntp",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/123"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "OCSP request or response carried in HTTP (application/ocsp-request or -response)",
+   "implicitly_uses": [
+    "web-browsing"
+   ],
+   "name": "ocsp",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/80"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "fins"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Omron FINS/TCP node address exchange or frame",
+   "implicitly_uses": [],
+   "name": "omron-fins",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/9600"
+   ],
+   "subcategory": "ics-protocol",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "opcua",
+    "opc-ua-tcp",
+    "opc"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "OPC UA TCP connection messages",
+   "implicitly_uses": [],
+   "name": "opc-ua",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/4840"
+   ],
+   "subcategory": "ics-protocol",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files",
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "OpenAI ChatGPT",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "openai-chatgpt",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "generative-ai",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "OpenAI developer platform and API",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "openai-platform",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "generative-ai",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications",
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "OpenVPN client hard-reset control packet",
+   "implicitly_uses": [],
+   "name": "openvpn",
+   "risk": 3,
+   "secure_ports": [
+    "tcp/443"
+   ],
+   "standard_ports": [
+    "udp/1194",
+    "tcp/1194"
+   ],
+   "subcategory": "encrypted-tunnel",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "oracle-db",
+    "tns",
+    "sqlnet",
+    "oracle-net"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files",
+    "has-known-vulnerabilities",
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Oracle Net (TNS) connect exchange",
+   "implicitly_uses": [],
+   "name": "oracle",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/1521"
+   ],
+   "subcategory": "database",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Outlook web mail (Microsoft 365 and Outlook.com)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "outlook-web",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "email",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "PayPal payments",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "paypal",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Pinterest image sharing",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "pinterest",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "cleartext-credentials",
+    "transfers-files",
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "POP3 server status line or client command",
+   "implicitly_uses": [],
+   "name": "pop3",
+   "risk": 4,
+   "secure_ports": [
+    "tcp/995"
+   ],
+   "standard_ports": [
+    "tcp/110"
+   ],
+   "subcategory": "email",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "rpcbind"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "has-known-vulnerabilities",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "ONC RPC portmapper/rpcbind (program 100000)",
+   "implicitly_uses": [
+    "sun-rpc"
+   ],
+   "name": "portmapper",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/111",
+    "udp/111"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "postgres"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files",
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "PostgreSQL v3 startup or SSL/GSS request",
+   "implicitly_uses": [],
+   "name": "postgresql",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/5432"
+   ],
+   "subcategory": "database",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications",
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "PPTP start-control-connection request",
+   "implicitly_uses": [],
+   "name": "pptp",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/1723"
+   ],
+   "subcategory": "encrypted-tunnel",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "http3",
+    "quic-base"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications",
+    "widely-used",
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "QUIC v1/v2 Initial packet; ClientHello recovered from Initial protection when possible; HTTP/3 is an ALPN offer",
+   "implicitly_uses": [],
+   "name": "quic",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/443"
+   ],
+   "subcategory": "encrypted-tunnel",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "RADIUS Access-Request (explicit candidate)",
+   "implicitly_uses": [],
+   "name": "radius",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/1812",
+    "udp/1813",
+    "udp/1645",
+    "udp/1646"
+   ],
+   "subcategory": "auth-service",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "ms-rdp"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "prone-to-misuse",
+    "has-known-vulnerabilities",
+    "tunnels-other-applications",
+    "transfers-files",
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "RDP X.224 connection request with negotiation",
+   "implicitly_uses": [],
+   "name": "rdp",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/3389",
+    "udp/3389"
+   ],
+   "subcategory": "remote-access",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Reddit forums",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "reddit",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [
+    "redis"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "prone-to-misuse",
+    "has-known-vulnerabilities",
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "RESP command array as used by Redis-compatible servers; no product inference",
+   "implicitly_uses": [],
+   "name": "resp",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/6379"
+   ],
+   "subcategory": "database",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "RIP v1/v2 request or response",
+   "implicitly_uses": [],
+   "name": "rip",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/520"
+   ],
+   "subcategory": "routing",
+   "technology": "peer-to-peer"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "rsync daemon greeting",
+   "implicitly_uses": [],
+   "name": "rsync",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/873"
+   ],
+   "subcategory": "storage-backup",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "RTCP compound packet (explicit candidate)",
+   "implicitly_uses": [],
+   "name": "rtcp",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/dynamic"
+   ],
+   "subcategory": "voip-video",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "excessive-bandwidth"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "RTP header (explicit candidate)",
+   "implicitly_uses": [],
+   "name": "rtp",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/dynamic"
+   ],
+   "subcategory": "voip-video",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "RTSP 1.0/2.0 headers",
+   "implicitly_uses": [],
+   "name": "rtsp",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/554"
+   ],
+   "subcategory": "photo-video",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "s7",
+    "siemens-s7"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities",
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Siemens S7 PDU after the ISO-TSAP connection",
+   "implicitly_uses": [
+    "iso-tsap"
+   ],
+   "name": "s7comm",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/102"
+   ],
+   "subcategory": "ics-protocol",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Salesforce CRM",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "salesforce",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "sFlow v5 datagram",
+   "implicitly_uses": [],
+   "name": "sflow",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/6343"
+   ],
+   "subcategory": "management",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "SharePoint Online sites and files",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "sharepoint-online",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "office-programs",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "transfers-files",
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Signal end-to-end encrypted messaging",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "signal",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "instant-messaging",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "SIP/2.0 request/response headers",
+   "implicitly_uses": [],
+   "name": "sip",
+   "risk": 3,
+   "secure_ports": [
+    "tcp/5061"
+   ],
+   "standard_ports": [
+    "udp/5060",
+    "tcp/5060"
+   ],
+   "subcategory": "voip-video",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "transfers-files",
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Skype calls and messaging",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "skype",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "voip-video",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Slack team messaging",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "slack",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "instant-messaging",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [
+    "ms-ds-smb",
+    "ms-ds-smbv2",
+    "ms-ds-smbv3",
+    "cifs",
+    "smb2"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "transfers-files",
+    "widely-used",
+    "used-by-malware",
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "SMB2/3 direct TCP NEGOTIATE",
+   "implicitly_uses": [],
+   "name": "smb",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/445"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "transfers-files",
+    "widely-used",
+    "used-by-malware",
+    "has-known-vulnerabilities",
+    "prone-to-misuse",
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "SMTP client EHLO/HELO",
+   "implicitly_uses": [],
+   "name": "smtp",
+   "risk": 5,
+   "secure_ports": [
+    "tcp/465"
+   ],
+   "standard_ports": [
+    "tcp/25",
+    "tcp/587"
+   ],
+   "subcategory": "email",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Snapchat messaging and stories",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "snapchat",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "has-known-vulnerabilities",
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "SNMPv1/v2c read requests and SNMPv3 messages",
+   "implicitly_uses": [],
+   "name": "snmp",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/161",
+    "udp/162"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "SOAP 1.2 envelope carried in HTTP (application/soap+xml); an asserted header class",
+   "implicitly_uses": [
+    "web-browsing"
+   ],
+   "name": "soap",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/443"
+   ],
+   "standard_ports": [
+    "tcp/80"
+   ],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [
+    "socks5"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "evasive",
+    "tunnels-other-applications",
+    "used-by-malware",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "SOCKS5 client greeting and request or server selection and reply",
+   "implicitly_uses": [],
+   "name": "socks",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/1080"
+   ],
+   "subcategory": "proxy",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "SPICE link header (client message or server reply)",
+   "implicitly_uses": [],
+   "name": "spice",
+   "risk": 3,
+   "secure_ports": [
+    "tcp/5900-5999"
+   ],
+   "standard_ports": [
+    "tcp/5900-5999"
+   ],
+   "subcategory": "remote-access",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth",
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Spotify music and podcast streaming",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "spotify",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "audio-streaming",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "upnp"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "SSDP M-SEARCH/NOTIFY over HTTPU",
+   "implicitly_uses": [],
+   "name": "ssdp",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/1900"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications",
+    "transfers-files",
+    "widely-used",
+    "evasive",
+    "used-by-malware"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "SSH 2.0 identification line",
+   "implicitly_uses": [],
+   "name": "ssh",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/22"
+   ],
+   "subcategory": "encrypted-tunnel",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "tls"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "widely-used",
+    "pervasive",
+    "tunnels-other-applications",
+    "used-by-malware",
+    "has-known-vulnerabilities",
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "TLS handshake without decrypted inner application; ALPN and SNI are client offers",
+   "implicitly_uses": [],
+   "name": "ssl",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/443"
+   ],
+   "subcategory": "encrypted-tunnel",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Valve Steam store, community and downloads",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "steam",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "STOMP 1.1/1.2 handshake",
+   "implicitly_uses": [],
+   "name": "stomp",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/61614"
+   ],
+   "standard_ports": [
+    "tcp/61613"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "STUN Binding",
+   "implicitly_uses": [],
+   "name": "stun",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/5349",
+    "udp/5349"
+   ],
+   "standard_ports": [
+    "udp/3478",
+    "tcp/3478"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [
+    "onc-rpc",
+    "rpc"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "has-known-vulnerabilities",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "ONC RPC v2 call or reply for a program outside the named ones",
+   "implicitly_uses": [],
+   "name": "sun-rpc",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/dynamic",
+    "udp/dynamic"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "RFC 5424 syslog message",
+   "implicitly_uses": [],
+   "name": "syslog",
+   "risk": 2,
+   "secure_ports": [
+    "tcp/6514"
+   ],
+   "standard_ports": [
+    "udp/514",
+    "tcp/514"
+   ],
+   "subcategory": "management",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "tacacs"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "TACACS+ first packet header",
+   "implicitly_uses": [],
+   "name": "tacacs-plus",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/49"
+   ],
+   "subcategory": "auth-service",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications",
+    "prone-to-misuse",
+    "used-by-malware"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "TeamViewer remote control",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "teamviewer",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "remote-access",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "transfers-files",
+    "evasive",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Telegram messaging",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "telegram",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "instant-messaging",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "cleartext-credentials",
+    "prone-to-misuse",
+    "has-known-vulnerabilities",
+    "used-by-malware"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Telnet option negotiation",
+   "implicitly_uses": [],
+   "name": "telnet",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/23"
+   ],
+   "subcategory": "remote-access",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "transfers-files",
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "TFTP read/write request",
+   "implicitly_uses": [],
+   "name": "tftp",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/69"
+   ],
+   "subcategory": "file-sharing",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth",
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "TikTok short-video platform",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "tiktok",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "photo-video",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "TP-Link Smart Home (Kasa) local discovery/control JSON; XOR obfuscation, not encryption",
+   "implicitly_uses": [],
+   "name": "tplink-smarthome",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/9999",
+    "tcp/9999"
+   ],
+   "subcategory": "internet-utility",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "evasive",
+    "tunnels-other-applications",
+    "prone-to-misuse"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "TURN Allocate, Refresh, CreatePermission, ChannelBind or TCP-relay methods over STUN framing",
+   "implicitly_uses": [
+    "stun"
+   ],
+   "name": "turn",
+   "risk": 3,
+   "secure_ports": [
+    "tcp/5349",
+    "udp/5349"
+   ],
+   "standard_ports": [
+    "udp/3478",
+    "tcp/3478"
+   ],
+   "subcategory": "infrastructure",
+   "technology": "network-protocol"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Tuya smart-home LAN discovery or control frame (protocol 3.3)",
+   "implicitly_uses": [],
+   "name": "tuya-lan",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/6666",
+    "udp/6667",
+    "tcp/6668"
+   ],
+   "subcategory": "internet-utility",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth",
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Twitch live video streaming",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "twitch",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "photo-video",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "X (Twitter) social network",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "twitter",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "unknown",
+   "characteristics": [
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "TCP payload outside every supported structural profile",
+   "implicitly_uses": [],
+   "name": "unknown-tcp",
+   "risk": 5,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "unknown",
+   "technology": "unknown"
+  },
+  {
+   "aliases": [],
+   "category": "unknown",
+   "characteristics": [
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "UDP payload outside every supported structural profile",
+   "implicitly_uses": [],
+   "name": "unknown-udp",
+   "risk": 5,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "unknown",
+   "technology": "unknown"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Vimeo video hosting",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "vimeo",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "photo-video",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [
+    "rfb"
+   ],
+   "category": "networking",
+   "characteristics": [
+    "prone-to-misuse",
+    "has-known-vulnerabilities",
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "RFB 3.3/3.7/3.8 version banner",
+   "implicitly_uses": [],
+   "name": "vnc",
+   "risk": 4,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/5900-5909"
+   ],
+   "subcategory": "remote-access",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "http"
+   ],
+   "category": "general-internet",
+   "characteristics": [
+    "widely-used",
+    "pervasive",
+    "transfers-files",
+    "tunnels-other-applications",
+    "used-by-malware",
+    "has-known-vulnerabilities",
+    "prone-to-misuse",
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "HTTP/1.x or HTTP/2 traffic without a more specific application mapping",
+   "implicitly_uses": [],
+   "name": "web-browsing",
+   "risk": 4,
+   "secure_ports": [
+    "tcp/443"
+   ],
+   "standard_ports": [
+    "tcp/80",
+    "tcp/8080"
+   ],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "transfers-files",
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "HTTP request with a WebDAV method (PROPFIND, MKCOL, LOCK, ...)",
+   "implicitly_uses": [
+    "web-browsing"
+   ],
+   "name": "webdav",
+   "risk": 3,
+   "secure_ports": [
+    "tcp/443"
+   ],
+   "standard_ports": [
+    "tcp/80"
+   ],
+   "subcategory": "file-sharing",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Cisco Webex meetings",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "webex",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "voip-video",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "tunnels-other-applications",
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "WebSocket frames after an HTTP/1.1 Upgrade",
+   "implicitly_uses": [
+    "web-browsing"
+   ],
+   "name": "websocket",
+   "risk": 3,
+   "secure_ports": [
+    "tcp/443"
+   ],
+   "standard_ports": [
+    "tcp/80"
+   ],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files",
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "WhatsApp messaging and calls",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "whatsapp",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "instant-messaging",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Wikipedia and Wikimedia projects",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "wikipedia",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications",
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "WireGuard handshake message sizes",
+   "implicitly_uses": [],
+   "name": "wireguard",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "udp/51820"
+   ],
+   "subcategory": "encrypted-tunnel",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "has-known-vulnerabilities"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "X11 connection setup",
+   "implicitly_uses": [],
+   "name": "x11",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/6000-6063"
+   ],
+   "subcategory": "remote-access",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [
+    "jabber"
+   ],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "XMPP stream header (client, server or component stream)",
+   "implicitly_uses": [],
+   "name": "xmpp",
+   "risk": 3,
+   "secure_ports": [
+    "tcp/5223"
+   ],
+   "standard_ports": [
+    "tcp/5222",
+    "tcp/5269"
+   ],
+   "subcategory": "instant-messaging",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [
+    "excessive-bandwidth",
+    "widely-used",
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "YouTube video streaming",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "youtube",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "photo-video",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [
+    "zmtp"
+   ],
+   "category": "business-systems",
+   "characteristics": [
+    "cleartext-credentials"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "ZMTP 3.x greeting; mechanism and bind side reported",
+   "implicitly_uses": [],
+   "name": "zeromq",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [
+    "tcp/dynamic"
+   ],
+   "subcategory": "general-business",
+   "technology": "peer-to-peer"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used",
+    "excessive-bandwidth"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Zoom meetings",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "zoom",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "voip-video",
+   "technology": "client-server"
+  }
+ ],
+ "host_catalog": {
+  "app_domains": {
+   "amazon": [
+    "amazon.com",
+    "media-amazon.com",
+    "ssl-images-amazon.com"
+   ],
+   "amazon-prime-video": [
+    "primevideo.com",
+    "aiv-cdn.net",
+    "aiv-delivery.net"
+   ],
+   "anthropic-claude": [
+    "claude.ai",
+    "anthropic.com",
+    "claude.com"
+   ],
+   "anydesk": [
+    "anydesk.com",
+    "net.anydesk.com"
+   ],
+   "atlassian": [
+    "atlassian.net",
+    "atlassian.com",
+    "bitbucket.org"
+   ],
+   "azure-ad": [
+    "login.microsoftonline.com",
+    "microsoftonline.com",
+    "login.live.com"
+   ],
+   "box": [
+    "box.com",
+    "boxcloud.com",
+    "box.net"
+   ],
+   "discord": [
+    "discord.com",
+    "discord.gg",
+    "discordapp.com",
+    "discordapp.net",
+    "discord.media"
+   ],
+   "disney-plus": [
+    "disneyplus.com",
+    "dssott.com",
+    "bamgrid.com"
+   ],
+   "dropbox": [
+    "dropbox.com",
+    "dropboxapi.com",
+    "dropboxusercontent.com",
+    "dropboxstatic.com"
+   ],
+   "ebay": [
+    "ebay.com",
+    "ebayimg.com",
+    "ebaystatic.com"
+   ],
+   "facebook": [
+    "facebook.com",
+    "fbcdn.net",
+    "fb.com",
+    "facebook.net",
+    "fbsbx.com"
+   ],
+   "github": [
+    "github.com",
+    "githubusercontent.com",
+    "githubassets.com"
+   ],
+   "gitlab": [
+    "gitlab.com"
+   ],
+   "gmail": [
+    "mail.google.com",
+    "gmail.com"
+   ],
+   "google-base": [
+    "google.com",
+    "gstatic.com",
+    "googleapis.com",
+    "googleusercontent.com",
+    "gvt1.com",
+    "gvt2.com"
+   ],
+   "google-drive": [
+    "drive.google.com",
+    "docs.google.com",
+    "drive.usercontent.google.com"
+   ],
+   "google-gemini": [
+    "gemini.google.com"
+   ],
+   "google-meet": [
+    "meet.google.com"
+   ],
+   "hulu": [
+    "hulu.com",
+    "hulustream.com"
+   ],
+   "icloud": [
+    "icloud.com",
+    "icloud-content.com"
+   ],
+   "instagram": [
+    "instagram.com",
+    "cdninstagram.com"
+   ],
+   "linkedin": [
+    "linkedin.com",
+    "licdn.com"
+   ],
+   "ms-office365": [
+    "office.com",
+    "office365.com",
+    "office.net",
+    "officeapps.live.com"
+   ],
+   "ms-onedrive": [
+    "onedrive.live.com",
+    "onedrive.com",
+    "1drv.com",
+    "1drv.ms"
+   ],
+   "ms-teams": [
+    "teams.microsoft.com",
+    "teams.live.com",
+    "teams.cdn.office.net"
+   ],
+   "ms-update": [
+    "windowsupdate.com",
+    "update.microsoft.com",
+    "delivery.mp.microsoft.com"
+   ],
+   "netflix": [
+    "netflix.com",
+    "nflxvideo.net",
+    "nflximg.net",
+    "nflxext.com",
+    "nflxso.net"
+   ],
+   "notion": [
+    "notion.so",
+    "notion.site"
+   ],
+   "openai-chatgpt": [
+    "chatgpt.com",
+    "chat.openai.com",
+    "oaiusercontent.com",
+    "oaistatic.com"
+   ],
+   "openai-platform": [
+    "api.openai.com",
+    "platform.openai.com"
+   ],
+   "outlook-web": [
+    "outlook.office365.com",
+    "outlook.office.com",
+    "outlook.live.com",
+    "outlook.com"
+   ],
+   "paypal": [
+    "paypal.com",
+    "paypalobjects.com"
+   ],
+   "pinterest": [
+    "pinterest.com",
+    "pinimg.com"
+   ],
+   "reddit": [
+    "reddit.com",
+    "redd.it",
+    "redditmedia.com",
+    "redditstatic.com"
+   ],
+   "salesforce": [
+    "salesforce.com",
+    "force.com"
+   ],
+   "sharepoint-online": [
+    "sharepoint.com"
+   ],
+   "signal": [
+    "signal.org",
+    "signal.art",
+    "whispersystems.org"
+   ],
+   "skype": [
+    "skype.com",
+    "skypeassets.com"
+   ],
+   "slack": [
+    "slack.com",
+    "slack-edge.com",
+    "slack-msgs.com",
+    "slack-files.com"
+   ],
+   "snapchat": [
+    "snapchat.com",
+    "sc-cdn.net",
+    "snap-dev.net"
+   ],
+   "spotify": [
+    "spotify.com",
+    "scdn.co",
+    "spotifycdn.com",
+    "spotify.design"
+   ],
+   "steam": [
+    "steampowered.com",
+    "steamcommunity.com",
+    "steamcontent.com",
+    "steamstatic.com"
+   ],
+   "teamviewer": [
+    "teamviewer.com"
+   ],
+   "telegram": [
+    "telegram.org",
+    "t.me",
+    "telegram.me",
+    "telesco.pe"
+   ],
+   "tiktok": [
+    "tiktok.com",
+    "tiktokcdn.com",
+    "tiktokv.com",
+    "tiktokcdn-us.com"
+   ],
+   "twitch": [
+    "twitch.tv",
+    "ttvnw.net",
+    "jtvnw.net"
+   ],
+   "twitter": [
+    "twitter.com",
+    "x.com",
+    "twimg.com",
+    "t.co"
+   ],
+   "vimeo": [
+    "vimeo.com",
+    "vimeocdn.com"
+   ],
+   "webex": [
+    "webex.com",
+    "wbx2.com"
+   ],
+   "whatsapp": [
+    "whatsapp.com",
+    "whatsapp.net"
+   ],
+   "wikipedia": [
+    "wikipedia.org",
+    "wikimedia.org"
+   ],
+   "youtube": [
+    "youtube.com",
+    "youtu.be",
+    "googlevideo.com",
+    "ytimg.com",
+    "youtube-nocookie.com"
+   ],
+   "zoom": [
+    "zoom.us",
+    "zoom.com",
+    "zoomgov.com"
+   ]
+  },
+  "entries": [
+   {
+    "category": "media",
+    "characteristics": [
+     "excessive-bandwidth",
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "YouTube video streaming",
+    "domains": [
+     "youtube.com",
+     "youtu.be",
+     "googlevideo.com",
+     "ytimg.com",
+     "youtube-nocookie.com"
+    ],
+    "name": "youtube",
+    "risk": 2,
+    "subcategory": "photo-video",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "media",
+    "characteristics": [
+     "excessive-bandwidth",
+     "widely-used"
+    ],
+    "description": "Netflix video streaming",
+    "domains": [
+     "netflix.com",
+     "nflxvideo.net",
+     "nflximg.net",
+     "nflxext.com",
+     "nflxso.net"
+    ],
+    "name": "netflix",
+    "risk": 2,
+    "subcategory": "photo-video",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "media",
+    "characteristics": [
+     "excessive-bandwidth",
+     "widely-used"
+    ],
+    "description": "Twitch live video streaming",
+    "domains": [
+     "twitch.tv",
+     "ttvnw.net",
+     "jtvnw.net"
+    ],
+    "name": "twitch",
+    "risk": 2,
+    "subcategory": "photo-video",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "media",
+    "characteristics": [
+     "excessive-bandwidth"
+    ],
+    "description": "Disney+ video streaming",
+    "domains": [
+     "disneyplus.com",
+     "dssott.com",
+     "bamgrid.com"
+    ],
+    "name": "disney-plus",
+    "risk": 2,
+    "subcategory": "photo-video",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "media",
+    "characteristics": [
+     "excessive-bandwidth"
+    ],
+    "description": "Hulu video streaming",
+    "domains": [
+     "hulu.com",
+     "hulustream.com"
+    ],
+    "name": "hulu",
+    "risk": 2,
+    "subcategory": "photo-video",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "media",
+    "characteristics": [
+     "excessive-bandwidth"
+    ],
+    "description": "Amazon Prime Video streaming",
+    "domains": [
+     "primevideo.com",
+     "aiv-cdn.net",
+     "aiv-delivery.net"
+    ],
+    "name": "amazon-prime-video",
+    "risk": 2,
+    "subcategory": "photo-video",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "media",
+    "characteristics": [
+     "excessive-bandwidth",
+     "transfers-files"
+    ],
+    "description": "Vimeo video hosting",
+    "domains": [
+     "vimeo.com",
+     "vimeocdn.com"
+    ],
+    "name": "vimeo",
+    "risk": 2,
+    "subcategory": "photo-video",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "media",
+    "characteristics": [
+     "excessive-bandwidth",
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "TikTok short-video platform",
+    "domains": [
+     "tiktok.com",
+     "tiktokcdn.com",
+     "tiktokv.com",
+     "tiktokcdn-us.com"
+    ],
+    "name": "tiktok",
+    "risk": 3,
+    "subcategory": "photo-video",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "media",
+    "characteristics": [
+     "excessive-bandwidth",
+     "widely-used"
+    ],
+    "description": "Spotify music and podcast streaming",
+    "domains": [
+     "spotify.com",
+     "scdn.co",
+     "spotifycdn.com",
+     "spotify.design"
+    ],
+    "name": "spotify",
+    "risk": 2,
+    "subcategory": "audio-streaming",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "media",
+    "characteristics": [
+     "excessive-bandwidth",
+     "transfers-files"
+    ],
+    "description": "Valve Steam store, community and downloads",
+    "domains": [
+     "steampowered.com",
+     "steamcommunity.com",
+     "steamcontent.com",
+     "steamstatic.com"
+    ],
+    "name": "steam",
+    "risk": 3,
+    "subcategory": "gaming",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "transfers-files",
+     "prone-to-misuse"
+    ],
+    "description": "Facebook social network",
+    "domains": [
+     "facebook.com",
+     "fbcdn.net",
+     "fb.com",
+     "facebook.net",
+     "fbsbx.com"
+    ],
+    "name": "facebook",
+    "risk": 3,
+    "subcategory": "social-networking",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Instagram photo and video sharing",
+    "domains": [
+     "instagram.com",
+     "cdninstagram.com"
+    ],
+    "name": "instagram",
+    "risk": 3,
+    "subcategory": "social-networking",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "X (Twitter) social network",
+    "domains": [
+     "twitter.com",
+     "x.com",
+     "twimg.com",
+     "t.co"
+    ],
+    "name": "twitter",
+    "risk": 3,
+    "subcategory": "social-networking",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "LinkedIn professional network",
+    "domains": [
+     "linkedin.com",
+     "licdn.com"
+    ],
+    "name": "linkedin",
+    "risk": 2,
+    "subcategory": "social-networking",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Reddit forums",
+    "domains": [
+     "reddit.com",
+     "redd.it",
+     "redditmedia.com",
+     "redditstatic.com"
+    ],
+    "name": "reddit",
+    "risk": 3,
+    "subcategory": "social-networking",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "Pinterest image sharing",
+    "domains": [
+     "pinterest.com",
+     "pinimg.com"
+    ],
+    "name": "pinterest",
+    "risk": 2,
+    "subcategory": "social-networking",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "Snapchat messaging and stories",
+    "domains": [
+     "snapchat.com",
+     "sc-cdn.net",
+     "snap-dev.net"
+    ],
+    "name": "snapchat",
+    "risk": 3,
+    "subcategory": "social-networking",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "transfers-files",
+     "evasive"
+    ],
+    "description": "WhatsApp messaging and calls",
+    "domains": [
+     "whatsapp.com",
+     "whatsapp.net"
+    ],
+    "name": "whatsapp",
+    "risk": 3,
+    "subcategory": "instant-messaging",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "transfers-files",
+     "evasive",
+     "prone-to-misuse"
+    ],
+    "description": "Telegram messaging",
+    "domains": [
+     "telegram.org",
+     "t.me",
+     "telegram.me",
+     "telesco.pe"
+    ],
+    "name": "telegram",
+    "risk": 4,
+    "subcategory": "instant-messaging",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "transfers-files",
+     "evasive"
+    ],
+    "description": "Signal end-to-end encrypted messaging",
+    "domains": [
+     "signal.org",
+     "signal.art",
+     "whispersystems.org"
+    ],
+    "name": "signal",
+    "risk": 3,
+    "subcategory": "instant-messaging",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "transfers-files",
+     "prone-to-misuse"
+    ],
+    "description": "Discord chat, voice and communities",
+    "domains": [
+     "discord.com",
+     "discord.gg",
+     "discordapp.com",
+     "discordapp.net",
+     "discord.media"
+    ],
+    "name": "discord",
+    "risk": 3,
+    "subcategory": "instant-messaging",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Slack team messaging",
+    "domains": [
+     "slack.com",
+     "slack-edge.com",
+     "slack-msgs.com",
+     "slack-files.com"
+    ],
+    "name": "slack",
+    "risk": 2,
+    "subcategory": "instant-messaging",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "excessive-bandwidth"
+    ],
+    "description": "Zoom meetings",
+    "domains": [
+     "zoom.us",
+     "zoom.com",
+     "zoomgov.com"
+    ],
+    "name": "zoom",
+    "risk": 2,
+    "subcategory": "voip-video",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Microsoft Teams chat and meetings",
+    "domains": [
+     "teams.microsoft.com",
+     "teams.live.com",
+     "teams.cdn.office.net"
+    ],
+    "name": "ms-teams",
+    "risk": 2,
+    "subcategory": "voip-video",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "transfers-files",
+     "evasive"
+    ],
+    "description": "Skype calls and messaging",
+    "domains": [
+     "skype.com",
+     "skypeassets.com"
+    ],
+    "name": "skype",
+    "risk": 3,
+    "subcategory": "voip-video",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "Cisco Webex meetings",
+    "domains": [
+     "webex.com",
+     "wbx2.com"
+    ],
+    "name": "webex",
+    "risk": 2,
+    "subcategory": "voip-video",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "Google Meet video meetings",
+    "domains": [
+     "meet.google.com"
+    ],
+    "name": "google-meet",
+    "risk": 2,
+    "subcategory": "voip-video",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Gmail web mail",
+    "domains": [
+     "mail.google.com",
+     "gmail.com"
+    ],
+    "name": "gmail",
+    "risk": 2,
+    "subcategory": "email",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Outlook web mail (Microsoft 365 and Outlook.com)",
+    "domains": [
+     "outlook.office365.com",
+     "outlook.office.com",
+     "outlook.live.com",
+     "outlook.com"
+    ],
+    "name": "outlook-web",
+    "risk": 2,
+    "subcategory": "email",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Microsoft 365 web applications",
+    "domains": [
+     "office.com",
+     "office365.com",
+     "office.net",
+     "officeapps.live.com"
+    ],
+    "name": "ms-office365",
+    "risk": 2,
+    "subcategory": "office-programs",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "SharePoint Online sites and files",
+    "domains": [
+     "sharepoint.com"
+    ],
+    "name": "sharepoint-online",
+    "risk": 2,
+    "subcategory": "office-programs",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Microsoft OneDrive file storage",
+    "domains": [
+     "onedrive.live.com",
+     "onedrive.com",
+     "1drv.com",
+     "1drv.ms"
+    ],
+    "name": "ms-onedrive",
+    "risk": 3,
+    "subcategory": "file-sharing",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "Microsoft Entra ID (Azure AD) sign-in",
+    "domains": [
+     "login.microsoftonline.com",
+     "microsoftonline.com",
+     "login.live.com"
+    ],
+    "name": "azure-ad",
+    "risk": 1,
+    "subcategory": "auth-service",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "widely-used",
+     "transfers-files",
+     "excessive-bandwidth"
+    ],
+    "description": "Windows Update and Microsoft software delivery",
+    "domains": [
+     "windowsupdate.com",
+     "update.microsoft.com",
+     "delivery.mp.microsoft.com"
+    ],
+    "name": "ms-update",
+    "risk": 1,
+    "subcategory": "software-development",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Google Drive and Docs",
+    "domains": [
+     "drive.google.com",
+     "docs.google.com",
+     "drive.usercontent.google.com"
+    ],
+    "name": "google-drive",
+    "risk": 3,
+    "subcategory": "file-sharing",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [
+     "widely-used",
+     "pervasive"
+    ],
+    "description": "Google services not mapped to a more specific application",
+    "domains": [
+     "google.com",
+     "gstatic.com",
+     "googleapis.com",
+     "googleusercontent.com",
+     "gvt1.com",
+     "gvt2.com"
+    ],
+    "name": "google-base",
+    "risk": 2,
+    "subcategory": "internet-utility",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Dropbox file sync and sharing",
+    "domains": [
+     "dropbox.com",
+     "dropboxapi.com",
+     "dropboxusercontent.com",
+     "dropboxstatic.com"
+    ],
+    "name": "dropbox",
+    "risk": 3,
+    "subcategory": "file-sharing",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "Box content management",
+    "domains": [
+     "box.com",
+     "boxcloud.com",
+     "box.net"
+    ],
+    "name": "box",
+    "risk": 2,
+    "subcategory": "file-sharing",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Apple iCloud services",
+    "domains": [
+     "icloud.com",
+     "icloud-content.com"
+    ],
+    "name": "icloud",
+    "risk": 2,
+    "subcategory": "file-sharing",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "GitHub code hosting",
+    "domains": [
+     "github.com",
+     "githubusercontent.com",
+     "githubassets.com"
+    ],
+    "name": "github",
+    "risk": 2,
+    "subcategory": "software-development",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "GitLab code hosting",
+    "domains": [
+     "gitlab.com"
+    ],
+    "name": "gitlab",
+    "risk": 2,
+    "subcategory": "software-development",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Atlassian cloud (Jira, Confluence, Bitbucket)",
+    "domains": [
+     "atlassian.net",
+     "atlassian.com",
+     "bitbucket.org"
+    ],
+    "name": "atlassian",
+    "risk": 2,
+    "subcategory": "software-development",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "widely-used",
+     "transfers-files"
+    ],
+    "description": "Salesforce CRM",
+    "domains": [
+     "salesforce.com",
+     "force.com"
+    ],
+    "name": "salesforce",
+    "risk": 2,
+    "subcategory": "general-business",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "Notion workspace",
+    "domains": [
+     "notion.so",
+     "notion.site"
+    ],
+    "name": "notion",
+    "risk": 2,
+    "subcategory": "office-programs",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files",
+     "widely-used"
+    ],
+    "description": "OpenAI ChatGPT",
+    "domains": [
+     "chatgpt.com",
+     "chat.openai.com",
+     "oaiusercontent.com",
+     "oaistatic.com"
+    ],
+    "name": "openai-chatgpt",
+    "risk": 3,
+    "subcategory": "generative-ai",
+    "technology": "browser-based",
+    "web_fronts": [
+     "openai.com",
+     "www.openai.com"
+    ]
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "OpenAI developer platform and API",
+    "domains": [
+     "api.openai.com",
+     "platform.openai.com"
+    ],
+    "name": "openai-platform",
+    "risk": 3,
+    "subcategory": "generative-ai",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "Anthropic Claude",
+    "domains": [
+     "claude.ai",
+     "anthropic.com",
+     "claude.com"
+    ],
+    "name": "anthropic-claude",
+    "risk": 3,
+    "subcategory": "generative-ai",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "Google Gemini",
+    "domains": [
+     "gemini.google.com"
+    ],
+    "name": "google-gemini",
+    "risk": 3,
+    "subcategory": "generative-ai",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "networking",
+    "characteristics": [
+     "tunnels-other-applications",
+     "prone-to-misuse",
+     "used-by-malware"
+    ],
+    "description": "TeamViewer remote control",
+    "domains": [
+     "teamviewer.com"
+    ],
+    "name": "teamviewer",
+    "risk": 4,
+    "subcategory": "remote-access",
+    "technology": "client-server",
+    "web_fronts": [
+     "teamviewer.com",
+     "www.teamviewer.com"
+    ]
+   },
+   {
+    "category": "networking",
+    "characteristics": [
+     "tunnels-other-applications",
+     "prone-to-misuse",
+     "used-by-malware"
+    ],
+    "description": "AnyDesk remote control",
+    "domains": [
+     "anydesk.com",
+     "net.anydesk.com"
+    ],
+    "name": "anydesk",
+    "risk": 4,
+    "subcategory": "remote-access",
+    "technology": "client-server",
+    "web_fronts": [
+     "anydesk.com",
+     "www.anydesk.com"
+    ]
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "Amazon retail site",
+    "domains": [
+     "amazon.com",
+     "media-amazon.com",
+     "ssl-images-amazon.com"
+    ],
+    "name": "amazon",
+    "risk": 2,
+    "subcategory": "internet-utility",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [],
+    "description": "eBay marketplace",
+    "domains": [
+     "ebay.com",
+     "ebayimg.com",
+     "ebaystatic.com"
+    ],
+    "name": "ebay",
+    "risk": 2,
+    "subcategory": "internet-utility",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "PayPal payments",
+    "domains": [
+     "paypal.com",
+     "paypalobjects.com"
+    ],
+    "name": "paypal",
+    "risk": 2,
+    "subcategory": "general-business",
+    "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "Wikipedia and Wikimedia projects",
+    "domains": [
+     "wikipedia.org",
+     "wikimedia.org"
+    ],
+    "name": "wikipedia",
+    "risk": 1,
+    "subcategory": "internet-utility",
+    "technology": "browser-based",
+    "web_fronts": []
+   }
+  ],
+  "suffixes": {
+   "1drv.com": "ms-onedrive",
+   "1drv.ms": "ms-onedrive",
+   "aiv-cdn.net": "amazon-prime-video",
+   "aiv-delivery.net": "amazon-prime-video",
+   "amazon.com": "amazon",
+   "anthropic.com": "anthropic-claude",
+   "anydesk.com": "anydesk",
+   "api.openai.com": "openai-platform",
+   "atlassian.com": "atlassian",
+   "atlassian.net": "atlassian",
+   "bamgrid.com": "disney-plus",
+   "bitbucket.org": "atlassian",
+   "box.com": "box",
+   "box.net": "box",
+   "boxcloud.com": "box",
+   "cdninstagram.com": "instagram",
+   "chat.openai.com": "openai-chatgpt",
+   "chatgpt.com": "openai-chatgpt",
+   "claude.ai": "anthropic-claude",
+   "claude.com": "anthropic-claude",
+   "delivery.mp.microsoft.com": "ms-update",
+   "discord.com": "discord",
+   "discord.gg": "discord",
+   "discord.media": "discord",
+   "discordapp.com": "discord",
+   "discordapp.net": "discord",
+   "disneyplus.com": "disney-plus",
+   "docs.google.com": "google-drive",
+   "drive.google.com": "google-drive",
+   "drive.usercontent.google.com": "google-drive",
+   "dropbox.com": "dropbox",
+   "dropboxapi.com": "dropbox",
+   "dropboxstatic.com": "dropbox",
+   "dropboxusercontent.com": "dropbox",
+   "dssott.com": "disney-plus",
+   "ebay.com": "ebay",
+   "ebayimg.com": "ebay",
+   "ebaystatic.com": "ebay",
+   "facebook.com": "facebook",
+   "facebook.net": "facebook",
+   "fb.com": "facebook",
+   "fbcdn.net": "facebook",
+   "fbsbx.com": "facebook",
+   "force.com": "salesforce",
+   "gemini.google.com": "google-gemini",
+   "github.com": "github",
+   "githubassets.com": "github",
+   "githubusercontent.com": "github",
+   "gitlab.com": "gitlab",
+   "gmail.com": "gmail",
+   "google.com": "google-base",
+   "googleapis.com": "google-base",
+   "googleusercontent.com": "google-base",
+   "googlevideo.com": "youtube",
+   "gstatic.com": "google-base",
+   "gvt1.com": "google-base",
+   "gvt2.com": "google-base",
+   "hulu.com": "hulu",
+   "hulustream.com": "hulu",
+   "icloud-content.com": "icloud",
+   "icloud.com": "icloud",
+   "instagram.com": "instagram",
+   "jtvnw.net": "twitch",
+   "licdn.com": "linkedin",
+   "linkedin.com": "linkedin",
+   "login.live.com": "azure-ad",
+   "login.microsoftonline.com": "azure-ad",
+   "mail.google.com": "gmail",
+   "media-amazon.com": "amazon",
+   "meet.google.com": "google-meet",
+   "microsoftonline.com": "azure-ad",
+   "net.anydesk.com": "anydesk",
+   "netflix.com": "netflix",
+   "nflxext.com": "netflix",
+   "nflximg.net": "netflix",
+   "nflxso.net": "netflix",
+   "nflxvideo.net": "netflix",
+   "notion.site": "notion",
+   "notion.so": "notion",
+   "oaistatic.com": "openai-chatgpt",
+   "oaiusercontent.com": "openai-chatgpt",
+   "office.com": "ms-office365",
+   "office.net": "ms-office365",
+   "office365.com": "ms-office365",
+   "officeapps.live.com": "ms-office365",
+   "onedrive.com": "ms-onedrive",
+   "onedrive.live.com": "ms-onedrive",
+   "outlook.com": "outlook-web",
+   "outlook.live.com": "outlook-web",
+   "outlook.office.com": "outlook-web",
+   "outlook.office365.com": "outlook-web",
+   "paypal.com": "paypal",
+   "paypalobjects.com": "paypal",
+   "pinimg.com": "pinterest",
+   "pinterest.com": "pinterest",
+   "platform.openai.com": "openai-platform",
+   "primevideo.com": "amazon-prime-video",
+   "redd.it": "reddit",
+   "reddit.com": "reddit",
+   "redditmedia.com": "reddit",
+   "redditstatic.com": "reddit",
+   "salesforce.com": "salesforce",
+   "sc-cdn.net": "snapchat",
+   "scdn.co": "spotify",
+   "sharepoint.com": "sharepoint-online",
+   "signal.art": "signal",
+   "signal.org": "signal",
+   "skype.com": "skype",
+   "skypeassets.com": "skype",
+   "slack-edge.com": "slack",
+   "slack-files.com": "slack",
+   "slack-msgs.com": "slack",
+   "slack.com": "slack",
+   "snap-dev.net": "snapchat",
+   "snapchat.com": "snapchat",
+   "spotify.com": "spotify",
+   "spotify.design": "spotify",
+   "spotifycdn.com": "spotify",
+   "ssl-images-amazon.com": "amazon",
+   "steamcommunity.com": "steam",
+   "steamcontent.com": "steam",
+   "steampowered.com": "steam",
+   "steamstatic.com": "steam",
+   "t.co": "twitter",
+   "t.me": "telegram",
+   "teams.cdn.office.net": "ms-teams",
+   "teams.live.com": "ms-teams",
+   "teams.microsoft.com": "ms-teams",
+   "teamviewer.com": "teamviewer",
+   "telegram.me": "telegram",
+   "telegram.org": "telegram",
+   "telesco.pe": "telegram",
+   "tiktok.com": "tiktok",
+   "tiktokcdn-us.com": "tiktok",
+   "tiktokcdn.com": "tiktok",
+   "tiktokv.com": "tiktok",
+   "ttvnw.net": "twitch",
+   "twimg.com": "twitter",
+   "twitch.tv": "twitch",
+   "twitter.com": "twitter",
+   "update.microsoft.com": "ms-update",
+   "vimeo.com": "vimeo",
+   "vimeocdn.com": "vimeo",
+   "wbx2.com": "webex",
+   "webex.com": "webex",
+   "whatsapp.com": "whatsapp",
+   "whatsapp.net": "whatsapp",
+   "whispersystems.org": "signal",
+   "wikimedia.org": "wikipedia",
+   "wikipedia.org": "wikipedia",
+   "windowsupdate.com": "ms-update",
+   "x.com": "twitter",
+   "youtu.be": "youtube",
+   "youtube-nocookie.com": "youtube",
+   "youtube.com": "youtube",
+   "ytimg.com": "youtube",
+   "zoom.com": "zoom",
+   "zoom.us": "zoom",
+   "zoomgov.com": "zoom"
+  },
+  "web_fronts": {
+   "anydesk.com": "anydesk",
+   "openai.com": "openai-chatgpt",
+   "teamviewer.com": "teamviewer",
+   "www.anydesk.com": "anydesk",
+   "www.openai.com": "openai-chatgpt",
+   "www.teamviewer.com": "teamviewer"
+  }
+ },
+ "protocol_names": {
+  "bolt": "neo4j",
+  "dcerpc": "dce-rpc",
+  "dtls": "dtls",
+  "fins": "omron-fins",
+  "http": "web-browsing",
+  "http2": "web-browsing",
+  "ikev2": "ike",
+  "onc-rpc": "sun-rpc",
+  "opcua": "opc-ua",
+  "quic": "quic",
+  "rfb": "vnc",
+  "smb1": "smb",
+  "smb2": "smb",
+  "socks5": "socks",
+  "tds": "mssql-db",
+  "tls": "ssl",
+  "tns": "oracle",
+  "zmtp": "zeromq"
+ },
+ "release": {
+  "components": {
+   "application_catalog": "4e37559adfe72232473e05c2cf77ecc979ae3426b4a6cd5494ec3f17f4517195",
+   "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+   "host_catalog": "928b856e40db5873d64db50ba81dfac5e07e44eb3c5c86b8009340f5eca1f17c",
+   "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
+  },
+  "digest": "991c007668d263d1",
+  "released": "2026-11-07",
+  "reviewed": "2026-11-07",
+  "version": "2026.11.0"
+ },
+ "risks": {
+  "cleartext-credential-protocol": {
+   "description": "Protocol that carries credentials in cleartext was observed without encryption",
+   "severity": "medium"
+  },
+  "database-encryption-unavailable": {
+   "description": "Database server cannot encrypt the session: MySQL greeting without CLIENT_SSL, or a TDS PRELOGIN response that does not support encryption (the login is protected only by TDS's reversible password obfuscation)",
+   "severity": "medium"
+  },
+  "database-session-unencrypted": {
+   "description": "Database session proceeds without transport encryption: a MySQL HandshakeResponse41 or PostgreSQL StartupMessage seen in the clear, or a TDS PRELOGIN response that encrypts only the login packet or nothing",
+   "severity": "medium"
+  },
+  "desktop-or-file-sharing-session": {
+   "description": "Remote desktop or file-sharing application",
+   "severity": "low"
+  },
+  "dns-error-response": {
+   "description": "DNS response with rcode servfail, nxdomain or refused",
+   "severity": "low"
+  },
+  "dns-suspicious-query-name": {
+   "description": "DNS query name with very long or high-entropy labels (tunnelling or algorithmically generated names)",
+   "severity": "medium"
+  },
+  "http-basic-authentication": {
+   "description": "HTTP Basic credentials sent without encryption in the session",
+   "severity": "medium"
+  },
+  "http-proxy-tunnel": {
+   "description": "HTTP CONNECT tunnel; the carried application is only visible through the shifted phase",
+   "severity": "low"
+  },
+  "kerberos-error-response": {
+   "description": "KRB-ERROR other than KDC_ERR_PREAUTH_REQUIRED (the normal pre-authentication step)",
+   "severity": "low"
+  },
+  "kerberos-weak-etype-offered": {
+   "description": "Kerberos AS-REQ or TGS-REQ offers RC4-HMAC, DES or 3DES (deprecated by RFC 6649 and RFC 8429)",
+   "severity": "low"
+  },
+  "kerberos-weak-etype-selected": {
+   "description": "Kerberos AS-REP or TGS-REP encrypted with RC4-HMAC, DES or 3DES: the reply key or the ticket is open to offline cracking (an RC4 service ticket is the Kerberoasting case)",
+   "severity": "high"
+  },
+  "malformed-protocol": {
+   "description": "A supported protocol was selected but the message violated its profile",
+   "severity": "medium"
+  },
+  "modbus-exception-response": {
+   "description": "Modbus/TCP exception response (illegal function, address or value, device failure or gateway error)",
+   "severity": "low"
+  },
+  "nonstandard-port": {
+   "description": "Identified application on a port outside its catalog ports (application-default violation)",
+   "severity": "medium"
+  },
+  "ntlm-authentication": {
+   "description": "NTLM authentication offered or performed (SMB session setup, LDAP bind, HTTP Negotiate/NTLM): relay and legacy hash exposure",
+   "severity": "medium"
+  },
+  "obsolete-protocol": {
+   "description": "Protocol version or family that is deprecated and known to be unsafe (SMB1, Telnet, SSH 1.99, TLS < 1.2 selected, RDP standard security)",
+   "severity": "high"
+  },
+  "radius-access-reject": {
+   "description": "RADIUS Access-Reject answering an Access-Request",
+   "severity": "low"
+  },
+  "rdp-nla-not-negotiated": {
+   "description": "RDP server Connection Confirm selects standard RDP security or TLS without CredSSP: no network level authentication, so the logon happens inside the session",
+   "severity": "medium"
+  },
+  "smb-encryption-unavailable": {
+   "description": "SMB2/3 server NEGOTIATE response selects a dialect or cipher without SMB encryption (2.0.2/2.1, no encryption capability, or no common cipher)",
+   "severity": "low"
+  },
+  "smb-guest-or-anonymous-session": {
+   "description": "SMB session established as guest or anonymous (null session)",
+   "severity": "low"
+  },
+  "smb-signing-not-required": {
+   "description": "SMB2/3 server NEGOTIATE response enables but does not require signing: sessions can be relayed or tampered with unless the client requires signing",
+   "severity": "medium"
+  },
+  "snmpv3-no-privacy": {
+   "description": "SNMPv3 message at authNoPriv other than a Report: authenticated, but the scoped PDU (OIDs and values) travels in cleartext",
+   "severity": "low"
+  },
+  "snmpv3-unauthenticated": {
+   "description": "SNMPv3 message at noAuthNoPriv other than an engine-discovery request or a Report: operations and values are neither authenticated nor encrypted",
+   "severity": "medium"
+  },
+  "ssh-none-cipher-offered": {
+   "description": "SSH KEXINIT offers the none cipher (no encryption)",
+   "severity": "high"
+  },
+  "ssh-terrapin-exposed": {
+   "description": "SSH KEXINIT offers ChaCha20-Poly1305 or an encrypt-then-MAC MAC with a CBC-mode cipher without the strict key exchange marker (Terrapin, CVE-2023-48795)",
+   "severity": "medium"
+  },
+  "ssh-weak-algorithm-offered": {
+   "description": "SSH KEXINIT offers a weak algorithm class: SHA-1 key exchange, DSA host keys, RC4, 3DES or 64-bit block ciphers, CBC mode, MD5 or truncated MACs, or no MAC",
+   "severity": "medium"
+  },
+  "tls-64-bit-block-cipher-offered": {
+   "description": "ClientHello offers a 3DES or IDEA suite (64-bit block, Sweet32; RFC 9325 says SHOULD NOT negotiate)",
+   "severity": "low"
+  },
+  "tls-ca-certificate-as-leaf": {
+   "description": "TLS 1.2 server leaf certificate asserts basicConstraints cA TRUE (a CA certificate presented as the end entity)",
+   "severity": "medium"
+  },
+  "tls-certificate-lifetime-excessive": {
+   "description": "TLS 1.2 server leaf certificate valid for more than 398 days",
+   "severity": "low"
+  },
+  "tls-certificate-not-for-server-auth": {
+   "description": "TLS 1.2 server leaf certificate restricts its extended key usage to purposes other than serverAuth",
+   "severity": "medium"
+  },
+  "tls-certificate-outside-validity": {
+   "description": "TLS 1.2 server leaf certificate expired or not yet valid at the capture time (evaluated only when the host supplies a capture clock)",
+   "severity": "medium"
+  },
+  "tls-certificate-without-san": {
+   "description": "TLS 1.2 server v3 leaf certificate without a subjectAltName extension (subject-CN-only names are rejected by current clients)",
+   "severity": "low"
+  },
+  "tls-encrypted-client-hello": {
+   "description": "ClientHello carries an outer encrypted_client_hello extension: the visible server_name is the client-facing public name and the real name is encrypted",
+   "severity": "low"
+  },
+  "tls-legacy-version-offer": {
+   "description": "ClientHello offers no version above TLS 1.1",
+   "severity": "medium"
+  },
+  "tls-missing-sni": {
+   "description": "ClientHello without a server_name extension",
+   "severity": "low"
+  },
+  "tls-no-forward-secrecy": {
+   "description": "Server selected a key exchange without forward secrecy: static RSA or static ECDH (TLS 1.2, DTLS 1.2) or psk_ke resumption (TLS 1.3)",
+   "severity": "medium"
+  },
+  "tls-prohibited-cipher-offered": {
+   "description": "ClientHello offers a cipher suite RFC 9325 forbids negotiating: NULL encryption, anonymous key exchange, export-grade, RC4 or single DES",
+   "severity": "medium"
+  },
+  "tls-self-issued-certificate": {
+   "description": "TLS 1.2 server leaf certificate whose issuer equals its subject (self-signed or a root presented as the leaf); unauthenticated",
+   "severity": "medium"
+  },
+  "tls-weak-certificate-key": {
+   "description": "TLS 1.2 server leaf certificate public key below RSA 2048 or a named curve below 256 bits",
+   "severity": "high"
+  },
+  "tls-weak-certificate-signature": {
+   "description": "TLS 1.2 server leaf certificate signed with MD5 or SHA-1",
+   "severity": "high"
+  },
+  "unknown-high-entropy-payload": {
+   "description": "No profile matched and the payload prefix looks encrypted, compressed or random",
+   "severity": "medium"
+  }
+ },
+ "schema": 1,
+ "vocabulary": {
+  "categories": {
+   "business-systems": [
+    "auth-service",
+    "database",
+    "general-business",
+    "generative-ai",
+    "ics-protocol",
+    "management",
+    "office-programs",
+    "software-development",
+    "storage-backup"
+   ],
+   "collaboration": [
+    "email",
+    "instant-messaging",
+    "social-networking",
+    "voip-video",
+    "web-posting"
+   ],
+   "custom": [
+    "configured-mapping",
+    "custom-signature"
+   ],
+   "general-internet": [
+    "file-sharing",
+    "internet-utility"
+   ],
+   "media": [
+    "audio-streaming",
+    "gaming",
+    "photo-video"
+   ],
+   "networking": [
+    "encrypted-tunnel",
+    "infrastructure",
+    "ip-protocol",
+    "proxy",
+    "remote-access",
+    "routing"
+   ],
+   "unknown": [
+    "unknown",
+    "session-outcome"
+   ]
+  },
+  "characteristics": [
+   "evasive",
+   "excessive-bandwidth",
+   "prone-to-misuse",
+   "transfers-files",
+   "tunnels-other-applications",
+   "used-by-malware",
+   "has-known-vulnerabilities",
+   "widely-used",
+   "pervasive",
+   "cleartext-credentials"
+  ],
+  "outcomes": [
+   "unknown-tcp",
+   "unknown-udp",
+   "incomplete",
+   "insufficient-data",
+   "not-applicable"
+  ],
+  "technologies": [
+   "network-protocol",
+   "client-server",
+   "browser-based",
+   "peer-to-peer",
+   "unknown"
+  ]
+ }
+}

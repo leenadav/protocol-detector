@@ -207,6 +207,15 @@ type Parser struct {
 	extra            []parsing.Row
 	scope            string
 	shift            *parsing.Shift
+	family           string // "text" until the first line resolves the route, then "http" (TextParser.family)
+}
+
+// ResolvedFamily is the family the first line resolved to ("text" before that).
+func (p *Parser) ResolvedFamily() string {
+	if p.family == "" {
+		return "text"
+	}
+	return p.family
 }
 
 // New creates the text-route parser; the continuation option is NotPorted.
@@ -466,6 +475,7 @@ func (p *Parser) consumeLine(line []byte) error {
 		if err := p.route(line); err != nil {
 			return err
 		}
+		p.family = "http"
 		p.first = false
 		request := requestLine.Match(line)
 		response := responseStrict.Match(line)

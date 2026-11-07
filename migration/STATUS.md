@@ -111,10 +111,25 @@ of the claimed families, and the backend never advertises an unported profile as
 feed-loop benchmark runs on identical bytes in both languages (above); the adapter-level benchmark through
 pcap input is M8/M9 work, so end-to-end CPU and memory remain unmeasured.
 
-## M5+ — next
+## M6 — App-ID, evidence semantics and session records (Go)
 
-Batches of protocol profiles derived from the registry (M5) after the record/verdict layer (M6) makes
-session records comparable; benchmark replay through the Go adapter before any optimization.
+Taken before M5 so that session records become comparable for every family as it is ported.
+
+| item | state | evidence |
+|---|---|---|
+| One versioned content source | implemented | `tools/export_content.py` writes `migration/fixtures/content.json` from the Python catalogs: 156 applications (host-named services included), the engine-label map, the server-name catalog tables of the current release (entries, service domains, exact web fronts), 41 flow risks, the closed vocabularies, and the content release with its digest and component digests. `make check` → `content-pack` fails when the Python content and the pack differ. |
+| Fail-closed loading | implemented | `go/internal/content` validates like `applications._validate` and `host_apps.build_tables` (duplicate names/domains/web fronts, unknown category/technology/characteristic, port specifications, unresolved references, outcomes without entries, schema, release); `TestPackFailsClosed` covers eight corruptions plus garbage. |
+| Verdicts | implemented | `go/internal/appid`: `session_verdict` rules in order (identified direction wins, server disagreement recorded, host catalog refines ssl/quic/web-browsing from a client-asserted name with the explicit reason, ECH outer never mapped, provider web fronts affiliate only; bidirectional ambiguity intersection; unknown before invalidated before insufficient-data before incomplete), web-application refinement (CONNECT, WebDAV, RPC-over-HTTP, gRPC, DNS-over-HTTPS, IPP/OCSP/SOAP), NetBIOS and TURN refinements, port usage incl. carrier ports after a shift, D03 attribution, midstream outcomes. Custom signatures and RuleIndex mappings are absent by construction (the Go engine never sets `application`). |
+| Flow risks | implemented | `appid/risks.go` ports every `flow_risks` branch that needs no x509 helper; certificate-validity and key classification are unreachable until the certificates option is ported (M7). |
+| Layered view and structured unknown reasons | implemented | `appid/layers.go` (wire-only: inner layer absent, identity basis, claims, chain), `appid/unknown.go` (`explain`, `session_unknown` with the inspector's resolved family and bytes received). |
+| Session records | implemented | `go/internal/analyzer`: the tracker with the engine as each direction's sink, decision timing (`first_seconds`/`stable_seconds` from identified events), the UDP flow state (first identification kept, invalidation sticky, per-direction observations), record fields as `Analyzer._record` emits them (observation block, input quality → capture quality, layers, unknown, content pin). Telemetry, policy, hostnames-in-records, fingerprints, certificates and continuation summaries are not produced (named gaps). |
+| Differential result | implemented | `make parity-go` now compares session **records** too (only `content.digest` is canonicalized, on both sides): 386 compared, 386 matched, 0 mismatched, 0 gaps in the claimed families; the 29 answered session cases (http, dns, lifecycle, modes, UDP dns) match record for record. Unit tests: verdict order, ports, host catalog/ECH/web front, ambiguity, web refinement, unknown codes. |
+| Not claimed | — | content hash definition shared by both runtimes (the pack carries Python's digest; a Go-side recomputation is M6 follow-up once the hash input is specified language-neutrally); regex/signature subset, fingerprints, policy predicates, continuation (named gaps). |
+
+## M5 / M7+ — next
+
+Protocol batches from the registry (M5) with record-level parity per batch; passive TLS decryption (M7);
+frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
 
 ## Open decisions and blockers
 
