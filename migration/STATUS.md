@@ -138,9 +138,18 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` with the 16 claimed families: **852 compared, 852 matched, 0 mismatched, 0 gaps**; per family (stream/session): ssh 44/0, smtp 45/0, nats 60/4, imap 52/4, pop3 48/4, ftp 50/4, irc 96/4, sip 34/4, rtsp 26/4, telnet 22/4; records included. |
 | Not claimed | — | HASSH and every fingerprint (option refused), signature contexts, the STARTTLS *server* correlation (LDAP-style peer opening), IRC/SMTP hints (hint-only routing for these families is not wired: `Ported` lists only text, tls, dns, irc, telnet). |
 
-## M5 batches 2+ / M7+ — next
+### Batch 2 — framed binary TCP families and two line protocols
 
-Remaining registry batches (binary framed families: databases, file sharing, messaging; UDP/control/media; network and
+| item | state | evidence |
+|---|---|---|
+| Families | implemented | postgresql (startup parameters, SSL/GSS requests with the `postgresql-sslrequest` shift, authentication, error and NegotiateProtocolVersion server messages), rfb (version banner), bittorrent (peer handshake), memcached (binary request/response headers, per-command size rules, status labels), fins (node address exchange, frame header), afp (DSI GetStatus/OpenSession with options), zmtp (3.0/3.1 greeting), bolt (handshake; version response only with the hint), rsync (daemon greeting), stomp (handshake frame, escapes, heart-beat). `go/internal/protocols/framed`: one `FrameParser` port (header, advertised size checked against `max_bytes` before the buffer grows, validation of the complete frame) plus the two line parsers. |
+| Fixtures | implemented | `cases.py framed_cases()`: 63 vectors × 4 chunkings, three hinted Bolt responses, a STOMP header budget and a PostgreSQL byte budget (257 stream cases); identifications, malformed sizes, unsupported versions and budget outcomes. |
+| Differential result | implemented | `make parity-go` with the 26 claimed families: **1284 compared, 1284 matched, 0 mismatched, 0 gaps**; per family (stream/session): postgresql 103/4, memcached 50/4, fins 42/4, stomp 41/4, afp 37/4, rsync 34/4, zmtp 32/4, bolt 31/4, rfb 18/4, bittorrent 14/4; records included. |
+| Not claimed | — | giop (CDR reader), x11, x11-server and spice remain in a later batch; one DSI vector with an unknown command dispatches to kafka and stays a named gap. |
+
+## M5 batches 3+ / M7+ — next
+
+Remaining registry batches (giop, x11, spice and the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive
 TLS decryption (M7); frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
 

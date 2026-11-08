@@ -18,6 +18,7 @@ documented profiles (PROTOCOLS.md) and an approved semantic delta recorded in mi
 """
 import json
 import random
+import struct
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -183,6 +184,7 @@ def stream_cases(seed=11, limit=None):
                   "hint": None, "config": {"max_bytes": 64}, "end": None})
     cases.extend(tls_cases())
     cases.extend(text_cases())
+    cases.extend(framed_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -392,6 +394,127 @@ def text_cases():
             cases.append({"id": base + "/" + variant, "kind": "stream", "label": name.split("-", 1)[0], "chunks": chunks, "hint": None, "config": {}, "end": end})
     cases.append({"id": "stream/text-options/smtp-header-budget", "kind": "stream", "label": "smtp",
                   "chunks": [(b"EHLO client.example\r\n" + b"NOOP\r\n" * 4 + b"STARTTLS\r\n").hex()], "hint": None, "config": {"max_headers": 2}, "end": "fin"})
+    return cases
+
+
+def _pg_startup(params, code=196608):
+    body = struct.pack(">I", code) + b"".join(k + b"\x00" + v + b"\x00" for k, v in params) + b"\x00"
+    return struct.pack(">I", len(body) + 4) + body
+
+
+def _pg_server(kind, body):
+    return kind + struct.pack(">I", len(body) + 4) + body
+
+
+def _memcached(magic, command, key=b"", extras=b"", value=b"", status=0):
+    body = extras + key + value
+    return (bytes([magic, command]) + struct.pack(">HBBH", len(key), len(extras), 0, status) + struct.pack(">I", len(body))
+            + bytes(12) + body)
+
+
+def _fins(command, body, error=0):
+    return b"FINS" + struct.pack(">III", len(body) + 8, command, error) + body
+
+
+def _dsi(flags, command, payload=b"", code=b"\x00\x00\x00\x00"):
+    return bytes([flags, command]) + b"\x00\x01" + code + struct.pack(">I", len(payload)) + bytes(4) + payload
+
+
+def _zmtp(mechanism=b"NULL", server=0, minor=0):
+    return b"\xff" + bytes(8) + b"\x7f" + bytes([3, minor]) + mechanism.ljust(20, b"\x00") + bytes([server]) + bytes(31)
+
+
+def _bolt(*versions):
+    slots = [bytes([0, span, minor, major]) for major, minor, span in versions]
+    return b"\x60\x60\xb0\x17" + b"".join(slots + [bytes(4)] * (4 - len(slots)))
+
+
+def framed_cases():
+    """Framed binary TCP families and the two batch-2 line protocols (M5 batch 2): PostgreSQL startup, encryption
+    requests and server messages, RFB, BitTorrent, memcached binary, FINS/TCP, AFP over DSI, ZMTP, Bolt, rsync and
+    STOMP; identifications, malformed sizes, unsupported versions and budget outcomes, each as whole / 1-byte /
+    7-byte / truncated chunkings."""
+    startup = _pg_startup([(b"user", b"alice"), (b"database", b"demo")])
+    fins_frame = bytes([0x80, 0, 2, 0, 1, 0, 0, 2, 0, 0x19, 0x01, 0x01, 0x82, 0, 0, 0, 0, 1])
+    vectors = [
+        ("postgresql-startup", startup),
+        ("postgresql-ssl", struct.pack(">II", 8, 80877103)),
+        ("postgresql-gss", struct.pack(">II", 8, 80877104)),
+        ("postgresql-ssl-long", struct.pack(">II", 12, 80877103) + bytes(4)),
+        ("postgresql-no-user", _pg_startup([(b"database", b"demo")])),
+        ("postgresql-duplicate", _pg_startup([(b"user", b"a"), (b"user", b"b")])),
+        ("postgresql-bad-version", _pg_startup([(b"user", b"a")], code=0x00040000)),
+        ("postgresql-huge", struct.pack(">I", 1 << 20) + struct.pack(">I", 196608)),
+        ("postgresql-auth-md5", _pg_server(b"R", struct.pack(">I", 5) + b"salt")),
+        ("postgresql-auth-sasl", _pg_server(b"R", struct.pack(">I", 10) + b"SCRAM-SHA-256\x00\x00")),
+        ("postgresql-auth-bad-salt", _pg_server(b"R", struct.pack(">I", 5) + b"sa")),
+        ("postgresql-auth-unknown", _pg_server(b"R", struct.pack(">I", 99))),
+        ("postgresql-error", _pg_server(b"E", b"SFATAL\x00C28P01\x00Mpassword authentication failed\x00\x00")),
+        ("postgresql-error-no-state", _pg_server(b"E", b"SFATAL\x00Mno code\x00\x00")),
+        ("postgresql-negotiate", _pg_server(b"v", struct.pack(">II", 196608, 1) + b"_pq_.opt\x00")),
+        ("rfb-38", b"RFB 003.008\n"),
+        ("rfb-33", b"RFB 003.003\n"),
+        ("rfb-future", b"RFB 004.001\n"),
+        ("bittorrent", b"\x13BitTorrent protocol" + bytes(8) + bytes(range(20)) + b"-XX0001-" + bytes(12)),
+        ("bittorrent-bad", b"\x13BitTorrent protocoX" + bytes(48)),
+        ("memcached-get", _memcached(0x80, 0, key=b"key")),
+        ("memcached-set", _memcached(0x80, 1, key=b"key", extras=bytes(8), value=b"value")),
+        ("memcached-noop", _memcached(0x80, 10)),
+        ("memcached-bad-sizes", _memcached(0x80, 0, key=b"key", extras=bytes(4))),
+        ("memcached-unknown-command", _memcached(0x80, 0x40, key=b"k")),
+        ("memcached-response-get", _memcached(0x81, 0, extras=bytes(4), value=b"value")),
+        ("memcached-response-miss", _memcached(0x81, 0, value=b"Not found", status=1)),
+        ("memcached-response-bad-status", _memcached(0x81, 0, status=0x99)),
+        ("fins-node-request", _fins(0, bytes(4))),
+        ("fins-node-reply", _fins(1, bytes([0, 0, 0, 1, 0, 0, 0, 2]))),
+        ("fins-frame", _fins(2, fins_frame)),
+        ("fins-bad-node", _fins(0, b"\x00\x00\x01\x00")),
+        ("fins-bad-command", _fins(7, bytes(4))),
+        ("fins-bad-icf", _fins(2, bytes([0x81]) + fins_frame[1:])),
+        ("afp-getstatus", _dsi(0, 3)),
+        ("afp-opensession", _dsi(0, 4, b"\x01\x04\x00\x00\x04\x00")),
+        ("afp-getstatus-reply", _dsi(1, 3, b"server-info")),
+        ("afp-bad-option", _dsi(0, 4, b"\x05\x04\x00\x00\x04\x00")),
+        ("afp-bad-command", _dsi(0, 8)),
+        ("afp-getstatus-data", _dsi(0, 3, b"x")),
+        ("zmtp-null", _zmtp()),
+        ("zmtp-curve-server", _zmtp(b"CURVE", 1, 1)),
+        ("zmtp-other", _zmtp(b"X-CUSTOM")),
+        ("zmtp-lower", _zmtp(b"null")),
+        ("zmtp-v2", b"\xff" + bytes(8) + b"\x7f\x01" + bytes(53)),
+        ("bolt-handshake", _bolt((5, 4, 4), (4, 4, 0))),
+        ("bolt-bad-version", _bolt((9, 0, 0))),
+        ("bolt-gap", b"\x60\x60\xb0\x17" + bytes(4) + bytes([0, 0, 0, 4]) + bytes(8)),
+        ("bolt-empty", _bolt()),
+        ("rsync-31", b"@RSYNCD: 31.0\n"),
+        ("rsync-32", b"@RSYNCD: 32.0 sha512 sha256 md5\n"),
+        ("rsync-29", b"@RSYNCD: 29\n"),
+        ("rsync-30-nosub", b"@RSYNCD: 30\n"),
+        ("rsync-32-nodigest", b"@RSYNCD: 32.0\n"),
+        ("rsync-duplicate", b"@RSYNCD: 32.0 md5 md5\n"),
+        ("rsync-old", b"@RSYNCD: 26\n"),
+        ("stomp-connect", b"CONNECT\naccept-version:1.1,1.2\nhost:broker.example\nheart-beat:0,1000\n\n\x00"),
+        ("stomp-stomp", b"STOMP\r\naccept-version:1.2\r\nhost:broker\\cexample\r\n\r\n\x00"),
+        ("stomp-connected", b"CONNECTED\nversion:1.2\n\n\x00"),
+        ("stomp-no-host", b"CONNECT\naccept-version:1.2\n\n\x00"),
+        ("stomp-body", b"CONNECT\naccept-version:1.2\nhost:b\n\nbody\x00"),
+        ("stomp-bad-escape", b"STOMP\naccept-version:1.2\nhost:b\\t\n\n\x00"),
+        ("stomp-bad-heartbeat", b"CONNECT\naccept-version:1.2\nhost:b\nheart-beat:1\n\n\x00"),
+    ]
+    cases = []
+    for number, (name, data) in enumerate(vectors):
+        base = "stream/framed-%02d-%s" % (number, name)
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": name.split("-", 1)[0], "chunks": chunks, "hint": None, "config": {}, "end": end})
+    response = b"\x00\x00\x04\x05"
+    for name, data in (("bolt-response", response), ("bolt-response-none", bytes(4)), ("bolt-response-bad", b"\x00\x00\x00\x09")):
+        cases.append({"id": "stream/framed-hinted/" + name, "kind": "stream", "label": "bolt", "chunks": [data.hex()], "hint": "bolt", "config": {}, "end": "fin"})
+    cases.append({"id": "stream/framed-options/stomp-header-budget", "kind": "stream", "label": "stomp",
+                  "chunks": [b"CONNECT\naccept-version:1.2\nhost:b\na:1\nb:2\nc:3\n\n\x00".hex()], "hint": None, "config": {"max_headers": 2}, "end": "fin"})
+    cases.append({"id": "stream/framed-options/postgresql-byte-budget", "kind": "stream", "label": "postgresql",
+                  "chunks": [_pg_startup([(b"user", b"a" * 100)]).hex()], "hint": None, "config": {"max_bytes": 64}, "end": "fin"})
     return cases
 
 

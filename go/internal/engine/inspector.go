@@ -6,15 +6,19 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/dnsx"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/framed"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/textroute"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
 )
 
 // Ported is the set of dispatch candidates the Go backend has a parser for.
-var Ported = map[string]bool{"text": true, "tls": true, "dns": true, "irc": true, "telnet": true}
+var Ported = map[string]bool{"text": true, "tls": true, "dns": true, "irc": true, "telnet": true,
+	"postgresql": true, "rfb": true, "bittorrent": true, "memcached": true, "rsync": true, "fins": true, "afp": true,
+	"zmtp": true, "bolt": true, "stomp": true}
 
 // Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
-var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet"}
+var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
+	"postgresql", "rfb", "bittorrent", "memcached", "rsync", "fins", "afp", "zmtp", "bolt", "stomp"}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 	switch candidate {
@@ -24,6 +28,26 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 		return textroute.NewIRC(cfg.MaxLine), nil
 	case "telnet":
 		return textroute.NewTelnet(), nil
+	case "postgresql":
+		return framed.NewPostgreSQL(cfg.MaxBytes), nil
+	case "rfb":
+		return framed.NewRFB(cfg.MaxBytes), nil
+	case "bittorrent":
+		return framed.NewBitTorrent(cfg.MaxBytes), nil
+	case "memcached":
+		return framed.NewMemcached(cfg.MaxBytes), nil
+	case "rsync":
+		return framed.NewRsync(cfg.MaxLine, cfg.MaxHeaders), nil
+	case "fins":
+		return framed.NewFINS(cfg.MaxBytes), nil
+	case "afp":
+		return framed.NewAFP(cfg.MaxBytes), nil
+	case "zmtp":
+		return framed.NewZMTP(cfg.MaxBytes), nil
+	case "bolt":
+		return framed.NewBolt(cfg.MaxBytes), nil
+	case "stomp":
+		return framed.NewSTOMP(cfg.MaxLine, cfg.MaxHeaders), nil
 	case "tls":
 		return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
 			Certificates: cfg.Certificates, Continuation: cfg.Continuation})
