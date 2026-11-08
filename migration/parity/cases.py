@@ -193,6 +193,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(tunnel_cases())
     cases.extend(service_cases())
     cases.extend(git_cases())
+    cases.extend(session_cases_v())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -1368,6 +1369,69 @@ def git_cases():
                                      ("git-discriminator-budget", b"0032git-upload-pack " + b"p" * 40, {"max_line": 32}, None)):
         cases.append({"id": "stream/git-options/" + name, "kind": "stream", "label": "git", "chunks": [data.hex()], "hint": hint, "config": config,
                       "end": "fin"})
+    return cases
+
+
+def _nb_name(text=b"FILESERVER"):
+    padded = text.ljust(16, b" ")
+    return b"\x20" + b"".join(bytes([0x41 + (byte >> 4), 0x41 + (byte & 15)]) for byte in padded) + b"\x00"
+
+
+def _tacacs(kind, seq, body, flags=0x01, version=0xc1):
+    return bytes([version, kind, seq, flags]) + struct.pack(">II", 0x1234, len(body)) + body
+
+
+def _socks_client(methods=b"\x00", command=1, atyp=1, address=b"\xc0\x00\x02\x01", port=443):
+    target = (bytes([len(address)]) + address) if atyp == 3 else address
+    return b"\x05" + bytes([len(methods)]) + methods + bytes([5, command, 0, atyp]) + target + struct.pack(">H", port)
+
+
+def session_cases_v():
+    """NetBIOS session requests, TACACS+ packet headers and SOCKS5 exchanges (M5 batch 10); identifications,
+    malformed framing, unsupported profiles, each as whole / 1-byte / 7-byte / truncated chunkings."""
+    vectors = [
+        ("netbios-request", b"\x81\x00\x00\x44" + _nb_name() + _nb_name(b"CLIENT")),
+        ("netbios-length", b"\x81\x00\x00\x40" + bytes(64)),
+        ("netbios-label", b"\x81\x00\x00\x44" + b"\x10" + _nb_name()[1:] + _nb_name()),
+        ("netbios-encoding", b"\x81\x00\x00\x44" + _nb_name()[:5] + b"Z" + _nb_name()[6:] + _nb_name()),
+        ("tacacs-start", _tacacs(1, 1, bytes([1, 15, 2, 1, 4, 3, 5, 0]) + b"user" + b"tty" + b"10.0.")),
+        ("tacacs-encrypted", _tacacs(2, 1, bytes(20), flags=0x00)),
+        ("tacacs-auth-reply", _tacacs(1, 2, bytes([1, 0]) + struct.pack(">HH", 3, 0) + b"msg")),
+        ("tacacs-author-reply", _tacacs(2, 2, bytes([1, 1]) + struct.pack(">HH", 0, 0) + bytes([4]) + b"priv")),
+        ("tacacs-acct-reply", _tacacs(3, 2, struct.pack(">HH", 2, 0) + bytes([1]) + b"ok")),
+        ("tacacs-bad-start", _tacacs(1, 1, bytes([9, 15, 2, 1, 0, 0, 0, 0]))),
+        ("tacacs-start-lengths", _tacacs(1, 1, bytes([1, 15, 2, 1, 9, 0, 0, 0]) + b"user")),
+        ("tacacs-auth-status", _tacacs(1, 2, bytes([9, 0]) + struct.pack(">HH", 0, 0))),
+        ("tacacs-author-args", _tacacs(2, 2, bytes([1, 9]) + struct.pack(">HH", 0, 0) + bytes([1]))),
+        ("tacacs-seq", _tacacs(1, 3, bytes(8))),
+        ("tacacs-version", _tacacs(1, 1, bytes(8), version=0xb1)),
+        ("tacacs-flags", _tacacs(1, 1, bytes(8), flags=0x02)),
+        ("socks5-connect-ipv4", _socks_client()),
+        ("socks5-connect-domain", _socks_client(atyp=3, address=b"WWW.Example.org")),
+        ("socks5-connect-ipv6", _socks_client(atyp=4, address=bytes.fromhex("20010db8000000000000000000000001"))),
+        ("socks5-udp-mapped", _socks_client(command=3, atyp=4, address=bytes.fromhex("00000000000000000000ffffc0000201"))),
+        ("socks5-two-methods", _socks_client(methods=b"\x00\x02")),
+        ("socks5-server", b"\x05\x00\x05\x00\x00\x01\xc0\x00\x02\x01\x01\xbb"),
+        ("socks5-server-userpass", b"\x05\x02\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00"),
+        ("socks5-server-refused", b"\x05\x00\x05\x05\x00\x03\x07host.ex\x00\x50"),
+        ("socks5-auth-only", _socks_client(methods=b"\x02")),
+        ("socks5-no-acceptable", _socks_client(methods=b"\xff\x00")),
+        ("socks5-command", _socks_client(command=7)),
+        ("socks5-domain-ip", _socks_client(atyp=3, address=b"192.0.2.1")),
+        ("socks5-empty-domain", b"\x05\x01\x00\x05\x01\x00\x03\x00\x00\x50"),
+        ("socks5-reply-code", b"\x05\x00\x05\x09\x00\x01" + bytes(6)),
+    ]
+    cases = []
+    for number, (name, data) in enumerate(vectors):
+        base = "stream/session-%02d-%s" % (number, name)
+        family = {"netbios": "netbios-ss", "tacacs": "tacacs-plus"}.get(name.split("-", 1)[0], name.split("-", 1)[0])
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": family, "chunks": chunks, "hint": None, "config": {}, "end": end})
+    long_domain = _socks_client(methods=bytes(range(0, 255)), atyp=3, address=b"a" * 63 + b"." + b"b" * 63 + b"." + b"c" * 63 + b"." + b"d" * 61)
+    cases.append({"id": "stream/session-options/socks5-maximum", "kind": "stream", "label": "socks5", "chunks": [long_domain.hex()],
+                  "hint": None, "config": {}, "end": "fin"})
     return cases
 
 

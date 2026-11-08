@@ -19,7 +19,8 @@ var Ported = map[string]bool{"text": true, "tls": true, "dns": true, "irc": true
 	"modbus": true, "dnp3": true, "ethernet-ip": true, "iec-104": true, "opcua": true, "s7comm": true,
 	"mqtt": true, "resp": true, "amqp": true, "onc-rpc": true, "diameter": true,
 	"bgp": true, "openvpn": true, "pptp": true, "fastcgi": true,
-	"dcerpc": true, "websocket": true, "xmpp": true, "syslog": true, "git": true}
+	"dcerpc": true, "websocket": true, "xmpp": true, "syslog": true, "git": true,
+	"netbios-ss": true, "tacacs-plus": true, "socks5": true}
 
 // Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
 var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
@@ -28,7 +29,8 @@ var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"modbus", "dnp3", "ethernet-ip", "iec-104", "opcua", "s7comm",
 	"mqtt", "resp", "amqp", "onc-rpc", "diameter",
 	"bgp", "openvpn", "pptp", "fastcgi",
-	"dcerpc", "websocket", "xmpp", "syslog", "git"}
+	"dcerpc", "websocket", "xmpp", "syslog", "git",
+	"netbios-ss", "tacacs-plus", "socks5"}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 	switch candidate {
@@ -118,6 +120,12 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 		return framed.NewSyslog(cfg.MaxLine), nil
 	case "git":
 		return framed.NewGit(cfg.MaxBytes, cfg.MaxLine, cfg.MaxHeaders), nil
+	case "netbios-ss":
+		return framed.NewNetBIOSSession(cfg.MaxBytes), nil
+	case "tacacs-plus":
+		return framed.NewTACACS(cfg.MaxBytes), nil
+	case "socks5":
+		return framed.NewSOCKS5(), nil
 	case "git_text":
 		return framed.NewGitText(cfg.MaxLine,
 			func() parsing.Parser { return framed.NewGit(cfg.MaxBytes, cfg.MaxLine, cfg.MaxHeaders) },

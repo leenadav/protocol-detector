@@ -211,7 +211,16 @@ Taken before M5 so that session records become comparable for every family as it
 | Repair | implemented | The engine fuzz target found a panic in the batch-2 PostgreSQL port: an 8-byte v3 startup ends in `\0\0` through its version bytes, and `data[8:len-1]` inverted where Python's slice clamps to empty. Fixed to clamp; the crashing input is kept as `go/internal/engine/testdata/fuzz/FuzzInspectorNeverPanics/8088a95f887cfb87`, and `postgresql-empty-startup` joins the fixtures ("PostgreSQL startup requires a user" in both backends). Every other end-relative slice in the framed package was audited and is guarded by an earlier length or terminator check. |
 | Differential result | implemented | `make parity-go` with the 55 claimed families: **3130 compared, 3130 matched, 0 mismatched, 0 gaps**; git 114 stream / 4 session cases; records included. |
 
-## M5 batches 10+ / M7+ — next
+### Batch 10 — NetBIOS session, TACACS+ and SOCKS5
+
+| item | state | evidence |
+|---|---|---|
+| Families | implemented | netbios-ss (session request names), tacacs-plus (header, unencrypted START and REPLY bodies), socks5 (both directions; IPv6 targets formatted by `net/netip`, matching Python's `ipaddress` text including IPv4-mapped addresses). `go/internal/protocols/framed/sessions.go`; the fuzz target covers all three. |
+| Fixtures | implemented | `cases.py session_cases_v()`: 30 vectors × 4 chunkings plus the longest SOCKS5 client exchange (121 stream cases). |
+| Differential result | implemented | `make parity-go` with the 58 claimed families: **3292 compared, 3292 matched, 0 mismatched, 0 gaps**; per family (stream/session): socks5 69/4, tacacs-plus 60/4, netbios-ss 22/4; records included. |
+| Not claimed | — | smb1 needs the GSS token classifier and moves to the dedicated-review batch with smb2, kerberos and ldap; SOCKS5 signature contexts (`retain_contexts`) remain with the signature option. |
+
+## M5 batches 11+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive
