@@ -271758,6 +271758,3015 @@
    "payload": "810a00"
   },
   {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 38,
+     "bytes_received": 38,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tftp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tftp",
+       "wire",
+       "structural"
+      ],
+      [
+       "tftp_packet",
+       "request",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TFTP initial read/write request and option framing validated; transfer unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-00-tftp/whole",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0001626f6f742e62696e006f6374657400626c6b73697a650031343238007473697a65003000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 19,
+     "bytes_received": 19,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid TFTP request length or terminator",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-00-tftp/half",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0001626f6f742e62696e006f6374657400626c"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 22,
+     "bytes_received": 22,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tftp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tftp",
+       "wire",
+       "structural"
+      ],
+      [
+       "tftp_packet",
+       "request",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TFTP initial read/write request and option framing validated; transfer unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-01-tftp/whole",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "000275706c6f61642e747874006e6574617363696900"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 11,
+     "bytes_received": 11,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid TFTP request length or terminator",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-01-tftp/half",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "000275706c6f61642e7478"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 11,
+     "bytes_received": 11,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Unsupported TFTP transfer mode",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-02-tftp/whole",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0001660062696e61727900"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 5,
+     "bytes_received": 5,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid TFTP request length or terminator",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-02-tftp/half",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0001660062"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TFTP option outside permitted range",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-03-tftp/whole",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "000166006f6374657400626c6b73697a65003400"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 10,
+     "bytes_received": 10,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tftp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tftp",
+       "wire",
+       "structural"
+      ],
+      [
+       "tftp_packet",
+       "request",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TFTP initial read/write request and option framing validated; transfer unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-03-tftp/half",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "000166006f6374657400"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TFTP option outside permitted range",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-04-tftp/whole",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "000166006f63746574007473697a650031303000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 10,
+     "bytes_received": 10,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tftp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tftp",
+       "wire",
+       "structural"
+      ],
+      [
+       "tftp_packet",
+       "request",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TFTP initial read/write request and option framing validated; transfer unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-04-tftp/half",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "000166006f6374657400"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tftp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tftp",
+       "wire",
+       "structural"
+      ],
+      [
+       "tftp_packet",
+       "oack",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TFTP option acknowledgement validated; option values not emitted, transfer unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-05-tftp/whole",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0006626c6b73697a65003134323800"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 7,
+     "bytes_received": 7,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid TFTP packet length or terminator",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-05-tftp/half",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0006626c6b7369"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TFTP OACK option outside the RFC 2348/2349/7440 set or repeated",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-06-tftp/whole",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0006636f6c6f720072656400"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid TFTP packet length or terminator",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-06-tftp/half",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0006636f6c6f"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 19,
+     "bytes_received": 19,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tftp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tftp",
+       "wire",
+       "structural"
+      ],
+      [
+       "tftp_packet",
+       "error",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "tftp",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TFTP error packet validated; code and message not emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "tftp",
+   "id": "datagram/udp2-07-tftp/whole",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0005000146696c65206e6f7420666f756e6400"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid TFTP packet length or terminator",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "tftp",
+   "id": "datagram/udp2-07-tftp/half",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0005000146696c6520"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TFTP error code outside RFC 1350/2347 or empty message",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "tftp",
+   "id": "datagram/udp2-08-tftp/whole",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "0005000962616400"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 4,
+     "bytes_received": 4,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid TFTP packet length or terminator",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "tftp",
+   "id": "datagram/udp2-08-tftp/half",
+   "kind": "datagram",
+   "label": "tftp",
+   "payload": "00050009"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 48,
+     "bytes_received": 48,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "ntp/4",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "ntp/4",
+       "wire",
+       "structural"
+      ],
+      [
+       "ntp_mode",
+       "client",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "ntp",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "NTP base header validated with caller hint; timestamps, peer, extensions and authentication unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "ntp",
+   "id": "datagram/udp2-09-ntp/whole",
+   "kind": "datagram",
+   "label": "ntp",
+   "payload": "230000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Only 48-byte unauthenticated NTP messages supported",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "ntp",
+   "id": "datagram/udp2-09-ntp/half",
+   "kind": "datagram",
+   "label": "ntp",
+   "payload": "230000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 48,
+     "bytes_received": 48,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "ntp/4",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "ntp/4",
+       "wire",
+       "structural"
+      ],
+      [
+       "ntp_mode",
+       "server",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "ntp",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "NTP base header validated with caller hint; timestamps, peer, extensions and authentication unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "ntp",
+   "id": "datagram/udp2-10-ntp/whole",
+   "kind": "datagram",
+   "label": "ntp",
+   "payload": "240200000000000000000000000000000000000000000000000000000000000000000000000000000101010101010101"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Only 48-byte unauthenticated NTP messages supported",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "ntp",
+   "id": "datagram/udp2-10-ntp/half",
+   "kind": "datagram",
+   "label": "ntp",
+   "payload": "240200000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 48,
+     "bytes_received": 48,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "NTP server transmit timestamp is zero",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "ntp",
+   "id": "datagram/udp2-11-ntp/whole",
+   "kind": "datagram",
+   "label": "ntp",
+   "payload": "240200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Only 48-byte unauthenticated NTP messages supported",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "ntp",
+   "id": "datagram/udp2-11-ntp/half",
+   "kind": "datagram",
+   "label": "ntp",
+   "payload": "240200000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 48,
+     "bytes_received": 48,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Only NTPv3/v4 client/server modes supported",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "ntp",
+   "id": "datagram/udp2-12-ntp/whole",
+   "kind": "datagram",
+   "label": "ntp",
+   "payload": "130000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Only 48-byte unauthenticated NTP messages supported",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "ntp",
+   "id": "datagram/udp2-12-ntp/half",
+   "kind": "datagram",
+   "label": "ntp",
+   "payload": "130000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "l2tp/2",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "l2tp/2",
+       "wire",
+       "structural"
+      ],
+      [
+       "l2tp_message",
+       "sccrq",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "L2TPv2 SCCRQ control framing and AVP boundaries validated; tunnel establishment unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-13-l2tp/whole",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "c802001400000000000000008008000000000001"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 10,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-13-l2tp/half",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "c8020014000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "l2tp/2",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "l2tp/2",
+       "wire",
+       "structural"
+      ],
+      [
+       "l2tp_message",
+       "sccrp",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "L2TPv2 SCCRP control framing and AVP boundaries validated; tunnel establishment unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-14-l2tp/whole",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "c802001400070000000000008008000000000002"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 10,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-14-l2tp/half",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "c8020014000700000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "L2TP SCCRQ requires zero identifiers; SCCRP carries the peer's assigned tunnel id",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-15-l2tp/whole",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "c802001400000000000000008008000000000002"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 10,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-15-l2tp/half",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "c8020014000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "L2TP profile covers SCCRQ and SCCRP as the first control messages",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-16-l2tp/whole",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "c802001400000000000000008008000000000006"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 10,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-16-l2tp/half",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "c8020014000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 20,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-17-l2tp/whole",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "8802001400000000000000008008000000000001"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 10,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-17-l2tp/half",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "88020014000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-18-coap/whole",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40011234b474657374"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 4,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-18-coap/half",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40011234"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-19-coap/whole",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "52451234abcdff01"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 4,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-19-coap/half",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "52451234"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 5,
+     "bytes_received": 5,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP payload marker without payload",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-20-coap/whole",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40011234ff"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 2,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-20-coap/half",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4001"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 5,
+     "bytes_received": 5,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Unsupported CoAP code profile",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-21-coap/whole",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4007123401"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 2,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-21-coap/half",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4007"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 4,
+     "bytes_received": 4,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "coap",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP empty-message framing only; no peer authentication",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/udp2-22-coap/whole",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40001234"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 2,
+     "bytes_received": 2,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid CoAP v1 header/token length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/udp2-22-coap/half",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "rip/2",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "rip/2",
+       "wire",
+       "structural"
+      ],
+      [
+       "rip_command",
+       "response",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "rip_authentication",
+       "none",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RIP response validated; routes and password not emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-23-rip/whole",
+   "kind": "datagram",
+   "label": "rip",
+   "payload": "0202000000020000c0000200000000000000000000000001"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 12,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-23-rip/half",
+   "kind": "datagram",
+   "label": "rip",
+   "payload": "0202000000020000c0000200"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "rip/2",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "rip/2",
+       "wire",
+       "structural"
+      ],
+      [
+       "rip_command",
+       "request",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "rip_authentication",
+       "none",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RIP request validated; routes and password not emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-24-rip/whole",
+   "kind": "datagram",
+   "label": "rip",
+   "payload": "010200000000000000000000000000000000000000000010"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 12,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-24-rip/half",
+   "kind": "datagram",
+   "label": "rip",
+   "payload": "010200000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 44,
+     "bytes_received": 44,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "rip/2",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "rip/2",
+       "wire",
+       "structural"
+      ],
+      [
+       "rip_command",
+       "response",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "rip_authentication",
+       "simple-password",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RIP response validated; routes and password not emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-25-rip/whole",
+   "kind": "datagram",
+   "label": "rip",
+   "payload": "02020000ffff000270617373776f7264000000000000000000020000c0000200000000000000000000000001"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 22,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-25-rip/half",
+   "kind": "datagram",
+   "label": "rip",
+   "payload": "02020000ffff000270617373776f7264000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RIP v1 entries must zero the route tag, mask and next hop",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-26-rip/whole",
+   "kind": "datagram",
+   "label": "rip",
+   "payload": "0201000000020007c0000200000000000000000000000001"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 12,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-26-rip/half",
+   "kind": "datagram",
+   "label": "rip",
+   "payload": "0201000000020007c0000200"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RIP metric outside 1..16",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-27-rip/whole",
+   "kind": "datagram",
+   "label": "rip",
+   "payload": "0202000000020000c0000200000000000000000000000011"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 12,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-27-rip/half",
+   "kind": "datagram",
+   "label": "rip",
+   "payload": "0202000000020000c0000200"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 36,
+     "bytes_received": 36,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "rtcp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "rtcp",
+       "wire",
+       "structural"
+      ],
+      [
+       "rtcp_packet",
+       "sr",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "rtcp_packets",
+       "2",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "rtcp",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTCP compound packet framing validated with a candidate hint; reports not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtcp",
+   "id": "datagram/udp2-28-rtcp/whole",
+   "kind": "datagram",
+   "label": "rtcp",
+   "payload": "80c8000600000000000000000000000000000000000000000000000081ca000100000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 18,
+     "bytes_received": 18,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTCP packet length exceeds the datagram",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtcp",
+   "id": "datagram/udp2-28-rtcp/half",
+   "kind": "datagram",
+   "label": "rtcp",
+   "payload": "80c800060000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 32,
+     "bytes_received": 32,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "rtcp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "rtcp",
+       "wire",
+       "structural"
+      ],
+      [
+       "rtcp_packet",
+       "rr",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "rtcp_packets",
+       "1",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "rtcp",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTCP compound packet framing validated with a candidate hint; reports not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtcp",
+   "id": "datagram/udp2-29-rtcp/whole",
+   "kind": "datagram",
+   "label": "rtcp",
+   "payload": "81c9000700000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTCP packet length exceeds the datagram",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtcp",
+   "id": "datagram/udp2-29-rtcp/half",
+   "kind": "datagram",
+   "label": "rtcp",
+   "payload": "81c90007000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTCP compound packet must begin with SR or RR",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtcp",
+   "id": "datagram/udp2-30-rtcp/whole",
+   "kind": "datagram",
+   "label": "rtcp",
+   "payload": "80ca000100000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 4,
+     "bytes_received": 4,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTCP packet shorter than its header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtcp",
+   "id": "datagram/udp2-30-rtcp/half",
+   "kind": "datagram",
+   "label": "rtcp",
+   "payload": "80ca0001"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTCP SR shorter than its sender info and report blocks",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtcp",
+   "id": "datagram/udp2-31-rtcp/whole",
+   "kind": "datagram",
+   "label": "rtcp",
+   "payload": "81c80006000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 14,
+     "bytes_received": 14,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTCP SR shorter than its sender info and report blocks",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtcp",
+   "id": "datagram/udp2-31-rtcp/half",
+   "kind": "datagram",
+   "label": "rtcp",
+   "payload": "81c8000600000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 36,
+     "bytes_received": 36,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "lifx-lan",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "lifx-lan",
+       "wire",
+       "structural"
+      ],
+      [
+       "lifx_message",
+       "getservice",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "lifx_tagged",
+       "yes",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "LIFX LAN header (size, protocol 1024, addressable, origin, target, message payload size) validated; target, source and payload never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-32-lifx-lan/whole",
+   "kind": "datagram",
+   "label": "lifx-lan",
+   "payload": "240000343412000000000000000000000000000000000101000000000000000002000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 18,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-32-lifx-lan/half",
+   "kind": "datagram",
+   "label": "lifx-lan",
+   "payload": "240000343412000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 41,
+     "bytes_received": 41,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "lifx-lan",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "lifx-lan",
+       "wire",
+       "structural"
+      ],
+      [
+       "lifx_message",
+       "stateservice",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "lifx_tagged",
+       "no",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "LIFX LAN header (size, protocol 1024, addressable, origin, target, message payload size) validated; target, source and payload never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-33-lifx-lan/whole",
+   "kind": "datagram",
+   "label": "lifx-lan",
+   "payload": "2900001434120000d073d501020300000000000000000101000000000000000003000000017cdd0000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 20,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-33-lifx-lan/half",
+   "kind": "datagram",
+   "label": "lifx-lan",
+   "payload": "2900001434120000d073d5010203000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 39,
+     "bytes_received": 39,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "lifx-lan",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "lifx-lan",
+       "wire",
+       "structural"
+      ],
+      [
+       "lifx_message",
+       "other",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "lifx_tagged",
+       "yes",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "LIFX LAN header (size, protocol 1024, addressable, origin, target, message payload size) validated; target, source and payload never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-34-lifx-lan/whole",
+   "kind": "datagram",
+   "label": "lifx-lan",
+   "payload": "2700003434120000000000000000000000000000000001010000000000000000e703000078797a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 19,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-34-lifx-lan/half",
+   "kind": "datagram",
+   "label": "lifx-lan",
+   "payload": "27000034341200000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 37,
+     "bytes_received": 37,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "LIFX LAN payload size disagrees with its message type",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-35-lifx-lan/whole",
+   "kind": "datagram",
+   "label": "lifx-lan",
+   "payload": "25000034341200000000000000000000000000000000010100000000000000000300000001"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 18,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-35-lifx-lan/half",
+   "kind": "datagram",
+   "label": "lifx-lan",
+   "payload": "250000343412000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 36,
+     "bytes_received": 36,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "LIFX LAN target must end in two zero bytes and be zero when tagged",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-36-lifx-lan/whole",
+   "kind": "datagram",
+   "label": "lifx-lan",
+   "payload": "240000343412000001000000000000000000000000000101000000000000000002000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 18,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-36-lifx-lan/half",
+   "kind": "datagram",
+   "label": "lifx-lan",
+   "payload": "240000343412000001000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tuya-lan",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tuya-lan",
+       "wire",
+       "structural"
+      ],
+      [
+       "tuya_command",
+       "udp-new",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Tuya LAN 3.3 frame (prefix, length, CRC32, suffix) validated; payload not decrypted or emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-37-tuya-lan/whole",
+   "kind": "datagram",
+   "label": "tuya-lan",
+   "payload": "000055aa00000001000000130000000c01020304c3519eb80000aa55"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 14,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-37-tuya-lan/half",
+   "kind": "datagram",
+   "label": "tuya-lan",
+   "payload": "000055aa00000001000000130000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tuya-lan",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tuya-lan",
+       "wire",
+       "structural"
+      ],
+      [
+       "tuya_command",
+       "other",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Tuya LAN 3.3 frame (prefix, length, CRC32, suffix) validated; payload not decrypted or emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-38-tuya-lan/whole",
+   "kind": "datagram",
+   "label": "tuya-lan",
+   "payload": "000055aa00000001000000770000000c01020304c2de4e100000aa55"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 14,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-38-tuya-lan/half",
+   "kind": "datagram",
+   "label": "tuya-lan",
+   "payload": "000055aa00000001000000770000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Tuya LAN CRC32 does not match (3.4 HMAC framing is outside the profile)",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-39-tuya-lan/whole",
+   "kind": "datagram",
+   "label": "tuya-lan",
+   "payload": "000055aa00000001000000130000000c01020304000000010000aa55"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 14,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-39-tuya-lan/half",
+   "kind": "datagram",
+   "label": "tuya-lan",
+   "payload": "000055aa00000001000000130000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 2,
+     "events_emitted": 0,
+     "parser_calls": 2,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "ethernet-ip",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "ethernet-ip",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "EtherNet/IP encapsulation header validated; CIP payload not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-40-ethernet-ip/whole",
+   "kind": "datagram",
+   "label": "ethernet-ip",
+   "payload": "630000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid CoAP empty message",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-40-ethernet-ip/half",
+   "kind": "datagram",
+   "label": "ethernet-ip",
+   "payload": "630000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 26,
+     "bytes_received": 26,
+     "candidates_selected": 2,
+     "events_emitted": 0,
+     "parser_calls": 2,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid CoAP empty message",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-41-ethernet-ip/whole",
+   "kind": "datagram",
+   "label": "ethernet-ip",
+   "payload": "6300000000000000000000000000000000000000000000007878"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 13,
+     "bytes_received": 13,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid CoAP empty message",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-41-ethernet-ip/half",
+   "kind": "datagram",
+   "label": "ethernet-ip",
+   "payload": "63000000000000000000000000"
+  },
+  {
+   "config": {
+    "max_headers": 3
+   },
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 56,
+     "bytes_received": 56,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "L2TP AVP count exceeds budget",
+     "scope": "datagram",
+     "status": "budget_exhausted",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp2-options/l2tp-avp-budget",
+   "kind": "datagram",
+   "label": "l2tp",
+   "payload": "c802003800000000000000008008000000000001000600000009000600000009000600000009000600000009000600000009000600000009"
+  },
+  {
    "expected": {
     "packets": [
      {
@@ -340888,7 +343897,7 @@
  "reference": {
   "backend": "python",
   "content_release": "2026.11.0",
-  "head": "8c8d3ec"
+  "head": "40633e7"
  },
  "schema": 1
 }

@@ -253,7 +253,7 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 		var err error
 		if validator, ok := framed.DatagramValidators[c]; ok {
 			var m *framed.Datagram
-			if m, err = validator(data, d.cfg.MaxBytes); err == nil {
+			if m, err = validator(data, framed.Limits{MaxBytes: d.cfg.MaxBytes, MaxHeaders: d.cfg.MaxHeaders}); err == nil {
 				found = match{protocol: m.Protocol, encryption: m.Encryption, reason: m.Reason}
 				if m.Simple {
 					found.evidence = []contracts.Evidence{{Field: "application_protocol", Value: m.Protocol, Source: "wire", Strength: "structural"}}

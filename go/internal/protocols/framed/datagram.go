@@ -13,8 +13,11 @@ type Datagram struct {
 	Simple                       bool
 }
 
+// Limits are the inspection budgets a UDP validator reads.
+type Limits struct{ MaxBytes, MaxHeaders int }
+
 // DatagramValidator validates one complete UDP payload.
-type DatagramValidator func(data []byte, maxBytes int) (*Datagram, error)
+type DatagramValidator func(data []byte, limits Limits) (*Datagram, error)
 
 // DatagramValidators are the ported entries of protocol_engine/datagram.VALIDATORS (the DNS layout stays in dnsx).
 var DatagramValidators = map[string]DatagramValidator{
@@ -25,7 +28,7 @@ var DatagramValidators = map[string]DatagramValidator{
 	"bacnet":    bacnetDatagram,
 }
 
-func syslogDatagram(data []byte, _ int) (*Datagram, error) {
+func syslogDatagram(data []byte, _ Limits) (*Datagram, error) {
 	reason, err := syslogMessage(data)
 	if err != nil {
 		return nil, err
@@ -33,7 +36,7 @@ func syslogDatagram(data []byte, _ int) (*Datagram, error) {
 	return &Datagram{Protocol: "syslog/5424", Reason: reason, Simple: true}, nil
 }
 
-func rpcDatagram(data []byte, _ int) (*Datagram, error) {
+func rpcDatagram(data []byte, _ Limits) (*Datagram, error) {
 	if len(data) < 20 {
 		return nil, parsing.Malformed("RPC datagram too short for a message")
 	}
@@ -51,7 +54,7 @@ func rpcDatagram(data []byte, _ int) (*Datagram, error) {
 	return &Datagram{Protocol: "onc-rpc/2", Reason: m.reason, Evidence: evidence}, nil
 }
 
-func openvpnDatagram(data []byte, _ int) (*Datagram, error) {
+func openvpnDatagram(data []byte, _ Limits) (*Datagram, error) {
 	width, role, err := openvpnControl(data)
 	if err != nil {
 		return nil, err
@@ -70,7 +73,7 @@ var wireguardMessages = map[byte]struct {
 	kind string
 }{1: {148, "handshake_initiation"}, 2: {92, "handshake_response"}, 3: {64, "cookie_reply"}}
 
-func wireguardDatagram(data []byte, _ int) (*Datagram, error) {
+func wireguardDatagram(data []byte, _ Limits) (*Datagram, error) {
 	message, ok := wireguardMessages[0]
 	if len(data) >= 4 {
 		message, ok = wireguardMessages[data[0]]
@@ -87,7 +90,7 @@ func wireguardDatagram(data []byte, _ int) (*Datagram, error) {
 }
 
 // bacnetDatagram ports ics.bacnet: BVLC framing with NPDU version 1 for NPDU-carrying functions.
-func bacnetDatagram(data []byte, _ int) (*Datagram, error) {
+func bacnetDatagram(data []byte, _ Limits) (*Datagram, error) {
 	if !(len(data) >= 4 && data[0] == 0x81 && data[1] <= 0x0c && be(data[2:4]) == len(data)) {
 		return nil, parsing.Unsupported("Outside BACnet/IP BVLC framing")
 	}

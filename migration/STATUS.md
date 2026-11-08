@@ -229,7 +229,16 @@ Taken before M5 so that session records become comparable for every family as it
 | Fixtures | implemented | `cases.py udp_cases_1()`: 20 payloads, whole and truncated (40 datagram cases). |
 | Differential result | implemented | `make parity-go` with the 60 claimed families: **3370 compared, 3370 matched, 0 mismatched, 0 gaps**; datagram: onc-rpc 20, wireguard 14, bacnet 13, openvpn 10, syslog 9; records included. |
 
-## M5 batches 12+ / M7+ — next
+### Batch 12 — more UDP validators
+
+| item | state | evidence |
+|---|---|---|
+| Validators | implemented | tftp, ntp (hint), l2tp, coap, rip, rtcp (hint), lifx-lan, tuya-lan (CRC32 via `hash/crc32`), and ethernet-ip over UDP (one complete encapsulation message, reusing the TCP parser). UDP validators now receive both budgets (`framed.Limits`: max_bytes, max_headers), so L2TP's AVP budget reads `min(max_headers, 64)` as in Python. `go/internal/protocols/framed/datagram_wire.go`. |
+| Fixtures | implemented | `cases.py udp_cases_2()`: 42 payloads, whole and truncated, plus an L2TP AVP budget case (85 datagram cases). |
+| Differential result | implemented | `make parity-go` with the 68 claimed families: **3500 compared, 3500 matched, 0 mismatched, 0 gaps**; datagram: tftp 27, lifx-lan 19, rip 19, l2tp 17, ntp 14, coap 13, rtcp 11, tuya-lan 9, ethernet-ip 7; records included. |
+| Not claimed | — | tplink-smarthome parses its de-obfuscated payload with Python's `json.loads` (NaN/Infinity, duplicate keys, big numbers), which needs a faithful bounded JSON port of its own. |
+
+## M5 batches 13+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive

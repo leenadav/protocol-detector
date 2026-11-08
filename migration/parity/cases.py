@@ -1468,6 +1468,84 @@ def udp_cases_1():
     return cases
 
 
+def _l2tp(first=1, tunnel=0, session=0, extra=b"", flags=0xc802):
+    avps = struct.pack(">HHHH", 0x8008, 0, 0, first) + extra
+    body = struct.pack(">HHHH", tunnel, session, 0, 0) + avps
+    return struct.pack(">HH", flags, 4 + len(body)) + body
+
+
+def _lifx(kind=2, payload=b"", tagged=True, target=bytes(8)):
+    word = 1024 | 0x1000 | (0x2000 if tagged else 0)
+    header = struct.pack("<HHI", 36 + len(payload), word, 0x1234) + target + bytes(6) + b"\x01\x01" + bytes(8) + struct.pack("<HH", kind, 0)
+    return header + payload
+
+
+def _tuya(command=0x13, payload=b"\x01\x02\x03\x04", crc=None):
+    import zlib
+    body = b"\x00\x00\x55\xaa" + struct.pack(">III", 1, command, len(payload) + 8) + payload
+    return body + struct.pack(">I", zlib.crc32(body) if crc is None else crc) + b"\x00\x00\xaa\x55"
+
+
+def udp_cases_2():
+    """UDP validators of M5 batch 12 (TFTP, NTP, L2TP, CoAP, RIP, RTCP, LIFX LAN, Tuya LAN, EtherNet/IP)."""
+    ntp_client = bytes([0x23]) + bytes(47)
+    ntp_server = bytes([0x24, 2]) + bytes(38) + b"\x01" * 8
+    rip_entry = struct.pack(">HHIIII", 2, 0, 0xc0000200, 0, 0, 1)
+    vectors = [
+        ("tftp", b"\x00\x01boot.bin\x00octet\x00blksize\x001428\x00tsize\x000\x00", None),
+        ("tftp", b"\x00\x02upload.txt\x00netascii\x00", None),
+        ("tftp", b"\x00\x01f\x00binary\x00", None),
+        ("tftp", b"\x00\x01f\x00octet\x00blksize\x004\x00", None),
+        ("tftp", b"\x00\x01f\x00octet\x00tsize\x00100\x00", None),
+        ("tftp", b"\x00\x06blksize\x001428\x00", None),
+        ("tftp", b"\x00\x06color\x00red\x00", None),
+        ("tftp", b"\x00\x05\x00\x01File not found\x00", "tftp"),
+        ("tftp", b"\x00\x05\x00\x09bad\x00", "tftp"),
+        ("ntp", ntp_client, "ntp"),
+        ("ntp", ntp_server, "ntp"),
+        ("ntp", bytes([0x24, 2]) + bytes(46), "ntp"),
+        ("ntp", bytes([0x13]) + bytes(47), "ntp"),
+        ("l2tp", _l2tp(), None),
+        ("l2tp", _l2tp(first=2, tunnel=7), None),
+        ("l2tp", _l2tp(first=2), None),
+        ("l2tp", _l2tp(first=6), None),
+        ("l2tp", _l2tp(flags=0x8802), None),
+        ("coap", b"\x40\x01\x12\x34\xb4test", None),
+        ("coap", b"\x52\x45\x12\x34\xab\xcd\xff\x01", None),
+        ("coap", b"\x40\x01\x12\x34\xff", None),
+        ("coap", b"\x40\x07\x12\x34\x01", None),
+        ("coap", b"\x40\x00\x12\x34", "coap"),
+        ("rip", struct.pack(">BBH", 2, 2, 0) + rip_entry, None),
+        ("rip", struct.pack(">BBH", 1, 2, 0) + struct.pack(">HHIIII", 0, 0, 0, 0, 0, 16), None),
+        ("rip", struct.pack(">BBH", 2, 2, 0) + b"\xff\xff\x00\x02" + b"password".ljust(16, b"\x00") + rip_entry, None),
+        ("rip", struct.pack(">BBH", 2, 1, 0) + struct.pack(">HHIIII", 2, 7, 0xc0000200, 0, 0, 1), None),
+        ("rip", struct.pack(">BBH", 2, 2, 0) + struct.pack(">HHIIII", 2, 0, 0xc0000200, 0, 0, 17), None),
+        ("rtcp", bytes([0x80, 200]) + struct.pack(">H", 6) + bytes(24) + bytes([0x81, 202]) + struct.pack(">H", 1) + bytes(4), "rtcp"),
+        ("rtcp", bytes([0x81, 201]) + struct.pack(">H", 7) + bytes(28), "rtcp"),
+        ("rtcp", bytes([0x80, 202]) + struct.pack(">H", 1) + bytes(4), "rtcp"),
+        ("rtcp", bytes([0x81, 200]) + struct.pack(">H", 6) + bytes(24), "rtcp"),
+        ("lifx-lan", _lifx(), None),
+        ("lifx-lan", _lifx(kind=3, payload=b"\x01\x7c\xdd\x00\x00", tagged=False, target=b"\xd0\x73\xd5\x01\x02\x03\x00\x00"), None),
+        ("lifx-lan", _lifx(kind=999, payload=b"xyz"), None),
+        ("lifx-lan", _lifx(kind=3, payload=b"\x01"), None),
+        ("lifx-lan", _lifx(target=b"\x01" + bytes(7)), None),
+        ("tuya-lan", _tuya(), None),
+        ("tuya-lan", _tuya(command=0x77), None),
+        ("tuya-lan", _tuya(crc=1), None),
+        ("ethernet-ip", struct.pack("<HHII", 0x63, 0, 0, 0) + bytes(12), None),
+        ("ethernet-ip", struct.pack("<HHII", 0x63, 0, 0, 0) + bytes(12) + b"xx", None),
+    ]
+    cases = []
+    for number, (label, data, hint) in enumerate(vectors):
+        base = "datagram/udp2-%02d-%s" % (number, label)
+        cases.append({"id": base + "/whole", "kind": "datagram", "label": label, "payload": data.hex(), "hint": hint, "config": {}})
+        cases.append({"id": base + "/half", "kind": "datagram", "label": label, "payload": data[:max(1, len(data) // 2)].hex(), "hint": hint, "config": {}})
+    many = _l2tp(extra=b"".join(struct.pack(">HHH", 0x0006, 0, 9) for _ in range(6)))
+    cases.append({"id": "datagram/udp2-options/l2tp-avp-budget", "kind": "datagram", "label": "l2tp", "payload": many.hex(), "hint": None,
+                  "config": {"max_headers": 3}})
+    return cases
+
+
 def datagram_cases(seed=12, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -1480,6 +1558,7 @@ def datagram_cases(seed=12, limit=None):
         cases.append({"id": base + "/half", "kind": "datagram", "label": label, "payload": data[:max(1, len(data) // 2)].hex(), "hint": hint, "config": {}})
         cases.append({"id": base + "/mutated", "kind": "datagram", "label": label, "payload": _mutate(rng, data).hex(), "hint": hint, "config": {}})
     cases.extend(udp_cases_1())
+    cases.extend(udp_cases_2())
     return cases
 
 
