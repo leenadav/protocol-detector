@@ -190,6 +190,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(database_cases())
     cases.extend(ics_cases())
     cases.extend(messaging_cases())
+    cases.extend(tunnel_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -1090,6 +1091,104 @@ def messaging_cases():
                                ("resp-byte-budget", _resp(b"SET", b"k", b"v" * 100), {"max_bytes": 64}),
                                ("diameter-avp-budget", _diameter(cer), {"max_headers": 3})):
         cases.append({"id": "stream/messaging-options/" + name, "kind": "stream", "label": name.split("-", 1)[0], "chunks": [data.hex()],
+                      "hint": None, "config": config, "end": "fin"})
+    return cases
+
+
+def _bgp_open(capabilities=b"\x01\x04\x00\x01\x00\x01\x41\x04\x00\x00\xfd\xe8", version=4, hold=180, kind=2, raw=None):
+    parameters = raw if raw is not None else bytes([kind, len(capabilities)]) + capabilities
+    body = bytes([version]) + struct.pack(">HH", 65001, hold) + bytes([192, 0, 2, 1]) + bytes([len(parameters)]) + parameters
+    return b"\xff" * 16 + struct.pack(">H", 19 + len(body)) + b"\x01" + body
+
+
+def _openvpn_tcp(opcode=7, session=b"\x11" * 8, hmac=0, tail=None):
+    packet = bytes([opcode << 3]) + session
+    if hmac:
+        packet += bytes(hmac) + struct.pack(">II", 1, 1700000000)
+    packet += b"\x00" + struct.pack(">I", 0) if tail is None else tail
+    return struct.pack(">H", len(packet)) + packet
+
+
+def _pptp(control=1, result=1, error=0, version=0x0100, framing=1, host=b"pptp-client", vendor=b"demo"):
+    header = struct.pack(">HHIHH", 156, 1, 0x1a2b3c4d, control, 0)
+    if control == 2:
+        body = struct.pack(">HBBIIHH", version, result, error, framing, 1, 1, 1)
+    else:
+        body = struct.pack(">HHIIHH", version, 0, framing, 1, 1, 1)
+    return header + body + host.ljust(64, b"\x00") + vendor.ljust(64, b"\x00")
+
+
+def _fcgi(kind, body, request=1, padding=0, version=1):
+    return struct.pack(">BBHHBB", version, kind, request, len(body), padding, 0) + body + bytes(padding)
+
+
+def _fcgi_params(*pairs):
+    out = b""
+    for name, value in pairs:
+        for item in (name, value):
+            out += bytes([len(item)]) if len(item) < 128 else struct.pack(">I", 0x80000000 | len(item))
+        out += name + value
+    return out
+
+
+def tunnel_cases():
+    """BGP OPEN, OpenVPN over TCP, PPTP control connection and FastCGI (M5 batch 7); identifications, malformed
+    sizes, unsupported versions and budget outcomes, each as whole / 1-byte / 7-byte / truncated chunkings."""
+    begin = _fcgi(1, struct.pack(">HB", 1, 0) + bytes(5))
+    params = _fcgi_params((b"SCRIPT_NAME", b"/index.php"), (b"REQUEST_METHOD", b"GET"))
+    vectors = [
+        ("bgp-open", _bgp_open()),
+        ("bgp-open-no-caps", _bgp_open(raw=b"")),
+        ("bgp-route-refresh", _bgp_open(capabilities=b"\x02\x00")),
+        ("bgp-version", _bgp_open(version=3)),
+        ("bgp-hold", _bgp_open(hold=2)),
+        ("bgp-auth-param", _bgp_open(kind=1, capabilities=b"\x00")),
+        ("bgp-bad-mp", _bgp_open(capabilities=b"\x01\x03\x00\x01\x00")),
+        ("bgp-mp-reserved", _bgp_open(capabilities=b"\x01\x04\x00\x01\x05\x01")),
+        ("bgp-marker", b"\xfe" + _bgp_open()[1:]),
+        ("bgp-update", _bgp_open()[:18] + b"\x02" + _bgp_open()[19:]),
+        ("openvpn-client", _openvpn_tcp()),
+        ("openvpn-tls-auth", _openvpn_tcp(hmac=20)),
+        ("openvpn-v3", _openvpn_tcp(opcode=10, tail=b"\x00" + struct.pack(">I", 0) + bytes(40))),
+        ("openvpn-server", _openvpn_tcp(opcode=8, tail=b"\x01" + struct.pack(">I", 0) + b"\x22" * 8 + struct.pack(">I", 0))),
+        ("openvpn-zero-session", _openvpn_tcp(session=bytes(8))),
+        ("openvpn-data", _openvpn_tcp(opcode=9)),
+        ("openvpn-layout", _openvpn_tcp(tail=b"\x03" + bytes(4))),
+        ("openvpn-key-id", struct.pack(">H", 14) + bytes([7 << 3 | 1]) + b"\x11" * 8 + bytes(5)),
+        ("pptp-sccrq", _pptp()),
+        ("pptp-sccrp", _pptp(control=2)),
+        ("pptp-sccrp-error", _pptp(control=2, result=2, error=1)),
+        ("pptp-bad-version", _pptp(version=0x0200)),
+        ("pptp-bad-result", _pptp(control=2, result=1, error=3)),
+        ("pptp-framing", _pptp(framing=8)),
+        ("pptp-host", _pptp(host=b"bad\x01host")),
+        ("pptp-call", struct.pack(">HHIHH", 156, 1, 0x1a2b3c4d, 7, 0) + bytes(144)),
+        ("fastcgi-request", begin + _fcgi(4, params) + _fcgi(4, b"")),
+        ("fastcgi-split-params", begin + _fcgi(4, params[:9], padding=3) + _fcgi(4, params[9:]) + _fcgi(4, b"")),
+        ("fastcgi-authorizer", _fcgi(1, struct.pack(">HB", 2, 1) + bytes(5)) + _fcgi(4, b"")),
+        ("fastcgi-stdout", _fcgi(6, b"Content-Type: text/plain\r\n\r\nhi")),
+        ("fastcgi-end", _fcgi(3, struct.pack(">IB", 0, 0) + bytes(3))),
+        ("fastcgi-end-status", _fcgi(3, struct.pack(">IB", 0, 9) + bytes(3))),
+        ("fastcgi-role", _fcgi(1, struct.pack(">HB", 7, 0) + bytes(5)) + _fcgi(4, b"")),
+        ("fastcgi-management", _fcgi(9, b"", request=0)),
+        ("fastcgi-interleaved", begin + _fcgi(5, b"x")),
+        ("fastcgi-truncated-param", begin + _fcgi(4, b"\x05\x05abc") + _fcgi(4, b"")),
+        ("fastcgi-long-length", begin + _fcgi(4, b"\x80\x00") + _fcgi(4, b"")),
+        ("fastcgi-version", _fcgi(1, struct.pack(">HB", 1, 0) + bytes(5), version=2)),
+    ]
+    cases = []
+    for number, (name, data) in enumerate(vectors):
+        base = "stream/tunnel-%02d-%s" % (number, name)
+        family = name.split("-", 1)[0]
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": family, "chunks": chunks, "hint": None, "config": {}, "end": end})
+    many = begin + b"".join(_fcgi(4, _fcgi_params((b"K", b"V"))) for _ in range(6)) + _fcgi(4, b"")
+    for name, data, config in (("fastcgi-record-budget", many, {"max_headers": 4}),
+                               ("fastcgi-byte-budget", begin + _fcgi(4, _fcgi_params((b"QUERY", b"q" * 120))) + _fcgi(4, b""), {"max_bytes": 64}),
+                               ("bgp-byte-budget", _bgp_open(capabilities=b"\x46\x00" * 30), {"max_bytes": 64})):
+        cases.append({"id": "stream/tunnel-options/" + name, "kind": "stream", "label": name.split("-", 1)[0], "chunks": [data.hex()],
                       "hint": None, "config": config, "end": "fin"})
     return cases
 

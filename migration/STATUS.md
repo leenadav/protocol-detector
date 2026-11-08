@@ -183,7 +183,16 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` with the 46 claimed families: **2507 compared, 2507 matched, 0 mismatched, 0 gaps**; per family (stream/session): onc-rpc 80/4, diameter 69/4, mqtt 63/4, resp 41/0, amqp 34/4; records included. |
 | Not claimed | — | The ONC RPC UDP datagram path waits for the datagram batch (a named `datagram candidate` gap). The engine test that checks an unported hint is refused now names smb2 instead of the newly ported mqtt. |
 
-## M5 batches 7+ / M7+ — next
+### Batch 7 — routing, tunnels and FastCGI
+
+| item | state | evidence |
+|---|---|---|
+| Families | implemented | bgp (OPEN, capability parameters), openvpn (TCP-framed hard-reset control packets, plain and tls-auth layouts), pptp (SCCRQ/SCCRP), fastcgi (BEGIN_REQUEST and the PARAMS stream across records, or one application-server record; record, wire-size and parameter budgets). `go/internal/protocols/framed/routing.go`; the fuzz target covers all four. |
+| Fixtures | implemented | `cases.py tunnel_cases()`: 38 vectors × 4 chunkings plus three budget cases (155 stream cases). |
+| Differential result | implemented | `make parity-go` with the 50 claimed families: **2722 compared, 2722 matched, 0 mismatched, 0 gaps**; per family (stream/session): fastcgi 68/4, bgp 47/4, openvpn 44/4, pptp 44/4; records included. |
+| Not claimed | — | The OpenVPN UDP datagram path waits for the datagram batch. |
+
+## M5 batches 8+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive

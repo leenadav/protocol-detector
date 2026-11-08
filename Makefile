@@ -154,7 +154,7 @@ go-check:
 	$(MAKE) parity-go
 
 # Migration M4: the Go backend's results against the Python reference (families it claims; records are M6)
-GO_FAMILIES := http,tls,dns,mdns,netbios-ns,llmnr,ssh,smtp,imap,pop3,ftp,nats,irc,sip,rtsp,telnet,postgresql,rfb,bittorrent,memcached,rsync,fins,afp,zmtp,bolt,stomp,giop,x11,spice,mysql,mongodb,tds,tns,cql,kafka,modbus,dnp3,ethernet-ip,iec-104,opcua,s7comm,mqtt,resp,amqp,onc-rpc,diameter
+GO_FAMILIES := http,tls,dns,mdns,netbios-ns,llmnr,ssh,smtp,imap,pop3,ftp,nats,irc,sip,rtsp,telnet,postgresql,rfb,bittorrent,memcached,rsync,fins,afp,zmtp,bolt,stomp,giop,x11,spice,mysql,mongodb,tds,tns,cql,kafka,modbus,dnp3,ethernet-ip,iec-104,opcua,s7comm,mqtt,resp,amqp,onc-rpc,diameter,bgp,openvpn,pptp,fastcgi
 parity-go:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go run ./cmd/protodetect replay --cases ../migration/fixtures/cases.json --out ../migration/parity/go-results.json
 	python3 -B migration/parity/compare.py --results migration/parity/go-results.json --families $(GO_FAMILIES) --report migration/parity/go-report.json
