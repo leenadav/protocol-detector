@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift workflow-policy
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -56,7 +56,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences capabilities content-pack parity
+check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences capabilities content-pack parity workflow-policy
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -81,20 +81,31 @@ ci-local: check fuzz sequences-extended
 	$(PYTHON) -B analyze_pcap.py sample-expanded.pcap --events-only --sessions > /dev/null
 	$(PYTHON) -B protodetect.py analyze sample-expanded.pcap --json --sessions | $(PYTHON) -B protodetect.py schema offline-row --validate /dev/stdin
 
-# Build the sdist and wheel (dev tools installed) and check the wheel carries only the engine package.
+# Build the sdist and wheel (dev tools installed), check the wheel carries only the engine package,
+# then install it into an empty environment and classify fixtures from there (never from the tree).
 package:
 	$(PYTHON) -m build --sdist --wheel --outdir dist
 	$(PYTHON) -B tools/check_wheel.py "dist/*.whl"
+	rm -rf dist/wheel-env && $(PYTHON) -m venv dist/wheel-env
+	dist/wheel-env/bin/python -m pip install --quiet --no-deps --no-index dist/*.whl
+	cd dist && wheel-env/bin/python ../tools/wheel_smoke.py
 
-# Workflow lint with a locally installed actionlint (CI fetches a checksum-verified release).
+# Workflow lint with a locally installed actionlint (CI fetches a checksum-verified release) and the
+# zizmor security audit from the dev toolchain (pedantic persona, offline audits, any finding fails).
 workflow-lint:
 	actionlint -no-color .github/workflows/*.yml
+	zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows
 
 lint:
 	ruff check .
 
 pins:
 	$(PYTHON) -B tools/check_action_pins.py .github/workflows
+
+# The ci gate lists every ci job; the drift workflow triggers on every workflow file.
+workflow-policy:
+	$(PYTHON) -B tools/check_workflow_policy.py --self-test
+	$(PYTHON) -B tools/check_workflow_policy.py
 
 requirements:
 	$(PYTHON) -B tools/check_security_requirements.py
@@ -185,3 +196,8 @@ release-gate: check presentation-test fuzz-smoke corpus soak dist installed-chec
 
 fuzz-smoke:
 	$(PYTHON) -B tools/fuzz_fixtures.py --iterations 200 --seed 80
+
+# Weekly drift gate run locally: every pinned action SHA must still be the commit its tag comment names (network).
+pin-drift:
+	$(PYTHON) -B tools/check_pin_drift.py --self-test
+	$(PYTHON) -B tools/check_pin_drift.py .github/workflows
