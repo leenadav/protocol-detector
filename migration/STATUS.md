@@ -202,7 +202,16 @@ Taken before M5 so that session records become comparable for every family as it
 | Reference discrepancy | open | The Python syslog profile checks timestamp values with `datetime.fromisoformat`, which accepts 1-6 fraction digits on Python 3.11+ but only 3 or 6 on Python 3.9; RFC 5424 allows 1-6. Go follows the fixtures' generator (3.11+ semantics). The fixtures use 3- and 6-digit fractions only, so `make parity` agrees on both interpreters (verified on 3.9.25). Fixing the Python reference (an explicit date check) is a separate engine-lane change. |
 | Not claimed | — | The syslog UDP datagram path waits for the datagram batch; git (the git/text discriminator) is next. |
 
-## M5 batches 9+ / M7+ — next
+### Batch 9 — Git and a fuzz-found repair
+
+| item | state | evidence |
+|---|---|---|
+| Families | implemented | git (pkt-line service requests with `host=`, extra parameters and version offers; the first server pkt-line: ref advertisement or `version 2`). The git/text discriminator (`git_text`) scans for the first NUL or LF within `max_line`, replays that field once into the git or text parser and forwards `ResolvedFamily`/`Refined` to it. `go/internal/protocols/framed/git.go`. |
+| Fixtures | implemented | `cases.py git_cases()`: 23 vectors × 4 chunkings plus a hinted case and three budget cases (96 stream cases). |
+| Repair | implemented | The engine fuzz target found a panic in the batch-2 PostgreSQL port: an 8-byte v3 startup ends in `\0\0` through its version bytes, and `data[8:len-1]` inverted where Python's slice clamps to empty. Fixed to clamp; the crashing input is kept as `go/internal/engine/testdata/fuzz/FuzzInspectorNeverPanics/8088a95f887cfb87`, and `postgresql-empty-startup` joins the fixtures ("PostgreSQL startup requires a user" in both backends). Every other end-relative slice in the framed package was audited and is guarded by an earlier length or terminator check. |
+| Differential result | implemented | `make parity-go` with the 55 claimed families: **3130 compared, 3130 matched, 0 mismatched, 0 gaps**; git 114 stream / 4 session cases; records included. |
+
+## M5 batches 10+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive

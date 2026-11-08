@@ -56,7 +56,12 @@ func pgValidate(data []byte) (*parsing.Result, error) {
 	if !bytes.HasSuffix(data, []byte{0, 0}) {
 		return nil, parsing.Malformed("PostgreSQL startup parameters require final terminator")
 	}
-	fields := bytes.Split(data[8:len(data)-1], []byte{0})
+	// data[8:-1] in Python: an 8-byte startup ends in "\0\0" through its version bytes, and the slice clamps to empty.
+	end := len(data) - 1
+	if end < 8 {
+		end = 8
+	}
+	fields := bytes.Split(data[8:end], []byte{0})
 	if len(fields[len(fields)-1]) != 0 || len(fields)%2 != 1 {
 		return nil, parsing.Malformed("Invalid PostgreSQL startup name/value pairs")
 	}

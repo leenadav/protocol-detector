@@ -192,6 +192,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(messaging_cases())
     cases.extend(tunnel_cases())
     cases.extend(service_cases())
+    cases.extend(git_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -446,6 +447,7 @@ def framed_cases():
     vectors = [
         ("postgresql-startup", startup),
         ("postgresql-ssl", struct.pack(">II", 8, 80877103)),
+        ("postgresql-empty-startup", struct.pack(">II", 8, 196608)),
         ("postgresql-gss", struct.pack(">II", 8, 80877104)),
         ("postgresql-ssl-long", struct.pack(">II", 12, 80877103) + bytes(4)),
         ("postgresql-no-user", _pg_startup([(b"database", b"demo")])),
@@ -1316,6 +1318,56 @@ def service_cases():
                                ("dcerpc-context-budget", _dce_bind([(abstract, [_NDR])] * 3), {"max_headers": 2})):
         cases.append({"id": "stream/service-options/" + name, "kind": "stream", "label": name.split("-", 1)[0], "chunks": [data.hex()],
                       "hint": None, "config": config, "end": "fin"})
+    return cases
+
+
+def _pkt(body):
+    return b"%04x" % (4 + len(body)) + body
+
+
+def git_cases():
+    """Native Git pkt-line requests (through the git/text discriminator) and the first server pkt-line (ref
+    advertisement, version 2) (M5 batch 9); identifications, malformed framing, unsupported profiles and budgets,
+    each as whole / 1-byte / 7-byte / truncated chunkings."""
+    sha = b"0123456789abcdef0123456789abcdef01234567"
+    vectors = [
+        ("git-upload-pack", _pkt(b"git-upload-pack /project.git\x00host=git.example.org\x00")),
+        ("git-receive-pack", _pkt(b"git-receive-pack /project.git\x00")),
+        ("git-host-port", _pkt(b"git-upload-pack /p.git\x00host=git.example.org:9418\x00")),
+        ("git-host-ipv4", _pkt(b"git-upload-pack /p.git\x00host=192.0.2.7\x00")),
+        ("git-version-2", _pkt(b"git-upload-pack /p.git\x00host=git.example.org\x00\x00version=2\x00")),
+        ("git-advertisement", _pkt(sha + b" HEAD\x00multi_ack thin-pack side-band\n")),
+        ("git-advertisement-sha256", _pkt(sha + sha[:24] + b" refs/heads/main\x00agent=git/2.45\n")),
+        ("git-server-v2", _pkt(b"version 2\n")),
+        ("git-no-nul", _pkt(b"git-upload-pack /p.git")),
+        ("git-command", _pkt(b"git-unknown /p.git\x00")),
+        ("git-empty-path", _pkt(b"git-upload-pack \x00")),
+        ("git-control-path", _pkt(b"git-upload-pack /p\x01.git\x00")),
+        ("git-bad-host", _pkt(b"git-upload-pack /p.git\x00host=bad_host\x00")),
+        ("git-bad-port", _pkt(b"git-upload-pack /p.git\x00host=git.example.org:70000\x00")),
+        ("git-extra-separator", _pkt(b"git-upload-pack /p.git\x00host=git.example.org\x00version=2\x00")),
+        ("git-version-3", _pkt(b"git-upload-pack /p.git\x00host=h.example\x00\x00version=3\x00")),
+        ("git-duplicate-parameter", _pkt(b"git-upload-pack /p.git\x00host=h.example\x00\x00a=1\x00a=2\x00")),
+        ("git-parameter", _pkt(b"git-upload-pack /p.git\x00host=h.example\x00\x00-bad\x00")),
+        ("git-advertisement-lf", _pkt(sha + b" HEAD\x00caps")),
+        ("git-advertisement-ref", _pkt(sha + b" tags/v1\x00caps\n")),
+        ("git-advertisement-nul", _pkt(sha + b" HEAD\x00caps\x00more\n")),
+        ("git-text-route", b"0032git-upload-pack /p.git\n"),
+        ("git-uppercase-length", b"003Fgit-upload-pack /p.git\x00"),
+    ]
+    cases = []
+    for number, (name, data) in enumerate(vectors):
+        base = "stream/git-%02d-%s" % (number, name)
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": "git", "chunks": chunks, "hint": None, "config": {}, "end": end})
+    for name, data, config, hint in (("git-hinted", _pkt(b"git-upload-pack /p.git\x00"), {}, "git"),
+                                     ("git-field-budget", _pkt(b"git-upload-pack /p.git\x00host=h.example\x00\x00" + b"a\x00b\x00c\x00"), {"max_headers": 1}, None),
+                                     ("git-line-budget", _pkt(b"git-upload-pack /" + b"p" * 40 + b"\x00"), {"max_line": 32}, None),
+                                     ("git-discriminator-budget", b"0032git-upload-pack " + b"p" * 40, {"max_line": 32}, None)):
+        cases.append({"id": "stream/git-options/" + name, "kind": "stream", "label": "git", "chunks": [data.hex()], "hint": hint, "config": config,
+                      "end": "fin"})
     return cases
 
 

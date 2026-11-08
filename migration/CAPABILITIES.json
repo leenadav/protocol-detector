@@ -565,9 +565,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 9: pkt-line service requests (host=, extra parameters, version offers), the first server pkt-line, and the git/text discriminator; 114 stream, 4 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -1420,7 +1420,7 @@
         "server"
       ],
       "go": {
-        "notes": "M5 batch 2: startup parameters, SSL/GSS requests (postgresql-sslrequest shift), authentication, error and NegotiateProtocolVersion server messages; 103 stream, 4 session cases matched",
+        "notes": "M5 batch 2 (empty-startup slice repaired in batch 9): startup parameters, SSL/GSS requests (postgresql-sslrequest shift), authentication, error and NegotiateProtocolVersion server messages; 103 stream, 4 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
