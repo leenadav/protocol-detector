@@ -18,7 +18,8 @@ var Ported = map[string]bool{"text": true, "tls": true, "dns": true, "irc": true
 	"mysql": true, "mongodb": true, "tds": true, "tns": true, "cql": true, "kafka": true,
 	"modbus": true, "dnp3": true, "ethernet-ip": true, "iec-104": true, "opcua": true, "s7comm": true,
 	"mqtt": true, "resp": true, "amqp": true, "onc-rpc": true, "diameter": true,
-	"bgp": true, "openvpn": true, "pptp": true, "fastcgi": true}
+	"bgp": true, "openvpn": true, "pptp": true, "fastcgi": true,
+	"dcerpc": true, "websocket": true, "xmpp": true, "syslog": true}
 
 // Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
 var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
@@ -26,7 +27,8 @@ var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"giop", "x11", "spice", "mysql", "mongodb", "tds", "tns", "cql", "kafka",
 	"modbus", "dnp3", "ethernet-ip", "iec-104", "opcua", "s7comm",
 	"mqtt", "resp", "amqp", "onc-rpc", "diameter",
-	"bgp", "openvpn", "pptp", "fastcgi"}
+	"bgp", "openvpn", "pptp", "fastcgi",
+	"dcerpc", "websocket", "xmpp", "syslog"}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 	switch candidate {
@@ -106,6 +108,14 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 		return framed.NewPPTP(cfg.MaxBytes), nil
 	case "fastcgi":
 		return framed.NewFastCGI(cfg.MaxBytes, cfg.MaxHeaders), nil
+	case "dcerpc":
+		return framed.NewDCERPC(cfg.MaxBytes, cfg.MaxHeaders), nil
+	case "websocket":
+		return framed.NewWebSocket(), nil
+	case "xmpp":
+		return framed.NewXMPP(cfg.MaxLine), nil
+	case "syslog":
+		return framed.NewSyslog(cfg.MaxLine), nil
 	case "tls":
 		return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
 			Certificates: cfg.Certificates, Continuation: cfg.Continuation})

@@ -249,9 +249,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 8: bind (NDR 2.0 / NDR64 1.0 offers), bind_ack and bind_nak in both data representations; 71 stream, 4 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -2126,9 +2126,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 8: RFC 5424 over RFC 6587 octet-counting or non-transparent TCP framing; the UDP datagram path is a named gap; 82 stream, 4 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": true,
       "observation_modes": [
@@ -2382,9 +2382,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 8: one frame header after the upgrade boundary (shift or hint only); 50 stream, 0 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -2468,9 +2468,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 8: stream header in both directions; the to/from domain is the asserted hostname (xmpp_stream); 76 stream, 4 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [

@@ -18,7 +18,8 @@ func parsers() []feeder {
 		NewSPICE(4096), NewMySQL(4096), NewMongoDB(MongoConfig{MaxBytes: 4096, MaxHeaders: 16, MaxLine: 512, MaxCRC32CBytes: 4096}),
 		NewTDS(4096), NewTNS(4096), NewCQL(4096), NewKafka(4096), NewModbus(4096), NewDNP3(4096), NewENIP(4096), NewIEC104(4096),
 		NewOPCUA(4096), NewS7(4096), NewMQTT(4096), NewRESP(4096), NewAMQP(), NewRPC(4096), NewDiameter(4096, 16),
-		NewBGP(4096), NewOpenVPN(4096), NewPPTP(4096), NewFastCGI(4096, 16)}
+		NewBGP(4096), NewOpenVPN(4096), NewPPTP(4096), NewFastCGI(4096, 16),
+		NewDCERPC(4096, 16), NewWebSocket(), NewXMPP(4096), NewSyslog(4096)}
 }
 
 // FuzzFramedNeverPanics feeds arbitrary bytes, in two chunks, to every framed parser (including the hint-only

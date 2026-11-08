@@ -192,7 +192,17 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` with the 50 claimed families: **2722 compared, 2722 matched, 0 mismatched, 0 gaps**; per family (stream/session): fastcgi 68/4, bgp 47/4, openvpn 44/4, pptp 44/4; records included. |
 | Not claimed | — | The OpenVPN UDP datagram path waits for the datagram batch. |
 
-## M5 batches 8+ / M7+ — next
+### Batch 8 — DCE/RPC, WebSocket, XMPP and syslog
+
+| item | state | evidence |
+|---|---|---|
+| Families | implemented | dcerpc (bind, bind_ack, bind_nak; both data representations), websocket (one frame header; reached through the HTTP upgrade shift or a hint), xmpp (stream header in both directions with the asserted `xmpp_stream` hostname; the declaration's quote pairs are spelled out because RE2 has no backreferences, and attributes are scanned byte by byte so the 64/1023 bounds count bytes as in Python), syslog (RFC 5424 over RFC 6587 TCP framing). `go/internal/protocols/framed/services.go`; the fuzz target covers all four. |
+| Fixtures | implemented | `cases.py service_cases()`: 44 automatic and 11 hinted vectors × 4 chunkings plus five budget cases (225 stream cases). |
+| Differential result | implemented | `make parity-go` with the 54 claimed families: **3011 compared, 3011 matched, 0 mismatched, 0 gaps**; per family (stream/session): syslog 82/4, xmpp 76/4, dcerpc 71/4, websocket 50/0; records included. |
+| Reference discrepancy | open | The Python syslog profile checks timestamp values with `datetime.fromisoformat`, which accepts 1-6 fraction digits on Python 3.11+ but only 3 or 6 on Python 3.9; RFC 5424 allows 1-6. Go follows the fixtures' generator (3.11+ semantics). The fixtures use 3- and 6-digit fractions only, so `make parity` agrees on both interpreters (verified on 3.9.25). Fixing the Python reference (an explicit date check) is a separate engine-lane change. |
+| Not claimed | — | The syslog UDP datagram path waits for the datagram batch; git (the git/text discriminator) is next. |
+
+## M5 batches 9+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive

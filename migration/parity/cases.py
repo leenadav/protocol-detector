@@ -191,6 +191,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(ics_cases())
     cases.extend(messaging_cases())
     cases.extend(tunnel_cases())
+    cases.extend(service_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -1189,6 +1190,131 @@ def tunnel_cases():
                                ("fastcgi-byte-budget", begin + _fcgi(4, _fcgi_params((b"QUERY", b"q" * 120))) + _fcgi(4, b""), {"max_bytes": 64}),
                                ("bgp-byte-budget", _bgp_open(capabilities=b"\x46\x00" * 30), {"max_bytes": 64})):
         cases.append({"id": "stream/tunnel-options/" + name, "kind": "stream", "label": name.split("-", 1)[0], "chunks": [data.hex()],
+                      "hint": None, "config": config, "end": "fin"})
+    return cases
+
+
+_NDR = bytes.fromhex("045d888aeb1cc9119fe808002b104860") + struct.pack("<I", 2)
+_NDR64 = bytes.fromhex("33057171babe37498319b5dbef9ccc36") + struct.pack("<I", 1)
+
+
+def _dce(ptype, body, flags=3, auth=0, drep=b"\x10\x00\x00\x00"):
+    return b"\x05\x00" + bytes([ptype, flags]) + drep + struct.pack("<HHI", 16 + len(body), auth, 2) + body
+
+
+def _dce_bind(contexts, count=None):
+    body = struct.pack("<HHI", 4280, 4280, 0) + bytes([len(contexts) if count is None else count]) + bytes(3)
+    for number, (abstract, transfers) in enumerate(contexts):
+        body += struct.pack("<HBB", number, len(transfers), 0) + abstract + struct.pack("<HH", 1, 0) + b"".join(transfers)
+    return _dce(0x0b, body)
+
+
+def _dce_ack(results, address=b"49664\x00"):
+    body = struct.pack("<HHI", 4280, 4280, 0x1234) + struct.pack("<H", len(address)) + address
+    body += bytes((-(16 + len(body))) % 4) + bytes([len(results)]) + bytes(3)
+    for result, syntax in results:
+        body += struct.pack("<HH", result, 0) + syntax
+    return _dce(0x0c, body)
+
+
+def _ws(first, second, rest=b""):
+    return bytes([first, second]) + rest
+
+
+def _xmpp(attributes, prolog=b"<?xml version='1.0'?>"):
+    return prolog + b"<stream:stream" + attributes + b">"
+
+
+def _syslog_line(message, octet=False):
+    return (b"%d " % len(message) + message) if octet else message + b"\n"
+
+
+def service_cases():
+    """DCE/RPC bind/bind_ack/bind_nak, WebSocket frame headers (hinted; the HTTP upgrade shift reaches them too), XMPP
+    stream headers and RFC 5424 syslog over RFC 6587 framing (M5 batch 8); syslog timestamps use 3- and 6-digit
+    fractions only, because Python 3.9 and 3.11+ disagree on the others (see migration/STATUS.md)."""
+    abstract = bytes.fromhex("78573412341256781234567890abcdef")
+    client = b" xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' to='chat.example.org' version='1.0'"
+    server = b" xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='c2s-1' from='chat.example.org' version='1.0'"
+    header = b"<165>1 2026-11-08T10:00:00.123Z host.example app 1234 ID47 "
+    vectors = [
+        ("dcerpc-bind", _dce_bind([(abstract, [_NDR])])),
+        ("dcerpc-bind-two", _dce_bind([(abstract, [_NDR, _NDR64]), (abstract, [_NDR64])])),
+        ("dcerpc-bind-ack", _dce_ack([(0, _NDR), (2, bytes(20))])),
+        ("dcerpc-bind-nak", _dce(0x0d, struct.pack("<HB", 4, 1) + b"\x05\x00")),
+        ("dcerpc-bind-big-endian", b"\x05\x00\x0b\x03\x00\x00\x00\x00" + struct.pack(">HHI", 72, 0, 2) + struct.pack(">HHI", 4280, 4280, 0)
+         + b"\x01\x00\x00\x00" + struct.pack(">HBB", 0, 1, 0) + abstract + struct.pack(">HH", 1, 0)
+         + bytes.fromhex("8a885d041ceb11c99fe808002b104860") + struct.pack(">I", 2)),
+        ("dcerpc-syntax", _dce_bind([(abstract, [bytes(range(20))])])),
+        ("dcerpc-duplicate-syntax", _dce_bind([(abstract, [_NDR, _NDR])])),
+        ("dcerpc-nil-abstract", _dce_bind([(bytes(16), [_NDR])])),
+        ("dcerpc-count", _dce_bind([(abstract, [_NDR])], count=2)),
+        ("dcerpc-auth", _dce(0x0b, bytes(56), auth=8)),
+        ("dcerpc-fragment", _dce(0x0b, bytes(56), flags=1)),
+        ("dcerpc-ack-result", _dce_ack([(5, _NDR)])),
+        ("dcerpc-nak-version", _dce(0x0d, struct.pack("<HB", 4, 1) + b"\x04\x00")),
+        ("xmpp-client", _xmpp(client)),
+        ("xmpp-server", _xmpp(server, prolog=b"")),
+        ("xmpp-double-quotes", _xmpp(client.replace(b"'", b'"'), prolog=b'<?xml version="1.0" encoding="UTF-8"?>\n')),
+        ("xmpp-component", _xmpp(b" xmlns='jabber:component:accept' xmlns:stream='http://etherx.jabber.org/streams' to='comp.example.org'")),
+        ("xmpp-ip-to", _xmpp(client.replace(b"chat.example.org", b"192.0.2.1"))),
+        ("xmpp-namespace", _xmpp(client.replace(b"jabber:client", b"jabber:other"))),
+        ("xmpp-streams-ns", _xmpp(client.replace(b"etherx", b"example"))),
+        ("xmpp-duplicate", _xmpp(client + b" to='x.example'")),
+        ("xmpp-self-closing", _xmpp(client + b"/")),
+        ("xmpp-version", _xmpp(client.replace(b"'1.0'", b"'one'"))),
+        ("xmpp-bad-host", _xmpp(client.replace(b"chat.example.org", b"bad_host!"))),
+        ("xmpp-empty-id", _xmpp(server.replace(b"'c2s-1'", b"''"))),
+        ("xmpp-prolog", _xmpp(client, prolog=b"<?xml version='2.0'?>")),
+        ("xmpp-gt-in-quote", _xmpp(client + b" note='a>b'")),
+        ("syslog-octet", _syslog_line(header + b"- hello", octet=True)),
+        ("syslog-newline", _syslog_line(header + b"[exampleSDID@32473 iut=\"3\" eventSource=\"App\"] message")),
+        ("syslog-crlf", header.replace(b".123Z", b".123456+02:00") + b"- x\r\n"),
+        ("syslog-nil-time", _syslog_line(b"<34>1 - host app - - -")),
+        ("syslog-escapes", _syslog_line(header + b"[id a=\"q\\\"b\\]c\\\\\"]")),
+        ("syslog-priority", _syslog_line(header.replace(b"<165>", b"<192>") + b"-")),
+        ("syslog-version", _syslog_line(header.replace(b">1 ", b">2 ") + b"-")),
+        ("syslog-date", _syslog_line(header.replace(b"2026-11-08", b"2026-02-30") + b"-")),
+        ("syslog-time-framing", _syslog_line(header.replace(b"T10:00:00", b" 10:00:00") + b"-")),
+        ("syslog-field", _syslog_line(b"<34>1 - " + b"h" * 300 + b" app - - -")),
+        ("syslog-duplicate-sd", _syslog_line(header + b"[a x=\"1\"][a y=\"2\"]")),
+        ("syslog-bracket", _syslog_line(header + b"[a x=\"1]\"]")),
+        ("syslog-unterminated", _syslog_line(header + b"[a x=\"1\"")),
+        ("syslog-boundary", _syslog_line(header + b"[a]x")),
+        ("syslog-utf8", _syslog_line(header + b"[a x=\"\xff\"]")),
+        ("syslog-count-zero", b"012 <34>1 - h a - - -"),
+        ("syslog-count-short", b"10 <34>1 - h"),
+    ]
+    hinted = [
+        ("websocket-text", _ws(0x81, 0x85, b"\x01\x02\x03\x04")),
+        ("websocket-binary-16", _ws(0x82, 0x7e, b"\x01\x00")),
+        ("websocket-binary-64", _ws(0x82, 0x7f, struct.pack(">Q", 70000))),
+        ("websocket-ping", _ws(0x89, 0x00)),
+        ("websocket-rsv", _ws(0xc1, 0x05)),
+        ("websocket-continuation", _ws(0x80, 0x05)),
+        ("websocket-opcode", _ws(0x83, 0x05)),
+        ("websocket-short-16", _ws(0x82, 0x7e, b"\x00\x10")),
+        ("websocket-high-bit", _ws(0x82, 0x7f, struct.pack(">Q", 1 << 63))),
+        ("websocket-fragmented-ping", _ws(0x09, 0x00)),
+        ("websocket-long-close", _ws(0x88, 0x7e, b"\x00\x80")),
+    ]
+    cases = []
+    for group, entries, hint in (("service", vectors, False), ("service-hinted", hinted, True)):
+        for number, (name, data) in enumerate(entries):
+            base = "stream/%s-%02d-%s" % (group, number, name)
+            family = name.split("-", 1)[0]
+            for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                         ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                         ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+                cases.append({"id": base + "/" + variant, "kind": "stream", "label": family, "chunks": chunks, "hint": family if hint else None,
+                              "config": {}, "end": end})
+    many = b"".join(b" a%d='x'" % index for index in range(20))
+    for name, data, config in (("xmpp-attribute-budget", _xmpp(client + many), {}),
+                               ("xmpp-line-budget", _xmpp(client + b" note='" + b"n" * 200 + b"'"), {"max_line": 128}),
+                               ("syslog-line-budget", _syslog_line(header + b"- " + b"m" * 200), {"max_line": 128}),
+                               ("syslog-octet-budget", b"500 " + header, {"max_line": 128}),
+                               ("dcerpc-context-budget", _dce_bind([(abstract, [_NDR])] * 3), {"max_headers": 2})):
+        cases.append({"id": "stream/service-options/" + name, "kind": "stream", "label": name.split("-", 1)[0], "chunks": [data.hex()],
                       "hint": None, "config": config, "end": "fin"})
     return cases
 
