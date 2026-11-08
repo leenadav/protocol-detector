@@ -5,6 +5,7 @@ package names
 import (
 	"errors"
 	"net"
+	"net/netip"
 	"regexp"
 	"strings"
 )
@@ -56,11 +57,11 @@ func IsIPv4(value string) bool {
 	return true
 }
 
-// IsIPv6 reports an IPv6 literal (ipaddress.IPv6Address accepts the same textual forms as net.ParseIP
-// for the cases the parsers see; zone identifiers are not accepted by either here).
+// IsIPv6 reports an IPv6 literal as ipaddress.IPv6Address accepts it (zone identifiers included).
 func IsIPv6(value string) bool {
-	if strings.Contains(value, "%") || !strings.Contains(value, ":") {
+	if !strings.Contains(value, ":") {
 		return false
 	}
-	return net.ParseIP(value) != nil
+	addr, err := netip.ParseAddr(value)
+	return err == nil && addr.Is6()
 }

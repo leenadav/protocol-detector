@@ -126,10 +126,23 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` now compares session **records** too (only `content.digest` is canonicalized, on both sides): 386 compared, 386 matched, 0 mismatched, 0 gaps in the claimed families; the 29 answered session cases (http, dns, lifecycle, modes, UDP dns) match record for record. Unit tests: verdict order, ports, host catalog/ECH/web front, ambiguity, web refinement, unknown codes. |
 | Not claimed | — | content hash definition shared by both runtimes (the pack carries Python's digest; a Go-side recomputation is M6 follow-up once the hash input is specified language-neutrally); regex/signature subset, fingerprints, policy predicates, continuation (named gaps). |
 
-## M5 / M7+ — next
+## M5 — protocol profiles in bounded batches (Go)
 
-Protocol batches from the registry (M5) with record-level parity per batch; passive TLS decryption (M7);
-frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
+### Batch 1 — text-route families and Telnet
+
+| item | state | evidence |
+|---|---|---|
+| Families | implemented | ssh (identification line, KEXINIT reader, posture classes: kex class, weak-algorithm classes, Terrapin), smtp (EHLO/HELO identity, STARTTLS watch bounded by `max_headers`), nats (INFO/CONNECT over the bounded JSON profile: nesting, field and digit budgets, duplicate members, non-standard constants, type rules), imap (server greeting/capability lines, tagged client commands, STARTTLS), pop3 (status lines, client commands, STLS), ftp (command grammar, AUTH TLS, shared commands ambiguous), irc (registration lines, unprefixed server openings, `:`-prefixed server lines as the dispatched family), sip and rtsp (start-line and header framing incl. compact SIP names), telnet (two IAC commands). `go/internal/protocols/textroute`. |
+| Engine | implemented | post-identification continuation ported (`continuing`, `refined`, `End` through a pending shift): an SSH banner publishes `updated`, the KEXINIT adds posture rows as `refined`; a bad KEXINIT keeps the identification silently; SMTP/IMAP/POP3/FTP STARTTLS-class boundaries open the TLS phase with `shift:<boundary>` as the hint source and merge as `shifted`. |
+| Fixtures | implemented | `cases.py text_cases()`: 95 vectors × 4 chunkings + one budget case (381 stream cases) covering identifications, ambiguities (220 greeting, USER/PASS, untagged IMAP, FTP/IRC USER), malformed and budget outcomes; deterministic ClientHello for the shifts. |
+| Differential result | implemented | `make parity-go` with the 16 claimed families: **852 compared, 852 matched, 0 mismatched, 0 gaps**; per family (stream/session): ssh 44/0, smtp 45/0, nats 60/4, imap 52/4, pop3 48/4, ftp 50/4, irc 96/4, sip 34/4, rtsp 26/4, telnet 22/4; records included. |
+| Not claimed | — | HASSH and every fingerprint (option refused), signature contexts, the STARTTLS *server* correlation (LDAP-style peer opening), IRC/SMTP hints (hint-only routing for these families is not wired: `Ported` lists only text, tls, dns, irc, telnet). |
+
+## M5 batches 2+ / M7+ — next
+
+Remaining registry batches (binary framed families: databases, file sharing, messaging; UDP/control/media; network and
+smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive
+TLS decryption (M7); frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
 
 ## Open decisions and blockers
 

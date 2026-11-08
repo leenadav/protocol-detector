@@ -182,6 +182,7 @@ def stream_cases(seed=11, limit=None):
     cases.append({"id": "stream/options/byte-budget", "kind": "stream", "label": "http", "chunks": [(b"GET /" + b"a" * 200).hex()],
                   "hint": None, "config": {"max_bytes": 64}, "end": None})
     cases.extend(tls_cases())
+    cases.extend(text_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -254,6 +255,143 @@ def tls_cases():
                                      ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
                                      ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
             cases.append({"id": base + "/" + variant, "kind": "stream", "label": "tls", "chunks": chunks, "hint": None, "config": {}, "end": end})
+    return cases
+
+
+def _namelist(value):
+    return len(value).to_bytes(4, "big") + value
+
+
+def _kexinit(lists=None, first_follows=0, reserved=bytes(4), msg=20, padding=None):
+    lists = lists or [b"curve25519-sha256,ecdh-sha2-nistp256", b"ssh-ed25519,rsa-sha2-512", b"aes128-ctr,aes256-gcm@openssh.com",
+                      b"aes128-ctr", b"hmac-sha2-256,umac-128-etm@openssh.com", b"hmac-sha2-256", b"none,zlib@openssh.com", b"none", b"", b""]
+    payload = bytes([msg]) + bytes(range(16)) + b"".join(_namelist(v) for v in lists) + bytes([first_follows]) + reserved
+    if padding is None:
+        padding = 8 - ((len(payload) + 5) % 8)
+        padding = padding + 8 if padding < 4 else padding
+    return (len(payload) + 1 + padding).to_bytes(4, "big") + bytes([padding]) + payload + bytes(padding)
+
+
+def text_cases():
+    """Text-route families (M5 batch 1): SSH banner and KEXINIT posture, SMTP with the STARTTLS watch, NATS JSON,
+    IMAP server and client lines, POP3, FTP, IRC, SIP/RTSP headers, Telnet; identifications, ambiguities, budget and
+    malformed outcomes, each as whole / 1-byte / 7-byte / truncated chunkings."""
+    hello = client_hello_with([(0, b"\x00\x12\x00\x00\x0fwww.example.com")])   # deterministic (proxy_demo.client_hello is random)
+    banner = b"SSH-2.0-OpenSSH_9.6\r\n"
+    weak = [b"diffie-hellman-group1-sha1,curve25519-sha256", b"ssh-rsa,ssh-dss", b"aes128-cbc,arcfour,3des-cbc", b"none",
+            b"hmac-md5,hmac-sha1-96", b"hmac-sha2-256-etm@openssh.com", b"none", b"none", b"", b""]
+    chacha = [b"curve25519-sha256", b"ssh-ed25519", b"chacha20-poly1305@openssh.com", b"aes256-gcm@openssh.com", b"hmac-sha2-256", b"hmac-sha2-256", b"none", b"none", b"", b""]
+    strict = [b"sntrup761x25519-sha512@openssh.com,kex-strict-c-v00@openssh.com", b"ssh-ed25519", b"aes256-gcm@openssh.com", b"aes256-gcm@openssh.com", b"hmac-sha2-256", b"hmac-sha2-256", b"none", b"none", b"", b""]
+    sip = (b"OPTIONS sip:server.example SIP/2.0\r\nVia: SIP/2.0/TCP client.example;branch=z9hG4bKdemo\r\nMax-Forwards: 70\r\n"
+           b"From: <sip:a@client.example>;tag=1\r\nTo: <sip:server.example>\r\nCall-ID: demo@client.example\r\nCSeq: 1 OPTIONS\r\n\r\n")
+    sip_response = (b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TCP client.example;branch=z9hG4bKdemo\r\nFrom: <sip:a@client.example>;tag=1\r\n"
+                    b"To: <sip:server.example>;tag=2\r\nCall-ID: demo@client.example\r\nCSeq: 1 OPTIONS\r\nContent-Length: 0\r\n\r\n")
+    vectors = [
+        ("ssh-banner", banner),
+        ("ssh-banner-kexinit", banner + _kexinit()),
+        ("ssh-banner-weak-kexinit", banner + _kexinit(weak)),
+        ("ssh-banner-chacha", banner + _kexinit(chacha)),
+        ("ssh-banner-strict", banner + _kexinit(strict)),
+        ("ssh-199", b"SSH-1.99-Legacy_1.0 comment here\r\n"),
+        ("ssh-bad-banner", b"SSH-3.0-Future\r\n"),
+        ("ssh-long-banner", b"SSH-2.0-" + b"x" * 300 + b"\r\n"),
+        ("ssh-bad-kexinit-msg", banner + _kexinit(msg=21)),
+        ("ssh-bad-kexinit-length", banner + b"\x00\x00\x00\x05abcde"),
+        ("ssh-kexinit-trailing", banner + _kexinit() + b"\x00\x00\x00\x0cmore"),
+        ("smtp-ehlo-mail", b"EHLO client.example\r\nMAIL FROM:<a@b.example>\r\n"),
+        ("smtp-ehlo-starttls-hello", b"EHLO client.example\r\nSTARTTLS\r\n" + hello),
+        ("smtp-ehlo-noops-starttls", b"EHLO client.example\r\n" + b"NOOP\r\n" * 3 + b"STARTTLS\r\n" + hello),
+        ("smtp-ehlo-many-noops", b"EHLO client.example\r\n" + b"NOOP\r\n" * 20 + b"STARTTLS\r\n" + hello),
+        ("smtp-helo-literal", b"HELO [192.0.2.1]\r\n"),
+        ("smtp-ehlo-ipv6", b"EHLO [IPv6:2001:db8::1]\r\nQUIT\r\n"),
+        ("smtp-ehlo-bad-identity", b"EHLO not valid!\r\n"),
+        ("smtp-ehlo-no-identity", b"EHLO\r\n"),
+        ("smtp-unexpected-command", b"EHLO client.example\r\nFOO bar\r\n"),
+        ("smtp-starttls-params", b"EHLO client.example\r\nSTARTTLS now\r\n" + hello),
+        ("smtp-220-ambiguous", b"220 mail.example ESMTP ready\r\n"),
+        ("nats-info", b'INFO {"server_id":"demo","version":"2.10.0","go":"go1.22","host":"127.0.0.1","port":4222,"max_payload":1048576,"proto":1}\r\n'),
+        ("nats-connect", b'CONNECT {"verbose":false,"pedantic":false,"tls_required":false,"lang":"python","version":"1.0"}\r\n'),
+        ("nats-info-missing", b'INFO {"server_id":"demo","version":"2.10.0"}\r\n'),
+        ("nats-info-port-range", b'INFO {"server_id":"demo","version":"2.10.0","go":"go1.22","host":"h","port":70000,"max_payload":10}\r\n'),
+        ("nats-duplicate-member", b'CONNECT {"verbose":false,"verbose":true,"pedantic":false,"tls_required":false,"lang":"go","version":"1"}\r\n'),
+        ("nats-not-object", b'INFO [1,2,3]\r\n'),
+        ("nats-bad-json", b'INFO {"server_id":\r\n'),
+        ("nats-deep", b'INFO {"a":' + b"[" * 20 + b"]" * 20 + b'}\r\n'),
+        ("nats-bool-wrong", b'CONNECT {"verbose":1,"pedantic":false,"tls_required":false,"lang":"go","version":"1"}\r\n'),
+        ("nats-proto-level", b'INFO {"server_id":"demo","version":"2","go":"g","host":"h","port":1,"max_payload":1,"proto":7}\r\n'),
+        ("nats-urls-wrong", b'INFO {"server_id":"demo","version":"2","go":"g","host":"h","port":1,"max_payload":1,"connect_urls":[1]}\r\n'),
+        ("nats-big-int", b'INFO {"server_id":"demo","version":"2","go":"g","host":"h","port":1,"max_payload":123456789012345678901234}\r\n'),
+        ("imap-greeting", b'* OK [CAPABILITY IMAP4rev1 IMAP4rev2 STARTTLS AUTH=PLAIN] Example server ready\r\n'),
+        ("imap-capability", b'* CAPABILITY IMAP4rev1 IDLE\r\n'),
+        ("imap-untagged-plain", b'* OK ready\r\n'),
+        ("imap-bad-atom", b'* CAPABILITY IMAP4rev1 IDLE(x)\r\n'),
+        ("imap-greeting-control", b'* OK [CAPABILITY IMAP4rev1] bad\x01text\r\n'),
+        ("imap-login", b"a001 LOGIN user pass\r\n"),
+        ("imap-capability-cmd", b"a001 CAPABILITY\r\n"),
+        ("imap-starttls-hello", b"a001 STARTTLS\r\n" + hello),
+        ("imap-login-no-args", b"a001 LOGIN\r\n"),
+        ("imap-noop-args", b"a001 NOOP extra\r\n"),
+        ("pop3-ok", b"+OK POP3 server ready\r\n"),
+        ("pop3-err", b"-ERR no\r\n"),
+        ("pop3-ok-bare", b"+OK\r\n"),
+        ("pop3-ok-bad", b"+OKbad\x01\r\n"),
+        ("pop3-capa", b"CAPA\r\n"),
+        ("pop3-stls-hello", b"STLS\r\n" + hello),
+        ("pop3-top", b"TOP 1 10\r\n"),
+        ("pop3-top-bad", b"TOP one\r\n"),
+        ("pop3-apop-bad", b"APOP alice\r\n"),
+        ("ftp-feat", b"FEAT\r\n"),
+        ("ftp-type", b"TYPE I\r\n"),
+        ("ftp-type-bad", b"TYPE Z\r\n"),
+        ("ftp-port", b"PORT 192,0,2,1,4,5\r\n"),
+        ("ftp-port-bad", b"PORT nope\r\n"),
+        ("ftp-cwd-missing", b"CWD\r\n"),
+        ("ftp-auth-tls-hello", b"AUTH TLS\r\n" + hello),
+        ("ftp-user-ambiguous", b"USER alice\r\n"),
+        ("ftp-pass-ambiguous", b"PASS secret\r\n"),
+        ("ftp-quit-arg", b"QUIT now\r\n"),
+        ("ftp-user-empty", b"USER\r\n"),
+        ("irc-nick", b"NICK alice\r\n"),
+        ("irc-user", b"USER alice 0 * :Alice Example\r\n"),
+        ("irc-cap-ls", b"CAP LS 302\r\n"),
+        ("irc-cap-bad", b"CAP FOO\r\n"),
+        ("irc-nick-bad", b"NICK 9alice\r\n"),
+        ("irc-unprefixed-notice", b"NOTICE AUTH :*** Checking Ident\r\n"),
+        ("irc-ping", b"PING :1760000000\r\n"),
+        ("irc-server-notice", b":irc.example.org NOTICE * :*** Looking up your hostname...\r\n"),
+        ("irc-server-welcome", b":irc.example.org 001 alice :Welcome to the Example IRC Network alice!alice@192.0.2.1\r\n"),
+        ("irc-server-cap", b":irc.example.org CAP * LS :multi-prefix sasl\r\n"),
+        ("irc-server-join", b":irc.example.org JOIN #chan\r\n"),
+        ("irc-server-bad-numeric", b":irc.example.org 001 :no nick\r\n"),
+        ("irc-server-unsupported", b":irc.example.org TOPIC #chan :x\r\n"),
+        ("irc-prefix-bad", b":bad prefix! NOTICE * :x\r\n"),
+        ("irc-long", b":irc.example.org NOTICE * :" + b"x" * 600 + b"\r\n"),
+        ("sip-options", sip),
+        ("sip-response", sip_response),
+        ("sip-missing-headers", b"OPTIONS sip:server.example SIP/2.0\r\nVia: SIP/2.0/TCP client.example;branch=1\r\n\r\n"),
+        ("sip-bad-cseq", sip.replace(b"CSeq: 1 OPTIONS", b"CSeq: 1 INVITE")),
+        ("sip-bad-max-forwards", sip.replace(b"Max-Forwards: 70", b"Max-Forwards: 700")),
+        ("sip-duplicate", sip.replace(b"To: <sip:server.example>\r\n", b"To: <sip:server.example>\r\nTo: <sip:b>\r\n")),
+        ("sip-compact", sip.replace(b"Via:", b"v:").replace(b"From:", b"f:").replace(b"To:", b"t:").replace(b"Call-ID:", b"i:")),
+        ("rtsp-options", b"OPTIONS rtsp://server.example/media RTSP/1.0\r\nCSeq: 1\r\n\r\n"),
+        ("rtsp-response", b"RTSP/1.0 200 OK\r\nCSeq: 1\r\nPublic: OPTIONS, DESCRIBE\r\n\r\n"),
+        ("rtsp-no-cseq", b"OPTIONS rtsp://server.example/media RTSP/1.0\r\nSession: 1\r\n\r\n"),
+        ("rtsp-6xx", b"RTSP/1.0 650 Weird\r\nCSeq: 1\r\n\r\n"),
+        ("rtsp-bad-header", b"OPTIONS rtsp://server.example/media RTSP/1.0\r\nCSeq 1\r\n\r\n"),
+        ("telnet", b"\xff\xfd\x18\xff\xfb\x01"),
+        ("telnet-sub", b"\xff\xfa\x18\x01\xff\xf0\xff\xfd\x01"),
+        ("telnet-data-first", b"\xff\xfd\x18login:"),
+        ("telnet-bad-command", b"\xff\xf1\xff\x10"),
+    ]
+    cases = []
+    for number, (name, data) in enumerate(vectors):
+        base = "stream/text-%02d-%s" % (number, name)
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": name.split("-", 1)[0], "chunks": chunks, "hint": None, "config": {}, "end": end})
+    cases.append({"id": "stream/text-options/smtp-header-budget", "kind": "stream", "label": "smtp",
+                  "chunks": [(b"EHLO client.example\r\n" + b"NOOP\r\n" * 4 + b"STARTTLS\r\n").hex()], "hint": None, "config": {"max_headers": 2}, "end": "fin"})
     return cases
 
 

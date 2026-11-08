@@ -6,20 +6,24 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/dnsx"
-	"github.com/leenadav/protocol-detector/go/internal/protocols/httpx"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/textroute"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
 )
 
 // Ported is the set of dispatch candidates the Go backend has a parser for.
-var Ported = map[string]bool{"text": true, "tls": true, "dns": true}
+var Ported = map[string]bool{"text": true, "tls": true, "dns": true, "irc": true, "telnet": true}
 
 // Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
-var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr"}
+var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet"}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 	switch candidate {
 	case "text":
-		return httpx.New(httpx.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, Continuation: cfg.Continuation})
+		return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation})
+	case "irc":
+		return textroute.NewIRC(cfg.MaxLine), nil
+	case "telnet":
+		return textroute.NewTelnet(), nil
 	case "tls":
 		return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
 			Certificates: cfg.Certificates, Continuation: cfg.Continuation})
@@ -50,6 +54,43 @@ type Inspector struct {
 	shiftSource string
 	NotPorted   *parsing.NotPorted // set when the Go backend cannot give this direction's outcome
 	resolved    string             // family a text route resolved to before it finished (D12)
+	continuing  bool               // identified; the parser still derives optional evidence or watches for a shift
+}
+
+// refiner is implemented by parsers whose published identification may be incomplete while they continue.
+type refiner interface{ Refined() bool }
+
+// refined ports Inspector._refined: rebuilt only when the parser derived something new.
+func (in *Inspector) refined() contracts.Observation {
+	if r, ok := in.parser.(refiner); ok && !r.Refined() {
+		return in.Observation
+	}
+	return in.identified()
+}
+
+// continueFeed ports Inspector._continue: bytes for a parser that already identified.
+func (in *Inspector) continueFeed(chunk []byte) []contracts.Event {
+	consumed, err := in.parser.Feed(chunk)
+	if err != nil {
+		if np, ok := err.(*parsing.NotPorted); ok {
+			in.NotPorted, in.terminal = np, true
+			return nil
+		}
+		in.Metrics.BytesInspected += len(chunk)
+		return in.finish(in.refined(), contracts.Refined)
+	}
+	in.Metrics.BytesInspected += consumed
+	r := in.parser.Result()
+	if !r.Continues {
+		if r.Shift != nil {
+			return in.beginShift(r.Shift, chunk[consumed:])
+		}
+		return in.finish(in.refined(), contracts.Refined)
+	}
+	if in.Metrics.BytesInspected >= in.cfg.MaxBytes {
+		return in.finish(in.refined(), contracts.Refined)
+	}
+	return nil
 }
 
 // familyResolver is implemented by routed parsers that learn their family from the first line.
@@ -98,6 +139,7 @@ func (in *Inspector) publish(obs contracts.Observation, kind contracts.Kind) []c
 
 func (in *Inspector) finish(obs contracts.Observation, kind contracts.Kind) []contracts.Event {
 	in.terminal = true
+	in.continuing = false
 	if fr, ok := in.parser.(familyResolver); ok && in.parser != nil {
 		in.resolved = fr.ResolvedFamily()
 	}
@@ -122,7 +164,7 @@ func (in *Inspector) identified() contracts.Observation {
 	} else {
 		protocol = str(r.ProtocolName)
 	}
-	if in.candidate == "text" || in.candidate == "git_text" || in.candidate == "tpkt" {
+	if (in.candidate == "text" || in.candidate == "git_text" || in.candidate == "tpkt") && r.Family != "" {
 		in.candidate = r.Family
 	}
 	var hostname *string
@@ -258,6 +300,9 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 		}
 	}
 	in.Metrics.ParserCalls++
+	if in.continuing {
+		return in.continueFeed(chunk)
+	}
 	newBytes := len(chunk) - previous
 	in.Metrics.BytesInspected += newBytes
 	consumed, err := in.parser.Feed(chunk)
@@ -269,9 +314,12 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 	if in.parser.Done() {
 		r := in.parser.Result()
 		if r.Continues {
-			in.NotPorted = &parsing.NotPorted{What: "post-identification continuation"}
-			in.terminal = true
-			return nil
+			in.continuing = true
+			events := in.publish(in.identified(), contracts.Updated)
+			if rest := chunk[consumed:]; len(rest) > 0 {
+				events = append(events, in.continueFeed(rest)...)
+			}
+			return events
 		}
 		if r.Shift != nil {
 			return in.beginShift(r.Shift, chunk[consumed:])
@@ -288,6 +336,7 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 func (in *Inspector) beginShift(shift *parsing.Shift, rest []byte) []contracts.Event {
 	events := in.publish(in.identified(), contracts.Updated)
 	in.parser = nil
+	in.continuing = false
 	in.prefix = in.prefix[:0]
 	carrier := in.Observation
 	in.carrier, in.shift = &carrier, shift.Boundary
@@ -403,6 +452,13 @@ func (in *Inspector) End(reason string) []contracts.Event {
 		}
 		in.next = nil
 		return in.finish(in.shiftResult(in.observation(contracts.Incomplete, reason)), contracts.Shifted)
+	}
+	if in.continuing {
+		if r := in.parser.Result(); r.Shift != nil {
+			events := in.beginShift(r.Shift, nil)
+			return append(events, in.End(reason)...)
+		}
+		return in.finish(in.refined(), contracts.Refined) // keep the identification; no further evidence
 	}
 	return in.finish(in.observation(contracts.Incomplete, reason), contracts.Updated)
 }

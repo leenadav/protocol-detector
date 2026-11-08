@@ -3,7 +3,7 @@
 // recognized here: the other text families the Python route resolves (SSH, SMTP, NATS, IMAP, POP3, FTP,
 // IRC, SIP/RTSP control headers) end in NotPorted, except the exact ambiguity sentences that need no
 // family parser. Header values are classified, never emitted.
-package httpx
+package textroute
 
 import (
 	"bytes"
@@ -19,6 +19,7 @@ import (
 type Options struct {
 	MaxLine      int
 	MaxHeaders   int
+	MaxBytes     int
 	Continuation int
 }
 
@@ -34,8 +35,6 @@ var (
 	wsKey          = regexp.MustCompile(`^[A-Za-z0-9+/]{22}==$`)
 	wsAccept       = regexp.MustCompile(`^[A-Za-z0-9+/]{27}=$`)
 	connectTarget  = regexp.MustCompile(`^(?:[A-Za-z0-9.\-]{1,253}|\[[0-9A-Fa-f:.]{2,45}\]):[0-9]{1,5}$`)
-	controlStart   = regexp.MustCompile(`^(?:[A-Z_]+ [\x21-\x7e]+ (?:SIP/2\.0|RTSP/[12]\.0)|(?:SIP/2\.0|RTSP/[12]\.0) [1-6][0-9]{2} [\x20-\x7e]*)$`)
-	natsStart      = regexp.MustCompile(`(?i)^(INFO|CONNECT)[ \t]+(.+)$`)
 	greeting220    = regexp.MustCompile(`^220(?:[ -]|$)`)
 	imapTag        = regexp.MustCompile(`^[A-Za-z0-9.\-_]{1,32}$`)
 	cmdVerb        = regexp.MustCompile(`^[A-Z]{3,4}$`)
@@ -50,6 +49,7 @@ var methods = map[string]bool{"GET": true, "HEAD": true, "POST": true, "PUT": tr
 var authSchemes = map[string]string{"basic": "basic", "bearer": "bearer", "digest": "digest", "negotiate": "negotiate", "ntlm": "ntlm"}
 
 var smtpCommands = map[string]bool{"EHLO": true, "HELO": true}
+var smtpVerbs = set("EHLO HELO MAIL RCPT DATA RSET NOOP QUIT VRFY EXPN HELP AUTH BDAT STARTTLS")
 
 var imapCommands = map[string]bool{"CAPABILITY": true, "NOOP": true, "LOGOUT": true, "STARTTLS": true, "AUTHENTICATE": true, "LOGIN": true, "ID": true, "ENABLE": true, "SELECT": true,
 	"EXAMINE": true, "CREATE": true, "DELETE": true, "RENAME": true, "SUBSCRIBE": true, "UNSUBSCRIBE": true, "LIST": true, "LSUB": true, "NAMESPACE": true,
@@ -207,7 +207,15 @@ type Parser struct {
 	extra            []parsing.Row
 	scope            string
 	shift            *parsing.Shift
-	family           string // "text" until the first line resolves the route, then "http" (TextParser.family)
+	family           string // "text" until the first line resolves the route (TextParser.family)
+	mode             string // "", "http", "ssh", "smtp", "control", or a one-line family that is already done
+	protocolName2    string // protocol name for the non-HTTP families
+	continues        bool   // post-identification continuation (SSH KEXINIT, SMTP STARTTLS watch)
+	refined          bool   // parsers.LineParser.refined: the published identification is complete
+	kexinit          *kexInit
+	smtpWatched      int
+	control          *controlHeaders
+	maxBytes         int
 }
 
 // ResolvedFamily is the family the first line resolved to ("text" before that).
@@ -223,21 +231,40 @@ func New(opts Options) (*Parser, error) {
 	if opts.Continuation != 0 {
 		return nil, &parsing.NotPorted{What: "option continuation (HTTP)"}
 	}
-	return &Parser{opts: opts, first: true, reason: "Waiting for complete line"}, nil
+	return &Parser{opts: opts, first: true, reason: "Waiting for complete line", refined: true, maxBytes: opts.MaxBytes}, nil
 }
+
+// Refined reports whether the published identification is complete (false while a KEXINIT is awaited).
+func (p *Parser) Refined() bool { return p.refined }
 
 func (p *Parser) Done() bool { return p.done }
 
 // Result exposes the identification once Done.
 func (p *Parser) Result() *parsing.Result {
-	return &parsing.Result{Family: "http", ProtocolName: p.protocolName, Host: p.host, HasHost: p.hasHost, HostSource: "http_host",
-		ALPN: []string{}, Extra: p.extra, Reason: p.reason, Scope: p.scope, Shift: p.shift}
+	if p.mode == "http" || p.mode == "" {
+		return &parsing.Result{Family: "http", ProtocolName: p.protocolName, Host: p.host, HasHost: p.hasHost, HostSource: "http_host",
+			ALPN: []string{}, Extra: p.extra, Reason: p.reason, Scope: p.scope, Shift: p.shift}
+	}
+	return &parsing.Result{Family: p.family, ProtocolName: p.protocolName2, ALPN: []string{}, Extra: p.extra, Reason: p.reason,
+		Scope: p.scope, Shift: p.shift, Continues: p.continues}
 }
 
 // Feed ports LineParser.feed for the HTTP protocol (no SSH/IRC limits, no continuation).
 func (p *Parser) Feed(data []byte) (int, error) {
+	if p.continues && p.kexinit != nil {
+		consumed, err := p.kexinit.feed(data)
+		if err != nil {
+			return consumed, err
+		}
+		if p.kexinit.done {
+			p.extra = append(p.extra, kexinitPosture(p.kexinit.lists)...)
+			p.refined, p.kexinit, p.continues = true, nil, false
+		}
+		return consumed, nil
+	}
+	continuing := p.done && p.continues
 	pos := 0
-	for pos < len(data) && !p.done {
+	for pos < len(data) && (!p.done || (continuing && p.continues)) {
 		newline := bytes.IndexByte(data[pos:], '\n')
 		end := len(data)
 		if newline >= 0 {
@@ -264,11 +291,18 @@ func (p *Parser) Feed(data []byte) (int, error) {
 	return pos, nil
 }
 
-// route ports TextParser.consume_line's first-line dispatch before the HTTP start-line check.
-func (p *Parser) route(line []byte) error {
+// route ports TextParser.consume_line's first-line dispatch. It returns handled=true when a non-HTTP
+// family consumed the line (identified, or continuing), false when the line is an HTTP start-line.
+func (p *Parser) route(line []byte) (bool, error) {
 	isRequest := requestLine.Match(line)
-	if !bytes.HasSuffix(line, []byte("HTTP/1.0")) && !bytes.HasSuffix(line, []byte("HTTP/1.1")) && controlStart.Match(line) {
-		return &parsing.NotPorted{What: "text family sip/rtsp"}
+	if !bytes.HasSuffix(line, []byte("HTTP/1.0")) && !bytes.HasSuffix(line, []byte("HTTP/1.1")) && controlStartRE.Match(line) {
+		control, err := newControlHeaders(line, p.opts.MaxHeaders)
+		if err != nil {
+			return true, err
+		}
+		p.control, p.mode, p.family, p.protocolName2, p.scope = control, "control", control.family, control.protocolName, "initial_headers"
+		p.reason = control.reason
+		return true, nil
 	}
 	command := line
 	if i := bytes.IndexByte(line, ' '); i >= 0 {
@@ -283,55 +317,177 @@ func (p *Parser) route(line []byte) error {
 		}
 	}
 	if special && isRequest {
-		return nil // HTTP
+		return false, nil // HTTP
 	}
 	if bytes.HasPrefix(line, []byte("SSH-")) {
-		return &parsing.NotPorted{What: "text family ssh"}
+		p.family, p.mode = "ssh", "ssh"
+		if len(line)+2 > 255 {
+			return true, parsing.Malformed("SSH identification exceeds 255 bytes")
+		}
+		if !sshBanner.Match(line) {
+			return true, parsing.Malformed("Invalid or unsupported SSH identification")
+		}
+		parts := bytes.SplitN(line, []byte("-"), 3)
+		p.protocolName2, p.done, p.reason = "ssh", true, sshReason
+		p.extra = []parsing.Row{{Field: "ssh_version", Value: string(parts[1]), Provenance: "banner", Strength: "structural"}}
+		p.kexinit, p.continues, p.refined = newKexInit(p.maxBytes), true, false
+		return true, nil
 	}
 	if smtpCommands[upper] {
-		return &parsing.NotPorted{What: "text family smtp"}
+		p.family, p.mode = "smtp", "smtp"
+		if len(line)+2 > 512 {
+			return true, parsing.Malformed("SMTP command exceeds 512 bytes")
+		}
+		_, identity, sep := bytes.Cut(line, []byte(" "))
+		if !sep || len(identity) == 0 {
+			return true, parsing.Malformed("SMTP greeting needs a domain or address literal")
+		}
+		text, ok := smtpIdentity(identity)
+		if !ok {
+			return true, parsing.Malformed("Invalid SMTP greeting identity")
+		}
+		p.protocolName2, p.done = "smtp", true
+		p.reason = "SMTP client EHLO/HELO syntax validated; server exchange and message body not inspected"
+		p.extra = []parsing.Row{{Field: "smtp_client_identity", Value: text, Provenance: "smtp_greeting", Strength: "asserted"}}
+		p.continues = true
+		return true, nil
 	}
-	if len(line) > 0 && (line[0] == 'I' || line[0] == 'i' || line[0] == 'C' || line[0] == 'c') && natsStart.Match(line) {
-		return &parsing.NotPorted{What: "text family nats"}
+	if len(line) > 0 && (line[0] == 'I' || line[0] == 'i' || line[0] == 'C' || line[0] == 'c') {
+		if m := natsStart.FindSubmatch(line); m != nil {
+			if err := natsHandshake(strings.ToUpper(string(m[1])), m[2], p.opts.MaxHeaders); err != nil {
+				return true, err
+			}
+			p.family, p.mode, p.protocolName2, p.scope, p.done, p.reason = "nats", "nats", "nats", "protocol_header", true, natsReason
+			return true, nil
+		}
 	}
 	if bytes.HasPrefix(line, []byte("* ")) {
-		return &parsing.NotPorted{What: "text family imap (untagged)"}
+		ok, err := imapServerCapability(line, p.opts.MaxHeaders)
+		if err != nil {
+			return true, err
+		}
+		if !ok {
+			return true, parsing.Ambiguous("Untagged text without explicit IMAP revision capabilities is ambiguous", "imap")
+		}
+		p.family, p.mode, p.protocolName2, p.scope, p.done, p.reason = "imap", "imap", "imap", "protocol_header", true, imapSrvReason
+		return true, nil
 	}
 	if greeting220.Match(line) {
-		return parsing.Ambiguous("A 220 server greeting alone is ambiguous between SMTP and FTP; a client command is required", "smtp", "ftp")
+		return true, parsing.Ambiguous("A 220 server greeting alone is ambiguous between SMTP and FTP; a client command is required", "smtp", "ftp")
 	}
 	if isRequest || responseLoose.Match(line) {
-		return nil
+		return false, nil
 	}
 	// Not HTTP: the families Python tries before falling back to the HTTP start-line error.
 	if len(line) > 0 && (line[0] == '+' || line[0] == '-') {
 		if ok, err := pop3Greeting(line); err != nil {
-			return err
+			return true, err
 		} else if ok {
-			return &parsing.NotPorted{What: "text family pop3"}
+			p.family, p.mode, p.protocolName2, p.scope, p.done = "pop3", "pop3", "pop3", "protocol_header", true
+			p.reason = "POP3 server status line validated; mailbox and authentication unverified"
+			return true, nil
 		}
 	}
 	if ok, err := imapCommand(line, p.opts.MaxLine); err != nil {
-		return err
+		return true, err
 	} else if ok {
-		return &parsing.NotPorted{What: "text family imap"}
+		p.family, p.mode, p.protocolName2, p.scope, p.done = "imap", "imap", "imap", "initial_message", true
+		p.reason = "IMAP tagged client command validated; arguments and credentials are not inspected or emitted"
+		if parts := bytes.Split(line, []byte(" ")); len(parts) > 1 && strings.ToUpper(string(parts[1])) == "STARTTLS" {
+			p.shift = &parsing.Shift{Boundary: "starttls", Expected: "tls"}
+		}
+		return true, nil
 	}
-	verb := upper
-	if (verb == "NICK" || verb == "CAP" || (verb == "USER" && len(bytes.Split(line, []byte(" "))) >= 5)) && len(line) >= 4 && len(line) <= 510 && line[0] != ':' {
-		return &parsing.NotPorted{What: "text family irc"}
+	label, err := ircClientLine(line)
+	if err != nil {
+		return true, err
 	}
-	if len(line) > 0 {
+	if label == "" && len(line) > 0 {
 		switch line[0] {
 		case 'N', 'n', 'P', 'p':
-			if verb == "NOTICE" || verb == "PING" {
-				return &parsing.NotPorted{What: "text family irc"}
+			if label, err = ircServerNotice(line); err != nil {
+				return true, err
 			}
 		}
 	}
-	if family, err := commandLine(line); err != nil {
-		return err
-	} else if family != "" {
-		return &parsing.NotPorted{What: "text family " + family}
+	if label == "user" {
+		return true, parsing.Ambiguous("USER with four parameters is valid for FTP and IRC; the server direction decides", "ftp", "irc")
+	}
+	if label != "" {
+		p.family, p.mode, p.protocolName2, p.done = "irc", "irc", "irc", true
+		p.scope = "protocol_header"
+		if label == "nick" || label == "user" || label == "cap" {
+			p.scope = "initial_message"
+		}
+		p.extra = []parsing.Row{{Field: "irc_message", Value: label, Provenance: "irc_line", Strength: "structural"}}
+		p.reason = ircReason(label)
+		return true, nil
+	}
+	family, candidates, shift, err := commandLine(line)
+	if err != nil {
+		return true, err
+	}
+	if candidates != nil {
+		if family == "" {
+			return true, parsing.Ambiguous("Command shared by FTP and POP3; the server greeting decides", candidates...)
+		}
+		p.family, p.mode, p.protocolName2, p.scope, p.done, p.shift = family, family, family, "initial_message", true, shift
+		if family == "ftp" {
+			p.reason = "FTP client command syntax validated; arguments are not emitted, transfers unverified"
+		} else {
+			p.reason = "POP3 client command syntax validated; credentials are not emitted, mailbox unverified"
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
+// smtpIdentity validates an EHLO/HELO argument (domain or [address literal]); the text is reported as asserted.
+func smtpIdentity(identity []byte) (string, bool) {
+	for _, b := range identity {
+		if b >= 128 {
+			return "", false
+		}
+	}
+	text := string(identity)
+	if strings.HasPrefix(text, "[") && strings.HasSuffix(text, "]") {
+		address := text[1 : len(text)-1]
+		if strings.HasPrefix(strings.ToLower(address), "ipv6:") {
+			return text, names.IsIPv6(address[5:])
+		}
+		return text, names.IsIPv4(address)
+	}
+	if _, err := names.Normalize(text); err != nil {
+		return "", false
+	}
+	return text, true
+}
+
+// consumeSMTP ports TextParser._consume_smtp: watch a bounded number of client commands for STARTTLS.
+func (p *Parser) consumeSMTP(line []byte) error {
+	p.smtpWatched++
+	if len(line)+2 > 512 {
+		return parsing.Malformed("SMTP command exceeds 512 bytes")
+	}
+	verbB, _, _ := bytes.Cut(line, []byte(" "))
+	verb := strings.ToUpper(string(verbB))
+	if !smtpVerbs[verb] {
+		return parsing.Malformed("Unexpected SMTP command")
+	}
+	if verb == "STARTTLS" {
+		if strings.ToUpper(string(line)) != "STARTTLS" {
+			return parsing.Malformed("STARTTLS takes no parameters")
+		}
+		p.shift = &parsing.Shift{Boundary: "starttls", Expected: "tls"}
+		p.continues = false
+		return nil
+	}
+	limit := p.opts.MaxHeaders
+	if limit > 8 {
+		limit = 8
+	}
+	if verb != "NOOP" || p.smtpWatched >= limit {
+		p.continues = false
 	}
 	return nil
 }
@@ -408,74 +564,105 @@ func imapCommand(line []byte, maxLine int) (bool, error) {
 	return true, nil
 }
 
-// commandLine ports session_text.command_line's classification; returns the family it would select
-// ("ftp", "pop3", "ambiguous") or "" when the line is not a command.
-func commandLine(line []byte) (string, error) {
+var portArgument = regexp.MustCompile(`^(\d{1,3},){5}\d{1,3}$`)
+var topArgument = regexp.MustCompile(`^\d{1,10} \d{1,10}$`)
+
+// commandLine ports session_text.command_line: (family or "" for ambiguous, candidates, shift, error);
+// candidates is nil when the line is not a command at all.
+func commandLine(line []byte) (string, []string, *parsing.Shift, error) {
 	if len(line) < 3 || len(line) > 520 {
-		return "", nil
+		return "", nil, nil, nil
 	}
 	for _, b := range line {
 		if b < 32 || b > 126 {
-			return "", nil
+			return "", nil, nil, nil
 		}
 	}
 	verbB, argument, hasSep := bytes.Cut(line, []byte(" "))
 	verb := strings.ToUpper(string(verbB))
 	if !cmdVerb.MatchString(verb) {
-		return "", nil
+		return "", nil, nil, nil
 	}
 	if hasSep && !printableArgument(argument) {
-		return "", parsing.Malformed("Command argument outside printable profile")
+		return "", nil, nil, parsing.Malformed("Command argument outside printable profile")
 	}
 	if noArgument[verb] && hasSep && len(argument) > 0 {
 		switch verb {
 		case "LIST", "NLST", "MLSD", "STAT", "UIDL", "TOP", "PASV":
 		default:
-			return "", parsing.Malformed("Command does not take an argument")
+			return "", nil, nil, parsing.Malformed("Command does not take an argument")
 		}
 	}
 	if ftpOnly[verb] {
 		switch verb {
 		case "PORT", "EPRT", "TYPE", "CWD", "MKD", "RMD", "STOR", "APPE", "RNFR", "RNTO", "SIZE", "MDTM", "OPTS":
 			if len(argument) == 0 {
-				return "", parsing.Malformed("FTP command requires an argument")
+				return "", nil, nil, parsing.Malformed("FTP command requires an argument")
 			}
 		}
 		if verb == "TYPE" {
 			a := strings.ToUpper(string(argument))
 			if len(a) == 0 || !strings.ContainsRune("AIEL", rune(a[0])) {
-				return "", parsing.Malformed("FTP TYPE argument invalid")
+				return "", nil, nil, parsing.Malformed("FTP TYPE argument invalid")
 			}
 		}
-		if verb == "PORT" && !regexp.MustCompile(`^(\d{1,3},){5}\d{1,3}$`).Match(argument) {
-			return "", parsing.Malformed("FTP PORT argument invalid")
+		if verb == "PORT" && !portArgument.Match(argument) {
+			return "", nil, nil, parsing.Malformed("FTP PORT argument invalid")
 		}
-		return "ftp", nil
+		return "ftp", []string{"ftp"}, nil, nil
 	}
 	if pop3Only[verb] {
 		if verb == "APOP" && len(bytes.Split(argument, []byte(" "))) != 2 {
-			return "", parsing.Malformed("POP3 APOP requires name and digest")
+			return "", nil, nil, parsing.Malformed("POP3 APOP requires name and digest")
 		}
-		if verb == "TOP" && !regexp.MustCompile(`^\d{1,10} \d{1,10}$`).Match(argument) {
-			return "", parsing.Malformed("POP3 TOP requires two numbers")
+		if verb == "TOP" && !topArgument.Match(argument) {
+			return "", nil, nil, parsing.Malformed("POP3 TOP requires two numbers")
 		}
-		return "pop3", nil
+		var shift *parsing.Shift
+		if verb == "STLS" {
+			shift = &parsing.Shift{Boundary: "starttls", Expected: "tls"}
+		}
+		return "pop3", []string{"pop3"}, shift, nil
 	}
 	if shared[verb] {
 		if (verb == "USER" || verb == "PASS" || verb == "AUTH" || verb == "RETR" || verb == "DELE") && len(argument) == 0 {
-			return "", parsing.Malformed("Command requires an argument")
+			return "", nil, nil, parsing.Malformed("Command requires an argument")
 		}
-		return "ambiguous", nil
+		if verb == "AUTH" {
+			switch strings.ToUpper(string(argument)) {
+			case "TLS", "SSL", "TLS-C", "TLS-P":
+				return "ftp", []string{"ftp"}, &parsing.Shift{Boundary: "auth-tls", Expected: "tls"}, nil
+			}
+		}
+		if verb == "PASS" {
+			return "", []string{"ftp", "pop3", "irc"}, nil, nil
+		}
+		return "", []string{"ftp", "pop3"}, nil, nil
 	}
-	return "", nil
+	return "", nil, nil, nil
 }
 
 func (p *Parser) consumeLine(line []byte) error {
-	if p.first {
-		if err := p.route(line); err != nil {
+	switch p.mode {
+	case "control":
+		if err := p.control.consume(line); err != nil {
 			return err
 		}
-		p.family = "http"
+		p.done, p.reason = p.control.done, p.control.reason
+		return nil
+	case "smtp":
+		return p.consumeSMTP(line)
+	}
+	if p.first {
+		handled, err := p.route(line)
+		if err != nil {
+			return err
+		}
+		if handled {
+			p.first = false
+			return nil
+		}
+		p.family, p.mode = "http", "http"
 		p.first = false
 		request := requestLine.Match(line)
 		response := responseStrict.Match(line)
