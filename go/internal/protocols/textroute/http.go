@@ -21,6 +21,7 @@ type Options struct {
 	MaxHeaders   int
 	MaxBytes     int
 	Continuation int
+	ForceHTTP    bool // parsers.LineParser(config, "http"): skip the first-line route (the SSDP datagram profile)
 }
 
 const token = `[!#$%&'*+.^_` + "`" + `|~0-9A-Za-z-]+`
@@ -232,6 +233,15 @@ func New(opts Options) (*Parser, error) {
 		return nil, &parsing.NotPorted{What: "option continuation (HTTP)"}
 	}
 	return &Parser{opts: opts, first: true, reason: "Waiting for complete line", refined: true, maxBytes: opts.MaxBytes}, nil
+}
+
+// ControlField returns a control-protocol header value (SIP/RTSP) the route recorded, for the SIP datagram profile.
+func (p *Parser) ControlField(name string) ([]byte, bool) {
+	if p.control == nil {
+		return nil, false
+	}
+	value, ok := p.control.fields[name]
+	return value, ok
 }
 
 // Refined reports whether the published identification is complete (false while a KEXINIT is awaited).
@@ -654,13 +664,15 @@ func (p *Parser) consumeLine(line []byte) error {
 		return p.consumeSMTP(line)
 	}
 	if p.first {
-		handled, err := p.route(line)
-		if err != nil {
-			return err
-		}
-		if handled {
-			p.first = false
-			return nil
+		if !p.opts.ForceHTTP {
+			handled, err := p.route(line)
+			if err != nil {
+				return err
+			}
+			if handled {
+				p.first = false
+				return nil
+			}
 		}
 		p.family, p.mode = "http", "http"
 		p.first = false

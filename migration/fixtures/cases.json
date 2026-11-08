@@ -278556,6 +278556,1018 @@
    "payload": "400000000000"
   },
   {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 101,
+     "bytes_received": 101,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "ssdp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "ssdp",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP search header framing validated; device descriptions and locations are not emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-00-ssdp/whole",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4d2d534541524348202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a313930300d0a4d414e3a2022737364703a646973636f766572220d0a4d583a20310d0a53543a2075706e703a726f6f746465766963650d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 50,
+     "bytes_received": 50,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP message must be exactly one complete HTTP header block",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-00-ssdp/half",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4d2d534541524348202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a313930300d0a4d"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 117,
+     "bytes_received": 117,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "ssdp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "ssdp",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP notify header framing validated; device descriptions and locations are not emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-01-ssdp/whole",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4e4f54494659202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a313930300d0a4e543a2075706e703a726f6f746465766963650d0a4e54533a20737364703a616c6976650d0a55534e3a20757569643a313a3a75706e703a726f6f746465766963650d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 58,
+     "bytes_received": 58,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP message must be exactly one complete HTTP header block",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-01-ssdp/half",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4e4f54494659202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a313930300d0a4e543a2075706e703a726f"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 99,
+     "bytes_received": 99,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "ssdp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "ssdp",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP response header framing validated; device descriptions and locations are not emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-02-ssdp/whole",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "485454502f312e3120323030204f4b0d0a43414348452d434f4e54524f4c3a206d61782d6167653d313830300d0a53543a2075706e703a726f6f746465766963650d0a55534e3a20757569643a313a3a75706e703a726f6f746465766963650d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 49,
+     "bytes_received": 49,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP message must be exactly one complete HTTP header block",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-02-ssdp/half",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "485454502f312e3120323030204f4b0d0a43414348452d434f4e54524f4c3a206d61782d6167653d313830300d0a53543a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 65,
+     "bytes_received": 65,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP M-SEARCH requires MAN ssdp:discover and ST headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-03-ssdp/whole",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4d2d534541524348202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a313930300d0a53543a20737364703a616c6c0d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 32,
+     "bytes_received": 32,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP message must be exactly one complete HTTP header block",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-03-ssdp/half",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4d2d534541524348202a20485454502f312e310d0a484f53543a203233392e32"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 70,
+     "bytes_received": 70,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP NOTIFY requires NTS and NT headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-04-ssdp/whole",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4e4f54494659202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a313930300d0a4e543a2075706e703a726f6f746465766963650d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 35,
+     "bytes_received": 35,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP message must be exactly one complete HTTP header block",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-04-ssdp/half",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4e4f54494659202a20485454502f312e310d0a484f53543a203233392e3235352e3235"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP response requires ST and USN headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-05-ssdp/whole",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "485454502f312e3120323030204f4b0d0a53543a2075706e703a726f6f746465766963650d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP message must be exactly one complete HTTP header block",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-05-ssdp/half",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "485454502f312e3120323030204f4b0d0a53543a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 88,
+     "bytes_received": 88,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP message must be exactly one complete HTTP header block",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-06-ssdp/whole",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4d2d534541524348202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a313930300d0a4d414e3a2022737364703a646973636f766572220d0a53543a20610d0a0d0a747261696c696e67"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 44,
+     "bytes_received": 44,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP message must be exactly one complete HTTP header block",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-06-ssdp/half",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4d2d534541524348202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a31"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 78,
+     "bytes_received": 78,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP message must be exactly one complete HTTP header block",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-07-ssdp/whole",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4d2d534541524348202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a313930300d0a4d414e3a2022737364703a646973636f766572220d0a53543a20610d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 39,
+     "bytes_received": 39,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SSDP message must be exactly one complete HTTP header block",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-07-ssdp/half",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4d2d534541524348202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 236,
+     "bytes_received": 236,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "sip/2.0",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "sip/2.0",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SIP required header framing and datagram body length validated; body/dialogue semantics unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-08-sip/whole",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a4d61782d466f7277617264733a2037300d0a46726f6d3a203c7369703a6140636c69656e742e6578616d706c653e3b7461673d310d0a546f3a203c7369703a7365727665722e6578616d706c653e0d0a43616c6c2d49443a2064656d6f40636c69656e742e6578616d706c650d0a435365713a2031204f5054494f4e530d0a436f6e74656e742d4c656e6774683a20300d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 118,
+     "bytes_received": 118,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete or invalid SIP datagram headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-08-sip/half",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a4d61782d466f7277617264733a2037300d0a46726f6d3a203c7369703a61"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 240,
+     "bytes_received": 240,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "sip/2.0",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "sip/2.0",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SIP required header framing and datagram body length validated; body/dialogue semantics unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-09-sip/whole",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a4d61782d466f7277617264733a2037300d0a46726f6d3a203c7369703a6140636c69656e742e6578616d706c653e3b7461673d310d0a546f3a203c7369703a7365727665722e6578616d706c653e0d0a43616c6c2d49443a2064656d6f40636c69656e742e6578616d706c650d0a435365713a2031204f5054494f4e530d0a436f6e74656e742d4c656e6774683a20340d0a0d0a626f6479"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 120,
+     "bytes_received": 120,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete or invalid SIP datagram headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-09-sip/half",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a4d61782d466f7277617264733a2037300d0a46726f6d3a203c7369703a614063"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 217,
+     "bytes_received": 217,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "sip/2.0",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "sip/2.0",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SIP required header framing and datagram body length validated; body/dialogue semantics unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-10-sip/whole",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a4d61782d466f7277617264733a2037300d0a46726f6d3a203c7369703a6140636c69656e742e6578616d706c653e3b7461673d310d0a546f3a203c7369703a7365727665722e6578616d706c653e0d0a43616c6c2d49443a2064656d6f40636c69656e742e6578616d706c650d0a435365713a2031204f5054494f4e530d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 108,
+     "bytes_received": 108,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete or invalid SIP datagram headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-10-sip/half",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a4d61782d466f7277617264733a2037300d0a4672"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 240,
+     "bytes_received": 240,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SIP datagram body disagrees with Content-Length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-11-sip/whole",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a4d61782d466f7277617264733a2037300d0a46726f6d3a203c7369703a6140636c69656e742e6578616d706c653e3b7461673d310d0a546f3a203c7369703a7365727665722e6578616d706c653e0d0a43616c6c2d49443a2064656d6f40636c69656e742e6578616d706c650d0a435365713a2031204f5054494f4e530d0a436f6e74656e742d4c656e6774683a20390d0a0d0a626f6479"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 120,
+     "bytes_received": 120,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete or invalid SIP datagram headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-11-sip/half",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a4d61782d466f7277617264733a2037300d0a46726f6d3a203c7369703a614063"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 204,
+     "bytes_received": 204,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "sip/2.0",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "sip/2.0",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SIP required header framing and datagram body length validated; body/dialogue semantics unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-12-sip/whole",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "5349502f322e3020323030204f4b0d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a46726f6d3a203c7369703a6140636c69656e742e6578616d706c653e3b7461673d310d0a546f3a203c7369703a7365727665722e6578616d706c653e3b7461673d320d0a43616c6c2d49443a2064656d6f40636c69656e742e6578616d706c650d0a435365713a2031204f5054494f4e530d0a436f6e74656e742d4c656e6774683a20300d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 102,
+     "bytes_received": 102,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete or invalid SIP datagram headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-12-sip/half",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "5349502f322e3020323030204f4b0d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a46726f6d3a203c7369703a6140636c69656e742e6578616d706c653e3b7461673d31"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 215,
+     "bytes_received": 215,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete or invalid SIP datagram headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-13-sip/whole",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a4d61782d466f7277617264733a2037300d0a46726f6d3a203c7369703a6140636c69656e742e6578616d706c653e3b7461673d310d0a546f3a203c7369703a7365727665722e6578616d706c653e0d0a43616c6c2d49443a2064656d6f40636c69656e742e6578616d706c650d0a435365713a2031204f5054494f4e530d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 107,
+     "bytes_received": 107,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete or invalid SIP datagram headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-13-sip/half",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020636c69656e742e6578616d706c653b6272616e63683d7a39684734624b64656d6f0d0a4d61782d466f7277617264733a2037300d0a46"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 67,
+     "bytes_received": 67,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SIP required headers missing",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "sip",
+   "id": "datagram/udp5-14-sip/whole",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e300d0a5669613a205349502f322e302f55445020633b6272616e63683d310d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 33,
+     "bytes_received": 33,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete or invalid SIP datagram headers",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "sip",
+   "id": "datagram/udp5-14-sip/half",
+   "kind": "datagram",
+   "label": "sip",
+   "payload": "4f5054494f4e53207369703a7365727665722e6578616d706c65205349502f322e"
+  },
+  {
+   "config": {
+    "max_headers": 2
+   },
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 101,
+     "bytes_received": 101,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Header count budget exceeded",
+     "scope": "datagram",
+     "status": "budget_exhausted",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp5-options/ssdp-header-budget",
+   "kind": "datagram",
+   "label": "ssdp",
+   "payload": "4d2d534541524348202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a313930300d0a4d414e3a2022737364703a646973636f766572220d0a4d583a20310d0a53543a2075706e703a726f6f746465766963650d0a0d0a"
+  },
+  {
    "expected": {
     "packets": [
      {
@@ -347686,7 +348698,7 @@
  "reference": {
   "backend": "python",
   "content_release": "2026.11.0",
-  "head": "e6b37d1"
+  "head": "26368c0"
  },
  "schema": 1
 }

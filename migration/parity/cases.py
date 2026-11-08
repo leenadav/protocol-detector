@@ -1676,6 +1676,38 @@ def udp_cases_4():
     return cases
 
 
+def udp_cases_5():
+    """UDP validators of M5 batch 15: SSDP (HTTP header block) and SIP over UDP (text route plus Content-Length)."""
+    sip = (b"OPTIONS sip:server.example SIP/2.0\r\nVia: SIP/2.0/UDP client.example;branch=z9hG4bKdemo\r\nMax-Forwards: 70\r\n"
+           b"From: <sip:a@client.example>;tag=1\r\nTo: <sip:server.example>\r\nCall-ID: demo@client.example\r\nCSeq: 1 OPTIONS\r\n")
+    vectors = [
+        ("ssdp", b"M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: 1\r\nST: upnp:rootdevice\r\n\r\n", None),
+        ("ssdp", b"NOTIFY * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nNT: upnp:rootdevice\r\nNTS: ssdp:alive\r\nUSN: uuid:1::upnp:rootdevice\r\n\r\n", None),
+        ("ssdp", b"HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=1800\r\nST: upnp:rootdevice\r\nUSN: uuid:1::upnp:rootdevice\r\n\r\n", None),
+        ("ssdp", b"M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nST: ssdp:all\r\n\r\n", None),
+        ("ssdp", b"NOTIFY * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nNT: upnp:rootdevice\r\n\r\n", None),
+        ("ssdp", b"HTTP/1.1 200 OK\r\nST: upnp:rootdevice\r\n\r\n", None),
+        ("ssdp", b"M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nST: a\r\n\r\ntrailing", None),
+        ("ssdp", b"M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nST: a\r\n", None),
+        ("sip", sip + b"Content-Length: 0\r\n\r\n", None),
+        ("sip", sip + b"Content-Length: 4\r\n\r\nbody", None),
+        ("sip", sip + b"\r\n", None),
+        ("sip", sip + b"Content-Length: 9\r\n\r\nbody", None),
+        ("sip", b"SIP/2.0 200 OK\r\nVia: SIP/2.0/UDP client.example;branch=z9hG4bKdemo\r\nFrom: <sip:a@client.example>;tag=1\r\n"
+                b"To: <sip:server.example>;tag=2\r\nCall-ID: demo@client.example\r\nCSeq: 1 OPTIONS\r\nContent-Length: 0\r\n\r\n", None),
+        ("sip", sip, None),
+        ("sip", b"OPTIONS sip:server.example SIP/2.0\r\nVia: SIP/2.0/UDP c;branch=1\r\n\r\n", "sip"),
+    ]
+    cases = []
+    for number, (label, data, hint) in enumerate(vectors):
+        base = "datagram/udp5-%02d-%s" % (number, label)
+        cases.append({"id": base + "/whole", "kind": "datagram", "label": label, "payload": data.hex(), "hint": hint, "config": {}})
+        cases.append({"id": base + "/half", "kind": "datagram", "label": label, "payload": data[:max(1, len(data) // 2)].hex(), "hint": hint, "config": {}})
+    cases.append({"id": "datagram/udp5-options/ssdp-header-budget", "kind": "datagram", "label": "ssdp", "hint": None, "config": {"max_headers": 2},
+                  "payload": vectors[0][1].hex()})
+    return cases
+
+
 def datagram_cases(seed=12, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -1691,6 +1723,7 @@ def datagram_cases(seed=12, limit=None):
     cases.extend(udp_cases_2())
     cases.extend(udp_cases_3())
     cases.extend(udp_cases_4())
+    cases.extend(udp_cases_5())
     return cases
 
 

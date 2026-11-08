@@ -255,7 +255,15 @@ Taken before M5 so that session records become comparable for every family as it
 | Fixtures | implemented | `cases.py udp_cases_4()`: 23 payloads, whole and truncated (46 datagram cases). |
 | Differential result | implemented | `make parity-go` with the 76 claimed families: **3673 compared, 3673 matched, 0 mismatched, 0 gaps**; datagram: snmp 58, rtp 15; records included. |
 
-## M5 batches 15+ / M7+ — next
+### Batch 15 — SSDP and SIP over UDP
+
+| item | state | evidence |
+|---|---|---|
+| Validators | implemented | ssdp (one complete HTTP header block plus the SSDP headers of its start line) and sip over UDP (the text route must resolve to SIP and finish; a Content-Length must equal the bytes after the headers). The text route gains `Options.ForceHTTP` (Python's `LineParser(config, "http")`: the first-line route is skipped, the start line is still validated) and a read-only `ControlField` accessor; UDP validators also receive `max_line`. `go/internal/protocols/framed/datagram_text.go`. |
+| Fixtures | implemented | `cases.py udp_cases_5()`: 15 payloads, whole and truncated, plus an SSDP header budget case (31 datagram cases). |
+| Differential result | implemented | `make parity-go` with the 77 claimed families: **3710 compared, 3710 matched, 0 mismatched, 0 gaps**; datagram: ssdp 20, sip 17; records included. The first run caught a bug in the new option (the start-line branch was skipped with the route), fixed before commit. |
+
+## M5 batches 16+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive

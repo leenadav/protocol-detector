@@ -1810,7 +1810,7 @@
         "client"
       ],
       "go": {
-        "notes": "M5 batch 1: start-line and required header framing (compact names, CSeq/Max-Forwards rules); 34 stream, 4 session cases matched",
+        "notes": "M5 batch 1: start-line and required header framing (compact names, CSeq/Max-Forwards rules); 34 stream, 4 session cases matched; UDP datagram path added in batch 15 (17 datagram cases)",
         "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
@@ -2013,9 +2013,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 15: M-SEARCH/NOTIFY/response as one HTTP header block (forced-HTTP line parser) with the SSDP headers; 20 datagram cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [

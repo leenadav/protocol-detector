@@ -14,7 +14,7 @@ type Datagram struct {
 }
 
 // Limits are the inspection budgets a UDP validator reads.
-type Limits struct{ MaxBytes, MaxHeaders int }
+type Limits struct{ MaxBytes, MaxHeaders, MaxLine int }
 
 // DatagramValidator validates one complete UDP payload.
 type DatagramValidator func(data []byte, limits Limits) (*Datagram, error)
