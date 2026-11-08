@@ -14,11 +14,12 @@ import (
 // Ported is the set of dispatch candidates the Go backend has a parser for.
 var Ported = map[string]bool{"text": true, "tls": true, "dns": true, "irc": true, "telnet": true,
 	"postgresql": true, "rfb": true, "bittorrent": true, "memcached": true, "rsync": true, "fins": true, "afp": true,
-	"zmtp": true, "bolt": true, "stomp": true}
+	"zmtp": true, "bolt": true, "stomp": true, "giop": true, "x11": true, "x11-server": true, "spice": true}
 
 // Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
 var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
-	"postgresql", "rfb", "bittorrent", "memcached", "rsync", "fins", "afp", "zmtp", "bolt", "stomp"}
+	"postgresql", "rfb", "bittorrent", "memcached", "rsync", "fins", "afp", "zmtp", "bolt", "stomp",
+	"giop", "x11", "spice"}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 	switch candidate {
@@ -48,6 +49,14 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 		return framed.NewBolt(cfg.MaxBytes), nil
 	case "stomp":
 		return framed.NewSTOMP(cfg.MaxLine, cfg.MaxHeaders), nil
+	case "giop":
+		return framed.NewGIOP(cfg.MaxBytes, cfg.MaxLine, cfg.MaxHeaders), nil
+	case "x11":
+		return framed.NewX11(cfg.MaxBytes), nil
+	case "x11-server":
+		return framed.NewX11Reply(cfg.MaxBytes), nil
+	case "spice":
+		return framed.NewSPICE(cfg.MaxBytes), nil
 	case "tls":
 		return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
 			Certificates: cfg.Certificates, Continuation: cfg.Continuation})

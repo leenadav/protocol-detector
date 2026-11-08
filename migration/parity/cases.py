@@ -185,6 +185,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(tls_cases())
     cases.extend(text_cases())
     cases.extend(framed_cases())
+    cases.extend(desktop_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -515,6 +516,139 @@ def framed_cases():
                   "chunks": [b"CONNECT\naccept-version:1.2\nhost:b\na:1\nb:2\nc:3\n\n\x00".hex()], "hint": None, "config": {"max_headers": 2}, "end": "fin"})
     cases.append({"id": "stream/framed-options/postgresql-byte-budget", "kind": "stream", "label": "postgresql",
                   "chunks": [_pg_startup([(b"user", b"a" * 100)]).hex()], "hint": None, "config": {"max_bytes": 64}, "end": "fin"})
+    return cases
+
+
+class _CDR:
+    """Minimal CDR writer with offsets relative to the whole GIOP message (body starts at 12)."""
+
+    def __init__(self, little=False):
+        self.order = "<" if little else ">"
+        self.data = bytearray()
+
+    def align(self, width):
+        self.data.extend(bytes((-(12 + len(self.data))) % width))
+        return self
+
+    def uint(self, width, value):
+        self.align(width)
+        self.data.extend(struct.pack(self.order + {1: "B", 2: "H", 4: "I"}[width], value))
+        return self
+
+    def raw(self, value):
+        self.data.extend(value)
+        return self
+
+    def seq(self, value):
+        return self.uint(4, len(value)).raw(value)
+
+
+def _giop(kind, body, little=False, flags=None):
+    order = "<" if little else ">"
+    return b"GIOP\x01\x02" + bytes([1 if little else 0 if flags is None else flags, kind]) + struct.pack(order + "I", len(body)) + bytes(body)
+
+
+def _giop_request(operation=b"ping\x00", contexts=0, args=b"", little=False, response=3, target=0):
+    w = _CDR(little).uint(4, 7).uint(1, response).raw(bytes(3)).uint(2, target).seq(b"key").seq(operation).uint(4, contexts)
+    for _ in range(min(contexts, 4)):
+        w.uint(4, 1).seq(b"ctx")
+    if args:
+        w.align(8).raw(args)
+    return _giop(0, w.data, little)
+
+
+def _x11_setup(name=b"MIT-MAGIC-COOKIE-1", data=bytes(16), little=False, major=11):
+    order = "<" if little else ">"
+    pad = lambda value: value + bytes((-len(value)) % 4)  # noqa: E731
+    return (b"l" if little else b"B") + b"\x00" + struct.pack(order + "HHHH", major, 0, len(name), len(data)) + bytes(2) + pad(name) + pad(data)
+
+
+def _x11_success(vendor=b"Example", formats=1, roots=1, keycodes=(8, 255)):
+    fixed = bytes(16) + struct.pack(">HH", len(vendor), 65535) + bytes([roots, formats, 0, 0, 32, 32, keycodes[0], keycodes[1]]) + bytes(4)
+    body = fixed + vendor + bytes((-len(vendor)) % 4) + bytes(8 * formats) + bytes(40 * roots)
+    return b"\x01\x00\x00\x0b\x00\x00" + struct.pack(">H", len(body) // 4) + body
+
+
+def _x11_failed(reason=b"No protocol specified"):
+    padded = reason + bytes((-len(reason)) % 4)
+    return bytes([0, len(reason)]) + b"\x00\x0b\x00\x00" + struct.pack(">H", len(padded) // 4) + padded
+
+
+def _spice(body, major=2):
+    return b"REDQ" + struct.pack("<III", major, 2, len(body)) + body
+
+
+def _spice_link(channel_type=1, connection=0, common=1, channel=1):
+    return _spice(struct.pack("<IBBIII", connection, channel_type, 0, common, channel, 18) + bytes(4 * (common + channel)))
+
+
+def _spice_reply(error=0, common=1, channel=1, offset=178):
+    return _spice(struct.pack("<I", error) + bytes(162) + struct.pack("<III", common, channel, offset) + bytes(4 * (common + channel)))
+
+
+def desktop_cases():
+    """GIOP 1.2 over the bounded CDR cursor, X11 connection setup (server reply hinted) and the SPICE link header
+    (M5 batch 3); identifications, malformed sizes, unsupported versions and budget outcomes, each as whole / 1-byte /
+    7-byte / truncated chunkings."""
+    vectors = [
+        ("giop-request", _giop_request()),
+        ("giop-request-little", _giop_request(little=True)),
+        ("giop-request-contexts-args", _giop_request(contexts=2, args=b"\x00\x00\x00\x01")),
+        ("giop-locate-request", _giop(3, _CDR().uint(4, 9).uint(2, 0).seq(b"key").data)),
+        ("giop-reply", _giop(1, _CDR().uint(4, 7).uint(4, 0).uint(4, 0).data)),
+        ("giop-reply-exception", _giop(1, _CDR().uint(4, 7).uint(4, 2).uint(4, 0).align(8).raw(b"IDL:x").data)),
+        ("giop-locate-reply", _giop(4, _CDR().uint(4, 9).uint(4, 1).data)),
+        ("giop-locate-forward", _giop(4, _CDR().uint(4, 9).uint(4, 2).raw(b"ior-bytes").data)),
+        ("giop-bad-magic", b"GIOX" + _giop_request()[4:]),
+        ("giop-version-10", b"GIOP\x01\x00" + _giop_request()[6:]),
+        ("giop-fragment", _giop_request()[:6] + b"\x02" + _giop_request()[7:]),
+        ("giop-bad-operation", _giop_request(operation=b"9op\x00")),
+        ("giop-string-nul", _giop_request(operation=b"pi\x00g\x00")),
+        ("giop-many-contexts", _giop_request(contexts=500)),
+        ("giop-truncated-contexts", _giop_request(contexts=40)),
+        ("giop-profile-target", _giop_request(target=1)),
+        ("giop-bad-response-flags", _giop_request(response=2)),
+        ("giop-reply-status", _giop(1, _CDR().uint(4, 7).uint(4, 9).uint(4, 0).data)),
+        ("giop-locate-trailing", _giop(3, _CDR().uint(4, 9).uint(2, 0).seq(b"key").raw(b"zz").data)),
+        ("giop-short", _giop(0, bytes(8))),
+        ("x11-setup", _x11_setup()),
+        ("x11-setup-little", _x11_setup(little=True)),
+        ("x11-setup-none", _x11_setup(name=b"", data=b"")),
+        ("x11-setup-other", _x11_setup(name=b"CUSTOM-AUTH")),
+        ("x11-setup-bad-name", _x11_setup(name=b"BAD\x01NAME")),
+        ("x11-setup-data-no-name", _x11_setup(name=b"", data=bytes(8))),
+        ("x11-setup-version", _x11_setup(major=10)),
+        ("x11-setup-huge", _x11_setup(data=bytes(2048))),
+        ("spice-link", _spice_link()),
+        ("spice-link-display", _spice_link(channel_type=2, connection=5)),
+        ("spice-link-no-connection", _spice_link(channel_type=2)),
+        ("spice-reply", _spice_reply()),
+        ("spice-reply-error", _spice_reply(error=7)),
+        ("spice-reply-bad-error", _spice_reply(error=40)),
+        ("spice-reply-three-caps", _spice_reply(common=3)),
+        ("spice-reply-bad-offset", _spice_reply(offset=18)),
+        ("spice-version", _spice_link()[:4] + struct.pack("<I", 1) + _spice_link()[8:]),
+        ("spice-size", b"REDQ" + struct.pack("<IIII", 2, 2, 4, 0)),
+    ]
+    cases = []
+    for number, (name, data) in enumerate(vectors):
+        base = "stream/desktop-%02d-%s" % (number, name)
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": name.split("-", 1)[0], "chunks": chunks, "hint": None, "config": {}, "end": end})
+    replies = (("x11-server-success", _x11_success()), ("x11-server-failed", _x11_failed()), ("x11-server-authenticate", b"\x02\x00\x00\x0b\x00\x00\x00\x02Auth\x00\x00\x00\x00"),
+               ("x11-server-bad-keycodes", _x11_success(keycodes=(4, 255))), ("x11-server-no-screens", _x11_success(roots=0)),
+               ("x11-server-short", b"\x01\x00\x00\x0b\x00\x00\x00\x02" + bytes(8)), ("x11-server-bad-reason", _x11_failed(b"bad\x07reason")),
+               ("x11-server-status", b"\x05\x00\x00\x0b\x00\x00\x00\x00"))
+    for name, data in replies:
+        for variant, chunks in (("whole", [data.hex()]), ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)])):
+            cases.append({"id": "stream/desktop-hinted/%s/%s" % (name, variant), "kind": "stream", "label": "x11", "chunks": chunks,
+                          "hint": "x11-server", "config": {}, "end": "fin"})
+    cases.append({"id": "stream/desktop-options/giop-context-budget", "kind": "stream", "label": "giop",
+                  "chunks": [_giop_request(contexts=3).hex()], "hint": None, "config": {"max_headers": 2}, "end": "fin"})
+    cases.append({"id": "stream/desktop-options/giop-key-budget", "kind": "stream", "label": "giop",
+                  "chunks": [_giop_request(operation=b"operation_name_longer_than_sixteen\x00").hex()], "hint": None, "config": {"max_line": 16}, "end": "fin"})
     return cases
 
 
