@@ -81,9 +81,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 11: BVLC framing with NPDU version 1 for NPDU-carrying functions; 13 datagram cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -1301,7 +1301,7 @@
         "client"
       ],
       "go": {
-        "notes": "M5 batch 6: TCP record marking with CALL/REPLY headers and opaque_auth (AUTH_SYS fully); the UDP datagram path is a named gap; 80 stream, 4 session cases matched",
+        "notes": "M5 batch 6: TCP record marking with CALL/REPLY headers and opaque_auth (AUTH_SYS fully); the UDP datagram path joined in batch 11 (20 datagram cases); 80 stream, 4 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
@@ -1360,7 +1360,7 @@
         "server"
       ],
       "go": {
-        "notes": "M5 batch 7: TCP-framed client/server hard-reset control packets incl. tls-auth layouts; the UDP datagram path is a named gap; 44 stream, 4 session cases matched",
+        "notes": "M5 batch 7: TCP-framed client/server hard-reset control packets incl. tls-auth layouts; the UDP datagram path joined in batch 11 (10 datagram cases); 44 stream, 4 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
@@ -2126,7 +2126,7 @@
         "client"
       ],
       "go": {
-        "notes": "M5 batch 8: RFC 5424 over RFC 6587 octet-counting or non-transparent TCP framing; the UDP datagram path is a named gap; 82 stream, 4 session cases matched",
+        "notes": "M5 batch 8: RFC 5424 over RFC 6587 octet-counting or non-transparent TCP framing; the UDP datagram path joined in batch 11 (9 datagram cases); 82 stream, 4 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
@@ -2411,9 +2411,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 11: handshake initiation, response and cookie reply sizes; encryption-only match; 14 datagram cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [

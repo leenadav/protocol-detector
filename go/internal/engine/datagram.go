@@ -7,6 +7,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/dnsx"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/framed"
 )
 
 // Datagram ports DatagramInspector for the DNS-layout validators; any other candidate the Python
@@ -233,18 +234,44 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 		return base, nil
 	}
 	for _, c := range candidates {
-		if !datagramValidators[c] {
+		if _, ported := framed.DatagramValidators[c]; !datagramValidators[c] && !ported {
 			return base, &parsing.NotPorted{What: "datagram candidate " + c}
 		}
 	}
 	d.Metrics.BytesInspected += len(data)
-	var matches []*dnsx.Details
+	type match struct {
+		protocol, encryption, reason string
+		evidence                     []contracts.Evidence
+	}
+	var matches []match
 	type failure struct{ status, reason string }
 	var errors []failure
 	for _, c := range candidates {
 		d.Metrics.CandidatesSelected++
 		d.Metrics.ParserCalls++
-		details, err := dnsx.Validate(data, d.cfg.MaxBytes, c == "llmnr")
+		var found match
+		var err error
+		if validator, ok := framed.DatagramValidators[c]; ok {
+			var m *framed.Datagram
+			if m, err = validator(data, d.cfg.MaxBytes); err == nil {
+				found = match{protocol: m.Protocol, encryption: m.Encryption, reason: m.Reason}
+				if m.Simple {
+					found.evidence = []contracts.Evidence{{Field: "application_protocol", Value: m.Protocol, Source: "wire", Strength: "structural"}}
+				}
+				for _, r := range m.Evidence {
+					found.evidence = append(found.evidence, contracts.Evidence{Field: r.Field, Value: r.Value, Source: r.Provenance, Strength: r.Strength})
+				}
+			}
+		} else {
+			var details *dnsx.Details
+			if details, err = dnsx.Validate(data, d.cfg.MaxBytes, c == "llmnr"); err == nil {
+				found = match{protocol: details.Protocol, reason: details.Reason,
+					evidence: []contracts.Evidence{{Field: "application_protocol", Value: details.Protocol, Source: "wire", Strength: "structural"}}}
+				for _, r := range details.Rows {
+					found.evidence = append(found.evidence, contracts.Evidence{Field: r.Field, Value: r.Value, Source: r.Provenance, Strength: r.Strength})
+				}
+			}
+		}
 		if err != nil {
 			e := err.(*parsing.Error)
 			switch e.Kind {
@@ -257,7 +284,7 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 			}
 			continue
 		}
-		matches = append(matches, details)
+		matches = append(matches, found)
 	}
 	if len(matches) > 1 {
 		base.Status, base.Reason = contracts.Unknown, "Ambiguous datagram matches multiple supported structures"
@@ -271,14 +298,17 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 			}
 		}
 		m := matches[0]
-		evidence := []contracts.Evidence{{Field: "application_protocol", Value: m.Protocol, Source: "wire", Strength: "structural"}}
-		for _, r := range m.Rows {
-			evidence = append(evidence, contracts.Evidence{Field: r.Field, Value: r.Value, Source: r.Provenance, Strength: r.Strength})
-		}
+		evidence := m.evidence
 		if hint != "" {
 			evidence = append(evidence, contracts.Evidence{Field: "candidate_hint", Value: hint, Source: "caller", Strength: "context"})
 		}
-		base.Status, base.ApplicationProtocol, base.Evidence, base.Reason = contracts.Identified, str(m.Protocol), evidence, m.Reason
+		base.Status, base.Evidence, base.Reason = contracts.Identified, evidence, m.reason
+		if m.protocol != "" {
+			base.ApplicationProtocol = str(m.protocol)
+		}
+		if m.encryption != "" {
+			base.Encryption = str(m.encryption)
+		}
 		return base, nil
 	}
 	chosen := errors[0]

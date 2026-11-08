@@ -1435,6 +1435,39 @@ def session_cases_v():
     return cases
 
 
+def udp_cases_1():
+    """UDP validators of M5 batch 11 (syslog, ONC RPC, OpenVPN, WireGuard, BACnet): whole, truncated and hinted payloads."""
+    rpc_call = struct.pack(">IIIIII", 0x77, 0, 2, 100000, 2, 3) + struct.pack(">IIII", 0, 0, 0, 0) + struct.pack(">IIII", 100003, 3, 17, 0)
+    vectors = [
+        ("syslog", b"<34>1 2026-11-08T10:00:00.123Z host app 1 ID - message", None),
+        ("syslog", b"<34>1 2026-02-30T10:00:00Z host app 1 ID -", None),
+        ("syslog", b"<34>1 - host app 1 ID [a b=\"c\"] text", "syslog"),
+        ("onc-rpc", rpc_call, None),
+        ("onc-rpc", struct.pack(">IIIIII", 0x77, 1, 0, 0, 0, 0) + struct.pack(">I", 7), None),
+        ("onc-rpc", struct.pack(">IIIII", 0x77, 1, 1, 1, 20), None),
+        ("onc-rpc", struct.pack(">IIIIII", 0x77, 0, 2, 100000, 9, 3) + bytes(16), None),
+        ("openvpn", bytes([0x38]) + b"\x11" * 8 + b"\x00" + bytes(4), None),
+        ("openvpn", bytes([0x38]) + b"\x11" * 8 + bytes(20) + struct.pack(">II", 1, 1) + b"\x00" + bytes(4), None),
+        ("openvpn", bytes([0x40]) + b"\x11" * 8 + b"\x01" + bytes(4) + b"\x22" * 8 + bytes(4), None),
+        ("openvpn", bytes([0x38]) + bytes(8) + b"\x00" + bytes(4), None),
+        ("wireguard", b"\x01\x00\x00\x00\x01\x02\x03\x04" + bytes(140), None),
+        ("wireguard", b"\x02\x00\x00\x00" + b"\x05" * 88, None),
+        ("wireguard", b"\x03\x00\x00\x00" + b"\x06" * 60, None),
+        ("wireguard", b"\x01\x00\x00\x00" + bytes(144), None),
+        ("bacnet", b"\x81\x0a\x00\x0c\x01\x20\xff\xff\x00\xff\x10\x08", None),
+        ("bacnet", b"\x81\x0b\x00\x08\x01\x00\x30\x00", None),
+        ("bacnet", b"\x81\x00\x00\x06\x00\x00", None),
+        ("bacnet", b"\x81\x0a\x00\x08\x02\x00\x10\x08", None),
+        ("bacnet", b"\x81\x0a\x00\x07\x01\x00\xf0", None),
+    ]
+    cases = []
+    for number, (label, data, hint) in enumerate(vectors):
+        base = "datagram/udp1-%02d-%s" % (number, label)
+        cases.append({"id": base + "/whole", "kind": "datagram", "label": label, "payload": data.hex(), "hint": hint, "config": {}})
+        cases.append({"id": base + "/half", "kind": "datagram", "label": label, "payload": data[:max(1, len(data) // 2)].hex(), "hint": hint, "config": {}})
+    return cases
+
+
 def datagram_cases(seed=12, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -1446,6 +1479,7 @@ def datagram_cases(seed=12, limit=None):
         cases.append({"id": base + "/whole", "kind": "datagram", "label": label, "payload": data.hex(), "hint": hint, "config": {}})
         cases.append({"id": base + "/half", "kind": "datagram", "label": label, "payload": data[:max(1, len(data) // 2)].hex(), "hint": hint, "config": {}})
         cases.append({"id": base + "/mutated", "kind": "datagram", "label": label, "payload": _mutate(rng, data).hex(), "hint": hint, "config": {}})
+    cases.extend(udp_cases_1())
     return cases
 
 

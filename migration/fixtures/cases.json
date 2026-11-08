@@ -270325,6 +270325,1439 @@
    "payload": "424304000001000000000000066c6170746f0e0000390001"
   },
   {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 54,
+     "bytes_received": 54,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "syslog/5424",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "syslog/5424",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RFC5424 header and NIL structured-data framing validated; log content unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-00-syslog/whole",
+   "kind": "datagram",
+   "label": "syslog",
+   "payload": "3c33343e3120323032362d31312d30385431303a30303a30302e3132335a20686f7374206170702031204944202d206d657373616765"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 27,
+     "bytes_received": 27,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete RFC5424 header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-00-syslog/half",
+   "kind": "datagram",
+   "label": "syslog",
+   "payload": "3c33343e3120323032362d31312d30385431303a30303a30302e31"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 42,
+     "bytes_received": 42,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid syslog timestamp value",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-01-syslog/whole",
+   "kind": "datagram",
+   "label": "syslog",
+   "payload": "3c33343e3120323032362d30322d33305431303a30303a30305a20686f7374206170702031204944202d"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 21,
+     "bytes_received": 21,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete RFC5424 header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-01-syslog/half",
+   "kind": "datagram",
+   "label": "syslog",
+   "payload": "3c33343e3120323032362d30322d33305431303a30"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 36,
+     "bytes_received": 36,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "syslog/5424",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "syslog/5424",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "syslog",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RFC5424 header and structured-data framing validated; log content unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "syslog",
+   "id": "datagram/udp1-02-syslog/whole",
+   "kind": "datagram",
+   "label": "syslog",
+   "payload": "3c33343e31202d20686f7374206170702031204944205b6120623d2263225d2074657874"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 18,
+     "bytes_received": 18,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Incomplete RFC5424 header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "syslog",
+   "id": "datagram/udp1-02-syslog/half",
+   "kind": "datagram",
+   "label": "syslog",
+   "payload": "3c33343e31202d20686f7374206170702031"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 56,
+     "bytes_received": 56,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "onc-rpc/2",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "onc-rpc/2",
+       "wire",
+       "structural"
+      ],
+      [
+       "rpc_message",
+       "call",
+       "wire:rpc_header",
+       "structural"
+      ],
+      [
+       "rpc_program",
+       "portmap",
+       "wire:rpc_header",
+       "structural"
+      ],
+      [
+       "rpc_program_version",
+       "2",
+       "wire:rpc_header",
+       "structural"
+      ],
+      [
+       "rpc_credential",
+       "auth-none",
+       "wire:rpc_header",
+       "asserted"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ONC RPC v2 call header and authentication structures validated; arguments not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-03-onc-rpc/whole",
+   "kind": "datagram",
+   "label": "onc-rpc",
+   "payload": "000000770000000000000002000186a0000000020000000300000000000000000000000000000000000186a3000000030000001100000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Truncated RPC message",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-03-onc-rpc/half",
+   "kind": "datagram",
+   "label": "onc-rpc",
+   "payload": "000000770000000000000002000186a0000000020000000300000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "onc-rpc/2",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "onc-rpc/2",
+       "wire",
+       "structural"
+      ],
+      [
+       "rpc_message",
+       "reply",
+       "wire:rpc_header",
+       "structural"
+      ],
+      [
+       "rpc_reply",
+       "accepted",
+       "wire:rpc_header",
+       "structural"
+      ],
+      [
+       "rpc_accept_status",
+       "success",
+       "wire:rpc_header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ONC RPC v2 accepted reply validated; results not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-04-onc-rpc/whole",
+   "kind": "datagram",
+   "label": "onc-rpc",
+   "payload": "00000077000000010000000000000000000000000000000000000007"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 14,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-04-onc-rpc/half",
+   "kind": "datagram",
+   "label": "onc-rpc",
+   "payload": "0000007700000001000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RPC authentication status outside the specification",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-05-onc-rpc/whole",
+   "kind": "datagram",
+   "label": "onc-rpc",
+   "payload": "0000007700000001000000010000000100000014"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 10,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-05-onc-rpc/half",
+   "kind": "datagram",
+   "label": "onc-rpc",
+   "payload": "00000077000000010000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RPC program version outside the known range",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-06-onc-rpc/whole",
+   "kind": "datagram",
+   "label": "onc-rpc",
+   "payload": "000000770000000000000002000186a0000000090000000300000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Truncated RPC message",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-06-onc-rpc/half",
+   "kind": "datagram",
+   "label": "onc-rpc",
+   "payload": "000000770000000000000002000186a000000009"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 14,
+     "bytes_received": 14,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "openvpn",
+     "evidence": [
+      [
+       "encryption",
+       "openvpn",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_auth",
+       "absent",
+       "wire",
+       "structural"
+      ],
+      [
+       "openvpn_control",
+       "client-hard-reset",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "OpenVPN client hard-reset control packet validated; no key exchange or tunnel claim",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-07-openvpn/whole",
+   "kind": "datagram",
+   "label": "openvpn",
+   "payload": "3811111111111111110000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 7,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-07-openvpn/half",
+   "kind": "datagram",
+   "label": "openvpn",
+   "payload": "38111111111111"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 42,
+     "bytes_received": 42,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "openvpn",
+     "evidence": [
+      [
+       "encryption",
+       "openvpn",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_auth",
+       "present",
+       "wire",
+       "structural"
+      ],
+      [
+       "openvpn_control",
+       "client-hard-reset",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "OpenVPN client hard-reset control packet validated; no key exchange or tunnel claim",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-08-openvpn/whole",
+   "kind": "datagram",
+   "label": "openvpn",
+   "payload": "381111111111111111000000000000000000000000000000000000000000000001000000010000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 21,
+     "bytes_received": 21,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "OpenVPN control framing does not match plain or tls-auth layouts",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-08-openvpn/half",
+   "kind": "datagram",
+   "label": "openvpn",
+   "payload": "381111111111111111000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 26,
+     "bytes_received": 26,
+     "candidates_selected": 2,
+     "events_emitted": 0,
+     "parser_calls": 2,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "openvpn",
+     "evidence": [
+      [
+       "encryption",
+       "openvpn",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_auth",
+       "absent",
+       "wire",
+       "structural"
+      ],
+      [
+       "openvpn_control",
+       "server-hard-reset",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "OpenVPN server hard-reset control packet validated; no key exchange or tunnel claim",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-09-openvpn/whole",
+   "kind": "datagram",
+   "label": "openvpn",
+   "payload": "4011111111111111110100000000222222222222222200000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 13,
+     "bytes_received": 13,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Unsupported CoAP code profile",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-09-openvpn/half",
+   "kind": "datagram",
+   "label": "openvpn",
+   "payload": "40111111111111111101000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 14,
+     "bytes_received": 14,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "OpenVPN session id must be nonzero",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-10-openvpn/whole",
+   "kind": "datagram",
+   "label": "openvpn",
+   "payload": "3800000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 7,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-10-openvpn/half",
+   "kind": "datagram",
+   "label": "openvpn",
+   "payload": "38000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 148,
+     "bytes_received": 148,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "wireguard",
+     "evidence": [
+      [
+       "encryption",
+       "wireguard",
+       "wire",
+       "structural"
+      ],
+      [
+       "message_type",
+       "handshake_initiation",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "WireGuard handshake message size and reserved bytes validated; keys and MACs unverified, no tunnel claim",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-11-wireguard/whole",
+   "kind": "datagram",
+   "label": "wireguard",
+   "payload": "01000000010203040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 74,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-11-wireguard/half",
+   "kind": "datagram",
+   "label": "wireguard",
+   "payload": "0100000001020304000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 92,
+     "bytes_received": 92,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "wireguard",
+     "evidence": [
+      [
+       "encryption",
+       "wireguard",
+       "wire",
+       "structural"
+      ],
+      [
+       "message_type",
+       "handshake_response",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "WireGuard handshake message size and reserved bytes validated; keys and MACs unverified, no tunnel claim",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-12-wireguard/whole",
+   "kind": "datagram",
+   "label": "wireguard",
+   "payload": "0200000005050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505050505"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 46,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-12-wireguard/half",
+   "kind": "datagram",
+   "label": "wireguard",
+   "payload": "02000000050505050505050505050505050505050505050505050505050505050505050505050505050505050505"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 64,
+     "bytes_received": 64,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "wireguard",
+     "evidence": [
+      [
+       "encryption",
+       "wireguard",
+       "wire",
+       "structural"
+      ],
+      [
+       "message_type",
+       "cookie_reply",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "WireGuard handshake message size and reserved bytes validated; keys and MACs unverified, no tunnel claim",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-13-wireguard/whole",
+   "kind": "datagram",
+   "label": "wireguard",
+   "payload": "03000000060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606060606"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 32,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-13-wireguard/half",
+   "kind": "datagram",
+   "label": "wireguard",
+   "payload": "0300000006060606060606060606060606060606060606060606060606060606"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 148,
+     "bytes_received": 148,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "WireGuard sender index must be nonzero",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-14-wireguard/whole",
+   "kind": "datagram",
+   "label": "wireguard",
+   "payload": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 74,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-14-wireguard/half",
+   "kind": "datagram",
+   "label": "wireguard",
+   "payload": "0100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "bacnet",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "bacnet",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BACnet/IP BVLC and NPDU framing validated; objects and services not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-15-bacnet/whole",
+   "kind": "datagram",
+   "label": "bacnet",
+   "payload": "810a000c0120ffff00ff1008"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 6,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-15-bacnet/half",
+   "kind": "datagram",
+   "label": "bacnet",
+   "payload": "810a000c0120"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "bacnet",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "bacnet",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BACnet/IP BVLC and NPDU framing validated; objects and services not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-16-bacnet/whole",
+   "kind": "datagram",
+   "label": "bacnet",
+   "payload": "810b000801003000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 4,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-16-bacnet/half",
+   "kind": "datagram",
+   "label": "bacnet",
+   "payload": "810b0008"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "bacnet",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "bacnet",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BACnet/IP BVLC and NPDU framing validated; objects and services not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-17-bacnet/whole",
+   "kind": "datagram",
+   "label": "bacnet",
+   "payload": "810000060000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 3,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-17-bacnet/half",
+   "kind": "datagram",
+   "label": "bacnet",
+   "payload": "810000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BACnet NPDU version must be 1",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-18-bacnet/whole",
+   "kind": "datagram",
+   "label": "bacnet",
+   "payload": "810a000802001008"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 4,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-18-bacnet/half",
+   "kind": "datagram",
+   "label": "bacnet",
+   "payload": "810a0008"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 7,
+     "bytes_received": 7,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BACnet APDU type reserved",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-19-bacnet/whole",
+   "kind": "datagram",
+   "label": "bacnet",
+   "payload": "810a00070100f0"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 3,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp1-19-bacnet/half",
+   "kind": "datagram",
+   "label": "bacnet",
+   "payload": "810a00"
+  },
+  {
    "expected": {
     "packets": [
      {
@@ -339455,7 +340888,7 @@
  "reference": {
   "backend": "python",
   "content_release": "2026.11.0",
-  "head": "e742e32"
+  "head": "8c8d3ec"
  },
  "schema": 1
 }

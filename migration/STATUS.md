@@ -220,7 +220,16 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` with the 58 claimed families: **3292 compared, 3292 matched, 0 mismatched, 0 gaps**; per family (stream/session): socks5 69/4, tacacs-plus 60/4, netbios-ss 22/4; records included. |
 | Not claimed | — | smb1 needs the GSS token classifier and moves to the dedicated-review batch with smb2, kerberos and ldap; SOCKS5 signature contexts (`retain_contexts`) remain with the signature option. |
 
-## M5 batches 11+ / M7+ — next
+### Batch 11 — the Go datagram inspector generalized; first UDP validators
+
+| item | state | evidence |
+|---|---|---|
+| Engine | implemented | `engine.Datagram` runs a validator table (`framed.DatagramValidators`) beside the DNS layout. A validator returns either a bare (protocol, reason) result, for which the inspector adds the `application_protocol` row, or a full match with encryption and evidence rows carrying their final provenance; the hint row, ambiguity, competing-budget and error-precedence rules are unchanged. |
+| Validators | implemented | syslog (the RFC 5424 profile shared with TCP), onc-rpc (shared `rpcParse`, `wire:` provenance), openvpn (shared hard-reset check), wireguard and bacnet. `go/internal/protocols/framed/datagram.go`. |
+| Fixtures | implemented | `cases.py udp_cases_1()`: 20 payloads, whole and truncated (40 datagram cases). |
+| Differential result | implemented | `make parity-go` with the 60 claimed families: **3370 compared, 3370 matched, 0 mismatched, 0 gaps**; datagram: onc-rpc 20, wireguard 14, bacnet 13, openvpn 10, syslog 9; records included. |
+
+## M5 batches 12+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive

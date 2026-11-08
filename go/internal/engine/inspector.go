@@ -30,7 +30,7 @@ var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"mqtt", "resp", "amqp", "onc-rpc", "diameter",
 	"bgp", "openvpn", "pptp", "fastcgi",
 	"dcerpc", "websocket", "xmpp", "syslog", "git",
-	"netbios-ss", "tacacs-plus", "socks5"}
+	"netbios-ss", "tacacs-plus", "socks5", "wireguard", "bacnet"}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 	switch candidate {
