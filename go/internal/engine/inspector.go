@@ -16,13 +16,15 @@ var Ported = map[string]bool{"text": true, "tls": true, "dns": true, "irc": true
 	"postgresql": true, "rfb": true, "bittorrent": true, "memcached": true, "rsync": true, "fins": true, "afp": true,
 	"zmtp": true, "bolt": true, "stomp": true, "giop": true, "x11": true, "x11-server": true, "spice": true,
 	"mysql": true, "mongodb": true, "tds": true, "tns": true, "cql": true, "kafka": true,
-	"modbus": true, "dnp3": true, "ethernet-ip": true, "iec-104": true, "opcua": true, "s7comm": true}
+	"modbus": true, "dnp3": true, "ethernet-ip": true, "iec-104": true, "opcua": true, "s7comm": true,
+	"mqtt": true, "resp": true, "amqp": true, "onc-rpc": true, "diameter": true}
 
 // Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
 var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
 	"postgresql", "rfb", "bittorrent", "memcached", "rsync", "fins", "afp", "zmtp", "bolt", "stomp",
 	"giop", "x11", "spice", "mysql", "mongodb", "tds", "tns", "cql", "kafka",
-	"modbus", "dnp3", "ethernet-ip", "iec-104", "opcua", "s7comm"}
+	"modbus", "dnp3", "ethernet-ip", "iec-104", "opcua", "s7comm",
+	"mqtt", "resp", "amqp", "onc-rpc", "diameter"}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 	switch candidate {
@@ -84,6 +86,16 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 		return framed.NewOPCUA(cfg.MaxBytes), nil
 	case "s7comm":
 		return framed.NewS7(cfg.MaxBytes), nil
+	case "mqtt":
+		return framed.NewMQTT(cfg.MaxBytes), nil
+	case "resp":
+		return framed.NewRESP(cfg.MaxBytes), nil
+	case "amqp":
+		return framed.NewAMQP(), nil
+	case "onc-rpc":
+		return framed.NewRPC(cfg.MaxBytes), nil
+	case "diameter":
+		return framed.NewDiameter(cfg.MaxBytes, cfg.MaxHeaders), nil
 	case "tls":
 		return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
 			Certificates: cfg.Certificates, Continuation: cfg.Continuation})

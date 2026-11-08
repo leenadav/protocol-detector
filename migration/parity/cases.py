@@ -189,6 +189,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(desktop_cases())
     cases.extend(database_cases())
     cases.extend(ics_cases())
+    cases.extend(messaging_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -957,6 +958,139 @@ def ics_cases():
     cases.append({"id": "stream/ics-options/opcua-byte-budget", "kind": "stream", "label": "opcua",
                   "chunks": [_opcua(b"HELF", struct.pack("<IIIII", 0, 65536, 65536, 0, 0) + _ua_string(b"opc.tcp://" + b"x" * 100)).hex()],
                   "hint": None, "config": {"max_bytes": 64}, "end": "fin"})
+    return cases
+
+
+def _mqtt_str(value):
+    return struct.pack(">H", len(value)) + value
+
+
+def _mqtt_connect(level=4, flags=0x02, client=b"sensor-1", properties=b"", will=b"", tail=b"", name=b"MQTT"):
+    body = _mqtt_str(name) + bytes([level, flags]) + b"\x00\x3c"
+    if level == 5:
+        body += bytes([len(properties)]) + properties
+    body += _mqtt_str(client) + will + tail
+    return b"\x10" + bytes([len(body)]) + body
+
+
+def _resp(*items):
+    return b"*%d\r\n" % len(items) + b"".join(b"$%d\r\n%s\r\n" % (len(item), item) for item in items)
+
+
+def _rpc_auth(flavor, body=b""):
+    return struct.pack(">II", flavor, len(body)) + body
+
+
+def _auth_sys(name=b"client", gids=2):
+    padded = name + bytes((-len(name)) % 4)
+    return struct.pack(">II", 1, len(name)) + padded + struct.pack(">III", 1000, 1000, gids) + bytes(4 * gids)
+
+
+def _rpc_call(program=100003, version=3, procedure=0, credential=None, verifier=None, rpcvers=2):
+    credential = _rpc_auth(0) if credential is None else credential
+    verifier = _rpc_auth(0) if verifier is None else verifier
+    return struct.pack(">IIIIII", 0x1234, 0, rpcvers, program, version, procedure) + credential + verifier
+
+
+def _rpc_record(message, last=True):
+    return struct.pack(">I", (0x80000000 if last else 0) | len(message)) + message
+
+
+def _avp(code, value, flags=0x40, vendor=None):
+    header = 12 if vendor is not None else 8
+    body = struct.pack(">I", code) + bytes([flags | (0x80 if vendor is not None else 0)]) + struct.pack(">I", header + len(value))[1:]
+    if vendor is not None:
+        body += struct.pack(">I", vendor)
+    return body + value + bytes((-len(value)) % 4)
+
+
+def _diameter(avps, flags=0x80, command=257):
+    body = b"".join(avps)
+    return bytes([1]) + struct.pack(">I", 20 + len(body))[1:] + bytes([flags]) + struct.pack(">I", command)[1:] + bytes(4) + struct.pack(">II", 1, 2) + body
+
+
+def messaging_cases():
+    """MQTT CONNECT, RESP command arrays, AMQP protocol headers and Connection.Start, ONC RPC over TCP record marking and
+    Diameter CER/CEA (M5 batch 6); identifications, malformed sizes, unsupported versions and budget outcomes, each as
+    whole / 1-byte / 7-byte / truncated chunkings."""
+    cer = [_avp(264, b"client.example.org"), _avp(296, b"example.org"), _avp(257, b"\x00\x01\xc0\x00\x02\x01"),
+           _avp(266, struct.pack(">I", 0)), _avp(269, b"demo product")]
+    table = struct.pack(">I", 4) + b"abcd"
+    start = (b"\x00\x0a\x00\x0a\x00\x09" + table + struct.pack(">I", 5) + b"PLAIN" + struct.pack(">I", 5) + b"en_US")
+    vectors = [
+        ("mqtt-311", _mqtt_connect()),
+        ("mqtt-5", _mqtt_connect(level=5, properties=b"\x11\x00\x00\x00\x3c\x21\x00\x10")),
+        ("mqtt-will", _mqtt_connect(flags=0x0e, will=_mqtt_str(b"status/offline") + _mqtt_str(b"gone"))),
+        ("mqtt-credentials", _mqtt_connect(flags=0xc2, tail=_mqtt_str(b"user") + _mqtt_str(b"secret"))),
+        ("mqtt-5-will-utf8", _mqtt_connect(level=5, flags=0x06, will=b"\x02\x01\x01" + _mqtt_str(b"t") + _mqtt_str(b"\xff"))),
+        ("mqtt-level", _mqtt_connect(level=3)),
+        ("mqtt-name", _mqtt_connect(name=b"MQIsdp")),
+        ("mqtt-flags", _mqtt_connect(flags=0x03)),
+        ("mqtt-empty-client", _mqtt_connect(flags=0x00, client=b"")),
+        ("mqtt-will-topic", _mqtt_connect(flags=0x06, will=_mqtt_str(b"a/#") + _mqtt_str(b"x"))),
+        ("mqtt-duplicate-property", _mqtt_connect(level=5, properties=b"\x21\x00\x10\x21\x00\x10")),
+        ("mqtt-auth-data", _mqtt_connect(level=5, properties=b"\x16\x00\x01x")),
+        ("mqtt-extra", _mqtt_connect(tail=b"zz")),
+        ("mqtt-password-only", _mqtt_connect(flags=0x42, tail=_mqtt_str(b"secret"))),
+        ("resp-ping", _resp(b"PING")),
+        ("resp-set", _resp(b"SET", b"key", b"value")),
+        ("resp-empty-arg", _resp(b"ECHO", b"")),
+        ("resp-bad-command", _resp(b"1NFO")),
+        ("resp-empty", b"*0\r\n"),
+        ("resp-bad-header", b"*1\r\n$x\r\nPING\r\n"),
+        ("resp-bad-terminator", b"*1\r\n$4\r\nPINGxx"),
+        ("resp-many", b"*5000\r\n"),
+        ("resp-long-header", b"*" + b"1" * 30 + b"\r\n"),
+        ("resp-leading-zeros", b"*0001\r\n$0004\r\nPING\r\n"),
+        ("amqp-091", b"AMQP\x00\x00\x09\x01"),
+        ("amqp-10", b"AMQP\x00\x01\x00\x00"),
+        ("amqp-unknown", b"AMQP\x03\x01\x00\x00"),
+        ("amqp-start", b"\x01\x00\x00" + struct.pack(">I", len(start)) + start + b"\xce"),
+        ("amqp-start-end", b"\x01\x00\x00" + struct.pack(">I", len(start)) + start + b"\x00"),
+        ("amqp-start-method", b"\x01\x00\x00" + struct.pack(">I", len(start)) + b"\x00\x0a\x00\x0b" + start[4:] + b"\xce"),
+        ("amqp-start-locale", b"\x01\x00\x00" + struct.pack(">I", len(start)) + start[:-5] + b"en\x01US" + b"\xce"),
+        ("onc-call", _rpc_record(_rpc_call())),
+        ("onc-call-auth-sys", _rpc_record(_rpc_call(program=100005, version=3, credential=_rpc_auth(1, _auth_sys())))),
+        ("onc-call-other", _rpc_record(_rpc_call(program=200100, version=1))),
+        ("onc-call-args", _rpc_record(_rpc_call() + bytes(8))),
+        ("onc-reply", _rpc_record(struct.pack(">III", 0x1234, 1, 0) + _rpc_auth(0) + struct.pack(">I", 0))),
+        ("onc-reply-mismatch", _rpc_record(struct.pack(">III", 0x1234, 1, 0) + _rpc_auth(0) + struct.pack(">III", 2, 2, 3))),
+        ("onc-denied", _rpc_record(struct.pack(">IIIII", 0x1234, 1, 1, 1, 5))),
+        ("onc-denied-trailing", _rpc_record(struct.pack(">IIIII", 0x1234, 1, 1, 1, 5) + bytes(4))),
+        ("onc-version", _rpc_record(_rpc_call(rpcvers=3))),
+        ("onc-program-version", _rpc_record(_rpc_call(version=9))),
+        ("onc-fragment", _rpc_record(_rpc_call(), last=False)),
+        ("onc-bad-flavor", _rpc_record(_rpc_call(credential=_rpc_auth(9)))),
+        ("onc-sys-verifier", _rpc_record(_rpc_call(verifier=_rpc_auth(1, _auth_sys())))),
+        ("onc-sys-gids", _rpc_record(_rpc_call(credential=_rpc_auth(1, _auth_sys(gids=20))))),
+        ("diameter-cer", _diameter(cer)),
+        ("diameter-cea", _diameter(cer + [_avp(268, struct.pack(">I", 2001))], flags=0x00)),
+        ("diameter-cea-failure", _diameter(cer + [_avp(268, struct.pack(">I", 5012))], flags=0x00)),
+        ("diameter-vendor-avp", _diameter(cer + [_avp(1000, b"opaque", vendor=10415)])),
+        ("diameter-missing", _diameter(cer[:3])),
+        ("diameter-no-m-flag", _diameter([_avp(264, b"client.example.org", flags=0)] + cer[1:])),
+        ("diameter-space", _diameter([_avp(264, b"client example")] + cer[1:])),
+        ("diameter-repeated", _diameter(cer + [_avp(269, b"again")])),
+        ("diameter-ipv6", _diameter(cer[:2] + [_avp(257, b"\x00\x02" + bytes(16))] + cer[3:])),
+        ("diameter-bad-ip", _diameter(cer[:2] + [_avp(257, b"\x00\x01" + bytes(8))] + cer[3:])),
+        ("diameter-result-range", _diameter(cer + [_avp(268, struct.pack(">I", 7000))], flags=0x00)),
+        ("diameter-proxiable", _diameter(cer, flags=0xc0)),
+        ("diameter-command", _diameter(cer, command=280)),
+        ("diameter-cea-no-result", _diameter(cer, flags=0x00)),
+    ]
+    cases = []
+    for number, (name, data) in enumerate(vectors):
+        base = "stream/messaging-%02d-%s" % (number, name)
+        family = {"onc": "onc-rpc"}.get(name.split("-", 1)[0], name.split("-", 1)[0])
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": family, "chunks": chunks, "hint": None, "config": {}, "end": end})
+    for name, data, config in (("mqtt-byte-budget", _mqtt_connect(client=b"c" * 80), {"max_bytes": 64}),
+                               ("resp-byte-budget", _resp(b"SET", b"k", b"v" * 100), {"max_bytes": 64}),
+                               ("diameter-avp-budget", _diameter(cer), {"max_headers": 3})):
+        cases.append({"id": "stream/messaging-options/" + name, "kind": "stream", "label": name.split("-", 1)[0], "chunks": [data.hex()],
+                      "hint": None, "config": config, "end": "fin"})
     return cases
 
 

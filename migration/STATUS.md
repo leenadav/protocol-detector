@@ -174,7 +174,16 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` with the 41 claimed families: **2209 compared, 2209 matched, 0 mismatched, 0 gaps**; per family (stream/session): modbus 74/4, opcua 65/4, s7comm 54/0, ethernet-ip 34/4, dnp3 30/4, iec-104 30/4; records included. |
 | Not claimed | — | iso-tsap stays with the TPKT route and RDP in the dedicated-review batch; bacnet is a datagram family for the UDP batch. |
 
-## M5 batches 6+ / M7+ — next
+### Batch 6 — messaging and RPC
+
+| item | state | evidence |
+|---|---|---|
+| Families | implemented | mqtt (3.1.1/5.0 CONNECT, v5 properties, Will and UTF-8 rules), resp (command array; numeric headers capped at 24 bytes, numbers beyond int64 treated as over budget), amqp (protocol headers, 0-9-1 Connection.Start), onc-rpc (TCP record marking, CALL/REPLY, opaque_auth with AUTH_SYS), diameter (CER/CEA AVP framing and mandatory AVPs). `go/internal/protocols/framed/messaging.go`, `rpc.go`; the fuzz target covers all five. |
+| Fixtures | implemented | `cases.py messaging_cases()`: 59 vectors × 4 chunkings plus three budget cases (239 stream cases). |
+| Differential result | implemented | `make parity-go` with the 46 claimed families: **2507 compared, 2507 matched, 0 mismatched, 0 gaps**; per family (stream/session): onc-rpc 80/4, diameter 69/4, mqtt 63/4, resp 41/0, amqp 34/4; records included. |
+| Not claimed | — | The ONC RPC UDP datagram path waits for the datagram batch (a named `datagram candidate` gap). The engine test that checks an unported hint is refused now names smb2 instead of the newly ported mqtt. |
+
+## M5 batches 7+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive
