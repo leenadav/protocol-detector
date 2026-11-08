@@ -1615,6 +1615,67 @@ def udp_cases_3():
     return cases
 
 
+def _tlv(tag, value):
+    size = len(value)
+    length = bytes([size]) if size < 128 else bytes([0x81, size]) if size < 256 else bytes([0x82]) + struct.pack(">H", size)
+    return bytes([tag]) + length + value
+
+
+def _int(value):
+    return _tlv(2, value.to_bytes(max(1, (value.bit_length() + 8) // 8), "big", signed=True))
+
+
+def _snmp(version, pdu_tag, bindings, community=b"public", status=0, index=0):
+    pdu = _tlv(pdu_tag, _int(7) + _int(status) + _int(index) + _tlv(0x30, bindings))
+    return _tlv(0x30, _int(version) + _tlv(4, community) + pdu)
+
+
+def _snmp3(flags=4, user=b"", engine=b"", auth=b"", priv=b"", scoped=None, model=3):
+    header = _tlv(0x30, _int(1) + _int(65507) + _tlv(4, bytes([flags])) + _int(model))
+    usm = _tlv(0x30, _tlv(4, engine) + _int(0) + _int(0) + _tlv(4, user) + _tlv(4, auth) + _tlv(4, priv))
+    if scoped is None:
+        scoped = _tlv(0x30, _tlv(4, b"") + _tlv(4, b"") + _tlv(0xa0, _int(1) + _int(0) + _int(0) + _tlv(0x30, b"")))
+    return _tlv(0x30, _int(3) + header + _tlv(4, usm) + scoped)
+
+
+def udp_cases_4():
+    """UDP validators of M5 batch 14: SNMP v1/v2c/v3 over BER and the hinted RTP header."""
+    sys_descr = _tlv(6, b"\x2b\x06\x01\x02\x01\x01\x01\x00")
+    get_binding = _tlv(0x30, sys_descr + _tlv(5, b""))
+    value_binding = _tlv(0x30, sys_descr + _tlv(4, b"Linux"))
+    vectors = [
+        ("snmp", _snmp(1, 0xa0, get_binding), None),
+        ("snmp", _snmp(0, 0xa1, get_binding), None),
+        ("snmp", _snmp(1, 0xa2, value_binding), None),
+        ("snmp", _snmp(1, 0xa5, get_binding, status=0, index=10), None),
+        ("snmp", _tlv(0x30, _int(0) + _tlv(4, b"public") + _tlv(0xa4, sys_descr + _tlv(0x40, bytes(4)) + _int(6) + _int(1) + _tlv(0x43, b"\x01") + _tlv(0x30, value_binding))), None),
+        ("snmp", _snmp(1, 0xa0, value_binding), None),
+        ("snmp", _snmp(1, 0xa0, get_binding, status=1), None),
+        ("snmp", _snmp(2, 0xa0, get_binding), None),
+        ("snmp", _snmp(0, 0xa5, get_binding), None),
+        ("snmp", _snmp(1, 0xa0, _tlv(0x30, _tlv(6, b"\x2b\x80\x01") + _tlv(5, b""))), None),
+        ("snmp", _snmp(1, 0xa2, _tlv(0x30, sys_descr + _tlv(0x40, b"\x01\x02"))), None),
+        ("snmp", _snmp3(), None),
+        ("snmp", _snmp3(flags=7, user=b"admin", engine=b"\x80\x00\x1f\x88", auth=bytes(12), priv=bytes(8), scoped=_tlv(4, bytes(32))), None),
+        ("snmp", _snmp3(flags=5, user=b"admin", engine=b"\x80\x00\x1f\x88", auth=bytes(12)), None),
+        ("snmp", _snmp3(flags=2), None),
+        ("snmp", _snmp3(flags=5, user=b"admin", engine=b"e"), None),
+        ("snmp", _snmp3(model=2, scoped=None), None),
+        ("rtp", bytes([0x80, 0x60]) + struct.pack(">HII", 1, 1000, 0x1234) + bytes(160), "rtp"),
+        ("rtp", bytes([0x91, 0x00]) + struct.pack(">HII", 1, 1000, 0x1234) + bytes(4) + struct.pack(">HH", 0xbede, 1) + bytes(4) + bytes(8), "rtp"),
+        ("rtp", bytes([0xa0, 0x00]) + struct.pack(">HII", 1, 1000, 0x1234) + bytes(8) + b"\x00\x00\x03", "rtp"),
+        ("rtp", bytes([0xa0, 0x00]) + struct.pack(">HII", 1, 1000, 0x1234) + bytes(3) + b"\x00", "rtp"),
+        ("rtp", bytes([0x80, 0xc8]) + struct.pack(">HII", 1, 1000, 0x1234), "rtp"),
+        ("rtp", bytes([0x40, 0x00]) + bytes(10), "rtp"),
+    ]
+    cases = []
+    for number, (label, data, hint) in enumerate(vectors):
+        base = "datagram/udp4-%02d-%s" % (number, label)
+        cases.append({"id": base + "/whole", "kind": "datagram", "label": label, "payload": data.hex(), "hint": hint, "config": {}})
+        cases.append({"id": base + "/half", "kind": "datagram", "label": label, "payload": data[:max(1, len(data) // 2)].hex(), "hint": hint, "config": {}})
+    return cases
+
+
 def datagram_cases(seed=12, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -1629,6 +1690,7 @@ def datagram_cases(seed=12, limit=None):
     cases.extend(udp_cases_1())
     cases.extend(udp_cases_2())
     cases.extend(udp_cases_3())
+    cases.extend(udp_cases_4())
     return cases
 
 

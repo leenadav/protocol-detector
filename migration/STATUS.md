@@ -247,7 +247,15 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` with the 74 claimed families: **3601 compared, 3601 matched, 0 mismatched, 0 gaps**; datagram: netflow 14, ipfix 7, sflow 9, stun 31, dhcp 18, radius 27; records included. |
 | Not claimed | — | ssdp (needs the HTTP line parser exposed outside the text route), sip over UDP (same), snmp (BER profile, next), rtp (hint), tplink-smarthome (faithful `json.loads`), kerberos, quic, dtls and ikev2 (dedicated review). |
 
-## M5 batches 14+ / M7+ — next
+### Batch 14 — SNMP and RTP
+
+| item | state | evidence |
+|---|---|---|
+| Validators | implemented | snmp (v1/v2c PDUs, v1 traps, v3 with USM security parameters and a plaintext or encrypted scoped PDU; the BER helpers `berLength`/`berField` port `framing.ber_length`/`ber_field`; OID subidentifiers bounded as in Python), rtp (hint only). `go/internal/protocols/framed/snmp.go`. |
+| Fixtures | implemented | `cases.py udp_cases_4()`: 23 payloads, whole and truncated (46 datagram cases). |
+| Differential result | implemented | `make parity-go` with the 76 claimed families: **3673 compared, 3673 matched, 0 mismatched, 0 gaps**; datagram: snmp 58, rtp 15; records included. |
+
+## M5 batches 15+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive

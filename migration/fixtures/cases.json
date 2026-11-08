@@ -276859,6 +276859,1703 @@
    "payload": "0107003200000000000000000000000000000000010675736572021200000000000000000000000000000000040600000000"
   },
   {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "snmp/2c",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "snmp/2c",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_pdu",
+       "get",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMP get BER/PDU/OID framing validated; community and values unverified and never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-00-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010104067075626c6963a019020107020100020100300e300c06082b060102010101000500"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-00-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010104067075626c6963a0190201070201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "snmp/1",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "snmp/1",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_pdu",
+       "get-next",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMP get-next BER/PDU/OID framing validated; community and values unverified and never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-01-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010004067075626c6963a119020107020100020100300e300c06082b060102010101000500"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-01-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010004067075626c6963a1190201070201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 45,
+     "bytes_received": 45,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "snmp/2c",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "snmp/2c",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_pdu",
+       "response",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMP response BER/PDU/OID framing validated; community and values unverified and never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-02-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302b02010104067075626c6963a21e0201070201000201003013301106082b0601020101010004054c696e7578"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 22,
+     "bytes_received": 22,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-02-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302b02010104067075626c6963a21e02010702010002"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "snmp/2c",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "snmp/2c",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_pdu",
+       "get-bulk",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMP get-bulk BER/PDU/OID framing validated; community and values unverified and never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-03-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010104067075626c6963a51902010702010002010a300e300c06082b060102010101000500"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-03-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010104067075626c6963a5190201070201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 61,
+     "bytes_received": 61,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "snmp/1",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "snmp/1",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_pdu",
+       "trap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMP trap BER/PDU/OID framing validated; community and values unverified and never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-04-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "303b02010004067075626c6963a42e06082b060102010101004004000000000201060201014301013013301106082b0601020101010004054c696e7578"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 30,
+     "bytes_received": 30,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-04-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "303b02010004067075626c6963a42e06082b060102010101004004000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 45,
+     "bytes_received": 45,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Unexpected BER field tag",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-05-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302b02010104067075626c6963a01e0201070201000201003013301106082b0601020101010004054c696e7578"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 22,
+     "bytes_received": 22,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-05-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302b02010104067075626c6963a01e02010702010002"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMP request error-status and error-index must be zero",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-06-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010104067075626c6963a019020107020101020100300e300c06082b060102010101000500"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-06-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010104067075626c6963a0190201070201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Only SNMPv1, v2c and v3 messages are supported",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-07-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010204067075626c6963a019020107020100020100300e300c06082b060102010101000500"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-07-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010204067075626c6963a0190201070201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMP PDU kind outside the version's PDU set",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-08-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010004067075626c6963a519020107020100020100300e300c06082b060102010101000500"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-08-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302602010004067075626c6963a5190201070201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 35,
+     "bytes_received": 35,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Nonminimal SNMP OID subidentifier",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-09-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302102010104067075626c6963a0140201070201000201003009300706032b80010500"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 17,
+     "bytes_received": 17,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-09-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302102010104067075626c6963a0140201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 42,
+     "bytes_received": 42,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMP binding value length outside its type",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-10-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302802010104067075626c6963a21b0201070201000201003010300e06082b0601020101010040020102"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 21,
+     "bytes_received": 21,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-10-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "302802010104067075626c6963a21b020107020100"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 58,
+     "bytes_received": 58,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "snmp/3",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "snmp/3",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_pdu",
+       "get",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_security",
+       "usm",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_scoped_pdu",
+       "plaintext",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_flags",
+       "reportable",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_security_level",
+       "no-auth-no-priv",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_usm_discovery",
+       "request",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMPv3 header, security parameter and plaintext scoped PDU framing validated; user, engine, keys and values unverified and never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-11-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "3038020103300e020101020300ffe30401040201030410300e0400020100020100040004000400301104000400a00b0201010201000201003000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 29,
+     "bytes_received": 29,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-11-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "3038020103300e020101020300ffe30401040201030410300e04000201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 102,
+     "bytes_received": 102,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "snmp/3",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "snmp/3",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_pdu",
+       "encrypted",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_security",
+       "usm",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_scoped_pdu",
+       "encrypted",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_flags",
+       "authprivreportable",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_security_level",
+       "auth-priv",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMPv3 header, security parameter and encrypted scoped PDU framing validated; user, engine, keys and values unverified and never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-12-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "3064020103300e020101020300ffe3040107020103042d302b040480001f88020100020100040561646d696e040c0000000000000000000000000408000000000000000004200000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 51,
+     "bytes_received": 51,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-12-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "3064020103300e020101020300ffe3040107020103042d302b040480001f88020100020100040561646d696e040c0000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 79,
+     "bytes_received": 79,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "snmp/3",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "snmp/3",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_pdu",
+       "get",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_security",
+       "usm",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_scoped_pdu",
+       "plaintext",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_flags",
+       "authreportable",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_security_level",
+       "auth-no-priv",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMPv3 header, security parameter and plaintext scoped PDU framing validated; user, engine, keys and values unverified and never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-13-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "304d020103300e020101020300ffe304010502010304253023040480001f88020100020100040561646d696e040c0000000000000000000000000400301104000400a00b0201010201000201003000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 39,
+     "bytes_received": 39,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-13-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "304d020103300e020101020300ffe304010502010304253023040480001f880201000201000405"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 58,
+     "bytes_received": 58,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMPv3 privacy without authentication is invalid",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-14-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "3038020103300e020101020300ffe30401020201030410300e0400020100020100040004000400301104000400a00b0201010201000201003000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 29,
+     "bytes_received": 29,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-14-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "3038020103300e020101020300ffe30401020201030410300e04000201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 64,
+     "bytes_received": 64,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMPv3 authentication flag without authentication parameters",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-15-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "303e020103300e020101020300ffe304010502010304163014040165020100020100040561646d696e04000400301104000400a00b0201010201000201003000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 32,
+     "bytes_received": 32,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-15-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "303e020103300e020101020300ffe30401050201030416301404016502010002"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 58,
+     "bytes_received": 58,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "snmp/3",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "snmp/3",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_pdu",
+       "get",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_security",
+       "model-2",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_scoped_pdu",
+       "plaintext",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_flags",
+       "reportable",
+       "wire",
+       "structural"
+      ],
+      [
+       "snmp_security_level",
+       "no-auth-no-priv",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "SNMPv3 header, security parameter and plaintext scoped PDU framing validated; user, engine, keys and values unverified and never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-16-snmp/whole",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "3038020103300e020101020300ffe30401040201020410300e0400020100020100040004000400301104000400a00b0201010201000201003000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 29,
+     "bytes_received": 29,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "BER field exceeds enclosing length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp4-16-snmp/half",
+   "kind": "datagram",
+   "label": "snmp",
+   "payload": "3038020103300e020101020300ffe30401040201020410300e04000201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 172,
+     "bytes_received": 172,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "rtp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "rtp",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "rtp",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTP fixed header, CSRC and extension framing validated with a candidate hint; media not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-17-rtp/whole",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "80600001000003e80000123400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 86,
+     "bytes_received": 86,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "rtp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "rtp",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "rtp",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTP fixed header, CSRC and extension framing validated with a candidate hint; media not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-17-rtp/half",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "80600001000003e8000012340000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 32,
+     "bytes_received": 32,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "rtp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "rtp",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "rtp",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTP fixed header, CSRC and extension framing validated with a candidate hint; media not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-18-rtp/whole",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "91000001000003e80000123400000000bede0001000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Truncated RTP header extension",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-18-rtp/half",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "91000001000003e80000123400000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 23,
+     "bytes_received": 23,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "rtp",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "rtp",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "rtp",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTP fixed header, CSRC and extension framing validated with a candidate hint; media not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-19-rtp/whole",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "a0000001000003e8000012340000000000000000000003"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 11,
+     "bytes_received": 11,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTP header shorter than 12 bytes",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-19-rtp/half",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "a0000001000003e8000012"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTP padding count invalid",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-20-rtp/whole",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "a0000001000003e80000123400000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTP header shorter than 12 bytes",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-20-rtp/half",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "a0000001000003e8"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Payload type collides with RTCP packet types",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-21-rtp/whole",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "80c80001000003e800001234"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTP header shorter than 12 bytes",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-21-rtp/half",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "80c800010000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTP profile requires version 2",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-22-rtp/whole",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "400000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RTP header shorter than 12 bytes",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "rtp",
+   "id": "datagram/udp4-22-rtp/half",
+   "kind": "datagram",
+   "label": "rtp",
+   "payload": "400000000000"
+  },
+  {
    "expected": {
     "packets": [
      {
@@ -345989,7 +347686,7 @@
  "reference": {
   "backend": "python",
   "content_release": "2026.11.0",
-  "head": "d63b371"
+  "head": "e6b37d1"
  },
  "schema": 1
 }

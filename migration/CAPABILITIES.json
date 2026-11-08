@@ -1699,9 +1699,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 14: fixed header, CSRC, extension and padding (hint only); 15 datagram cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -1928,9 +1928,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 14: v1/v2c PDUs, v1 traps and v3 (USM, plaintext or encrypted scoped PDU) over BER; 58 datagram cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
