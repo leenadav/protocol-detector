@@ -221,9 +221,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 4: native protocol v4 STARTUP/OPTIONS requests and ERROR/READY/AUTHENTICATE/SUPPORTED responses; 74 stream, 4 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -820,9 +820,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 4: request header v1/v2 incl. ApiVersions v3 client software name; 38 stream, 4 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -1077,9 +1077,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 4: uncompressed OP_MSG with CRC-32C (budget checked from the fixed header) and the bounded BSON validator; hint only; 94 stream, 0 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -1134,9 +1134,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 4: server HandshakeV10, client HandshakeResponse41 and SSLRequest (mysql-sslrequest shift); hint only; 69 stream, 0 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -2186,9 +2186,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 4: PRELOGIN request and response options (encryption, MARS, federated auth, session encryption); 48 stream, 4 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -2300,9 +2300,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 4: CONNECT (inline or deferred descriptor), ACCEPT, REFUSE and RESEND; 70 stream, 4 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [

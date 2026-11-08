@@ -14,12 +14,13 @@ import (
 // Ported is the set of dispatch candidates the Go backend has a parser for.
 var Ported = map[string]bool{"text": true, "tls": true, "dns": true, "irc": true, "telnet": true,
 	"postgresql": true, "rfb": true, "bittorrent": true, "memcached": true, "rsync": true, "fins": true, "afp": true,
-	"zmtp": true, "bolt": true, "stomp": true, "giop": true, "x11": true, "x11-server": true, "spice": true}
+	"zmtp": true, "bolt": true, "stomp": true, "giop": true, "x11": true, "x11-server": true, "spice": true,
+	"mysql": true, "mongodb": true, "tds": true, "tns": true, "cql": true, "kafka": true}
 
 // Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
 var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
 	"postgresql", "rfb", "bittorrent", "memcached", "rsync", "fins", "afp", "zmtp", "bolt", "stomp",
-	"giop", "x11", "spice"}
+	"giop", "x11", "spice", "mysql", "mongodb", "tds", "tns", "cql", "kafka"}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 	switch candidate {
@@ -57,6 +58,18 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 		return framed.NewX11Reply(cfg.MaxBytes), nil
 	case "spice":
 		return framed.NewSPICE(cfg.MaxBytes), nil
+	case "mysql":
+		return framed.NewMySQL(cfg.MaxBytes), nil
+	case "mongodb":
+		return framed.NewMongoDB(framed.MongoConfig{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, MaxLine: cfg.MaxLine, MaxCRC32CBytes: cfg.MaxCRC32CBytes}), nil
+	case "tds":
+		return framed.NewTDS(cfg.MaxBytes), nil
+	case "tns":
+		return framed.NewTNS(cfg.MaxBytes), nil
+	case "cql":
+		return framed.NewCQL(cfg.MaxBytes), nil
+	case "kafka":
+		return framed.NewKafka(cfg.MaxBytes), nil
 	case "tls":
 		return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
 			Certificates: cfg.Certificates, Continuation: cfg.Continuation})

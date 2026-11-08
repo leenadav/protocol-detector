@@ -34,6 +34,7 @@ from protocol_adapters.protocol_fixtures import (DATAGRAM_CASES, DNS, HINTED_DAT
 from protocol_engine import Config, DatagramInspector, Inspector  # noqa: E402
 from protocol_engine import content  # noqa: E402
 from protocol_engine.descriptors import build  # noqa: E402
+from protocol_engine.database import crc32c  # noqa: E402
 from protocol_engine.registry import PARSERS  # noqa: E402
 
 SCHEMA = 1
@@ -186,6 +187,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(text_cases())
     cases.extend(framed_cases())
     cases.extend(desktop_cases())
+    cases.extend(database_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -649,6 +651,189 @@ def desktop_cases():
                   "chunks": [_giop_request(contexts=3).hex()], "hint": None, "config": {"max_headers": 2}, "end": "fin"})
     cases.append({"id": "stream/desktop-options/giop-key-budget", "kind": "stream", "label": "giop",
                   "chunks": [_giop_request(operation=b"operation_name_longer_than_sixteen\x00").hex()], "hint": None, "config": {"max_line": 16}, "end": "fin"})
+    return cases
+
+
+def _mysql_packet(payload, sequence=0):
+    return struct.pack("<I", len(payload))[:3] + bytes([sequence]) + payload
+
+
+def _mysql_server(version=b"8.0.36", caps_low=0xffff, caps_high=0xdfff, auth=21, plugin=b"caching_sha2_password", proto=10):
+    return _mysql_packet(bytes([proto]) + version + b"\x00" + struct.pack("<I", 9) + bytes(range(1, 9)) + b"\x00"
+                         + struct.pack("<HBHHB", caps_low, 0xff, 2, caps_high, auth) + bytes(10) + bytes(range(1, 13)) + b"\x00" + plugin + b"\x00")
+
+
+def _mysql_response(caps=0x88208, user=b"alice", database=b"demo", plugin=b"caching_sha2_password", attrs=None, charset=0x21):
+    body = struct.pack("<IIB", caps, 1 << 24, charset) + bytes(23) + user + b"\x00" + bytes([20]) + bytes(20)
+    if caps & 0x8:
+        body += database + b"\x00"
+    if caps & 0x80000:
+        body += plugin + b"\x00"
+    if attrs is not None:
+        block = b"".join(bytes([len(item)]) + item for item in attrs)
+        body += bytes([len(block)]) + block
+    return _mysql_packet(body, 1)
+
+
+def _bson(elements):
+    body = b"".join(bytes([kind]) + name + b"\x00" + value for kind, name, value in elements)
+    return struct.pack("<i", len(body) + 5) + body + b"\x00"
+
+
+def _bson_string(value):
+    return struct.pack("<i", len(value) + 1) + value + b"\x00"
+
+
+def _mongo(sections, response_to=0, flags=0, checksum=None):
+    body = struct.pack("<I", flags) + sections
+    size = 16 + len(body) + (4 if flags & 1 else 0)
+    message = struct.pack("<iiii", size, 1, response_to, 2013) + body
+    if flags & 1:
+        message += struct.pack("<I", crc32c(message) if checksum is None else checksum)
+    return message
+
+
+def _tds(options, kind=0x12, status=0x01):
+    table = b"".join(bytes([token]) + struct.pack(">HH", 0, len(value)) for token, value in options) + b"\xff"
+    offset, entries, data = len(table), b"", b""
+    for token, value in options:
+        entries += bytes([token]) + struct.pack(">HH", offset + len(data), len(value))
+        data += value
+    payload = entries + b"\xff" + data
+    return bytes([kind, status]) + struct.pack(">H", 8 + len(payload)) + b"\x00\x00\x01\x00" + payload
+
+
+def _tns_connect(descriptor=b"(DESCRIPTION=(CONNECT_DATA=(SERVICE_NAME=orcl)))", version=314, inline=True, order=b"\x01\x00"):
+    offset = 58
+    head = struct.pack(">HHHHHHH", version, 300, 0, 8192, 32767, 0x4f98, 0) + order + struct.pack(">HH", len(descriptor), offset)
+    head += bytes(offset - 8 - len(head))
+    body = head + (descriptor if inline else b"")
+    return struct.pack(">H", 8 + len(body)) + b"\x00\x00\x01\x00\x00\x00" + body
+
+
+def _tns(kind, body):
+    return struct.pack(">H", 8 + len(body)) + b"\x00\x00" + bytes([kind]) + b"\x00\x00\x00" + body
+
+
+def _cql(opcode, body=b"", version=0x04, flags=0):
+    return bytes([version, flags]) + b"\x00\x01" + bytes([opcode]) + struct.pack(">I", len(body)) + body
+
+
+def _cql_strings(*values):
+    return b"".join(struct.pack(">H", len(value)) + value for value in values)
+
+
+def _kafka(key, version, client=b"client", rest=b""):
+    body = struct.pack(">hhi", key, version, 7) + (struct.pack(">h", -1) if client is None else struct.pack(">h", len(client)) + client) + rest
+    return struct.pack(">I", len(body)) + body
+
+
+def database_cases():
+    """MySQL (hinted), MongoDB OP_MSG over bounded BSON (hinted), TDS PRELOGIN, Oracle Net TNS, Cassandra CQL v4 and
+    Kafka request headers (M5 batch 4); identifications, malformed sizes, unsupported versions and budget outcomes,
+    each as whole / 1-byte / 7-byte / truncated chunkings."""
+    ping = _bson([(16, b"ping", struct.pack("<i", 1)), (2, b"$db", _bson_string(b"admin"))])
+    version = struct.pack(">IH", 0x0f000000, 0)
+    hinted = [
+        ("mysql-server", _mysql_server()),
+        ("mysql-server-v9", _mysql_server(proto=9)),
+        ("mysql-server-bad-version", _mysql_server(version=b"8.0 36")),
+        ("mysql-server-no-41", _mysql_server(caps_low=0x0000)),
+        ("mysql-server-challenge", _mysql_server(auth=8)),
+        ("mysql-server-plugin", _mysql_server(plugin=b"dialog")),
+        ("mysql-response", _mysql_response()),
+        ("mysql-response-attrs", _mysql_response(caps=0x188208, attrs=[b"_os", b"linux"])),
+        ("mysql-response-ssl-flag", _mysql_response(caps=0x88a08)),
+        ("mysql-response-after-frame", _mysql_response()[:-1] + b"\x00xx"),
+        ("mysql-response-charset", _mysql_response(charset=0)),
+        ("mysql-sslrequest", _mysql_packet(struct.pack("<IIB", 0x88a08, 1 << 24, 0x21) + bytes(23), 1)),
+        ("mysql-sslrequest-no-ssl", _mysql_packet(struct.pack("<IIB", 0x88208, 1 << 24, 0x21) + bytes(23), 1)),
+        ("mysql-short", _mysql_packet(bytes(20))),
+        ("mongodb-ping", _mongo(b"\x00" + ping)),
+        ("mongodb-reply", _mongo(b"\x00" + _bson([(1, b"ok", struct.pack("<d", 1.0))]), response_to=1)),
+        ("mongodb-checksum", _mongo(b"\x00" + ping, flags=1)),
+        ("mongodb-bad-checksum", _mongo(b"\x00" + ping, flags=1, checksum=1)),
+        ("mongodb-sequence", _mongo(b"\x00" + _bson([(16, b"insert", struct.pack("<i", 1)), (2, b"$db", _bson_string(b"app"))])
+                                    + b"\x01" + struct.pack("<i", 4 + 10 + len(_bson([]))) + b"documents\x00" + _bson([]))),
+        ("mongodb-no-db", _mongo(b"\x00" + _bson([(16, b"ping", struct.pack("<i", 1))]))),
+        ("mongodb-dollar-first", _mongo(b"\x00" + _bson([(2, b"$db", _bson_string(b"admin")), (16, b"ping", struct.pack("<i", 1))]))),
+        ("mongodb-duplicate", _mongo(b"\x00" + _bson([(16, b"ping", struct.pack("<i", 1)), (16, b"ping", struct.pack("<i", 2))]))),
+        ("mongodb-bad-bool", _mongo(b"\x00" + _bson([(8, b"ping", b"\x02"), (2, b"$db", _bson_string(b"a"))]))),
+        ("mongodb-nested", _mongo(b"\x00" + _bson([(3, b"find", _bson([(4, b"a", _bson([(16, b"0", bytes(4)), (16, b"1", bytes(4))]))])),
+                                                   (2, b"$db", _bson_string(b"a"))]))),
+        ("mongodb-bad-array", _mongo(b"\x00" + _bson([(4, b"find", _bson([(16, b"1", bytes(4))])), (2, b"$db", _bson_string(b"a"))]))),
+        ("mongodb-regex", _mongo(b"\x00" + _bson([(11, b"find", b"^a\x00im\x00"), (2, b"$db", _bson_string(b"a"))]))),
+        ("mongodb-bad-regex", _mongo(b"\x00" + _bson([(11, b"find", b"^a\x00mi\x00"), (2, b"$db", _bson_string(b"a"))]))),
+        ("mongodb-binary-uuid", _mongo(b"\x00" + _bson([(5, b"find", struct.pack("<i", 16) + b"\x04" + bytes(16)), (2, b"$db", _bson_string(b"a"))]))),
+        ("mongodb-binary-bad-uuid", _mongo(b"\x00" + _bson([(5, b"find", struct.pack("<i", 8) + b"\x04" + bytes(8)), (2, b"$db", _bson_string(b"a"))]))),
+        ("mongodb-unknown-type", _mongo(b"\x00" + _bson([(0x20, b"find", b""), (2, b"$db", _bson_string(b"a"))]))),
+        ("mongodb-opcode", struct.pack("<iiii", 20, 1, 0, 2004) + bytes(4)),
+        ("mongodb-flags", _mongo(b"\x00" + ping, flags=4)),
+    ]
+    vectors = [
+        ("tds-prelogin", _tds([(0x00, version), (0x01, b"\x00"), (0x02, b"\x00"), (0x03, bytes(4)), (0x04, b"\x00")])),
+        ("tds-prelogin-fedauth", _tds([(0x00, version), (0x01, b"\x03"), (0x06, b"\x01")])),
+        ("tds-response", _tds([(0x00, version), (0x01, b"\x01"), (0x05, b"")], kind=0x04)),
+        ("tds-bad-encryption", _tds([(0x00, version), (0x01, b"\x09")])),
+        ("tds-no-version", _tds([(0x01, b"\x00"), (0x04, b"\x00"), (0x02, b"abc\x00")])),
+        ("tds-repeated", _tds([(0x00, version), (0x01, b"\x00"), (0x01, b"\x00")])),
+        ("tds-bad-mars", _tds([(0x00, version), (0x01, b"\x00"), (0x04, b"\x02")])),
+        ("tds-instopt", _tds([(0x00, version), (0x01, b"\x00"), (0x02, b"abc")])),
+        ("tds-status", _tds([(0x00, version), (0x01, b"\x00")], status=0x00)),
+        ("tns-connect", _tns_connect()),
+        ("tns-connect-deferred", _tns_connect(inline=False)),
+        ("tns-connect-version", _tns_connect(version=0x0100)),
+        ("tns-connect-order", _tns_connect(order=b"\x02\x02")),
+        ("tns-connect-binary", _tns_connect(descriptor=b"(DESC\x01)")),
+        ("tns-accept", _tns(2, struct.pack(">HHHH", 315, 0, 8192, 32767) + b"\x01\x00" + struct.pack(">HHHH", 0, 0, 0, 0))),
+        ("tns-refuse", _tns(4, b"\x22\x00" + _cql_strings(b"(DESCRIPTION=(ERR=12514))"))),
+        ("tns-refuse-length", _tns(4, b"\x22\x00\x00\x40(DESCRIPTION=(ERR=1))")),
+        ("tns-resend", _tns(11, b"")),
+        ("tns-checksum", b"\x00\x08\x00\x01\x0b\x00\x00\x00"),
+        ("cql-startup", _cql(0x01, struct.pack(">H", 1) + _cql_strings(b"CQL_VERSION", b"3.0.0"))),
+        ("cql-startup-compression", _cql(0x01, struct.pack(">H", 2) + _cql_strings(b"CQL_VERSION", b"3.0.0", b"COMPRESSION", b"lz4"))),
+        ("cql-options", _cql(0x05)),
+        ("cql-startup-no-version", _cql(0x01, struct.pack(">H", 1) + _cql_strings(b"COMPRESSION", b"lz4"))),
+        ("cql-startup-trailing", _cql(0x01, struct.pack(">H", 1) + _cql_strings(b"CQL_VERSION", b"3.0.0") + b"x")),
+        ("cql-ready", _cql(0x02, version=0x84)),
+        ("cql-supported", _cql(0x06, struct.pack(">H", 1) + _cql_strings(b"CQL_VERSION") + struct.pack(">H", 1) + _cql_strings(b"3.4.5"), version=0x84)),
+        ("cql-authenticate", _cql(0x03, _cql_strings(b"org.apache.cassandra.auth.PasswordAuthenticator"), version=0x84)),
+        ("cql-error", _cql(0x00, struct.pack(">I", 0x100) + _cql_strings(b"Bad credentials"), version=0x84)),
+        ("cql-v3", _cql(0x05, version=0x03)),
+        ("cql-query", _cql(0x07, b"\x00\x00")),
+        ("cql-ready-body", _cql(0x02, b"x", version=0x84)),
+        ("kafka-apiversions", _kafka(18, 3, rest=b"\x00\x0dapache-kafka\x063.7.0\x00")),
+        ("kafka-apiversions-v0", _kafka(18, 0)),
+        ("kafka-metadata", _kafka(3, 9, client=None, rest=bytes(4))),
+        ("kafka-null-client", _kafka(18, 2, client=None)),
+        ("kafka-apiversions-bad-name", _kafka(18, 3, rest=b"\x00\x00")),
+        ("kafka-client-binary", _kafka(18, 1, client=b"cl\x01ent")),
+        ("kafka-client-length", _kafka(18, 1, client=b"c" * 300)),
+        ("kafka-huge", struct.pack(">Ihhi", 100000, 18, 1, 7) + b"\x00\x00"),
+    ]
+    cases = []
+    for group, entries, hint in (("database", vectors, False), ("database-hinted", hinted, True)):
+        for number, (name, data) in enumerate(entries):
+            base = "stream/%s-%02d-%s" % (group, number, name)
+            family = name.split("-", 1)[0]
+            for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                         ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                         ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+                cases.append({"id": base + "/" + variant, "kind": "stream", "label": family, "chunks": chunks, "hint": family if hint else None,
+                              "config": {}, "end": end})
+    many = _bson([(16, b"f%d" % index, bytes(4)) for index in range(6)] + [(2, b"$db", _bson_string(b"a"))])
+    deep = _bson([(16, b"x", bytes(4))])
+    for _ in range(17):
+        deep = _bson([(3, b"d", deep)])
+    for name, data, config in (("mongodb-field-budget", _mongo(b"\x00" + many), {"max_headers": 4}),
+                               ("mongodb-crc-budget", _mongo(b"\x00" + ping, flags=1), {"max_crc32c_bytes": 16}),
+                               ("mongodb-depth", _mongo(b"\x00" + _bson([(16, b"find", bytes(4)), (3, b"q", deep), (2, b"$db", _bson_string(b"a"))])), {}),
+                               ("mongodb-name-budget", _mongo(b"\x00" + _bson([(16, b"x" * 40, bytes(4)), (2, b"$db", _bson_string(b"a"))])), {"max_line": 16})):
+        cases.append({"id": "stream/database-options/" + name, "kind": "stream", "label": "mongodb", "chunks": [data.hex()], "hint": "mongodb",
+                      "config": config, "end": "fin"})
+    attrs = [b"k%d" % index for index in range(34)]
+    cases.append({"id": "stream/database-options/mysql-attribute-count", "kind": "stream", "label": "mysql",
+                  "chunks": [_mysql_response(caps=0x188208, attrs=attrs).hex()], "hint": "mysql", "config": {}, "end": "fin"})
     return cases
 
 

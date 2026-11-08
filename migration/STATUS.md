@@ -155,7 +155,17 @@ Taken before M5 so that session records become comparable for every family as it
 | Fixtures | implemented | `cases.py desktop_cases()`: 38 vectors × 4 chunkings, eight hinted X11 replies × 2 chunkings and two GIOP budget cases (170 stream cases). |
 | Differential result | implemented | `make parity-go` with the 29 claimed families: **1503 compared, 1503 matched, 0 mismatched, 0 gaps**; per family (stream/session): giop 100/4, x11 60/4, spice 52/4; records included. |
 
-## M5 batches 4+ / M7+ — next
+### Batch 4 — databases and data infrastructure
+
+| item | state | evidence |
+|---|---|---|
+| Families | implemented | mysql (server HandshakeV10, HandshakeResponse41, SSLRequest with the `mysql-sslrequest` shift; hint only), mongodb (OP_MSG with CRC-32C from `hash/crc32` Castagnoli, the checksum budget checked from the fixed header, and the bounded BSON validator: depth 16, 128 documents, field and name budgets, wire-order body fields; hint only), tds (PRELOGIN request/response), tns (CONNECT/ACCEPT/REFUSE/RESEND), cql (v4 requests and four responses), kafka (request header). `go/internal/protocols/framed/database.go`, `bson.go`. |
+| Fixtures | implemented | `cases.py database_cases()`: 39 automatic and 32 hinted vectors × 4 chunkings plus five budget cases (289 stream cases). |
+| Fuzzing | implemented | `FuzzFramedNeverPanics` drives every framed parser, including the hint-only profiles the dispatcher never selects; part of `make go-check`. |
+| Differential result | implemented | `make parity-go` with the 35 claimed families: **1912 compared, 1912 matched, 0 mismatched, 0 gaps**; per family (stream/session): mongodb 94/0, cql 74/4, tns 70/4, mysql 69/0, tds 48/4, kafka 38/4; records included. |
+| Not claimed | — | A CQL v3 vector dispatches to `tpkt` and stays a named gap. |
+
+## M5 batches 5+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive
