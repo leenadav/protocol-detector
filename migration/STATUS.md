@@ -238,7 +238,16 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` with the 68 claimed families: **3500 compared, 3500 matched, 0 mismatched, 0 gaps**; datagram: tftp 27, lifx-lan 19, rip 19, l2tp 17, ntp 14, coap 13, rtcp 11, tuya-lan 9, ethernet-ip 7; records included. |
 | Not claimed | — | tplink-smarthome parses its de-obfuscated payload with Python's `json.loads` (NaN/Infinity, duplicate keys, big numbers), which needs a faithful bounded JSON port of its own. |
 
-## M5 batches 13+ / M7+ — next
+### Batch 13 — flow export, STUN/TURN, DHCP and RADIUS
+
+| item | state | evidence |
+|---|---|---|
+| Validators | implemented | netflow (v5 records, v9 flowsets) and ipfix, sflow (v5), stun (Binding and the TURN methods; FINGERPRINT checked with `hash/crc32`), dhcp (v4 options), radius (four codes; hint only). `go/internal/protocols/framed/datagram_services.go`. |
+| Fixtures | implemented | `cases.py udp_cases_3()`: 30 payloads, whole and truncated, plus a RADIUS attribute budget case (61 datagram cases). |
+| Differential result | implemented | `make parity-go` with the 74 claimed families: **3601 compared, 3601 matched, 0 mismatched, 0 gaps**; datagram: netflow 14, ipfix 7, sflow 9, stun 31, dhcp 18, radius 27; records included. |
+| Not claimed | — | ssdp (needs the HTTP line parser exposed outside the text route), sip over UDP (same), snmp (BER profile, next), rtp (hint), tplink-smarthome (faithful `json.loads`), kerberos, quic, dtls and ikev2 (dedicated review). |
+
+## M5 batches 14+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive

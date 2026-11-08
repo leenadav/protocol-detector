@@ -1546,6 +1546,75 @@ def udp_cases_2():
     return cases
 
 
+def _stun(method_class=0x0001, attributes=b"", fingerprint=False):
+    import zlib
+    body = attributes
+    length = len(body) + (8 if fingerprint else 0)
+    message = struct.pack(">HH", method_class, length) + b"\x21\x12\xa4\x42" + bytes(range(12)) + body
+    if fingerprint:
+        message += struct.pack(">HHI", 0x8028, 4, (zlib.crc32(message) & 0xffffffff) ^ 0x5354554e)
+    return message
+
+
+def _dhcp(op=1, options=b"\x35\x01\x01\xff", flags=0):
+    return bytes([op, 1, 6, 0]) + struct.pack(">IHH", 0x1234, 0, flags) + bytes(16) + bytes(16) + bytes(192) + b"\x63\x82\x53\x63" + options
+
+
+def _radius(code, attributes):
+    return bytes([code, 7]) + struct.pack(">H", 20 + len(attributes)) + bytes(16) + attributes
+
+
+def udp_cases_3():
+    """UDP validators of M5 batch 13 (NetFlow v5/v9, IPFIX, sFlow v5, STUN/TURN, DHCPv4, RADIUS)."""
+    record = bytes(16) + struct.pack(">II", 10, 1500) + bytes(24)   # 48 bytes; offset 36 and 46..47 stay zero
+    v5 = struct.pack(">HHIIIIBBH", 5, 1, 1, 2, 3, 4, 0, 0, 0) + record
+    v9 = struct.pack(">HHIIII", 9, 1, 1, 2, 3, 4) + struct.pack(">HH", 0, 8) + bytes(4)
+    ipfix_body = struct.pack(">HH", 2, 8) + bytes(4)
+    ipfix = struct.pack(">HHIII", 10, 16 + len(ipfix_body), 1, 2, 3) + ipfix_body
+    sflow = struct.pack(">IIIIIII", 5, 1, 0xc0000201, 0, 1, 2, 1) + struct.pack(">II", 1, 8) + bytes(8)
+    xor_mapped = struct.pack(">HHBBH", 0x0020, 8, 0, 1, 0x1234) + bytes(4)
+    vectors = [
+        ("netflow", v5, None),
+        ("netflow", v5[:24 + 16] + struct.pack(">II", 0, 1500) + v5[24 + 24:], None),
+        ("netflow", v9, None),
+        ("netflow", v9[:20] + struct.pack(">HH", 5, 8) + bytes(4), None),
+        ("ipfix", ipfix, None),
+        ("ipfix", ipfix[:16] + struct.pack(">HH", 1, 8) + bytes(4), None),
+        ("sflow", sflow, None),
+        ("sflow", sflow + b"xxxx", None),
+        ("sflow", sflow[:28] + struct.pack(">II", 9, 8) + bytes(8), None),
+        ("stun", _stun(), None),
+        ("stun", _stun(0x0101, xor_mapped, fingerprint=True), None),
+        ("stun", _stun(0x0003, struct.pack(">HHB", 0x0019, 4, 17) + bytes(3)), None),
+        ("stun", _stun(0x0016, struct.pack(">HH", 0x0013, 4) + b"data"), None),
+        ("stun", _stun(0x0006), None),
+        ("stun", _stun(0x0101, struct.pack(">HHBBH", 0x0020, 8, 0, 3, 0x1234) + bytes(4)), None),
+        ("stun", _stun(0x0001, struct.pack(">HH", 0x0008, 8) + bytes(8)), None),
+        ("stun", _stun(0x0101, xor_mapped, fingerprint=True)[:-1] + b"\x00", None),
+        ("dhcp", _dhcp(), None),
+        ("dhcp", _dhcp(op=2, options=b"\x35\x01\x05\x01\x04\xff\xff\xff\x00\xff\x00\x00"), None),
+        ("dhcp", _dhcp(op=2, options=b"\x35\x01\x01\xff"), None),
+        ("dhcp", _dhcp(options=b"\x35\x01\x01"), None),
+        ("dhcp", _dhcp(options=b"\x34\x01\x03\x35\x01\x01\xff"), None),
+        ("dhcp", _dhcp(flags=0x0001), None),
+        ("radius", _radius(1, bytes([1, 6]) + b"alice" [:4] + bytes([2, 18]) + bytes(16) + bytes([4, 6]) + bytes([192, 0, 2, 1])), "radius"),
+        ("radius", _radius(2, bytes([6, 6, 0, 0, 0, 1]) + bytes([18, 5]) + b"ok!"), "radius"),
+        ("radius", _radius(11, bytes([24, 6]) + b"st01"), "radius"),
+        ("radius", _radius(11, bytes([18, 5]) + b"hi!"), "radius"),
+        ("radius", _radius(1, bytes([1, 6]) + b"user" + bytes([4, 6]) + bytes(4)), "radius"),
+        ("radius", _radius(1, bytes([2, 18]) + bytes(16) + bytes([3, 19]) + bytes(17) + bytes([4, 6]) + bytes(4)), "radius"),
+        ("radius", _radius(3, bytes([6, 6]) + bytes(4)), "radius"),
+    ]
+    cases = []
+    for number, (label, data, hint) in enumerate(vectors):
+        base = "datagram/udp3-%02d-%s" % (number, label)
+        cases.append({"id": base + "/whole", "kind": "datagram", "label": label, "payload": data.hex(), "hint": hint, "config": {}})
+        cases.append({"id": base + "/half", "kind": "datagram", "label": label, "payload": data[:max(1, len(data) // 2)].hex(), "hint": hint, "config": {}})
+    cases.append({"id": "datagram/udp3-options/radius-budget", "kind": "datagram", "label": "radius", "hint": "radius", "config": {"max_headers": 2},
+                  "payload": _radius(1, bytes([1, 6]) + b"user" + bytes([2, 18]) + bytes(16) + bytes([4, 6]) + bytes(4)).hex()})
+    return cases
+
+
 def datagram_cases(seed=12, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -1559,6 +1628,7 @@ def datagram_cases(seed=12, limit=None):
         cases.append({"id": base + "/mutated", "kind": "datagram", "label": label, "payload": _mutate(rng, data).hex(), "hint": hint, "config": {}})
     cases.extend(udp_cases_1())
     cases.extend(udp_cases_2())
+    cases.extend(udp_cases_3())
     return cases
 
 

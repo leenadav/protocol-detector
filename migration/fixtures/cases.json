@@ -274767,6 +274767,2098 @@
    "payload": "c802003800000000000000008008000000000001000600000009000600000009000600000009000600000009000600000009000600000009"
   },
   {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 72,
+     "bytes_received": 72,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "netflow/5",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "netflow/5",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "NetFlow v5 header and 1 records framed; counters and addresses are not emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-00-netflow/whole",
+   "kind": "datagram",
+   "label": "netflow",
+   "payload": "000500010000000100000002000000030000000400000000000000000000000000000000000000000000000a000005dc000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 36,
+     "bytes_received": 36,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "NetFlow v5 datagram length disagrees with record count",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-00-netflow/half",
+   "kind": "datagram",
+   "label": "netflow",
+   "payload": "000500010000000100000002000000030000000400000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 72,
+     "bytes_received": 72,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "NetFlow v5 record requires nonzero packet and byte counters",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-01-netflow/whole",
+   "kind": "datagram",
+   "label": "netflow",
+   "payload": "0005000100000001000000020000000300000004000000000000000000000000000000000000000000000000000005dc000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 36,
+     "bytes_received": 36,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "NetFlow v5 datagram length disagrees with record count",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-01-netflow/half",
+   "kind": "datagram",
+   "label": "netflow",
+   "payload": "000500010000000100000002000000030000000400000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "netflow/9",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "netflow/9",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "NetFlow v9 header and 1 flowsets framed; templates and records are not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-02-netflow/whole",
+   "kind": "datagram",
+   "label": "netflow",
+   "payload": "00090001000000010000000200000003000000040000000800000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 14,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-02-netflow/half",
+   "kind": "datagram",
+   "label": "netflow",
+   "payload": "0009000100000001000000020000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "NetFlow v9 flowset id reserved",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-03-netflow/whole",
+   "kind": "datagram",
+   "label": "netflow",
+   "payload": "00090001000000010000000200000003000000040005000800000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 14,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-03-netflow/half",
+   "kind": "datagram",
+   "label": "netflow",
+   "payload": "0009000100000001000000020000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "ipfix",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "ipfix",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "IPFIX message header and 1 sets framed; templates and records are not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-04-ipfix/whole",
+   "kind": "datagram",
+   "label": "ipfix",
+   "payload": "000a00180000000100000002000000030002000800000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 12,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-04-ipfix/half",
+   "kind": "datagram",
+   "label": "ipfix",
+   "payload": "000a00180000000100000002"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "IPFIX set id or length invalid",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-05-ipfix/whole",
+   "kind": "datagram",
+   "label": "ipfix",
+   "payload": "000a00180000000100000002000000030001000800000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 12,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-05-ipfix/half",
+   "kind": "datagram",
+   "label": "ipfix",
+   "payload": "000a00180000000100000002"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 44,
+     "bytes_received": 44,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "sflow/5",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "sflow/5",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "sFlow v5 datagram and 1 sample headers framed; sample contents are not decoded",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-06-sflow/whole",
+   "kind": "datagram",
+   "label": "sflow",
+   "payload": "0000000500000001c00002010000000000000001000000020000000100000001000000080000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 22,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-06-sflow/half",
+   "kind": "datagram",
+   "label": "sflow",
+   "payload": "0000000500000001c000020100000000000000010000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 48,
+     "bytes_received": 48,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Trailing bytes after sFlow samples",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-07-sflow/whole",
+   "kind": "datagram",
+   "label": "sflow",
+   "payload": "0000000500000001c0000201000000000000000100000002000000010000000100000008000000000000000078787878"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 24,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-07-sflow/half",
+   "kind": "datagram",
+   "label": "sflow",
+   "payload": "0000000500000001c0000201000000000000000100000002"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 44,
+     "bytes_received": 44,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "sFlow sample type outside flow/counter samples",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-08-sflow/whole",
+   "kind": "datagram",
+   "label": "sflow",
+   "payload": "0000000500000001c00002010000000000000001000000020000000100000009000000080000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 22,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-08-sflow/half",
+   "kind": "datagram",
+   "label": "sflow",
+   "payload": "0000000500000001c000020100000000000000010000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "stun",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "stun",
+       "wire",
+       "structural"
+      ],
+      [
+       "stun_method",
+       "binding",
+       "wire",
+       "structural"
+      ],
+      [
+       "stun_class",
+       "request",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "STUN Binding framing validated; optional fingerprint checked, HMAC and peer identity unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-09-stun/whole",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "000100002112a442000102030405060708090a0b"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 10,
+     "bytes_received": 10,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid STUN header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-09-stun/half",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "000100002112a4420001"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "stun",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "stun",
+       "wire",
+       "structural"
+      ],
+      [
+       "stun_method",
+       "binding",
+       "wire",
+       "structural"
+      ],
+      [
+       "stun_class",
+       "success-response",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "STUN Binding framing validated; optional fingerprint checked, HMAC and peer identity unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-10-stun/whole",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "010100142112a442000102030405060708090a0b002000080001123400000000802800042dcbe3c5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid STUN message length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-10-stun/half",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "010100142112a442000102030405060708090a0b"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "stun",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "stun",
+       "wire",
+       "structural"
+      ],
+      [
+       "stun_method",
+       "allocate",
+       "wire",
+       "structural"
+      ],
+      [
+       "stun_class",
+       "request",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TURN allocate framing validated; relayed addresses, credentials, realm and nonce not emitted, HMAC unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-11-stun/whole",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "000300082112a442000102030405060708090a0b0019000411000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 14,
+     "bytes_received": 14,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid STUN header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-11-stun/half",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "000300082112a442000102030405"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "stun",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "stun",
+       "wire",
+       "structural"
+      ],
+      [
+       "stun_method",
+       "send",
+       "wire",
+       "structural"
+      ],
+      [
+       "stun_class",
+       "indication",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TURN send framing validated; relayed addresses, credentials, realm and nonce not emitted, HMAC unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-12-stun/whole",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "001600082112a442000102030405060708090a0b0013000464617461"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 14,
+     "bytes_received": 14,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid STUN header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-12-stun/half",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "001600082112a442000102030405"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "STUN class inconsistent with its method (Send/Data/ConnectionAttempt are indications only)",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-13-stun/whole",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "000600002112a442000102030405060708090a0b"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 10,
+     "bytes_received": 10,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid STUN header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-13-stun/half",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "000600002112a4420001"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 32,
+     "bytes_received": 32,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid STUN address attribute",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-14-stun/whole",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "0101000c2112a442000102030405060708090a0b002000080003123400000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid STUN header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-14-stun/half",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "0101000c2112a4420001020304050607"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 32,
+     "bytes_received": 32,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid STUN MESSAGE-INTEGRITY size",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-15-stun/whole",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "0001000c2112a442000102030405060708090a0b000800080000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid STUN header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-15-stun/half",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "0001000c2112a4420001020304050607"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "STUN FINGERPRINT mismatch",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-16-stun/whole",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "010100142112a442000102030405060708090a0b002000080001123400000000802800042dcbe300"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid STUN message length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-16-stun/half",
+   "kind": "datagram",
+   "label": "stun",
+   "payload": "010100142112a442000102030405060708090a0b"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 244,
+     "bytes_received": 244,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "dhcp/4",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "dhcp/4",
+       "wire",
+       "structural"
+      ],
+      [
+       "dhcp_operation",
+       "request",
+       "wire",
+       "structural"
+      ],
+      [
+       "dhcp_message",
+       "discover",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "DHCPv4 header and option framing validated; lease state and option semantics unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-17-dhcp/whole",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "010106000000123400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063825363350101ff"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 122,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-17-dhcp/half",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "0101060000001234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 252,
+     "bytes_received": 252,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "dhcp/4",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "dhcp/4",
+       "wire",
+       "structural"
+      ],
+      [
+       "dhcp_operation",
+       "reply",
+       "wire",
+       "structural"
+      ],
+      [
+       "dhcp_message",
+       "ack",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "DHCPv4 header and option framing validated; lease state and option semantics unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-18-dhcp/whole",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "0201060000001234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000638253633501050104ffffff00ff0000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 126,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-18-dhcp/half",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "020106000000123400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 244,
+     "bytes_received": 244,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "DHCP message type conflicts with operation",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-19-dhcp/whole",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "020106000000123400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063825363350101ff"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 122,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-19-dhcp/half",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "0201060000001234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 243,
+     "bytes_received": 243,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "DHCP options require END",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-20-dhcp/whole",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "010106000000123400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063825363350101"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 121,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-20-dhcp/half",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "01010600000012340000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 247,
+     "bytes_received": 247,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "DHCP overloaded option fields are outside this profile",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-21-dhcp/whole",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "010106000000123400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063825363340103350101ff"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 123,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-21-dhcp/half",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "010106000000123400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 244,
+     "bytes_received": 244,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Reserved DHCPv4 flags set",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-22-dhcp/whole",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "010106000000123400000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063825363350101ff"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 122,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp3-22-dhcp/half",
+   "kind": "datagram",
+   "label": "dhcp",
+   "payload": "0101060000001234000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 50,
+     "bytes_received": 50,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "radius",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "radius",
+       "wire",
+       "structural"
+      ],
+      [
+       "radius_code",
+       "access-request",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "radius",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RADIUS Access-Request and supported attributes structurally validated; authenticators, password values, vendor contents and authorization unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-23-radius/whole",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "01070032000000000000000000000000000000000106616c69630212000000000000000000000000000000000406c0000201"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 25,
+     "bytes_received": 25,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid RADIUS packet length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-23-radius/half",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "01070032000000000000000000000000000000000106616c69"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 31,
+     "bytes_received": 31,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "radius",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "radius",
+       "wire",
+       "structural"
+      ],
+      [
+       "radius_code",
+       "access-accept",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "radius",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RADIUS access-accept attribute framing validated; authenticator, values and authorization unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-24-radius/whole",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0207001f0000000000000000000000000000000006060000000112056f6b21"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Truncated RADIUS header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-24-radius/half",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0207001f0000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 26,
+     "bytes_received": 26,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "radius",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "radius",
+       "wire",
+       "structural"
+      ],
+      [
+       "radius_code",
+       "access-challenge",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "radius",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RADIUS access-challenge attribute framing validated; authenticator, values and authorization unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-25-radius/whole",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0b07001a00000000000000000000000000000000180673743031"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 13,
+     "bytes_received": 13,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Truncated RADIUS header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-25-radius/half",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0b07001a000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 25,
+     "bytes_received": 25,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RADIUS Access-Challenge requires a State attribute",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-26-radius/whole",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0b070019000000000000000000000000000000001205686921"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Truncated RADIUS header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-26-radius/half",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0b0700190000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 32,
+     "bytes_received": 32,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RADIUS profile requires PAP, CHAP or State authentication fields",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-27-radius/whole",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0107002000000000000000000000000000000000010675736572040600000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Truncated RADIUS header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-27-radius/half",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "01070020000000000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 63,
+     "bytes_received": 63,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RADIUS Access-Request cannot combine User-Password and CHAP-Password",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-28-radius/whole",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0107003f0000000000000000000000000000000002120000000000000000000000000000000003130000000000000000000000000000000000040600000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 31,
+     "bytes_received": 31,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid RADIUS packet length",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-28-radius/half",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0107003f000000000000000000000000000000000212000000000000000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 26,
+     "bytes_received": 26,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RADIUS attribute outside the response profile for this code",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-29-radius/whole",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0307001a00000000000000000000000000000000060600000000"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 13,
+     "bytes_received": 13,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Truncated RADIUS header",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-29-radius/half",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0307001a000000000000000000"
+  },
+  {
+   "config": {
+    "max_headers": 2
+   },
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 50,
+     "bytes_received": 50,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "RADIUS attribute count exceeds budget",
+     "scope": "datagram",
+     "status": "budget_exhausted",
+     "transport": "udp"
+    }
+   },
+   "hint": "radius",
+   "id": "datagram/udp3-options/radius-budget",
+   "kind": "datagram",
+   "label": "radius",
+   "payload": "0107003200000000000000000000000000000000010675736572021200000000000000000000000000000000040600000000"
+  },
+  {
    "expected": {
     "packets": [
      {
@@ -343897,7 +345989,7 @@
  "reference": {
   "backend": "python",
   "content_release": "2026.11.0",
-  "head": "40633e7"
+  "head": "d63b371"
  },
  "schema": 1
 }
