@@ -165,7 +165,16 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` with the 35 claimed families: **1912 compared, 1912 matched, 0 mismatched, 0 gaps**; per family (stream/session): mongodb 94/0, cql 74/4, tns 70/4, mysql 69/0, tds 48/4, kafka 38/4; records included. |
 | Not claimed | — | A CQL v3 vector dispatches to `tpkt` and stays a named gap. |
 
-## M5 batches 5+ / M7+ — next
+### Batch 5 — industrial control
+
+| item | state | evidence |
+|---|---|---|
+| Families | implemented | modbus (MBAP; request, response and exception shapes), dnp3 (link frame, header and block CRCs), ethernet-ip (encapsulation header), iec-104 (APCI; only U-format frames select automatically), opcua (HEL/ACK/ERR/RHE), s7comm (PDU header and Setup Communication; hint only until iso-tsap ports the `cotp-connect` shift). `go/internal/protocols/framed/ics.go`; the fuzz target covers all six. |
+| Fixtures | implemented | `cases.py ics_cases()`: 41 automatic and 16 hinted vectors × 4 chunkings plus an OPC UA byte budget (229 stream cases). |
+| Differential result | implemented | `make parity-go` with the 41 claimed families: **2209 compared, 2209 matched, 0 mismatched, 0 gaps**; per family (stream/session): modbus 74/4, opcua 65/4, s7comm 54/0, ethernet-ip 34/4, dnp3 30/4, iec-104 30/4; records included. |
+| Not claimed | — | iso-tsap stays with the TPKT route and RDP in the dedicated-review batch; bacnet is a datagram family for the UDP batch. |
+
+## M5 batches 6+ / M7+ — next
 
 Remaining registry batches (the other binary framed families; UDP/control/media; network and
 smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive

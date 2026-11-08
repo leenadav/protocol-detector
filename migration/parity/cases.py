@@ -188,6 +188,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(framed_cases())
     cases.extend(desktop_cases())
     cases.extend(database_cases())
+    cases.extend(ics_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -834,6 +835,128 @@ def database_cases():
     attrs = [b"k%d" % index for index in range(34)]
     cases.append({"id": "stream/database-options/mysql-attribute-count", "kind": "stream", "label": "mysql",
                   "chunks": [_mysql_response(caps=0x188208, attrs=attrs).hex()], "hint": "mysql", "config": {}, "end": "fin"})
+    return cases
+
+
+def _modbus(function, pdu, unit=1):
+    return struct.pack(">HHHB", 0x0102, 0, 2 + len(pdu), unit) + bytes([function]) + pdu
+
+
+def _dnp3_crc(data):
+    crc = 0
+    for byte in data:
+        crc ^= byte
+        for _ in range(8):
+            crc = (crc >> 1) ^ 0xa6bc if crc & 1 else crc >> 1
+    return struct.pack("<H", (~crc) & 0xffff)
+
+
+def _dnp3(user=b"\xc0\xc1\x01\x3c\x02\x06", control=0xc4, bad_block=False, bad_header=False):
+    header = b"\x05\x64" + bytes([5 + len(user), control]) + struct.pack("<HH", 4, 3)
+    frame = header + (b"\x00\x00" if bad_header else _dnp3_crc(header))
+    for start in range(0, len(user), 16):
+        block = user[start:start + 16]
+        frame += block + (b"\x00\x00" if bad_block else _dnp3_crc(block))
+    return frame
+
+
+def _enip(command, body=b"", session=0, status=0, options=0):
+    return struct.pack("<HHII", command, len(body), session, status) + bytes(8) + struct.pack("<I", options) + body
+
+
+def _opcua(kind, body):
+    return kind + struct.pack("<I", 8 + len(body)) + body
+
+
+def _ua_string(value):
+    return struct.pack("<i", -1) if value is None else struct.pack("<i", len(value)) + value
+
+
+def _s7(rosctr, parameters, data=b"", error=b""):
+    pdu = b"\x32" + bytes([rosctr]) + b"\x00\x00\x01\x00" + struct.pack(">HH", len(parameters), len(data)) + error + parameters + data
+    return b"\x03\x00" + struct.pack(">H", 7 + len(pdu)) + b"\x02\xf0\x80" + pdu
+
+
+def ics_cases():
+    """Modbus/TCP, DNP3 link frames, EtherNet/IP encapsulation, IEC 60870-5-104 APCI, OPC UA connection messages and
+    S7comm PDUs and IEC 104 S/I frames (hinted: the cotp-connect shift is not ported, and only U-format frames select
+    IEC 104 automatically) (M5 batch 5); identifications, malformed sizes,
+    unsupported codes and CRC outcomes, each as whole / 1-byte / 7-byte / truncated chunkings."""
+    hello = struct.pack("<IIIII", 0, 65536, 65536, 0, 0) + _ua_string(b"opc.tcp://plc.example:4840")
+    setup = b"\xf0\x00" + struct.pack(">HHH", 1, 1, 480)
+    vectors = [
+        ("modbus-read", _modbus(3, struct.pack(">HH", 0, 10))),
+        ("modbus-read-coils", _modbus(1, struct.pack(">HH", 0, 2000))),
+        ("modbus-write-coil", _modbus(5, struct.pack(">HH", 1, 0xff00))),
+        ("modbus-write-multiple", _modbus(16, struct.pack(">HHB", 0, 2, 4) + bytes(4))),
+        ("modbus-response", _modbus(3, b"\x04" + bytes(4))),
+        ("modbus-exception", _modbus(0x83, b"\x02")),
+        ("modbus-exception-other", _modbus(0x83, b"\x07")),
+        ("modbus-identification", _modbus(43, b"\x0e\x01\x00")),
+        ("modbus-bad-quantity", _modbus(3, struct.pack(">HH", 0, 200))),
+        ("modbus-bad-coil", _modbus(5, struct.pack(">HH", 1, 0x1234))),
+        ("modbus-bad-count", _modbus(16, struct.pack(">HHB", 0, 2, 9) + bytes(4))),
+        ("modbus-odd-registers", _modbus(3, b"\x05" + bytes(5))),
+        ("modbus-private", _modbus(100, b"\x00")),
+        ("modbus-exception-code", _modbus(0x83, b"\x09")),
+        ("dnp3-read", _dnp3()),
+        ("dnp3-long", _dnp3(user=bytes(range(40)))),
+        ("dnp3-header-only", _dnp3(user=b"", control=0xc9)),
+        ("dnp3-bad-header-crc", _dnp3(bad_header=True)),
+        ("dnp3-bad-block-crc", _dnp3(bad_block=True)),
+        ("dnp3-function", _dnp3(control=0xc6)),
+        ("ethernet-register", _enip(0x65, b"\x01\x00\x00\x00")),
+        ("ethernet-list-identity", _enip(0x63)),
+        ("ethernet-send-rr", _enip(0x6f, bytes(6) + b"\x02\x00", session=0x11223344)),
+        ("ethernet-register-version", _enip(0x65, b"\x02\x00\x00\x00")),
+        ("ethernet-status", _enip(0x63, status=1)),
+        ("ethernet-no-session", _enip(0x6f, bytes(8))),
+        ("ethernet-list-body", _enip(0x04, b"xx")),
+        ("iec-startdt", b"\x68\x04\x07\x00\x00\x00"),
+        ("iec-two-functions", b"\x68\x04\x0f\x00\x00\x00"),
+        ("opcua-hello", _opcua(b"HELF", hello)),
+        ("opcua-ack", _opcua(b"ACKF", struct.pack("<IIIII", 0, 65536, 65536, 0, 0))),
+        ("opcua-error", _opcua(b"ERRF", struct.pack("<I", 0x80010000) + _ua_string(b"Bad request"))),
+        ("opcua-reverse", _opcua(b"RHEF", _ua_string(b"urn:server") + _ua_string(b"opc.tcp://plc.example:4840"))),
+        ("opcua-small-buffer", _opcua(b"HELF", struct.pack("<IIIII", 0, 1024, 65536, 0, 0) + _ua_string(b"opc.tcp://x"))),
+        ("opcua-scheme", _opcua(b"HELF", struct.pack("<IIIII", 0, 65536, 65536, 0, 0) + _ua_string(b"http://x"))),
+        ("opcua-null-url", _opcua(b"HELF", struct.pack("<IIIII", 0, 65536, 65536, 0, 0) + _ua_string(None))),
+        ("opcua-good-status", _opcua(b"ERRF", struct.pack("<I", 0) + _ua_string(b"x"))),
+        ("opcua-trailing", _opcua(b"ACKF", struct.pack("<IIIII", 0, 65536, 65536, 0, 0) + b"xx")),
+        ("opcua-binary-reason", _opcua(b"ERRF", struct.pack("<I", 0x80010000) + _ua_string(b"bad\x01"))),
+    ]
+    hinted = [
+        ("s7comm-setup", _s7(1, setup)),
+        ("s7comm-setup-ack", _s7(3, setup, error=b"\x00\x00")),
+        ("s7comm-read", _s7(1, b"\x04\x01\x12\x0a\x10\x02\x00\x01\x00\x01\x84\x00\x00\x00")),
+        ("s7comm-userdata", _s7(7, b"\x00\x01\x12\x04\x11\x44\x01\x00", b"\x0a\x00\x00\x00")),
+        ("s7comm-ack", _s7(2, b"", error=b"\x00\x00")),
+        ("s7comm-bad-setup", _s7(1, b"\xf0\x00" + struct.pack(">HHH", 0, 1, 480))),
+        ("s7comm-bad-pdu-size", _s7(1, b"\xf0\x00" + struct.pack(">HHH", 1, 1, 500))),
+        ("s7comm-error-class", _s7(3, setup, error=b"\x90\x00")),
+        ("s7comm-function", _s7(1, b"\x77")),
+        ("s7comm-rosctr", _s7(5, b"\x04")),
+        ("s7comm-protocol", _s7(1, setup)[:7] + b"\x72" + _s7(1, setup)[8:]),
+        ("s7comm-cotp", b"\x03\x00\x00\x16\x11\xe0\x00" + bytes(15)),
+        ("iec-supervisory", b"\x68\x04\x01\x00\x02\x00"),
+        ("iec-information", b"\x68\x0e\x00\x00\x00\x00\x64\x01\x06\x00\x01\x00\x00\x00\x00\x14"),
+        ("iec-short-i", b"\x68\x04\x00\x00\x00\x00"),
+        ("iec-bad-s", b"\x68\x04\x01\x01\x00\x00"),
+    ]
+    cases = []
+    for group, entries, hint in (("ics", vectors, False), ("ics-hinted", hinted, True)):
+        for number, (name, data) in enumerate(entries):
+            base = "stream/%s-%02d-%s" % (group, number, name)
+            family = name.split("-", 1)[0]
+            family = {"ethernet": "ethernet-ip", "iec": "iec-104"}.get(family, family)
+            for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                         ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                         ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+                cases.append({"id": base + "/" + variant, "kind": "stream", "label": family, "chunks": chunks, "hint": family if hint else None,
+                              "config": {}, "end": end})
+    cases.append({"id": "stream/ics-options/opcua-byte-budget", "kind": "stream", "label": "opcua",
+                  "chunks": [_opcua(b"HELF", struct.pack("<IIIII", 0, 65536, 65536, 0, 0) + _ua_string(b"opc.tcp://" + b"x" * 100)).hex()],
+                  "hint": None, "config": {"max_bytes": 64}, "end": "fin"})
     return cases
 
 

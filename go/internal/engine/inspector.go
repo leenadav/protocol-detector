@@ -15,12 +15,14 @@ import (
 var Ported = map[string]bool{"text": true, "tls": true, "dns": true, "irc": true, "telnet": true,
 	"postgresql": true, "rfb": true, "bittorrent": true, "memcached": true, "rsync": true, "fins": true, "afp": true,
 	"zmtp": true, "bolt": true, "stomp": true, "giop": true, "x11": true, "x11-server": true, "spice": true,
-	"mysql": true, "mongodb": true, "tds": true, "tns": true, "cql": true, "kafka": true}
+	"mysql": true, "mongodb": true, "tds": true, "tns": true, "cql": true, "kafka": true,
+	"modbus": true, "dnp3": true, "ethernet-ip": true, "iec-104": true, "opcua": true, "s7comm": true}
 
 // Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
 var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
 	"postgresql", "rfb", "bittorrent", "memcached", "rsync", "fins", "afp", "zmtp", "bolt", "stomp",
-	"giop", "x11", "spice", "mysql", "mongodb", "tds", "tns", "cql", "kafka"}
+	"giop", "x11", "spice", "mysql", "mongodb", "tds", "tns", "cql", "kafka",
+	"modbus", "dnp3", "ethernet-ip", "iec-104", "opcua", "s7comm"}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 	switch candidate {
@@ -70,6 +72,18 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 		return framed.NewCQL(cfg.MaxBytes), nil
 	case "kafka":
 		return framed.NewKafka(cfg.MaxBytes), nil
+	case "modbus":
+		return framed.NewModbus(cfg.MaxBytes), nil
+	case "dnp3":
+		return framed.NewDNP3(cfg.MaxBytes), nil
+	case "ethernet-ip":
+		return framed.NewENIP(cfg.MaxBytes), nil
+	case "iec-104":
+		return framed.NewIEC104(cfg.MaxBytes), nil
+	case "opcua":
+		return framed.NewOPCUA(cfg.MaxBytes), nil
+	case "s7comm":
+		return framed.NewS7(cfg.MaxBytes), nil
 	case "tls":
 		return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
 			Certificates: cfg.Certificates, Continuation: cfg.Continuation})
