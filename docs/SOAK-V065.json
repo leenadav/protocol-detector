@@ -1,0 +1,58 @@
+{
+ "python": "3.13.16",
+ "machine": "x86_64",
+ "overload": {
+  "connections": 200,
+  "syn_flood": 5000,
+  "flood_peak_mib": 2.56,
+  "flood_retained_at_limit": 256,
+  "flood_rejected_beyond_limit": 4744,
+  "flood_left_after_idle_expiry": 0,
+  "peak_mib": 6.09,
+  "retained_bytes_max_seen": 0,
+  "retained_limit": 8388608,
+  "pending_overflow": 0,
+  "decrypted": 200,
+  "rows": 200,
+  "seconds": 1.59,
+  "telemetry_counters": {
+   "bytes.new": 453400,
+   "bytes.replayed": 0,
+   "signatures.candidates": 0,
+   "sessions.incomplete": 256,
+   "bytes.retained": 906800,
+   "queue.depth": 0,
+   "sessions.identified": 200,
+   "keys.pending": 0,
+   "bytes.decrypted": 25800
+  }
+ },
+ "sparse_gaps": {
+  "flows": 1000,
+  "retained_bytes_peak": 2071640,
+  "retained_limit": 2097152,
+  "rejected_bytes": 310800,
+  "rows_unavailable": 256
+ },
+ "worker_crashes": {
+  "outcomes": [
+   "done",
+   "done",
+   "done",
+   "expired",
+   "expired",
+   "failed",
+   "failed"
+  ],
+  "rejected_at_admission": 9,
+  "counts": {
+   "submitted": 8,
+   "rejected": 9,
+   "done": 4,
+   "failed": 2,
+   "cancelled": 0,
+   "expired": 2
+  }
+ },
+ "failures": []
+}

@@ -46,7 +46,7 @@ class EnterpriseDatabaseTests(unittest.TestCase):
     def test_tds_prelogin_both_directions(self):
         client = self.assert_identified(TDS_PRELOGIN, "tds", "negotiation_request", tds_encryption="off", tds_mars="off", tds_federated_auth="no")
         server = self.assert_identified(TDS_PRELOGIN_RESPONSE, "tds", "negotiation_response", tds_encryption="on")
-        self.assertEqual(fields(server, "tds_"), {"tds_encryption": "on", "tds_mars": "off", "tds_federated_auth": "no"})
+        self.assertEqual(fields(server, "tds_"), {"tds_encryption": "on", "tds_mars": "off", "tds_federated_auth": "no", "tds_session_encryption": "full"})  # v0.61
         verdict = session_verdict(client, server, "tcp", 1433, 94, 49, True, None)
         self.assertEqual((verdict.app, verdict.port_usage, verdict.category, verdict.subcategory, verdict.risks), ("mssql-db", "standard", "business-systems", "database", ()))
         self.assertEqual(classify(client, "tcp", 1434).risks, ("nonstandard-port",))

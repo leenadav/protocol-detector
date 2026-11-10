@@ -45,9 +45,10 @@ closed set reviewers should expect in records.
 | irc | tcp | yes | - | `irc_message` |
 | iso-tsap | tcp | yes | yes | - |
 | kafka | tcp | yes | - | `kafka_api_key` |
-| kerberos | tcp/udp | yes | yes | `kerberos_error`, `kerberos_message` |
+| kerberos | tcp/udp | yes | yes | `kerberos_error`, `kerberos_etype_offered`, `kerberos_etype_preferred`, `kerberos_message`, `kerberos_reply_etype`, `kerberos_ticket_etype` |
 | l2tp | udp | yes | yes | `l2tp_message` |
 | ldap | tcp | yes | yes | `gss_mechanism`, `ldap_bind`, `ldap_extended`, `ldap_message`, `ldap_result`, `ntlm_message` |
+| lifx-lan | udp | yes | yes | `lifx_message`, `lifx_tagged` |
 | llmnr | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `llmnr_flags` |
 | mdns | udp | yes | yes | `dns_message`, `dns_query_type`, `dns_rcode`, `mdns_profile` |
 | memcached | tcp | yes | yes | `memcached_message`, `memcached_status` |
@@ -68,7 +69,7 @@ closed set reviewers should expect in records.
 | pptp | tcp | yes | yes | `pptp_message`, `pptp_result` |
 | quic | udp | yes | - | `crypto_assembly`, `hostname`, `initial_protection`, `offered_alpn`, `packet_type`, `quic_version` |
 | radius | udp | yes | yes | `radius_code` |
-| rdp | tcp | yes | yes | `rdp_security_flags`, `rdp_selected_protocol` |
+| rdp | tcp | yes | yes | `rdp_offered_security`, `rdp_security_flags`, `rdp_selected_protocol`, `rdp_selected_security` |
 | resp | tcp | yes | - | - |
 | rfb | tcp | yes | same shape | - |
 | rip | udp | yes | yes | `rip_authentication`, `rip_command` |
@@ -80,9 +81,9 @@ closed set reviewers should expect in records.
 | sflow | udp | yes | n/a (one-way) | - |
 | sip | tcp/udp | yes | same shape | - |
 | smb1 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb1_dialect_layout`, `smb1_message`, `smb_session` |
-| smb2 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb_dialect`, `smb_message`, `smb_session`, `smb_signing` |
+| smb2 | tcp | yes | yes | `gss_mechanism`, `ntlm_message`, `smb_dialect`, `smb_encryption`, `smb_encryption_cipher`, `smb_message`, `smb_session`, `smb_signing`, `smb_signing_algorithm` |
 | smtp | tcp | yes | - | `smtp_client_identity` |
-| snmp | udp | yes | yes | `snmp_flags`, `snmp_pdu`, `snmp_scoped_pdu`, `snmp_security` |
+| snmp | udp | yes | yes | `snmp_flags`, `snmp_pdu`, `snmp_scoped_pdu`, `snmp_security`, `snmp_security_level`, `snmp_usm_discovery` |
 | socks5 | tcp | yes | yes | `socks_command`, `socks_method`, `socks_port`, `socks_reply`, `socks_target` |
 | spice | tcp | yes | yes | `spice_channel`, `spice_link_error`, `spice_message` |
 | ssdp | udp | yes | same shape | - |
@@ -91,19 +92,23 @@ closed set reviewers should expect in records.
 | stun | tcp/udp | yes | same shape | `stun_class`, `stun_method` |
 | syslog | udp/tcp | yes | n/a (one-way) | `syslog_framing` |
 | tacacs-plus | tcp | yes | yes | `tacacs_packet`, `tacacs_type` |
-| tds | tcp | yes | yes | `tds_encryption`, `tds_federated_auth`, `tds_mars` |
+| tds | tcp | yes | yes | `tds_encryption`, `tds_federated_auth`, `tds_mars`, `tds_session_encryption` |
 | telnet | tcp | yes | same shape | - |
 | tftp | udp | yes | yes | `tftp_packet` |
 | tls | tcp | yes | yes | `hostname`, `offered_alpn`, `requested_group`, `selected_alpn`, `selected_cipher`, `selected_cipher_mode`, `selected_group`, `selected_key_exchange`, `selected_tls_version`, `tls_certificate_ca`, `tls_certificate_chain`, `tls_certificate_eku`, `tls_certificate_key`, `tls_certificate_lifetime_days`, `tls_certificate_not_after`, `tls_certificate_not_before`, `tls_certificate_san`, `tls_certificate_self_issued`, `tls_certificate_signature`, `tls_certificate_version`, `tls_ech`, `tls_handshake`, `tls_offered_max_version` |
 | tns | tcp | yes | yes | `tns_connect_data`, `tns_response`, `tns_version` |
+| tplink-smarthome | udp | yes | same shape | `tplink_module`, `tplink_modules` |
+| tuya-lan | udp | yes | n/a (one-way) | `tuya_command` |
 | websocket | tcp | yes | yes | `websocket_masked`, `websocket_opcode` |
 | wireguard | udp | yes | yes | `message_type` |
 | x11 | tcp | yes | yes | `x11_authorization`, `x11_byte_order`, `x11_message` |
 | xmpp | tcp | yes | yes | `hostname`, `xmpp_namespace`, `xmpp_stream`, `xmpp_version` |
 | zmtp | tcp | yes | yes | `zmtp_mechanism`, `zmtp_role` |
 
-85 families in the catalog, 85 with fixtures, 72 proven on both sides (or symmetric), 4 one-way; server side still unproven: ftp, irc, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
+88 families in the catalog, 88 with fixtures, 74 proven on both sides (or symmetric), 5 one-way; server side still unproven: ftp, irc, kafka, mqtt, netbios-ss, quic, resp, rsync, smtp.
 <!-- coverage-matrix:end -->
+
+| `lifx-lan`, `tuya-lan`, `tplink-smarthome` | Smart-home LAN datagrams (v0.66, ported from the Mac v0.59 branch): LIFX LAN header (size, protocol 1024, addressable, target layout, payload size per known type), Tuya LAN 3.3 frame (prefix, length, CRC32, suffix; payload not decrypted), TP-Link Smart Home JSON under the published XOR autokey with documented module names only; `lifx_message`, `tuya_command`, `tplink_module` evidence |
 
 ## Direction evidence and remaining replies (v0.49)
 
@@ -719,7 +724,11 @@ No new family. After the banner the SSH parser now always reads the one
 SSH_MSG_KEXINIT it already validated for HASSH (same RFC 4253 7.1 profile and
 budgets: packet 17..35000 bytes within `max_bytes`, ten printable name-lists of
 at most 4096 bytes, a valid trailer, nothing after it) and publishes a
-`refined` event with closed-set classes. Algorithm names, the cookie and the
+`refined` event with closed-set classes. Each non-empty name-list must follow
+the RFC 4251 section 6 grammar: comma-separated names of 1..64 characters, so a
+leading, trailing or doubled comma or an over-long name rejects the KEXINIT
+(the banner stays identified with no classes, no HASSH and no `refined`
+event); a zero-length list stays valid. Algorithm names, the cookie and the
 lists are never emitted. A KEXINIT is each side's offer: nothing is negotiated,
 selected or verified, so the classes describe what a side is willing to use.
 
@@ -727,7 +736,7 @@ selected or verified, so the classes describe what a side is willing to use.
 |---|---|---|
 | `ssh_kex_class` | `pq-hybrid`, `ecdh`, `dh-sha2`, `dh-sha1`, `other` | The strongest family among the offered key exchange names: sntrup761x25519 / mlkem768x25519 / mlkem768nistp256 / mlkem1024nistp384 (`pq-hybrid`); curve25519, curve448, ecdh-sha2-nistp* (`ecdh`); diffie-hellman group14-sha256, group15..18-sha512, group-exchange-sha256 (`dh-sha2`); group1-sha1, group14-sha1, group-exchange-sha1 (`dh-sha1`); anything else, including only pseudo-algorithms, is `other` |
 | `ssh_weak_algorithm` | `kex-sha1`, `hostkey-dss`, `hostkey-rsa-sha1`, `cipher-none`, `cipher-rc4`, `cipher-3des-or-64-bit-block`, `cipher-cbc`, `mac-none`, `mac-md5`, `mac-truncated` | One row per weak class offered in either direction's list (exact, case-sensitive names; empty names ignored) |
-| `ssh_terrapin` | `strict`, `exposed`, `not-applicable` | `strict` when kex-strict-c-v00@openssh.com or kex-strict-s-v00@openssh.com is offered; otherwise `exposed` when chacha20-poly1305@openssh.com, or an `-etm@openssh.com` MAC together with a CBC or 64-bit-block cipher, is offered (CVE-2023-48795); otherwise `not-applicable` |
+| `ssh_terrapin` | `strict`, `exposed`, `not-applicable` | `strict` when kex-strict-c-v00@openssh.com or kex-strict-s-v00@openssh.com is offered; otherwise `exposed` when chacha20-poly1305@openssh.com is offered in either direction, or a CBC or 64-bit-block cipher and an `-etm@openssh.com` MAC are offered in the same direction (client-to-server lists, or server-to-client lists; CVE-2023-48795); otherwise `not-applicable` |
 
 Risks (RISKS.md): `ssh-weak-algorithm-offered` (every weak class except
 `hostkey-rsa-sha1`, which many clients still offer for compatibility, and
@@ -743,3 +752,350 @@ classes. `tools/compare_engine.py` has no banner-plus-KEXINIT fixture in its
 generic stream list (those identify before their last byte), so the new
 fixtures `SSH_MODERN_STREAM` and `SSH_LEGACY_STREAM` are registered in the
 coverage matrix extras and exercised by `test_v058.py`.
+
+## SMB2/3 security posture from the NEGOTIATE response (v0.59)
+
+No new family. The SMB2/3 NEGOTIATE response, already validated since v0.44,
+now says what the selected dialect can protect. All values are the server's
+assertions in an unauthenticated message: nothing is negotiated, signed or
+verified by the engine.
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `smb_encryption` | `supported`, `not-supported`, `unavailable` | 2.0.2 and 2.1 have no SMB encryption (`unavailable`); 3.0 and 3.0.2 announce it with SMB2_GLOBAL_CAP_ENCRYPTION (0x40) in Capabilities; 3.1.1 selects a cipher in its ENCRYPTION_CAPABILITIES context (`not-supported` when the context is absent or selects cipher 0). The 2.??? wildcard response carries no label |
+| `smb_encryption_cipher` | `aes-128-ccm`, `aes-128-gcm`, `aes-256-ccm`, `aes-256-gcm`, `none`, `other` | The one cipher a 3.1.1 response selects (MS-SMB2 2.2.3.1.2; 0 means no common cipher) |
+| `smb_signing_algorithm` | `hmac-sha256`, `aes-cmac`, `aes-gmac`, `other` | The one algorithm a 3.1.1 response selects in SIGNING_CAPABILITIES (context 8, MS-SMB2 2.2.3.1.7); a count other than one, a length that disagrees with the count, or a duplicate context is malformed |
+
+`smb_signing` (`enabled`/`required`, since v0.44 on the response and v0.56 on
+the request) is unchanged. Requests carry no new rows: a client's offers say
+nothing about the server's policy, and the NETNAME context (which names the
+server) is still never read.
+
+Risks (RISKS.md): `smb-signing-not-required` (the server's response enables
+but does not require signing; a client's `enabled` never raises it) and
+`smb-encryption-unavailable` (`unavailable` or `not-supported`).
+
+Behaviour diff against v0.58 (84264 inputs): 599 `smb2` inputs gain posture
+rows only; one seeded mutation that turned a negotiate context into kind 8 with
+a length that disagrees with its count, skipped by v0.58 as an unknown context,
+is now malformed under the SIGNING_CAPABILITIES rule. No other change.
+
+## RDP security posture from the X.224 negotiation (v0.60)
+
+No new family. The RDP Connection Request and Connection Confirm, validated
+since v0.28 and v0.44, now carry closed labels for what the numeric
+`rdp_security_flags` and `rdp_selected_protocol` already reported, plus the
+negotiation flags and failure codes that were validated but not reported. Every
+value is an offer or an unauthenticated server assertion; the engine does not
+follow the security exchange.
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `rdp_offered_security` | `standard-rdp`, `tls`, `credssp`, `rdstls`, `credssp-early-user-auth`, `aad` | One row per requestedProtocols bit (MS-RDPBCGR 2.2.1.1.1: PROTOCOL_SSL, PROTOCOL_HYBRID, PROTOCOL_RDSTLS, PROTOCOL_HYBRID_EX, PROTOCOL_RDSAAD); `standard-rdp` only when no bit is set |
+| `rdp_credential_mode` | `restricted-admin`, `remote-credential-guard` | RDP_NEG_REQ flags RESTRICTED_ADMIN_MODE_REQUIRED (0x01) and REDIRECTED_AUTHENTICATION_MODE_REQUIRED (0x02); CORRELATION_INFO_PRESENT is framing and not reported |
+| `rdp_selected_security` | as `rdp_offered_security` | The one protocol a Connection Confirm selects (2.2.1.2.1); `standard-rdp` for 0 |
+| `rdp_server_supports` | `extended-client-data`, `gfx-pipeline`, `restricted-admin`, `remote-credential-guard` | RDP_NEG_RSP flags 0x01, 0x02, 0x08, 0x10; NEGRSP_FLAG_RESERVED (0x04) is accepted and not reported |
+| `rdp_failure` | `ssl-required`, `ssl-not-allowed`, `ssl-certificate-missing`, `inconsistent-flags`, `hybrid-required`, `ssl-with-user-auth-required` | RDP_NEG_FAILURE failureCode 1..6 (2.2.1.2.2), next to the existing `rdp_negotiation=failure` |
+
+The structural profile is unchanged: the same offers, flags and codes are
+accepted or rejected as before. The cookie, routing token and correlation id
+are never emitted.
+
+Risk (RISKS.md): `rdp-nla-not-negotiated` when a Connection Confirm selects
+standard RDP security or TLS without CredSSP. A request's offers and a
+negotiation failure never raise it. `obsolete-protocol` for standard RDP
+security is unchanged.
+
+Behaviour diff against v0.59 (84264 inputs): 43 `rdp` inputs gain posture rows
+only; status, protocol and reason are unchanged (also checked over 1441
+targeted single-byte mutations of five RDP messages).
+
+## Database transport protection (v0.61)
+
+No new family and no change to any accept/reject profile. Evidence the
+database parsers already validated now says whether the session is encrypted:
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `tds_session_encryption` | `full`, `login-only`, `none` | TDS PRELOGIN response only. The response's ENCRYPTION value is the server's resolution of both offers (MS-TDS 2.2.6.5): ENCRYPT_ON and ENCRYPT_REQ encrypt the whole session, ENCRYPT_OFF only the LOGIN7 packet, ENCRYPT_NOT_SUP nothing (a client that required encryption then disconnects). The request's `tds_encryption` is an offer and gains no label |
+| `postgresql_message` | `startup` (new value) | A PostgreSQL v3 StartupMessage on the wire: neither SSLRequest nor GSSENCRequest preceded it, so the session is not encrypted. Parameter names and values (user, database) are never emitted |
+
+`mysql_tls_supported` (server greeting, CLIENT_SSL) and `mysql_client_ssl`
+(`not-requested` on a HandshakeResponse41, `requested` on an SSLRequest) are
+unchanged; they now feed risks.
+
+Risks (RISKS.md): `database-encryption-unavailable` (MySQL greeting without
+CLIENT_SSL; TDS response `none`) and `database-session-unencrypted` (a MySQL
+HandshakeResponse41 or PostgreSQL StartupMessage seen in the clear; TDS response
+`login-only` or `none`). A MySQL HandshakeResponse41 naming
+`mysql_clear_password` now also raises `cleartext-credential-protocol`: that
+plugin places the password itself in the cleartext message. The "seen in the
+clear" rules (MySQL HandshakeResponse41, PostgreSQL StartupMessage, the
+cleartext plugin) read only wire-sourced rows: bytes a host decrypted out of
+TLS (`feed_decrypted`, `Inspector(source="decrypted")`) were protected on the
+wire (self-review repair before the v0.61 review).
+
+Behaviour diff against v0.60 (84264 inputs): 105 `postgresql` and 74 `tds`
+inputs gain evidence rows only; status, protocol and reason are unchanged (also
+checked over 1969 targeted single-byte mutations of three messages).
+
+## SNMPv3 security level (v0.62)
+
+No new family and no change to the SNMPv3 profile of v0.38. Every validated
+SNMPv3 message now carries its RFC 3411 securityLevel, read from msgFlags (the
+profile already rejects privacy without authentication):
+
+| Evidence | Values | Rule |
+|---|---|---|
+| `snmp_security_level` | `no-auth-no-priv`, `auth-no-priv`, `auth-priv` | msgFlags auth and priv bits of an SNMPv3 message; SNMPv1/v2c messages carry no level |
+| `snmp_usm_discovery` | `request` | USM message without authentication and with an empty msgAuthoritativeEngineID: the RFC 3414 section 4 engine-discovery request |
+
+The engine ID, user name and authentication or privacy parameters are still
+never emitted; only their absence or presence decides these labels.
+
+Risks (RISKS.md): `snmpv3-unauthenticated` (noAuthNoPriv) and
+`snmpv3-no-privacy` (authNoPriv). Neither is raised for a discovery request or
+a Report PDU, which RFC 3414 sends below the session's level by design
+(unknown engine, unknown user, time-window synchronisation).
+
+Behaviour diff against v0.61 (84264 inputs): 268 `snmp/3` inputs gain evidence
+rows only; status, protocol and reason are unchanged (also checked over 2530
+targeted single-byte mutations of three messages).
+
+## Kerberos encryption types (v0.63)
+
+No new family and no new rejection. KDC requests and replies, validated since
+v0.27 and v0.44, now report the encryption types they offer or use as closed
+classes of the IANA registry: `aes-sha2` (19, 20), `aes-sha1` (17, 18),
+`camellia` (25, 26), `des3` (5, 7, 16), `rc4` (23, 24), `des` (1, 2, 3) and
+`other` for any other Int32.
+
+| Evidence | Where | Rule |
+|---|---|---|
+| `kerberos_etype_preferred` | AS-REQ, TGS-REQ | Class of the first `etype` in the KDC-REQ-BODY (RFC 4120 5.4.1, preference order) |
+| `kerberos_etype_offered` | AS-REQ, TGS-REQ | One row per distinct class in the `etype` list, in order of first appearance; at most 32 etypes |
+| `kerberos_reply_etype` | AS-REP, TGS-REP | `etype` of the reply's `enc-part` EncryptedData (the reply key the KDC chose) |
+| `kerberos_ticket_etype` | AS-REP, TGS-REP | `etype` of the ticket's `enc-part` (the service or TGT key; an RC4 service ticket can be cracked offline) |
+
+The labels are emitted only when the substructure they come from walks cleanly
+under DER-style rules: KDC-REQ-BODY fields context-tagged in strictly
+increasing order with kdc-options, realm, till, nonce and a non-empty etype
+list present; a Ticket with exactly tkt-vno, realm, sname and enc-part; an
+EncryptedData with etype, an optional INTEGER kvno and a non-empty cipher;
+every etype a minimally encoded Int32. Any deviation drops only the label: the
+message is identified exactly as before. Principals, realms, nonces, addresses,
+tickets and ciphertext are never emitted.
+
+Risks (RISKS.md): `kerberos-weak-etype-offered` (a request offers `rc4`, `des`
+or `des3`) and `kerberos-weak-etype-selected` (a reply or its ticket uses one).
+
+Behaviour diff against v0.62 (84264 inputs): 1106 `kerberos` inputs gain
+evidence rows only; status, protocol and reason are unchanged (also checked
+over 5016 targeted single-byte mutations of three messages).
+
+## Weak cipher suites in TLS ClientHello offers (v0.64)
+
+No new family and no change to the ClientHello profile. The offered
+cipher-suite vector, already validated, is classified against a table derived
+from the IANA "TLS Cipher Suites" registry by `tools/tls_cipher_classes.py`
+(registry snapshot and sha256 in `protocol_engine/tls_ciphers.py`). Each suite
+gets at most one class, the first rule its registered name matches:
+
+| `tls_weak_cipher_offered` | Registry names | RFC 9325 (BCP 195) 4.1 |
+|---|---|---|
+| `null` | `*_WITH_NULL_*`, `TLS_NULL_WITH_NULL_NULL`, `TLS_SHA256_SHA256`, `TLS_SHA384_SHA384` | MUST NOT negotiate |
+| `export` | `*_EXPORT*` | MUST NOT negotiate |
+| `anon` | `*_anon_*` | MUST NOT negotiate |
+| `rc4` | `*_RC4_*` | MUST NOT negotiate |
+| `des` | `*_WITH_DES_CBC_*`, `*_DES40_*` | MUST NOT negotiate |
+| `64-bit-block` | `*_3DES_EDE_*`, `*_WITH_IDEA_*` | SHOULD NOT negotiate (Sweet32) |
+
+One row per class present, in the order above; suite numbers are not emitted.
+GREASE values, signalling values (`*_SCSV`) and every other suite carry no
+class. The rows are offers: the server's selection is still reported by
+`selected_cipher` and `selected_cipher_mode`, whose profile admits none of
+these suites. DTLS and QUIC ClientHellos are not classified (QUIC offers TLS
+1.3 suites only).
+
+Risks (RISKS.md): `tls-prohibited-cipher-offered` (any MUST NOT class) and
+`tls-64-bit-block-cipher-offered`.
+
+Behaviour diff against v0.63 (84264 inputs): no difference, since no fixture
+ClientHello or seeded mutation offers one of these suites; the new rows and
+risks are exercised by `test_v064`.
+
+## Built-in server-name application catalog (v0.65)
+
+No new family and no change to any observation: the engine's evidence is
+byte-identical. The verdict layer (`appid.py`) now refines the generic carriers
+`ssl`, `quic` and `web-browsing` to a named application when the session's
+server name (TLS SNI, QUIC SNI or HTTP Host) falls under a domain one service
+operates. 53 applications, 158 domains (`protocol_engine/host_apps.py`).
+
+Rules:
+- Matching is on DNS label boundaries with the longest suffix winning:
+  `teams.microsoft.com` maps to `ms-teams` before `microsoft.com` is
+  considered, and `notyoutube.com` never matches `youtube.com`. One dictionary
+  probe per label of a name already bounded to 253 bytes.
+- Configured `RuleIndex` rules and custom signatures win over the catalog.
+- Structural refinements win: `dns-over-https`, `grpc`, `webdav`,
+  `ms-rpc-over-http`, `http-proxy` (CONNECT) and the content applications keep
+  their names.
+- A ClientHello with an outer `encrypted_client_hello` (`tls_ech=outer`) is
+  never mapped: its visible SNI is the provider's public front name.
+- The name is a client assertion, not authenticated identity (domain fronting
+  exists): the verdict adds the reason "Application named by the built-in
+  server-name catalog from a client-asserted server name (not authenticated)";
+  the hostname itself is never placed in reasons.
+- The verdict keeps the carrier: `base_app` and `implicitly_uses` name `ssl`,
+  `quic` or `web-browsing`, and port usage is judged against the carrier's
+  ports.
+- Shared CDNs and cloud hosting (cloudfront.net, akamaized.net, amazonaws.com,
+  azureedge.net, fastly.net, cloudflare.com, ...) name no application and are
+  absent.
+
+| Application | Domains |
+|---|---|
+| `youtube` | `youtube.com`, `youtu.be`, `googlevideo.com`, `ytimg.com`, `youtube-nocookie.com` |
+| `netflix` | `netflix.com`, `nflxvideo.net`, `nflximg.net`, `nflxext.com`, `nflxso.net` |
+| `twitch` | `twitch.tv`, `ttvnw.net`, `jtvnw.net` |
+| `disney-plus` | `disneyplus.com`, `dssott.com`, `bamgrid.com` |
+| `hulu` | `hulu.com`, `hulustream.com` |
+| `amazon-prime-video` | `primevideo.com`, `aiv-cdn.net`, `aiv-delivery.net` |
+| `vimeo` | `vimeo.com`, `vimeocdn.com` |
+| `tiktok` | `tiktok.com`, `tiktokcdn.com`, `tiktokv.com`, `tiktokcdn-us.com` |
+| `spotify` | `spotify.com`, `scdn.co`, `spotifycdn.com`, `spotify.design` |
+| `steam` | `steampowered.com`, `steamcommunity.com`, `steamcontent.com`, `steamstatic.com` |
+| `facebook` | `facebook.com`, `fbcdn.net`, `fb.com`, `facebook.net`, `fbsbx.com` |
+| `instagram` | `instagram.com`, `cdninstagram.com` |
+| `twitter` | `twitter.com`, `x.com`, `twimg.com`, `t.co` |
+| `linkedin` | `linkedin.com`, `licdn.com` |
+| `reddit` | `reddit.com`, `redd.it`, `redditmedia.com`, `redditstatic.com` |
+| `pinterest` | `pinterest.com`, `pinimg.com` |
+| `snapchat` | `snapchat.com`, `sc-cdn.net`, `snap-dev.net` |
+| `whatsapp` | `whatsapp.com`, `whatsapp.net` |
+| `telegram` | `telegram.org`, `t.me`, `telegram.me`, `telesco.pe` |
+| `signal` | `signal.org`, `signal.art`, `whispersystems.org` |
+| `discord` | `discord.com`, `discord.gg`, `discordapp.com`, `discordapp.net`, `discord.media` |
+| `slack` | `slack.com`, `slack-edge.com`, `slack-msgs.com`, `slack-files.com` |
+| `zoom` | `zoom.us`, `zoom.com`, `zoomgov.com` |
+| `ms-teams` | `teams.microsoft.com`, `teams.live.com`, `teams.cdn.office.net` |
+| `skype` | `skype.com`, `skypeassets.com` |
+| `webex` | `webex.com`, `wbx2.com` |
+| `google-meet` | `meet.google.com` |
+| `gmail` | `mail.google.com`, `gmail.com` |
+| `outlook-web` | `outlook.office365.com`, `outlook.office.com`, `outlook.live.com`, `outlook.com` |
+| `ms-office365` | `office.com`, `office365.com`, `office.net`, `officeapps.live.com` |
+| `sharepoint-online` | `sharepoint.com` |
+| `ms-onedrive` | `onedrive.live.com`, `onedrive.com`, `1drv.com`, `1drv.ms` |
+| `azure-ad` | `login.microsoftonline.com`, `microsoftonline.com`, `login.live.com` |
+| `ms-update` | `windowsupdate.com`, `update.microsoft.com`, `delivery.mp.microsoft.com` |
+| `google-drive` | `drive.google.com`, `docs.google.com`, `drive.usercontent.google.com` |
+| `google-base` | `google.com`, `gstatic.com`, `googleapis.com`, `googleusercontent.com`, `gvt1.com`, `gvt2.com` |
+| `dropbox` | `dropbox.com`, `dropboxapi.com`, `dropboxusercontent.com`, `dropboxstatic.com` |
+| `box` | `box.com`, `boxcloud.com`, `box.net` |
+| `icloud` | `icloud.com`, `icloud-content.com` |
+| `github` | `github.com`, `githubusercontent.com`, `githubassets.com` (github.io is tenant hosting and names nobody) |
+| `gitlab` | `gitlab.com` |
+| `atlassian` | `atlassian.net`, `atlassian.com`, `bitbucket.org` |
+| `salesforce` | `salesforce.com`, `force.com` |
+| `notion` | `notion.so`, `notion.site` |
+| `openai-chatgpt` | `chatgpt.com`, `chat.openai.com`, `oaiusercontent.com`, `oaistatic.com`; web fronts `openai.com`, `www.openai.com` (provider affiliation only) |
+| `openai-platform` | `api.openai.com`, `platform.openai.com` |
+| `anthropic-claude` | `claude.ai`, `anthropic.com`, `claude.com` |
+| `google-gemini` | `gemini.google.com` |
+| `teamviewer` | `teamviewer.com`; web fronts `teamviewer.com`, `www.teamviewer.com` (provider affiliation only, no remote-control activity asserted) |
+| `anydesk` | `anydesk.com`, `net.anydesk.com`; web fronts `anydesk.com`, `www.anydesk.com` |
+| `amazon` | `amazon.com`, `media-amazon.com`, `ssl-images-amazon.com` |
+| `ebay` | `ebay.com`, `ebayimg.com`, `ebaystatic.com` |
+| `paypal` | `paypal.com`, `paypalobjects.com` |
+| `wikipedia` | `wikipedia.org`, `wikimedia.org` |
+
+Behaviour diff against v0.64 (84264 inputs): no difference (observations are
+unchanged; only verdicts with a catalog name change).
+
+## Smart-home LAN datagrams and multicast DNS repairs (v0.66)
+
+Ported from the separately published Mac v0.59 branch (`claude/v059-unknowns-catalog-keylog`, `190e011`),
+where unidentified flows in local captures (first bytes `24000034`, `000055aa`, `d0f2`) led to three new
+automatic UDP families; re-verified here on the v0.65 architecture (descriptors, inventory check, template
+tests, corpus report, behaviour diff).
+
+- `lifx-lan`: 36-byte little-endian header; size equals the datagram, protocol 1024, addressable 1,
+  origin 0, reserved bits and the word after the type zero, target ends in two zero bytes and is all zero
+  when tagged; known message types must carry their documented payload size. Evidence `lifx_message`
+  (named type or `other`), `lifx_tagged`.
+- `tuya-lan`: protocol 3.3 frame, prefix `000055AA`, length counting the rest, CRC32 over header and
+  payload, suffix `0000AA55`. Evidence `tuya_command`. Excluded: 3.4 HMAC trailers, 3.5 `00006699` GCM
+  framing, TCP 6668 control.
+- `tplink-smarthome`: UDP datagram under the published XOR autokey (171); plaintext printable ASCII,
+  nesting <= 8, one JSON object of objects whose keys are documented module names. Evidence
+  `tplink_module`, `tplink_modules`. Excluded: the TCP variant with its 4-byte length prefix, KLAP/TPAP
+  devices.
+
+DNS layout: SRV target and NSEC next-domain names are parsed, so later compression pointers into them are
+valid; the AA bit is ignored on multicast DNS queries (RFC 6762 18.4); a type-ANY query with Authority
+records is an mDNS probe (RFC 6762 8.1) even for reverse-mapping names. Still rejected on purpose: trailing
+bytes after the last section and AA on a unicast DNS query. QUIC short-header packets without an observed
+Initial remain unknown: one fixed bit is not a structural profile.
+
+## Observation modes (D05)
+
+Every TCP profile in this document was written for the connection's initial message after an observed
+handshake. The Analyzer therefore has three explicit observation modes (`--observation`), and every session
+record states which one produced it (`observation.mode`, `handshake_observed`, `directions_seen`, `roles`):
+
+- `handshake` (default): SYN and SYN-ACK must be observed; data without them is skipped and counted
+  (`tcp_without_start`). Unchanged behaviour.
+- `asymmetric`: for one-direction captures (a SPAN of one side). The client's SYN and data are observed, the
+  server side never. The client direction is inspected exactly as after a handshake; the server direction's
+  origin is the client's acknowledgement number. A real SYN-ACK is still validated against the client's ISN, a
+  server segment before any client data is still skipped, and nothing is relaxed for connections whose
+  handshake is observed.
+- `midstream`: for captures that start inside connections. The first data segment's sender is taken as the
+  client (`roles: assumed-from-first-segment`), its sequence is that direction's origin and its acknowledgement
+  number the peer's origin. Recognition is deliberately conservative: a family is identified midstream only
+  when its profile checks a self-delimiting message layout that recurs at every message boundary
+  (`MIDSTREAM_FAMILIES`: http, dns, syslog, modbus, dnp3, iec-104, resp, memcached, sip, rtsp), so a segment
+  starting on a boundary is structurally indistinguishable from an initial message. Any other profile that
+  matches midstream, and any segment that matches nothing, ends as the outcome `incomplete` with engine status
+  `midstream` and a reason that says the start was not observed. An unsupported protocol and an unobserved
+  start are not told apart there, and the record says so instead of claiming `unknown-tcp`. A SYN on a tuple
+  under midstream observation ends that observation and starts an ordinary handshake observation (new
+  generation).
+
+Datagram profiles are per message and carry `observation.mode = datagram`. Policies can require a mode with
+the `observation` predicate (POLICY.md).
+
+## Budgeted continuation after identification (D07)
+
+Every profile above decides on the initial message, and by default inspection stops there: later bytes of a
+direction are neither parsed nor retained. `Config(continuation=BYTES)` (`--continuation BYTES` on both
+CLIs, 0 by default) lets two parsers keep framing the new bytes that arrive after their identification, up
+to that budget per direction and never beyond `max_bytes`, and adds bounded structural evidence from the
+source `continuation`:
+
+- HTTP/1: later messages of the same direction. Bodies are skipped by their declared framing
+  (`Content-Length`, chunked with extensions and trailers, none for requests and for 1xx/204/304); a
+  response without declared framing is close-delimited and ends the continuation. Each later start-line and
+  header block is validated with the same rules as a first message. Evidence: `http_messages` (count
+  including the first), `http_methods` (distinct known methods or `extension`, at most eight),
+  `http_status_classes` (`2xx`, `4xx`, ...), `http_host_variation=observed` when a later Host differs from
+  the identifying one (the hostname of the identification never changes). A later CONNECT or Upgrade
+  shifts the stream exactly as a first-message one would, with the carrier identification republished first.
+  `max_transactions` (16) caps the messages counted.
+- TLS: record-layer framing after the ClientHello or ServerHello, after the certificate watch when
+  `certificates` is on. Headers are validated (content type, version 3.x, length <= 16640); nothing inside a
+  record is read. Evidence: `tls_records` (`handshake=…,ccs=…,alert=…,application_data=…`),
+  `tls_application_data=observed`, `tls_alert=observed`; at most 256 records.
+
+The continuation can only add evidence to a `refined` event; the identification published before it, the
+application verdict and the decision time stand. It ends with a `continuation` evidence value naming why:
+`budget`, `messages`, `records`, `framing` (a later message or record header did not validate; the
+identification is kept, nothing after it is read), `close-delimited` or `shift`; a direction that ends
+first carries no such value. Session records summarise it per direction under `continuation`.
+
+This is one vertical slice, not a session parser: responses to HEAD, pipelined requests interleaved with
+the other direction, HTTP/1.0 keep-alive without `Content-Length`, trailers' names, record contents and
+anything after a framing error are not modelled. The default path is unchanged (behaviour diff and the
+per-flow cost are the same with the option off).

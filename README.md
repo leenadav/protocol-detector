@@ -12,8 +12,8 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 
 | Area | What exists | Where to read |
 |---|---|---|
-| Protocol profiles | 85 families (76 automatic, 9 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
-| Application verdicts | App-ID style vocabulary: 99 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
+| Protocol profiles | 88 families (79 automatic, 9 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
+| Application verdicts | App-ID style vocabulary: 156 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
 | Application shift | CONNECT, WebSocket/h2c upgrade, STARTTLS/STLS/AUTH TLS, PostgreSQL/MySQL SSLRequest, RDP negotiation: the phase after the boundary is inspected and the carrier is kept as `shifted_from` | PROTOCOLS.md (v0.28) |
 | Custom signatures | JSON rules over bounded parser contexts (host, SNI, ALPN, banner, query name, payload prefix) with a safe regex subset | [SIGNATURES.md](SIGNATURES.md) |
 | Fingerprints | JA3/JA4/JA3S/JA4S/HASSH/HTTP2 SETTINGS, opt-in, derived evidence only | [FINGERPRINTS.md](FINGERPRINTS.md) |
@@ -21,7 +21,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 622 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 813 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -69,6 +69,71 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## New in v0.65 — Applications by server name
+
+HTTPS, QUIC and HTTP sessions are no longer just `ssl` or `web-browsing` when
+the server name identifies the service: a built-in catalog of 53
+applications (YouTube, Netflix, Teams, Zoom, Slack, WhatsApp, ChatGPT, GitHub,
+Office 365, ...) maps the SNI or Host by DNS label suffix. The name is a client
+assertion and the verdict says so; configured rules win, and encrypted
+ClientHello front names are never mapped.
+88 families, 79 automatic, 156 applications, 813 tests.
+
+## New in v0.64 — Weak cipher suites in TLS offers
+
+ClientHellos now report which RFC 9325 weak classes they offer (NULL, export,
+anonymous, RC4, single DES, and 3DES/IDEA 64-bit blocks), from a table derived
+from the IANA cipher-suite registry by a checked-in tool. New risks:
+`tls-prohibited-cipher-offered` and `tls-64-bit-block-cipher-offered`.
+85 families, 76 automatic, 99 applications, 650 tests.
+
+## New in v0.63 — Kerberos encryption types
+
+Kerberos requests now report which encryption types the client offers and
+prefers, and replies which ones the KDC used for the reply key and the ticket
+(AES-SHA2, AES-SHA1, Camellia, 3DES, RC4, DES). New risks:
+`kerberos-weak-etype-offered` and `kerberos-weak-etype-selected` (an RC4
+service ticket is the Kerberoasting case).
+85 families, 76 automatic, 99 applications, 646 tests.
+
+## New in v0.62 — SNMPv3 security level
+
+Every SNMPv3 message now carries its security level (`no-auth-no-priv`,
+`auth-no-priv`, `auth-priv`) and marks engine-discovery requests. New risks:
+`snmpv3-unauthenticated` and `snmpv3-no-privacy`, never raised for discovery
+requests or Report PDUs, which the protocol sends at a lower level by design.
+85 families, 76 automatic, 99 applications, 640 tests.
+
+## New in v0.61 — Database transport protection
+
+Database handshakes now say whether the session is encrypted. A TDS (MSSQL)
+PRELOGIN response is labelled `full`, `login-only` or `none`; a PostgreSQL
+StartupMessage or MySQL HandshakeResponse41 seen in the clear marks the session
+unencrypted; a MySQL greeting without CLIENT_SSL means the server cannot
+encrypt. New risks: `database-encryption-unavailable` and
+`database-session-unencrypted`; `mysql_clear_password` now raises
+`cleartext-credential-protocol`.
+85 families, 76 automatic, 99 applications, 637 tests.
+
+## New in v0.60 — RDP security posture
+
+The RDP negotiation now carries readable labels: which security protocols the
+client offers (standard RDP, TLS, CredSSP, CredSSP with early user
+authorization, RDSTLS, Azure AD), whether it asks for restricted admin or
+remote credential guard, what the server selects and supports, and the named
+reason when negotiation fails. New risk: `rdp-nla-not-negotiated` (the server
+selects standard RDP security or TLS without CredSSP).
+85 families, 76 automatic, 99 applications, 633 tests.
+
+## New in v0.59 — SMB transport protection posture
+
+The SMB2/3 NEGOTIATE response now says what the selected dialect can protect:
+whether SMB encryption is available, supported or not, the cipher a 3.1.1
+server selects (AES-128/256 CCM/GCM) and its signing algorithm (HMAC-SHA256,
+AES-CMAC, AES-GMAC). New risks: `smb-signing-not-required` (the server only
+enables signing, the classic relay exposure) and `smb-encryption-unavailable`.
+85 families, 76 automatic, 99 applications, 627 tests.
 
 ## New in v0.58 — SSH algorithm posture
 
@@ -265,6 +330,78 @@ descriptor) and reports the version and whether the descriptor is inline or
 deferred. Instance names, connect descriptors, thread and trace identifiers
 are never emitted. Catalog applications `mssql-db` (tcp/1433) and `oracle`
 (tcp/1521). 69 families, 62 automatic, 73 applications, 442 tests.
+
+## A01 / A14 — one installable product, cursor-driven live view
+
+`pip install ".[decryption]"` now installs the engine, the adapters and the Protocol Observatory application
+(`protocol_observatory`, with its web assets) from one wheel; `protocol-observatory` starts the loopback
+server and opens the page, `python -m protocol_observatory.server --port 8765` runs it headless.
+`tools/installed_check.py` proves it: a fresh environment, the wheel, no checkout nearby, then health, the
+page, the demo replay (18 sessions) and the decryption demo (3 decrypted connections) from the installed
+artifact. The live view reads `/api/live/state` and the versioned event log by cursor
+(`/api/live/events?cursor=`), rebuilding from zero on `reset_required` or a new capture id; the legacy
+snapshot endpoint stays for compatibility.
+
+## D12 — structured unknown reasons and minimized examples
+
+A session that is not an identification now carries `unknown`: per direction a closed code
+(`no-dispatch`, `ambiguous` with candidates, `profile-unsupported`, `malformed`, `budget`, `no-payload`,
+`incomplete`, `no-handshake`, `midstream`, `invalidated`), the stage that produced it, the family whose
+parser spoke and the engine's sentence; derived after the fact, never part of the verdict. `protodetect
+explain --hex … [--minimize]` prints that structure for one payload and shrinks it to the smallest input
+with the same outcome (status, code, family and sentence), ready to paste into a report or a fixture.
+docs/UNKNOWN-REASONS.md.
+
+## D11 — separated performance measurement
+
+`tools/perf_profile.py` (`make perf-profile`, docs/PERF-PROFILE-V066.md) reports four measurements apart
+instead of one blended number: CPU per flow by layer (frame decode, engine, whole adapter path, with the
+adapter overhead as the difference), bytes to identification per family (the engine's shortest identifying
+prefix of every fixture: median 36 bytes, maximum 247), consumer-queue wait by drain cadence on the new
+`queue.wait_seconds` histogram, and tracemalloc bytes per tracked connection state, plus a cProfile
+breakdown of where the adapter path spends its time. Local single-process numbers on the named host; no
+capacity, SWG latency or long-run claim. On this host the Python adapter, not the parsers, carries most of the CPU of a small flow; the first finding
+(the legacy per-feed compatibility table built on every segment) is now computed lazily, which took the small
+HTTP flow's adapter path from 274 to about 210 µs and a half-closed identified connection from 25 KB to 6 KB held.
+
+## D10 — metamorphic packet-sequence relations
+
+`tools/sequence_check.py` (`make sequences`, in `make check`; `make sequences-extended`) sends every
+automatically identified stream fixture through the Analyzer after an observed handshake and checks seeded
+transformations against that plain delivery: any segmentation and any reordering with identical
+retransmissions give the same session record with each contiguous byte inspected once; a conflicting
+retransmission gives the same record or an explicit invalidation and never another family; interleaved
+connections and datagram flows give the records they give alone; a FIN before the last segment waits for
+the gap; a reused 5-tuple gets its own record; an idle half-message ends explicitly. 135 fixtures, three
+seeds × 6 transformations: 0 violations (about 95 % of conflicts were still retained and invalidated).
+
+## D09 — independent corpus evaluation (infrastructure; acceptance blocked)
+
+`tools/evaluate_corpus.py CORPUS` scores the engine against an externally labelled capture corpus
+(manifest with stated provenance and verified digests; per-flow correct / wrong application / wrong
+family / unidentified / missing; per-family recall and precision; confusions; content pin). It is
+distinct from the synthetic fixture report, which is a regression gate. No independent corpus has been
+evaluated yet: docs/CORPUS-EVALUATION.md says what is needed and why the acceptance is blocked.
+
+## D08 — detection content releases, provenance and rollback
+
+The built-in catalogs (server names, applications, families, risks) have their own release history
+(`protocol_engine/content.py`, `YYYY.MM.N`, with release and review dates and an honest `review` note), a
+digest lock checked by `make check` (`tools/check_content.py`: a catalog edit without a new release entry
+fails), per-entry provenance (`protodetect content`), and a pin on every session record and summary
+(`content: {version, digest}`). `--content-version` runs the server-name catalog as of an earlier release
+(rollback) in that process; records say so. docs/CONTENT-GOVERNANCE.md.
+
+## D07 — budgeted continuation after identification
+
+`--continuation BYTES` (`Config(continuation=BYTES)`, off by default) keeps the HTTP/1 and TLS parsers
+reading only the new bytes after an identification, within that per-direction budget: later HTTP/1
+messages (count, methods, status classes, a differing Host, a later CONNECT/Upgrade shift) and TLS record
+kinds after the hello (handshake, change-cipher-spec, alert, application data). Bodies are skipped by their
+declared framing, nothing inside a record is read, the identification and decision time never change, and
+a `continuation` value names why it ended (budget, messages, records, framing, close-delimited, shift).
+Session records carry a per-direction `continuation` summary. One vertical slice; PROTOCOLS.md lists what it
+does not model. The default path is unchanged.
 
 ## New in v0.39 — TLS 1.2 certificate structure
 

@@ -1,39 +1,11 @@
-"""Simulate a proxy supplying ClientHello, then already-decrypted HTTP.
+"""Root shim: this module moved to protocol_adapters.proxy_demo (stage 1b, A01). The shim keeps bare imports,
+scripts and CI steps working; the package module is the one source."""
+from protocol_adapters.proxy_demo import *  # noqa: F401,F403
+from protocol_adapters.proxy_demo import main
+from protocol_adapters import proxy_demo as _module
 
-No TLS decryption occurs here. The HTTP input is a separate synthetic fixture.
-"""
-import json
-import ssl
-from dataclasses import asdict
-from protocol_engine import ApplicationRule, Inspector, RuleIndex
-
-
-def client_hello():
-    incoming, outgoing = ssl.MemoryBIO(), ssl.MemoryBIO()
-    context = ssl.create_default_context()
-    context.set_alpn_protocols(["h2", "http/1.1"])
-    connection = context.wrap_bio(incoming, outgoing, server_hostname="example.com")
-    try:
-        connection.do_handshake()
-    except ssl.SSLWantReadError:
-        pass
-    return outgoing.read()
-
-
-def main():
-    rules = RuleIndex([ApplicationRule("example.com", "Example demo service", "http_host")])
-    inspector = Inspector(rules=rules)
-    hello = client_hello()
-    for offset in range(0, len(hello), 32):
-        for event in inspector.feed(hello[offset:offset + 32]):
-            print(json.dumps(asdict(event), ensure_ascii=False))
-    # Integration contract: the host proxy supplies plaintext from its TLS stack.
-    plaintext = b"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"
-    for event in inspector.feed_decrypted(plaintext):
-        print(json.dumps(asdict(event), ensure_ascii=False))
-    print(json.dumps({"outer_metrics": asdict(inspector.metrics),
-                      "decrypted_metrics": asdict(inspector.decrypted_metrics)}))
-
+globals().update({k: v for k, v in vars(_module).items() if not k.startswith("__")})
+del _module
 
 if __name__ == "__main__":
     main()

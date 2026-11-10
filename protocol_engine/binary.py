@@ -57,6 +57,8 @@ class PostgreSQLParser(FrameParser):
         if not user:
             raise ParseError("PostgreSQL startup requires a user")
         self.reason = "PostgreSQL v3 startup parameter framing validated; authentication and queries unverified"
+        # A StartupMessage on the wire means neither SSL nor GSS encryption was negotiated first (v0.61).
+        self.extra_evidence = (("postgresql_message", "startup", "client", "structural"),)
 
     def _server(self, data):
         kind, body = data[0], data[5:]

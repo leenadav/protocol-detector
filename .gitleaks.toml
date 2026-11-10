@@ -13,4 +13,16 @@ paths = [
 regexes = [
   # RFC 6455 section 1.3 WebSocket example nonce/accept and RFC 9001/9369 QUIC vectors reproduced in fixtures.
   '''Sec-WebSocket-(Key|Accept)''',
+  # The SSH post-quantum key exchange name in the PROTOCOLS.md v0.58 table ("key exchange names:
+  # sntrup761x25519") matches generic-api-key; exact token only, so a real key next to it still flags.
+  '''^sntrup761x25519$''',
 ]
+
+# Stage 8 (A16/A10): an NSS key log (SSLKEYLOGFILE) must never be committed. Secrets and client randoms are
+# 32 or 48 bytes of hex; placeholder vectors in tests are all-zero or repeated bytes and are allowlisted by
+# the paths above only when they are such placeholders (tools/check_no_keylogs.py enforces that part).
+[[rules]]
+id = "nss-key-log"
+description = "TLS key-log line (CLIENT_RANDOM / TRAFFIC_SECRET with hex secrets)"
+regex = '''(?m)^(CLIENT_RANDOM|(?:CLIENT|SERVER)_(?:HANDSHAKE_)?TRAFFIC_SECRET_?0?|EXPORTER_SECRET)\s+[0-9a-fA-F]{64}\s+[0-9a-fA-F]{64,96}\s*$'''
+keywords = ["CLIENT_RANDOM", "TRAFFIC_SECRET", "EXPORTER_SECRET"]

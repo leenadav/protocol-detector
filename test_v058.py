@@ -75,7 +75,13 @@ class KexinitPostureTests(unittest.TestCase):
         self.assertEqual(classes(kex=b"curve25519-sha256,kex-strict-s-v00@openssh.com", c2s=b"chacha20-poly1305@openssh.com"), ([], "strict"))
         self.assertEqual(classes(kex=b"curve25519-sha256,kex-strict-c-v00@openssh.com", c2s=b"aes128-cbc", m2s=b"hmac-sha1-etm@openssh.com"),
                          (["cipher-cbc"], "strict"))
-        self.assertEqual(classes(c2s=b"aes128-ctr,,aes256-ctr"), ([], "not-applicable"))           # empty names are ignored
+        # v0.58 review round 1: cipher and MAC pair within one direction (c2s: lists 2 and 4; s2c: lists 3 and 5).
+        self.assertEqual(classes(c2s=b"aes128-cbc", m2s=b"hmac-sha2-256", ms2c=b"hmac-sha2-256-etm@openssh.com"),
+                         (["cipher-cbc"], "not-applicable"))                                     # CBC c2s, EtM s2c only
+        self.assertEqual(classes(s2c=b"aes128-cbc", ms2c=b"hmac-sha2-256-etm@openssh.com"), (["cipher-cbc"], "exposed"))
+        self.assertEqual(classes(s2c=b"3des-cbc", m2s=b"hmac-sha2-256-etm@openssh.com"),
+                         (["cipher-3des-or-64-bit-block"], "not-applicable"))
+        self.assertEqual(classes(s2c=b"chacha20-poly1305@openssh.com"), ([], "exposed"))           # ChaCha20 in either direction
         self.assertEqual(classes(c2s=b"AES128-CBC"), ([], "not-applicable"))                       # names are case-sensitive
 
     def test_default_read_events_and_risks(self):
@@ -119,13 +125,23 @@ class KexinitPostureTests(unittest.TestCase):
     def test_rejections_keep_the_identification(self):
         rejected = [ssh_kexinit(msg=21), ssh_kexinit(first_follows=2), ssh_kexinit(ciphers=b"aes\x7f"),
                     b"\x00\x00\x00\x05" + bytes(5), b"\x00\x00\x00\x10" + bytes(4), (40000).to_bytes(4, "big") + bytes(16),
-                    ssh_kexinit(kex=b"k" * 4097)]
+                    ssh_kexinit(kex=b"k" * 4097),
+                    # v0.58 review round 1: RFC 4251 section 6 names are non-empty (no leading, trailing or doubled
+                    # comma) and at most 64 characters; a malformed list ends the read with no posture.
+                    ssh_kexinit(ciphers=b"aes128-ctr,,aes256-ctr"), ssh_kexinit(macs=b",hmac-sha2-256"),
+                    ssh_kexinit(kex=b"curve25519-sha256,"), ssh_kexinit(hostkeys=b","), ssh_kexinit(compression=b"none,,"),
+                    ssh_kexinit(s2c_ciphers=b"aes128-ctr,,"), ssh_kexinit(hostkeys=b"x" * 65)]
         for packet in rejected:
             inspector, events = inspect(BANNER + packet)
+            self.assertEqual([event.kind for event in events], ["updated"], packet[:8].hex())    # no refined event
             inspector.end()
             observation = inspector.observation
             self.assertEqual((observation.status, observation.application_protocol, posture(observation)), ("identified", "ssh", {}), packet[:8].hex())
             self.assertLessEqual(inspector.metrics.bytes_inspected, len(BANNER + packet))
+        for packet in (ssh_kexinit(kex=b"x" * 64), ssh_kexinit(compression=b""), ssh_kexinit(s2c_macs=b"")):
+            inspector, events = inspect(BANNER + packet)                                           # boundary cases accepted
+            self.assertEqual([event.kind for event in events], ["updated", "refined"])
+            self.assertIn("ssh_terrapin", posture(inspector.observation))
         budget = Inspector(Config(max_bytes=len(BANNER) + 40))
         budget.feed(SSH_LEGACY_STREAM)
         self.assertEqual((budget.observation.status, posture(budget.observation)), ("identified", {}))

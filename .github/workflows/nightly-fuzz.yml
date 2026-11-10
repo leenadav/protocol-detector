@@ -18,6 +18,12 @@ concurrency:
   group: nightly-fuzz-${{ github.ref }}
   cancel-in-progress: false   # a manual run never cancels the scheduled one; they queue
 
+# Explicit bash runs `bash --noprofile --norc -eo pipefail`; the unspecified default is
+# `bash -e` without pipefail, under which a failing check piped into tee passes the step.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   fuzz:
     name: extended mutation fuzz

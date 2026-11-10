@@ -2,6 +2,7 @@
 import re
 from .media import METHODS, accept_class, auth_scheme_class, challenge_scheme_classes, content_type_class
 from .model import normalize_hostname
+from .tls_ciphers import offered_weak_classes
 
 TOKEN = rb"[!#$%&'*+.^_`|~0-9A-Za-z-]+"
 
@@ -56,8 +57,23 @@ class LineParser:
         self.websocket_version = False
         self.websocket_accept = False
         self.h2_settings = False
+        self.continuation = None   # D07: HttpContinuation reading later messages within Config.continuation
+        self.subordinate = False   # a per-message parser owned by a continuation never starts one itself
+        self._base_evidence = ()
+        self.refined = True
 
     def feed(self, data):
+        if self.continuation is not None:
+            consumed = self.continuation.feed(data)
+            self._continuation_evidence()
+            if self.continuation.done:
+                if self.continuation.shift is not None:
+                    self.shift = self.continuation.shift
+                    self.scope = self.continuation.scope or "initial_message"
+                    self.correlation = self.continuation.correlation
+                self.continuation = None
+                self.continues = False
+            return consumed
         if self.continues and self.kexinit is not None:
             consumed = self.kexinit.feed(data)
             if self.kexinit.done:
@@ -163,6 +179,17 @@ class LineParser:
                     self.contexts["http-req-host-header"] = self.host.encode("ascii")
                 if self.content_length is not None:
                     self.contexts["http-req-content-length"] = self.content_length
+            if self.shift is None and self.config.continuation and not self.subordinate:
+                # D07: keep reading later messages of this direction within the continuation budget.
+                from .continuation import HttpContinuation
+                self._base_evidence = self.extra_evidence
+                self.continuation = HttpContinuation(self.config, self, self._message_parser)
+                self.reason = "HTTP start-line and headers validated; later messages framed within the continuation budget"
+                self.refined = False
+                self.continues = not self.continuation.done
+                if not self.continues:
+                    self._continuation_evidence()
+                    self.continuation = None
             return
         self.headers += 1
         if self.headers > self.config.max_headers:
@@ -260,6 +287,15 @@ class LineParser:
             if self.h2_settings or not re.fullmatch(rb"[A-Za-z0-9_\-]{0,1024}", value):
                 raise ParseError("Invalid or duplicate HTTP2-Settings")
             self.h2_settings = True
+
+    def _message_parser(self):
+        parser = LineParser(self.config, "http")
+        parser.subordinate = True
+        return parser
+
+    def _continuation_evidence(self):
+        self.extra_evidence = self._base_evidence + self.continuation.evidence()
+        self.refined = True
 
     def _shift_boundary(self):
         """Decide whether the bytes after this header block belong to another protocol.
@@ -360,6 +396,10 @@ class KexInit:
             value = packet[pos:pos + size]
             if value.translate(None, _SSH_NAME_BYTES):      # same rule as a per-byte check, at C speed (v0.58)
                 raise ParseError("SSH KEXINIT name-list must be printable ASCII")
+            # RFC 4251 section 6: a non-empty name-list holds non-empty names of at most 64 characters, so no
+            # leading, trailing or doubled comma (v0.58 review round 1). An empty list (size 0) stays valid.
+            if value and any(not 1 <= len(name) <= 64 for name in value.split(b",")):
+                raise ParseError("SSH KEXINIT name-list has an empty or over-long name")
             lists.append(value)
             pos += size
         if pos + 5 > payload_end or packet[pos] > 1 or packet[pos + 1:pos + 5] != bytes(4):
@@ -467,8 +507,9 @@ def _u16_list(data, width=2):
 def parse_hello(body, info=None, offered=None):
     """Validate a ClientHello body; return (hostname, alpn) and fill info when supplied.
 
-    `offered`, when a list, receives [legacy_version, supported_versions tuple]
-    without the cost of the full ClientHelloInfo collection. The fixed fields and
+    `offered`, when a list, receives [legacy_version, supported_versions tuple,
+    encrypted_client_hello type, cipher-suite vector bytes] without the cost of
+    the full ClientHelloInfo collection. The fixed fields and
     the extension walk are index arithmetic over the body (this is the hottest
     parser in the engine); every bound raises the same ParseError the Reader
     helper raises, so truncated or inconsistent lengths fail identically.
@@ -481,6 +522,7 @@ def parse_hello(body, info=None, offered=None):
         offered.append(int.from_bytes(version, "big"))
         offered.append(())
         offered.append(None)   # encrypted_client_hello type ("outer"/"inner") when the extension is present
+        offered.append(b"")    # cipher-suite vector, set once its length is validated (v0.64)
     if version not in (b"\x03\x01", b"\x03\x02", b"\x03\x03"):
         raise ParseError("Unsupported ClientHello version")
     pos = 34  # version + random
@@ -511,6 +553,8 @@ def parse_hello(body, info=None, offered=None):
     pos += compression_length
     if cipher_length < 2 or cipher_length % 2 or not compression or 0 not in compression:
         raise ParseError("Invalid cipher or compression vector")
+    if offered is not None:
+        offered[3] = ciphers
     if info is not None:
         info.version = int.from_bytes(version, "big")
         info.ciphers = _u16_list(ciphers)
@@ -625,17 +669,41 @@ class TLSParser:
         self.continues = False
         self.watch = None          # CertificateWatch after a TLS 1.2 ServerHello when configured
         self.consumed = 0          # bytes accepted so far; the watch inherits the remaining byte budget
+        self.continuation = None   # D07: TlsContinuation framing records after the hello
+        self.refined = True
+        self._base_evidence = ()
         self.reason = "Waiting for complete TLS hello"
 
+    def _start_continuation(self, record_remaining):
+        from .continuation import TlsContinuation
+        self._base_evidence = self.extra_evidence
+        self.continuation = TlsContinuation(self.config, record_remaining)
+        self.refined = False
+        self.continues = True
+
     def feed(self, data):
+        if self.continuation is not None:
+            consumed = self.continuation.feed(data)
+            self.extra_evidence = self._base_evidence + self.continuation.evidence()
+            self.refined = True
+            if self.continuation.done:
+                self.continuation = None
+                self.continues = False
+            return consumed
         if self.watch is not None:
             # Post-identification continuation: the leaf certificate adds asserted evidence
             # or the watch ends quietly; the ServerHello identification stands either way.
             consumed = self.watch.feed(data)
             if self.watch.done:
                 self.extra_evidence += self.watch.evidence
+                remaining = self.watch.record_remaining
                 self.watch = None
                 self.continues = False
+                if self.config.continuation and remaining is not None:
+                    # D07: records after the certificate flight are framed within the continuation budget.
+                    self._start_continuation(remaining)
+                    if consumed < len(data):
+                        consumed += self.feed(data[consumed:])
             return consumed
         pos = 0
         while pos < len(data) and not self.done:
@@ -676,6 +744,10 @@ class TLSParser:
                     if offered[2] is not None:
                         # The visible SNI is the client-facing public name; the real name is encrypted.
                         self.extra_evidence += (("tls_ech", offered[2], "client_hello", "offered"),)
+                    weak = offered_weak_classes(offered[3])
+                    if weak:
+                        # RFC 9325 classes of offered suites (v0.64); suite numbers are not emitted.
+                        self.extra_evidence += tuple(("tls_weak_cipher_offered", label, "client_hello", "offered") for label in weak)
                     if info is not None and self.config.fingerprints:
                         from .fingerprints import ja3, ja4
                         self.fingerprints = (("ja4", ja4(info), "client_hello"), ("ja3", ja3(info), "client_hello"))
@@ -701,5 +773,7 @@ class TLSParser:
                         self.continues = True
                 self.handshake.clear()
                 self.done = True
+                if self.watch is None and self.config.continuation:
+                    self._start_continuation(self.record_remaining)
         self.consumed += pos
         return pos

@@ -30,3 +30,11 @@ moved from a per-byte Python loop to `bytes.translate` with the same accepted
 set and error; without it the default path measured about 97 us. Work stays
 bounded by the existing KEXINIT budgets: one packet of at most 35000 bytes and
 `max_bytes`, ten name-lists of at most 4096 bytes each.
+
+Review round 1 repair (Terrapin pairs cipher and MAC within one direction;
+RFC 4251 name-list grammar: non-empty names of at most 64 characters). The
+grammar check splits each non-empty list once per KEXINIT, inside the same
+4096-byte list budget. Banner plus modern KEXINIT (517 bytes), best of 5 x
+3000, before then after, three runs: 78.9/86.0, 71.5/75.6, 75.2/72.5 us with
+fingerprints off; 92.9/86.8, 81.2/82.8, 77.8/79.9 us with fingerprints on.
+The difference is within run-to-run noise.

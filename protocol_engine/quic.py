@@ -7,8 +7,9 @@ frames are validated (PADDING, PING, ACK, CRYPTO, CONNECTION_CLOSE only) and
 the CRYPTO stream is assembled into a TLS ClientHello for SNI, ALPN and JA4
 (protocol code q). This recovers data the client sent in the clear by design;
 it decrypts nothing that a passive observer could not. Server Initials, later
-packets and 0-RTT remain opaque. No connection state beyond the bounded CRYPTO
-assembler is kept.
+packets and 0-RTT remain opaque. The only connection state is the bounded CRYPTO
+assembler, keyed per flow scope, version and DCID (D01), which compares every overlapping
+fragment byte for byte and withdraws a connection's ClientHello evidence on contradiction (D02).
 """
 from collections import OrderedDict
 from .aes import encrypt_block, expand_key, gcm_open, hkdf_expand_label, hkdf_extract
@@ -49,42 +50,125 @@ def varint(data, pos, limit):
 
 
 class QuicAssembler:
-    """Bounded CRYPTO fragment store keyed by Destination Connection ID (LRU eviction)."""
+    """Bounded CRYPTO fragment store, one entry per connection (D01), with byte-compared overlaps (D02).
 
-    def __init__(self, max_connections=64):
+    An entry is keyed by (scope, version, DCID): `scope` is whatever identity the host hands in for the
+    datagram's flow (the Analyzer passes the (source, destination) endpoints, so direction is part of it;
+    a bare DatagramInspector passes None and gets one namespace per inspector). Fragments from a different
+    scope, version or DCID never meet, so a reused DCID on unrelated endpoints cannot combine evidence.
+
+    Lifetime: LRU eviction at `max_connections`, idle expiry at `idle_seconds` when the host supplies
+    time, and an explicit `reset(scope)` when the host ends a flow. A completed ClientHello stays in its
+    entry until then so a later contradictory retransmission is still detected: the entry turns into a
+    conflict marker and every further fragment for that connection answers "conflict" until it expires.
+    DCID or tuple reuse inside the idle window with different CRYPTO bytes is therefore reported as a
+    contradiction, never silently merged or migrated; after expiry a new connection starts clean.
+    """
+
+    def __init__(self, max_connections=64, idle_seconds=60.0):
+        if max_connections < 1 or idle_seconds <= 0:
+            raise ValueError("Invalid QUIC assembler limits")
         self.max_connections = max_connections
+        self.idle_seconds = idle_seconds
         self.entries = OrderedDict()
+        self.counts = {"conflicts": 0, "evictions": 0, "expired": 0, "exhausted": 0}
 
     def clear(self):
         self.entries.clear()
 
-    def add(self, dcid, fragments):
-        """Merge fragments; return the complete ClientHello bytes when available, else None."""
-        entry = self.entries.pop(dcid, None)
+    def reset(self, scope):
+        """Forget every connection of one flow scope (the host ended or restarted the flow)."""
+        for key in [key for key in self.entries if key[0] == scope]:
+            del self.entries[key]
+
+    def expire(self, now):
+        for key, entry in list(self.entries.items()):
+            if now - entry["last"] > self.idle_seconds:
+                del self.entries[key]
+                self.counts["expired"] += 1
+
+    def conflicted(self, dcid, scope=None, version=None, now=None):
+        """True while this connection carries a conflict marker (review round 2: the marker binds every later
+        datagram of the connection, CRYPTO or not, until reset or expiry)."""
+        if now is not None:
+            self.expire(now)
+        entry = self.entries.get((scope, version, dcid))
+        if entry is None or not entry["conflict"]:
+            return False
+        if now is not None:
+            entry["last"] = now
+        return True
+
+    def add(self, dcid, fragments, scope=None, version=None, now=None):
+        """Merge fragments for one connection; returns (status, data) with status in
+        complete | partial | conflict | exhausted (data only with complete)."""
+        if now is not None:
+            self.expire(now)
+        key = (scope, version, dcid)
+        entry = self.entries.pop(key, None)
         if entry is None:
             if len(self.entries) >= self.max_connections:
                 self.entries.popitem(last=False)
-            entry = []
-        entry.extend(fragments)
-        entry.sort(key=lambda item: item[0])
-        if len(entry) > MAX_FRAGMENTS or sum(len(item[1]) for item in entry) > MAX_CRYPTO:
-            return None  # over budget: forget this connection
-        self.entries[dcid] = entry
-        return assemble(entry)
+                self.counts["evictions"] += 1
+            entry = {"fragments": [], "conflict": False, "last": now if now is not None else 0.0}
+        entry["last"] = now if now is not None else entry["last"]
+        if entry["conflict"]:
+            self.entries[key] = entry
+            return "conflict", None
+        merged = _merge(entry["fragments"], fragments)
+        if len(merged) > MAX_FRAGMENTS or sum(len(item[1]) for item in merged) > MAX_CRYPTO:
+            self.counts["exhausted"] += 1
+            return "exhausted", None  # over budget: this connection is forgotten
+        status, data = assemble(merged)
+        if status == "conflict":
+            entry["fragments"], entry["conflict"] = [], True
+            self.counts["conflicts"] += 1
+        else:
+            entry["fragments"] = merged
+        self.entries[key] = entry
+        return status, data
+
+
+def _merge(existing, fragments):
+    """Union of fragments in offset order; an exact duplicate (same offset and bytes) is kept once."""
+    merged = list(existing)
+    for offset, chunk in fragments:
+        if not any(offset == o and chunk == c for o, c in merged):
+            merged.append((offset, bytes(chunk)))
+    merged.sort(key=lambda item: (item[0], len(item[1])))
+    return merged
 
 
 def assemble(fragments):
-    """Contiguous CRYPTO bytes from offset zero; a complete handshake message or None."""
+    """Contiguous CRYPTO bytes from offset zero as (status, data).
+
+    complete  one whole handshake message is present (data holds exactly it)
+    partial   bytes are missing before the end of the message (data None)
+    conflict  two fragments disagree on at least one shared offset (data None): a retransmission that
+              contradicts earlier bytes can never be a valid ClientHello, so nothing is derived from it (D02)
+    Every overlapping pair is compared byte for byte before anything is assembled; identical
+    retransmissions and exact duplicates are harmless.
+    """
+    items = sorted(fragments, key=lambda item: item[0])
+    for index, (offset, chunk) in enumerate(items):
+        end = offset + len(chunk)
+        for other_offset, other in items[index + 1:]:
+            if other_offset >= end:
+                break
+            start = other_offset
+            stop = min(end, other_offset + len(other))
+            if chunk[start - offset:stop - offset] != other[:stop - other_offset]:
+                return "conflict", None
     data = bytearray()
-    for offset, chunk in sorted(fragments, key=lambda item: item[0]):
+    for offset, chunk in items:
         if offset > len(data):
-            return None
+            return "partial", None
         if offset + len(chunk) > len(data):
             data.extend(chunk[len(data) - offset:])
     if len(data) < 4 or data[0] != 1:
-        return None
+        return "partial", None
     size = int.from_bytes(data[1:4], "big")
-    return bytes(data[:4 + size]) if len(data) >= 4 + size else None
+    return ("complete", bytes(data[:4 + size])) if len(data) >= 4 + size else ("partial", None)
 
 
 def _initial_keys(version, dcid):
@@ -170,7 +254,7 @@ def frames(plaintext, config):
     return fragments
 
 
-def quic(data, config, assembler=None):
+def quic(data, config, assembler=None, scope=None, now=None):
     if not quic_probe(data):
         raise UnsupportedPrefix("Outside QUIC long-header Initial/Version Negotiation profile")
     version = int.from_bytes(data[1:5], "big")
@@ -211,6 +295,12 @@ def quic(data, config, assembler=None):
                      Evidence("packet_type", "initial", "wire", "structural")))
     if token_length:
         evidence.append(Evidence("initial_token", "present", "wire", "structural"))
+    if assembler is not None and assembler.conflicted(bytes(dcid), scope, version, now):
+        # A contradiction already invalidated this connection: every further Initial of it (PING, ACK,
+        # PADDING or CRYPTO, opened or not) keeps the invalidation until the host resets the flow.
+        evidence.append(Evidence("crypto_assembly", "conflict", "wire", "structural"))
+        return DatagramMatch(encryption="quic", evidence=tuple(evidence), retracts=True,
+                             reason="QUIC connection invalidated by an earlier CRYPTO contradiction; later datagrams of it stay withdrawn")
     if not config.quic_decrypt:
         evidence.append(Evidence("initial_protection", "skipped", "wire", "context"))
         return DatagramMatch(encryption="quic", evidence=tuple(evidence),
@@ -232,9 +322,19 @@ def quic(data, config, assembler=None):
         return DatagramMatch(encryption="quic", evidence=tuple(evidence),
                              reason="QUIC Initial opened but frames outside the Initial profile: " + str(error))
     evidence.append(Evidence("initial_protection", "removed", "wire", "structural"))
-    hello = assemble(fragments)
-    if hello is None and assembler is not None and fragments:
-        hello = assembler.add(bytes(dcid), fragments)
+    status, hello = assemble(fragments)
+    if assembler is not None and fragments:
+        # The connection's store decides: it also sees earlier datagrams of this flow (D01 scope) and
+        # reports a contradiction with them even when this datagram is complete on its own (D02).
+        status, stored = assembler.add(bytes(dcid), fragments, scope, version, now)
+        hello = stored if status == "complete" else None
+    if status == "exhausted":
+        raise BudgetError("QUIC CRYPTO assembly exceeds its fragment or byte budget")
+    if status == "conflict":
+        evidence.append(Evidence("crypto_assembly", "conflict", "wire", "structural"))
+        return DatagramMatch(encryption="quic", evidence=tuple(evidence), retracts=True,
+                             reason="QUIC CRYPTO retransmission contradicts earlier bytes of this connection; "
+                                    "ClientHello evidence (server name, ALPN, fingerprints) for it is withdrawn")
     if hello is None:
         evidence.append(Evidence("crypto_assembly", "partial", "wire", "structural"))
         return DatagramMatch(encryption="quic", evidence=tuple(evidence),

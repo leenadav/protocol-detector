@@ -48,7 +48,12 @@ _CHACHA = b"chacha20-poly1305@openssh.com"
 
 
 def _names(value):
-    return frozenset(name for name in value.split(b",") if name)
+    """Names of one name-list; the parser has already rejected empty names (RFC 4251 section 6)."""
+    return frozenset(value.split(b",")) if value else frozenset()
+
+
+def _cbc_with_etm(ciphers, macs):
+    return bool(ciphers & _CBC_OR_64) and any(name.endswith(b"-etm@openssh.com") for name in macs)
 
 
 def kexinit_posture(lists):
@@ -60,14 +65,18 @@ def kexinit_posture(lists):
     encrypt-then-MAC MAC with a CBC-mode cipher is offered: CVE-2023-48795), or not-applicable.
     """
     kex, hostkeys = _names(lists[0]), _names(lists[1])
-    ciphers, macs = _names(lists[2]) | _names(lists[3]), _names(lists[4]) | _names(lists[5])
+    c2s_ciphers, s2c_ciphers = _names(lists[2]), _names(lists[3])
+    c2s_macs, s2c_macs = _names(lists[4]), _names(lists[5])
+    ciphers, macs = c2s_ciphers | s2c_ciphers, c2s_macs | s2c_macs
     by_list = {0: kex, 1: hostkeys, 2: ciphers, 4: macs}
     families = {_KEX[name] for name in kex if name in _KEX}
     rows = [("ssh_kex_class", next((family for family in _KEX_RANK if family in families), "other"))]
     rows.extend(("ssh_weak_algorithm", label) for label, index, names in _WEAK if by_list[index] & names)
     if kex & _STRICT:
         terrapin = "strict"
-    elif _CHACHA in ciphers or (ciphers & _CBC_OR_64 and any(name.endswith(b"-etm@openssh.com") for name in macs)):
+    elif _CHACHA in ciphers or _cbc_with_etm(c2s_ciphers, c2s_macs) or _cbc_with_etm(s2c_ciphers, s2c_macs):
+        # Cipher and MAC are negotiated per direction, so CBC/64-bit-block plus EtM must meet in one direction
+        # (v0.58 review round 1); ChaCha20-Poly1305 in either direction is enough.
         terrapin = "exposed"
     else:
         terrapin = "not-applicable"
