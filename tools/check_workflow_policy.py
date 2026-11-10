@@ -1110,7 +1110,7 @@ ISOLATED_INSTALL = "python -I -m pip install --require-hashes -r requirements-de
 # The Go-built scanners (items 21 and 22): one supported Go, the module proxy and checksum database
 # written out, read-only modules, no workspace, and only tools/scanners/go.mod and go.sum copied
 # out of the checkout for the build.
-SETUP_GO = {"uses": "actions/setup-go", "with": {"go-version": "1.27.3", "cache": "false"}}
+SETUP_GO = {"uses": "actions/setup-go", "with": {"go-version": "1.27.4", "cache": "false"}}
 GO_BUILD_ENV = {"GOPROXY": "https://proxy.golang.org", "GOSUMDB": "sum.golang.org", "GOTOOLCHAIN": "local",
                 "GOFLAGS": "-mod=readonly", "GOWORK": "off", "GONOSUMDB": "", "GOPRIVATE": "", "GOINSECURE": ""}
 SCANNER_BUILD = ['mkdir -p "$RUNNER_TEMP/scanners"',
@@ -2347,7 +2347,7 @@ def self_test():
         # item 22: the Go-built scanners' build is pinned too
         "writable modules": ci_full.replace('          GOFLAGS: "-mod=readonly"\n', '          GOFLAGS: "-mod=mod"\n', 1),
         "workspace on": ci_full.replace('          GOWORK: "off"\n', '          GOWORK: "auto"\n', 1),
-        "old Go": ci_full.replace('          go-version: "1.27.3"\n', '          go-version: "1.24.11"\n', 1),
+        "old Go": ci_full.replace('          go-version: "1.27.4"\n', '          go-version: "1.24.11"\n', 1),
         "build in the checkout": ci_full.replace('          cd "$RUNNER_TEMP/scanners"\n', '          cd tools/scanners\n', 1),
         "govulncheck dropped": ci_full.replace('          "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/gitleaks" | tee -a "$GITHUB_STEP_SUMMARY"\n', "", 1),
         "repository code before govulncheck": ci_full.replace(

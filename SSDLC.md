@@ -428,6 +428,11 @@ Next, in priority order (from the gaps still open after item 16):
    other tool self-tests. Against the live list it passes for 1.27.3 and
    would have failed item 21's 1.24.11 (out of support) and 1.27.2 (behind
    1.27.3). Needs CI: the job on a GitHub runner.
+   Hosted, 2026-11-10: the job failed on `main` 27c5f2f once Go 1.27.4 was
+   released, as designed. The pin moved to 1.27.4 in ci.yml (both setup-go
+   steps), `tools/scanners/go.mod` and the policy's pinned SETUP_GO, with
+   both locks advanced; gitleaks and govulncheck rebuild under 1.27.4 with
+   `go mod verify` and `tidy -diff` clean and govulncheck finding nothing.
 
 Open, not startable from this lane today: item 18 below; RUF100 (unused
 noqa), which needs engine-lane edits; and the engine branch's own secret
@@ -552,7 +557,7 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
 ```bash
 make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint, coverage matrix, docs numbers, manifest, inventory, key logs, content lock (D08)
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories (dev tools installed)
-(mkdir -p /tmp/scanners && cp tools/scanners/go.mod tools/scanners/go.sum /tmp/scanners/ && cd /tmp/scanners && GOFLAGS=-mod=readonly GOWORK=off GOTOOLCHAIN=go1.27.3 GOBIN=/tmp/scanners/bin go install tool && bin/govulncheck -mode=binary bin/gitleaks)   # Go scanner advisories (needs Go)
+(mkdir -p /tmp/scanners && cp tools/scanners/go.mod tools/scanners/go.sum /tmp/scanners/ && cd /tmp/scanners && GOFLAGS=-mod=readonly GOWORK=off GOTOOLCHAIN=go1.27.4 GOBIN=/tmp/scanners/bin go install tool && bin/govulncheck -mode=binary bin/gitleaks)   # Go scanner advisories (needs Go)
 make ci-local       # make check plus extended fuzzing and the offline replay/schema validation CI runs
 make package        # sdist and wheel plus the wheel-content gate (dev tools installed)
 make workflow-lint  # actionlint (needs a local actionlint and shellcheck, which the hosted runner has; CI fetches a checksum-verified release) then zizmor from the dev toolchain
