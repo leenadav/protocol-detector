@@ -55,7 +55,7 @@ never edits the engine branch's snapshot. No migration PR is opened until author
 
 | item | state | evidence |
 |---|---|---|
-| Toolchain | implemented | `go/go.mod` pins `go 1.27.3` (supported releases on 2026-11-07: 1.27.3, 1.26.10; the container's 1.24.7 is out of support and unused). Pure Go, standard library only; ADR 0002. |
+| Toolchain | implemented | `go/go.mod` pins `go 1.27.4` (moved from 1.27.3 on 2026-11-10; supported releases then: 1.27.4, 1.26.11; the container's 1.24.7 is out of support and unused). Pure Go, standard library only; ADR 0002. |
 | Typed contracts | implemented | `go/internal/contracts`: Status/Kind closed vocabularies, Evidence as the 4-tuple array, nullable fields, `Initial()` defaults, `Config` decoding over the Python defaults with unknown-field and non-positive-limit rejection. Tests: round trip of the Python shape, null lists never emitted, vocabularies closed, defaults; fuzz `FuzzObservationJSONNeverPanics`. |
 | Fixture contract proof | implemented | `go/internal/parity` loads `migration/fixtures/cases.json` (bounded size, schema check, unique ids, cancellation between cases, fail-closed on bad expectations) and the test re-encodes every stream and datagram expectation (1140 cases) through the Go types with structural equality to the Python output. `protodetect cases` does the same from the CLI. |
 | Bounded buffer primitives | implemented | `go/internal/buffer`: `Bounded` (per-direction limit, copies input, zeroes on discard/release) charging an `Account` (aggregate limit with a stated scope). Tests: input mutation after the call, per-buffer limit with scope and limit in the error, aggregate limit across buffers, discard/release accounting, zeroed tails; fuzz `FuzzAppendNeverExceedsLimits`. |

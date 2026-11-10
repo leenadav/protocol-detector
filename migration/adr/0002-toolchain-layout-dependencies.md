@@ -11,6 +11,8 @@ Status: accepted for M2 (2026-11-07).
   `go-version-file: go/go.mod`, not "latest".
 - Upgrades move the pin in one commit with the gates rerun; a toolchain change is never bundled with an
   engine change.
+- 2026-11-10: pin moved to `go 1.27.4` (go.dev/dl lists 1.27.4 and 1.26.11 as supported); toolchain-only commit,
+  gates rerun.
 
 ## Module and layout
 
