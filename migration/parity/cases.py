@@ -159,6 +159,112 @@ def _mutate(rng, data, count=2):
     return bytes(out)
 
 
+def kerberos_vectors():
+    """Kerberos KDC messages for M5 batch 17: requests with etype lists, replies with ticket and enc-part etypes,
+    KRB-ERROR codes, and each rejection path of windows._kerberos_body (tags, order, required fields, pvno,
+    msg-type, padata budget, times, microseconds, error codes, empty strings, minimal etype encoding)."""
+    from protocol_adapters.protocol_fixtures import _ber, _krb_principal, krb_error, krb_rep
+
+    def req(tag=0x6a, msg=b"\x0a", etypes=(b"\x12", b"\x11"), pvno=b"\x05", padata=None, body_extra=b"", order=None, omit=()):
+        body_fields = [(0, _ber(0xa0, _ber(0x03, b"\x00\x40\x81\x00\x10"))),
+                       (1, _ber(0xa1, _krb_principal(b"user"))),
+                       (2, _ber(0xa2, _ber(0x1b, b"EXAMPLE.ORG"))),
+                       (5, _ber(0xa5, _ber(0x18, b"20371231235959Z"))),
+                       (7, _ber(0xa7, _ber(0x02, b"\x12\x34\x56\x78"))),
+                       (8, _ber(0xa8, _ber(0x30, b"".join(_ber(0x02, e) for e in etypes))))]
+        body = _ber(0x30, b"".join(v for n, v in body_fields if n not in omit) + body_extra)
+        fields = [_ber(0xa1, _ber(0x02, pvno)), _ber(0xa2, _ber(0x02, msg))]
+        if padata is not None:
+            fields.append(_ber(0xa3, _ber(0x30, b"".join(_ber(0x30, _ber(0xa1, _ber(0x02, b"\x02"))) for _ in range(padata)))))
+        fields.append(_ber(0xa4, body))
+        if order:
+            fields = [fields[i] for i in order]
+        return _ber(tag, _ber(0x30, b"".join(fields)))
+
+    def err(over=None):
+        parts = {0: _ber(0xa0, _ber(2, b"\x05")), 1: _ber(0xa1, _ber(2, b"\x1e")), 4: _ber(0xa4, _ber(0x18, b"20260101120000Z")),
+                 5: _ber(0xa5, _ber(2, b"\x01")), 6: _ber(0xa6, _ber(2, b"\x19")), 9: _ber(0xa9, _ber(0x1b, b"EXAMPLE.ORG")),
+                 10: _ber(0xaa, _krb_principal(b"krbtgt")), 12: _ber(0xac, _ber(4, bytes(12)))}
+        parts.update(over or {})
+        return krb_error(fields=b"".join(v for k, v in sorted(parts.items()) if v is not None))
+
+    def rep(enc_etype=b"\x12", ticket_etype=b"\x12", kvno=None, ticket_fields=4, cipher=bytes(32), tag=0x6b):
+        msg = {0x6b: b"\x0b", 0x6d: b"\x0d"}[tag]
+        enc = _ber(0xa0, _ber(2, enc_etype)) + (_ber(0xa1, _ber(2, kvno)) if kvno is not None else b"") + _ber(0xa2, _ber(4, cipher))
+        tkt = [_ber(0xa0, _ber(2, b"\x05")), _ber(0xa1, _ber(0x1b, b"EXAMPLE.ORG")), _ber(0xa2, _krb_principal(b"krbtgt")),
+               _ber(0xa3, _ber(0x30, _ber(0xa0, _ber(2, ticket_etype)) + _ber(0xa2, _ber(4, bytes(24)))))][:ticket_fields]
+        fields = (_ber(0xa0, _ber(2, b"\x05")) + _ber(0xa1, _ber(2, msg)) + _ber(0xa3, _ber(0x1b, b"EXAMPLE.ORG"))
+                  + _ber(0xa4, _krb_principal(b"user")) + _ber(0xa5, _ber(0x61, _ber(0x30, b"".join(tkt)))) + _ber(0xa6, _ber(0x30, enc)))
+        return krb_rep(tag, fields=fields)
+
+    return [
+        ("as-req-aes", req()),
+        ("tgs-req", req(0x6c, b"\x0c")),
+        ("as-req-weak", req(etypes=(b"\x17", b"\x03", b"\x12", b"\x17"))),
+        ("as-req-other-etype", req(etypes=(b"\x7f", b"\xff"))),
+        ("as-req-negative-etype", req(etypes=(b"\xff\x80",))),
+        ("as-req-nonminimal-etype", req(etypes=(b"\x00\x12",))),
+        ("as-req-empty-etypes", req(etypes=())),
+        ("as-req-33-etypes", req(etypes=(b"\x12",) * 33)),
+        ("as-req-32-etypes", req(etypes=(b"\x11",) * 32)),
+        ("as-req-no-nonce", req(omit=(7,))),
+        ("as-req-padata", req(padata=2)),
+        ("as-req-padata-budget", req(padata=33)),
+        ("as-req-pvno4", req(pvno=b"\x04")),
+        ("as-req-msgtype", req(msg=b"\x0c")),
+        ("as-req-order", req(order=(1, 0, 2))),
+        ("as-req-body-extra-field", req(body_extra=_ber(0xbf, b"\x00"))),
+        ("as-rep", rep()),
+        ("tgs-rep-rc4", rep(enc_etype=b"\x17", ticket_etype=b"\x17", tag=0x6d)),
+        ("as-rep-kvno", rep(kvno=b"\x02")),
+        ("as-rep-short-ticket", rep(ticket_fields=3)),
+        ("as-rep-empty-cipher", rep(cipher=b"")),
+        ("as-rep-bad-kvno", rep(kvno=b"")),
+        ("error-preauth", err()),
+        ("error-code-6", err({6: _ber(0xa6, _ber(2, b"\x06"))})),
+        ("error-code-128", err({6: _ber(0xa6, _ber(2, b"\x00\x80"))})),
+        ("error-code-wide", err({6: _ber(0xa6, _ber(2, b"\x00\x00\x19"))})),
+        ("error-bad-time", err({4: _ber(0xa4, _ber(0x18, b"2026010112000Z0"))})),
+        ("error-usec-max", err({5: _ber(0xa5, _ber(2, b"\x0f\x42\x3f"))})),
+        ("error-usec-over", err({5: _ber(0xa5, _ber(2, b"\x0f\x42\x40"))})),
+        ("error-usec-negative", err({5: _ber(0xa5, _ber(2, b"\xff"))})),
+        ("error-empty-realm", err({9: _ber(0xa9, _ber(0x1b, b""))})),
+        ("error-no-sname", err({10: None})),
+        ("error-ctime", err({2: _ber(0xa2, _ber(0x18, b"20260101120000Z")), 3: _ber(0xa3, _ber(2, b"\x00"))})),
+        ("error-etext", err({11: _ber(0xab, _ber(0x1b, b"text"))})),
+        ("error-bad-edata", err({12: _ber(0xac, _ber(0x1b, b"x" * 40))})),
+        ("unknown-tag", _ber(0x6e, _ber(0x30, bytes(60)))),
+        ("trailing", req() + b"\x00"),
+    ]
+
+
+def kerberos_cases():
+    """Kerberos over TCP (record marking) and UDP (M5 batch 17): every vector as a stream (whole / 1-byte / 7-byte /
+    truncated) and as a datagram (whole / truncated), plus a padata budget at max_headers 1 and a TCP extension bit."""
+    cases = []
+    for number, (name, data) in enumerate(kerberos_vectors()):
+        framed = len(data).to_bytes(4, "big") + data
+        base = "stream/kerberos-%02d-%s" % (number, name)
+        for variant, chunks, end in (("whole", [framed.hex()], "fin"), ("bytes", [framed[i:i + 1].hex() for i in range(len(framed))], "fin"),
+                                     ("sevens", [framed[i:i + 7].hex() for i in range(0, len(framed), 7)], "fin"),
+                                     ("half", [framed[:max(1, len(framed) // 2)].hex()], "Capture ended before initial message completed")):
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": "kerberos", "chunks": chunks, "hint": None, "config": {}, "end": end})
+        base = "datagram/kerberos-%02d-%s" % (number, name)
+        cases.append({"id": base + "/whole", "kind": "datagram", "label": "kerberos", "payload": data.hex(), "hint": None, "config": {}})
+        cases.append({"id": base + "/half", "kind": "datagram", "label": "kerberos", "payload": data[:max(1, len(data) // 2)].hex(), "hint": None, "config": {}})
+    padded = dict(kerberos_vectors())["as-req-padata"]
+    cases.append({"id": "stream/kerberos-options/padata-budget", "kind": "stream", "label": "kerberos",
+                  "chunks": [(len(padded).to_bytes(4, "big") + padded).hex()], "hint": None, "config": {"max_headers": 1}, "end": "fin"})
+    cases.append({"id": "datagram/kerberos-options/padata-budget", "kind": "datagram", "label": "kerberos", "payload": padded.hex(), "hint": None,
+                  "config": {"max_headers": 1}})
+    whole = dict(kerberos_vectors())["as-req-aes"]
+    cases.append({"id": "stream/kerberos-options/extension-bit", "kind": "stream", "label": "kerberos",
+                  "chunks": [((len(whole) | 0x80000000).to_bytes(4, "big") + whole).hex()], "hint": None, "config": {}, "end": "fin"})
+    cases.append({"id": "stream/kerberos-options/byte-budget", "kind": "stream", "label": "kerberos",
+                  "chunks": [(len(whole).to_bytes(4, "big") + whole).hex()], "hint": None, "config": {"max_bytes": 64}, "end": "fin"})
+    return cases
+
+
 def stream_cases(seed=11, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -194,6 +300,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(service_cases())
     cases.extend(git_cases())
     cases.extend(session_cases_v())
+    cases.extend(kerberos_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})

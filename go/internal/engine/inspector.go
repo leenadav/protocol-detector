@@ -32,7 +32,7 @@ var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"dcerpc", "websocket", "xmpp", "syslog", "git",
 	"netbios-ss", "tacacs-plus", "socks5", "wireguard", "bacnet",
 	"tftp", "ntp", "l2tp", "coap", "rip", "rtcp", "lifx-lan", "tuya-lan",
-	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome"}
+	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos"}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 	switch candidate {
@@ -78,6 +78,8 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 		return framed.NewTDS(cfg.MaxBytes), nil
 	case "tns":
 		return framed.NewTNS(cfg.MaxBytes), nil
+	case "kerberos":
+		return framed.NewKerberos(cfg.MaxBytes, cfg.MaxHeaders), nil
 	case "cql":
 		return framed.NewCQL(cfg.MaxBytes), nil
 	case "kafka":

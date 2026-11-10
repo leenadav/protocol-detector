@@ -848,9 +848,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 17: AS/TGS-REQ, AS/TGS-REP and KRB-ERROR over TCP record marking and UDP; field walks, required sets, padata budget, time/microsecond/error-code bounds and etype classes (request, reply and ticket) ported from windows._kerberos_body; 239 stream and datagram cases matched, plus 40,000 seeded mutations compared once outside the committed set",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [

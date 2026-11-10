@@ -273,9 +273,26 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` with the 78 claimed families: **3828 compared, 3828 matched, 0 mismatched, 0 gaps**; datagram: tplink-smarthome 118; records included. Matched on the first run. One-off check outside the committed set: 30,000 seeded mutations of the vectors through both backends, 30,000 matched (832 identified, 26,496 malformed, 2,672 unknown). |
 | Stated dependency | — | the 4300-digit limit is CPython's default and can be changed with `PYTHONINTMAXSTRDIGITS`; the Go port fixes the default. |
 
-## M5 batches 17+ / M7+ — next
+### Batch 17 — Kerberos
 
-Remaining registry batches (10 families: HTTP2, SMB1, SMB2, Kerberos, LDAP, RDP, ISO-TSAP, QUIC, DTLS, IKEv2, each with dedicated review) with record-level parity per batch; passive
+| item | state | evidence |
+|---|---|---|
+| Validator | implemented | kerberos over TCP (`NewKerberos`: 4-byte record length, extension bit refused, 40-byte minimum) and UDP: AS/TGS-REQ, AS/TGS-REP and KRB-ERROR with the Python field walk (context tags strictly increasing, interleaved checks in the order of the Python generator), required field sets, pvno/msg-type, padata count bounded by `min(max_headers, 32)`, GeneralizedTime, microseconds 0..999999, error codes 0..127, non-empty realms and principals. Etype rows (offered, preferred, reply, ticket) follow the Python helpers, which drop the rows on any error, budget included, without rejecting the message. No principal, realm, ticket or pre-authentication value is emitted. `go/internal/protocols/framed/kerberos.go`. |
+| Fixtures | implemented | `cases.py kerberos_cases()`: 37 vectors (requests with weak, other, negative, non-minimal, empty, 32 and 33 etypes; replies with kvno, short tickets, empty ciphers; KRB-ERROR codes, times, microseconds, realms, sname, ctime, e-text, e-data; unknown tag; trailing byte) as streams (whole / 1-byte / 7-byte / truncated) and datagrams (whole / truncated), plus padata budget, extension bit and byte budget options (226 cases, 4253 total). |
+| Go tests | implemented | `kerberos_test.go`: etype rows and provenance, rows dropped on a non-minimal etype, byte-at-a-time stream feed, scope, TCP framing rejections, tag/trailing/pvno/order rejections; `NewKerberos` joins `FuzzFramedNeverPanics`. |
+| Differential result | implemented | `make parity-go` with the 79 claimed families: **4084 compared, 4084 matched, 0 mismatched, 0 gaps**. Matched on the first run. One-off check outside the committed set: 20,000 seeded mutations of the vectors, each as a datagram and as a TCP stream (40,000 cases), all matched. |
+
+### LDAP — scoped, not started
+
+The message parser itself is a small port (`binary.LDAPParser`: BindRequest, BindResponse, ExtendedRequest and
+ExtendedResponse). Two dependencies are not in Go yet and need their own review: the SPNEGO/GSS token
+classifier for `GSS-SPNEGO` binds (`gss.classify_token`, also needed by SMB), and the host-side StartTLS
+correlation (`Analyzer._correlate_ldap` with `Stream.open_shift` and replay of retained bytes), which is also
+where the HTTP CONNECT tunnel correlation lives and which the Go session tracker does not implement.
+
+## M5 batches 18+ / M7+ — next
+
+Remaining registry batches (9 families: HTTP2, SMB1, SMB2, LDAP, RDP, ISO-TSAP, QUIC, DTLS, IKEv2, each with dedicated review) with record-level parity per batch; passive
 TLS decryption (M7); frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
 
 ## Open decisions and blockers

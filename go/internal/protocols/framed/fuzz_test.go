@@ -20,7 +20,7 @@ func parsers() []feeder {
 		NewOPCUA(4096), NewS7(4096), NewMQTT(4096), NewRESP(4096), NewAMQP(), NewRPC(4096), NewDiameter(4096, 16),
 		NewBGP(4096), NewOpenVPN(4096), NewPPTP(4096), NewFastCGI(4096, 16),
 		NewDCERPC(4096, 16), NewWebSocket(), NewXMPP(4096), NewSyslog(4096), NewGit(4096, 512, 16),
-		NewNetBIOSSession(4096), NewTACACS(4096), NewSOCKS5()}
+		NewNetBIOSSession(4096), NewTACACS(4096), NewSOCKS5(), NewKerberos(4096, 16)}
 }
 
 // FuzzFramedNeverPanics feeds arbitrary bytes, in two chunks, to every framed parser (including the hint-only
