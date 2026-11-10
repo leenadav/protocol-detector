@@ -263,10 +263,19 @@ Taken before M5 so that session records become comparable for every family as it
 | Fixtures | implemented | `cases.py udp_cases_5()`: 15 payloads, whole and truncated, plus an SSDP header budget case (31 datagram cases). |
 | Differential result | implemented | `make parity-go` with the 77 claimed families: **3710 compared, 3710 matched, 0 mismatched, 0 gaps**; datagram: ssdp 20, sip 17; records included. The first run caught a bug in the new option (the start-line branch was skipped with the route), fixed before commit. |
 
-## M5 batches 16+ / M7+ — next
+### Batch 16 — TP-Link Smart Home
 
-Remaining registry batches (the other binary framed families; UDP/control/media; network and
-smart-home; QUIC/DTLS/HTTP2/SMB2/Kerberos/LDAP/RDP with dedicated review) with record-level parity per batch; passive
+| item | state | evidence |
+|---|---|---|
+| Validator | implemented | tplink-smarthome: one pass undoes the autokey with the printable-ASCII and nesting checks in byte order, then `jsonDocument` decides whether the plaintext is one JSON document. It ports the grammar of CPython's `json.loads` (C scanner, defaults) rather than using `encoding/json`, because the two differ where the reference accepts `NaN`/`Infinity`/`-Infinity` and where it refuses an integer literal of more than 4300 digits (`sys.int_info.default_max_str_digits`, a `ValueError` the Python validator reports as malformed). A repeated key keeps its first position and last value, as a Python dict does. Only module names from the fixed vocabulary are emitted. `go/internal/protocols/framed/kasa.go`. |
+| Fixtures | implemented | `cases.py udp_cases_6()`: 56 payloads, whole and truncated (112 datagram cases, 4027 total): literals, number forms, escapes and surrogates, repeated keys, trailing data, the nesting budget at 8 and 9, the digit limit at 4300 and 4301. |
+| Go tests | implemented | `kasa_test.go`: grammar table, key order and last-value rule, the six validator outcomes, no value in evidence; fuzz `FuzzKasaNeverPanics` (no panic; verdict equal to `encoding/json` on printable ASCII outside the Python-only rules), added to `make go-check`. |
+| Differential result | implemented | `make parity-go` with the 78 claimed families: **3828 compared, 3828 matched, 0 mismatched, 0 gaps**; datagram: tplink-smarthome 118; records included. Matched on the first run. One-off check outside the committed set: 30,000 seeded mutations of the vectors through both backends, 30,000 matched (832 identified, 26,496 malformed, 2,672 unknown). |
+| Stated dependency | — | the 4300-digit limit is CPython's default and can be changed with `PYTHONINTMAXSTRDIGITS`; the Go port fixes the default. |
+
+## M5 batches 17+ / M7+ — next
+
+Remaining registry batches (10 families: HTTP2, SMB1, SMB2, Kerberos, LDAP, RDP, ISO-TSAP, QUIC, DTLS, IKEv2, each with dedicated review) with record-level parity per batch; passive
 TLS decryption (M7); frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
 
 ## Open decisions and blockers

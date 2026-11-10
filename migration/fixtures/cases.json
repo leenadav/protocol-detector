@@ -279568,6 +279568,3896 @@
    "payload": "4d2d534541524348202a20485454502f312e310d0a484f53543a203233392e3235352e3235352e3235303a313930300d0a4d414e3a2022737364703a646973636f766572220d0a4d583a20310d0a53543a2075706e703a726f6f746465766963650d0a0d0a"
   },
   {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 58,
+     "bytes_received": 58,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "2",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-00-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d1b4c09fec95e68fe187e8caf08bf68ba785e08de89cf98ba993e8caadc8bce391f495f98de489eccef48ff28ff2"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 29,
+     "bytes_received": 29,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-00-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d1b4c09fec95e68fe187e8caf08bf68ba7"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 63,
+     "bytes_received": 63,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-01-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d1b4c09fec95e68fe187e8caf08ba9c8a4cdacdffdc7e595f998fb9ef699f591f486a488aacfbdcf90f39cf89dbf85b5c8b5c8"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 31,
+     "bytes_received": 31,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-01-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d1b4c09fec95e68fe187e8caf08ba9c8a4cdac"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 87,
+     "bytes_received": 87,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "smartlife.iot.common.emeter",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "3",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-02-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281ec8dff8be78ee88da3caa5d1ff9cf39ef39cf2dcb9d4b1c5a0d2f0cab193f491e5bac8adcca0d4bdd0b597add6abd6fad8acc5a8cdefd5ae8ceb8efaa5d1b8d5b092a8c6b3dfb3cee2c0aecbbfd6b092a8d3aed3"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 43,
+     "bytes_received": 43,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-02-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281ec8dff8be78ee88da3caa5d1ff9cf39ef39cf2dcb9d4b1c5a0d2f0cab193f491e5bac8adcca0d4bd"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 35,
+     "bytes_received": 35,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-03-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5f5cfef94b496f7d5f5cfefb494a585a989bb9bc6e69bbbc6e6c6"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 17,
+     "bytes_received": 17,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-03-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5f5cfef94b496f7d5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-04-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5efdef2d0a3daa9ddb8d5f7cdb6cbb6"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-04-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5efdef2"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home message must be an object of module objects",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-05-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94e9c5e794ed9eea8fe2c0facbb6"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-05-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94e9"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 37,
+     "bytes_received": 37,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "2",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-06-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94e9c5e782ef8afe9be9cbf18af7dbf98af380f491fcdee49fe29f"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 18,
+     "bytes_received": 18,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-06-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94e9c5e782ef8afe"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 18,
+     "bytes_received": 18,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-07-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281dda898a89fa6d5a1c4a98bb1cab7ca"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-07-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281dda898a89fa6"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 30,
+     "bytes_received": 30,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-08-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281dda898a89fa6d5a1c4a98bb1cab79bb9cab3c0b4d1bc9ea4dfa2df"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-08-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281dda898a89fa6d5a1c4a98bb1"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 31,
+     "bytes_received": 31,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home message names a module outside the documented vocabulary",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-09-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94e9c5e788fc94f183dcb1debacfa3c6e4dea5d8a5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-09-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94e9c5e788"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 30,
+     "bytes_received": 30,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home message must be an object of module objects",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-10-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f29de981e496c9a4cbafdab6d3f1cbfad6f487fe8df99cf1d3e992ef92"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-10-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f29de981e496c9a4cbafdab6d3f1"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 13,
+     "bytes_received": 13,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home message must be an object of module objects",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-11-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5efb4e994"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 6,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-11-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home message must be an object of module objects",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-12-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef81f498f489"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 7,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-12-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 47,
+     "bytes_received": 47,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-13-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cf81e0ae82a0c2e0daf7bed0b6dfb1d8acd5f9dbb89aa0e987e188e68ffb82ff82"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 23,
+     "bytes_received": 23,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-13-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cf81e0ae82a0c2e0da"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-14-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cf81e08ef38e"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 10,
+     "bytes_received": 10,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-14-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 21,
+     "bytes_received": 21,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-15-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfe2abc5a3dea3"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 10,
+     "bytes_received": 10,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-15-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 45,
+     "bytes_received": 45,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-16-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cf94a5c0f5d9f4c4e8d8f6c3efde9bb082ae83b29cae9bfed3e0ccfca1dca1"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 22,
+     "bytes_received": 22,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-16-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cf94a5c0f5d9f4c4"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 19,
+     "bytes_received": 19,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-17-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfffceb3ce"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-17-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 19,
+     "bytes_received": 19,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-18-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffed0add0"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-18-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 19,
+     "bytes_received": 19,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-19-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffe9be69b"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-19-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 19,
+     "bytes_received": 19,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-20-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfe4d5a8d5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-20-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 19,
+     "bytes_received": 19,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-21-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfe1d4a9d4"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-21-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 18,
+     "bytes_received": 18,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-22-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfe29fe2"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-22-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 19,
+     "bytes_received": 19,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-23-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffed2afd2"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-23-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 21,
+     "bytes_received": 21,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-24-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cf94a589d4a9d4"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 10,
+     "bytes_received": 10,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-24-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-25-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94e994b4cc"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 7,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-25-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-26-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94e994b494b4"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-26-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 14,
+     "bytes_received": 14,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-27-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94e994e9"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 7,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-27-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-28-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94e9"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 6,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-28-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 49,
+     "bytes_received": 49,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-29-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfb496f7d5ef94b6d7f5cfb496f7d5ef94b6d7f5cfb496f7d5ef94e994e994e994e994"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-29-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfb496f7d5ef94b6d7f5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 55,
+     "bytes_received": 55,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON exceeds the nesting budget",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-30-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfb496f7d5ef94b6d7f5cfb496f7d5ef94b6d7f5cfb496f7d5ef94b6d7f5cfb4c9b4c9b4c9b4c9b4c9"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 27,
+     "bytes_received": 27,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-30-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfb496f7d5ef94b6d7f5cfb496"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 33,
+     "bytes_received": 33,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-31-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb6edb6edb6edb6edb6ed96ed96edcfb2cf"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-31-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfed"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 33,
+     "bytes_received": 33,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-32-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb193c893c893c893c893c893cfedcfb2cf"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-32-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfed"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 35,
+     "bytes_received": 35,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-33-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb1df83a1fdd28eecb0d68af8a4d08cd0f28ff2"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 17,
+     "bytes_received": 17,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-33-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb1"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 21,
+     "bytes_received": 21,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-34-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb1c9eb96eb"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 10,
+     "bytes_received": 10,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-34-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 23,
+     "bytes_received": 23,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-35-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb1c4f5c7e598e5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 11,
+     "bytes_received": 11,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-35-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 25,
+     "bytes_received": 25,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-36-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb1c4f5c7a094b6cbb6"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-36-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 31,
+     "bytes_received": 31,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-37-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb1c4a098abcf93e682e7d7e7c5b8c5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-37-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cf"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 25,
+     "bytes_received": 25,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-38-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb1c4a098a898bac7ba"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-38-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 31,
+     "bytes_received": 31,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-39-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb1c4a098a898c4b1ebb1ebb193ee93"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-39-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cf"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 31,
+     "bytes_received": 31,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-40-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfedb1c4a098a898c4b181b185b496eb96"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-40-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cf"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 4317,
+     "bytes_received": 4317,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-41-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecfb2cf"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 2158,
+     "bytes_received": 2158,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-41-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffe"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 4318,
+     "bytes_received": 4318,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-42-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffe83fe"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 2159,
+     "bytes_received": 2159,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-42-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecf"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 4319,
+     "bytes_received": 4319,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-43-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfe2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3aed3"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 2159,
+     "bytes_received": 2159,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-43-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfe2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3e2d3"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 4320,
+     "bytes_received": 4320,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-44-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffed0e09de0"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 2160,
+     "bytes_received": 2160,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-44-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffe"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 4320,
+     "bytes_received": 4320,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-45-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffe9baad7aa"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 2160,
+     "bytes_received": 2160,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-45-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffecffe"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 27,
+     "bytes_received": 27,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext must be printable ASCII JSON",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-46-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfed99f89a93fb9eec89abd6ab"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 13,
+     "bytes_received": 13,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-46-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-47-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfa1d4b8c5b8"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 10,
+     "bytes_received": 10,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-47-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 20,
+     "bytes_received": 20,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-48-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfbbc9bcc1bc"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 10,
+     "bytes_received": 10,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-48-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 18,
+     "bytes_received": 18,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-49-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b3d2f5cffe83fe"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 9,
+     "bytes_received": 9,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-49-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 13,
+     "bytes_received": 13,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-50-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5f58ef38e"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 6,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-50-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 30,
+     "bytes_received": 30,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-51-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfed98f682e795f891ff9eea8feb96eb"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 15,
+     "bytes_received": 15,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-51-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cf"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 47,
+     "bytes_received": 47,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "tplink-smarthome",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "tplink-smarthome",
+       "wire",
+       "structural"
+      ],
+      [
+       "tplink_module",
+       "system",
+       "wire:header",
+       "structural"
+      ],
+      [
+       "tplink_modules",
+       "1",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home JSON (autokey 171) parsed with documented module names; values such as alias, MAC, device ID and location are never emitted",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-52-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfbbc9bcd9f5d7b597adcbaac6b5d0fcdebd9fa5cbbed2be92b0d4f6cceeccb1cc"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 23,
+     "bytes_received": 23,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-52-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f281f88bff9af7d5ef94b6d7f5cfbbc9bcd9f5d7b597"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TP-Link Smart Home plaintext is not one JSON document",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-53-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f2d0ea91ec91e9"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 4,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-53-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f2d0ea"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 7,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-54-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f293b18bbac7"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 3,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-54-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "d0f293"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 15,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-55-tplink-smarthome/whole",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "f08ba9daa3d0a4c1ac8eb4cfb2cf92"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 0,
+     "bytes_received": 7,
+     "candidates_selected": 0,
+     "events_emitted": 0,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "No supported datagram structure selected",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/udp6-55-tplink-smarthome/half",
+   "kind": "datagram",
+   "label": "tplink-smarthome",
+   "payload": "f08ba9daa3d0a4"
+  },
+  {
    "expected": {
     "packets": [
      {
@@ -348698,7 +352588,7 @@
  "reference": {
   "backend": "python",
   "content_release": "2026.11.0",
-  "head": "26368c0"
+  "head": "cf45d84"
  },
  "schema": 1
 }

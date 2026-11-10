@@ -2328,9 +2328,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "M5 batch 16: autokey undone in one pass with the printable-ASCII and nesting checks; the plaintext is parsed by a port of CPython's json.loads grammar (NaN/Infinity literals, 4300-digit integer limit, repeated keys keep the first position and last value); 118 datagram cases matched, plus 30,000 seeded mutations compared once outside the committed set",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [

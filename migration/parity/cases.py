@@ -1708,6 +1708,79 @@ def udp_cases_5():
     return cases
 
 
+def udp_cases_6():
+    """UDP validator of M5 batch 16: TP-Link Smart Home (autokey JSON). The vectors pin the json.loads grammar the Go
+    port must share: NaN/Infinity literals, number forms, escapes and surrogates, repeated keys, trailing data, the
+    nesting budget and the 4300-digit integer limit."""
+    from protocol_adapters.protocol_fixtures import kasa
+    deep = lambda n: b'{"system":' + b'{"a":' * (n - 2) + b'{}' + b'}' * (n - 2) + b'}'
+    vectors = [
+        b'{"system":{"get_sysinfo":{}},"emeter":{"get_realtime":{}}}',
+        b'{"system":{"get_sysinfo":{"alias":"placeholder","err_code":0}}}',
+        b'{"smartlife.iot.common.emeter":{"get_realtime":{}},"time":{"get_time":null},"netif":{}}',
+        b'  {"system" : { "a" : [ 1 , 2 ] } }  '[2:],
+        b'{"system":1,"system":{}}',
+        b'{"system":{},"system":1}',
+        b'{"system":{},"emeter":{},"system":{}}',
+        b'{"s\\u0079stem":{}}',
+        b'{"s\\u0079stem":{},"system":{}}',
+        b'{"system":{},"other_module":{}}',
+        b'{"other_module":1,"system":{}}',
+        b'{"system":[]}',
+        b'{"system":null}',
+        b'{"system":{"a":NaN,"b":-Infinity,"c":Infinity}}',
+        b'{"system":{"a":Nan}}',
+        b'{"system":{"a":-Inf}}',
+        b'{"system":{"a":[1e5,-0,0.5,1E+2,-1.25e-3,0]}}',
+        b'{"system":{"a":01}}',
+        b'{"system":{"a":1.}}',
+        b'{"system":{"a":1e}}',
+        b'{"system":{"a":+1}}',
+        b'{"system":{"a":.5}}',
+        b'{"system":{"a":-}}',
+        b'{"system":{"a":1,}}',
+        b'{"system":{"a":[1,]}}',
+        b'{"system":{}} x',
+        b'{"system":{}}   ',
+        b'{"system":{}}}',
+        b'{"system":{}',
+        deep(8),
+        deep(9),
+        b'{"system":{"a":"[[[[[[[[[[{{{{"}}',
+        b'{"system":{"a":"\\"[[[[[[[[[[\\""}}',
+        b'{"system":{"a":"\\n\\"\\/\\b\\f\\r\\t\\\\"}}',
+        b'{"system":{"a":"\\x"}}',
+        b'{"system":{"a":"\\u12"}}',
+        b'{"system":{"a":"\\u12g4"}}',
+        b'{"system":{"a":"\\ud83d\\ude00"}}',
+        b'{"system":{"a":"\\ud800"}}',
+        b'{"system":{"a":"\\ud800\\uZZZZ"}}',
+        b'{"system":{"a":"\\ud800\\u0041"}}',
+        b'{"system":{"a":' + b'1' * 4300 + b'}}',
+        b'{"system":{"a":' + b'1' * 4301 + b'}}',
+        b'{"system":{"a":-' + b'1' * 4301 + b'}}',
+        b'{"system":{"a":' + b'1' * 4301 + b'.0}}',
+        b'{"system":{"a":' + b'1' * 4301 + b'e1}}',
+        b'{"system":{"a":"tab\there"}}',
+        b'{"system":{"a":nul}}',
+        b'{"system":{"a":tru}}',
+        b"{\"system\":{'a':1}}",
+        b'{"system" {}}',
+        b'{"system":{"a":"unterminated}}',
+        b'{"system":{"a":true,"b":false,"c":null,"d":""}}',
+        b'{"":{}}xxx'[:8],
+        b'{"a":1}',
+        b'[{"system":{}}]',
+    ]
+    cases = []
+    for number, text in enumerate(vectors):
+        data = kasa(text)
+        base = "datagram/udp6-%02d-tplink-smarthome" % number
+        cases.append({"id": base + "/whole", "kind": "datagram", "label": "tplink-smarthome", "payload": data.hex(), "hint": None, "config": {}})
+        cases.append({"id": base + "/half", "kind": "datagram", "label": "tplink-smarthome", "payload": data[:max(1, len(data) // 2)].hex(), "hint": None, "config": {}})
+    return cases
+
+
 def datagram_cases(seed=12, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -1724,6 +1797,7 @@ def datagram_cases(seed=12, limit=None):
     cases.extend(udp_cases_3())
     cases.extend(udp_cases_4())
     cases.extend(udp_cases_5())
+    cases.extend(udp_cases_6())
     return cases
 
 
