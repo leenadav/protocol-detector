@@ -661,7 +661,7 @@ DTLS 1.2 ServerHello; a HelloRetryRequest selects nothing and carries neither):
 
 | Evidence | Values | Rule |
 |---|---|---|
-| `selected_key_exchange` | `ecdhe`, `dhe`, `static-ecdh`, `static-rsa`, `psk` | TLS 1.2 from the suite: `TLS_RSA_*` (0x002f) is `static-rsa`; `TLS_ECDH_*` (0xc025, 0xc026, 0xc029, 0xc02a, 0xc02d, 0xc02e, 0xc031, 0xc032) use the certificate's static key and are `static-ecdh`; `TLS_ECDHE_*` are `ecdhe`. TLS 1.3 from the extensions: a `key_share` names `ecdhe` (x25519, x448, P-256/384/521) or `dhe` (ffdhe2048..8192), with or without `pre_shared_key`; `pre_shared_key` alone is `psk` (psk_ke resumption, RFC 8446 4.2.9) |
+| `selected_key_exchange` | `ecdhe`, `dhe`, `hybrid`, `static-ecdh`, `static-rsa`, `psk` | TLS 1.2 from the suite: `TLS_RSA_*` (0x002f) is `static-rsa`; `TLS_ECDH_*` (0xc025, 0xc026, 0xc029, 0xc02a, 0xc02d, 0xc02e, 0xc031, 0xc032) use the certificate's static key and are `static-ecdh`; `TLS_ECDHE_*` are `ecdhe`. TLS 1.3 from the extensions: a `key_share` names `ecdhe` (x25519, x448, P-256/384/521), `dhe` (ffdhe2048..8192) or `hybrid` (the post-quantum hybrids X25519MLKEM768 0x11EC, SecP256r1MLKEM768 0x11EB and SecP384r1MLKEM1024 0x11ED; the server share must have the exact length of the classical share plus the ML-KEM ciphertext, and the NIST-curve hybrids must start with an uncompressed point), with or without `pre_shared_key`; `pre_shared_key` alone is `psk` (psk_ke resumption, RFC 8446 4.2.9) |
 | `selected_cipher_mode` | `aead`, `cbc` | GCM suites and every TLS 1.3 suite are `aead`; the CBC suites (0x002f, 0xc023..0xc02a) are `cbc` |
 
 Both are `asserted`: the server's selection, unauthenticated, with handshake

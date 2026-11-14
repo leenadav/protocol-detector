@@ -133,7 +133,9 @@ Done:
 - **#8–#13** first public slice in `go/detector`.
 - **#19** external consumer module.
 
-See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: #4–#7, #14 (wiring), #16–#18.
+- **#4** post-quantum hybrid key shares, in Python and Go.
+
+See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: #5–#7, #14 (wiring), #16–#18.
 
 ### 4.4 Gate before attaching the real detector (lab phase L4)
 

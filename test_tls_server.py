@@ -115,6 +115,38 @@ class TLSServerTests(unittest.TestCase):
         for cipher in range(0xc023,0xc033):
             self.assertEqual(inspect(record(hello(((11,b'\1\0'),),cipher=cipher))).observation.status,'identified',cipher)
 
+    def test_post_quantum_hybrid_key_shares(self):
+        # Integration work item #4 (2026-11-14): the hybrid groups current TLS stacks negotiate by default.
+        hybrids=((4588,1120,bytes(1120)),(4587,1153,b'\x04'+bytes(1152)),(4589,1665,b'\x04'+bytes(1664)))
+        for group,size,key in hybrids:
+            e=inspect(record(server13(((51,group.to_bytes(2,'big')+size.to_bytes(2,'big')+key),))))
+            self.assertEqual(e.observation.status,'identified',(group,e.observation))
+            self.assertEqual(evidence(e)['selected_group'],str(group))
+            self.assertEqual(evidence(e)['selected_key_exchange'],'hybrid')
+            self.assertEqual(evidence(e)['selected_tls_version'],'1.3')
+            from protocol_engine.risks import NO_FORWARD_SECRECY
+            self.assertNotIn('hybrid',NO_FORWARD_SECRECY)
+            # A HelloRetryRequest may ask the client for the same group.
+            retry=inspect(record(server13(((51,group.to_bytes(2,'big')),),random_value=RETRY)))
+            self.assertEqual(retry.observation.status,'identified',(group,retry.observation))
+            self.assertEqual(evidence(retry)['requested_group'],str(group))
+            # Exact length only: one byte short, one byte long, and an empty share are malformed.
+            for bad in (key[:-1],key+b'\0',b''):
+                e=inspect(record(server13(((51,group.to_bytes(2,'big')+len(bad).to_bytes(2,'big')+bad),))))
+                self.assertEqual(e.observation.status,'malformed',(group,len(bad),e.observation))
+        # The NIST-curve hybrids start with an uncompressed point; anything else is malformed. X25519MLKEM768
+        # starts with the ML-KEM ciphertext, which has no fixed first byte.
+        for group,size in ((4587,1153),(4589,1665)):
+            for first in (0,2,3):
+                key=bytes([first])+bytes(size-1)
+                e=inspect(record(server13(((51,group.to_bytes(2,'big')+size.to_bytes(2,'big')+key),))))
+                self.assertEqual(e.observation.status,'malformed',(group,first))
+        # A group this profile does not name is still a documented exclusion, not an identification
+        # (0x6399 is the withdrawn X25519Kyber768Draft00 code point; work item #5 decides its future).
+        e=inspect(record(server13(((51,b'\x63\x99'+(1120).to_bytes(2,'big')+bytes(1120)),))))
+        self.assertEqual(e.observation.status,'unknown',e.observation)
+        self.assertEqual(e.observation.reason,'Server key share group outside supported profile')
+
     def test_bad_server13_extension_dependencies_and_shapes(self):
         for extra in ((),((41,b'\0'),),((51,b'\0\x1d'),),((51,b'\0\x1d\0\x1f'+bytes(31)),),
                       ((51,b'\0\x17\0\x41'+bytes(65)),),((51,b'\xff\xff\0\x01x'),),

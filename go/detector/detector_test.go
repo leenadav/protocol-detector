@@ -191,17 +191,22 @@ func TestProfileOutcomes(t *testing.T) {
 	}
 }
 
-// TestPostQuantumServerHelloGap pins a known detection gap (working plan B2 and work item #4): a ServerHello
+// TestPostQuantumServerHello is the facade-level regression for integration work item #4: a ServerHello
 // selecting the X25519MLKEM768 hybrid group, the default of current clients and of Go's crypto/tls, is
-// reported as unknown. The ClientHello side is identified. When #4 lands this test must be inverted.
-func TestPostQuantumServerHelloGap(t *testing.T) {
-	ch, sh := tlsFlights(t, "pq.example.test", []string{"h2"}, nil)
+// identified in both directions. Until the fix it was reported unknown ("Server key share group outside
+// supported profile"), which the Culvert lab reproduced on a live tunnel.
+func TestPostQuantumServerHello(t *testing.T) {
+	ch, sh := tlsFlights(t, "pq.example.test", []string{"h2"}, nil) // nil: the standard library's default groups
 	s := observe(t, mustEngine(t, allFamilies()), ch, sh)
 	expect(t, "pq", s.Direction(ClientToServer), want{OutcomeIdentified, ReasonEngine, "tls", "pq.example.test"})
 	srv := s.Direction(ServerToClient)
-	if srv.Outcome != OutcomeUnknown || srv.Detail != "Server key share group outside supported profile" {
-		t.Fatalf("post-quantum ServerHello: got %s %q; if this now identifies, invert this test with work item #4",
-			srv.Outcome, srv.Detail)
+	expect(t, "pq", srv, want{OutcomeIdentified, ReasonEngine, "tls", ""})
+	got := map[string]string{}
+	for _, ev := range srv.Evidence {
+		got[ev.Field] = ev.Value
+	}
+	if got["selected_group"] != "4588" || got["selected_key_exchange"] != "hybrid" || got["selected_tls_version"] != "1.3" {
+		t.Fatalf("post-quantum ServerHello evidence: %v", got)
 	}
 }
 

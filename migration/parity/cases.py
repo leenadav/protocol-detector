@@ -625,6 +625,14 @@ def tls_cases():
         ("hrr-no-change", _tls_record(_server_hello(((43, b"\x03\x04"),), cipher=0x1301, random_value=RETRY))),
         ("server-compression", _tls_record(_server_hello(compression=1))),
         ("server-legacy-version", _tls_record(_server_hello(version=b"\x03\x01"))),
+        # Integration work item #4 (2026-11-14): post-quantum hybrid key shares. Appended so earlier case ids stay stable.
+        ("server13-hybrid-x25519mlkem768", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xec\x04\x60" + bytes(1120))), cipher=0x1301))),
+        ("server13-hybrid-p256mlkem768", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xeb\x04\x81\x04" + bytes(1152))), cipher=0x1302))),
+        ("server13-hybrid-p384mlkem1024", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xed\x06\x81\x04" + bytes(1664))), cipher=0x1302))),
+        ("server13-hybrid-short", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xec\x04\x5f" + bytes(1119))), cipher=0x1301))),
+        ("server13-hybrid-bad-point", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xeb\x04\x81\x02" + bytes(1152))), cipher=0x1301))),
+        ("server13-kyber-draft-group", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x63\x99\x04\x60" + bytes(1120))), cipher=0x1301))),
+        ("hrr-hybrid-group", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xec")), cipher=0x1301, random_value=RETRY))),
     ]
     cases = []
     for number, (name, data) in enumerate(hellos):

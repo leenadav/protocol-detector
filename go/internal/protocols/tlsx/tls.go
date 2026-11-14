@@ -435,7 +435,17 @@ func (p *Parser) Feed(data []byte) (int, error) {
 var hrrRandom = []byte{0xcf, 0x21, 0xad, 0x74, 0xe5, 0x9a, 0x61, 0x11, 0xbe, 0x1d, 0x8c, 0x02, 0x1e, 0x65, 0xb8, 0x91,
 	0xc2, 0xa2, 0x11, 0x16, 0x7a, 0xbb, 0x8c, 0x5e, 0x07, 0x9e, 0x09, 0xe2, 0xc8, 0xa8, 0x33, 0x9c}
 
-var keySizes = map[int]int{23: 65, 24: 97, 25: 133, 29: 32, 30: 56, 256: 256, 257: 384, 258: 512, 259: 768, 260: 1024}
+// keySizes is the server key-share length of each supported named group (tls_server._KEY_SIZES). The
+// post-quantum hybrids (integration work item #4, 2026-11-14) carry the classical share plus the ML-KEM
+// ciphertext: 4587 SecP256r1MLKEM768 (65 + 1088), 4588 X25519MLKEM768 (1088 + 32), 4589 SecP384r1MLKEM1024
+// (97 + 1568).
+var keySizes = map[int]int{23: 65, 24: 97, 25: 133, 29: 32, 30: 56, 256: 256, 257: 384, 258: 512, 259: 768, 260: 1024,
+	4587: 1153, 4588: 1120, 4589: 1665}
+
+// hybridGroup reports a post-quantum hybrid group; pointFirstGroup a group whose share starts with an
+// uncompressed SEC1 point (first byte 4).
+func hybridGroup(g int) bool     { return g == 4587 || g == 4588 || g == 4589 }
+func pointFirstGroup(g int) bool { return g == 23 || g == 24 || g == 25 || g == 4587 || g == 4589 }
 
 func tls12Cipher(c int) bool { return c == 0x002f || (c >= 0xc023 && c < 0xc033) }
 func tls12ECC(c int) bool    { return c >= 0xc023 && c < 0xc033 }
@@ -613,13 +623,15 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 				if !ok {
 					return nil, "", "", parsing.Unsupported("Server key share group outside supported profile")
 				}
-				if len(key) != size || ((group == 23 || group == 24 || group == 25) && key[0] != 4) {
+				if len(key) != size || (pointFirstGroup(group) && key[0] != 4) {
 					return nil, "", "", parsing.Malformed("Server key share encoding length or point format invalid")
 				}
 				rows = append(rows, rowsOf("selected_group", fmt.Sprint(group), "asserted"))
 				exchange = "ecdhe"
 				if group >= 256 && group <= 260 {
 					exchange = "dhe"
+				} else if hybridGroup(group) {
+					exchange = "hybrid"
 				}
 			}
 			rows = append(rows, rowsOf("selected_key_exchange", exchange, "asserted"), rowsOf("selected_cipher_mode", "aead", "asserted"))

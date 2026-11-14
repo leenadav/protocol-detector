@@ -7,8 +7,17 @@ HRR_RANDOM = bytes.fromhex('cf21ad74e59a6111be1d8c021e65b891c2a211167abb8c5e079e
 _TLS12_ECC_CIPHERS = frozenset(range(0xc023, 0xc033))
 _TLS12_CIPHERS = frozenset((0x002f,)) | _TLS12_ECC_CIPHERS
 _KEY_SIZES = {23:65, 24:97, 25:133, 29:32, 30:56,
-              256:256, 257:384, 258:512, 259:768, 260:1024}
+              256:256, 257:384, 258:512, 259:768, 260:1024,
+              # Integration work item #4 (2026-11-14): the post-quantum hybrid groups current clients and servers
+              # negotiate by default. The size is the SERVER share: the classical share plus the ML-KEM
+              # ciphertext (ML-KEM-768: 1088 bytes, ML-KEM-1024: 1568 bytes).
+              4587:65 + 1088,    # SecP256r1MLKEM768: uncompressed P-256 point, then the ciphertext
+              4588:1088 + 32,    # X25519MLKEM768: the ciphertext, then the X25519 share
+              4589:97 + 1568}    # SecP384r1MLKEM1024: uncompressed P-384 point, then the ciphertext
 _FFDHE_GROUPS = frozenset(range(256, 261))
+_HYBRID_GROUPS = frozenset((4587, 4588, 4589))
+# Groups whose share starts with an uncompressed SEC1 point (first byte 4).
+_POINT_FIRST_GROUPS = frozenset((23, 24, 25, 4587, 4589))
 # v0.57: key exchange and record protection named by the selected TLS 1.2 suite (RFC 5246, 5289).
 # ECDH_ suites (0xc025..0xc02a, 0xc02d..0xc032) use the certificate's static key: no forward secrecy.
 _TLS12_STATIC_ECDH = frozenset((0xc025, 0xc026, 0xc029, 0xc02a, 0xc02d, 0xc02e, 0xc031, 0xc032))
@@ -84,11 +93,11 @@ def parse_server_hello(body, config, record_versions, record_remaining):
                 value.end()
                 if group not in _KEY_SIZES:
                     raise UnsupportedPrefix('Server key share group outside supported profile')
-                if len(key) != _KEY_SIZES[group] or (group in (23,24,25) and key[0] != 4):
+                if len(key) != _KEY_SIZES[group] or (group in _POINT_FIRST_GROUPS and key[0] != 4):
                     raise ParseError('Server key share encoding length or point format invalid')
-                # Key validity / curve membership and DH checks require the TLS stack.
+                # Key validity / curve membership, DH and KEM checks require the TLS stack.
                 evidence.append(('selected_group', str(group), source, 'asserted'))
-                exchange = 'dhe' if group in _FFDHE_GROUPS else 'ecdhe'
+                exchange = 'dhe' if group in _FFDHE_GROUPS else 'hybrid' if group in _HYBRID_GROUPS else 'ecdhe'
             else:
                 exchange = 'psk'   # psk_ke: the resumed secret alone keys the session (RFC 8446 4.2.9)
             evidence.extend((('selected_key_exchange', exchange, source, 'asserted'),
