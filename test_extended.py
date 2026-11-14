@@ -6,7 +6,7 @@ import sys
 import unittest
 from pathlib import Path
 from protocol_engine import ApplicationRule, Config, Inspector, RuleIndex
-from protocol_engine.extended import H2_PREFACE
+from protocol_engine.extended import H2_PREFACE, wire_address
 from protocol_demo import HTTP2, SOCKS5, examples
 from protocol_fixtures import DATAGRAM_CASES, HINTED_DATAGRAM_CASES
 from proxy_demo import client_hello
@@ -166,6 +166,35 @@ class ExtendedTests(unittest.TestCase):
             for timestamp, packet in enumerate(packets):
                 analyzer.process(timestamp, decode_tcp(packet))
             self.assertEqual(analyzer.last_classification.application_protocol, name)
+
+
+
+class WireAddressTextTests(unittest.TestCase):
+    """Review R6 (2026-11-14): address text in evidence is spelled out, not left to the interpreter's str()."""
+
+    def test_ipv4_mapped_addresses_use_the_dotted_form(self):
+        mapped = bytes(10) + b"\xff\xff" + bytes((192, 0, 2, 1))
+        self.assertEqual(wire_address(mapped), "::ffff:192.0.2.1")
+        self.assertEqual(wire_address(bytes(10) + b"\xff\xff" + bytes(4)), "::ffff:0.0.0.0")
+
+    def test_other_addresses_keep_the_rfc_5952_text(self):
+        for field, text in ((bytes((192, 0, 2, 1)), "192.0.2.1"), (bytes(16), "::"), (bytes(15) + b"\x01", "::1"),
+                            (bytes(12) + bytes((192, 0, 2, 1)), "::c000:201"),                      # IPv4-compatible, not mapped
+                            (bytes.fromhex("20010db8000000000000000000000001"), "2001:db8::1"),
+                            (bytes.fromhex("20010db8000000010000000000000001"), "2001:db8:0:1::1"),
+                            (bytes.fromhex("20010db8000100000001000000000001"), "2001:db8:1:0:1::1"),
+                            (bytes.fromhex("0064ff9b0000000000000000c0000201"), "64:ff9b::c000:201")):
+            self.assertEqual(wire_address(field), text)
+        self.assertRaises(ValueError, wire_address, bytes(5))
+
+    def test_socks5_reports_the_same_text(self):
+        request = b"\x05\x01\x00\x04" + bytes(10) + b"\xff\xff" + bytes((192, 0, 2, 1)) + b"\x01\xbb"
+        inspector = Inspector(Config(), protocol_hint="socks5")
+        inspector.feed(request)
+        inspector.end("fin")
+        text = json.dumps([list(e.__dict__.values()) if hasattr(e, "__dict__") else list(e) for e in inspector.observation.evidence]) \
+            + str(inspector.observation.hostname)
+        self.assertNotIn("c000:201", text)
 
 
 if __name__ == "__main__":

@@ -84,7 +84,7 @@
   "tools/scanners/go.mod": [
    "module protocol-detector/tools/scanners",
    "",
-   "go 1.27.3",
+   "go 1.27.4",
    "",
    "tool (",
    "\tgithub.com/zricethezav/gitleaks/v8",

@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -56,7 +56,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences
+check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences capabilities content-pack parity
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -144,6 +144,45 @@ keylogs:
 
 content:
 	python3 -B tools/check_content.py
+
+# Migration M0: the per-family capability inventory must match the registry (Go statuses are kept as recorded)
+capabilities:
+	python3 -B tools/capabilities.py --check migration/CAPABILITIES.json
+
+# Migration M6: the exported content pack both runtimes load must match the Python content (tools/export_content.py)
+content-pack:
+	python3 -B tools/export_content.py --check migration/fixtures/content.json
+
+# Migration M1: the Python reference must match the committed differential cases exactly (migration/CONTRACTS.md)
+parity:
+	python3 -B migration/parity/compare.py --backend python
+
+# Migration M2: the Go module's own gate (pinned toolchain from go/go.mod; separate from `check` until the CI/CD lane wires it)
+GO_TOOLCHAIN := $(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod)
+go-check:
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) sh -c 'test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }'
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go vet ./...
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test -race ./...
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/buffer -run NONE -fuzz FuzzAppendNeverExceedsLimits -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/contracts -run NONE -fuzz FuzzObservationJSONNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/reassembly -run NONE -fuzz FuzzFeedInvariants -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/framed -run NONE -fuzz FuzzFramedNeverPanics -fuzztime 20s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/framed -run NONE -fuzz FuzzKasaNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/framed -run NONE -fuzz FuzzGSSNeverPanics -fuzztime 15s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/transport -run NONE -fuzz FuzzDecodeNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzInspectorNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzSelectNeverPanics -fuzztime 5s
+	$(MAKE) parity-go
+
+# Migration M4: the Go backend's results against the Python reference (families it claims; records are M6)
+GO_FAMILIES := http,tls,dns,mdns,netbios-ns,llmnr,ssh,smtp,imap,pop3,ftp,nats,irc,sip,rtsp,telnet,postgresql,rfb,bittorrent,memcached,rsync,fins,afp,zmtp,bolt,stomp,giop,x11,spice,mysql,mongodb,tds,tns,cql,kafka,modbus,dnp3,ethernet-ip,iec-104,opcua,s7comm,mqtt,resp,amqp,onc-rpc,diameter,bgp,openvpn,pptp,fastcgi,dcerpc,websocket,xmpp,syslog,git,netbios-ss,tacacs-plus,socks5,wireguard,bacnet,tftp,ntp,l2tp,coap,rip,rtcp,lifx-lan,tuya-lan,netflow,ipfix,sflow,stun,dhcp,radius,snmp,rtp,ssdp,tplink-smarthome,kerberos,ldap,smb1,smb2,rdp,iso-tsap
+parity-go:
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go run ./cmd/protodetect replay --cases ../migration/fixtures/cases.json --out ../migration/parity/go-results.json
+	python3 -B migration/parity/compare.py --results migration/parity/go-results.json --families $(GO_FAMILIES) --report migration/parity/go-report.json
+
+# Migration M4/M9: Python vs Go engine feed loop on identical bytes, alternating rounds (not part of `check`)
+bench-compare:
+	BENCH_SCRATCH=$${TMPDIR:-/tmp} python3 -B migration/benchmarks/bench_compare.py --iterations 300 --rounds 5
 
 # D11: separated performance measurements (CPU by layer, bytes to identification, queue wait, memory); local numbers only
 perf-profile:

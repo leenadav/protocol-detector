@@ -50,6 +50,20 @@ async function waitFor(page, fn, timeout) {
     assert.strictEqual(counts.table, 18);
     assert.strictEqual(counts.store, 18);
     // Filters and navigation touch the store, not the run.
+    // M0: an unidentified demo session shows its destination port and transport as a display label only.
+    const labels = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll('#session-rows tr')];
+      const row = rows.find(r => r.querySelector('strong').textContent === '8081 tcp');
+      const s = Store.selectors.sessions(store.getState()).find(x => x.server[1] === 8081);
+      return {shown: !!row, small: row ? row.querySelector('small').textContent : null, app: s ? s.app : null,
+              exported: Store.selectors.exportData(store.getState()).sessions.find(x => x.server[1] === 8081).app,
+              resetDisabled: document.getElementById('live-reset').disabled};
+    });
+    assert.strictEqual(labels.shown, true, 'unknown session shows "8081 tcp"');
+    assert.ok(labels.small.startsWith(labels.app + ' · '), 'raw verdict stays visible beside the label');
+    assert.ok(labels.app.startsWith('unknown') || labels.app === 'insufficient-data', 'store keeps the raw outcome: ' + labels.app);
+    assert.strictEqual(labels.exported, labels.app, 'exports keep the raw outcome');
+    assert.strictEqual(labels.resetDisabled, true, 'reset is disabled while no run exists');
     await page.fill('#session-search', 'ssh');
     await waitFor(page, () => document.querySelectorAll('#session-rows tr').length < 18);
     const afterFilter = await page.evaluate(() => ({rows: document.querySelectorAll('#session-rows tr').length, run: store.getState().runId, visible: state.visible}));

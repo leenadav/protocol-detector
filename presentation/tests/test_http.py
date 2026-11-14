@@ -87,6 +87,15 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(json.loads(body)['events'], [])
         self.assertEqual(self.request('GET', '/api/live/events?cursor=abc')[0], 400)
 
+    def test_live_reset_without_a_run_changes_nothing(self):
+        token = json.loads(self.request('GET', '/api/live/interfaces')[2])['token']
+        status, _, body = self.request('POST', '/api/live/reset', b'{}', {'X-Live-Token': token, 'Content-Type': 'application/json'})
+        self.assertEqual(status, 200)
+        answer = json.loads(body)
+        self.assertEqual((answer['reset'], answer['reason'], answer['state']), (False, 'no_run', 'idle'))
+        status, _, body = self.request('POST', '/api/live/reset', b'{"run_id": "older"}', {'X-Live-Token': token, 'Content-Type': 'application/json'})
+        self.assertEqual((status, json.loads(body)['reason']), (200, 'stale'))
+
     def test_live_controls_require_token_and_validate_interface(self):
         self.assertEqual(self.request('POST', '/api/live/start', b'{}')[0], 403)
         status, _, body = self.request('GET', '/api/live/interfaces')
