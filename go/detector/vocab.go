@@ -49,7 +49,9 @@ const (
 	OutcomeInvalidated Outcome = "invalidated"
 	// OutcomeUnsupported: the selected family or path is not available in this backend.
 	OutcomeUnsupported Outcome = "unsupported"
-	// OutcomeOutsideProfile: the stream belongs to a family the engine's profile does not allow.
+	// OutcomeOutsideProfile: the prefix selected, or the stream resolved to, a family the engine's profile
+	// does not allow. Inspection stops there, usually BEFORE that family's structure is validated, so this
+	// is not an identification of the named family: a host must never treat it as a positive match.
 	OutcomeOutsideProfile Outcome = "outside_profile"
 	// OutcomeFailed: the engine failed (a recovered panic); the flow is quarantined.
 	OutcomeFailed Outcome = "failed"

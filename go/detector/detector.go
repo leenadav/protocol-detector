@@ -194,8 +194,11 @@ type DirectionSnapshot struct {
 	Encryption          string
 	Hostname            Hostname
 	OfferedALPN         []string
-	Evidence            []Evidence
-	// EvidenceTruncated is true when more than MaxEvidence items were produced.
+	// OfferedALPNTruncated is true when the client offered more than MaxOfferedALPN identifiers.
+	OfferedALPNTruncated bool
+	Evidence             []Evidence
+	// EvidenceTruncated is true when any evidence item was left out: more than MaxEvidence items, or
+	// offered_alpn items beyond MaxOfferedALPN.
 	EvidenceTruncated bool
 	Scope             string
 	// BytesFed counts every byte passed to Feed; BytesInspected the bytes the engine examined.
@@ -426,10 +429,13 @@ func (f *Flow) finish(ds *direction, outcome Outcome, reason Reason, detail stri
 	s := &ds.snap
 	s.Outcome, s.Reason, s.Detail, s.Done = outcome, reason, bounded(detail), true
 	s.Family, s.ApplicationProtocol, s.Encryption, s.Hostname, s.Scope = "", "", "", "", ""
-	s.OfferedALPN, s.Evidence, s.EvidenceTruncated = nil, nil, false
+	s.OfferedALPN, s.OfferedALPNTruncated, s.Evidence, s.EvidenceTruncated = nil, false, nil, false
 }
 
-const maxOfferedALPN = 16
+// MaxOfferedALPN bounds the ALPN identifiers a client offered that leave the engine, in OfferedALPN and
+// as offered_alpn evidence alike (review round 1, R1: the evidence rows used to carry every offer while
+// the list was capped). The TLS parser itself accepts up to 64 offers; this is an export bound only.
+const MaxOfferedALPN = 16
 
 func (f *Flow) copyObservation(ds *direction, o contracts.Observation, revision int, family string, reason Reason) {
 	s := &ds.snap
@@ -453,16 +459,25 @@ func (f *Flow) copyObservation(ds *direction, o contracts.Observation, revision 
 	}
 	s.ApplicationProtocol, s.Encryption, s.Hostname = deref(o.ApplicationProtocol), deref(o.Encryption), Hostname(deref(o.Hostname))
 	s.Scope = bounded(o.Scope)
-	s.OfferedALPN = nil
+	s.OfferedALPN, s.OfferedALPNTruncated = nil, len(o.OfferedALPN) > MaxOfferedALPN
 	for i, a := range o.OfferedALPN {
-		if i == maxOfferedALPN {
+		if i == MaxOfferedALPN {
 			break
 		}
 		s.OfferedALPN = append(s.OfferedALPN, bounded(a))
 	}
-	s.Evidence, s.EvidenceTruncated = nil, len(o.Evidence) > MaxEvidence
-	for i, ev := range o.Evidence {
-		if i == MaxEvidence {
+	s.Evidence, s.EvidenceTruncated = nil, false
+	offers := 0
+	for _, ev := range o.Evidence {
+		if ev.Field == "offered_alpn" { // the same export bound as OfferedALPN, signalled the same way
+			if offers == MaxOfferedALPN {
+				s.OfferedALPNTruncated, s.EvidenceTruncated = true, true
+				continue
+			}
+			offers++
+		}
+		if len(s.Evidence) == MaxEvidence {
+			s.EvidenceTruncated = true
 			break
 		}
 		class := classify(ev.Field)

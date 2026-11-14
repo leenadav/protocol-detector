@@ -43,10 +43,17 @@ func FuzzFlowInvariants(f *testing.F) {
 				if prev[d].Done && (ds.Outcome != prev[d].Outcome || !ds.Done) {
 					t.Fatalf("%s: done direction changed from %s to %s", d, prev[d].Outcome, ds.Outcome)
 				}
+				offers := 0
 				for _, ev := range ds.Evidence {
 					if ev.Class == ClassWithheld && ev.Value != "" {
 						t.Fatalf("withheld value kept: %+v", ev)
 					}
+					if ev.Field == "offered_alpn" {
+						offers++
+					}
+				}
+				if len(ds.OfferedALPN) > MaxOfferedALPN || offers > MaxOfferedALPN || len(ds.Evidence) > MaxEvidence {
+					t.Fatalf("%s: export bounds exceeded: %d ALPN, %d offered_alpn rows, %d evidence", d, len(ds.OfferedALPN), offers, len(ds.Evidence))
 				}
 				prev[d] = ds
 			}

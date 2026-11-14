@@ -553,3 +553,50 @@ func TestModuleIsStandardLibraryOnly(t *testing.T) {
 		}
 	}
 }
+
+// TestOfferedALPNExportBound is the regression for review round 1, R1: the 16-offer export bound must hold
+// for the evidence rows as well as for OfferedALPN, and an omission must be signalled in both places. The
+// inputs are real crypto/tls ClientHellos; the parser's own acceptance (up to 64 offers) is unchanged.
+func TestOfferedALPNExportBound(t *testing.T) {
+	e := mustEngine(t, allFamilies())
+	for _, n := range []int{1, MaxOfferedALPN, MaxOfferedALPN + 1, 40} {
+		var offers []string
+		for i := 0; i < n; i++ {
+			offers = append(offers, "p"+string(rune('a'+i/26))+string(rune('a'+i%26)))
+		}
+		ch, _ := tlsFlights(t, "alpn.example.test", offers, []tls.CurveID{tls.X25519})
+		s := observe(t, e, ch, nil).Direction(ClientToServer)
+		if s.Outcome != OutcomeIdentified {
+			t.Fatalf("%d offers: %s %q", n, s.Outcome, s.Detail)
+		}
+		want := n
+		if want > MaxOfferedALPN {
+			want = MaxOfferedALPN
+		}
+		rows, other := 0, 0
+		for _, ev := range s.Evidence {
+			if ev.Field == "offered_alpn" {
+				if ev.Value != offers[rows] {
+					t.Errorf("%d offers: evidence row %d is %q, want %q (order must match the list)", n, rows, ev.Value, offers[rows])
+				}
+				rows++
+			} else {
+				other++
+			}
+		}
+		over := n > MaxOfferedALPN
+		if len(s.OfferedALPN) != want || rows != want {
+			t.Errorf("%d offers: OfferedALPN has %d, evidence has %d offered_alpn rows; both must be %d", n, len(s.OfferedALPN), rows, want)
+		}
+		if s.OfferedALPNTruncated != over || s.EvidenceTruncated != over {
+			t.Errorf("%d offers: OfferedALPNTruncated=%v EvidenceTruncated=%v, want both %v", n, s.OfferedALPNTruncated, s.EvidenceTruncated, over)
+		}
+		if len(s.Evidence) > MaxEvidence {
+			t.Errorf("%d offers: %d evidence items", n, len(s.Evidence))
+		}
+		// The rows after the offers (encryption, hostname, offered version) are not crowded out.
+		if other < 3 {
+			t.Errorf("%d offers: only %d non-ALPN evidence rows survived: %+v", n, other, s.Evidence)
+		}
+	}
+}
