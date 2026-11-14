@@ -265,6 +265,226 @@ def kerberos_cases():
     return cases
 
 
+def ldap_vectors():
+    """LDAP messages for M5 batch 18: simple and SASL binds, GSS-SPNEGO credentials through every layout of
+    gss.classify_token (NTLMSSP, direct Kerberos tokens, NegTokenInit, NegTokenResp, other mechanisms) and each of its
+    rejection paths, BindResponse results with referrals and server credentials, extended requests and responses."""
+    from protocol_adapters import protocol_fixtures as F
+    b, der = F._ber, F.der
+
+    def message(operation, message_id=b"\x01", extra=b""):
+        return b(0x30, b(2, message_id) + operation + extra)
+
+    def bind(auth, version=b"\x03", dn=b"", extra=b""):
+        return message(b(0x60, b(2, version) + b(4, dn) + auth + extra))
+
+    def sasl(mechanism, credentials=None, extra=b""):
+        return bind(b(0xa3, b(4, mechanism) + (b(4, credentials) if credentials is not None else b"") + extra))
+
+    def spnego(token):
+        return sasl(b"GSS-SPNEGO", token)
+
+    def response(code=0, matched=b"", diagnostic=b"", extra=b"", tag=0x61, message_id=b"\x01", controls=b""):
+        return message(b(tag, b(0x0a, bytes((code,))) + b(4, matched) + b(4, diagnostic) + extra), message_id, controls)
+
+    def extended(oid, value=None, message_id=b"\x01", controls=b""):
+        return message(b(0x77, (b(0x80, oid) if oid is not None else b"") + (b(0x81, value) if value is not None else b"")), message_id, controls)
+
+    def init(fields):
+        return der(0x60, der(0x06, F.OID_SPNEGO) + der(0xa0, der(0x30, fields)))
+
+    def resp(fields):
+        return der(0xa1, der(0x30, fields))
+
+    mechs = der(0xa0, der(0x30, der(0x06, F.OID_NTLMSSP)))
+    krb = F.krb5_ap_req_message
+    enc = F.krb5_encrypted
+    int5, flags = b(0xa0, b(2, b"\x05")), b(0xa2, b(3, b"\x00\x20\x00\x00\x00"))
+    ap = lambda *fields: F.krb5_gss(b(0x6e, b(0x30, b"".join(fields))))                       # noqa: E731
+    ticket = lambda *fields: b(0xa3, b(0x61, b(0x30, b"".join(fields))))                        # noqa: E731
+    realm, sname = b(0xa1, b(0x1b, b"EXAMPLE.ORG")), b(0xa2, F._krb_principal(b"cifs"))
+    names = lambda count: b(0xa2, b(0x30, b(0xa0, b(2, b"\x01")) + b(0xa1, b(0x30, b(0x1b, b"n") * count))))   # noqa: E731
+    msg14, auth = b(0xa1, b(2, b"\x0e")), b(0xa4, enc(40, kvno=False))
+    good_ticket = b(0xa3, F.krb5_ticket())
+    error = dict(kerberos_vectors())
+    starttls, whoami = F.LDAP_STARTTLS_OID, b"1.3.6.1.4.1.4203.1.11.3"
+    oid_u2u = F.OID_KRB5 + b"\x03"
+    return [
+        ("simple", bind(b(0x80, b""))),
+        ("simple-dn", bind(b(0x80, b"placeholder"), dn="cn=tëst,dc=example".encode())),
+        ("simple-bad-dn", bind(b(0x80, b""), dn=b"\xff\xfe")),
+        ("simple-trailing", bind(b(0x80, b""), extra=b(4, b""))),
+        ("v2", bind(b(0x80, b""), version=b"\x02")),
+        ("no-auth", bind(b"")),
+        ("auth-choice", bind(b(0x81, b""))),
+        ("controls", message(b(0x60, b(2, b"\x03") + b(4, b"") + b(0x80, b"")), extra=b(0xa0, b""))),
+        ("id-zero", message(b(0x60, b(2, b"\x03") + b(4, b"") + b(0x80, b"")), b"\x00")),
+        ("id-negative", message(b(0x60, b(2, b"\x03") + b(4, b"") + b(0x80, b"")), b"\x80\x01")),
+        ("id-wide", message(b(0x60, b(2, b"\x03") + b(4, b"") + b(0x80, b"")), b"\x01\x02\x03\x04\x05")),
+        ("id-four", message(b(0x60, b(2, b"\x03") + b(4, b"") + b(0x80, b"")), b"\x7f\xff\xff\xff")),
+        ("search", message(b(0x63, b""))),
+        ("no-operation", message(b"")),
+        ("sasl-plain", sasl(b"PLAIN", b"placeholder")),
+        ("sasl-gssapi", sasl(b"GSSAPI", F.krb5_ap_req())),
+        ("sasl-external-no-credentials", sasl(b"EXTERNAL")),
+        ("sasl-scram", sasl(b"SCRAM-SHA-256", b"n,,n=user,r=nonce")),
+        ("sasl-other", sasl(b"X-UNKNOWN_1", b"")),
+        ("sasl-empty-mechanism", sasl(b"", b"x")),
+        ("sasl-lowercase", sasl(b"plain", b"x")),
+        ("sasl-long-mechanism", sasl(b"A" * 21, b"x")),
+        ("sasl-trailing", sasl(b"PLAIN", b"x", extra=b(4, b""))),
+        ("spnego-empty-credentials", spnego(b"")),
+        ("spnego-no-credentials", sasl(b"GSS-SPNEGO")),
+        ("spnego-ntlm-init", spnego(F.SPNEGO_NTLM_INIT)),
+        ("spnego-ntlm-challenge", spnego(F.SPNEGO_NTLM_CHALLENGE)),
+        ("spnego-ntlm-authenticate", spnego(F.SPNEGO_NTLM_AUTHENTICATE)),
+        ("spnego-accept", spnego(F.SPNEGO_ACCEPT)),
+        ("spnego-krb5-init", spnego(F.SPNEGO_KRB5_INIT)),
+        ("spnego-mechs-only", spnego(F.SPNEGO_MECHS_ONLY)),
+        ("raw-ntlm-negotiate", spnego(F.ntlmssp(1))),
+        ("raw-ntlm-authenticate", spnego(F.ntlmssp(3, 64))),
+        ("raw-ntlm-type-4", spnego(F.ntlmssp(4))),
+        ("raw-ntlm-short", spnego(b"NTLMSSP\x00\x01\x00")),
+        ("token-budget", spnego(b"NTLMSSP\x00" + (1).to_bytes(4, "little") + bytes(4085))),
+        ("token-at-budget", spnego(b"NTLMSSP\x00" + (1).to_bytes(4, "little") + bytes(4084))),
+        ("token-unknown-tag", spnego(b"\x30\x00")),
+        ("gss-length-disagrees", spnego(b"\x60\x05\x06\x01\x2a")),
+        ("gss-truncated-length", spnego(b"\x60")),
+        ("gss-no-oid", spnego(der(0x60, b"\x04\x00"))),
+        ("gss-other-mechanism", spnego(der(0x60, der(0x06, b"\x2a\x03") + b"opaque"))),
+        ("gss-negoex-direct", spnego(der(0x60, der(0x06, F.OID_NEGOEX) + b"x"))),
+        ("krb5-ap-req", spnego(F.krb5_ap_req())),
+        ("krb5-ap-req-ms-oid", spnego(F.krb5_gss(krb(), oid=F.OID_MS_KRB5))),
+        ("krb5-ap-rep", spnego(F.krb5_gss(F.krb5_ap_rep_message(), b"\x02\x00"))),
+        ("krb5-error", spnego(F.krb5_gss(error["error-preauth"], b"\x03\x00"))),
+        ("krb5-error-bad-code", spnego(F.krb5_gss(error["error-code-128"], b"\x03\x00"))),
+        ("krb5-error-wrong-message", spnego(F.krb5_gss(error["as-rep"], b"\x03\x00"))),
+        ("krb5-tgt-req", spnego(F.krb5_gss(F.krb5_tgt_req_message(), b"\x04\x00", oid_u2u))),
+        ("krb5-tgt-req-bare", spnego(F.krb5_gss(F.krb5_tgt_req_message(False, False), b"\x04\x00", oid_u2u))),
+        ("krb5-tgt-req-msgtype", spnego(F.krb5_gss(b(0x30, int5 + b(0xa1, b(2, b"\x0e"))), b"\x04\x00"))),
+        ("krb5-tgt-req-empty-realm", spnego(F.krb5_gss(b(0x30, int5 + b(0xa1, b(2, b"\x10")) + b(0xa3, b(0x1b, b""))), b"\x04\x00"))),
+        ("krb5-tok-id-unknown", spnego(F.krb5_gss(krb(), b"\x05\x00"))),
+        ("krb5-tok-id-missing", spnego(der(0x60, der(0x06, F.OID_KRB5)))),
+        ("krb5-tok-id-mismatch", spnego(F.krb5_gss(krb(), b"\x02\x00"))),
+        ("krb5-trailing", spnego(der(0x60, der(0x06, F.OID_KRB5) + b"\x01\x00" + krb() + b"\x00"))),
+        ("krb5-ap-req-pvno", spnego(ap(b(0xa0, b(2, b"\x04")), msg14, flags, good_ticket, auth))),
+        ("krb5-ap-req-msgtype", spnego(ap(int5, b(0xa1, b(2, b"\x0f")), flags, good_ticket, auth))),
+        ("krb5-ap-req-missing", spnego(ap(int5, msg14, flags, good_ticket))),
+        ("krb5-ap-req-order", spnego(ap(msg14, int5, flags, good_ticket, auth))),
+        ("krb5-ap-req-extra-field", spnego(ap(int5, msg14, flags, good_ticket, auth, b(0xa5, b"")))),
+        ("krb5-ap-req-universal-field", spnego(ap(int5, msg14, flags, good_ticket, auth, b(0x04, b"")))),
+        ("krb5-flags-short", spnego(ap(int5, msg14, b(0xa2, b(3, b"\x00\x20\x00\x00")), good_ticket, auth))),
+        ("krb5-flags-empty", spnego(ap(int5, msg14, b(0xa2, b(3, b"")), good_ticket, auth))),
+        ("krb5-flags-unused-8", spnego(ap(int5, msg14, b(0xa2, b(3, b"\x08\x20\x00\x00\x00\x00")), good_ticket, auth))),
+        ("krb5-flags-padding-set", spnego(ap(int5, msg14, b(0xa2, b(3, b"\x04\x20\x00\x00\x00\x0f")), good_ticket, auth))),
+        ("krb5-flags-padding-clear", spnego(ap(int5, msg14, b(0xa2, b(3, b"\x04\x20\x00\x00\x00\xf0")), good_ticket, auth))),
+        ("krb5-flags-framing", spnego(ap(int5, msg14, b(0xa2, b(3, b"\x00\x20\x00\x00\x00") + b"\x05\x00"), good_ticket, auth))),
+        ("krb5-ticket-vno", spnego(ap(int5, msg14, flags, ticket(b(0xa0, b(2, b"\x04")), realm, sname, b(0xa3, enc())), auth))),
+        ("krb5-ticket-empty-realm", spnego(ap(int5, msg14, flags, ticket(int5, b(0xa1, b(0x1b, b"")), sname, b(0xa3, enc())), auth))),
+        ("krb5-ticket-8-names", spnego(ap(int5, msg14, flags, ticket(int5, realm, names(8), b(0xa3, enc())), auth))),
+        ("krb5-ticket-9-names", spnego(ap(int5, msg14, flags, ticket(int5, realm, names(9), b(0xa3, enc())), auth))),
+        ("krb5-ticket-no-names", spnego(ap(int5, msg14, flags, ticket(int5, realm, names(0), b(0xa3, enc())), auth))),
+        ("krb5-ticket-empty-cipher", spnego(ap(int5, msg14, flags, ticket(int5, realm, sname, b(0xa3, enc(0))), auth))),
+        ("krb5-ticket-wide-etype", spnego(ap(int5, msg14, flags, ticket(int5, realm, sname, b(0xa3, b(0x30, b(0xa0, b(2, bytes(5))) + b(0xa2, b(4, b"x"))))), auth))),
+        ("krb5-ticket-kvno-5", spnego(ap(int5, msg14, flags, ticket(int5, realm, sname, b(0xa3, b(0x30, b(0xa0, b(2, b"\x12")) + b(0xa1, b(2, bytes(5))) + b(0xa2, b(4, b"x"))))), auth))),
+        ("krb5-ticket-kvno-6", spnego(ap(int5, msg14, flags, ticket(int5, realm, sname, b(0xa3, b(0x30, b(0xa0, b(2, b"\x12")) + b(0xa1, b(2, bytes(6))) + b(0xa2, b(4, b"x"))))), auth))),
+        ("krb5-ap-rep-msgtype", spnego(F.krb5_gss(b(0x6f, b(0x30, int5 + b(0xa1, b(2, b"\x0e")) + b(0xa2, enc(24, kvno=False)))), b"\x02\x00"))),
+        ("init-no-fields", spnego(init(b""))),
+        ("init-empty-mechs", spnego(init(der(0xa0, der(0x30, b""))))),
+        ("init-8-mechs", spnego(init(der(0xa0, der(0x30, der(0x06, F.OID_NEGOEX) * 8))))),
+        ("init-9-mechs", spnego(init(der(0xa0, der(0x30, der(0x06, F.OID_NTLMSSP) * 9))))),
+        ("init-unknown-mech", spnego(init(der(0xa0, der(0x30, der(0x06, b"\x2a\x03")))))),
+        ("init-mechs-trailing", spnego(init(der(0xa0, der(0x30, der(0x06, F.OID_NTLMSSP)) + b"\x05\x00")))),
+        ("init-all-fields", spnego(init(mechs + der(0xa1, b"\x03\x02\x00\x00") + der(0xa2, der(0x04, F.ntlmssp(1))) + der(0xa3, der(0x04, b"mic"))))),
+        ("init-order", spnego(init(der(0xa2, der(0x04, F.ntlmssp(1))) + mechs))),
+        ("init-empty-token", spnego(init(mechs + der(0xa2, der(0x04, b""))))),
+        ("init-token-trailing", spnego(init(mechs + der(0xa2, der(0x04, b"x") + b"\x05\x00")))),
+        ("init-token-overrides-mech", spnego(init(mechs + der(0xa2, der(0x04, F.krb5_ap_req()))))),
+        ("init-token-other", spnego(init(mechs + der(0xa2, der(0x04, b"opaque"))))),
+        ("init-token-gss-other", spnego(init(mechs + der(0xa2, der(0x04, der(0x60, der(0x06, b"\x2a\x03") + b"x")))))),
+        ("init-token-bad-kerberos", spnego(init(mechs + der(0xa2, der(0x04, F.krb5_gss(krb(), b"\x09\x00")))))),
+        ("init-token-bad-ntlm", spnego(init(mechs + der(0xa2, der(0x04, F.ntlmssp(9)))))),
+        ("init-token-truncated-gss", spnego(init(mechs + der(0xa2, der(0x04, b"\x60"))))),
+        ("init-token-gss-length-off", spnego(init(mechs + der(0xa2, der(0x04, b"\x60\x09\x06\x01\x2a"))))),
+        ("init-trailing", spnego(der(0x60, der(0x06, F.OID_SPNEGO) + der(0xa0, der(0x30, mechs)) + b"\x05\x00"))),
+        ("init-sequence-trailing", spnego(der(0x60, der(0x06, F.OID_SPNEGO) + der(0xa0, der(0x30, mechs) + b"\x05\x00")))),
+        ("init-not-negtokeninit", spnego(der(0x60, der(0x06, F.OID_SPNEGO) + der(0xa1, b"")))),
+        ("init-oid-only", spnego(der(0x60, der(0x06, F.OID_SPNEGO)))),
+        ("resp-empty", spnego(resp(b""))),
+        ("resp-states", spnego(resp(der(0xa0, der(0x0a, b"\x03"))))),
+        ("resp-reject", spnego(resp(der(0xa0, der(0x0a, b"\x02"))))),
+        ("resp-state-4", spnego(resp(der(0xa0, der(0x0a, b"\x04"))))),
+        ("resp-state-wide", spnego(resp(der(0xa0, der(0x0a, b"\x00\x01"))))),
+        ("resp-mech-only", spnego(resp(der(0xa1, der(0x06, F.OID_MS_KRB5))))),
+        ("resp-unknown-mech-only", spnego(resp(der(0xa1, der(0x06, b"\x2a\x03"))))),
+        ("resp-mech-trailing", spnego(resp(der(0xa1, der(0x06, F.OID_KRB5) + b"\x05\x00")))),
+        ("resp-krb5-ap-rep", spnego(F.spnego_resp(0, F.OID_KRB5, F.krb5_gss(F.krb5_ap_rep_message(), b"\x02\x00")))),
+        ("resp-token-only-ntlm", spnego(resp(der(0xa2, der(0x04, F.ntlmssp(3, 40)))))),
+        ("resp-token-other-only", spnego(resp(der(0xa2, der(0x04, b"opaque"))))),
+        ("resp-mic", spnego(resp(der(0xa0, der(0x0a, b"\x00")) + der(0xa3, der(0x04, b"mic"))))),
+        ("resp-order", spnego(resp(der(0xa1, der(0x06, F.OID_KRB5)) + der(0xa0, der(0x0a, b"\x00"))))),
+        ("resp-trailing", spnego(resp(der(0xa0, der(0x0a, b"\x00"))) + b"\x05\x00")),
+        ("bind-response", response()),
+        ("bind-response-invalid-credentials", response(49, b"", b"80090308: LdapErr: placeholder")),
+        ("bind-response-in-progress", response(14, extra=b(0x87, F.SPNEGO_NTLM_CHALLENGE))),
+        ("bind-response-other-code", response(123)),
+        ("bind-response-code-124", response(124)),
+        ("bind-response-referral", response(10, extra=b(0xa3, b(4, b"ldap://placeholder.example/")))),
+        ("bind-response-16-referrals", response(10, extra=b(0xa3, b(4, b"u") * 16))),
+        ("bind-response-17-referrals", response(10, extra=b(0xa3, b(4, b"u") * 17))),
+        ("bind-response-empty-referral", response(10, extra=b(0xa3, b(4, b"")))),
+        ("bind-response-bad-text", response(0, b"", b"\xc3")),
+        ("bind-response-trailing", response(0, extra=b(4, b""))),
+        ("bind-response-controls", response(0, controls=b(0xa0, b""))),
+        ("starttls-request", extended(starttls)),
+        ("starttls-request-value", extended(starttls, b"")),
+        ("whoami-request", extended(whoami, message_id=b"\x02")),
+        ("extended-request-other-value", extended(b"1.2.840.113556.1.4.1781", b"value")),
+        ("extended-request-bad-oid", extended(b"1.02.3")),
+        ("extended-request-arc-11-digits", extended(b"1.12345678901")),
+        ("extended-request-arc-10-digits", extended(b"1.1234567890")),
+        ("extended-request-single-arc", extended(b"1")),
+        ("extended-request-first-arc-3", extended(b"3.1")),
+        ("extended-request-31-arcs", extended(b"1" + b".1" * 31)),
+        ("extended-request-30-arcs", extended(b"1" + b".1" * 30)),
+        ("extended-request-no-name", extended(None)),
+        ("extended-request-controls", extended(starttls, controls=b(0xa0, b""))),
+        ("starttls-response", response(0, extra=b(0x8a, starttls), tag=0x78)),
+        ("starttls-response-unnamed", response(0, tag=0x78)),
+        ("starttls-response-refused", response(52, extra=b(0x8a, starttls), tag=0x78)),
+        ("starttls-response-value", response(0, extra=b(0x8a, starttls) + b(0x8b, b""), tag=0x78)),
+        ("extended-response-value", response(0, extra=b(0x8a, whoami) + b(0x8b, b"dn:placeholder"), tag=0x78)),
+        ("extended-response-bad-name", response(0, extra=b(0x8a, b"x"), tag=0x78)),
+        ("extended-response-trailing", response(0, extra=b(0x8b, b"") + b(0x8a, whoami), tag=0x78)),
+        ("not-sequence", b"\x31" + bind(b(0x80, b""))[1:]),
+        ("indefinite", b"\x30\x80\x02\x01\x01\x60\x00\x00\x00"),
+    ]
+
+
+def ldap_cases():
+    """LDAP (M5 batch 18): every vector as a stream (whole / 1-byte / 7-byte / truncated), a ServerHello after the
+    named StartTLS success (the ldap-starttls shift), and a byte budget below a bind's advertised size."""
+    cases = []
+    vectors = ldap_vectors()
+    for number, (name, data) in enumerate(vectors):
+        base = "stream/ldap-%03d-%s" % (number, name)
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            if variant == "bytes" and len(data) > 600:
+                continue
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": "ldap", "chunks": chunks, "hint": None, "config": {}, "end": end})
+    named = dict(vectors)
+    for name in ("starttls-response", "starttls-response-unnamed", "starttls-response-refused"):
+        cases.append({"id": "stream/ldap-shift/" + name, "kind": "stream", "label": "ldap",
+                      "chunks": [named[name].hex(), _tls_record(_server_hello()).hex()], "hint": None, "config": {}, "end": "fin"})
+        cases.append({"id": "stream/ldap-shift/" + name + "-coalesced", "kind": "stream", "label": "ldap",
+                      "chunks": [(named[name] + _tls_record(_server_hello())).hex()], "hint": None, "config": {}, "end": "fin"})
+    cases.append({"id": "stream/ldap-options/byte-budget", "kind": "stream", "label": "ldap",
+                  "chunks": [named["spnego-krb5-init"].hex()], "hint": None, "config": {"max_bytes": 64}, "end": "fin"})
+    return cases
+
+
 def stream_cases(seed=11, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -301,6 +521,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(git_cases())
     cases.extend(session_cases_v())
     cases.extend(kerberos_cases())
+    cases.extend(ldap_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})

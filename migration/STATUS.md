@@ -282,17 +282,20 @@ Taken before M5 so that session records become comparable for every family as it
 | Go tests | implemented | `kerberos_test.go`: etype rows and provenance, rows dropped on a non-minimal etype, byte-at-a-time stream feed, scope, TCP framing rejections, tag/trailing/pvno/order rejections; `NewKerberos` joins `FuzzFramedNeverPanics`. |
 | Differential result | implemented | `make parity-go` with the 79 claimed families: **4084 compared, 4084 matched, 0 mismatched, 0 gaps**. Matched on the first run. One-off check outside the committed set: 20,000 seeded mutations of the vectors, each as a datagram and as a TCP stream (40,000 cases), all matched. |
 
-### LDAP — scoped, not started
+### Batch 18 — SPNEGO/GSS token classifier and LDAP
 
-The message parser itself is a small port (`binary.LDAPParser`: BindRequest, BindResponse, ExtendedRequest and
-ExtendedResponse). Two dependencies are not in Go yet and need their own review: the SPNEGO/GSS token
-classifier for `GSS-SPNEGO` binds (`gss.classify_token`, also needed by SMB), and the host-side StartTLS
-correlation (`Analyzer._correlate_ldap` with `Stream.open_shift` and replay of retained bytes), which is also
-where the HTTP CONNECT tunnel correlation lives and which the Go session tracker does not implement.
+| item | state | evidence |
+|---|---|---|
+| Token classifier | implemented | `gss.classify_token` in Go (`classifyToken`, `go/internal/protocols/framed/gss.go`): raw NTLMSSP, direct Kerberos GSS tokens (TOK_ID then exactly one AP-REQ, AP-REP, KRB-ERROR or user-to-user TGT-REQ; the KRB-ERROR case reuses `kerberosBody`), SPNEGO NegTokenInit and NegTokenResp with a carried NTLMSSP or Kerberos token, and other GSS mechanisms. Bounds are the Python ones: 4096-byte token, 8 listed mechanisms, 8 principal name components. Only closed labels are returned (kind, mechanism, NTLM message, negState); principals, realms, tickets, challenges and MICs are not decoded. It is unexported and reachable only through the LDAP parser until SMB is ported. |
+| LDAP parser | implemented | `binary.LDAPParser` in Go (`NewLDAP`, `ldap.go`): BindRequest (simple, SASL, `GSS-SPNEGO` credentials through the classifier), BindResponse (LDAPResult, at most 16 non-empty referrals, optional server credentials), ExtendedRequest and ExtendedResponse (numeric OID grammar, StartTLS without a value). A named StartTLS success sets the `ldap-starttls` shift with the `tls` hint; DN, diagnostic text, credentials and extended values are not emitted. |
+| Fixtures | implemented | `cases.py ldap_cases()`: 151 vectors as streams (whole / 1-byte / 7-byte / truncated), a ServerHello after the named, unnamed and refused StartTLS responses (separate and coalesced), and a byte budget (597 cases, 4850 total). |
+| Go tests | implemented | `ldap_test.go`: classifier labels and rejections (budgets included), closed labels on a `GSS-SPNEGO` bind, no classification under another SASL mechanism, shift only on a named success, OID grammar; fuzz `FuzzGSSNeverPanics` (classifier and message validator, labels stay in the closed sets) added to `make go-check`; `NewLDAP` joins `FuzzFramedNeverPanics`. |
+| Differential result | implemented | `make parity-go` with the 80 claimed families: **4733 compared, 4733 matched, 0 mismatched, 0 gaps**. Matched on the first run. One-off checks outside the committed set: 40,000 seeded byte mutations of the vectors (39,932 compared and matched; 68 dispatched to families not yet ported) and 40,000 structure-aware mutations of the tokens inside a well-formed bind (40,000 matched, 109 distinct reasons). |
+| Not claimed | — | host-side StartTLS correlation (`Analyzer._correlate_ldap` with `Stream.open_shift` and replay of retained bytes): the client direction after a StartTLS request, and the server direction after an unnamed success, stay LDAP in the Go session tracker. The parser does not yet expose the message id that correlation needs. The same host mechanism carries the HTTP CONNECT tunnel correlation. No session fixture exercises it yet. |
 
 ## M5 batches 18+ / M7+ — next
 
-Remaining registry batches (9 families: HTTP2, SMB1, SMB2, LDAP, RDP, ISO-TSAP, QUIC, DTLS, IKEv2, each with dedicated review) with record-level parity per batch; passive
+Remaining registry batches (8 families: HTTP2, SMB1, SMB2, RDP, ISO-TSAP, QUIC, DTLS, IKEv2, each with dedicated review) and the host-side shift correlation (LDAP StartTLS, HTTP CONNECT) with record-level parity per batch; passive
 TLS decryption (M7); frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
 
 ## Open decisions and blockers
