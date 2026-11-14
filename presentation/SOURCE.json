@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "dbe20f30377dd9627391040827dd8c0c3d636ac5",
+  "commit": "e3200fd340331d6ee33ef4285cfb335f91c18aec",
   "branch": "claude/go-migration",
-  "build_digest": "6b9318b49f37854cb645a3d6f56f20cd48acbe4fe58e393757c8233398173e28",
+  "build_digest": "9113a7e6eb9801cbacf09ade118165e26a59c9d842118fd1f9b3e2eb2cab076a",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -150,7 +150,7 @@
     {
       "path": "protocol_engine/extended.py",
       "component": "engine",
-      "sha256": "eec19b7128143d7bff31af5ccd0c574c1477932a2aa38f2a6729f9213316cb10"
+      "sha256": "e12994ad46305b92ab09a045f30568f8049819b69b8b2ad3231093b15a2f0dba"
     },
     {
       "path": "protocol_engine/fastcgi.py",
@@ -320,7 +320,7 @@
     {
       "path": "protocol_engine/smarthome.py",
       "component": "engine",
-      "sha256": "a7a9b4b1e894f2643d851022494b7315c9f72f37e39b671424aa1447c19b2423"
+      "sha256": "e0d65638c29aee968035faf56eec550d4573221cf0361e2c0fe71204284b0d26"
     },
     {
       "path": "protocol_engine/ssh_posture.py",
