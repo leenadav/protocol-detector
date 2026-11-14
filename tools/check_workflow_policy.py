@@ -48,7 +48,9 @@
 7. Action consistency: every action repository (`owner/repo`, sub-actions included) is pinned
    to one commit SHA and one `# vX.Y.Z` tag comment across all workflows, and
    `actions/upload-artifact` and `actions/download-artifact`, which hand the release files
-   from the build job to the publish job, share a major version. A partial bump (one file,
+   from the build job to the publish job, share a major version or form a pairing the vendor
+   documents (ARTIFACT_COMPATIBLE, with its evidence: upload v7 with download v8); no
+   `digest-mismatch` input may relax v8's digest check below `error`. A partial bump (one file,
    one job, or one half of the artifact pair; Dependabot PR #8 was computed before the
    release split and would have moved only the upload side to v7) fails here instead of
    surfacing as a broken release. `owner/repo` is compared case-insensitively, as GitHub
@@ -1110,7 +1112,7 @@ ISOLATED_INSTALL = "python -I -m pip install --require-hashes -r requirements-de
 # The Go-built scanners (items 21 and 22): one supported Go, the module proxy and checksum database
 # written out, read-only modules, no workspace, and only tools/scanners/go.mod and go.sum copied
 # out of the checkout for the build.
-SETUP_GO = {"uses": "actions/setup-go", "with": {"go-version": "1.27.3", "cache": "false"}}
+SETUP_GO = {"uses": "actions/setup-go", "with": {"go-version": "1.27.4", "cache": "false"}}
 GO_BUILD_ENV = {"GOPROXY": "https://proxy.golang.org", "GOSUMDB": "sum.golang.org", "GOTOOLCHAIN": "local",
                 "GOFLAGS": "-mod=readonly", "GOWORK": "off", "GONOSUMDB": "", "GOPRIVATE": "", "GOINSECURE": ""}
 SCANNER_BUILD = ['mkdir -p "$RUNNER_TEMP/scanners"',
@@ -1447,6 +1449,19 @@ USES_KEY = re.compile(r"""(?:^|[\s{,\-])["']?uses["']?\s*:""")
 PINNED = re.compile(r"^([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)(/[^@]*)?@([0-9a-f]{40})$")
 TAG = re.compile(r"^#\s*v(\d+)(?:\.\d+)*\s*$")
 ARTIFACT_PAIR = ("actions/upload-artifact", "actions/download-artifact")
+# The release files cross from the build job to the publish job through this pair, so only pairings
+# the vendor documents may be pinned (Dependabot PR #23; issue #7 triage 6877234718: a policy
+# assertion is not by itself a runtime incompatibility). A same-major pair is the vendor's default;
+# a cross-major pair needs its evidence here. Anything else fails closed, so a partial bump still
+# fails before it can break a release.
+ARTIFACT_COMPATIBLE = {
+    (7, 8): "actions/download-artifact v8.0.2 README pairs upload-artifact@v7 with download-artifact@v8 "
+            "(also for `archive: false` files, which only v7 uploads); upload-artifact v7.0.2 and "
+            "download-artifact v8.0.2 build on the same @actions/artifact ^6.3.1",
+}
+# Integrity: download-artifact v8 checks each file's digest against the server's and fails on a
+# mismatch by default. Nothing may relax that.
+DIGEST_MISMATCH = re.compile(r"""^\s*["']?digest-mismatch["']?\s*:\s*["']?([^"'\s#]*)["']?\s*(#.*)?$""")
 
 
 def check_action_consistency(workflows):
@@ -1454,7 +1469,13 @@ def check_action_consistency(workflows):
     problems, pins, majors = [], {}, {}
     for path, text in sorted(workflows.items()):
         for number, line in enumerate(text.splitlines(), 1):
-            if line.strip().startswith("#") or not USES_KEY.search(line):
+            if line.strip().startswith("#"):
+                continue
+            mismatch = DIGEST_MISMATCH.match(line)
+            if mismatch and mismatch.group(1) != "error":
+                problems.append("{}:{}: `digest-mismatch: {}` relaxes download-artifact's digest check; only "
+                                "`error` (the default) is allowed".format(path, number, mismatch.group(1)))
+            if not USES_KEY.search(line):
                 continue
             found = USES.match(line)
             if not found:
@@ -1480,9 +1501,14 @@ def check_action_consistency(workflows):
             problems.append("{} is pinned {} different ways: {}".format(
                 repository, len(seen), "; ".join("{} {}".format(sha[:12], comment) for sha, comment in sorted(seen))))
     upload, download = (majors.get(name, set()) for name in ARTIFACT_PAIR)
-    if upload and download and upload != download:
-        problems.append("{} (v{}) and {} (v{}) must share a major version".format(
-            ARTIFACT_PAIR[0], "/v".join(map(str, sorted(upload))), ARTIFACT_PAIR[1], "/v".join(map(str, sorted(download)))))
+    if upload and download:
+        unlisted = sorted((up, down) for up in upload for down in download
+                          if up != down and (up, down) not in ARTIFACT_COMPATIBLE)
+        if unlisted:
+            problems.append("{} (v{}) and {} (v{}) must share a major version or be a vendor-documented "
+                            "pairing in ARTIFACT_COMPATIBLE".format(
+                                ARTIFACT_PAIR[0], "/v".join(map(str, sorted(upload))),
+                                ARTIFACT_PAIR[1], "/v".join(map(str, sorted(download)))))
     return problems
 
 
@@ -1885,7 +1911,7 @@ def self_test():
     consistent = {"a.yml": co + up4 + init + analyze + "      - uses: ./local-action\n", "b.yml": co + down4}
     assert check_action_consistency(consistent) == []
     assert check_action_consistency({"a.yml": co + up7, "b.yml": co + down4}) == [
-        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version"]
+        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version or be a vendor-documented pairing in ARTIFACT_COMPATIBLE"]
     assert check_action_consistency({"a.yml": co + up7 + up4, "b.yml": down4})[0].startswith(
         "actions/upload-artifact is pinned 2 different ways")
     partial = {"a.yml": co, "b.yml": co.replace("1" * 40, "2" * 40).replace("v4.2.2", "v4.3.0")}
@@ -1902,10 +1928,10 @@ def self_test():
     # milestone 3 round 1: quoted keys and values are read; other spellings fail closed
     quoted = {"a.yml": co + up7.replace("- uses:", '- "uses":'), "b.yml": co + down4}
     assert check_action_consistency(quoted) == [
-        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version"], check_action_consistency(quoted)
+        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version or be a vendor-documented pairing in ARTIFACT_COMPATIBLE"], check_action_consistency(quoted)
     single = {"a.yml": co + up7.replace("- uses: ", "- 'uses': '").replace(" # v7", "' # v7"), "b.yml": co + down4}
     assert check_action_consistency(single) == [
-        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version"], check_action_consistency(single)
+        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version or be a vendor-documented pairing in ARTIFACT_COMPATIBLE"], check_action_consistency(single)
     assert check_action_consistency({"a.yml": co + up4.replace("- uses: ", '- uses: "').replace(" # v4", '" # v4'), "b.yml": down4}) == []
     unreadable = ["      - {uses: actions/upload-artifact@" + "c" * 40 + "}  # v7.0.2\n",                       # flow mapping
                   "      - name: x\n        uses:\n          actions/upload-artifact@" + "c" * 40 + "\n",      # value on next line
@@ -1917,10 +1943,27 @@ def self_test():
         found = check_action_consistency({"a.yml": co + bad, "b.yml": down4})
         assert any("cannot read this `uses` entry" in problem for problem in found), (bad, found)
     assert check_action_consistency({"a.yml": "      # uses: anything goes in a comment\n" + co}) == []
+    # Dependabot PR #23: the vendor-documented v7 upload / v8 download pairing passes; other cross-major
+    # pairings and the reverse direction still fail; digest-mismatch may only stay `error`
+    down8 = "      - uses: actions/download-artifact@" + "8" * 40 + " # v8.0.2\n"
+    up8 = "      - uses: actions/upload-artifact@" + "9" * 40 + " # v8.0.0\n"
+    assert check_action_consistency({"a.yml": co + up7, "b.yml": co + down8}) == []
+    assert check_action_consistency({"a.yml": co + up8, "b.yml": co + down8}) == []
+    found = check_action_consistency({"a.yml": co + up8, "b.yml": co + down4.replace("v4.3.0", "v7.0.0")})
+    assert len(found) == 1 and "(v8) and actions/download-artifact (v7) must share" in found[0], found
+    found = check_action_consistency({"a.yml": co + up4, "b.yml": co + down8})
+    assert len(found) == 1 and "(v4) and actions/download-artifact (v8)" in found[0], found
+    with_digest = down8 + "        with:\n          name: dist\n"
+    assert check_action_consistency({"a.yml": co + up7, "b.yml": co + with_digest + "          digest-mismatch: error\n"}) == []
+    for relaxed in ("warn", "info", "ignore", '"ignore"', "'warn'", "ignore   # trust the server"):
+        found = check_action_consistency({"a.yml": co + up7, "b.yml": co + with_digest + "          digest-mismatch: " + relaxed + "\n"})
+        assert len(found) == 1 and "relaxes download-artifact's digest check" in found[0], (relaxed, found)
+    found = check_action_consistency({"a.yml": co + up7, "b.yml": co + with_digest + '          "digest-mismatch": warn\n'})
+    assert len(found) == 1 and "relaxes" in found[0], found
     # milestone 3 round 2: owner/repo is case-insensitive on GitHub, so case must not split identities
     mixed7 = up7.replace("actions/upload-artifact", "Actions/Upload-Artifact")
     assert check_action_consistency({"a.yml": co + mixed7, "b.yml": co + down4}) == [
-        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version"]
+        "actions/upload-artifact (v7) and actions/download-artifact (v4) must share a major version or be a vendor-documented pairing in ARTIFACT_COMPATIBLE"]
     found = check_action_consistency({"a.yml": co + up4 + mixed7, "b.yml": down4})
     assert found[0].startswith("actions/upload-artifact is pinned 2 different ways") and len(found) == 2, found
     assert check_action_consistency({"a.yml": co + up4.replace("actions/upload-artifact", "ACTIONS/UPLOAD-ARTIFACT"),
@@ -2347,7 +2390,7 @@ def self_test():
         # item 22: the Go-built scanners' build is pinned too
         "writable modules": ci_full.replace('          GOFLAGS: "-mod=readonly"\n', '          GOFLAGS: "-mod=mod"\n', 1),
         "workspace on": ci_full.replace('          GOWORK: "off"\n', '          GOWORK: "auto"\n', 1),
-        "old Go": ci_full.replace('          go-version: "1.27.3"\n', '          go-version: "1.24.11"\n', 1),
+        "old Go": ci_full.replace('          go-version: "1.27.4"\n', '          go-version: "1.24.11"\n', 1),
         "build in the checkout": ci_full.replace('          cd "$RUNNER_TEMP/scanners"\n', '          cd tools/scanners\n', 1),
         "govulncheck dropped": ci_full.replace('          "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/gitleaks" | tee -a "$GITHUB_STEP_SUMMARY"\n', "", 1),
         "repository code before govulncheck": ci_full.replace(
