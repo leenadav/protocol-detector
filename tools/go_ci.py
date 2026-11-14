@@ -133,7 +133,9 @@ def report_problems(report):
         problems.append("the parity report compared no case (compared={!r})".format(compared))
     elif matched != compared:
         problems.append("the parity report matched {!r} of {} compared cases".format(matched, compared))
-    for key in ("mismatched", "extra"):
+    # mismatched/extra in either format (counts since the engine's R2 fix 321e088, lists before);
+    # the gap-allowlist counters that fix added are checked whenever the report carries them
+    for key in ("mismatched", "extra", "unexpected_gaps", "stale_gaps", "claimed_without_match"):
         if report.get(key):
             problems.append("the parity report lists {} {}".format(key, report[key] if isinstance(report[key], int) else len(report[key])))
     return problems
@@ -202,19 +204,26 @@ def self_test():
     assert oracle_action == "fail" and oracle_problems, oracle_problems
     good = {"ok": True, "compared": 4084, "matched": 4084, "unsupported": 169, "mismatched": [], "extra": []}
     assert report_problems(good) == []
+    current = {"ok": True, "compared": 5185, "matched": 5185, "mismatched": 0, "missing": 0, "extra": 0, "unsupported": 180,
+               "unexpected_gaps": 0, "stale_gaps": 0, "claimed_without_match": 0}
+    assert report_problems(current) == []
     for label, bad, expected in (
             ("all unsupported", dict(good, compared=0, matched=0, unsupported=4253), "compared no case"),
             ("not ok", dict(good, ok=False), "not ok"),
             ("ok as a string", dict(good, ok="true"), "not ok"),
             ("a mismatch", dict(good, matched=4083, mismatched=["case-1"]), "matched 4083 of 4084"),
             ("an extra result", dict(good, extra=["stray"]), "lists extra 1"),
+            ("an extra count (321e088 format)", dict(good, extra=2), "lists extra 2"),
+            ("an unexpected gap", dict(good, unexpected_gaps=1), "lists unexpected_gaps 1"),
+            ("a stale gap entry", dict(good, stale_gaps=3), "lists stale_gaps 3"),
+            ("a claim without a match", dict(good, claimed_without_match=1), "lists claimed_without_match 1"),
             ("no compared count", {"ok": True}, "compared no case"),
             ("not an object", [], "not a JSON object")):
         found = report_problems(bad)
         assert any(expected in problem for problem in found), (label, found)
     assert directive("module x\n\ngo 1.27\n") == "1.27"
     assert GO_VERSION.search("go version go1.27.4 darwin/arm64 ").group(1) == "1.27.4"
-    print("go_ci self-test: ok ({} tree refusals, 7 report refusals)".format(len(cases) + 1))
+    print("go_ci self-test: ok ({} tree refusals, 11 report refusals)".format(len(cases) + 1))
     return 0
 
 
