@@ -1,0 +1,553 @@
+From 7b9a9afa7dbdc44fc3b5fefde0964b35d421ac35 Mon Sep 17 00:00:00 2001
+From: lab <lab@localhost>
+Date: Sat, 14 Nov 2026 15:00:42 +0000
+Subject: [PATCH] LAB: observe CONNECT-bypass tunnels with a protocol detector
+ (local only)
+
+Local lab branch; not for upstream as-is. Culvert-owned interface in
+internal/protodetect (off / fake / real engines), an observed prefix on the
+bypass relay that writes first, then feeds the engine, and hands back to
+idleCopyCounted so the splice path carries the rest. Wiring by environment
+variable only. Built with a go.work workspace; go.mod and go.sum untouched.
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UqaXYypys1mDv9szgRtF6T
+---
+ internal/protodetect/protodetect.go | 174 +++++++++++++++++++++++
+ internal/protodetect/real.go        |  89 ++++++++++++
+ protodetect_lab.go                  | 213 ++++++++++++++++++++++++++++
+ proxy_tunnel.go                     |   9 +-
+ 4 files changed, 484 insertions(+), 1 deletion(-)
+ create mode 100644 internal/protodetect/protodetect.go
+ create mode 100644 internal/protodetect/real.go
+ create mode 100644 protodetect_lab.go
+
+diff --git a/internal/protodetect/protodetect.go b/internal/protodetect/protodetect.go
+new file mode 100644
+index 0000000..7c954b9
+--- /dev/null
++++ b/internal/protodetect/protodetect.go
+@@ -0,0 +1,174 @@
++// Package protodetect is the LAB adapter between Culvert's raw relays and a protocol detector
++// (local branch lab/protocol-detector; not proposed upstream). Culvert owns this interface; an
++// engine is anything that implements it. The package never touches a socket and never makes or
++// changes an access decision: every outcome is an observation.
++//
++// Three engines exist: Off (nil Observer, the relay path is byte-for-byte the unmodified one),
++// Fake (scripted, for lifecycle and failure tests) and Real (a thin wrapper over the detector
++// library in real.go, so a library API change stays inside that file).
++package protodetect
++
++import (
++	"sync"
++	"sync/atomic"
++)
++
++// Direction of a relayed byte stream.
++type Direction uint8
++
++const (
++	ClientToServer Direction = iota
++	ServerToClient
++)
++
++// Observer admits flows. A nil Observer means observation is off.
++type Observer interface {
++	// Begin admits one tunnel. ok=false means admission was refused (limit or breaker); the
++	// tunnel then relays unobserved.
++	Begin(id string) (flow Flow, ok bool)
++	Stats() Stats
++	Name() string
++}
++
++// Flow is one observed tunnel. All methods are safe for concurrent use and never panic.
++type Flow interface {
++	// Observe is given bytes already read from the peer. done reports that this direction needs
++	// no more bytes, so the relay can hand back to its normal copy path.
++	Observe(d Direction, data []byte) (done bool)
++	// End reports that a direction carries no more bytes.
++	End(d Direction)
++	// Expire ends the observation window. It touches no socket.
++	Expire()
++	// Finish releases all state and returns the final record. Idempotent.
++	Finish() Record
++}
++
++// DirRecord is the final observation of one direction. Outcome and Reason are closed
++// vocabularies of the engine; Hostname is peer-asserted and must be redacted by the caller.
++type DirRecord struct {
++	Outcome  string `json:"outcome"`
++	Reason   string `json:"reason"`
++	Family   string `json:"family,omitempty"`
++	Protocol string `json:"protocol,omitempty"`
++	Encrypt  string `json:"encryption,omitempty"`
++	Hostname string `json:"hostname,omitempty"`
++	Detail   string `json:"detail,omitempty"`
++	Observed int    `json:"observed_bytes"`
++}
++
++// Record is the final observation of a tunnel.
++type Record struct {
++	Engine      string    `json:"engine"`
++	Client      DirRecord `json:"client"`
++	Server      DirRecord `json:"server"`
++	Quarantined bool      `json:"quarantined,omitempty"`
++}
++
++// Stats are engine counters.
++type Stats struct {
++	Active   int64 `json:"active"`
++	Admitted int64 `json:"admitted"`
++	Refused  int64 `json:"refused"`
++	Panics   int64 `json:"panics"`
++	Disabled bool  `json:"disabled"`
++}
++
++// Fake is a scripted engine: it "identifies" a direction after NeedBytes bytes and can be told
++// to panic, so the relay's lifecycle and failure handling are testable without a parser.
++type Fake struct {
++	NeedBytes int
++	PanicOn   string // "", "observe", "end", "expire", "finish"
++	MaxFlows  int64
++
++	active, admitted, refused, panics atomic.Int64
++}
++
++func (f *Fake) Name() string { return "fake" }
++
++func (f *Fake) Stats() Stats {
++	return Stats{Active: f.active.Load(), Admitted: f.admitted.Load(), Refused: f.refused.Load(), Panics: f.panics.Load()}
++}
++
++func (f *Fake) Begin(string) (Flow, bool) {
++	if f.MaxFlows > 0 && f.active.Load() >= f.MaxFlows {
++		f.refused.Add(1)
++		return nil, false
++	}
++	f.active.Add(1)
++	f.admitted.Add(1)
++	return &fakeFlow{e: f}, true
++}
++
++type fakeFlow struct {
++	e        *Fake
++	mu       sync.Mutex
++	seen     [2]int
++	done     [2]bool
++	outcome  [2]string
++	finished bool
++	failed   bool
++}
++
++func (f *fakeFlow) guard(op string, fn func()) {
++	defer func() {
++		if recover() != nil {
++			f.e.panics.Add(1)
++			f.failed = true
++			f.done = [2]bool{true, true}
++		}
++	}()
++	if f.e.PanicOn == op {
++		panic("fake engine: injected " + op + " panic")
++	}
++	fn()
++}
++
++func (f *fakeFlow) Observe(d Direction, data []byte) bool {
++	f.mu.Lock()
++	defer f.mu.Unlock()
++	f.guard("observe", func() {
++		if f.done[d] {
++			return
++		}
++		f.seen[d] += len(data)
++		if f.seen[d] >= f.e.NeedBytes {
++			f.done[d], f.outcome[d] = true, "identified"
++		}
++	})
++	return f.done[d]
++}
++
++func (f *fakeFlow) End(d Direction) {
++	f.mu.Lock()
++	defer f.mu.Unlock()
++	f.guard("end", func() { f.done[d] = true })
++}
++
++func (f *fakeFlow) Expire() {
++	f.mu.Lock()
++	defer f.mu.Unlock()
++	f.guard("expire", func() { f.done = [2]bool{true, true} })
++}
++
++func (f *fakeFlow) Finish() Record {
++	f.mu.Lock()
++	defer f.mu.Unlock()
++	if !f.finished {
++		f.finished = true
++		f.e.active.Add(-1)
++		f.guard("finish", func() {})
++	}
++	rec := Record{Engine: "fake", Quarantined: f.failed}
++	for d, dr := range []*DirRecord{&rec.Client, &rec.Server} {
++		dr.Observed = f.seen[d]
++		switch {
++		case f.failed:
++			dr.Outcome, dr.Reason = "failed", "panic"
++		case f.outcome[d] != "":
++			dr.Outcome, dr.Reason, dr.Family = f.outcome[d], "engine", "fake"
++		default:
++			dr.Outcome, dr.Reason = "incomplete", "closed"
++		}
++	}
++	return rec
++}
+diff --git a/internal/protodetect/real.go b/internal/protodetect/real.go
+new file mode 100644
+index 0000000..d40d05f
+--- /dev/null
++++ b/internal/protodetect/real.go
+@@ -0,0 +1,89 @@
++package protodetect
++
++import (
++	"github.com/leenadav/protocol-detector/go/detector"
++)
++
++// Real wraps the detector library. It is the only file that names the library's API.
++type Real struct{ engine *detector.Engine }
++
++// NewReal builds the real engine with the lab profile.
++func NewReal(families []string, maxBytes, maxFeeds, maxFlows int) (*Real, error) {
++	c := detector.DefaultConfig()
++	c.Families, c.MaxBytesPerDirection, c.MaxFeedsPerDirection, c.MaxFlows = families, maxBytes, maxFeeds, maxFlows
++	e, err := detector.New(c)
++	if err != nil {
++		return nil, err
++	}
++	return &Real{engine: e}, nil
++}
++
++var (
++	_ Observer = (*Real)(nil)
++	_ Observer = (*Fake)(nil)
++	_ Flow     = realFlow{}
++	_ Flow     = (*fakeFlow)(nil)
++)
++
++func (r *Real) Name() string { return "real" }
++
++func (r *Real) Stats() Stats {
++	s := r.engine.Stats()
++	return Stats{Active: s.Active, Admitted: s.Admitted, Refused: s.Refused, Panics: s.Panics, Disabled: s.Disabled}
++}
++
++func (r *Real) Begin(id string) (Flow, bool) {
++	f, err := r.engine.NewFlow(id)
++	if err != nil {
++		return nil, false
++	}
++	return realFlow{f}, true
++}
++
++type realFlow struct{ flow *detector.Flow }
++
++func dir(d Direction) detector.Direction {
++	if d == ServerToClient {
++		return detector.ServerToClient
++	}
++	return detector.ClientToServer
++}
++
++// The library recovers engine panics itself; the deferred recover here is the second layer the
++// working plan asks for, so nothing from the library can unwind into a relay goroutine.
++func (f realFlow) Observe(d Direction, data []byte) (done bool) {
++	defer func() {
++		if recover() != nil {
++			done = true
++		}
++	}()
++	u, err := f.flow.Feed(dir(d), data)
++	return err != nil || u.Done
++}
++
++func (f realFlow) End(d Direction) {
++	defer func() { _ = recover() }()
++	_, _ = f.flow.EndDirection(dir(d), detector.EndEOF)
++}
++
++func (f realFlow) Expire() {
++	defer func() { _ = recover() }()
++	_ = f.flow.Expire()
++}
++
++func (f realFlow) Finish() (rec Record) {
++	defer func() {
++		if recover() != nil {
++			rec = Record{Engine: "real", Quarantined: true,
++				Client: DirRecord{Outcome: "failed", Reason: "panic"}, Server: DirRecord{Outcome: "failed", Reason: "panic"}}
++		}
++	}()
++	s := f.flow.Close()
++	conv := func(ds detector.DirectionSnapshot) DirRecord {
++		return DirRecord{Outcome: ds.Outcome.String(), Reason: ds.Reason.String(), Family: ds.Family,
++			Protocol: ds.ApplicationProtocol, Encrypt: ds.Encryption, Hostname: string(ds.Hostname), Detail: ds.Detail,
++			Observed: ds.BytesFed}
++	}
++	return Record{Engine: "real", Client: conv(s.Direction(detector.ClientToServer)),
++		Server: conv(s.Direction(detector.ServerToClient)), Quarantined: s.Quarantined}
++}
+diff --git a/protodetect_lab.go b/protodetect_lab.go
+new file mode 100644
+index 0000000..40008d6
+--- /dev/null
++++ b/protodetect_lab.go
+@@ -0,0 +1,213 @@
++package main
++
++// LAB ONLY (local branch lab/protocol-detector, never proposed upstream as-is).
++//
++// Observation of CONNECT-bypass tunnels by a protocol detector, in observe mode: nothing here
++// makes or changes an access decision, holds a byte back, or shortens the tunnel's idle timeout.
++// Wiring is by environment variable instead of a config surface on purpose: a real setting needs
++// config_surfaces.go, the snapshot, the API and the GUI (working plan section 12).
++//
++//	CULVERT_LAB_PROTODETECT   off (default) | fake | real
++//	CULVERT_LAB_PD_FAMILIES   comma list for the real engine (default http,tls,ssh,smtp)
++//	CULVERT_LAB_PD_WINDOW_MS  observation window (default 10000)
++//	CULVERT_LAB_PD_FAKE_PANIC observe | end | expire | finish (fake engine failure injection)
++
++import (
++	"encoding/json"
++	"errors"
++	"net"
++	"os"
++	"strconv"
++	"strings"
++	"sync"
++	"sync/atomic"
++	"time"
++
++	"github.com/KidCarmi/Culvert/internal/protodetect"
++)
++
++const (
++	labTapBufSize  = 4096 // read buffer while observing; never the 128 KiB relay buffer
++	labMaxBytes    = 16384
++	labMaxFeeds    = 16
++	labMaxObserved = 4096 // concurrent observed tunnels
++)
++
++var (
++	labOnce     sync.Once
++	labObserver protodetect.Observer // nil: observation off, the unmodified relay path runs
++	labWindow   = 10 * time.Second
++	labHandoffs atomic.Int64 // directions handed back to the normal copy path
++)
++
++func labObs() protodetect.Observer {
++	labOnce.Do(func() {
++		if ms, err := strconv.Atoi(os.Getenv("CULVERT_LAB_PD_WINDOW_MS")); err == nil && ms > 0 {
++			labWindow = time.Duration(ms) * time.Millisecond
++		}
++		switch os.Getenv("CULVERT_LAB_PROTODETECT") {
++		case "fake":
++			labObserver = &protodetect.Fake{NeedBytes: 16, PanicOn: os.Getenv("CULVERT_LAB_PD_FAKE_PANIC"), MaxFlows: labMaxObserved}
++		case "real":
++			families := []string{"http", "tls", "ssh", "smtp"}
++			if v := os.Getenv("CULVERT_LAB_PD_FAMILIES"); v != "" {
++				families = strings.Split(v, ",")
++			}
++			real, err := protodetect.NewReal(families, labMaxBytes, labMaxFeeds, labMaxObserved)
++			if err != nil {
++				logger.Printf("LAB protodetect: real engine refused its configuration, observation stays off: %v", err)
++				return
++			}
++			labObserver = real
++		}
++		if labObserver != nil {
++			logger.Printf("LAB protodetect: observe mode ON, engine=%s window=%v (lab build; not a product feature)", labObserver.Name(), labWindow)
++		}
++	})
++	return labObserver
++}
++
++// labObservation is one observed tunnel: the engine flow plus the window timer.
++type labObservation struct {
++	flow   protodetect.Flow
++	expiry int64 // monotonic nanos at which the observation window ends
++	timer  *time.Timer
++}
++
++// labBeginObservation admits a tunnel for observation; nil when observation is off or refused.
++func labBeginObservation(host string) *labObservation {
++	obs := labObs()
++	if obs == nil {
++		return nil
++	}
++	flow, ok := obs.Begin(host)
++	if !ok {
++		return nil
++	}
++	o := &labObservation{flow: flow, expiry: monoNanos() + int64(labWindow)}
++	// The timer releases the engine's state when the window ends even if both relay directions
++	// are blocked (in Read or in Write). Expire only takes the flow's own lock; it touches no
++	// socket and no deadline, so it cannot end or prolong the tunnel.
++	o.timer = time.AfterFunc(labWindow, flow.Expire)
++	return o
++}
++
++// labObservePrebuffer shows the engine the client bytes the HTTP server had already buffered
++// (they are forwarded by the caller exactly as before).
++func (o *labObservation) labObservePrebuffer(b []byte) {
++	if o != nil && len(b) > 0 {
++		o.flow.Observe(protodetect.ClientToServer, b)
++	}
++}
++
++// labBidiRelay is bidiRelayCounted with an observed prefix on each direction. With o == nil it
++// IS bidiRelayCounted.
++func labBidiRelay(o *labObservation, destConn, clientConn net.Conn) (toDest, toClient int64) {
++	if o == nil {
++		return bidiRelayCounted(destConn, clientConn, clientConn, destConn)
++	}
++	shared := newTunnelActivityStamp()
++	done := make(chan struct{}, 2)
++	go labRelayCounted(o, protodetect.ClientToServer, destConn, clientConn, shared, &toDest, done)
++	go labRelayCounted(o, protodetect.ServerToClient, clientConn, destConn, shared, &toClient, done)
++	<-done
++	<-done
++	return toDest, toClient
++}
++
++// labRelayCounted mirrors relayCounted (same recover, same half-close, same done signal).
++func labRelayCounted(o *labObservation, d protodetect.Direction, dst, src net.Conn, shared *atomic.Int64, count *int64, done chan<- struct{}) {
++	defer func() {
++		if v := recover(); v != nil {
++			recordCrash("tunnel-relay", "", v)
++			_ = dst.Close()
++			_ = src.Close()
++		}
++		done <- struct{}{}
++	}()
++	*count += labObservedCopy(o, d, dst, src, shared)
++	if tc, ok := dst.(interface{ CloseWrite() error }); ok {
++		tc.CloseWrite() //nolint:errcheck // best-effort EOF signal, as in relayCounted
++	}
++}
++
++// labObservedCopy relays src→dst. While the observation window is open it reads into a small
++// buffer, WRITES FIRST, then shows the same bytes to the engine; when the engine is done, the
++// window ends or the direction ends, it returns to idleCopyCounted on the original conns, so
++// the kernel splice path carries the rest of the tunnel. It is the only owner of src's read
++// deadline during the prefix, exactly as idleCopyCounted is afterwards.
++func labObservedCopy(o *labObservation, d protodetect.Direction, dst, src net.Conn, shared *atomic.Int64) int64 {
++	timeout := tunnelIdleTimeout
++	armInterval := timeout / 2
++	buf := make([]byte, labTapBufSize)
++	var total int64
++	for {
++		remaining := time.Duration(o.expiry - monoNanos())
++		if remaining <= 0 {
++			break // window over: hand off; this is not an idle event and stamps nothing
++		}
++		wait := armInterval
++		if remaining < wait {
++			wait = remaining
++		}
++		src.SetReadDeadline(time.Now().Add(wait)) //nolint:errcheck // surfaces as the next read error
++		n, err := src.Read(buf)
++		if n > 0 {
++			shared.Store(monoNanos())
++			wn, werr := dst.Write(buf[:n])
++			total += int64(wn)
++			engineDone := o.flow.Observe(d, buf[:n])
++			if werr != nil {
++				o.flow.End(d)
++				return total
++			}
++			if engineDone && err == nil {
++				break
++			}
++		}
++		if err != nil {
++			var ne net.Error
++			if errors.As(err, &ne) && ne.Timeout() {
++				if monoSince(shared.Load()) >= timeout {
++					logger.Printf("tunnel idle timeout: no bytes in either direction for %v, closing relay", timeout)
++					dst.Close() //nolint:errcheck // teardown, as in idleCopyCounted
++					src.Close() //nolint:errcheck
++					o.flow.End(d)
++					return total
++				}
++				continue // loop top decides between "window over" and "keep waiting"
++			}
++			o.flow.End(d) // EOF or a terminal error
++			return total
++		}
++	}
++	labHandoffs.Add(1)
++	return total + idleCopyCounted(dst, src, src, shared)
++}
++
++// labFinishObservation releases the observation and writes one lab log line. Hostnames go
++// through the same redaction switch as the decryption record.
++func labFinishObservation(o *labObservation, match *PolicyMatch, host string, toDest, toClient int64) {
++	if o == nil {
++		return
++	}
++	o.timer.Stop()
++	rec := o.flow.Finish()
++	if match != nil && !ruleLogsTraffic(match.Rule) {
++		return // a rule that does not log traffic does not log observations either
++	}
++	redact := decRedactHosts()
++	rec.Client.Hostname = redactHost(rec.Client.Hostname, redact)
++	rec.Server.Hostname = redactHost(rec.Server.Hostname, redact)
++	line, err := json.Marshal(struct {
++		Dest      string   `json:"dest"`
++		Forwarded [2]int64 `json:"forwarded_bytes"`
++		protodetect.Record
++		Stats    protodetect.Stats `json:"engine_stats"`
++		Handoffs int64             `json:"handoffs_total"`
++	}{redactHost(host, redact), [2]int64{toDest, toClient}, rec, labObs().Stats(), labHandoffs.Load()})
++	if err != nil {
++		return
++	}
++	logger.Printf("PROTODETECT %s", line)
++}
+diff --git a/proxy_tunnel.go b/proxy_tunnel.go
+index c8f328c..edf22f0 100644
+--- a/proxy_tunnel.go
++++ b/proxy_tunnel.go
+@@ -577,11 +577,18 @@ func handleTunnelBypass(w http.ResponseWriter, r *http.Request, match *PolicyMat
+ 
+ 	start := time.Now()
+ 	var toDest, toClient int64
++	labObsFlow := labBeginObservation(r.Host) // LAB: nil unless CULVERT_LAB_PROTODETECT is set
++	defer func() { labFinishObservation(labObsFlow, match, r.Host, toDest, toClient) }()
+ 
+ 	// Drain bytes the HTTP server already buffered from the client during request
+ 	// parsing; without this they are lost and the upstream blocks forever.
+ 	if clientBuf != nil {
+ 		if n := clientBuf.Reader.Buffered(); n > 0 {
++			if labObsFlow != nil { // LAB: show the engine the prebuffer; Peek consumes nothing
++				if b, perr := clientBuf.Reader.Peek(n); perr == nil {
++					labObsFlow.labObservePrebuffer(b)
++				}
++			}
+ 			flushed, err := io.CopyN(destConn, clientBuf.Reader, int64(n))
+ 			toDest += flushed
+ 			if err != nil {
+@@ -593,7 +600,7 @@ func handleTunnelBypass(w http.ResponseWriter, r *http.Request, match *PolicyMat
+ 
+ 	// Bridge both directions. toDest already carries any prebuffer bytes
+ 	// flushed above; bidiRelayCounted's relayCounted adds (+=) to it.
+-	dOut, cOut := bidiRelayCounted(destConn, clientConn, clientConn, destConn)
++	dOut, cOut := labBidiRelay(labObsFlow, destConn, clientConn) // LAB: bidiRelayCounted when observation is off
+ 	toDest += dOut
+ 	toClient += cOut
+ 
+-- 
+2.43.0
+

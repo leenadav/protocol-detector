@@ -1,0 +1,887 @@
+{
+ "started": "2026-11-14 15:02:19 UTC",
+ "builds": {
+  "A": {
+   "label": "unmodified Culvert 52eb9d1",
+   "port": 18080,
+   "engine": "off"
+  },
+  "B": {
+   "label": "integrated build, detector off",
+   "port": 18081,
+   "engine": "off"
+  },
+  "C": {
+   "label": "integrated build, fake engine",
+   "port": 18082,
+   "engine": "fake"
+  },
+  "D": {
+   "label": "integrated build, real detector (observe)",
+   "port": 18083,
+   "engine": "real"
+  },
+  "E": {
+   "label": "integrated build, fake engine with injected panic",
+   "port": 18084,
+   "engine": "fake-panic"
+  }
+ },
+ "scenarios": [
+  {
+   "name": "Plain HTTP through the proxy",
+   "group": "Baseline access",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "body": "470f07670f1679dd"
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "body": "470f07670f1679dd"
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "body": "470f07670f1679dd"
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "no tunnel: nothing to observe"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "body": "470f07670f1679dd"
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "no tunnel: nothing to observe"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "body": "470f07670f1679dd"
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "no tunnel: nothing to observe"
+    }
+   },
+   "same_bytes_all_builds": true
+  },
+  {
+   "name": "CONNECT + TLS to the lab origin",
+   "group": "Protocols",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "tls": "",
+      "key_exchange": "not reported by this Python",
+      "cert_verified_against": "lab CA (not the proxy's): tunnel was not intercepted"
+     },
+     "seconds": 0.01,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "tls": "",
+      "key_exchange": "not reported by this Python",
+      "cert_verified_against": "lab CA (not the proxy's): tunnel was not intercepted"
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "tls": "",
+      "key_exchange": "not reported by this Python",
+      "cert_verified_against": "lab CA (not the proxy's): tunnel was not intercepted"
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "tls": "",
+      "key_exchange": "not reported by this Python",
+      "cert_verified_against": "lab CA (not the proxy's): tunnel was not intercepted"
+     },
+     "seconds": 0.0,
+     "detector_ok": "gap",
+     "detector": "client: identified tls host=origin.lab.test (engine) \u00b7 server: unknown (engine) \u00b7 KNOWN GAP (work item #4): post-quantum ServerHello not recognised yet"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "tls": "",
+      "key_exchange": "not reported by this Python",
+      "cert_verified_against": "lab CA (not the proxy's): tunnel was not intercepted"
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "CONNECT + SSH (server speaks first)",
+   "group": "Protocols",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "server_first": true
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "server_first": true
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "server_first": true
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "server_first": true
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified ssh (engine) \u00b7 server: identified ssh (engine)"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "server_first": true
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "CONNECT + SMTP (server speaks first)",
+   "group": "Protocols",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "server_first": true
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "server_first": true
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "server_first": true
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "server_first": true
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified smtp (engine) \u00b7 server: unknown (engine)"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "server_first": true
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "CONNECT + HTTP/1.1 inside the tunnel",
+   "group": "Protocols",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {},
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {},
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {},
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {},
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified http host=origin.lab.test (engine) \u00b7 server: identified http (engine)"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {},
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "PostgreSQL (family outside the profile)",
+   "group": "Protocols",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {},
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {},
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {},
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: incomplete (closed) \u00b7 server: incomplete (closed)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {},
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: outside_profile postgresql (outside_profile) \u00b7 server: incomplete (ended)"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {},
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "Unrecognised bytes",
+   "group": "Protocols",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "76a93918a7b92376",
+      "received": "76a93918a7b92376",
+      "bytes": 57
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "76a93918a7b92376",
+      "received": "76a93918a7b92376",
+      "bytes": 57
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "76a93918a7b92376",
+      "received": "76a93918a7b92376",
+      "bytes": 57
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "76a93918a7b92376",
+      "received": "76a93918a7b92376",
+      "bytes": 57
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "76a93918a7b92376",
+      "received": "76a93918a7b92376",
+      "bytes": 57
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+    }
+   },
+   "same_bytes_all_builds": true
+  },
+  {
+   "name": "1 MiB echo, hash compared",
+   "group": "Byte transparency",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "2cb1826d73a9cb0f",
+      "received": "2cb1826d73a9cb0f",
+      "bytes": 1048581
+     },
+     "seconds": 0.01,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "2cb1826d73a9cb0f",
+      "received": "2cb1826d73a9cb0f",
+      "bytes": 1048581
+     },
+     "seconds": 0.01,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "2cb1826d73a9cb0f",
+      "received": "2cb1826d73a9cb0f",
+      "bytes": 1048581
+     },
+     "seconds": 0.01,
+     "detector_ok": true,
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "2cb1826d73a9cb0f",
+      "received": "2cb1826d73a9cb0f",
+      "bytes": 1048581
+     },
+     "seconds": 0.01,
+     "detector_ok": true,
+     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "2cb1826d73a9cb0f",
+      "received": "2cb1826d73a9cb0f",
+      "bytes": 1048581
+     },
+     "seconds": 0.01,
+     "detector_ok": true,
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+    }
+   },
+   "same_bytes_all_builds": true
+  },
+  {
+   "name": "Bytes pipelined with the CONNECT header",
+   "group": "Byte transparency",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "8706d1ab4c18b64e",
+      "received": "8706d1ab4c18b64e",
+      "bytes": 82
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "8706d1ab4c18b64e",
+      "received": "8706d1ab4c18b64e",
+      "bytes": 82
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "8706d1ab4c18b64e",
+      "received": "8706d1ab4c18b64e",
+      "bytes": 82
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "8706d1ab4c18b64e",
+      "received": "8706d1ab4c18b64e",
+      "bytes": 82
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified http host=origin.lab.test (engine) \u00b7 server: identified http (engine)"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "8706d1ab4c18b64e",
+      "received": "8706d1ab4c18b64e",
+      "bytes": 82
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+    }
+   },
+   "same_bytes_all_builds": true
+  },
+  {
+   "name": "Half-close after sending",
+   "group": "Byte transparency",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "d6ae4933fc1fd736",
+      "received": "d6ae4933fc1fd736",
+      "bytes": 200005
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "d6ae4933fc1fd736",
+      "received": "d6ae4933fc1fd736",
+      "bytes": 200005
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "d6ae4933fc1fd736",
+      "received": "d6ae4933fc1fd736",
+      "bytes": 200005
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "d6ae4933fc1fd736",
+      "received": "d6ae4933fc1fd736",
+      "bytes": 200005
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "d6ae4933fc1fd736",
+      "received": "d6ae4933fc1fd736",
+      "bytes": 200005
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+    }
+   },
+   "same_bytes_all_builds": true
+  },
+  {
+   "name": "32 MiB echo after the observation window",
+   "group": "Byte transparency",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "3a69d9e8661fe5c9",
+      "received": "3a69d9e8661fe5c9",
+      "bytes": 33554437,
+      "seconds": 0.18
+     },
+     "seconds": 0.33,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "3a69d9e8661fe5c9",
+      "received": "3a69d9e8661fe5c9",
+      "bytes": 33554437,
+      "seconds": 0.15
+     },
+     "seconds": 0.32,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "3a69d9e8661fe5c9",
+      "received": "3a69d9e8661fe5c9",
+      "bytes": 33554437,
+      "seconds": 0.18
+     },
+     "seconds": 0.33,
+     "detector_ok": true,
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "3a69d9e8661fe5c9",
+      "received": "3a69d9e8661fe5c9",
+      "bytes": 33554437,
+      "seconds": 0.17
+     },
+     "seconds": 0.31,
+     "detector_ok": true,
+     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)"
+    }
+   },
+   "same_bytes_all_builds": true
+  },
+  {
+   "name": "HTTP request in 1-byte writes",
+   "group": "Fragmentation",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "4f1133495946c114",
+      "received": "4f1133495946c114",
+      "bytes": 51
+     },
+     "seconds": 0.21,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "4f1133495946c114",
+      "received": "4f1133495946c114",
+      "bytes": 51
+     },
+     "seconds": 0.21,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "4f1133495946c114",
+      "received": "4f1133495946c114",
+      "bytes": 51
+     },
+     "seconds": 0.21,
+     "detector_ok": true,
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "4f1133495946c114",
+      "received": "4f1133495946c114",
+      "bytes": 51
+     },
+     "seconds": 0.21,
+     "detector_ok": true,
+     "detector": "client: budget_exhausted (engine) \u00b7 server: budget_exhausted (engine) \u00b7 never left at 'detecting'"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "sent": "4f1133495946c114",
+      "received": "4f1133495946c114",
+      "bytes": 51
+     },
+     "seconds": 0.21,
+     "detector_ok": true,
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+    }
+   },
+   "same_bytes_all_builds": true
+  },
+  {
+   "name": "Silent tunnel past the 3 s window",
+   "group": "Expiry",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "quiet_seconds": 4.2
+     },
+     "seconds": 4.2,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "quiet_seconds": 4.2
+     },
+     "seconds": 4.2,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "quiet_seconds": 4.2
+     },
+     "seconds": 4.2,
+     "detector_ok": true,
+     "detector": "client: incomplete (closed) \u00b7 server: incomplete (closed)"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "quiet_seconds": 4.2
+     },
+     "seconds": 4.2,
+     "detector_ok": true,
+     "detector": "client: incomplete (expired) \u00b7 server: incomplete (expired)"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "quiet_seconds": 4.2
+     },
+     "seconds": 4.2,
+     "detector_ok": true,
+     "detector": "client: incomplete (closed) \u00b7 server: incomplete (closed) \u00b7 no bytes reached the engine"
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "SSRF guard: private and reserved targets",
+   "group": "Security parity",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "status": {
+       "127.0.0.1:19090": 403,
+       "10.0.0.1:80": 403,
+       "198.18.0.1:80": 403,
+       "169.254.169.254:80": 403
+      }
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "status": {
+       "127.0.0.1:19090": 403,
+       "10.0.0.1:80": 403,
+       "198.18.0.1:80": 403,
+       "169.254.169.254:80": 403
+      }
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "status": {
+       "127.0.0.1:19090": 403,
+       "10.0.0.1:80": 403,
+       "198.18.0.1:80": 403,
+       "169.254.169.254:80": 403
+      }
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "no tunnel: nothing to observe"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "status": {
+       "127.0.0.1:19090": 403,
+       "10.0.0.1:80": 403,
+       "198.18.0.1:80": 403,
+       "169.254.169.254:80": 403
+      }
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "no tunnel: nothing to observe"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "status": {
+       "127.0.0.1:19090": 403,
+       "10.0.0.1:80": 403,
+       "198.18.0.1:80": 403,
+       "169.254.169.254:80": 403
+      }
+     },
+     "seconds": 0.0,
+     "detector_ok": true,
+     "detector": "no tunnel: nothing to observe"
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "300 short tunnels, 50 at a time",
+   "group": "Resource pressure",
+   "results": {
+    "A": {
+     "traffic_ok": true,
+     "detail": {
+      "flows": 300,
+      "failed": 0
+     },
+     "seconds": 0.54,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "B": {
+     "traffic_ok": true,
+     "detail": {
+      "flows": 300,
+      "failed": 0
+     },
+     "seconds": 0.55,
+     "detector_ok": true,
+     "detector": "observation off: no detector records"
+    },
+    "C": {
+     "traffic_ok": true,
+     "detail": {
+      "flows": 300,
+      "failed": 0
+     },
+     "seconds": 0.57,
+     "detector_ok": true,
+     "detector": "300 records, 0 flows still held by the engine afterwards"
+    },
+    "D": {
+     "traffic_ok": true,
+     "detail": {
+      "flows": 300,
+      "failed": 0
+     },
+     "seconds": 0.5,
+     "detector_ok": true,
+     "detector": "300 records, 0 flows still held by the engine afterwards"
+    },
+    "E": {
+     "traffic_ok": true,
+     "detail": {
+      "flows": 300,
+      "failed": 0
+     },
+     "seconds": 0.51,
+     "detector_ok": true,
+     "detector": "300 records, 0 flows still held by the engine afterwards"
+    }
+   },
+   "same_bytes_all_builds": null
+  }
+ ],
+ "state": "finished",
+ "finished": "2026-11-14 15:02:48 UTC"
+}
