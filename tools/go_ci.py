@@ -136,8 +136,10 @@ def report_problems(report, expected_cases=None):
     all-unsupported answer set once passed it): it must have compared cases, matched every one and
     listed no mismatch or extra result. Closing R2 itself (an explicit gap allowlist) is the engine's.
     With `expected_cases` (the committed fixtures' count) the report must also account for exactly
-    those cases, compared plus unsupported plus exempted, none missing, so it describes this checkout's
-    fixtures (issue #7 M10 review of eaa8a99)."""
+    those cases, compared plus unsupported, none missing, so it describes this checkout's fixtures
+    (issue #7 M10 review of eaa8a99). `exempted` is not a case count: compare.py counts the difference
+    paths an approved delta exempts inside cases already counted as compared, so it stays out of the
+    sum and is not constrained here."""
     if not isinstance(report, dict):
         return ["{} is not a JSON object".format(REPORT)]
     problems = []
@@ -154,11 +156,11 @@ def report_problems(report, expected_cases=None):
         if report.get(key):
             problems.append("the parity report lists {} {}".format(key, report[key] if isinstance(report[key], int) else len(report[key])))
     if expected_cases is not None:
-        parts = [report.get(key, 0) for key in ("compared", "unsupported", "exempted")]
+        parts = [report.get(key, 0) for key in ("compared", "unsupported")]
         if not all(isinstance(part, int) and not isinstance(part, bool) for part in parts):
             problems.append("the parity report's case counts are not integers: {!r}".format(parts))
         elif sum(parts) != expected_cases:
-            problems.append("the parity report accounts for {} cases (compared + unsupported + exempted) but {} holds {}: "
+            problems.append("the parity report accounts for {} cases (compared + unsupported) but {} holds {}: "
                             "it does not describe this checkout's fixtures".format(sum(parts), FIXTURES, expected_cases))
         if report.get("missing"):
             problems.append("the parity report lists missing {}".format(report["missing"]))
@@ -266,17 +268,20 @@ def self_test():
         assert any(expected in problem for problem in found), (label, found)
     counted = dict(current)
     assert report_problems(counted, 5365) == []
+    # an approved delta exempts difference paths inside compared cases (engine lane, compare.py)
+    assert report_problems(dict(counted, exempted=3), 5365) == []
     assert report_problems(good, 4253) == []
     for label, bad, expected in (
             ("other fixtures", counted, "accounts for 5365 cases"),
             ("a missing case", dict(counted, missing=1), "lists missing 1"),
-            ("a boolean count", dict(counted, unsupported=True), "not integers")):
+            ("a boolean count", dict(counted, unsupported=True), "not integers"),
+            ("exempted counted as cases", dict(counted, compared=5184, matched=5184, exempted=1), "accounts for 5364 cases")):
         found = report_problems(bad, 5366 if label == "other fixtures" else 5365)
         assert any(expected in problem for problem in found), (label, found)
     stale_regression()
     assert directive("module x\n\ngo 1.27\n") == "1.27"
     assert GO_VERSION.search("go version go1.27.4 darwin/arm64 ").group(1) == "1.27.4"
-    print("go_ci self-test: ok ({} tree refusals, 14 report refusals, 3 end-to-end runs)".format(len(cases) + 1))
+    print("go_ci self-test: ok ({} tree refusals, 15 report refusals, 3 end-to-end runs)".format(len(cases) + 1))
     return 0
 
 
