@@ -303,6 +303,16 @@ Taken before M5 so that session records become comparable for every family as it
 | Fixtures | implemented | `cases.py correlation_session_cases()`: 20 sessions (CONNECT tunnel, coalesced ServerHello, early ClientHello, refusal, GET 200; LDAP named, unnamed, early and coalesced ClientHello, refusal, other message id, whoami success, response before request, bind followed by a response; FIN and no-FIN variants), 5385 cases in total. |
 | Differential result | implemented | `make parity-go`: all 20 correlation sessions match with packets, peer events and records. One-off checks outside the committed set: 12,000 random conversations (seeds 5, 11 and 12, 4,000 each; random message ids, names, result codes, coalescing, interleaving, segment splits and FIN placement) matched. |
 
+### Batch 19 — SMB1 and SMB2/3
+
+| item | state | evidence |
+|---|---|---|
+| Parsers | implemented | `NewSMB1` (`windows.SMB1Parser`) and `NewSMB2` (`network.SMB2Parser`) in `go/internal/protocols/framed/smb.go`: NEGOTIATE requests and responses in either direction (SMB1 dialect strings bounded by `min(max_headers, 32)` and the 17/13/1-word response layouts; SMB2 dialect offers, fixed fields, 3.1.1 negotiate contexts with preauthentication, cipher and signing posture, the per-dialect encryption row), then a watch of exactly one more frame: a SESSION_SETUP whose security buffer goes through `classifyToken` (SMB1 also reports legacy LM/NTLM response lengths and the response action; SMB2 the session flags and the signed-only-on-final-success rule). Only closed labels are emitted. Field reads use `le`, which reads short slices as Python's `int.from_bytes` does. |
+| Fixtures | implemented | `cases.py smb_vectors()`: 101 vectors (negotiate variants and every rejection branch of both parsers, session setups with each token layout and each rejection) as streams (whole, without FIN, 1-byte, 7-byte, truncated), plus a dialect budget and a byte budget (512 cases, 5897 total). |
+| Go tests | implemented | `smb_test.go`: short-slice reads, refinement with closed labels only, the watch ending on a foreign frame without consuming it, a bad token, the SESSION_SETUP byte budget; both parsers join `FuzzFramedNeverPanics`. |
+| Differential result | implemented | `make parity-go` with smb1 and smb2 claimed: **5785 compared, 5785 matched, 112 listed gaps**; the 68 SMB cases previously listed as gaps are answered (the gap list rejected them as stale until regenerated). Matched on the first run. One-off check outside the committed set: 40,000 seeded mutations biased to header and fixed-field offsets of both frames (two seeds), all matched. |
+| Not claimed | — | SMB2 compounded requests, signed session binding and SMB 3.1.1 request priority remain outside the Python profile and the port. |
+
 ## Independent review of 2026-11-14 (snapshot `dbe20f3`, issue #2 comment 6877159227)
 
 Each finding was reproduced before it was changed. Commits are on `claude/go-migration` after batch 18 (`a2cf4e8`).
@@ -322,7 +332,7 @@ TLS library) are not reproduced here and are not changed.
 
 ## M5 batches 18+ / M7+ — next
 
-Remaining registry batches (8 families: HTTP2, SMB1, SMB2, RDP, ISO-TSAP, QUIC, DTLS, IKEv2, each with dedicated review) and the host-side shift correlation (LDAP StartTLS, HTTP CONNECT) with record-level parity per batch; passive
+Remaining registry batches (6 families: HTTP2, RDP, ISO-TSAP, QUIC, DTLS, IKEv2, each with dedicated review) and the HTTP/2 prior-knowledge correlation with record-level parity per batch; passive
 TLS decryption (M7); frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
 
 ## Open decisions and blockers
