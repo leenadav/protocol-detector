@@ -178537,6 +178537,152 @@
   },
   {
    "chunks": [
+    "370000000100000000000000dd07000001000000001e0000001070696e67000100000002246462000600000061646d696e0000327e69a8"
+   ],
+   "config": {
+    "max_crc32c_bytes": 0
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "MongoDB CRC-32C input exceeds checksum budget",
+       "scope": "initial_message",
+       "status": "budget_exhausted",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "MongoDB CRC-32C input exceeds checksum budget",
+     "scope": "initial_message",
+     "status": "budget_exhausted",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 55,
+     "bytes_received": 55,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": "mongodb",
+   "id": "stream/database-options/mongodb-crc-disabled",
+   "kind": "stream",
+   "label": "mongodb"
+  },
+  {
+   "chunks": [
+    "330000000100000000000000dd07000000000000001e0000001070696e67000100000002246462000600000061646d696e0000"
+   ],
+   "config": {
+    "max_crc32c_bytes": 0
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": "mongodb",
+       "encryption": null,
+       "evidence": [
+        [
+         "application_protocol",
+         "mongodb",
+         "wire",
+         "structural"
+        ],
+        [
+         "candidate_hint",
+         "mongodb",
+         "caller",
+         "context"
+        ],
+        [
+         "mongodb_message",
+         "request",
+         "wire:header",
+         "structural"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "MongoDB OP_MSG framing and BSON validated; command semantics, authentication and subsequent messages unverified",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": "mongodb",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "mongodb",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "mongodb",
+       "caller",
+       "context"
+      ],
+      [
+       "mongodb_message",
+       "request",
+       "wire:header",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "MongoDB OP_MSG framing and BSON validated; command semantics, authentication and subsequent messages unverified",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 51,
+     "bytes_received": 51,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": "mongodb",
+   "id": "stream/database-options/mongodb-crc-disabled-plain",
+   "kind": "stream",
+   "label": "mongodb"
+  },
+  {
+   "chunks": [
     "c60000000100000000000000dd0700000000000000b10000001066696e640000000000037100940000000364008c000000036400840000000364007c000000036400740000000364006c000000036400640000000364005c000000036400540000000364004c000000036400440000000364003c000000036400340000000364002c000000036400240000000364001c000000036400140000000364000c00000010780000000000000000000000000000000000000000000000022464620002000000610000"
    ],
    "config": {},

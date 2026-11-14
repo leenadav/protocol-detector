@@ -91,6 +91,29 @@ class ParityHarnessTests(unittest.TestCase):
             for item in items:
                 self.assertTrue(item.get("path") and item.get("justification"), item)
 
+    def test_go_config_ranges_equal_the_python_limits(self):
+        """Review R4 (2026-11-14): both runtimes enforce one range table; each bound is probed on the Python Config."""
+        import re
+        from protocol_engine import Config
+        source = (CASES.parent.parent.parent / "go" / "internal" / "contracts" / "contracts.go").read_text(encoding="utf-8")
+        table = source[source.index("var ConfigRanges"):source.index("func (c Config) integer")]
+        ranges = [(name, int(low), int(high)) for name, low, high in re.findall(r'\{"([a-z0-9_]+)", (\d+), (\d+)\}', table)]
+        self.assertEqual(len(ranges), 9)
+
+        def accepted(name, value):
+            try:
+                Config(**{name: value})
+                return True
+            except ValueError:
+                return False
+
+        for name, low, high in ranges:
+            with self.subTest(option=name):
+                self.assertEqual([accepted(name, value) for value in (low - 1, low, low + 1, high - 1, high, high + 1)],
+                                 [False, True, True, True, True, False])
+        integers = sorted(name for name, value in vars(Config()).items() if type(value) is int)
+        self.assertEqual(sorted(name for name, _, _ in ranges), integers)
+
 
 if __name__ == "__main__":
     unittest.main()

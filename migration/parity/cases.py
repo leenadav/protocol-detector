@@ -1201,6 +1201,8 @@ def database_cases():
         deep = _bson([(3, b"d", deep)])
     for name, data, config in (("mongodb-field-budget", _mongo(b"\x00" + many), {"max_headers": 4}),
                                ("mongodb-crc-budget", _mongo(b"\x00" + ping, flags=1), {"max_crc32c_bytes": 16}),
+                               ("mongodb-crc-disabled", _mongo(b"\x00" + ping, flags=1), {"max_crc32c_bytes": 0}),
+                               ("mongodb-crc-disabled-plain", _mongo(b"\x00" + ping), {"max_crc32c_bytes": 0}),
                                ("mongodb-depth", _mongo(b"\x00" + _bson([(16, b"find", bytes(4)), (3, b"q", deep), (2, b"$db", _bson_string(b"a"))])), {}),
                                ("mongodb-name-budget", _mongo(b"\x00" + _bson([(16, b"x" * 40, bytes(4)), (2, b"$db", _bson_string(b"a"))])), {"max_line": 16})):
         cases.append({"id": "stream/database-options/" + name, "kind": "stream", "label": "mongodb", "chunks": [data.hex()], "hint": "mongodb",

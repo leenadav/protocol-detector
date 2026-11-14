@@ -213,16 +213,52 @@ var configNames = map[string]bool{"max_bytes": true, "max_updates": true, "max_l
 	"retain_contexts": true, "signature_bytes": true, "fingerprints": true, "quic_decrypt": true, "heuristics": true,
 	"heuristic_bytes": true, "certificates": true, "continuation": true, "max_transactions": true}
 
-// Validate rejects limits that would disable a bound.
-func (c Config) Validate() error {
-	for name, value := range map[string]int{"max_bytes": c.MaxBytes, "max_updates": c.MaxUpdates, "max_line": c.MaxLine,
-		"max_headers": c.MaxHeaders, "max_crc32c_bytes": c.MaxCRC32CBytes, "max_transactions": c.MaxTransactions} {
-		if value <= 0 {
-			return errs.New(errs.Invalid, errs.ScopeDirection, fmt.Sprintf("%s must be positive", name))
-		}
+// configRange is one integer option's inclusive range; the table is protocol_engine/model.Config.__post_init__.
+type configRange struct {
+	Name      string
+	Low, High int
+}
+
+// ConfigRanges lists every integer option with its inclusive range, in the order of the Python table (review R4,
+// 2026-11-14: Go rejected the valid max_crc32c_bytes=0, which disables checksum work, and had no upper bounds, so
+// max_bytes=1<<40 was accepted where Python caps it at 1 MiB).
+var ConfigRanges = []configRange{
+	{"max_bytes", 64, 1048576}, {"max_updates", 1, 1000000}, {"max_line", 16, 65536}, {"max_headers", 1, 4096},
+	{"max_crc32c_bytes", 0, 1048576}, {"signature_bytes", 16, 65536}, {"heuristic_bytes", 16, 65536},
+	{"continuation", 0, 1048576}, {"max_transactions", 1, 4096},
+}
+
+func (c Config) integer(name string) int {
+	switch name {
+	case "max_bytes":
+		return c.MaxBytes
+	case "max_updates":
+		return c.MaxUpdates
+	case "max_line":
+		return c.MaxLine
+	case "max_headers":
+		return c.MaxHeaders
+	case "max_crc32c_bytes":
+		return c.MaxCRC32CBytes
+	case "signature_bytes":
+		return c.SignatureBytes
+	case "heuristic_bytes":
+		return c.HeuristicBytes
+	case "continuation":
+		return c.Continuation
+	case "max_transactions":
+		return c.MaxTransactions
 	}
-	if c.SignatureBytes < 0 || c.HeuristicBytes < 0 || c.Continuation < 0 {
-		return errs.New(errs.Invalid, errs.ScopeDirection, "byte options cannot be negative")
+	panic("contracts: no integer option " + name)
+}
+
+// Validate applies the Python resource limits: every integer option inside its inclusive range. A shifted phase
+// keeps the same table (the engine opens one only with at least 64 bytes of budget left, as Python does).
+func (c Config) Validate() error {
+	for _, r := range ConfigRanges {
+		if value := c.integer(r.Name); value < r.Low || value > r.High {
+			return errs.New(errs.Invalid, errs.ScopeDirection, fmt.Sprintf("Invalid inspection resource limits: %s must be %d..%d", r.Name, r.Low, r.High))
+		}
 	}
 	return nil
 }
