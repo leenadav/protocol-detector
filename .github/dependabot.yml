@@ -11,13 +11,6 @@ updates:
     groups:
       actions:
         patterns: ["*"]
-    ignore:
-      # Rule 7 of tools/check_workflow_policy.py keeps upload-artifact and download-artifact (the
-      # release handoff) on one major version. download-artifact v8 shipped before any upload-artifact
-      # v8, so a grouped PR that moves only the download side fails workflow-lint (PR #23). Remove this
-      # entry, and bump both together, once actions/upload-artifact publishes v8.
-      - dependency-name: actions/download-artifact
-        update-types: ["version-update:semver-major"]
   - package-ecosystem: pip
     directory: /
     schedule:

@@ -45,7 +45,7 @@ only with green checks is a review discipline, not a guarantee.
 | Release provenance: a `v*` tag publishes only a commit already on `main` | enforced since 2026-10-23, when Lee disabled the legacy `release` workflow (Actions workflow id 392108448, `.github/workflows/release.yml`, state `disabled_manually`). `publish-release.yml` runs the check (`tools/check_release_ref.py`; rule 4 of `tools/check_workflow_policy.py` pins its exact env and run lines, the publish job's condition and its dependency path, and the whole `release-gate` job it runs in: keys, permissions, runner and every step in order, so no earlier step or repository test of that job can shadow its `gh` or `python` through the runner's per-step path or env file). A tag push runs the workflow file at the tagged commit, and older commits (for example 214042f, 6e1cd61, or `main` at 70e7356) still hold the unguarded `.github/workflows/release.yml`; with that workflow disabled, a `v*` tag on them publishes nothing (`check_release_exposure.py --disabled .github/workflows/release.yml` reports no unguarded path on any of them, and `exposed` for `main` without the disable). Re-enabling the legacy workflow would reopen that path, so it must stay disabled. Rule 5 keeps the path out of the tree, so the disable never touches the controller. `python3 tools/check_release_exposure.py --ref <commit> [--disabled .github/workflows/release.yml]` models a tag on any commit without creating one |
 | Release checks: a `v*` tag publishes only a commit whose `ci` and `codeql` workflows passed | enforced by `publish-release.yml` for tags on commits that carry it (`tools/check_release_checks.py`, with `actions: read` on the read-only `release-gate` job). Results are bound to the workflow's identity, not to a job name another workflow could reuse: only `push` runs of `.github/workflows/ci.yml` and `.github/workflows/codeql.yml` for that exact commit count. A push run executes the commit's own copy of the file, and a `ci` run succeeds only when its `ci gate (all jobs)` does. At least one run of each must have completed, and the latest completed one must have succeeded. A run GitHub still shows as in progress neither passes nor blocks: a stale job state was observed on 6e1cd61 after its workflow run completed. A missing, only-pending, failed or cancelled run, or an unreadable API answer, fails the tag. Rule 4 pins the step and its `release-gate` job. With the legacy `release` workflow disabled (2026-10-23), this holds for every tag; re-enabling it would reopen older commits. Tagging a commit whose ci or CodeQL is still running, or was cancelled by a newer push, fails the release; re-run it once a completed run exists |
 | Attestation verified before publishing: every released file's provenance attestation must verify, bound to this controller workflow, the tag ref, the commit and a GitHub-hosted runner, before `gh release create` runs | enforced by `publish-release.yml` for tags on commits that carry it: `gh attestation verify` with `--signer-workflow`, `--source-ref`, `--source-digest` and `--deny-self-hosted-runners`. Rule 8 of the policy makes the publish job an allowlist: exactly its six steps, in order, each pinned by action identity or exact env and run lines, so no other step can publish before verification. It also enforces that only the publish job holds a write permission, that the workflow env sets no `BASH_ENV` or anything beyond the two Python variables, and that the controller references no `secrets`, `vars`, `inputs` or `client_payload` context in any syntax or case (`secrets['X']` and `toJSON(secrets)` included), so no credential but each job's own GITHUB_TOKEN can authenticate. The publish path only runs on a real tag, so a build-job dry-run step checks that the runner's `gh` supports every flag used. Same condition as provenance: the legacy `release` workflow stays disabled |
-| Consistent action pins: one SHA and tag per action repository across every workflow; `upload-artifact` and `download-artifact` (the release handoff) on one major version | enforced by rule 7 of `tools/check_workflow_policy.py` (CI `workflow-lint`, `make check`, pre-commit). A partial bump fails before merge. Dependabot PR #8, computed before the release split, would have moved only the upload side to v7 |
+| Consistent action pins: one SHA and tag per action repository across every workflow; `upload-artifact` and `download-artifact` (the release handoff) on one major version or a vendor-documented pairing (`ARTIFACT_COMPATIBLE`: upload v7 with download v8), and no `digest-mismatch` input below `error` | enforced by rule 7 of `tools/check_workflow_policy.py` (CI `workflow-lint`, `make check`, pre-commit). A partial bump fails before merge. Dependabot PR #8, computed before the release split, would have moved only the upload side to v7 |
 | Workflow text means what GitHub reads: no YAML encoding that decodes into something the line-based policy rules did not see | enforced by rule 9 of `tools/check_workflow_policy.py`: outside literal block scalars, no backslash (so no `\u0073ecrets`-style escapes or escaped line breaks), and no tag, anchor, alias, merge key or explicit key. No flow mapping is allowed at all outside `${{ }}` expressions, and a flow sequence must be one line of plain or quoted scalars, so `push: {? tags: ["v*"]}` cannot hide a trigger from rule 5. No workflow may authenticate with a stored credential. On every line, comments included, the words `secrets` and `vars` may appear only in one job name; since item 21 no workflow references `${{ secrets.GITHUB_TOKEN }}` either, and a step authenticates as the job with `${{ github.token }}`. Comments are scanned because inside a `run: |` block a `#` line is script data, such as here-document input that Actions interpolates, not a YAML comment. This is a word ban rather than an expression parser, so no expression grammar can route around it: a quoted `}}` in a `format()` string, multi-line expressions, `secrets: inherit` and `if:` conditions are all covered. A read-only workflow therefore cannot publish with a PAT. Rule 5 also keeps release-relevant write scopes (`contents`, `id-token`, `attestations`, `packages`, `actions`, `deployments`, `statuses`, `write-all`) out of every workflow but the controller. The credential, trigger, pin and pinned-step rules therefore read the same text GitHub evaluates |
 | Scheduled release audit: every `v*` tag points at a commit on `main`; every published release names an existing, on-`main` `v*` tag and that tag's current commit; and every downloaded file, hidden ones included, carries an attestation from `publish-release.yml` for that tag ref and commit | enforced after the fact, once merged to `main`, by `.github/workflows/release-audit.yml`. It runs daily and on manual dispatch. A scheduled run always uses the default branch's copy, so no tag, legacy `release.yml` or branch-edited workflow can swap it. It holds read-only permissions (`contents`, `attestations: read`); `tools/release_audit.py` decides, and fails closed on unreadable facts. A failing run is GitHub's notification to the owner. Rule 10 of the policy keeps the schedule, pins the gather-and-decide step and pins the audit job whole (keys, permissions, runner, harden-runner, checkout and setup-python before that step and nothing else, no workflow env, no other job), so no step can shadow the gather step's `gh` and fabricate verified attestations. This is detective: it reports a bad release but cannot stop one being published |
 | The policy reads what GitHub reads: the line parser in `tools/check_workflow_policy.py` and a real YAML parser agree on every fact the rules use | enforced by `tools/check_workflow_yaml.py` in CI `workflow-lint` and `make workflow-lint`, with the hash-pinned PyYAML. Rule 11 of the policy pins the CI step, including its own toolchain install, and forbids `if:` or `continue-on-error` on it or on its job, so the step cannot be dropped or masked while the gate stays green. `make check` does not run it because it needs the dev toolchain. Every workflow is parsed both ways. Any disagreement fails: top-level and job keys, job ids, `needs`, tag triggers, permissions, each step's keys, `name`, `if`, `uses`, `env`, `with` and `run` lines, or the `uses` list. The stored-credential ban is also re-run over every decoded key and string. Each review finding against the line rules was such a disagreement, so this closes the class rather than one spelling. Limit: PyYAML is YAML 1.1 and GitHub's parser is YAML 1.2; the one difference that matters here (`on` as a boolean) is normalized |
@@ -226,6 +226,13 @@ issue #2, and follows the same gated loop:
      later SHA that fixes each finding is recorded. A missing review, green CI or a merge
      is never approval: item 25 round 2 (`13fc8ef` / `70eeab3`) stays pending although
      PR #13 merged.
+   - Coordination, reviews, engineering decisions and actions that would otherwise go to Lee
+     go to Codex as a `CODEX_ACTION_REQUEST` in issue #7 (or #2 for the engine). It names the
+     exact SHA, the requested action, the reason or blocker and the evidence, is linked on the
+     current PR, and the other lane is notified. Codex handles authorized work and escalates
+     only approvals that are genuinely Lee's. Nothing here bypasses tool or security
+     restrictions or authorizes a merge, deployment or permission change, and independent
+     work continues meanwhile. This replaces step 7's "permission questions go to Codex".
    - Engine findings that need CI changes (`.github/`, the CI tools, the locks) go to this
      lane; CI needs in `go/`, `migration/` or product code go to the engine lane, as a patch
      or a pull request into its branch, never a direct push.
@@ -255,7 +262,8 @@ the review loop above.
    the release files between jobs; Dependabot can move them to different
    majors (open PR #8 moves upload to v7 and leaves download at v4). A
    policy rule should require matching majors, or the pair should be
-   updated together.
+   updated together. (Since item 26, rule 7 accepts a matching major or a vendor-documented
+   pairing, and only upload v7 with download v8 is listed.)
 4. Post-publish verification (three review rounds used; the late finding was carried by items 5 and 6, which resolved it; verification runs after
    attesting and before publishing, so a failed verification publishes nothing). After `attest-build-provenance`, verify the
    attestation of every published file with `gh attestation verify` in the
@@ -534,9 +542,9 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      the result is a false positive, but CodeQL cannot see that; initialising `command = None` before
      the branch clears it. No suppression is added (rule 16), so the CodeQL job stays red until the
      engine lane lands that line.
-26. Dependabot PR #23, seven grouped action updates (Lee, 2026-11-14). Six are taken on
-   `claude/cicd-next`, one is held; each major bump was checked against its `action.yml` and
-   changelog at the pinned SHA:
+26. Dependabot PR #23, seven grouped action updates (Lee, 2026-11-14). All seven are taken on
+   `claude/cicd-next`; each major update was checked against its `action.yml` and changelog at
+   the pinned SHA:
    - `actions/setup-node` v6.5.0 → v7.1.0 (`presentation-ui`): ESM rewrite, node-version
      validation, new `cache-primary-key`/`cache-matched-key` outputs; no input removed, and
      `package-manager-cache: false` still disables caching.
@@ -551,11 +559,24 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      `gh attestation verify --signer-workflow --source-ref --source-digest
      --deny-self-hosted-runners` step apply. The new `create-storage-record` input needs
      `push-to-registry` and does nothing here. Not exercised until the first tag release.
-   - **Held:** `actions/download-artifact` v7.0.0 → v8.0.2. No `upload-artifact` v8 exists, and
-     rule 7 keeps the release handoff pair on one major, which is why PR #23's workflow-lint
-     failed. The rule stays; `.github/dependabot.yml` ignores download-artifact majors until
-     upload-artifact v8 ships, at which point both move together (v8 adds `digest-mismatch:
-     error` by default, a stricter download).
+   - `actions/download-artifact` v7.0.0 → v8.0.2 (`presentation-ui` and the release publish job),
+     taken in a second commit after the independent triage (issue #7 comment 6877234718). PR #23
+     failed rule 7, which then required one major for the release-handoff pair, and no
+     `upload-artifact` v8 exists. The first commit held the update. The triage pointed out that a
+     policy assertion is not a runtime incompatibility, and PR #23's hosted run had already
+     downloaded the v7 upload with v8. The vendor documents the pairing:
+     - download-artifact v8.0.2's README pairs `upload-artifact@v7` with `download-artifact@v8` in
+       its examples, including for `archive: false` files, which only upload v7 writes;
+     - upload-artifact v7.0.2 and download-artifact v8.0.2 build on the same `@actions/artifact`
+       ^6.3.1, while the download v7.0.0 it replaces was on ^5.0.0.
+
+     Rule 7 now allows a same-major pair or a pairing listed with its evidence in
+     `ARTIFACT_COMPATIBLE`, and only (7, 8) is listed. Anything else still fails closed: upload v8
+     with download v7, and upload v4 with download v8. Rule 7 also refuses a `digest-mismatch`
+     input other than `error`, which is v8's default: a download whose digest differs from the
+     server's fails. The publish job's SHA256SUMS re-check stays as well. Self-test cases cover the
+     allowed pair, both refusals and six spellings of a relaxed `digest-mismatch`.
+     `.github/dependabot.yml` needs no ignore.
    - PR #23's other red check, the Go drift job, comes from the Go 1.27.4 release (item 23's run on
      `main` 27c5f2f; `5f45214` moves the pin). On `main` 201a552 the toolchain audit also failed:
      govulncheck found GO-2026-6859 in `net/http@go1.27.3` in the gitleaks build, fixed in 1.27.4
