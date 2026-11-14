@@ -1,7 +1,7 @@
 From 7b9a9afa7dbdc44fc3b5fefde0964b35d421ac35 Mon Sep 17 00:00:00 2001
 From: lab <lab@localhost>
 Date: Sat, 14 Nov 2026 15:00:42 +0000
-Subject: [PATCH 1/3] LAB: observe CONNECT-bypass tunnels with a protocol
+Subject: [PATCH 1/4] LAB: observe CONNECT-bypass tunnels with a protocol
  detector (local only)
 
 Local lab branch; not for upstream as-is. Culvert-owned interface in
@@ -555,7 +555,7 @@ index c8f328c..edf22f0 100644
 From b70cd3e7035c55fa41ea193d801f5d7716f4122d Mon Sep 17 00:00:00 2001
 From: lab <lab@localhost>
 Date: Sat, 14 Nov 2026 15:29:05 +0000
-Subject: [PATCH 2/3] LAB: carry the detector's evidence and offered ALPN in
+Subject: [PATCH 2/4] LAB: carry the detector's evidence and offered ALPN in
  the lab record
 
 Hostname-class evidence goes through redactHost like the hostname field.
@@ -641,7 +641,7 @@ index 40008d6..05c6c33 100644
 From 777fa6bc727b6efb411b6b35121ea1ab02ad3e60 Mon Sep 17 00:00:00 2001
 From: lab <lab@localhost>
 Date: Sat, 14 Nov 2026 15:56:55 +0000
-Subject: [PATCH 3/3] LAB: protocol detection in the log entry, the UI and the
+Subject: [PATCH 3/4] LAB: protocol detection in the log entry, the UI and the
  access rules
 
 Local lab branch; not for upstream as-is.
@@ -2669,6 +2669,214 @@ index 45680ca..301dff7 100644
  	// Schedule timezone is validated for both rule types.
  	if rule.Schedule != nil && rule.Schedule.Timezone != "" {
  		if _, err := time.LoadLocation(rule.Schedule.Timezone); err != nil {
+-- 
+2.43.0
+
+
+From 1aa9d0e3c8dbefdd25ed4fb266aa7c88da887527 Mon Sep 17 00:00:00 2001
+From: lab <lab@localhost>
+Date: Sat, 14 Nov 2026 16:44:54 +0000
+Subject: [PATCH 4/4] LAB: fixes from Codex's advisory read of the lab patch
+
+- The enforce hold never exceeds its 16 KiB budget: reads are sized to what
+  is left (it could reach 20479 bytes before). Regression test.
+- The observation window is initialised before the expiry is computed (the
+  first tunnel could pair a configured timer with the default expiry, and
+  concurrent first tunnels raced on the value).
+- A write that accepts fewer bytes without an error is treated as
+  io.ErrShortWrite at both write sites.
+- Only an identification can match a rule's allowed list. outside_profile
+  names a family from the prefix alone: it can refuse a tunnel, never allow
+  one. Decision-table tests.
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UqaXYypys1mDv9szgRtF6T
+---
+ protodetect_lab.go      | 41 ++++++++++++++++++---------
+ protodetect_lab_test.go | 62 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 90 insertions(+), 13 deletions(-)
+
+diff --git a/protodetect_lab.go b/protodetect_lab.go
+index 2bd6f6f..a87a84f 100644
+--- a/protodetect_lab.go
++++ b/protodetect_lab.go
+@@ -26,6 +26,7 @@ package main
+ import (
+ 	"encoding/json"
+ 	"errors"
++	"io"
+ 	"net"
+ 	"os"
+ 	"strconv"
+@@ -101,8 +102,11 @@ func labBeginObservation(host string, match *PolicyMatch) *labObservation {
+ 	if match != nil && match.Rule != nil && match.Action == ActionAllow {
+ 		restrict = match.Rule.AppRestriction
+ 	}
++	// labObs() runs the one-time initialisation that also sets labWindow; it must come before the
++	// expiry is computed, or the first tunnel pairs a configured timer with a default expiry.
++	obs := labObs()
+ 	o := &labObservation{restrict: restrict, expiry: monoNanos() + int64(labWindow)}
+-	if obs := labObs(); obs != nil {
++	if obs != nil {
+ 		if flow, ok := obs.Begin(host); ok {
+ 			o.flow = flow
+ 			// The timer releases the engine's state when the window ends even if both relay
+@@ -165,17 +169,17 @@ func (o *labObservation) decide() bool {
+ 		outcome, family, _ = o.flow.Peek(protodetect.ClientToServer)
+ 	}
+ 	block := false
++	listed := false
++	for _, f := range o.restrict.Allow {
++		listed = listed || (family != "" && f == family)
++	}
+ 	switch {
+-	case (outcome == "identified" || outcome == "outside_profile") && family != "":
+-		allowed := false
+-		for _, f := range o.restrict.Allow {
+-			allowed = allowed || f == family
+-		}
+-		if allowed {
+-			o.reason = "protocol_allowed"
+-		} else {
+-			block, o.reason = true, "protocol_not_allowed"
+-		}
++	case outcome == "identified" && listed:
++		o.reason = "protocol_allowed"
++	case (outcome == "identified" || outcome == "outside_profile") && family != "" && !listed:
++		// A named other protocol. outside_profile comes from the prefix alone, before that family's
++		// structure is validated; that is enough to refuse it, never enough to allow it.
++		block, o.reason = true, "protocol_not_allowed"
+ 	default: // unknown, incomplete, budget exhausted, unsupported, failed, or no detector
+ 		block = o.restrict.Unknown == "block"
+ 		switch {
+@@ -201,7 +205,8 @@ func (o *labObservation) decide() bool {
+ // labTakePrebuffer handles the client bytes the HTTP server had already buffered. Observe mode: the
+ // engine is shown them and the caller forwards them exactly as before (it returns false). Enforce
+ // mode: they are held with the rest of the client's first bytes and the caller must NOT forward
+-// them (it returns true).
++// them (it returns true). The prebuffer is at most the HTTP server's read buffer (4 KiB), so it
++// always fits the hold budget; labHoldClient sizes its reads to what is left of that budget.
+ func (o *labObservation) labTakePrebuffer(b []byte) (held bool) {
+ 	if o == nil || len(b) == 0 {
+ 		return false
+@@ -265,7 +270,11 @@ func labHoldClient(o *labObservation, dst, src net.Conn, shared *atomic.Int64) (
+ 			wait = remaining
+ 		}
+ 		src.SetReadDeadline(time.Now().Add(wait)) //nolint:errcheck // surfaces as the next read error
+-		n, err := src.Read(buf)
++		room := labMaxBytes - len(o.held)         // never read past the hold budget: nothing read here may be dropped
++		if room > len(buf) {
++			room = len(buf)
++		}
++		n, err := src.Read(buf[:room])
+ 		if n > 0 {
+ 			shared.Store(monoNanos())
+ 			o.observe(protodetect.ClientToServer, buf[:n])
+@@ -296,6 +305,9 @@ func labHoldClient(o *labObservation, dst, src net.Conn, shared *atomic.Int64) (
+ 		return 0, false
+ 	}
+ 	wn, werr := dst.Write(o.held)
++	if werr == nil && wn < len(o.held) {
++		werr = io.ErrShortWrite // a Conn that accepts part of the bytes without an error: stop, never retry the chunk
++	}
+ 	o.held = nil
+ 	total = int64(wn)
+ 	if werr != nil || eof {
+@@ -339,6 +351,9 @@ func labObservedCopy(o *labObservation, d protodetect.Direction, dst, src net.Co
+ 		if n > 0 {
+ 			shared.Store(monoNanos())
+ 			wn, werr := dst.Write(buf[:n])
++			if werr == nil && wn < n {
++				werr = io.ErrShortWrite
++			}
+ 			total += int64(wn)
+ 			engineDone := o.observe(d, buf[:n])
+ 			if werr != nil {
+diff --git a/protodetect_lab_test.go b/protodetect_lab_test.go
+index 38236a2..3f81bd4 100644
+--- a/protodetect_lab_test.go
++++ b/protodetect_lab_test.go
+@@ -1,7 +1,12 @@
+ package main
+ 
+ import (
++	"bytes"
++	"io"
++	"net"
++	"sync/atomic"
+ 	"testing"
++	"time"
+ 
+ 	"github.com/KidCarmi/Culvert/internal/protodetect"
+ )
+@@ -60,6 +65,8 @@ func TestLabRestrictionDecisionTable(t *testing.T) {
+ 		{"other protocol, enforce", tlsOnly("enforce", "block"), stubFlow{"identified", "ssh"}, "blocked", "protocol_not_allowed", false},
+ 		{"other protocol, enforce, unknown=allow still blocks a NAMED protocol", tlsOnly("enforce", "allow"), stubFlow{"identified", "ssh"}, "blocked", "protocol_not_allowed", false},
+ 		{"outside profile is a named protocol", tlsOnly("enforce", "allow"), stubFlow{"outside_profile", "postgresql"}, "blocked", "protocol_not_allowed", false},
++		{"outside profile naming a LISTED family is not an identification: unknown action (block)", tlsOnly("enforce", "block"), stubFlow{"outside_profile", "tls"}, "blocked", "unknown_blocked", false},
++		{"outside profile naming a LISTED family is not an identification: unknown action (allow)", tlsOnly("enforce", "allow"), stubFlow{"outside_profile", "tls"}, "allowed", "unknown_allowed", true},
+ 		{"other protocol, monitor", tlsOnly("monitor", "block"), stubFlow{"identified", "ssh"}, "would_block", "protocol_not_allowed", true},
+ 		{"unknown, block", tlsOnly("enforce", "block"), stubFlow{"unknown", ""}, "blocked", "unknown_blocked", false},
+ 		{"unknown, allow", tlsOnly("enforce", "allow"), stubFlow{"unknown", ""}, "allowed", "unknown_allowed", true},
+@@ -127,3 +134,58 @@ func TestLabObservationOffIsNil(t *testing.T) {
+ 	}
+ 	o.labRelease()
+ }
++
++// pendingFlow never decides: the client direction stays "detecting", so only the hold budget ends the hold.
++type pendingFlow struct{ seen atomic.Int64 }
++
++func (p *pendingFlow) Observe(_ protodetect.Direction, b []byte) bool {
++	p.seen.Add(int64(len(b)))
++	return false
++}
++func (p *pendingFlow) Peek(protodetect.Direction) (string, string, bool) {
++	return "detecting", "", false
++}
++func (p *pendingFlow) End(protodetect.Direction)  {}
++func (p *pendingFlow) Expire()                    {}
++func (p *pendingFlow) Finish() protodetect.Record { return protodetect.Record{} }
++
++// TestLabHoldNeverExceedsItsBudget is the regression for the hold cap (Codex advisory 1): with 16383 bytes
++// held and the protocol still undecided, the next read must take 1 byte, not a whole 4 KiB buffer. The
++// bytes past the budget stay in the socket and are relayed afterwards, so nothing is lost or reordered.
++func TestLabHoldNeverExceedsItsBudget(t *testing.T) {
++	for _, unknown := range []string{"allow", "block"} {
++		clientApp, clientProxy := net.Pipe()
++		proxyDest, destApp := net.Pipe()
++		payload := bytes.Repeat([]byte("x"), labMaxBytes-1)
++		payload = append(payload, bytes.Repeat([]byte("y"), 4096)...)
++		go func() {
++			_, _ = clientApp.Write(payload[:labMaxBytes-1])
++			_, _ = clientApp.Write(payload[labMaxBytes-1:])
++		}()
++		got := make(chan []byte, 1)
++		go func() {
++			b, _ := io.ReadAll(io.LimitReader(destApp, int64(labMaxBytes)))
++			got <- b
++		}()
++		flow := &pendingFlow{}
++		o := &labObservation{flow: flow, expiry: monoNanos() + int64(5*time.Second),
++			restrict: &AppRestriction{Mode: "enforce", Allow: []string{"tls"}, Unknown: unknown}}
++		total, ok := labHoldClient(o, proxyDest, clientProxy, newTunnelActivityStamp())
++		if o.heldBytes != labMaxBytes || flow.seen.Load() != int64(labMaxBytes) {
++			t.Fatalf("unknown=%s: held %d bytes and showed the engine %d; both must be exactly the %d-byte budget", unknown, o.heldBytes, flow.seen.Load(), labMaxBytes)
++		}
++		if unknown == "allow" {
++			if !ok || total != int64(labMaxBytes) {
++				t.Fatalf("allow: forwarded %d ok=%v", total, ok)
++			}
++			if b := <-got; !bytes.Equal(b, payload[:labMaxBytes]) {
++				t.Fatalf("allow: the held bytes were not forwarded intact and in order (%d bytes)", len(b))
++			}
++		} else if ok || total != 0 {
++			t.Fatalf("block: forwarded %d ok=%v; a block must forward nothing", total, ok)
++		}
++		for _, c := range []net.Conn{clientApp, clientProxy, proxyDest, destApp} {
++			_ = c.Close()
++		}
++	}
++}
 -- 
 2.43.0
 

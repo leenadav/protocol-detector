@@ -1,5 +1,5 @@
 {
- "started": "2026-11-14 15:57:29 UTC",
+ "started": "2026-11-14 16:44:57 UTC",
  "builds": {
   "A": {
    "label": "unmodified Culvert 52eb9d1",
@@ -71,7 +71,7 @@
      "detail": {
       "body": "470f07670f1679dd"
      },
-     "seconds": 0.0,
+     "seconds": 0.06,
      "detector_ok": true,
      "detector": "no tunnel: nothing to observe",
      "records": [],
@@ -151,12 +151,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 626,
+        "admitted": 1,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1248
+       "handoffs_total": 2
       }
      ],
      "record_count": 1
@@ -168,7 +168,7 @@
       "key_exchange": "not reported by this Python",
       "cert_verified_against": "lab CA (not the proxy's): tunnel was not intercepted"
      },
-     "seconds": 0.01,
+     "seconds": 0.0,
      "detector_ok": "gap",
      "detector": "client: identified tls host=origin.lab.test (engine) \u00b7 server: unknown (engine) \u00b7 KNOWN GAP (work item #4): post-quantum ServerHello not recognised yet",
      "records": [
@@ -176,7 +176,7 @@
        "dest": "origin.lab.test:443",
        "forwarded_bytes": [
         1668,
-        2546
+        2545
        ],
        "schema_version": 1,
        "engine": "real",
@@ -216,7 +216,7 @@
         "outcome": "unknown",
         "reason": "engine",
         "detail": "Server key share group outside supported profile",
-        "observed_bytes": 1921
+        "observed_bytes": 1920
        },
        "quarantined": false,
        "signals": [
@@ -224,12 +224,12 @@
        ],
        "engine_stats": {
         "active": 0,
-        "admitted": 654,
+        "admitted": 1,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1286
+       "handoffs_total": 2
       }
      ],
      "record_count": 1
@@ -266,12 +266,12 @@
        "quarantined": true,
        "engine_stats": {
         "active": 0,
-        "admitted": 624,
+        "admitted": 1,
         "refused": 0,
-        "panics": 1242,
+        "panics": 2,
         "disabled": false
        },
-       "handoffs_total": 1248
+       "handoffs_total": 2
       }
      ],
      "record_count": 1
@@ -333,12 +333,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 627,
+        "admitted": 2,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1250
+       "handoffs_total": 4
       }
      ],
      "record_count": 1
@@ -411,12 +411,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 655,
+        "admitted": 2,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1287
+       "handoffs_total": 3
       }
      ],
      "record_count": 1
@@ -451,12 +451,12 @@
        "quarantined": true,
        "engine_stats": {
         "active": 0,
-        "admitted": 625,
+        "admitted": 2,
         "refused": 0,
-        "panics": 1244,
+        "panics": 4,
         "disabled": false
        },
-       "handoffs_total": 1250
+       "handoffs_total": 4
       }
      ],
      "record_count": 1
@@ -518,12 +518,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 628,
+        "admitted": 3,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1252
+       "handoffs_total": 6
       }
      ],
      "record_count": 1
@@ -587,12 +587,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 656,
+        "admitted": 3,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1289
+       "handoffs_total": 5
       }
      ],
      "record_count": 1
@@ -602,7 +602,7 @@
      "detail": {
       "server_first": true
      },
-     "seconds": 0.01,
+     "seconds": 0.0,
      "detector_ok": true,
      "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
      "records": [
@@ -627,12 +627,12 @@
        "quarantined": true,
        "engine_stats": {
         "active": 0,
-        "admitted": 626,
+        "admitted": 3,
         "refused": 0,
-        "panics": 1246,
+        "panics": 6,
         "disabled": false
        },
-       "handoffs_total": 1252
+       "handoffs_total": 6
       }
      ],
      "record_count": 1
@@ -688,12 +688,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 629,
+        "admitted": 4,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1254
+       "handoffs_total": 8
       }
      ],
      "record_count": 1
@@ -779,12 +779,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 657,
+        "admitted": 4,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1291
+       "handoffs_total": 7
       }
      ],
      "record_count": 1
@@ -817,12 +817,12 @@
        "quarantined": true,
        "engine_stats": {
         "active": 0,
-        "admitted": 627,
+        "admitted": 4,
         "refused": 0,
-        "panics": 1248,
+        "panics": 8,
         "disabled": false
        },
-       "handoffs_total": 1254
+       "handoffs_total": 8
       }
      ],
      "record_count": 1
@@ -876,12 +876,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 630,
+        "admitted": 5,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1254
+       "handoffs_total": 8
       }
      ],
      "record_count": 1
@@ -917,12 +917,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 658,
+        "admitted": 5,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1292
+       "handoffs_total": 8
       }
      ],
      "record_count": 1
@@ -955,12 +955,12 @@
        "quarantined": true,
        "engine_stats": {
         "active": 0,
-        "admitted": 628,
+        "admitted": 5,
         "refused": 0,
-        "panics": 1250,
+        "panics": 10,
         "disabled": false
        },
-       "handoffs_total": 1256
+       "handoffs_total": 10
       }
      ],
      "record_count": 1
@@ -1028,12 +1028,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 631,
+        "admitted": 6,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1256
+       "handoffs_total": 10
       }
      ],
      "record_count": 1
@@ -1072,12 +1072,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 659,
+        "admitted": 6,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1294
+       "handoffs_total": 10
       }
      ],
      "record_count": 1
@@ -1114,12 +1114,12 @@
        "quarantined": true,
        "engine_stats": {
         "active": 0,
-        "admitted": 629,
+        "admitted": 6,
         "refused": 0,
-        "panics": 1252,
+        "panics": 12,
         "disabled": false
        },
-       "handoffs_total": 1258
+       "handoffs_total": 12
       }
      ],
      "record_count": 1
@@ -1187,12 +1187,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 632,
+        "admitted": 7,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1258
+       "handoffs_total": 12
       }
      ],
      "record_count": 1
@@ -1231,12 +1231,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 660,
+        "admitted": 7,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1296
+       "handoffs_total": 12
       }
      ],
      "record_count": 1
@@ -1273,12 +1273,12 @@
        "quarantined": true,
        "engine_stats": {
         "active": 0,
-        "admitted": 630,
+        "admitted": 7,
         "refused": 0,
-        "panics": 1254,
+        "panics": 14,
         "disabled": false
        },
-       "handoffs_total": 1260
+       "handoffs_total": 14
       }
      ],
      "record_count": 1
@@ -1346,12 +1346,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 633,
+        "admitted": 8,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1260
+       "handoffs_total": 14
       }
      ],
      "record_count": 1
@@ -1445,12 +1445,12 @@
        ],
        "engine_stats": {
         "active": 0,
-        "admitted": 661,
+        "admitted": 8,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1298
+       "handoffs_total": 14
       }
      ],
      "record_count": 1
@@ -1487,12 +1487,12 @@
        "quarantined": true,
        "engine_stats": {
         "active": 0,
-        "admitted": 631,
+        "admitted": 8,
         "refused": 0,
-        "panics": 1255,
+        "panics": 15,
         "disabled": false
        },
-       "handoffs_total": 1262
+       "handoffs_total": 16
       }
      ],
      "record_count": 1
@@ -1560,12 +1560,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 634,
+        "admitted": 9,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1262
+       "handoffs_total": 16
       }
      ],
      "record_count": 1
@@ -1604,12 +1604,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 662,
+        "admitted": 9,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1300
+       "handoffs_total": 16
       }
      ],
      "record_count": 1
@@ -1646,12 +1646,12 @@
        "quarantined": true,
        "engine_stats": {
         "active": 0,
-        "admitted": 632,
+        "admitted": 9,
         "refused": 0,
-        "panics": 1257,
+        "panics": 17,
         "disabled": false
        },
-       "handoffs_total": 1264
+       "handoffs_total": 18
       }
      ],
      "record_count": 1
@@ -1671,7 +1671,7 @@
       "bytes": 33554437,
       "seconds": 0.18
      },
-     "seconds": 0.31,
+     "seconds": 0.36,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -1681,7 +1681,7 @@
       "sent": "3a69d9e8661fe5c9",
       "received": "3a69d9e8661fe5c9",
       "bytes": 33554437,
-      "seconds": 0.17
+      "seconds": 0.18
      },
      "seconds": 0.32,
      "detector_ok": true,
@@ -1693,9 +1693,9 @@
       "sent": "3a69d9e8661fe5c9",
       "received": "3a69d9e8661fe5c9",
       "bytes": 33554437,
-      "seconds": 0.18
+      "seconds": 0.16
      },
-     "seconds": 0.31,
+     "seconds": 0.29,
      "detector_ok": true,
      "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
      "records": [
@@ -1722,12 +1722,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 635,
+        "admitted": 10,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1264
+       "handoffs_total": 18
       }
      ],
      "record_count": 1
@@ -1738,9 +1738,9 @@
       "sent": "3a69d9e8661fe5c9",
       "received": "3a69d9e8661fe5c9",
       "bytes": 33554437,
-      "seconds": 0.19
+      "seconds": 0.15
      },
-     "seconds": 0.37,
+     "seconds": 0.3,
      "detector_ok": true,
      "detector": "client: unknown (engine) \u00b7 server: unknown (engine)",
      "records": [
@@ -1767,12 +1767,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 663,
+        "admitted": 10,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1302
+       "handoffs_total": 18
       }
      ],
      "record_count": 1
@@ -1791,7 +1791,7 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.22,
+     "seconds": 0.21,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -1840,12 +1840,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 636,
+        "admitted": 11,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1266
+       "handoffs_total": 20
       }
      ],
      "record_count": 1
@@ -1884,12 +1884,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 664,
+        "admitted": 11,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1304
+       "handoffs_total": 20
       }
      ],
      "record_count": 1
@@ -1901,7 +1901,7 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.21,
+     "seconds": 0.22,
      "detector_ok": true,
      "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
      "records": [
@@ -1926,12 +1926,12 @@
        "quarantined": true,
        "engine_stats": {
         "active": 0,
-        "admitted": 633,
+        "admitted": 10,
         "refused": 0,
-        "panics": 1259,
+        "panics": 19,
         "disabled": false
        },
-       "handoffs_total": 1266
+       "handoffs_total": 20
       }
      ],
      "record_count": 1
@@ -1991,12 +1991,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 637,
+        "admitted": 12,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1268
+       "handoffs_total": 22
       }
      ],
      "record_count": 1
@@ -2033,12 +2033,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 665,
+        "admitted": 12,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1306
+       "handoffs_total": 22
       }
      ],
      "record_count": 1
@@ -2073,12 +2073,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 0,
-        "admitted": 634,
+        "admitted": 11,
         "refused": 0,
-        "panics": 1259,
+        "panics": 19,
         "disabled": false
        },
-       "handoffs_total": 1268
+       "handoffs_total": 22
       }
      ],
      "record_count": 1
@@ -2179,7 +2179,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.57,
+     "seconds": 0.58,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -2189,7 +2189,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.61,
+     "seconds": 0.57,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -2199,10 +2199,40 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.63,
+     "seconds": 0.53,
      "detector_ok": true,
      "detector": "300 records, 0 flows still held by the engine afterwards",
      "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 9,
+        "admitted": 22,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 24
+      },
       {
        "dest": "origin.lab.test:9000",
        "forwarded_bytes": [
@@ -2226,12 +2256,12 @@
        "quarantined": false,
        "engine_stats": {
         "active": 12,
-        "admitted": 650,
+        "admitted": 26,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1272
+       "handoffs_total": 26
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2255,13 +2285,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 11,
-        "admitted": 650,
+        "active": 17,
+        "admitted": 32,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1272
+       "handoffs_total": 28
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2285,43 +2315,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 16,
-        "admitted": 656,
+        "active": 19,
+        "admitted": 35,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1280
-      },
-      {
-       "dest": "origin.lab.test:9000",
-       "forwarded_bytes": [
-        2005,
-        2005
-       ],
-       "schema_version": 1,
-       "engine": "fake",
-       "client": {
-        "outcome": "identified",
-        "reason": "engine",
-        "family": "fake",
-        "observed_bytes": 2005
-       },
-       "server": {
-        "outcome": "identified",
-        "reason": "engine",
-        "family": "fake",
-        "observed_bytes": 2005
-       },
-       "quarantined": false,
-       "engine_stats": {
-        "active": 16,
-        "admitted": 657,
-        "refused": 0,
-        "panics": 0,
-        "disabled": false
-       },
-       "handoffs_total": 1282
+       "handoffs_total": 30
       }
      ],
      "record_count": 300
@@ -2332,7 +2332,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.69,
+     "seconds": 0.6,
      "detector_ok": true,
      "detector": "300 records, 0 flows still held by the engine afterwards",
      "records": [
@@ -2358,13 +2358,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 5,
-        "admitted": 671,
+        "active": 24,
+        "admitted": 37,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1308
+       "handoffs_total": 28
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2388,13 +2388,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 8,
-        "admitted": 675,
+        "active": 24,
+        "admitted": 38,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1310
+       "handoffs_total": 29
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2418,13 +2418,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 10,
-        "admitted": 678,
+        "active": 23,
+        "admitted": 38,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1312
+       "handoffs_total": 30
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2448,13 +2448,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 14,
-        "admitted": 683,
+        "active": 25,
+        "admitted": 41,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1314
+       "handoffs_total": 30
       }
      ],
      "record_count": 300
@@ -2465,7 +2465,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.57,
+     "seconds": 0.61,
      "detector_ok": true,
      "detector": "300 records, 0 flows still held by the engine afterwards",
      "records": [
@@ -2489,13 +2489,13 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 8,
-        "admitted": 643,
+        "active": 7,
+        "admitted": 19,
         "refused": 0,
-        "panics": 1261,
+        "panics": 21,
         "disabled": false
        },
-       "handoffs_total": 1270
+       "handoffs_total": 24
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2517,13 +2517,13 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 14,
-        "admitted": 650,
+        "active": 12,
+        "admitted": 25,
         "refused": 0,
-        "panics": 1263,
+        "panics": 23,
         "disabled": false
        },
-       "handoffs_total": 1272
+       "handoffs_total": 26
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2545,13 +2545,13 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 18,
-        "admitted": 655,
+        "active": 15,
+        "admitted": 29,
         "refused": 0,
-        "panics": 1267,
+        "panics": 25,
         "disabled": false
        },
-       "handoffs_total": 1276
+       "handoffs_total": 28
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2573,13 +2573,13 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 17,
-        "admitted": 655,
+        "active": 15,
+        "admitted": 30,
         "refused": 0,
-        "panics": 1267,
+        "panics": 29,
         "disabled": false
        },
-       "handoffs_total": 1276
+       "handoffs_total": 32
       }
      ],
      "record_count": 300
@@ -2607,7 +2607,7 @@
        "dest": "secure.lab.test:443",
        "forwarded_bytes": [
         1671,
-        2549
+        2550
        ],
        "schema_version": 1,
        "engine": "real",
@@ -2647,7 +2647,7 @@
         "outcome": "unknown",
         "reason": "engine",
         "detail": "Server key share group outside supported profile",
-        "observed_bytes": 1921
+        "observed_bytes": 1922
        },
        "quarantined": false,
        "signals": [
@@ -2664,12 +2664,12 @@
        },
        "engine_stats": {
         "active": 0,
-        "admitted": 967,
+        "admitted": 314,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1910
+       "handoffs_total": 626
       }
      ]
     },
@@ -2683,7 +2683,7 @@
       },
       "bytes": "n/a (TLS origin)"
      },
-     "seconds": 0.16,
+     "seconds": 0.23,
      "records": [
       {
        "dest": "secure.lab.test:443",
@@ -2720,7 +2720,7 @@
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 13
+       "handoffs_total": 1
       }
      ]
     }
@@ -2741,7 +2741,7 @@
       },
       "bytes": 0
      },
-     "seconds": 0.17,
+     "seconds": 0.16,
      "records": [
       {
        "dest": "secure.lab.test:22",
@@ -2811,12 +2811,12 @@
        },
        "engine_stats": {
         "active": 0,
-        "admitted": 968,
+        "admitted": 315,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1910
+       "handoffs_total": 626
       }
      ]
     },
@@ -2867,7 +2867,7 @@
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 14
+       "handoffs_total": 2
       }
      ]
     }
@@ -2922,12 +2922,12 @@
        },
        "engine_stats": {
         "active": 0,
-        "admitted": 969,
+        "admitted": 316,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1910
+       "handoffs_total": 626
       }
      ]
     },
@@ -2941,7 +2941,7 @@
       },
       "bytes": 0
      },
-     "seconds": 0.17,
+     "seconds": 0.16,
      "records": [
       {
        "dest": "secure.lab.test:9000",
@@ -2978,7 +2978,7 @@
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 15
+       "handoffs_total": 3
       }
      ]
     }
@@ -2999,7 +2999,7 @@
       },
       "bytes": 0
      },
-     "seconds": 0.17,
+     "seconds": 0.16,
      "records": [
       {
        "dest": "secure.lab.test:9000",
@@ -3062,12 +3062,12 @@
        },
        "engine_stats": {
         "active": 0,
-        "admitted": 970,
+        "admitted": 317,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1910
+       "handoffs_total": 626
       }
      ]
     },
@@ -3081,7 +3081,7 @@
       },
       "bytes": 0
      },
-     "seconds": 0.17,
+     "seconds": 0.16,
      "records": [
       {
        "dest": "secure.lab.test:9000",
@@ -3118,7 +3118,7 @@
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 16
+       "handoffs_total": 4
       }
      ]
     }
@@ -3139,7 +3139,7 @@
       },
       "bytes": 23
      },
-     "seconds": 0.17,
+     "seconds": 0.16,
      "records": [
       {
        "dest": "monitor.lab.test:22",
@@ -3209,12 +3209,12 @@
        },
        "engine_stats": {
         "active": 0,
-        "admitted": 971,
+        "admitted": 318,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 1911
+       "handoffs_total": 627
       }
      ]
     },
@@ -3265,7 +3265,7 @@
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 18
+       "handoffs_total": 6
       }
      ]
     }
@@ -3274,5 +3274,5 @@
   }
  ],
  "state": "finished",
- "finished": "2026-11-14 15:58:02 UTC"
+ "finished": "2026-11-14 16:45:30 UTC"
 }

@@ -6,7 +6,7 @@ This directory is the backup of a local lab that runs the protocol detector insi
 
 ## What was built on the Culvert lab branch
 
-Base: Culvert `52eb9d1e4482adc9773afc4db77109acad617625`, local branch `lab/protocol-detector` (3 commits, push disabled). The patch is `culvert-lab-52eb9d1.patch`; it leaves out `frontend/dist`, which `npm run build` regenerates.
+Base: Culvert `52eb9d1e4482adc9773afc4db77109acad617625`, local branch `lab/protocol-detector` (4 commits, push disabled). The patch is `culvert-lab-52eb9d1.patch`; it leaves out `frontend/dist`, which `npm run build` regenerates.
 
 | Area | Change |
 |---|---|
@@ -23,15 +23,31 @@ Base: Culvert `52eb9d1e4482adc9773afc4db77109acad617625`, local branch `lab/prot
 | Situation | Monitor | Enforce |
 |---|---|---|
 | Client protocol identified and in the allowed list | Passes; verdict `allowed` | Held bytes are forwarded; verdict `allowed` |
-| Client protocol identified (or outside the profile) and not in the list | Passes; verdict `would_block` | Tunnel closed; verdict `blocked`; no client byte forwarded |
+| Client protocol identified (or named by its prefix as outside the profile) and not in the list | Passes; verdict `would_block` | Tunnel closed; verdict `blocked`; no client byte forwarded |
 | Could not be identified (unknown, incomplete, budget exhausted, unsupported, engine failure) | The rule's unknown action, recorded as `allowed` or `would_block` | The rule's unknown action: forwarded, or closed with nothing forwarded |
 | Detector unavailable (off, refused, breaker open) | Same, with reason `detector_unavailable` | Same: an enforce rule never silently allows |
 
 Details that matter:
 - **A restriction can only narrow an Allow.** It is rejected on other rule types and can't turn a block into an allow.
 - **What is held.** In enforce mode the client's first bytes are held, up to 16 KiB and the observation window, including bytes sent in the same write as the CONNECT header. The server's bytes are not held, so a server-first banner still reaches the client.
+- **Only an identification can allow.** A result of "outside profile" names a family from the prefix alone, before its structure is validated. It can refuse a tunnel; it can never match the allowed list.
 - **Decided once.** The verdict is taken when the client direction leaves "detecting"; it never changes afterwards.
 - **Logged even on quiet rules.** A block is written as `APP_BLOCKED` even when the rule doesn't log traffic.
+
+## Codex's advisory read (2026-11-14) and what changed
+
+Codex read the patch as advice, not as a review round ([issue #2 comment 6880722498](https://github.com/leenadav/protocol-detector/issues/2#issuecomment-6880722498)). It could not run anything, so its points are source traces.
+
+| Point | Outcome |
+|---|---|
+| 1. The hold could reach 20479 bytes, past its 16 KiB budget | Fixed: reads are sized to what is left of the budget. Regression test `TestLabHoldNeverExceedsItsBudget`. |
+| 2. The window was read before it was initialised | Fixed: initialisation runs before the expiry is computed. No dedicated test. |
+| 3. A short write without an error could drop bytes | Fixed: treated as `io.ErrShortWrite` at both write sites. No scripted-Conn test yet. |
+| 4. Idle timing differs from the unmodified relay | Not fixed. The tap stamps activity per read; the unmodified loop stamps when its copy returns. Byte-hash tests don't cover this. |
+| 5. Expiry releases the parser state, not everything | Not fixed, documented: the 4 KiB tap buffer and, in enforce mode, the held bytes live until a blocked write returns. |
+| 6. `outside_profile` counted as a named protocol on the allow side | Fixed: only an identification can match the allowed list. Decision-table tests. |
+
+Still to test, from the same read: a valid allowed opening followed by another protocol in the same read and in the next one; CONNECT, Upgrade and STARTTLS transitions; unknown=allow at byte, feed and time exhaustion.
 
 ## Results of the run in `results/`
 
@@ -54,7 +70,7 @@ Details that matter:
 - **Splice (earlier run of this lab):** during a 32 MiB echo, `strace -f -c -e trace=splice` counted 256 splice calls on A and 217 on D, with the same delivered hash.
 
 Tests on the lab branch:
-- Go: `go test -run 'TestLab|Policy|ProxyE2E|RelayBuf|TunnelIdle|TunnelBypass|TunnelDrain|FrontendV2|ConfigSurface|LogEntry|Reqlog|APIContract|OpenAPI|UIContract' .` passed (378 tests), plus `./internal/logstore` and `./internal/reqlog`. Culvert's full test suite was not run.
+- Go: `go test -run 'TestLab|Policy|ProxyE2E|RelayBuf|TunnelIdle|TunnelBypass|TunnelDrain|FrontendV2|ConfigSurface|LogEntry|Reqlog|APIContract|OpenAPI|UIContract' .` passed (378 tests) before the advisory fixes, plus `./internal/logstore` and `./internal/reqlog`. After the fixes, `TestLab` passed under the race detector and the subset without the last five patterns passed again. Culvert's full test suite was not run.
 - Frontend: `npm run typecheck`, `npm run lint`, `npm run format:check` and `npm test` (791 tests) passed.
 
 ## What this does not show
@@ -65,7 +81,7 @@ Tests on the lab branch:
 - **Only CONNECT bypass tunnels.** Inspected tunnels, non-TLS fallbacks, SOCKS5, WebSocket and plain HTTP are untouched. A restriction on a rule whose tunnels are inspected has no effect.
 - **Rule storage only.** The new rule field is not registered in Culvert's config surfaces, snapshot, OpenAPI contract, policy tester, commit-review diff or learning mode. Detector settings are environment variables.
 - **One container, not two VMs. No performance or memory measurement.**
-- **Untested paths:** expiry while a direction is blocked in `Write`, idle-timeout parity with the unmodified relay, and holding under a slow client beyond the window.
+- **Untested paths:** expiry while a direction is blocked in `Write`, idle-timeout parity with the unmodified relay (known to differ, see Codex's point 4), short writes, and holding under a slow client beyond the window.
 - **Not reviewed.** The Culvert lab change has had no Codex round, by decision.
 
 ## Reproduce
