@@ -20,7 +20,11 @@ scope before any parser is translated.
 2. **Retained bytes are copied into owned memory** under a `buffer.Bounded` (per direction) that charges
    a `buffer.Account` (aggregate, per flow table / capture / worker). There is no third place to keep
    bytes. Discard and Release zero the bytes they give up, so a later consumer of the backing array can
-   never read an earlier payload.
+   never read an earlier payload. The per-buffer limit counts logical bytes; the account counts allocated
+   capacity, charged before a backing array is allocated and returned only when the array is freed or
+   replaced by a smaller one (review R3, 2026-11-14: charging the length let buffers that had discarded
+   their content keep full arrays outside the account). `Discard` moves the remainder to an array of its
+   own size once at most half of the capacity is still in use.
 3. **Views are transient.** `Bytes()` and any parser-facing slice are valid only until the next
    mutating call on the same buffer; they are never stored in an observation, event or error. Evidence
    values are fresh strings bounded by the profile's field limits.
