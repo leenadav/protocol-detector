@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "ca841c81deeca3268157bbddb1070c9342c1a5ba",
-  "branch": "work/v065-stage0",
-  "build_digest": "e7d15f286739d0a294e7b1cc63633e5f9828e956eadee29b263b0c436ca73f6e",
+  "commit": "dbe20f30377dd9627391040827dd8c0c3d636ac5",
+  "branch": "claude/go-migration",
+  "build_digest": "6b9318b49f37854cb645a3d6f56f20cd48acbe4fe58e393757c8233398173e28",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -475,12 +475,12 @@
     {
       "path": "link_packets.py",
       "component": "adapters",
-      "sha256": "24163e9501f5fd90d39db77d91b88465c68f83f216ea84bdada3b0a08d518732"
+      "sha256": "92ee537907c30ff336356e4801e05dacd25fbda0ba5623829151ebecc6ebcf62"
     },
     {
       "path": "capture_stream.py",
       "component": "adapters",
-      "sha256": "0ade4d09ab944056dd9b2a3ecb10905212010bd3159ff7c70340244be7e82e2e"
+      "sha256": "15e7ad639e66c26942898cd2e04ae974dcbcecb2b1ed9e90eb317fde89094563"
     },
     {
       "path": "sessions.py",
@@ -490,17 +490,17 @@
     {
       "path": "analyze_pcap.py",
       "component": "adapters",
-      "sha256": "32f17b522e6303d3b37adf1547acb3c3152cf9163137cc75fb6c72cc033fd60d"
+      "sha256": "5e29d9456aa826364b36e6a53f8cb67e702d8381149cdc54d30295cd508c206e"
     },
     {
       "path": "live_capture.py",
       "component": "adapters",
-      "sha256": "8742aeaac51be077312ea295e5e6463a4e036c24c15d036341991038af6c8496"
+      "sha256": "ca09722f916c810937f810499c1b3d5451c8ed1decd60a1a573ffc3a4898c91e"
     },
     {
       "path": "make_sample_pcap.py",
       "component": "adapters",
-      "sha256": "762edda2277ddab0379f4128e07af51d8c30ed652ed5df56ba3db2ba4d07df90"
+      "sha256": "e6fbc7eeef8ace8402785a58ff88a2c71d1784fff470af63a9a6fd9ead68bb74"
     },
     {
       "path": "protocol_fixtures.py",
@@ -520,7 +520,7 @@
     {
       "path": "detectors.py",
       "component": "adapters",
-      "sha256": "3f61af047eeb70344bda25bfe21ac07d7f2d2e6e9cbd212f29322501dbc361c8"
+      "sha256": "8ed95f13dce9c98df366422c7bdb66dca7b4e7565e563cdb66706e2bb039d11b"
     },
     {
       "path": "presentation/__init__.py",
