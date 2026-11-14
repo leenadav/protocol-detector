@@ -5,9 +5,11 @@
   9000 raw echo (byte-transparency tests)            9001 silent (accepts, never sends)
   5432 PostgreSQL-like: answers 'N' to an SSLRequest
 """
-import asyncio, ssl, sys
+import asyncio, json, ssl, sys
 HOST = "203.0.113.10"
+HOST2 = "203.0.113.20"  # secure.lab.test / monitor.lab.test: the policy-restriction targets
 CERTS = sys.argv[1]
+RECEIVED = {}  # port -> client bytes the recording origins on HOST2 have received since the last reset
 
 async def http(r, w):
     try:
@@ -67,6 +69,37 @@ async def postgres(r, w):
     finally:
         w.close()
 
+def recording(port, banner=b""):
+    """An origin on HOST2 that counts every client byte it receives (the proof that held bytes never arrived)."""
+    async def handler(r, w):
+        try:
+            if banner:
+                w.write(banner); await w.drain()
+            while True:
+                data = await r.read(65536)
+                if not data: break
+                RECEIVED[port] = RECEIVED.get(port, 0) + len(data)
+                w.write(data); await w.drain()
+        except (OSError, asyncio.IncompleteReadError):
+            return
+        finally:
+            w.close()
+    return handler
+
+async def control(r, w):
+    """GET /stats returns the counters as JSON; GET /reset clears them. Loopback lab control only."""
+    try:
+        head = await r.readuntil(b"\r\n\r\n")
+        if b"/reset" in head.split(b"\r\n")[0]:
+            RECEIVED.clear()
+        body = json.dumps({str(k): v for k, v in RECEIVED.items()}).encode()
+        w.write(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\nConnection: close\r\n\r\n" % len(body) + body)
+        await w.drain()
+    except (OSError, asyncio.IncompleteReadError, asyncio.LimitOverrunError):
+        return
+    finally:
+        w.close()
+
 async def main():
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.load_cert_chain(CERTS + "/origin.crt", CERTS + "/origin.key")
@@ -75,6 +108,10 @@ async def main():
                (9001, silent, None), (5432, postgres, None)]
     for port, handler, tls in servers:
         await asyncio.start_server(handler, HOST, port, ssl=tls)
+    await asyncio.start_server(http, HOST2, 443, ssl=ctx)
+    await asyncio.start_server(recording(22, b"SSH-2.0-LabOrigin_1.0\r\n"), HOST2, 22)
+    await asyncio.start_server(recording(9000), HOST2, 9000)
+    await asyncio.start_server(control, "127.0.0.1", 9999)
     print("origins up on", HOST, [p for p, _, _ in servers], flush=True)
     await asyncio.Event().wait()
 

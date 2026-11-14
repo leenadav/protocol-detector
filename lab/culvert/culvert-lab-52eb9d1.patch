@@ -1,8 +1,8 @@
 From 7b9a9afa7dbdc44fc3b5fefde0964b35d421ac35 Mon Sep 17 00:00:00 2001
 From: lab <lab@localhost>
 Date: Sat, 14 Nov 2026 15:00:42 +0000
-Subject: [PATCH] LAB: observe CONNECT-bypass tunnels with a protocol detector
- (local only)
+Subject: [PATCH 1/3] LAB: observe CONNECT-bypass tunnels with a protocol
+ detector (local only)
 
 Local lab branch; not for upstream as-is. Culvert-owned interface in
 internal/protodetect (off / fake / real engines), an observed prefix on the
@@ -548,6 +548,2127 @@ index c8f328c..edf22f0 100644
  	toDest += dOut
  	toClient += cOut
  
+-- 
+2.43.0
+
+
+From b70cd3e7035c55fa41ea193d801f5d7716f4122d Mon Sep 17 00:00:00 2001
+From: lab <lab@localhost>
+Date: Sat, 14 Nov 2026 15:29:05 +0000
+Subject: [PATCH 2/3] LAB: carry the detector's evidence and offered ALPN in
+ the lab record
+
+Hostname-class evidence goes through redactHost like the hostname field.
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UqaXYypys1mDv9szgRtF6T
+---
+ internal/protodetect/protodetect.go | 13 +++++++++++++
+ internal/protodetect/real.go        |  9 +++++++--
+ protodetect_lab.go                  | 10 ++++++++--
+ 3 files changed, 28 insertions(+), 4 deletions(-)
+
+diff --git a/internal/protodetect/protodetect.go b/internal/protodetect/protodetect.go
+index 7c954b9..7faba39 100644
+--- a/internal/protodetect/protodetect.go
++++ b/internal/protodetect/protodetect.go
+@@ -54,6 +54,19 @@ type DirRecord struct {
+ 	Hostname string `json:"hostname,omitempty"`
+ 	Detail   string `json:"detail,omitempty"`
+ 	Observed int    `json:"observed_bytes"`
++	// OfferedALPN and Evidence are record fields only. An Evidence item of class "hostname" must be
++	// redacted by the caller; a "withheld" item has no value.
++	OfferedALPN []string       `json:"offered_alpn,omitempty"`
++	Evidence    []EvidenceItem `json:"evidence,omitempty"`
++}
++
++// EvidenceItem is one piece of evidence behind a direction's outcome.
++type EvidenceItem struct {
++	Field    string `json:"field"`
++	Value    string `json:"value"`
++	Source   string `json:"source"`
++	Strength string `json:"strength"`
++	Class    string `json:"class"`
+ }
+ 
+ // Record is the final observation of a tunnel.
+diff --git a/internal/protodetect/real.go b/internal/protodetect/real.go
+index d40d05f..4c986b9 100644
+--- a/internal/protodetect/real.go
++++ b/internal/protodetect/real.go
+@@ -80,9 +80,14 @@ func (f realFlow) Finish() (rec Record) {
+ 	}()
+ 	s := f.flow.Close()
+ 	conv := func(ds detector.DirectionSnapshot) DirRecord {
+-		return DirRecord{Outcome: ds.Outcome.String(), Reason: ds.Reason.String(), Family: ds.Family,
++		rec := DirRecord{Outcome: ds.Outcome.String(), Reason: ds.Reason.String(), Family: ds.Family,
+ 			Protocol: ds.ApplicationProtocol, Encrypt: ds.Encryption, Hostname: string(ds.Hostname), Detail: ds.Detail,
+-			Observed: ds.BytesFed}
++			Observed: ds.BytesFed, OfferedALPN: ds.OfferedALPN}
++		for _, ev := range ds.Evidence {
++			rec.Evidence = append(rec.Evidence, EvidenceItem{Field: ev.Field, Value: ev.Value, Source: ev.Source,
++				Strength: ev.Strength, Class: ev.Class.String()})
++		}
++		return rec
+ 	}
+ 	return Record{Engine: "real", Client: conv(s.Direction(detector.ClientToServer)),
+ 		Server: conv(s.Direction(detector.ServerToClient)), Quarantined: s.Quarantined}
+diff --git a/protodetect_lab.go b/protodetect_lab.go
+index 40008d6..05c6c33 100644
+--- a/protodetect_lab.go
++++ b/protodetect_lab.go
+@@ -197,8 +197,14 @@ func labFinishObservation(o *labObservation, match *PolicyMatch, host string, to
+ 		return // a rule that does not log traffic does not log observations either
+ 	}
+ 	redact := decRedactHosts()
+-	rec.Client.Hostname = redactHost(rec.Client.Hostname, redact)
+-	rec.Server.Hostname = redactHost(rec.Server.Hostname, redact)
++	for _, dr := range []*protodetect.DirRecord{&rec.Client, &rec.Server} {
++		dr.Hostname = redactHost(dr.Hostname, redact)
++		for i := range dr.Evidence {
++			if dr.Evidence[i].Class == "hostname" {
++				dr.Evidence[i].Value = redactHost(dr.Evidence[i].Value, redact)
++			}
++		}
++	}
+ 	line, err := json.Marshal(struct {
+ 		Dest      string   `json:"dest"`
+ 		Forwarded [2]int64 `json:"forwarded_bytes"`
+-- 
+2.43.0
+
+
+From 777fa6bc727b6efb411b6b35121ea1ab02ad3e60 Mon Sep 17 00:00:00 2001
+From: lab <lab@localhost>
+Date: Sat, 14 Nov 2026 15:56:55 +0000
+Subject: [PATCH 3/3] LAB: protocol detection in the log entry, the UI and the
+ access rules
+
+Local lab branch; not for upstream as-is.
+
+- Log: the detector's observation rides the TUNNEL_CLOSED entry as a nested
+  pd block (own schema version, closed vocabularies, absent when nothing was
+  observed). Host names go through the keyed destination pseudonymizer.
+  Advisory signals: nonstandard_port, host_mismatch, server_unresolved.
+- Policy: PolicyRule.AppRestriction restricts the protocol families allowed
+  on the raw tunnels an Allow rule permits. Monitor records what enforce
+  would do. Enforce holds the client's first bytes (bounded, prebuffer
+  included) until the client direction is decided, so no client byte of a
+  disallowed protocol reaches the server. The unknown action is explicit and
+  also applies when the detector is unavailable. A block is logged as
+  APP_BLOCKED.
+- UI: new frontend (frontend/): Traffic gets an Application / Protocol
+  column, a protocol-mix bar and an evidence panel in the row detail; the
+  Access Rule editor gets the protocol restriction; the rules list shows it.
+  The legacy page gets the same column. frontend/dist is rebuilt with the
+  pinned Node 24.19.0.
+- Tests: decision table, validation and signals (Go); pd decoder (vitest).
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UqaXYypys1mDv9szgRtF6T
+---
+ frontend/src/api/ops.ts                       |  97 +++++
+ frontend/src/api/policy.ts                    |  28 ++
+ frontend/src/api/policyWrite.ts               |   6 +-
+ .../features/monitor/ProtocolDetection.tsx    | 303 ++++++++++++++
+ frontend/src/features/monitor/TrafficPage.tsx |  18 +-
+ .../src/features/monitor/monitor.module.css   | 148 +++++++
+ .../src/features/policy/AccessRulesPage.tsx   |   6 +
+ frontend/src/features/policy/RuleEditor.tsx   |  64 +++
+ frontend/src/test/ops-decoders.test.ts        |  65 +++
+ internal/logstore/logstore.go                 |  54 +++
+ internal/protodetect/protodetect.go           |  14 +
+ internal/protodetect/real.go                  |  10 +
+ internal/reqlog/reqlog.go                     |   3 +-
+ logstore.go                                   |   2 +
+ policy.go                                     |  57 +++
+ protodetect_lab.go                            | 374 +++++++++++++++---
+ protodetect_lab_test.go                       | 129 ++++++
+ proxy_tunnel.go                               |  19 +-
+ static/index.html                             |  66 +++-
+ store.go                                      |  16 +-
+ ui_helpers.go                                 |   3 +
+ 21 files changed, 1412 insertions(+), 70 deletions(-)
+ create mode 100644 frontend/src/features/monitor/ProtocolDetection.tsx
+ create mode 100644 protodetect_lab_test.go
+
+diff --git a/frontend/src/api/ops.ts b/frontend/src/api/ops.ts
+index a822719..0205f5b 100644
+--- a/frontend/src/api/ops.ts
++++ b/frontend/src/api/ops.ts
+@@ -219,6 +219,47 @@ export interface TrafficEntry {
+   authSource: string;
+   authOutcome: string;
+   dec: TrafficDec | null;
++  /** LAB: protocol-detector observation of a raw tunnel (entry.pd); null when
++   * nothing was observed. */
++  pd: TrafficPd | null;
++}
++
++export interface TrafficPdEvidence {
++  field: string;
++  value: string;
++  source: string;
++  strength: string;
++  cls: string;
++}
++
++export interface TrafficPdDirection {
++  outcome: string;
++  reason: string;
++  family: string;
++  protocol: string;
++  encryption: string;
++  hostname: string;
++  detail: string;
++  observedBytes: number;
++  offeredAlpn: readonly string[];
++  evidence: readonly TrafficPdEvidence[];
++}
++
++export interface TrafficPdPolicy {
++  mode: string;
++  allow: readonly string[];
++  verdict: string;
++  reason: string;
++  heldBytes: number;
++}
++
++export interface TrafficPd {
++  engine: string;
++  client: TrafficPdDirection;
++  server: TrafficPdDirection;
++  quarantined: boolean;
++  signals: readonly string[];
++  policy: TrafficPdPolicy | null;
+ }
+ 
+ const optStr = readOptional(readString);
+@@ -232,6 +273,61 @@ function readArrayOrNull<T>(decode: Decoder<T>): Decoder<readonly T[]> {
+   return (v, path = "$") => (v === null ? [] : arr(v, path));
+ }
+ 
++const optStrArray = readOptional(readArray(readString));
++
++const decodePdEvidence: Decoder<TrafficPdEvidence> = (v, path = "$") => {
++  const o = readRecord(v, path);
++  return {
++    field: field(o, "field", readString, path),
++    value: field(o, "value", readString, path),
++    source: field(o, "source", readString, path),
++    strength: field(o, "strength", readString, path),
++    cls: field(o, "class", readString, path),
++  };
++};
++
++const decodePdDirection: Decoder<TrafficPdDirection> = (v, path = "$") => {
++  const o = readRecord(v, path);
++  return {
++    outcome: field(o, "outcome", readString, path),
++    reason: field(o, "reason", readString, path),
++    family: field(o, "family", optStr, path) ?? "",
++    protocol: field(o, "protocol", optStr, path) ?? "",
++    encryption: field(o, "encryption", optStr, path) ?? "",
++    hostname: field(o, "hostname", optStr, path) ?? "",
++    detail: field(o, "detail", optStr, path) ?? "",
++    observedBytes: field(o, "observed_bytes", readNumber, path),
++    offeredAlpn: field(o, "offered_alpn", optStrArray, path) ?? [],
++    evidence:
++      field(o, "evidence", readOptional(readArray(decodePdEvidence)), path) ??
++      [],
++  };
++};
++
++const decodePd: Decoder<TrafficPd> = (v, path = "$") => {
++  const o = readRecord(v, path);
++  const polRaw = field(o, "policy", readOptional(readRecord), path);
++  let policy: TrafficPdPolicy | null = null;
++  if (polRaw !== undefined) {
++    const pp = `${path}.policy`;
++    policy = {
++      mode: field(polRaw, "mode", readString, pp),
++      allow: field(polRaw, "allow", optStrArray, pp) ?? [],
++      verdict: field(polRaw, "verdict", readString, pp),
++      reason: field(polRaw, "reason", readString, pp),
++      heldBytes: field(polRaw, "held_bytes", readNumber, pp),
++    };
++  }
++  return {
++    engine: field(o, "engine", readString, path),
++    client: field(o, "client", decodePdDirection, path),
++    server: field(o, "server", decodePdDirection, path),
++    quarantined: field(o, "quarantined", readBoolean, path),
++    signals: field(o, "signals", optStrArray, path) ?? [],
++    policy,
++  };
++};
++
+ export const decodeTrafficEntry: Decoder<TrafficEntry> = (v, path = "$") => {
+   const o = readRecord(v, path);
+   const decRaw = field(o, "dec", readOptional(readRecord), path);
+@@ -265,6 +361,7 @@ export const decodeTrafficEntry: Decoder<TrafficEntry> = (v, path = "$") => {
+     authSource: field(o, "auth_source", optStr, path) ?? "",
+     authOutcome: field(o, "auth_outcome", optStr, path) ?? "",
+     dec,
++    pd: field(o, "pd", readOptional(decodePd), path) ?? null,
+   };
+ };
+ 
+diff --git a/frontend/src/api/policy.ts b/frontend/src/api/policy.ts
+index f3f3568..81760f3 100644
+--- a/frontend/src/api/policy.ts
++++ b/frontend/src/api/policy.ts
+@@ -40,6 +40,25 @@ export interface PolicySchedule {
+   timezone: string;
+ }
+ 
++/** LAB: PolicyRule.appRestriction (Go AppRestriction). */
++export interface AppRestriction {
++  mode: "monitor" | "enforce";
++  allow: readonly string[];
++  unknown: "allow" | "block";
++}
++
++/** Protocol families a restriction may name (the lab detector profile). */
++export const APP_RESTRICTION_FAMILIES = ["tls", "http", "ssh", "smtp"] as const;
++
++const decodeAppRestriction: Decoder<AppRestriction> = (v, path = "$") => {
++  const o = readRecord(v, path);
++  return {
++    mode: field(o, "mode", readEnum(["monitor", "enforce"] as const), path),
++    allow: field(o, "allow", readArray(readString), path),
++    unknown: field(o, "unknown", readEnum(["allow", "block"] as const), path),
++  };
++};
++
+ export interface PolicyRuleView {
+   priority: number;
+   id: string;
+@@ -70,6 +89,9 @@ export interface PolicyRuleView {
+   // ABSENT wire value is distinct from an explicit boolean. `undefined` here
+   // means "absent on the wire" and must round-trip as absent.
+   tlsSkipVerify: boolean;
++  /** LAB: protocol restriction on the raw tunnels this rule allows; absent =
++   * no restriction. */
++  appRestriction: AppRestriction | undefined;
+   /** nil/true = log allowed traffic; false = stats only. Absent preserved. */
+   logTraffic: boolean | undefined;
+   /** nil/true = downgrade inspected tunnel to HTTP/1.1; false = native H2. */
+@@ -133,6 +155,12 @@ export const decodePolicyRule: Decoder<PolicyRuleView> = (v, path = "$") => {
+     redirectURL: field(o, "redirectURL", optStr, path) ?? "",
+     logFullUri: field(o, "logFullUri", optBool, path) ?? false,
+     tlsSkipVerify: field(o, "tlsSkipVerify", optBool, path) ?? false,
++    appRestriction: field(
++      o,
++      "appRestriction",
++      readOptional(decodeAppRestriction),
++      path,
++    ),
+     logTraffic: field(o, "logTraffic", optBool, path),
+     stripAlpn: field(o, "stripAlpn", optBool, path),
+     enabledWire: field(o, "enabled", optBool, path),
+diff --git a/frontend/src/api/policyWrite.ts b/frontend/src/api/policyWrite.ts
+index 77d797b..689dc5b 100644
+--- a/frontend/src/api/policyWrite.ts
++++ b/frontend/src/api/policyWrite.ts
+@@ -28,7 +28,7 @@ import {
+   readString,
+ } from "./decode";
+ import { ApiError, apiRequest } from "./client";
+-import type { PolicyRuleView, PolicySchedule } from "./policy";
++import type { AppRestriction, PolicyRuleView, PolicySchedule } from "./policy";
+ import { decodePolicyRule } from "./policy";
+ import { decodeFileProfileState } from "./dcobjects";
+ 
+@@ -78,6 +78,8 @@ export interface AccessRuleWrite {
+   /** tri-state: undefined = absent (HTTP/1.1 downgrade); false = native H2 */
+   stripAlpn: boolean | undefined;
+   tlsSkipVerify: boolean;
++  /** LAB: undefined = no protocol restriction (absent on the wire) */
++  appRestriction: AppRestriction | undefined;
+   /** profile NAME — the authoritative id is stamped server-side */
+   decryptionProfile: string;
+   action: RuleAction;
+@@ -118,6 +120,7 @@ export function writeSeedFromView(view: PolicyRuleView): AccessRuleWrite {
+     logTraffic: view.logTraffic,
+     stripAlpn: view.stripAlpn,
+     tlsSkipVerify: view.tlsSkipVerify,
++    appRestriction: view.appRestriction,
+     decryptionProfile: view.decryptionProfile,
+     action: view.action,
+     redirectURL: view.redirectURL,
+@@ -159,6 +162,7 @@ export function serializeAccessRuleWrite(
+   if (w.logTraffic !== undefined) out["logTraffic"] = w.logTraffic;
+   if (w.stripAlpn !== undefined) out["stripAlpn"] = w.stripAlpn;
+   if (w.schedule !== undefined) out["schedule"] = w.schedule;
++  if (w.appRestriction !== undefined) out["appRestriction"] = w.appRestriction;
+   if (w.ruleType === "access") out["ruleType"] = "access";
+   return out;
+ }
+diff --git a/frontend/src/features/monitor/ProtocolDetection.tsx b/frontend/src/features/monitor/ProtocolDetection.tsx
+new file mode 100644
+index 0000000..84a2f79
+--- /dev/null
++++ b/frontend/src/features/monitor/ProtocolDetection.tsx
+@@ -0,0 +1,303 @@
++// LAB (local branch lab/protocol-detector): the protocol detector's observation
++// of a raw tunnel (TrafficEntry.pd), read the way the Protocol Observatory
++// reads a session: what was identified, the layers, the signals, a
++// per-direction timeline and the evidence ledger. Every label comes from the
++// detector's closed vocabularies; host names and ALPN offers are peer
++// assertions and are shown as such.
++import type { JSX } from "react";
++import type { TrafficPd, TrafficPdDirection } from "../../api/ops";
++import { KeyValue, Mono, StatusBadge } from "../../design-system/primitives";
++import type { Status } from "../../design-system/primitives";
++import styles from "./monitor.module.css";
++
++const OUTCOME: Record<string, readonly [Status, string]> = {
++  identified: ["ok", "Identified"],
++  unknown: ["unknown", "Unresolved"],
++  incomplete: ["neutral", "Incomplete"],
++  outside_profile: ["warn", "Outside profile"],
++  budget_exhausted: ["warn", "Budget exhausted"],
++  unsupported: ["neutral", "Unsupported"],
++  malformed: ["warn", "Malformed"],
++  invalidated: ["warn", "Retracted"],
++  failed: ["critical", "Engine failed"],
++  detecting: ["neutral", "Detecting"],
++};
++
++const SIGNAL: Record<string, string> = {
++  nonstandard_port: "Protocol on a port it is not usually seen on",
++  host_mismatch: "Client-asserted host differs from the CONNECT destination",
++  server_unresolved: "Server reply not recognised by the detector",
++};
++
++const VERDICT: Record<string, readonly [Status, string]> = {
++  allowed: ["ok", "Allowed by restriction"],
++  would_block: ["warn", "Would block (monitor)"],
++  blocked: ["critical", "Blocked by restriction"],
++};
++
++const REASON: Record<string, string> = {
++  protocol_allowed: "the detected protocol is in the rule's allowed list",
++  protocol_not_allowed:
++    "the detected protocol is not in the rule's allowed list",
++  unknown_allowed: "the protocol could not be named; the rule allows unknown",
++  unknown_blocked: "the protocol could not be named; the rule blocks unknown",
++  detector_unavailable:
++    "the detector was unavailable; the rule's unknown action was applied",
++};
++
++function outcomeOf(d: TrafficPdDirection): readonly [Status, string] {
++  return OUTCOME[d.outcome] ?? ["neutral", d.outcome];
++}
++
++export function pdName(d: TrafficPdDirection): string {
++  if (d.encryption !== "") return d.encryption.toUpperCase();
++  if (d.protocol !== "") return d.protocol.toUpperCase();
++  return d.family.toUpperCase();
++}
++
++/** The direction the row is labelled by: the client if it identified,
++ * otherwise the server if it did, otherwise the client. */
++function lead(pd: TrafficPd): TrafficPdDirection {
++  if (pd.client.outcome === "identified") return pd.client;
++  if (pd.server.outcome === "identified") return pd.server;
++  return pd.client;
++}
++
++/** Summary of what the detector observed in the rows on screen (the
++ * Observatory's "application mix", for a traffic page). */
++export function PdMix({
++  rows,
++}: {
++  rows: ReadonlyArray<{ pd: TrafficPd | null }>;
++}): JSX.Element | null {
++  const counts = new Map<string, number>();
++  let observed = 0;
++  let blocked = 0;
++  let wouldBlock = 0;
++  let signals = 0;
++  for (const r of rows) {
++    if (r.pd === null) continue;
++    observed += 1;
++    const d = lead(r.pd);
++    const key =
++      d.outcome === "identified"
++        ? pdName(d)
++        : d.outcome === "outside_profile"
++          ? `${pdName(d)} (outside profile)`
++          : outcomeOf(d)[1];
++    counts.set(key, (counts.get(key) ?? 0) + 1);
++    if (r.pd.policy?.verdict === "blocked") blocked += 1;
++    if (r.pd.policy?.verdict === "would_block") wouldBlock += 1;
++    if (r.pd.signals.length > 0) signals += 1;
++  }
++  if (observed === 0) return null;
++  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
++  return (
++    <div className={styles.pdMix} role="status" aria-label="Protocol mix">
++      <span className={styles.pdMixTitle}>
++        Protocol mix · {String(observed)} observed tunnels on this page
++      </span>
++      {sorted.map(([k, n]) => (
++        <span key={k} className={styles.pdMixChip}>
++          <strong>{k}</strong> {String(n)}
++        </span>
++      ))}
++      {blocked > 0 && (
++        <StatusBadge status="critical">{String(blocked)} blocked</StatusBadge>
++      )}
++      {wouldBlock > 0 && (
++        <StatusBadge status="warn">
++          {String(wouldBlock)} would block
++        </StatusBadge>
++      )}
++      {signals > 0 && (
++        <StatusBadge status="warn">{String(signals)} with signals</StatusBadge>
++      )}
++    </div>
++  );
++}
++
++/** Table cell: the application / protocol the detector observed. */
++export function PdCell({ pd }: { pd: TrafficPd | null }): JSX.Element {
++  if (pd === null) return <span className={styles.pdMuted}>—</span>;
++  const d = lead(pd);
++  const [status, label] = outcomeOf(d);
++  const name = pdName(d);
++  const host =
++    pd.client.hostname !== "" ? pd.client.hostname : pd.server.hostname;
++  return (
++    <div className={styles.pdCell}>
++      <div className={styles.pdLine}>
++        <StatusBadge status={status}>{label}</StatusBadge>
++        {name !== "" && <strong>{name}</strong>}
++        {pd.policy !== null && pd.policy.verdict !== "allowed" && (
++          <StatusBadge status={(VERDICT[pd.policy.verdict] ?? ["warn", ""])[0]}>
++            {pd.policy.verdict === "blocked" ? "Blocked" : "Would block"}
++          </StatusBadge>
++        )}
++        {pd.signals.length > 0 && (
++          <StatusBadge status="warn">
++            {String(pd.signals.length)} signal
++            {pd.signals.length > 1 ? "s" : ""}
++          </StatusBadge>
++        )}
++      </div>
++      {host !== "" && (
++        <div
++          className={styles.pdHost}
++          title="Asserted by the client (SNI / Host); not authenticated identity"
++        >
++          {host}
++        </div>
++      )}
++    </div>
++  );
++}
++
++function Direction({
++  title,
++  d,
++}: {
++  title: string;
++  d: TrafficPdDirection;
++}): JSX.Element {
++  const [status, label] = outcomeOf(d);
++  const name = pdName(d);
++  return (
++    <div className={styles.pdEvent}>
++      <div className={styles.pdEventHead}>{title}</div>
++      <div className={styles.pdLine}>
++        <StatusBadge status={status}>{label}</StatusBadge>
++        <strong>{name === "" ? "—" : name}</strong>
++        <span className={styles.pdMuted}>
++          {d.reason} · {String(d.observedBytes)} bytes observed
++        </span>
++      </div>
++      {d.detail !== "" && <p className={styles.pdReason}>{d.detail}</p>}
++    </div>
++  );
++}
++
++/** Row detail: layers, policy, signals, timeline and evidence ledger. */
++export function PdDetail({ pd }: { pd: TrafficPd }): JSX.Element {
++  const d = lead(pd);
++  const layers = ["TCP"];
++  const name = pdName(d);
++  if (d.outcome === "identified" && name !== "") layers.push(name);
++  const ledger = [
++    ...pd.client.evidence.map((e) => ({ ...e, dir: "client" })),
++    ...pd.server.evidence.map((e) => ({ ...e, dir: "server" })),
++  ];
++  const alpn = pd.client.offeredAlpn;
++  return (
++    <section className={styles.pdDetail} aria-label="Protocol detection">
++      <h3 className={styles.pdTitle}>Protocol detection</h3>
++      <div className={styles.pdLayers}>
++        {layers.map((l, i) => (
++          <span key={l}>
++            {i > 0 && <span className={styles.pdMuted}> → </span>}
++            <span className={styles.pdLayer}>{l}</span>
++          </span>
++        ))}
++        {pd.quarantined && (
++          <StatusBadge status="critical">Flow quarantined</StatusBadge>
++        )}
++      </div>
++
++      {pd.policy !== null && (
++        <div className={styles.pdBlock}>
++          <h4 className={styles.pdSub}>Rule protocol restriction</h4>
++          <KeyValue
++            items={[
++              [
++                "Verdict",
++                <StatusBadge
++                  key="v"
++                  status={(VERDICT[pd.policy.verdict] ?? ["neutral", ""])[0]}
++                >
++                  {(VERDICT[pd.policy.verdict] ?? ["", pd.policy.verdict])[1]}
++                </StatusBadge>,
++              ],
++              ["Why", REASON[pd.policy.reason] ?? pd.policy.reason],
++              ["Mode", pd.policy.mode],
++              ["Allowed protocols", pd.policy.allow.join(", ").toUpperCase()],
++              [
++                "Client bytes held for the decision",
++                pd.policy.mode === "enforce"
++                  ? `${String(pd.policy.heldBytes)} (none forwarded on a block)`
++                  : "not held in monitor mode",
++              ],
++            ]}
++          />
++        </div>
++      )}
++
++      <div className={styles.pdBlock}>
++        <h4 className={styles.pdSub}>
++          Signals <span className={styles.pdCount}>{pd.signals.length}</span>
++        </h4>
++        {pd.signals.length === 0 ? (
++          <p className={styles.pdNote}>No advisory signals were raised.</p>
++        ) : (
++          <ul className={styles.pdSignals}>
++            {pd.signals.map((s) => (
++              <li key={s}>{SIGNAL[s] ?? s}</li>
++            ))}
++          </ul>
++        )}
++        <p className={styles.pdNote}>
++          Signals describe what was observed. They do not mean the tunnel is
++          malicious or was blocked.
++        </p>
++      </div>
++
++      <div className={styles.pdBlock}>
++        <h4 className={styles.pdSub}>Detection timeline</h4>
++        <Direction title="Client → server" d={pd.client} />
++        <Direction title="Server → client" d={pd.server} />
++      </div>
++
++      <div className={styles.pdBlock}>
++        <h4 className={styles.pdSub}>
++          Evidence ledger{" "}
++          <span className={styles.pdCount}>{ledger.length}</span>
++        </h4>
++        {ledger.length === 0 ? (
++          <p className={styles.pdNote}>
++            No structural evidence was established.
++          </p>
++        ) : (
++          <table className={styles.pdLedger}>
++            <tbody>
++              {ledger.map((e, i) => (
++                <tr key={`${e.dir}-${e.field}-${String(i)}`}>
++                  <th scope="row">{e.field}</th>
++                  <td>
++                    {e.cls === "withheld" ? (
++                      <em>withheld</em>
++                    ) : (
++                      <Mono>{e.value}</Mono>
++                    )}
++                  </td>
++                  <td className={styles.pdMuted}>
++                    {e.dir} · {e.source} · {e.strength}
++                  </td>
++                </tr>
++              ))}
++            </tbody>
++          </table>
++        )}
++        {alpn.length > 0 && (
++          <p className={styles.pdNote}>
++            ALPN offered by the client: <Mono>{alpn.join(", ")}</Mono> (an
++            offer, not the negotiated protocol).
++          </p>
++        )}
++      </div>
++      <p className={styles.pdNote}>
++        Engine: {pd.engine}. Lab build. Host names and ALPN are peer assertions,
++        not authenticated identity.
++      </p>
++    </section>
++  );
++}
+diff --git a/frontend/src/features/monitor/TrafficPage.tsx b/frontend/src/features/monitor/TrafficPage.tsx
+index e52d265..c2e6b12 100644
+--- a/frontend/src/features/monitor/TrafficPage.tsx
++++ b/frontend/src/features/monitor/TrafficPage.tsx
+@@ -33,6 +33,7 @@ import {
+   resolveWindow,
+ } from "./timeRange";
+ import type { TimePreset } from "./timeRange";
++import { PdCell, PdDetail, PdMix } from "./ProtocolDetection";
+ import styles from "./monitor.module.css";
+ 
+ interface AppliedQuery {
+@@ -70,6 +71,7 @@ function statusBadge(s: string): JSX.Element {
+     AUTH_FAIL: "warn",
+     RATE_LIMITED: "warn",
+     IP_BLOCKED: "critical",
++    APP_BLOCKED: "critical", // LAB: ended by a rule's protocol restriction
+   };
+   return <StatusBadge status={map[s] ?? "neutral"}>{s}</StatusBadge>;
+ }
+@@ -130,9 +132,12 @@ function RowDetail({ e }: { e: TrafficEntry }): JSX.Element {
+     }
+   }
+   return (
+-    <div className={styles.rowDetail}>
+-      <KeyValue items={items} />
+-    </div>
++    <>
++      <div className={styles.rowDetail}>
++        <KeyValue items={items} />
++      </div>
++      {e.pd !== null && <PdDetail pd={e.pd} />}
++    </>
+   );
+ }
+ 
+@@ -491,6 +496,7 @@ function TrafficTable({
+ }): JSX.Element {
+   return (
+     <div className={styles.tableWrap}>
++      <PdMix rows={rows} />
+       <table className={styles.table}>
+         <caption className="sr-only">Traffic history query results</caption>
+         <thead>
+@@ -503,6 +509,7 @@ function TrafficTable({
+             <th scope="col">Identity</th>
+             <th scope="col">Method</th>
+             <th scope="col">Destination</th>
++            <th scope="col">Application / Protocol</th>
+             <th scope="col">Status</th>
+             <th scope="col">Rule</th>
+             <th scope="col" className={styles.numeric}>
+@@ -558,6 +565,9 @@ function TrafficRow({
+         <td>{e.identity === "" ? "—" : e.identity}</td>
+         <td className={styles.mono}>{e.method}</td>
+         <td className={styles.hostCell}>{e.host}</td>
++        <td>
++          <PdCell pd={e.pd} />
++        </td>
+         <td>{statusBadge(e.status)}</td>
+         <td className={styles.ruleCell}>
+           {/* 2A: the STABLE rule ID is authoritative for the Policy deep
+@@ -583,7 +593,7 @@ function TrafficRow({
+       </tr>
+       {open && (
+         <tr className={styles.detailRow}>
+-          <td colSpan={10}>
++          <td colSpan={11}>
+             <RowDetail e={e} />
+           </td>
+         </tr>
+diff --git a/frontend/src/features/monitor/monitor.module.css b/frontend/src/features/monitor/monitor.module.css
+index 115cfec..a8f316a 100644
+--- a/frontend/src/features/monitor/monitor.module.css
++++ b/frontend/src/features/monitor/monitor.module.css
+@@ -186,3 +186,151 @@
+   min-width: 180px;
+   flex: 0 1 auto;
+ }
++
++/* LAB: protocol detection (TrafficEntry.pd) */
++.pdCell {
++  min-width: 170px;
++}
++
++.pdLine {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  gap: var(--sp-2);
++}
++
++.pdHost {
++  font-family: var(--font-mono);
++  font-size: var(--fs-xs);
++  color: var(--color-text-muted);
++  margin-top: var(--sp-1);
++  overflow-wrap: anywhere;
++}
++
++.pdMuted {
++  color: var(--color-text-muted);
++  font-size: var(--fs-sm);
++}
++
++.pdDetail {
++  margin: var(--sp-2) var(--sp-3) var(--sp-3);
++  padding: var(--sp-3);
++  max-width: 900px;
++  border: 1px solid var(--color-border-subtle);
++  border-left: 3px solid var(--color-interactive);
++  border-radius: var(--r-md);
++  background: var(--color-surface);
++}
++
++.pdTitle {
++  margin: 0 0 var(--sp-2);
++  font-size: var(--fs-md);
++}
++
++.pdSub {
++  margin: 0 0 var(--sp-2);
++  font-size: var(--fs-sm);
++  color: var(--color-text-secondary);
++  text-transform: uppercase;
++  letter-spacing: 0.04em;
++}
++
++.pdBlock {
++  margin-top: var(--sp-3);
++  padding-top: var(--sp-3);
++  border-top: 1px solid var(--color-border-subtle);
++}
++
++.pdLayers {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  gap: var(--sp-2);
++}
++
++.pdLayer {
++  display: inline-block;
++  padding: var(--sp-1) var(--sp-2);
++  border: 1px solid var(--color-border);
++  border-radius: var(--r-sm);
++  font-family: var(--font-mono);
++  font-size: var(--fs-sm);
++  background: var(--color-surface-raised);
++}
++
++.pdCount {
++  display: inline-block;
++  margin-left: var(--sp-1);
++  padding: 0 var(--sp-2);
++  border-radius: var(--r-full);
++  background: var(--color-surface-sunken);
++  font-size: var(--fs-xs);
++}
++
++.pdEvent {
++  margin-bottom: var(--sp-2);
++}
++
++.pdEventHead {
++  font-size: var(--fs-xs);
++  color: var(--color-text-muted);
++  margin-bottom: var(--sp-1);
++}
++
++.pdReason {
++  margin: var(--sp-1) 0 0;
++  font-size: var(--fs-sm);
++}
++
++.pdNote {
++  margin: var(--sp-2) 0 0;
++  font-size: var(--fs-xs);
++  color: var(--color-text-muted);
++}
++
++.pdSignals {
++  margin: 0;
++  padding-left: var(--sp-4);
++  font-size: var(--fs-sm);
++}
++
++.pdLedger {
++  border-collapse: collapse;
++  font-size: var(--fs-sm);
++  width: 100%;
++}
++
++.pdLedger th {
++  text-align: left;
++  font-weight: 500;
++  color: var(--color-text-secondary);
++  padding: var(--sp-1) var(--sp-3) var(--sp-1) 0;
++  white-space: nowrap;
++}
++
++.pdLedger td {
++  padding: var(--sp-1) var(--sp-3) var(--sp-1) 0;
++  overflow-wrap: anywhere;
++}
++
++.pdMix {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  gap: var(--sp-2);
++  padding: var(--sp-2) var(--sp-3);
++  border-bottom: 1px solid var(--color-border-subtle);
++  font-size: var(--fs-sm);
++}
++
++.pdMixTitle {
++  color: var(--color-text-muted);
++  margin-right: var(--sp-2);
++}
++
++.pdMixChip {
++  padding: var(--sp-1) var(--sp-2);
++  border: 1px solid var(--color-border);
++  border-radius: var(--r-full);
++  background: var(--color-surface-raised);
++}
+diff --git a/frontend/src/features/policy/AccessRulesPage.tsx b/frontend/src/features/policy/AccessRulesPage.tsx
+index bedd3d3..6a6c0cd 100644
+--- a/frontend/src/features/policy/AccessRulesPage.tsx
++++ b/frontend/src/features/policy/AccessRulesPage.tsx
+@@ -97,6 +97,12 @@ function tlsSummary(r: PolicyRuleView): string {
+   return joinNonEmpty([
+     ["", r.sslAction],
+     ["profile:", r.decryptionProfile],
++    [
++      "protocols:",
++      r.appRestriction === undefined
++        ? ""
++        : `${r.appRestriction.allow.join("+").toUpperCase()} (${r.appRestriction.mode})`,
++    ],
+   ]);
+ }
+ 
+diff --git a/frontend/src/features/policy/RuleEditor.tsx b/frontend/src/features/policy/RuleEditor.tsx
+index 10557fe..f5711ee 100644
+--- a/frontend/src/features/policy/RuleEditor.tsx
++++ b/frontend/src/features/policy/RuleEditor.tsx
+@@ -24,6 +24,7 @@ import {
+   SelectField,
+   TextareaField,
+ } from "../../design-system/forms";
++import { APP_RESTRICTION_FAMILIES } from "../../api/policy";
+ import type { PolicyRuleView, PolicySchedule } from "../../api/policy";
+ import type {
+   AccessRuleWrite,
+@@ -90,6 +91,7 @@ function emptyWrite(): AccessRuleWrite {
+     logTraffic: undefined,
+     stripAlpn: undefined,
+     tlsSkipVerify: false,
++    appRestriction: undefined,
+     decryptionProfile: "",
+     action: "Allow",
+     redirectURL: "",
+@@ -480,6 +482,68 @@ export function RuleEditor(props: RuleEditorProps): JSX.Element {
+           )}
+         </fieldset>
+ 
++        {w.action === "Allow" && w.sslAction === "Bypass" && (
++          <fieldset className={styles.editorGroup}>
++            <legend>Protocol restriction (lab)</legend>
++            <SelectField
++              label="Restrict the protocols allowed on tunnels this rule permits"
++              help="The protocol detector looks at the first bytes of each raw tunnel. A restriction can only narrow this rule's allow. Monitor records what Enforce would do. Enforce holds the client's first bytes until the protocol is decided, so nothing from a disallowed protocol reaches the server."
++              value={w.appRestriction?.mode ?? ""}
++              onChange={(e) => {
++                const v = e.target.value;
++                if (v === "monitor" || v === "enforce") {
++                  setW({
++                    appRestriction: {
++                      mode: v,
++                      allow: w.appRestriction?.allow ?? ["tls"],
++                      unknown: w.appRestriction?.unknown ?? "block",
++                    },
++                  });
++                } else {
++                  setW({ appRestriction: undefined });
++                }
++              }}
++            >
++              <option value="">No restriction</option>
++              <option value="monitor">Monitor (log only)</option>
++              <option value="enforce">Enforce (block other protocols)</option>
++            </SelectField>
++            {w.appRestriction !== undefined && (
++              <>
++                {APP_RESTRICTION_FAMILIES.map((f) => (
++                  <Checkbox
++                    key={f}
++                    label={`Allow ${f.toUpperCase()}`}
++                    checked={w.appRestriction?.allow.includes(f) ?? false}
++                    onChange={(e) => {
++                      const cur = w.appRestriction;
++                      if (cur === undefined) return;
++                      const allow = e.target.checked
++                        ? [...cur.allow.filter((x) => x !== f), f]
++                        : cur.allow.filter((x) => x !== f);
++                      setW({ appRestriction: { ...cur, allow } });
++                    }}
++                  />
++                ))}
++                <SelectField
++                  label="When the protocol cannot be identified"
++                  help="Applies to unknown, incomplete or budget-exhausted results and when the detector is unavailable. There is no implicit default."
++                  value={w.appRestriction.unknown}
++                  onChange={(e) => {
++                    const cur = w.appRestriction;
++                    const v = e.target.value;
++                    if (cur !== undefined && (v === "allow" || v === "block"))
++                      setW({ appRestriction: { ...cur, unknown: v } });
++                  }}
++                >
++                  <option value="block">Block the tunnel</option>
++                  <option value="allow">Allow the tunnel</option>
++                </SelectField>
++              </>
++            )}
++          </fieldset>
++        )}
++
+         <fieldset className={styles.editorGroup}>
+           <legend>File handling</legend>
+           <OptionSelect
+diff --git a/frontend/src/test/ops-decoders.test.ts b/frontend/src/test/ops-decoders.test.ts
+index 6a6889f..8952a7e 100644
+--- a/frontend/src/test/ops-decoders.test.ts
++++ b/frontend/src/test/ops-decoders.test.ts
+@@ -55,6 +55,71 @@ describe("decodeTrafficEntry", () => {
+   it("fails closed on a missing required field", () => {
+     expect(() => decodeTrafficEntry(omit(entry, "host"))).toThrow(DecodeError);
+   });
++
++  // LAB: the protocol-detector block (entry.pd).
++  const dir = { outcome: "identified", reason: "engine", observed_bytes: 23 };
++  it("has no pd block unless the entry carries one", () => {
++    expect(decodeTrafficEntry(entry).pd).toBeNull();
++  });
++
++  it("decodes the pd block with its policy verdict and signals", () => {
++    const e = decodeTrafficEntry({
++      ...entry,
++      pd: {
++        schema_version: 1,
++        engine: "real",
++        quarantined: false,
++        signals: ["nonstandard_port"],
++        client: {
++          ...dir,
++          family: "ssh",
++          protocol: "ssh",
++          evidence: [
++            {
++              field: "ssh_version",
++              value: "2.0",
++              source: "wire:banner",
++              strength: "structural",
++              class: "asserted",
++            },
++          ],
++        },
++        server: { outcome: "incomplete", reason: "closed", observed_bytes: 0 },
++        policy: {
++          mode: "enforce",
++          allow: ["tls"],
++          verdict: "blocked",
++          reason: "protocol_not_allowed",
++          held_bytes: 23,
++        },
++      },
++    });
++    expect(e.pd?.client.family).toBe("ssh");
++    expect(e.pd?.client.evidence[0]?.cls).toBe("asserted");
++    expect(e.pd?.server.offeredAlpn).toEqual([]);
++    expect(e.pd?.signals).toEqual(["nonstandard_port"]);
++    expect(e.pd?.policy).toEqual({
++      mode: "enforce",
++      allow: ["tls"],
++      verdict: "blocked",
++      reason: "protocol_not_allowed",
++      heldBytes: 23,
++    });
++  });
++
++  it("fails closed on a pd block without an outcome", () => {
++    expect(() =>
++      decodeTrafficEntry({
++        ...entry,
++        pd: {
++          engine: "real",
++          quarantined: false,
++          client: { reason: "engine", observed_bytes: 1 },
++          server: dir,
++        },
++      }),
++    ).toThrow(DecodeError);
++  });
+ });
+ 
+ describe("decodeTrafficPage (cursor contract)", () => {
+diff --git a/internal/logstore/logstore.go b/internal/logstore/logstore.go
+index 665874a..00aa18c 100644
+--- a/internal/logstore/logstore.go
++++ b/internal/logstore/logstore.go
+@@ -102,6 +102,60 @@ type Entry struct {
+ 	// is queryable rather than indistinguishable from an old/forgotten record. Populated
+ 	// only on the decryption decision path (a later ADR-0011 slice); nil until then.
+ 	Dec *DecryptionBlock `json:"dec,omitempty"`
++
++	// LAB (local branch lab/protocol-detector): protocol-detector observation of a raw tunnel,
++	// following the dec block's rules — nested pointer, block-level omitempty (absent when nothing
++	// was observed, so the wire is byte-identical with observation off), its own schema version,
++	// closed-vocabulary outcome/reason strings, hostnames redacted by the caller.
++	PD *ProtoDetectBlock `json:"pd,omitempty"`
++}
++
++// ProtoDetectBlock is the nested "pd" object on Entry (lab).
++type ProtoDetectBlock struct {
++	SchemaVersion int            `json:"schema_version"`
++	Engine        string         `json:"engine"`
++	Client        ProtoDetectDir `json:"client"`
++	Server        ProtoDetectDir `json:"server"`
++	Quarantined   bool           `json:"quarantined"`
++	// Signals are closed-vocabulary advisory flags: nonstandard_port, host_mismatch,
++	// server_unresolved. They describe what was observed; they are not verdicts.
++	Signals []string `json:"signals,omitempty"`
++	// Policy is present when the matched rule carries a protocol restriction.
++	Policy *ProtoDetectPolicy `json:"policy,omitempty"`
++}
++
++// ProtoDetectPolicy records how a rule's protocol restriction was applied to the tunnel.
++type ProtoDetectPolicy struct {
++	Mode    string   `json:"mode"`    // monitor | enforce
++	Allow   []string `json:"allow"`   // the rule's allowed families
++	Verdict string   `json:"verdict"` // allowed | would_block | blocked
++	Reason  string   `json:"reason"`  // protocol_allowed | protocol_not_allowed | unknown_allowed | unknown_blocked | detector_unavailable
++	// HeldBytes is how many client bytes were held back while the detector decided (enforce only);
++	// on a block none of them were forwarded.
++	HeldBytes int `json:"held_bytes"`
++}
++
++// ProtoDetectDir is one direction of a ProtoDetectBlock.
++type ProtoDetectDir struct {
++	Outcome       string                `json:"outcome"`
++	Reason        string                `json:"reason"`
++	Family        string                `json:"family,omitempty"`
++	Protocol      string                `json:"protocol,omitempty"`
++	Encryption    string                `json:"encryption,omitempty"`
++	Hostname      string                `json:"hostname,omitempty"`
++	Detail        string                `json:"detail,omitempty"`
++	ObservedBytes int                   `json:"observed_bytes"`
++	OfferedALPN   []string              `json:"offered_alpn,omitempty"`
++	Evidence      []ProtoDetectEvidence `json:"evidence,omitempty"`
++}
++
++// ProtoDetectEvidence is one evidence item of a direction.
++type ProtoDetectEvidence struct {
++	Field    string `json:"field"`
++	Value    string `json:"value"`
++	Source   string `json:"source"`
++	Strength string `json:"strength"`
++	Class    string `json:"class"`
+ }
+ 
+ // DecryptionBlock is the nested "dec" object on Entry (ADR-0011 §2.1). Fields are plain
+diff --git a/internal/protodetect/protodetect.go b/internal/protodetect/protodetect.go
+index 7faba39..576c290 100644
+--- a/internal/protodetect/protodetect.go
++++ b/internal/protodetect/protodetect.go
+@@ -35,6 +35,8 @@ type Flow interface {
+ 	// Observe is given bytes already read from the peer. done reports that this direction needs
+ 	// no more bytes, so the relay can hand back to its normal copy path.
+ 	Observe(d Direction, data []byte) (done bool)
++	// Peek returns one direction's current outcome and family without ending anything.
++	Peek(d Direction) (outcome, family string, done bool)
+ 	// End reports that a direction carries no more bytes.
+ 	End(d Direction)
+ 	// Expire ends the observation window. It touches no socket.
+@@ -151,6 +153,18 @@ func (f *fakeFlow) Observe(d Direction, data []byte) bool {
+ 	return f.done[d]
+ }
+ 
++func (f *fakeFlow) Peek(d Direction) (string, string, bool) {
++	f.mu.Lock()
++	defer f.mu.Unlock()
++	switch {
++	case f.failed:
++		return "failed", "", true
++	case f.outcome[d] != "":
++		return f.outcome[d], "fake", true
++	}
++	return "detecting", "", f.done[d]
++}
++
+ func (f *fakeFlow) End(d Direction) {
+ 	f.mu.Lock()
+ 	defer f.mu.Unlock()
+diff --git a/internal/protodetect/real.go b/internal/protodetect/real.go
+index 4c986b9..30e759e 100644
+--- a/internal/protodetect/real.go
++++ b/internal/protodetect/real.go
+@@ -61,6 +61,16 @@ func (f realFlow) Observe(d Direction, data []byte) (done bool) {
+ 	return err != nil || u.Done
+ }
+ 
++func (f realFlow) Peek(d Direction) (outcome, family string, done bool) {
++	defer func() {
++		if recover() != nil {
++			outcome, family, done = "failed", "", true
++		}
++	}()
++	s := f.flow.Snapshot().Direction(dir(d))
++	return s.Outcome.String(), s.Family, s.Done
++}
++
+ func (f realFlow) End(d Direction) {
+ 	defer func() { _ = recover() }()
+ 	_, _ = f.flow.EndDirection(dir(d), detector.EndEOF)
+diff --git a/internal/reqlog/reqlog.go b/internal/reqlog/reqlog.go
+index acbd6cb..ad6526d 100644
+--- a/internal/reqlog/reqlog.go
++++ b/internal/reqlog/reqlog.go
+@@ -106,7 +106,8 @@ func LevelForStatus(status string) string {
+ 	case "BLOCKED", "THREAT_BLOCKED", "FILE_BLOCKED", "SCAN_BLOCKED",
+ 		"DPI_BLOCKED", "POLYGLOT_BLOCKED", "CDR_BLOCKED", "CDR_SANITIZED",
+ 		"RATE_LIMITED", "IP_BLOCKED",
+-		"POLICY_BLOCK", "POLICY_DROP", "POLICY_REDIRECT", "POLICY_DEFAULT_DENY":
++		"POLICY_BLOCK", "POLICY_DROP", "POLICY_REDIRECT", "POLICY_DEFAULT_DENY",
++		"APP_BLOCKED": // LAB: a tunnel ended by a rule's protocol restriction
+ 		return "WARN"
+ 	default: // AUTH_FAIL, CDR_ERROR, and anything unexpected
+ 		return "ERROR"
+diff --git a/logstore.go b/logstore.go
+index 160200a..0c71c7d 100644
+--- a/logstore.go
++++ b/logstore.go
+@@ -32,6 +32,8 @@ type (
+ 	// DecryptionBlock is the nested "dec" observability block on a LogEntry
+ 	// (ADR-0011); re-exposed unqualified for the recorder seam and callers.
+ 	DecryptionBlock = logstore.DecryptionBlock
++	// ProtoDetectBlock is the LAB nested "pd" block on a LogEntry.
++	ProtoDetectBlock = logstore.ProtoDetectBlock
+ )
+ 
+ // errLogStoreEncMismatch / errLogStoreSaltUnusable are re-exposed for the
+diff --git a/policy.go b/policy.go
+index 61990e2..f796321 100644
+--- a/policy.go
++++ b/policy.go
+@@ -165,6 +165,11 @@ type PolicyRule struct {
+ 	ModifiedBy string `json:"modifiedBy,omitempty"` // actor identity of the last content edit
+ 	Comment    string `json:"comment,omitempty"`    // admin free-text note (client-authoritative, like Name/Action)
+ 
++	// LAB (local branch lab/protocol-detector): protocol restriction on the raw tunnels this rule
++	// allows. nil = no restriction (the rule behaves exactly as before). It can only NARROW an
++	// Allow: it never turns a block into an allow and is ignored on non-Allow rules.
++	AppRestriction *AppRestriction `json:"appRestriction,omitempty"`
++
+ 	// Metadata scope (policy-metadata P1): ModifiedAt/ModifiedBy track the last
+ 	// edit to a rule's DEFINITION (its fields), stamped by
+ 	// stampRuleMetadataForWrite in the create/update handlers. Position-only
+@@ -2733,3 +2738,55 @@ func lookupHostCategory(host string) (category, tier, matchedBy string) {
+ type SSLBypassMatcher = sslbypass.Matcher
+ 
+ var sslBypass = &SSLBypassMatcher{}
++
++// AppRestriction (LAB) restricts which detected protocol families may use a raw CONNECT tunnel that
++// a rule allows. The protocol detector observes the first bytes of the tunnel:
++//
++//   - Mode "monitor": nothing is held or blocked; the log entry records what enforce would have done.
++//   - Mode "enforce": the client's bytes are HELD (bounded) until the detector decides on the client
++//     direction, so no client byte of a disallowed protocol reaches the server. The server may speak
++//     first (SSH, SMTP greetings still flow back to the client).
++//
++// Unknown says what happens when the detector cannot name the protocol (unknown, incomplete,
++// budget exhausted, unsupported, engine failure, or the detector being unavailable): "allow" or
++// "block". There is no implicit default.
++type AppRestriction struct {
++	Mode    string   `json:"mode"`    // "monitor" | "enforce"
++	Allow   []string `json:"allow"`   // detector families, e.g. ["tls"]
++	Unknown string   `json:"unknown"` // "allow" | "block"
++}
++
++// appRestrictionFamilies are the families a restriction may name (the lab detector profile).
++var appRestrictionFamilies = []string{"http", "tls", "ssh", "smtp"}
++
++// validateAppRestriction rejects a malformed restriction. nil is valid (no restriction).
++func validateAppRestriction(rule PolicyRule) error {
++	ar := rule.AppRestriction
++	if ar == nil {
++		return nil
++	}
++	if rule.Action != ActionAllow {
++		return fmt.Errorf("protocol restriction is only valid on Allow rules")
++	}
++	if ar.Mode != "monitor" && ar.Mode != "enforce" {
++		return fmt.Errorf("protocol restriction mode must be monitor or enforce")
++	}
++	if ar.Unknown != "allow" && ar.Unknown != "block" {
++		return fmt.Errorf("protocol restriction needs an explicit unknown action: allow or block")
++	}
++	if len(ar.Allow) == 0 {
++		return fmt.Errorf("protocol restriction needs at least one allowed protocol")
++	}
++	seen := map[string]bool{}
++	for _, f := range ar.Allow {
++		ok := false
++		for _, known := range appRestrictionFamilies {
++			ok = ok || f == known
++		}
++		if !ok || seen[f] {
++			return fmt.Errorf("protocol restriction: unknown or repeated protocol")
++		}
++		seen[f] = true
++	}
++	return nil
++}
+diff --git a/protodetect_lab.go b/protodetect_lab.go
+index 05c6c33..2bd6f6f 100644
+--- a/protodetect_lab.go
++++ b/protodetect_lab.go
+@@ -2,8 +2,19 @@ package main
+ 
+ // LAB ONLY (local branch lab/protocol-detector, never proposed upstream as-is).
+ //
+-// Observation of CONNECT-bypass tunnels by a protocol detector, in observe mode: nothing here
+-// makes or changes an access decision, holds a byte back, or shortens the tunnel's idle timeout.
++// Protocol detection on CONNECT-bypass tunnels.
++//
++// Observe: the detector is shown the first bytes of each direction; nothing is held, delayed or
++// decided. The result rides the TUNNEL_CLOSED log entry as a nested "pd" block.
++//
++// Restrict (per rule, PolicyRule.AppRestriction): a rule that ALLOWS a tunnel may name the protocol
++// families allowed on it. Mode "monitor" only records what enforce would have done. Mode "enforce"
++// holds the client's bytes (bounded) until the detector decides on the client direction, so no
++// client byte of a disallowed protocol reaches the server; the server may still speak first. A
++// restriction can only narrow an allow, and what happens when the protocol cannot be named is the
++// rule's explicit Unknown action. If the detector is unavailable an enforce rule applies that same
++// Unknown action; it never silently allows.
++//
+ // Wiring is by environment variable instead of a config surface on purpose: a real setting needs
+ // config_surfaces.go, the snapshot, the API and the GUI (working plan section 12).
+ //
+@@ -23,6 +34,7 @@ import (
+ 	"sync/atomic"
+ 	"time"
+ 
++	"github.com/KidCarmi/Culvert/internal/logstore"
+ 	"github.com/KidCarmi/Culvert/internal/protodetect"
+ )
+ 
+@@ -53,55 +65,157 @@ func labObs() protodetect.Observer {
+ 			if v := os.Getenv("CULVERT_LAB_PD_FAMILIES"); v != "" {
+ 				families = strings.Split(v, ",")
+ 			}
+-			real, err := protodetect.NewReal(families, labMaxBytes, labMaxFeeds, labMaxObserved)
++			realEngine, err := protodetect.NewReal(families, labMaxBytes, labMaxFeeds, labMaxObserved)
+ 			if err != nil {
+ 				logger.Printf("LAB protodetect: real engine refused its configuration, observation stays off: %v", err)
+ 				return
+ 			}
+-			labObserver = real
++			labObserver = realEngine
+ 		}
+ 		if labObserver != nil {
+-			logger.Printf("LAB protodetect: observe mode ON, engine=%s window=%v (lab build; not a product feature)", labObserver.Name(), labWindow)
++			logger.Printf("LAB protodetect: ON, engine=%s window=%v (lab build; not a product feature)", labObserver.Name(), labWindow)
+ 		}
+ 	})
+ 	return labObserver
+ }
+ 
+-// labObservation is one observed tunnel: the engine flow plus the window timer.
++// labObservation is one tunnel under observation and, when its rule says so, under a protocol
++// restriction. flow is nil when the detector is unavailable but the rule still carries a restriction.
+ type labObservation struct {
+-	flow   protodetect.Flow
+-	expiry int64 // monotonic nanos at which the observation window ends
+-	timer  *time.Timer
++	flow     protodetect.Flow
++	expiry   int64 // monotonic nanos at which the observation window ends
++	timer    *time.Timer
++	restrict *AppRestriction
++
++	mu        sync.Mutex
++	verdict   string // "" until decided: allowed | would_block | blocked
++	reason    string
++	heldBytes int
++	held      []byte // client bytes held back in enforce mode; owned by the client relay goroutine
+ }
+ 
+-// labBeginObservation admits a tunnel for observation; nil when observation is off or refused.
+-func labBeginObservation(host string) *labObservation {
+-	obs := labObs()
+-	if obs == nil {
+-		return nil
++// labBeginObservation admits a tunnel. It returns nil when there is nothing to do: observation is
++// off (or refused) and the matched rule carries no restriction.
++func labBeginObservation(host string, match *PolicyMatch) *labObservation {
++	var restrict *AppRestriction
++	if match != nil && match.Rule != nil && match.Action == ActionAllow {
++		restrict = match.Rule.AppRestriction
++	}
++	o := &labObservation{restrict: restrict, expiry: monoNanos() + int64(labWindow)}
++	if obs := labObs(); obs != nil {
++		if flow, ok := obs.Begin(host); ok {
++			o.flow = flow
++			// The timer releases the engine's state when the window ends even if both relay
++			// directions are blocked (in Read or in Write). Expire only takes the flow's own
++			// lock; it touches no socket and no deadline.
++			o.timer = time.AfterFunc(labWindow, flow.Expire)
++		}
+ 	}
+-	flow, ok := obs.Begin(host)
+-	if !ok {
++	if o.flow == nil && restrict == nil {
+ 		return nil
+ 	}
+-	o := &labObservation{flow: flow, expiry: monoNanos() + int64(labWindow)}
+-	// The timer releases the engine's state when the window ends even if both relay directions
+-	// are blocked (in Read or in Write). Expire only takes the flow's own lock; it touches no
+-	// socket and no deadline, so it cannot end or prolong the tunnel.
+-	o.timer = time.AfterFunc(labWindow, flow.Expire)
+ 	return o
+ }
+ 
+-// labObservePrebuffer shows the engine the client bytes the HTTP server had already buffered
+-// (they are forwarded by the caller exactly as before).
+-func (o *labObservation) labObservePrebuffer(b []byte) {
+-	if o != nil && len(b) > 0 {
+-		o.flow.Observe(protodetect.ClientToServer, b)
++func (o *labObservation) enforcing() bool {
++	return o != nil && o.restrict != nil && o.restrict.Mode == "enforce"
++}
++
++func (o *labObservation) blocked() bool {
++	if o == nil {
++		return false
++	}
++	o.mu.Lock()
++	defer o.mu.Unlock()
++	return o.verdict == "blocked"
++}
++
++func (o *labObservation) observe(d protodetect.Direction, b []byte) bool {
++	if o.flow == nil {
++		return true
++	}
++	return o.flow.Observe(d, b)
++}
++
++func (o *labObservation) end(d protodetect.Direction) {
++	if o.flow != nil {
++		o.flow.End(d)
++	}
++}
++
++// decisionReady reports whether the client direction has left "detecting".
++func (o *labObservation) decisionReady() bool {
++	if o.flow == nil {
++		return true
++	}
++	outcome, _, done := o.flow.Peek(protodetect.ClientToServer)
++	return done || outcome != "detecting"
++}
++
++// decide applies the rule's restriction to the client direction once and returns whether the
++// tunnel may carry client bytes. In monitor mode it always returns true and records would_block.
++func (o *labObservation) decide() bool {
++	o.mu.Lock()
++	defer o.mu.Unlock()
++	if o.verdict != "" {
++		return o.verdict != "blocked"
++	}
++	outcome, family := "unavailable", ""
++	if o.flow != nil {
++		outcome, family, _ = o.flow.Peek(protodetect.ClientToServer)
++	}
++	block := false
++	switch {
++	case (outcome == "identified" || outcome == "outside_profile") && family != "":
++		allowed := false
++		for _, f := range o.restrict.Allow {
++			allowed = allowed || f == family
++		}
++		if allowed {
++			o.reason = "protocol_allowed"
++		} else {
++			block, o.reason = true, "protocol_not_allowed"
++		}
++	default: // unknown, incomplete, budget exhausted, unsupported, failed, or no detector
++		block = o.restrict.Unknown == "block"
++		switch {
++		case o.flow == nil:
++			o.reason = "detector_unavailable"
++		case block:
++			o.reason = "unknown_blocked"
++		default:
++			o.reason = "unknown_allowed"
++		}
++	}
++	switch {
++	case !block:
++		o.verdict = "allowed"
++	case o.restrict.Mode == "enforce":
++		o.verdict = "blocked"
++	default:
++		o.verdict = "would_block"
++	}
++	return o.verdict != "blocked"
++}
++
++// labTakePrebuffer handles the client bytes the HTTP server had already buffered. Observe mode: the
++// engine is shown them and the caller forwards them exactly as before (it returns false). Enforce
++// mode: they are held with the rest of the client's first bytes and the caller must NOT forward
++// them (it returns true).
++func (o *labObservation) labTakePrebuffer(b []byte) (held bool) {
++	if o == nil || len(b) == 0 {
++		return false
++	}
++	o.observe(protodetect.ClientToServer, b)
++	if !o.enforcing() {
++		return false
+ 	}
++	o.held = append(o.held, b...)
++	return true
+ }
+ 
+-// labBidiRelay is bidiRelayCounted with an observed prefix on each direction. With o == nil it
+-// IS bidiRelayCounted.
++// labBidiRelay is bidiRelayCounted with an observed (and, in enforce mode, held) prefix. With
++// o == nil it IS bidiRelayCounted.
+ func labBidiRelay(o *labObservation, destConn, clientConn net.Conn) (toDest, toClient int64) {
+ 	if o == nil {
+ 		return bidiRelayCounted(destConn, clientConn, clientConn, destConn)
+@@ -131,21 +245,91 @@ func labRelayCounted(o *labObservation, d protodetect.Direction, dst, src net.Co
+ 	}
+ }
+ 
++// labHoldClient is the enforce-mode prefix of the client direction: it reads and shows the engine
++// the client's first bytes WITHOUT forwarding them, until the client direction is decided, the
++// window ends, the hold budget is reached or the client stops. It then applies the restriction:
++// on allow the held bytes are forwarded in order; on block both legs are closed and none of them
++// is forwarded. ok=false means the direction is finished (blocked, write error or client EOF).
++func labHoldClient(o *labObservation, dst, src net.Conn, shared *atomic.Int64) (total int64, ok bool) {
++	timeout := tunnelIdleTimeout
++	armInterval := timeout / 2
++	buf := make([]byte, labTapBufSize)
++	eof := false
++	for !eof && !o.decisionReady() && len(o.held) < labMaxBytes {
++		remaining := time.Duration(o.expiry - monoNanos())
++		if remaining <= 0 {
++			break
++		}
++		wait := armInterval
++		if remaining < wait {
++			wait = remaining
++		}
++		src.SetReadDeadline(time.Now().Add(wait)) //nolint:errcheck // surfaces as the next read error
++		n, err := src.Read(buf)
++		if n > 0 {
++			shared.Store(monoNanos())
++			o.observe(protodetect.ClientToServer, buf[:n])
++			o.held = append(o.held, buf[:n]...)
++		}
++		if err != nil {
++			var ne net.Error
++			if errors.As(err, &ne) && ne.Timeout() {
++				if monoSince(shared.Load()) >= timeout {
++					dst.Close() //nolint:errcheck // idle teardown, as in idleCopyCounted
++					src.Close() //nolint:errcheck
++					o.end(protodetect.ClientToServer)
++					return 0, false
++				}
++				continue
++			}
++			eof = true
++		}
++	}
++	o.mu.Lock()
++	o.heldBytes = len(o.held)
++	o.mu.Unlock()
++	if !o.decide() {
++		o.held = nil
++		dst.Close() //nolint:errcheck // restriction block: end both legs; no held byte was forwarded
++		src.Close() //nolint:errcheck
++		o.end(protodetect.ClientToServer)
++		return 0, false
++	}
++	wn, werr := dst.Write(o.held)
++	o.held = nil
++	total = int64(wn)
++	if werr != nil || eof {
++		o.end(protodetect.ClientToServer)
++		return total, false
++	}
++	return total, true
++}
++
+ // labObservedCopy relays src→dst. While the observation window is open it reads into a small
+ // buffer, WRITES FIRST, then shows the same bytes to the engine; when the engine is done, the
+ // window ends or the direction ends, it returns to idleCopyCounted on the original conns, so
+ // the kernel splice path carries the rest of the tunnel. It is the only owner of src's read
+ // deadline during the prefix, exactly as idleCopyCounted is afterwards.
+ func labObservedCopy(o *labObservation, d protodetect.Direction, dst, src net.Conn, shared *atomic.Int64) int64 {
++	var total int64
++	if d == protodetect.ClientToServer && o.enforcing() {
++		n, ok := labHoldClient(o, dst, src, shared)
++		total += n
++		if !ok {
++			return total
++		}
++	}
+ 	timeout := tunnelIdleTimeout
+ 	armInterval := timeout / 2
+ 	buf := make([]byte, labTapBufSize)
+-	var total int64
+-	for {
++	for o.flow != nil {
+ 		remaining := time.Duration(o.expiry - monoNanos())
+ 		if remaining <= 0 {
+ 			break // window over: hand off; this is not an idle event and stamps nothing
+ 		}
++		if _, _, done := o.flow.Peek(d); done {
++			break
++		}
+ 		wait := armInterval
+ 		if remaining < wait {
+ 			wait = remaining
+@@ -156,9 +340,9 @@ func labObservedCopy(o *labObservation, d protodetect.Direction, dst, src net.Co
+ 			shared.Store(monoNanos())
+ 			wn, werr := dst.Write(buf[:n])
+ 			total += int64(wn)
+-			engineDone := o.flow.Observe(d, buf[:n])
++			engineDone := o.observe(d, buf[:n])
+ 			if werr != nil {
+-				o.flow.End(d)
++				o.end(d)
+ 				return total
+ 			}
+ 			if engineDone && err == nil {
+@@ -172,12 +356,12 @@ func labObservedCopy(o *labObservation, d protodetect.Direction, dst, src net.Co
+ 					logger.Printf("tunnel idle timeout: no bytes in either direction for %v, closing relay", timeout)
+ 					dst.Close() //nolint:errcheck // teardown, as in idleCopyCounted
+ 					src.Close() //nolint:errcheck
+-					o.flow.End(d)
++					o.end(d)
+ 					return total
+ 				}
+ 				continue // loop top decides between "window over" and "keep waiting"
+ 			}
+-			o.flow.End(d) // EOF or a terminal error
++			o.end(d) // EOF or a terminal error
+ 			return total
+ 		}
+ 	}
+@@ -185,35 +369,119 @@ func labObservedCopy(o *labObservation, d protodetect.Direction, dst, src net.Co
+ 	return total + idleCopyCounted(dst, src, src, shared)
+ }
+ 
+-// labFinishObservation releases the observation and writes one lab log line. Hostnames go
+-// through the same redaction switch as the decryption record.
+-func labFinishObservation(o *labObservation, match *PolicyMatch, host string, toDest, toClient int64) {
++// labRelease stops the window timer and releases the engine state. Idempotent; safe on nil.
++func (o *labObservation) labRelease() {
+ 	if o == nil {
+ 		return
+ 	}
+-	o.timer.Stop()
+-	rec := o.flow.Finish()
+-	if match != nil && !ruleLogsTraffic(match.Rule) {
+-		return // a rule that does not log traffic does not log observations either
+-	}
+-	redact := decRedactHosts()
+-	for _, dr := range []*protodetect.DirRecord{&rec.Client, &rec.Server} {
+-		dr.Hostname = redactHost(dr.Hostname, redact)
+-		for i := range dr.Evidence {
+-			if dr.Evidence[i].Class == "hostname" {
+-				dr.Evidence[i].Value = redactHost(dr.Evidence[i].Value, redact)
++	if o.timer != nil {
++		o.timer.Stop()
++	}
++	if o.flow != nil {
++		o.flow.Finish()
++	}
++}
++
++// labStandardPorts are the ports a family is expected on; anything else is flagged nonstandard_port.
++var labStandardPorts = map[string][]string{
++	"tls": {"443", "8443", "993", "995", "465", "636", "853"}, "ssh": {"22"}, "smtp": {"25", "587"},
++	"http": {"80", "8080", "8000", "3128"},
++}
++
++func labHostOnly(hostport string) string {
++	if h, _, err := net.SplitHostPort(hostport); err == nil {
++		return strings.ToLower(strings.TrimSuffix(h, "."))
++	}
++	return strings.ToLower(strings.TrimSuffix(hostport, "."))
++}
++
++// labSignals derives the advisory flags from the unredacted record.
++func labSignals(rec protodetect.Record, dest string) []string {
++	var signals []string
++	family := ""
++	for _, dr := range []protodetect.DirRecord{rec.Client, rec.Server} {
++		if family == "" && dr.Outcome == "identified" {
++			family = dr.Family
++		}
++	}
++	if ports, ok := labStandardPorts[family]; ok {
++		_, port, _ := net.SplitHostPort(dest)
++		standard := false
++		for _, p := range ports {
++			standard = standard || p == port
++		}
++		if !standard {
++			signals = append(signals, "nonstandard_port")
++		}
++	}
++	if h := rec.Client.Hostname; h != "" && labHostOnly(h) != labHostOnly(dest) {
++		signals = append(signals, "host_mismatch")
++	}
++	if rec.Client.Outcome == "identified" && rec.Client.Family == "tls" && rec.Server.Outcome == "unknown" &&
++		strings.Contains(rec.Server.Detail, "key share group") {
++		signals = append(signals, "server_unresolved")
++	}
++	return signals
++}
++
++// labFinishObservation releases the observation and returns the pd block for the tunnel's log
++// entry. Hostnames (the field and hostname-class evidence) go through the same keyed destination
++// pseudonymizer as the entry's host, so the block never carries a plaintext destination when
++// redaction is on. A rule that does not log traffic logs no observation, except a block.
++func labFinishObservation(o *labObservation, match *PolicyMatch, host string, toDest, toClient int64) *ProtoDetectBlock {
++	if o == nil {
++		return nil
++	}
++	if o.timer != nil {
++		o.timer.Stop()
++	}
++	rec := protodetect.Record{Engine: "unavailable",
++		Client: protodetect.DirRecord{Outcome: "incomplete", Reason: "closed"}, Server: protodetect.DirRecord{Outcome: "incomplete", Reason: "closed"}}
++	if o.restrict != nil {
++		o.decide() // monitor mode, and enforce tunnels that ended before the client direction decided
++	}
++	if o.flow != nil {
++		rec = o.flow.Finish()
++	}
++	if match != nil && !ruleLogsTraffic(match.Rule) && !o.blocked() {
++		return nil
++	}
++	conv := func(dr protodetect.DirRecord) logstore.ProtoDetectDir {
++		out := logstore.ProtoDetectDir{Outcome: dr.Outcome, Reason: dr.Reason, Family: dr.Family, Protocol: dr.Protocol,
++			Encryption: dr.Encrypt, Hostname: dr.Hostname, Detail: dr.Detail, ObservedBytes: dr.Observed, OfferedALPN: dr.OfferedALPN}
++		if out.Hostname != "" {
++			out.Hostname = redactDestinationHost(out.Hostname)
++		}
++		for _, ev := range dr.Evidence {
++			if ev.Class == "hostname" && ev.Value != "" {
++				ev.Value = redactDestinationHost(ev.Value)
+ 			}
++			out.Evidence = append(out.Evidence, logstore.ProtoDetectEvidence{Field: ev.Field, Value: ev.Value, Source: ev.Source,
++				Strength: ev.Strength, Class: ev.Class})
+ 		}
++		return out
++	}
++	block := &ProtoDetectBlock{SchemaVersion: 1, Engine: rec.Engine, Client: conv(rec.Client), Server: conv(rec.Server),
++		Quarantined: rec.Quarantined, Signals: labSignals(rec, host)}
++	if o.restrict != nil {
++		o.mu.Lock()
++		block.Policy = &logstore.ProtoDetectPolicy{Mode: o.restrict.Mode, Allow: append([]string(nil), o.restrict.Allow...),
++			Verdict: o.verdict, Reason: o.reason, HeldBytes: o.heldBytes}
++		o.mu.Unlock()
++	}
++	stats := protodetect.Stats{}
++	if obs := labObs(); obs != nil {
++		stats = obs.Stats()
+ 	}
+ 	line, err := json.Marshal(struct {
+ 		Dest      string   `json:"dest"`
+ 		Forwarded [2]int64 `json:"forwarded_bytes"`
+-		protodetect.Record
++		*ProtoDetectBlock
+ 		Stats    protodetect.Stats `json:"engine_stats"`
+ 		Handoffs int64             `json:"handoffs_total"`
+-	}{redactHost(host, redact), [2]int64{toDest, toClient}, rec, labObs().Stats(), labHandoffs.Load()})
+-	if err != nil {
+-		return
++	}{redactDestinationHost(host), [2]int64{toDest, toClient}, block, stats, labHandoffs.Load()})
++	if err == nil {
++		logger.Printf("PROTODETECT %s", line)
+ 	}
+-	logger.Printf("PROTODETECT %s", line)
++	return block
+ }
+diff --git a/protodetect_lab_test.go b/protodetect_lab_test.go
+new file mode 100644
+index 0000000..38236a2
+--- /dev/null
++++ b/protodetect_lab_test.go
+@@ -0,0 +1,129 @@
++package main
++
++import (
++	"testing"
++
++	"github.com/KidCarmi/Culvert/internal/protodetect"
++)
++
++// LAB tests for the protocol restriction: validation, the decision table and the advisory signals.
++
++func TestLabAppRestrictionValidation(t *testing.T) {
++	ok := &AppRestriction{Mode: "enforce", Allow: []string{"tls"}, Unknown: "block"}
++	cases := []struct {
++		name string
++		rule PolicyRule
++		bad  bool
++	}{
++		{"no restriction", PolicyRule{Action: ActionAllow}, false},
++		{"valid enforce", PolicyRule{Action: ActionAllow, AppRestriction: ok}, false},
++		{"valid monitor", PolicyRule{Action: ActionAllow, AppRestriction: &AppRestriction{Mode: "monitor", Allow: []string{"tls", "ssh"}, Unknown: "allow"}}, false},
++		{"on a block rule", PolicyRule{Action: ActionDrop, AppRestriction: ok}, true},
++		{"bad mode", PolicyRule{Action: ActionAllow, AppRestriction: &AppRestriction{Mode: "on", Allow: []string{"tls"}, Unknown: "block"}}, true},
++		{"no unknown action", PolicyRule{Action: ActionAllow, AppRestriction: &AppRestriction{Mode: "enforce", Allow: []string{"tls"}}}, true},
++		{"empty allow", PolicyRule{Action: ActionAllow, AppRestriction: &AppRestriction{Mode: "enforce", Unknown: "block"}}, true},
++		{"unknown family", PolicyRule{Action: ActionAllow, AppRestriction: &AppRestriction{Mode: "enforce", Allow: []string{"gopher"}, Unknown: "block"}}, true},
++		{"repeated family", PolicyRule{Action: ActionAllow, AppRestriction: &AppRestriction{Mode: "enforce", Allow: []string{"tls", "tls"}, Unknown: "block"}}, true},
++	}
++	for _, c := range cases {
++		if err := validateAppRestriction(c.rule); (err != nil) != c.bad {
++			t.Errorf("%s: err=%v, want error=%v", c.name, err, c.bad)
++		}
++	}
++}
++
++// stubFlow is a Flow whose client direction reports a fixed outcome.
++type stubFlow struct{ outcome, family string }
++
++func (s stubFlow) Observe(protodetect.Direction, []byte) bool { return true }
++func (s stubFlow) Peek(protodetect.Direction) (string, string, bool) {
++	return s.outcome, s.family, true
++}
++func (s stubFlow) End(protodetect.Direction) {}
++func (s stubFlow) Expire()                   {}
++func (s stubFlow) Finish() protodetect.Record {
++	return protodetect.Record{}
++}
++
++func TestLabRestrictionDecisionTable(t *testing.T) {
++	tlsOnly := func(mode, unknown string) *AppRestriction {
++		return &AppRestriction{Mode: mode, Allow: []string{"tls"}, Unknown: unknown}
++	}
++	cases := []struct {
++		name            string
++		restrict        *AppRestriction
++		flow            protodetect.Flow // nil: detector unavailable
++		verdict, reason string
++		passes          bool
++	}{
++		{"allowed protocol", tlsOnly("enforce", "block"), stubFlow{"identified", "tls"}, "allowed", "protocol_allowed", true},
++		{"other protocol, enforce", tlsOnly("enforce", "block"), stubFlow{"identified", "ssh"}, "blocked", "protocol_not_allowed", false},
++		{"other protocol, enforce, unknown=allow still blocks a NAMED protocol", tlsOnly("enforce", "allow"), stubFlow{"identified", "ssh"}, "blocked", "protocol_not_allowed", false},
++		{"outside profile is a named protocol", tlsOnly("enforce", "allow"), stubFlow{"outside_profile", "postgresql"}, "blocked", "protocol_not_allowed", false},
++		{"other protocol, monitor", tlsOnly("monitor", "block"), stubFlow{"identified", "ssh"}, "would_block", "protocol_not_allowed", true},
++		{"unknown, block", tlsOnly("enforce", "block"), stubFlow{"unknown", ""}, "blocked", "unknown_blocked", false},
++		{"unknown, allow", tlsOnly("enforce", "allow"), stubFlow{"unknown", ""}, "allowed", "unknown_allowed", true},
++		{"incomplete, block", tlsOnly("enforce", "block"), stubFlow{"incomplete", ""}, "blocked", "unknown_blocked", false},
++		{"budget exhausted, block", tlsOnly("enforce", "block"), stubFlow{"budget_exhausted", ""}, "blocked", "unknown_blocked", false},
++		{"engine failed, block", tlsOnly("enforce", "block"), stubFlow{"failed", ""}, "blocked", "unknown_blocked", false},
++		{"detector unavailable, block: never a silent allow", tlsOnly("enforce", "block"), nil, "blocked", "detector_unavailable", false},
++		{"detector unavailable, allow (explicit)", tlsOnly("enforce", "allow"), nil, "allowed", "detector_unavailable", true},
++		{"detector unavailable, monitor", tlsOnly("monitor", "block"), nil, "would_block", "detector_unavailable", true},
++	}
++	for _, c := range cases {
++		o := &labObservation{restrict: c.restrict, flow: c.flow}
++		if got := o.decide(); got != c.passes || o.verdict != c.verdict || o.reason != c.reason {
++			t.Errorf("%s: passes=%v verdict=%s reason=%s; want %v %s %s", c.name, got, o.verdict, o.reason, c.passes, c.verdict, c.reason)
++		}
++		first := o.verdict
++		o.restrict = &AppRestriction{Mode: "enforce", Allow: []string{"ssh"}, Unknown: "allow"}
++		if o.decide(); o.verdict != first {
++			t.Errorf("%s: the verdict changed on a second decide (%s -> %s); it must be decided once", c.name, first, o.verdict)
++		}
++	}
++}
++
++func TestLabSignals(t *testing.T) {
++	id := func(family, host string) protodetect.DirRecord {
++		return protodetect.DirRecord{Outcome: "identified", Family: family, Hostname: host}
++	}
++	cases := []struct {
++		name string
++		rec  protodetect.Record
++		dest string
++		want []string
++	}{
++		{"tls on 443, same host", protodetect.Record{Client: id("tls", "a.example.test"), Server: id("tls", "")}, "a.example.test:443", nil},
++		{"ssh on 443", protodetect.Record{Client: id("ssh", ""), Server: id("ssh", "")}, "a.example.test:443", []string{"nonstandard_port"}},
++		{"sni differs from the CONNECT host", protodetect.Record{Client: id("tls", "other.example.test"), Server: id("tls", "")}, "a.example.test:443", []string{"host_mismatch"}},
++		{"case and trailing dot are not a mismatch", protodetect.Record{Client: id("tls", "A.Example.Test."), Server: id("tls", "")}, "a.example.test:443", nil},
++		{"post-quantum server reply", protodetect.Record{Client: id("tls", "a.example.test"),
++			Server: protodetect.DirRecord{Outcome: "unknown", Detail: "Server key share group outside supported profile"}}, "a.example.test:443", []string{"server_unresolved"}},
++		{"nothing identified", protodetect.Record{Client: protodetect.DirRecord{Outcome: "unknown"}, Server: protodetect.DirRecord{Outcome: "unknown"}}, "a.example.test:9000", nil},
++	}
++	for _, c := range cases {
++		got := labSignals(c.rec, c.dest)
++		if len(got) != len(c.want) {
++			t.Errorf("%s: %v, want %v", c.name, got, c.want)
++			continue
++		}
++		for i := range got {
++			if got[i] != c.want[i] {
++				t.Errorf("%s: %v, want %v", c.name, got, c.want)
++			}
++		}
++	}
++}
++
++func TestLabObservationOffIsNil(t *testing.T) {
++	// With the detector off and no restriction on the matched rule there is no observation object,
++	// so handleTunnelBypass runs the unmodified relay path.
++	if labObs() == nil && labBeginObservation("example.test:443", nil) != nil {
++		t.Fatal("an observation was created with the detector off and no restriction")
++	}
++	var o *labObservation
++	if o.enforcing() || o.blocked() || o.labTakePrebuffer([]byte("x")) {
++		t.Fatal("a nil observation must be inert")
++	}
++	o.labRelease()
++}
+diff --git a/proxy_tunnel.go b/proxy_tunnel.go
+index edf22f0..1ac7aec 100644
+--- a/proxy_tunnel.go
++++ b/proxy_tunnel.go
+@@ -577,16 +577,19 @@ func handleTunnelBypass(w http.ResponseWriter, r *http.Request, match *PolicyMat
+ 
+ 	start := time.Now()
+ 	var toDest, toClient int64
+-	labObsFlow := labBeginObservation(r.Host) // LAB: nil unless CULVERT_LAB_PROTODETECT is set
+-	defer func() { labFinishObservation(labObsFlow, match, r.Host, toDest, toClient) }()
++	labObsFlow := labBeginObservation(r.Host, match) // LAB: nil unless the detector is on or the rule restricts protocols
++	defer labObsFlow.labRelease()                    // LAB: releases the engine state on every exit path
+ 
+ 	// Drain bytes the HTTP server already buffered from the client during request
+ 	// parsing; without this they are lost and the upstream blocks forever.
+ 	if clientBuf != nil {
+ 		if n := clientBuf.Reader.Buffered(); n > 0 {
+ 			if labObsFlow != nil { // LAB: show the engine the prebuffer; Peek consumes nothing
+-				if b, perr := clientBuf.Reader.Peek(n); perr == nil {
+-					labObsFlow.labObservePrebuffer(b)
++				if b, perr := clientBuf.Reader.Peek(n); perr == nil && labObsFlow.labTakePrebuffer(b) {
++					// Enforce mode: these bytes are held with the client's first bytes until the
++					// detector decides; they are forwarded (or dropped) by the relay, not here.
++					_, _ = clientBuf.Reader.Discard(n)
++					n = 0
+ 				}
+ 			}
+ 			flushed, err := io.CopyN(destConn, clientBuf.Reader, int64(n))
+@@ -606,7 +609,13 @@ func handleTunnelBypass(w http.ResponseWriter, r *http.Request, match *PolicyMat
+ 
+ 	// Per-connection accounting entry (bytes + lifetime). bypassReason (when set)
+ 	// tags the feed entry so a rescue is queryable, not just an unattributed bypass.
+-	recordTunnelCloseGatedDec(match, id, "CONNECT", r.Host, toDest, toClient, start, "bypass", bypassReason, dec, decRedactHosts())
++	// LAB: the detector's observation rides the same TUNNEL_CLOSED entry as a nested pd block (nil when off).
++	pd := labFinishObservation(labObsFlow, match, r.Host, toDest, toClient)
++	status := "TUNNEL_CLOSED"
++	if labObsFlow.blocked() { // LAB: the rule's protocol restriction ended the tunnel
++		status, bypassReason = "APP_BLOCKED", "app_restriction"
++	}
++	recordTunnelCloseGatedDecPD(match, id, "CONNECT", r.Host, toDest, toClient, start, "bypass", bypassReason, dec, decRedactHosts(), pd, status)
+ }
+ 
+ // upstreamVerifyRoots returns the process-wide root pool used to verify
+diff --git a/static/index.html b/static/index.html
+index b96b254..f29081e 100644
+--- a/static/index.html
++++ b/static/index.html
+@@ -1192,7 +1192,7 @@ table.mcpx-cat-tbl td{padding:6px 10px;border-bottom:1px solid var(--border)}
+           <div class="tbl-wrap">
+             <table>
+               <thead>
+-                <tr><th>Time</th><th>IP</th><th>User</th><th>Method</th><th>Host</th><th>Status</th><th>Reason</th><th>Level</th></tr>
++                <tr><th>Time</th><th>IP</th><th>User</th><th>Method</th><th>Host</th><th title="LAB: protocol-detector observation of the tunnel (observe mode; never blocks or allows)">Application / Protocol</th><th>Status</th><th>Reason</th><th>Level</th></tr>
+               </thead>
+               <tbody id="dash-log"></tbody>
+             </table>
+@@ -1330,7 +1330,7 @@ table.mcpx-cat-tbl td{padding:6px 10px;border-bottom:1px solid var(--border)}
+         <div class="tbl-wrap" style="max-height:60vh;overflow-y:auto" id="log-scroll">
+           <table>
+             <thead>
+-              <tr><th>Time</th><th>IP</th><th>User</th><th>Method</th><th>Host</th><th>Status</th><th>Reason</th><th>Level</th></tr>
++              <tr><th>Time</th><th>IP</th><th>User</th><th>Method</th><th>Host</th><th title="LAB: protocol-detector observation of the tunnel (observe mode; never blocks or allows)">Application / Protocol</th><th>Status</th><th>Reason</th><th>Level</th></tr>
+             </thead>
+             <tbody id="live-log"></tbody>
+           </table>
+@@ -8890,6 +8890,65 @@ function levelBadge(level) {
+   return '';
+ }
+ 
++// ── LAB: protocol-detector observation (entry.pd) ─────────────────────────
++// Same reading order as the Protocol Observatory's live log: what was identified, for which
++// flow direction, then the evidence behind it. Observe mode only: nothing here is a verdict.
++const PD_OUTCOME = {
++  identified:       ['ok',      'Identified'],
++  unknown:          ['bypass',  'Unresolved'],
++  incomplete:       ['bypass',  'Incomplete'],
++  outside_profile:  ['auth',    'Outside profile'],
++  budget_exhausted: ['auth',    'Budget exhausted'],
++  unsupported:      ['bypass',  'Unsupported'],
++  malformed:        ['auth',    'Malformed'],
++  invalidated:      ['auth',    'Retracted'],
++  failed:           ['blocked', 'Engine failed'],
++  detecting:        ['bypass',  'Detecting'],
++};
++function pdName(d) {
++  if (!d) return '';
++  if (d.encryption) return d.encryption.toUpperCase();
++  if (d.protocol) return d.protocol.toUpperCase();
++  return d.family ? d.family.toUpperCase() : '';
++}
++function pdDirHTML(title, d) {
++  const o = PD_OUTCOME[d.outcome] || ['bypass', d.outcome];
++  const ev = (d.evidence || []).map(x =>
++    `<tr><td style="color:var(--muted);padding:2px 10px 2px 0;white-space:nowrap">${escHtml(x.field)}</td>` +
++    `<td style="padding:2px 10px 2px 0;font-family:monospace">${x.class === 'withheld' ? '<i>withheld</i>' : escHtml(x.value)}</td>` +
++    `<td style="color:var(--muted);padding:2px 0">${escHtml(x.source)} · ${escHtml(x.strength)}</td></tr>`).join('');
++  return `<div style="margin-top:8px">
++    <div style="font-size:.7rem;letter-spacing:.04em;color:var(--muted);text-transform:uppercase">${title}</div>
++    <div><span class="badge ${o[0]}">${escHtml(o[1])}</span> <b>${escHtml(pdName(d) || '—')}</b>
++      <span style="color:var(--muted)"> · ${escHtml(d.reason)} · ${d.observed_bytes} bytes observed</span></div>
++    ${d.detail ? `<div style="font-size:.74rem;margin-top:2px">${escHtml(d.detail)}</div>` : ''}
++    ${ev ? `<table style="font-size:.72rem;margin-top:4px;border-collapse:collapse">${ev}</table>` : ''}
++  </div>`;
++}
++function pdCellHTML(e) {
++  const pd = e.pd;
++  if (!pd) return '<span style="color:var(--muted);font-size:.75rem">-</span>';
++  const c = pd.client, s = pd.server;
++  const lead = c.outcome === 'identified' ? c : (s.outcome === 'identified' ? s : c);
++  const o = PD_OUTCOME[lead.outcome] || ['bypass', lead.outcome];
++  const name = pdName(lead) || (lead.outcome === 'outside_profile' ? (lead.family || '').toUpperCase() : '');
++  const host = c.hostname || s.hostname;
++  const gap = c.outcome === 'identified' && s.outcome === 'unknown' && (s.detail || '').indexOf('key share group') >= 0;
++  return `<details style="font-size:.78rem;max-width:420px">
++    <summary style="cursor:pointer;list-style:none">
++      <span class="badge ${o[0]}" title="Protocol detector, observe mode">${escHtml(o[1])}</span>
++      ${name ? `<b style="margin-left:4px">${escHtml(name)}</b>` : ''}
++      ${gap ? '<span class="badge auth" style="margin-left:4px" title="Server reply uses a key exchange the detector does not recognise yet">server side unresolved</span>' : ''}
++      ${host ? `<div style="font-size:.7rem;color:var(--muted);font-family:monospace" title="Asserted by the client (SNI / Host); not authenticated identity">${escHtml(host)}</div>` : ''}
++    </summary>
++    <div style="border-left:2px solid var(--accent2);padding:2px 0 6px 10px;margin-top:6px">
++      ${pdDirHTML('Client → server', c)}
++      ${pdDirHTML('Server → client', s)}
++      <div style="font-size:.68rem;color:var(--muted);margin-top:8px">Engine: ${escHtml(pd.engine)}${pd.quarantined ? ' · flow quarantined after an engine failure' : ''} · observe mode: this record never blocks or allows traffic. Host names and ALPN are peer assertions.</div>
++    </div>
++  </details>`;
++}
++
+ function rowHTML(e) {
+   const identityCell = e.identity
+     ? `<td style="font-size:.75rem;color:var(--accent);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(e.identity)}">${escHtml(e.identity)}</td>`
+@@ -8900,6 +8959,7 @@ function rowHTML(e) {
+     ${identityCell}
+     <td><code style="font-size:.78rem">${escHtml(e.method)}</code></td>
+     <td style="font-family:monospace;font-size:.8rem">${escHtml(e.host)}${e.uri ? `<div style="font-size:.7rem;color:var(--accent2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:280px" title="${escHtml(e.uri)}">${escHtml(e.uri)}</div>` : ''}${(e.bytesSent || e.bytesRecv || e.durationMs) ? `<div style="font-size:.7rem;color:var(--muted)">&#8593;${fmtBytes(e.bytesSent)} &#8595;${fmtBytes(e.bytesRecv)}${e.durationMs ? ' &middot; ' + (e.durationMs >= 1000 ? (e.durationMs/1000).toFixed(1)+'s' : e.durationMs+'ms') : ''}</div>` : ''}</td>
++    <td>${pdCellHTML(e)}</td>
+     <td>${badgeHTML(e.status)}</td>
+     <td style="font-size:.72rem;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(e.ruleMatched||'')}${e.ruleId ? ' ('+escHtml(e.ruleId)+')' : ''}">${e.ruleMatched ? `<a href="#" data-click="trafficGotoRule" data-arg="${escHtml(e.ruleMatched)}" data-arg2="${escHtml(e.ruleId||'')}" style="color:var(--accent2);text-decoration:none" title="${escHtml(e.ruleMatched)}">${escHtml(e.ruleMatched)}</a>` : ''}</td>
+     <td>${levelBadge(e.level)}</td>
+@@ -9150,7 +9210,7 @@ function renderLogs() {
+     let msg = 'No requests yet';
+     if (logSource === 'store')      msg = 'No saved logs in this range. Turn on “Save logs to disk” above, or widen the time range.';
+     else if (logSource === 'file')  msg = 'No persistent JSON log file found (set <code>request_log_file</code>), or it’s empty.';
+-    const empty = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-inbox"/></svg></div>${msg}</div></td></tr>`;
++    const empty = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-inbox"/></svg></div>${msg}</div></td></tr>`;
+     tbody.innerHTML = empty;
+     dash.innerHTML  = '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon"><svg class="ico" aria-hidden="true"><use href="#i-inbox"/></svg></div>No requests yet</div></td></tr>';
+   } else {
+diff --git a/store.go b/store.go
+index 17f3d64..5283433 100644
+--- a/store.go
++++ b/store.go
+@@ -347,6 +347,8 @@ type AuthLogFields struct {
+ 	// (the wire stays byte-identical); populated only on the CONNECT decision
+ 	// path. Maps to LogEntry.Dec.
+ 	Dec *DecryptionBlock
++	// PD is the LAB protocol-detector block (nil unless a raw tunnel was observed).
++	PD *ProtoDetectBlock
+ 	// AuthSource is the categorical authentication source that produced this
+ 	// request's identity context (F5): "local" | "exempt" | "unauth" | an IdP
+ 	// profile source ("oidc:<id>" / "saml:<id>" / bare profile ID from
+@@ -372,6 +374,7 @@ func (a AuthLogFields) applyTo(e *LogEntry) {
+ 	e.AuthSchemaVersion = a.SchemaVersion
+ 	e.RuleID = a.RuleID
+ 	e.Dec = a.Dec // nil ⇒ no dec block (byte-identical); set only on the decryption decision path
++	e.PD = a.PD   // LAB: nil ⇒ no pd block (byte-identical)
+ 	e.AuthSource = a.AuthSource
+ }
+ 
+@@ -2624,14 +2627,20 @@ func recordTunnelCloseGatedReason(match *PolicyMatch, id ProxyIdentity, method,
+ // later ADR-0011 slice); every current caller passes nil, so this is behavior-neutral
+ // plumbing. Projection (toBlock) happens off the latency-critical decision, at close.
+ func recordTunnelCloseGatedDec(match *PolicyMatch, id ProxyIdentity, method, host string, bytesSent, bytesRecv int64, start time.Time, sslAction, actionTaken string, dec *DecryptionOutcome, redact bool) {
++	recordTunnelCloseGatedDecPD(match, id, method, host, bytesSent, bytesRecv, start, sslAction, actionTaken, dec, redact, nil, "TUNNEL_CLOSED")
++}
++
++// recordTunnelCloseGatedDecPD is recordTunnelCloseGatedDec plus the LAB protocol-detector block
++// (nil ⇒ identical to recordTunnelCloseGatedDec).
++func recordTunnelCloseGatedDecPD(match *PolicyMatch, id ProxyIdentity, method, host string, bytesSent, bytesRecv int64, start time.Time, sslAction, actionTaken string, dec *DecryptionOutcome, redact bool, pd *ProtoDetectBlock, status string) {
+ 	recordTunnelBytes(bytesSent, bytesRecv) // always — independent of the log gate
+ 	// ADR-0011 coverage metric: count the session once, unconditionally (a quiet rule
+ 	// still had a decryption decision). nil dec ⇒ a non-decryption close (WS/SOCKS) ⇒
+ 	// no-op. This is the choke point for bypass / learned-bypass / rescue / non-TLS
+ 	// fallback; the inspect-success path counts separately (it never reaches here).
+ 	recordDecryptSession(dec)
+-	if match != nil && !ruleLogsTraffic(match.Rule) {
+-		return
++	if match != nil && !ruleLogsTraffic(match.Rule) && status == "TUNNEL_CLOSED" {
++		return // LAB: a protocol-restriction block is logged even on a rule that does not log traffic
+ 	}
+ 	ruleName, ruleID := "", ""
+ 	if match != nil && match.Rule != nil {
+@@ -2642,7 +2651,8 @@ func recordTunnelCloseGatedDec(match *PolicyMatch, id ProxyIdentity, method, hos
+ 	if dec != nil {
+ 		block = dec.toBlock(redact)
+ 	}
+-	persistTunnelCloseDec(id.ClientIP, method, host, id.Identity, ruleName, ruleID, bytesSent, bytesRecv, start, sslAction, actionTaken, block, id.AuthSource)
++	persistLogEntry(id.ClientIP, method, host, status, ruleName, actionTaken, id.Identity,
++		bytesSent, bytesRecv, time.Since(start).Milliseconds(), sslAction, "", AuthLogFields{RuleID: ruleID, Dec: block, AuthSource: id.AuthSource, PD: pd})
+ }
+ 
+ // persistLogEntry builds the LogEntry and writes it to the ring, JSONL file,
+diff --git a/ui_helpers.go b/ui_helpers.go
+index 45680ca..301dff7 100644
+--- a/ui_helpers.go
++++ b/ui_helpers.go
+@@ -187,6 +187,9 @@ func validateRuleShape(rule PolicyRule) error {
+ 	if rule.Name == "" {
+ 		return fmt.Errorf("name is required")
+ 	}
++	if err := validateAppRestriction(rule); err != nil { // LAB
++		return err
++	}
+ 	// Schedule timezone is validated for both rule types.
+ 	if rule.Schedule != nil && rule.Schedule.Timezone != "" {
+ 		if _, err := time.LoadLocation(rule.Schedule.Timezone); err != nil {
 -- 
 2.43.0
 

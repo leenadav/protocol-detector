@@ -18,7 +18,8 @@ def cell(x):
             v = det[k]
             if k == "status":
                 v = ", ".join(f"{a} → {b}" for a, b in v.items())
-            bits.append(f"{k.replace('_',' ')}: {html.escape(str(v))}")
+            label = "client bytes that reached the origin" if (k == "bytes" and "status" in det and "CONNECT" in det["status"]) else k.replace('_', ' ')
+            bits.append(f"{label}: {html.escape(str(v))}")
     if bits:
         extra = '<div class="meta">' + " · ".join(bits) + "</div>"
     return f'<td class="{cls}"><b>{mark}</b><div class="obs">{html.escape(x["detector"])}</div>{extra}</td>'
@@ -61,7 +62,7 @@ td.gap{{background:var(--gap)}} td.gap b{{color:var(--gapf)}} td.na{{color:var(-
 ul{{margin:6px 0 0 18px;padding:0}} .note{{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px}}
 </style></head><body>
 <h1>Protocol detector in Culvert — live lab</h1>
-<p class="sub">Same synthetic scenarios against five proxies running side by side. Started {html.escape(r["started"])}. <b>{state}</b></p>
+<p class="sub">Same synthetic scenarios against the lab proxies running side by side. Started {html.escape(r["started"])}. <b>{state}</b></p>
 <div class="bar"><div class="pill"><b>{summary}</b></div><div class="pill">Observe mode only: the detector never blocks or delays traffic</div><div class="pill">Loopback only · origins on 203.0.113.10 · all Culvert protections on</div></div>
 <div class="wrap"><table><thead><tr><th>Scenario</th>{head}<th>Bytes delivered across builds</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>
 <div class="note"><b>How to read this</b><ul>

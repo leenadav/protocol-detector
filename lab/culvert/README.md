@@ -1,69 +1,88 @@
-# Culvert lab kit: first live run (2026-11-14)
+# Culvert lab kit: detector, log, UI and policy integration (2026-11-14)
 
-This directory is the backup of a local lab that runs the protocol detector inside a local copy of Culvert, in observe mode. It follows `docs/integration/PROTODETECT-CULVERT-WORKING-PLAN.md` (phases L0, L1, L3 and L4, first pass). Nothing here was pushed to, or proposed for, KidCarmi/Culvert.
+This directory is the backup of a local lab that runs the protocol detector inside a local copy of Culvert. It follows `docs/integration/PROTODETECT-CULVERT-WORKING-PLAN.md`. Nothing here was pushed to, or proposed for, KidCarmi/Culvert.
 
-## What ran
+**One deviation from the plan, at Lee's request (2026-11-14):** the plan gates any enforcement behind a separate phase (L7) with a threat model and adversarial qualification. This lab already contains a per-rule protocol restriction with an enforce mode. It is a lab demonstration with the limits listed below, not a qualified control.
 
-Five proxies side by side, each with its own data directory, all on loopback:
+## What was built on the Culvert lab branch
 
-| Build | What it is | Port |
+Base: Culvert `52eb9d1e4482adc9773afc4db77109acad617625`, local branch `lab/protocol-detector` (3 commits, push disabled). The patch is `culvert-lab-52eb9d1.patch`; it leaves out `frontend/dist`, which `npm run build` regenerates.
+
+| Area | Change |
+|---|---|
+| Detector | A Culvert-owned interface (`internal/protodetect`) with three engines: off, a scripted fake, and a thin wrapper over this repository's `go/detector`. Built through `go.work`; Culvert's `go.mod` and `go.sum` are untouched. |
+| Relay | CONNECT bypass tunnels only. Each direction is observed for a bounded prefix (write first, then feed the detector), then the relay returns to Culvert's normal copy path. |
+| Log | The result rides Culvert's own `TUNNEL_CLOSED` entry as a nested `pd` block: its own schema version, closed vocabularies, absent when nothing was observed. Host names go through Culvert's keyed destination pseudonymizer. |
+| Signals | Three advisory flags in the `pd` block: `nonstandard_port` (for example HTTP on 9000), `host_mismatch` (client-asserted host differs from the CONNECT destination), `server_unresolved` (server reply not recognised). They are not verdicts. |
+| Policy | `PolicyRule.AppRestriction`: an Allow rule may name the protocol families allowed on its tunnels, in `monitor` or `enforce` mode, with an explicit action for "could not be identified". |
+| New frontend (`frontend/`) | Traffic: an Application / Protocol column, a protocol-mix bar and an evidence panel in the row detail. Access Rules: the restriction in the rule editor and in the rules list. Rebuilt with the pinned Node 24.19.0. |
+| Legacy UI | The same Application / Protocol column with expandable evidence (done before the request to use the new frontend). |
+
+## How the restriction behaves
+
+| Situation | Monitor | Enforce |
 |---|---|---|
-| A | Unmodified Culvert `52eb9d1e4482adc9773afc4db77109acad617625` | 18080 |
-| B | Lab build, detector off | 18081 |
-| C | Lab build, scripted fake engine | 18082 |
-| D | Lab build, real detector (`go/detector` at `0eb7ee7`), profile http, tls, ssh, smtp | 18083 |
-| E | Lab build, fake engine that panics on every call | 18084 |
+| Client protocol identified and in the allowed list | Passes; verdict `allowed` | Held bytes are forwarded; verdict `allowed` |
+| Client protocol identified (or outside the profile) and not in the list | Passes; verdict `would_block` | Tunnel closed; verdict `blocked`; no client byte forwarded |
+| Could not be identified (unknown, incomplete, budget exhausted, unsupported, engine failure) | The rule's unknown action, recorded as `allowed` or `would_block` | The rule's unknown action: forwarded, or closed with nothing forwarded |
+| Detector unavailable (off, refused, breaker open) | Same, with reason `detector_unavailable` | Same: an enforce rule never silently allows |
 
-Fifteen synthetic scenarios run against every build (`tools/runner.py`). Each one first checks the traffic itself, then checks the detector's record against an expectation written from what the scenario sends.
+Details that matter:
+- **A restriction can only narrow an Allow.** It is rejected on other rule types and can't turn a block into an allow.
+- **What is held.** In enforce mode the client's first bytes are held, up to 16 KiB and the observation window, including bytes sent in the same write as the CONNECT header. The server's bytes are not held, so a server-first banner still reaches the client.
+- **Decided once.** The verdict is taken when the client direction leaves "detecting"; it never changes afterwards.
+- **Logged even on quiet rules.** A block is written as `APP_BLOCKED` even when the rule doesn't log traffic.
 
-## Results of this run
+## Results of the run in `results/`
 
-Open `results/index.html`. In summary:
+`results/index.html` is the check matrix, `results/observatory.html` the same run in the Protocol Observatory's design, and `shots/` holds photos of Culvert's own UI.
 
-- **Traffic:** every scenario passed on every build. Where bytes are echoed, the hash of what was delivered is identical on all five builds: 1 MiB, 32 MiB, bytes pipelined with the CONNECT header, half-close, 1-byte writes.
-- **Detector off (A, B):** no detector records at all.
-- **Real detector (D):**
-  - TLS ClientHello identified with its SNI.
-  - SSH identified in both directions, including the server-first banner.
-  - SMTP client identified.
-  - HTTP inside a tunnel identified in both directions.
-  - PostgreSQL reported as outside the profile.
-  - Unrecognised bytes reported as unknown.
-  - 1-byte writes ended as an explicit `budget_exhausted`, never left at `detecting`.
-  - A silent tunnel ended as `incomplete`/`expired` after the 3-second window, and a byte sent afterwards still passed.
-  - After 300 short tunnels the engine held 0 flows.
-- **Injected panics (E):** every tunnel still delivered every byte; the flows were quarantined.
-- **SSRF guard:** CONNECT to `127.0.0.1`, `10.0.0.1`, `198.18.0.1` and `169.254.169.254` returned 403 on every build.
-- **One known gap, reproduced live:** on D, the server side of the TLS scenario is `unknown` ("Server key share group outside supported profile"). The scenario's client and origin both use OpenSSL 3.5.9, which negotiates the X25519MLKEM768 hybrid group by default. The same origin through curl with OpenSSL 3.0.13 (X25519) was identified. This is work item #4.
-- **Splice:** during a 32 MiB echo, `strace -f -c -e trace=splice` counted 256 splice calls on A and 217 on D, with the same delivered hash. `results/splice-trace-*.txt` hold the raw counts. This shows the kernel splice path is used after the observation hands back; it was a tracing run, not a performance run.
-- **Culvert's own tests on the lab branch:** `go test -run 'TestProxyE2E|RelayBuf|TunnelIdle|TunnelBypass' .` passed with the detector off.
+84 checks: 83 passed, 0 failed, 1 known gap.
 
-## What this run does not show
+- **Traffic unchanged (builds A–E):** every scenario passed, and the delivered bytes have the same hash on all five builds.
+- **Detector off (A, B):** no detector records.
+- **Real detector (D):** TLS (with SNI), SSH in both directions, SMTP and HTTP identified; PostgreSQL reported outside the profile; unrecognised bytes unknown; 1-byte writes an explicit `budget_exhausted`; a silent tunnel `incomplete`/`expired` after the 3-second window.
+- **Policy, real detector (D):**
+  - TLS to the TLS-only host passed.
+  - An SSH client, unrecognised bytes and an HTTP request pipelined with the CONNECT header were each blocked, and the recording origin received **0 client bytes** in each case.
+  - The same SSH client to the monitor-mode host passed and was recorded as `would_block`.
+- **Policy, detector off (F):** the enforce rule blocked everything with reason `detector_unavailable`; the monitor rule passed traffic and recorded `would_block`.
+- **Panics (E):** every tunnel still delivered every byte.
+- **After 300 short tunnels:** the engine held 0 flows on C, D and E. This is measured with one quiet probe tunnel afterwards, because a record's counters are read while other tunnels may still be open.
+- **SSRF guard:** 403 on every build for `127.0.0.1`, `10.0.0.1`, `198.18.0.1` and `169.254.169.254`.
+- **Known gap, reproduced live:** the server side of a TLS handshake that uses X25519MLKEM768 is `unknown` (work item #4). It also raises the `server_unresolved` signal.
+- **Splice (earlier run of this lab):** during a 32 MiB echo, `strace -f -c -e trace=splice` counted 256 splice calls on A and 217 on D, with the same delivered hash.
 
-- **One container, not two VMs.** Client, proxies and origins share one host and one loopback interface.
-- **No performance or capacity result.** Timings on the page are context only. No memory measurement was taken.
-- **Lab addresses.** The origins are on `203.0.113.10` (RFC 5737), added to `lo`. Unmodified Culvert reached them through its real resolver and dial with every protection on, so no SSRF exception was needed. That is proven for this container only.
-- **Only the CONNECT bypass path is tapped.** Inspect paths, non-TLS fallbacks, SOCKS5, WebSocket and the facts-only phase (L2) are untouched.
-- **Blocked-write expiry was not exercised.** The timer-based expiry is implemented; the "one or both directions blocked in Write" cases are not tested yet.
-- **Idle-clock parity is not tested.** The tap stamps activity per chunk while observing; `idleCopyCounted` stamps when `io.Copy` returns.
-- **Logging is a lab log line** (`PROTODETECT {json}`), not the ADR-0011-style block on the log entry. Hostnames pass through Culvert's `redactHost` switch.
-- **Wiring is by environment variable**, not a config surface.
+Tests on the lab branch:
+- Go: `go test -run 'TestLab|Policy|ProxyE2E|RelayBuf|TunnelIdle|TunnelBypass|TunnelDrain|FrontendV2|ConfigSurface|LogEntry|Reqlog|APIContract|OpenAPI|UIContract' .` passed (378 tests), plus `./internal/logstore` and `./internal/reqlog`. Culvert's full test suite was not run.
+- Frontend: `npm run typecheck`, `npm run lint`, `npm run format:check` and `npm test` (791 tests) passed.
+
+## What this does not show
+
+- **Not a qualified security control.** No threat model, red-team pass or false-positive measurement stands behind the enforce mode.
+- **Only the first message is checked.** After an allowed first message, the rest of the tunnel is not inspected. A client can send a valid TLS ClientHello and then anything, and two cooperating endpoints can imitate a protocol's opening.
+- **Encrypted content is opaque.** "TLS allowed" says nothing about what is inside the TLS session. SNI and ALPN are client assertions.
+- **Only CONNECT bypass tunnels.** Inspected tunnels, non-TLS fallbacks, SOCKS5, WebSocket and plain HTTP are untouched. A restriction on a rule whose tunnels are inspected has no effect.
+- **Rule storage only.** The new rule field is not registered in Culvert's config surfaces, snapshot, OpenAPI contract, policy tester, commit-review diff or learning mode. Detector settings are environment variables.
+- **One container, not two VMs. No performance or memory measurement.**
+- **Untested paths:** expiry while a direction is blocked in `Write`, idle-timeout parity with the unmodified relay, and holding under a slow client beyond the window.
 - **Not reviewed.** The Culvert lab change has had no Codex round, by decision.
 
 ## Reproduce
 
-1. Clone Culvert at `52eb9d1` and apply `culvert-lab-52eb9d1.patch` on a local branch `lab/protocol-detector`. Disable push on that clone.
-2. Copy `go.work.example` to a `go.work` that names your two checkouts (Culvert, and this repository's `go/`).
-3. Build A with `GOWORK=off go build -o culvert-A .` on the unpatched commit, and the lab binary with `GOWORK=<your go.work> go build -o culvert-lab .` on the lab branch.
-4. `tools/start-lab.sh` starts the origins and the five proxies; `tools/run-live.sh` runs the scenarios and keeps `results/index.html` current. The scripts assume `/home/user/culvert-lab`; adjust the paths.
+1. Clone Culvert at `52eb9d1`, create `lab/protocol-detector`, apply `culvert-lab-52eb9d1.patch`, and disable push on that clone.
+2. Copy `go.work.example` to a `go.work` naming your Culvert checkout and this repository's `go/`.
+3. Frontend: Node 24.19.0 and npm 11.17.0 (the versions `frontend/package.json` pins), then `npm ci` and `npm run build` in `frontend/`.
+4. Build A with `GOWORK=off go build -o culvert-A .` on the unpatched commit, and the lab binary with `GOWORK=<your go.work> go build -o culvert-lab .` on the lab branch.
+5. `tools/start-lab.sh` starts the origins and the six proxies. `tools/lab_admin.py 19093 D` and `tools/lab_admin.py 19095 F` create the lab admin and the three rules. `tools/run-live.sh` runs the scenarios; `tools/observatory.py` renders the Observatory-style page. The scripts assume `/home/user/culvert-lab`.
 
-Binaries of this run (sha256): `culvert-A` `df4bf3c64959ede9…a487ff`, `culvert-lab` `54f2b63a15903193…2df311`. Compiler go1.27.4, Linux 6.18.44.
+| Build | What it is | Proxy port |
+|---|---|---|
+| A | Unmodified Culvert | 18080 |
+| B | Lab build, detector off | 18081 |
+| C | Lab build, fake engine | 18082 |
+| D | Lab build, real detector, restriction rules, new UI at `/app` | 18083 |
+| E | Lab build, fake engine that panics on every call | 18084 |
+| F | Lab build, detector off, same restriction rules | 18085 |
 
-Lab environment variables (lab build only):
-
-| Variable | Meaning |
-|---|---|
-| `CULVERT_LAB_PROTODETECT` | `off` (default), `fake` or `real` |
-| `CULVERT_LAB_PD_FAMILIES` | Profile for the real engine |
-| `CULVERT_LAB_PD_WINDOW_MS` | Observation window; the run used 3000 |
-| `CULVERT_LAB_PD_FAKE_PANIC` | `observe`, `end`, `expire` or `finish` |
+The lab admin password is generated per run and kept in a mode-0600 file under the lab's `run/` directory; it is not in this repository.

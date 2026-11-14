@@ -16,7 +16,11 @@ BUILDS = [
     ("D", 18083, "integrated build, real detector (observe)", "real"),
     ("E", 18084, "integrated build, fake engine with injected panic", "fake-panic"),
 ]
-OUT = sys.argv[1]
+POLICY_BUILDS = [
+    ("D", 18083, "real detector + the lab's protocol-restriction rules", "real"),
+    ("F", 18085, "detector OFF + the same rules (the detector is unavailable)", None),
+]
+OUT = sys.argv[1] if __name__ == "__main__" and len(sys.argv) > 1 else os.devnull
 RESULTS = {"started": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()), "builds": {}, "scenarios": [], "state": "running"}
 
 
@@ -31,11 +35,21 @@ def sha(b):
     return hashlib.sha256(b).hexdigest()[:16]
 
 
+def proxy_auth(port):
+    """Proxy-Authorization for builds whose lab admin was set up (their proxy then requires credentials)."""
+    import base64
+    build = {b[1]: b[0] for b in BUILDS + POLICY_BUILDS}.get(port, "")
+    path = f"{LAB}/run/admin-{build}.secret"
+    if not os.path.exists(path):
+        return b""
+    return b"Proxy-Authorization: Basic " + base64.b64encode(b"admin:" + open(path, "rb").read()) + b"\r\n"
+
+
 def connect(port, dest, extra=b"", timeout=8):
     """Open a CONNECT tunnel; `extra` is sent in the same write as the CONNECT header (pipelined)."""
     s = socket.create_connection(("127.0.0.1", port), timeout=timeout)
     s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-    s.sendall(b"CONNECT %s HTTP/1.1\r\nHost: %s\r\n\r\n" % (dest.encode(), dest.encode()) + extra)
+    s.sendall(b"CONNECT %s HTTP/1.1\r\nHost: %s\r\n%s\r\n" % (dest.encode(), dest.encode(), proxy_auth(port)) + extra)
     head = b""
     while b"\r\n\r\n" not in head:
         chunk = s.recv(1)
@@ -70,7 +84,7 @@ def recv_until(s, token):
 
 def s_http_plain(port):
     s = socket.create_connection(("127.0.0.1", port), timeout=8)
-    s.sendall(b"GET http://%s/plain HTTP/1.1\r\nHost: %s\r\n\r\n" % (ORIGIN.encode(), ORIGIN.encode()))
+    s.sendall(b"GET http://%s/plain HTTP/1.1\r\nHost: %s\r\n%s\r\n" % (ORIGIN.encode(), ORIGIN.encode(), proxy_auth(port)))
     data = recv_until(s, b"/plain\n")
     s.close()
     return b"200 OK" in data and b"lab origin says hello: /plain" in data, {"body": sha(data.split(b"\r\n\r\n", 1)[-1])}
@@ -233,6 +247,101 @@ def s_churn(port):
     return not fails, {"flows": n, "failed": len(fails)}
 
 
+# ---- protocol-restriction (policy) scenarios: rules installed by tools/lab_admin.py ----
+#   secure.lab.test   Allow, restriction ENFORCE, allow [tls], unknown = block
+#   monitor.lab.test  Allow, restriction MONITOR, allow [tls], unknown = block
+
+def origin_stats(reset=False):
+    import urllib.request
+    op = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    return json.loads(op.open("http://127.0.0.1:9999/" + ("reset" if reset else "stats"), timeout=5).read())
+
+
+def policy_case(port, host, dport, payload=b"", extra=b"", tls=False):
+    """One tunnel to a restricted host. Returns what the client saw and how many client bytes the origin received."""
+    origin_stats(reset=True)
+    out = {"connect": 0, "delivered": False, "closed_by_proxy": False}
+    s, out["connect"] = connect(port, f"{host}:{dport}", extra=extra, timeout=6)
+    try:
+        if tls:
+            ctx = ssl.create_default_context(cafile=LAB + "/certs/origin.crt")
+            t = ctx.wrap_socket(s, server_hostname=host)
+            t.sendall(b"GET /policy HTTP/1.1\r\nHost: %s\r\n\r\n" % host.encode())
+            out["delivered"] = b"/policy" in recv_until(t, b"/policy\n")
+            t.close()
+        else:
+            if payload:
+                s.sendall(payload)
+            want = extra + payload
+            got = b""
+            while len(got) < len(want) + 64:
+                c = s.recv(4096)
+                if not c:
+                    out["closed_by_proxy"] = True
+                    break
+                got += c
+                if want in got:
+                    out["delivered"] = True
+                    break
+    except (OSError, ssl.SSLError):
+        out["closed_by_proxy"] = True
+    finally:
+        s.close()
+    time.sleep(0.15)
+    out["origin_received_client_bytes"] = sum(origin_stats().values()) if not tls else "n/a (TLS origin)"
+    return out
+
+
+SSH_CLIENT = b"SSH-2.0-LabClient_1.0\r\n"
+JUNK = b"\x01\x02\x03\x04\x05 not a protocol prefix at all, just lab filler bytes"
+HTTP_PIPE = b"GET /pipelined HTTP/1.1\r\nHost: secure.lab.test\r\n\r\n"
+POLICY_SCENARIOS = [
+    # name, call, expectation per build: (tunnel passes?, verdict, reason)
+    ("TLS to the TLS-only host (enforce)", lambda p: policy_case(p, "secure.lab.test", 443, tls=True),
+     {"D": (True, "allowed", "protocol_allowed"), "F": (False, "blocked", "detector_unavailable")}),
+    ("SSH client to the TLS-only host (enforce)", lambda p: policy_case(p, "secure.lab.test", 22, payload=SSH_CLIENT),
+     {"D": (False, "blocked", "protocol_not_allowed"), "F": (False, "blocked", "detector_unavailable")}),
+    ("Unrecognised bytes to the TLS-only host (enforce)", lambda p: policy_case(p, "secure.lab.test", 9000, payload=JUNK),
+     {"D": (False, "blocked", "unknown_blocked"), "F": (False, "blocked", "detector_unavailable")}),
+    ("HTTP pipelined with CONNECT to the TLS-only host (enforce)", lambda p: policy_case(p, "secure.lab.test", 9000, extra=HTTP_PIPE),
+     {"D": (False, "blocked", "protocol_not_allowed"), "F": (False, "blocked", "detector_unavailable")}),
+    ("SSH client to the monitor-mode host", lambda p: policy_case(p, "monitor.lab.test", 22, payload=SSH_CLIENT),
+     {"D": (True, "would_block", "protocol_not_allowed"), "F": (True, "would_block", "detector_unavailable")}),
+]
+
+
+def run_policy():
+    for name, fn, expect in POLICY_SCENARIOS:
+        row = {"name": name, "group": "Protocol restriction on a rule (policy)", "results": {}, "same_bytes_all_builds": None}
+        RESULTS["scenarios"].append(row)
+        for build, port, label, kind in POLICY_BUILDS:
+            passes, verdict, reason = expect[build]
+            off = log_offset(build)
+            t0 = time.time()
+            try:
+                seen = fn(port)
+            except Exception as e:
+                seen = {"error": repr(e)[:200], "delivered": None}
+            if seen.get("connect") != 200:  # the proxy must have accepted the CONNECT for the case to mean anything
+                ok = False
+            elif passes:
+                ok = seen.get("delivered") is True
+            else:  # blocked: nothing delivered, and no client byte reached the origin
+                ok = seen.get("delivered") is False and seen.get("origin_received_client_bytes") in (0, "n/a (TLS origin)")
+            recs = observations(build, off, 1)
+            pol = recs[0].get("policy") if len(recs) == 1 else None
+            dok = bool(pol) and pol["verdict"] == verdict and pol["reason"] == reason
+            text = "no policy record" if not pol else (
+                f"verdict: {pol['verdict']} · {pol['reason']} · mode {pol['mode']} · allow {'+'.join(pol['allow'])}"
+                f" · {pol['held_bytes']} client bytes held · forwarded to the server: {recs[0]['forwarded_bytes'][0]}")
+            detail = {"status": {"CONNECT": seen.get("connect")}, "bytes": seen.get("origin_received_client_bytes")}
+            if "error" in seen:
+                detail["error"] = seen["error"]
+            row["results"][build] = {"traffic_ok": bool(ok), "detector_ok": bool(dok), "detector": text, "detail": detail,
+                                     "seconds": round(time.time() - t0, 2), "records": recs[:1]}
+            save()
+
+
 def X(outcome, reason="engine", family="", hostname=None):
     d = {"outcome": outcome, "reason": reason}
     if family:
@@ -284,12 +393,14 @@ def matches(exp, got):
     return all(got.get(k, "") == v for k, v in exp.items())
 
 
-def check_observation(kind, expect, recs):
+def check_observation(kind, expect, recs, settled_active=None):
     """Return (ok, text) for the detector column of builds C/D/E."""
     if expect is None:
         return (not recs, "no tunnel: nothing to observe" if not recs else f"unexpected {len(recs)} record(s)")
     if expect == "churn":
-        active = recs[-1]["engine_stats"]["active"] if recs else -1
+        # The stats in a record are read when that tunnel finishes, while others may still be open, so the
+        # last record of a concurrent burst can honestly say "1 active". Ask again once everything is quiet.
+        active = settled_active if settled_active is not None else (recs[-1]["engine_stats"]["active"] if recs else -1)
         ok = len(recs) == 300 and active == 0 and all(r["engine_stats"]["panics"] == 0 for r in recs) if kind != "fake-panic" else len(recs) == 300 and active == 0
         return ok, f"{len(recs)} records, {active} flows still held by the engine afterwards"
     if len(recs) != 1:
@@ -334,8 +445,16 @@ def main():
             if kind:
                 want = 300 if expect == "churn" else (0 if expect is None else 1)
                 recs = observations(build, off, want)
-                dok, text = check_observation(kind, expect, recs)
+                settled = None
+                if expect == "churn":  # one quiet probe tunnel after the burst; its record shows what the engine still holds
+                    time.sleep(0.3)
+                    off2 = log_offset(build)
+                    echo_roundtrip(port, b"\x01\x02LAB quiet probe after the burst")
+                    probe = observations(build, off2, 1)
+                    settled = probe[0]["engine_stats"]["active"] if probe else -1
+                dok, text = check_observation(kind, expect, recs, settled)
                 res["detector_ok"], res["detector"] = (dok if dok == "gap" else bool(dok)), text
+                res["records"], res["record_count"] = recs[:4], len(recs)
             else:
                 recs = observations(build, off, 0, wait=0.3)
                 res["detector_ok"], res["detector"] = (not recs), "observation off: no detector records" if not recs else "UNEXPECTED detector records"
@@ -346,9 +465,14 @@ def main():
         hashes = {b: h for b, h in hashes.items() if h}
         row["same_bytes_all_builds"] = (len(set(hashes.values())) == 1) if hashes else None
         save()
+    for build, port, label, kind in POLICY_BUILDS:
+        RESULTS["builds"].setdefault(build, {"label": label, "port": port, "engine": kind or "off"})
+    RESULTS["builds"]["D"]["label"] += " + restriction rules"
+    run_policy()
     RESULTS["state"] = "finished"
     RESULTS["finished"] = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
     save()
 
 
-main()
+if __name__ == "__main__":
+    main()

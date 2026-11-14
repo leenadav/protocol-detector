@@ -1,5 +1,5 @@
 {
- "started": "2026-11-14 15:02:19 UTC",
+ "started": "2026-11-14 15:57:29 UTC",
  "builds": {
   "A": {
    "label": "unmodified Culvert 52eb9d1",
@@ -17,7 +17,7 @@
    "engine": "fake"
   },
   "D": {
-   "label": "integrated build, real detector (observe)",
+   "label": "integrated build, real detector (observe) + restriction rules",
    "port": 18083,
    "engine": "real"
   },
@@ -25,6 +25,11 @@
    "label": "integrated build, fake engine with injected panic",
    "port": 18084,
    "engine": "fake-panic"
+  },
+  "F": {
+   "label": "detector OFF + the same rules (the detector is unavailable)",
+   "port": 18085,
+   "engine": "off"
   }
  },
  "scenarios": [
@@ -57,7 +62,9 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "no tunnel: nothing to observe"
+     "detector": "no tunnel: nothing to observe",
+     "records": [],
+     "record_count": 0
     },
     "D": {
      "traffic_ok": true,
@@ -66,7 +73,9 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "no tunnel: nothing to observe"
+     "detector": "no tunnel: nothing to observe",
+     "records": [],
+     "record_count": 0
     },
     "E": {
      "traffic_ok": true,
@@ -75,7 +84,9 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "no tunnel: nothing to observe"
+     "detector": "no tunnel: nothing to observe",
+     "records": [],
+     "record_count": 0
     }
    },
    "same_bytes_all_builds": true
@@ -115,7 +126,40 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:443",
+       "forwarded_bytes": [
+        1668,
+        2546
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 1522
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 1921
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 626,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1248
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
@@ -124,9 +168,71 @@
       "key_exchange": "not reported by this Python",
       "cert_verified_against": "lab CA (not the proxy's): tunnel was not intercepted"
      },
-     "seconds": 0.0,
+     "seconds": 0.01,
      "detector_ok": "gap",
-     "detector": "client: identified tls host=origin.lab.test (engine) \u00b7 server: unknown (engine) \u00b7 KNOWN GAP (work item #4): post-quantum ServerHello not recognised yet"
+     "detector": "client: identified tls host=origin.lab.test (engine) \u00b7 server: unknown (engine) \u00b7 KNOWN GAP (work item #4): post-quantum ServerHello not recognised yet",
+     "records": [
+      {
+       "dest": "origin.lab.test:443",
+       "forwarded_bytes": [
+        1668,
+        2546
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "tls",
+        "encryption": "tls",
+        "hostname": "origin.lab.test",
+        "detail": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+        "observed_bytes": 1522,
+        "evidence": [
+         {
+          "field": "encryption",
+          "value": "tls",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "hostname",
+          "value": "origin.lab.test",
+          "source": "wire:tls_sni",
+          "strength": "asserted",
+          "class": "hostname"
+         },
+         {
+          "field": "tls_offered_max_version",
+          "value": "1.3",
+          "source": "wire:client_hello",
+          "strength": "offered",
+          "class": "categorical"
+         }
+        ]
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Server key share group outside supported profile",
+        "observed_bytes": 1921
+       },
+       "quarantined": false,
+       "signals": [
+        "server_unresolved"
+       ],
+       "engine_stats": {
+        "active": 0,
+        "admitted": 654,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1286
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
@@ -137,7 +243,38 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
+     "records": [
+      {
+       "dest": "origin.lab.test:443",
+       "forwarded_bytes": [
+        1668,
+        2547
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 624,
+        "refused": 0,
+        "panics": 1242,
+        "disabled": false
+       },
+       "handoffs_total": 1248
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": null
@@ -171,7 +308,40 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:22",
+       "forwarded_bytes": [
+        23,
+        46
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 23
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 23
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 627,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1250
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
@@ -180,7 +350,76 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified ssh (engine) \u00b7 server: identified ssh (engine)"
+     "detector": "client: identified ssh (engine) \u00b7 server: identified ssh (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:22",
+       "forwarded_bytes": [
+        23,
+        46
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "ssh",
+        "protocol": "ssh",
+        "detail": "SSH identification validated; key exchange offers classified, nothing negotiated or verified",
+        "observed_bytes": 23,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "ssh",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "ssh_version",
+          "value": "2.0",
+          "source": "wire:banner",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "ssh",
+        "protocol": "ssh",
+        "detail": "SSH identification validated; key exchange offers classified, nothing negotiated or verified",
+        "observed_bytes": 46,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "ssh",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "ssh_version",
+          "value": "2.0",
+          "source": "wire:banner",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 655,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1287
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
@@ -189,7 +428,38 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
+     "records": [
+      {
+       "dest": "origin.lab.test:22",
+       "forwarded_bytes": [
+        23,
+        46
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 625,
+        "refused": 0,
+        "panics": 1244,
+        "disabled": false
+       },
+       "handoffs_total": 1250
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": null
@@ -223,7 +493,40 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:25",
+       "forwarded_bytes": [
+        28,
+        75
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 22
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 31
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 628,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1252
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
@@ -232,16 +535,107 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified smtp (engine) \u00b7 server: unknown (engine)"
+     "detector": "client: identified smtp (engine) \u00b7 server: unknown (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:25",
+       "forwarded_bytes": [
+        28,
+        75
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "smtp",
+        "protocol": "smtp",
+        "detail": "SMTP client EHLO/HELO syntax validated; server exchange and message body not inspected",
+        "observed_bytes": 28,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "smtp",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "smtp_client_identity",
+          "value": "client.lab.test",
+          "source": "wire:smtp_greeting",
+          "strength": "asserted",
+          "class": "hostname"
+         }
+        ]
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "A 220 server greeting alone is ambiguous between SMTP and FTP; a client command is required",
+        "observed_bytes": 31,
+        "evidence": [
+         {
+          "field": "ambiguous_candidates",
+          "value": "smtp,ftp",
+          "source": "wire",
+          "strength": "context",
+          "class": "categorical"
+         }
+        ]
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 656,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1289
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
      "detail": {
       "server_first": true
      },
-     "seconds": 0.0,
+     "seconds": 0.01,
      "detector_ok": true,
-     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
+     "records": [
+      {
+       "dest": "origin.lab.test:25",
+       "forwarded_bytes": [
+        28,
+        75
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 626,
+        "refused": 0,
+        "panics": 1246,
+        "disabled": false
+       },
+       "handoffs_total": 1252
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": null
@@ -269,21 +663,169 @@
      "detail": {},
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:80",
+       "forwarded_bytes": [
+        50,
+        99
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 50
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 99
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 629,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1254
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
      "detail": {},
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified http host=origin.lab.test (engine) \u00b7 server: identified http (engine)"
+     "detector": "client: identified http host=origin.lab.test (engine) \u00b7 server: identified http (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:80",
+       "forwarded_bytes": [
+        50,
+        99
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "http",
+        "protocol": "http/1.1",
+        "hostname": "origin.lab.test",
+        "detail": "HTTP start-line and headers validated; body and later requests not inspected",
+        "observed_bytes": 50,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "http/1.1",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "hostname",
+          "value": "origin.lab.test",
+          "source": "wire:http_host",
+          "strength": "asserted",
+          "class": "hostname"
+         },
+         {
+          "field": "http_method",
+          "value": "GET",
+          "source": "wire:request_line",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "http",
+        "protocol": "http/1.1",
+        "detail": "HTTP start-line and headers validated; body and later requests not inspected",
+        "observed_bytes": 99,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "http/1.1",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "http_status",
+          "value": "200",
+          "source": "wire:status_line",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "http_content_type",
+          "value": "text",
+          "source": "wire:headers",
+          "strength": "asserted",
+          "class": "categorical"
+         }
+        ]
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 657,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1291
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
      "detail": {},
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
+     "records": [
+      {
+       "dest": "origin.lab.test:80",
+       "forwarded_bytes": [
+        50,
+        99
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 627,
+        "refused": 0,
+        "panics": 1248,
+        "disabled": false
+       },
+       "handoffs_total": 1254
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": null
@@ -311,21 +853,117 @@
      "detail": {},
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: incomplete (closed) \u00b7 server: incomplete (closed)"
+     "detector": "client: incomplete (closed) \u00b7 server: incomplete (closed)",
+     "records": [
+      {
+       "dest": "origin.lab.test:5432",
+       "forwarded_bytes": [
+        8,
+        1
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 8
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 1
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 630,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1254
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
      "detail": {},
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: outside_profile postgresql (outside_profile) \u00b7 server: incomplete (ended)"
+     "detector": "client: outside_profile postgresql (outside_profile) \u00b7 server: incomplete (ended)",
+     "records": [
+      {
+       "dest": "origin.lab.test:5432",
+       "forwarded_bytes": [
+        8,
+        1
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "outside_profile",
+        "reason": "outside_profile",
+        "family": "postgresql",
+        "detail": "postgresql",
+        "observed_bytes": 8
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "ended",
+        "detail": "Direction ended before identification",
+        "observed_bytes": 1
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 658,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1292
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
      "detail": {},
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
+     "records": [
+      {
+       "dest": "origin.lab.test:5432",
+       "forwarded_bytes": [
+        8,
+        1
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 628,
+        "refused": 0,
+        "panics": 1250,
+        "disabled": false
+       },
+       "handoffs_total": 1256
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": null
@@ -365,7 +1003,40 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        57,
+        57
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 57
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 57
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 631,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1256
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
@@ -376,7 +1047,40 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)"
+     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        57,
+        57
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 57
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 57
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 659,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1294
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
@@ -387,7 +1091,38 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        57,
+        57
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 629,
+        "refused": 0,
+        "panics": 1252,
+        "disabled": false
+       },
+       "handoffs_total": 1258
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": true
@@ -427,7 +1162,40 @@
      },
      "seconds": 0.01,
      "detector_ok": true,
-     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        1048581,
+        1048581
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 4096
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 4096
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 632,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1258
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
@@ -438,7 +1206,40 @@
      },
      "seconds": 0.01,
      "detector_ok": true,
-     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)"
+     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        1048581,
+        1048581
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 4096
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 4096
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 660,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1296
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
@@ -449,7 +1250,38 @@
      },
      "seconds": 0.01,
      "detector_ok": true,
-     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        1048581,
+        1048581
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 630,
+        "refused": 0,
+        "panics": 1254,
+        "disabled": false
+       },
+       "handoffs_total": 1260
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": true
@@ -489,7 +1321,40 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        82,
+        82
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 50
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 50
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 633,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1260
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
@@ -500,7 +1365,95 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified http host=origin.lab.test (engine) \u00b7 server: identified http (engine)"
+     "detector": "client: identified http host=origin.lab.test (engine) \u00b7 server: identified http (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        82,
+        82
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "http",
+        "protocol": "http/1.1",
+        "hostname": "origin.lab.test",
+        "detail": "HTTP start-line and headers validated; body and later requests not inspected",
+        "observed_bytes": 50,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "http/1.1",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "hostname",
+          "value": "origin.lab.test",
+          "source": "wire:http_host",
+          "strength": "asserted",
+          "class": "hostname"
+         },
+         {
+          "field": "http_method",
+          "value": "GET",
+          "source": "wire:request_line",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "http",
+        "protocol": "http/1.1",
+        "hostname": "origin.lab.test",
+        "detail": "HTTP start-line and headers validated; body and later requests not inspected",
+        "observed_bytes": 50,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "http/1.1",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "hostname",
+          "value": "origin.lab.test",
+          "source": "wire:http_host",
+          "strength": "asserted",
+          "class": "hostname"
+         },
+         {
+          "field": "http_method",
+          "value": "GET",
+          "source": "wire:request_line",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
+       },
+       "quarantined": false,
+       "signals": [
+        "nonstandard_port"
+       ],
+       "engine_stats": {
+        "active": 0,
+        "admitted": 661,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1298
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
@@ -511,7 +1464,38 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        82,
+        82
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 631,
+        "refused": 0,
+        "panics": 1255,
+        "disabled": false
+       },
+       "handoffs_total": 1262
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": true
@@ -551,7 +1535,40 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        200005,
+        200005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 4096
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 4096
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 634,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1262
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
@@ -562,7 +1579,40 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)"
+     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        200005,
+        200005
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 4096
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 4096
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 662,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1300
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
@@ -573,7 +1623,38 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        200005,
+        200005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 632,
+        "refused": 0,
+        "panics": 1257,
+        "disabled": false
+       },
+       "handoffs_total": 1264
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": true
@@ -590,7 +1671,7 @@
       "bytes": 33554437,
       "seconds": 0.18
      },
-     "seconds": 0.33,
+     "seconds": 0.31,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -600,7 +1681,7 @@
       "sent": "3a69d9e8661fe5c9",
       "received": "3a69d9e8661fe5c9",
       "bytes": 33554437,
-      "seconds": 0.15
+      "seconds": 0.17
      },
      "seconds": 0.32,
      "detector_ok": true,
@@ -614,9 +1695,42 @@
       "bytes": 33554437,
       "seconds": 0.18
      },
-     "seconds": 0.33,
+     "seconds": 0.31,
      "detector_ok": true,
-     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        33554437,
+        33554437
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 4096
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 4096
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 635,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1264
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
@@ -624,11 +1738,44 @@
       "sent": "3a69d9e8661fe5c9",
       "received": "3a69d9e8661fe5c9",
       "bytes": 33554437,
-      "seconds": 0.17
+      "seconds": 0.19
      },
-     "seconds": 0.31,
+     "seconds": 0.37,
      "detector_ok": true,
-     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)"
+     "detector": "client: unknown (engine) \u00b7 server: unknown (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        33554437,
+        33554437
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 4096
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 4096
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 663,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1302
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": true
@@ -644,7 +1791,7 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.21,
+     "seconds": 0.22,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -655,7 +1802,7 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.21,
+     "seconds": 0.22,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -668,7 +1815,40 @@
      },
      "seconds": 0.21,
      "detector_ok": true,
-     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)"
+     "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        51,
+        51
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 16
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 16
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 636,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1266
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
@@ -677,9 +1857,42 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.21,
+     "seconds": 0.22,
      "detector_ok": true,
-     "detector": "client: budget_exhausted (engine) \u00b7 server: budget_exhausted (engine) \u00b7 never left at 'detecting'"
+     "detector": "client: budget_exhausted (engine) \u00b7 server: budget_exhausted (engine) \u00b7 never left at 'detecting'",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        51,
+        51
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "budget_exhausted",
+        "reason": "engine",
+        "detail": "Update budget exhausted",
+        "observed_bytes": 17
+       },
+       "server": {
+        "outcome": "budget_exhausted",
+        "reason": "engine",
+        "detail": "Update budget exhausted",
+        "observed_bytes": 17
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 664,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1304
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
@@ -690,7 +1903,38 @@
      },
      "seconds": 0.21,
      "detector_ok": true,
-     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying"
+     "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        51,
+        51
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 633,
+        "refused": 0,
+        "panics": 1259,
+        "disabled": false
+       },
+       "handoffs_total": 1266
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": true
@@ -724,7 +1968,38 @@
      },
      "seconds": 4.2,
      "detector_ok": true,
-     "detector": "client: incomplete (closed) \u00b7 server: incomplete (closed)"
+     "detector": "client: incomplete (closed) \u00b7 server: incomplete (closed)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        27,
+        27
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 637,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1268
+      }
+     ],
+     "record_count": 1
     },
     "D": {
      "traffic_ok": true,
@@ -733,7 +2008,40 @@
      },
      "seconds": 4.2,
      "detector_ok": true,
-     "detector": "client: incomplete (expired) \u00b7 server: incomplete (expired)"
+     "detector": "client: incomplete (expired) \u00b7 server: incomplete (expired)",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        27,
+        27
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "incomplete",
+        "reason": "expired",
+        "detail": "Observation window expired",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "expired",
+        "detail": "Observation window expired",
+        "observed_bytes": 0
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 665,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1306
+      }
+     ],
+     "record_count": 1
     },
     "E": {
      "traffic_ok": true,
@@ -742,7 +2050,38 @@
      },
      "seconds": 4.2,
      "detector_ok": true,
-     "detector": "client: incomplete (closed) \u00b7 server: incomplete (closed) \u00b7 no bytes reached the engine"
+     "detector": "client: incomplete (closed) \u00b7 server: incomplete (closed) \u00b7 no bytes reached the engine",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        27,
+        27
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 0,
+        "admitted": 634,
+        "refused": 0,
+        "panics": 1259,
+        "disabled": false
+       },
+       "handoffs_total": 1268
+      }
+     ],
+     "record_count": 1
     }
    },
    "same_bytes_all_builds": null
@@ -791,7 +2130,9 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "no tunnel: nothing to observe"
+     "detector": "no tunnel: nothing to observe",
+     "records": [],
+     "record_count": 0
     },
     "D": {
      "traffic_ok": true,
@@ -805,7 +2146,9 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "no tunnel: nothing to observe"
+     "detector": "no tunnel: nothing to observe",
+     "records": [],
+     "record_count": 0
     },
     "E": {
      "traffic_ok": true,
@@ -819,7 +2162,9 @@
      },
      "seconds": 0.0,
      "detector_ok": true,
-     "detector": "no tunnel: nothing to observe"
+     "detector": "no tunnel: nothing to observe",
+     "records": [],
+     "record_count": 0
     }
    },
    "same_bytes_all_builds": null
@@ -834,7 +2179,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.54,
+     "seconds": 0.57,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -844,7 +2189,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.55,
+     "seconds": 0.61,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -854,9 +2199,132 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.57,
+     "seconds": 0.63,
      "detector_ok": true,
-     "detector": "300 records, 0 flows still held by the engine afterwards"
+     "detector": "300 records, 0 flows still held by the engine afterwards",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 12,
+        "admitted": 650,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1272
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 11,
+        "admitted": 650,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1272
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 16,
+        "admitted": 656,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1280
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 16,
+        "admitted": 657,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1282
+      }
+     ],
+     "record_count": 300
     },
     "D": {
      "traffic_ok": true,
@@ -864,9 +2332,132 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.5,
+     "seconds": 0.69,
      "detector_ok": true,
-     "detector": "300 records, 0 flows still held by the engine afterwards"
+     "detector": "300 records, 0 flows still held by the engine afterwards",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 5,
+        "admitted": 671,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1308
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 8,
+        "admitted": 675,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1310
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 10,
+        "admitted": 678,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1312
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 14,
+        "admitted": 683,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1314
+      }
+     ],
+     "record_count": 300
     },
     "E": {
      "traffic_ok": true,
@@ -874,14 +2465,814 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.51,
+     "seconds": 0.57,
      "detector_ok": true,
-     "detector": "300 records, 0 flows still held by the engine afterwards"
+     "detector": "300 records, 0 flows still held by the engine afterwards",
+     "records": [
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 8,
+        "admitted": 643,
+        "refused": 0,
+        "panics": 1261,
+        "disabled": false
+       },
+       "handoffs_total": 1270
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 14,
+        "admitted": 650,
+        "refused": 0,
+        "panics": 1263,
+        "disabled": false
+       },
+       "handoffs_total": 1272
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 18,
+        "admitted": 655,
+        "refused": 0,
+        "panics": 1267,
+        "disabled": false
+       },
+       "handoffs_total": 1276
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "failed",
+        "reason": "panic",
+        "observed_bytes": 0
+       },
+       "quarantined": true,
+       "engine_stats": {
+        "active": 17,
+        "admitted": 655,
+        "refused": 0,
+        "panics": 1267,
+        "disabled": false
+       },
+       "handoffs_total": 1276
+      }
+     ],
+     "record_count": 300
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "TLS to the TLS-only host (enforce)",
+   "group": "Protocol restriction on a rule (policy)",
+   "results": {
+    "D": {
+     "traffic_ok": true,
+     "detector_ok": true,
+     "detector": "verdict: allowed \u00b7 protocol_allowed \u00b7 mode enforce \u00b7 allow tls \u00b7 1522 client bytes held \u00b7 forwarded to the server: 1671",
+     "detail": {
+      "status": {
+       "CONNECT": 200
+      },
+      "bytes": "n/a (TLS origin)"
+     },
+     "seconds": 0.18,
+     "records": [
+      {
+       "dest": "secure.lab.test:443",
+       "forwarded_bytes": [
+        1671,
+        2549
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "tls",
+        "encryption": "tls",
+        "hostname": "secure.lab.test",
+        "detail": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+        "observed_bytes": 1522,
+        "evidence": [
+         {
+          "field": "encryption",
+          "value": "tls",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "hostname",
+          "value": "secure.lab.test",
+          "source": "wire:tls_sni",
+          "strength": "asserted",
+          "class": "hostname"
+         },
+         {
+          "field": "tls_offered_max_version",
+          "value": "1.3",
+          "source": "wire:client_hello",
+          "strength": "offered",
+          "class": "categorical"
+         }
+        ]
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Server key share group outside supported profile",
+        "observed_bytes": 1921
+       },
+       "quarantined": false,
+       "signals": [
+        "server_unresolved"
+       ],
+       "policy": {
+        "mode": "enforce",
+        "allow": [
+         "tls"
+        ],
+        "verdict": "allowed",
+        "reason": "protocol_allowed",
+        "held_bytes": 1522
+       },
+       "engine_stats": {
+        "active": 0,
+        "admitted": 967,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1910
+      }
+     ]
+    },
+    "F": {
+     "traffic_ok": true,
+     "detector_ok": true,
+     "detector": "verdict: blocked \u00b7 detector_unavailable \u00b7 mode enforce \u00b7 allow tls \u00b7 0 client bytes held \u00b7 forwarded to the server: 0",
+     "detail": {
+      "status": {
+       "CONNECT": 200
+      },
+      "bytes": "n/a (TLS origin)"
+     },
+     "seconds": 0.16,
+     "records": [
+      {
+       "dest": "secure.lab.test:443",
+       "forwarded_bytes": [
+        0,
+        0
+       ],
+       "schema_version": 1,
+       "engine": "unavailable",
+       "client": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "quarantined": false,
+       "policy": {
+        "mode": "enforce",
+        "allow": [
+         "tls"
+        ],
+        "verdict": "blocked",
+        "reason": "detector_unavailable",
+        "held_bytes": 0
+       },
+       "engine_stats": {
+        "active": 0,
+        "admitted": 0,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 13
+      }
+     ]
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "SSH client to the TLS-only host (enforce)",
+   "group": "Protocol restriction on a rule (policy)",
+   "results": {
+    "D": {
+     "traffic_ok": true,
+     "detector_ok": true,
+     "detector": "verdict: blocked \u00b7 protocol_not_allowed \u00b7 mode enforce \u00b7 allow tls \u00b7 23 client bytes held \u00b7 forwarded to the server: 0",
+     "detail": {
+      "status": {
+       "CONNECT": 200
+      },
+      "bytes": 0
+     },
+     "seconds": 0.17,
+     "records": [
+      {
+       "dest": "secure.lab.test:22",
+       "forwarded_bytes": [
+        0,
+        23
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "ssh",
+        "protocol": "ssh",
+        "detail": "SSH identification validated; key exchange offers classified, nothing negotiated or verified",
+        "observed_bytes": 23,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "ssh",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "ssh_version",
+          "value": "2.0",
+          "source": "wire:banner",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "ssh",
+        "protocol": "ssh",
+        "detail": "SSH identification validated; key exchange offers classified, nothing negotiated or verified",
+        "observed_bytes": 23,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "ssh",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "ssh_version",
+          "value": "2.0",
+          "source": "wire:banner",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
+       },
+       "quarantined": false,
+       "policy": {
+        "mode": "enforce",
+        "allow": [
+         "tls"
+        ],
+        "verdict": "blocked",
+        "reason": "protocol_not_allowed",
+        "held_bytes": 23
+       },
+       "engine_stats": {
+        "active": 0,
+        "admitted": 968,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1910
+      }
+     ]
+    },
+    "F": {
+     "traffic_ok": true,
+     "detector_ok": true,
+     "detector": "verdict: blocked \u00b7 detector_unavailable \u00b7 mode enforce \u00b7 allow tls \u00b7 0 client bytes held \u00b7 forwarded to the server: 0",
+     "detail": {
+      "status": {
+       "CONNECT": 200
+      },
+      "bytes": 0
+     },
+     "seconds": 0.17,
+     "records": [
+      {
+       "dest": "secure.lab.test:22",
+       "forwarded_bytes": [
+        0,
+        0
+       ],
+       "schema_version": 1,
+       "engine": "unavailable",
+       "client": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "quarantined": false,
+       "policy": {
+        "mode": "enforce",
+        "allow": [
+         "tls"
+        ],
+        "verdict": "blocked",
+        "reason": "detector_unavailable",
+        "held_bytes": 0
+       },
+       "engine_stats": {
+        "active": 0,
+        "admitted": 0,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 14
+      }
+     ]
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "Unrecognised bytes to the TLS-only host (enforce)",
+   "group": "Protocol restriction on a rule (policy)",
+   "results": {
+    "D": {
+     "traffic_ok": true,
+     "detector_ok": true,
+     "detector": "verdict: blocked \u00b7 unknown_blocked \u00b7 mode enforce \u00b7 allow tls \u00b7 57 client bytes held \u00b7 forwarded to the server: 0",
+     "detail": {
+      "status": {
+       "CONNECT": 200
+      },
+      "bytes": 0
+     },
+     "seconds": 0.17,
+     "records": [
+      {
+       "dest": "secure.lab.test:9000",
+       "forwarded_bytes": [
+        0,
+        0
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 57
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "ended",
+        "detail": "Direction ended before identification",
+        "observed_bytes": 0
+       },
+       "quarantined": false,
+       "policy": {
+        "mode": "enforce",
+        "allow": [
+         "tls"
+        ],
+        "verdict": "blocked",
+        "reason": "unknown_blocked",
+        "held_bytes": 57
+       },
+       "engine_stats": {
+        "active": 0,
+        "admitted": 969,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1910
+      }
+     ]
+    },
+    "F": {
+     "traffic_ok": true,
+     "detector_ok": true,
+     "detector": "verdict: blocked \u00b7 detector_unavailable \u00b7 mode enforce \u00b7 allow tls \u00b7 0 client bytes held \u00b7 forwarded to the server: 0",
+     "detail": {
+      "status": {
+       "CONNECT": 200
+      },
+      "bytes": 0
+     },
+     "seconds": 0.17,
+     "records": [
+      {
+       "dest": "secure.lab.test:9000",
+       "forwarded_bytes": [
+        0,
+        0
+       ],
+       "schema_version": 1,
+       "engine": "unavailable",
+       "client": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "quarantined": false,
+       "policy": {
+        "mode": "enforce",
+        "allow": [
+         "tls"
+        ],
+        "verdict": "blocked",
+        "reason": "detector_unavailable",
+        "held_bytes": 0
+       },
+       "engine_stats": {
+        "active": 0,
+        "admitted": 0,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 15
+      }
+     ]
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "HTTP pipelined with CONNECT to the TLS-only host (enforce)",
+   "group": "Protocol restriction on a rule (policy)",
+   "results": {
+    "D": {
+     "traffic_ok": true,
+     "detector_ok": true,
+     "detector": "verdict: blocked \u00b7 protocol_not_allowed \u00b7 mode enforce \u00b7 allow tls \u00b7 50 client bytes held \u00b7 forwarded to the server: 0",
+     "detail": {
+      "status": {
+       "CONNECT": 200
+      },
+      "bytes": 0
+     },
+     "seconds": 0.17,
+     "records": [
+      {
+       "dest": "secure.lab.test:9000",
+       "forwarded_bytes": [
+        0,
+        0
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "http",
+        "protocol": "http/1.1",
+        "hostname": "secure.lab.test",
+        "detail": "HTTP start-line and headers validated; body and later requests not inspected",
+        "observed_bytes": 50,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "http/1.1",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "hostname",
+          "value": "secure.lab.test",
+          "source": "wire:http_host",
+          "strength": "asserted",
+          "class": "hostname"
+         },
+         {
+          "field": "http_method",
+          "value": "GET",
+          "source": "wire:request_line",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "ended",
+        "detail": "Direction ended before identification",
+        "observed_bytes": 0
+       },
+       "quarantined": false,
+       "signals": [
+        "nonstandard_port"
+       ],
+       "policy": {
+        "mode": "enforce",
+        "allow": [
+         "tls"
+        ],
+        "verdict": "blocked",
+        "reason": "protocol_not_allowed",
+        "held_bytes": 50
+       },
+       "engine_stats": {
+        "active": 0,
+        "admitted": 970,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1910
+      }
+     ]
+    },
+    "F": {
+     "traffic_ok": true,
+     "detector_ok": true,
+     "detector": "verdict: blocked \u00b7 detector_unavailable \u00b7 mode enforce \u00b7 allow tls \u00b7 50 client bytes held \u00b7 forwarded to the server: 0",
+     "detail": {
+      "status": {
+       "CONNECT": 200
+      },
+      "bytes": 0
+     },
+     "seconds": 0.17,
+     "records": [
+      {
+       "dest": "secure.lab.test:9000",
+       "forwarded_bytes": [
+        0,
+        0
+       ],
+       "schema_version": 1,
+       "engine": "unavailable",
+       "client": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "quarantined": false,
+       "policy": {
+        "mode": "enforce",
+        "allow": [
+         "tls"
+        ],
+        "verdict": "blocked",
+        "reason": "detector_unavailable",
+        "held_bytes": 50
+       },
+       "engine_stats": {
+        "active": 0,
+        "admitted": 0,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 16
+      }
+     ]
+    }
+   },
+   "same_bytes_all_builds": null
+  },
+  {
+   "name": "SSH client to the monitor-mode host",
+   "group": "Protocol restriction on a rule (policy)",
+   "results": {
+    "D": {
+     "traffic_ok": true,
+     "detector_ok": true,
+     "detector": "verdict: would_block \u00b7 protocol_not_allowed \u00b7 mode monitor \u00b7 allow tls \u00b7 0 client bytes held \u00b7 forwarded to the server: 23",
+     "detail": {
+      "status": {
+       "CONNECT": 200
+      },
+      "bytes": 23
+     },
+     "seconds": 0.17,
+     "records": [
+      {
+       "dest": "monitor.lab.test:22",
+       "forwarded_bytes": [
+        23,
+        46
+       ],
+       "schema_version": 1,
+       "engine": "real",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "ssh",
+        "protocol": "ssh",
+        "detail": "SSH identification validated; key exchange offers classified, nothing negotiated or verified",
+        "observed_bytes": 23,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "ssh",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "ssh_version",
+          "value": "2.0",
+          "source": "wire:banner",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "ssh",
+        "protocol": "ssh",
+        "detail": "SSH identification validated; key exchange offers classified, nothing negotiated or verified",
+        "observed_bytes": 46,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "ssh",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "ssh_version",
+          "value": "2.0",
+          "source": "wire:banner",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
+       },
+       "quarantined": false,
+       "policy": {
+        "mode": "monitor",
+        "allow": [
+         "tls"
+        ],
+        "verdict": "would_block",
+        "reason": "protocol_not_allowed",
+        "held_bytes": 0
+       },
+       "engine_stats": {
+        "active": 0,
+        "admitted": 971,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 1911
+      }
+     ]
+    },
+    "F": {
+     "traffic_ok": true,
+     "detector_ok": true,
+     "detector": "verdict: would_block \u00b7 detector_unavailable \u00b7 mode monitor \u00b7 allow tls \u00b7 0 client bytes held \u00b7 forwarded to the server: 23",
+     "detail": {
+      "status": {
+       "CONNECT": 200
+      },
+      "bytes": 23
+     },
+     "seconds": 0.17,
+     "records": [
+      {
+       "dest": "monitor.lab.test:22",
+       "forwarded_bytes": [
+        23,
+        46
+       ],
+       "schema_version": 1,
+       "engine": "unavailable",
+       "client": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "server": {
+        "outcome": "incomplete",
+        "reason": "closed",
+        "observed_bytes": 0
+       },
+       "quarantined": false,
+       "policy": {
+        "mode": "monitor",
+        "allow": [
+         "tls"
+        ],
+        "verdict": "would_block",
+        "reason": "detector_unavailable",
+        "held_bytes": 0
+       },
+       "engine_stats": {
+        "active": 0,
+        "admitted": 0,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 18
+      }
+     ]
     }
    },
    "same_bytes_all_builds": null
   }
  ],
  "state": "finished",
- "finished": "2026-11-14 15:02:48 UTC"
+ "finished": "2026-11-14 15:58:02 UTC"
 }

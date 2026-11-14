@@ -4,6 +4,7 @@
 cd /home/user/culvert-lab/run || exit 1
 python3 ../tools/addaddr.py 203.0.113.10 203.0.113.20 >/dev/null
 grep -q origin.lab.test /etc/hosts || echo "203.0.113.10 origin.lab.test" >> /etc/hosts
+grep -q secure.lab.test /etc/hosts || echo "203.0.113.20 secure.lab.test monitor.lab.test" >> /etc/hosts
 pgrep -f tools/origins.py >/dev/null || (nohup python3 ../tools/origins.py ../certs > origins.log 2>&1 &)
 start() { name=$1; bin=$2; port=$3; ui=$4; shift 4
   mkdir -p data-$name
@@ -12,5 +13,6 @@ start() { name=$1; bin=$2; port=$3; ui=$4; shift 4
 start A culvert-A   18080 19090
 start B culvert-lab 18081 19091
 start C culvert-lab 18082 19092 CULVERT_LAB_PROTODETECT=fake CULVERT_LAB_PD_WINDOW_MS=3000
-start D culvert-lab 18083 19093 CULVERT_LAB_PROTODETECT=real CULVERT_LAB_PD_WINDOW_MS=3000
+start D culvert-lab 18083 19093 CULVERT_LAB_PROTODETECT=real CULVERT_LAB_PD_WINDOW_MS=3000 CULVERT_EXPERIMENTAL_UI=1
 start E culvert-lab 18084 19094 CULVERT_LAB_PROTODETECT=fake CULVERT_LAB_PD_WINDOW_MS=3000 CULVERT_LAB_PD_FAKE_PANIC=observe
+start F culvert-lab 18085 19095
