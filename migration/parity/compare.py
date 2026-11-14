@@ -13,17 +13,21 @@ content digest) and per-packet messages. Approved semantic deltas (migration/par
 one named path of one named case, each with a justification; nothing else is tolerated.
 
 A backend may answer a case with {"unsupported": "<reason>"} instead of a result. Such a case is counted
-as unsupported, never as matched. With --families, an unsupported answer on a case of a named family is a
-failure unless its reason names an option the backend lacks ("option ..."), a competing datagram candidate
-("datagram candidate ..."), a text family the route would have selected ("text family ..."), a shift target
-("shift to ..."), or UDP flow state ("UDP flows in sessions ..."); every answered case is compared exactly
-whatever its family. --ignore removes named top-level paths (e.g. `$.records` until the record layer exists)
-and is reported, so a partial comparison is never silent.
+as unsupported, never as matched, and it is accepted only when migration/parity/gaps.json lists that case id
+with exactly that reason (review R2, 2026-11-14: a reason that merely contained "family " or "option " used
+to be exempt, so a backend that stopped answering everything still passed). The allowlist is versioned and
+exact in both directions: an unsupported answer that is not listed, or listed with another reason, fails
+(`unexpected_gaps`); a listed case that the backend now answers, or that no longer exists, fails too
+(`stale_gaps`), so the list can only change in a reviewed diff (`--write-gaps` regenerates it from a results
+file). With --families, every named family must also have at least one matched case (`claimed_without_match`).
+Result ids that are not cases fail (`extra`). --ignore removes named top-level paths and is reported, so a
+partial comparison is never silent.
 
-`--plant` mutates the backend's results in one of five ways a regression could take and must be reported:
+`--plant` mutates the backend's results in one of six ways a regression could take and must be reported:
 wrong-positive (an unknown becomes identified), missing-retraction (an invalidation becomes identified),
 wrong-port (a session's server port changes), dropped-event (one intermediate event disappears),
-boundary-shift (bytes_inspected / a shift boundary moves).
+boundary-shift (bytes_inspected / a shift boundary moves), supported-to-unsupported (an answered case
+becomes an unsupported answer with a plausible reason).
 """
 import argparse
 import json
@@ -34,8 +38,19 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT))
 
-PLANTS = ("wrong-positive", "missing-retraction", "wrong-port", "dropped-event", "boundary-shift")
-NAMED_GAPS = ("option ", "datagram candidate ", "text family ", "shift to ", "UDP flows in sessions", "family ", "hint ")
+PLANTS = ("wrong-positive", "missing-retraction", "wrong-port", "dropped-event", "boundary-shift", "supported-to-unsupported")
+GAPS_SCHEMA = 1
+
+
+def load_gaps(path):
+    """The allowlist {case id: exact unsupported reason} of one backend; a missing file is an empty list."""
+    path = Path(path)
+    if not path.exists():
+        return {}
+    document = load(path)
+    if document.get("schema") != GAPS_SCHEMA or not isinstance(document.get("gaps"), dict):
+        raise ValueError("%s: expected {\"schema\": %d, \"gaps\": {case id: reason}}" % (path, GAPS_SCHEMA))
+    return document["gaps"]
 
 
 def load(path):
@@ -90,13 +105,16 @@ def strip_ignored(value, ignored):
     return {k: v for k, v in value.items() if k not in names}
 
 
-def compare(cases_doc, results_doc, deltas=None, families=(), ignored=()):
+def compare(cases_doc, results_doc, deltas=None, families=(), ignored=(), gaps=None):
+    """Exact comparison. `gaps` is the allowlist of unsupported answers ({case id: reason}); None means none is allowed."""
     deltas = deltas or {}
+    gaps = gaps or {}
     families = tuple(families)
     report = {"compared": 0, "matched": 0, "mismatched": [], "missing": [], "extra": [], "exempted": 0,
-              "unsupported": 0, "unsupported_in_required_family": [], "families": list(families), "ignored": list(ignored),
-              "matched_by_family": {}}
+              "unsupported": 0, "unexpected_gaps": [], "stale_gaps": [], "claimed_without_match": [],
+              "families": list(families), "ignored": list(ignored), "matched_by_family": {}}
     results = results_doc.get("results", {})
+    matched_families = set()
     for case in cases_doc["cases"]:
         cid = case["id"]
         if cid not in results:
@@ -106,9 +124,11 @@ def compare(cases_doc, results_doc, deltas=None, families=(), ignored=()):
         if isinstance(result, dict) and set(result) == {"unsupported"}:
             report["unsupported"] += 1
             reason = str(result["unsupported"])
-            if family_of(case.get("label")) in families and not any(gap in reason for gap in NAMED_GAPS):
-                report["unsupported_in_required_family"].append({"id": cid, "reason": reason})
+            if gaps.get(cid) != reason:
+                report["unexpected_gaps"].append({"id": cid, "reason": reason, "listed": gaps.get(cid)})
             continue
+        if cid in gaps:
+            report["stale_gaps"].append({"id": cid, "listed": gaps[cid], "why": "the backend answers this case"})
         report["compared"] += 1
         differences = diff(strip_ignored(case["expected"], ignored), strip_ignored(canonicalize_result(result), ignored))
         allowed = {item["path"] for item in deltas.get(cid, [])}
@@ -119,10 +139,15 @@ def compare(cases_doc, results_doc, deltas=None, families=(), ignored=()):
                                          "differences": [{"path": p, "expected": e, "actual": a} for p, e, a in kept[:20]]})
         else:
             report["matched"] += 1
+            matched_families.add(family_of(case.get("label")))
             key = case["kind"] + "/" + family_of(case.get("label"))
             report["matched_by_family"][key] = report["matched_by_family"].get(key, 0) + 1
-    report["extra"] = sorted(set(results) - {case["id"] for case in cases_doc["cases"]})
-    report["ok"] = not report["mismatched"] and not report["missing"] and not report["unsupported_in_required_family"]
+    known = {case["id"] for case in cases_doc["cases"]}
+    report["extra"] = sorted(set(results) - known)
+    report["stale_gaps"].extend({"id": cid, "listed": gaps[cid], "why": "no such case"} for cid in sorted(set(gaps) - known))
+    report["claimed_without_match"] = sorted(set(families) - matched_families)
+    report["ok"] = not (report["mismatched"] or report["missing"] or report["extra"] or report["unexpected_gaps"]
+                        or report["stale_gaps"] or report["claimed_without_match"])
     return report
 
 
@@ -159,6 +184,9 @@ def plant(results, kind, cases_doc):
     elif kind == "boundary-shift":
         cid, result = first(lambda c, r: cases[c]["kind"] == "stream" and r["metrics"]["bytes_inspected"] > 0)
         result["metrics"]["bytes_inspected"] -= 1
+    elif kind == "supported-to-unsupported":
+        cid, result = first(lambda c, r: True)
+        results[cid] = {"unsupported": "not ported in the Go backend: family " + family_of(cases[cid].get("label"))}
     else:
         raise ValueError("unknown plant " + kind)
     return results, cid
@@ -178,7 +206,9 @@ def main(argv=None):
     source.add_argument("--backend", choices=("python",), help="run this backend in process")
     source.add_argument("--results", help="a results file produced by another backend")
     parser.add_argument("--deltas", default=str(HERE / "deltas.json"))
-    parser.add_argument("--families", default="", help="comma-separated families the backend claims; unsupported answers there fail unless a gap is named")
+    parser.add_argument("--families", default="", help="comma-separated families the backend claims; each needs at least one matched case")
+    parser.add_argument("--gaps", default=str(HERE / "gaps.json"), help="the exact allowlist of unsupported answers for --results")
+    parser.add_argument("--write-gaps", action="store_true", help="rewrite --gaps from the unsupported answers of --results, then compare")
     parser.add_argument("--ignore", action="append", default=[], help="top-level path to leave out, e.g. $.records (reported)")
     parser.add_argument("--plant", choices=PLANTS, help="self-test: plant one regression and expect a mismatch")
     parser.add_argument("--report", help="write the JSON report here")
@@ -189,21 +219,37 @@ def main(argv=None):
     families = tuple(f for f in args.families.split(",") if f)
     if args.plant:
         results_doc["results"], touched = plant(results_doc["results"], args.plant, cases_doc)
-    report = compare(cases_doc, results_doc, deltas, families, tuple(args.ignore))
+    if args.write_gaps:
+        if not args.results or args.plant:
+            parser.error("--write-gaps needs --results and no --plant")
+        listed = {cid: str(result["unsupported"]) for cid, result in sorted(results_doc.get("results", {}).items())
+                  if isinstance(result, dict) and set(result) == {"unsupported"}}
+        Path(args.gaps).write_text(json.dumps({"schema": GAPS_SCHEMA, "backend": results_doc.get("backend"), "gaps": listed},
+                                              indent=1, sort_keys=True) + "\n", encoding="utf-8")
+        print("gaps written: %d -> %s" % (len(listed), args.gaps))
+    gaps = load_gaps(args.gaps) if args.results else {}
+    report = compare(cases_doc, results_doc, deltas, families, tuple(args.ignore), gaps)
     if args.report:
         Path(args.report).write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
     print("parity: compared %d, matched %d, mismatched %d, missing %d, extra %d, exempted %d, unsupported %d%s%s" % (
         report["compared"], report["matched"], len(report["mismatched"]), len(report["missing"]), len(report["extra"]), report["exempted"],
-        report["unsupported"], (" (gaps in required families: %d)" % len(report["unsupported_in_required_family"])) if families else "",
+        report["unsupported"], " (unlisted gaps: %d, stale gap entries: %d, claimed families without a match: %d)" % (
+            len(report["unexpected_gaps"]), len(report["stale_gaps"]), len(report["claimed_without_match"])),
         (" ignoring " + ",".join(report["ignored"])) if report["ignored"] else ""))
     if report["matched_by_family"] and (families or args.results):
         print("  matched by kind/family: " + ", ".join("%s %d" % item for item in sorted(report["matched_by_family"].items())))
     for item in report["mismatched"][:10]:
         print("  mismatch %s: %s" % (item["id"], "; ".join("%s expected %r got %r" % (d["path"], d["expected"], d["actual"]) for d in item["differences"][:3])))
-    for item in report["unsupported_in_required_family"][:10]:
-        print("  unsupported without a named gap %s: %s" % (item["id"], item["reason"]))
+    for item in report["unexpected_gaps"][:10]:
+        print("  unsupported answer not in the gap list %s: %r (listed: %r)" % (item["id"], item["reason"], item["listed"]))
+    for item in report["stale_gaps"][:10]:
+        print("  stale gap entry %s: %s" % (item["id"], item["why"]))
+    for name in report["extra"][:10]:
+        print("  result for an unknown case id: %s" % name)
+    if report["claimed_without_match"]:
+        print("  claimed families without a matched case: " + ", ".join(report["claimed_without_match"]))
     if args.plant:
-        detected = any(item["id"] == touched for item in report["mismatched"])
+        detected = any(item["id"] == touched for item in report["mismatched"] + report["unexpected_gaps"])
         print("planted %s in %s: %s" % (args.plant, touched, "DETECTED" if detected else "NOT DETECTED"))
         return 0 if detected else 1
     return 0 if report["ok"] else 1

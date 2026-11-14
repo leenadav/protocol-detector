@@ -79,6 +79,23 @@ class SmartHomeProfileTests(unittest.TestCase):
             self.assertNotEqual(datagram(DNS, hint=hint).status, "identified")
             self.assertNotEqual(datagram(b"\x00" * 40, hint=hint).status, "identified")
 
+    def test_kasa_integer_digit_limit_does_not_depend_on_the_interpreter(self):
+        """Review R6 (2026-11-14): 3.9.6 identified a 4301-digit integer that newer interpreters refuse in int()."""
+        import sys
+        at_limit = kasa(b'{"system":{"a":' + b"1" * 4300 + b"}}")
+        over = kasa(b'{"system":{"a":' + b"1" * 4301 + b"}}")
+        negative = kasa(b'{"system":{"a":-' + b"1" * 4300 + b"}}")
+        decimal = kasa(b'{"system":{"a":' + b"1" * 4301 + b".5}}")
+        expected = ("identified", "malformed", "identified", "identified")
+        self.assertEqual(tuple(datagram(payload).status for payload in (at_limit, over, negative, decimal)), expected)
+        if hasattr(sys, "set_int_max_str_digits"):       # without the interpreter's own limit the profile limit still holds
+            previous = sys.get_int_max_str_digits()
+            sys.set_int_max_str_digits(0)
+            try:
+                self.assertEqual(tuple(datagram(payload).status for payload in (at_limit, over, negative, decimal)), expected)
+            finally:
+                sys.set_int_max_str_digits(previous)
+
 
 class MulticastDnsLayoutTests(unittest.TestCase):
     def test_pointer_into_srv_target(self):

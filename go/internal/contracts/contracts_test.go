@@ -120,3 +120,51 @@ func FuzzObservationJSONNeverPanics(f *testing.F) {
 		}
 	})
 }
+
+// Review R4 (2026-11-14): every integer option accepts both ends of its Python range and rejects the values
+// just outside; max_crc32c_bytes=0 (checksum work disabled) is valid and max_bytes above 1 MiB is not.
+func TestConfigRangesAtTheirBoundaries(t *testing.T) {
+	set := func(name string, value int) Config {
+		c := DefaultConfig()
+		raw, _ := json.Marshal(map[string]int{name: value})
+		if err := json.Unmarshal(raw, (*configJSON)(&c)); err != nil {
+			t.Fatal(err)
+		}
+		return c
+	}
+	if len(ConfigRanges) != 9 {
+		t.Fatalf("%d ranges", len(ConfigRanges))
+	}
+	for _, r := range ConfigRanges {
+		if DefaultConfig().integer(r.Name) < r.Low || DefaultConfig().integer(r.Name) > r.High {
+			t.Errorf("default %s outside its range", r.Name)
+		}
+		for _, tc := range []struct {
+			value int
+			valid bool
+		}{{r.Low - 1, false}, {r.Low, true}, {r.Low + 1, true}, {r.High - 1, true}, {r.High, true}, {r.High + 1, false}} {
+			c := set(r.Name, tc.value)
+			if c.integer(r.Name) != tc.value {
+				t.Fatalf("%s not set", r.Name)
+			}
+			if err := c.Validate(); (err == nil) != tc.valid {
+				t.Errorf("%s=%d: valid=%v, got %v", r.Name, tc.value, tc.valid, err)
+			}
+			var viaJSON Config
+			raw, _ := json.Marshal(map[string]int{r.Name: tc.value})
+			if err := json.Unmarshal(raw, &viaJSON); (err == nil) != tc.valid {
+				t.Errorf("JSON %s=%d: valid=%v, got %v", r.Name, tc.value, tc.valid, err)
+			}
+		}
+	}
+	zero := DefaultConfig()
+	zero.MaxCRC32CBytes = 0
+	if err := zero.Validate(); err != nil {
+		t.Errorf("max_crc32c_bytes=0 rejected: %v", err)
+	}
+	huge := DefaultConfig()
+	huge.MaxBytes = 1 << 40
+	if huge.Validate() == nil {
+		t.Error("max_bytes=1<<40 accepted")
+	}
+}

@@ -57,9 +57,9 @@ func TestAggregateAccountBoundsManyBuffers(t *testing.T) {
 	if n != 0 || !errors.Is(err, &errs.Error{Code: errs.Budget, Scope: errs.ScopeFlow}) {
 		t.Fatalf("aggregate limit not enforced: n=%d err=%v", n, err)
 	}
-	one.Discard(5)
-	if a.Used() != 3 {
-		t.Fatalf("used after discard = %d", a.Used())
+	one.Discard(5) // three of eight bytes remain: the remainder moves to a three-byte array
+	if a.Used() != 3 || one.Cap() != 3 {
+		t.Fatalf("used after discard = %d, cap %d", a.Used(), one.Cap())
 	}
 	if n, err := two.Append([]byte("abc")); n != 3 || err != nil {
 		t.Fatal(n, err)
@@ -84,6 +84,83 @@ func TestDiscardKeepsTheRemainderAndZeroesTheTail(t *testing.T) {
 	}
 	if !bytes.Equal(backing[4:10], make([]byte, 6)) {
 		t.Fatalf("discarded bytes still readable: %q", backing)
+	}
+}
+
+// Review R3 (2026-11-14): the account released a buffer's charge on Discard while its backing array stayed
+// allocated, so 100 retained buffers under a 1,024-byte account held 102,400 bytes with Used() == 0.
+func TestAccountFollowsAllocatedCapacity(t *testing.T) {
+	a := account(t, 1024)
+	payload := bytes.Repeat([]byte{7}, 1024)
+	var kept []*Bounded
+	for i := 0; i < 100; i++ {
+		b, _ := NewBounded(a, 1024)
+		if n, err := b.Append(payload); n != 1024 || err != nil {
+			t.Fatalf("buffer %d: %d %v", i, n, err)
+		}
+		b.Discard(1024)
+		kept = append(kept, b)
+		total := 0
+		for _, k := range kept {
+			total += k.Cap()
+		}
+		if total != a.Used() || total > 1024 {
+			t.Fatalf("after %d buffers: allocated %d, charged %d", i+1, total, a.Used())
+		}
+	}
+	// A buffer that keeps more than half of its array keeps the charge, and the next buffer is refused.
+	first, _ := NewBounded(a, 1024)
+	first.Append(payload)
+	first.Discard(400)
+	if first.Len() != 624 || first.Cap() != 1024 || a.Used() != 1024 {
+		t.Fatalf("len %d cap %d used %d", first.Len(), first.Cap(), a.Used())
+	}
+	second, _ := NewBounded(a, 1024)
+	if n, err := second.Append([]byte("x")); n != 0 || !errors.Is(err, &errs.Error{Code: errs.Budget, Scope: errs.ScopeFlow}) {
+		t.Fatalf("append beyond the allocated total: %d %v", n, err)
+	}
+	// Reuse inside the kept capacity costs nothing; dropping below half returns the difference.
+	if n, err := first.Append(bytes.Repeat([]byte{1}, 400)); n != 400 || err != nil || a.Used() != 1024 {
+		t.Fatalf("reuse: %d %v used %d", n, err, a.Used())
+	}
+	first.Discard(900)
+	if first.Len() != 124 || first.Cap() != 124 || a.Used() != 124 {
+		t.Fatalf("after shrink: len %d cap %d used %d", first.Len(), first.Cap(), a.Used())
+	}
+	if n, err := second.Append(bytes.Repeat([]byte{2}, 900)); n != 900 || err != nil || a.Used() != 1024 {
+		t.Fatalf("second after shrink: %d %v used %d", n, err, a.Used())
+	}
+	first.Release()
+	second.Release()
+	if a.Used() != 0 || first.Cap() != 0 || second.Cap() != 0 {
+		t.Fatalf("after release: used %d", a.Used())
+	}
+}
+
+// Growth is charged as capacity: doubling when the account allows it, the exact need when it does not, nothing
+// when even that does not fit; the per-buffer limit caps the capacity as well as the length.
+func TestGrowthIsChargedBeforeItIsAllocated(t *testing.T) {
+	a := account(t, 100)
+	b, _ := NewBounded(a, 64)
+	b.Append(make([]byte, 10))
+	if b.Cap() != 10 || a.Used() != 10 {
+		t.Fatalf("cap %d used %d", b.Cap(), a.Used())
+	}
+	b.Append(make([]byte, 1)) // doubles to 20
+	if b.Len() != 11 || b.Cap() != 20 || a.Used() != 20 {
+		t.Fatalf("len %d cap %d used %d", b.Len(), b.Cap(), a.Used())
+	}
+	b.Append(make([]byte, 40)) // needs 51; doubling would give 40, the limit caps growth at 64
+	if b.Len() != 51 || b.Cap() != 51 || a.Used() != 51 {
+		t.Fatalf("len %d cap %d used %d", b.Len(), b.Cap(), a.Used())
+	}
+	other, _ := NewBounded(a, 64)
+	other.Append(make([]byte, 45)) // 96 of 100 charged
+	if n, err := b.Append(make([]byte, 3)); n != 3 || err != nil || b.Cap() != 54 || a.Used() != 99 {
+		t.Fatalf("exact fallback: %d %v cap %d used %d", n, err, b.Cap(), a.Used())
+	}
+	if n, err := b.Append(make([]byte, 5)); n != 0 || err == nil || b.Len() != 54 || a.Used() != 99 {
+		t.Fatalf("refused growth changed state: %d %v len %d used %d", n, err, b.Len(), a.Used())
 	}
 }
 
@@ -112,14 +189,30 @@ func FuzzAppendNeverExceedsLimits(f *testing.F) {
 		for i := 0; i < 4; i++ {
 			n, _ := b.Append(p)
 			total += n
-			if b.Len() > limit || a.Used() > aggregate || b.Len() != total {
-				t.Fatalf("limits broken: len=%d limit=%d used=%d aggregate=%d", b.Len(), limit, a.Used(), aggregate)
+			if b.Len() > limit || a.Used() > aggregate || b.Len() != total || b.Cap() != a.Used() || b.Cap() > limit || b.Cap() < b.Len() {
+				t.Fatalf("limits broken: len=%d cap=%d limit=%d used=%d aggregate=%d", b.Len(), b.Cap(), limit, a.Used(), aggregate)
 			}
 		}
 		b.Discard(len(p) / 2)
+		if b.Cap() != a.Used() || b.Cap() < b.Len() || !bytes.Equal(b.Bytes(), expected(p, total)[min(len(p)/2, total):]) {
+			t.Fatalf("after discard: len=%d cap=%d used=%d", b.Len(), b.Cap(), a.Used())
+		}
 		b.Release()
 		if a.Used() != 0 {
 			t.Fatalf("charge leaked: %d", a.Used())
 		}
 	})
+}
+
+// expected is the first total bytes of p repeated (what four Appends of p retain).
+func expected(p []byte, total int) []byte {
+	out := make([]byte, 0, total)
+	for len(out) < total {
+		n := total - len(out)
+		if n > len(p) {
+			n = len(p)
+		}
+		out = append(out, p[:n]...)
+	}
+	return out
 }

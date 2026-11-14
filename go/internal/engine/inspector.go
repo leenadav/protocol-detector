@@ -11,16 +11,13 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
 )
 
-// Ported is the set of dispatch candidates the Go backend has a parser for.
-var Ported = map[string]bool{"text": true, "tls": true, "dns": true, "irc": true, "telnet": true,
-	"postgresql": true, "rfb": true, "bittorrent": true, "memcached": true, "rsync": true, "fins": true, "afp": true,
-	"zmtp": true, "bolt": true, "stomp": true, "giop": true, "x11": true, "x11-server": true, "spice": true,
-	"mysql": true, "mongodb": true, "tds": true, "tns": true, "cql": true, "kafka": true,
-	"modbus": true, "dnp3": true, "ethernet-ip": true, "iec-104": true, "opcua": true, "s7comm": true,
-	"mqtt": true, "resp": true, "amqp": true, "onc-rpc": true, "diameter": true,
-	"bgp": true, "openvpn": true, "pptp": true, "fastcgi": true,
-	"dcerpc": true, "websocket": true, "xmpp": true, "syslog": true, "git": true,
-	"netbios-ss": true, "tacacs-plus": true, "socks5": true}
+// Ported is the set of candidates a caller or a shift may name as a hint: every candidate the factory builds
+// except the internal routes (review R5, 2026-11-14: a hand-kept copy of this set had drifted from the factory,
+// so New refused the hint "kerberos" although the parser was ported and dispatch selected it).
+var Ported = map[string]bool{}
+
+// internalCandidates are dispatch routes that are not registry names; Python rejects them as hints too.
+var internalCandidates = map[string]bool{"git_text": true}
 
 // Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
 var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
@@ -32,113 +29,180 @@ var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"dcerpc", "websocket", "xmpp", "syslog", "git",
 	"netbios-ss", "tacacs-plus", "socks5", "wireguard", "bacnet",
 	"tftp", "ntp", "l2tp", "coap", "rip", "rtcp", "lifx-lan", "tuya-lan",
-	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos"}
+	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap"}
+
+// factories builds the parser of each candidate; it is the single registry of what the Go backend ports.
+var factories map[string]func(cfg contracts.Config) (parsing.Parser, error)
+
+func init() {
+	factories = map[string]func(cfg contracts.Config) (parsing.Parser, error){
+		"text": func(cfg contracts.Config) (parsing.Parser, error) {
+			return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation})
+		},
+		"irc": func(cfg contracts.Config) (parsing.Parser, error) {
+			return textroute.NewIRC(cfg.MaxLine), nil
+		},
+		"telnet": func(cfg contracts.Config) (parsing.Parser, error) {
+			return textroute.NewTelnet(), nil
+		},
+		"postgresql": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewPostgreSQL(cfg.MaxBytes), nil
+		},
+		"rfb": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewRFB(cfg.MaxBytes), nil
+		},
+		"bittorrent": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewBitTorrent(cfg.MaxBytes), nil
+		},
+		"memcached": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewMemcached(cfg.MaxBytes), nil
+		},
+		"rsync": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewRsync(cfg.MaxLine, cfg.MaxHeaders), nil
+		},
+		"fins": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewFINS(cfg.MaxBytes), nil
+		},
+		"afp": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewAFP(cfg.MaxBytes), nil
+		},
+		"zmtp": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewZMTP(cfg.MaxBytes), nil
+		},
+		"bolt": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewBolt(cfg.MaxBytes), nil
+		},
+		"stomp": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewSTOMP(cfg.MaxLine, cfg.MaxHeaders), nil
+		},
+		"giop": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewGIOP(cfg.MaxBytes, cfg.MaxLine, cfg.MaxHeaders), nil
+		},
+		"x11": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewX11(cfg.MaxBytes), nil
+		},
+		"x11-server": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewX11Reply(cfg.MaxBytes), nil
+		},
+		"spice": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewSPICE(cfg.MaxBytes), nil
+		},
+		"mysql": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewMySQL(cfg.MaxBytes), nil
+		},
+		"mongodb": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewMongoDB(framed.MongoConfig{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, MaxLine: cfg.MaxLine, MaxCRC32CBytes: cfg.MaxCRC32CBytes}), nil
+		},
+		"tds": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewTDS(cfg.MaxBytes), nil
+		},
+		"tns": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewTNS(cfg.MaxBytes), nil
+		},
+		"kerberos": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewKerberos(cfg.MaxBytes, cfg.MaxHeaders), nil
+		},
+		"ldap": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewLDAP(cfg.MaxBytes), nil
+		},
+		"cql": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewCQL(cfg.MaxBytes), nil
+		},
+		"kafka": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewKafka(cfg.MaxBytes), nil
+		},
+		"modbus": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewModbus(cfg.MaxBytes), nil
+		},
+		"dnp3": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewDNP3(cfg.MaxBytes), nil
+		},
+		"ethernet-ip": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewENIP(cfg.MaxBytes), nil
+		},
+		"iec-104": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewIEC104(cfg.MaxBytes), nil
+		},
+		"opcua": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewOPCUA(cfg.MaxBytes), nil
+		},
+		"s7comm": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewS7(cfg.MaxBytes), nil
+		},
+		"mqtt": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewMQTT(cfg.MaxBytes), nil
+		},
+		"resp": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewRESP(cfg.MaxBytes), nil
+		},
+		"amqp": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewAMQP(), nil
+		},
+		"onc-rpc": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewRPC(cfg.MaxBytes), nil
+		},
+		"diameter": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewDiameter(cfg.MaxBytes, cfg.MaxHeaders), nil
+		},
+		"bgp": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewBGP(cfg.MaxBytes), nil
+		},
+		"openvpn": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewOpenVPN(cfg.MaxBytes), nil
+		},
+		"pptp": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewPPTP(cfg.MaxBytes), nil
+		},
+		"fastcgi": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewFastCGI(cfg.MaxBytes, cfg.MaxHeaders), nil
+		},
+		"dcerpc": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewDCERPC(cfg.MaxBytes, cfg.MaxHeaders), nil
+		},
+		"websocket": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewWebSocket(), nil
+		},
+		"xmpp": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewXMPP(cfg.MaxLine), nil
+		},
+		"syslog": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewSyslog(cfg.MaxLine), nil
+		},
+		"git": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewGit(cfg.MaxBytes, cfg.MaxLine, cfg.MaxHeaders), nil
+		},
+		"netbios-ss": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewNetBIOSSession(cfg.MaxBytes), nil
+		},
+		"tacacs-plus": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewTACACS(cfg.MaxBytes), nil
+		},
+		"socks5": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewSOCKS5(), nil
+		},
+		"git_text": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewGitText(cfg.MaxLine,
+				func() parsing.Parser { return framed.NewGit(cfg.MaxBytes, cfg.MaxLine, cfg.MaxHeaders) },
+				func() (parsing.Parser, error) { return factory("text", cfg) }), nil
+		},
+		"tls": func(cfg contracts.Config) (parsing.Parser, error) {
+			return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
+				Certificates: cfg.Certificates, Continuation: cfg.Continuation})
+		},
+		"dns": func(cfg contracts.Config) (parsing.Parser, error) {
+			return dnsx.NewTCP(cfg.MaxBytes), nil
+		},
+	}
+	for name := range factories {
+		if !internalCandidates[name] {
+			Ported[name] = true
+		}
+	}
+}
 
 func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
-	switch candidate {
-	case "text":
-		return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation})
-	case "irc":
-		return textroute.NewIRC(cfg.MaxLine), nil
-	case "telnet":
-		return textroute.NewTelnet(), nil
-	case "postgresql":
-		return framed.NewPostgreSQL(cfg.MaxBytes), nil
-	case "rfb":
-		return framed.NewRFB(cfg.MaxBytes), nil
-	case "bittorrent":
-		return framed.NewBitTorrent(cfg.MaxBytes), nil
-	case "memcached":
-		return framed.NewMemcached(cfg.MaxBytes), nil
-	case "rsync":
-		return framed.NewRsync(cfg.MaxLine, cfg.MaxHeaders), nil
-	case "fins":
-		return framed.NewFINS(cfg.MaxBytes), nil
-	case "afp":
-		return framed.NewAFP(cfg.MaxBytes), nil
-	case "zmtp":
-		return framed.NewZMTP(cfg.MaxBytes), nil
-	case "bolt":
-		return framed.NewBolt(cfg.MaxBytes), nil
-	case "stomp":
-		return framed.NewSTOMP(cfg.MaxLine, cfg.MaxHeaders), nil
-	case "giop":
-		return framed.NewGIOP(cfg.MaxBytes, cfg.MaxLine, cfg.MaxHeaders), nil
-	case "x11":
-		return framed.NewX11(cfg.MaxBytes), nil
-	case "x11-server":
-		return framed.NewX11Reply(cfg.MaxBytes), nil
-	case "spice":
-		return framed.NewSPICE(cfg.MaxBytes), nil
-	case "mysql":
-		return framed.NewMySQL(cfg.MaxBytes), nil
-	case "mongodb":
-		return framed.NewMongoDB(framed.MongoConfig{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, MaxLine: cfg.MaxLine, MaxCRC32CBytes: cfg.MaxCRC32CBytes}), nil
-	case "tds":
-		return framed.NewTDS(cfg.MaxBytes), nil
-	case "tns":
-		return framed.NewTNS(cfg.MaxBytes), nil
-	case "kerberos":
-		return framed.NewKerberos(cfg.MaxBytes, cfg.MaxHeaders), nil
-	case "cql":
-		return framed.NewCQL(cfg.MaxBytes), nil
-	case "kafka":
-		return framed.NewKafka(cfg.MaxBytes), nil
-	case "modbus":
-		return framed.NewModbus(cfg.MaxBytes), nil
-	case "dnp3":
-		return framed.NewDNP3(cfg.MaxBytes), nil
-	case "ethernet-ip":
-		return framed.NewENIP(cfg.MaxBytes), nil
-	case "iec-104":
-		return framed.NewIEC104(cfg.MaxBytes), nil
-	case "opcua":
-		return framed.NewOPCUA(cfg.MaxBytes), nil
-	case "s7comm":
-		return framed.NewS7(cfg.MaxBytes), nil
-	case "mqtt":
-		return framed.NewMQTT(cfg.MaxBytes), nil
-	case "resp":
-		return framed.NewRESP(cfg.MaxBytes), nil
-	case "amqp":
-		return framed.NewAMQP(), nil
-	case "onc-rpc":
-		return framed.NewRPC(cfg.MaxBytes), nil
-	case "diameter":
-		return framed.NewDiameter(cfg.MaxBytes, cfg.MaxHeaders), nil
-	case "bgp":
-		return framed.NewBGP(cfg.MaxBytes), nil
-	case "openvpn":
-		return framed.NewOpenVPN(cfg.MaxBytes), nil
-	case "pptp":
-		return framed.NewPPTP(cfg.MaxBytes), nil
-	case "fastcgi":
-		return framed.NewFastCGI(cfg.MaxBytes, cfg.MaxHeaders), nil
-	case "dcerpc":
-		return framed.NewDCERPC(cfg.MaxBytes, cfg.MaxHeaders), nil
-	case "websocket":
-		return framed.NewWebSocket(), nil
-	case "xmpp":
-		return framed.NewXMPP(cfg.MaxLine), nil
-	case "syslog":
-		return framed.NewSyslog(cfg.MaxLine), nil
-	case "git":
-		return framed.NewGit(cfg.MaxBytes, cfg.MaxLine, cfg.MaxHeaders), nil
-	case "netbios-ss":
-		return framed.NewNetBIOSSession(cfg.MaxBytes), nil
-	case "tacacs-plus":
-		return framed.NewTACACS(cfg.MaxBytes), nil
-	case "socks5":
-		return framed.NewSOCKS5(), nil
-	case "git_text":
-		return framed.NewGitText(cfg.MaxLine,
-			func() parsing.Parser { return framed.NewGit(cfg.MaxBytes, cfg.MaxLine, cfg.MaxHeaders) },
-			func() (parsing.Parser, error) { return factory("text", cfg) }), nil
-	case "tls":
-		return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
-			Certificates: cfg.Certificates, Continuation: cfg.Continuation})
-	case "dns":
-		return dnsx.NewTCP(cfg.MaxBytes), nil
+	if build, ok := factories[candidate]; ok {
+		return build(cfg)
 	}
 	return nil, &parsing.NotPorted{What: "family " + candidate}
 }

@@ -14,8 +14,9 @@ import (
 const (
 	kasaKey      = 171
 	kasaMaxDepth = 8
-	// CPython refuses to convert an integer literal of more than 4300 digits (sys.int_info.default_max_str_digits);
-	// json.loads raises ValueError there, which the Python validator reports as "not one JSON document".
+	// The profile's integer digit limit (smarthome.MAX_JSON_INTEGER_DIGITS). It began as CPython's own int() limit
+	// (sys.int_info.default_max_str_digits); since review R6 the Python validator enforces it explicitly through a
+	// parse_int hook, so the verdict no longer depends on the interpreter's patch release.
 	pythonMaxIntDigits = 4300
 )
 

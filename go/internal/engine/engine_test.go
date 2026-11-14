@@ -87,3 +87,42 @@ func FuzzInspectorNeverPanics(f *testing.F) {
 		d.Inspect(data, "")
 	})
 }
+
+// Review R5 (2026-11-14): the hint set is derived from the parser registry, so a ported candidate can always be
+// named as a hint and an internal route cannot. The hinted fixtures (cases.py hint_cases) compare the outcomes.
+func TestHintSetFollowsTheParserRegistry(t *testing.T) {
+	for name := range factories {
+		_, err := New(contracts.DefaultConfig(), name)
+		if internalCandidates[name] {
+			if err == nil {
+				t.Errorf("internal route %q accepted as a hint", name)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("hint %q refused although its parser is ported: %v", name, err)
+		}
+	}
+	for _, name := range []string{"kerberos", "ldap", "text", "tls", "dns"} {
+		if !Ported[name] {
+			t.Errorf("%q missing from the hint set", name)
+		}
+	}
+	if _, err := New(contracts.DefaultConfig(), "no-such-family"); err == nil {
+		t.Error("unknown hint accepted")
+	}
+}
+
+// A hint selects the candidate and never establishes identity: Kerberos is identified from its bytes under the
+// hint, and other bytes under the same hint are not Kerberos.
+func TestKerberosHintSelectsButDoesNotIdentify(t *testing.T) {
+	in, err := New(contracts.DefaultConfig(), "kerberos")
+	if err != nil {
+		t.Fatal(err)
+	}
+	in.Feed([]byte("GET / HTTP/1.1\r\nHost: a.example\r\n\r\n"))
+	in.End("fin")
+	if in.Observation.Status == contracts.Identified {
+		t.Fatalf("HTTP bytes identified under the kerberos hint: %+v", in.Observation)
+	}
+}

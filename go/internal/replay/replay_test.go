@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -91,6 +92,23 @@ func canonicalizeRecords(got interface{}) {
 	}
 }
 
+// loadGaps reads the exact allowlist of unsupported answers shared with compare.py.
+func loadGaps(t *testing.T) map[string]string {
+	t.Helper()
+	raw, err := os.ReadFile("../../../migration/parity/gaps.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document struct {
+		Schema int               `json:"schema"`
+		Gaps   map[string]string `json:"gaps"`
+	}
+	if err := json.Unmarshal(raw, &document); err != nil || document.Schema != 1 || len(document.Gaps) == 0 {
+		t.Fatalf("gaps.json: %v (schema %d, %d entries)", err, document.Schema, len(document.Gaps))
+	}
+	return document.Gaps
+}
+
 // The Go backend's results must equal the Python expectations on every case of a ported family that
 // uses only ported options; cases it cannot answer are reported as unsupported, never as a different
 // result. Session cases are compared without their records (M6).
@@ -103,6 +121,8 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	gaps := loadGaps(t)
+	seenGaps := map[string]bool{}
 	counts := map[string]int{}
 	var failures []string
 	for i := range doc.Cases {
@@ -110,11 +130,12 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 		raw := results.Results[c.ID]
 		var marker Unsupported
 		if json.Unmarshal(raw, &marker) == nil && marker.Unsupported != "" {
-			if ported(c.Label) && !strings.Contains(marker.Unsupported, "option ") && !strings.Contains(marker.Unsupported, "datagram candidate") &&
-				!strings.Contains(marker.Unsupported, "UDP flows in sessions") && !strings.Contains(marker.Unsupported, "text family") &&
-				!strings.Contains(marker.Unsupported, "shift to") && !strings.Contains(marker.Unsupported, "family ") {
-				failures = append(failures, c.ID+": unsupported without a named gap: "+marker.Unsupported)
+			// Review R2: an unsupported answer is accepted only when migration/parity/gaps.json lists this case
+			// with exactly this reason; a reason that merely looks like a named gap is not enough.
+			if listed, ok := gaps[c.ID]; !ok || listed != marker.Unsupported {
+				failures = append(failures, c.ID+": unsupported answer not in gaps.json: "+marker.Unsupported)
 			}
+			seenGaps[c.ID] = true
 			counts["unsupported/"+c.Kind]++
 			continue
 		}
@@ -134,6 +155,14 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 			continue
 		}
 		counts["matched/"+c.Kind]++
+	}
+	for id := range gaps {
+		if !seenGaps[id] {
+			failures = append(failures, id+": stale gaps.json entry (the case is answered or does not exist)")
+		}
+	}
+	if len(results.Results) != len(doc.Cases) {
+		failures = append(failures, fmt.Sprintf("%d results for %d cases", len(results.Results), len(doc.Cases)))
 	}
 	keys := make([]string, 0, len(counts))
 	for k := range counts {
