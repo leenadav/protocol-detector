@@ -597,7 +597,8 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    - **What it runs:** `make go-check`, which is gofmt, `go vet`, `go test -race`, the fuzz smoke
      targets and `make parity-go`.
    - **Floor under the parity report.** It must be ok, have compared cases, match every compared
-     case and list no mismatch or extra result. The first engine review (issue #2 R2) showed an
+     case and list no mismatch, extra result, unexpected or stale gap, or claim without a match
+     (the counters the engine's R2 fix `321e088` added; read whenever the report carries them). The first engine review (issue #2 R2) showed an
      all-unsupported answer set passing `compare.py` with `compared 0`; the floor catches that
      case. Closing R2 itself is engine work: an explicit per-case gap allowlist, with extra
      result ids failing.
