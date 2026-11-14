@@ -28,9 +28,18 @@ synthetic IPv4 loopback only. Ordinary tests need no capture privileges.
 This is initial-message inspection, not a complete TCP stack or full-session
 protocol validator. Profiles intentionally exclude features listed in PROTOCOLS.md.
 Do not report those exclusions alone as bugs. Report contradictions between the
-implementation and its stated contracts. Python remains required; no native
-rewrite, IPv6 transport or proxy integration is in scope. Benchmarks report local
-CPU work, not production SWG end-to-end latency.
+implementation and its stated contracts. Python remains required as the
+reference implementation; no IPv6 packet transport is in scope. Benchmarks report
+local CPU work, not production SWG end-to-end latency.
+
+The Go port (`go/`, plan in `migration/`) and preparation for in-process use by
+the Culvert proxy are in scope (Lee, 2026-11-14). The agreed contract is
+`docs/integration/PROTODETECT-CULVERT-WORKING-PLAN.md`: a public Go library the
+proxy feeds with ordered stream bytes or typed facts it already parsed; the proxy
+owns transport, TLS, policy and lifecycle; the library performs no I/O. The Go
+backend must match the Python reference case for case (`make parity-go`); a
+detection change is made in both runtimes. Integration work in this repository
+does not authorize changes, pushes or releases in the Culvert repository.
 
 ## Codex review-and-repair workflow (cloud mailbox)
 

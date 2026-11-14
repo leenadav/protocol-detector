@@ -13,6 +13,15 @@ Status: accepted for M2 (2026-11-07).
   engine change.
 - 2026-11-10: pin moved to `go 1.27.4` (go.dev/dl lists 1.27.4 and 1.26.11 as supported); toolchain-only commit,
   gates rerun.
+- 2026-11-14 (integration preparation, `docs/integration/PROTODETECT-CULVERT-WORKING-PLAN.md` #3): the build compiler
+  and the language minimum are now separate lines. `toolchain go1.27.4` is the compiler for every gate and result;
+  `go 1.27.0` is the minimum a consumer needs. A consumer's `go` line is raised to the maximum `go` line of its
+  dependencies, and Culvert keeps `go 1.27.0` deliberately because its `go` line selects GODEBUG defaults; the
+  `toolchain` line of a dependency is ignored by consumers. The minimum is not a claim: `make go-check` runs
+  `go vet` and `go test -race ./...` with `GOTOOLCHAIN` set to the `go` line as well as the full gate with the
+  `toolchain` line. Raising the minimum needs a stated reason (a language or standard-library feature, or a
+  security fix that must be enforced on consumers) and the same gates. Security patches of the compiler are
+  taken through the `toolchain` line, which consumers set for themselves.
 
 ## Module and layout
 

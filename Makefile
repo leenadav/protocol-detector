@@ -157,9 +157,15 @@ content-pack:
 parity:
 	python3 -B migration/parity/compare.py --backend python
 
-# Migration M2: the Go module's own gate (pinned toolchain from go/go.mod; separate from `check` until the CI/CD lane wires it)
-GO_TOOLCHAIN := $(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod)
+# Migration M2: the Go module's own gate (pinned toolchain from go/go.mod; separate from `check` until the CI/CD lane wires it).
+# go/go.mod states the build compiler on its `toolchain` line and the language minimum on its `go` line (ADR 0002): a
+# consumer such as Culvert must not have its own `go` line raised by importing the module. The gate builds with the
+# toolchain and also runs vet and the race-enabled tests at the minimum, so the minimum stays true.
+GO_TOOLCHAIN := $(or $(shell sed -n 's/^toolchain \(go.*\)$$/\1/p' go/go.mod),$(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod))
+GO_MINIMUM := $(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod)
 go-check:
+	cd go && GOTOOLCHAIN=$(GO_MINIMUM) go vet ./...
+	cd go && GOTOOLCHAIN=$(GO_MINIMUM) go test -race ./...
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) sh -c 'test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }'
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go vet ./...
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test -race ./...
