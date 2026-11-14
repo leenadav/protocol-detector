@@ -1842,9 +1842,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "Batch 19: NEGOTIATE in either direction and the one watched SESSION_SETUP with its security buffer through the ported gss.classify_token; stream and hint cases matched, plus 40,000 seeded mutations compared once outside the committed set",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -1871,9 +1871,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "Batch 19: NEGOTIATE in either direction and the one watched SESSION_SETUP with its security buffer through the ported gss.classify_token; stream and hint cases matched, plus 40,000 seeded mutations compared once outside the committed set",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
