@@ -76,6 +76,15 @@ authorization for anything else.
   the mailbox issue reports later commits, and the later SHA that fixes each
   finding is recorded. Never force-push or silently replace a reviewed
   snapshot.
+- Coordination, reviews, engineering decisions and actions an agent would
+  otherwise ask Lee for go to Codex, not Lee (Lee, 2026-11-14): post a
+  `CODEX_ACTION_REQUEST` on the lane's mailbox issue (#7 CI/CD, #2 engine)
+  naming the exact SHA, the requested action, the reason or blocker and the
+  evidence, link it on the lane's current open pull request, and notify the
+  other lane's session. Codex handles authorized work and escalates only
+  approvals that are genuinely Lee's. This does not bypass tool or security
+  restrictions and authorizes no merge, deployment or permission change.
+  Independent work continues while the request is open.
 - Evaluate each finding against the documented profile, fix justified ones
   with regression tests, run the full gate (`make check`, the second Python
   interpreter, fuzz, security requirements, behaviour diff), push, and request
