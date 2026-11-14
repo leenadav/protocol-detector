@@ -25,9 +25,12 @@ def call(method, path, body=None):
 secret = f"/home/user/culvert-lab/run/admin-{build}.secret"
 st, status = call("GET", "/api/setup/status")
 if status.get("needsSetup"):
-    pw = "Lab-" + secrets.token_urlsafe(12) + "9aZ"
-    fd = os.open(secret, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    os.write(fd, pw.encode()); os.close(fd)
+    if os.path.exists(secret):  # after a container restart: keep the password the lab user already has
+        pw = open(secret).read()
+    else:
+        pw = "Lab-" + secrets.token_urlsafe(12) + "9aZ"
+        fd = os.open(secret, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        os.write(fd, pw.encode()); os.close(fd)
     print("setup:", call("POST", "/api/setup/complete", {"user": "admin", "pass": pw})[0])
 else:
     pw = open(secret).read()
