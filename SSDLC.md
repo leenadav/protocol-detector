@@ -460,7 +460,7 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      `tools/run_tests_strict.py`: a skip fails unless its test id is named with `--allow-skip`,
      and a named test the suite no longer contains fails too. The `tests (python …)` jobs name
      only the two UI tests; the new `presentation-ui` job installs Node (`actions/setup-node`
-     v6.5.0, `package-manager-cache: false`) and Playwright 1.56.1 from
+     v7.1.0, `package-manager-cache: false`) and Playwright 1.64.1 from
      `tools/ui-test-deps/package-lock.json` (sha512 integrity, `npm ci --ignore-scripts`) with
      its Chromium, and allows no skip. Dependabot's `npm` entry keeps that lock current.
    - **Product checks in CI and the release gate.** The build manifest, the protocol inventory,
@@ -516,6 +516,32 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      the result is a false positive, but CodeQL cannot see that; initialising `command = None` before
      the branch clears it. No suppression is added (rule 16), so the CodeQL job stays red until the
      engine lane lands that line.
+26. Dependabot PR #23, seven grouped action updates (Lee, 2026-11-14). Six are taken on
+   `claude/cicd-next`, one is held; each major bump was checked against its `action.yml` and
+   changelog at the pinned SHA:
+   - `actions/setup-node` v6.5.0 → v7.1.0 (`presentation-ui`): ESM rewrite, node-version
+     validation, new `cache-primary-key`/`cache-matched-key` outputs; no input removed, and
+     `package-manager-cache: false` still disables caching.
+   - `actions/setup-go` v5.6.0 → v7.0.0 (`static-analysis`, `toolchain-audit`): node24 runtime,
+     honours a `toolchain` directive, and exports `GOTOOLCHAIN=local` to later steps. The scanner
+     builds already pin the toolchain locally and pass `cache: false`, so behaviour is unchanged;
+     rule 15's pinned SETUP_GO compares inputs, not versions.
+   - `github/codeql-action` init/analyze/upload-sarif v4.39.1 → v4.39.2: patch.
+   - `actions/attest-build-provenance` v2.4.0 → v4.2.2 (release publish): since v4 a wrapper over
+     `actions/attest` v4.2.1, which with no predicate inputs runs in provenance mode, so the same
+     `subject-path: "dist/*"`, `id-token`/`attestations: write` and the
+     `gh attestation verify --signer-workflow --source-ref --source-digest
+     --deny-self-hosted-runners` step apply. The new `create-storage-record` input needs
+     `push-to-registry` and does nothing here. Not exercised until the first tag release.
+   - **Held:** `actions/download-artifact` v7.0.0 → v8.0.2. No `upload-artifact` v8 exists, and
+     rule 7 keeps the release handoff pair on one major, which is why PR #23's workflow-lint
+     failed. The rule stays; `.github/dependabot.yml` ignores download-artifact majors until
+     upload-artifact v8 ships, at which point both move together (v8 adds `digest-mismatch:
+     error` by default, a stricter download).
+   - PR #23's other red check, the Go drift job, is the Go 1.27.4 release (item 23's run on
+     `main` 27c5f2f; `5f45214` moves the pin). On `main` 201a552 the toolchain audit also failed:
+     govulncheck found GO-2026-6859 in `net/http@go1.27.3` in the gitleaks build, fixed in 1.27.4
+     and reproduced locally on both versions.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
