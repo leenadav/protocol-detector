@@ -25,3 +25,4 @@ migration/parity/go-results.json
 migration/parity/go-report.json
 # CI-only Node toolchain for the presentation UI tests (npm ci --prefix tools/ui-test-deps)
 node_modules/
+lab-work/

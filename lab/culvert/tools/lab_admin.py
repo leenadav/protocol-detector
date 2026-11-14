@@ -5,7 +5,8 @@ and is never printed. Lab only: loopback, throwaway account."""
 import http.cookiejar, json, os, secrets, ssl, sys, urllib.request
 
 ui, build = int(sys.argv[1]), sys.argv[2]
-base = f"https://127.0.0.1:{ui}"
+scheme = sys.argv[3] if len(sys.argv) > 3 else "https"  # build G serves its UI over plain HTTP for the preview
+base = f"{scheme}://127.0.0.1:{ui}"  # noqa: S310
 ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE  # lab self-signed UI cert on loopback
 jar = http.cookiejar.CookieJar()
 opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), urllib.request.HTTPSHandler(context=ctx),

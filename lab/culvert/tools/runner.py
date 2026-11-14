@@ -20,6 +20,7 @@ POLICY_BUILDS = [
     ("D", 18083, "real detector + the lab's protocol-restriction rules", "real"),
     ("F", 18085, "detector OFF + the same rules (the detector is unavailable)", None),
 ]
+EXTRA_AUTH = {18086: "G"}  # build G is the interactive preview instance; sample_traffic.py can target it
 OUT = sys.argv[1] if __name__ == "__main__" and len(sys.argv) > 1 else os.devnull
 RESULTS = {"started": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()), "builds": {}, "scenarios": [], "state": "running"}
 
@@ -38,7 +39,7 @@ def sha(b):
 def proxy_auth(port):
     """Proxy-Authorization for builds whose lab admin was set up (their proxy then requires credentials)."""
     import base64
-    build = {b[1]: b[0] for b in BUILDS + POLICY_BUILDS}.get(port, "")
+    build = {**{b[1]: b[0] for b in BUILDS + POLICY_BUILDS}, **EXTRA_AUTH}.get(port, "")
     path = f"{LAB}/run/admin-{build}.secret"
     if not os.path.exists(path):
         return b""

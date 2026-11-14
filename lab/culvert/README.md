@@ -53,7 +53,7 @@ Still to test, from the same read: a valid allowed opening followed by another p
 
 `results/index.html` is the check matrix, `results/observatory.html` the same run in the Protocol Observatory's design, and `shots/` holds photos of Culvert's own UI.
 
-84 checks: 83 passed, 0 failed, 1 known gap.
+84 checks: 84 passed (run of 2026-11-14 17:20 UTC, after work item #4). Earlier runs had 83 passes and one known gap.
 
 - **Traffic unchanged (builds A–E):** every scenario passed, and the delivered bytes have the same hash on all five builds.
 - **Detector off (A, B):** no detector records.
@@ -66,7 +66,7 @@ Still to test, from the same read: a valid allowed opening followed by another p
 - **Panics (E):** every tunnel still delivered every byte.
 - **After 300 short tunnels:** the engine held 0 flows on C, D and E. This is measured with one quiet probe tunnel afterwards, because a record's counters are read while other tunnels may still be open.
 - **SSRF guard:** 403 on every build for `127.0.0.1`, `10.0.0.1`, `198.18.0.1` and `169.254.169.254`.
-- **Known gap, reproduced live:** the server side of a TLS handshake that uses X25519MLKEM768 is `unknown` (work item #4). It also raises the `server_unresolved` signal.
+- **The post-quantum gap is closed.** Earlier runs reproduced it live: the server side of a TLS handshake using X25519MLKEM768 was `unknown`. After work item #4 (commit `a51f459`, Python and Go) the same tunnel is identified in both directions and raises no signal.
 - **Splice (earlier run of this lab):** during a 32 MiB echo, `strace -f -c -e trace=splice` counted 256 splice calls on A and 217 on D, with the same delivered hash.
 
 Tests on the lab branch:
@@ -84,6 +84,16 @@ Tests on the lab branch:
 - **Untested paths:** expiry while a direction is blocked in `Write`, idle-timeout parity with the unmodified relay (known to differ, see Codex's point 4), short writes, and holding under a slow client beyond the window.
 - **Not reviewed.** The Culvert lab change has had no Codex round, by decision.
 
+## Use the GUI yourself
+
+On your own machine, from the root of this checkout:
+
+```bash
+sh lab/culvert/run-local.sh
+```
+
+It clones Culvert at the pinned commit into `./lab-work`, applies the lab patch, builds the frontend and the binary against this checkout's `go/` module, and starts the proxy on `http://localhost:8080` and the admin UI on `https://localhost:9090/app`. It needs git, Go 1.27.4 or newer, Node 24.19.0 and npm 11.17.0, and it pushes nothing. `--build` stops after building. The build step was run end to end in the lab container (48 seconds); the run step on macOS was not tested.
+
 ## Reproduce
 
 1. Clone Culvert at `52eb9d1`, create `lab/protocol-detector`, apply `culvert-lab-52eb9d1.patch`, and disable push on that clone.
@@ -100,5 +110,6 @@ Tests on the lab branch:
 | D | Lab build, real detector, restriction rules, new UI at `/app` | 18083 |
 | E | Lab build, fake engine that panics on every call | 18084 |
 | F | Lab build, detector off, same restriction rules | 18085 |
+| G | Same as D, admin UI over plain HTTP on 19096 for a preview pane; `tools/live-traffic.sh` feeds it | 18086 |
 
 The lab admin password is generated per run and kept in a mode-0600 file under the lab's `run/` directory; it is not in this repository.
