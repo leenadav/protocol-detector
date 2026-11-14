@@ -85025,13 +85025,50 @@
       "observation": {
        "application": null,
        "application_protocol": null,
-       "encryption": null,
-       "evidence": [],
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
        "hostname": null,
        "offered_alpn": [],
-       "reason": "TLS 1.2 ServerHello extension outside supported profile",
-       "scope": "initial_message",
-       "status": "unknown",
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
        "transport": "tcp"
       },
       "revision": 1
@@ -85040,13 +85077,50 @@
     "final": {
      "application": null,
      "application_protocol": null,
-     "encryption": null,
-     "evidence": [],
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "TLS 1.2 ServerHello extension outside supported profile",
-     "scope": "initial_message",
-     "status": "unknown",
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
      "transport": "tcp"
     },
     "metrics": {
@@ -85130,13 +85204,50 @@
       "observation": {
        "application": null,
        "application_protocol": null,
-       "encryption": null,
-       "evidence": [],
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
        "hostname": null,
        "offered_alpn": [],
-       "reason": "TLS 1.2 ServerHello extension outside supported profile",
-       "scope": "initial_message",
-       "status": "unknown",
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
        "transport": "tcp"
       },
       "revision": 1
@@ -85145,13 +85256,50 @@
     "final": {
      "application": null,
      "application_protocol": null,
-     "encryption": null,
-     "evidence": [],
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "TLS 1.2 ServerHello extension outside supported profile",
-     "scope": "initial_message",
-     "status": "unknown",
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
      "transport": "tcp"
     },
     "metrics": {
@@ -85189,13 +85337,50 @@
       "observation": {
        "application": null,
        "application_protocol": null,
-       "encryption": null,
-       "evidence": [],
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
        "hostname": null,
        "offered_alpn": [],
-       "reason": "TLS 1.2 ServerHello extension outside supported profile",
-       "scope": "initial_message",
-       "status": "unknown",
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
        "transport": "tcp"
       },
       "revision": 1
@@ -85204,13 +85389,50 @@
     "final": {
      "application": null,
      "application_protocol": null,
-     "encryption": null,
-     "evidence": [],
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "TLS 1.2 ServerHello extension outside supported profile",
-     "scope": "initial_message",
-     "status": "unknown",
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
      "transport": "tcp"
     },
     "metrics": {
@@ -86624,13 +86846,56 @@
       "observation": {
        "application": null,
        "application_protocol": null,
-       "encryption": null,
-       "evidence": [],
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_group",
+         "99",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "unrecognized",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1301",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
        "hostname": null,
        "offered_alpn": [],
-       "reason": "Server key share group outside supported profile",
-       "scope": "initial_message",
-       "status": "unknown",
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
        "transport": "tcp"
       },
       "revision": 1
@@ -86639,13 +86904,56 @@
     "final": {
      "application": null,
      "application_protocol": null,
-     "encryption": null,
-     "evidence": [],
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_group",
+       "99",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "unrecognized",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1301",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "Server key share group outside supported profile",
-     "scope": "initial_message",
-     "status": "unknown",
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
      "transport": "tcp"
     },
     "metrics": {
@@ -86742,13 +87050,56 @@
       "observation": {
        "application": null,
        "application_protocol": null,
-       "encryption": null,
-       "evidence": [],
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_group",
+         "99",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "unrecognized",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1301",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
        "hostname": null,
        "offered_alpn": [],
-       "reason": "Server key share group outside supported profile",
-       "scope": "initial_message",
-       "status": "unknown",
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
        "transport": "tcp"
       },
       "revision": 1
@@ -86757,13 +87108,56 @@
     "final": {
      "application": null,
      "application_protocol": null,
-     "encryption": null,
-     "evidence": [],
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_group",
+       "99",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "unrecognized",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1301",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "Server key share group outside supported profile",
-     "scope": "initial_message",
-     "status": "unknown",
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
      "transport": "tcp"
     },
     "metrics": {
@@ -86803,13 +87197,56 @@
       "observation": {
        "application": null,
        "application_protocol": null,
-       "encryption": null,
-       "evidence": [],
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_group",
+         "99",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "unrecognized",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1301",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
        "hostname": null,
        "offered_alpn": [],
-       "reason": "Server key share group outside supported profile",
-       "scope": "initial_message",
-       "status": "unknown",
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
        "transport": "tcp"
       },
       "revision": 1
@@ -86818,13 +87255,56 @@
     "final": {
      "application": null,
      "application_protocol": null,
-     "encryption": null,
-     "evidence": [],
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_group",
+       "99",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "unrecognized",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1301",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "Server key share group outside supported profile",
-     "scope": "initial_message",
-     "status": "unknown",
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
      "transport": "tcp"
     },
     "metrics": {
@@ -97386,13 +97866,56 @@
       "observation": {
        "application": null,
        "application_protocol": null,
-       "encryption": null,
-       "evidence": [],
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_group",
+         "25497",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "unrecognized",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1301",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
        "hostname": null,
        "offered_alpn": [],
-       "reason": "Server key share group outside supported profile",
-       "scope": "initial_message",
-       "status": "unknown",
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
        "transport": "tcp"
       },
       "revision": 1
@@ -97401,13 +97924,56 @@
     "final": {
      "application": null,
      "application_protocol": null,
-     "encryption": null,
-     "evidence": [],
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_group",
+       "25497",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "unrecognized",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1301",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "Server key share group outside supported profile",
-     "scope": "initial_message",
-     "status": "unknown",
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
      "transport": "tcp"
     },
     "metrics": {
@@ -98620,13 +99186,56 @@
       "observation": {
        "application": null,
        "application_protocol": null,
-       "encryption": null,
-       "evidence": [],
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_group",
+         "25497",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "unrecognized",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1301",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
        "hostname": null,
        "offered_alpn": [],
-       "reason": "Server key share group outside supported profile",
-       "scope": "initial_message",
-       "status": "unknown",
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
        "transport": "tcp"
       },
       "revision": 1
@@ -98635,13 +99244,56 @@
     "final": {
      "application": null,
      "application_protocol": null,
-     "encryption": null,
-     "evidence": [],
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_group",
+       "25497",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "unrecognized",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1301",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "Server key share group outside supported profile",
-     "scope": "initial_message",
-     "status": "unknown",
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
      "transport": "tcp"
     },
     "metrics": {
@@ -98840,13 +99492,56 @@
       "observation": {
        "application": null,
        "application_protocol": null,
-       "encryption": null,
-       "evidence": [],
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_group",
+         "25497",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "unrecognized",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1301",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
        "hostname": null,
        "offered_alpn": [],
-       "reason": "Server key share group outside supported profile",
-       "scope": "initial_message",
-       "status": "unknown",
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
        "transport": "tcp"
       },
       "revision": 1
@@ -98855,13 +99550,56 @@
     "final": {
      "application": null,
      "application_protocol": null,
-     "encryption": null,
-     "evidence": [],
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_group",
+       "25497",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "unrecognized",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1301",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "Server key share group outside supported profile",
-     "scope": "initial_message",
-     "status": "unknown",
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
      "transport": "tcp"
     },
     "metrics": {
@@ -99390,6 +100128,4425 @@
    },
    "hint": null,
    "id": "stream/tls-38-hrr-hybrid-group/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003a020000360303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00130100000e002b0002030400330004ffff0000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Server key share encoding length or point format invalid",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Server key share encoding length or point format invalid",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 63,
+     "bytes_received": 63,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-39-server13-unnamed-group-empty-share/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "3a",
+    "02",
+    "00",
+    "00",
+    "36",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "13",
+    "01",
+    "00",
+    "00",
+    "0e",
+    "00",
+    "2b",
+    "00",
+    "02",
+    "03",
+    "04",
+    "00",
+    "33",
+    "00",
+    "04",
+    "ff",
+    "ff",
+    "00",
+    "00"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Server key share encoding length or point format invalid",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Server key share encoding length or point format invalid",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 63,
+     "bytes_received": 63,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 63,
+     "signature_candidates": 0,
+     "updates": 63
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-39-server13-unnamed-group-empty-share/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003a0200",
+    "00360303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f00130100000e",
+    "002b0002030400",
+    "330004ffff0000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Server key share encoding length or point format invalid",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Server key share encoding length or point format invalid",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 63,
+     "bytes_received": 63,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 9,
+     "signature_candidates": 0,
+     "updates": 9
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-39-server13-unnamed-group-empty-share/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003a020000360303000102030405060708090a0b0c0d0e0f10111213"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 31,
+     "bytes_received": 31,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-39-server13-unnamed-group-empty-share/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003c020000380303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f001301000010002b0002030400330006ffff00017879"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Trailing bytes in TLS structure",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Trailing bytes in TLS structure",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 65,
+     "bytes_received": 65,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-40-server13-unnamed-group-trailing/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "3c",
+    "02",
+    "00",
+    "00",
+    "38",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "13",
+    "01",
+    "00",
+    "00",
+    "10",
+    "00",
+    "2b",
+    "00",
+    "02",
+    "03",
+    "04",
+    "00",
+    "33",
+    "00",
+    "06",
+    "ff",
+    "ff",
+    "00",
+    "01",
+    "78",
+    "79"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Trailing bytes in TLS structure",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Trailing bytes in TLS structure",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 65,
+     "bytes_received": 65,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 65,
+     "signature_candidates": 0,
+     "updates": 65
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-40-server13-unnamed-group-trailing/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003c0200",
+    "00380303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f001301000010",
+    "002b0002030400",
+    "330006ffff0001",
+    "7879"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Trailing bytes in TLS structure",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Trailing bytes in TLS structure",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 65,
+     "bytes_received": 65,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 10,
+     "signature_candidates": 0,
+     "updates": 10
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-40-server13-unnamed-group-trailing/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003c020000380303000102030405060708090a0b0c0d0e0f1011121314"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 32,
+     "bytes_received": 32,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-40-server13-unnamed-group-trailing/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003b020000370303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00130100000f002b00020304003300051a1a000178"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Server selected a reserved GREASE group",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Server selected a reserved GREASE group",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 64,
+     "bytes_received": 64,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-41-server13-grease-group/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "3b",
+    "02",
+    "00",
+    "00",
+    "37",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "13",
+    "01",
+    "00",
+    "00",
+    "0f",
+    "00",
+    "2b",
+    "00",
+    "02",
+    "03",
+    "04",
+    "00",
+    "33",
+    "00",
+    "05",
+    "1a",
+    "1a",
+    "00",
+    "01",
+    "78"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Server selected a reserved GREASE group",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Server selected a reserved GREASE group",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 64,
+     "bytes_received": 64,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 64,
+     "signature_candidates": 0,
+     "updates": 64
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-41-server13-grease-group/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003b0200",
+    "00370303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f00130100000f",
+    "002b0002030400",
+    "3300051a1a0001",
+    "78"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Server selected a reserved GREASE group",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Server selected a reserved GREASE group",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 64,
+     "bytes_received": 64,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 10,
+     "signature_candidates": 0,
+     "updates": 10
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-41-server13-grease-group/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003b020000370303000102030405060708090a0b0c0d0e0f1011121314"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 32,
+     "bytes_received": 32,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-41-server13-grease-group/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300600200005c0303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f001303000034002b0002030400290002000000330024020000200000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_group",
+         "512",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "unrecognized",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1303",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_group",
+       "512",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "unrecognized",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1303",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 101,
+     "bytes_received": 101,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-42-server13-unnamed-group-psk/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "60",
+    "02",
+    "00",
+    "00",
+    "5c",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "13",
+    "03",
+    "00",
+    "00",
+    "34",
+    "00",
+    "2b",
+    "00",
+    "02",
+    "03",
+    "04",
+    "00",
+    "29",
+    "00",
+    "02",
+    "00",
+    "00",
+    "00",
+    "33",
+    "00",
+    "24",
+    "02",
+    "00",
+    "00",
+    "20",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_group",
+         "512",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "unrecognized",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1303",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_group",
+       "512",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "unrecognized",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1303",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 101,
+     "bytes_received": 101,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 101,
+     "signature_candidates": 0,
+     "updates": 101
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-42-server13-unnamed-group-psk/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300600200",
+    "005c0303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f001303000034",
+    "002b0002030400",
+    "29000200000033",
+    "00240200002000",
+    "00000000000000",
+    "00000000000000",
+    "00000000000000",
+    "00000000000000",
+    "000000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_group",
+         "512",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "unrecognized",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1303",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_group",
+       "512",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "unrecognized",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1303",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 101,
+     "bytes_received": 101,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 15,
+     "signature_candidates": 0,
+     "updates": 15
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-42-server13-unnamed-group-psk/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300600200005c0303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00130300003400"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 50,
+     "bytes_received": 50,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-42-server13-unnamed-group-psk/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303005e0200005a0303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f001301000032002b0002030400330024001d0020000000000000000000000000000000000000000000000000000000000000000004d20000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension outside supported TLS 1.3 server hello context",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension outside supported TLS 1.3 server hello context",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 99,
+     "bytes_received": 99,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-43-server13-unknown-extension/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "5e",
+    "02",
+    "00",
+    "00",
+    "5a",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "13",
+    "01",
+    "00",
+    "00",
+    "32",
+    "00",
+    "2b",
+    "00",
+    "02",
+    "03",
+    "04",
+    "00",
+    "33",
+    "00",
+    "24",
+    "00",
+    "1d",
+    "00",
+    "20",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "04",
+    "d2",
+    "00",
+    "00"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension outside supported TLS 1.3 server hello context",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension outside supported TLS 1.3 server hello context",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 99,
+     "bytes_received": 99,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 99,
+     "signature_candidates": 0,
+     "updates": 99
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-43-server13-unknown-extension/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303005e0200",
+    "005a0303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f001301000032",
+    "002b0002030400",
+    "330024001d0020",
+    "00000000000000",
+    "00000000000000",
+    "00000000000000",
+    "00000000000000",
+    "0000000004d200",
+    "00"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension outside supported TLS 1.3 server hello context",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension outside supported TLS 1.3 server hello context",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 99,
+     "bytes_received": 99,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 15,
+     "signature_candidates": 0,
+     "updates": 15
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-43-server13-unknown-extension/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303005e0200005a0303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f001301000032"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 49,
+     "bytes_received": 49,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-43-server13-unknown-extension/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030038020000340303cf21ad74e59a6111be1d8c021e65b891c2a211167abb8c5e079e09e2c8a8339c00130100000c002b00020304003300026399"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "hello_retry_request",
+         "wire:hello_retry_request",
+         "structural"
+        ],
+        [
+         "requested_group",
+         "25497",
+         "wire:hello_retry_request",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:hello_retry_request",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1301",
+         "wire:hello_retry_request",
+         "asserted"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "HelloRetryRequest structure validated; requested changes unverified",
+       "scope": "hello_retry_request",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "hello_retry_request",
+       "wire:hello_retry_request",
+       "structural"
+      ],
+      [
+       "requested_group",
+       "25497",
+       "wire:hello_retry_request",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:hello_retry_request",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1301",
+       "wire:hello_retry_request",
+       "asserted"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "HelloRetryRequest structure validated; requested changes unverified",
+     "scope": "hello_retry_request",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 61,
+     "bytes_received": 61,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-44-hrr-unnamed-group/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "38",
+    "02",
+    "00",
+    "00",
+    "34",
+    "03",
+    "03",
+    "cf",
+    "21",
+    "ad",
+    "74",
+    "e5",
+    "9a",
+    "61",
+    "11",
+    "be",
+    "1d",
+    "8c",
+    "02",
+    "1e",
+    "65",
+    "b8",
+    "91",
+    "c2",
+    "a2",
+    "11",
+    "16",
+    "7a",
+    "bb",
+    "8c",
+    "5e",
+    "07",
+    "9e",
+    "09",
+    "e2",
+    "c8",
+    "a8",
+    "33",
+    "9c",
+    "00",
+    "13",
+    "01",
+    "00",
+    "00",
+    "0c",
+    "00",
+    "2b",
+    "00",
+    "02",
+    "03",
+    "04",
+    "00",
+    "33",
+    "00",
+    "02",
+    "63",
+    "99"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "hello_retry_request",
+         "wire:hello_retry_request",
+         "structural"
+        ],
+        [
+         "requested_group",
+         "25497",
+         "wire:hello_retry_request",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:hello_retry_request",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1301",
+         "wire:hello_retry_request",
+         "asserted"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "HelloRetryRequest structure validated; requested changes unverified",
+       "scope": "hello_retry_request",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "hello_retry_request",
+       "wire:hello_retry_request",
+       "structural"
+      ],
+      [
+       "requested_group",
+       "25497",
+       "wire:hello_retry_request",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:hello_retry_request",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1301",
+       "wire:hello_retry_request",
+       "asserted"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "HelloRetryRequest structure validated; requested changes unverified",
+     "scope": "hello_retry_request",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 61,
+     "bytes_received": 61,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 61,
+     "signature_candidates": 0,
+     "updates": 61
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-44-hrr-unnamed-group/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300380200",
+    "00340303cf21ad",
+    "74e59a6111be1d",
+    "8c021e65b891c2",
+    "a211167abb8c5e",
+    "079e09e2c8a833",
+    "9c00130100000c",
+    "002b0002030400",
+    "3300026399"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "hello_retry_request",
+         "wire:hello_retry_request",
+         "structural"
+        ],
+        [
+         "requested_group",
+         "25497",
+         "wire:hello_retry_request",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.3",
+         "wire:hello_retry_request",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0x1301",
+         "wire:hello_retry_request",
+         "asserted"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "HelloRetryRequest structure validated; requested changes unverified",
+       "scope": "hello_retry_request",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "hello_retry_request",
+       "wire:hello_retry_request",
+       "structural"
+      ],
+      [
+       "requested_group",
+       "25497",
+       "wire:hello_retry_request",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.3",
+       "wire:hello_retry_request",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0x1301",
+       "wire:hello_retry_request",
+       "asserted"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "HelloRetryRequest structure validated; requested changes unverified",
+     "scope": "hello_retry_request",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 61,
+     "bytes_received": 61,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 9,
+     "signature_candidates": 0,
+     "updates": 9
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-44-hrr-unnamed-group/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030038020000340303cf21ad74e59a6111be1d8c021e65b891c2a211"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 30,
+     "bytes_received": 30,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-44-hrr-unnamed-group/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030038020000340303cf21ad74e59a6111be1d8c021e65b891c2a211167abb8c5e079e09e2c8a8339c00130100000c002b0002030400330002fafa"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Server selected a reserved GREASE group",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Server selected a reserved GREASE group",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 61,
+     "bytes_received": 61,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-45-hrr-grease-group/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "38",
+    "02",
+    "00",
+    "00",
+    "34",
+    "03",
+    "03",
+    "cf",
+    "21",
+    "ad",
+    "74",
+    "e5",
+    "9a",
+    "61",
+    "11",
+    "be",
+    "1d",
+    "8c",
+    "02",
+    "1e",
+    "65",
+    "b8",
+    "91",
+    "c2",
+    "a2",
+    "11",
+    "16",
+    "7a",
+    "bb",
+    "8c",
+    "5e",
+    "07",
+    "9e",
+    "09",
+    "e2",
+    "c8",
+    "a8",
+    "33",
+    "9c",
+    "00",
+    "13",
+    "01",
+    "00",
+    "00",
+    "0c",
+    "00",
+    "2b",
+    "00",
+    "02",
+    "03",
+    "04",
+    "00",
+    "33",
+    "00",
+    "02",
+    "fa",
+    "fa"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Server selected a reserved GREASE group",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Server selected a reserved GREASE group",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 61,
+     "bytes_received": 61,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 61,
+     "signature_candidates": 0,
+     "updates": 61
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-45-hrr-grease-group/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300380200",
+    "00340303cf21ad",
+    "74e59a6111be1d",
+    "8c021e65b891c2",
+    "a211167abb8c5e",
+    "079e09e2c8a833",
+    "9c00130100000c",
+    "002b0002030400",
+    "330002fafa"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Server selected a reserved GREASE group",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Server selected a reserved GREASE group",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 61,
+     "bytes_received": 61,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 9,
+     "signature_candidates": 0,
+     "updates": 9
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-45-hrr-grease-group/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030038020000340303cf21ad74e59a6111be1d8c021e65b891c2a211"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 30,
+     "bytes_received": 30,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-45-hrr-grease-group/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303004b020000470303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00c02f00001f0016000000120006000461626364001000050003026832000a00040002001d"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_alpn",
+         "h2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_alpn",
+       "h2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 80,
+     "bytes_received": 80,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-46-server12-unknown-exts-alpn/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "4b",
+    "02",
+    "00",
+    "00",
+    "47",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "c0",
+    "2f",
+    "00",
+    "00",
+    "1f",
+    "00",
+    "16",
+    "00",
+    "00",
+    "00",
+    "12",
+    "00",
+    "06",
+    "00",
+    "04",
+    "61",
+    "62",
+    "63",
+    "64",
+    "00",
+    "10",
+    "00",
+    "05",
+    "00",
+    "03",
+    "02",
+    "68",
+    "32",
+    "00",
+    "0a",
+    "00",
+    "04",
+    "00",
+    "02",
+    "00",
+    "1d"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_alpn",
+         "h2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_alpn",
+       "h2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 80,
+     "bytes_received": 80,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 80,
+     "signature_candidates": 0,
+     "updates": 80
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-46-server12-unknown-exts-alpn/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303004b0200",
+    "00470303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f00c02f00001f",
+    "00160000001200",
+    "06000461626364",
+    "00100005000302",
+    "6832000a000400",
+    "02001d"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_alpn",
+         "h2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_alpn",
+       "h2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 80,
+     "bytes_received": 80,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 12,
+     "signature_candidates": 0,
+     "updates": 12
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-46-server12-unknown-exts-alpn/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303004b020000470303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 40,
+     "bytes_received": 40,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-46-server12-unknown-exts-alpn/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030054020000500303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00c02f00002800330024001d00200000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 89,
+     "bytes_received": 89,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-47-server12-tls13-only-ext/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "54",
+    "02",
+    "00",
+    "00",
+    "50",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "c0",
+    "2f",
+    "00",
+    "00",
+    "28",
+    "00",
+    "33",
+    "00",
+    "24",
+    "00",
+    "1d",
+    "00",
+    "20",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 89,
+     "bytes_received": 89,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 89,
+     "signature_candidates": 0,
+     "updates": 89
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-47-server12-tls13-only-ext/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300540200",
+    "00500303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f00c02f000028",
+    "00330024001d00",
+    "20000000000000",
+    "00000000000000",
+    "00000000000000",
+    "00000000000000",
+    "0000000000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 89,
+     "bytes_received": 89,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 13,
+     "signature_candidates": 0,
+     "updates": 13
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-47-server12-tls13-only-ext/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030054020000500303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 44,
+     "bytes_received": 44,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-47-server12-tls13-only-ext/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030034020000300303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00c02f000008000d000400020403"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 57,
+     "bytes_received": 57,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-48-server12-client-only-ext/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "34",
+    "02",
+    "00",
+    "00",
+    "30",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "c0",
+    "2f",
+    "00",
+    "00",
+    "08",
+    "00",
+    "0d",
+    "00",
+    "04",
+    "00",
+    "02",
+    "04",
+    "03"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 57,
+     "bytes_received": 57,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 57,
+     "signature_candidates": 0,
+     "updates": 57
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-48-server12-client-only-ext/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300340200",
+    "00300303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f00c02f000008",
+    "000d0004000204",
+    "03"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 57,
+     "bytes_received": 57,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 9,
+     "signature_candidates": 0,
+     "updates": 9
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-48-server12-client-only-ext/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030034020000300303000102030405060708090a0b0c0d0e0f10"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-48-server12-client-only-ext/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300300200002c0303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00c02f0000040a0a0000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 53,
+     "bytes_received": 53,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-49-server12-grease-ext/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "30",
+    "02",
+    "00",
+    "00",
+    "2c",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "c0",
+    "2f",
+    "00",
+    "00",
+    "04",
+    "0a",
+    "0a",
+    "00",
+    "00"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 53,
+     "bytes_received": 53,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 53,
+     "signature_candidates": 0,
+     "updates": 53
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-49-server12-grease-ext/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300300200",
+    "002c0303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f00c02f000004",
+    "0a0a0000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Extension not permitted in a TLS 1.2 ServerHello",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 53,
+     "bytes_received": 53,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 8,
+     "signature_candidates": 0,
+     "updates": 8
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-49-server12-grease-ext/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300300200002c0303000102030405060708090a0b0c0d0e"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 26,
+     "bytes_received": 26,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-49-server12-grease-ext/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030034020000300303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00c02f00000804d2000004d20000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Duplicate ServerHello extension",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Duplicate ServerHello extension",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 57,
+     "bytes_received": 57,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-50-server12-unknown-ext-duplicate/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "34",
+    "02",
+    "00",
+    "00",
+    "30",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "c0",
+    "2f",
+    "00",
+    "00",
+    "08",
+    "04",
+    "d2",
+    "00",
+    "00",
+    "04",
+    "d2",
+    "00",
+    "00"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Duplicate ServerHello extension",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Duplicate ServerHello extension",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 57,
+     "bytes_received": 57,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 57,
+     "signature_candidates": 0,
+     "updates": 57
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-50-server12-unknown-ext-duplicate/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300340200",
+    "00300303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f00c02f000008",
+    "04d2000004d200",
+    "00"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Duplicate ServerHello extension",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Duplicate ServerHello extension",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 57,
+     "bytes_received": 57,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 9,
+     "signature_candidates": 0,
+     "updates": 9
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-50-server12-unknown-ext-duplicate/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030034020000300303000102030405060708090a0b0c0d0e0f10"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 28,
+     "bytes_received": 28,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-50-server12-unknown-ext-duplicate/half",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300300200002c0303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00009c00000404d20000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "TLS 1.2 cipher outside supported ServerHello profile",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TLS 1.2 cipher outside supported ServerHello profile",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 53,
+     "bytes_received": 53,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-51-server12-unknown-ext-bad-cipher/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "30",
+    "02",
+    "00",
+    "00",
+    "2c",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "00",
+    "9c",
+    "00",
+    "00",
+    "04",
+    "04",
+    "d2",
+    "00",
+    "00"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "TLS 1.2 cipher outside supported ServerHello profile",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TLS 1.2 cipher outside supported ServerHello profile",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 53,
+     "bytes_received": 53,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 53,
+     "signature_candidates": 0,
+     "updates": 53
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-51-server12-unknown-ext-bad-cipher/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300300200",
+    "002c0303000102",
+    "03040506070809",
+    "0a0b0c0d0e0f10",
+    "11121314151617",
+    "18191a1b1c1d1e",
+    "1f00009c000004",
+    "04d20000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "TLS 1.2 cipher outside supported ServerHello profile",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "TLS 1.2 cipher outside supported ServerHello profile",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 53,
+     "bytes_received": 53,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 8,
+     "signature_candidates": 0,
+     "updates": 8
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-51-server12-unknown-ext-bad-cipher/sevens",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300300200002c0303000102030405060708090a0b0c0d0e"
+   ],
+   "config": {},
+   "end": "Capture ended before initial message completed",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Capture ended before initial message completed",
+       "scope": "initial_message",
+       "status": "incomplete",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Capture ended before initial message completed",
+     "scope": "initial_message",
+     "status": "incomplete",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 26,
+     "bytes_received": 26,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/tls-51-server12-unknown-ext-bad-cipher/half",
    "kind": "stream",
    "label": "tls"
   },
@@ -386348,13 +391505,50 @@
     "observation": {
      "application": null,
      "application_protocol": null,
-     "encryption": null,
-     "evidence": [],
+     "encryption": "dtls",
+     "evidence": [
+      [
+       "encryption",
+       "dtls",
+       "wire",
+       "structural"
+      ],
+      [
+       "handshake",
+       "server_hello",
+       "wire",
+       "structural"
+      ],
+      [
+       "selected_dtls_version",
+       "1.2",
+       "dtls_server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "dtls_server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "dtls_server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "dtls_server_hello",
+       "asserted"
+      ]
+     ],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "TLS 1.2 ServerHello extension outside supported profile",
+     "reason": "DTLS ServerHello structure validated; selections unauthenticated, handshake completion unverified",
      "scope": "datagram",
-     "status": "unknown",
+     "status": "identified",
      "transport": "udp"
     }
    },

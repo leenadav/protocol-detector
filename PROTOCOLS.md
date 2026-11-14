@@ -271,6 +271,29 @@ when the first accepted media type is a DNS message; HTTP/2 gains the same
 message, or a request accepting one, is `dns-over-https` (implicitly
 web-browsing) over HTTP/1.x and HTTP/2. Header values are never emitted.
 
+### Unknown TLS registry values (integration work item #5, 2026-11-14)
+
+A value the profile does not name is decided per field and position. Framing
+is validated in every case.
+
+| Message and field | Unknown value | Result |
+|---|---|---|
+| ClientHello: cipher suites, extensions, supported groups, signature schemes, supported versions, key shares | Any, including GREASE | Accepted (unchanged). Vector widths and extension framing are validated; no fact is derived from an unknown value |
+| TLS 1.3 ServerHello `key_share` group | Unnamed, not GREASE | Identified. `selected_group` is the number, `selected_key_exchange` is `unrecognized`. The share must be a well-framed, non-empty vector filling the extension |
+| TLS 1.3 ServerHello `key_share` group | GREASE (RFC 8701) | Malformed: a server never selects a reserved value |
+| TLS 1.3 ServerHello `key_share` group | Named | Unchanged: exact share length and, where it applies, the uncompressed-point byte |
+| HelloRetryRequest `key_share` group | Unnamed, not GREASE | Identified. `requested_group` is the number |
+| HelloRetryRequest `key_share` group | GREASE | Malformed |
+| TLS 1.3 ServerHello / HelloRetryRequest extension types | Outside the fixed sets (43, 41, 51 / 43, 44, 51) | Unchanged exclusion (`unknown`): the protocol fixes what may appear in clear |
+| TLS 1.3 cipher suite | Outside 0x1301..0x1305 | Unchanged exclusion |
+| TLS 1.2 (and DTLS 1.2) ServerHello extension type | Not interpreted by the profile | Skipped once framed; nothing is reported about it |
+| TLS 1.2 (and DTLS 1.2) ServerHello extension type | 13 (client offer), 41, 42, 44, 45, 47, 48, 49, 50, 51 (TLS 1.3 only), or GREASE | Malformed |
+| TLS 1.2 ServerHello extension | Duplicate type, length past the block | Malformed (unchanged) |
+| TLS 1.2 cipher suite | Outside the profile's list | Unchanged exclusion: key exchange and cipher mode are read from the suite |
+
+Whether a server selection was among the client's offers is not checked: one
+direction is inspected at a time.
+
 An HTTP/1.x `Content-Length` is one to twenty digits, appears once, and must
 fit in a signed 64-bit integer (at most 9223372036854775807); a larger value
 is malformed (integration work item #6, 2026-11-14).
@@ -665,7 +688,7 @@ DTLS 1.2 ServerHello; a HelloRetryRequest selects nothing and carries neither):
 
 | Evidence | Values | Rule |
 |---|---|---|
-| `selected_key_exchange` | `ecdhe`, `dhe`, `hybrid`, `static-ecdh`, `static-rsa`, `psk` | TLS 1.2 from the suite: `TLS_RSA_*` (0x002f) is `static-rsa`; `TLS_ECDH_*` (0xc025, 0xc026, 0xc029, 0xc02a, 0xc02d, 0xc02e, 0xc031, 0xc032) use the certificate's static key and are `static-ecdh`; `TLS_ECDHE_*` are `ecdhe`. TLS 1.3 from the extensions: a `key_share` names `ecdhe` (x25519, x448, P-256/384/521), `dhe` (ffdhe2048..8192) or `hybrid` (the post-quantum hybrids X25519MLKEM768 0x11EC, SecP256r1MLKEM768 0x11EB and SecP384r1MLKEM1024 0x11ED; the server share must have the exact length of the classical share plus the ML-KEM ciphertext, and the NIST-curve hybrids must start with an uncompressed point), with or without `pre_shared_key`; `pre_shared_key` alone is `psk` (psk_ke resumption, RFC 8446 4.2.9) |
+| `selected_key_exchange` | `ecdhe`, `dhe`, `hybrid`, `unrecognized`, `static-ecdh`, `static-rsa`, `psk` | TLS 1.2 from the suite: `TLS_RSA_*` (0x002f) is `static-rsa`; `TLS_ECDH_*` (0xc025, 0xc026, 0xc029, 0xc02a, 0xc02d, 0xc02e, 0xc031, 0xc032) use the certificate's static key and are `static-ecdh`; `TLS_ECDHE_*` are `ecdhe`. TLS 1.3 from the extensions: a `key_share` names `ecdhe` (x25519, x448, P-256/384/521), `dhe` (ffdhe2048..8192) or `hybrid` (the post-quantum hybrids X25519MLKEM768 0x11EC, SecP256r1MLKEM768 0x11EB and SecP384r1MLKEM1024 0x11ED; the server share must have the exact length of the classical share plus the ML-KEM ciphertext, and the NIST-curve hybrids must start with an uncompressed point), with or without `pre_shared_key`; `pre_shared_key` alone is `psk` (psk_ke resumption, RFC 8446 4.2.9); a `key_share` whose group the profile does not name is `unrecognized` (no class is claimed and no risk follows from it; see "Unknown TLS registry values") |
 | `selected_cipher_mode` | `aead`, `cbc` | GCM suites and every TLS 1.3 suite are `aead`; the CBC suites (0x002f, 0xc023..0xc02a) are `cbc` |
 
 Both are `asserted`: the server's selection, unauthenticated, with handshake

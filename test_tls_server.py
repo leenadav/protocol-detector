@@ -97,7 +97,7 @@ class TLSServerTests(unittest.TestCase):
         for extensions in (((0,b'x'),),((23,b'x'),),((35,b'x'),),((65281,b''),),((65281,b'\x01x'),),
                            ((11,b'\0'),),((11,b'\x01\x01'),),((11,b'\x01\0x'),),
                            ((16,b'\0\0'),),((16,b'\0\x01\0'),),((16,b'\0\x06\x02h2\x02h3'),),
-                           ((16,b'\0\x03\x02h2x'),),((23,b''),(23,b'')),((51,b'\0\x1d'),),((1234,b''),)):
+                           ((16,b'\0\x03\x02h2x'),),((23,b''),(23,b'')),((51,b'\0\x1d'),)):
             self.assertNotEqual(inspect(record(hello(extensions))).observation.status,'identified',extensions)
 
     def test_ec_formats_require_ecc_cipher_in_server_hello(self):
@@ -141,20 +141,63 @@ class TLSServerTests(unittest.TestCase):
                 key=bytes([first])+bytes(size-1)
                 e=inspect(record(server13(((51,group.to_bytes(2,'big')+size.to_bytes(2,'big')+key),))))
                 self.assertEqual(e.observation.status,'malformed',(group,first))
-        # A group this profile does not name is still a documented exclusion, not an identification
-        # (0x6399 is the withdrawn X25519Kyber768Draft00 code point; work item #5 decides its future).
-        e=inspect(record(server13(((51,b'\x63\x99'+(1120).to_bytes(2,'big')+bytes(1120)),))))
-        self.assertEqual(e.observation.status,'unknown',e.observation)
-        self.assertEqual(e.observation.reason,'Server key share group outside supported profile')
+
+    def test_unknown_registry_values_by_position(self):
+        # Integration work item #5 (2026-11-14): an unknown value is decided per field and position.
+        from protocol_engine.risks import NO_FORWARD_SECRECY
+        # TLS 1.3 ServerHello key_share: an unnamed group is recorded by number and gets no named exchange class
+        # (0x6399 is the withdrawn X25519Kyber768Draft00 code point, 0xffff is unassigned).
+        for group,key in ((0x6399,bytes(1120)),(0xffff,b'x'),(0x0200,bytes(1568))):
+            e=inspect(record(server13(((51,group.to_bytes(2,'big')+len(key).to_bytes(2,'big')+key),))))
+            self.assertEqual(e.observation.status,'identified',(group,e.observation))
+            self.assertEqual(evidence(e)['selected_group'],str(group))
+            self.assertEqual(evidence(e)['selected_key_exchange'],'unrecognized')
+            self.assertNotIn('unrecognized',NO_FORWARD_SECRECY)
+            # ... the key_share framing is still validated: empty share, short vector, trailing byte.
+            for value in (group.to_bytes(2,'big')+b'\0\0',group.to_bytes(2,'big')+b'\0\x05abc',
+                          group.to_bytes(2,'big')+b'\0\x01xy',group.to_bytes(2,'big')):
+                e=inspect(record(server13(((51,value),))))
+                self.assertEqual(e.observation.status,'malformed',(group,value))
+            # HelloRetryRequest: the requested group is a bare number.
+            retry=inspect(record(server13(((51,group.to_bytes(2,'big')),),random_value=RETRY)))
+            self.assertEqual(retry.observation.status,'identified',group)
+            self.assertEqual(evidence(retry)['requested_group'],str(group))
+            self.assertNotIn('selected_key_exchange',evidence(retry))
+        # A server never selects a GREASE value (RFC 8701), in either message.
+        for group in (0x0a0a,0x8a8a,0xfafa):
+            e=inspect(record(server13(((51,group.to_bytes(2,'big')+b'\0\x01x'),))))
+            self.assertEqual(e.observation.status,'malformed',group)
+            retry=inspect(record(server13(((51,group.to_bytes(2,'big')),),random_value=RETRY)))
+            self.assertEqual(retry.observation.status,'malformed',group)
+        # Known groups keep their exact lengths.
+        e=inspect(record(server13(((51,b'\0\x1d\0\x1f'+bytes(31)),))))
+        self.assertEqual(e.observation.status,'malformed')
+        # The TLS 1.3 extension sets and cipher list stay closed.
+        for extra in (((16,b'\0\x03\x02h2'),),((1234,b''),),((0x0a0a,b''),)):
+            self.assertEqual(inspect(record(server13(extra+((51,b'\0\x1d\0\x20'+bytes(32)),)))).observation.status,'unknown',extra)
+        # TLS 1.2 ServerHello: an extension type the profile does not interpret is skipped once framed ...
+        base=evidence(inspect(record(hello(((16,b'\0\x03\x02h2'),)))))
+        for extensions in (((1234,b''),),((22,b''),),((18,b'\0\x04abcd'),),((10,b'\0\x02\0\x1d'),),((1234,b'x'*300),(16,b'\0\x03\x02h2'))):
+            e=inspect(record(hello(extensions+(() if any(k==16 for k,_ in extensions) else ((16,b'\0\x03\x02h2'),)))))
+            self.assertEqual(e.observation.status,'identified',extensions)
+            self.assertEqual(evidence(e),base,extensions)      # nothing is claimed about the skipped extension
+        # ... but TLS 1.3-only and client-only types, GREASE types, duplicates and bad framing are malformed.
+        for kind in (13,41,42,44,45,47,48,49,50,51,0x0a0a,0xfafa):
+            self.assertEqual(inspect(record(hello(((kind,b''),)))).observation.status,'malformed',kind)
+        self.assertEqual(inspect(record(hello(((1234,b''),(1234,b''))))).observation.status,'malformed')
+        body=hello(((1234,b'abc'),))
+        self.assertEqual(inspect(record(body[:-5]+b'\0\x04'+body[-3:])).observation.status,'malformed')   # length past the block
+        # The TLS 1.2 cipher list stays closed: the key exchange and cipher mode are read from the suite.
+        self.assertEqual(inspect(record(hello(((1234,b''),),cipher=0x009c))).observation.status,'unknown')
 
     def test_bad_server13_extension_dependencies_and_shapes(self):
         for extra in ((),((41,b'\0'),),((51,b'\0\x1d'),),((51,b'\0\x1d\0\x1f'+bytes(31)),),
-                      ((51,b'\0\x17\0\x41'+bytes(65)),),((51,b'\xff\xff\0\x01x'),),
+                      ((51,b'\0\x17\0\x41'+bytes(65)),),((51,b'\xff\xff\0\x00'),),
                       ((44,b'\0\x01x'),),((16,b'\0\x03\x02h2'),),((43,b'\x03\x04'),)):
             self.assertNotEqual(inspect(record(server13(extra))).observation.status,'identified',extra)
         for value in (b'',b'\x03\x03',b'\x03\x04x',b'\x03\x05'):
             self.assertNotEqual(inspect(record(hello(((43,value),(41,b'\0\0')),cipher=0x1301))).observation.status,'identified')
-        for extra in ((),((41,b'\0\0'),),((44,b'\0\0'),),((44,b'\0\x02x'),),((51,b'\0\x1d\0\x20'+bytes(32)),)):
+        for extra in ((),((41,b'\0\0'),),((44,b'\0\0'),),((44,b'\0\x02x'),),((51,b'\0\x1d\0\x20'+bytes(32)),),((51,b'\x0a\x0a'),)):
             self.assertNotEqual(inspect(record(server13(extra,random_value=RETRY))).observation.status,'identified',extra)
 
     def test_server13_record_boundary_version_and_interleaving(self):

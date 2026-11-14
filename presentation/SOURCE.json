@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "ab510fb3efcc5905a0f9fea7230c2b5d34151ea2",
+  "commit": "4f697a497d124a0ec9bac60370420bcfbad92321",
   "branch": "claude/culvert-integration-prep",
-  "build_digest": "9898db5c6cc2160df3aa9148c3308efe95920b0d5c6a09cfad05658a548e23e7",
+  "build_digest": "af94b4572e3dafce366785695127435ab5e829b0ee76aedcc29f9b810772df80",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -350,7 +350,7 @@
     {
       "path": "protocol_engine/tls_server.py",
       "component": "engine",
-      "sha256": "2e11ee7d210eba47f9669729ef8521670c6a3338aefb95a9b20adcd8b72f4bcf"
+      "sha256": "a1724b4fad1b395a925f01a0264f899fbdfa0e4ae170b2a7fdc45cbdac772dc6"
     },
     {
       "path": "protocol_engine/unknown.py",

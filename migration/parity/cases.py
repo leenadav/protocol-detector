@@ -641,6 +641,21 @@ def tls_cases():
         ("server13-hybrid-bad-point", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xeb\x04\x81\x02" + bytes(1152))), cipher=0x1301))),
         ("server13-kyber-draft-group", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x63\x99\x04\x60" + bytes(1120))), cipher=0x1301))),
         ("hrr-hybrid-group", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xec")), cipher=0x1301, random_value=RETRY))),
+        # Integration work item #5 (2026-11-14): unknown registry values by field and position. Appended. The
+        # expectations of server12-unknown-ext, server13-bad-group and server13-kyber-draft-group change with it.
+        ("server13-unnamed-group-empty-share", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\xff\xff\x00\x00")), cipher=0x1301))),
+        ("server13-unnamed-group-trailing", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\xff\xff\x00\x01xy")), cipher=0x1301))),
+        ("server13-grease-group", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x1a\x1a\x00\x01x")), cipher=0x1301))),
+        ("server13-unnamed-group-psk", _tls_record(_server_hello(((43, b"\x03\x04"), (41, b"\x00\x00"), (51, b"\x02\x00\x00\x20" + bytes(32))), cipher=0x1303))),
+        ("server13-unknown-extension", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x00\x1d\x00\x20" + bytes(32)), (1234, b"")), cipher=0x1301))),
+        ("hrr-unnamed-group", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x63\x99")), cipher=0x1301, random_value=RETRY))),
+        ("hrr-grease-group", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\xfa\xfa")), cipher=0x1301, random_value=RETRY))),
+        ("server12-unknown-exts-alpn", _tls_record(_server_hello(((22, b""), (18, b"\x00\x04abcd"), (16, b"\x00\x03\x02h2"), (10, b"\x00\x02\x00\x1d"))))),
+        ("server12-tls13-only-ext", _tls_record(_server_hello(((51, b"\x00\x1d\x00\x20" + bytes(32)),)))),
+        ("server12-client-only-ext", _tls_record(_server_hello(((13, b"\x00\x02\x04\x03"),)))),
+        ("server12-grease-ext", _tls_record(_server_hello(((0x0a0a, b""),)))),
+        ("server12-unknown-ext-duplicate", _tls_record(_server_hello(((1234, b""), (1234, b""))))),
+        ("server12-unknown-ext-bad-cipher", _tls_record(_server_hello(((1234, b""),), cipher=0x009c))),
     ]
     cases = []
     for number, (name, data) in enumerate(hellos):

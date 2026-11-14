@@ -447,6 +447,20 @@ var keySizes = map[int]int{23: 65, 24: 97, 25: 133, 29: 32, 30: 56, 256: 256, 25
 func hybridGroup(g int) bool     { return g == 4587 || g == 4588 || g == 4589 }
 func pointFirstGroup(g int) bool { return g == 23 || g == 24 || g == 25 || g == 4587 || g == 4589 }
 
+// Integration work item #5 (2026-11-14): unknown registry values are decided per field and position.
+// grease reports an RFC 8701 reserved 16-bit value; a client offers them, a server never selects one.
+func grease(v int) bool { return v&0x0f0f == 0x0a0a && v>>8 == v&0xff }
+
+// tls12Forbidden reports an extension type a TLS 1.2 ServerHello can never carry: signature_algorithms is a
+// client offer, the rest exist only in TLS 1.3 messages (tls_server._TLS12_FORBIDDEN_EXTENSIONS).
+func tls12Forbidden(kind int) bool {
+	switch kind {
+	case 13, 41, 42, 44, 45, 47, 48, 49, 50, 51:
+		return true
+	}
+	return false
+}
+
 func tls12Cipher(c int) bool { return c == 0x002f || (c >= 0xc023 && c < 0xc033) }
 func tls12ECC(c int) bool    { return c >= 0xc023 && c < 0xc033 }
 func tls12AEAD(c int) bool   { return c >= 0xc02b && c < 0xc033 }
@@ -590,8 +604,8 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 					return nil, "", "", parsing.Malformed("Retry key_share must contain one selected group")
 				}
 				group := int(value[0])<<8 | int(value[1])
-				if _, ok := keySizes[group]; !ok {
-					return nil, "", "", parsing.Unsupported("Retry group outside supported named groups")
+				if grease(group) {
+					return nil, "", "", parsing.Malformed("Server selected a reserved GREASE group")
 				}
 				rows = append(rows, rowsOf("requested_group", fmt.Sprint(group), "asserted"))
 			}
@@ -619,20 +633,28 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 				if err := value.end(); err != nil {
 					return nil, "", "", err
 				}
-				size, ok := keySizes[group]
-				if !ok {
-					return nil, "", "", parsing.Unsupported("Server key share group outside supported profile")
+				if grease(group) {
+					return nil, "", "", parsing.Malformed("Server selected a reserved GREASE group")
 				}
-				if len(key) != size || (pointFirstGroup(group) && key[0] != 4) {
-					return nil, "", "", parsing.Malformed("Server key share encoding length or point format invalid")
+				if size, ok := keySizes[group]; ok {
+					if len(key) != size || (pointFirstGroup(group) && key[0] != 4) {
+						return nil, "", "", parsing.Malformed("Server key share encoding length or point format invalid")
+					}
+					exchange = "ecdhe"
+					if group >= 256 && group <= 260 {
+						exchange = "dhe"
+					} else if hybridGroup(group) {
+						exchange = "hybrid"
+					}
+				} else {
+					// Work item #5: an unnamed group keeps the validated framing and a non-empty share, and
+					// gets no named exchange class.
+					if len(key) == 0 {
+						return nil, "", "", parsing.Malformed("Server key share encoding length or point format invalid")
+					}
+					exchange = "unrecognized"
 				}
 				rows = append(rows, rowsOf("selected_group", fmt.Sprint(group), "asserted"))
-				exchange = "ecdhe"
-				if group >= 256 && group <= 260 {
-					exchange = "dhe"
-				} else if hybridGroup(group) {
-					exchange = "hybrid"
-				}
 			}
 			rows = append(rows, rowsOf("selected_key_exchange", exchange, "asserted"), rowsOf("selected_cipher_mode", "aead", "asserted"))
 		}
@@ -697,7 +719,10 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 				}
 				rows = append(rows, rowsOf("selected_alpn", alpnText(name), "asserted"))
 			default:
-				return nil, "", "", parsing.Unsupported("TLS 1.2 ServerHello extension outside supported profile")
+				if tls12Forbidden(e.kind) || grease(e.kind) {
+					return nil, "", "", parsing.Malformed("Extension not permitted in a TLS 1.2 ServerHello")
+				}
+				// Work item #5: any other extension type is skipped; its framing was validated above.
 			}
 		}
 		mode := "cbc"
