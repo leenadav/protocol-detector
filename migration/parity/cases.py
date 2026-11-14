@@ -485,6 +485,44 @@ def ldap_cases():
     return cases
 
 
+def hint_cases():
+    """Explicit hints (review R5, 2026-11-14): every registry candidate as a caller hint with a fixture it identifies
+    (whole, bytewise, two seeded mutations) and with inputs of other protocols (an HTTP request, a TLS ClientHello,
+    64 zero bytes, a text greeting), where the hint must select the candidate and never establish identity by itself."""
+    rng = random.Random(29)
+    fixtures = [data for data, _ in STREAM_CASES] + [data for data, _, _ in HINTED_STREAM_CASES] + [data for _, data in kerberos_vectors()[:1]]
+    fixtures[-1] = len(fixtures[-1]).to_bytes(4, "big") + fixtures[-1]
+    from protocol_adapters import protocol_fixtures as F
+    fixtures += [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]), b"*1\r\n$4\r\nPING\r\n", F.X11_REPLY, F.H2_REQUEST,
+                 F.H2_SETTINGS]
+    foreign = (("http-request", b"GET /a HTTP/1.1\r\nHost: a.example\r\n\r\n"), ("tls-hello", client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")])),
+               ("zeros", bytes(64)), ("greeting", b"220 mail.example ESMTP ready\r\n"))
+    cases = []
+
+    def add(name, hint, data, chunks=None):
+        cases.append({"id": "stream/hint-%s/%s" % (hint, name), "kind": "stream", "label": hint, "chunks": chunks or [data.hex()],
+                      "hint": hint, "config": {}, "end": "fin"})
+
+    for hint in sorted(PARSERS):
+        positive = None
+        for data in fixtures:
+            inspector = Inspector(Config(), protocol_hint=hint)
+            inspector.feed(data)
+            if inspector.observation.status == "identified":
+                positive = data
+                break
+        if positive is not None:
+            add("positive", hint, positive)
+            if len(positive) <= 400:
+                add("positive-bytes", hint, positive, [positive[i:i + 1].hex() for i in range(len(positive))])
+            add("mutated-1", hint, _mutate(rng, positive))
+            add("mutated-2", hint, _mutate(rng, positive, 4))
+            add("truncated", hint, positive[:max(1, len(positive) // 2)])
+        for name, data in foreign:
+            add(name, hint, data)
+    return cases
+
+
 def stream_cases(seed=11, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -522,6 +560,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(session_cases_v())
     cases.extend(kerberos_cases())
     cases.extend(ldap_cases())
+    cases.extend(hint_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
