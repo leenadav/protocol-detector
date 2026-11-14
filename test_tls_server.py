@@ -190,6 +190,26 @@ class TLSServerTests(unittest.TestCase):
         # The TLS 1.2 cipher list stays closed: the key exchange and cipher mode are read from the suite.
         self.assertEqual(inspect(record(hello(((1234,b''),),cipher=0x009c))).observation.status,'unknown')
 
+    def test_modern_client_matrix_identifies(self):
+        # Integration work item #7: every hello of the modern-client set identifies, whole and byte by byte,
+        # and the set carries a review date so a stale list is visible.
+        from migration.parity.cases import MODERN_CLIENTS_REVIEWED, modern_client_cases
+        cases=modern_client_cases()
+        names={c['id'].split('/')[2] for c in cases}
+        for client in ('chrome','firefox','safari','curl-openssl','go','java'):
+            self.assertIn('client-'+client,names)
+        self.assertRegex(MODERN_CLIENTS_REVIEWED,r'^20\d\d-\d\d-\d\d$')
+        for case in cases:
+            e=Inspector()
+            for chunk in case['chunks']:e.feed(bytes.fromhex(chunk))
+            self.assertEqual(e.observation.status,'identified',case['id'])
+            self.assertEqual(e.observation.encryption,'tls',case['id'])
+            if '/client-' in case['id']:
+                self.assertEqual(e.observation.hostname,'www.example.com',case['id'])
+                self.assertEqual(e.observation.offered_alpn,('h2','http/1.1'),case['id'])
+        e=inspect(bytes.fromhex(next(c for c in cases if c['id']=='stream/modern/server13-x25519mlkem768/whole')['chunks'][0]))
+        self.assertEqual(evidence(e)['selected_key_exchange'],'hybrid')
+
     def test_bad_server13_extension_dependencies_and_shapes(self):
         for extra in ((),((41,b'\0'),),((51,b'\0\x1d'),),((51,b'\0\x1d\0\x1f'+bytes(31)),),
                       ((51,b'\0\x17\0\x41'+bytes(65)),),((51,b'\xff\xff\0\x00'),),

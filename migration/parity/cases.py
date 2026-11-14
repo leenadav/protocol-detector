@@ -572,6 +572,102 @@ def stream_cases(seed=11, limit=None):
             for variant, chunks in (("whole", [data.hex()]), ("bytes", [data[i:i + 1].hex() for i in range(len(data))])):
                 cases.append({"id": "stream/http-content-length/%s-%s/%s" % (kind, name, variant), "kind": "stream", "label": "http",
                               "chunks": chunks, "hint": None, "config": {}, "end": "fin"})
+    cases.extend(modern_client_cases())
+    return cases
+
+
+MODERN_CLIENTS_REVIEWED = "2026-11-14"   # refresh quarterly (integration work item #7); next review due 2027-02
+
+
+def _modern_client_hello(ciphers, extensions, session=bytes(range(32, 64))):
+    body = (b"\x03\x03" + bytes(range(64, 96)) + bytes([len(session)]) + session
+            + (2 * len(ciphers)).to_bytes(2, "big") + b"".join(c.to_bytes(2, "big") for c in ciphers) + b"\x01\x00")
+    block = b"".join(_tls_ext(kind, value) for kind, value in extensions)
+    body += len(block).to_bytes(2, "big") + block
+    return _tls_record(b"\x01" + len(body).to_bytes(3, "big") + body, b"\x03\x01")
+
+
+def _u16list(values, width=2):
+    data = b"".join(v.to_bytes(2, "big") for v in values)
+    return len(data).to_bytes(width, "big") + data
+
+
+def _shares(entries):
+    data = b"".join(group.to_bytes(2, "big") + size.to_bytes(2, "big") + bytes([7]) * size for group, size in entries)
+    return len(data).to_bytes(2, "big") + data
+
+
+def modern_client_cases():
+    """Integration work item #7: the first flights of current TLS clients and the server replies they draw.
+
+    Synthesized here, not captured: each hello is modelled on the public structure of the named client (cipher list,
+    extension set and order, GREASE use, post-quantum key share sizes) with fixed filler for random values and
+    keys. They are regression inputs for the parser's tolerance of what real stacks send, not fingerprints of
+    exact releases. Review the list each quarter (MODERN_CLIENTS_REVIEWED)."""
+    from protocol_adapters.protocol_fixtures import ech_outer
+    from test_tls_server import RETRY
+    sni = (0, b"\x00\x12\x00\x00\x0fwww.example.com")
+    alpn = (16, b"\x00\x0c\x02h2\x08http/1.1")
+    ems, reneg, ticket, status = (23, b""), (65281, b"\x00"), (35, b""), (5, b"\x01\x00\x00\x00\x00")
+    point_formats, sct, psk_modes = (11, b"\x01\x00"), (18, b""), (45, b"\x01\x01")
+    schemes = (0x0403, 0x0804, 0x0401, 0x0503, 0x0805, 0x0501, 0x0806, 0x0601)
+    client_share = {4588: 1216, 4587: 1249, 29: 32, 23: 65, 24: 97}      # hybrid client shares: ML-KEM key plus the classical share
+    tls13, ecdhe, legacy = (0x1301, 0x1302, 0x1303), (0xc02b, 0xc02f, 0xc02c, 0xc030, 0xcca9, 0xcca8), (0xc013, 0xc014, 0x009c, 0x009d, 0x002f, 0x0035)
+
+    def share(*groups, grease=None):
+        return (51, _shares(([(grease, 1)] if grease else []) + [(g, client_share[g]) for g in groups]))
+
+    clients = [
+        # Chromium family: GREASE in ciphers, groups, versions and extensions; X25519MLKEM768 + X25519 shares; ALPS; ECH GREASE.
+        ("chrome", _modern_client_hello((0x4a4a,) + tls13 + ecdhe + legacy, [
+            (0x1a1a, b""), sni, ems, reneg, (10, _u16list((0x2a2a, 4588, 29, 23, 24))), point_formats, ticket, alpn, status,
+            (13, _u16list(schemes)), sct, share(4588, 29, grease=0x2a2a), psk_modes, (43, b"\x06\x3a\x3a\x03\x04\x03\x03"),
+            (27, b"\x02\x00\x02"), (17613, b"\x00\x03\x02h2"), (0xfe0d, ech_outer()), (0x5a5a, b"\x00")])),
+        # Firefox: no GREASE; three key shares; delegated credentials; record size limit; ECH GREASE.
+        ("firefox", _modern_client_hello(tls13 + ecdhe + (0xc00a, 0xc009) + legacy, [
+            sni, ems, reneg, (10, _u16list((4588, 29, 23, 24, 25, 256, 257))), point_formats, ticket, alpn, status,
+            (34, _u16list((0x0403, 0x0503, 0x0603, 0x0203))), sct, share(4588, 29, 23), (43, b"\x04\x03\x04\x03\x03"),
+            (13, _u16list(schemes + (0x0203, 0x0201))), psk_modes, (28, b"\x40\x01"), (27, b"\x06\x00\x01\x00\x02\x00\x03"), (0xfe0d, ech_outer())])),
+        # Safari: GREASE; hybrid and X25519 shares; no ECH.
+        ("safari", _modern_client_hello((0x8a8a,) + tls13 + (0xc02c, 0xc02b, 0xcca9, 0xc030, 0xc02f, 0xcca8, 0xc00a, 0xc009) + legacy, [
+            (0xdada, b""), sni, ems, reneg, (10, _u16list((0x6a6a, 4588, 29, 23, 24, 25))), point_formats, alpn, status,
+            (13, _u16list(schemes)), sct, share(4588, 29, grease=0x6a6a), psk_modes, (43, b"\x0a\x9a\x9a\x03\x04\x03\x03\x03\x02\x03\x01"),
+            (27, b"\x02\x00\x01"), (0xbaba, b"\x00")])),
+        # curl on OpenSSL 3.5: no GREASE; many groups; encrypt-then-mac; hybrid and X25519 shares.
+        ("curl-openssl", _modern_client_hello(tls13 + (0xc02c, 0xc030, 0x009f, 0xcca9, 0xcca8, 0xccaa, 0xc02b, 0xc02f, 0x009e) + legacy + (0x00ff,), [
+            sni, point_formats, (10, _u16list((4588, 29, 23, 30, 24, 25, 256, 257))), ticket, alpn, (22, b""), ems,
+            (13, _u16list(schemes + (0x0807, 0x0808, 0x0809, 0x080a, 0x080b))), (43, b"\x04\x03\x04\x03\x03"), psk_modes, share(4588, 29)])),
+        # Go crypto/tls: no GREASE; X25519MLKEM768 + X25519 shares.
+        ("go", _modern_client_hello(ecdhe + legacy + tls13, [
+            sni, status, (10, _u16list((4588, 29, 23, 24))), point_formats, (13, _u16list(schemes + (0x0807, 0x0203, 0x0201))), reneg, ems, alpn, sct,
+            (43, b"\x04\x03\x04\x03\x03"), share(4588, 29)])),
+        # Java (JSSE): no post-quantum group; status_request_v2; signature_algorithms_cert; X25519 + P-256 shares.
+        ("java", _modern_client_hello(tls13 + (0xc02c, 0xc02b, 0xcca9, 0xc030, 0xcca8, 0xc02f, 0x009f, 0xccaa, 0x009e) + legacy + (0x00ff,), [
+            sni, status, (10, _u16list((29, 23, 24, 25, 30, 256, 257, 258))), point_formats,
+            (17, b"\x00\x09\x02\x00\x04\x00\x00\x00\x00\x01\x00\x00\x00"), alpn, ems, ticket,
+            (13, _u16list(schemes + (0x0807, 0x0808))), (50, _u16list(schemes)), (43, b"\x04\x03\x04\x03\x03"), psk_modes, share(29, 23)])),
+    ]
+    tls13_ext = (43, b"\x03\x04")
+    servers = [
+        # TLS 1.3 replies: the hybrid share most current servers select, the classical ones, and resumption.
+        ("server13-x25519mlkem768", _tls_record(_server_hello((tls13_ext, (51, b"\x11\xec\x04\x60" + bytes([7]) * 1120)), cipher=0x1301, session=bytes(range(32, 64))))),
+        ("server13-x25519", _tls_record(_server_hello(((51, b"\x00\x1d\x00\x20" + bytes([7]) * 32), tls13_ext), cipher=0x1303, session=bytes(range(32, 64))))),
+        ("server13-p256", _tls_record(_server_hello((tls13_ext, (51, b"\x00\x17\x00\x41\x04" + bytes([7]) * 64)), cipher=0x1302, session=bytes(range(32, 64))))),
+        ("server13-resumption", _tls_record(_server_hello((tls13_ext, (51, b"\x11\xec\x04\x60" + bytes([7]) * 1120), (41, b"\x00\x00")), cipher=0x1301, session=bytes(range(32, 64))))),
+        # HelloRetryRequest: a server that wants a share the client did not send (Java offers no hybrid share).
+        ("hrr-to-x25519mlkem768", _tls_record(_server_hello((tls13_ext, (51, b"\x11\xec")), cipher=0x1301, session=bytes(range(32, 64)), random_value=RETRY))),
+        ("hrr-to-p384", _tls_record(_server_hello(((51, b"\x00\x18"), tls13_ext), cipher=0x1302, session=bytes(range(32, 64)), random_value=RETRY))),
+        # TLS 1.2 replies as common servers send them, including extensions the profile does not interpret (#5).
+        ("server12-ecdhe-h2", _tls_record(_server_hello((reneg, (0, b""), point_formats, ticket, (16, b"\x00\x03\x02h2"), ems), cipher=0xc02f, session=bytes(range(32))))),
+        ("server12-ecdsa-etm", _tls_record(_server_hello((reneg, point_formats, (22, b""), ems, (16, b"\x00\x09\x08http/1.1")), cipher=0xc02c))),
+        ("server12-status-sct", _tls_record(_server_hello(((5, b""), (18, b"\x00\x04\x00\x02ab"), reneg, ems), cipher=0xc030))),
+    ]
+    cases = []
+    for name, data in [("client-" + n, d) for n, d in clients] + servers:
+        for variant, chunks in (("whole", [data.hex()]), ("bytes", [data[i:i + 1].hex() for i in range(len(data))]),
+                                ("mss", [data[i:i + 1400].hex() for i in range(0, len(data), 1400)])):
+            cases.append({"id": "stream/modern/%s/%s" % (name, variant), "kind": "stream", "label": "tls", "chunks": chunks,
+                          "hint": None, "config": {}, "end": "fin"})
     return cases
 
 
