@@ -271,6 +271,10 @@ when the first accepted media type is a DNS message; HTTP/2 gains the same
 message, or a request accepting one, is `dns-over-https` (implicitly
 web-browsing) over HTTP/1.x and HTTP/2. Header values are never emitted.
 
+An HTTP/1.x `Content-Length` is one to twenty digits, appears once, and must
+fit in a signed 64-bit integer (at most 9223372036854775807); a larger value
+is malformed (integration work item #6, 2026-11-14).
+
 ## XMPP, syslog over TCP and HTTP-carried applications (v0.52)
 
 `xmpp` (RFC 6120, TCP, 75 families in total, 68 automatic): the initial stream

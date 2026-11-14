@@ -775,8 +775,11 @@ func (p *Parser) consumeLine(line []byte) error {
 		if p.hasContentLength || !contentLength.Match(value) {
 			return parsing.Malformed("Invalid or duplicate Content-Length")
 		}
-		p.hasContentLength = true
-		p.contentLength, _ = strconv.ParseInt(string(value), 10, 64)
+		length, err := strconv.ParseInt(string(value), 10, 64)
+		if err != nil { // the grammar admits 20 digits; a length that overflows int64 is malformed
+			return parsing.Malformed("Invalid or duplicate Content-Length")
+		}
+		p.hasContentLength, p.contentLength = true, length
 	case "transfer-encoding":
 		if p.transferEncoding || strings.ToLower(string(value)) != "chunked" {
 			return parsing.Malformed("Unsupported or duplicate Transfer-Encoding")

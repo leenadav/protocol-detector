@@ -380356,6 +380356,1630 @@
    "label": "tls"
   },
   {
+   "chunks": [
+    "504f5354202f75706c6f616420485454502f312e310d0a486f73743a20612e6578616d706c650d0a436f6e74656e742d4c656e6774683a20393232333337323033363835343737353830370d0a0d0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": "http/1.1",
+       "encryption": null,
+       "evidence": [
+        [
+         "application_protocol",
+         "http/1.1",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "a.example",
+         "wire:http_host",
+         "asserted"
+        ],
+        [
+         "http_method",
+         "POST",
+         "wire:request_line",
+         "structural"
+        ]
+       ],
+       "hostname": "a.example",
+       "offered_alpn": [],
+       "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": "http/1.1",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "http/1.1",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "a.example",
+       "wire:http_host",
+       "asserted"
+      ],
+      [
+       "http_method",
+       "POST",
+       "wire:request_line",
+       "structural"
+      ]
+     ],
+     "hostname": "a.example",
+     "offered_alpn": [],
+     "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 79,
+     "bytes_received": 79,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/request-max-int64/whole",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "50",
+    "4f",
+    "53",
+    "54",
+    "20",
+    "2f",
+    "75",
+    "70",
+    "6c",
+    "6f",
+    "61",
+    "64",
+    "20",
+    "48",
+    "54",
+    "54",
+    "50",
+    "2f",
+    "31",
+    "2e",
+    "31",
+    "0d",
+    "0a",
+    "48",
+    "6f",
+    "73",
+    "74",
+    "3a",
+    "20",
+    "61",
+    "2e",
+    "65",
+    "78",
+    "61",
+    "6d",
+    "70",
+    "6c",
+    "65",
+    "0d",
+    "0a",
+    "43",
+    "6f",
+    "6e",
+    "74",
+    "65",
+    "6e",
+    "74",
+    "2d",
+    "4c",
+    "65",
+    "6e",
+    "67",
+    "74",
+    "68",
+    "3a",
+    "20",
+    "39",
+    "32",
+    "32",
+    "33",
+    "33",
+    "37",
+    "32",
+    "30",
+    "33",
+    "36",
+    "38",
+    "35",
+    "34",
+    "37",
+    "37",
+    "35",
+    "38",
+    "30",
+    "37",
+    "0d",
+    "0a",
+    "0d",
+    "0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": "http/1.1",
+       "encryption": null,
+       "evidence": [
+        [
+         "application_protocol",
+         "http/1.1",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "a.example",
+         "wire:http_host",
+         "asserted"
+        ],
+        [
+         "http_method",
+         "POST",
+         "wire:request_line",
+         "structural"
+        ]
+       ],
+       "hostname": "a.example",
+       "offered_alpn": [],
+       "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": "http/1.1",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "http/1.1",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "a.example",
+       "wire:http_host",
+       "asserted"
+      ],
+      [
+       "http_method",
+       "POST",
+       "wire:request_line",
+       "structural"
+      ]
+     ],
+     "hostname": "a.example",
+     "offered_alpn": [],
+     "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 79,
+     "bytes_received": 79,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 78,
+     "signature_candidates": 0,
+     "updates": 79
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/request-max-int64/bytes",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "485454502f312e3120323030204f4b0d0a436f6e74656e742d4c656e6774683a20393232333337323033363835343737353830370d0a0d0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": "http/1.1",
+       "encryption": null,
+       "evidence": [
+        [
+         "application_protocol",
+         "http/1.1",
+         "wire",
+         "structural"
+        ],
+        [
+         "http_status",
+         "200",
+         "wire:status_line",
+         "structural"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": "http/1.1",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "http/1.1",
+       "wire",
+       "structural"
+      ],
+      [
+       "http_status",
+       "200",
+       "wire:status_line",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 56,
+     "bytes_received": 56,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/response-max-int64/whole",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "48",
+    "54",
+    "54",
+    "50",
+    "2f",
+    "31",
+    "2e",
+    "31",
+    "20",
+    "32",
+    "30",
+    "30",
+    "20",
+    "4f",
+    "4b",
+    "0d",
+    "0a",
+    "43",
+    "6f",
+    "6e",
+    "74",
+    "65",
+    "6e",
+    "74",
+    "2d",
+    "4c",
+    "65",
+    "6e",
+    "67",
+    "74",
+    "68",
+    "3a",
+    "20",
+    "39",
+    "32",
+    "32",
+    "33",
+    "33",
+    "37",
+    "32",
+    "30",
+    "33",
+    "36",
+    "38",
+    "35",
+    "34",
+    "37",
+    "37",
+    "35",
+    "38",
+    "30",
+    "37",
+    "0d",
+    "0a",
+    "0d",
+    "0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": "http/1.1",
+       "encryption": null,
+       "evidence": [
+        [
+         "application_protocol",
+         "http/1.1",
+         "wire",
+         "structural"
+        ],
+        [
+         "http_status",
+         "200",
+         "wire:status_line",
+         "structural"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": "http/1.1",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "http/1.1",
+       "wire",
+       "structural"
+      ],
+      [
+       "http_status",
+       "200",
+       "wire:status_line",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 56,
+     "bytes_received": 56,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 55,
+     "signature_candidates": 0,
+     "updates": 56
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/response-max-int64/bytes",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "504f5354202f75706c6f616420485454502f312e310d0a486f73743a20612e6578616d706c650d0a436f6e74656e742d4c656e6774683a2030393232333337323033363835343737353830370d0a0d0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": "http/1.1",
+       "encryption": null,
+       "evidence": [
+        [
+         "application_protocol",
+         "http/1.1",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "a.example",
+         "wire:http_host",
+         "asserted"
+        ],
+        [
+         "http_method",
+         "POST",
+         "wire:request_line",
+         "structural"
+        ]
+       ],
+       "hostname": "a.example",
+       "offered_alpn": [],
+       "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": "http/1.1",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "http/1.1",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "a.example",
+       "wire:http_host",
+       "asserted"
+      ],
+      [
+       "http_method",
+       "POST",
+       "wire:request_line",
+       "structural"
+      ]
+     ],
+     "hostname": "a.example",
+     "offered_alpn": [],
+     "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 80,
+     "bytes_received": 80,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/request-max-int64-leading-zero/whole",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "50",
+    "4f",
+    "53",
+    "54",
+    "20",
+    "2f",
+    "75",
+    "70",
+    "6c",
+    "6f",
+    "61",
+    "64",
+    "20",
+    "48",
+    "54",
+    "54",
+    "50",
+    "2f",
+    "31",
+    "2e",
+    "31",
+    "0d",
+    "0a",
+    "48",
+    "6f",
+    "73",
+    "74",
+    "3a",
+    "20",
+    "61",
+    "2e",
+    "65",
+    "78",
+    "61",
+    "6d",
+    "70",
+    "6c",
+    "65",
+    "0d",
+    "0a",
+    "43",
+    "6f",
+    "6e",
+    "74",
+    "65",
+    "6e",
+    "74",
+    "2d",
+    "4c",
+    "65",
+    "6e",
+    "67",
+    "74",
+    "68",
+    "3a",
+    "20",
+    "30",
+    "39",
+    "32",
+    "32",
+    "33",
+    "33",
+    "37",
+    "32",
+    "30",
+    "33",
+    "36",
+    "38",
+    "35",
+    "34",
+    "37",
+    "37",
+    "35",
+    "38",
+    "30",
+    "37",
+    "0d",
+    "0a",
+    "0d",
+    "0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": "http/1.1",
+       "encryption": null,
+       "evidence": [
+        [
+         "application_protocol",
+         "http/1.1",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "a.example",
+         "wire:http_host",
+         "asserted"
+        ],
+        [
+         "http_method",
+         "POST",
+         "wire:request_line",
+         "structural"
+        ]
+       ],
+       "hostname": "a.example",
+       "offered_alpn": [],
+       "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": "http/1.1",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "http/1.1",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "a.example",
+       "wire:http_host",
+       "asserted"
+      ],
+      [
+       "http_method",
+       "POST",
+       "wire:request_line",
+       "structural"
+      ]
+     ],
+     "hostname": "a.example",
+     "offered_alpn": [],
+     "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 80,
+     "bytes_received": 80,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 79,
+     "signature_candidates": 0,
+     "updates": 80
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/request-max-int64-leading-zero/bytes",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "485454502f312e3120323030204f4b0d0a436f6e74656e742d4c656e6774683a2030393232333337323033363835343737353830370d0a0d0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": "http/1.1",
+       "encryption": null,
+       "evidence": [
+        [
+         "application_protocol",
+         "http/1.1",
+         "wire",
+         "structural"
+        ],
+        [
+         "http_status",
+         "200",
+         "wire:status_line",
+         "structural"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": "http/1.1",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "http/1.1",
+       "wire",
+       "structural"
+      ],
+      [
+       "http_status",
+       "200",
+       "wire:status_line",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 57,
+     "bytes_received": 57,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/response-max-int64-leading-zero/whole",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "48",
+    "54",
+    "54",
+    "50",
+    "2f",
+    "31",
+    "2e",
+    "31",
+    "20",
+    "32",
+    "30",
+    "30",
+    "20",
+    "4f",
+    "4b",
+    "0d",
+    "0a",
+    "43",
+    "6f",
+    "6e",
+    "74",
+    "65",
+    "6e",
+    "74",
+    "2d",
+    "4c",
+    "65",
+    "6e",
+    "67",
+    "74",
+    "68",
+    "3a",
+    "20",
+    "30",
+    "39",
+    "32",
+    "32",
+    "33",
+    "33",
+    "37",
+    "32",
+    "30",
+    "33",
+    "36",
+    "38",
+    "35",
+    "34",
+    "37",
+    "37",
+    "35",
+    "38",
+    "30",
+    "37",
+    "0d",
+    "0a",
+    "0d",
+    "0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": "http/1.1",
+       "encryption": null,
+       "evidence": [
+        [
+         "application_protocol",
+         "http/1.1",
+         "wire",
+         "structural"
+        ],
+        [
+         "http_status",
+         "200",
+         "wire:status_line",
+         "structural"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": "http/1.1",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "http/1.1",
+       "wire",
+       "structural"
+      ],
+      [
+       "http_status",
+       "200",
+       "wire:status_line",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 57,
+     "bytes_received": 57,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 56,
+     "signature_candidates": 0,
+     "updates": 57
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/response-max-int64-leading-zero/bytes",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "504f5354202f75706c6f616420485454502f312e310d0a486f73743a20612e6578616d706c650d0a436f6e74656e742d4c656e6774683a20393232333337323033363835343737353830380d0a0d0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Invalid or duplicate Content-Length",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid or duplicate Content-Length",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 79,
+     "bytes_received": 79,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/request-overflow-int64/whole",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "50",
+    "4f",
+    "53",
+    "54",
+    "20",
+    "2f",
+    "75",
+    "70",
+    "6c",
+    "6f",
+    "61",
+    "64",
+    "20",
+    "48",
+    "54",
+    "54",
+    "50",
+    "2f",
+    "31",
+    "2e",
+    "31",
+    "0d",
+    "0a",
+    "48",
+    "6f",
+    "73",
+    "74",
+    "3a",
+    "20",
+    "61",
+    "2e",
+    "65",
+    "78",
+    "61",
+    "6d",
+    "70",
+    "6c",
+    "65",
+    "0d",
+    "0a",
+    "43",
+    "6f",
+    "6e",
+    "74",
+    "65",
+    "6e",
+    "74",
+    "2d",
+    "4c",
+    "65",
+    "6e",
+    "67",
+    "74",
+    "68",
+    "3a",
+    "20",
+    "39",
+    "32",
+    "32",
+    "33",
+    "33",
+    "37",
+    "32",
+    "30",
+    "33",
+    "36",
+    "38",
+    "35",
+    "34",
+    "37",
+    "37",
+    "35",
+    "38",
+    "30",
+    "38",
+    "0d",
+    "0a",
+    "0d",
+    "0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Invalid or duplicate Content-Length",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid or duplicate Content-Length",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 77,
+     "bytes_received": 79,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 76,
+     "signature_candidates": 0,
+     "updates": 77
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/request-overflow-int64/bytes",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "485454502f312e3120323030204f4b0d0a436f6e74656e742d4c656e6774683a20393232333337323033363835343737353830380d0a0d0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Invalid or duplicate Content-Length",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid or duplicate Content-Length",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 56,
+     "bytes_received": 56,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/response-overflow-int64/whole",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "48",
+    "54",
+    "54",
+    "50",
+    "2f",
+    "31",
+    "2e",
+    "31",
+    "20",
+    "32",
+    "30",
+    "30",
+    "20",
+    "4f",
+    "4b",
+    "0d",
+    "0a",
+    "43",
+    "6f",
+    "6e",
+    "74",
+    "65",
+    "6e",
+    "74",
+    "2d",
+    "4c",
+    "65",
+    "6e",
+    "67",
+    "74",
+    "68",
+    "3a",
+    "20",
+    "39",
+    "32",
+    "32",
+    "33",
+    "33",
+    "37",
+    "32",
+    "30",
+    "33",
+    "36",
+    "38",
+    "35",
+    "34",
+    "37",
+    "37",
+    "35",
+    "38",
+    "30",
+    "38",
+    "0d",
+    "0a",
+    "0d",
+    "0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Invalid or duplicate Content-Length",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid or duplicate Content-Length",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 54,
+     "bytes_received": 56,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 53,
+     "signature_candidates": 0,
+     "updates": 54
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/response-overflow-int64/bytes",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "504f5354202f75706c6f616420485454502f312e310d0a486f73743a20612e6578616d706c650d0a436f6e74656e742d4c656e6774683a2039393939393939393939393939393939393939390d0a0d0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Invalid or duplicate Content-Length",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid or duplicate Content-Length",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 80,
+     "bytes_received": 80,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/request-overflow-20-nines/whole",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "50",
+    "4f",
+    "53",
+    "54",
+    "20",
+    "2f",
+    "75",
+    "70",
+    "6c",
+    "6f",
+    "61",
+    "64",
+    "20",
+    "48",
+    "54",
+    "54",
+    "50",
+    "2f",
+    "31",
+    "2e",
+    "31",
+    "0d",
+    "0a",
+    "48",
+    "6f",
+    "73",
+    "74",
+    "3a",
+    "20",
+    "61",
+    "2e",
+    "65",
+    "78",
+    "61",
+    "6d",
+    "70",
+    "6c",
+    "65",
+    "0d",
+    "0a",
+    "43",
+    "6f",
+    "6e",
+    "74",
+    "65",
+    "6e",
+    "74",
+    "2d",
+    "4c",
+    "65",
+    "6e",
+    "67",
+    "74",
+    "68",
+    "3a",
+    "20",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "0d",
+    "0a",
+    "0d",
+    "0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Invalid or duplicate Content-Length",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid or duplicate Content-Length",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 78,
+     "bytes_received": 80,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 77,
+     "signature_candidates": 0,
+     "updates": 78
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/request-overflow-20-nines/bytes",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "485454502f312e3120323030204f4b0d0a436f6e74656e742d4c656e6774683a2039393939393939393939393939393939393939390d0a0d0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Invalid or duplicate Content-Length",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid or duplicate Content-Length",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 57,
+     "bytes_received": 57,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/response-overflow-20-nines/whole",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
+   "chunks": [
+    "48",
+    "54",
+    "54",
+    "50",
+    "2f",
+    "31",
+    "2e",
+    "31",
+    "20",
+    "32",
+    "30",
+    "30",
+    "20",
+    "4f",
+    "4b",
+    "0d",
+    "0a",
+    "43",
+    "6f",
+    "6e",
+    "74",
+    "65",
+    "6e",
+    "74",
+    "2d",
+    "4c",
+    "65",
+    "6e",
+    "67",
+    "74",
+    "68",
+    "3a",
+    "20",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "39",
+    "0d",
+    "0a",
+    "0d",
+    "0a"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Invalid or duplicate Content-Length",
+       "scope": "initial_message",
+       "status": "malformed",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Invalid or duplicate Content-Length",
+     "scope": "initial_message",
+     "status": "malformed",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 55,
+     "bytes_received": 57,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 54,
+     "signature_candidates": 0,
+     "updates": 55
+    }
+   },
+   "hint": null,
+   "id": "stream/http-content-length/response-overflow-20-nines/bytes",
+   "kind": "stream",
+   "label": "http"
+  },
+  {
    "config": {},
    "expected": {
     "metrics": {

@@ -564,6 +564,14 @@ def stream_cases(seed=11, limit=None):
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
+    # Content-Length must fit in int64 (integration work item #6); appended last so earlier case order is unchanged
+    for name, value in (("max-int64", b"9223372036854775807"), ("max-int64-leading-zero", b"09223372036854775807"),
+                        ("overflow-int64", b"9223372036854775808"), ("overflow-20-nines", b"9" * 20)):
+        for kind, head in (("request", b"POST /upload HTTP/1.1\r\nHost: a.example\r\n"), ("response", b"HTTP/1.1 200 OK\r\n")):
+            data = head + b"Content-Length: " + value + b"\r\n\r\n"
+            for variant, chunks in (("whole", [data.hex()]), ("bytes", [data[i:i + 1].hex() for i in range(len(data))])):
+                cases.append({"id": "stream/http-content-length/%s-%s/%s" % (kind, name, variant), "kind": "stream", "label": "http",
+                              "chunks": chunks, "hint": None, "config": {}, "end": "fin"})
     return cases
 
 

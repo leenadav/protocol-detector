@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "e5f13b8725f7bf6ea9f8a6e837fc14e25024a87b",
+  "commit": "ab510fb3efcc5905a0f9fea7230c2b5d34151ea2",
   "branch": "claude/culvert-integration-prep",
-  "build_digest": "719f85effdef82729ea16ef056b75973fc32e1e38c6916d069022fbe4b6ed81f",
+  "build_digest": "9898db5c6cc2160df3aa9148c3308efe95920b0d5c6a09cfad05658a548e23e7",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -250,7 +250,7 @@
     {
       "path": "protocol_engine/parsers.py",
       "component": "engine",
-      "sha256": "5880fb3e9622c9df77791f8bff529b38d659c08716b0e25beeff266a1ef3f7b6"
+      "sha256": "7173510ddebe6a72e51a0a46b8b4edbb08ad3955f3decab5bbf97656ad3eedfc"
     },
     {
       "path": "protocol_engine/policy.py",

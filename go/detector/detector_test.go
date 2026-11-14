@@ -210,6 +210,22 @@ func TestPostQuantumServerHello(t *testing.T) {
 	}
 }
 
+// A Content-Length must fit in int64: the largest value identifies, the next one is malformed in both directions.
+func TestContentLengthOverflowIsMalformed(t *testing.T) {
+	e := mustEngine(t, allFamilies())
+	for value, outcome := range map[string]Outcome{"9223372036854775807": OutcomeIdentified, "9223372036854775808": OutcomeMalformed,
+		"99999999999999999999": OutcomeMalformed} {
+		request := []byte("POST /upload HTTP/1.1\r\nHost: a.example\r\nContent-Length: " + value + "\r\n\r\n")
+		response := []byte("HTTP/1.1 200 OK\r\nContent-Length: " + value + "\r\n\r\n")
+		s := observe(t, e, request, response)
+		for _, d := range []Direction{ClientToServer, ServerToClient} {
+			if got := s.Direction(d).Outcome; got != outcome {
+				t.Errorf("Content-Length %s, direction %v: outcome %s, want %s", value, d, got, outcome)
+			}
+		}
+	}
+}
+
 func TestHostnameEvidenceIsTyped(t *testing.T) {
 	e := mustEngine(t, allFamilies())
 	ch, _ := tlsFlights(t, "sni.example.test", nil, []tls.CurveID{tls.X25519})

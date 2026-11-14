@@ -134,8 +134,9 @@ Done:
 - **#19** external consumer module.
 
 - **#4** post-quantum hybrid key shares, in Python and Go.
+- **#6** Content-Length overflow is malformed, in Python and Go.
 
-See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: #5–#7, #14 (wiring), #16–#18.
+See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: #5, #7, #14 (wiring), #16–#18.
 
 ### 4.4 Gate before attaching the real detector (lab phase L4)
 
