@@ -28,9 +28,12 @@ Standard library only; Python 3.9 syntax.
 """
 import argparse
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 GO_MOD = Path("go/go.mod")
@@ -119,10 +122,22 @@ def summarise(path, lines):
         print(line)
 
 
-def report_problems(report):
+def fixture_case_count():
+    """The number of cases in the committed fixtures, or None when unreadable."""
+    try:
+        cases = json.loads(FIXTURES.read_text(encoding="utf-8")).get("cases")
+    except (OSError, ValueError, AttributeError):
+        return None
+    return len(cases) if isinstance(cases, list) else None
+
+
+def report_problems(report, expected_cases=None):
     """A floor under the parity report, independent of compare.py's own verdict (issue #2 R2: an
     all-unsupported answer set once passed it): it must have compared cases, matched every one and
-    listed no mismatch or extra result. Closing R2 itself (an explicit gap allowlist) is the engine's."""
+    listed no mismatch or extra result. Closing R2 itself (an explicit gap allowlist) is the engine's.
+    With `expected_cases` (the committed fixtures' count) the report must also account for exactly
+    those cases, compared plus unsupported plus exempted, none missing, so it describes this checkout's
+    fixtures (issue #7 M10 review of eaa8a99)."""
     if not isinstance(report, dict):
         return ["{} is not a JSON object".format(REPORT)]
     problems = []
@@ -138,18 +153,42 @@ def report_problems(report):
     for key in ("mismatched", "extra", "unexpected_gaps", "stale_gaps", "claimed_without_match"):
         if report.get(key):
             problems.append("the parity report lists {} {}".format(key, report[key] if isinstance(report[key], int) else len(report[key])))
+    if expected_cases is not None:
+        parts = [report.get(key, 0) for key in ("compared", "unsupported", "exempted")]
+        if not all(isinstance(part, int) and not isinstance(part, bool) for part in parts):
+            problems.append("the parity report's case counts are not integers: {!r}".format(parts))
+        elif sum(parts) != expected_cases:
+            problems.append("the parity report accounts for {} cases (compared + unsupported + exempted) but {} holds {}: "
+                            "it does not describe this checkout's fixtures".format(sum(parts), FIXTURES, expected_cases))
+        if report.get("missing"):
+            problems.append("the parity report lists missing {}".format(report["missing"]))
     return problems
+
+
+def clear_report():
+    """Remove a parity report left by an earlier run, so the gate only ever reads the one `make go-check`
+    writes now; None, or the reason the old report could not be removed."""
+    try:
+        REPORT.unlink()
+    except FileNotFoundError:
+        return None
+    except OSError as error:
+        return "a stale {} could not be removed before the run: {}".format(REPORT, error)
+    return None if not REPORT.exists() else "a stale {} is still present after removal".format(REPORT)
 
 
 def parity_lines():
     """(summary lines, problems) for the report `make parity-go` writes."""
+    expected = fixture_case_count()
+    if expected is None:
+        return ["- parity report: {} is unreadable".format(FIXTURES)], ["{} has no readable case list".format(FIXTURES)]
     try:
         report = json.loads(REPORT.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         return ["- parity report: {} unreadable ({})".format(REPORT, error)], ["{} was not written".format(REPORT)]
     keys = ("ok", "total", "compared", "matched", "unsupported")
     line = "- parity report: " + ", ".join("{} {}".format(key, report[key]) for key in keys if isinstance(report, dict) and key in report)
-    problems = report_problems(report)
+    problems = report_problems(report, expected)
     return [line] + ["- FAILED: " + problem for problem in problems], problems
 
 
@@ -163,6 +202,10 @@ def run(mode, summary):
         summarise(summary, [title, ""] + ["- FAILED: " + problem for problem in problems])
         return 1
     if mode == "go":
+        stale = clear_report()
+        if stale:
+            summarise(summary, [title, "", "- FAILED: " + stale])
+            return 1
         command = ["make", "go-check", "PYTHON=" + sys.executable]
     else:
         command = [sys.executable, "-B", str(COMPARE), "--backend", "python", "--cases", str(FIXTURES)]
@@ -221,10 +264,59 @@ def self_test():
             ("not an object", [], "not a JSON object")):
         found = report_problems(bad)
         assert any(expected in problem for problem in found), (label, found)
+    counted = dict(current)
+    assert report_problems(counted, 5365) == []
+    assert report_problems(good, 4253) == []
+    for label, bad, expected in (
+            ("other fixtures", counted, "accounts for 5365 cases"),
+            ("a missing case", dict(counted, missing=1), "lists missing 1"),
+            ("a boolean count", dict(counted, unsupported=True), "not integers")):
+        found = report_problems(bad, 5366 if label == "other fixtures" else 5365)
+        assert any(expected in problem for problem in found), (label, found)
+    stale_regression()
     assert directive("module x\n\ngo 1.27\n") == "1.27"
     assert GO_VERSION.search("go version go1.27.4 darwin/arm64 ").group(1) == "1.27.4"
-    print("go_ci self-test: ok ({} tree refusals, 11 report refusals)".format(len(cases) + 1))
+    print("go_ci self-test: ok ({} tree refusals, 14 report refusals, 3 end-to-end runs)".format(len(cases) + 1))
     return 0
+
+
+def stale_regression():
+    """End to end, in a scratch git tree with a stub `go` (issue #7 M10 review of eaa8a99): a passing
+    report left from an earlier run must not pass a `go-check` that no longer runs parity, and a fresh
+    report must describe the committed fixtures; a fresh matching report passes."""
+    for tool in ("git", "make"):
+        if shutil.which(tool) is None:
+            raise AssertionError("the end-to-end self-test needs `{}` on PATH".format(tool))
+    passing = {"ok": True, "compared": 2, "matched": 2, "mismatched": 0, "extra": 0, "unsupported": 1}
+    copy = "go-check:\n\tcp fresh.json {}\n".format(REPORT)
+    targets = {
+        "stale report, no-op target": ("go-check:\n\t@echo NO_TESTS_EXECUTED\n", passing, 1),
+        "fresh report for other fixtures": (copy, dict(passing, compared=4084, matched=4084), 1),
+        "fresh matching report": (copy, passing, 0),
+    }
+    here = Path(__file__).resolve()
+    for label, (makefile, fresh, wanted) in targets.items():
+        root = Path(tempfile.mkdtemp(prefix="go_ci_selftest_"))
+        try:
+            for path, text in {"go/go.mod": "module x\n\ngo 1.27.4\n", "tools/scanners/go.mod": "module s\n\ngo 1.27.4\n",
+                               "go/main.go": "package main\n", "Makefile": makefile, "fresh.json": json.dumps(fresh),
+                               str(FIXTURES): json.dumps({"cases": [{"id": "a"}, {"id": "b"}, {"id": "c"}]}),
+                               str(COMPARE): "import sys\nsys.exit(99)\n",
+                               str(REPORT): json.dumps(dict(passing, compared=3, matched=3, unsupported=0)),
+                               "bin/go": "#!/bin/sh\necho 'go version go1.27.4 linux/amd64'\n"}.items():
+                target = root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(text, encoding="utf-8")
+            (root / "bin/go").chmod(0o755)
+            subprocess.run(["git", "init", "-q"], cwd=str(root), check=True)  # noqa: S603,S607
+            subprocess.run(["git", "add", "-A"], cwd=str(root), check=True)  # noqa: S603,S607
+            env = dict(os.environ, PATH=str(root / "bin") + os.pathsep + os.environ.get("PATH", ""))
+            result = subprocess.run([sys.executable, "-B", str(here), "go"], cwd=str(root), env=env,  # noqa: S603
+                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False, timeout=120)
+            output = result.stdout.decode("utf-8", "replace")
+            assert result.returncode == wanted, (label, result.returncode, output)
+        finally:
+            shutil.rmtree(str(root), ignore_errors=True)
 
 
 def main(argv=None):
