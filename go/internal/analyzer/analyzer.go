@@ -23,14 +23,31 @@ import (
 var midstreamFamilies = map[string]bool{"http": true, "dns": true, "syslog": true, "modbus": true, "dnp3": true, "iec-104": true,
 	"resp": true, "memcached": true, "sip": true, "rtsp": true}
 
-// Sink is the engine inspector as a session.Sink; it keeps the events of the current packet.
+// Sink is the engine inspector as a session.Sink; it keeps the events of the current packet. The connection
+// owns it: the analyzer holds a sink only while it is in the touched list of the packet being processed, so
+// retained state and per-packet work are bounded by the active connections, not by the connections ever seen.
 type Sink struct {
 	In         *engine.Inspector
 	Pending    []contracts.Event
 	identified []session.Label
+	owner      *Analyzer
+	seq        uint64 // creation order; the packet's events are reported in this order
+	touched    bool
+}
+
+// touch registers the sink for the current packet and propagates an engine gap to the analyzer.
+func (s *Sink) touch() {
+	if s.In.NotPorted != nil && s.owner.NotPorted == nil {
+		s.owner.NotPorted = s.In.NotPorted
+	}
+	if !s.touched {
+		s.touched = true
+		s.owner.touched = append(s.owner.touched, s)
+	}
 }
 
 func (s *Sink) collect(events []contracts.Event) bool {
+	s.touch()
 	s.Pending = append(s.Pending, events...)
 	for _, e := range events {
 		if e.Observation.Status == contracts.Identified {
@@ -49,10 +66,16 @@ func (s *Sink) collect(events []contracts.Event) bool {
 	return len(events) > 0
 }
 
-func (s *Sink) Feed(delta []byte) bool          { return s.collect(s.In.Feed(delta)) }
-func (s *Sink) Invalidate(reason string) bool   { return s.collect(s.In.Invalidate(reason)) }
-func (s *Sink) End(reason string) bool          { return s.collect(s.In.End(reason)) }
-func (s *Sink) Retire(reason string) bool       { return len(s.In.End(reason)) > 0 }
+func (s *Sink) Feed(delta []byte) bool        { return s.collect(s.In.Feed(delta)) }
+func (s *Sink) Invalidate(reason string) bool { return s.collect(s.In.Invalidate(reason)) }
+func (s *Sink) End(reason string) bool        { return s.collect(s.In.End(reason)) }
+
+// Retire ends the direction when tracking ends; its events are retirement events, not the packet's.
+func (s *Sink) Retire(reason string) bool {
+	changed := len(s.In.End(reason)) > 0
+	s.touch()
+	return changed
+}
 func (s *Sink) TakeIdentified() []session.Label { out := s.identified; s.identified = nil; return out }
 
 // Analyzer is the record producer.
@@ -62,7 +85,8 @@ type Analyzer struct {
 	Tracker   *session.Tracker
 	udp       *engine.Datagram
 	udpRev    int
-	sinks     []*Sink
+	touched   []*Sink // sinks the current packet (or Finish) reached; reset at the next packet
+	sinkSeq   uint64
 	Records   []map[string]interface{}
 	NotPorted *parsing.NotPorted
 	// Per packet (Python last_events / peer_events).
@@ -88,9 +112,8 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 			}
 			in, _ = engine.New(contracts.DefaultConfig(), "")
 		}
-		s := &Sink{In: in}
-		a.sinks = append(a.sinks, s)
-		return s
+		a.sinkSeq++
+		return &Sink{In: in, owner: a, seq: a.sinkSeq}
 	}, a.closed)
 	if err != nil {
 		return nil, err
@@ -110,9 +133,7 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 // Process handles one decoded packet and returns the adapter message (first segment compared by the harness).
 func (a *Analyzer) Process(timestamp float64, decoded interface{}) string {
 	a.LastEvents = nil
-	for _, s := range a.sinks {
-		s.Pending = nil
-	}
+	a.resetTouched()
 	switch p := decoded.(type) {
 	case *transport.UDP:
 		obs, err := a.udp.Inspect(p.Payload, "")
@@ -127,10 +148,8 @@ func (a *Analyzer) Process(timestamp float64, decoded interface{}) string {
 		return a.Tracker.ProcessUDP(timestamp, p, &obs)
 	case *transport.TCP:
 		message := a.Tracker.Process(timestamp, p)
-		for _, s := range a.sinks {
-			if s.In.NotPorted != nil && a.NotPorted == nil {
-				a.NotPorted = s.In.NotPorted
-			}
+		sort.Slice(a.touched, func(i, j int) bool { return a.touched[i].seq < a.touched[j].seq })
+		for _, s := range a.touched {
 			a.LastEvents = append(a.LastEvents, s.Pending...)
 		}
 		return message
@@ -138,8 +157,25 @@ func (a *Analyzer) Process(timestamp float64, decoded interface{}) string {
 	return ""
 }
 
-// Finish ends every connection and flow with the reason.
-func (a *Analyzer) Finish(reason string) error { return a.Tracker.Finish(reason) }
+// resetTouched forgets the previous packet's sinks and their events.
+func (a *Analyzer) resetTouched() {
+	for i, s := range a.touched {
+		s.Pending, s.touched = nil, false
+		a.touched[i] = nil
+	}
+	a.touched = a.touched[:0]
+}
+
+// Finish ends every connection and flow with the reason and releases the sinks it reached.
+func (a *Analyzer) Finish(reason string) error {
+	err := a.Tracker.Finish(reason)
+	a.resetTouched()
+	a.touched = nil
+	return err
+}
+
+// RetainedSinks reports how many direction sinks the analyzer itself still references (tests).
+func (a *Analyzer) RetainedSinks() int { return len(a.touched) }
 
 func (a *Analyzer) closed(c session.Closed) {
 	state := c.State
