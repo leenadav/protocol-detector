@@ -4,6 +4,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7   # a new release waits a week before an update PR proposes it (zizmor dependabot-cooldown)
     commit-message:
       prefix: "ci(deps)"
     groups:
@@ -13,9 +15,40 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7   # a new release waits a week before an update PR proposes it (zizmor dependabot-cooldown)
     commit-message:
       prefix: "ci(deps)"
     groups:
       dev-tools:
         patterns: ["*"]
     # requirements-dev.txt is the only pip input; the package has no runtime dependencies.
+    # presentation/requirements-decryption.lock.txt is deliberately not managed here: it is a uv universal
+    # lock with per-interpreter environment markers (Python 3.9 pins included), which Dependabot's pip
+    # updater would rewrite as single pins. Regenerate it with the command in its header (engine lane).
+  - package-ecosystem: gomod
+    directory: /tools/scanners
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7   # a new release waits a week before an update PR proposes it (zizmor dependabot-cooldown)
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      scanners:
+        patterns: ["*"]
+    # gitleaks, govulncheck and their dependencies (items 21-22). Rule 16 locks go.mod, so each
+    # update PR also advances tools/scanner_config.lock.json (--write-scanner-lock) as its
+    # reviewed baseline step; govulncheck in ci decides whether the result is safe.
+  - package-ecosystem: npm
+    directory: /tools/ui-test-deps
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7   # a new release waits a week before an update PR proposes it (zizmor dependabot-cooldown)
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      ui-test-tools:
+        patterns: ["*"]
+    # The Playwright the presentation-ui ci job installs with npm ci (item 25); CI-only, never shipped.

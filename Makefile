@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift workflow-policy
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -56,7 +56,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences capabilities content-pack parity workflow-policy
+check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences capabilities content-pack parity
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -95,6 +95,8 @@ package:
 workflow-lint:
 	actionlint -no-color .github/workflows/*.yml
 	zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows
+	$(PYTHON) -B tools/check_workflow_yaml.py --self-test
+	$(PYTHON) -B tools/check_workflow_yaml.py
 
 lint:
 	ruff check .
@@ -102,8 +104,15 @@ lint:
 pins:
 	$(PYTHON) -B tools/check_action_pins.py .github/workflows
 
-# The ci gate lists every ci job; the drift workflow triggers on every workflow file.
+# The ci gate lists every ci job; the drift workflow triggers on every workflow file;
+# release publishes serialize; a release tag must point at a commit on main.
 workflow-policy:
+	$(PYTHON) -B tools/check_release_ref.py --self-test
+	$(PYTHON) -B tools/check_release_exposure.py --self-test
+	$(PYTHON) -B tools/check_release_checks.py --self-test
+	$(PYTHON) -B tools/release_audit.py --self-test
+	$(PYTHON) -B tools/check_go_drift.py --self-test
+	$(PYTHON) -B tools/codeql_gate.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 
@@ -116,6 +125,16 @@ fuzz:
 sbom:
 	cyclonedx-py environment --output-format json --output-file sbom.cdx.json
 	$(PYTHON) -B tools/sbom_summary.py sbom.cdx.json
+
+# Weekly drift gate run locally: every pinned action SHA must still be the commit its tag comment names (network).
+pin-drift:
+	$(PYTHON) -B tools/check_pin_drift.py --self-test
+	$(PYTHON) -B tools/check_pin_drift.py .github/workflows
+
+# Weekly drift gate run locally: the Go that builds the pinned scanners is supported and on its newest patch (network).
+go-drift:
+	$(PYTHON) -B tools/check_go_drift.py --self-test
+	$(PYTHON) -B tools/check_go_drift.py
 
 inventory:
 	python3 -B tools/check_inventory.py
@@ -199,8 +218,3 @@ release-gate: check presentation-test fuzz-smoke corpus soak dist installed-chec
 
 fuzz-smoke:
 	$(PYTHON) -B tools/fuzz_fixtures.py --iterations 200 --seed 80
-
-# Weekly drift gate run locally: every pinned action SHA must still be the commit its tag comment names (network).
-pin-drift:
-	$(PYTHON) -B tools/check_pin_drift.py --self-test
-	$(PYTHON) -B tools/check_pin_drift.py .github/workflows
