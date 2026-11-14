@@ -36,8 +36,44 @@ class ParityHarnessTests(unittest.TestCase):
             with self.subTest(plant=kind):
                 planted, touched = compare.plant(self.results["results"], kind, self.doc)
                 report = compare.compare(self.doc, {"results": planted})
-                self.assertEqual([item["id"] for item in report["mismatched"]], [touched])
+                self.assertFalse(report["ok"])
+                self.assertEqual([item["id"] for item in report["mismatched"] + report["unexpected_gaps"]], [touched])
                 self.assertEqual(report["matched"], len(self.doc["cases"]) - 1)
+
+    def test_unsupported_answers_need_an_exact_allowlist_entry(self):
+        """Review R2 (2026-11-14): answering every case with a plausible unsupported reason passed the gate."""
+        everything = {"results": {c["id"]: {"unsupported": "family http"} for c in self.doc["cases"]}}
+        report = compare.compare(self.doc, everything, families=("http", "tls", "kerberos"))
+        self.assertFalse(report["ok"])
+        self.assertEqual(len(report["unexpected_gaps"]), len(self.doc["cases"]))
+        self.assertEqual(report["claimed_without_match"], ["http", "kerberos", "tls"])
+        first, second = self.doc["cases"][0]["id"], self.doc["cases"][1]["id"]
+        results = dict(self.results["results"])
+        results[first] = {"unsupported": "not ported: option x"}
+        listed = compare.compare(self.doc, {"results": results}, gaps={first: "not ported: option x"})
+        self.assertTrue(listed["ok"], listed["unexpected_gaps"])
+        self.assertEqual((listed["unsupported"], listed["matched"]), (1, len(self.doc["cases"]) - 1))
+        reworded = compare.compare(self.doc, {"results": results}, gaps={first: "not ported: option y"})
+        self.assertEqual([item["id"] for item in reworded["unexpected_gaps"]], [first])
+        self.assertFalse(reworded["ok"])
+        stale = compare.compare(self.doc, {"results": results}, gaps={first: "not ported: option x", second: "not ported: option x",
+                                                                      "stream/no-such-case": "x"})
+        self.assertEqual([item["id"] for item in stale["stale_gaps"]], [second, "stream/no-such-case"])
+        self.assertFalse(stale["ok"])
+
+    def test_results_for_unknown_cases_fail(self):
+        results = dict(self.results["results"])
+        results["stream/not-a-case"] = results[self.doc["cases"][0]["id"]]
+        report = compare.compare(self.doc, {"results": results})
+        self.assertEqual(report["extra"], ["stream/not-a-case"])
+        self.assertFalse(report["ok"])
+
+    def test_committed_gap_list_names_existing_cases(self):
+        gaps = compare.load_gaps(CASES.parent.parent / "parity" / "gaps.json")
+        ids = {c["id"] for c in self.doc["cases"]}
+        self.assertTrue(gaps)
+        self.assertEqual(sorted(set(gaps) - ids), [])
+        self.assertTrue(all(isinstance(reason, str) and reason for reason in gaps.values()))
 
     def test_outcome_coverage(self):
         statuses = {c["expected"].get("final", c["expected"].get("observation", {})).get("status") for c in self.doc["cases"] if c["kind"] != "session"}
