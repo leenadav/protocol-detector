@@ -229,7 +229,74 @@ type Inspector struct {
 	NotPorted   *parsing.NotPorted // set when the Go backend cannot give this direction's outcome
 	resolved    string             // family a text route resolved to before it finished (D12)
 	continuing  bool               // identified; the parser still derives optional evidence or watches for a shift
+	// Host-correlation metadata, never emitted: the identifying parser's LDAP message id, and the identification
+	// that announced this inspector's shift (kept after the shifted phase merges; Python Inspector.announcement).
+	ldapID       int
+	hasLDAPID    bool
+	Announcement *contracts.Observation
 }
+
+// LDAPMessageID reports the message id of the LDAP message this inspector identified (Python
+// inspector.correlation["ldap_message_id"]).
+func (in *Inspector) LDAPMessageID() (int, bool) { return in.ldapID, in.hasLDAPID }
+
+// OpenShift ports Inspector.open_shift: a host-driven shift on this direction because the peer direction
+// established that the boundary applies here too (an HTTP 2xx answering CONNECT, an LDAP StartTLS success).
+// Allowed only on a terminal identified observation that has not shifted, with at least 64 bytes of budget left;
+// it reports whether the next bytes will be inspected as the new phase. expected is "" or a ported candidate.
+func (in *Inspector) OpenShift(boundary, expected string) bool {
+	if len(boundary) < 1 || len(boundary) > 64 {
+		panic("engine: shift boundary must be a short name")
+	}
+	if !in.terminal || in.next != nil || in.Observation.Status != contracts.Identified || in.NotPorted != nil {
+		return false
+	}
+	for _, e := range in.Observation.Evidence {
+		if e.Field == "shift" {
+			return false
+		}
+	}
+	remaining := in.cfg.MaxBytes - in.Metrics.BytesInspected
+	if remaining < 64 {
+		return false
+	}
+	cfg := in.cfg
+	cfg.MaxBytes = remaining
+	next, err := New(cfg, expected)
+	if err != nil {
+		if np, ok := err.(*parsing.NotPorted); ok {
+			in.NotPorted = np
+		} else {
+			in.NotPorted = &parsing.NotPorted{What: "shift to " + expected}
+		}
+		return false
+	}
+	carrier := in.Observation
+	in.carrier, in.shift, in.shiftSource = &carrier, boundary, in.source+":peer"
+	announced := carrier
+	in.Announcement = &announced
+	next.hintSource = "shift:" + boundary
+	in.next = next
+	in.terminal = false
+	return true
+}
+
+// Replay ports Inspector.replay: bytes this inspector skipped while terminal, retained by the host, fed into a
+// phase the peer direction opened. They were counted as received when first offered and are not counted again.
+// It returns false (and nothing) when no host-opened phase is pending or data exceeds the skipped bytes.
+func (in *Inspector) Replay(data []byte) ([]contracts.Event, bool) {
+	if in.next == nil || in.terminal || in.shiftSource != in.source+":peer" {
+		return nil, false
+	}
+	if len(data) > in.Metrics.BytesReceived-in.Metrics.BytesInspected {
+		return nil, false
+	}
+	in.Metrics.BytesReceived -= len(data)
+	return in.Feed(data), true
+}
+
+// HasBoundary reports whether Boundary is set (a terminal identified message ended there).
+func (in *Inspector) HasBoundary() bool { return in.hasBoundary }
 
 // refiner is implemented by parsers whose published identification may be incomplete while they continue.
 type refiner interface{ Refined() bool }
@@ -332,6 +399,7 @@ func str(s string) *string { return &s }
 
 func (in *Inspector) identified() contracts.Observation {
 	r := in.parser.Result()
+	in.ldapID, in.hasLDAPID = r.LDAPMessageID, r.HasLDAPMessageID
 	var encryption, protocol *string
 	if in.candidate == "tls" {
 		encryption = str("tls")
@@ -514,6 +582,8 @@ func (in *Inspector) beginShift(shift *parsing.Shift, rest []byte) []contracts.E
 	in.prefix = in.prefix[:0]
 	carrier := in.Observation
 	in.carrier, in.shift = &carrier, shift.Boundary
+	announced := carrier
+	in.Announcement = &announced
 	remaining := in.cfg.MaxBytes - in.Metrics.BytesInspected
 	if remaining < 64 {
 		in.next = nil
@@ -604,7 +674,7 @@ func (in *Inspector) mergeShift() []contracts.Event {
 
 // Invalidate ports Inspector.invalidate: upstream reassembly is no longer trustworthy.
 func (in *Inspector) Invalidate(reason string) []contracts.Event {
-	in.next, in.carrier, in.parser = nil, nil, nil
+	in.next, in.carrier, in.parser, in.Announcement = nil, nil, nil, nil
 	in.terminal = true
 	in.prefix = in.prefix[:0]
 	return in.publish(in.observation(contracts.Invalidated, reason), contracts.Retracted)

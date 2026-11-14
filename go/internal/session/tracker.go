@@ -106,8 +106,12 @@ type Tracker struct {
 	nextExp  float64
 	Counts   map[string]int
 	onClosed func(Closed)
-	factory  func() Sink
-	gen      int
+	// Correlate, when set, runs after a data segment was fed and its identifications recorded, before the
+	// direction's FIN is applied (Python Analyzer._correlate_* between feed and finish_direction). It returns the
+	// endpoints whose observation it changed, so their next segment reports a change as Python's snapshot does.
+	Correlate func(state *State, source transport.Endpoint) []transport.Endpoint
+	factory   func() Sink
+	gen       int
 }
 
 // NewTracker validates the options like the Python constructor.
@@ -454,6 +458,10 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 			t.Decided(state, label)
 		}
 	}
+	var correlated []transport.Endpoint
+	if t.Correlate != nil {
+		correlated = t.Correlate(state, source)
+	}
 	if final, ok := state.FIN[source]; ok && final <= stream.Limit() && stream.Contiguous() == final {
 		if t.manager.FinishDirection(source, destination, ReasonFIN) {
 			changed = true
@@ -466,6 +474,11 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 		changed = true
 	}
 	state.reportedSeen[source] = current
+	for _, endpoint := range correlated {
+		previous := state.reportedSeen[endpoint]
+		previous.valid = false // the observation changed outside this endpoint's own segments
+		state.reportedSeen[endpoint] = previous
+	}
 	message := "No new contiguous data"
 	if !t.opts.Compact && changed && (current.contiguous > 0 || current.pending > 0) {
 		message = fmt.Sprintf("%s -> %s | contiguous=%d pending=%d", source, destination, current.contiguous, current.pending)

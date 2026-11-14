@@ -91,85 +91,97 @@ func NewLDAP(maxBytes int) *Parser {
 		validate: ldapMessage})
 }
 
+// ldapMessage validates one message and records its message id for host correlation (never as evidence).
 func ldapMessage(data []byte) (*parsing.Result, error) {
+	r, id, err := ldapMessageBody(data)
+	if r != nil {
+		r.LDAPMessageID, r.HasLDAPMessageID = id, true
+	}
+	return r, err
+}
+
+func ldapMessageBody(data []byte) (*parsing.Result, int, error) {
 	message, end, err := berField(data, 0, len(data), 0x30)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if end != len(data) {
-		return nil, parsing.Malformed("Trailing LDAP data")
+		return nil, 0, parsing.Malformed("Trailing LDAP data")
 	}
 	identifier, pos, err := berField(message, 0, len(message), 2)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if len(identifier) < 1 || len(identifier) > 4 || identifier[0]&128 != 0 || be(identifier) == 0 {
-		return nil, parsing.Malformed("Invalid LDAP request message ID")
+		return nil, 0, parsing.Malformed("Invalid LDAP request message ID")
 	}
 	if pos < len(message) {
 		switch message[pos] {
 		case 0x61:
-			return ldapBindResponse(message, pos)
+			r, err := ldapBindResponse(message, pos)
+			return r, be(identifier), err
 		case 0x77:
-			return ldapExtendedRequest(message, pos)
+			r, err := ldapExtendedRequest(message, pos)
+			return r, be(identifier), err
 		case 0x78:
-			return ldapExtendedResponse(message, pos)
+			r, err := ldapExtendedResponse(message, pos)
+			return r, be(identifier), err
 		}
 	}
 	if pos >= len(message) || message[pos] != 0x60 {
-		return nil, parsing.Unsupported("Only the initial LDAP BindRequest, BindResponse, ExtendedRequest and ExtendedResponse are supported")
+		return nil, 0, parsing.Unsupported("Only the initial LDAP BindRequest, BindResponse, ExtendedRequest and ExtendedResponse are supported")
 	}
 	bind, pos, err := berField(message, pos, len(message), 0x60)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if pos != len(message) {
-		return nil, parsing.Unsupported("LDAP controls are outside the initial bind profile")
+		return nil, 0, parsing.Unsupported("LDAP controls are outside the initial bind profile")
 	}
 	version, cursor, err := berField(bind, 0, len(bind), 2)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if len(version) != 1 || version[0] != 3 {
-		return nil, parsing.Unsupported("Only LDAP v3 bind is supported")
+		return nil, 0, parsing.Unsupported("Only LDAP v3 bind is supported")
 	}
 	dn, cursor, err := berField(bind, cursor, len(bind), 4)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if !utf8.Valid(dn) {
-		return nil, parsing.Malformed("Invalid LDAP DN UTF-8")
+		return nil, 0, parsing.Malformed("Invalid LDAP DN UTF-8")
 	}
 	if cursor >= len(bind) {
-		return nil, parsing.Malformed("LDAP bind missing authentication field")
+		return nil, 0, parsing.Malformed("LDAP bind missing authentication field")
 	}
 	rows := []parsing.Row{row("ldap_message", "bind_request", "ldap_message", "structural")}
 	switch bind[cursor] {
 	case 0x80:
 		if _, cursor, err = berField(bind, cursor, len(bind), 0x80); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		rows = append(rows, row("ldap_bind", "simple", "bind_request", "structural"))
 	case 0xa3:
 		var sasl []byte
 		if sasl, cursor, err = berField(bind, cursor, len(bind), 0xa3); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		mechanism, off, err := berField(sasl, 0, len(sasl), 4)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		if len(mechanism) > 0 && !ldapSASLName(mechanism) {
-			return nil, parsing.Malformed("Invalid LDAP SASL mechanism")
+			return nil, 0, parsing.Malformed("Invalid LDAP SASL mechanism")
 		}
 		var credentials []byte
 		if off < len(sasl) {
 			if credentials, off, err = berField(sasl, off, len(sasl), 4); err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 		}
 		if off != len(sasl) {
-			return nil, parsing.Malformed("Trailing LDAP SASL fields")
+			return nil, 0, parsing.Malformed("Trailing LDAP SASL fields")
 		}
 		label, ok := ldapSASL[string(mechanism)]
 		if !ok {
@@ -179,7 +191,7 @@ func ldapMessage(data []byte) (*parsing.Result, error) {
 		if string(mechanism) == "GSS-SPNEGO" && len(credentials) > 0 {
 			token, err := classifyToken(credentials) // the SPNEGO token names the inner mechanism; closed labels only
 			if err != nil {
-				return nil, err
+				return nil, 0, err
 			}
 			rows = append(rows, row("gss_mechanism", token.Mechanism, "bind_request", "asserted"))
 			if token.NTLMMessage != "" {
@@ -187,13 +199,13 @@ func ldapMessage(data []byte) (*parsing.Result, error) {
 			}
 		}
 	default:
-		return nil, parsing.Unsupported("Unsupported LDAP authentication choice")
+		return nil, 0, parsing.Unsupported("Unsupported LDAP authentication choice")
 	}
 	if cursor != len(bind) {
-		return nil, parsing.Malformed("Trailing LDAP bind fields")
+		return nil, 0, parsing.Malformed("Trailing LDAP bind fields")
 	}
 	return &parsing.Result{ProtocolName: "ldap/3", Extra: rows,
-		Reason: "LDAPv3 BindRequest BER fields validated; credentials, DN semantics and authentication unverified"}, nil
+		Reason: "LDAPv3 BindRequest BER fields validated; credentials, DN semantics and authentication unverified"}, be(identifier), nil
 }
 
 // ldapExtendedRequest: ExtendedRequest (RFC 4511 4.12) is a requestName OID and an optional requestValue; StartTLS
