@@ -602,7 +602,8 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      Freshness (Codex M10 review of `eaa8a99`, P2): a report left by an earlier run used to pass a
      `go-check` that no longer ran parity. The tool now removes `go-report.json` before the run,
      fails if it cannot, and requires the new report to account for exactly the committed fixtures'
-     cases (compared + unsupported + exempted, none missing). The self-test reproduces the finding
+     cases (compared + unsupported, none missing; `exempted` counts difference paths that an approved
+     delta exempts inside compared cases, so it is not part of the sum, as the engine lane pointed out). The self-test reproduces the finding
      end to end in a scratch git tree with a stub `go`: a stale passing report with a no-op target
      fails, a fresh report for other fixtures fails, and a fresh matching report passes. The same
      regression grafted onto the old code fails. The first engine review (issue #2 R2) showed an
