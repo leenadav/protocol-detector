@@ -4,6 +4,6 @@
   "description": "CI-only: the Playwright the presentation's browser tests run with (presentation/tests/ui). Installed with npm ci from the committed lock; never shipped.",
   "license": "UNLICENSED",
   "dependencies": {
-    "playwright": "1.56.1"
+    "playwright": "1.64.1"
   }
 }
