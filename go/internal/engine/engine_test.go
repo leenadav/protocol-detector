@@ -33,7 +33,7 @@ func TestHintSelectsButNeverEstablishes(t *testing.T) {
 	if ev := in2.Feed([]byte("GET / HTTP/1.1\r\n\r\n")); len(ev) != 1 || ev[0].Observation.Status != contracts.Malformed {
 		t.Fatalf("a tls hint on HTTP bytes: %+v", ev)
 	}
-	if _, err := New(contracts.DefaultConfig(), "rdp"); err == nil { // still unported; smb2 was the example until batch 19
+	if _, err := New(contracts.DefaultConfig(), "http2"); err == nil { // still unported; smb2 and rdp were the example earlier
 		t.Fatal("unported hint accepted")
 	}
 }

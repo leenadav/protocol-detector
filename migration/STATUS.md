@@ -313,6 +313,15 @@ Taken before M5 so that session records become comparable for every family as it
 | Differential result | implemented | `make parity-go` with smb1 and smb2 claimed: **5785 compared, 5785 matched, 112 listed gaps**; the 68 SMB cases previously listed as gaps are answered (the gap list rejected them as stale until regenerated). Matched on the first run. One-off check outside the committed set: 40,000 seeded mutations biased to header and fixed-field offsets of both frames (two seeds), all matched. |
 | Not claimed | — | SMB2 compounded requests, signed session binding and SMB 3.1.1 request priority remain outside the Python profile and the port. |
 
+### Batch 20 — TPKT: RDP and ISO-TSAP
+
+| item | state | evidence |
+|---|---|---|
+| Parsers | implemented | `go/internal/protocols/framed/tpkt.go`: the automatic `tpkt` route (`ics.TPKTParser`, an internal candidate like `git_text`, never a hint) frames with the TPKT bound 11..1024 and resolves the family from the bytes after the X.224 header; `NewRDP` (`remote.RDPParser`, explicit hint, bound 11..260: cookie framing, RDP_NEG_REQ offers and credential modes, correlation block, RDP_NEG_RSP selection and server flags, RDP_NEG_FAILURE codes, `rdp-negotiation` shift to TLS unless standard RDP security) and `NewCOTP` (`ics.COTPParser`: X.224 request and confirm, unique parameters, TPDU size and TSAP lengths, `cotp-connect` shift to S7comm). Cookies and correlation ids are not emitted. |
+| Fixtures | implemented | `cases.py tpkt_vectors()`: 56 vectors (every rejection path of the three parsers, the route's choice, shifts into TLS and S7comm) automatically (whole / 1-byte / 7-byte / truncated) and under both hints (329 cases, 6226 total). |
+| Go tests | implemented | `tpkt_test.go`: route resolution, evidence rows, the TLS shift only for non-standard security, the hint's own length bound; the three parsers join `FuzzFramedNeverPanics`. |
+| Differential result | implemented | `make parity-go` with rdp and iso-tsap claimed: **6156 compared, 6156 matched, 70 listed gaps**; the 42 TPKT cases previously listed (rdp, iso-tsap and a CQL vector the dispatcher routes to tpkt) are answered. Matched on the first run. One-off check outside the committed set: 30,000 seeded mutations with random hints, all matched. |
+
 ## Independent review of 2026-11-14 (snapshot `dbe20f3`, issue #2 comment 6877159227)
 
 Each finding was reproduced before it was changed. Commits are on `claude/go-migration` after batch 18 (`a2cf4e8`).
@@ -332,7 +341,7 @@ TLS library) are not reproduced here and are not changed.
 
 ## M5 batches 18+ / M7+ — next
 
-Remaining registry batches (6 families: HTTP2, RDP, ISO-TSAP, QUIC, DTLS, IKEv2, each with dedicated review) and the HTTP/2 prior-knowledge correlation with record-level parity per batch; passive
+Remaining registry batches (4 families: HTTP2, QUIC, DTLS, IKEv2, each with dedicated review) and the HTTP/2 prior-knowledge correlation with record-level parity per batch; passive
 TLS decryption (M7); frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
 
 ## Open decisions and blockers

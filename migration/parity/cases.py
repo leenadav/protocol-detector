@@ -679,6 +679,99 @@ def smb_cases():
     return cases
 
 
+def tpkt_vectors():
+    """TPKT connection requests and confirms (batch 20): RDP negotiation requests (offers, credential modes, cookie,
+    correlation), RDP confirms and failures, ISO-TSAP requests and confirms with X.224 parameters, the automatic
+    route's choice between them, and each rejection path of the three parsers."""
+    from protocol_adapters import protocol_fixtures as F
+
+    def x224(kind, dst, params, cls=0, src=b"\x00\x01"):
+        body = bytes([kind]) + dst + src + bytes([cls]) + params
+        return b"\x03\x00" + (5 + len(body)).to_bytes(2, "big") + bytes([len(body) & 0xff]) + body   # the length indicator is one octet
+
+    def patch(data, offset, value):
+        out = bytearray(data)
+        out[offset:offset + len(value)] = value
+        return bytes(out)
+
+    tsap = b"\xc0\x01\x0a\xc1\x02\x01\x00\xc2\x02\x01\x02"
+    return [
+        ("rdp-request", F.RDP),
+        ("rdp-tls-only", F.rdp_request(1)),
+        ("rdp-standard", F.rdp_request(0)),
+        ("rdp-all-offers", F.rdp_request(0x1f)),
+        ("rdp-restricted-admin", F.rdp_request(3, flags=1)),
+        ("rdp-credential-guard", F.rdp_request(3, flags=2)),
+        ("rdp-cookie", F.rdp_request(3, cookie=b"Cookie: mstshash=placeholder\r\n")),
+        ("rdp-cookie-unterminated", F.rdp_request(3, cookie=b"Cookie: mstshash=placeholder")),
+        ("rdp-cookie-control", F.rdp_request(3, cookie=b"Cookie: mstshash=a\x01b\r\n")),
+        ("rdp-correlation", F.rdp_request(3, correlation=True)),
+        ("rdp-correlation-bad", patch(F.rdp_request(3, correlation=True), 23, b"\x07")),
+        ("rdp-correlation-reserved", patch(F.rdp_request(3, correlation=True), len(F.rdp_request(3, correlation=True)) - 1, b"\x01")),
+        ("rdp-offer-flags", F.rdp_request(0x20)),
+        ("rdp-neg-flags", F.rdp_request(3, flags=4)),
+        ("rdp-routing-token", F.rdp_request(3, cookie=b"")[:11] + b"\x02" + F.rdp_request(3)[12:]),
+        ("rdp-neg-length", patch(F.RDP, 13, b"\x09")),
+        ("rdp-trailing", F.RDP[:2] + (len(F.RDP) + 1).to_bytes(2, "big") + bytes([F.RDP[4] + 1]) + F.RDP[5:] + b"\x00"),
+        ("rdp-class", patch(F.RDP, 10, b"\x10")),
+        ("rdp-length-byte", patch(F.RDP, 4, b"\x0f")),
+        ("rdp-confirm", F.RDP_CONFIRM),
+        ("rdp-confirm-standard", F.rdp_confirm(0)),
+        ("rdp-confirm-credssp-flags", F.rdp_confirm(2, flags=0x1b)),
+        ("rdp-confirm-two", F.rdp_confirm(3)),
+        ("rdp-confirm-flags", F.rdp_confirm(1, flags=0x20)),
+        ("rdp-failure", F.rdp_confirm(5, kind=3)),
+        ("rdp-failure-code", F.rdp_confirm(9, kind=3)),
+        ("rdp-failure-flags", F.rdp_confirm(1, flags=1, kind=3)),
+        ("rdp-confirm-kind", F.rdp_confirm(1, kind=4)),
+        ("rdp-confirm-dst-zero", patch(F.RDP_CONFIRM, 6, b"\x00\x00")),
+        ("rdp-confirm-alone", x224(0xd0, b"\x12\x34", b"")),
+        ("rdp-request-alone", x224(0xe0, b"\x00\x00", b"")),
+        ("iso-tsap-request", F.ISO_TSAP),
+        ("iso-tsap-confirm", F.ISO_TSAP_CONFIRM),
+        ("iso-tsap-confirm-tpdu-only", x224(0xd0, b"\x00\x01", b"\xc0\x01\x0a")),
+        ("iso-tsap-class-4", x224(0xe0, b"\x00\x00", tsap, cls=0x40)),
+        ("iso-tsap-class-5", x224(0xe0, b"\x00\x00", tsap, cls=0x50)),
+        ("iso-tsap-no-tsap", x224(0xe0, b"\x00\x00", b"\xc0\x01\x0a")),
+        ("iso-tsap-dst-ref", x224(0xe0, b"\x00\x07", tsap)),
+        ("iso-tsap-confirm-dst-zero", x224(0xd0, b"\x00\x00", tsap)),
+        ("iso-tsap-confirm-empty", x224(0xd0, b"\x00\x01", b"\x01\x00")),
+        ("iso-tsap-duplicate", x224(0xe0, b"\x00\x00", tsap + b"\xc1\x02\x01\x00")),
+        ("iso-tsap-tpdu-size", x224(0xe0, b"\x00\x00", b"\xc0\x01\x0e\xc1\x02\x01\x00")),
+        ("iso-tsap-tpdu-length", x224(0xe0, b"\x00\x00", b"\xc0\x02\x0a\x0a\xc1\x02\x01\x00")),
+        ("iso-tsap-tsap-empty", x224(0xe0, b"\x00\x00", b"\xc1\x00")),
+        ("iso-tsap-tsap-long", x224(0xe0, b"\x00\x00", b"\xc1\x21" + bytes(33))),
+        ("iso-tsap-param-overrun", x224(0xe0, b"\x00\x00", b"\xc1\x05\x01")),
+        ("iso-tsap-param-truncated", x224(0xe0, b"\x00\x00", tsap + b"\xc0")),
+        ("iso-tsap-kind", x224(0xf0, b"\x00\x00", tsap)),
+        ("iso-tsap-large", x224(0xe0, b"\x00\x00", tsap + b"\xc5\xff" + bytes(255) + b"\xc6\xff" + bytes(255) + b"\xc7\xff" + bytes(255))),
+        ("iso-tsap-then-s7", F.ISO_TSAP + F.S7COMM),
+        ("iso-tsap-then-garbage", F.ISO_TSAP + b"\x03\x00\x00\x07\x02\xf0\x80"),
+        ("rdp-then-hello", F.RDP + client_hello_with([(0, b"\x00\x0f\x00\x00\x0crdp.example")])),
+        ("tpkt-version", b"\x02" + F.RDP[1:]),
+        ("tpkt-short", F.RDP[:2] + b"\x00\x0a" + F.RDP[4:14]),
+        ("tpkt-long", F.RDP[:2] + b"\x04\x01" + F.RDP[4:]),
+    ]
+
+
+def tpkt_cases():
+    """TPKT route (batch 20): every vector automatically (whole / 1-byte / 7-byte / truncated) and under the rdp and
+    iso-tsap hints (whole), where the hinted parser's own length bound and profile apply."""
+    cases = []
+    for number, (name, data) in enumerate(tpkt_vectors()):
+        base = "stream/tpkt-%02d-%s" % (number, name)
+        label = "iso-tsap" if name.startswith("iso-tsap") else "rdp"
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            if variant == "bytes" and len(data) > 600:
+                continue
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": label, "chunks": chunks, "hint": None, "config": {}, "end": end})
+        for hint in ("rdp", "iso-tsap"):
+            cases.append({"id": base + "/hint-" + hint, "kind": "stream", "label": hint, "chunks": [data.hex()], "hint": hint, "config": {}, "end": "fin"})
+    return cases
+
+
 def stream_cases(seed=11, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -718,6 +811,7 @@ def stream_cases(seed=11, limit=None):
     cases.extend(ldap_cases())
     cases.extend(hint_cases())
     cases.extend(smb_cases())
+    cases.extend(tpkt_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})

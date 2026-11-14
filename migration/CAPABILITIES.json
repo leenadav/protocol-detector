@@ -792,9 +792,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "Batch 20: TPKT connection request and confirm through the automatic route and the explicit hint, with the TLS (RDP) and S7comm (ISO-TSAP) shifts; stream and hint cases matched, plus 30,000 seeded mutations compared once outside the committed set",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
@@ -1531,9 +1531,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "Batch 20: TPKT connection request and confirm through the automatic route and the explicit hint, with the TLS (RDP) and S7comm (ISO-TSAP) shifts; stream and hint cases matched, plus 30,000 seeded mutations compared once outside the committed set",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [

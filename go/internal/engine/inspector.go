@@ -17,7 +17,7 @@ import (
 var Ported = map[string]bool{}
 
 // internalCandidates are dispatch routes that are not registry names; Python rejects them as hints too.
-var internalCandidates = map[string]bool{"git_text": true}
+var internalCandidates = map[string]bool{"git_text": true, "tpkt": true}
 
 // Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
 var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
@@ -29,7 +29,7 @@ var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"dcerpc", "websocket", "xmpp", "syslog", "git",
 	"netbios-ss", "tacacs-plus", "socks5", "wireguard", "bacnet",
 	"tftp", "ntp", "l2tp", "coap", "rip", "rtcp", "lifx-lan", "tuya-lan",
-	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap", "smb1", "smb2"}
+	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap", "smb1", "smb2", "rdp", "iso-tsap"}
 
 // factories builds the parser of each candidate; it is the single registry of what the Go backend ports.
 var factories map[string]func(cfg contracts.Config) (parsing.Parser, error)
@@ -101,6 +101,15 @@ func init() {
 		},
 		"kerberos": func(cfg contracts.Config) (parsing.Parser, error) {
 			return framed.NewKerberos(cfg.MaxBytes, cfg.MaxHeaders), nil
+		},
+		"tpkt": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewTPKT(cfg.MaxBytes), nil
+		},
+		"rdp": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewRDP(cfg.MaxBytes), nil
+		},
+		"iso-tsap": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewCOTP(cfg.MaxBytes), nil
 		},
 		"smb1": func(cfg contracts.Config) (parsing.Parser, error) {
 			return framed.NewSMB1(cfg.MaxBytes, cfg.MaxHeaders), nil
