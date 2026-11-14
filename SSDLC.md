@@ -606,7 +606,9 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      delta exempts inside compared cases, so it is not part of the sum, as the engine lane pointed out). The self-test reproduces the finding
      end to end in a scratch git tree with a stub `go`: a stale passing report with a no-op target
      fails, a fresh report for other fixtures fails, and a fresh matching report passes. The same
-     regression grafted onto the old code fails. The first engine review (issue #2 R2) showed an
+     regression grafted onto the old code fails.
+     The case-count check is a consistency check, not a cryptographic binding to the fixtures'
+     contents (Codex, issue #7 comment 6882602432); the full parity comparison remains the evidence. The first engine review (issue #2 R2) showed an
      all-unsupported answer set passing `compare.py` with `compared 0`; the floor catches that
      case. Closing R2 itself is engine work: an explicit per-case gap allowlist, with extra
      result ids failing.

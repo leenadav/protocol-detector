@@ -137,7 +137,8 @@ def report_problems(report, expected_cases=None):
     listed no mismatch or extra result. Closing R2 itself (an explicit gap allowlist) is the engine's.
     With `expected_cases` (the committed fixtures' count) the report must also account for exactly
     those cases, compared plus unsupported, none missing, so it describes this checkout's fixtures
-    (issue #7 M10 review of eaa8a99). `exempted` is not a case count: compare.py counts the difference
+    (issue #7 M10 review of eaa8a99). This is a consistency check on the counts, not a binding to the
+    fixtures' contents; the full parity comparison is the evidence. `exempted` is not a case count: compare.py counts the difference
     paths an approved delta exempts inside cases already counted as compared, so it stays out of the
     sum and is not constrained here."""
     if not isinstance(report, dict):
