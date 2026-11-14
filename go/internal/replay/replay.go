@@ -170,6 +170,14 @@ func Session(pack *content.Pack, c *parity.Case) interface{} {
 		}
 		message, _, _ = strings.Cut(message, " | ") // the harness compares the first segment (cases.py)
 		pr := PacketResult{Index: index, Message: &message, Events: events(an.LastEvents), PeerEvents: []json.RawMessage{}}
+		for _, pe := range an.PeerEvents {
+			raw, err := json.Marshal([]interface{}{[]interface{}{pe.Source.Addr, int(pe.Source.Port)},
+				[]interface{}{pe.Destination.Addr, int(pe.Destination.Port)}, pe.Event})
+			if err != nil {
+				return Unsupported{"peer event: " + err.Error()}
+			}
+			pr.PeerEvents = append(pr.PeerEvents, raw)
+		}
 		tracked, conns, flows := an.Tracker.Tables()
 		pr.Tables = []int{tracked, conns, flows}
 		if conn := an.Tracker.Manager().Connections[session.KeyOf(a, b)]; conn != nil {

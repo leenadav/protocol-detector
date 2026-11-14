@@ -2255,8 +2255,67 @@ def session_cases(limit=None):
     return cases
 
 
+def _exchange(steps, isn=1000, sisn=9000, fin=True):
+    """A TCP conversation: handshake, then (direction, payload) steps in capture order ("c" client, "s" server;
+    a payload list is sent as several segments in that order), then FIN from both sides when fin is set."""
+    frames = [frame(CLIENT, SERVER, isn - 1, 0, 2), frame(SERVER, CLIENT, sisn - 1, isn, 18), frame(CLIENT, SERVER, isn, sisn, 16)]
+    sent = {"c": 0, "s": 0}
+    for side, payload in steps:
+        source, destination, base, peer = (CLIENT, SERVER, isn, sisn) if side == "c" else (SERVER, CLIENT, sisn, isn)
+        other = "s" if side == "c" else "c"
+        frames.append(frame(source, destination, base + sent[side], peer + sent[other], 24, payload))
+        sent[side] += len(payload)
+    if fin:
+        frames.append(frame(CLIENT, SERVER, isn + sent["c"], sisn + sent["s"], 17))
+        frames.append(frame(SERVER, CLIENT, sisn + sent["s"], isn + sent["c"] + 1, 17))
+    return frames
+
+
+def correlation_session_cases():
+    """Host-side shift correlation (review follow-up to batch 18): the server's 2xx to an HTTP CONNECT opens its
+    tunnel phase, and an LDAP StartTLS success response with the request's message id opens the client's TLS
+    phase (and the server's, when the response is unnamed). Bytes a direction carried past its message before
+    the peer's answer are replayed into the opened phase; refusals and mismatched ids open nothing."""
+    from protocol_adapters import protocol_fixtures as F
+    hello = client_hello_with([(0, b"\x00\x0f\x00\x00\x0cldap.example")])
+    server_hello = _tls_record(_server_hello())
+    connect = b"CONNECT a.example:443 HTTP/1.1\r\nHost: a.example:443\r\n\r\n"
+    established = b"HTTP/1.1 200 Connection established\r\n\r\n"
+    refused = b"HTTP/1.1 407 Proxy Authentication Required\r\nContent-Length: 0\r\n\r\n"
+    request, named, unnamed, declined = (F.LDAP_STARTTLS_REQUEST, F.LDAP_STARTTLS_RESPONSE, F.LDAP_STARTTLS_UNNAMED,
+                                         F.LDAP_STARTTLS_REFUSED)
+    other_id = F.ldap_extended(2, 0x78, F.LDAP_STARTTLS_OID, 0)
+    other_id_unnamed = F.ldap_extended(2, 0x78, None, 0)
+    scenarios = [
+        ("connect/tunnel", "http", [("c", connect), ("s", established), ("c", hello), ("s", server_hello)]),
+        ("connect/server-hello-coalesced", "http", [("c", connect), ("s", established + server_hello), ("c", hello)]),
+        ("connect/client-hello-early", "http", [("c", connect + hello), ("s", established), ("s", server_hello)]),
+        ("connect/refused", "http", [("c", connect), ("s", refused), ("s", server_hello)]),
+        ("connect/get-200", "http", [("c", b"GET /a HTTP/1.1\r\nHost: a.example\r\n\r\n"), ("s", established), ("s", server_hello)]),
+        ("ldap/named", "ldap", [("c", request), ("s", named), ("c", hello), ("s", server_hello)]),
+        ("ldap/client-hello-early", "ldap", [("c", request), ("c", hello), ("s", named), ("s", server_hello)]),
+        ("ldap/client-hello-coalesced", "ldap", [("c", request + hello), ("s", named + server_hello)]),
+        ("ldap/unnamed", "ldap", [("c", request), ("s", unnamed), ("c", hello), ("s", server_hello)]),
+        ("ldap/unnamed-coalesced", "ldap", [("c", request + hello), ("s", unnamed + server_hello)]),
+        ("ldap/refused", "ldap", [("c", request), ("s", declined), ("c", hello)]),
+        ("ldap/other-id", "ldap", [("c", request), ("c", hello), ("s", other_id), ("s", server_hello)]),
+        ("ldap/other-id-unnamed", "ldap", [("c", request + hello), ("s", other_id_unnamed + server_hello)]),
+        ("ldap/whoami-success", "ldap", [("c", F.LDAP_WHOAMI_REQUEST), ("s", F.ldap_extended(2, 0x78, None, 0)), ("c", hello)]),
+        ("ldap/response-first", "ldap", [("s", named), ("c", request), ("c", hello), ("s", server_hello)]),
+        ("ldap/bind-then-response", "ldap", [("c", F.LDAP_SPNEGO_BIND), ("s", unnamed), ("c", hello)]),
+    ]
+    cases = []
+    for name, label, steps in scenarios:
+        cases.append({"id": "session/correlation/" + name, "kind": "session", "label": label, "options": {}, "finish": "eof",
+                      "packets": [_packet(0.001 * i, f) for i, f in enumerate(_exchange(steps))]})
+        if name.endswith(("named", "tunnel")):
+            cases.append({"id": "session/correlation/" + name + "-no-fin", "kind": "session", "label": label, "options": {}, "finish": "eof",
+                          "packets": [_packet(0.001 * i, f) for i, f in enumerate(_exchange(steps, fin=False))]})
+    return cases
+
+
 def generate(limit=None):
-    return stream_cases(limit=limit) + datagram_cases(limit=limit) + session_cases(limit=limit)
+    return stream_cases(limit=limit) + datagram_cases(limit=limit) + session_cases(limit=limit) + correlation_session_cases()
 
 
 def with_expectations(cases):

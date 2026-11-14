@@ -64,4 +64,8 @@ type Result struct {
 	Scope        string // "" means initial_message
 	Shift        *Shift
 	Continues    bool
+	// LDAPMessageID is the message id of an LDAP message (HasLDAPMessageID): private host-correlation metadata,
+	// never evidence (binary.LDAPParser.correlation).
+	LDAPMessageID    int
+	HasLDAPMessageID bool
 }

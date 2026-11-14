@@ -906,7 +906,7 @@
         "server"
       ],
       "go": {
-        "notes": "M5 batch 18: BindRequest (simple, SASL, GSS-SPNEGO credentials through the ported gss.classify_token), BindResponse, ExtendedRequest and ExtendedResponse with the ldap-starttls shift on a named success; 649 stream and session cases matched, plus 80,000 seeded mutations compared once outside the committed set; host-side StartTLS correlation is not ported",
+        "notes": "M5 batch 18: BindRequest (simple, SASL, GSS-SPNEGO credentials through the ported gss.classify_token), BindResponse, ExtendedRequest and ExtendedResponse with the ldap-starttls shift on a named success; host-side StartTLS correlation (message id, replay of retained bytes) ported after the batch; stream, hint and session cases matched, plus seeded mutation and conversation differentials compared once outside the committed set",
         "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },

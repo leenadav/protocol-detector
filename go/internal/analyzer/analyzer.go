@@ -91,6 +91,18 @@ type Analyzer struct {
 	NotPorted *parsing.NotPorted
 	// Per packet (Python last_events / peer_events).
 	LastEvents []contracts.Event
+	PeerEvents []PeerEvent
+	// Replayed events of the packet's own direction and where they go among that direction's events.
+	replaySink   *Sink
+	replayAt     int
+	replayEvents []contracts.Event
+}
+
+// PeerEvent is an event a correlation published on the other direction of the packet's connection
+// (Python Analyzer.peer_events: replayed bytes publish there, not on the packet's direction).
+type PeerEvent struct {
+	Source, Destination transport.Endpoint
+	Event               contracts.Event
 }
 
 // Options mirrors the Analyzer constructor arguments the Go backend honours.
@@ -119,6 +131,7 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 		return nil, err
 	}
 	a.Tracker = tr
+	tr.Correlate = a.correlate
 	udp, err := engine.NewDatagram(cfg)
 	if err != nil {
 		if np, ok := err.(*parsing.NotPorted); ok {
@@ -132,7 +145,8 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 
 // Process handles one decoded packet and returns the adapter message (first segment compared by the harness).
 func (a *Analyzer) Process(timestamp float64, decoded interface{}) string {
-	a.LastEvents = nil
+	a.LastEvents, a.PeerEvents = nil, nil
+	a.replaySink, a.replayAt, a.replayEvents = nil, 0, nil
 	a.resetTouched()
 	switch p := decoded.(type) {
 	case *transport.UDP:
@@ -150,7 +164,16 @@ func (a *Analyzer) Process(timestamp float64, decoded interface{}) string {
 		message := a.Tracker.Process(timestamp, p)
 		sort.Slice(a.touched, func(i, j int) bool { return a.touched[i].seq < a.touched[j].seq })
 		for _, s := range a.touched {
+			if s == a.replaySink {
+				a.LastEvents = append(a.LastEvents, s.Pending[:a.replayAt]...)
+				a.LastEvents = append(a.LastEvents, a.replayEvents...)
+				a.LastEvents = append(a.LastEvents, s.Pending[a.replayAt:]...)
+				continue
+			}
 			a.LastEvents = append(a.LastEvents, s.Pending...)
+		}
+		if a.replaySink != nil && !a.replaySink.touched {
+			a.LastEvents = append(a.LastEvents, a.replayEvents...)
 		}
 		return message
 	}
@@ -305,4 +328,161 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 		record["decision"] = map[string]interface{}{"first_seconds": round6(state.FirstDecision - state.Start), "stable_seconds": round6(state.StableAt - state.Start)}
 	}
 	a.Records = append(a.Records, record)
+}
+
+// correlate ports the Analyzer._correlate_connect and _correlate_ldap calls that follow a data segment whose
+// direction published an identification. It returns the endpoints whose observation a replay changed.
+func (a *Analyzer) correlate(state *session.State, source transport.Endpoint) []transport.Endpoint {
+	connection := a.Tracker.Manager().Connections[session.KeyOf(state.Client, state.Server)]
+	if connection == nil {
+		return nil
+	}
+	sink, ok := connection.Directions[source].Sink.(*Sink)
+	if !ok || !hasIdentified(sink.Pending) {
+		return nil
+	}
+	client, okc := connection.Directions[state.Client].Sink.(*Sink)
+	server, oks := connection.Directions[state.Server].Sink.(*Sink)
+	if !okc || !oks {
+		return nil
+	}
+	var changed []transport.Endpoint
+	open := func(endpoint transport.Endpoint, boundary, expected string) bool {
+		opened, events := a.openShift(connection.Directions[endpoint], boundary, expected)
+		if !opened {
+			return false
+		}
+		other := state.Server
+		if endpoint == state.Server {
+			other = state.Client
+		}
+		if len(events) > 0 {
+			changed = append(changed, endpoint)
+		}
+		if endpoint == source {
+			a.replaySink, a.replayAt = connection.Directions[endpoint].Sink.(*Sink), len(sink.Pending)
+			a.replayEvents = append(a.replayEvents, events...)
+		} else {
+			for _, e := range events {
+				a.PeerEvents = append(a.PeerEvents, PeerEvent{Source: endpoint, Destination: other, Event: e})
+			}
+		}
+		return true
+	}
+	a.correlateConnect(state, client, server, open)
+	a.correlateLDAP(state, client, server, open)
+	return changed
+}
+
+func hasIdentified(events []contracts.Event) bool {
+	for _, e := range events {
+		if e.Observation.Status == contracts.Identified {
+			return true
+		}
+	}
+	return false
+}
+
+// openShift ports Analyzer._open_shift with Stream.open_shift: open the peer-decided phase, then replay the bytes
+// the direction carried past its message (a ClientHello recorded before the answer, a ServerHello coalesced with
+// it) exactly once from the bounded reassembly window.
+func (a *Analyzer) openShift(d *session.Direction, boundary, expected string) (bool, []contracts.Event) {
+	sink := d.Sink.(*Sink)
+	in := sink.In
+	start, has := in.Boundary, in.HasBoundary()
+	if !in.OpenShift(boundary, expected) {
+		if in.NotPorted != nil && a.NotPorted == nil {
+			a.NotPorted = in.NotPorted
+		}
+		return false, nil
+	}
+	if has && d.Stream.Contiguous() > start {
+		retained := append([]byte(nil), d.Stream.Prefix()[start:d.Stream.Contiguous()]...)
+		events, _ := in.Replay(retained)
+		if in.NotPorted != nil && a.NotPorted == nil {
+			a.NotPorted = in.NotPorted
+		}
+		return true, events
+	}
+	return true, nil
+}
+
+func evidenceValue(o contracts.Observation, field string) (string, bool) {
+	for _, e := range o.Evidence {
+		if e.Field == field {
+			return e.Value, true
+		}
+	}
+	return "", false
+}
+
+// correlateConnect ports Analyzer._correlate_connect: the server direction of a CONNECT opens its tunnel phase
+// once its 2xx answer is seen; nothing is retracted.
+func (a *Analyzer) correlateConnect(state *session.State, client, server *Sink, open func(transport.Endpoint, string, string) bool) {
+	request, response := client.In.Observation, server.In.Observation
+	if response.Status != contracts.Identified || response.ApplicationProtocol == nil || len(*response.ApplicationProtocol) < 5 ||
+		(*response.ApplicationProtocol)[:5] != "http/" {
+		return
+	}
+	if request.Status != contracts.Identified {
+		return
+	}
+	connect := false
+	for _, e := range request.Evidence {
+		if (e.Field == "http_method" && e.Value == "CONNECT") || (e.Field == "shift" && e.Value == "http-connect") {
+			connect = true
+		}
+	}
+	if !connect {
+		return
+	}
+	if status, _ := evidenceValue(response, "http_status"); len(status) > 0 && status[0] == '2' && open(state.Server, "http-connect", "") {
+		a.Tracker.Counts["connect_tunnels_correlated"]++
+	}
+}
+
+// correlateLDAP ports Analyzer._correlate_ldap: the client's StartTLS request decides nothing by itself; its
+// direction is opened only when the server's ExtendedResponse is a success for the same message id, and the
+// server's too when the response is unnamed. A server that shifted inside the segment of its named success is
+// compared through its announcement.
+func (a *Analyzer) correlateLDAP(state *session.State, client, server *Sink, open func(transport.Endpoint, string, string) bool) {
+	request, response := client.In.Observation, server.In.Observation
+	if (response.ApplicationProtocol == nil || *response.ApplicationProtocol != "ldap") && server.In.Announcement != nil {
+		response = *server.In.Announcement
+	}
+	if request.Status != contracts.Identified || response.Status != contracts.Identified || response.ApplicationProtocol == nil ||
+		*response.ApplicationProtocol != "ldap" {
+		return
+	}
+	asked := map[string]string{}
+	for _, e := range request.Evidence {
+		if e.Field == "ldap_message" || e.Field == "ldap_extended" {
+			asked[e.Field] = e.Value
+		}
+	}
+	if len(asked) != 2 || asked["ldap_message"] != "extended_request" || asked["ldap_extended"] != "starttls" {
+		return
+	}
+	answered := map[string]string{}
+	for _, e := range response.Evidence {
+		if e.Field == "ldap_message" || e.Field == "ldap_extended" || e.Field == "ldap_result" {
+			answered[e.Field] = e.Value
+		}
+	}
+	if answered["ldap_message"] != "extended_response" || answered["ldap_result"] != "success" ||
+		(answered["ldap_extended"] != "starttls" && answered["ldap_extended"] != "unnamed") {
+		return
+	}
+	requestID, okRequest := client.In.LDAPMessageID()
+	responseID, okResponse := server.In.LDAPMessageID()
+	if !okRequest || !okResponse || requestID != responseID {
+		return
+	}
+	opened := open(state.Client, "ldap-starttls", "tls")
+	if answered["ldap_extended"] == "unnamed" {
+		opened = open(state.Server, "ldap-starttls", "tls") || opened
+	}
+	if opened {
+		a.Tracker.Counts["ldap_starttls_correlated"]++
+	}
 }

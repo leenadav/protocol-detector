@@ -153,3 +153,152 @@ func TestInvalidationEventSurvivesRetirement(t *testing.T) {
 		t.Fatalf("analyzer retains %d sinks", n)
 	}
 }
+
+// ldapExtended builds an LDAP ExtendedRequest (0x77) or ExtendedResponse (0x78) with an optional name and result.
+func ldapExtended(id byte, tag byte, oid string, result int) []byte {
+	var body []byte
+	if result >= 0 {
+		body = append(body, 0x0a, 1, byte(result), 4, 0, 4, 0)
+	}
+	if oid != "" {
+		nameTag := byte(0x80)
+		if tag == 0x78 {
+			nameTag = 0x8a
+		}
+		body = append(body, nameTag, byte(len(oid)))
+		body = append(body, oid...)
+	}
+	message := append([]byte{2, 1, id, tag, byte(len(body))}, body...)
+	return append([]byte{0x30, byte(len(message))}, message...)
+}
+
+const startTLS = "1.3.6.1.4.1.1466.20037"
+
+// clientHello is a minimal TLS 1.2 ClientHello record the Go TLS parser identifies.
+var clientHello = func() []byte {
+	body := append([]byte{3, 3}, make([]byte, 32)...)
+	body = append(body, 0, 0, 2, 0x13, 0x01, 1, 0, 0, 0)
+	hs := append([]byte{1, 0, byte(len(body) >> 8), byte(len(body))}, body...)
+	return append([]byte{0x16, 3, 1, byte(len(hs) >> 8), byte(len(hs))}, hs...)
+}()
+
+type step struct {
+	server  bool
+	payload []byte
+}
+
+// converse runs the handshake, the steps in capture order and FIN from both sides; it returns the analyzer, the
+// events reported per step packet and the peer events per step packet.
+func converse(t *testing.T, steps []step) (*Analyzer, [][]contracts.Event, [][]PeerEvent) {
+	t.Helper()
+	a := newAnalyzer(t, session.Options{MaxConnections: 4, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1})
+	ldapServer := transport.Endpoint{Addr: "198.51.100.20", Port: 389}
+	a.Process(0, seg(client, ldapServer, 999, 0, transport.SYN, nil))
+	a.Process(0, seg(ldapServer, client, 8999, 1000, transport.SYN|transport.ACK, nil))
+	a.Process(0, seg(client, ldapServer, 1000, 9000, transport.ACK, nil))
+	sent := map[bool]uint32{}
+	var events [][]contracts.Event
+	var peers [][]PeerEvent
+	for i, s := range steps {
+		src, dst, base, peer := client, ldapServer, uint32(1000), uint32(9000)
+		if s.server {
+			src, dst, base, peer = ldapServer, client, 9000, 1000
+		}
+		a.Process(0.001*float64(i+1), seg(src, dst, base+sent[s.server], peer+sent[!s.server], transport.ACK|8, s.payload))
+		sent[s.server] += uint32(len(s.payload))
+		events = append(events, a.LastEvents)
+		peers = append(peers, a.PeerEvents)
+	}
+	if a.NotPorted != nil {
+		t.Fatal(a.NotPorted)
+	}
+	return a, events, peers
+}
+
+func connectionSinks(t *testing.T, a *Analyzer) (*Sink, *Sink) {
+	t.Helper()
+	ldapServer := transport.Endpoint{Addr: "198.51.100.20", Port: 389}
+	c := a.Tracker.Manager().Connections[session.KeyOf(client, ldapServer)]
+	if c == nil {
+		t.Fatal("connection not tracked")
+	}
+	return c.Directions[client].Sink.(*Sink), c.Directions[ldapServer].Sink.(*Sink)
+}
+
+func encryption(o contracts.Observation) string {
+	if o.Encryption == nil {
+		return ""
+	}
+	return *o.Encryption
+}
+
+// A StartTLS success with the request's message id opens the client direction; a ClientHello recorded before the
+// answer is replayed into it once and reported as a peer event of the server's packet.
+func TestLDAPStartTLSOpensTheClientAndReplaysOnce(t *testing.T) {
+	request, success := ldapExtended(1, 0x77, startTLS, -1), ldapExtended(1, 0x78, startTLS, 0)
+	a, _, peers := converse(t, []step{{false, request}, {false, clientHello}, {true, success}})
+	cl, _ := connectionSinks(t, a)
+	if encryption(cl.In.Observation) != "tls" || a.Tracker.Counts["ldap_starttls_correlated"] != 1 {
+		t.Fatalf("client %+v, count %d", cl.In.Observation, a.Tracker.Counts["ldap_starttls_correlated"])
+	}
+	if len(peers[2]) != 1 || peers[2][0].Source != client || peers[2][0].Event.Kind != contracts.Shifted {
+		t.Fatalf("peer events of the answer: %+v", peers[2])
+	}
+	if cl.In.Metrics.BytesReceived != len(request)+len(clientHello) {
+		t.Fatalf("replayed bytes counted twice: %d", cl.In.Metrics.BytesReceived)
+	}
+}
+
+// Refusals, another message id, and a success to another operation open nothing.
+func TestLDAPStartTLSOpensNothingWithoutAMatchingSuccess(t *testing.T) {
+	request := ldapExtended(1, 0x77, startTLS, -1)
+	for name, answer := range map[string][]byte{
+		"refused":  ldapExtended(1, 0x78, startTLS, 52),
+		"other id": ldapExtended(2, 0x78, "", 0),
+	} {
+		a, _, peers := converse(t, []step{{false, request}, {false, clientHello}, {true, answer}})
+		cl, _ := connectionSinks(t, a)
+		if encryption(cl.In.Observation) != "" || len(peers[2]) != 0 || a.Tracker.Counts["ldap_starttls_correlated"] != 0 {
+			t.Errorf("%s: client %+v, peers %+v", name, cl.In.Observation, peers[2])
+		}
+	}
+	whoami := ldapExtended(1, 0x77, "1.3.6.1.4.1.4203.1.11.3", -1)
+	a, _, _ := converse(t, []step{{false, whoami}, {true, ldapExtended(1, 0x78, "", 0)}, {false, clientHello}})
+	if cl, _ := connectionSinks(t, a); encryption(cl.In.Observation) != "" {
+		t.Errorf("whoami success opened the client: %+v", cl.In.Observation)
+	}
+}
+
+// The case found while porting (fixed in the Python reference too): a named success coalesced with the
+// ServerHello shifts the server inside that packet, and the client must still be opened through the announcement.
+func TestLDAPNamedSuccessCoalescedWithTheServerHello(t *testing.T) {
+	request, success := ldapExtended(1, 0x77, startTLS, -1), ldapExtended(1, 0x78, startTLS, 0)
+	serverHello := append([]byte{0x16, 3, 3, 0, 0}, []byte{}...) // placeholder record; the server phase result is not asserted
+	a, _, peers := converse(t, []step{{false, append(append([]byte{}, request...), clientHello...)}, {true, append(append([]byte{}, success...), serverHello...)}})
+	cl, sv := connectionSinks(t, a)
+	if sv.In.Announcement == nil || *sv.In.Announcement.ApplicationProtocol != "ldap" {
+		t.Fatalf("server announcement: %+v", sv.In.Announcement)
+	}
+	if encryption(cl.In.Observation) != "tls" || len(peers[1]) != 1 {
+		t.Fatalf("client %+v, peers %+v", cl.In.Observation, peers[1])
+	}
+}
+
+// OpenShift refuses a direction that is not a terminal, unshifted identification, and Replay refuses without a
+// host-opened phase or beyond the skipped bytes.
+func TestOpenShiftAndReplayPreconditions(t *testing.T) {
+	a, _, _ := converse(t, []step{{false, ldapExtended(1, 0x77, startTLS, -1)}})
+	cl, _ := connectionSinks(t, a)
+	if _, ok := cl.In.Replay([]byte{1}); ok {
+		t.Fatal("replay accepted without an opened phase")
+	}
+	if !cl.In.OpenShift("ldap-starttls", "tls") {
+		t.Fatal("terminal identified direction refused")
+	}
+	if cl.In.OpenShift("ldap-starttls", "tls") {
+		t.Fatal("second open accepted")
+	}
+	if _, ok := cl.In.Replay(make([]byte, 1)); ok {
+		t.Fatal("replay beyond the skipped bytes accepted")
+	}
+}
