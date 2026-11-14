@@ -680,9 +680,9 @@
         "client"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "Batch 21: IKE_SA_INIT initiator offer and responder selection with the work, nonce and opaque-field budgets; datagram, hint and budget cases matched, plus 30,000 seeded mutations compared once outside the committed set",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [

@@ -322,6 +322,16 @@ Taken before M5 so that session records become comparable for every family as it
 | Go tests | implemented | `tpkt_test.go`: route resolution, evidence rows, the TLS shift only for non-standard security, the hint's own length bound; the three parsers join `FuzzFramedNeverPanics`. |
 | Differential result | implemented | `make parity-go` with rdp and iso-tsap claimed: **6156 compared, 6156 matched, 70 listed gaps**; the 42 TPKT cases previously listed (rdp, iso-tsap and a CQL vector the dispatcher routes to tpkt) are answered. Matched on the first run. One-off check outside the committed set: 30,000 seeded mutations with random hints, all matched. |
 
+### Batch 21 — IKEv2, and the UDP hint table
+
+| item | state | evidence |
+|---|---|---|
+| Validator | implemented | `go/internal/protocols/framed/ikev2.go` ports `ikev2.ikev2` and `_sa`: header at offset 0 or after the non-ESP marker, declared length, a `min(max_headers, 128)` work budget over payloads, proposals and transforms, AES-CBC/GCM key-length attributes, HMAC-SHA PRF and integrity, MODP 14..18 with exact KE widths, the PRF-dependent nonce minimum, a responder's single proposal with one transform per type, NAT-detection, cookie and responder capability notifications, CERTREQ and Vendor ID bounded by `max_line`. Only the exchange and the DH group number are emitted. |
+| UDP hint table | fixed | Found while porting: Go's datagram hint set was a hand-kept subset of Python's `VALIDATORS` and refused 15 valid hints (bacnet, ethernet-ip, ikev2, kerberos, l2tp, lifx-lan, mdns, netbios-ns, netflow, onc-rpc, openvpn, rip, sflow, tplink-smarthome, tuya-lan) with NotPorted even where the validator was ported, the datagram counterpart of review R5. `engine.DatagramHints` now is the Python table, the `mdns` and `netbios-ns` hints run the DNS-layout validator as in Python, and `test_migration_parity.test_go_udp_hints_equal_the_python_validators` compares the two tables. |
+| Fixtures | implemented | `cases.py ikev2_vectors()`: 66 vectors (each acceptance and rejection path) automatically, hinted and truncated, plus work, field and byte budgets (201 cases); `datagram_hint_cases()`: every `VALIDATORS` entry as a hint on a datagram it identifies, truncated and on three foreign payloads (160 cases); 6584 total. |
+| Go tests | implemented | `ikev2_test.go`: offer evidence, marker, width, group/offer agreement, work and byte budgets, trailing bytes. |
+| Differential result | implemented | `make parity-go` with ikev2 claimed: **6510 compared, 6510 matched, 74 listed gaps** (DTLS, QUIC, HTTP/2, STUN over TCP and two options). Matched on the first run. One-off check outside the committed set: 30,000 seeded IKEv2 mutations with random hints and budgets, all matched. |
+
 ## Independent review of 2026-11-14 (snapshot `dbe20f3`, issue #2 comment 6877159227)
 
 Each finding was reproduced before it was changed. Commits are on `claude/go-migration` after batch 18 (`a2cf4e8`).
@@ -341,7 +351,7 @@ TLS library) are not reproduced here and are not changed.
 
 ## M5 batches 18+ / M7+ — next
 
-Remaining registry batches (4 families: HTTP2, QUIC, DTLS, IKEv2, each with dedicated review) and the HTTP/2 prior-knowledge correlation with record-level parity per batch; passive
+Remaining registry batches (3 families: HTTP2, QUIC, DTLS, each with dedicated review) and the HTTP/2 prior-knowledge correlation with record-level parity per batch; passive
 TLS decryption (M7); frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
 
 ## Open decisions and blockers

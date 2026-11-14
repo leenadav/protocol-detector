@@ -114,6 +114,14 @@ class ParityHarnessTests(unittest.TestCase):
         integers = sorted(name for name, value in vars(Config()).items() if type(value) is int)
         self.assertEqual(sorted(name for name, _, _ in ranges), integers)
 
+    def test_go_udp_hints_equal_the_python_validators(self):
+        """The Go DatagramHints table is the Python VALIDATORS table: no valid hint refused, no invalid one accepted."""
+        import re
+        from protocol_engine.datagram import VALIDATORS
+        source = (CASES.parent.parent.parent / "go" / "internal" / "engine" / "datagram.go").read_text(encoding="utf-8")
+        table = source[source.index("var DatagramHints"):source.index("func sipProbe")]
+        self.assertEqual(sorted(re.findall(r'"([a-z0-9-]+)": true', table)), sorted(VALIDATORS))
+
 
 if __name__ == "__main__":
     unittest.main()

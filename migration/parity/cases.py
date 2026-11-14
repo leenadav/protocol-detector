@@ -772,6 +772,157 @@ def tpkt_cases():
     return cases
 
 
+def ikev2_vectors():
+    """IKEv2 IKE_SA_INIT (batch 21): initiator offers and responder selections built from payloads, transforms and
+    proposals, with each acceptance and rejection path of ikev2.ikev2 and its SA walk (header, length, budget,
+    chaining, transform values and attributes, required payloads, notifications, CERTREQ, Vendor ID)."""
+    def tr(kind, value, attrs=b"", last=False):
+        body = bytes([kind, 0]) + value.to_bytes(2, "big") + attrs
+        return bytes([0 if last else 3, 0]) + (4 + len(body)).to_bytes(2, "big") + body
+
+    def aes(value=12, bits=128, last=False):
+        return tr(1, value, b"\x80\x0e" + bits.to_bytes(2, "big"), last)
+
+    def proposal(transforms, number=1, last=True, protocol=1, spi=0):
+        body = bytes([number, protocol, spi, len(transforms)]) + b"".join(transforms)
+        return bytes([0 if last else 2, 0]) + (4 + len(body)).to_bytes(2, "big") + body
+
+    cbc = [aes(), tr(2, 5), tr(3, 12), tr(4, 14, last=True)]
+    gcm = [aes(20, 256), tr(2, 7), tr(4, 14, last=True)]
+
+    def ke(group=14, width=None, reserved=b"\x00\x00"):
+        return group.to_bytes(2, "big") + reserved + bytes(256 if width is None else width)
+
+    def notify(kind, data=b""):
+        return b"\x00\x00" + kind.to_bytes(2, "big") + data
+
+    def ike(payloads, response=False, marker=False, spi_i=b"\x11\x12\x13\x14\x15\x16\x17\x18", version=0x20, exchange=34,
+            flags=None, msgid=bytes(4), length_delta=0, reserved=0):
+        chain = b""
+        kinds = [k for k, _ in payloads]
+        for index, (kind, body) in enumerate(payloads):
+            nxt = kinds[index + 1] if index + 1 < len(kinds) else 0
+            chain += bytes([nxt, reserved if index == 0 else 0]) + (4 + len(body)).to_bytes(2, "big") + body
+        spi_r = bytes.fromhex("2122232425262728") if response else bytes(8)
+        flag = (0x20 if response else 0x08) if flags is None else flags
+        header = spi_i + spi_r + bytes([kinds[0] if kinds else 0, version, exchange, flag]) + msgid
+        header += (28 + len(chain) + length_delta).to_bytes(4, "big")
+        return (bytes(4) if marker else b"") + header + chain
+
+    sa = lambda *props: (33, b"".join(props))                                                    # noqa: E731
+    base = [sa(proposal(cbc)), (34, ke()), (40, bytes(32))]
+    resp = [sa(proposal(cbc)), (34, ke()), (40, bytes(32))]
+    nat = (41, notify(16388, bytes(20)))
+    return [
+        ("init-cbc", ike(base)),
+        ("init-gcm", ike([sa(proposal(gcm)), (34, ke()), (40, bytes(32))])),
+        ("init-marker", ike(base, marker=True)),
+        ("init-two-proposals", ike([sa(proposal(cbc, 1, last=False), proposal(gcm, 2)), (34, ke()), (40, bytes(32))])),
+        ("init-modp18", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 18, last=True)])), (34, ke(18, 1024)), (40, bytes(32))])),
+        ("init-nat-cookie-vendor", ike([(41, notify(16390, b"cookie")), sa(proposal(cbc)), (34, ke()), (40, bytes(32)), nat,
+                                       (41, notify(16389, bytes(20))), (43, b"vendor-id")])),
+        ("init-cookie-not-first", ike(base + [(41, notify(16390, b"c"))])),
+        ("init-cookie-empty", ike([(41, notify(16390))] + base)),
+        ("init-nat-short", ike(base + [(41, notify(16388, bytes(19)))])),
+        ("init-notify-spi", ike(base + [(41, b"\x01\x00" + (16388).to_bytes(2, "big") + bytes(20))])),
+        ("init-notify-other", ike(base + [(41, notify(16430))])),
+        ("init-capability-notify", ike(base + [(41, notify(16404))])),
+        ("init-certreq", ike(base + [(38, b"\x04" + bytes(20))])),
+        ("init-vendor-empty", ike(base + [(43, b"")])),
+        ("init-vendor-long", ike(base + [(43, b"v" * 9000)])),
+        ("init-no-nonce", ike([sa(proposal(cbc)), (34, ke())])),
+        ("init-duplicate-ke", ike(base + [(34, ke())])),
+        ("init-nonce-short", ike([sa(proposal(cbc)), (34, ke()), (40, bytes(15))])),
+        ("init-nonce-prf", ike([sa(proposal([aes(), tr(2, 7), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(16))])),
+        ("init-ke-group", ike([sa(proposal(cbc)), (34, ke(15, 384)), (40, bytes(32))])),
+        ("init-ke-width", ike([sa(proposal(cbc)), (34, ke(14, 255)), (40, bytes(32))])),
+        ("init-ke-reserved", ike([sa(proposal(cbc)), (34, ke(reserved=b"\x00\x01")), (40, bytes(32))])),
+        ("init-ke-unknown", ike([sa(proposal(cbc)), (34, ke(19, 64)), (40, bytes(32))])),
+        ("init-unknown-payload", ike(base + [(44, b"x")])),
+        ("init-reserved-bits", ike(base, reserved=0x01)),
+        ("init-critical-bit", ike(base, reserved=0x80)),
+        ("init-length-short", ike(base, length_delta=-1)),
+        ("init-length-long", ike(base, length_delta=1)),
+        ("init-zero-spi", ike(base, spi_i=bytes(8))),
+        ("init-version", ike(base, version=0x10)),
+        ("init-exchange", ike(base, exchange=35)),
+        ("init-flags", ike(base, flags=0x00)),
+        ("init-msgid", ike(base, msgid=b"\x00\x00\x00\x01")),
+        ("init-trailing", ike(base) + b"\x00"),
+        ("sa-empty", ike([(33, b""), (34, ke()), (40, bytes(32))])),
+        ("sa-chain", ike([sa(proposal(cbc, last=False)), (34, ke()), (40, bytes(32))])),
+        ("sa-number", ike([sa(proposal(cbc, number=2)), (34, ke()), (40, bytes(32))])),
+        ("sa-protocol-esp", ike([sa(proposal(cbc, protocol=3)), (34, ke()), (40, bytes(32))])),
+        ("sa-no-transforms", ike([sa(proposal([])), (34, ke()), (40, bytes(32))])),
+        ("sa-transform-chain", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 14)])), (34, ke()), (40, bytes(32))])),
+        ("sa-3des", ike([sa(proposal([tr(1, 3), tr(2, 5), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-aes-bits", ike([sa(proposal([aes(bits=100), tr(2, 5), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-aes-no-attr", ike([sa(proposal([tr(1, 12), tr(2, 5), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-prf-md5", ike([sa(proposal([aes(), tr(2, 1), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-integ-md5", ike([sa(proposal([aes(), tr(2, 5), tr(3, 1), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-dh-ecp", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 19, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-esn", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 14), tr(5, 0, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-attr-on-prf", ike([sa(proposal([aes(), tr(2, 5, b"\x80\x0e\x00\x80"), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-no-dh", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-mixed", ike([sa(proposal([aes(), aes(20), tr(2, 5), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-cbc-no-integrity", ike([sa(proposal([aes(), tr(2, 5), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-gcm-integrity", ike([sa(proposal([aes(20), tr(2, 5), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-ke-not-offered", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 15, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-budget", ike([sa(*[proposal(cbc, n, last=(n == 40)) for n in range(1, 41)]), (34, ke()), (40, bytes(32))])),
+        ("resp", ike(resp, response=True)),
+        ("resp-certreq", ike(resp + [(38, b"\x04" + bytes(40)), (41, notify(16404))], response=True)),
+        ("resp-certreq-hash", ike(resp + [(38, b"\x04" + bytes(19))], response=True)),
+        ("resp-certreq-encoding", ike(resp + [(38, b"\x07" + bytes(20))], response=True)),
+        ("resp-certreq-long", ike(resp + [(38, b"\x0c" + bytes(9000))], response=True)),
+        ("resp-capability-data", ike(resp + [(41, notify(16405, b"x"))], response=True)),
+        ("resp-cookie", ike([(41, notify(16390, b"c"))] + resp, response=True)),
+        ("resp-two-proposals", ike([sa(proposal(cbc, 1, last=False), proposal(gcm, 2)), (34, ke()), (40, bytes(32))], response=True)),
+        ("resp-two-groups", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 14), tr(4, 15, last=True)])), (34, ke()), (40, bytes(32))], response=True)),
+        ("resp-zero-responder-spi", ike(resp, response=True)[:8] + bytes(8) + ike(resp, response=True)[16:]),
+        ("short", ike(base)[:300]),
+    ]
+
+
+def ikev2_cases():
+    """IKEv2 (batch 21): every vector as a datagram automatically, under the ikev2 hint, and truncated; the work and
+    opaque-field budgets at max_headers 4 and max_line 32."""
+    cases = []
+    for number, (name, data) in enumerate(ikev2_vectors()):
+        base = "datagram/ikev2-%02d-%s" % (number, name)
+        cases.append({"id": base + "/whole", "kind": "datagram", "label": "ikev2", "payload": data.hex(), "hint": None, "config": {}})
+        cases.append({"id": base + "/hint", "kind": "datagram", "label": "ikev2", "payload": data.hex(), "hint": "ikev2", "config": {}})
+        cases.append({"id": base + "/half", "kind": "datagram", "label": "ikev2", "payload": data[:max(1, len(data) // 2)].hex(), "hint": "ikev2",
+                      "config": {}})
+    vectors = dict(ikev2_vectors())
+    for name, config in (("init-nat-cookie-vendor", {"max_headers": 4}), ("init-nat-cookie-vendor", {"max_line": 32}),
+                         ("init-cbc", {"max_bytes": 300})):
+        cases.append({"id": "datagram/ikev2-options/%s-%s" % (name, "-".join("%s%d" % kv for kv in config.items())), "kind": "datagram",
+                      "label": "ikev2", "payload": vectors[name].hex(), "hint": None, "config": config})
+    return cases
+
+
+def datagram_hint_cases():
+    """Explicit UDP hints (2026-11-15, the datagram counterpart of review R5): every VALIDATORS entry as a hint on a
+    datagram it identifies (when one exists among the fixtures), truncated, and on three foreign payloads, where the
+    hint must select the validator and never establish identity by itself."""
+    from protocol_engine.datagram import VALIDATORS
+    fixtures = [data for data, _ in DATAGRAM_CASES] + [data for data, _, _ in HINTED_DATAGRAM_CASES] + [d for _, d in ikev2_vectors()[:2]]
+    fixtures += [d for _, d in kerberos_vectors()[:1]]
+    foreign = (("dns-query", DNS), ("zeros", bytes(64)), ("text", b"GET / HTTP/1.1\r\nHost: a.example\r\n\r\n"))
+    cases = []
+    for hint in sorted(VALIDATORS):
+        positive = None
+        for data in fixtures:
+            if DatagramInspector(Config()).inspect(data, protocol_hint=hint).status == "identified":
+                positive = data
+                break
+        named = [("positive", positive), ("truncated", positive[:max(1, len(positive) // 2)])] if positive is not None else []
+        for name, data in named + list(foreign):
+            cases.append({"id": "datagram/hint-%s/%s" % (hint, name), "kind": "datagram", "label": hint, "payload": data.hex(),
+                          "hint": hint, "config": {}})
+    return cases
+
+
 def stream_cases(seed=11, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -2418,6 +2569,8 @@ def datagram_cases(seed=12, limit=None):
     cases.extend(udp_cases_4())
     cases.extend(udp_cases_5())
     cases.extend(udp_cases_6())
+    cases.extend(ikev2_cases())
+    cases.extend(datagram_hint_cases())
     return cases
 
 

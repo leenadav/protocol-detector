@@ -29,7 +29,7 @@ var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"dcerpc", "websocket", "xmpp", "syslog", "git",
 	"netbios-ss", "tacacs-plus", "socks5", "wireguard", "bacnet",
 	"tftp", "ntp", "l2tp", "coap", "rip", "rtcp", "lifx-lan", "tuya-lan",
-	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap", "smb1", "smb2", "rdp", "iso-tsap"}
+	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap", "smb1", "smb2", "rdp", "iso-tsap", "ikev2"}
 
 // factories builds the parser of each candidate; it is the single registry of what the Go backend ports.
 var factories map[string]func(cfg contracts.Config) (parsing.Parser, error)
