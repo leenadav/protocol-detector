@@ -83,8 +83,8 @@ request:
 
 | Workflow | Job name | Gate |
 |---|---|---|
-| ci | `tests (python 3.9)`, `tests (python 3.11)`, `tests (python 3.13)` | compile, unit/fuzz/property tests, docs numbers, product integrity (build manifest, protocol inventory, no tracked key logs), the presentation suite with the decryption extra under `tools/run_tests_strict.py` (any skip but the two named UI tests fails), offline replay, coverage matrix |
-| ci | `presentation with Node and a real browser (no test may skip)` | the presentation suite with Node 22.22.0 and the lock-pinned Playwright 1.56.1 with Chromium, zero skips allowed; the installed whole-product check (`tools/installed_check.py`) |
+| ci | `tests (python 3.9)`, `tests (python 3.11)`, `tests (python 3.13)` | compile, unit/fuzz/property tests, docs numbers, product integrity (build manifest, protocol inventory, no tracked key logs), the Go migration's parity oracle replayed through the Python reference on that interpreter (`tools/go_ci.py oracle`), the presentation suite with the decryption extra under `tools/run_tests_strict.py` (any skip but the two named UI tests fails), offline replay, coverage matrix |
+| ci | `presentation with Node and a real browser (no test may skip)` | the presentation suite with Node 22.22.0 and the lock-pinned Playwright 1.64.1 with Chromium, zero skips allowed; the installed whole-product check (`tools/installed_check.py`) |
 | ci | `behaviour diff against the previous commit` | `tools/compare_engine.py` against the parent (and the pull request base) |
 | ci | `per-commit mutation smoke (second seed, python 3.9)` | second-seed mutation diff and a 100-mutation fuzz pass |
 | ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, and gitleaks 8.30.1 (built from the Go module proxy, verified against the Go checksum database) over the full history with inline allows ignored |
@@ -92,6 +92,7 @@ request:
 | ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py` (engine and adapter packages, only the `decryption` extra), wheel smoke under 3.13 and 3.9, the complete-product SBOM checked by `tools/check_product_sbom.py` |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
 | ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds |
+| ci | `Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)` | `tools/go_ci.py go`: on the pinned Go 1.27.4, `make go-check` (gofmt, `go vet`, `go test -race`, fuzz smoke, `make parity-go`) and a floor under the parity report; nothing to check on a commit without the migration tree, failure on one with part of it |
 | ci | `security requirements gate` | every SR row names an existing test |
 
 Do not mark the `supply-chain-drift` jobs required: that workflow is path
@@ -211,6 +212,23 @@ issue #2, and follows the same gated loop:
    go to Codex in issue #7, and a Codex yes counts as the user's agreement,
    except for merging, deploying, settings, permissions, credentials and
    billing, which stay with Lee.
+8. Routing since 2026-11-14 (Lee; issues #2 and #7 bodies). This supersedes steps 1, 3, 4, 6
+   and 7 where they differ:
+   - Issues #2 and #7 are the authoritative mailboxes. Each lane mirrors a request or
+     result as a short, lane-prefixed comment on its own current open pull request and
+     messages the other active Claude session directly. PRs #3 and #13 are closed and are
+     no longer wake channels.
+   - `claude/cicd-next` is based on current `main`. Before a request it records the CI base
+     and the engine SHA it integrates (the Go migration is `claude/go-migration`, PR #19);
+     it no longer merges the obsolete `claude/appid-engine` mechanically.
+   - A requested snapshot stays frozen until a result names its exact SHA. Unrelated
+     work continues in separate commits while Codex's hourly automation reviews it; the
+     later SHA that fixes each finding is recorded. A missing review, green CI or a merge
+     is never approval: item 25 round 2 (`13fc8ef` / `70eeab3`) stays pending although
+     PR #13 merged.
+   - Engine findings that need CI changes (`.github/`, the CI tools, the locks) go to this
+     lane; CI needs in `go/`, `migration/` or product code go to the engine lane, as a patch
+     or a pull request into its branch, never a direct push.
 
 The loop never merges, deploys, deletes branches, or changes branch
 protection, permissions or credentials.
@@ -538,10 +556,46 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      failed. The rule stays; `.github/dependabot.yml` ignores download-artifact majors until
      upload-artifact v8 ships, at which point both move together (v8 adds `digest-mismatch:
      error` by default, a stricter download).
-   - PR #23's other red check, the Go drift job, is the Go 1.27.4 release (item 23's run on
+   - PR #23's other red check, the Go drift job, comes from the Go 1.27.4 release (item 23's run on
      `main` 27c5f2f; `5f45214` moves the pin). On `main` 201a552 the toolchain audit also failed:
      govulncheck found GO-2026-6859 in `net/http@go1.27.3` in the gitleaks build, fixed in 1.27.4
      and reproduced locally on both versions.
+27. Hosted Go CI, migration M10 (Lee authorized the Python-to-Go migration and its hosted CI,
+   issues #2 and #7, 2026-11-14; AGENTS.md's scope text now says so). The Go engine lives on
+   `claude/go-migration` (PR #19, engine lane); its workflow wiring is this lane's.
+   - **`go-engine` job** in ci.yml, in the gate's `needs`. It runs on the one pinned Go, the
+     scanners' 1.27.4, via `actions/setup-go` with `GOTOOLCHAIN=local`, and then
+     `python -B tools/go_ci.py go`.
+   - **What `go_ci.py go` refuses:**
+     - a `go/go.mod` whose `go` directive differs from `tools/scanners/go.mod` (one toolchain,
+       which `tools/check_go_drift.py` keeps on the newest patch);
+     - an installed `go version` that differs from the directive (no toolchain download chosen
+       by go.mod);
+     - a missing `go-check` target;
+     - Go sources or migration fixtures without the module.
+   - **What it runs:** `make go-check`, which is gofmt, `go vet`, `go test -race`, the fuzz smoke
+     targets and `make parity-go`.
+   - **Floor under the parity report.** It must be ok, have compared cases, match every compared
+     case and list no mismatch or extra result. The first engine review (issue #2 R2) showed an
+     all-unsupported answer set passing `compare.py` with `compared 0`; the floor catches that
+     case. Closing R2 itself is engine work: an explicit per-case gap allowlist, with extra
+     result ids failing.
+   - **No migration tree.** On a commit without one (`main` today) the job reports that there is
+     nothing to check and passes. Rule 13 bans shell conditionals, so the decision is made in
+     the tool, which has a self-test (`make workflow-policy`, `workflow-lint`).
+   - **`tests (python 3.9/3.11/3.13)`** also run `tools/go_ci.py oracle`. The committed fixtures
+     are replayed through the Python reference (`compare.py --backend python`) on each
+     supported interpreter (issue #2 R6: the oracle drifted on an older 3.9 patch). Hosted 3.9
+     is setup-python's newest 3.9 patch, so the 3.9.6 differences R6 found need the engine's
+     decision (deterministic formatting and explicit numeric limits, or a narrower supported
+     range); CI cannot pin an old patch.
+   - **Measured locally** on the `claude/go-migration` head `a4d39c3`, with the scanner go.mod the
+     merge from `main` brings: `go_ci.py go` passes in 2m39s with parity 4084/4084 matched and
+     169 unsupported; `go_ci.py oracle` passes on CPython 3.13.16 and 3.9.25.
+   - **Running it on the migration.** The job reaches PR #19 once the engine lane merges `main`
+     (after this lane's PR) into `claude/go-migration`. That merge also brings the PR #13 gates
+     the branch lacks, the build-manifest check among them, which issue #2 R7 found stale on
+     `dbe20f3`.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
