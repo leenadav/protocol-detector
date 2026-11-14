@@ -125,6 +125,16 @@ Three kinds of change:
 | 19 | External consumer module test; a test that the module stays standard-library-only. |
 | 20 | Analyzer retention (R1). **Done** at base `f239c65` (`6375457`). |
 
+### 4.3a Progress on `claude/culvert-integration-prep`
+
+Done:
+- **#2** scope update.
+- **#3** Go minimum, with `-race` at both toolchains.
+- **#8–#13** first public slice in `go/detector`.
+- **#19** external consumer module.
+
+See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: #4–#7, #14 (wiring), #16–#18.
+
 ### 4.4 Gate before attaching the real detector (lab phase L4)
 
 All of the following must hold:

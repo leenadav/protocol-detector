@@ -320,6 +320,27 @@ Each finding was reproduced before it was changed. Commits are on `claude/go-mig
 The review's two host-dependent TLS fixture failures on the Mac's Python 3.9.6 (TLS 1.3 ClientHello generation by the host
 TLS library) are not reproduced here and are not changed.
 
+## Culvert integration preparation (branch `claude/culvert-integration-prep`, base `f239c65`)
+
+Contract: `docs/integration/PROTODETECT-CULVERT-WORKING-PLAN.md` (work items #2, #3, #8–#13, #19). Go-only: no
+detection change; `make parity-go` and the Python parity are unchanged.
+
+| item | state | evidence |
+|---|---|---|
+| #2 scope | implemented | `AGENTS.md` states the Go port and in-process preparation for Culvert are in scope; no Culvert-side authority. |
+| #3 Go minimum | implemented | `go 1.27.0` with `toolchain go1.27.4`; `make go-check` runs vet and `-race` tests at both (ADR 0002). |
+| #8 public package | implemented | `go/detector`: `New(Config)`, `Engine.NewFlow(id)`, `Flow.Feed(dir, data)`, `EndDirection`, `Expire`, `Snapshot`, `Close` (idempotent, returns the admission slot once). One lazily created inspector per direction; released as soon as the direction is final. |
+| #9 typed outcomes | implemented | closed `Outcome` (detecting, identified, unknown, malformed, incomplete, budget_exhausted, invalidated, unsupported, outside_profile, failed) and `Reason` (none, engine, not_ported, outside_profile, ended, expired, closed, panic); `Inspector.NotPorted` becomes `unsupported`/`not_ported`, never a silent `detecting`. |
+| #10 panic boundary | implemented | every engine call runs under `recover`; the flow is quarantined (inspectors dropped, never re-entered, outcome `failed`/`panic`, panic value dropped); `PanicLimit` disables admission; tests inject panics in feed, end and expire. |
+| #11 vocabularies | implemented | `All*`/`Valid`/`String` for directions, outcomes, reasons, end causes and evidence classes; exhaustive tests. |
+| #12 hostname type | implemented | `Hostname` type; evidence classes categorical / asserted / hostname / withheld; unclassified fields are withheld; values bounded to 255 bytes, 32 items, 16 ALPN offers. |
+| #13 profile | implemented | profile families `http`, `tls`, `ssh`, `smtp`; any other family the engine selects or resolves ends as `outside_profile` without its evidence. |
+| #19 external consumer | implemented | `go/consumertest` (own module, `GOWORK=off`, built at the minimum) imports the package from an empty working directory through a host-owned interface and adapter. A test keeps `go/go.mod` free of `require`/`replace`. |
+| Facade vs engine | implemented | `cases_test.go`: every unhinted stream case of `cases.json` through a Flow and a bare Inspector: 633 compared, 2876 outside the profile, 77 not ported, all consistent; every evidence field of identified profile cases is classified. |
+| Fuzz | implemented | `FuzzFlowInvariants` (both directions, arbitrary splits, end and expiry): 923,720 executions in 60 s locally, no failure; 15 s in `make go-check`. |
+| Known gap pinned | open (#4) | `TestPostQuantumServerHelloGap`: a crypto/tls ServerHello selecting X25519MLKEM768 is `unknown` ("Server key share group outside supported profile"); X25519 is identified. Inverted when #4 lands in both runtimes. |
+| Not in this slice | — | #4–#7 detection fixes (Python and Go), #14 `buffer.Account` wiring, #16 embedded content, #17 `DeepEqual` removal, #18 benchmarks and per-parser fuzzing; hints, content attribution and host-opened shifts are not exposed. |
+
 ## M5 batches 18+ / M7+ — next
 
 Remaining registry batches (8 families: HTTP2, SMB1, SMB2, RDP, ISO-TSAP, QUIC, DTLS, IKEv2, each with dedicated review) and the host-side shift correlation (LDAP StartTLS, HTTP CONNECT) with record-level parity per batch; passive

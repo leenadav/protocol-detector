@@ -178,6 +178,8 @@ go-check:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/transport -run NONE -fuzz FuzzDecodeNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzInspectorNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzSelectNeverPanics -fuzztime 5s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./detector -run NONE -fuzz FuzzFlowInvariants -fuzztime 15s
+	cd go/consumertest && GOWORK=off GOTOOLCHAIN=$(GO_MINIMUM) go vet ./... && GOWORK=off GOTOOLCHAIN=$(GO_MINIMUM) go test -race ./...
 	$(MAKE) parity-go
 
 # Migration M4: the Go backend's results against the Python reference (families it claims; records are M6)
