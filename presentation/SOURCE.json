@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "9bbc9f482f5b9932ac74cc92126c6edc469b545a",
-  "branch": "work/v065-stage0",
-  "build_digest": "0c8c9f21f19cdc856468d1e4c45c8f45553b78b67473858f8d397315bb184f53",
+  "commit": "dbe20f30377dd9627391040827dd8c0c3d636ac5",
+  "branch": "claude/go-migration",
+  "build_digest": "6b9318b49f37854cb645a3d6f56f20cd48acbe4fe58e393757c8233398173e28",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -475,12 +475,12 @@
     {
       "path": "link_packets.py",
       "component": "adapters",
-      "sha256": "24163e9501f5fd90d39db77d91b88465c68f83f216ea84bdada3b0a08d518732"
+      "sha256": "92ee537907c30ff336356e4801e05dacd25fbda0ba5623829151ebecc6ebcf62"
     },
     {
       "path": "capture_stream.py",
       "component": "adapters",
-      "sha256": "0ade4d09ab944056dd9b2a3ecb10905212010bd3159ff7c70340244be7e82e2e"
+      "sha256": "15e7ad639e66c26942898cd2e04ae974dcbcecb2b1ed9e90eb317fde89094563"
     },
     {
       "path": "sessions.py",
@@ -490,17 +490,17 @@
     {
       "path": "analyze_pcap.py",
       "component": "adapters",
-      "sha256": "32f17b522e6303d3b37adf1547acb3c3152cf9163137cc75fb6c72cc033fd60d"
+      "sha256": "5e29d9456aa826364b36e6a53f8cb67e702d8381149cdc54d30295cd508c206e"
     },
     {
       "path": "live_capture.py",
       "component": "adapters",
-      "sha256": "8742aeaac51be077312ea295e5e6463a4e036c24c15d036341991038af6c8496"
+      "sha256": "ca09722f916c810937f810499c1b3d5451c8ed1decd60a1a573ffc3a4898c91e"
     },
     {
       "path": "make_sample_pcap.py",
       "component": "adapters",
-      "sha256": "762edda2277ddab0379f4128e07af51d8c30ed652ed5df56ba3db2ba4d07df90"
+      "sha256": "e6fbc7eeef8ace8402785a58ff88a2c71d1784fff470af63a9a6fd9ead68bb74"
     },
     {
       "path": "protocol_fixtures.py",
@@ -520,7 +520,7 @@
     {
       "path": "detectors.py",
       "component": "adapters",
-      "sha256": "3f61af047eeb70344bda25bfe21ac07d7f2d2e6e9cbd212f29322501dbc361c8"
+      "sha256": "8ed95f13dce9c98df366422c7bdb66dca7b4e7565e563cdb66706e2bb039d11b"
     },
     {
       "path": "presentation/__init__.py",
@@ -540,7 +540,7 @@
     {
       "path": "presentation/live_manager.py",
       "component": "presentation",
-      "sha256": "fc4fca57900cc314b7a001897f8cb8ea97bdd7d9ead2477f6072949df1b39b09"
+      "sha256": "704c967ad7cafa86b11b944446784d8092f4b2f81b2a7b018ecdc3ed3eb1a8de"
     },
     {
       "path": "presentation/live_smoke_check.py",
@@ -550,7 +550,7 @@
     {
       "path": "presentation/server.py",
       "component": "presentation",
-      "sha256": "279cb710626ead22fe1de9cce08901ba10b2c21771bc6c6d88bbef3868ef29b8"
+      "sha256": "953bbf295577f64af7997a3d220a41d6d11c7768c123c6029a500de0c89738d4"
     },
     {
       "path": "presentation/poc_decryption/__init__.py",
@@ -590,7 +590,7 @@
     {
       "path": "presentation/web/app.js",
       "component": "presentation",
-      "sha256": "4075ee69af23eb46a3b439ca73aa3f33387f988d4387008ce5a08a6e5fe62f77"
+      "sha256": "925633ebe2db458b8bd07e4553afdf440edd9abb6e2dbff0731f5a7917ae35a0"
     },
     {
       "path": "presentation/web/decrypt.js",
@@ -600,17 +600,17 @@
     {
       "path": "presentation/web/index.html",
       "component": "presentation",
-      "sha256": "a40aec34ad51f9042e9b4f3763b16e075854cc91953870eb2b8c70f72ed72ce1"
+      "sha256": "0003ecde165ca1e2c1d501529500061f839a955eff068df17eae38e5924d84b8"
     },
     {
       "path": "presentation/web/live.js",
       "component": "presentation",
-      "sha256": "3e04b82702c6699655d18ea7a69a2ba21d17162d4bbe710531f3d2153aa640c5"
+      "sha256": "cb515d2481a5b12b3bd2829c618edbea6ce9f49f57ea6c2e728626b6c39014f8"
     },
     {
       "path": "presentation/web/store.js",
       "component": "presentation",
-      "sha256": "2c47407a8d6814f7318577fc1ed67e54a64893a85cfae9d0ede771e41b19ba7f"
+      "sha256": "b3dfd90c3dd7d33e8008e28ef70b9fe3d75d772e21f4fd98deaa975425ecddf2"
     },
     {
       "path": "presentation/web/styles.css",

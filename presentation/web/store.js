@@ -84,6 +84,14 @@
                                           retracted: view ? view.retracted_total : state.retracted,
                                           result: {sessions: sessions, meta: liveMeta({summary: summary})}, visible: sessions.length});
       }
+      case 'live/reset': {
+        // M0: "Clear sessions & reset capture" for the run it names; a reset answered for an older run (a
+        // stale tab) is counted stale and never clears a replacement run's results.
+        if (action.runId !== state.runId) return Object.assign({}, state, {stale: state.stale + 1});
+        return Object.assign({}, state, {live: action.control || null, liveLog: [], liveCaptureId: null, liveCursor: 0,
+                                          decryption: null, busy: false, quality: 'intact', retracted: 0, selected: null,
+                                          result: {sessions: [], meta: liveMeta({summary: {}})}, visible: 0});
+      }
       case 'set': {
         const next = Object.assign({}, state);
         next[action.key] = action.value;
@@ -128,6 +136,13 @@
   const selectors = {
     sessions: function (state) { return state.result ? state.result.sessions.slice(0, state.visible) : []; },
     unresolved: function (state, s) { return !!state.catalog && state.catalog.outcomes.indexOf(s.app) >= 0; },
+    displayLabel: function (state, s) {
+      // M0: a frontend-only fallback label for traffic the engine did not identify: destination port and
+      // transport (for example "8789 udp"). The verdict (`app`), filters and exports keep the raw outcome;
+      // a port is a place the traffic went, never an application identity.
+      if (!selectors.unresolved(state, s) || !s.server || s.server.length < 2 || !s.transport) return s.app;
+      return s.server[1] + ' ' + String(s.transport).toLowerCase();
+    },
     attention: function (state, s) { return selectors.unresolved(state, s) || s.port_usage === 'nonstandard' || (s.risks || []).length > 0; },
     chain: function (s) {
       const layers = s && s.layers;
