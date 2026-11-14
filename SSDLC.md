@@ -598,7 +598,14 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      targets and `make parity-go`.
    - **Floor under the parity report.** It must be ok, have compared cases, match every compared
      case and list no mismatch, extra result, unexpected or stale gap, or claim without a match
-     (the counters the engine's R2 fix `321e088` added; read whenever the report carries them). The first engine review (issue #2 R2) showed an
+     (the counters the engine's R2 fix `321e088` added; read whenever the report carries them).
+     Freshness (Codex M10 review of `eaa8a99`, P2): a report left by an earlier run used to pass a
+     `go-check` that no longer ran parity. The tool now removes `go-report.json` before the run,
+     fails if it cannot, and requires the new report to account for exactly the committed fixtures'
+     cases (compared + unsupported + exempted, none missing). The self-test reproduces the finding
+     end to end in a scratch git tree with a stub `go`: a stale passing report with a no-op target
+     fails, a fresh report for other fixtures fails, and a fresh matching report passes. The same
+     regression grafted onto the old code fails. The first engine review (issue #2 R2) showed an
      all-unsupported answer set passing `compare.py` with `compared 0`; the floor catches that
      case. Closing R2 itself is engine work: an explicit per-case gap allowlist, with extra
      result ids failing.
