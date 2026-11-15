@@ -1,15 +1,15 @@
 {
   "components": {
-    "application_catalog": "2b61c2aaf2e51fff1ccdaf479673082e6b300cd2649cf960c1f139295bd63b90",
+    "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
     "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-    "host_catalog": "d90de751d3e9f4ac4602deca7637f3e2164fc6ed7ccd8cb292a99ccd54fa43fe",
+    "host_catalog": "82e1abd27dad3f3ee04cb80939a9ab81f099631f06e23d94fb75e6071afd1c7d",
     "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
   },
-  "digest": "c4020c2437f3de8d",
-  "host_entries": 169,
-  "note": "115 more services on operator-owned domains (streaming, gaming, social, messaging, storage, business, developer, identity, generative AI, remote access, VPN, encrypted-DNS resolvers, platform bases, search, commerce); remote-access and VPN apex/www names are web fronts",
+  "digest": "e0d6e39533a6ae9c",
+  "host_entries": 431,
+  "note": "262 more services on operator-owned domains (media, social, messaging, mail, storage and backup, business, management and endpoint security, developer, identity, generative AI, remote access and RMM, VPN and circumvention, cloud proxies, resolvers, commerce, news, education, advertising and measurement); remote-access, RMM and VPN apex/www names are web fronts",
   "released": "2026-11-15",
   "review": "engine-lane self-review against the operator-owned-domain rule; independent review pending",
   "reviewed": "2026-11-15",
-  "version": "2026.11.1"
+  "version": "2026.11.2"
 }

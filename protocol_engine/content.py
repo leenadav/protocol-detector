@@ -37,6 +37,12 @@ HISTORY = (
             "115 more services on operator-owned domains (streaming, gaming, social, messaging, storage, business, "
             "developer, identity, generative AI, remote access, VPN, encrypted-DNS resolvers, platform bases, search, "
             "commerce); remote-access and VPN apex/www names are web fronts"),
+    Release("2026.11.2", "2026-11-15", "2026-11-15",
+            "engine-lane self-review against the operator-owned-domain rule; independent review pending",
+            "262 more services on operator-owned domains (media, social, messaging, mail, storage and backup, business, "
+            "management and endpoint security, developer, identity, generative AI, remote access and RMM, VPN and "
+            "circumvention, cloud proxies, resolvers, commerce, news, education, advertising and measurement); "
+            "remote-access, RMM and VPN apex/www names are web fronts"),
 )
 CURRENT = HISTORY[-1].version
 LOCK_PATH = Path(__file__).with_name("content_lock.json")
@@ -62,7 +68,42 @@ _ADDED_2026_11_1 = (
     "bing", "duckduckgo", "baidu", "yandex", "google-ads", "google-analytics", "speedtest", "aliexpress", "walmart",
     "etsy", "shopify", "booking", "airbnb", "uber",
 )
+# Entries first released in 2026.11.2.
+_ADDED_2026_11_2 = (
+    "crunchyroll", "plex", "kick", "rumble", "bilibili", "espn", "dazn", "discovery-plus", "tidal", "audible",
+    "bandcamp", "iheartradio", "tunein", "gog", "ubisoft-connect", "minecraft", "unity", "nextdoor", "flickr",
+    "imgur", "9gag", "medium", "substack", "wordpress-com", "goodreads", "strava", "tinder", "bumble", "kakaotalk",
+    "zalo", "groupme", "google-chat", "intercom", "google-voice", "whereby", "jitsi-meet", "8x8", "dialpad",
+    "twilio", "vonage", "mailchimp", "sendgrid", "fastmail", "tuta-mail", "yandex-mail", "gmx-mail", "aol",
+    "google-photos", "gofile", "file-io", "transfer-sh", "catbox", "4shared", "sendspace", "sync-com", "egnyte",
+    "backblaze", "idrive", "sap", "oracle-cloud", "netsuite", "intuit", "xero", "freshworks", "gusto", "adp",
+    "bamboohr", "sap-concur", "expensify", "revolut", "wise", "venmo", "cash-app", "robinhood", "kraken",
+    "metamask", "wix", "squarespace", "godaddy", "namecheap", "tableau", "power-bi", "smartsheet", "clickup",
+    "basecamp", "calendly", "typeform", "surveymonkey", "lucid", "dropbox-sign", "pandadoc", "snowflake",
+    "databricks", "splunk-cloud", "datadog", "new-relic", "sentry", "pagerduty", "crowdstrike", "sentinelone",
+    "virustotal", "malwarebytes", "kaspersky", "norton", "mcafee", "avast", "bitdefender", "eset", "sophos",
+    "ms-telemetry", "apple-software-update", "mozilla", "android-services", "samsung", "xiaomi", "huawei",
+    "sourceforge", "circleci", "vercel", "netlify", "heroku", "digitalocean", "linode", "maven-central", "rubygems",
+    "crates-io", "go-modules", "nuget", "packagist", "gradle", "visual-studio", "postman", "sonarcloud", "snyk",
+    "codepen", "replit", "kaggle", "google-colab", "ubuntu", "debian", "fedora", "homebrew", "onelogin",
+    "ping-identity", "jumpcloud", "dashlane", "keeper", "authy", "lets-encrypt", "digicert", "cohere", "replicate",
+    "stability-ai", "elevenlabs", "runway", "jasper-ai", "copy-ai", "writesonic", "cursor", "windsurf", "tabnine",
+    "together-ai", "groq", "openrouter", "meta-ai", "suno", "phind", "you-com", "doubao", "baidu-ernie",
+    "alibaba-tongyi", "zhipu-ai", "google-ai-studio", "google-notebooklm", "beyondtrust", "connectwise-control",
+    "parsec", "nomachine", "remotepc", "gotomypc", "ammyy-admin", "supremo", "atera", "ninjaone", "kaseya",
+    "dwservice", "getscreen", "ngrok", "zoho-assist", "cyberghost", "private-internet-access", "ipvanish",
+    "windscribe", "tunnelbear", "hotspot-shield", "hide-me", "psiphon", "ultrasurf", "lantern", "tor-project",
+    "cloudflare-warp", "zscaler", "netskope", "opendns", "cleanbrowsing-dns", "controld-dns", "dns-sb",
+    "google-maps", "waze", "openstreetmap", "target", "best-buy", "costco", "ikea", "temu", "shein", "mercadolibre",
+    "rakuten", "flipkart", "taobao", "jd-com", "alibaba", "craigslist", "doordash", "instacart", "expedia",
+    "tripadvisor", "nytimes", "bbc", "cnn", "reuters", "the-guardian", "imdb", "weather-com", "internet-archive",
+    "coursera", "udemy", "khan-academy", "duolingo", "canvas-lms", "blackboard", "quizlet", "amazon-ads", "criteo",
+    "taboola", "outbrain", "appsflyer", "adjust", "mixpanel", "segment", "hotjar", "amplitude", "branch-io",
+    "onesignal", "braze", "scorecard-research", "quantcast", "the-trade-desk", "pubmatic", "magnite", "openx",
+    "xandr",
+)
 _PRIOR_HOST_STATE = MappingProxyType({
+    "2026.11.1": MappingProxyType({name: None for name in _ADDED_2026_11_2}),
     "2026.11.0": MappingProxyType({name: None for name in _ADDED_2026_11_1}),
     "2025.10.0": MappingProxyType({
         "github": {"domains": ("github.com", "githubusercontent.com", "githubassets.com", "github.io"), "web_fronts": ()},

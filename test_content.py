@@ -72,9 +72,13 @@ class RollbackTests(unittest.TestCase):
         old = {entry["name"]: entry for entry in content.host_entries("2025.10.0")}
         new = {entry["name"]: entry for entry in content.host_entries()}
         self.assertEqual(len(old), 53)
-        self.assertEqual(len(new), 169)
+        self.assertEqual(len(new), 431)
         previous = {entry["name"] for entry in content.host_entries("2026.11.0")}
         self.assertEqual(len(previous), 54)                         # 2026.11.1 added 115 services and changed none
+        middle = {entry["name"] for entry in content.host_entries("2026.11.1")}
+        self.assertEqual(len(middle), 169)                          # 2026.11.2 added 262 more
+        self.assertTrue(previous < middle < set(new) and "crowdstrike" not in middle and "nordvpn" in middle)
+        self.assertEqual(content.host_provenance()["crowdstrike"]["since"], "2026.11.2")
         self.assertTrue(previous < set(new) and "nordvpn" not in previous and "nordvpn" not in old)
         self.assertEqual(content.host_provenance()["nordvpn"]["since"], "2026.11.1")
         self.assertEqual(content.host_provenance()["youtube"]["since"], "2025.10.0")
