@@ -400,6 +400,13 @@ gates pass, host-named applications are added, the Python port-table cache is fi
 | Fixes found | fixed | session tables were walked in Go map order when several states ended together (insertion order now, regression test); an identified git or TPKT route kept its internal candidate name. |
 | Not switched | open | `protodetect live` (tcpdump adapter, compact tracking) and the presentation service (`presentation/server.py`, coordinator, key-log decryption glue) still run the Python engine; their adapters are not ported. |
 
+## M10 — CI for the Go engine (2026-11-15)
+
+| item | state | evidence |
+|---|---|---|
+| Engine gate | implemented | the `go-engine` job runs `make go-check`, which now also runs the capture, signature and decryption fuzz targets and `make parity-analyze` (Go binary against the Python reference, byte comparison). |
+| Vulnerability scan | implemented in CI, first hosted result pending | `toolchain-audit` runs the pinned govulncheck in source mode over `go/` (`go.mod`/`go.sum` as committed). The workflow lock was regenerated in the same change (rule 14). It could not be run in this session (blocked by the session's permission policy), so the first result is the hosted run on this commit. |
+
 ## Open after M7
 
 - Default-backend switch, merge and deployment: Lee's decision (AGENTS.md); the branch makes no switch.

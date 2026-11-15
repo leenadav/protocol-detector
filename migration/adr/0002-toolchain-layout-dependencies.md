@@ -37,8 +37,8 @@ Status: accepted for M2 (2026-11-07).
   `chacha20poly1305` (TLS_CHACHA20_POLY1305_SHA256, which the reference decrypts with the `cryptography`
   package). It pulls `golang.org/x/sys` v0.50.0 (BSD-3-Clause, CPU feature detection) indirectly. Both are
   pinned in `go/go.sum` and verified against sum.golang.org by the CI `go-engine` job (`-mod=readonly`).
-  Open for the CI/CD lane (M10): run `govulncheck` over `go/` in the gate; it was not run when the
-  dependency was added.
+  `govulncheck` runs over `go/` in the CI `toolchain-audit` job since 2026-11-15 (source mode, the pinned
+  govulncheck build of `tools/scanners`); it was not run locally when the dependency was added.
 
 ## Gates
 
