@@ -216,6 +216,9 @@ func init() {
 		"dns": func(cfg contracts.Config) (parsing.Parser, error) {
 			return dnsx.NewTCP(cfg.MaxBytes), nil
 		},
+		"stun": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewSTUN(cfg.MaxBytes), nil
+		},
 	}
 	for name := range factories {
 		if !internalCandidates[name] {

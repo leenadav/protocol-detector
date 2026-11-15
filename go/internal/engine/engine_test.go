@@ -33,8 +33,12 @@ func TestHintSelectsButNeverEstablishes(t *testing.T) {
 	if ev := in2.Feed([]byte("GET / HTTP/1.1\r\n\r\n")); len(ev) != 1 || ev[0].Observation.Status != contracts.Malformed {
 		t.Fatalf("a tls hint on HTTP bytes: %+v", ev)
 	}
-	if _, err := New(contracts.DefaultConfig(), "stun"); err == nil { // STUN over TCP is still unported; http2, smb2 and rdp were the example earlier
-		t.Fatal("unported hint accepted")
+	// Every registry candidate is ported now (stun, http2, smb2 and rdp were the unported example earlier); a name
+	// outside the registry and an internal dispatch route are still refused, as Python refuses them.
+	for _, hint := range []string{"no-such-family", "git_text", "tpkt"} {
+		if _, err := New(contracts.DefaultConfig(), hint); err == nil {
+			t.Fatalf("hint %q accepted", hint)
+		}
 	}
 }
 

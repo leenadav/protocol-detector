@@ -2096,7 +2096,7 @@
         "client"
       ],
       "go": {
-        "notes": "M5 batch 13: STUN Binding and TURN methods, attribute rules and FINGERPRINT CRC; 31 datagram cases matched",
+        "notes": "M5 batch 13: STUN Binding and TURN methods, attribute rules and FINGERPRINT CRC; 31 datagram cases matched. Over TCP (one framed message, the datagram profile): 26 stream and 3 session cases matched, plus 4,000 generated streams compared outside the committed set",
         "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
