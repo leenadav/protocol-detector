@@ -26,7 +26,6 @@
   "session/002-stun/plain": "not ported in the Go backend: family stun",
   "session/002-stun/reordered": "not ported in the Go backend: family stun",
   "session/002-stun/split": "not ported in the Go backend: family stun",
-  "session/options/continuation": "not ported in the Go backend: option continuation (HTTP)",
   "session/quic/assembly-conflict-sticky": "not ported in the Go backend: datagram candidate quic",
   "session/quic/reordered-assembly": "not ported in the Go backend: datagram candidate quic",
   "stream/002-stun/bytes": "not ported in the Go backend: family stun",
@@ -73,7 +72,6 @@
   "stream/hint-stun/tls-hello": "not ported in the Go backend: hint stun",
   "stream/hint-stun/truncated": "not ported in the Go backend: hint stun",
   "stream/hint-stun/zeros": "not ported in the Go backend: hint stun",
-  "stream/options/continuation": "not ported in the Go backend: option continuation (HTTP)",
   "stream/options/fingerprints": "not ported in the Go backend: option fingerprints (TLS)"
  },
  "schema": 1
