@@ -127,6 +127,10 @@ func orders(row map[string][]string) pyjson.Orders {
 	}
 }
 
+// Orders is the key order of the reference's fixed layouts for a row rooted at "session" (a session record,
+// or another row that carries the layered view), with the row's own evidence-ordered maps.
+func Orders(row map[string][]string) pyjson.Orders { return orders(row) }
+
 var rejectKinds = []string{"link", "network", "fragment", "length", "transport", "truncated", "checksum", "malformed"}
 
 // quality is InputQuality("recorded", checksums).

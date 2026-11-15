@@ -428,6 +428,17 @@ func New(cfg contracts.Config, hint string) (*Inspector, error) {
 	return in, nil
 }
 
+// NewDecrypted is Inspector(source='decrypted'): an inspector for plaintext a decoder authenticated, whose
+// evidence carries the decrypted provenance.
+func NewDecrypted(cfg contracts.Config) (*Inspector, error) {
+	in, err := New(cfg, "")
+	if err != nil {
+		return nil, err
+	}
+	in.source, in.shiftSource = "decrypted", "decrypted"
+	return in, nil
+}
+
 func (in *Inspector) Terminal() bool { return in.terminal }
 
 func (in *Inspector) publish(obs contracts.Observation, kind contracts.Kind) []contracts.Event {

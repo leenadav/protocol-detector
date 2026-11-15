@@ -185,6 +185,9 @@ func (t *Tracker) Tracked(a, b transport.Endpoint) *State {
 	return t.udpFlows[KeyOf(a, b)]
 }
 
+// TracksTCP reports whether a TCP connection with this key is tracked (key in Analyzer.tracked).
+func (t *Tracker) TracksTCP(key Key) bool { _, ok := t.tracked[key]; return ok }
+
 func (t *Tracker) closed(state *State, reason string, delivered map[transport.Endpoint]int, sinks map[transport.Endpoint]Sink) {
 	if t.onClosed != nil {
 		t.onClosed(Closed{State: state, Reason: reason, End: t.now, Delivered: delivered, Sinks: sinks})

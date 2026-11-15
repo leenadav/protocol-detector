@@ -42,6 +42,10 @@ Status: accepted for M2 (2026-11-07).
 
 ## Gates
 
+2026-11-15: `make go-check` also runs `make parity-analyze` and `make parity-decrypt`. The second compares key-log
+decryption with the Python reference, which decrypts with the `cryptography` package, so the CI `go-engine` job
+installs the repository's hash-pinned decryption lock first; the Go module itself gains no dependency from it.
+
 `make go-check` (root Makefile): `gofmt -l`, `go vet`, `go test -race`, and short fuzz runs of every
 `Fuzz*` target; it is separate from `make check` until the CI/CD lane wires the toolchain into the
 hosted workflow (one writer per lane).

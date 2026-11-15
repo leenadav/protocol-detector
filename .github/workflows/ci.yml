@@ -569,8 +569,9 @@ jobs:
     # Migration M10: the Go engine's own gate on GitHub's runners, on the one Go toolchain the scanner
     # builds use (tools/check_go_drift.py keeps it the newest patch of a supported line; tools/go_ci.py
     # refuses a go/go.mod that declares another). `make go-check` is gofmt, go vet, go test -race,
-    # the fuzz smoke targets and `make parity-go` (every committed fixture replayed through the Go
-    # engine and compared with the Python reference's answers). A commit without the migration tree has
+    # the fuzz smoke targets, `make parity-go` (every committed fixture replayed through the Go
+    # engine and compared with the Python reference's answers), `make parity-analyze` and
+    # `make parity-decrypt` (the Go binary against the reference on generated captures and key logs). A commit without the migration tree has
     # nothing to check and says so in the summary; one with part of it fails.
     name: Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)
     runs-on: ubuntu-24.04
@@ -591,6 +592,8 @@ jobs:
         with:
           go-version: "1.27.4"
           cache: false
+      - name: Install the hash-pinned decryption extra (the Python reference of `make parity-decrypt` decrypts with it)
+        run: python -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt
       - name: Go engine gate (make go-check) and parity report floor
         env:
           GOPROXY: https://proxy.golang.org
