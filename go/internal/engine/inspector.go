@@ -37,7 +37,7 @@ var factories map[string]func(cfg contracts.Config) (parsing.Parser, error)
 func init() {
 	factories = map[string]func(cfg contracts.Config) (parsing.Parser, error){
 		"text": func(cfg contracts.Config) (parsing.Parser, error) {
-			return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation})
+			return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation, MaxTransactions: cfg.MaxTransactions})
 		},
 		"irc": func(cfg contracts.Config) (parsing.Parser, error) {
 			return textroute.NewIRC(cfg.MaxLine), nil
@@ -503,7 +503,7 @@ func joinComma(parts []string) string {
 	return out
 }
 
-// Feed ports Inspector.feed without the signature/heuristic unknown buffer and the continuation paths.
+// Feed ports Inspector.feed without the signature/heuristic unknown buffer.
 func (in *Inspector) Feed(data []byte) []contracts.Event {
 	in.Metrics.BytesReceived += len(data)
 	if in.terminal || len(data) == 0 {

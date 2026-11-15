@@ -20,8 +20,10 @@ type Options struct {
 	MaxLine      int
 	MaxHeaders   int
 	MaxBytes     int
-	Continuation int
-	ForceHTTP    bool // parsers.LineParser(config, "http"): skip the first-line route (the SSDP datagram profile)
+	Continuation int // D07 byte budget after an HTTP/1 identification; 0 = off
+	// MaxTransactions caps the HTTP/1 messages a continuation counts per direction (Config.max_transactions).
+	MaxTransactions int
+	ForceHTTP       bool // parsers.LineParser(config, "http"): skip the first-line route (the SSDP datagram profile)
 }
 
 const token = `[!#$%&'*+.^_` + "`" + `|~0-9A-Za-z-]+`
@@ -217,6 +219,9 @@ type Parser struct {
 	smtpWatched      int
 	control          *controlHeaders
 	maxBytes         int
+	cont             *httpContinuation // D07: later messages of this direction within Options.Continuation
+	subordinate      bool              // a per-message parser owned by a continuation never starts one itself
+	baseExtra        []parsing.Row     // the identifying message's evidence, before continuation evidence
 }
 
 // ResolvedFamily is the family the first line resolved to ("text" before that).
@@ -227,11 +232,9 @@ func (p *Parser) ResolvedFamily() string {
 	return p.family
 }
 
-// New creates the text-route parser; the continuation option is NotPorted.
+// New creates the text-route parser. With opts.Continuation an HTTP/1 identification keeps framing later
+// messages of its direction (continuation.go); the other text families ignore the option, as in Python.
 func New(opts Options) (*Parser, error) {
-	if opts.Continuation != 0 {
-		return nil, &parsing.NotPorted{What: "option continuation (HTTP)"}
-	}
 	return &Parser{opts: opts, first: true, reason: "Waiting for complete line", refined: true, maxBytes: opts.MaxBytes}, nil
 }
 
@@ -253,14 +256,28 @@ func (p *Parser) Done() bool { return p.done }
 func (p *Parser) Result() *parsing.Result {
 	if p.mode == "http" || p.mode == "" {
 		return &parsing.Result{Family: "http", ProtocolName: p.protocolName, Host: p.host, HasHost: p.hasHost, HostSource: "http_host",
-			ALPN: []string{}, Extra: p.extra, Reason: p.reason, Scope: p.scope, Shift: p.shift}
+			ALPN: []string{}, Extra: p.extra, Reason: p.reason, Scope: p.scope, Shift: p.shift, Continues: p.continues}
 	}
 	return &parsing.Result{Family: p.family, ProtocolName: p.protocolName2, ALPN: []string{}, Extra: p.extra, Reason: p.reason,
 		Scope: p.scope, Shift: p.shift, Continues: p.continues}
 }
 
-// Feed ports LineParser.feed for the HTTP protocol (no SSH/IRC limits, no continuation).
+// Feed ports LineParser.feed (TextParser route, SSH KEXINIT, SMTP watch, HTTP/1 continuation).
 func (p *Parser) Feed(data []byte) (int, error) {
+	if p.cont != nil {
+		consumed := p.cont.feed(data)
+		p.continuationEvidence()
+		if p.cont.done {
+			if p.cont.shift != nil {
+				p.shift, p.scope = p.cont.shift, p.cont.scope
+				if p.scope == "" {
+					p.scope = "initial_message"
+				}
+			}
+			p.cont, p.continues = nil, false
+		}
+		return consumed, nil
+	}
 	if p.continues && p.kexinit != nil {
 		consumed, err := p.kexinit.feed(data)
 		if err != nil {
@@ -720,7 +737,21 @@ func (p *Parser) consumeLine(line []byte) error {
 		}
 		p.done = true
 		p.reason = "HTTP start-line and headers validated; body and later requests not inspected"
-		return p.shiftBoundary()
+		if err := p.shiftBoundary(); err != nil {
+			return err
+		}
+		if p.shift == nil && p.opts.Continuation > 0 && !p.subordinate {
+			p.baseExtra = append([]parsing.Row{}, p.extra...)
+			p.cont = newHTTPContinuation(p.opts, p)
+			p.reason = "HTTP start-line and headers validated; later messages framed within the continuation budget"
+			p.refined = false
+			p.continues = !p.cont.done
+			if !p.continues {
+				p.continuationEvidence()
+				p.cont = nil
+			}
+		}
+		return nil
 	}
 	p.headers++
 	if p.headers > p.opts.MaxHeaders {
@@ -816,6 +847,12 @@ func (p *Parser) consumeLine(line []byte) error {
 		p.h2Settings = true
 	}
 	return nil
+}
+
+// continuationEvidence ports LineParser._continuation_evidence.
+func (p *Parser) continuationEvidence() {
+	p.extra = append(append([]parsing.Row{}, p.baseExtra...), p.cont.evidence()...)
+	p.refined = true
 }
 
 // h2SettingsValue ports the base64url character check `[A-Za-z0-9_\-]{0,1024}` (RE2 caps repeat counts).

@@ -321,6 +321,9 @@ type Parser struct {
 	hasHelloSize    bool
 	done            bool
 	result          *parsing.Result
+	cont            *tlsContinuation // D07: record framing after the hello within Options.Continuation
+	baseExtra       []parsing.Row
+	unrefined       bool // parsers.TLSParser.refined is False until the continuation fed bytes
 }
 
 // New creates the parser; options the Go backend lacks fail at construction with NotPorted.
@@ -331,17 +334,26 @@ func New(opts Options) (*Parser, error) {
 	if opts.Certificates {
 		return nil, &parsing.NotPorted{What: "option certificates (TLS)"}
 	}
-	if opts.Continuation != 0 {
-		return nil, &parsing.NotPorted{What: "option continuation (TLS)"}
-	}
 	return &Parser{opts: opts}, nil
 }
 
 func (p *Parser) Done() bool              { return p.done }
 func (p *Parser) Result() *parsing.Result { return p.result }
 
-// Feed ports TLSParser.feed for the hello (no watch, no continuation).
+// Refined reports whether the published identification is complete (false until a continuation fed bytes).
+func (p *Parser) Refined() bool { return !p.unrefined }
+
+// Feed ports TLSParser.feed for the hello and the record-layer continuation (no certificate watch).
 func (p *Parser) Feed(data []byte) (int, error) {
+	if p.cont != nil {
+		consumed := p.cont.feed(data)
+		p.result.Extra = append(append([]parsing.Row{}, p.baseExtra...), p.cont.evidence()...)
+		p.unrefined = false
+		if p.cont.done {
+			p.cont, p.result.Continues = nil, false
+		}
+		return consumed, nil
+	}
 	pos := 0
 	for pos < len(data) && !p.done {
 		if p.recordRemaining == 0 {
@@ -425,6 +437,11 @@ func (p *Parser) Feed(data []byte) (int, error) {
 			}
 			p.handshake = nil
 			p.done = true
+			if p.opts.Continuation > 0 {
+				p.baseExtra = append([]parsing.Row{}, p.result.Extra...)
+				p.cont = newTLSContinuation(p.opts.Continuation, p.recordRemaining)
+				p.unrefined, p.result.Continues = true, true
+			}
 		}
 	}
 	return pos, nil

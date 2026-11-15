@@ -2,14 +2,16 @@
 // tracker drives TCP connections with the engine attached as each direction's sink, the datagram
 // inspector classifies UDP payloads per flow, and when tracking of a connection or flow ends one
 // JSON-friendly session record is produced (verdict, flow risks, layered view, structured unknown
-// reasons, decision timing, content pin). Signatures, policy, hostnames-in-records, certificates,
-// continuation and the live telemetry are not ported; a direction the engine cannot answer makes the
+// reasons, decision timing, content pin, the HTTP/1 continuation summary). Signatures, policy,
+// hostnames-in-records, certificates and the live telemetry are not ported; a direction the engine cannot answer makes the
 // whole run report NotPorted instead of a record.
 package analyzer
 
 import (
 	"math"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/appid"
 	"github.com/leenadav/protocol-detector/go/internal/content"
@@ -318,6 +320,9 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 	record["observation"] = map[string]interface{}{"mode": observationMode,
 		"handshake_observed": transportName == "tcp" && (state.Mode == "" || state.Mode == session.ModeHandshake) && state.Ready,
 		"directions_seen":    seen, "roles": roles}
+	if summary := continuationSummary(clientObs, serverObs); len(summary) > 0 {
+		record["continuation"] = summary // D07: what followed the identification, per direction
+	}
 	quality := "intact"
 	if len(state.Input) > 0 {
 		record["input_quality"] = state.Input
@@ -485,4 +490,48 @@ func (a *Analyzer) correlateLDAP(state *session.State, client, server *Sink, ope
 	if opened {
 		a.Tracker.Counts["ldap_starttls_correlated"]++
 	}
+}
+
+// continuationFields is continuation.SUMMARY_FIELDS.
+var continuationFields = map[string]bool{"http_messages": true, "http_methods": true, "http_status_classes": true, "http_host_variation": true,
+	"tls_records": true, "tls_application_data": true, "tls_alert": true, "continuation": true}
+
+// continuationSummary ports continuation.continuation_summary: per-direction continuation evidence ({} when none ran).
+func continuationSummary(client, server *contracts.Observation) map[string]interface{} {
+	summary := map[string]interface{}{}
+	for _, side := range []struct {
+		name string
+		obs  *contracts.Observation
+	}{{"client", client}, {"server", server}} {
+		if side.obs == nil {
+			continue
+		}
+		fields := map[string]interface{}{}
+		for _, item := range side.obs.Evidence {
+			source := item.Source
+			if i := strings.LastIndexByte(source, ':'); i >= 0 {
+				source = source[i+1:]
+			}
+			if source != "continuation" || !continuationFields[item.Field] {
+				continue
+			}
+			key := item.Field
+			if key == "continuation" {
+				key = "ended"
+			}
+			if item.Field == "http_messages" {
+				n, err := strconv.Atoi(item.Value)
+				if err != nil {
+					continue
+				}
+				fields[key] = n
+			} else {
+				fields[key] = item.Value
+			}
+		}
+		if len(fields) > 0 {
+			summary[side.name] = fields
+		}
+	}
+	return summary
 }
