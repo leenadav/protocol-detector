@@ -29,7 +29,7 @@ var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"dcerpc", "websocket", "xmpp", "syslog", "git",
 	"netbios-ss", "tacacs-plus", "socks5", "wireguard", "bacnet",
 	"tftp", "ntp", "l2tp", "coap", "rip", "rtcp", "lifx-lan", "tuya-lan",
-	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap", "smb1", "smb2", "rdp", "iso-tsap", "ikev2", "quic"}
+	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap", "smb1", "smb2", "rdp", "iso-tsap", "ikev2", "quic", "http2"}
 
 // factories builds the parser of each candidate; it is the single registry of what the Go backend ports.
 var factories map[string]func(cfg contracts.Config) (parsing.Parser, error)
@@ -174,6 +174,15 @@ func init() {
 		"dcerpc": func(cfg contracts.Config) (parsing.Parser, error) {
 			return framed.NewDCERPC(cfg.MaxBytes, cfg.MaxHeaders), nil
 		},
+		"http2": func(cfg contracts.Config) (parsing.Parser, error) {
+			if cfg.Fingerprints {
+				return nil, &parsing.NotPorted{What: "option fingerprints (HTTP/2 SETTINGS)"}
+			}
+			return textroute.NewHTTP2(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes}), nil
+		},
+		"http2-server": func(cfg contracts.Config) (parsing.Parser, error) {
+			return textroute.NewHTTP2Server(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes}), nil
+		},
 		"websocket": func(cfg contracts.Config) (parsing.Parser, error) {
 			return framed.NewWebSocket(), nil
 		},
@@ -308,6 +317,24 @@ func (in *Inspector) Replay(data []byte) ([]contracts.Event, bool) {
 	}
 	in.Metrics.BytesReceived -= len(data)
 	return in.Feed(data), true
+}
+
+// Expect ports Inspector.expect: a host-driven candidate, when the peer direction established which family this one
+// must be (the server side of an HTTP/2 connection with prior knowledge, whose first SETTINGS frame no prefix routes).
+// The candidate only selects the parser; its bytes still have to validate. It is adopted only before any byte
+// arrived and when no hint exists; it reports whether it was adopted.
+func (in *Inspector) Expect(candidate, source string) bool {
+	if _, ok := factories[candidate]; !ok || internalCandidates[candidate] {
+		panic("engine: unsupported expected candidate " + candidate)
+	}
+	if source == "" || len(source) > 64 {
+		panic("engine: expectation source must be a short name")
+	}
+	if in.Metrics.BytesReceived > 0 || in.hint != "" || in.terminal || in.next != nil {
+		return false
+	}
+	in.hint, in.hintSource = candidate, "peer:"+source
+	return true
 }
 
 // HasBoundary reports whether Boundary is set (a terminal identified message ended there).

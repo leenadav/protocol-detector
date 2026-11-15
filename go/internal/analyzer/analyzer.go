@@ -398,7 +398,25 @@ func (a *Analyzer) correlate(state *session.State, source transport.Endpoint) []
 	}
 	a.correlateConnect(state, client, server, open)
 	a.correlateLDAP(state, client, server, open)
+	a.correlateHTTP2(client, server)
 	return changed
+}
+
+// correlateHTTP2 ports Analyzer._correlate_http2: with prior knowledge (RFC 9113 3.3, including after ALPN) the
+// server's first frame is a bare SETTINGS frame no prefix routes anywhere, so once the client preface identified
+// the connection the server direction expects HTTP/2; its bytes still have to validate as SETTINGS and HEADERS.
+// Only a direction that has not sent anything yet adopts the expectation.
+func (a *Analyzer) correlateHTTP2(client, server *Sink) {
+	request := client.In.Observation
+	if request.Status != contracts.Identified || request.ApplicationProtocol == nil || *request.ApplicationProtocol != "http/2" {
+		return
+	}
+	if _, shifted := evidenceValue(request, "shift"); shifted {
+		return
+	}
+	if server.In.Expect("http2-server", "http2-preface") {
+		a.Tracker.Counts["http2_servers_expected"]++
+	}
 }
 
 func hasIdentified(events []contracts.Event) bool {

@@ -623,9 +623,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "Client preface and initial SETTINGS (identification), then the first HEADERS block decoded with a bounded RFC 7541 HPACK decoder (Huffman, dynamic table); http2-server for the h2c-upgrade shift and prior knowledge (the analyzer's expectation after a client preface); 18 hint cases matched, plus 7,000 generated stream and session scenarios compared outside the committed set; SETTINGS and pseudo-header fingerprints not ported",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
