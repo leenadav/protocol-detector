@@ -64,6 +64,8 @@ type Result struct {
 	Scope        string // "" means initial_message
 	Shift        *Shift
 	Continues    bool
+	// Fingerprints are derived rows (Config.fingerprints), published after Extra with the "derived" strength.
+	Fingerprints []Row
 	// LDAPMessageID is the message id of an LDAP message (HasLDAPMessageID): private host-correlation metadata,
 	// never evidence (binary.LDAPParser.correlation).
 	LDAPMessageID    int

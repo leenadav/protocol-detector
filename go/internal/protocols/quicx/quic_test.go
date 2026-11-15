@@ -257,3 +257,17 @@ func FuzzValidateStaysBounded(f *testing.F) {
 		}
 	})
 }
+
+// With fingerprints the RFC 9001 ClientHello carries the reference's JA4 (protocol code q).
+func TestRFC9001JA4(t *testing.T) {
+	opts := defaults
+	opts.Fingerprints = true
+	m, err := Validate(load(t, "rfc9001_client_initial.hex"), opts, nil, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	last := m.Evidence[len(m.Evidence)-1]
+	if last.Field != "ja4" || last.Value != "q13d0211an_62ed6f6ca7ad_4d634acda6c0" || last.Source != "wire:quic_client_hello" || last.Strength != "derived" {
+		t.Fatalf("%+v", last)
+	}
+}

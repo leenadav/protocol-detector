@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/fingerprint"
 )
 
 // dtls.go ports protocol_engine/dtls.py (RFC 6347): one epoch-zero record holding one complete DTLS 1.2
@@ -23,7 +24,7 @@ type DTLSMatch struct {
 
 func uint24(b []byte) int { return int(b[0])<<16 | int(b[1])<<8 | int(b[2]) }
 
-// DTLS is dtls.dtls. fingerprints (JA4 with protocol code d) is not ported: a valid ClientHello answers NotPorted.
+// DTLS is dtls.dtls; with fingerprints a valid ClientHello also carries its JA4 (protocol code d).
 func DTLS(data []byte, maxBytes, maxHeaders int, fingerprints bool) (*DTLSMatch, error) {
 	if len(data) < 25 {
 		return nil, parsing.Malformed("Incomplete DTLS record/handshake headers")
@@ -133,12 +134,9 @@ func DTLS(data []byte, maxBytes, maxHeaders int, fingerprints bool) (*DTLSMatch,
 	}
 	// Translate only the wire layout for the shared structural decoder; this selects no version.
 	translated := append(append([]byte{3, 3}, body[2:cookieStart]...), body[cookieEnd:]...)
-	fields, err := parseHello(translated)
+	fields, err := parseHello(translated, fingerprints)
 	if err != nil {
 		return nil, err
-	}
-	if fingerprints {
-		return nil, &parsing.NotPorted{What: "option fingerprints (DTLS JA4)"}
 	}
 	m := &DTLSMatch{Rows: []parsing.Row{{Field: "encryption", Value: "dtls", Provenance: "wire", Strength: "structural"},
 		{Field: "handshake", Value: "client_hello", Provenance: "wire", Strength: "structural"},
@@ -154,6 +152,10 @@ func DTLS(data []byte, maxBytes, maxHeaders int, fingerprints bool) (*DTLSMatch,
 	}
 	if len(fields.alpn) > 0 {
 		m.Rows = append(m.Rows, parsing.Row{Field: "offered_alpn", Value: strings.Join(fields.alpn, ","), Provenance: "dtls_alpn", Strength: "asserted"})
+	}
+	if fields.info != nil {
+		fields.info.Version = 0xfefd // the DTLS 1.2 legacy version, not the translated TLS wire layout
+		m.Rows = append(m.Rows, parsing.Row{Field: "ja4", Value: fingerprint.JA4(fields.info, "d"), Provenance: "wire:dtls_client_hello", Strength: "derived"})
 	}
 	return m, nil
 }

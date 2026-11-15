@@ -1,7 +1,5 @@
 {
  "backend": "go",
- "gaps": {
-  "stream/options/fingerprints": "not ported in the Go backend: option fingerprints (TLS)"
- },
+ "gaps": {},
  "schema": 1
 }

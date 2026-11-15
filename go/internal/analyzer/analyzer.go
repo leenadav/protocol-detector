@@ -112,12 +112,14 @@ type PeerEvent struct {
 type Options struct {
 	Session      session.Options
 	Continuation int
+	Fingerprints bool
 }
 
 // New builds an analyzer; options the engine lacks are reported through NotPorted on first use.
 func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 	cfg := contracts.DefaultConfig()
 	cfg.Continuation = opts.Continuation
+	cfg.Fingerprints = opts.Fingerprints
 	a := &Analyzer{pack: pack, cfg: cfg}
 	tr, err := session.NewTracker(opts.Session, func() session.Sink {
 		in, err := engine.New(cfg, "")
@@ -353,6 +355,21 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 	record["layers"] = appid.LayeredView(a.pack, transportName, clientObs, serverObs, verdict, quality)
 	if state.HasFirst {
 		record["decision"] = map[string]interface{}{"first_seconds": round6(state.FirstDecision - state.Start), "stable_seconds": round6(state.StableAt - state.Start)}
+	}
+	// Derived evidence (Config.fingerprints) of both directions, by field; a later direction's value wins.
+	fingerprints := map[string]interface{}{}
+	for _, obs := range []*contracts.Observation{clientObs, serverObs} {
+		if obs == nil {
+			continue
+		}
+		for _, e := range obs.Evidence {
+			if e.Strength == "derived" {
+				fingerprints[e.Field] = e.Value
+			}
+		}
+	}
+	if len(fingerprints) > 0 {
+		record["fingerprints"] = fingerprints
 	}
 	a.Records = append(a.Records, record)
 }

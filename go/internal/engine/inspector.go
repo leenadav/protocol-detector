@@ -37,7 +37,7 @@ var factories map[string]func(cfg contracts.Config) (parsing.Parser, error)
 func init() {
 	factories = map[string]func(cfg contracts.Config) (parsing.Parser, error){
 		"text": func(cfg contracts.Config) (parsing.Parser, error) {
-			return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation, MaxTransactions: cfg.MaxTransactions})
+			return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation, MaxTransactions: cfg.MaxTransactions, Fingerprints: cfg.Fingerprints})
 		},
 		"irc": func(cfg contracts.Config) (parsing.Parser, error) {
 			return textroute.NewIRC(cfg.MaxLine), nil
@@ -175,13 +175,10 @@ func init() {
 			return framed.NewDCERPC(cfg.MaxBytes, cfg.MaxHeaders), nil
 		},
 		"http2": func(cfg contracts.Config) (parsing.Parser, error) {
-			if cfg.Fingerprints {
-				return nil, &parsing.NotPorted{What: "option fingerprints (HTTP/2 SETTINGS)"}
-			}
-			return textroute.NewHTTP2(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes}), nil
+			return textroute.NewHTTP2(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Fingerprints: cfg.Fingerprints}), nil
 		},
 		"http2-server": func(cfg contracts.Config) (parsing.Parser, error) {
-			return textroute.NewHTTP2Server(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes}), nil
+			return textroute.NewHTTP2Server(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Fingerprints: cfg.Fingerprints}), nil
 		},
 		"websocket": func(cfg contracts.Config) (parsing.Parser, error) {
 			return framed.NewWebSocket(), nil
@@ -487,6 +484,9 @@ func (in *Inspector) identified() contracts.Observation {
 	}
 	for _, row := range r.Extra {
 		evidence = append(evidence, contracts.Evidence{Field: row.Field, Value: row.Value, Source: in.source + ":" + row.Provenance, Strength: row.Strength})
+	}
+	for _, row := range r.Fingerprints {
+		evidence = append(evidence, contracts.Evidence{Field: row.Field, Value: row.Value, Source: in.source + ":" + row.Provenance, Strength: "derived"})
 	}
 	if evidence == nil {
 		evidence = []contracts.Evidence{}

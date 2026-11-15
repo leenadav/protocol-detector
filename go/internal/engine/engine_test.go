@@ -49,11 +49,11 @@ func TestOptionsTheBackendLacksAreRefusedUpFront(t *testing.T) {
 		t.Fatal("heuristics accepted")
 	}
 	cfg = contracts.DefaultConfig()
-	cfg.Fingerprints = true
+	cfg.Certificates = true
 	in, _ := New(cfg, "")
 	in.Feed([]byte{0x16, 0x03, 0x01, 0x00, 0x05, 0x01})
 	if in.NotPorted == nil {
-		t.Fatal("fingerprints on TLS not reported as unsupported")
+		t.Fatal("certificates on TLS not reported as unsupported")
 	}
 }
 

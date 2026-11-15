@@ -4,6 +4,7 @@
 package replay
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -135,13 +136,17 @@ func Session(pack *content.Pack, c *parity.Case) interface{} {
 		IdleTimeout  *float64 `json:"idle_timeout"`
 		Observation  string   `json:"observation"`
 		Continuation int      `json:"continuation"`
+		Fingerprints bool     `json:"fingerprints"`
 	}
 	if len(c.Options) > 0 {
-		if err := json.Unmarshal(c.Options, &options); err != nil {
-			return Unsupported{"bad options"}
+		// An option the Go analyzer does not know is reported, never silently dropped.
+		decoder := json.NewDecoder(bytes.NewReader(c.Options))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&options); err != nil {
+			return Unsupported{"session option not ported in the Go backend: " + err.Error()}
 		}
 	}
-	opts := analyzer.Options{Continuation: options.Continuation,
+	opts := analyzer.Options{Continuation: options.Continuation, Fingerprints: options.Fingerprints,
 		Session: session.Options{MaxConnections: 32, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1, Observation: options.Observation}}
 	if options.IdleTimeout != nil {
 		opts.Session.IdleTimeout = *options.IdleTimeout

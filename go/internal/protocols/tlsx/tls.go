@@ -11,6 +11,7 @@ import (
 
 	"github.com/leenadav/protocol-detector/go/internal/names"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/fingerprint"
 )
 
 const (
@@ -113,6 +114,7 @@ func echType(value []byte) (string, error) {
 }
 
 type helloFields struct {
+	info          *fingerprint.ClientHello // collected only when asked (parse_hello with a ClientHelloInfo)
 	hostname      string
 	hasHost       bool
 	alpn          []string
@@ -122,10 +124,26 @@ type helloFields struct {
 	ciphers       []byte
 }
 
-// parseHello ports parse_hello without info collection (fingerprints/contexts are NotPorted upstream).
-func parseHello(body []byte) (*helloFields, error) {
+func u16List(data []byte) ([]int, error) {
+	if len(data)%2 != 0 {
+		return nil, parsing.Malformed("TLS list length is not a multiple of its element width")
+	}
+	out := make([]int, 0, len(data)/2)
+	for i := 0; i < len(data); i += 2 {
+		out = append(out, int(data[i])<<8|int(data[i+1]))
+	}
+	return out, nil
+}
+
+// parseHello ports parse_hello; with collect it also fills the ClientHelloInfo a fingerprint reads, which adds
+// the extension-count budget and strict parsing of the groups, point-format, signature-algorithm and
+// supported-version lists, exactly as the Python collection does.
+func parseHello(body []byte, collect bool) (*helloFields, error) {
 	size := len(body)
 	out := &helloFields{}
+	if collect {
+		out.info = &fingerprint.ClientHello{}
+	}
 	if size < 2 {
 		return nil, parsing.Malformed(errField)
 	}
@@ -170,6 +188,10 @@ func parseHello(body []byte) (*helloFields, error) {
 		return nil, parsing.Malformed("Invalid cipher or compression vector")
 	}
 	out.ciphers = ciphers
+	if collect {
+		out.info.Version = out.legacyVersion
+		out.info.Ciphers, _ = u16List(ciphers) // even length checked above
+	}
 	if pos == size {
 		return out, nil
 	}
@@ -205,6 +227,15 @@ func parseHello(body []byte) (*helloFields, error) {
 			return nil, parsing.Malformed("Duplicate TLS extension")
 		}
 		seen[kind] = true
+		if collect {
+			out.info.Extensions = append(out.info.Extensions, kind)
+			if len(out.info.Extensions) > 128 {
+				return nil, parsing.Budget("ClientHello extension count exceeds inspection limit")
+			}
+		}
+		if err := collectList(out.info, kind, value); err != nil {
+			return nil, err
+		}
 		switch kind {
 		case 43:
 			if len(value) == 0 || int(value[0]) != len(value)-1 || value[0]%2 != 0 {
@@ -212,6 +243,9 @@ func parseHello(body []byte) (*helloFields, error) {
 			}
 			for i := 1; i+1 < len(value); i += 2 {
 				out.supported = append(out.supported, int(value[i])<<8|int(value[i+1]))
+			}
+			if out.info != nil {
+				out.info.SupportedVersions = append([]int{}, out.supported...)
 			}
 		case echExt:
 			ech, err := echType(value)
@@ -285,7 +319,43 @@ func parseHello(body []byte) (*helloFields, error) {
 			out.alpn = protocols
 		}
 	}
+	if collect {
+		out.info.ALPN = out.alpn
+	}
 	return out, nil
+}
+
+// collectList parses the groups (10), point formats (11) and signature algorithms (13) lists into info (nil: no
+// collection). supported_versions (43) is copied after its own validation, which Python runs first.
+func collectList(info *fingerprint.ClientHello, kind int, value []byte) error {
+	if info == nil || (kind != 10 && kind != 11 && kind != 13) {
+		return nil
+	}
+	lists := &reader{data: value}
+	width := 2
+	if kind == 11 {
+		width = 1
+	}
+	list, err := lists.vector(width)
+	if err != nil {
+		return err
+	}
+	switch kind {
+	case 10:
+		if info.Groups, err = u16List(list); err != nil {
+			return err
+		}
+	case 11:
+		info.PointFormats = make([]int, len(list))
+		for i, b := range list {
+			info.PointFormats[i] = int(b)
+		}
+	case 13:
+		if info.SignatureAlgorithms, err = u16List(list); err != nil {
+			return err
+		}
+	}
+	return lists.end()
 }
 
 func isASCII(b []byte) bool {
@@ -328,9 +398,6 @@ type Parser struct {
 
 // New creates the parser; options the Go backend lacks fail at construction with NotPorted.
 func New(opts Options) (*Parser, error) {
-	if opts.Fingerprints {
-		return nil, &parsing.NotPorted{What: "option fingerprints (TLS)"}
-	}
 	if opts.Certificates {
 		return nil, &parsing.NotPorted{What: "option certificates (TLS)"}
 	}
@@ -411,7 +478,7 @@ func (p *Parser) Feed(data []byte) (int, error) {
 		if p.hasHelloSize && len(p.handshake) == p.helloSize+4 {
 			body := p.handshake[4:]
 			if p.handshake[0] == 1 {
-				fields, err := parseHello(body)
+				fields, err := parseHello(body, p.opts.Fingerprints)
 				if err != nil {
 					return pos, err
 				}
@@ -428,6 +495,10 @@ func (p *Parser) Feed(data []byte) (int, error) {
 				}
 				p.result = &parsing.Result{Host: fields.hostname, HasHost: fields.hasHost, ALPN: alpn, Extra: extra,
 					Reason: "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content"}
+				if fields.info != nil {
+					p.result.Fingerprints = []parsing.Row{{Field: "ja4", Value: fingerprint.JA4(fields.info, "t"), Provenance: "client_hello"},
+						{Field: "ja3", Value: fingerprint.JA3(fields.info), Provenance: "client_hello"}}
+				}
 			} else {
 				rows, scope, reason, err := parseServerHello(body, p.opts, p.recordVersions, p.recordRemaining)
 				if err != nil {
@@ -712,6 +783,24 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 		rows = append(rows, rowsOf("selected_key_exchange", tls12KeyExchange(cipher), "asserted"), rowsOf("selected_cipher_mode", mode, "asserted"))
 	}
 	rows = append(rows, rowsOf("selected_tls_version", version, "asserted"), rowsOf("selected_cipher", fmt.Sprintf("0x%04x", cipher), "asserted"))
+	if opts.Fingerprints && !retry {
+		var selected []string
+		for _, r := range rows {
+			if r.Field == "selected_alpn" {
+				selected = append(selected, r.Value)
+			}
+		}
+		negotiated := 0x0303
+		if tls13 {
+			negotiated = 0x0304
+		}
+		kinds := make([]int, len(extensions))
+		for i, e := range extensions {
+			kinds[i] = e.kind
+		}
+		rows = append(rows, rowsOf("ja4s", fingerprint.JA4S(negotiated, cipher, kinds, selected, "t"), "derived"),
+			rowsOf("ja3s", fingerprint.JA3S(negotiated, cipher, kinds), "derived"))
+	}
 	reason := "ServerHello structure validated; server selections unauthenticated, handshake completion unverified"
 	if retry {
 		reason = "HelloRetryRequest structure validated; requested changes unverified"
@@ -723,17 +812,19 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 // ClientHelloOffer is what a ClientHello body offers (parse_hello with an `offered` list): the SNI, ALPN names
 // and the encrypted_client_hello class. Used by the QUIC Initial validator on the assembled CRYPTO stream.
 type ClientHelloOffer struct {
+	Info     *fingerprint.ClientHello
 	Hostname string
 	HasHost  bool
 	ALPN     []string
 	ECH      string
 }
 
-// ParseClientHello validates a ClientHello body (the handshake message without its 4-byte header).
-func ParseClientHello(body []byte) (*ClientHelloOffer, error) {
-	fields, err := parseHello(body)
+// ParseClientHello validates a ClientHello body (the handshake message without its 4-byte header); collect fills
+// Info for a fingerprint.
+func ParseClientHello(body []byte, collect bool) (*ClientHelloOffer, error) {
+	fields, err := parseHello(body, collect)
 	if err != nil {
 		return nil, err
 	}
-	return &ClientHelloOffer{Hostname: fields.hostname, HasHost: fields.hasHost, ALPN: fields.alpn, ECH: fields.ech}, nil
+	return &ClientHelloOffer{Info: fields.info, Hostname: fields.hostname, HasHost: fields.hasHost, ALPN: fields.alpn, ECH: fields.ech}, nil
 }

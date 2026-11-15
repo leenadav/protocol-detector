@@ -71,7 +71,6 @@ class ParityHarnessTests(unittest.TestCase):
     def test_committed_gap_list_names_existing_cases(self):
         gaps = compare.load_gaps(CASES.parent.parent / "parity" / "gaps.json")
         ids = {c["id"] for c in self.doc["cases"]}
-        self.assertTrue(gaps)
         self.assertEqual(sorted(set(gaps) - ids), [])
         self.assertTrue(all(isinstance(reason, str) and reason for reason in gaps.values()))
 

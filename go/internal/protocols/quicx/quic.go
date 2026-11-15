@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/fingerprint"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
 )
 
@@ -79,7 +80,7 @@ type Options struct {
 	MaxHeaders   int
 	MaxBytes     int
 	Decrypt      bool // Config.quic_decrypt
-	Fingerprints bool // JA4 over the QUIC ClientHello is not ported: a complete hello then answers NotPorted
+	Fingerprints bool // JA4 (protocol code q) over a complete ClientHello
 }
 
 func hkdfExpandLabel(secret []byte, label string, length int) []byte {
@@ -346,13 +347,10 @@ func Validate(data []byte, opts Options, asm *Assembler, scope string, now *floa
 		evidence = append(evidence, wire("crypto_assembly", "partial", "structural"))
 		return &Match{Evidence: evidence, Reason: "QUIC Initial protection removed; ClientHello incomplete in this datagram"}, nil
 	}
-	offer, err := tlsx.ParseClientHello(hello[4:])
+	offer, err := tlsx.ParseClientHello(hello[4:], opts.Fingerprints)
 	if err != nil {
 		evidence = append(evidence, wire("crypto_assembly", "invalid", "structural"))
 		return &Match{Evidence: evidence, Reason: "QUIC Initial protection removed; CRYPTO stream is not a supported ClientHello"}, nil
-	}
-	if opts.Fingerprints {
-		return nil, &parsing.NotPorted{What: "option fingerprints (QUIC JA4)"}
 	}
 	evidence = append(evidence, wire("crypto_assembly", "complete", "structural"))
 	if offer.HasHost && offer.Hostname != "" {
@@ -363,6 +361,10 @@ func Validate(data []byte, opts Options, asm *Assembler, scope string, now *floa
 	}
 	if offer.ECH != "" {
 		evidence = append(evidence, Row{"tls_ech", offer.ECH, "quic_client_hello", "offered"})
+	}
+	if offer.Info != nil {
+		offer.Info.Version = 0x0304 // QUIC requires TLS 1.3; supported_versions carries it
+		evidence = append(evidence, Row{"ja4", fingerprint.JA4(offer.Info, "q"), "wire:quic_client_hello", "derived"})
 	}
 	alpn := offer.ALPN
 	if alpn == nil {

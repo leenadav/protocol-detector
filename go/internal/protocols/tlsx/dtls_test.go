@@ -88,8 +88,10 @@ func TestDTLSProfileBoundaries(t *testing.T) {
 			t.Fatalf("%s: %v", c.name, err)
 		}
 	}
-	if _, err := DTLS(base, dtlsMaxBytes, dtlsMaxHeaders, true); kindOf(err) != "notported" {
-		t.Fatalf("fingerprints: %v", err)
+	// With fingerprints the ClientHello carries its JA4 (protocol code d, DTLS 1.2 version code d2).
+	if m, err := DTLS(base, dtlsMaxBytes, dtlsMaxHeaders, true); err != nil || m.Rows[len(m.Rows)-1].Field != "ja4" ||
+		m.Rows[len(m.Rows)-1].Value[:4] != "dd2i" || m.Rows[len(m.Rows)-1].Strength != "derived" {
+		t.Fatalf("fingerprints: %v %+v", err, m)
 	}
 	// The cookie is removed before the shared TLS decoder; it never becomes evidence.
 	m, _ := DTLS(base, dtlsMaxBytes, dtlsMaxHeaders, false)

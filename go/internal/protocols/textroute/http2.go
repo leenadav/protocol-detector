@@ -7,6 +7,7 @@ import (
 
 	"github.com/leenadav/protocol-detector/go/internal/names"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/fingerprint"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/hpack"
 )
 
@@ -39,6 +40,7 @@ var (
 	h2Token            = byteSet("!#$%&'*+-.^_`|~0123456789abcdefghijklmnopqrstuvwxyz")
 	h2Method           = byteSet("!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
 	h2PseudoRequest    = map[string]bool{":method": true, ":scheme": true, ":authority": true, ":path": true, ":protocol": true}
+	pseudoLetters      = map[string]string{":method": "m", ":authority": "a", ":scheme": "s", ":path": "p", ":protocol": "r", ":status": "t"}
 	h2ConnectionFields = map[string]bool{"connection": true, "keep-alive": true, "proxy-connection": true, "transfer-encoding": true, "upgrade": true}
 )
 
@@ -129,10 +131,11 @@ type HTTP2Parser struct {
 	blockFrames    int
 	reason         string
 	scope          string
+	fingerprints   []parsing.Row
 }
 
-// NewHTTP2 creates the client parser; NewHTTP2Server the server parser (no preface). Options.Fingerprints is not
-// read here: the engine refuses the fingerprints option for the client direction (the SETTINGS fingerprint).
+// NewHTTP2 creates the client parser; NewHTTP2Server the server parser (no preface). With Options.Fingerprints the
+// client direction also derives the SETTINGS string and the pseudo-header order (a server derives neither).
 func NewHTTP2(opts Options) *HTTP2Parser {
 	return &HTTP2Parser{opts: opts, request: true, reason: "Waiting for complete HTTP/2 client preface and initial SETTINGS"}
 }
@@ -147,7 +150,7 @@ func (p *HTTP2Parser) Refined() bool { return p.refined }
 
 func (p *HTTP2Parser) Result() *parsing.Result {
 	return &parsing.Result{ProtocolName: "http/2", Host: p.host, HasHost: p.hasHost, ALPN: []string{}, Extra: p.extra, Reason: p.reason,
-		Scope: p.scope, Continues: p.continues}
+		Scope: p.scope, Continues: p.continues, Fingerprints: p.fingerprints}
 }
 
 func (p *HTTP2Parser) prefaceLen() int {
@@ -200,8 +203,12 @@ func (p *HTTP2Parser) Feed(data []byte) (int, error) {
 	pos += amount
 	p.consumed += pos
 	if len(p.payload) == p.length {
-		if err := checkSettings(p.payload); err != nil {
+		settings, err := parseSettings(p.payload)
+		if err != nil {
 			return pos, err
+		}
+		if p.opts.Fingerprints && p.request {
+			p.fingerprints = []parsing.Row{{Field: "h2_settings", Value: fingerprint.H2Settings(settings), Provenance: "settings_frame"}}
 		}
 		p.done, p.continues = true, true
 		if p.request {
@@ -214,19 +221,27 @@ func (p *HTTP2Parser) Feed(data []byte) (int, error) {
 }
 
 func checkSettings(payload []byte) error {
+	_, err := parseSettings(payload)
+	return err
+}
+
+// parseSettings is HTTP2Parser._settings: the entries in frame order, with the three value rules checked.
+func parseSettings(payload []byte) ([]fingerprint.Setting, error) {
+	var settings []fingerprint.Setting
 	for offset := 0; offset+6 <= len(payload); offset += 6 {
 		setting := binary.BigEndian.Uint16(payload[offset:])
 		value := binary.BigEndian.Uint32(payload[offset+2:])
+		settings = append(settings, fingerprint.Setting{ID: uint32(setting), Value: value})
 		switch {
 		case setting == 2 && value != 0 && value != 1:
-			return parsing.Malformed("Invalid SETTINGS_ENABLE_PUSH")
+			return nil, parsing.Malformed("Invalid SETTINGS_ENABLE_PUSH")
 		case setting == 4 && value > 0x7fffffff:
-			return parsing.Malformed("Invalid SETTINGS_INITIAL_WINDOW_SIZE")
+			return nil, parsing.Malformed("Invalid SETTINGS_INITIAL_WINDOW_SIZE")
 		case setting == 5 && (value < 16384 || value > 0xffffff):
-			return parsing.Malformed("Invalid SETTINGS_MAX_FRAME_SIZE")
+			return nil, parsing.Malformed("Invalid SETTINGS_MAX_FRAME_SIZE")
 		}
 	}
-	return nil
+	return settings, nil
 }
 
 func (p *HTTP2Parser) frames(data []byte) (int, error) {
@@ -383,6 +398,7 @@ func (p *HTTP2Parser) headers(block []byte) error {
 	}
 	pseudo := map[string][]byte{}
 	var regular []h2Field
+	var order []string
 	for _, f := range decoded {
 		name, value := f.Name, f.Value
 		bare := name
@@ -420,6 +436,7 @@ func (p *HTTP2Parser) headers(block []byte) error {
 				return parsing.Malformed("HTTP/2 pseudo-header outside this message direction")
 			}
 			pseudo[string(name)] = value
+			order = append(order, pseudoLetters[string(name)])
 			continue
 		}
 		if h2ConnectionFields[string(name)] || (string(name) == "te" && strings.ToLower(string(value)) != "trailers") {
@@ -470,6 +487,9 @@ func (p *HTTP2Parser) headers(block []byte) error {
 				}
 			}
 		}
+	}
+	if p.opts.Fingerprints && p.request {
+		p.fingerprints = append(p.fingerprints, parsing.Row{Field: "h2_pseudo_order", Value: strings.Join(order, ","), Provenance: "headers_frame"})
 	}
 	p.extra = append(p.extra, evidence...)
 	if p.request {

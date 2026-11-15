@@ -13,6 +13,7 @@ import (
 
 	"github.com/leenadav/protocol-detector/go/internal/names"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/fingerprint"
 )
 
 // Options mirrors the Config fields the parser reads.
@@ -23,7 +24,8 @@ type Options struct {
 	Continuation int // D07 byte budget after an HTTP/1 identification; 0 = off
 	// MaxTransactions caps the HTTP/1 messages a continuation counts per direction (Config.max_transactions).
 	MaxTransactions int
-	ForceHTTP       bool // parsers.LineParser(config, "http"): skip the first-line route (the SSDP datagram profile)
+	ForceHTTP       bool
+	Fingerprints    bool // Config.fingerprints: HASSH over the SSH KEXINIT, the HTTP/2 SETTINGS and pseudo-header order // parsers.LineParser(config, "http"): skip the first-line route (the SSDP datagram profile)
 }
 
 const token = `[!#$%&'*+.^_` + "`" + `|~0-9A-Za-z-]+`
@@ -222,6 +224,7 @@ type Parser struct {
 	cont             *httpContinuation // D07: later messages of this direction within Options.Continuation
 	subordinate      bool              // a per-message parser owned by a continuation never starts one itself
 	baseExtra        []parsing.Row     // the identifying message's evidence, before continuation evidence
+	fingerprints     []parsing.Row
 }
 
 // ResolvedFamily is the family the first line resolved to ("text" before that).
@@ -259,7 +262,7 @@ func (p *Parser) Result() *parsing.Result {
 			ALPN: []string{}, Extra: p.extra, Reason: p.reason, Scope: p.scope, Shift: p.shift, Continues: p.continues}
 	}
 	return &parsing.Result{Family: p.family, ProtocolName: p.protocolName2, ALPN: []string{}, Extra: p.extra, Reason: p.reason,
-		Scope: p.scope, Shift: p.shift, Continues: p.continues}
+		Scope: p.scope, Shift: p.shift, Continues: p.continues, Fingerprints: p.fingerprints}
 }
 
 // Feed ports LineParser.feed (TextParser route, SSH KEXINIT, SMTP watch, HTTP/1 continuation).
@@ -285,6 +288,10 @@ func (p *Parser) Feed(data []byte) (int, error) {
 		}
 		if p.kexinit.done {
 			p.extra = append(p.extra, kexinitPosture(p.kexinit.lists)...)
+			if p.opts.Fingerprints {
+				l := p.kexinit.lists
+				p.fingerprints = []parsing.Row{{Field: "hassh", Value: fingerprint.HASSH(l[0], l[2], l[4], l[6]), Provenance: "kexinit"}}
+			}
 			p.refined, p.kexinit, p.continues = true, nil, false
 		}
 		return consumed, nil
