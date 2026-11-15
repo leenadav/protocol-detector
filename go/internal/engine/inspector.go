@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"reflect"
-
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/dnsx"
@@ -369,7 +367,7 @@ func New(cfg contracts.Config, hint string) (*Inspector, error) {
 func (in *Inspector) Terminal() bool { return in.terminal }
 
 func (in *Inspector) publish(obs contracts.Observation, kind contracts.Kind) []contracts.Event {
-	if reflect.DeepEqual(obs, in.Observation) {
+	if obs.Equal(in.Observation) {
 		return nil
 	}
 	in.Observation = obs

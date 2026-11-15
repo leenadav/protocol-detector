@@ -137,8 +137,9 @@ Done:
 - **#6** Content-Length overflow is malformed, in Python and Go.
 - **#5** unknown TLS registry values decided per field and position, in Python and Go (table in PROTOCOLS.md).
 - **#7** modern-client fixture set (reviewed 2026-11-14; next review 2027-02).
+- **#17** `reflect.DeepEqual` removed from the publish path (Go only; event stream unchanged).
 
-See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: #14 (wiring), #16–#18.
+See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: #14 (wiring), #16, #18.
 
 ### 4.4 Gate before attaching the real detector (lab phase L4)
 
