@@ -7,6 +7,7 @@
 package content
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -403,3 +404,12 @@ func (p *Pack) ApplicationForHost(hostname string) string {
 	}
 	return ""
 }
+
+// pack.json is a byte-for-byte copy of migration/fixtures/content.json (TestEmbeddedPackIsTheSharedPack), so
+// the binary carries the detection content of the release it was built from and needs no file at run time.
+//
+//go:embed pack.json
+var embedded []byte
+
+// Embedded parses the content pack built into the binary.
+func Embedded() (*Pack, error) { return Parse(embedded) }

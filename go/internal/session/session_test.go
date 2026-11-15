@@ -425,3 +425,33 @@ func TestUDPInvalidationWithdrawsRetainedPeerEvidence(t *testing.T) {
 		}
 	}
 }
+
+// Several states that end together are closed in table insertion order, as the reference walks its dicts; the
+// Go tables are maps, whose iteration order is random (the analyze differential would otherwise flake).
+func TestStatesEndInInsertionOrder(t *testing.T) {
+	for round := 0; round < 20; round++ {
+		h := newHarness(t, Options{})
+		var want []uint16
+		for i := 0; i < 12; i++ {
+			port := uint16(40000 + (i*7919)%977) // not sorted, so map or key order would differ
+			want = append(want, port)
+			from := transport.Endpoint{Addr: "192.0.2.10", Port: port}
+			h.tracker.Process(float64(i), seg(from, server, 100, 0, transport.SYN, nil))
+		}
+		retired := 0
+		h.tracker.Retired = func(source, destination transport.Endpoint, sink Sink) { retired++ }
+		if round%2 == 0 {
+			h.tracker.Finish("capture end")
+		} else {
+			h.tracker.Expire(1000)
+		}
+		if len(h.closed) != len(want) || retired != 0 {
+			t.Fatalf("closed %d, retired %d", len(h.closed), retired)
+		}
+		for i, c := range h.closed {
+			if c.State.Client.Port != want[i] {
+				t.Fatalf("round %d: state %d closed out of order: %d, want %d", round, i, c.State.Client.Port, want[i])
+			}
+		}
+	}
+}

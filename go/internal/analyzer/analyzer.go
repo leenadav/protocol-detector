@@ -17,7 +17,9 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/content"
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/engine"
+	"github.com/leenadav/protocol-detector/go/internal/errs"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
+	"github.com/leenadav/protocol-detector/go/internal/policy"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/quicx"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/x509x"
 	"github.com/leenadav/protocol-detector/go/internal/session"
@@ -38,6 +40,7 @@ type Sink struct {
 	owner      *Analyzer
 	seq        uint64 // creation order; the packet's events are reported in this order
 	touched    bool
+	retired    []contracts.Event // the events of Retire, until the tracker's Retired hook takes them
 }
 
 // touch registers the sink for the current packet and propagates an engine gap to the analyzer.
@@ -77,9 +80,9 @@ func (s *Sink) End(reason string) bool        { return s.collect(s.In.End(reason
 
 // Retire ends the direction when tracking ends; its events are retirement events, not the packet's.
 func (s *Sink) Retire(reason string) bool {
-	changed := len(s.In.End(reason)) > 0
+	s.retired = s.In.End(reason)
 	s.touch()
-	return changed
+	return len(s.retired) > 0
 }
 func (s *Sink) TakeIdentified() []session.Label { out := s.identified; s.identified = nil; return out }
 
@@ -95,6 +98,15 @@ type Analyzer struct {
 	sinkSeq   uint64
 	Records   []map[string]interface{}
 	NotPorted *parsing.NotPorted
+	opts      Options
+	// Rows is the adapter output since the caller last drained it (Options.Rows).
+	Rows []Row
+	// LastClassification is the observation of the packet in progress (Analyzer.last_classification), nil when the
+	// packet classified nothing; LastServer is the server endpoint when tracking knows it.
+	LastClassification *contracts.Observation
+	LastServer         *transport.Endpoint
+	// Sessions counts the session records produced (Analyzer.counts["sessions"]).
+	Sessions int
 	// Per packet (Python last_events / peer_events).
 	LastEvents []contracts.Event
 	PeerEvents []PeerEvent
@@ -120,6 +132,24 @@ type Options struct {
 	Heuristics   bool
 	// Signatures are custom application signatures (nil or empty: none); a non-empty set retains parser contexts.
 	Signatures *signatures.Set
+	// TCPHint restricts both TCP directions to one validated candidate; UDPHint restricts UDP validation.
+	TCPHint, UDPHint string
+	// CRC32CByteLimit is Config.max_crc32c_bytes (nil: the default).
+	CRC32CByteLimit *int
+	// IncludeHostnames adds the asserted SNI/Host name to session records.
+	IncludeHostnames bool
+	// Policy, when set, is evaluated on every session record (POLICY.md).
+	Policy *policy.Policy
+	// Rows collects the adapter output in emission order (stream-end events and session records).
+	Rows bool
+}
+
+// Row is one adapter output besides the per-packet row: a directional terminal event when tracking of its
+// connection ended (Python on_retire) or a session record (on_session), in the order the reference emits them.
+type Row struct {
+	Source, Destination transport.Endpoint // stream end only
+	Event               *contracts.Event   // stream end only
+	Session             map[string]interface{}
 }
 
 // New builds an analyzer; options the engine lacks are reported through NotPorted on first use.
@@ -129,14 +159,31 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 	cfg.Fingerprints = opts.Fingerprints
 	cfg.Certificates = opts.Certificates
 	cfg.Heuristics = opts.Heuristics
-	a := &Analyzer{pack: pack, cfg: cfg}
+	if opts.CRC32CByteLimit != nil {
+		cfg.MaxCRC32CBytes = *opts.CRC32CByteLimit
+	}
+	if opts.Session.ByteLimit > 0 {
+		cfg.MaxBytes = opts.Session.ByteLimit
+	}
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+	if opts.UDPHint != "" && !engine.DatagramHints[opts.UDPHint] {
+		return nil, errs.New(errs.Invalid, errs.ScopeProcess, "Unsupported UDP candidate hint")
+	}
+	if opts.TCPHint != "" {
+		if _, err := engine.New(contracts.DefaultConfig(), opts.TCPHint); err != nil {
+			return nil, errs.New(errs.Invalid, errs.ScopeProcess, "Unsupported TCP candidate hint")
+		}
+	}
+	a := &Analyzer{pack: pack, cfg: cfg, opts: opts}
 	if opts.Signatures.Len() > 0 {
 		a.sigs = opts.Signatures
 		cfg.RetainContexts = true
 		a.cfg = cfg
 	}
 	tr, err := session.NewTracker(opts.Session, func() session.Sink {
-		in, err := engine.New(cfg, "")
+		in, err := engine.New(cfg, opts.TCPHint)
 		if err != nil {
 			if np, ok := err.(*parsing.NotPorted); ok && a.NotPorted == nil {
 				a.NotPorted = np
@@ -153,6 +200,30 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 	}
 	a.Tracker = tr
 	tr.Correlate = a.correlate
+	tr.Classified = func(sink session.Sink) {
+		if s, ok := sink.(*Sink); ok {
+			o := s.In.Observation
+			a.LastClassification = &o
+		}
+	}
+	tr.Evidence = func(sink session.Sink) string {
+		if s, ok := sink.(*Sink); ok {
+			return compatEvidence(s.In.Observation, s.In.Candidate())
+		}
+		return ""
+	}
+	tr.Retired = func(source, destination transport.Endpoint, sink session.Sink) {
+		s, ok := sink.(*Sink)
+		if !ok {
+			return
+		}
+		if opts.Rows {
+			for i := range s.retired {
+				a.Rows = append(a.Rows, Row{Source: source, Destination: destination, Event: &s.retired[i]})
+			}
+		}
+		s.retired = nil
+	}
 	udp, err := engine.NewDatagram(cfg)
 	if err != nil {
 		if np, ok := err.(*parsing.NotPorted); ok {
@@ -183,14 +254,16 @@ func quicScope(source, destination transport.Endpoint) string {
 // Process handles one decoded packet and returns the adapter message (first segment compared by the harness).
 func (a *Analyzer) Process(timestamp float64, decoded interface{}) string {
 	a.LastEvents, a.PeerEvents = nil, nil
+	a.LastClassification, a.LastServer = nil, nil
 	a.replaySink, a.replayAt, a.replayEvents = nil, 0, nil
 	a.resetTouched()
+	defer func() { a.LastServer = a.Tracker.LastServer }()
 	switch p := decoded.(type) {
 	case *transport.UDP:
 		// Python Analyzer.process expires idle state (retiring flows resets their QUIC scopes) before inspecting.
 		a.Tracker.Expire(timestamp)
 		now := a.Tracker.Now()
-		obs, err := a.udp.InspectFlow(p.Payload, "", quicScope(p.Source, p.Destination), &now)
+		obs, err := a.udp.InspectFlow(p.Payload, a.opts.UDPHint, quicScope(p.Source, p.Destination), &now)
 		if err != nil {
 			if np, ok := err.(*parsing.NotPorted); ok && a.NotPorted == nil {
 				a.NotPorted = np
@@ -199,6 +272,8 @@ func (a *Analyzer) Process(timestamp float64, decoded interface{}) string {
 		}
 		a.udpRev++
 		a.LastEvents = []contracts.Event{{Kind: contracts.DatagramObs, Revision: a.udpRev, Observation: obs}}
+		classified := obs
+		a.LastClassification = &classified
 		return a.Tracker.ProcessUDP(timestamp, p, &obs)
 	case *transport.TCP:
 		message := a.Tracker.Process(timestamp, p)
@@ -235,6 +310,16 @@ func (a *Analyzer) Finish(reason string) error {
 	a.resetTouched()
 	a.touched = nil
 	return err
+}
+
+// Reset forgets every connection, flow and QUIC assembly without producing records (a capture gap: active
+// observations are retracted, not ended).
+func (a *Analyzer) Reset() {
+	a.Tracker.Reset()
+	a.udp.Assembler.Clear()
+	a.resetTouched()
+	a.LastEvents, a.PeerEvents, a.LastClassification = nil, nil, nil
+	a.Rows = a.Rows[:0]
 }
 
 // RetainedSinks reports how many direction sinks the analyzer itself still references (tests).
@@ -396,7 +481,85 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 	if certificate := certificateFields(clientObs, serverObs, state.Start); len(certificate) > 0 {
 		record["certificate"] = certificate // structure labels only: no names, serials or keys
 	}
+	if a.opts.Policy != nil {
+		// D04: the decision sees the typed evidence contract, never a confidence number.
+		layers, _ := record["layers"].(map[string]interface{})
+		record["policy"] = a.opts.Policy.Evaluate(verdict, transportName, int(state.Server.Port), true, layers, observationMode).Fields()
+	}
+	if a.opts.IncludeHostnames {
+		var hostname interface{}
+		for _, obs := range []*contracts.Observation{clientObs, serverObs} {
+			if obs != nil && obs.Hostname != nil && *obs.Hostname != "" {
+				hostname = *obs.Hostname
+				break
+			}
+		}
+		record["hostname"] = hostname
+	}
+	a.Sessions++
+	if a.opts.Rows {
+		a.Rows = append(a.Rows, Row{Session: record})
+		return
+	}
 	a.Records = append(a.Records, record)
+}
+
+// compatFamilies is sessions.TCP_FAMILIES: the legacy display order followed by the remaining TCP families in
+// inventory order. test_migration_parity compares it with the Python tuple.
+var compatFamilies = []string{"http", "ssh", "tls", "http2", "socks5", "smtp", "mqtt", "resp", "amqp", "dns", "stun", "postgresql", "rfb",
+	"bittorrent", "memcached", "ldap", "sip", "rtsp", "bgp", "smb2", "stomp", "nats", "imap", "rdp", "mysql", "mongodb", "websocket", "ftp",
+	"pop3", "telnet", "smb1", "netbios-ss", "kerberos", "tacacs-plus", "openvpn", "pptp", "modbus", "dnp3", "iso-tsap", "s7comm", "ethernet-ip",
+	"iec-104", "kafka", "cql", "dcerpc", "giop", "git", "fastcgi", "rsync", "tds", "tns", "onc-rpc", "diameter", "zmtp", "bolt", "opcua", "syslog",
+	"x11", "spice", "afp", "irc", "fins", "xmpp"}
+
+var textCandidates = map[string]bool{"http": true, "ssh": true, "smtp": true, "sip": true, "rtsp": true, "nats": true, "imap": true, "git": true}
+
+// compatEvidence ports sessions._compat_rows as the analyzer prints it: "FAMILY=STATUS (evidence)" per TCP family.
+func compatEvidence(o contracts.Observation, candidate string) string {
+	if candidate == "git_text" {
+		candidate = "text" // shared routing scope before a structural discriminator
+	}
+	if candidate == "tpkt" {
+		candidate = "rdp"
+	}
+	matched := ""
+	if o.Encryption != nil && *o.Encryption == "tls" {
+		matched = "tls"
+	} else if o.ApplicationProtocol != nil {
+		matched = *o.ApplicationProtocol
+	}
+	if matched == "http/2" {
+		matched = "http2"
+	} else if strings.HasPrefix(matched, "http/") {
+		matched = "http"
+	}
+	if i := strings.IndexByte(matched, '/'); i >= 0 {
+		matched = matched[:i] // mqtt/, amqp/ and every other versioned label
+	}
+	var b strings.Builder
+	for i, name := range compatFamilies {
+		routed := candidate == "" || name == candidate || (candidate == "text" && textCandidates[name])
+		status := "NO_MATCH"
+		switch {
+		case o.Status == contracts.Identified && matched == name && matched != "":
+			status = "MATCH"
+		case o.Status == contracts.Detecting && routed:
+			status = "NEED_MORE"
+		case o.Status == contracts.Unknown && routed:
+			status = "UNKNOWN"
+		case (o.Status == contracts.BudgetExhausted || o.Status == contracts.Incomplete || o.Status == contracts.Invalidated) && routed:
+			status = strings.ToUpper(string(o.Status))
+		}
+		evidence := "Excluded by prefix dispatch"
+		if routed || status == "MATCH" {
+			evidence = o.Reason
+		}
+		if i > 0 {
+			b.WriteString("; ")
+		}
+		b.WriteString(strings.ToUpper(name) + "=" + status + " (" + evidence + ")")
+	}
+	return b.String()
 }
 
 // correlate ports the Analyzer._correlate_connect and _correlate_ldap calls that follow a data segment whose

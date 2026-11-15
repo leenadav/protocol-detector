@@ -397,6 +397,10 @@ func (in *Inspector) continueFeed(chunk []byte) []contracts.Event {
 // familyResolver is implemented by routed parsers that learn their family from the first line.
 type familyResolver interface{ ResolvedFamily() string }
 
+// Candidate is Inspector.candidate: the dispatch candidate ("" before dispatch), or the family a text route
+// resolved to once it identified.
+func (in *Inspector) Candidate() string { return in.candidate }
+
 // ResolvedFamily ports Inspector.resolved_family: the candidate, or what a text route resolved to ("" for none).
 func (in *Inspector) ResolvedFamily() string {
 	if in.candidate == "text" || in.candidate == "git_text" || in.candidate == "tpkt" {
@@ -464,8 +468,20 @@ func (in *Inspector) identified() contracts.Observation {
 	} else {
 		protocol = str(r.ProtocolName)
 	}
-	if (in.candidate == "text" || in.candidate == "git_text" || in.candidate == "tpkt") && r.Family != "" {
-		in.candidate = r.Family
+	if in.candidate == "text" || in.candidate == "git_text" || in.candidate == "tpkt" {
+		// Python: self._candidate = parser.family. The Git child is "git"; the TPKT route's family is its
+		// child's protocol name; a text route names its own.
+		family := r.Family
+		if family == "" {
+			if fr, ok := in.parser.(familyResolver); ok {
+				family = fr.ResolvedFamily()
+			} else if in.candidate == "tpkt" {
+				family = r.ProtocolName
+			}
+		}
+		if family != "" {
+			in.candidate = family
+		}
 	}
 	var hostname *string
 	if r.HasHost {

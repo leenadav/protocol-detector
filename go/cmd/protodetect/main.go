@@ -36,7 +36,7 @@ func main() {
 
 func run(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: protodetect version | cases --file PATH | replay --cases PATH --out PATH")
+		fmt.Fprintln(os.Stderr, "usage: protodetect version | analyze CAPTURE [options] | cases --file PATH | replay --cases PATH --out PATH")
 		return 2
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -45,6 +45,8 @@ func run(args []string) int {
 	case "version":
 		fmt.Printf("protodetect %s (go backend; experimental families: %s; no production use)\n", version, strings.Join(engine.Families, ", "))
 		return 0
+	case "analyze":
+		return runAnalyze(args[1:], os.Stdout, os.Stderr)
 	case "cases":
 		fs := flag.NewFlagSet("cases", flag.ContinueOnError)
 		file := fs.String("file", "migration/fixtures/cases.json", "the differential cases file")

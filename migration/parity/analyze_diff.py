@@ -1,0 +1,249 @@
+"""Migration M8: the Go `analyze` command against the Python reference on generated captures.
+
+    python3 -B migration/parity/analyze_diff.py --binary PATH [--count 300] [--seed 1] [--keep DIR]
+
+Captures are built from the frames of the committed session cases (migration/fixtures/cases.json): one to
+five conversations per file on shifted client addresses, in classic PCAP or pcapng, with idle gaps past the
+flow timeout and seeded faults (dropped, duplicated, reordered, bit-flipped and truncated records, trailing
+garbage). Each capture is analyzed with a seeded option set (JSON or text rows, events only, sessions,
+hostnames, fingerprints, heuristics, certificates, observation modes, checksum policies, continuation, hints,
+custom signatures, a policy) by the Python reference in process and by the Go binary. JSON rows are compared
+as parsed values, text output byte for byte, and the exit status and error text too. Synthetic bytes only.
+"""
+import argparse
+import contextlib
+import io
+import json
+import random
+import struct
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+import analyze_pcap  # noqa: E402
+from protocol_adapters.packets import CaptureError  # noqa: E402
+from protocol_engine import SignatureSet  # noqa: E402
+from protocol_engine.policy import Policy, PolicyError  # noqa: E402
+
+SIGNATURES = [
+    {"name": "example-host", "category": "business-systems", "subcategory": "general-business", "risk": 2,
+     "conditions": [{"context": "http-req-host-header", "pattern": "example"}]},
+    {"name": "any-get", "conditions": {"or": [{"context": "http-req-method", "operator": "equal-to", "value": "GET"},
+                                               {"context": "http2-req-method", "operator": "equal-to", "value": "GET"}]}},
+    {"name": "sni-example", "parent": "ssl", "conditions": [{"context": "ssl-req-chello-sni", "pattern": "\\.example", "case_insensitive": True}]},
+    {"name": "openssh", "risk": 4, "conditions": [{"context": "ssh-req-banner", "pattern": "OpenSSH_[0-9]"}]},
+    {"name": "dns-example", "conditions": [{"context": "dns-req-query-name", "pattern": "example"}, {"context": "dns-req-query-type", "operator": "less-than", "value": 30}]},
+    {"name": "tcp-zeros", "conditions": [{"context": "unknown-req-tcp-payload", "pattern": "\\x00\\x00\\x00\\x00\\x00\\x00\\x00"}]},
+    {"name": "udp-short", "conditions": [{"context": "unknown-req-udp-payload-length", "operator": "less-than", "value": 64},
+                                          {"context": "unknown-req-udp-payload", "pattern": "[\\x00-\\xff]{0,8}\\x00\\x00\\x00\\x00\\x00\\x00\\x00"}]},
+]
+POLICY = {"version": 1, "default": "alert", "rules": [
+    {"name": "web", "action": "allow", "match": {"apps": ["web-browsing", "ssl"], "server_ports": ["tcp/80", "tcp/443", "tcp/8000-8100"]}},
+    {"name": "structural-only", "action": "allow", "match": {"identity_basis": ["structural"], "categories": ["networking", "business-systems"]}},
+    {"name": "risky", "action": "deny", "match": {"risk_min": 4}},
+    {"name": "default-ports", "action": "allow", "application_default": True, "match": {"transports": ["tcp"], "technologies": ["client-server"]}},
+    {"name": "outcomes", "action": "deny", "match": {"apps": ["unknown-tcp", "unknown-udp", "incomplete"]}},
+    {"name": "nonstd", "action": "alert", "match": {"port_usage": ["nonstandard"], "encryption": ["none", "tls"]}}]}
+
+
+def shifted(frame, linktype, shift):
+    """Move a frame to another client address so conversations share a capture without colliding."""
+    if linktype != 1 or len(frame) < 34 or frame[12:14] != b"\x08\x00" or not shift:
+        return frame
+    data = bytearray(frame)
+    for offset in (26, 30):                 # IPv4 source and destination: the last octet of 192.0.2.x only
+        if data[offset:offset + 3] == b"\xc0\x00\x02":
+            data[offset + 3] = (data[offset + 3] + shift) & 0xff
+    return bytes(data)                      # checksums are left as they were: audit/verify then see failures
+
+
+def records_for(rng, sessions):
+    records, start = [], 1700000000.0
+    for index in range(rng.choice([1, 1, 2, 3, 5])):
+        case = rng.choice(sessions)
+        shift = index * 7 if rng.random() < 0.8 else 0
+        for packet in case["packets"]:
+            records.append([start + packet["t"], shifted(bytes.fromhex(packet["frame"]), packet.get("linktype", 1), shift), False])
+        start += rng.choice([0, 0, 0.5, 61, 200]) + 1
+    if rng.random() < 0.4:
+        if rng.random() < 0.2:
+            rng.shuffle(records)
+        else:
+            records.sort(key=lambda record: record[0])
+    for _ in range(rng.choice([0, 0, 0, 1, 2])):
+        if not records:
+            break
+        index, fault = rng.randrange(len(records)), rng.random()
+        if fault < 0.3:
+            del records[index]
+        elif fault < 0.5:
+            records.insert(index, list(records[index]))
+        elif fault < 0.7:
+            data = bytearray(records[index][1])
+            if data:
+                data[rng.randrange(len(data))] ^= 1 << rng.randrange(8)
+            records[index][1] = bytes(data)
+        elif fault < 0.85:
+            records[index][2] = True
+        else:
+            records[index][0] += rng.choice([-5, 100, 1e6])
+    return records
+
+
+def write_capture(rng, path, records):
+    with open(path, "wb") as capture:
+        if rng.random() < 0.4:
+            def block(kind, body):
+                body += bytes(-len(body) % 4)
+                total = len(body) + 12
+                return struct.pack("<II", kind, total) + body + struct.pack("<I", total)
+            capture.write(block(0x0A0D0D0A, struct.pack("<IHHq", 0x1A2B3C4D, 1, 0, -1)))
+            capture.write(block(1, struct.pack("<HHI", 1, 0, 0)))
+            for timestamp, data, truncate in records:
+                kept = data[:len(data) // 2] if truncate else data
+                ticks = int(round(timestamp * 1000000))
+                capture.write(block(6, struct.pack("<IIIII", 0, ticks >> 32, ticks & 0xffffffff, len(kept), len(data)) + kept))
+        else:
+            capture.write(b"\xd4\xc3\xb2\xa1" + struct.pack("<HHIIII", 2, 4, 0, 0, 65535, 1))
+            for timestamp, data, truncate in records:
+                kept = data[:len(data) // 2] if truncate else data
+                seconds = int(timestamp)
+                capture.write(struct.pack("<IIII", seconds, int(round((timestamp - seconds) * 1000000)) % 1000000, len(kept), len(data)) + kept)
+        if rng.random() < 0.03:
+            capture.write(b"\x00\x01\x02")
+
+
+def options_for(rng, signatures_path, policy_path):
+    options = []
+    if rng.random() < 0.85:
+        options.append("--json")
+    if rng.random() < 0.3:
+        options.append("--events-only")
+    if rng.random() < 0.8:
+        options.append("--sessions")
+    for flag in ("--hostnames", "--fingerprints", "--heuristics", "--certificates"):
+        if rng.random() < 0.3:
+            options.append(flag)
+    if rng.random() < 0.3:
+        options += ["--observation", rng.choice(["handshake", "asymmetric", "midstream"])]
+    if rng.random() < 0.3:
+        options += ["--checksums", rng.choice(["ignore", "audit", "verify"])]
+    if rng.random() < 0.2:
+        options += ["--continuation", str(rng.choice([0, 512, 4096, 65536]))]
+    if rng.random() < 0.1:
+        options += ["--udp-hint", rng.choice(["dns", "quic", "stun", "ntp"])]
+    if rng.random() < 0.1:
+        options += ["--tcp-hint", rng.choice(["tls", "dns", "ldap", "kerberos", "http2"])]
+    if rng.random() < 0.1:
+        options += ["--crc32c-byte-limit", str(rng.choice([0, 16, 4096]))]
+    if rng.random() < 0.25:
+        options += ["--signatures", signatures_path]
+    if rng.random() < 0.25:
+        options += ["--policy", policy_path]
+    return options
+
+
+def reference(path, options):
+    """The Python analyze() in process, with the exit status and error text its command line would give."""
+    def value(name, default=None):
+        return options[options.index(name) + 1] if name in options else default
+    arguments = dict(json_output="--json" in options, events_only="--events-only" in options,
+                     sessions="--sessions" in options or "--policy" in options, include_hostnames="--hostnames" in options,
+                     fingerprints="--fingerprints" in options, heuristics="--heuristics" in options, certificates="--certificates" in options,
+                     observation=value("--observation", "handshake"), checksums=value("--checksums", "ignore"),
+                     continuation=int(value("--continuation", 0)), udp_hint=value("--udp-hint"), tcp_hint=value("--tcp-hint"),
+                     crc32c_byte_limit=int(value("--crc32c-byte-limit", 4096)))
+    output, status, error = io.StringIO(), 0, ""
+    try:
+        if "--signatures" in options:
+            arguments["signatures"] = SignatureSet.from_path(value("--signatures"))
+        if "--policy" in options:
+            arguments["policy"] = Policy.from_path(value("--policy"))
+        with contextlib.redirect_stdout(output):
+            analyze_pcap.analyze(str(path), **arguments)
+    except (OSError, CaptureError, ValueError, PolicyError) as failure:
+        status, error = 1, "Capture error: {}\n".format(failure)
+    return output.getvalue(), status, error
+
+
+def difference(expected, found, path="$"):
+    if isinstance(expected, dict) and isinstance(found, dict):
+        for key in sorted(set(expected) | set(found)):
+            if key not in expected or key not in found:
+                return "{}.{} present only in {}".format(path, key, "python" if key in expected else "go")
+            inner = difference(expected[key], found[key], path + "." + key)
+            if inner:
+                return inner
+        return None
+    if isinstance(expected, list) and isinstance(found, list):
+        if len(expected) != len(found):
+            return "{} length python {} go {}".format(path, len(expected), len(found))
+        for index, (left, right) in enumerate(zip(expected, found)):
+            inner = difference(left, right, "{}[{}]".format(path, index))
+            if inner:
+                return inner
+        return None
+    numbers = isinstance(expected, (int, float)) and isinstance(found, (int, float)) and not isinstance(expected, bool) and not isinstance(found, bool)
+    if expected != found or (type(expected) is not type(found) and not numbers):
+        return "{} python {!r:.160} go {!r:.160}".format(path, expected, found)
+    return None
+
+
+def compare(reference_result, go_result, as_json):
+    (py_out, py_status, py_error), (go_out, go_status, go_error) = reference_result, go_result
+    if as_json:
+        py_rows, go_rows = py_out.splitlines(), go_out.splitlines()
+        for index, (left, right) in enumerate(zip(py_rows, go_rows)):
+            problem = difference(json.loads(left), json.loads(right))
+            if problem:
+                return "row {}: {}".format(index, problem)
+        if len(py_rows) != len(go_rows):
+            return "row count python {} go {}".format(len(py_rows), len(go_rows))
+    elif py_out != go_out:
+        py_rows, go_rows = py_out.splitlines(), go_out.splitlines()
+        index = next((i for i, (left, right) in enumerate(zip(py_rows, go_rows)) if left != right), min(len(py_rows), len(go_rows)))
+        return "text line {}: python {!r:.200} go {!r:.200}".format(index, (py_rows[index:] or ["<end>"])[0], (go_rows[index:] or ["<end>"])[0])
+    if (py_status, py_error) != (go_status, go_error):
+        return "exit python {} {!r:.160} go {} {!r:.160}".format(py_status, py_error, go_status, go_error)
+    return None
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--binary", required=True, help="the Go protodetect binary")
+    parser.add_argument("--count", type=int, default=300)
+    parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--keep", help="write the captures here instead of a temporary directory")
+    args = parser.parse_args(argv)
+    rng = random.Random(args.seed)
+    sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
+    with contextlib.ExitStack() as stack:
+        folder = Path(args.keep) if args.keep else Path(stack.enter_context(tempfile.TemporaryDirectory()))
+        folder.mkdir(parents=True, exist_ok=True)
+        signatures_path, policy_path = str(folder / "signatures.json"), str(folder / "policy.json")
+        Path(signatures_path).write_text(json.dumps(SIGNATURES), encoding="utf-8")
+        Path(policy_path).write_text(json.dumps(POLICY), encoding="utf-8")
+        failures, rows = [], 0
+        for index in range(args.count):
+            capture = folder / "capture-{}-{}.pcap".format(args.seed, index)
+            write_capture(rng, capture, records_for(rng, sessions))
+            options = options_for(rng, signatures_path, policy_path)
+            expected = reference(capture, options)
+            done = subprocess.run([args.binary, "analyze", str(capture)] + options, stdout=subprocess.PIPE, stderr=subprocess.PIPE,  # noqa: S603
+                                  check=False, timeout=120)
+            rows += expected[0].count("\n")
+            problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")), "--json" in options)
+            if problem:
+                failures.append("{} {}: {}".format(capture.name, " ".join(options), problem))
+        for line in failures[:10]:
+            print("analyze mismatch:", line)
+        print("analyze parity: {} captures, {} rows, {} mismatched (seed {})".format(args.count, rows, len(failures), args.seed))
+        return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
