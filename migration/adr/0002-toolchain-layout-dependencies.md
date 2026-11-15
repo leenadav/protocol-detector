@@ -32,6 +32,13 @@ Status: accepted for M2 (2026-11-07).
   (`CGO_ENABLED=0` for release builds) unless an ADR states a packaging plan.
 - Cryptography (M7): `crypto/aes`, `crypto/cipher` (GCM), `golang.org/x/crypto` (ChaCha20-Poly1305, HKDF)
   from the Go project; the handwritten Python AES is not ported. The decision is recorded when M7 starts.
+- Decision (M7, 2026-11-15): `go/internal/decrypt` uses the standard library for AES-GCM, HMAC, SHA-2 and
+  HKDF-Expand-Label, and `golang.org/x/crypto` v0.59.0 (BSD-3-Clause, the Go project) only for
+  `chacha20poly1305` (TLS_CHACHA20_POLY1305_SHA256, which the reference decrypts with the `cryptography`
+  package). It pulls `golang.org/x/sys` v0.50.0 (BSD-3-Clause, CPU feature detection) indirectly. Both are
+  pinned in `go/go.sum` and verified against sum.golang.org by the CI `go-engine` job (`-mod=readonly`).
+  Open for the CI/CD lane (M10): run `govulncheck` over `go/` in the gate; it was not run when the
+  dependency was added.
 
 ## Gates
 

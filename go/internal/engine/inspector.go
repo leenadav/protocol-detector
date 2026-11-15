@@ -236,6 +236,10 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 
 // Inspector is one direction of one ordered stream (engine.Inspector). Not safe for concurrent use.
 type Inspector struct {
+	// inner inspects host-supplied decrypted plaintext of an identified TLS envelope (feed_decrypted); outer is
+	// the envelope observation it refines.
+	inner *Inspector
+	outer *contracts.Observation
 	// Signatures are the custom signatures evaluated over the parsers' contexts (nil: none).
 	sigs *signatures.Set
 	// The bounded unknown-payload buffer (Python _unknown): after dispatch fails, heuristics profile up to
@@ -305,6 +309,7 @@ func (in *Inspector) OpenShift(boundary, expected string) bool {
 		}
 		return false
 	}
+	next.source, next.shiftSource = in.source, in.source // a shifted phase keeps the byte provenance (wire or decrypted)
 	if in.sigs != nil {
 		_ = next.SetSignatures(in.sigs) // same config: cannot fail
 	}
@@ -678,6 +683,7 @@ func (in *Inspector) beginShift(shift *parsing.Shift, rest []byte) []contracts.E
 		in.NotPorted, in.terminal = &parsing.NotPorted{What: "shift to " + shift.Expected}, true
 		return events
 	}
+	next.source, next.shiftSource = in.source, in.source // a shifted phase keeps the byte provenance (wire or decrypted)
 	if in.sigs != nil {
 		_ = next.SetSignatures(in.sigs) // same config: cannot fail
 	}
@@ -756,6 +762,7 @@ func (in *Inspector) mergeShift() []contracts.Event {
 // Invalidate ports Inspector.invalidate: upstream reassembly is no longer trustworthy.
 func (in *Inspector) Invalidate(reason string) []contracts.Event {
 	in.next, in.carrier, in.parser, in.Announcement = nil, nil, nil, nil
+	in.inner, in.outer = nil, nil
 	in.terminal = true
 	in.prefix = in.prefix[:0]
 	return in.publish(in.observation(contracts.Invalidated, reason), contracts.Retracted)
@@ -764,6 +771,11 @@ func (in *Inspector) Invalidate(reason string) []contracts.Event {
 // End ports Inspector.end for the ported paths.
 func (in *Inspector) End(reason string) []contracts.Event {
 	if in.terminal {
+		if in.inner != nil {
+			if events := in.inner.End(reason); len(events) > 0 {
+				return in.mergeInner()
+			}
+		}
 		return nil
 	}
 	if in.next != nil {
@@ -877,4 +889,73 @@ func maxInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// FeedDecrypted ports Inspector.feed_decrypted: authenticated plaintext ONLY from the host TLS stack (or the
+// key-log record engine), from the plaintext stream start, after this inspector identified the TLS envelope. It
+// never decrypts and must never receive encrypted records. The inner inspection's identification refines the
+// envelope; the offered ALPN is never promoted to an observed inner protocol.
+func (in *Inspector) FeedDecrypted(data []byte) ([]contracts.Event, error) {
+	if in.source != "wire" || in.Observation.Encryption == nil || *in.Observation.Encryption != "tls" ||
+		in.Observation.Status == contracts.Invalidated {
+		return nil, errs.New(errs.Invalid, errs.ScopeProcess, "Decrypted data requires a previously identified TLS envelope")
+	}
+	if in.inner == nil {
+		outer := in.Observation
+		in.outer = &outer
+		inner, err := New(in.cfg, "")
+		if err != nil {
+			return nil, err
+		}
+		inner.source, inner.shiftSource = "decrypted", "decrypted"
+		if in.sigs != nil {
+			_ = inner.SetSignatures(in.sigs) // same config: cannot fail
+		}
+		in.inner = inner
+	}
+	events := in.inner.Feed(data)
+	if in.inner.NotPorted != nil {
+		in.NotPorted = in.inner.NotPorted
+		return nil, nil
+	}
+	if len(events) == 0 {
+		return nil, nil
+	}
+	return in.mergeInner(), nil
+}
+
+// mergeInner ports Inspector._merge_inner: the inner observation under the retained TLS envelope. An outer
+// hostname mapping is not kept when a different inner host appears.
+func (in *Inspector) mergeInner() []contracts.Event {
+	outer, inner := *in.outer, in.inner.Observation
+	hasInnerHost := inner.Hostname != nil
+	application := outer.Application
+	if hasInnerHost {
+		application = inner.Application
+	}
+	if inner.Status != contracts.Identified {
+		application = nil
+	}
+	merged := inner
+	evidence := []contracts.Evidence{}
+	for _, e := range outer.Evidence {
+		if e.Field != "application" || (!hasInnerHost && application != nil) {
+			evidence = append(evidence, e)
+		}
+	}
+	merged.Evidence = append(evidence, inner.Evidence...)
+	merged.Encryption, merged.OfferedALPN, merged.Application = str("tls"), outer.OfferedALPN, application
+	if !hasInnerHost {
+		merged.Hostname = outer.Hostname
+	}
+	merged.Reason = "TLS envelope retained; plaintext: " + inner.Reason
+	return in.publish(merged, contracts.Refined)
+}
+
+// DecryptedMetrics are the inner inspection's metrics (nil before any decrypted byte).
+func (in *Inspector) DecryptedMetrics() *contracts.Metrics {
+	if in.inner == nil {
+		return nil
+	}
+	return &in.inner.Metrics
 }
