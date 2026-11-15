@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "c52aa818c3693aca1e2c6d5e62a894e1adfa9e8c",
-  "branch": "claude/go-migration",
-  "build_digest": "2a2dfc83469849cd9796d528a7d7bb35ddbe83a5c0c35fd6ce158fec2ee1582a",
+  "commit": "e8830db4355f4a9498e1c03e452a03d0698122be",
+  "branch": "codex/fix-quic-retirement-http304",
+  "build_digest": "6d9f2621edb6e479727792cf52e03dc11a35ac537da80010eedc64c8758ac1bd",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -80,7 +80,7 @@
     {
       "path": "protocol_engine/continuation.py",
       "component": "engine",
-      "sha256": "1b0135299d95926f2224511a28d58738dd08ce214e16021ecd504c2bb15abb83"
+      "sha256": "08d6c04f00c5cb720d560f4ff6a302d5e2806b9f2db830e0fdcd31655cdb0d1c"
     },
     {
       "path": "protocol_engine/control.py",
@@ -395,7 +395,7 @@
     {
       "path": "protocol_adapters/analyze_pcap.py",
       "component": "adapters",
-      "sha256": "55a3d8b65465e8c627fccb7f7c0f4288c3855c798777ad24559a7a82c85a2a30"
+      "sha256": "ce1739f10c4e42305c5a780a305a66a9d0025d645da9a09ea3b844f76bd6f122"
     },
     {
       "path": "protocol_adapters/capture_stream.py",

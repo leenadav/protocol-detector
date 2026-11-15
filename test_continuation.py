@@ -99,6 +99,32 @@ class HttpContinuationTests(unittest.TestCase):
         self.assertEqual(fields(events[-1].observation)["continuation"], "budget")
         self.assertEqual(inspector.metrics.bytes_inspected, len(GET) + 400)
 
+    def test_304_metadata_never_consumes_the_next_response_as_a_body(self):
+        for header in (b"Content-Length: 1000\r\n", b"Transfer-Encoding: chunked\r\n", b""):
+            for prefix in (b"", OK_EMPTY):  # no-body handling for the first and a later response
+                wire = prefix + b"HTTP/1.1 304 Not Modified\r\n" + header + b"\r\n" + OK_EMPTY
+                chunkings = [[wire], [bytes((byte,)) for byte in wire]]
+                chunkings.extend([wire[:cut], wire[cut:]] for cut in range(1, len(wire)))
+                for chunks in chunkings:
+                    with self.subTest(header=header, later=bool(prefix), lengths=[len(c) for c in chunks]):
+                        inspector, _ = run(chunks, continuation=4096)
+                        summary = fields(inspector.observation)
+                        self.assertEqual(inspector.observation.status, "identified")
+                        self.assertEqual(summary["http_messages"], "3" if prefix else "2")
+                        self.assertIn("2xx", summary["http_status_classes"])
+                        self.assertNotIn("continuation", summary)
+
+    def test_no_body_statuses_take_precedence_over_framing_metadata(self):
+        # Even prohibited CL/TE fields cannot create a body on these statuses. The
+        # initial-message profile accepts the fields; continuation must keep the boundary.
+        for status in (100, 103, 204):
+            for header in (b"Content-Length: 7\r\n", b"Transfer-Encoding: chunked\r\n"):
+                with self.subTest(status=status, header=header):
+                    response = b"HTTP/1.1 %d No Body\r\n" % status + header + b"\r\n"
+                    inspector, _ = run([bytes((byte,)) for byte in response + OK_EMPTY], continuation=4096)
+                    self.assertEqual(fields(inspector.observation)["http_messages"], "2")
+                    self.assertNotIn("continuation", fields(inspector.observation))
+
     def test_framing_error_keeps_the_identification(self):
         inspector, events = run([GET, b"\x16\x03\x01garbage\r\n\r\n", POST], continuation=4096)
         last = events[-1].observation
