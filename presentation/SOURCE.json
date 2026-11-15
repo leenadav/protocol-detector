@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "9bbc9f482f5b9932ac74cc92126c6edc469b545a",
-  "branch": "work/v065-stage0",
-  "build_digest": "0c8c9f21f19cdc856468d1e4c45c8f45553b78b67473858f8d397315bb184f53",
+  "commit": "201a552f8764113620522691a6e0cb2c969031f9",
+  "branch": "codex/fix-quic-retirement-http304",
+  "build_digest": "daf239900f8c82b9b50a6e47f56786dd156f09a5c8b2d4d9e03457cc81e69c7c",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -80,7 +80,7 @@
     {
       "path": "protocol_engine/continuation.py",
       "component": "engine",
-      "sha256": "1b0135299d95926f2224511a28d58738dd08ce214e16021ecd504c2bb15abb83"
+      "sha256": "08d6c04f00c5cb720d560f4ff6a302d5e2806b9f2db830e0fdcd31655cdb0d1c"
     },
     {
       "path": "protocol_engine/control.py",
@@ -395,7 +395,7 @@
     {
       "path": "protocol_adapters/analyze_pcap.py",
       "component": "adapters",
-      "sha256": "80e25b871d8bb3b45cc77417300d6b31008d44a911cb3fb76757d5d7062a729e"
+      "sha256": "cccfc1f16ede1d0f2cb2bf56653233f1e3c31a5970844fbd4ff8a180cc665635"
     },
     {
       "path": "protocol_adapters/capture_stream.py",
