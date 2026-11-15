@@ -362,8 +362,8 @@
         "server"
       ],
       "go": {
-        "notes": "M4: DNS layout over UDP and TCP; 12 datagram, 6 stream, 4 session cases matched; competing datagram candidates not ported",
-        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "notes": "M4: DNS layout over UDP and TCP; 12 datagram, 6 stream, 4 session cases matched",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
       "midstream": true,
@@ -594,7 +594,7 @@
       ],
       "go": {
         "notes": "M4: HTTP/1 start-line/headers through the text route; 55 stream, 10 session cases matched; continuation option ported (no-body statuses end at the headers, Codex R3)",
-        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
       "midstream": true,
@@ -962,7 +962,7 @@
       ],
       "go": {
         "notes": "M4: hint-only LLMNR header semantics in the shared validator; 9 datagram cases matched",
-        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
       "midstream": false,
@@ -990,7 +990,7 @@
       ],
       "go": {
         "notes": "M4: multicast DNS markers in the shared validator; 25 datagram cases matched",
-        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
       "midstream": false,
@@ -1192,7 +1192,7 @@
       ],
       "go": {
         "notes": "M4: NetBIOS name service opcodes and NB/NBSTAT records in the shared validator; 16 datagram cases matched",
-        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
       "midstream": false,
@@ -1956,7 +1956,7 @@
         "server"
       ],
       "go": {
-        "notes": "M5 batch 10: client greeting and request (IPv4, IPv6, domain targets) or server method selection and reply; signature contexts not ported; 69 stream, 4 session cases matched",
+        "notes": "M5 batch 10: client greeting and request (IPv4, IPv6, domain targets) or server method selection and reply; signature contexts ported (socks-req-target, socks-req-port); 69 stream, 4 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
@@ -2271,8 +2271,8 @@
         "server"
       ],
       "go": {
-        "notes": "M4: ClientHello and TLS 1.2/1.3 ServerHello/HRR profiles; 128 stream cases matched; record continuation and fingerprints (JA3/JA4, JA3S/JA4S) ported; certificates ported (TLS 1.2 leaf watch and the RFC 5280 structural profile: 12,584 generated leaves and mutations, 2,500 generated flights and sessions with records, risks and validity compared)",
-        "parity": "migration/parity/compare.py --families (exact; records pending M6)",
+        "notes": "M4: ClientHello and TLS 1.2/1.3 ServerHello/HRR profiles; 128 stream cases matched; record continuation and fingerprints (JA3/JA4, JA3S/JA4S) ported; certificates ported (TLS 1.2 leaf watch and the RFC 5280 structural profile: 12,584 generated leaves and mutations, 2,500 generated flights and sessions with records, risks and validity compared); signature contexts ported; decrypted plaintext refines the envelope (feed_decrypted, M7)",
+        "parity": "migration/parity/compare.py --families (exact, records included)",
         "status": "experimental"
       },
       "midstream": false,

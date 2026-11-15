@@ -360,10 +360,36 @@ Each finding was reproduced before it was changed. Commits are on `claude/go-mig
 The review's two host-dependent TLS fixture failures on the Mac's Python 3.9.6 (TLS 1.3 ClientHello generation by the host
 TLS library) are not reproduced here and are not changed.
 
-## M5 batches 18+ / M7+ — next
+## Remaining families and options, M7 (2026-11-15)
 
-Remaining registry batches (3 families: HTTP2, QUIC, DTLS, each with dedicated review) and the HTTP/2 prior-knowledge correlation with record-level parity per batch; passive
-TLS decryption (M7); frontend and API integration (M8); adapter-level benchmarks (M9); CI wiring with the CI/CD lane (M10).
+The sections above are a ledger: a "Not claimed" or "NotPorted" row records the state at its commit and is
+superseded by the rows below. Every command was run on the head named in the row; parity numbers are
+`make go-check` (`compare.py --families`, every registry family, 0 unlisted gaps, `gaps.json` empty).
+
+| item | state | evidence |
+|---|---|---|
+| QUIC | implemented | `d2a8469`: Initial protection (v1/v2), CRYPTO assembler per capture scope and direction (C5/C6), D02 retraction, R2 two-scope reset. All committed QUIC cases match; ~16,500 generated datagrams (10,558 with JA4) compared with the reference, 0 mismatches. |
+| HTTP/2, http2-server, HPACK | implemented | `4b21369`: 7,000 generated scenarios, 0 mismatches. |
+| DTLS | implemented | `8c5a9c1`: 12,000 generated datagrams, 0 mismatches. |
+| STUN over TCP | implemented | `fd92ed0`: 4,000 generated streams, 0 mismatches. |
+| Fingerprints (JA3/JA4, JA3S/JA4S, HASSH, h2, QUIC/DTLS JA4) | implemented | `0b13a2b`: every committed case re-run with the option, 0 mismatches; `gaps.json` emptied. |
+| Certificates (TLS 1.2 leaf watch, RFC 5280 structural profile, validity risks) | implemented | `9e7432d`: 12,584 generated leaves, 2,500 flights and sessions with records, 0 mismatches. |
+| Heuristics | implemented | `17aa6f1`: 6,000 generated inputs, 0 mismatches; fixed a Unicode case-mapping bug (`ſtarttls` opened a STARTTLS boundary). |
+| Custom signatures (`retain_contexts`) | implemented | `957ff39`: parser contexts, unknown-payload signatures, App-ID metadata, `signature_set` digest, `replay --signatures`. Random 60-signature sets over all 6,584 cases (4 seeds) and over HTTP/2, DTLS, STUN, heuristics and QUIC corpora, 0 mismatches; 20,000 signature documents and 20,000 patterns (accept/reject, digest, every invalid-pattern message). RE2 cannot express possessive or atomic groups, inline flags, repeats above 1000 or a non-final `$`: such a pattern is refused as not ported, never guessed (3.2% of the random pattern corpus). |
+| Key-log TLS decryption (M7) | implemented (engine) | `4111a70`: `go/internal/decrypt` (KeyProvider, TLS 1.3 and TLS 1.2 ECDHE AES-GCM record engines, TlsConnection states and reason codes) and `Inspector.FeedDecrypted`. 12,300 scripted connection traces, 2,200 key-provider traces and 3,000 `feed_decrypted` traces, 0 divergences; fixed shifted-phase provenance inside decrypted plaintext. `golang.org/x/crypto` added for ChaCha20-Poly1305 only (ADR 0002). The presentation glue (`decryptor.py`, `capture.py`, `live.py`) belongs to M8. |
+| Engine benchmark (M9, engine level) | measured | `bench_compare.py --iterations 200 --rounds 3` on `4111a70`: Go p50 faster by 8.0x (http_small), 36.4x (http_fragmented), 13.5x (tls_whole), 18.1x (tls_fragmented), 9.5x (http_after_identification); local CPU only, not SWG latency. Adapter-level benchmarks are not built yet. |
+
+## Open after M7
+
+- Default-backend switch, merge and deployment: Lee's decision (AGENTS.md); the branch makes no switch.
+- M8 (frontend, API, presentation decryption glue) and M10 (CI, incl. `govulncheck` over `go/`) are other lanes.
+- Contracts C14-C17 (cursor APIs, cancellation, fail-closed adapter errors, logging) stay `pending`: they are
+  HTTP- and adapter-level and are not exercised by `cases.json`.
+- Reference finding, not ported: `applications._PORT_TABLES` caches port tables by application name, so a
+  custom signature (or configured mapping) seen over two carriers in one process takes the first carrier's
+  ports. Go computes them per verdict; the signature differential clears the cache per case. Reported to Lee.
+- Signature documents whose description is a JSON object or list are refused as not ported (Python's
+  `str()` of a dict depends on key order the Go decoder does not keep).
 
 ## Open decisions and blockers
 
