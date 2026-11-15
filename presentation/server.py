@@ -417,7 +417,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.respond(429, {"error": str(error)})
             except (ValueError, OSError) as error:
                 return self.respond(400, {"error": str(error)})
-        if path in ("/api/live/start", "/api/live/stop", "/api/live/heartbeat"):
+        if path in ("/api/live/start", "/api/live/stop", "/api/live/heartbeat", "/api/live/reset"):
             if self.headers.get('X-Live-Token') != self.server.live.token:
                 return self.respond(403, {'error': 'Reload the dashboard before starting capture.'})
             try:
@@ -434,6 +434,10 @@ class Handler(BaseHTTPRequestHandler):
                     # Stage 6 (A08): the only call that keeps a run alive, scoped to the run id it names.
                     renewed = self.server.live.heartbeat(options.get('run_id'))
                     result = dict(self.server.live.snapshot(), renewed=renewed)
+                elif path.endswith('/reset'):
+                    # M0: clear retained results of the named run only; a stale tab never resets a replacement run.
+                    outcome = self.server.live.reset(options.get('run_id'))
+                    result = dict(self.server.live.state_view(), **outcome)
                 else:
                     self.server.live.stop(run_id=options.get('run_id'))      # idempotent
                     result = self.server.live.snapshot()

@@ -55,6 +55,10 @@ class Inspector:
         self._hint_source = "caller"
         self._next = None      # Inspector for the phase after a structural application shift
         self._carrier = None   # identification that announced the shift
+        # The identification that announced this inspector's shift, kept after the shifted phase merges (the carrier
+        # is cleared then). Host correlation only, never emitted: an LDAP server whose StartTLS success and ServerHello
+        # share a segment has shifted before the host compares it with the client's request.
+        self.announcement = None
         self._shift = None     # boundary name
         self._shift_source = source  # "wire" for a boundary this direction announced, "wire:peer" when the host opened it
 
@@ -139,6 +143,7 @@ class Inspector:
         self._continuing = False
         self._prefix.clear()
         self._carrier, self._shift = self.observation, boundary
+        self.announcement = self.observation
         remaining = self.config.max_bytes - self.metrics.bytes_inspected
         if remaining < 64:
             self._next = None
@@ -170,6 +175,7 @@ class Inspector:
         if remaining < 64:
             return False
         self._carrier, self._shift, self._shift_source = self.observation, boundary, self.source + ":peer"
+        self.announcement = self.observation
         config = replace(self.config, max_bytes=remaining) if remaining != self.config.max_bytes else self.config
         self._next = Inspector(config, self.rules, self.source, protocol_hint=expected, signatures=self.signatures)
         self._next._hint_source = "shift:" + boundary
@@ -278,6 +284,7 @@ class Inspector:
         self._outer = None
         self._next = None
         self._carrier = None
+        self.announcement = None
         self._unknown = None
         self._terminal = True
         self._parser = None

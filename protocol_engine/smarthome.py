@@ -49,6 +49,19 @@ _TUYA_COMMANDS = {0x00: "udp", 0x07: "control", 0x08: "status", 0x09: "heartbeat
 
 KASA_KEY = 171
 MAX_JSON_DEPTH = 8
+# An integer literal of more than 4300 digits is not accepted (review R6, 2026-11-14). The bound used to be
+# CPython's own int() digit limit, which json.loads hits on 3.11+ and on patched 3.9/3.10 but not on older patch
+# releases (3.9.6 parsed such a literal), so the verdict depended on the interpreter. It is a profile limit now.
+MAX_JSON_INTEGER_DIGITS = 4300
+
+
+def _bounded_integer(literal):
+    """json.loads parse_int hook: bound the literal's digits and never convert it; integer values are not read."""
+    if len(literal) - literal.startswith("-") > MAX_JSON_INTEGER_DIGITS:
+        raise ValueError("JSON integer literal exceeds the digit limit")
+    return 0
+
+
 # Module names from the TP-Link Smart Home (Kasa) local protocol; only these are ever emitted.
 _KASA_MODULES = frozenset(("system", "emeter", "schedule", "count_down", "anti_theft", "time", "cnCloud", "netif",
                            "context", "smartlife.iot.common.emeter", "smartlife.iot.smartbulb.lightingservice",
@@ -129,7 +142,7 @@ def kasa(data, config):
             depth -= 1
         text.append(plain)
     try:
-        message = json.loads(text.decode("ascii"))
+        message = json.loads(text.decode("ascii"), parse_int=_bounded_integer)
     except ValueError:
         raise ParseError("TP-Link Smart Home plaintext is not one JSON document") from None
     if not isinstance(message, dict) or not message or not all(isinstance(value, dict) for value in message.values()):

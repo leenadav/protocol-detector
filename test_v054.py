@@ -137,6 +137,29 @@ class LDAPStartTLSTests(unittest.TestCase):
             self.assertEqual((record["app"], record["shifted_from"], record["client_protocol"], record["server_protocol"]), ("ssl", "ldap", "tls", "tls"))
             self.assertNotIn("cleartext-credential-protocol", record["risks"])
 
+    def test_success_coalesced_with_the_server_hello_still_opens_the_client(self):
+        """2026-11-14: a named success and the ServerHello in one segment shift the server inside that packet; the
+        correlation compared the client's request with the server's TLS observation and never opened the client."""
+        cr, cs = 1000, 9000
+        server_bytes = LDAP_STARTTLS_RESPONSE + TLS_SERVER13
+        for client_bytes, order in ((LDAP_STARTTLS_REQUEST + HELLO, "request and hello coalesced"),
+                                    (LDAP_STARTTLS_REQUEST, "hello after the answer")):
+            frames = [frame(A, B, 999, 0, 2), frame(B, A, 8999, 1000, 18), frame(A, B, cr, cs, 24, client_bytes),
+                      frame(B, A, cs, cr + len(client_bytes), 24, server_bytes)]
+            if len(client_bytes) == len(LDAP_STARTTLS_REQUEST):
+                frames.append(frame(A, B, cr + len(client_bytes), cs + len(server_bytes), 24, HELLO))
+            analyzer, client, server, record = analyze(frames)
+            self.assertEqual(analyzer.counts["ldap_starttls_correlated"], 1, order)
+            self.assertEqual((client.encryption, server.encryption), ("tls", "tls"), order)
+            self.assertEqual(fields(client, "shift", "shift_from"), {"shift": "ldap-starttls", "shift_from": "ldap"}, order)
+            self.assertEqual((record["app"], record["client_protocol"], record["server_protocol"]), ("ssl", "tls", "tls"), order)
+        # The announcement never substitutes for a missing or mismatched request: another message id opens nothing.
+        other = ldap_extended(2, 0x78, LDAP_STARTTLS_OID, 0)
+        frames = [frame(A, B, 999, 0, 2), frame(B, A, 8999, 1000, 18), frame(A, B, cr, cs, 24, LDAP_STARTTLS_REQUEST + HELLO),
+                  frame(B, A, cs, cr + len(LDAP_STARTTLS_REQUEST + HELLO), 24, other + TLS_SERVER13)]
+        analyzer, client, server, record = analyze(frames)
+        self.assertEqual((analyzer.counts["ldap_starttls_correlated"], client.encryption, server.encryption), (0, None, "tls"))
+
     def test_analyzer_keeps_plaintext_ldap_after_a_refusal(self):
         # Review round 1: request, refusal, then an ordinary BindRequest and BindResponse in the clear.
         from protocol_fixtures import LDAP_BIND_RESPONSE
