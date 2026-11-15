@@ -13,6 +13,21 @@ H2_PREFACE = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 _NATS_START = re.compile(rb'(INFO|CONNECT)[ \t]+(.+)', re.I)
 
 
+def wire_address(field):
+    """Text of a 4- or 16-byte wire address, the same on every supported interpreter (review R6, 2026-11-14).
+
+    str() of an IPv4-mapped IPv6 address is "::ffff:192.0.2.1" on some CPython releases and "::ffff:c000:201" on
+    others (3.12.3 and 3.9.6 print the latter; 3.9.25, 3.11.17 and 3.13 the former), so evidence and fixtures
+    depended on the interpreter. The mapped form is written out here: dotted quad after "::ffff:", as RFC 5952
+    section 5 recommends and as Go's netip prints it; every other address keeps the RFC 5952 text of str().
+    """
+    address = ipaddress.ip_address(field)
+    if address.version == 6 and address.ipv4_mapped is not None:
+        return "::ffff:" + str(address.ipv4_mapped)
+    return str(address)
+
+
+
 class AmbiguousPrefix(UnsupportedPrefix):
     """Valid for several families at once; carries the candidate set for session correlation."""
 
@@ -607,7 +622,7 @@ class Socks5Parser:
             return None
         field = bytes(buf[pos:pos + length])
         try:
-            address = normalize_hostname(field.decode("ascii")) if atyp == 3 else str(ipaddress.ip_address(field))
+            address = normalize_hostname(field.decode("ascii")) if atyp == 3 else wire_address(field)
         except (ValueError, UnicodeError):
             raise ParseError("Invalid or unsupported SOCKS5 " + what) from None
         return atyp, address, pos + length + 2

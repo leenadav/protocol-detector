@@ -235,6 +235,11 @@ class Analyzer:
             return
         client, server = connection["directions"][state["client"]].inspector, connection["directions"][state["server"]].inspector
         request, response = client.observation, server.observation
+        if response.application_protocol != "ldap" and server.announcement is not None:
+            # A named success shifts the server by itself; when its ServerHello shares the segment the server is TLS
+            # already, and the success it answered with is the announcement (2026-11-14, found while porting this
+            # correlation to Go: the client direction stayed LDAP although it carried the ClientHello).
+            response = server.announcement
         if request.status != "identified" or response.status != "identified" or response.application_protocol != "ldap":
             return
         asked = {e.field: e.value for e in request.evidence if e.field in ("ldap_message", "ldap_extended")}

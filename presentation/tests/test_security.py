@@ -189,7 +189,7 @@ class LocalApiGuardTests(unittest.TestCase):
                 self.assertEqual(self.request("GET", "/api/live/status", headers=headers)[0], 403)
         self.assertEqual(self.request("GET", "/api/live/status", headers={"Origin": "http://127.0.0.1:%d" % port})[0], 200)
         token = json.loads(self.request('GET', '/api/live/interfaces')[1])['token']
-        for path in ('/api/jobs?kind=demo', '/api/jobs/x/cancel', '/api/live/heartbeat', '/api/live/start', '/api/live/stop', '/api/decrypt', '/api/decrypt/demo'):
+        for path in ('/api/jobs?kind=demo', '/api/jobs/x/cancel', '/api/live/heartbeat', '/api/live/start', '/api/live/stop', '/api/live/reset', '/api/decrypt', '/api/decrypt/demo'):
             with self.subTest(path=path):
                 self.assertEqual(self.request('POST', path, b'{}')[0], 403)
                 self.assertEqual(self.request('POST', path, b'{}', {'X-Live-Token': token[:-1] + ('a' if token[-1] != 'a' else 'b')})[0], 403)

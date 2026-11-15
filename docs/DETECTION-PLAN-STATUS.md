@@ -83,7 +83,16 @@ the current content release and of the whole range is pending (PR #18, issue #2)
   stopped/failed/idle release it, an unknown state leaves it, a page for an older run changes nothing) and
   `live.js` dispatches `run/error` when a start fails. `tests/ui/store.test.js` case 6 holds the reviewer's
   reproduction, the retry, the failed start and the legacy snapshot path.
-- Not in this head: the Mac checkout's "Clear sessions & reset capture" control and the frontend-only
-  unknown-to-port/transport labels. That checkout was not pushed to this repository, so they could not be
-  ported here; once pushed (or described), they are to be integrated on top of the cursor path with the
-  local log reset on a new capture id (`liveCaptureId`/`liveCursor` in the store).
+- "Clear sessions & reset capture" and the frontend-only unknown-to-port/transport labels: the Mac checkout
+  holding Lee's versions was never pushed here, so both are implemented from the migration plan's contract
+  (section 2) and must be reconciled with that checkout when it is pushed. Reset: `POST /api/live/reset
+  {run_id}` (token-guarded) → `LiveManager.reset(run_id)` stops the named run and clears its events,
+  sessions, summary, decryption report and event log; a stale or absent run id changes nothing and says so;
+  key-log files are never touched. The page's button is enabled only while a run exists; the store's
+  `live/reset` action empties the local log, cursor, capture id and results under the run identity (a reset
+  answered for an older run counts as stale). Labels: `selectors.displayLabel` shows `<server port> <transport>`
+  (for example `8081 tcp`) for session outcomes only, in the table and the drawer title, with the raw outcome
+  kept beside it; `app`, filters and exports keep the verdict. Tests: `store.test.js` case 7,
+  `test_live_bridge::test_reset_is_scoped_to_the_run_it_names`, `test_http::test_live_reset_without_a_run_changes_nothing`,
+  token guard in `test_security`, and the browser test (label on the unknown demo session, reset disabled
+  without a run).

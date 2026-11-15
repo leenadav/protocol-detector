@@ -1,0 +1,235 @@
+{
+ "recorded": "2026-11-07",
+ "head": "1113a91",
+ "host": "Linux-6.18.44-fc-v310-x86_64-with-glibc2.39",
+ "cpu_count": 4,
+ "python": "3.13.16",
+ "go": "go version go1.26.10 linux/amd64",
+ "iterations_per_round": 300,
+ "rounds": 5,
+ "warmup_flows": 50,
+ "order": "python/go alternated per round, seed 402",
+ "scope": "Engine feed loop including events; excludes Inspector construction, capture, TCP reassembly, output, concurrency; Python with gc enabled, Go with default GC; not SWG latency",
+ "cases": {
+  "http_small": {
+   "input_bytes": 37,
+   "chunks": 1,
+   "python": {
+    "flow": {
+     "p50_us": 45.532,
+     "p95_us": 66.601,
+     "p99_us": 86.853
+    },
+    "round_p50_us": [
+     46.407,
+     45.004,
+     46.099,
+     45.696,
+     43.548
+    ]
+   },
+   "go": {
+    "flow": {
+     "p50_us": 3.515,
+     "p95_us": 8.938,
+     "p99_us": 27.374
+    },
+    "round_p50_us": [
+     3.664,
+     4.089,
+     3.24,
+     2.234,
+     3.515
+    ],
+    "allocs_per_flow": 26.1,
+    "alloc_bytes_per_flow": 2748.5,
+    "metrics": {
+     "bytes_received": 37,
+     "bytes_inspected": 37,
+     "updates": 1,
+     "parser_calls": 1,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "signature_candidates": 0
+    }
+   },
+   "python_over_go_p50": 12.95
+  },
+  "http_fragmented": {
+   "input_bytes": 6050,
+   "chunks": 190,
+   "python": {
+    "flow": {
+     "p50_us": 485.896,
+     "p95_us": 820.947,
+     "p99_us": 870.895
+    },
+    "round_p50_us": [
+     604.177,
+     466.351,
+     781.755,
+     482.045,
+     467.033
+    ]
+   },
+   "go": {
+    "flow": {
+     "p50_us": 19.839,
+     "p95_us": 67.876,
+     "p99_us": 232.884
+    },
+    "round_p50_us": [
+     17.932,
+     21.759,
+     20.596,
+     19.839,
+     17.611
+    ],
+    "allocs_per_flow": 39.2,
+    "alloc_bytes_per_flow": 33953.2,
+    "metrics": {
+     "bytes_received": 6050,
+     "bytes_inspected": 6050,
+     "updates": 190,
+     "parser_calls": 190,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "signature_candidates": 0
+    }
+   },
+   "python_over_go_p50": 24.49
+  },
+  "tls_whole": {
+   "input_bytes": 517,
+   "chunks": 1,
+   "python": {
+    "flow": {
+     "p50_us": 57.042,
+     "p95_us": 112.113,
+     "p99_us": 158.882
+    },
+    "round_p50_us": [
+     66.943,
+     68.804,
+     60.303,
+     49.318,
+     49.839
+    ]
+   },
+   "go": {
+    "flow": {
+     "p50_us": 3.42,
+     "p95_us": 9.188,
+     "p99_us": 24.988
+    },
+    "round_p50_us": [
+     3.411,
+     2.505,
+     3.42,
+     4.26,
+     3.481
+    ],
+    "allocs_per_flow": 32.1,
+    "alloc_bytes_per_flow": 3738.5,
+    "metrics": {
+     "bytes_received": 517,
+     "bytes_inspected": 517,
+     "updates": 1,
+     "parser_calls": 1,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "signature_candidates": 0
+    }
+   },
+   "python_over_go_p50": 16.68
+  },
+  "tls_fragmented": {
+   "input_bytes": 517,
+   "chunks": 17,
+   "python": {
+    "flow": {
+     "p50_us": 59.087,
+     "p95_us": 92.229,
+     "p99_us": 147.02
+    },
+    "round_p50_us": [
+     59.901,
+     57.685,
+     59.904,
+     59.2,
+     58.857
+    ]
+   },
+   "go": {
+    "flow": {
+     "p50_us": 3.023,
+     "p95_us": 8.071,
+     "p99_us": 16.425
+    },
+    "round_p50_us": [
+     3.023,
+     3.298,
+     2.771,
+     3.042,
+     2.849
+    ],
+    "allocs_per_flow": 36.1,
+    "alloc_bytes_per_flow": 4218.5,
+    "metrics": {
+     "bytes_received": 517,
+     "bytes_inspected": 517,
+     "updates": 17,
+     "parser_calls": 17,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "signature_candidates": 0
+    }
+   },
+   "python_over_go_p50": 19.55
+  },
+  "http_after_identification": {
+   "input_bytes": 65573,
+   "chunks": 65,
+   "python": {
+    "flow": {
+     "p50_us": 50.377,
+     "p95_us": 79.473,
+     "p99_us": 119.656
+    },
+    "round_p50_us": [
+     53.005,
+     52.931,
+     52.517,
+     36.736,
+     37.303
+    ]
+   },
+   "go": {
+    "flow": {
+     "p50_us": 2.323,
+     "p95_us": 6.742,
+     "p99_us": 12.271
+    },
+    "round_p50_us": [
+     2.258,
+     2.277,
+     2.33,
+     2.323,
+     3.882
+    ],
+    "allocs_per_flow": 26.1,
+    "alloc_bytes_per_flow": 2748.5,
+    "metrics": {
+     "bytes_received": 65573,
+     "bytes_inspected": 37,
+     "updates": 1,
+     "parser_calls": 1,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "signature_candidates": 0
+    }
+   },
+   "python_over_go_p50": 21.69
+  }
+ }
+}

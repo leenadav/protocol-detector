@@ -43,6 +43,7 @@ function renderLive(control, page) {
   $('live-status').textContent = data.state;
   $('live-start').disabled = running;
   $('live-stop').disabled = !running || data.state === 'stopping';
+  $('live-reset').disabled = !data.run_id;
   ['live-interface','live-duration','live-scope','live-keylog','live-refresh','run-button','upload-button','empty-run','decrypt-run','decrypt-demo','live-app-demo'].forEach(id => $(id).disabled = running);
   const summary = data.summary || {}, counts = summary.counts || {};
   const drops = summary.capture_stats;
@@ -108,6 +109,31 @@ $('live-stop').onclick = async () => {
   clearTimeout(live.timer);
   try { const current = live.latest && live.latest.run_id; await api('/api/live/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Live-Token':live.token},body:JSON.stringify(current?{run_id:current}:{})}); await pollLive(); }
   catch (e) { showError(e.message); live.timer = setTimeout(pollLive,1000); }
+};
+$('live-reset').onclick = async () => {
+  // M0: stops the run this tab watches and clears its retained results; the server refuses a run id it no
+  // longer runs (a stale tab), and the store ignores a reset answered for an older run.
+  const current = live.latest && live.latest.run_id;
+  if (!current) return;
+  $('live-reset').disabled = true;
+  clearTimeout(live.timer);
+  try {
+    const answer = await api('/api/live/reset',{method:'POST',headers:{'Content-Type':'application/json','X-Live-Token':live.token},body:JSON.stringify({run_id:current})});
+    if (answer.reset) {
+      const runId = live.runId === null ? beginRun('live', 'Live capture') : live.runId;
+      store.dispatch({type:'live/reset', runId: runId, control: answer});
+      live.runId = null; live.cursor = 0; live.captureId = null; live.latest = null; live.events = [];
+      $('live-events').innerHTML = ''; $('live-log-count').textContent = '';
+      $('live-metrics').textContent = 'Capture reset · retained sessions and logs cleared';
+      $('live-note').textContent = 'Reset complete. Start a new capture when ready; key-log files were not touched.';
+      $('live-status').textContent = answer.state;
+      $('live-start').disabled = false; $('live-stop').disabled = true;
+      closeDetail(); render();
+    } else {
+      $('live-note').textContent = answer.reason === 'stale' ? 'This tab watched an earlier run; the current run was not reset. Reload to follow it.' : 'No capture to reset.';
+      await pollLive();
+    }
+  } catch (e) { showError(e.message); live.timer = setTimeout(pollLive,1000); }
 };
 function openLiveDetail(sequence) {
   const event = (live.events || []).find(item => String(item.sequence) === String(sequence));

@@ -192,6 +192,36 @@ class LiveManager:
                 pass
             process.wait(timeout=2)
 
+    def reset(self, run_id):
+        """M0: "Clear sessions & reset capture", scoped to the run it names.
+
+        Stops the named run if it is still running and clears every retained result of it (events,
+        sessions, summary, decryption report, event log); the next start is a fresh run and a fresh log. A
+        request naming another run (a stale tab, or no run) changes nothing and says so. Key-log files on
+        disk are never touched: the manager only ever reads the path the user gave for one run.
+        """
+        with self.lock:
+            if run_id is None or run_id != self.capture_id:
+                return {'reset': False, 'reason': 'stale' if run_id else 'no_run', 'run_id': self.capture_id}
+            process = self.process
+        if process is not None and process.poll() is None:
+            self.stop(run_id=run_id)
+        with self.lock:
+            if run_id != self.capture_id:
+                return {'reset': False, 'reason': 'stale', 'run_id': self.capture_id}
+            self.events.clear()
+            self.sessions.clear()
+            self.summary = {}
+            self.decryption = None
+            self.error = None
+            self.sequence = self.session_count = 0
+            self.log = None
+            self.capture_id = None
+            self.interface = None
+            if self.state in ('running', 'stopping'):
+                self.state = 'stopped'
+            return {'reset': True, 'reason': 'cleared', 'run_id': None}
+
     def heartbeat(self, run_id):
         """Stage 6 (A08): the one place that renews the dashboard lease, scoped to the run it names.
 
