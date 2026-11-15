@@ -245,9 +245,13 @@ func (p *Parser) ControlField(name string) ([]byte, bool) {
 }
 
 // RetainedBytes is the capacity of the line accumulator, the kept request target, a pending SSH KEXINIT
-// buffer with its name lists, and the control-protocol header values (parsing.Retainer).
+// buffer with its name lists, and the control-protocol method and header values (parsing.Retainer). Every
+// one of them is a buffer this parser owns outright: none is a subslice of a larger allocation, so its
+// capacity is the whole allocation it keeps alive. The host and the first Upgrade token are kept as strings
+// copied from header values and are counted by length. The method is kept only when it is one of the named
+// methods, at most a dozen bytes. Other retained strings are closed vocabulary values.
 func (p *Parser) RetainedBytes() int {
-	n := cap(p.line) + cap(p.target)
+	n := cap(p.line) + cap(p.target) + len(p.host) + len(p.upgrade) // the two strings are copies of header values
 	if p.kexinit != nil {
 		n += cap(p.kexinit.buffer)
 		for _, list := range p.kexinit.lists {
@@ -707,8 +711,15 @@ func (p *Parser) consumeLine(line []byte) error {
 			i := bytes.LastIndexByte(line, ' ')
 			version = line[i+1:]
 			parts := bytes.SplitN(line, []byte(" "), 3)
+			// Only a method the profile names is kept. An extension method is compared with nothing later,
+			// and keeping it would retain an input-sized string outside the memory accounting (R1).
 			p.method = strings.ToUpper(string(parts[0]))
-			p.target = parts[1]
+			if !methods[p.method] {
+				p.method = ""
+			}
+			// An owned compact copy: a subslice of line would keep the whole copied request line alive
+			// while RetainedBytes counted only the subslice (review of work item #14, R1).
+			p.target = append([]byte(nil), parts[1]...)
 			if p.method != "CONNECT" {
 				label := "extension"
 				if methods[p.method] {

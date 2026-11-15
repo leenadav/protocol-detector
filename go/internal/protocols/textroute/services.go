@@ -382,7 +382,8 @@ func newControlHeaders(line []byte, maxHeaders int) (*controlHeaders, error) {
 	c.request = !(bytes.HasPrefix(line, []byte("SIP/")) || bytes.HasPrefix(line, []byte("RTSP/")))
 	var version []byte
 	if c.request {
-		c.method, _, _ = bytes.Cut(line, []byte(" "))
+		method, _, _ := bytes.Cut(line, []byte(" "))
+		c.method = append([]byte(nil), method...) // owned copy, not a view of the copied line (see Parser.RetainedBytes)
 		version = line[bytes.LastIndexByte(line, ' ')+1:]
 	} else {
 		version, _, _ = bytes.Cut(line, []byte(" "))
@@ -475,7 +476,7 @@ func (c *controlHeaders) consume(line []byte) error {
 			return parsing.Malformed("Invalid control-protocol Content-Length")
 		}
 		if !seen {
-			c.fields[name] = value
+			c.fields[name] = append([]byte(nil), value...) // owned copy, not a view of the copied header line
 		}
 	}
 	return nil
