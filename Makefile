@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy
+.PHONY: bench-go test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -179,6 +179,8 @@ go-check:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzInspectorNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzSelectNeverPanics -fuzztime 5s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./detector -run NONE -fuzz FuzzFlowInvariants -fuzztime 15s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/tlsx -run NONE -fuzz FuzzSplitInvariance -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/textroute -run NONE -fuzz FuzzSplitInvariance -fuzztime 10s
 	cd go/consumertest && GOWORK=off GOTOOLCHAIN=$(GO_MINIMUM) go vet ./... && GOWORK=off GOTOOLCHAIN=$(GO_MINIMUM) go test -race ./...
 	$(MAKE) parity-go
 
@@ -189,6 +191,11 @@ parity-go:
 	python3 -B migration/parity/compare.py --results migration/parity/go-results.json --families $(GO_FAMILIES) --report migration/parity/go-report.json
 
 # Migration M4/M9: Python vs Go engine feed loop on identical bytes, alternating rounds (not part of `check`)
+# Facade benchmarks (integration work item #18): time and allocations per flow on this machine, not a
+# production latency figure. The allocation ceilings are enforced by TestFlowAllocationBudget in go-check.
+bench-go:
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./detector ./internal/contracts -run NONE -bench . -benchmem
+
 bench-compare:
 	BENCH_SCRATCH=$${TMPDIR:-/tmp} python3 -B migration/benchmarks/bench_compare.py --iterations 300 --rounds 5
 

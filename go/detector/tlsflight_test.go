@@ -18,7 +18,7 @@ import (
 // and returns the first bytes each side wrote (the ClientHello flight and the ServerHello flight). The
 // key exchange is whatever the standard library offers by default unless curves restricts it, so the
 // default case is the post-quantum hybrid group current clients negotiate.
-func tlsFlights(t *testing.T, serverName string, alpn []string, curves []tls.CurveID) (client, server []byte) {
+func tlsFlights(t testing.TB, serverName string, alpn []string, curves []tls.CurveID) (client, server []byte) {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
