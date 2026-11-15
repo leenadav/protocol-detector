@@ -332,6 +332,17 @@ Taken before M5 so that session records become comparable for every family as it
 | Go tests | implemented | `ikev2_test.go`: offer evidence, marker, width, group/offer agreement, work and byte budgets, trailing bytes. |
 | Differential result | implemented | `make parity-go` with ikev2 claimed: **6510 compared, 6510 matched, 74 listed gaps** (DTLS, QUIC, HTTP/2, STUN over TCP and two options). Matched on the first run. One-off check outside the committed set: 30,000 seeded IKEv2 mutations with random hints and budgets, all matched. |
 
+### Codex PR #25 findings (R1–R3 of issue #2 comment 6889957362), compared with this branch
+
+Codex fixed these in the Python reference on its own branch (`codex/fix-quic-retirement-http304`, `e8830db`, draft PR #25).
+This branch does not duplicate that Python change; it arrives here when PR #25 reaches `main` and `main` is merged.
+
+| finding | Go on this branch | action |
+|---|---|---|
+| R1: an invalidated UDP flow kept the peer's retained identification | same gap in `session.Tracker.ProcessUDP` (unreachable through replay today: only QUIC invalidates a UDP flow, and QUIC is not ported) | fixed: the invalidation clears every retained direction observation; `TestUDPInvalidationWithdrawsRetainedPeerEvidence` covers both directions and a later peer identification, and fails without the fix |
+| R2: flow retirement reset only one ordered QUIC scope | no Go QUIC assembler yet | requirement for the QUIC batch: retirement (end, idle expiry, Finish, with or without a session callback) resets both ordered scopes |
+| R3: an HTTP 304 (and 1xx, 204) with Content-Length or Transfer-Encoding took the next response as its body | Go HTTP continuation is not ported (`option continuation (HTTP)` is a listed gap) | requirement for the continuation port: no-body statuses end at the header boundary before CL/TE are read |
+
 ## Independent review of 2026-11-14 (snapshot `dbe20f3`, issue #2 comment 6877159227)
 
 Each finding was reproduced before it was changed. Commits are on `claude/go-migration` after batch 18 (`a2cf4e8`).
