@@ -1,6 +1,6 @@
 {
   "applications": {
-    "host_named": 54,
+    "host_named": 169,
     "outcomes": [
       "incomplete",
       "insufficient-data",
@@ -8,10 +8,10 @@
       "unknown-tcp",
       "unknown-udp"
     ],
-    "total": 156
+    "total": 271
   },
-  "content_digest": "991c007668d263d1",
-  "content_release": "2026.11.0",
+  "content_digest": "c4020c2437f3de8d",
+  "content_release": "2026.11.1",
   "counts": {
     "families": 88,
     "hint_only": 9,

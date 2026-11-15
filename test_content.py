@@ -72,7 +72,12 @@ class RollbackTests(unittest.TestCase):
         old = {entry["name"]: entry for entry in content.host_entries("2025.10.0")}
         new = {entry["name"]: entry for entry in content.host_entries()}
         self.assertEqual(len(old), 53)
-        self.assertEqual(len(new), 54)
+        self.assertEqual(len(new), 169)
+        previous = {entry["name"] for entry in content.host_entries("2026.11.0")}
+        self.assertEqual(len(previous), 54)                         # 2026.11.1 added 115 services and changed none
+        self.assertTrue(previous < set(new) and "nordvpn" not in previous and "nordvpn" not in old)
+        self.assertEqual(content.host_provenance()["nordvpn"]["since"], "2026.11.1")
+        self.assertEqual(content.host_provenance()["youtube"]["since"], "2025.10.0")
         self.assertNotIn("openai-platform", old)
         self.assertIn("github.io", old["github"]["domains"])
         self.assertNotIn("github.io", new["github"]["domains"])

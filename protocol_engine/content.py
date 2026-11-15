@@ -32,6 +32,11 @@ HISTORY = (
             "engine-lane self-review (D03); independent review pending on PR #18",
             "provider web fronts separated from service domains; OpenAI split into ChatGPT, platform and web front; "
             "github.io (tenant hosting) removed; TeamViewer/AnyDesk apex and www names are web fronts"),
+    Release("2026.11.1", "2026-11-15", "2026-11-15",
+            "engine-lane self-review against the operator-owned-domain rule; independent review pending",
+            "115 more services on operator-owned domains (streaming, gaming, social, messaging, storage, business, "
+            "developer, identity, generative AI, remote access, VPN, encrypted-DNS resolvers, platform bases, search, "
+            "commerce); remote-access and VPN apex/www names are web fronts"),
 )
 CURRENT = HISTORY[-1].version
 LOCK_PATH = Path(__file__).with_name("content_lock.json")
@@ -40,7 +45,25 @@ LOCK_PATH = Path(__file__).with_name("content_lock.json")
 # tables: None means the entry did not exist yet; a dict names the fields that were different.
 # Entry layout (host_apps._HOST_APPS): name, category, subcategory, technology, risk, description,
 # characteristics, domains, web_fronts (optional).
+# Entries first released in 2026.11.1 (absent from every earlier release).
+_ADDED_2026_11_1 = (
+    "hbo-max", "paramount-plus", "peacock", "dailymotion", "apple-tv", "apple-music", "soundcloud", "deezer",
+    "pandora", "epic-games", "roblox", "xbox-live", "playstation-network", "nintendo", "ea-games", "battle-net",
+    "riot-games", "threads", "tumblr", "quora", "vk", "bluesky", "weibo", "facebook-messenger", "line", "wechat",
+    "viber", "threema", "matrix-element", "goto-meeting", "ringcentral", "yahoo-mail", "proton-mail", "zoho",
+    "mega", "wetransfer", "mediafire", "pcloud", "pastebin", "servicenow", "workday", "hubspot", "zendesk",
+    "docusign", "stripe", "coinbase", "binance", "adobe-cloud", "canva", "figma", "miro", "trello", "asana",
+    "monday", "airtable", "evernote", "grammarly", "docker-hub", "npm", "pypi", "stack-overflow", "jetbrains",
+    "apple-app-store", "google-play", "okta", "duo-security", "auth0", "google-accounts", "1password", "lastpass",
+    "bitwarden", "ms-copilot", "github-copilot", "perplexity", "mistral-ai", "deepseek", "xai-grok", "hugging-face",
+    "midjourney", "character-ai", "poe", "logmein", "splashtop", "rustdesk", "chrome-remote-desktop", "nordvpn",
+    "expressvpn", "proton-vpn", "surfshark", "mullvad", "tailscale", "zerotier", "cloudflare-dns",
+    "google-public-dns", "quad9-dns", "nextdns", "adguard-dns", "apple-base", "apple-push", "ms-base", "yahoo",
+    "bing", "duckduckgo", "baidu", "yandex", "google-ads", "google-analytics", "speedtest", "aliexpress", "walmart",
+    "etsy", "shopify", "booking", "airbnb", "uber",
+)
 _PRIOR_HOST_STATE = MappingProxyType({
+    "2026.11.0": MappingProxyType({name: None for name in _ADDED_2026_11_1}),
     "2025.10.0": MappingProxyType({
         "github": {"domains": ("github.com", "githubusercontent.com", "githubassets.com", "github.io"), "web_fronts": ()},
         "openai-chatgpt": {"description": "OpenAI ChatGPT and API",

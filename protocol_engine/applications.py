@@ -54,9 +54,12 @@ class Application:
 
     def uses_port(self, transport, port):
         """True when transport/port is a documented standard or secure port."""
-        table = _PORT_TABLES.get(self.name)
+        # Keyed by the port lists, not the name: a host-named or custom application carries its carrier's ports,
+        # and the same name over another carrier (ssl, then quic) must not reuse the first carrier's table.
+        ports = self.standard_ports + self.secure_ports
+        table = _PORT_TABLES.get(ports)
         if table is None:
-            table = _PORT_TABLES[self.name] = _port_table(self.standard_ports + self.secure_ports)
+            table = _PORT_TABLES[ports] = _port_table(ports)
         exact, ranges, dynamic = table.get(transport, _EMPTY_PORTS)
         return dynamic or port in exact or any(low <= port <= high for low, high in ranges)
 
@@ -66,7 +69,7 @@ _PORT_TABLES = {}
 
 
 def _port_table(entries):
-    """Per-transport exact set, range list and dynamic flag, computed once per application."""
+    """Per-transport exact set, range list and dynamic flag, computed once per distinct port list."""
     table = {}
     for entry in entries:
         kind, _, spec = entry.partition("/")

@@ -379,15 +379,23 @@ superseded by the rows below. Every command was run on the head named in the row
 | Key-log TLS decryption (M7) | implemented (engine) | `4111a70`: `go/internal/decrypt` (KeyProvider, TLS 1.3 and TLS 1.2 ECDHE AES-GCM record engines, TlsConnection states and reason codes) and `Inspector.FeedDecrypted`. 12,300 scripted connection traces, 2,200 key-provider traces and 3,000 `feed_decrypted` traces, 0 divergences; fixed shifted-phase provenance inside decrypted plaintext. `golang.org/x/crypto` added for ChaCha20-Poly1305 only (ADR 0002). The presentation glue (`decryptor.py`, `capture.py`, `live.py`) belongs to M8. |
 | Engine benchmark (M9, engine level) | measured | `bench_compare.py --iterations 200 --rounds 3` on `4111a70`: Go p50 faster by 8.0x (http_small), 36.4x (http_fragmented), 13.5x (tls_whole), 18.1x (tls_fragmented), 9.5x (http_after_identification); local CPU only, not SWG latency. Adapter-level benchmarks are not built yet. |
 
+## Content release 2026.11.1 (2026-11-15)
+
+| item | state | evidence |
+|---|---|---|
+| Server-name catalog | implemented | 115 more services on operator-owned domains (169 entries, 271 catalog applications): streaming, gaming, social, messaging, storage, business, developer, identity, generative AI, remote access, VPN, encrypted-DNS resolvers, platform bases, search and commerce. Remote-access and VPN apex/www names are web fronts (D03). `content.select("2026.11.0")` reproduces the previous host-catalog digest. Self-reviewed against the rule only; independent review pending. |
+| Parity cases | implemented | `cases.py host_catalog_session_cases()`: every entry as a TLS SNI under its first and last domain, every web front, HTTP Host for every tenth entry and seven names that must not map (329 session cases; 6,913 in total). Python and Go match on all of them (`make check`, `make go-check`); Go needed no change, it loads the shared pack. |
+
 ## Open after M7
 
 - Default-backend switch, merge and deployment: Lee's decision (AGENTS.md); the branch makes no switch.
 - M8 (frontend, API, presentation decryption glue) and M10 (CI, incl. `govulncheck` over `go/`) are other lanes.
 - Contracts C14-C17 (cursor APIs, cancellation, fail-closed adapter errors, logging) stay `pending`: they are
   HTTP- and adapter-level and are not exercised by `cases.json`.
-- Reference finding, not ported: `applications._PORT_TABLES` caches port tables by application name, so a
-  custom signature (or configured mapping) seen over two carriers in one process takes the first carrier's
-  ports. Go computes them per verdict; the signature differential clears the cache per case. Reported to Lee.
+- Reference finding, fixed in Python on 2026-11-15 (Lee's decision): `applications._PORT_TABLES` cached port
+  tables by application name, so a host-named application, configured mapping or custom signature seen over
+  two carriers in one process (YouTube over TLS, then over QUIC) took the first carrier's ports. The cache is
+  keyed by the port list now; `test_appid.PortTablePerCarrierTests` fails without the fix. Go never had it.
 - Signature documents whose description is a JSON object or list are refused as not ported (Python's
   `str()` of a dict depends on key order the Go decoder does not keep).
 
