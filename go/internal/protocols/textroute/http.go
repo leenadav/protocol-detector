@@ -916,7 +916,10 @@ func (p *Parser) parseHost(value []byte) error {
 	if err != nil {
 		return parsing.Malformed("Invalid Host authority")
 	}
-	p.host, p.hasHost = normalized, true
+	// An owned compact copy. normalized is a substring of text, the string copy of the whole authority, so
+	// keeping it would keep the port and a trailing dot alive behind a host charged by its own length
+	// (review of work item #14, round 2).
+	p.host, p.hasHost = strings.Clone(normalized), true
 	return nil
 }
 
