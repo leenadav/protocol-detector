@@ -7,7 +7,6 @@ package analyze
 
 import (
 	"bufio"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -21,6 +20,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/content"
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/policy"
+	"github.com/leenadav/protocol-detector/go/internal/pyjson"
 	"github.com/leenadav/protocol-detector/go/internal/session"
 	"github.com/leenadav/protocol-detector/go/internal/signatures"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
@@ -44,8 +44,88 @@ type Options struct {
 	CRC32CByteLimit  int // Config.max_crc32c_bytes (the reference default is 4096)
 }
 
-// Counts is the summary counter of one run.
-type Counts map[string]int
+// Counts is the summary counter of one run; Order holds its keys in first-touched order, as the reference's
+// Counter (a dict) reports them.
+type Counts struct {
+	Values map[string]int
+	Order  []string
+}
+
+func (c *Counts) add(key string, n int) {
+	if _, seen := c.Values[key]; !seen {
+		c.Order = append(c.Order, key)
+	}
+	c.Values[key] += n
+}
+
+func (c *Counts) set(key string, n int) {
+	if _, seen := c.Values[key]; !seen {
+		c.Order = append(c.Order, key)
+	}
+	c.Values[key] = n
+}
+
+var observationKeys = []string{"status", "transport", "encryption", "application_protocol", "application", "hostname", "offered_alpn", "evidence", "reason", "scope"}
+var evidenceKeys = []string{"field", "value", "source", "strength"}
+var eventKeys = []string{"revision", "kind", "observation"}
+
+// keyOrders is the key order of every object the reference writes with a fixed layout (dict literals and
+// dataclasses.asdict); objects it fills in evidence order are ordered per row (analyzer.Row.Order).
+var keyOrders = map[string][]string{
+	"frame":                          {"frame", "source", "destination", "message", "classification", "events", "app"},
+	"skip":                           {"frame", "status", "reason", "kind"},
+	"capture_gap":                    {"type", "scope", "active_connections", "reason", "frame"},
+	"stream_end":                     {"type", "source", "destination", "classification", "events"},
+	"summary":                        {"summary", "input_quality", "content"},
+	"summary.input_quality":          {"adapter", "checksums", "rejected", "flows_marked", "unsupported", "checksums_note"},
+	"summary.input_quality.rejected": rejectKinds,
+	"summary.content":                {"version", "digest"},
+	"session": {"type", "transport", "client", "server", "start", "end", "packets", "client_bytes", "server_bytes", "end_reason",
+		"app", "category", "subcategory", "technology", "risk", "characteristics", "base_app", "implicitly_uses", "port_usage", "engine_status",
+		"client_protocol", "server_protocol", "encryption", "reasons", "shifted_from", "risks", "attribution", "content", "unknown", "observation",
+		"continuation", "input_quality", "layers", "signature_set", "decision", "policy", "fingerprints", "certificate", "hostname"},
+	"session.attribution":        {"provider", "kind", "family", "activity", "asserted_by"},
+	"session.content":            {"version", "digest"},
+	"session.unknown":            {"session", "client", "server"},
+	"session.unknown.session":    {"code", "stage", "family", "detail"},
+	"session.unknown.client":     {"code", "stage", "family", "detail"},
+	"session.unknown.server":     {"code", "stage", "family", "detail"},
+	"session.observation":        {"mode", "handshake_observed", "directions_seen", "roles"},
+	"session.continuation":       {"client", "server"},
+	"session.layers":             {"version", "transport", "outer", "encryption", "inner", "application", "decryption", "capture_quality", "chain", "claims", "note"},
+	"session.layers.outer":       {"protocol", "app", "status"},
+	"session.layers.encryption":  {"protocol", "offered_alpn", "server_name_asserted", "version"},
+	"session.layers.inner":       {"protocol", "app", "status", "source", "authenticated"},
+	"session.layers.application": {"name", "category", "status", "basis", "provider", "affiliation", "activity"},
+	"session.layers.decryption":  {"state", "reason_code", "authenticated_records"},
+	"session.layers.claims[]":    {"field", "source", "strength"},
+	"session.decision":           {"first_seconds", "stable_seconds"},
+	"session.policy":             {"action", "rule", "reasons", "predicates"},
+	"session.policy.predicates": {"identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions",
+		"observation"},
+}
+
+// orders resolves a path: the fixed table, the observation and event layouts wherever they occur, then the
+// per-row orders of the evidence-ordered maps.
+func orders(row map[string][]string) pyjson.Orders {
+	return func(path string) []string {
+		if keys, ok := keyOrders[path]; ok {
+			return keys
+		}
+		switch {
+		case strings.HasSuffix(path, ".classification"), strings.HasSuffix(path, ".observation") && path != "session.observation":
+			return observationKeys
+		case strings.HasSuffix(path, ".evidence[]"):
+			return evidenceKeys
+		case strings.HasSuffix(path, ".events[]"):
+			return eventKeys
+		}
+		if keys, ok := row[path]; ok {
+			return keys
+		}
+		return row[strings.TrimPrefix(path, "session.")]
+	}
+}
 
 var rejectKinds = []string{"link", "network", "fragment", "length", "transport", "truncated", "checksum", "malformed"}
 
@@ -108,18 +188,11 @@ type printer struct {
 	err  error
 }
 
-func (p *printer) row(v map[string]interface{}) {
-	if p.err != nil {
-		return
+// row writes one JSON line as json.dumps would: kind names the row layout, order the row's own map orders.
+func (p *printer) row(kind string, v map[string]interface{}, order map[string][]string) {
+	if p.err == nil {
+		_, p.err = p.w.WriteString(pyjson.Dumps(v, kind, orders(order)) + "\n")
 	}
-	var b strings.Builder
-	enc := json.NewEncoder(&b)
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(v); err != nil {
-		p.err = err
-		return
-	}
-	_, p.err = p.w.WriteString(b.String())
 }
 
 func (p *printer) line(text string) {
@@ -211,7 +284,7 @@ func isOSError(err error) bool {
 
 // Run analyzes the capture at path and writes the rows to out. The returned error is a capture, I/O or option
 // error the caller reports as "Capture error: ..."; the rows written before it stand, with a capture-gap row.
-func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, error) {
+func Run(path string, pack *content.Pack, opts Options, out io.Writer) (*Counts, error) {
 	if opts.Checksums == "" {
 		opts.Checksums = transport.Ignore
 	}
@@ -229,7 +302,7 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 	p := &printer{w: bufio.NewWriterSize(out, 1<<16), json: opts.JSON}
 	defer p.w.Flush()
 	q := &quality{checksums: opts.Checksums, counts: map[string]int{}}
-	counts := Counts{}
+	counts := &Counts{Values: map[string]int{}}
 	sessions := opts.Sessions || opts.Policy != nil
 
 	// drain prints what tracking emitted since the last call: stream ends and session records, in order.
@@ -237,8 +310,8 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 		for _, row := range an.Rows {
 			if row.Event != nil {
 				if opts.JSON {
-					p.row(map[string]interface{}{"type": "stream_end", "source": endpoint(row.Source), "destination": endpoint(row.Destination),
-						"classification": observationDict(row.Event.Observation), "events": []interface{}{eventDict(*row.Event)}})
+					p.row("stream_end", map[string]interface{}{"type": "stream_end", "source": endpoint(row.Source), "destination": endpoint(row.Destination),
+						"classification": observationDict(row.Event.Observation), "events": []interface{}{eventDict(*row.Event)}}, nil)
 				} else {
 					p.line(fmt.Sprintf("END %s -> %s | %s | %s", row.Source, row.Destination,
 						strings.ToUpper(string(row.Event.Observation.Status)), row.Event.Observation.Reason))
@@ -249,7 +322,7 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 				continue
 			}
 			if opts.JSON {
-				p.row(row.Session)
+				p.row("session", row.Session, row.Order)
 			} else {
 				p.line(readableSession(row.Session))
 			}
@@ -258,7 +331,7 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 	}
 	gap := func(reason, scope string, number int) {
 		tracked, _, _ := an.Tracker.Tables()
-		counts["connections_discarded_after_gap"] += tracked
+		counts.add("connections_discarded_after_gap", tracked)
 		// A partial link/IP header cannot safely identify the affected flow. Active labels are retracted
 		// explicitly, both directions are discarded and a newly observed handshake is required: capture loss
 		// is never turned into a clean end.
@@ -267,7 +340,7 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 			if number > 0 {
 				event["frame"] = number
 			}
-			p.row(event)
+			p.row("capture_gap", event, nil)
 		} else {
 			p.line("CAPTURE_GAP: " + reason)
 		}
@@ -277,10 +350,10 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 	number := 0
 	readErr := capture.ReadFile(path, func(record capture.Record) error {
 		number++
-		counts["frames"]++
+		counts.add("frames", 1)
 		if record.Truncated() {
-			counts["truncated"]++
-			counts["skipped"]++
+			counts.add("truncated", 1)
+			counts.add("skipped", 1)
 			q.counts["truncated"]++
 			gap("Capture truncation; active stream observations invalidated", "active_connections", number)
 			return p.err
@@ -291,7 +364,7 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 			if !ok {
 				return derr
 			}
-			counts["skipped"]++
+			counts.add("skipped", 1)
 			q.counts[reject.Kind]++
 			if reject.Endpoints != nil && an.Tracker.NoteInput(reject.Kind, reject.Endpoints) {
 				q.flowsMarked++
@@ -299,7 +372,7 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 			drain()
 			if !opts.EventsOnly {
 				if opts.JSON {
-					p.row(map[string]interface{}{"frame": number, "status": "skipped", "reason": reject.Message, "kind": reject.Kind})
+					p.row("skip", map[string]interface{}{"frame": number, "status": "skipped", "reason": reject.Message, "kind": reject.Kind}, nil)
 				} else {
 					p.line(fmt.Sprintf("#%d SKIP (%s): %s", number, reject.Kind, reject.Message))
 				}
@@ -322,7 +395,7 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 				q.flowsMarked++
 			}
 		}
-		counts[transportName]++
+		counts.add(transportName, 1)
 		message := an.Process(record.Timestamp, packet)
 		if an.NotPorted != nil {
 			return an.NotPorted
@@ -345,7 +418,7 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 					row["app"] = appid.SessionVerdictWith(pack, opts.Signatures, an.LastClassification, nil, transportName, port, hasPort,
 						appid.Bytes{}, appid.Bytes{}, true, nil).App
 				}
-				p.row(row)
+				p.row("frame", row, nil)
 			} else {
 				p.line(fmt.Sprintf("#%d %s", number, message))
 			}
@@ -365,20 +438,18 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (Counts, 
 		return counts, err
 	}
 	drain()
-	counts["sessions"] = 0 // the reference counts session records only when it emits them
-	if sessions {
-		counts["sessions"] = an.Sessions
+	if sessions { // the reference counts session records only when it emits them
+		counts.set("sessions", an.Sessions)
+	} else {
+		counts.set("sessions", 0)
 	}
 	if opts.JSON {
-		summary := map[string]interface{}{}
-		for k, v := range counts {
-			summary[k] = v
-		}
-		p.row(map[string]interface{}{"summary": summary, "input_quality": q.render(),
-			"content": map[string]interface{}{"version": pack.Release.Version, "digest": pack.Release.Digest}})
+		p.row("summary", map[string]interface{}{"summary": counts.Values, "input_quality": q.render(),
+			"content": map[string]interface{}{"version": pack.Release.Version, "digest": pack.Release.Digest}},
+			map[string][]string{"summary.summary": counts.Order})
 	} else {
-		p.line(fmt.Sprintf("\nFrames: %d; TCP: %d; UDP: %d; skipped: %d; sessions: %d", counts["frames"], counts["tcp"], counts["udp"],
-			counts["skipped"], counts["sessions"]))
+		v := counts.Values
+		p.line(fmt.Sprintf("\nFrames: %d; TCP: %d; UDP: %d; skipped: %d; sessions: %d", v["frames"], v["tcp"], v["udp"], v["skipped"], v["sessions"]))
 	}
 	if p.err != nil {
 		return counts, p.err

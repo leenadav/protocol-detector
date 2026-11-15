@@ -696,8 +696,57 @@ def analyze(path, json_output=False, events_only=False, tcp_hint=None, crc32c_by
     return counts
 
 
+BACKENDS = ("go", "python")
+GO_NOT_PORTED = 64      # exit status of the Go binary for a request it does not serve
+
+
+def go_binary():
+    """The Go engine's command-line binary, or None: PROTODETECT_GO_BINARY, then go/bin/protodetect of a source
+    checkout (`make go-build`), then `protodetect-go` on PATH."""
+    import os
+    import shutil
+    from pathlib import Path
+    named = os.environ.get("PROTODETECT_GO_BINARY")
+    if named:
+        return named if os.access(named, os.X_OK) and os.path.isfile(named) else None
+    built = Path(__file__).resolve().parents[1] / "go" / "bin" / "protodetect"
+    if built.is_file() and os.access(str(built), os.X_OK):
+        return str(built)
+    return shutil.which("protodetect-go")
+
+
+def run_go(binary, arguments):
+    """Run the Go `analyze` with these arguments, forwarding its rows and errors; returns its exit status."""
+    import subprocess
+    import sys
+    import threading
+    process = subprocess.Popen([binary, "analyze"] + list(arguments), stdout=subprocess.PIPE, stderr=subprocess.PIPE,  # noqa: S603
+                               encoding="utf-8", errors="replace")
+    errors = []
+    reader = threading.Thread(target=lambda: errors.append(process.stderr.read()), daemon=True)
+    reader.start()
+    try:
+        for line in process.stdout:
+            sys.stdout.write(line)
+    finally:
+        process.stdout.close()
+        status = process.wait()
+        reader.join()
+        process.stderr.close()
+    return status, "".join(errors)
+
+
 def main():
+    """Offline analysis. The Go engine is the default backend (migration M8): the same options, rows, exit
+    status and error text, verified against this module by `make parity-analyze`. The Python reference runs
+    when asked for (--backend python or PROTODETECT_BACKEND=python), when no Go binary is installed, and for
+    the requests the Go binary does not serve (it says so with exit status 64): --content-version rollback and
+    signature patterns outside its regular-expression subset."""
+    import os
+    import sys
     parser = argparse.ArgumentParser(description="Inspect IPv4 TCP/UDP captures (classic PCAP or pcapng) offline")
+    parser.add_argument("--backend", choices=BACKENDS, default=None,
+                        help="Engine that analyzes the capture: go (default when its binary is installed) or python (the reference)")
     parser.add_argument("capture", help="Path to a classic .pcap or .pcapng file")
     parser.add_argument("--json", action="store_true", help="Write structured JSON Lines")
     parser.add_argument("--events-only", action="store_true", help="Only classification changes and final summary")
@@ -720,6 +769,32 @@ def main():
     parser.add_argument("--tcp-hint", choices=sorted(PARSERS), help="Restrict both TCP directions to one validated candidate")
     parser.add_argument('--crc32c-byte-limit', type=int, default=4096, help='Maximum bytes checked by Python CRC-32C; 0 disables checksummed profiles')
     args = parser.parse_args()
+    requested = args.backend or os.environ.get("PROTODETECT_BACKEND") or None
+    if requested is not None and requested not in BACKENDS:
+        parser.exit(2, "Unknown PROTODETECT_BACKEND {!r}; use go or python\n".format(requested))
+    if requested != "python":
+        binary = go_binary()
+        if binary is None and requested == "go":
+            parser.exit(1, "Capture error: the Go backend binary is not installed (make go-build, or set PROTODETECT_GO_BINARY)\n")
+        if binary is not None:
+            forwarded, skip = [], False
+            for argument in sys.argv[1:]:
+                if skip:
+                    skip = False
+                elif argument == "--backend":
+                    skip = True
+                elif not argument.startswith("--backend="):
+                    forwarded.append(argument)
+            status, errors = run_go(binary, forwarded)
+            if status != GO_NOT_PORTED:
+                if errors:
+                    sys.stderr.write(errors)
+                if status:
+                    sys.exit(status)
+                return
+            if requested == "go":
+                parser.exit(1, "Capture error: " + (errors.strip() or "request not served by the Go backend") + "\n")
+            # Not served by the Go binary: the reference answers, as documented above.
     try:
         if args.content_version:
             detection_content.select(args.content_version)

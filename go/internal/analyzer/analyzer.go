@@ -8,7 +8,6 @@
 package analyzer
 
 import (
-	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -22,6 +21,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/policy"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/quicx"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/x509x"
+	"github.com/leenadav/protocol-detector/go/internal/pyjson"
 	"github.com/leenadav/protocol-detector/go/internal/session"
 	"github.com/leenadav/protocol-detector/go/internal/signatures"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
@@ -150,6 +150,9 @@ type Row struct {
 	Source, Destination transport.Endpoint // stream end only
 	Event               *contracts.Event   // stream end only
 	Session             map[string]interface{}
+	// Order names, for the maps of a session record the reference fills in evidence order, their keys in
+	// that order: "fingerprints", "certificate", "input_quality", "continuation.client", "continuation.server".
+	Order map[string][]string
 }
 
 // New builds an analyzer; options the engine lacks are reported through NotPorted on first use.
@@ -400,12 +403,20 @@ func (a *Analyzer) udpSession(flow *session.State, reason string, end float64) {
 
 func endpoint(e transport.Endpoint) []interface{} { return []interface{}{e.Addr, int(e.Port)} }
 
-func round6(v float64) float64 { return math.Round(v*1e6) / 1e6 }
+// seconds renders a capture time as the reference holds it: the integer 0 before any timestamp above zero,
+// a float afterwards.
+func seconds(v float64) interface{} {
+	if v == 0 {
+		return 0
+	}
+	return v
+}
 
 func (a *Analyzer) record(transportName string, state *session.State, verdict *appid.Verdict, reason string, end float64,
 	clientObs, serverObs *contracts.Observation, clientFacts, serverFacts appid.DirectionFacts) {
+	order := map[string][]string{}
 	record := map[string]interface{}{"type": "session", "transport": transportName, "client": endpoint(state.Client), "server": endpoint(state.Server),
-		"start": state.Start, "end": end, "packets": state.Packets, "client_bytes": state.Bytes[state.Client], "server_bytes": state.Bytes[state.Server],
+		"start": seconds(state.Start), "end": seconds(end), "packets": state.Packets, "client_bytes": state.Bytes[state.Client], "server_bytes": state.Bytes[state.Server],
 		"end_reason": reason}
 	for k, v := range verdict.Fields() {
 		record[k] = v
@@ -448,12 +459,13 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 	record["observation"] = map[string]interface{}{"mode": observationMode,
 		"handshake_observed": transportName == "tcp" && (state.Mode == "" || state.Mode == session.ModeHandshake) && state.Ready,
 		"directions_seen":    seen, "roles": roles}
-	if summary := continuationSummary(clientObs, serverObs); len(summary) > 0 {
+	if summary := continuationSummary(clientObs, serverObs, order); len(summary) > 0 {
 		record["continuation"] = summary // D07: what followed the identification, per direction
 	}
 	quality := "intact"
 	if len(state.Input) > 0 {
 		record["input_quality"] = state.Input
+		order["input_quality"] = state.InputOrder
 		quality = "degraded"
 	}
 	record["layers"] = appid.LayeredView(a.pack, transportName, clientObs, serverObs, verdict, quality)
@@ -461,7 +473,16 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 		record["signature_set"] = a.sigs.Digest // stage 7 (A11): the rule set this verdict used
 	}
 	if state.HasFirst {
-		record["decision"] = map[string]interface{}{"first_seconds": round6(state.FirstDecision - state.Start), "stable_seconds": round6(state.StableAt - state.Start)}
+		// The reference's clock is the integer 0 until a capture timestamp above zero arrives; a decision at
+		// that instant is the integer 0 there (round(0 - 0, 6)), any other is a float.
+		decision := map[string]interface{}{"first_seconds": interface{}(0), "stable_seconds": interface{}(0)}
+		if state.FirstDecision != 0 {
+			decision["first_seconds"] = pyjson.Round(state.FirstDecision-state.Start, 6)
+		}
+		if state.StableAt != 0 {
+			decision["stable_seconds"] = pyjson.Round(state.StableAt-state.Start, 6)
+		}
+		record["decision"] = decision
 	}
 	// Derived evidence (Config.fingerprints) of both directions, by field; a later direction's value wins.
 	fingerprints := map[string]interface{}{}
@@ -471,6 +492,9 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 		}
 		for _, e := range obs.Evidence {
 			if e.Strength == "derived" {
+				if _, seen := fingerprints[e.Field]; !seen {
+					order["fingerprints"] = append(order["fingerprints"], e.Field)
+				}
 				fingerprints[e.Field] = e.Value
 			}
 		}
@@ -478,7 +502,7 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 	if len(fingerprints) > 0 {
 		record["fingerprints"] = fingerprints
 	}
-	if certificate := certificateFields(clientObs, serverObs, state.Start); len(certificate) > 0 {
+	if certificate := certificateFields(clientObs, serverObs, state.Start, order); len(certificate) > 0 {
 		record["certificate"] = certificate // structure labels only: no names, serials or keys
 	}
 	if a.opts.Policy != nil {
@@ -498,7 +522,7 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 	}
 	a.Sessions++
 	if a.opts.Rows {
-		a.Rows = append(a.Rows, Row{Session: record})
+		a.Rows = append(a.Rows, Row{Session: record, Order: order})
 		return
 	}
 	a.Records = append(a.Records, record)
@@ -742,7 +766,7 @@ var continuationFields = map[string]bool{"http_messages": true, "http_methods": 
 	"tls_records": true, "tls_application_data": true, "tls_alert": true, "continuation": true}
 
 // continuationSummary ports continuation.continuation_summary: per-direction continuation evidence ({} when none ran).
-func continuationSummary(client, server *contracts.Observation) map[string]interface{} {
+func continuationSummary(client, server *contracts.Observation, order map[string][]string) map[string]interface{} {
 	summary := map[string]interface{}{}
 	for _, side := range []struct {
 		name string
@@ -764,6 +788,9 @@ func continuationSummary(client, server *contracts.Observation) map[string]inter
 			if key == "continuation" {
 				key = "ended"
 			}
+			if _, seen := fields[key]; !seen && order != nil {
+				order["continuation."+side.name] = append(order["continuation."+side.name], key)
+			}
 			if item.Field == "http_messages" {
 				n, err := strconv.Atoi(item.Value)
 				if err != nil {
@@ -783,7 +810,7 @@ func continuationSummary(client, server *contracts.Observation) map[string]inter
 
 // certificateFields ports analyze_pcap.certificate_fields: the tls_certificate_* evidence of both directions without
 // its prefix, plus the validity label at the capture time when both dates and the clock allow it.
-func certificateFields(client, server *contracts.Observation, at float64) map[string]interface{} {
+func certificateFields(client, server *contracts.Observation, at float64, order map[string][]string) map[string]interface{} {
 	certificate := map[string]interface{}{}
 	for _, obs := range []*contracts.Observation{client, server} {
 		if obs == nil {
@@ -791,13 +818,20 @@ func certificateFields(client, server *contracts.Observation, at float64) map[st
 		}
 		for _, e := range obs.Evidence {
 			if strings.HasPrefix(e.Field, "tls_certificate_") {
-				certificate[e.Field[len("tls_certificate_"):]] = e.Value
+				key := e.Field[len("tls_certificate_"):]
+				if _, seen := certificate[key]; !seen && order != nil {
+					order["certificate"] = append(order["certificate"], key)
+				}
+				certificate[key] = e.Value
 			}
 		}
 	}
 	notBefore, _ := certificate["not_before"].(string)
 	notAfter, _ := certificate["not_after"].(string)
 	if label := x509x.Validity(notBefore, notAfter, &at); label != "" {
+		if _, seen := certificate["validity"]; !seen && order != nil {
+			order["certificate"] = append(order["certificate"], "validity")
+		}
 		certificate["validity"] = label
 	}
 	return certificate

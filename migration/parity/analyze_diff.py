@@ -7,8 +7,9 @@ five conversations per file on shifted client addresses, in classic PCAP or pcap
 flow timeout and seeded faults (dropped, duplicated, reordered, bit-flipped and truncated records, trailing
 garbage). Each capture is analyzed with a seeded option set (JSON or text rows, events only, sessions,
 hostnames, fingerprints, heuristics, certificates, observation modes, checksum policies, continuation, hints,
-custom signatures, a policy) by the Python reference in process and by the Go binary. JSON rows are compared
-as parsed values, text output byte for byte, and the exit status and error text too. Synthetic bytes only.
+custom signatures, a policy) by the Python reference in process and by the Go binary. Standard output is
+compared byte for byte in both forms (JSON rows and text), and the exit status and error text too. Synthetic
+bytes only.
 """
 import argparse
 import contextlib
@@ -170,43 +171,16 @@ def reference(path, options):
     return output.getvalue(), status, error
 
 
-def difference(expected, found, path="$"):
-    if isinstance(expected, dict) and isinstance(found, dict):
-        for key in sorted(set(expected) | set(found)):
-            if key not in expected or key not in found:
-                return "{}.{} present only in {}".format(path, key, "python" if key in expected else "go")
-            inner = difference(expected[key], found[key], path + "." + key)
-            if inner:
-                return inner
-        return None
-    if isinstance(expected, list) and isinstance(found, list):
-        if len(expected) != len(found):
-            return "{} length python {} go {}".format(path, len(expected), len(found))
-        for index, (left, right) in enumerate(zip(expected, found)):
-            inner = difference(left, right, "{}[{}]".format(path, index))
-            if inner:
-                return inner
-        return None
-    numbers = isinstance(expected, (int, float)) and isinstance(found, (int, float)) and not isinstance(expected, bool) and not isinstance(found, bool)
-    if expected != found or (type(expected) is not type(found) and not numbers):
-        return "{} python {!r:.160} go {!r:.160}".format(path, expected, found)
-    return None
-
-
-def compare(reference_result, go_result, as_json):
+def compare(reference_result, go_result):
+    """Standard output byte for byte (the Go rows are written in the reference's JSON text form), then the exit
+    status and the error text."""
     (py_out, py_status, py_error), (go_out, go_status, go_error) = reference_result, go_result
-    if as_json:
-        py_rows, go_rows = py_out.splitlines(), go_out.splitlines()
-        for index, (left, right) in enumerate(zip(py_rows, go_rows)):
-            problem = difference(json.loads(left), json.loads(right))
-            if problem:
-                return "row {}: {}".format(index, problem)
-        if len(py_rows) != len(go_rows):
-            return "row count python {} go {}".format(len(py_rows), len(go_rows))
-    elif py_out != go_out:
+    if py_out != go_out:
         py_rows, go_rows = py_out.splitlines(), go_out.splitlines()
         index = next((i for i, (left, right) in enumerate(zip(py_rows, go_rows)) if left != right), min(len(py_rows), len(go_rows)))
-        return "text line {}: python {!r:.200} go {!r:.200}".format(index, (py_rows[index:] or ["<end>"])[0], (go_rows[index:] or ["<end>"])[0])
+        left, right = (py_rows[index:] or ["<end>"])[0], (go_rows[index:] or ["<end>"])[0]
+        column = next((i for i, (a, b) in enumerate(zip(left, right)) if a != b), min(len(left), len(right)))
+        return "line {} column {}: python ...{!r} go ...{!r}".format(index, column, left[max(0, column - 60):column + 60], right[max(0, column - 60):column + 60])
     if (py_status, py_error) != (go_status, go_error):
         return "exit python {} {!r:.160} go {} {!r:.160}".format(py_status, py_error, go_status, go_error)
     return None
@@ -236,7 +210,7 @@ def main(argv=None):
             done = subprocess.run([args.binary, "analyze", str(capture)] + options, stdout=subprocess.PIPE, stderr=subprocess.PIPE,  # noqa: S603
                                   check=False, timeout=120)
             rows += expected[0].count("\n")
-            problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")), "--json" in options)
+            problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")))
             if problem:
                 failures.append("{} {}: {}".format(capture.name, " ".join(options), problem))
         for line in failures[:10]:

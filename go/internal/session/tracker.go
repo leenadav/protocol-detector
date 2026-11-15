@@ -46,6 +46,7 @@ type State struct {
 	FIN          map[transport.Endpoint]int
 	Mode         string
 	Input        map[string]int
+	InputOrder   []string // the kinds of Input in first-seen order (the reference's dict order)
 	reportedSeen map[transport.Endpoint]snapshot
 	// Decision timing (P2): when the flow was first identified and when its label last changed.
 	FirstDecision float64
@@ -301,6 +302,9 @@ func (t *Tracker) NoteInput(kind string, endpoints *[2]transport.Endpoint) bool 
 	}
 	if state.Input == nil {
 		state.Input = map[string]int{}
+	}
+	if _, seen := state.Input[kind]; !seen {
+		state.InputOrder = append(state.InputOrder, kind)
 	}
 	state.Input[kind]++
 	if kind == transport.KindTruncated {

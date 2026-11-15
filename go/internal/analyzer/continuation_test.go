@@ -18,12 +18,12 @@ func TestContinuationSummaryPerDirection(t *testing.T) {
 		{Field: "http_messages", Value: "9", Source: "wire:headers"}, // not a continuation source
 	}}
 	server := &contracts.Observation{Evidence: []contracts.Evidence{{Field: "http_status", Value: "200", Source: "wire:status_line"}}}
-	got := continuationSummary(client, server)
+	got := continuationSummary(client, server, nil)
 	want := map[string]interface{}{"client": map[string]interface{}{"http_messages": 3, "http_methods": "POST", "ended": "budget"}}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("summary %v, want %v", got, want)
 	}
-	if len(continuationSummary(nil, server)) != 0 {
+	if len(continuationSummary(nil, server, nil)) != 0 {
 		t.Fatal("summary without continuation evidence")
 	}
 }

@@ -386,6 +386,20 @@ superseded by the rows below. Every command was run on the head named in the row
 | Server-name catalog | implemented | 115 more services on operator-owned domains (169 entries, 271 catalog applications): streaming, gaming, social, messaging, storage, business, developer, identity, generative AI, remote access, VPN, encrypted-DNS resolvers, platform bases, search and commerce. Remote-access and VPN apex/www names are web fronts (D03). `content.select("2026.11.0")` reproduces the previous host-catalog digest. Self-reviewed against the rule only; independent review pending. |
 | Parity cases | implemented | `cases.py host_catalog_session_cases()`: every entry as a TLS SNI under its first and last domain, every web front, HTTP Host for every tenth entry and seven names that must not map (329 session cases; 6,913 in total). Python and Go match on all of them (`make check`, `make go-check`); Go needed no change, it loads the shared pack. |
 
+## M8 — offline analysis on the Go engine, default backend (2026-11-15)
+
+Lee's decisions of 2026-11-15: this session also does M8 and M10, the default backend switches to Go once the
+gates pass, host-named applications are added, the Python port-table cache is fixed.
+
+| item | state | evidence |
+|---|---|---|
+| Go `analyze` command | implemented | `1eea0cd`: `go/internal/capture` (classic PCAP and pcapng), `go/internal/policy`, `go/internal/analyze`, `cmd/protodetect analyze` with the options of `analyze_pcap.py`. 4,000 capture files through the reader, 20,000 policy documents and 15,618 evaluations, 0 differences. |
+| Byte-identical rows | implemented | `go/internal/pyjson` writes rows as `json.dumps` does (separators, ASCII escapes, float repr, dict key order incl. evidence-ordered maps, the reference's integer zero clock). 5,400 generated captures (about 76,000 rows) byte-identical in JSON and text form, with exit status and error text. |
+| Default backend | switched for `analyze` | `protocol_adapters/analyze_pcap.main`: Go when its binary is installed, Python on `--backend python` / `PROTODETECT_BACKEND=python`, without a binary, and for what Go declines with exit 64 (`--content-version` rollback, signature patterns outside RE2). `--backend go` never falls back. `test_backend.py` (8 tests); the whole Python suite (841 tests) passes with either backend answering. |
+| Gate | implemented | `make parity-analyze` (`migration/parity/analyze_diff.py`, 300 captures, byte comparison) inside `make go-check`; fuzz targets for capture, signatures and decrypt. |
+| Fixes found | fixed | session tables were walked in Go map order when several states ended together (insertion order now, regression test); an identified git or TPKT route kept its internal candidate name. |
+| Not switched | open | `protodetect live` (tcpdump adapter, compact tracking) and the presentation service (`presentation/server.py`, coordinator, key-log decryption glue) still run the Python engine; their adapters are not ported. |
+
 ## Open after M7
 
 - Default-backend switch, merge and deployment: Lee's decision (AGENTS.md); the branch makes no switch.
