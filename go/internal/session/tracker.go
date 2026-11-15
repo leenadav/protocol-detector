@@ -282,7 +282,13 @@ func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP, obs *contracts
 			previous := flow.Observations[p.Source]
 			switch {
 			case latest.Status == contracts.Invalidated:
+				// The flow is withdrawn, including a peer identification retained before the conflict; otherwise
+				// the session verdict could select that peer and revive the invalidated session (Python
+				// Analyzer._udp, the R1 repair of Codex PR #25).
 				flow.Observation = latest
+				for endpoint := range flow.Observations {
+					delete(flow.Observations, endpoint)
+				}
 				flow.Observations[p.Source] = latest
 			case flow.Observation != nil && flow.Observation.Status == contracts.Invalidated,
 				previous != nil && previous.Status == contracts.Invalidated:

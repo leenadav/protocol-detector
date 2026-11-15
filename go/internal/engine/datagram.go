@@ -32,11 +32,19 @@ func NewDatagram(cfg contracts.Config) (*Datagram, error) {
 	return &Datagram{cfg: cfg}, nil
 }
 
-var datagramValidators = map[string]bool{"dns": true, "llmnr": true}
+// DNS-layout validators handled by dnsx; as in Python VALIDATORS, the mdns and netbios-ns hints run the dns validator.
+var datagramValidators = map[string]bool{"dns": true, "llmnr": true, "mdns": true, "netbios-ns": true}
 
-// Hints the Python VALIDATORS table accepts (a hint outside it is a caller error there).
-var datagramHints = map[string]bool{"dns": true, "llmnr": true, "ntp": true, "radius": true, "rtcp": true, "rtp": true, "tftp": true,
-	"snmp": true, "stun": true, "coap": true, "dhcp": true, "syslog": true, "sip": true, "quic": true, "wireguard": true, "ssdp": true, "dtls": true}
+// DatagramHints is the Python VALIDATORS table (protocol_engine/datagram.py): exactly the hints a caller may give.
+// A hint outside it is a caller error in both runtimes; a hint inside it whose validator the Go backend lacks is
+// reported NotPorted as a datagram candidate. test_migration_parity compares this list with VALIDATORS. Until
+// 2026-11-15 this was a hand-kept subset that refused 15 valid hints (bacnet, ikev2, kerberos, openvpn, ...) even
+// where the validator was ported, the datagram counterpart of review finding R5.
+var DatagramHints = map[string]bool{"bacnet": true, "coap": true, "dhcp": true, "dns": true, "dtls": true, "ethernet-ip": true,
+	"ikev2": true, "kerberos": true, "l2tp": true, "lifx-lan": true, "llmnr": true, "mdns": true, "netbios-ns": true, "netflow": true,
+	"ntp": true, "onc-rpc": true, "openvpn": true, "quic": true, "radius": true, "rip": true, "rtcp": true, "rtp": true, "sflow": true,
+	"sip": true, "snmp": true, "ssdp": true, "stun": true, "syslog": true, "tftp": true, "tplink-smarthome": true, "tuya-lan": true,
+	"wireguard": true}
 
 func sipProbe(data []byte, limit int) bool {
 	if len(data) == 0 || data[0] < 65 || data[0] > 90 {
@@ -219,7 +227,7 @@ func (d *Datagram) candidates(data []byte, hint string) []string {
 func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, error) {
 	base := contracts.Initial("udp")
 	base.Scope = "datagram"
-	if hint != "" && !datagramHints[hint] {
+	if hint != "" && !DatagramHints[hint] {
 		return base, &parsing.NotPorted{What: "unknown UDP hint " + hint}
 	}
 	d.Metrics.BytesReceived += len(data)

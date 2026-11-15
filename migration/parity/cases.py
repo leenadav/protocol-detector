@@ -523,6 +523,406 @@ def hint_cases():
     return cases
 
 
+def smb_vectors():
+    """SMB1 and SMB2/3 for the batch after LDAP: NEGOTIATE requests and responses (dialect layouts, 3.1.1 contexts,
+    posture rows) and the one SESSION_SETUP frame watched after them (security blobs through gss.classify_token,
+    legacy password lengths, response actions and session flags), with the rejection paths of both parsers. A
+    patch is (offset in the SMB message after the 4-byte length, bytes)."""
+    from protocol_adapters import protocol_fixtures as F
+
+    def patch(frame, *edits):
+        out = bytearray(frame)
+        for offset, value in edits:
+            out[4 + offset:4 + offset + len(value)] = value
+        return bytes(out)
+
+    def resize(frame, body):
+        return frame[:1] + len(body).to_bytes(3, "big") + body
+
+    u16 = lambda v: v.to_bytes(2, "little")                                                         # noqa: E731
+    u32 = lambda v: v.to_bytes(4, "little")                                                         # noqa: E731
+    preauth = F.SMB3_PREAUTH_RESPONSE
+    ctx = F.smb3_contexts
+    smb2_311 = lambda *items, mode=3, count=None: F.smb2_response(dialect=0x311, security_mode=mode, contexts=ctx(*items),  # noqa: E731
+                                                                     context_count=len(items) if count is None else count)
+    n1, n2, s2, s1 = F.SMB2_SESSION_NTLM, F.SMB2_SESSION_CHALLENGE, F.SMB2, F.SMB1
+    return [
+        # SMB2/3 negotiate requests
+        ("smb2-request", s2),
+        ("smb2-request-311", F.SMB311),
+        ("smb2-request-required-signing", patch(s2, (68, u16(2)))),
+        ("smb2-request-mode-0", patch(s2, (68, u16(0)))),
+        ("smb2-request-flags", patch(s2, (16, u32(2)))),
+        ("smb2-request-signature", patch(s2, (50, b"\x01"))),
+        ("smb2-request-structure", patch(s2, (64, u16(37)))),
+        ("smb2-request-command", patch(s2, (12, u16(3)))),
+        ("smb2-request-no-dialects", patch(s2, (66, u16(0)))),
+        ("smb2-request-129-dialects", patch(s2, (66, u16(129)))),
+        ("smb2-request-truncated-dialects", patch(s2, (66, u16(40)))),
+        ("smb2-request-unknown-dialect", patch(s2, (100, u16(0x999)))),
+        ("smb2-request-extension", patch(s2, (95, b"\x01"))),
+        ("smb2-request-311-no-contexts", patch(F.SMB311, (96, u16(0)))),
+        ("smb2-request-311-odd-offset", patch(F.SMB311, (92, u32(105)))),
+        ("smb2-request-311-reserved", patch(F.SMB311, (98, u16(1)))),
+        ("smb2-request-311-sha256-only", patch(F.SMB311, (112, u16(2)))),
+        # SMB2/3 negotiate responses
+        ("smb2-response", F.SMB2_RESPONSE),
+        ("smb2-response-311", F.SMB311_RESPONSE),
+        ("smb2-response-posture", F.SMB311_RESPONSE_POSTURE),
+        ("smb2-response-no-cipher", smb2_311(preauth, (2, u16(1) + u16(0)))),
+        ("smb2-response-other-cipher", smb2_311(preauth, (2, u16(1) + u16(9)), (8, u16(1) + u16(7)))),
+        ("smb2-response-two-ciphers", smb2_311(preauth, (2, u16(2) + u16(1) + u16(2)))),
+        ("smb2-response-duplicate-context", smb2_311(preauth, preauth)),
+        ("smb2-response-no-preauth", smb2_311((2, u16(1) + u16(2)))),
+        ("smb2-response-unknown-context", smb2_311(preauth, (7, b"xyz"))),
+        ("smb2-response-context-count", smb2_311(preauth, count=2)),
+        ("smb2-response-20", F.smb2_response(dialect=0x202)),
+        ("smb2-response-21", F.smb2_response(dialect=0x210)),
+        ("smb2-response-30-encryption", F.smb2_response(dialect=0x300, capabilities=0x40)),
+        ("smb2-response-30-plain", F.smb2_response(dialect=0x300, capabilities=0x3f)),
+        ("smb2-response-wildcard", F.smb2_response(dialect=0x2ff)),
+        ("smb2-response-unknown-dialect", F.smb2_response(dialect=0x400)),
+        ("smb2-response-mode-0", F.smb2_response(security_mode=0)),
+        ("smb2-response-required", F.smb2_response(security_mode=2)),
+        ("smb2-response-status", patch(F.SMB2_RESPONSE, (8, u32(0xC0000022)))),
+        ("smb2-response-zero-transfer", patch(F.SMB2_RESPONSE, (96, u32(0)))),
+        ("smb2-response-buffer-offset", patch(F.SMB2_RESPONSE, (120, u16(130)))),
+        ("smb2-response-contexts-on-302", patch(F.SMB2_RESPONSE, (70, u16(1)))),
+        ("smb2-response-no-token", F.smb2_response(token=b"")),
+        # SMB2 negotiate followed by SESSION_SETUP
+        ("smb2-session-ntlm", s2 + n1),
+        ("smb2-session-krb5", s2 + F.SMB2_SESSION_KRB5),
+        ("smb2-session-challenge", F.SMB2_RESPONSE + n2),
+        ("smb2-session-guest", F.SMB2_RESPONSE + F.SMB2_SESSION_GUEST),
+        ("smb2-session-ok", F.SMB2_RESPONSE + F.SMB2_SESSION_OK),
+        ("smb2-session-anonymous", F.SMB2_RESPONSE + F.smb2_session_setup(F.SPNEGO_ACCEPT, response=True, flags=2)),
+        ("smb2-session-encrypted", F.SMB2_RESPONSE + F.smb2_session_setup(F.SPNEGO_ACCEPT, response=True, flags=4)),
+        ("smb2-session-signed-ok", F.SMB2_RESPONSE + patch(F.SMB2_SESSION_OK, (16, u32(9)), (48, b"\x01" * 16))),
+        ("smb2-session-signed-continuing", F.SMB2_RESPONSE + patch(n2, (16, u32(9)))),
+        ("smb2-session-unsigned-signature", F.SMB2_RESPONSE + patch(F.SMB2_SESSION_OK, (50, b"\x01"))),
+        ("smb2-session-request-flags", s2 + patch(n1, (16, u32(0x10)))),
+        ("smb2-session-related", s2 + patch(n1, (16, u32(4)))),
+        ("smb2-session-compounded", s2 + patch(n1, (20, u32(200)))),
+        ("smb2-session-request-status", s2 + patch(n1, (8, u32(1)))),
+        ("smb2-session-request-structure", s2 + patch(n1, (64, u16(24)))),
+        ("smb2-session-request-mode", s2 + patch(n1, (67, b"\x04"))),
+        ("smb2-session-request-offset", s2 + patch(n1, (76, u16(90)))),
+        ("smb2-session-request-length", s2 + patch(n1, (78, u16(1)))),
+        ("smb2-session-request-empty", s2 + F.smb2_session_setup(b"")),
+        ("smb2-session-bad-token", s2 + F.smb2_session_setup(b"\x30\x00")),
+        ("smb2-session-response-status", F.SMB2_RESPONSE + patch(n2, (8, u32(0xC000006D)))),
+        ("smb2-session-response-flags", F.SMB2_RESPONSE + patch(F.SMB2_SESSION_OK, (66, u16(8)))),
+        ("smb2-session-response-structure", F.SMB2_RESPONSE + patch(F.SMB2_SESSION_OK, (64, u16(8)))),
+        ("smb2-session-other-command", s2 + patch(n1, (12, u16(5)))),
+        ("smb2-session-short", s2 + resize(n1, n1[4:4 + 72])),
+        ("smb2-session-short-request-fields", s2 + resize(n1, n1[4:4 + 74])),
+        ("smb2-session-budget", s2 + n1[:1] + (70000).to_bytes(3, "big") + n1[4:]),
+        ("smb2-then-other", s2 + b"GET / HTTP/1.1\r\n\r\n"),
+        ("smb2-then-smb1", s2 + F.SMB1_SESSION_NTLM),
+        # SMB1 negotiate
+        ("smb1-request", s1),
+        ("smb1-request-status", patch(s1, (5, b"\x01"))),
+        ("smb1-request-words", patch(s1, (32, b"\x01"))),
+        ("smb1-request-format", patch(s1, (35, b"\x03"))),
+        ("smb1-request-nonprintable", patch(s1, (37, b"\x07"))),
+        ("smb1-request-other-command", patch(s1, (4, b"\x25"))),
+        ("smb1-response", F.SMB1_RESPONSE),
+        ("smb1-response-lanman", F.smb1_response(words=13)),
+        ("smb1-response-core", F.smb1_response(words=1, challenge=b"")),
+        ("smb1-response-words", F.smb1_response(words=12)),
+        ("smb1-response-index", F.smb1_response(dialect_index=40)),
+        ("smb1-response-index-none", F.smb1_response(dialect_index=0xffff)),
+        ("smb1-response-security-mode", F.smb1_response(security_mode=0x13)),
+        ("smb1-response-challenge-4", F.smb1_response(challenge=bytes(4))),
+        ("smb1-response-status", patch(F.SMB1_RESPONSE, (5, b"\x01"))),
+        # SMB1 negotiate followed by SESSION_SETUP_ANDX
+        ("smb1-session-ntlm", s1 + F.SMB1_SESSION_NTLM),
+        ("smb1-session-legacy", s1 + F.SMB1_SESSION_LEGACY),
+        ("smb1-session-legacy-empty", s1 + F.smb1_session_setup_legacy(0, 0)),
+        ("smb1-session-legacy-long", s1 + F.smb1_session_setup_legacy(25, 24)),
+        ("smb1-session-challenge", F.SMB1_RESPONSE + F.SMB1_SESSION_CHALLENGE),
+        ("smb1-session-guest", F.SMB1_RESPONSE + F.SMB1_SESSION_GUEST),
+        ("smb1-session-authenticated", F.SMB1_RESPONSE + F.smb1_session_setup_response()),
+        ("smb1-session-action", F.SMB1_RESPONSE + F.smb1_session_setup_response(action=4)),
+        ("smb1-session-response-status", F.SMB1_RESPONSE + F.smb1_session_setup_response(status=0xC000006D)),
+        ("smb1-session-request-status", s1 + patch(F.SMB1_SESSION_NTLM, (5, b"\x01"))),
+        ("smb1-session-blob-zero", s1 + patch(F.SMB1_SESSION_NTLM, (47, u16(0)))),
+        ("smb1-session-blob-long", s1 + patch(F.SMB1_SESSION_NTLM, (47, u16(4000)))),
+        ("smb1-session-bad-token", s1 + F.smb1_session_setup(b"\x30\x00")),
+        ("smb1-session-krb5", s1 + F.smb1_session_setup(F.SPNEGO_KRB5_INIT)),
+        ("smb1-session-words-11", s1 + patch(F.SMB1_SESSION_NTLM, (32, b"\x0b"))),
+        ("smb1-session-other-command", s1 + patch(F.SMB1_SESSION_NTLM, (4, b"\x75"))),
+        ("smb1-session-short", s1 + F.smb1_frame(F.smb1_header(0x73) + b"\x00\x00")),
+        ("smb1-then-other", s1 + b"\x00\x00\x00\x10" + bytes(16)),
+    ]
+
+
+def smb_cases():
+    """SMB1 and SMB2/3 (Go batch after LDAP): every vector as a stream (whole / 1-byte / 7-byte / truncated, the
+    whole stream also without FIN), plus a dialect budget at max_headers 1 and a byte budget."""
+    from protocol_adapters import protocol_fixtures as F
+    cases = []
+    for number, (name, data) in enumerate(smb_vectors()):
+        base = "stream/smb-%03d-%s" % (number, name)
+        label = name.split("-", 1)[0]
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("open", [data.hex()], None),
+                                     ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            if variant == "bytes" and len(data) > 600:
+                continue
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": label, "chunks": chunks, "hint": None, "config": {}, "end": end})
+    cases.append({"id": "stream/smb-options/smb1-dialect-budget", "kind": "stream", "label": "smb1", "chunks": [F.SMB1.hex()], "hint": None,
+                  "config": {"max_headers": 1}, "end": "fin"})
+    cases.append({"id": "stream/smb-options/smb2-byte-budget", "kind": "stream", "label": "smb2",
+                  "chunks": [(F.SMB2 + F.SMB2_SESSION_KRB5).hex()], "hint": None, "config": {"max_bytes": 256}, "end": "fin"})
+    return cases
+
+
+def tpkt_vectors():
+    """TPKT connection requests and confirms (batch 20): RDP negotiation requests (offers, credential modes, cookie,
+    correlation), RDP confirms and failures, ISO-TSAP requests and confirms with X.224 parameters, the automatic
+    route's choice between them, and each rejection path of the three parsers."""
+    from protocol_adapters import protocol_fixtures as F
+
+    def x224(kind, dst, params, cls=0, src=b"\x00\x01"):
+        body = bytes([kind]) + dst + src + bytes([cls]) + params
+        return b"\x03\x00" + (5 + len(body)).to_bytes(2, "big") + bytes([len(body) & 0xff]) + body   # the length indicator is one octet
+
+    def patch(data, offset, value):
+        out = bytearray(data)
+        out[offset:offset + len(value)] = value
+        return bytes(out)
+
+    tsap = b"\xc0\x01\x0a\xc1\x02\x01\x00\xc2\x02\x01\x02"
+    return [
+        ("rdp-request", F.RDP),
+        ("rdp-tls-only", F.rdp_request(1)),
+        ("rdp-standard", F.rdp_request(0)),
+        ("rdp-all-offers", F.rdp_request(0x1f)),
+        ("rdp-restricted-admin", F.rdp_request(3, flags=1)),
+        ("rdp-credential-guard", F.rdp_request(3, flags=2)),
+        ("rdp-cookie", F.rdp_request(3, cookie=b"Cookie: mstshash=placeholder\r\n")),
+        ("rdp-cookie-unterminated", F.rdp_request(3, cookie=b"Cookie: mstshash=placeholder")),
+        ("rdp-cookie-control", F.rdp_request(3, cookie=b"Cookie: mstshash=a\x01b\r\n")),
+        ("rdp-correlation", F.rdp_request(3, correlation=True)),
+        ("rdp-correlation-bad", patch(F.rdp_request(3, correlation=True), 23, b"\x07")),
+        ("rdp-correlation-reserved", patch(F.rdp_request(3, correlation=True), len(F.rdp_request(3, correlation=True)) - 1, b"\x01")),
+        ("rdp-offer-flags", F.rdp_request(0x20)),
+        ("rdp-neg-flags", F.rdp_request(3, flags=4)),
+        ("rdp-routing-token", F.rdp_request(3, cookie=b"")[:11] + b"\x02" + F.rdp_request(3)[12:]),
+        ("rdp-neg-length", patch(F.RDP, 13, b"\x09")),
+        ("rdp-trailing", F.RDP[:2] + (len(F.RDP) + 1).to_bytes(2, "big") + bytes([F.RDP[4] + 1]) + F.RDP[5:] + b"\x00"),
+        ("rdp-class", patch(F.RDP, 10, b"\x10")),
+        ("rdp-length-byte", patch(F.RDP, 4, b"\x0f")),
+        ("rdp-confirm", F.RDP_CONFIRM),
+        ("rdp-confirm-standard", F.rdp_confirm(0)),
+        ("rdp-confirm-credssp-flags", F.rdp_confirm(2, flags=0x1b)),
+        ("rdp-confirm-two", F.rdp_confirm(3)),
+        ("rdp-confirm-flags", F.rdp_confirm(1, flags=0x20)),
+        ("rdp-failure", F.rdp_confirm(5, kind=3)),
+        ("rdp-failure-code", F.rdp_confirm(9, kind=3)),
+        ("rdp-failure-flags", F.rdp_confirm(1, flags=1, kind=3)),
+        ("rdp-confirm-kind", F.rdp_confirm(1, kind=4)),
+        ("rdp-confirm-dst-zero", patch(F.RDP_CONFIRM, 6, b"\x00\x00")),
+        ("rdp-confirm-alone", x224(0xd0, b"\x12\x34", b"")),
+        ("rdp-request-alone", x224(0xe0, b"\x00\x00", b"")),
+        ("iso-tsap-request", F.ISO_TSAP),
+        ("iso-tsap-confirm", F.ISO_TSAP_CONFIRM),
+        ("iso-tsap-confirm-tpdu-only", x224(0xd0, b"\x00\x01", b"\xc0\x01\x0a")),
+        ("iso-tsap-class-4", x224(0xe0, b"\x00\x00", tsap, cls=0x40)),
+        ("iso-tsap-class-5", x224(0xe0, b"\x00\x00", tsap, cls=0x50)),
+        ("iso-tsap-no-tsap", x224(0xe0, b"\x00\x00", b"\xc0\x01\x0a")),
+        ("iso-tsap-dst-ref", x224(0xe0, b"\x00\x07", tsap)),
+        ("iso-tsap-confirm-dst-zero", x224(0xd0, b"\x00\x00", tsap)),
+        ("iso-tsap-confirm-empty", x224(0xd0, b"\x00\x01", b"\x01\x00")),
+        ("iso-tsap-duplicate", x224(0xe0, b"\x00\x00", tsap + b"\xc1\x02\x01\x00")),
+        ("iso-tsap-tpdu-size", x224(0xe0, b"\x00\x00", b"\xc0\x01\x0e\xc1\x02\x01\x00")),
+        ("iso-tsap-tpdu-length", x224(0xe0, b"\x00\x00", b"\xc0\x02\x0a\x0a\xc1\x02\x01\x00")),
+        ("iso-tsap-tsap-empty", x224(0xe0, b"\x00\x00", b"\xc1\x00")),
+        ("iso-tsap-tsap-long", x224(0xe0, b"\x00\x00", b"\xc1\x21" + bytes(33))),
+        ("iso-tsap-param-overrun", x224(0xe0, b"\x00\x00", b"\xc1\x05\x01")),
+        ("iso-tsap-param-truncated", x224(0xe0, b"\x00\x00", tsap + b"\xc0")),
+        ("iso-tsap-kind", x224(0xf0, b"\x00\x00", tsap)),
+        ("iso-tsap-large", x224(0xe0, b"\x00\x00", tsap + b"\xc5\xff" + bytes(255) + b"\xc6\xff" + bytes(255) + b"\xc7\xff" + bytes(255))),
+        ("iso-tsap-then-s7", F.ISO_TSAP + F.S7COMM),
+        ("iso-tsap-then-garbage", F.ISO_TSAP + b"\x03\x00\x00\x07\x02\xf0\x80"),
+        ("rdp-then-hello", F.RDP + client_hello_with([(0, b"\x00\x0f\x00\x00\x0crdp.example")])),
+        ("tpkt-version", b"\x02" + F.RDP[1:]),
+        ("tpkt-short", F.RDP[:2] + b"\x00\x0a" + F.RDP[4:14]),
+        ("tpkt-long", F.RDP[:2] + b"\x04\x01" + F.RDP[4:]),
+    ]
+
+
+def tpkt_cases():
+    """TPKT route (batch 20): every vector automatically (whole / 1-byte / 7-byte / truncated) and under the rdp and
+    iso-tsap hints (whole), where the hinted parser's own length bound and profile apply."""
+    cases = []
+    for number, (name, data) in enumerate(tpkt_vectors()):
+        base = "stream/tpkt-%02d-%s" % (number, name)
+        label = "iso-tsap" if name.startswith("iso-tsap") else "rdp"
+        for variant, chunks, end in (("whole", [data.hex()], "fin"), ("bytes", [data[i:i + 1].hex() for i in range(len(data))], "fin"),
+                                     ("sevens", [data[i:i + 7].hex() for i in range(0, len(data), 7)], "fin"),
+                                     ("half", [data[:max(1, len(data) // 2)].hex()], "Capture ended before initial message completed")):
+            if variant == "bytes" and len(data) > 600:
+                continue
+            cases.append({"id": base + "/" + variant, "kind": "stream", "label": label, "chunks": chunks, "hint": None, "config": {}, "end": end})
+        for hint in ("rdp", "iso-tsap"):
+            cases.append({"id": base + "/hint-" + hint, "kind": "stream", "label": hint, "chunks": [data.hex()], "hint": hint, "config": {}, "end": "fin"})
+    return cases
+
+
+def ikev2_vectors():
+    """IKEv2 IKE_SA_INIT (batch 21): initiator offers and responder selections built from payloads, transforms and
+    proposals, with each acceptance and rejection path of ikev2.ikev2 and its SA walk (header, length, budget,
+    chaining, transform values and attributes, required payloads, notifications, CERTREQ, Vendor ID)."""
+    def tr(kind, value, attrs=b"", last=False):
+        body = bytes([kind, 0]) + value.to_bytes(2, "big") + attrs
+        return bytes([0 if last else 3, 0]) + (4 + len(body)).to_bytes(2, "big") + body
+
+    def aes(value=12, bits=128, last=False):
+        return tr(1, value, b"\x80\x0e" + bits.to_bytes(2, "big"), last)
+
+    def proposal(transforms, number=1, last=True, protocol=1, spi=0):
+        body = bytes([number, protocol, spi, len(transforms)]) + b"".join(transforms)
+        return bytes([0 if last else 2, 0]) + (4 + len(body)).to_bytes(2, "big") + body
+
+    cbc = [aes(), tr(2, 5), tr(3, 12), tr(4, 14, last=True)]
+    gcm = [aes(20, 256), tr(2, 7), tr(4, 14, last=True)]
+
+    def ke(group=14, width=None, reserved=b"\x00\x00"):
+        return group.to_bytes(2, "big") + reserved + bytes(256 if width is None else width)
+
+    def notify(kind, data=b""):
+        return b"\x00\x00" + kind.to_bytes(2, "big") + data
+
+    def ike(payloads, response=False, marker=False, spi_i=b"\x11\x12\x13\x14\x15\x16\x17\x18", version=0x20, exchange=34,
+            flags=None, msgid=bytes(4), length_delta=0, reserved=0):
+        chain = b""
+        kinds = [k for k, _ in payloads]
+        for index, (kind, body) in enumerate(payloads):
+            nxt = kinds[index + 1] if index + 1 < len(kinds) else 0
+            chain += bytes([nxt, reserved if index == 0 else 0]) + (4 + len(body)).to_bytes(2, "big") + body
+        spi_r = bytes.fromhex("2122232425262728") if response else bytes(8)
+        flag = (0x20 if response else 0x08) if flags is None else flags
+        header = spi_i + spi_r + bytes([kinds[0] if kinds else 0, version, exchange, flag]) + msgid
+        header += (28 + len(chain) + length_delta).to_bytes(4, "big")
+        return (bytes(4) if marker else b"") + header + chain
+
+    sa = lambda *props: (33, b"".join(props))                                                    # noqa: E731
+    base = [sa(proposal(cbc)), (34, ke()), (40, bytes(32))]
+    resp = [sa(proposal(cbc)), (34, ke()), (40, bytes(32))]
+    nat = (41, notify(16388, bytes(20)))
+    return [
+        ("init-cbc", ike(base)),
+        ("init-gcm", ike([sa(proposal(gcm)), (34, ke()), (40, bytes(32))])),
+        ("init-marker", ike(base, marker=True)),
+        ("init-two-proposals", ike([sa(proposal(cbc, 1, last=False), proposal(gcm, 2)), (34, ke()), (40, bytes(32))])),
+        ("init-modp18", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 18, last=True)])), (34, ke(18, 1024)), (40, bytes(32))])),
+        ("init-nat-cookie-vendor", ike([(41, notify(16390, b"cookie")), sa(proposal(cbc)), (34, ke()), (40, bytes(32)), nat,
+                                       (41, notify(16389, bytes(20))), (43, b"vendor-id")])),
+        ("init-cookie-not-first", ike(base + [(41, notify(16390, b"c"))])),
+        ("init-cookie-empty", ike([(41, notify(16390))] + base)),
+        ("init-nat-short", ike(base + [(41, notify(16388, bytes(19)))])),
+        ("init-notify-spi", ike(base + [(41, b"\x01\x00" + (16388).to_bytes(2, "big") + bytes(20))])),
+        ("init-notify-other", ike(base + [(41, notify(16430))])),
+        ("init-capability-notify", ike(base + [(41, notify(16404))])),
+        ("init-certreq", ike(base + [(38, b"\x04" + bytes(20))])),
+        ("init-vendor-empty", ike(base + [(43, b"")])),
+        ("init-vendor-long", ike(base + [(43, b"v" * 9000)])),
+        ("init-no-nonce", ike([sa(proposal(cbc)), (34, ke())])),
+        ("init-duplicate-ke", ike(base + [(34, ke())])),
+        ("init-nonce-short", ike([sa(proposal(cbc)), (34, ke()), (40, bytes(15))])),
+        ("init-nonce-prf", ike([sa(proposal([aes(), tr(2, 7), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(16))])),
+        ("init-ke-group", ike([sa(proposal(cbc)), (34, ke(15, 384)), (40, bytes(32))])),
+        ("init-ke-width", ike([sa(proposal(cbc)), (34, ke(14, 255)), (40, bytes(32))])),
+        ("init-ke-reserved", ike([sa(proposal(cbc)), (34, ke(reserved=b"\x00\x01")), (40, bytes(32))])),
+        ("init-ke-unknown", ike([sa(proposal(cbc)), (34, ke(19, 64)), (40, bytes(32))])),
+        ("init-unknown-payload", ike(base + [(44, b"x")])),
+        ("init-reserved-bits", ike(base, reserved=0x01)),
+        ("init-critical-bit", ike(base, reserved=0x80)),
+        ("init-length-short", ike(base, length_delta=-1)),
+        ("init-length-long", ike(base, length_delta=1)),
+        ("init-zero-spi", ike(base, spi_i=bytes(8))),
+        ("init-version", ike(base, version=0x10)),
+        ("init-exchange", ike(base, exchange=35)),
+        ("init-flags", ike(base, flags=0x00)),
+        ("init-msgid", ike(base, msgid=b"\x00\x00\x00\x01")),
+        ("init-trailing", ike(base) + b"\x00"),
+        ("sa-empty", ike([(33, b""), (34, ke()), (40, bytes(32))])),
+        ("sa-chain", ike([sa(proposal(cbc, last=False)), (34, ke()), (40, bytes(32))])),
+        ("sa-number", ike([sa(proposal(cbc, number=2)), (34, ke()), (40, bytes(32))])),
+        ("sa-protocol-esp", ike([sa(proposal(cbc, protocol=3)), (34, ke()), (40, bytes(32))])),
+        ("sa-no-transforms", ike([sa(proposal([])), (34, ke()), (40, bytes(32))])),
+        ("sa-transform-chain", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 14)])), (34, ke()), (40, bytes(32))])),
+        ("sa-3des", ike([sa(proposal([tr(1, 3), tr(2, 5), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-aes-bits", ike([sa(proposal([aes(bits=100), tr(2, 5), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-aes-no-attr", ike([sa(proposal([tr(1, 12), tr(2, 5), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-prf-md5", ike([sa(proposal([aes(), tr(2, 1), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-integ-md5", ike([sa(proposal([aes(), tr(2, 5), tr(3, 1), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-dh-ecp", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 19, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-esn", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 14), tr(5, 0, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-attr-on-prf", ike([sa(proposal([aes(), tr(2, 5, b"\x80\x0e\x00\x80"), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-no-dh", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-mixed", ike([sa(proposal([aes(), aes(20), tr(2, 5), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-cbc-no-integrity", ike([sa(proposal([aes(), tr(2, 5), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-gcm-integrity", ike([sa(proposal([aes(20), tr(2, 5), tr(3, 12), tr(4, 14, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-ke-not-offered", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 15, last=True)])), (34, ke()), (40, bytes(32))])),
+        ("sa-budget", ike([sa(*[proposal(cbc, n, last=(n == 40)) for n in range(1, 41)]), (34, ke()), (40, bytes(32))])),
+        ("resp", ike(resp, response=True)),
+        ("resp-certreq", ike(resp + [(38, b"\x04" + bytes(40)), (41, notify(16404))], response=True)),
+        ("resp-certreq-hash", ike(resp + [(38, b"\x04" + bytes(19))], response=True)),
+        ("resp-certreq-encoding", ike(resp + [(38, b"\x07" + bytes(20))], response=True)),
+        ("resp-certreq-long", ike(resp + [(38, b"\x0c" + bytes(9000))], response=True)),
+        ("resp-capability-data", ike(resp + [(41, notify(16405, b"x"))], response=True)),
+        ("resp-cookie", ike([(41, notify(16390, b"c"))] + resp, response=True)),
+        ("resp-two-proposals", ike([sa(proposal(cbc, 1, last=False), proposal(gcm, 2)), (34, ke()), (40, bytes(32))], response=True)),
+        ("resp-two-groups", ike([sa(proposal([aes(), tr(2, 5), tr(3, 12), tr(4, 14), tr(4, 15, last=True)])), (34, ke()), (40, bytes(32))], response=True)),
+        ("resp-zero-responder-spi", ike(resp, response=True)[:8] + bytes(8) + ike(resp, response=True)[16:]),
+        ("short", ike(base)[:300]),
+    ]
+
+
+def ikev2_cases():
+    """IKEv2 (batch 21): every vector as a datagram automatically, under the ikev2 hint, and truncated; the work and
+    opaque-field budgets at max_headers 4 and max_line 32."""
+    cases = []
+    for number, (name, data) in enumerate(ikev2_vectors()):
+        base = "datagram/ikev2-%02d-%s" % (number, name)
+        cases.append({"id": base + "/whole", "kind": "datagram", "label": "ikev2", "payload": data.hex(), "hint": None, "config": {}})
+        cases.append({"id": base + "/hint", "kind": "datagram", "label": "ikev2", "payload": data.hex(), "hint": "ikev2", "config": {}})
+        cases.append({"id": base + "/half", "kind": "datagram", "label": "ikev2", "payload": data[:max(1, len(data) // 2)].hex(), "hint": "ikev2",
+                      "config": {}})
+    vectors = dict(ikev2_vectors())
+    for name, config in (("init-nat-cookie-vendor", {"max_headers": 4}), ("init-nat-cookie-vendor", {"max_line": 32}),
+                         ("init-cbc", {"max_bytes": 300})):
+        cases.append({"id": "datagram/ikev2-options/%s-%s" % (name, "-".join("%s%d" % kv for kv in config.items())), "kind": "datagram",
+                      "label": "ikev2", "payload": vectors[name].hex(), "hint": None, "config": config})
+    return cases
+
+
+def datagram_hint_cases():
+    """Explicit UDP hints (2026-11-15, the datagram counterpart of review R5): every VALIDATORS entry as a hint on a
+    datagram it identifies (when one exists among the fixtures), truncated, and on three foreign payloads, where the
+    hint must select the validator and never establish identity by itself."""
+    from protocol_engine.datagram import VALIDATORS
+    fixtures = [data for data, _ in DATAGRAM_CASES] + [data for data, _, _ in HINTED_DATAGRAM_CASES] + [d for _, d in ikev2_vectors()[:2]]
+    fixtures += [d for _, d in kerberos_vectors()[:1]]
+    foreign = (("dns-query", DNS), ("zeros", bytes(64)), ("text", b"GET / HTTP/1.1\r\nHost: a.example\r\n\r\n"))
+    cases = []
+    for hint in sorted(VALIDATORS):
+        positive = None
+        for data in fixtures:
+            if DatagramInspector(Config()).inspect(data, protocol_hint=hint).status == "identified":
+                positive = data
+                break
+        named = [("positive", positive), ("truncated", positive[:max(1, len(positive) // 2)])] if positive is not None else []
+        for name, data in named + list(foreign):
+            cases.append({"id": "datagram/hint-%s/%s" % (hint, name), "kind": "datagram", "label": hint, "payload": data.hex(),
+                          "hint": hint, "config": {}})
+    return cases
+
+
 def stream_cases(seed=11, limit=None):
     rng = random.Random(seed)
     cases = []
@@ -561,6 +961,8 @@ def stream_cases(seed=11, limit=None):
     cases.extend(kerberos_cases())
     cases.extend(ldap_cases())
     cases.extend(hint_cases())
+    cases.extend(smb_cases())
+    cases.extend(tpkt_cases())
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
@@ -2312,6 +2714,8 @@ def datagram_cases(seed=12, limit=None):
     cases.extend(udp_cases_4())
     cases.extend(udp_cases_5())
     cases.extend(udp_cases_6())
+    cases.extend(ikev2_cases())
+    cases.extend(datagram_hint_cases())
     return cases
 
 

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/parity"
 	"github.com/leenadav/protocol-detector/go/internal/testframes"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
@@ -384,4 +385,43 @@ func TestSessionCasesMatchThePythonReassembly(t *testing.T) {
 		t.Fatalf("compared %d packets of %d cases", compared, cases)
 	}
 	t.Logf("session cases %d, packets compared %d, messages left to the inspector (zero-payload FIN) %d", cases, compared, skipped)
+}
+
+// R1 of Codex PR #25, ported to the Go tracker: an invalidation in one direction withdraws the whole UDP flow,
+// including the peer's identification retained before the conflict, and nothing afterwards revives it. Before
+// the fix the peer's observation stayed in Observations, where the session verdict could select it.
+func TestUDPInvalidationWithdrawsRetainedPeerEvidence(t *testing.T) {
+	identified := func(name string) *contracts.Observation {
+		o := contracts.Initial("udp")
+		o.Status, o.Encryption = contracts.Identified, &name
+		return &o
+	}
+	invalid := contracts.Initial("udp")
+	invalid.Status, invalid.Reason = contracts.Invalidated, "QUIC CRYPTO contradiction"
+	for _, conflictFromServer := range []bool{false, true} {
+		h := newHarness(t, Options{})
+		toServer, _ := transport.Decode(testframes.UDP(client.Addr, 51000, server.Addr, 443, []byte("c")), 1, transport.Ignore)
+		toClient, _ := transport.Decode(testframes.UDP(server.Addr, 443, client.Addr, 51000, []byte("s")), 1, transport.Ignore)
+		c, s := toServer.(*transport.UDP), toClient.(*transport.UDP)
+		h.tracker.ProcessUDP(0.1, c, identified("quic"))
+		h.tracker.ProcessUDP(0.2, s, identified("quic"))
+		conflict, peer := c, s
+		if conflictFromServer {
+			conflict, peer = s, c
+		}
+		h.tracker.ProcessUDP(0.3, conflict, &invalid)
+		h.tracker.ProcessUDP(0.4, peer, identified("quic")) // a later peer identification must not restore the flow
+		h.tracker.Finish(ReasonCaptureEnded)
+		if len(h.closed) != 1 {
+			t.Fatalf("closed %d", len(h.closed))
+		}
+		flow := h.closed[0].State
+		if flow.Observation.Status != contracts.Invalidated || len(flow.Observations) != 1 ||
+			flow.Observations[conflict.Source].Status != contracts.Invalidated {
+			t.Fatalf("conflict from server=%v: flow %+v observations %+v", conflictFromServer, flow.Observation, flow.Observations)
+		}
+		if _, kept := flow.Observations[peer.Source]; kept {
+			t.Fatalf("conflict from server=%v: peer evidence retained", conflictFromServer)
+		}
+	}
 }
