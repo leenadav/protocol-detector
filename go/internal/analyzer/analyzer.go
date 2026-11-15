@@ -2,9 +2,9 @@
 // tracker drives TCP connections with the engine attached as each direction's sink, the datagram
 // inspector classifies UDP payloads per flow, and when tracking of a connection or flow ends one
 // JSON-friendly session record is produced (verdict, flow risks, layered view, structured unknown
-// reasons, decision timing, content pin, the HTTP/1 continuation summary). Signatures, policy,
-// hostnames-in-records, certificates and the live telemetry are not ported; a direction the engine cannot answer makes the
-// whole run report NotPorted instead of a record.
+// reasons, decision timing, content pin, the HTTP/1 continuation summary, fingerprints, certificate
+// structure, custom signatures with their set digest). Policy, hostnames-in-records and the live telemetry are not
+// ported; a direction the engine cannot answer makes the whole run report NotPorted instead of a record.
 package analyzer
 
 import (
@@ -21,6 +21,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/protocols/quicx"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/x509x"
 	"github.com/leenadav/protocol-detector/go/internal/session"
+	"github.com/leenadav/protocol-detector/go/internal/signatures"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
 )
 
@@ -86,6 +87,7 @@ func (s *Sink) TakeIdentified() []session.Label { out := s.identified; s.identif
 type Analyzer struct {
 	pack      *content.Pack
 	cfg       contracts.Config
+	sigs      *signatures.Set
 	Tracker   *session.Tracker
 	udp       *engine.Datagram
 	udpRev    int
@@ -116,6 +118,8 @@ type Options struct {
 	Fingerprints bool
 	Certificates bool
 	Heuristics   bool
+	// Signatures are custom application signatures (nil or empty: none); a non-empty set retains parser contexts.
+	Signatures *signatures.Set
 }
 
 // New builds an analyzer; options the engine lacks are reported through NotPorted on first use.
@@ -126,6 +130,11 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 	cfg.Certificates = opts.Certificates
 	cfg.Heuristics = opts.Heuristics
 	a := &Analyzer{pack: pack, cfg: cfg}
+	if opts.Signatures.Len() > 0 {
+		a.sigs = opts.Signatures
+		cfg.RetainContexts = true
+		a.cfg = cfg
+	}
 	tr, err := session.NewTracker(opts.Session, func() session.Sink {
 		in, err := engine.New(cfg, "")
 		if err != nil {
@@ -133,6 +142,8 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 				a.NotPorted = np
 			}
 			in, _ = engine.New(contracts.DefaultConfig(), "")
+		} else if a.sigs != nil {
+			_ = in.SetSignatures(a.sigs) // retain_contexts is set with them
 		}
 		a.sinkSeq++
 		return &Sink{In: in, owner: a, seq: a.sinkSeq}
@@ -148,6 +159,8 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 			a.NotPorted = np
 		}
 		udp, _ = engine.NewDatagram(contracts.DefaultConfig())
+	} else if a.sigs != nil {
+		_ = udp.SetSignatures(a.sigs)
 	}
 	// D01: the QUIC CRYPTO store is scoped per flow direction and expires with the flow table.
 	maxQUIC := tr.MaxUDPFlows()
@@ -248,7 +261,7 @@ func (a *Analyzer) closed(c session.Closed) {
 		}
 	}
 	start := state.Start // Python passes at=state["start"] for TCP verdicts only (certificate validity)
-	verdict := appid.SessionVerdictAt(a.pack, clientObs, serverObs, "tcp", int(state.Server.Port), true,
+	verdict := appid.SessionVerdictWith(a.pack, a.sigs, clientObs, serverObs, "tcp", int(state.Server.Port), true,
 		appid.Bytes{N: state.Bytes[state.Client], Known: true}, appid.Bytes{N: state.Bytes[state.Server], Known: true}, state.Ready, &start)
 	if state.Mode == session.ModeMidstream {
 		if verdict.Identified(a.pack) {
@@ -291,11 +304,11 @@ func (a *Analyzer) udpSession(flow *session.State, reason string, end float64) {
 	serverObs := flow.Observations[flow.Server]
 	var verdict *appid.Verdict
 	if serverObs == nil {
-		verdict = appid.SessionVerdict(a.pack, clientObs, nil, "udp", int(flow.Server.Port), true,
-			appid.Bytes{N: flow.Bytes[flow.Client], Known: true}, appid.Bytes{}, true)
+		verdict = appid.SessionVerdictWith(a.pack, a.sigs, clientObs, nil, "udp", int(flow.Server.Port), true,
+			appid.Bytes{N: flow.Bytes[flow.Client], Known: true}, appid.Bytes{}, true, nil)
 	} else {
-		verdict = appid.SessionVerdict(a.pack, clientObs, serverObs, "udp", int(flow.Server.Port), true,
-			appid.Bytes{N: flow.Bytes[flow.Client], Known: true}, appid.Bytes{N: flow.Bytes[flow.Server], Known: true}, true)
+		verdict = appid.SessionVerdictWith(a.pack, a.sigs, clientObs, serverObs, "udp", int(flow.Server.Port), true,
+			appid.Bytes{N: flow.Bytes[flow.Client], Known: true}, appid.Bytes{N: flow.Bytes[flow.Server], Known: true}, true, nil)
 	}
 	a.record("udp", flow, verdict, reason, end, clientObs, serverObs, appid.DirectionFacts{}, appid.DirectionFacts{})
 }
@@ -359,6 +372,9 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 		quality = "degraded"
 	}
 	record["layers"] = appid.LayeredView(a.pack, transportName, clientObs, serverObs, verdict, quality)
+	if a.sigs != nil {
+		record["signature_set"] = a.sigs.Digest // stage 7 (A11): the rule set this verdict used
+	}
 	if state.HasFirst {
 		record["decision"] = map[string]interface{}{"first_seconds": round6(state.FirstDecision - state.Start), "stable_seconds": round6(state.StableAt - state.Start)}
 	}

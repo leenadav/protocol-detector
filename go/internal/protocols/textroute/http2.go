@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/leenadav/protocol-detector/go/internal/ascii"
+	"strconv"
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/names"
@@ -133,17 +134,28 @@ type HTTP2Parser struct {
 	reason         string
 	scope          string
 	fingerprints   []parsing.Row
+	contexts       parsing.Contexts
 }
 
 // NewHTTP2 creates the client parser; NewHTTP2Server the server parser (no preface). With Options.Fingerprints the
 // client direction also derives the SETTINGS string and the pseudo-header order (a server derives neither).
 func NewHTTP2(opts Options) *HTTP2Parser {
-	return &HTTP2Parser{opts: opts, request: true, reason: "Waiting for complete HTTP/2 client preface and initial SETTINGS"}
+	return &HTTP2Parser{opts: opts, request: true, reason: "Waiting for complete HTTP/2 client preface and initial SETTINGS", contexts: retained(opts)}
+}
+
+// retained is the parser's initial context map: empty when contexts are retained (signatures are then consulted at
+// identification even before the HEADERS block is decoded), nil otherwise.
+func retained(opts Options) parsing.Contexts {
+	if opts.RetainContexts {
+		return parsing.Contexts{}
+	}
+	return nil
 }
 
 // NewHTTP2Server creates the server-direction parser: the first frame is SETTINGS without any preface.
 func NewHTTP2Server(opts Options) *HTTP2Parser {
-	return &HTTP2Parser{opts: opts, prefacePos: len(Preface), reason: "Waiting for the server's initial HTTP/2 SETTINGS after the h2c upgrade"}
+	return &HTTP2Parser{opts: opts, prefacePos: len(Preface), reason: "Waiting for the server's initial HTTP/2 SETTINGS after the h2c upgrade",
+		contexts: retained(opts)}
 }
 
 func (p *HTTP2Parser) Done() bool    { return p.done }
@@ -151,7 +163,7 @@ func (p *HTTP2Parser) Refined() bool { return p.refined }
 
 func (p *HTTP2Parser) Result() *parsing.Result {
 	return &parsing.Result{ProtocolName: "http/2", Host: p.host, HasHost: p.hasHost, ALPN: []string{}, Extra: p.extra, Reason: p.reason,
-		Scope: p.scope, Continues: p.continues, Fingerprints: p.fingerprints}
+		Scope: p.scope, Continues: p.continues, Fingerprints: p.fingerprints, Contexts: p.contexts}
 }
 
 func (p *HTTP2Parser) prefaceLen() int {
@@ -491,6 +503,36 @@ func (p *HTTP2Parser) headers(block []byte) error {
 	}
 	if p.opts.Fingerprints && p.request {
 		p.fingerprints = append(p.fingerprints, parsing.Row{Field: "h2_pseudo_order", Value: strings.Join(order, ","), Provenance: "headers_frame"})
+	}
+	if p.contexts != nil {
+		if p.request {
+			p.contexts["http2-req-method"] = append([]byte{}, pseudo[":method"]...)
+			if path, ok := pseudo[":path"]; ok {
+				before, _, _ := bytes.Cut(path, []byte("?"))
+				p.contexts["http2-req-uri-path"] = append([]byte{}, before...)
+			}
+			if authority, ok := pseudo[":authority"]; ok {
+				p.contexts["http2-req-host-header"] = append([]byte{}, authority...)
+			}
+			for _, f := range regular {
+				if string(f.name) == "user-agent" {
+					agent := f.value
+					if len(agent) > 1024 {
+						agent = agent[:1024]
+					}
+					p.contexts["http2-req-user-agent-header"] = append([]byte{}, agent...)
+					break
+				}
+			}
+			block := []byte{}
+			for _, f := range regular {
+				block = append(append(append(append(block, f.name...), ": "...), f.value...), "\r\n"...)
+			}
+			p.contexts["http2-req-headers"] = block
+		} else {
+			status, _ := strconv.Atoi(string(pseudo[":status"]))
+			p.contexts["http2-rsp-status"] = int64(status)
+		}
 	}
 	p.extra = append(p.extra, evidence...)
 	if p.request {

@@ -73,14 +73,16 @@ type Match struct {
 	Evidence []Row
 	Reason   string
 	Retracts bool
+	Contexts parsing.Contexts // signature contexts (family tls); nil unless retained
 }
 
 // Options are the Config fields the validator reads.
 type Options struct {
-	MaxHeaders   int
-	MaxBytes     int
-	Decrypt      bool // Config.quic_decrypt
-	Fingerprints bool // JA4 (protocol code q) over a complete ClientHello
+	MaxHeaders     int
+	MaxBytes       int
+	Decrypt        bool // Config.quic_decrypt
+	Fingerprints   bool // JA4 (protocol code q) over a complete ClientHello
+	RetainContexts bool // signature contexts of a complete ClientHello (family tls)
 }
 
 func hkdfExpandLabel(secret []byte, label string, length int) []byte {
@@ -347,7 +349,7 @@ func Validate(data []byte, opts Options, asm *Assembler, scope string, now *floa
 		evidence = append(evidence, wire("crypto_assembly", "partial", "structural"))
 		return &Match{Evidence: evidence, Reason: "QUIC Initial protection removed; ClientHello incomplete in this datagram"}, nil
 	}
-	offer, err := tlsx.ParseClientHello(hello[4:], opts.Fingerprints)
+	offer, err := tlsx.ParseClientHello(hello[4:], opts.Fingerprints || opts.RetainContexts)
 	if err != nil {
 		evidence = append(evidence, wire("crypto_assembly", "invalid", "structural"))
 		return &Match{Evidence: evidence, Reason: "QUIC Initial protection removed; CRYPTO stream is not a supported ClientHello"}, nil
@@ -362,14 +364,20 @@ func Validate(data []byte, opts Options, asm *Assembler, scope string, now *floa
 	if offer.ECH != "" {
 		evidence = append(evidence, Row{"tls_ech", offer.ECH, "quic_client_hello", "offered"})
 	}
+	var contexts parsing.Contexts
 	if offer.Info != nil {
 		offer.Info.Version = 0x0304 // QUIC requires TLS 1.3; supported_versions carries it
-		evidence = append(evidence, Row{"ja4", fingerprint.JA4(offer.Info, "q"), "wire:quic_client_hello", "derived"})
+		if opts.Fingerprints {
+			evidence = append(evidence, Row{"ja4", fingerprint.JA4(offer.Info, "q"), "wire:quic_client_hello", "derived"})
+		}
+		if opts.RetainContexts {
+			contexts = tlsx.HelloContexts(hello[4:], offer.Info, offer.Hostname, offer.HasHost, offer.ALPN)
+		}
 	}
 	alpn := offer.ALPN
 	if alpn == nil {
 		alpn = []string{}
 	}
-	return &Match{Hostname: offer.Hostname, HasHost: offer.HasHost && offer.Hostname != "", ALPN: alpn, Evidence: evidence,
+	return &Match{Hostname: offer.Hostname, HasHost: offer.HasHost && offer.Hostname != "", ALPN: alpn, Evidence: evidence, Contexts: contexts,
 		Reason: "QUIC Initial protection removed and ClientHello validated; SNI/ALPN are client offers, handshake not completed"}, nil
 }

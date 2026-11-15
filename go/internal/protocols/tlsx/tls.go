@@ -22,11 +22,12 @@ const (
 
 // Options mirrors the Config fields the TLS parser reads.
 type Options struct {
-	MaxBytes     int
-	MaxHeaders   int
-	Fingerprints bool
-	Certificates bool
-	Continuation int
+	MaxBytes       int
+	MaxHeaders     int
+	Fingerprints   bool
+	Certificates   bool
+	Continuation   int
+	RetainContexts bool // signature contexts of the ClientHello (never emitted)
 }
 
 type reader struct {
@@ -499,7 +500,7 @@ func (p *Parser) Feed(data []byte) (int, error) {
 		if p.hasHelloSize && len(p.handshake) == p.helloSize+4 {
 			body := p.handshake[4:]
 			if p.handshake[0] == 1 {
-				fields, err := parseHello(body, p.opts.Fingerprints)
+				fields, err := parseHello(body, p.opts.Fingerprints || p.opts.RetainContexts)
 				if err != nil {
 					return pos, err
 				}
@@ -516,7 +517,10 @@ func (p *Parser) Feed(data []byte) (int, error) {
 				}
 				p.result = &parsing.Result{Host: fields.hostname, HasHost: fields.hasHost, ALPN: alpn, Extra: extra,
 					Reason: "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content"}
-				if fields.info != nil {
+				if fields.info != nil && p.opts.RetainContexts {
+					p.result.Contexts = HelloContexts(body, fields.info, fields.hostname, fields.hasHost, fields.alpn)
+				}
+				if fields.info != nil && p.opts.Fingerprints {
 					p.result.Fingerprints = []parsing.Row{{Field: "ja4", Value: fingerprint.JA4(fields.info, "t"), Provenance: "client_hello"},
 						{Field: "ja3", Value: fingerprint.JA3(fields.info), Provenance: "client_hello"}}
 				}
@@ -869,4 +873,24 @@ func ParseClientHello(body []byte, collect bool) (*ClientHelloOffer, error) {
 		return nil, err
 	}
 	return &ClientHelloOffer{Info: fields.info, Hostname: fields.hostname, HasHost: fields.hasHost, ALPN: fields.alpn, ECH: fields.ech}, nil
+}
+
+// HelloContexts are the ClientHello signature contexts (TLSParser and quic.quic with retain_contexts).
+func HelloContexts(body []byte, info *fingerprint.ClientHello, host string, hasHost bool, alpn []string) parsing.Contexts {
+	ciphers, extensions := map[int64]bool{}, map[int64]bool{}
+	for _, c := range info.Ciphers {
+		ciphers[int64(c)] = true
+	}
+	for _, e := range info.Extensions {
+		extensions[int64(e)] = true
+	}
+	contexts := parsing.Contexts{"ssl-req-client-hello": append([]byte{}, body...), "ssl-req-version": int64(info.Version),
+		"ssl-req-cipher-suite": ciphers, "ssl-req-client-hello-ext-type": extensions}
+	if hasHost && host != "" {
+		contexts["ssl-req-chello-sni"] = []byte(host)
+	}
+	if len(alpn) > 0 {
+		contexts["ssl-req-alpn"] = []byte(strings.Join(alpn, ","))
+	}
+	return contexts
 }

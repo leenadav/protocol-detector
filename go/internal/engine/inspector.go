@@ -4,12 +4,14 @@ import (
 	"reflect"
 
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
+	"github.com/leenadav/protocol-detector/go/internal/errs"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/dnsx"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/framed"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/heuristics"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/textroute"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
+	"github.com/leenadav/protocol-detector/go/internal/signatures"
 )
 
 // Ported is the set of candidates a caller or a shift may name as a hint: every candidate the factory builds
@@ -38,7 +40,7 @@ var factories map[string]func(cfg contracts.Config) (parsing.Parser, error)
 func init() {
 	factories = map[string]func(cfg contracts.Config) (parsing.Parser, error){
 		"text": func(cfg contracts.Config) (parsing.Parser, error) {
-			return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation, MaxTransactions: cfg.MaxTransactions, Fingerprints: cfg.Fingerprints})
+			return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation, MaxTransactions: cfg.MaxTransactions, Fingerprints: cfg.Fingerprints, RetainContexts: cfg.RetainContexts})
 		},
 		"irc": func(cfg contracts.Config) (parsing.Parser, error) {
 			return textroute.NewIRC(cfg.MaxLine), nil
@@ -176,10 +178,10 @@ func init() {
 			return framed.NewDCERPC(cfg.MaxBytes, cfg.MaxHeaders), nil
 		},
 		"http2": func(cfg contracts.Config) (parsing.Parser, error) {
-			return textroute.NewHTTP2(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Fingerprints: cfg.Fingerprints}), nil
+			return textroute.NewHTTP2(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Fingerprints: cfg.Fingerprints, RetainContexts: cfg.RetainContexts}), nil
 		},
 		"http2-server": func(cfg contracts.Config) (parsing.Parser, error) {
-			return textroute.NewHTTP2Server(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Fingerprints: cfg.Fingerprints}), nil
+			return textroute.NewHTTP2Server(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Fingerprints: cfg.Fingerprints, RetainContexts: cfg.RetainContexts}), nil
 		},
 		"websocket": func(cfg contracts.Config) (parsing.Parser, error) {
 			return framed.NewWebSocket(), nil
@@ -209,7 +211,7 @@ func init() {
 		},
 		"tls": func(cfg contracts.Config) (parsing.Parser, error) {
 			return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
-				Certificates: cfg.Certificates, Continuation: cfg.Continuation})
+				Certificates: cfg.Certificates, Continuation: cfg.Continuation, RetainContexts: cfg.RetainContexts})
 		},
 		"dns": func(cfg contracts.Config) (parsing.Parser, error) {
 			return dnsx.NewTCP(cfg.MaxBytes), nil
@@ -234,6 +236,8 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 
 // Inspector is one direction of one ordered stream (engine.Inspector). Not safe for concurrent use.
 type Inspector struct {
+	// Signatures are the custom signatures evaluated over the parsers' contexts (nil: none).
+	sigs *signatures.Set
 	// The bounded unknown-payload buffer (Python _unknown): after dispatch fails, heuristics profile up to
 	// unknownLimit bytes before the stream is declared unknown.
 	unknown      []byte
@@ -300,6 +304,9 @@ func (in *Inspector) OpenShift(boundary, expected string) bool {
 			in.NotPorted = &parsing.NotPorted{What: "shift to " + expected}
 		}
 		return false
+	}
+	if in.sigs != nil {
+		_ = next.SetSignatures(in.sigs) // same config: cannot fail
 	}
 	carrier := in.Observation
 	in.carrier, in.shift, in.shiftSource = &carrier, boundary, in.source+":peer"
@@ -402,9 +409,6 @@ func New(cfg contracts.Config, hint string) (*Inspector, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-	if cfg.RetainContexts {
-		return nil, &parsing.NotPorted{What: "option retain_contexts (signatures)"}
-	}
 	if hint != "" && !Ported[hint] {
 		return nil, &parsing.NotPorted{What: "hint " + hint}
 	}
@@ -486,6 +490,11 @@ func (in *Inspector) identified() contracts.Observation {
 	if hostname != nil && *hostname != "" {
 		evidence = append(evidence, contracts.Evidence{Field: "hostname", Value: *hostname, Source: in.source + ":" + hostSource, Strength: "asserted"})
 	}
+	var application *string
+	if match := in.signature(in.candidate, r.Contexts); match != nil {
+		application = str(match.Name)
+		evidence = append(evidence, contracts.Evidence{Field: "application", Value: match.Name, Source: "signature:" + in.candidate, Strength: "configured_signature"})
+	}
 	for _, offered := range alpn {
 		evidence = append(evidence, contracts.Evidence{Field: "offered_alpn", Value: offered, Source: in.source + ":client_hello", Strength: "offered"})
 	}
@@ -502,7 +511,7 @@ func (in *Inspector) identified() contracts.Observation {
 	if scope == "" {
 		scope = "initial_message"
 	}
-	return contracts.Observation{Status: contracts.Identified, Transport: "tcp", Encryption: encryption, ApplicationProtocol: protocol,
+	return contracts.Observation{Status: contracts.Identified, Transport: "tcp", Encryption: encryption, ApplicationProtocol: protocol, Application: application,
 		Hostname: hostname, OfferedALPN: alpn, Evidence: evidence, Reason: r.Reason, Scope: scope}
 }
 
@@ -669,6 +678,9 @@ func (in *Inspector) beginShift(shift *parsing.Shift, rest []byte) []contracts.E
 		in.NotPorted, in.terminal = &parsing.NotPorted{What: "shift to " + shift.Expected}, true
 		return events
 	}
+	if in.sigs != nil {
+		_ = next.SetSignatures(in.sigs) // same config: cannot fail
+	}
 	next.hintSource = "shift:" + shift.Boundary
 	in.next = next
 	if len(rest) > 0 {
@@ -776,16 +788,66 @@ func (in *Inspector) End(reason string) []contracts.Event {
 	if in.hasUnknown {
 		return in.unknownObservation("Prefix outside supported protocol families", true)
 	}
+	if in.candidate == "" && len(in.prefix) > 0 && in.sigs.Wants("unknown-tcp") {
+		// Dispatch never resolved; the short prefix may still name a custom application.
+		if events := in.unknownFrom(reason, false, in.prefix); events != nil {
+			return events
+		}
+	}
 	return in.finish(in.observation(contracts.Incomplete, reason), contracts.Updated)
 }
 
-// unknownObservation ports Inspector._unknown_observation without signatures: the stream stays detecting until the
-// buffer is full (final) or the caller ends it; then it is unknown, with heuristic evidence over the buffer.
+// SetSignatures attaches a signature set before any byte is fed (Python's constructor argument). A non-empty set
+// requires Config.retain_contexts; the unknown-payload buffer grows to signature_bytes when unknown-tcp is wanted.
+func (in *Inspector) SetSignatures(set *signatures.Set) error {
+	if set.Len() > 0 && !in.cfg.RetainContexts {
+		return errs.New(errs.Invalid, errs.ScopeProcess, "Signatures require Config(retain_contexts=True)")
+	}
+	in.sigs = set
+	limit := 0
+	if set.Wants("unknown-tcp") {
+		limit = in.cfg.SignatureBytes
+	}
+	if in.cfg.Heuristics && in.cfg.HeuristicBytes > limit {
+		limit = in.cfg.HeuristicBytes
+	}
+	in.unknownLimit = limit
+	return nil
+}
+
+// signature ports Inspector._signature: the first matching signature for a completed parser family, counting the
+// candidates evaluated.
+func (in *Inspector) signature(family string, contexts parsing.Contexts) *signatures.Signature {
+	if in.sigs == nil || contexts == nil || !in.sigs.Wants(family) {
+		return nil
+	}
+	match, evaluated := in.sigs.MatchCounted(family, contexts)
+	in.Metrics.SignatureCandidates += evaluated
+	return match
+}
+
+// unknownObservation ports Inspector._unknown_observation: unknown-payload signatures are consulted over the
+// bounded buffer (a match is terminal); without one the stream stays detecting until the buffer is full (final) or
+// the caller ends it, then it is unknown with heuristic evidence over the buffer.
 func (in *Inspector) unknownObservation(reason string, final bool) []contracts.Event {
+	return in.unknownFrom(reason, final, in.unknown)
+}
+
+func (in *Inspector) unknownFrom(reason string, final bool, data []byte) []contracts.Event {
+	if match := in.signature("unknown-tcp", parsing.Contexts{"unknown-req-tcp-payload": append([]byte{}, data...),
+		"unknown-req-tcp-payload-length": int64(len(data))}); match != nil {
+		in.unknown, in.hasUnknown = nil, false
+		o := in.observation(contracts.Identified, "Custom signature matched an unknown payload prefix; no protocol profile validated")
+		o.Application, o.Scope = str(match.Name), "signature_match"
+		o.Evidence = []contracts.Evidence{{Field: "application", Value: match.Name, Source: "signature:unknown-tcp", Strength: "configured_signature"}}
+		if in.hint != "" {
+			o.Evidence = append(o.Evidence, contracts.Evidence{Field: "candidate_hint", Value: in.hint, Source: in.hintSource, Strength: "context"})
+		}
+		return in.finish(o, contracts.Updated)
+	}
 	if !final {
 		return nil
 	}
-	data := in.unknown
 	in.unknown, in.hasUnknown = nil, false
 	o := in.observation(contracts.Unknown, reason)
 	if in.cfg.Heuristics {

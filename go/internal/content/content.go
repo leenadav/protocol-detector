@@ -111,9 +111,13 @@ type Pack struct {
 	ProtocolNames map[string]string
 	Outcomes      map[string]bool
 	Risks         map[string]Risk
-	AppDomains    map[string][]string
-	webFronts     map[string]string
-	suffixes      map[string]string
+	// The catalog vocabularies (applications.CATEGORIES, TECHNOLOGIES, CHARACTERISTICS) custom signatures validate against.
+	Categories      map[string][]string
+	Technologies    map[string]bool
+	Characteristics map[string]bool
+	AppDomains      map[string][]string
+	webFronts       map[string]string
+	suffixes        map[string]string
 }
 
 func invalid(msg string) error { return errs.New(errs.Invalid, errs.ScopeProcess, msg) }
@@ -231,6 +235,7 @@ func Parse(data []byte) (*Pack, error) {
 			return nil, invalid("risk entry with an unknown severity: " + name)
 		}
 	}
+	p.Categories, p.Technologies, p.Characteristics = raw.Vocabulary.Categories, technologies, characteristics
 	return p, nil
 }
 
@@ -342,6 +347,33 @@ func (p *Pack) CustomApplication(name, container string) *Application {
 	return &Application{Name: name, Category: "custom", Subcategory: "configured-mapping", Technology: base.Technology, Risk: base.Risk,
 		Description: "Configured mapping carried over " + container, Characteristics: base.Characteristics, StandardPorts: base.StandardPorts,
 		SecurePorts: base.SecurePorts, ImplicitlyUses: []string{container}, DependsOn: []string{}, Container: &c, Aliases: []string{}, ports: base.ports}
+}
+
+// SignatureApplication is a custom signature's application carried over container: the signature's own
+// metadata (an empty description names the carrier), the carrier's ports, and its parent when the catalog has it.
+func (p *Pack) SignatureApplication(sig Application, parent, container string) *Application {
+	carrier := p.Applications[container]
+	if sig.Description == "" {
+		sig.Description = "Custom signature carried over " + container
+	}
+	uses := parent
+	if uses == "" {
+		uses = container
+	}
+	if _, ok := p.Applications[uses]; !ok {
+		uses = container
+	}
+	c := container
+	if _, ok := p.Applications[parent]; ok && parent != "" {
+		c = parent
+	}
+	characteristics := sig.Characteristics
+	if characteristics == nil {
+		characteristics = []string{}
+	}
+	return &Application{Name: sig.Name, Category: sig.Category, Subcategory: sig.Subcategory, Technology: sig.Technology, Risk: sig.Risk,
+		Description: sig.Description, Characteristics: characteristics, StandardPorts: carrier.StandardPorts, SecurePorts: carrier.SecurePorts,
+		ImplicitlyUses: []string{uses}, DependsOn: []string{}, Container: &c, Aliases: []string{}, ports: carrier.ports}
 }
 
 // AttributionForHost returns (provider, kind) for a normalized server name; kind is "provider-web" for an

@@ -42,11 +42,14 @@ func TestHintSelectsButNeverEstablishes(t *testing.T) {
 	}
 }
 
-func TestOptionsTheBackendLacksAreRefusedUpFront(t *testing.T) {
+func TestEveryConfigOptionIsAccepted(t *testing.T) {
 	cfg := contracts.DefaultConfig()
-	cfg.RetainContexts = true // signatures: the last option the Go backend refuses
-	if _, err := New(cfg, ""); err == nil {
-		t.Fatal("retain_contexts accepted")
+	cfg.RetainContexts, cfg.Fingerprints, cfg.Certificates, cfg.Heuristics = true, true, true, true
+	if _, err := New(cfg, ""); err != nil {
+		t.Fatalf("stream inspector refused a ported option: %v", err)
+	}
+	if _, err := NewDatagram(cfg); err != nil {
+		t.Fatalf("datagram inspector refused a ported option: %v", err)
 	}
 }
 

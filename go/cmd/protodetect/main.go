@@ -25,6 +25,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/engine"
 	"github.com/leenadav/protocol-detector/go/internal/parity"
 	"github.com/leenadav/protocol-detector/go/internal/replay"
+	"github.com/leenadav/protocol-detector/go/internal/signatures"
 )
 
 const version = "0.0.0-m4"
@@ -74,9 +75,18 @@ func run(args []string) int {
 		fs := flag.NewFlagSet("replay", flag.ContinueOnError)
 		cases := fs.String("cases", "migration/fixtures/cases.json", "the differential cases file")
 		out := fs.String("out", "", "where to write the results (required)")
+		sigPath := fs.String("signatures", "", "JSON file of custom application signatures applied to every case (as analyze --signatures)")
 		if err := fs.Parse(args[1:]); err != nil || *out == "" {
 			fmt.Fprintln(os.Stderr, "replay: --out is required")
 			return 2
+		}
+		if *sigPath != "" {
+			text, err := signatures.ReadFile(*sigPath)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "replay:", err)
+				return 1
+			}
+			replay.SetSignatures(text)
 		}
 		doc, err := parity.Load(ctx, *cases)
 		if err != nil {

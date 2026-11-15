@@ -516,7 +516,8 @@ func (p *TCP) Feed(data []byte) (int, error) {
 		for i, r := range details.Rows {
 			rows[i] = parsing.Row{Field: r.Field, Value: r.Value, Provenance: "message", Strength: r.Strength}
 		}
-		p.result = &parsing.Result{ProtocolName: "dns", Reason: details.Reason, Extra: rows}
+		p.result = &parsing.Result{ProtocolName: "dns", Reason: details.Reason, Extra: rows,
+			Contexts: parsing.Contexts{"dns-req-query-name": details.QName, "dns-req-query-type": int64(details.QType)}}
 		p.done = true
 		p.buffer = nil
 	}

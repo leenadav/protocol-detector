@@ -26,7 +26,8 @@ type Options struct {
 	// MaxTransactions caps the HTTP/1 messages a continuation counts per direction (Config.max_transactions).
 	MaxTransactions int
 	ForceHTTP       bool
-	Fingerprints    bool // Config.fingerprints: HASSH over the SSH KEXINIT, the HTTP/2 SETTINGS and pseudo-header order // parsers.LineParser(config, "http"): skip the first-line route (the SSDP datagram profile)
+	Fingerprints    bool // Config.fingerprints: HASSH over the SSH KEXINIT, the HTTP/2 SETTINGS and pseudo-header order
+	RetainContexts  bool // Config.retain_contexts: bounded signature contexts (never emitted) // parsers.LineParser(config, "http"): skip the first-line route (the SSDP datagram profile)
 }
 
 const token = `[!#$%&'*+.^_` + "`" + `|~0-9A-Za-z-]+`
@@ -226,6 +227,8 @@ type Parser struct {
 	subordinate      bool              // a per-message parser owned by a continuation never starts one itself
 	baseExtra        []parsing.Row     // the identifying message's evidence, before continuation evidence
 	fingerprints     []parsing.Row
+	contexts         parsing.Contexts
+	headerBlock      []byte
 }
 
 // ResolvedFamily is the family the first line resolved to ("text" before that).
@@ -239,7 +242,11 @@ func (p *Parser) ResolvedFamily() string {
 // New creates the text-route parser. With opts.Continuation an HTTP/1 identification keeps framing later
 // messages of its direction (continuation.go); the other text families ignore the option, as in Python.
 func New(opts Options) (*Parser, error) {
-	return &Parser{opts: opts, first: true, reason: "Waiting for complete line", refined: true, maxBytes: opts.MaxBytes}, nil
+	p := &Parser{opts: opts, first: true, reason: "Waiting for complete line", refined: true, maxBytes: opts.MaxBytes}
+	if opts.RetainContexts {
+		p.contexts = parsing.Contexts{}
+	}
+	return p, nil
 }
 
 // ControlField returns a control-protocol header value (SIP/RTSP) the route recorded, for the SIP datagram profile.
@@ -260,10 +267,10 @@ func (p *Parser) Done() bool { return p.done }
 func (p *Parser) Result() *parsing.Result {
 	if p.mode == "http" || p.mode == "" {
 		return &parsing.Result{Family: "http", ProtocolName: p.protocolName, Host: p.host, HasHost: p.hasHost, HostSource: "http_host",
-			ALPN: []string{}, Extra: p.extra, Reason: p.reason, Scope: p.scope, Shift: p.shift, Continues: p.continues}
+			ALPN: []string{}, Extra: p.extra, Reason: p.reason, Scope: p.scope, Shift: p.shift, Continues: p.continues, Contexts: p.contexts}
 	}
 	return &parsing.Result{Family: p.family, ProtocolName: p.protocolName2, ALPN: []string{}, Extra: p.extra, Reason: p.reason,
-		Scope: p.scope, Shift: p.shift, Continues: p.continues, Fingerprints: p.fingerprints}
+		Scope: p.scope, Shift: p.shift, Continues: p.continues, Fingerprints: p.fingerprints, Contexts: p.contexts}
 }
 
 // Feed ports LineParser.feed (TextParser route, SSH KEXINIT, SMTP watch, HTTP/1 continuation).
@@ -359,6 +366,9 @@ func (p *Parser) route(line []byte) (bool, error) {
 		if len(line)+2 > 255 {
 			return true, parsing.Malformed("SSH identification exceeds 255 bytes")
 		}
+		if p.contexts != nil {
+			p.contexts["ssh-req-banner"] = append([]byte{}, line...)
+		}
 		if !sshBanner.Match(line) {
 			return true, parsing.Malformed("Invalid or unsupported SSH identification")
 		}
@@ -384,6 +394,9 @@ func (p *Parser) route(line []byte) (bool, error) {
 		p.protocolName2, p.done = "smtp", true
 		p.reason = "SMTP client EHLO/HELO syntax validated; server exchange and message body not inspected"
 		p.extra = []parsing.Row{{Field: "smtp_client_identity", Value: text, Provenance: "smtp_greeting", Strength: "asserted"}}
+		if p.contexts != nil {
+			p.contexts["smtp-req-argument"] = append([]byte{}, identity...)
+		}
 		p.continues = true
 		return true, nil
 	}
@@ -734,6 +747,24 @@ func (p *Parser) consumeLine(line []byte) error {
 			p.protocolName = "http/1.0"
 		}
 		p.reason = "Start-line validated; waiting for headers"
+		if p.contexts != nil {
+			parts := bytes.SplitN(line, []byte(" "), 3)
+			p.contexts["http-req-version"] = append([]byte{}, version...)
+			if request {
+				p.contexts["http-req-method"] = append([]byte{}, parts[0]...)
+				path, _, _ := bytes.Cut(parts[1], []byte("?"))
+				p.contexts["http-req-uri-path"] = append([]byte{}, path...)
+			} else {
+				status, _ := strconv.Atoi(string(parts[1]))
+				p.contexts["http-rsp-status"] = int64(status)
+				reason := []byte{}
+				if len(parts) > 2 {
+					reason = append(reason, parts[2]...)
+				}
+				p.contexts["http-rsp-reason"] = reason
+			}
+			p.headerBlock = []byte{}
+		}
 		return nil
 	}
 	if len(line) == 0 {
@@ -747,6 +778,15 @@ func (p *Parser) consumeLine(line []byte) error {
 		p.reason = "HTTP start-line and headers validated; body and later requests not inspected"
 		if err := p.shiftBoundary(); err != nil {
 			return err
+		}
+		if p.contexts != nil {
+			p.contexts["http-req-headers"] = p.headerBlock
+			if p.hasHost {
+				p.contexts["http-req-host-header"] = []byte(p.host)
+			}
+			if p.hasContentLength {
+				p.contexts["http-req-content-length"] = p.contentLength
+			}
 		}
 		if p.shift == nil && p.opts.Continuation > 0 && !p.subordinate {
 			p.baseExtra = append([]parsing.Row{}, p.extra...)
@@ -776,6 +816,22 @@ func (p *Parser) consumeLine(line []byte) error {
 	}
 	name := ascii.Lower(string(nameB))
 	value = bytes.Trim(value, " \t")
+	if p.contexts != nil {
+		if len(p.headerBlock) < 4096 { // bounded header block for raw-context signatures
+			line := append(append(append([]byte(name), ": "...), value...), "\r\n"...)
+			if room := 4096 - len(p.headerBlock); len(line) > room {
+				line = line[:room]
+			}
+			p.headerBlock = append(p.headerBlock, line...)
+		}
+		if _, seen := p.contexts["http-req-user-agent-header"]; name == "user-agent" && !seen {
+			agent := value
+			if len(agent) > 1024 {
+				agent = agent[:1024]
+			}
+			p.contexts["http-req-user-agent-header"] = append([]byte{}, agent...)
+		}
+	}
 	switch name {
 	case "host":
 		p.hostCount++
