@@ -592,9 +592,26 @@ def _u16list(values, width=2):
     return len(data).to_bytes(width, "big") + data
 
 
+# Named groups whose share (or, for the NIST-curve hybrids, whose leading classical part) is an uncompressed SEC1
+# point: the first byte is the point format 4. That byte is framing, not key material.
+_POINT_FIRST = (23, 24, 25, 4587, 4589)
+
+
+def _share_bytes(group, size):
+    filler = bytes([7]) * size                       # fixed, non-cryptographic key material
+    return b"\x04" + filler[1:] if group in _POINT_FIRST else filler
+
+
 def _shares(entries):
-    data = b"".join(group.to_bytes(2, "big") + size.to_bytes(2, "big") + bytes([7]) * size for group, size in entries)
+    data = b"".join(group.to_bytes(2, "big") + size.to_bytes(2, "big") + _share_bytes(group, size) for group, size in entries)
     return len(data).to_bytes(2, "big") + data
+
+
+def _status_request_v2(*kinds):
+    """RFC 6961 CertificateStatusRequestListV2: each item is a type, a 16-bit length and an OCSP request with an empty
+    responder list and no extensions."""
+    items = b"".join(bytes([kind]) + b"\x00\x04" + b"\x00\x00" + b"\x00\x00" for kind in kinds)
+    return len(items).to_bytes(2, "big") + items
 
 
 def modern_client_cases():
@@ -644,7 +661,7 @@ def modern_client_cases():
         # Java (JSSE): no post-quantum group; status_request_v2; signature_algorithms_cert; X25519 + P-256 shares.
         ("java", _modern_client_hello(tls13 + (0xc02c, 0xc02b, 0xcca9, 0xc030, 0xcca8, 0xc02f, 0x009f, 0xccaa, 0x009e) + legacy + (0x00ff,), [
             sni, status, (10, _u16list((29, 23, 24, 25, 30, 256, 257, 258))), point_formats,
-            (17, b"\x00\x09\x02\x00\x04\x00\x00\x00\x00\x01\x00\x00\x00"), alpn, ems, ticket,
+            (17, _status_request_v2(2, 1)), alpn, ems, ticket,
             (13, _u16list(schemes + (0x0807, 0x0808))), (50, _u16list(schemes)), (43, b"\x04\x03\x04\x03\x03"), psk_modes, share(29, 23)])),
     ]
     tls13_ext = (43, b"\x03\x04")
@@ -652,14 +669,15 @@ def modern_client_cases():
         # TLS 1.3 replies: the hybrid share most current servers select, the classical ones, and resumption.
         ("server13-x25519mlkem768", _tls_record(_server_hello((tls13_ext, (51, b"\x11\xec\x04\x60" + bytes([7]) * 1120)), cipher=0x1301, session=bytes(range(32, 64))))),
         ("server13-x25519", _tls_record(_server_hello(((51, b"\x00\x1d\x00\x20" + bytes([7]) * 32), tls13_ext), cipher=0x1303, session=bytes(range(32, 64))))),
-        ("server13-p256", _tls_record(_server_hello((tls13_ext, (51, b"\x00\x17\x00\x41\x04" + bytes([7]) * 64)), cipher=0x1302, session=bytes(range(32, 64))))),
+        ("server13-p256", _tls_record(_server_hello((tls13_ext, (51, b"\x00\x17\x00\x41" + _share_bytes(23, 65))), cipher=0x1302, session=bytes(range(32, 64))))),
         ("server13-resumption", _tls_record(_server_hello((tls13_ext, (51, b"\x11\xec\x04\x60" + bytes([7]) * 1120), (41, b"\x00\x00")), cipher=0x1301, session=bytes(range(32, 64))))),
         # HelloRetryRequest: a server that wants a share the client did not send (Java offers no hybrid share).
         ("hrr-to-x25519mlkem768", _tls_record(_server_hello((tls13_ext, (51, b"\x11\xec")), cipher=0x1301, session=bytes(range(32, 64)), random_value=RETRY))),
         ("hrr-to-p384", _tls_record(_server_hello(((51, b"\x00\x18"), tls13_ext), cipher=0x1302, session=bytes(range(32, 64)), random_value=RETRY))),
         # TLS 1.2 replies as common servers send them, including extensions the profile does not interpret (#5).
         ("server12-ecdhe-h2", _tls_record(_server_hello((reneg, (0, b""), point_formats, ticket, (16, b"\x00\x03\x02h2"), ems), cipher=0xc02f, session=bytes(range(32))))),
-        ("server12-ecdsa-etm", _tls_record(_server_hello((reneg, point_formats, (22, b""), ems, (16, b"\x00\x09\x08http/1.1")), cipher=0xc02c))),
+        # encrypt_then_mac is only negotiated with a CBC suite (RFC 7366 section 3), so this reply selects one.
+        ("server12-ecdsa-cbc-etm", _tls_record(_server_hello((reneg, point_formats, (22, b""), ems, (16, b"\x00\x09\x08http/1.1")), cipher=0xc024))),
         ("server12-status-sct", _tls_record(_server_hello(((5, b""), (18, b"\x00\x04\x00\x02ab"), reneg, ems), cipher=0xc030))),
     ]
     cases = []

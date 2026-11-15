@@ -210,6 +210,90 @@ class TLSServerTests(unittest.TestCase):
         e=inspect(bytes.fromhex(next(c for c in cases if c['id']=='stream/modern/server13-x25519mlkem768/whole')['chunks'][0]))
         self.assertEqual(evidence(e)['selected_key_exchange'],'hybrid')
 
+    def test_modern_client_fixture_shapes(self):
+        # Review of work item #7 (R1, R2): the fixtures must be well-formed on their own account, in the nested
+        # fields the detector skips as well. This decoder is independent of protocol_engine.
+        from migration.parity.cases import modern_client_cases
+        point_first={23:65,24:97,25:133,4587:65,4589:97}   # group -> length of the leading uncompressed point
+        def vec(data,pos,width):
+            n=int.from_bytes(data[pos:pos+width],'big');end=pos+width+n
+            self.assertLessEqual(end,len(data),'vector runs past its container')
+            return data[pos+width:end],end
+        def whole(data,width):
+            body,end=vec(data,0,width);self.assertEqual(end,len(data),'trailing bytes after a vector');return body
+        def u16s(data):
+            self.assertEqual(len(data)%2,0);self.assertTrue(data);return [int.from_bytes(data[i:i+2],'big') for i in range(0,len(data),2)]
+        def extensions(block):
+            out,pos=[],0
+            while pos<len(block):
+                kind=int.from_bytes(block[pos:pos+2],'big');value,pos=vec(block,pos+2,2);out.append((kind,value))
+            self.assertEqual(len({k for k,_ in out}),len(out),'duplicate extension')
+            return out
+        def hello(data):
+            self.assertEqual(data[0],22);record=whole(data[3:],2)
+            body=whole(record[1:],3);pos=34
+            session,pos=vec(body,pos,1);self.assertLessEqual(len(session),32)
+            return record[0],body,pos
+        def check_shares(value,client):
+            entries=whole(value,2) if client else value
+            pos,groups=0,[]
+            while pos<len(entries):
+                group=int.from_bytes(entries[pos:pos+2],'big');key,pos=vec(entries,pos+2,2)
+                self.assertTrue(key,group);groups.append(group)
+                if group in point_first:
+                    self.assertGreaterEqual(len(key),point_first[group]);self.assertEqual(key[0],4,'group %d share must start with the point format'%group)
+            return groups
+        seen=set()
+        for case in modern_client_cases():
+            name=case['id'].split('/')[2]
+            if name in seen:continue
+            seen.add(name)
+            with self.subTest(name):
+                kind,body,pos=hello(bytes.fromhex(''.join(case['chunks'])))
+                if name.startswith('client-'):
+                    self.assertEqual(kind,1)
+                    ciphers,pos=vec(body,pos,2);u16s(ciphers)
+                    compression,pos=vec(body,pos,1);self.assertEqual(compression,b'\0')
+                    block,pos=vec(body,pos,2);self.assertEqual(pos,len(body))
+                    ext=dict(extensions(block))
+                    groups=u16s(whole(ext[10],2))
+                    shares=check_shares(ext[51],True)
+                    offered=[g for g in groups if g in shares]
+                    self.assertEqual(offered,shares,'key shares must follow the supported_groups order')
+                    u16s(whole(ext[13],2));self.assertIn(0x0304,u16s(whole(ext[43],1)))
+                    names=whole(ext[16],2);p=0
+                    while p<len(names):
+                        proto,p=vec(names,p,1);self.assertTrue(proto)
+                    sni=whole(ext[0],2);self.assertEqual(sni[0],0);self.assertEqual(whole(sni[1:],2),b'www.example.com')
+                    if 5 in ext:                                   # status_request: type, responder list, extensions
+                        self.assertEqual(ext[5][0],1);_,p=vec(ext[5],1,2);_,p=vec(ext[5],p,2);self.assertEqual(p,len(ext[5]))
+                    if 17 in ext:                                  # status_request_v2 (RFC 6961): a list of typed requests
+                        items=whole(ext[17],2);p=0;self.assertTrue(items)
+                        while p<len(items):
+                            self.assertIn(items[p],(1,2));request,p=vec(items,p+1,2)
+                            _,q=vec(request,0,2);_,q=vec(request,q,2);self.assertEqual(q,len(request))
+                    for k,width in ((11,1),(27,1),(34,2),(45,1),(50,2),(17613,2)):
+                        if k in ext:self.assertTrue(whole(ext[k],width),k)
+                    if 28 in ext:self.assertEqual(len(ext[28]),2)
+                else:
+                    self.assertEqual(kind,2)
+                    cipher=int.from_bytes(body[pos:pos+2],'big');self.assertEqual(body[pos+2],0)
+                    block,end=vec(body,pos+3,2);self.assertEqual(end,len(body))
+                    ext=dict(extensions(block))
+                    if 43 in ext:
+                        self.assertEqual(ext[43],b'\x03\x04');self.assertIn(cipher,range(0x1301,0x1304))
+                        if 51 in ext and len(ext[51])>2:check_shares(ext[51],False)
+                    else:
+                        aead=cipher in range(0xc02b,0xc033)
+                        # RFC 7366 section 3: encrypt_then_mac is never selected together with an AEAD suite.
+                        self.assertFalse(22 in ext and aead,'encrypt_then_mac with an AEAD suite')
+                        if 11 in ext:self.assertTrue(whole(ext[11],1))
+                        if 16 in ext:self.assertTrue(whole(whole(ext[16],2),1))
+                        if 18 in ext:
+                            scts=whole(ext[18],2);p=0
+                            while p<len(scts):_,p=vec(scts,p,2)
+        self.assertEqual(len(seen),15)
+
     def test_bad_server13_extension_dependencies_and_shapes(self):
         for extra in ((),((41,b'\0'),),((51,b'\0\x1d'),),((51,b'\0\x1d\0\x1f'+bytes(31)),),
                       ((51,b'\0\x17\0\x41'+bytes(65)),),((51,b'\xff\xff\0\x00'),),
