@@ -44,9 +44,9 @@ func TestHintSelectsButNeverEstablishes(t *testing.T) {
 
 func TestOptionsTheBackendLacksAreRefusedUpFront(t *testing.T) {
 	cfg := contracts.DefaultConfig()
-	cfg.Heuristics = true
+	cfg.RetainContexts = true // signatures: the last option the Go backend refuses
 	if _, err := New(cfg, ""); err == nil {
-		t.Fatal("heuristics accepted")
+		t.Fatal("retain_contexts accepted")
 	}
 }
 

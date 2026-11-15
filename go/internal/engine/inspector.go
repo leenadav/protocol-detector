@@ -7,6 +7,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/dnsx"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/framed"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/heuristics"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/textroute"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
 )
@@ -233,26 +234,31 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 
 // Inspector is one direction of one ordered stream (engine.Inspector). Not safe for concurrent use.
 type Inspector struct {
-	cfg         contracts.Config
-	hint        string
-	hintSource  string
-	source      string
-	Observation contracts.Observation
-	Metrics     contracts.Metrics
-	revision    int
-	prefix      []byte
-	parser      parsing.Parser
-	candidate   string
-	terminal    bool
-	Boundary    int // stream offset where a terminal identified message ended (-1: none)
-	hasBoundary bool
-	next        *Inspector
-	carrier     *contracts.Observation
-	shift       string
-	shiftSource string
-	NotPorted   *parsing.NotPorted // set when the Go backend cannot give this direction's outcome
-	resolved    string             // family a text route resolved to before it finished (D12)
-	continuing  bool               // identified; the parser still derives optional evidence or watches for a shift
+	// The bounded unknown-payload buffer (Python _unknown): after dispatch fails, heuristics profile up to
+	// unknownLimit bytes before the stream is declared unknown.
+	unknown      []byte
+	hasUnknown   bool
+	unknownLimit int
+	cfg          contracts.Config
+	hint         string
+	hintSource   string
+	source       string
+	Observation  contracts.Observation
+	Metrics      contracts.Metrics
+	revision     int
+	prefix       []byte
+	parser       parsing.Parser
+	candidate    string
+	terminal     bool
+	Boundary     int // stream offset where a terminal identified message ended (-1: none)
+	hasBoundary  bool
+	next         *Inspector
+	carrier      *contracts.Observation
+	shift        string
+	shiftSource  string
+	NotPorted    *parsing.NotPorted // set when the Go backend cannot give this direction's outcome
+	resolved     string             // family a text route resolved to before it finished (D12)
+	continuing   bool               // identified; the parser still derives optional evidence or watches for a shift
 	// Host-correlation metadata, never emitted: the identifying parser's LDAP message id, and the identification
 	// that announced this inspector's shift (kept after the shifted phase merges; Python Inspector.announcement).
 	ldapID       int
@@ -396,16 +402,17 @@ func New(cfg contracts.Config, hint string) (*Inspector, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-	if cfg.Heuristics {
-		return nil, &parsing.NotPorted{What: "option heuristics"}
-	}
 	if cfg.RetainContexts {
 		return nil, &parsing.NotPorted{What: "option retain_contexts (signatures)"}
 	}
 	if hint != "" && !Ported[hint] {
 		return nil, &parsing.NotPorted{What: "hint " + hint}
 	}
-	return &Inspector{cfg: cfg, hint: hint, hintSource: "caller", source: "wire", Observation: contracts.Initial("tcp"), shiftSource: "wire"}, nil
+	in := &Inspector{cfg: cfg, hint: hint, hintSource: "caller", source: "wire", Observation: contracts.Initial("tcp"), shiftSource: "wire"}
+	if cfg.Heuristics {
+		in.unknownLimit = cfg.HeuristicBytes
+	}
+	return in, nil
 }
 
 func (in *Inspector) Terminal() bool { return in.terminal }
@@ -533,7 +540,7 @@ func joinComma(parts []string) string {
 	return out
 }
 
-// Feed ports Inspector.feed without the signature/heuristic unknown buffer.
+// Feed ports Inspector.feed (the unknown-payload buffer serves heuristics; signatures are not ported).
 func (in *Inspector) Feed(data []byte) []contracts.Event {
 	in.Metrics.BytesReceived += len(data)
 	if in.terminal || len(data) == 0 {
@@ -551,6 +558,15 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 	if in.next != nil {
 		return in.forward(chunk)
 	}
+	if in.hasUnknown {
+		// Dispatch already failed: collect a bounded prefix for the heuristics; no parser runs here.
+		room := in.unknownLimit - len(in.unknown)
+		take := minInt(maxInt(room, 0), len(chunk))
+		in.unknown = append(in.unknown, chunk[:take]...)
+		in.Metrics.BytesInspected += minInt(room, len(chunk))
+		in.Metrics.ParserCalls++
+		return in.unknownObservation("Prefix outside supported protocol families", len(in.unknown) >= in.unknownLimit)
+	}
 	previous := 0
 	if in.candidate == "" {
 		previous = len(in.prefix)
@@ -566,6 +582,14 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 		}
 		if candidate == Unknown {
 			in.Metrics.BytesInspected += len(probe) - previous
+			if in.unknownLimit > 0 {
+				in.unknown = append(append([]byte{}, in.prefix...), pySlice(chunk, in.unknownLimit-previous)...)
+				in.hasUnknown = true
+				in.prefix = in.prefix[:0]
+				in.Metrics.BytesInspected += len(in.unknown) - len(probe)
+				in.Metrics.ParserCalls++
+				return in.unknownObservation("Prefix outside supported protocol families", len(in.unknown) >= in.unknownLimit)
+			}
 			return in.finish(in.observation(contracts.Unknown, "Prefix outside supported protocol families"), contracts.Updated)
 		}
 		if candidate == Wait {
@@ -749,7 +773,41 @@ func (in *Inspector) End(reason string) []contracts.Event {
 		}
 		return in.finish(in.refined(), contracts.Refined) // keep the identification; no further evidence
 	}
+	if in.hasUnknown {
+		return in.unknownObservation("Prefix outside supported protocol families", true)
+	}
 	return in.finish(in.observation(contracts.Incomplete, reason), contracts.Updated)
+}
+
+// unknownObservation ports Inspector._unknown_observation without signatures: the stream stays detecting until the
+// buffer is full (final) or the caller ends it; then it is unknown, with heuristic evidence over the buffer.
+func (in *Inspector) unknownObservation(reason string, final bool) []contracts.Event {
+	if !final {
+		return nil
+	}
+	data := in.unknown
+	in.unknown, in.hasUnknown = nil, false
+	o := in.observation(contracts.Unknown, reason)
+	if in.cfg.Heuristics {
+		if rows := heuristics.Evidence(data, in.source, in.cfg.HeuristicBytes); rows != nil {
+			o.Evidence = rows
+		}
+	}
+	return in.finish(o, contracts.Updated)
+}
+
+// pySlice is Python's data[:n], where a negative n counts from the end.
+func pySlice(data []byte, n int) []byte {
+	if n < 0 {
+		n += len(data)
+		if n < 0 {
+			n = 0
+		}
+	}
+	if n > len(data) {
+		n = len(data)
+	}
+	return data[:n]
 }
 
 func maxInt(a, b int) int {

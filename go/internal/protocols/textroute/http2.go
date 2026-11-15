@@ -3,6 +3,7 @@ package textroute
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/names"
@@ -439,7 +440,7 @@ func (p *HTTP2Parser) headers(block []byte) error {
 			order = append(order, pseudoLetters[string(name)])
 			continue
 		}
-		if h2ConnectionFields[string(name)] || (string(name) == "te" && strings.ToLower(string(value)) != "trailers") {
+		if h2ConnectionFields[string(name)] || (string(name) == "te" && ascii.Lower(string(value)) != "trailers") {
 			return parsing.Malformed("HTTP/2 connection-specific field")
 		}
 		regular = append(regular, h2Field{name, value})
@@ -534,7 +535,7 @@ func (p *HTTP2Parser) requestEvidence(pseudo map[string][]byte) ([]parsing.Row, 
 		if !hasScheme || len(pseudo[":path"]) == 0 {
 			return nil, parsing.Malformed("HTTP/2 request requires :scheme and a non-empty :path")
 		}
-		scheme := strings.ToLower(string(pseudo[":scheme"]))
+		scheme := ascii.Lower(string(pseudo[":scheme"]))
 		if scheme != "http" && scheme != "https" {
 			scheme = "other"
 		}
@@ -544,7 +545,7 @@ func (p *HTTP2Parser) requestEvidence(pseudo map[string][]byte) ([]parsing.Row, 
 				return nil, parsing.Malformed("HTTP/2 :protocol requires an extended CONNECT with :authority")
 			}
 			protocol := "other"
-			if strings.ToLower(string(pseudo[":protocol"])) == "websocket" {
+			if ascii.Lower(string(pseudo[":protocol"])) == "websocket" {
 				protocol = "websocket"
 			}
 			evidence = append(evidence, row("http2_protocol", protocol, "asserted"))

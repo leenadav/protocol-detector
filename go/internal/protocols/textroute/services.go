@@ -3,6 +3,7 @@ package textroute
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 	"math"
 	"math/big"
 	"regexp"
@@ -355,7 +356,7 @@ func imapServerCapability(line []byte, maxHeaders int) (bool, error) {
 		}
 	}
 	for _, c := range caps {
-		u := strings.ToUpper(string(c))
+		u := ascii.Upper(string(c))
 		if u == "IMAP4REV1" || u == "IMAP4REV2" {
 			return true, nil
 		}
@@ -387,7 +388,7 @@ func newControlHeaders(line []byte, maxHeaders int) (*controlHeaders, error) {
 	} else {
 		version, _, _ = bytes.Cut(line, []byte(" "))
 	}
-	c.protocolName = strings.ToLower(string(version))
+	c.protocolName = ascii.Lower(string(version))
 	if bytes.HasPrefix(version, []byte("SIP")) {
 		c.family = "sip"
 	} else {
@@ -458,7 +459,7 @@ func (c *controlHeaders) consume(line []byte) error {
 			return parsing.Malformed("Invalid control-protocol header")
 		}
 	}
-	name := strings.ToLower(string(nameB))
+	name := ascii.Lower(string(nameB))
 	value = bytes.Trim(value, " \t")
 	if c.family == "sip" {
 		if full, ok := map[string]string{"v": "via", "f": "from", "t": "to", "i": "call-id", "l": "content-length"}[name]; ok {

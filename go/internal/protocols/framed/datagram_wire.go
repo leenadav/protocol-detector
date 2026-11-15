@@ -3,6 +3,7 @@ package framed
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 	"hash/crc32"
 	"strconv"
 
@@ -32,7 +33,7 @@ func init() {
 
 // --- TFTP (network.tftp) ------------------------------------------------------------------------------------
 
-func asciiLower(b []byte) string { return string(bytes.ToLower(b)) }
+func asciiLower(b []byte) string { return string(ascii.LowerBytes(b)) }
 
 func tftpDatagram(data []byte, _ Limits) (*Datagram, error) {
 	if len(data) >= 2 && data[0] == 0 && (data[1] == 5 || data[1] == 6) {

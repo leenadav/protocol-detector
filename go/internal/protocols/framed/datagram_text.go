@@ -2,6 +2,7 @@ package framed
 
 import (
 	"bytes"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 	"strconv"
 
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
@@ -32,7 +33,7 @@ func ssdpDatagram(data []byte, limits Limits) (*Datagram, error) {
 	if !parser.Done() || consumed != len(data) {
 		return nil, parsing.Malformed("SSDP message must be exactly one complete HTTP header block")
 	}
-	head := bytes.ToLower(data)
+	head := ascii.LowerBytes(data)
 	has := func(s string) bool { return bytes.Contains(head, []byte(s)) }
 	kind := "response"
 	switch {

@@ -115,6 +115,7 @@ type Options struct {
 	Continuation int
 	Fingerprints bool
 	Certificates bool
+	Heuristics   bool
 }
 
 // New builds an analyzer; options the engine lacks are reported through NotPorted on first use.
@@ -123,6 +124,7 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 	cfg.Continuation = opts.Continuation
 	cfg.Fingerprints = opts.Fingerprints
 	cfg.Certificates = opts.Certificates
+	cfg.Heuristics = opts.Heuristics
 	a := &Analyzer{pack: pack, cfg: cfg}
 	tr, err := session.NewTracker(opts.Session, func() session.Sink {
 		in, err := engine.New(cfg, "")

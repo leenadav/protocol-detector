@@ -8,6 +8,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/dnsx"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/framed"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/heuristics"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/quicx"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
 )
@@ -26,9 +27,6 @@ type Datagram struct {
 func NewDatagram(cfg contracts.Config) (*Datagram, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
-	}
-	if cfg.Heuristics {
-		return nil, &parsing.NotPorted{What: "option heuristics"}
 	}
 	if cfg.RetainContexts {
 		return nil, &parsing.NotPorted{What: "option retain_contexts (signatures)"}
@@ -249,6 +247,7 @@ func (d *Datagram) InspectFlow(data []byte, hint, scope string, now *float64) (c
 	candidates := d.candidates(data, hint)
 	if len(candidates) == 0 {
 		base.Status, base.Reason = contracts.Unknown, "No supported datagram structure selected"
+		base.Evidence = d.unknownEvidence(data)
 		return base, nil
 	}
 	for _, c := range candidates {
@@ -318,6 +317,9 @@ func (d *Datagram) InspectFlow(data []byte, hint, scope string, now *float64) (c
 				for _, r := range details.Rows {
 					found.evidence = append(found.evidence, contracts.Evidence{Field: r.Field, Value: r.Value, Source: r.Provenance, Strength: r.Strength})
 				}
+				if d.cfg.Heuristics && c != "llmnr" { // datagram.dns_with_contexts: the query-name shape, never the name
+					found.evidence = append(found.evidence, heuristics.DNSNameShape(details.QName)...)
+				}
 			}
 		}
 		if err != nil {
@@ -379,5 +381,21 @@ func (d *Datagram) InspectFlow(data []byte, hint, scope string, now *float64) (c
 		}
 	}
 	base.Status, base.Reason = contracts.Status(chosen.status), chosen.reason
+	if chosen.status == "unknown" && hint == "" && len(errors) == len(candidates) {
+		// A hint restricts validation to its candidate; it never opens the unknown-payload path.
+		base.Evidence = d.unknownEvidence(data)
+	}
 	return base, nil
+}
+
+// unknownEvidence is DatagramInspector._unknown's heuristic evidence (none without the heuristics option).
+func (d *Datagram) unknownEvidence(data []byte) []contracts.Evidence {
+	if !d.cfg.Heuristics {
+		return []contracts.Evidence{}
+	}
+	rows := heuristics.Evidence(data, "wire", d.cfg.HeuristicBytes)
+	if rows == nil {
+		return []contracts.Evidence{}
+	}
+	return rows
 }

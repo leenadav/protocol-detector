@@ -7,6 +7,7 @@ package textroute
 
 import (
 	"bytes"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 	"regexp"
 	"strconv"
 	"strings"
@@ -95,7 +96,7 @@ func ContentTypeClass(value []byte) string {
 	if i := bytes.IndexByte(media, ';'); i >= 0 {
 		media = media[:i]
 	}
-	m := strings.ToLower(string(bytes.TrimSpace(media)))
+	m := ascii.Lower(string(bytes.TrimSpace(media)))
 	for _, c := range classes {
 		if (c.isPrefix && strings.HasPrefix(m, c.prefix)) || (!c.isPrefix && m == c.prefix) {
 			return c.label
@@ -126,7 +127,7 @@ func authSchemeClass(value []byte) string {
 	if i := bytes.IndexByte(scheme, ','); i >= 0 {
 		scheme = scheme[:i]
 	}
-	s := strings.ToLower(string(bytes.Trim(scheme, "\t")))
+	s := ascii.Lower(string(bytes.Trim(scheme, "\t")))
 	if label, ok := authSchemes[s]; ok {
 		return label
 	}
@@ -163,7 +164,7 @@ func challengeSchemeClasses(value []byte) []string {
 			label = "other"
 		} else if len(tok) > 0 {
 			label = "other"
-			if l, ok := authSchemes[strings.ToLower(string(tok))]; ok {
+			if l, ok := authSchemes[ascii.Lower(string(tok))]; ok {
 				label = l
 			}
 		} else {
@@ -342,7 +343,7 @@ func (p *Parser) route(line []byte) (bool, error) {
 	if i := bytes.IndexByte(line, ' '); i >= 0 {
 		command = line[:i]
 	}
-	upper := strings.ToUpper(string(command))
+	upper := ascii.Upper(string(command))
 	special := bytes.HasPrefix(line, []byte("SSH-")) || smtpCommands[upper]
 	if len(line) > 0 {
 		switch line[0] {
@@ -388,7 +389,7 @@ func (p *Parser) route(line []byte) (bool, error) {
 	}
 	if len(line) > 0 && (line[0] == 'I' || line[0] == 'i' || line[0] == 'C' || line[0] == 'c') {
 		if m := natsStart.FindSubmatch(line); m != nil {
-			if err := natsHandshake(strings.ToUpper(string(m[1])), m[2], p.opts.MaxHeaders); err != nil {
+			if err := natsHandshake(ascii.Upper(string(m[1])), m[2], p.opts.MaxHeaders); err != nil {
 				return true, err
 			}
 			p.family, p.mode, p.protocolName2, p.scope, p.done, p.reason = "nats", "nats", "nats", "protocol_header", true, natsReason
@@ -427,7 +428,7 @@ func (p *Parser) route(line []byte) (bool, error) {
 	} else if ok {
 		p.family, p.mode, p.protocolName2, p.scope, p.done = "imap", "imap", "imap", "initial_message", true
 		p.reason = "IMAP tagged client command validated; arguments and credentials are not inspected or emitted"
-		if parts := bytes.Split(line, []byte(" ")); len(parts) > 1 && strings.ToUpper(string(parts[1])) == "STARTTLS" {
+		if parts := bytes.Split(line, []byte(" ")); len(parts) > 1 && ascii.Upper(string(parts[1])) == "STARTTLS" {
 			p.shift = &parsing.Shift{Boundary: "starttls", Expected: "tls"}
 		}
 		return true, nil
@@ -486,7 +487,7 @@ func smtpIdentity(identity []byte) (string, bool) {
 	text := string(identity)
 	if strings.HasPrefix(text, "[") && strings.HasSuffix(text, "]") {
 		address := text[1 : len(text)-1]
-		if strings.HasPrefix(strings.ToLower(address), "ipv6:") {
+		if strings.HasPrefix(ascii.Lower(address), "ipv6:") {
 			return text, names.IsIPv6(address[5:])
 		}
 		return text, names.IsIPv4(address)
@@ -504,12 +505,12 @@ func (p *Parser) consumeSMTP(line []byte) error {
 		return parsing.Malformed("SMTP command exceeds 512 bytes")
 	}
 	verbB, _, _ := bytes.Cut(line, []byte(" "))
-	verb := strings.ToUpper(string(verbB))
+	verb := ascii.Upper(string(verbB))
 	if !smtpVerbs[verb] {
 		return parsing.Malformed("Unexpected SMTP command")
 	}
 	if verb == "STARTTLS" {
-		if strings.ToUpper(string(line)) != "STARTTLS" {
+		if ascii.Upper(string(line)) != "STARTTLS" {
 			return parsing.Malformed("STARTTLS takes no parameters")
 		}
 		p.shift = &parsing.Shift{Boundary: "starttls", Expected: "tls"}
@@ -569,11 +570,11 @@ func imapCommand(line []byte, maxLine int) (bool, error) {
 	if len(parts) < 2 || !imapTag.Match(parts[0]) {
 		return false, nil
 	}
-	tag := strings.ToUpper(string(parts[0]))
+	tag := ascii.Upper(string(parts[0]))
 	if tag == "OK" || tag == "NO" || tag == "BAD" {
 		return false, nil
 	}
-	command := strings.ToUpper(string(parts[1]))
+	command := ascii.Upper(string(parts[1]))
 	if !imapCommands[command] {
 		return false, nil
 	}
@@ -613,7 +614,7 @@ func commandLine(line []byte) (string, []string, *parsing.Shift, error) {
 		}
 	}
 	verbB, argument, hasSep := bytes.Cut(line, []byte(" "))
-	verb := strings.ToUpper(string(verbB))
+	verb := ascii.Upper(string(verbB))
 	if !cmdVerb.MatchString(verb) {
 		return "", nil, nil, nil
 	}
@@ -635,7 +636,7 @@ func commandLine(line []byte) (string, []string, *parsing.Shift, error) {
 			}
 		}
 		if verb == "TYPE" {
-			a := strings.ToUpper(string(argument))
+			a := ascii.Upper(string(argument))
 			if len(a) == 0 || !strings.ContainsRune("AIEL", rune(a[0])) {
 				return "", nil, nil, parsing.Malformed("FTP TYPE argument invalid")
 			}
@@ -663,7 +664,7 @@ func commandLine(line []byte) (string, []string, *parsing.Shift, error) {
 			return "", nil, nil, parsing.Malformed("Command requires an argument")
 		}
 		if verb == "AUTH" {
-			switch strings.ToUpper(string(argument)) {
+			switch ascii.Upper(string(argument)) {
 			case "TLS", "SSL", "TLS-C", "TLS-P":
 				return "ftp", []string{"ftp"}, &parsing.Shift{Boundary: "auth-tls", Expected: "tls"}, nil
 			}
@@ -712,7 +713,7 @@ func (p *Parser) consumeLine(line []byte) error {
 			i := bytes.LastIndexByte(line, ' ')
 			version = line[i+1:]
 			parts := bytes.SplitN(line, []byte(" "), 3)
-			p.method = strings.ToUpper(string(parts[0]))
+			p.method = ascii.Upper(string(parts[0]))
 			p.target = parts[1]
 			if p.method != "CONNECT" {
 				label := "extension"
@@ -773,7 +774,7 @@ func (p *Parser) consumeLine(line []byte) error {
 			return parsing.Malformed("Control byte in header")
 		}
 	}
-	name := strings.ToLower(string(nameB))
+	name := ascii.Lower(string(nameB))
 	value = bytes.Trim(value, " \t")
 	switch name {
 	case "host":
@@ -816,7 +817,7 @@ func (p *Parser) consumeLine(line []byte) error {
 		p.hasContentLength = true
 		p.contentLength, _ = strconv.ParseInt(string(value), 10, 64)
 	case "transfer-encoding":
-		if p.transferEncoding || strings.ToLower(string(value)) != "chunked" {
+		if p.transferEncoding || ascii.Lower(string(value)) != "chunked" {
 			return parsing.Malformed("Unsupported or duplicate Transfer-Encoding")
 		}
 		p.transferEncoding = true
@@ -825,10 +826,10 @@ func (p *Parser) consumeLine(line []byte) error {
 			return parsing.Malformed("Invalid or duplicate Upgrade header")
 		}
 		first, _, _ := bytes.Cut(value, []byte(","))
-		p.upgrade, p.hasUpgrade = strings.ToLower(string(bytes.TrimSpace(first))), true
+		p.upgrade, p.hasUpgrade = ascii.Lower(string(bytes.TrimSpace(first))), true
 	case "connection":
 		for _, tok := range bytes.Split(value, []byte(",")) {
-			if strings.ToLower(string(bytes.TrimSpace(tok))) == "upgrade" {
+			if ascii.Lower(string(bytes.TrimSpace(tok))) == "upgrade" {
 				p.connectionUpg = true
 			}
 		}

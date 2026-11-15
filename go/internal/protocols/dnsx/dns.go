@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 )
@@ -121,7 +122,7 @@ func expandName(data []byte, start, end int) []byte {
 		if length == 0 {
 			break
 		}
-		labels = append(labels, bytes.ToLower(data[pos:pos+length]))
+		labels = append(labels, ascii.LowerBytes(data[pos:pos+length]))
 		pos += length
 	}
 	return bytes.Join(labels, []byte("."))

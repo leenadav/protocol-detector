@@ -4,6 +4,7 @@ package names
 
 import (
 	"errors"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 	"net"
 	"net/netip"
 	"regexp"
@@ -17,7 +18,7 @@ var ErrInvalid = errors.New("invalid hostname")
 
 // Normalize lowercases, strips one trailing dot and validates every label; IP literals are rejected.
 func Normalize(value string) (string, error) {
-	value = strings.ToLower(value)
+	value = ascii.Lower(value)
 	value = strings.TrimSuffix(value, ".")
 	if value == "" || len(value) > 253 {
 		return "", ErrInvalid

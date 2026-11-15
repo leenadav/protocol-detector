@@ -3,6 +3,7 @@ package framed
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 	"hash/crc32"
 	"regexp"
 	"strconv"
@@ -717,7 +718,7 @@ func NewCQL(maxBytes int) *Parser {
 							return nil, parsing.Malformed("CQL string map entry outside printable ASCII")
 						}
 						if len(keys) < 32 {
-							keys[string(bytes.ToUpper(d[pos+2:pos+2+size]))] = true
+							keys[string(ascii.UpperBytes(d[pos+2:pos+2+size]))] = true
 						}
 						pos += 2 + size
 					}
