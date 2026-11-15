@@ -127,6 +127,12 @@ func orders(row map[string][]string) pyjson.Orders {
 	}
 }
 
+// SessionKeys is the key order of a session record.
+func SessionKeys() []string { return append([]string{}, keyOrders["session"]...) }
+
+// RejectKinds are the input-rejection kinds in the reference's order.
+func RejectKinds() []string { return append([]string{}, rejectKinds...) }
+
 // Orders is the key order of the reference's fixed layouts for a row rooted at "session" (a session record,
 // or another row that carries the layered view), with the row's own evidence-ordered maps.
 func Orders(row map[string][]string) pyjson.Orders { return orders(row) }
@@ -141,6 +147,13 @@ type quality struct {
 }
 
 func (q *quality) render() map[string]interface{} {
+	return RenderQuality("recorded", q.checksums, q.counts, q.flowsMarked)
+}
+
+// RenderQuality is InputQuality(adapter, checksums).render(): rejected input by kind, the checksum policy in
+// force and what the adapter does not support.
+func RenderQuality(adapter, checksums string, counts map[string]int, flowsMarked int) map[string]interface{} {
+	q := &quality{checksums: checksums, counts: counts, flowsMarked: flowsMarked}
 	rejected := map[string]interface{}{}
 	for _, kind := range rejectKinds {
 		if q.counts[kind] > 0 {
@@ -154,7 +167,7 @@ func (q *quality) render() map[string]interface{} {
 	case transport.Audit:
 		note = "computed; failures counted, packets inspected"
 	}
-	return map[string]interface{}{"adapter": "recorded", "checksums": q.checksums, "rejected": rejected, "flows_marked": q.flowsMarked,
+	return map[string]interface{}{"adapter": adapter, "checksums": q.checksums, "rejected": rejected, "flows_marked": q.flowsMarked,
 		"unsupported": []string{"ipv4-fragments", "ipv6", "non-ipv4-link-types"}, "checksums_note": note}
 }
 
@@ -241,6 +254,9 @@ func endpointText(v interface{}) string {
 }
 
 // readableSession is readable_session(record).
+// ReadableSession is readable_session(record): the one-line text form of a session record.
+func ReadableSession(r map[string]interface{}) string { return readableSession(r) }
+
 func readableSession(r map[string]interface{}) string {
 	text := fmt.Sprintf("SESSION %-16s %s -> %s | %s/%s risk=%v port=%v | client=%s server=%s | %v pkts %v+%v B | %v",
 		pyStr(r["app"]), endpointText(r["client"]), endpointText(r["server"]), pyStr(r["category"]), pyStr(r["subcategory"]), r["risk"],

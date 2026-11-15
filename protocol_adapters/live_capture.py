@@ -17,7 +17,7 @@ import sys
 import time
 import weakref
 from collections import Counter
-from .analyze_pcap import Analyzer, certificate_fields
+from .analyze_pcap import BACKENDS, Analyzer, certificate_fields
 from .coordinator import SessionCoordinator
 from .quality import InputQuality
 from .capture_stream import PcapStreamDecoder
@@ -385,6 +385,43 @@ def run_capture(stream, emit, duration=60, max_packets=0, stats_interval=10, pro
     return 1 if error else 2 if drops or monitor.counts["truncated"] else 0
 
 
+def hand_over_to_go(arguments, replace=None):
+    """Migration M8: let the Go engine's binary run this capture when it is installed and serves the request.
+
+    The options, the signature file and the policy file are first validated by the binary itself
+    (`live --check`, nothing is captured). When it accepts them this process is replaced by the binary
+    (os.execv), so the interface, the pipes and a later SIGINT belong to it directly: there is no relay in
+    between. Otherwise the reason is returned and the Python reference runs: no binary, a request the binary
+    does not serve (exit status 64: --content-version rollback, signature patterns outside its regular
+    expressions), or options it rejects, which the reference then reports in its own words.
+    """
+    from .analyze_pcap import GO_NOT_PORTED, go_binary
+    binary = go_binary()
+    if binary is None:
+        return "the Go backend binary is not installed (make go-build, or set PROTODETECT_GO_BINARY)"
+    forwarded, skip = [], False
+    for argument in arguments:
+        if skip:
+            skip = False
+        elif argument == "--backend":
+            skip = True
+        elif not argument.startswith("--backend="):
+            forwarded.append(argument)
+    try:
+        check = subprocess.run([binary, "live", "--check"] + forwarded, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,  # noqa: S603 - the binary go_binary() resolved, argv only
+                               stderr=subprocess.PIPE, timeout=20, check=False)
+    except (OSError, subprocess.SubprocessError) as error:
+        return "the Go backend could not be started: " + error.__class__.__name__
+    if check.returncode != 0:
+        detail = check.stderr.decode("utf-8", "replace").strip().splitlines()
+        return ("request not served by the Go backend" if check.returncode == GO_NOT_PORTED else "the Go backend rejected the request") + (
+            ": " + detail[-1][:200] if detail else "")
+    sys.stdout.flush()
+    sys.stderr.flush()
+    (replace or os.execv)(binary, [binary, "live"] + forwarded)
+    return "the Go backend did not take over"           # only reached with an injected `replace` (tests)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog="Example: python3 live_capture.py --interface en0 --duration 60")
     source = parser.add_mutually_exclusive_group(required=True)
@@ -417,6 +454,9 @@ def main():
     parser.add_argument("--content-version", choices=[item.version for item in detection_content.releases()], default=None,
                         help="D08: run the built-in server-name catalog as of an earlier content release (rollback); records pin the version used")
     parser.add_argument("--json", action="store_true", help="JSON Lines metadata; no payload output")
+    parser.add_argument("--backend", choices=BACKENDS, default=None,
+                        help="Engine that inspects the capture: go (default when its binary is installed) or python (the reference); "
+                             "PROTODETECT_BACKEND sets the default")
     args = parser.parse_args()
     if (not math.isfinite(args.duration) or args.duration < 0 or args.max_packets < 0
             or not math.isfinite(args.stats_interval) or args.stats_interval < 0
@@ -425,6 +465,14 @@ def main():
             or not 0 <= args.crc32c_byte_limit <= 1048576 or not 0 <= args.continuation <= args.byte_limit):
         parser.error("Invalid limits: connections 1..1024, bytes 64..65536, CRC-32C bytes 0..1048576, continuation 0..bytes, finite nonnegative times, idle timeout >0")
     emit = (lambda event: print(json.dumps(event), flush=True)) if args.json else readable
+    requested = args.backend or os.environ.get("PROTODETECT_BACKEND") or None
+    if requested is not None and requested not in BACKENDS:
+        parser.exit(2, "Unknown PROTODETECT_BACKEND {!r}; use go or python\n".format(requested))
+    if requested != "python" and not args.interfaces:
+        declined = hand_over_to_go(sys.argv[1:])        # does not return when the Go binary takes the capture
+        if requested == "go":
+            emit({"type": "error", "reason": declined})
+            return 1
     process = None
     try:
         if args.content_version:

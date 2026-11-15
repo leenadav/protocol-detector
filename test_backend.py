@@ -102,5 +102,90 @@ class BackendSelectionTests(unittest.TestCase):
             self.assertIsNone(analyze_pcap.go_binary())
 
 
+class LiveHandOverTests(unittest.TestCase):
+    """The live adapter hands the capture to the Go binary (process replacement) when the binary accepts it."""
+
+    FAKE = """#!{python}
+import sys
+arguments = sys.argv[1:]
+if "--content-version" in arguments:
+    sys.stderr.write("not ported in the Go backend: --content-version\\n")
+    sys.exit(64)
+if "--policy" in arguments:
+    sys.stderr.write("Policy file could not be read\\n")
+    sys.exit(1)
+sys.exit(0 if arguments[:2] == ["live", "--check"] else 9)
+"""
+
+    def setUp(self):
+        from protocol_adapters import live_capture
+        self.live = live_capture
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.fake = os.path.join(folder.name, "protodetect")
+        Path(self.fake).write_text(self.FAKE.format(python=sys.executable), encoding="utf-8")
+        os.chmod(self.fake, os.stat(self.fake).st_mode | stat.S_IXUSR)
+        patcher = mock.patch.dict(os.environ, {"PROTODETECT_GO_BINARY": self.fake})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        os.environ.pop("PROTODETECT_BACKEND", None)
+
+    def test_an_accepted_request_replaces_the_process_without_the_backend_option(self):
+        calls = []
+        reason = self.live.hand_over_to_go(["--stdin", "--backend", "go", "--json", "--backend=go"], replace=lambda *a: calls.append(a))
+        self.assertEqual(calls, [(self.fake, [self.fake, "live", "--stdin", "--json"])])
+        self.assertIn("did not take over", reason)        # only reachable with an injected replace
+
+    def test_a_declined_or_rejected_request_stays_with_the_reference(self):
+        calls = []
+        declined = self.live.hand_over_to_go(["--stdin", "--content-version", "2026.11.0"], replace=lambda *a: calls.append(a))
+        rejected = self.live.hand_over_to_go(["--stdin", "--policy", "missing.json"], replace=lambda *a: calls.append(a))
+        self.assertEqual(calls, [])
+        self.assertEqual(declined, "request not served by the Go backend: not ported in the Go backend: --content-version")
+        self.assertEqual(rejected, "the Go backend rejected the request: Policy file could not be read")
+        with mock.patch.dict(os.environ, {"PROTODETECT_GO_BINARY": self.fake + "-absent"}):
+            self.assertIn("not installed", self.live.hand_over_to_go(["--stdin"], replace=lambda *a: calls.append(a)))
+        self.assertEqual(calls, [])
+
+    def run_main(self, arguments, environment=None, stdin=b""):
+        import subprocess
+        variables = dict(os.environ, **(environment or {}))
+        done = subprocess.run([sys.executable, "-B", str(ROOT / "protodetect.py"), "live"] + arguments, input=stdin, env=variables,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60, check=False)
+        return done.stdout.decode("utf-8"), done.returncode
+
+    def test_options_right_after_the_live_command_reach_the_adapter(self):
+        # `protodetect live --stdin ...` was rejected by the command parser (an option cannot start a REMAINDER).
+        output, status = self.run_main(["--stdin", "--duration", "0", "--stats-interval", "0", "--backend", "python"],
+                                       stdin=Path(SAMPLE).read_bytes())
+        self.assertEqual(status, 0)
+        self.assertIn("STARTED: Passive initial-message inspection", output)
+        self.assertIn("SUMMARY ", output)
+
+    def test_python_runs_when_the_binary_declines_and_go_on_demand_reports_why(self):
+        capture = Path(SAMPLE).read_bytes()
+        output, status = self.run_main(["--stdin", "--duration", "0", "--stats-interval", "0", "--content-version", "2026.11.0"], stdin=capture)
+        self.assertEqual(status, 0)
+        self.assertIn("SUMMARY ", output)                              # the reference ran the rollback
+        output, status = self.run_main(["--stdin", "--duration", "0", "--json", "--backend", "go", "--content-version", "2026.11.0"], stdin=capture)
+        self.assertEqual(status, 1)
+        self.assertEqual(output.strip(), '{"type": "error", "reason": "request not served by the Go backend: not ported in the Go backend: --content-version"}')
+
+    def test_the_built_binary_and_the_reference_report_the_same_replay(self):
+        import json
+        built = ROOT / "go" / "bin" / "protodetect"
+        if not built.is_file():
+            return      # no binary in this checkout; the comparison is `make parity-live` in the Go engine gate
+        capture, outputs = Path(SAMPLE).read_bytes(), []
+        for backend in ("go", "python"):
+            output, status = self.run_main(["--stdin", "--duration", "0", "--stats-interval", "0", "--json", "--backend", backend],
+                                           {"PROTODETECT_GO_BINARY": str(built)}, capture)
+            self.assertEqual(status, 0)
+            events = [json.loads(line) for line in output.splitlines()]
+            outputs.append([(event["type"], event.get("app"), event.get("status"), event.get("counts")) for event in events])
+        self.assertEqual(outputs[0], outputs[1])
+        self.assertGreater(len(outputs[0]), 4)
+
+
 if __name__ == "__main__":
     unittest.main()

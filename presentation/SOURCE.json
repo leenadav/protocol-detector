@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "c09591db9b0049b308f7c7ddc73c0128684e8e7d",
+  "commit": "2907724eb68c26751bda30be5c17a4e9e7e260f5",
   "branch": "claude/go-migration",
-  "build_digest": "6ba46d71fe43d3f8d3ce8291e2a5d22afcc2960819034b76d5e1444c2aedc365",
+  "build_digest": "794f3cc4bb936e1def3af948c20f3704d72e6141a0c98f2796bc7ea248de1be6",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -430,7 +430,7 @@
     {
       "path": "protocol_adapters/live_capture.py",
       "component": "adapters",
-      "sha256": "ab10539b863e1556aabd13c7b26607ee8a603f3f495b1e78f71d76e02329e15d"
+      "sha256": "41c5bd0bb6e2d44371ea22c92cf07eb653909a36726c60001a80aa15b80a47bf"
     },
     {
       "path": "protocol_adapters/make_sample_pcap.py",
@@ -515,7 +515,7 @@
     {
       "path": "protodetect.py",
       "component": "adapters",
-      "sha256": "952a3af136b3d6956e641535228142fe95689e491b1a31d38b53a44c6dce2760"
+      "sha256": "1351ae09b4ecec130aff0538b61ca7177c7bdaaaa79d16b87b0ee1d195b9928e"
     },
     {
       "path": "detectors.py",

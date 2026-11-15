@@ -24,6 +24,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/pyjson"
 	"github.com/leenadav/protocol-detector/go/internal/session"
 	"github.com/leenadav/protocol-detector/go/internal/signatures"
+	"github.com/leenadav/protocol-detector/go/internal/telemetry"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
 )
 
@@ -99,6 +100,8 @@ type Analyzer struct {
 	Records   []map[string]interface{}
 	NotPorted *parsing.NotPorted
 	opts      Options
+	// Telemetry is the capture path's registry (Analyzer.telemetry): latency histograms and byte counters.
+	Telemetry *telemetry.Telemetry
 	// Rows is the adapter output since the caller last drained it (Options.Rows).
 	Rows []Row
 	// LastClassification is the observation of the packet in progress (Analyzer.last_classification), nil when the
@@ -149,7 +152,11 @@ type Options struct {
 type Row struct {
 	Source, Destination transport.Endpoint // stream end only
 	Event               *contracts.Event   // stream end only
-	Session             map[string]interface{}
+	// Bytes is the payload the retiring connection saw from Source (stream end only); BytesKnown is false when
+	// no tracked state was being retired (Analyzer.retiring is None).
+	Bytes      int
+	BytesKnown bool
+	Session    map[string]interface{}
 	// Order names, for the maps of a session record the reference fills in evidence order, their keys in
 	// that order: "fingerprints", "certificate", "input_quality", "continuation.client", "continuation.server".
 	Order map[string][]string
@@ -179,7 +186,7 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 			return nil, errs.New(errs.Invalid, errs.ScopeProcess, "Unsupported TCP candidate hint")
 		}
 	}
-	a := &Analyzer{pack: pack, cfg: cfg, opts: opts}
+	a := &Analyzer{pack: pack, cfg: cfg, opts: opts, Telemetry: telemetry.New()}
 	if opts.Signatures.Len() > 0 {
 		a.sigs = opts.Signatures
 		cfg.RetainContexts = true
@@ -221,8 +228,12 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 			return
 		}
 		if opts.Rows {
+			seen, known := 0, false
+			if state := tr.Retiring; state != nil {
+				seen, known = state.Bytes[source], true
+			}
 			for i := range s.retired {
-				a.Rows = append(a.Rows, Row{Source: source, Destination: destination, Event: &s.retired[i]})
+				a.Rows = append(a.Rows, Row{Source: source, Destination: destination, Event: &s.retired[i], Bytes: seen, BytesKnown: known})
 			}
 		}
 		s.retired = nil
@@ -337,6 +348,26 @@ func (a *Analyzer) closed(c session.Closed) {
 	var clientObs, serverObs *contracts.Observation
 	clientFacts, serverFacts := appid.DirectionFacts{}, appid.DirectionFacts{}
 	if c.Sinks != nil {
+		seen, unique, candidates := 0, 0, 0
+		for _, n := range state.Bytes {
+			seen += n
+		}
+		for endpoint, n := range c.Stored {
+			unique += n
+			if s, ok := c.Sinks[endpoint].(*Sink); ok {
+				candidates += s.In.Metrics.SignatureCandidates
+			}
+		}
+		replayed := seen - unique
+		if replayed < 0 {
+			replayed = 0
+		}
+		if seen < unique {
+			unique = seen
+		}
+		a.Telemetry.Add("bytes.new", unique)
+		a.Telemetry.Add("bytes.replayed", replayed)
+		a.Telemetry.Add("signatures.candidates", candidates)
 		if s, ok := c.Sinks[state.Client].(*Sink); ok {
 			o := s.In.Observation
 			clientObs = &o
@@ -472,6 +503,19 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 	if a.sigs != nil {
 		record["signature_set"] = a.sigs.Digest // stage 7 (A11): the rule set this verdict used
 	}
+	// Latency telemetry (P2): the session's lifetime is not its decision time.
+	positive := func(v float64) float64 {
+		if v < 0 {
+			return 0
+		}
+		return v
+	}
+	a.Telemetry.Observe("session_lifetime_seconds", positive(end-state.Start))
+	if state.HasFirst {
+		a.Telemetry.Observe("time_to_first_decision_seconds", positive(state.FirstDecision-state.Start))
+		a.Telemetry.Observe("time_to_stable_verdict_seconds", positive(state.StableAt-state.Start))
+	}
+	a.Telemetry.Add("sessions."+verdict.Status, 1)
 	if state.HasFirst {
 		// The reference's clock is the integer 0 until a capture timestamp above zero arrives; a decision at
 		// that instant is the integer 0 there (round(0 - 0, 6)), any other is a float.
@@ -810,6 +854,21 @@ func continuationSummary(client, server *contracts.Observation, order map[string
 
 // certificateFields ports analyze_pcap.certificate_fields: the tls_certificate_* evidence of both directions without
 // its prefix, plus the validity label at the capture time when both dates and the clock allow it.
+// CertificateFields is certificate_fields((observation,), at) with the fields in evidence order.
+func CertificateFields(o *contracts.Observation, at float64) (map[string]interface{}, []string) {
+	order := map[string][]string{}
+	fields := certificateFields(o, nil, at, order)
+	return fields, order["certificate"]
+}
+
+// Content is the content release every record of this run names (Analyzer.content).
+func (a *Analyzer) Content() map[string]interface{} {
+	return map[string]interface{}{"version": a.pack.Release.Version, "digest": a.pack.Release.Digest}
+}
+
+// Signatures is the custom signature set in force (nil: none).
+func (a *Analyzer) Signatures() *signatures.Set { return a.sigs }
+
 func certificateFields(client, server *contracts.Observation, at float64, order map[string][]string) map[string]interface{} {
 	certificate := map[string]interface{}{}
 	for _, obs := range []*contracts.Observation{client, server} {

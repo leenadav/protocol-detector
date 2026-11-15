@@ -102,6 +102,7 @@ type Closed struct {
 	Reason    string
 	End       float64
 	Delivered map[transport.Endpoint]int  // contiguous bytes handed to each direction's sink
+	Stored    map[transport.Endpoint]int  // bytes each direction's window retained (Stream.stored)
 	Sinks     map[transport.Endpoint]Sink // the directions' sinks (nil when no connection was opened)
 }
 
@@ -136,7 +137,9 @@ type Tracker struct {
 	// first, after the sink was retired (Python on_retire). Classified names the sink whose observation is the
 	// packet's classification (Analyzer.last_classification) at the moment Python reads it. Evidence renders the
 	// legacy per-family table appended to a data segment's message.
-	Retired    func(source, destination transport.Endpoint, sink Sink)
+	Retired func(source, destination transport.Endpoint, sink Sink)
+	// Retiring is the state of the connection Drop is retiring, nil outside Drop and for an untracked key.
+	Retiring   *State
 	Classified func(sink Sink)
 	Evidence   func(sink Sink) string
 	// LastServer is the server endpoint of the packet in progress when tracking knows it (Analyzer.last_server).
@@ -189,9 +192,22 @@ func (t *Tracker) Tracked(a, b transport.Endpoint) *State {
 func (t *Tracker) TracksTCP(key Key) bool { _, ok := t.tracked[key]; return ok }
 
 func (t *Tracker) closed(state *State, reason string, delivered map[transport.Endpoint]int, sinks map[transport.Endpoint]Sink) {
+	t.closedWith(state, reason, delivered, nil, sinks)
+}
+
+func (t *Tracker) closedWith(state *State, reason string, delivered, stored map[transport.Endpoint]int, sinks map[transport.Endpoint]Sink) {
 	if t.onClosed != nil {
-		t.onClosed(Closed{State: state, Reason: reason, End: t.now, Delivered: delivered, Sinks: sinks})
+		t.onClosed(Closed{State: state, Reason: reason, End: t.now, Delivered: delivered, Stored: stored, Sinks: sinks})
 	}
+}
+
+// TrackedTCP are the tracked TCP connections in table order (Analyzer.tracked.values()).
+func (t *Tracker) TrackedTCP() []*State {
+	out := make([]*State, 0, len(t.tracked))
+	for _, key := range inOrder(t.tracked) {
+		out = append(out, t.tracked[key])
+	}
+	return out
 }
 
 // Drop ends tracking of a connection: each direction's sink is ended with the reason.
@@ -199,10 +215,13 @@ func (t *Tracker) Drop(key Key, reason string) {
 	connection := t.manager.Connections[key]
 	state := t.tracked[key]
 	delete(t.tracked, key)
-	var delivered map[transport.Endpoint]int
+	// Lets Retired consumers read the per-direction byte counts of the state being retired (Analyzer.retiring).
+	t.Retiring = state
+	defer func() { t.Retiring = nil }()
+	var delivered, stored map[transport.Endpoint]int
 	var sinks map[transport.Endpoint]Sink
 	if connection != nil {
-		delivered = map[transport.Endpoint]int{}
+		delivered, stored = map[transport.Endpoint]int{}, map[transport.Endpoint]int{}
 		sinks = map[transport.Endpoint]Sink{}
 		// Client first, as the reference's direction table is ordered.
 		order := []transport.Endpoint{key[0], key[1]}
@@ -219,12 +238,13 @@ func (t *Tracker) Drop(key Key, reason string) {
 				t.Retired(endpoint, order[len(order)-1-i], d.Sink)
 			}
 			delivered[endpoint] = d.Stream.Delivered()
+			stored[endpoint] = d.Stream.Stored()
 			sinks[endpoint] = d.Sink
 		}
 		t.manager.release(key)
 	}
 	if state != nil {
-		t.closed(state, reason, delivered, sinks)
+		t.closedWith(state, reason, delivered, stored, sinks)
 	}
 }
 
