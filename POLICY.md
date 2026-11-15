@@ -28,7 +28,15 @@ flow risks and application shifts.
        "port_usage": ["standard", "nonstandard", "unknown"],
        "transports": ["tcp", "udp"], "server_ports": ["tcp/443", "udp/53-60", "tcp/dynamic"],
        "encryption": ["none", "tls", "dtls", "quic", "wireguard", "openvpn"],
-       "shifted_from": ["http-proxy", "smtp"]
+       "shifted_from": ["http-proxy", "smtp"],
+       "identity_basis": ["authenticated_plaintext", "structural", "configured_rule", "client_assertion", "none"],
+       "activity": ["unobserved", "http-request", "authenticated-plaintext", "none"],
+       "affiliation": ["service", "provider-web", "none"],
+       "decryption": ["none", "awaiting_hello", "awaiting_keys", "decrypting", "complete", "failed"],
+       "capture_quality": ["intact", "degraded", "provisional"],
+       "engine_status": ["identified", "correlated", "unknown", "budget_exhausted", "invalidated", "incomplete"],
+       "directions": ["consistent", "conflicting", "one-direction"],
+       "observation": ["handshake", "asymmetric", "midstream", "datagram"]
      }}
   ]
 }
@@ -50,9 +58,37 @@ flow risks and application shifts.
 - Limits: 1024 rules, 256 entries per list, 4 MiB file, names of 1..64
   printable characters, unique rule names.
 
+## Evidence predicates (D04)
+
+The seven typed predicates match the session's evidence contract, not its payload and not a confidence
+number (none exists). Values come from the layered view (`layers`) when the caller has one and from the
+verdict otherwise; the decision reports the values it saw under `predicates`.
+
+- `identity_basis`: how the application name was established. There is no ordering: a rule that lists
+  `structural` or `authenticated_plaintext` is **not** satisfied by `client_assertion` (an SNI or Host name
+  the client sent), and `authenticated_plaintext` means record AEAD with supplied secrets, not verified peer
+  or product identity.
+- `activity` and `affiliation` (D03): what was observed versus which provider the name affiliates with
+  (`provider-web` is a marketing or documentation front, `service` a service domain).
+- `decryption`: the decoder's state for the session (`none` when no decoder ran). Missing keys are
+  `awaiting_keys`, a failed authentication `failed`; neither satisfies a rule that requires `complete`.
+- `capture_quality`: `intact`, `degraded` (a gap or truncation retracted dependents) or `provisional`
+  (a live run before stop).
+- `engine_status`: the verdict's engine status (`budget_exhausted` and `invalidated` are explicit outcomes,
+  never identities).
+- `directions`: `conflicting` when the two directions identified different applications, `one-direction`
+  when only one side was identified, `consistent` otherwise.
+- `observation` (D05): how the connection was observed (`handshake`, `asymmetric`, `midstream`, or
+  `datagram`); a rule can insist on an observed handshake before it allows anything.
+
+A rule that names a predicate never matches when the context is missing. When no rule matched because of
+predicates alone, the default decision's reasons name the first rule that would have matched and which
+requirement failed, so operators see "would allow, but identity is a client assertion" rather than a bare
+default.
+
 ## Evaluation
 
-`Policy.evaluate(verdict, transport, server_port)` walks the rules in order and
+`Policy.evaluate(verdict, transport, server_port, layers=None)` walks the rules in order and
 returns `Decision(action, rule, reasons)` for the first match, otherwise
 `Decision(default, None, reasons)`. Cost is linear in the rule count with a few
 set lookups per rule (about 1 µs for the seven-rule example, about 150 µs for

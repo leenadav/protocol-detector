@@ -19,12 +19,15 @@ class Config:
     heuristics: bool = False        # profile unknown payload prefixes (entropy/printable) and DNS name shape
     heuristic_bytes: int = 512      # unknown-payload prefix profiled when heuristics are on
     certificates: bool = False      # read the leaf certificate structure after a TLS 1.2 ServerHello (no names)
+    continuation: int = 0           # D07: bytes inspected after identification (HTTP/1 messages, TLS records); 0 = off
+    max_transactions: int = 16      # D07: HTTP/1 messages per direction counted by a continuation
 
     def __post_init__(self):
         limits = ((self.max_bytes, 64, 1048576), (self.max_updates, 1, 1000000),
                   (self.max_line, 16, 65536), (self.max_headers, 1, 4096),
                   (self.max_crc32c_bytes, 0, 1048576), (self.signature_bytes, 16, 65536),
-                  (self.heuristic_bytes, 16, 65536))
+                  (self.heuristic_bytes, 16, 65536), (self.continuation, 0, 1048576),
+                  (self.max_transactions, 1, 4096))
         if any(type(value) is not int or not low <= value <= high for value, low, high in limits):
             raise ValueError("Invalid inspection resource limits")
         if (type(self.retain_contexts) is not bool or type(self.fingerprints) is not bool or type(self.quic_decrypt) is not bool
@@ -69,6 +72,7 @@ class Metrics:
     parser_calls: int = 0
     candidates_selected: int = 0
     events_emitted: int = 0
+    signature_candidates: int = 0   # stage 7 (A11): custom signatures evaluated for this direction
 
 
 def normalize_hostname(value):

@@ -98,8 +98,10 @@ class LeadingOverlapTests(unittest.TestCase):
                     self.assertEqual(stream.contiguous,contiguous)
                     self.assertEqual(stream.highest_end,max(expected,default=-1)+1)
                     self.assertEqual(b''.join(stream.inspector.chunks),data[:contiguous])
-                    self.assertEqual(len(stream.buffer),64)
-                    self.assertEqual(len(stream.present),64)
+                    # Stage 4 (A07): lazily allocated up to the highest retained byte, never beyond the limit.
+                    self.assertEqual(len(stream.buffer),stream.highest_end)
+                    self.assertEqual(len(stream.present),stream.highest_end)
+                    self.assertLessEqual(len(stream.buffer),64)
                 stream.feed((first-3)%MODULUS,b'old'+data+b'ignored')
                 self.assertEqual(b''.join(stream.inspector.chunks),data)
 

@@ -158,9 +158,15 @@ class LiveCaptureTests(unittest.TestCase):
                 monitor.accept(CaptureRecord(i, data, len(data), 1), i)
         connections = monitor.analyzer.manager.connections
         self.assertEqual(len(connections), 8)
-        allocated = sum(len(stream.buffer) + len(stream.present)
-                        for conn in connections.values() for stream in conn['directions'].values())
-        self.assertEqual(allocated, 8 * 4 * 1024)
+        allocated = sum(stream.allocated for conn in connections.values() for stream in conn['directions'].values())
+        # Stage 4 (A07): a handshake-only connection allocates nothing per direction; bytes grow the arrays
+        # on demand and never past 2 * byte_limit per direction.
+        self.assertEqual(allocated, 0)
+        source = ('192.0.2.1', 50000)
+        data = frame(source, B, 1000, 9000, 24, b'x' * 3000)
+        monitor.accept(CaptureRecord(20, data, len(data), 1), 20)
+        stream = connections[monitor.analyzer.manager.key(source, B)]['directions'][source]
+        self.assertEqual(stream.allocated, 2 * 1024)
         monitor.analyzer.expire(100)
         self.assertFalse(connections)
 

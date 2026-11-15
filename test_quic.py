@@ -143,8 +143,8 @@ class AssemblyTests(unittest.TestCase):
         frames = crypto_frames(CLIENT_HELLO, [50, 120])
         payload = frames[2] + frames[0] + frames[1]
         self.assertEqual(DatagramInspector().inspect(protect(V1, DCID, b"", payload)).hostname, "example.com")
-        self.assertIsNone(assemble([(0, CLIENT_HELLO[:10]), (20, CLIENT_HELLO[20:])]))  # gap
-        self.assertEqual(assemble([(0, CLIENT_HELLO[:100]), (60, CLIENT_HELLO[60:])]), CLIENT_HELLO)  # overlap
+        self.assertEqual(assemble([(0, CLIENT_HELLO[:10]), (20, CLIENT_HELLO[20:])]), ("partial", None))  # gap
+        self.assertEqual(assemble([(0, CLIENT_HELLO[:100]), (60, CLIENT_HELLO[60:])]), ("complete", CLIENT_HELLO))  # agreeing overlap
 
     def test_cross_datagram_assembly_requires_an_assembler(self):
         first, second = crypto_frames(CLIENT_HELLO, [100])
@@ -161,10 +161,10 @@ class AssemblyTests(unittest.TestCase):
         # Bounded store: a third connection evicts the oldest; oversized fragments are dropped.
         assembler.add(b"a", [(0, b"x")]); assembler.add(b"b", [(0, b"x")]); assembler.add(b"c", [(0, b"x")])
         self.assertEqual(len(assembler.entries), 2)
-        self.assertNotIn(b"a", assembler.entries)
-        self.assertIsNone(assembler.add(b"d", [(0, bytes(17000))]))
-        self.assertNotIn(b"d", assembler.entries)
-        self.assertIsNone(assembler.add(b"e", [(i * 10, b"0123456789") for i in range(9)]))
+        self.assertNotIn((None, None, b"a"), assembler.entries)
+        self.assertEqual(assembler.add(b"d", [(0, bytes(17000))]), ("exhausted", None))
+        self.assertNotIn((None, None, b"d"), assembler.entries)
+        self.assertEqual(assembler.add(b"e", [(i * 10, b"0123456789") for i in range(9)]), ("exhausted", None))
         assembler.clear()
         self.assertEqual(len(assembler.entries), 0)
         with self.assertRaises(TypeError):
@@ -191,7 +191,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual((records[0]["app"], records[0]["packets"], records[0]["port_usage"]), ("quic", 2, "standard"))
         self.assertNotIn("hostname", records[0])
         self.assertEqual(analyzer.quic_assembler.max_connections, 4)
-        self.assertTrue(analyzer.quic_assembler.entries)
+        self.assertFalse(analyzer.quic_assembler.entries)   # D01: the flow ended with finish(), so did its CRYPTO state
         analyzer.quic_assembler.clear()
 
     def test_mutations_and_noise_stay_within_documented_statuses_and_time(self):

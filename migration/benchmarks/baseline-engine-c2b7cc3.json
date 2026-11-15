@@ -1,0 +1,346 @@
+{
+  "environment": {
+    "python": "3.13.16",
+    "platform": "Linux-6.18.44-fc-v310-x86_64-with-glibc2.39",
+    "iterations": 300,
+    "warmup_flows": 20
+  },
+  "cases": {
+    "http_small": {
+      "incremental": {
+        "flow": {
+          "p50_us": 30.338,
+          "p95_us": 42.453,
+          "p99_us": 60.403
+        },
+        "feed": {
+          "p50_us": 29.904,
+          "p95_us": 41.975,
+          "p99_us": 59.894
+        },
+        "metrics": {
+          "bytes_received": 37,
+          "bytes_inspected": 37,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1,
+          "signature_candidates": 0
+        }
+      },
+      "legacy": {
+        "flow": {
+          "p50_us": 8.392,
+          "p95_us": 11.111,
+          "p99_us": 29.322
+        },
+        "feed": {
+          "p50_us": 8.073,
+          "p95_us": 10.671,
+          "p99_us": 28.722
+        },
+        "metrics": null
+      }
+    },
+    "http_fragmented": {
+      "incremental": {
+        "flow": {
+          "p50_us": 509.382,
+          "p95_us": 578.219,
+          "p99_us": 687.148
+        },
+        "feed": {
+          "p50_us": 1.166,
+          "p95_us": 1.676,
+          "p99_us": 15.895
+        },
+        "metrics": {
+          "bytes_received": 6050,
+          "bytes_inspected": 6050,
+          "updates": 190,
+          "parser_calls": 190,
+          "candidates_selected": 1,
+          "events_emitted": 1,
+          "signature_candidates": 0
+        }
+      },
+      "legacy": {
+        "flow": {
+          "p50_us": 31553.979,
+          "p95_us": 43330.178,
+          "p99_us": 53669.71
+        },
+        "feed": {
+          "p50_us": 166.465,
+          "p95_us": 329.064,
+          "p99_us": 479.319
+        },
+        "metrics": null
+      }
+    },
+    "tls_fragmented": {
+      "incremental": {
+        "flow": {
+          "p50_us": 60.994,
+          "p95_us": 80.742,
+          "p99_us": 95.523
+        },
+        "feed": {
+          "p50_us": 1.186,
+          "p95_us": 32.922,
+          "p99_us": 35.949
+        },
+        "metrics": {
+          "bytes_received": 517,
+          "bytes_inspected": 517,
+          "updates": 17,
+          "parser_calls": 17,
+          "candidates_selected": 1,
+          "events_emitted": 1,
+          "signature_candidates": 0
+        }
+      },
+      "legacy": {
+        "flow": {
+          "p50_us": 55.26,
+          "p95_us": 75.177,
+          "p99_us": 82.823
+        },
+        "feed": {
+          "p50_us": 2.627,
+          "p95_us": 10.081,
+          "p99_us": 11.861
+        },
+        "metrics": null
+      }
+    },
+    "http_after_identification": {
+      "incremental": {
+        "flow": {
+          "p50_us": 47.285,
+          "p95_us": 61.761,
+          "p99_us": 71.986
+        },
+        "feed": {
+          "p50_us": 0.173,
+          "p95_us": 0.265,
+          "p99_us": 28.685
+        },
+        "metrics": {
+          "bytes_received": 65573,
+          "bytes_inspected": 37,
+          "updates": 1,
+          "parser_calls": 1,
+          "candidates_selected": 1,
+          "events_emitted": 1,
+          "signature_candidates": 0
+        }
+      },
+      "legacy": {
+        "flow": {
+          "p50_us": 626.466,
+          "p95_us": 871.546,
+          "p99_us": 2511.395
+        },
+        "feed": {
+          "p50_us": 9.101,
+          "p95_us": 12.729,
+          "p99_us": 31.616
+        },
+        "metrics": null
+      }
+    }
+  },
+  "rule_index_build_ms": 201.455,
+  "rules_30000": {
+    "flow": {
+      "p50_us": 31.667,
+      "p95_us": 50.673,
+      "p99_us": 75.611
+    },
+    "feed": {
+      "p50_us": 31.261,
+      "p95_us": 50.189,
+      "p99_us": 74.892
+    },
+    "metrics": {
+      "bytes_received": 43,
+      "bytes_inspected": 43,
+      "updates": 1,
+      "parser_calls": 1,
+      "candidates_selected": 1,
+      "events_emitted": 1,
+      "signature_candidates": 0
+    }
+  },
+  "rules_0_same_request": {
+    "flow": {
+      "p50_us": 31.005,
+      "p95_us": 49.317,
+      "p99_us": 65.681
+    },
+    "feed": {
+      "p50_us": 30.59,
+      "p95_us": 48.471,
+      "p99_us": 65.204
+    },
+    "metrics": {
+      "bytes_received": 43,
+      "bytes_inspected": 43,
+      "updates": 1,
+      "parser_calls": 1,
+      "candidates_selected": 1,
+      "events_emitted": 1,
+      "signature_candidates": 0
+    }
+  },
+  "protocol_extensions": {
+    "http2": {
+      "flow": {
+        "p50_us": 17.573,
+        "p95_us": 24.738,
+        "p99_us": 54.207
+      },
+      "feed": {
+        "p50_us": 2.078,
+        "p95_us": 8.14,
+        "p99_us": 11.713
+      },
+      "metrics": {
+        "bytes_received": 33,
+        "bytes_inspected": 33,
+        "updates": 5,
+        "parser_calls": 2,
+        "candidates_selected": 1,
+        "events_emitted": 1,
+        "signature_candidates": 0
+      }
+    },
+    "socks5": {
+      "flow": {
+        "p50_us": 21.357,
+        "p95_us": 30.314,
+        "p99_us": 51.157
+      },
+      "feed": {
+        "p50_us": 3.539,
+        "p95_us": 19.216,
+        "p99_us": 25.848
+      },
+      "metrics": {
+        "bytes_received": 21,
+        "bytes_inspected": 21,
+        "updates": 3,
+        "parser_calls": 3,
+        "candidates_selected": 1,
+        "events_emitted": 1,
+        "signature_candidates": 0
+      }
+    },
+    "smtp": {
+      "flow": {
+        "p50_us": 25.167,
+        "p95_us": 33.601,
+        "p99_us": 58.07
+      },
+      "feed": {
+        "p50_us": 4.531,
+        "p95_us": 19.101,
+        "p99_us": 22.561
+      },
+      "metrics": {
+        "bytes_received": 25,
+        "bytes_inspected": 25,
+        "updates": 4,
+        "parser_calls": 4,
+        "candidates_selected": 1,
+        "events_emitted": 1,
+        "signature_candidates": 0
+      }
+    },
+    "mqtt": {
+      "flow": {
+        "p50_us": 13.968,
+        "p95_us": 19.337,
+        "p99_us": 42.354
+      },
+      "feed": {
+        "p50_us": 3.16,
+        "p95_us": 10.078,
+        "p99_us": 14.141
+      },
+      "metrics": {
+        "bytes_received": 18,
+        "bytes_inspected": 18,
+        "updates": 3,
+        "parser_calls": 3,
+        "candidates_selected": 1,
+        "events_emitted": 1,
+        "signature_candidates": 0
+      }
+    },
+    "resp": {
+      "flow": {
+        "p50_us": 17.407,
+        "p95_us": 26.123,
+        "p99_us": 51.695
+      },
+      "feed": {
+        "p50_us": 4.239,
+        "p95_us": 7.612,
+        "p99_us": 9.82
+      },
+      "metrics": {
+        "bytes_received": 25,
+        "bytes_inspected": 25,
+        "updates": 4,
+        "parser_calls": 4,
+        "candidates_selected": 1,
+        "events_emitted": 1,
+        "signature_candidates": 0
+      }
+    },
+    "amqp_091": {
+      "flow": {
+        "p50_us": 8.685,
+        "p95_us": 13.037,
+        "p99_us": 20.424
+      },
+      "feed": {
+        "p50_us": 4.675,
+        "p95_us": 7.482,
+        "p99_us": 9.35
+      },
+      "metrics": {
+        "bytes_received": 8,
+        "bytes_inspected": 8,
+        "updates": 2,
+        "parser_calls": 2,
+        "candidates_selected": 1,
+        "events_emitted": 1,
+        "signature_candidates": 0
+      }
+    },
+    "amqp_10": {
+      "flow": {
+        "p50_us": 10.523,
+        "p95_us": 13.806,
+        "p99_us": 21.349
+      },
+      "feed": {
+        "p50_us": 5.048,
+        "p95_us": 7.908,
+        "p99_us": 11.666
+      },
+      "metrics": {
+        "bytes_received": 8,
+        "bytes_inspected": 8,
+        "updates": 2,
+        "parser_calls": 2,
+        "candidates_selected": 1,
+        "events_emitted": 1,
+        "signature_candidates": 0
+      }
+    }
+  }
+}

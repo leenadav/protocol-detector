@@ -4,13 +4,30 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "protocol-stream-engine"
-version = "0.65.0"
+version = "0.66.0"
 description = "Bounded incremental protocol classification for TCP streams and UDP datagrams"
 requires-python = ">=3.9"
 dependencies = []
 
+[project.optional-dependencies]
+# The presentation application's TLS POC decrypts records with cryptography's AEADs; the core needs nothing.
+decryption = ["cryptography==50.0.2"]
+
+[project.scripts]
+# A01: the whole product from one artifact. `protocol-observatory` starts the loopback server and opens the page.
+protocol-observatory = "protocol_observatory.launch:main"
+
 [tool.setuptools]
-packages = ["protocol_engine"]
+# A01: engine, adapters and the presentation application (as `protocol_observatory`) ship in one wheel; the
+# presentation directory keeps its name in the tree and its tests stay out of the artifact.
+packages = ["protocol_engine", "protocol_adapters", "protocol_observatory", "protocol_observatory.poc_decryption"]
+
+[tool.setuptools.package-dir]
+protocol_observatory = "presentation"
+"protocol_observatory.poc_decryption" = "presentation/poc_decryption"
+
+[tool.setuptools.package-data]
+protocol_observatory = ["web/*", "SOURCE.json", "requirements-decryption.txt", "requirements-decryption.lock.txt", "DECRYPTION.md"]
 
 [tool.ruff]
 line-length = 160
@@ -32,7 +49,14 @@ ignore = [
 "test_*.py" = ["S", "B"]
 "live_capture.py" = ["S603", "S404", "S607"]   # argv-only subprocess with resolved executable, reviewed
 "tools/compare_engine.py" = ["S603"]        # sys.executable with argv-only arguments, reviewed
+"tools/build_manifest.py" = ["S603", "S607"]  # fixed argv `git rev-parse` for manifest provenance only
 "live_smoke.py" = ["S603", "S404", "S607", "S104"]
 "*interop*.py" = ["S603", "S404", "S607"]
 "benchmark*.py" = ["S603", "S404", "S607"]
 "ike_decoder_check.py" = ["S603", "S404", "S607"]
+# Presentation application (stage 1a): argv-only subprocess calls, no shell. The workers run sys.executable on the
+# app's own scripts; tcpdump comes from live_capture.capture_command, which validates interface and filter.
+"presentation/server.py" = ["S603"]
+"presentation/live_manager.py" = ["S603"]
+"presentation/poc_decryption/live.py" = ["S603"]
+"presentation/launch.py" = ["S603", "S310"]   # S310: urlopen only of http://127.0.0.1:<port> built in main()

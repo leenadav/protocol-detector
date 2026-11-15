@@ -100,3 +100,5 @@ TLS 1.3 certificates (encrypted), cipher-strength grading beyond forward
 secrecy, AEAD versus CBC and the RFC 9325 offer classes, HTTP header anomaly
 scoring, port scan or probing detection, periodicity/beaconing analysis, byte
 distribution learning, and any risk that needs more than the initial message.
+
+(v0.66 note) No new flow risk. `tplink-smarthome` carries the `prone-to-misuse` characteristic: its XOR autokey is obfuscation, not encryption, so LAN observers can read and forge control messages.

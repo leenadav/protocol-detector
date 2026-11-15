@@ -13,6 +13,44 @@ fingerprints, hostnames, all-events).
 | `live-event` | `live_capture --json`, `protodetect live --json` | `started`, `classification` (per state-change event, plus retired observations with `--all-events`), `session`, `progress`/`summary`, `capture_gap`, `error` |
 | `offline-row` | `analyze_pcap --json`, `protodetect analyze --json` | per-frame rows with the direction's current classification and events (omitted with `--events-only` unless an event fired), `skipped` frames, `stream_end`, `capture_gap`, `session`, final `summary` |
 
+Every `session` record (and every decryption row of the presentation's live
+`decryption` event) also carries `layers` (schema `$defs/layers`, stage 5 of the
+v0.65 architecture plan): the per-layer knowledge of one session and the one
+effective answer derived from it. `outer` is the protocol and verdict seen on
+the wire, `encryption` the envelope (protocol, offered ALPN, whether a server
+name was asserted, negotiated version when a decoder ran), `inner` the protocol
+and verdict seen in authenticated plaintext (absent without decryption),
+`application` the effective name with its `basis`: `authenticated_plaintext`,
+`structural`, `configured_rule`, `client_assertion` (built-in server-name
+catalog) or `none`. `chain` is the display order, e.g. `["tls", "http/1.1",
+"webdav"]`; `claims` lists asserted, offered and derived evidence by field,
+source and strength, never by value. A failed decryption withdraws `inner`
+(`authenticated: false`) and keeps the wire layer; record authentication is
+never presented as peer or product identity verification (`note`).
+
+Every `session` record, the offline summary and the live `started`,
+`progress` and `summary` events carry `content: {version, digest}` (D08): the
+detection content release in force and its digest, so records classified by
+different catalogs can be told apart (docs/CONTENT-GOVERNANCE.md).
+
+A `session` record that is not an identification carries `unknown` (D12): per
+direction (and per session for lifecycle outcomes) a closed `code`
+(`no-dispatch`, `ambiguous`, `profile-unsupported`, `malformed`, `budget`,
+`no-payload`, `incomplete`, `no-handshake`, `midstream`, `invalidated`), the
+`stage` that produced it, the `family` whose parser spoke when one was selected,
+the engine's sentence as `detail` and, for ambiguity, the `candidates`
+(docs/UNKNOWN-REASONS.md). `protodetect explain` turns one payload into that
+structure and can minimize it to the shortest input with the same outcome.
+
+With `--continuation BYTES` (D07) a `session` record may also carry
+`continuation`: per direction (`client`, `server`) the counts and classes the
+budgeted continuation framed after the identification (`http_messages`,
+`http_methods`, `http_status_classes`, `http_host_variation`, `tls_records`,
+`tls_application_data`, `tls_alert`) and `ended` (`budget`, `messages`,
+`records`, `framing`, `close-delimited`, `shift`; absent when the direction
+ended first). It is absent when the option is off or nothing followed; the
+verdict, `decision` and hostname are never changed by it (PROTOCOLS.md).
+
 Schemas set `additionalProperties: false` on every object the tools build, so a
 new field is a schema change and a review item. Values that could carry
 payload are structurally excluded: `evidence[].value` is a short string from a

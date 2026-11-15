@@ -237,6 +237,12 @@ def dns_details(data, config, llmnr=False):
                 raise ParseError("Invalid DNS MX RDATA")
             if kind == 6 and name(name(pos)) + 20 != end:
                 raise ParseError("Invalid DNS SOA RDATA")
+            if kind == 33 and not netbios and (size < 7 or name(pos + 6) != end):
+                # SRV target (RFC 2782); parsing it records label boundaries later records may point to.
+                raise ParseError("Invalid DNS SRV RDATA")
+            if kind == 47 and name(pos) > end:
+                # NSEC next domain name (RFC 4034 4.1); multicast DNS negative answers compress against it.
+                raise ParseError("Invalid DNS NSEC RDATA")
             if kind == 16:
                 cursor = pos
                 while cursor < end:
@@ -277,15 +283,19 @@ def dns_details(data, config, llmnr=False):
         label = _NBNS_OPCODES[opcode]
         reason = "NetBIOS name service {} framing validated; names, addresses and node status are never emitted".format(label)
         return "netbios-ns", reason, qname, qtype, evidence + _NBNS_OPCODE_EVIDENCE[label]
-    if not counts[0] or unicast_requested or cache_flush or local:
+    # RFC 6762 8.1: a probe asks type ANY and carries its proposed records in the Authority section;
+    # a unicast DNS QUERY never does, so this layout marks multicast DNS even for reverse-mapping names.
+    probe = not response and qtype == 255 and counts[2] > 0
+    if not counts[0] or unicast_requested or cache_flush or local or probe:
         # Multicast DNS (RFC 6762): QU questions, cache-flush answers, .local names, known-answer and probe
         # queries carrying records, unsolicited announcements without questions.
         if not counts[0] and not (local or cache_flush):
             raise ParseError("DNS response without a question")
         if response and (rcode or not data[2] & 0x04):
             raise ParseError("Multicast DNS responses carry the AA bit and a zero response code")
-        if not response and (rcode or data[2] & 0x04):
-            raise ParseError("Multicast DNS queries carry neither the AA bit nor a response code")
+        if not response and rcode:
+            # RFC 6762 18.4: the AA bit MUST be zero on transmission and MUST be ignored on reception in queries.
+            raise ParseError("Multicast DNS queries carry no response code")
         if not counts[0]:
             profile = "announcement"
         elif not response and counts[2]:

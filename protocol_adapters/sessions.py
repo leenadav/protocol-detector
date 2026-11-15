@@ -1,0 +1,356 @@
+"""Bounded educational TCP payload reassembly, not a complete TCP stack.
+
+Call open_connection with the first DATA sequence number for each direction
+(normally SYN sequence + 1). Feed decoded TCP payloads, not raw packets.
+The caller owns SYN/FIN/RST processing and connection lifecycle.
+"""
+import time
+from dataclasses import dataclass, field
+from typing import Optional
+from .detectors import Result
+from protocol_engine import Inspector, Observation, supported_protocols
+
+MODULUS = 2 ** 32
+# Legacy display only: compiled once from the public inventory. Live capture
+# disables compatibility results and never iterates this collection.
+_LEGACY_ORDER = ('http', 'ssh', 'tls', 'http2', 'socks5', 'smtp', 'mqtt', 'resp', 'amqp',
+                 'dns', 'stun', 'postgresql', 'rfb', 'bittorrent', 'memcached', 'ldap',
+                 'sip', 'rtsp', 'bgp', 'smb2', 'stomp', 'nats', 'imap', 'rdp', 'mysql', 'mongodb')
+TCP_FAMILIES = _LEGACY_ORDER + tuple(entry.family for entry in supported_protocols()
+                                   if 'tcp' in entry.transports and entry.family not in _LEGACY_ORDER)
+
+
+class StreamError(ValueError):
+    pass
+
+
+class CompatResults:
+    """The legacy per-family MATCH/NO_MATCH table of one feed, built only when a reader asks for it (D11).
+
+    It captures the frozen observation and the dispatch candidate at feed time, so a later feed never
+    changes what an earlier snapshot reports; the rows are a pure function of that captured state and are
+    rebuilt on each read rather than cached, so a connection never holds 63 Result objects per direction
+    for its lifetime. Live capture (compatibility off) never builds them, and the Analyzer's compact path
+    never reads them.
+    """
+    __slots__ = ("_observation", "_candidate")
+
+    def __init__(self, observation, candidate):
+        self._observation, self._candidate = observation, candidate
+
+    def _materialize(self):
+        return tuple(_compat_rows(self._observation, self._candidate))
+
+    def __iter__(self):
+        return iter(self._materialize())
+
+    def __len__(self):
+        return len(self._materialize())
+
+    def __getitem__(self, index):
+        return self._materialize()[index]
+
+    def __eq__(self, other):
+        if isinstance(other, CompatResults):
+            return self._materialize() == other._materialize()
+        return self._materialize() == tuple(other) if isinstance(other, (list, tuple)) else NotImplemented
+
+    def __hash__(self):
+        return hash(self._materialize())
+
+    def __repr__(self):
+        return repr(self._materialize())
+
+
+def _compat_rows(observation, candidate):
+    if candidate == "git_text":
+        candidate = "text"  # Shared routing scope before a structural discriminator.
+    if candidate == "tpkt":
+        candidate = "rdp"
+    matched = "tls" if observation.encryption == "tls" else observation.application_protocol
+    if matched == "http/2":
+        matched = "http2"
+    elif matched and matched.startswith("http/"):
+        matched = "http"
+    if matched and matched.startswith("mqtt/"):
+        matched = "mqtt"
+    if matched and matched.startswith("amqp/"):
+        matched = "amqp"
+    if matched and "/" in matched:
+        matched = matched.split("/", 1)[0]
+    candidates = {candidate} if candidate != "text" else {"http", "ssh", "smtp", "sip", "rtsp", "nats", "imap", "git"}
+    results = []
+    for name in TCP_FAMILIES:
+        status = "NO_MATCH"
+        if observation.status == "identified" and matched == name:
+            status = "MATCH"
+        elif observation.status == "detecting" and (candidate is None or name in candidates):
+            status = "NEED_MORE"
+        elif observation.status == "unknown" and (candidate is None or name in candidates):
+            status = "UNKNOWN"
+        elif observation.status in ("budget_exhausted", "incomplete", "invalidated") and (candidate is None or name in candidates):
+            status = observation.status.upper()
+        # A shifted phase (v0.28) identifies a family the first prefix never routed to; its
+        # reason explains the boundary and must not read as a dispatch exclusion.
+        results.append(Result(name.upper(), status, observation.reason if candidate is None or name in candidates or status == "MATCH"
+                              else "Excluded by prefix dispatch"))
+    return results
+
+
+class Stream:
+    """Keep one direction's first bytes, including bytes beyond a gap."""
+    def __init__(self, first_sequence, limit, inspector_factory=Inspector, compatibility=True, prefix_only=False):
+        if not 0 <= first_sequence < MODULUS:
+            raise ValueError("Sequence must be an unsigned 32-bit number")
+        self.compatibility = compatibility
+        self.prefix_only = prefix_only
+        self.first_sequence = first_sequence
+        self.limit = limit
+        # Stage 4 (A07): both arrays grow on demand up to limit, never allocated at limit up front, so an
+        # idle or short connection costs what it stored and a SYN flood allocates nothing per direction.
+        self.buffer = bytearray()
+        self.present = bytearray()
+        self.contiguous = 0
+        self.stored = 0
+        self.highest_end = 0  # Exclusive end of the highest retained payload byte.
+        self.delivered = 0    # Contiguous bytes already handed out by deltas() (stage 3).
+        self.error = None
+        self.inspector = inspector_factory()
+        self.events = ()
+        self.results = self._compat_results()
+
+    def deltas(self):
+        """The contiguous bytes not yet returned by a previous call, as one StreamDelta, or None.
+
+        Application-agnostic: this is the transport reassembler's output. The inspector attached to this
+        stream consumes the same bytes through feed(); a second consumer (the TLS decoder) reads them here
+        instead of reaching into the buffer, so both get exactly-once delivery from one owner.
+        """
+        if self.delivered >= self.contiguous:
+            return None
+        delta = StreamDelta(self.delivered, bytes(self.buffer[self.delivered:self.contiguous]))
+        self.delivered = self.contiguous
+        return delta
+
+    @property
+    def allocated(self):
+        """Bytes this direction currently holds for its arrays (A07 accounting; never above 2 * limit)."""
+        return len(self.buffer) + len(self.present)
+
+    def _reserve(self, end):
+        """Grow both arrays to cover [0, end); callers have already checked end <= limit."""
+        grow = end - len(self.buffer)
+        if grow > 0:
+            self.buffer.extend(bytes(grow))
+            self.present.extend(bytes(grow))
+
+    def _compat_results(self):
+        if not self.compatibility:
+            return ()
+        return CompatResults(self.inspector.observation, self.inspector.candidate)
+
+    def open_shift(self, boundary, expected=None):
+        """Host-driven shift on this direction (the peer decided it); replays retained bytes after the carrier.
+
+        The inspector drops bytes once it is terminal, but this stream keeps the
+        bounded initial window, so a ClientHello captured before the peer's answer
+        (or coalesced with the carrier in one segment) is fed into the opened phase
+        exactly once. Returns True when the phase was opened; events are left in
+        self.events like a feed.
+        """
+        self.events = ()
+        inspector = self.inspector
+        start = inspector.boundary
+        if not inspector.open_shift(boundary, expected):
+            return False
+        if start is not None and self.contiguous > start:
+            self.events = inspector.replay(bytes(self.buffer[start:self.contiguous]))
+            self.results = self._compat_results()
+        return True
+
+    def feed(self, sequence, payload):
+        self.events = ()
+        if self.error:
+            raise StreamError(self.error)
+        if not isinstance(payload, bytes) or not 0 <= sequence < MODULUS:
+            raise ValueError("Expected bytes and an unsigned 32-bit sequence")
+        if not payload:
+            return
+        # Modulo subtraction handles a sequence counter wrapping past 2**32.
+        offset = (sequence - self.first_sequence) % MODULUS
+        # A segment can start before offset zero and still cover retained
+        # bytes. In prefix mode clip that leading portion before the ordinary
+        # upper-bound check; modulo subtraction alone would ignore its tail.
+        if self.prefix_only and offset >= MODULUS // 2:
+            leading = MODULUS - offset
+            if leading >= len(payload):
+                return
+            payload = payload[leading:]
+            offset = 0
+        if offset + len(payload) > self.limit:
+            if self.prefix_only:
+                # Live observation covers the bounded initial prefix only.
+                # Continue checking overlaps within it; ignore later bytes.
+                if offset >= self.limit:
+                    return
+                payload = payload[:self.limit - offset]
+            else:
+                self.error = "Data lies outside the bounded initial stream window"
+                self.events = self.inspector.invalidate(self.error)
+                self.results = ()
+                raise StreamError(self.error)
+        # Common in-order case: copy slices once, no byte-by-byte Python loops.
+        if offset == self.contiguous and self.stored == self.contiguous:
+            end = offset + len(payload)
+            self._reserve(end)
+            self.buffer[offset:end] = payload
+            self.present[offset:end] = b"\x01" * len(payload)
+            self.stored = self.contiguous = end
+            self.highest_end = end
+            self.events = self.inspector.feed(payload)
+            self.results = self._compat_results()
+            return
+        end = offset + len(payload)
+        # Count in C without allocating a bitmap slice. Fully absent and fully
+        # present ranges cover ordinary reordering and retransmission cheaply.
+        # Bytes beyond the allocated arrays are absent by definition (lazy allocation, A07).
+        allocated = len(self.present)
+        missing = self.present.count(0, offset, min(end, allocated)) + max(0, end - max(offset, allocated))
+        if missing == 0:
+            conflict = self.buffer[offset:end] != payload
+        elif missing == len(payload):
+            conflict = False
+        else:
+            # Mixed overlaps are bounded by the initial window. Check every
+            # occupied byte BEFORE writing anything: a late conflict must not
+            # admit earlier new bytes or feed them into the inspector.
+            conflict = False
+            for index, value in enumerate(payload[:max(0, allocated - offset)], offset):
+                if self.present[index] and self.buffer[index] != value:
+                    conflict = True
+                    break
+        if conflict:
+            self.error = "Conflicting overlapping bytes; classification invalidated"
+            self.events = self.inspector.invalidate(self.error)
+            self.results = ()
+            raise StreamError(self.error)
+        if missing == 0:
+            return  # Identical duplicate: never feed the inspector twice.
+        self._reserve(end)
+        self.buffer[offset:end] = payload
+        self.present[offset:end] = b"\x01" * len(payload)
+        self.stored += missing
+        self.highest_end = max(self.highest_end, end)
+        old_length = self.contiguous
+        # Only a segment touching the current gap can extend the ready prefix.
+        if offset <= old_length < end:
+            gap = self.present.find(b"\x00", old_length, self.highest_end)
+            self.contiguous = self.highest_end if gap == -1 else gap
+        if self.contiguous != old_length:
+            self.events = self.inspector.feed(bytes(self.buffer[old_length:self.contiguous]))
+            self.results = self._compat_results()
+
+
+@dataclass(frozen=True)
+class StreamDelta:
+    """Newly contiguous bytes of one direction, in order (stage 3, A03).
+
+    A consumer that reads deltas sees each contiguous byte exactly once, in stream order, and never sees
+    a byte that a later conflicting overlap would have invalidated: Stream.feed raises before admitting
+    such bytes. offset is the stream offset of data[0] (0 = first payload byte after the SYN).
+    """
+    offset: int
+    data: bytes
+
+
+@dataclass(frozen=True)
+class Snapshot:
+    contiguous_bytes: int
+    pending_bytes: int
+    next_sequence: int
+    results: object                 # tuple, or a CompatResults computed on first read (D11)
+    classification: Optional[Observation] = None
+    events: tuple = field(default=(), compare=False)
+
+
+class SessionManager:
+    def __init__(self, byte_limit=65536, max_connections=32, idle_timeout=60, clock=time.monotonic,
+                 inspector_factory=Inspector, compatibility=True, expiry_interval=0, prefix_only=False):
+        if not 1 <= byte_limit <= 65536 or max_connections < 1 or idle_timeout <= 0:
+            raise ValueError("Invalid reassembly limits")
+        self.compatibility = compatibility
+        self.prefix_only = prefix_only
+        self.expiry_interval = expiry_interval
+        self.next_expiry = float("-inf")
+        self.byte_limit = byte_limit
+        self.max_connections = max_connections
+        self.idle_timeout = idle_timeout
+        self.clock = clock
+        self.inspector_factory = inspector_factory
+        self.connections = {}
+
+    @staticmethod
+    def key(source, destination):
+        # Endpoint = (IP address string, port). Reverse traffic gets the same key.
+        return tuple(sorted((source, destination)))
+
+    def expire(self):
+        now = self.clock()
+        if now < self.next_expiry:
+            return 0
+        self.next_expiry = now + self.expiry_interval
+        expired = [key for key, connection in self.connections.items()
+                   if now - connection["last_seen"] >= self.idle_timeout]
+        for key in expired:
+            del self.connections[key]
+        return len(expired)
+
+    def open_connection(self, source, destination, source_sequence, destination_sequence):
+        self.expire()
+        key = self.key(source, destination)
+        if source == destination:
+            raise ValueError("Endpoints must differ")
+        if key in self.connections:
+            raise ValueError("Connection already exists; close it before reusing endpoints")
+        if len(self.connections) >= self.max_connections:
+            raise StreamError("Connection limit reached")
+        self.connections[key] = {
+            "last_seen": self.clock(),
+            "directions": {
+                source: Stream(source_sequence, self.byte_limit, self.inspector_factory, self.compatibility, self.prefix_only),
+                destination: Stream(destination_sequence, self.byte_limit, self.inspector_factory, self.compatibility, self.prefix_only),
+            },
+        }
+
+    def feed(self, source, destination, sequence, payload):
+        self.expire()
+        key = self.key(source, destination)
+        if key not in self.connections:
+            raise StreamError("Unknown connection: first data sequences must be established")
+        connection = self.connections[key]
+        stream = connection["directions"][source]
+        stream.feed(sequence, payload)
+        connection["last_seen"] = self.clock()
+        return Snapshot(
+            stream.contiguous, stream.stored - stream.contiguous,
+            (stream.first_sequence + stream.contiguous) % MODULUS,
+            stream.results,
+            stream.inspector.observation, stream.events,
+        )
+
+    def close(self, source, destination):
+        self.connections.pop(self.key(source, destination), None)
+
+    def finish_direction(self, source, destination, reason="EOF before identification completed"):
+        """Caller asserts the observed direction has ended at a trusted boundary.
+
+        Retain bytes for overlap checks until the caller closes the connection.
+        This does not turn a FIN beyond a reassembly gap into a complete stream.
+        """
+        stream = self.connections[self.key(source, destination)]["directions"][source]
+        events = stream.inspector.end(reason)
+        if events:
+            stream.results = stream._compat_results()
+        return Snapshot(stream.contiguous, stream.stored - stream.contiguous,
+                        (stream.first_sequence + stream.contiguous) % MODULUS,
+                        stream.results, stream.inspector.observation, events)

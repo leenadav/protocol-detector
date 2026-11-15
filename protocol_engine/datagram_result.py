@@ -14,3 +14,4 @@ class DatagramMatch:
     evidence: Tuple[Evidence, ...] = ()
     contexts: Optional[dict] = None          # bounded signature contexts, never emitted
     signature_family: Optional[str] = None   # family whose signatures may read the contexts
+    retracts: bool = False                   # D02: this datagram contradicts earlier evidence of its connection

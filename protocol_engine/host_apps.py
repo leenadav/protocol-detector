@@ -94,24 +94,30 @@ _HOST_APPS = (
      ("widely-used", "transfers-files"), ("dropbox.com", "dropboxapi.com", "dropboxusercontent.com", "dropboxstatic.com")),
     ("box", "general-internet", "file-sharing", "browser-based", 2, "Box content management", ("transfers-files",), ("box.com", "boxcloud.com", "box.net")),
     ("icloud", "general-internet", "file-sharing", "client-server", 2, "Apple iCloud services", ("widely-used", "transfers-files"), ("icloud.com", "icloud-content.com")),
+    # github.io is tenant hosting (user and project pages): an arbitrary tenant is not GitHub and gets no mapping (D03).
     ("github", "business-systems", "software-development", "browser-based", 2, "GitHub code hosting",
-     ("widely-used", "transfers-files"), ("github.com", "githubusercontent.com", "githubassets.com", "github.io")),
+     ("widely-used", "transfers-files"), ("github.com", "githubusercontent.com", "githubassets.com")),
     ("gitlab", "business-systems", "software-development", "browser-based", 2, "GitLab code hosting", ("transfers-files",), ("gitlab.com",)),
     ("atlassian", "business-systems", "software-development", "browser-based", 2, "Atlassian cloud (Jira, Confluence, Bitbucket)",
      ("widely-used", "transfers-files"), ("atlassian.net", "atlassian.com", "bitbucket.org")),
     ("salesforce", "business-systems", "general-business", "browser-based", 2, "Salesforce CRM", ("widely-used", "transfers-files"), ("salesforce.com", "force.com")),
     ("notion", "business-systems", "office-programs", "browser-based", 2, "Notion workspace", ("transfers-files",), ("notion.so", "notion.site")),
     # Generative AI.
-    ("openai-chatgpt", "business-systems", "generative-ai", "browser-based", 3, "OpenAI ChatGPT and API",
-     ("transfers-files", "widely-used"), ("openai.com", "chatgpt.com", "oaiusercontent.com", "oaistatic.com")),
+    # D03: ChatGPT (the assistant), the developer platform/API and the provider's web presence are three things.
+    ("openai-chatgpt", "business-systems", "generative-ai", "browser-based", 3, "OpenAI ChatGPT",
+     ("transfers-files", "widely-used"), ("chatgpt.com", "chat.openai.com", "oaiusercontent.com", "oaistatic.com"), ("openai.com", "www.openai.com")),
+    ("openai-platform", "business-systems", "generative-ai", "client-server", 3, "OpenAI developer platform and API",
+     ("transfers-files",), ("api.openai.com", "platform.openai.com")),
     ("anthropic-claude", "business-systems", "generative-ai", "browser-based", 3, "Anthropic Claude",
      ("transfers-files",), ("claude.ai", "anthropic.com", "claude.com")),
     ("google-gemini", "business-systems", "generative-ai", "browser-based", 3, "Google Gemini", ("transfers-files",), ("gemini.google.com",)),
     # Remote access.
+    # D03: the apex and www names are the vendors' marketing sites; they affiliate with the provider but assert no
+    # remote-control activity. Other names under the domain remain service affiliation (activity still unobserved).
     ("teamviewer", "networking", "remote-access", "client-server", 4, "TeamViewer remote control",
-     ("tunnels-other-applications", "prone-to-misuse", "used-by-malware"), ("teamviewer.com",)),
+     ("tunnels-other-applications", "prone-to-misuse", "used-by-malware"), ("teamviewer.com",), ("teamviewer.com", "www.teamviewer.com")),
     ("anydesk", "networking", "remote-access", "client-server", 4, "AnyDesk remote control",
-     ("tunnels-other-applications", "prone-to-misuse", "used-by-malware"), ("anydesk.com", "net.anydesk.com")),
+     ("tunnels-other-applications", "prone-to-misuse", "used-by-malware"), ("anydesk.com", "net.anydesk.com"), ("anydesk.com", "www.anydesk.com")),
     # Commerce and reference.
     ("amazon", "general-internet", "internet-utility", "browser-based", 2, "Amazon retail site", ("widely-used",), ("amazon.com", "media-amazon.com", "ssl-images-amazon.com")),
     ("ebay", "general-internet", "internet-utility", "browser-based", 2, "eBay marketplace", (), ("ebay.com", "ebayimg.com", "ebaystatic.com")),
@@ -119,32 +125,83 @@ _HOST_APPS = (
     ("wikipedia", "general-internet", "internet-utility", "browser-based", 1, "Wikipedia and Wikimedia projects", ("widely-used",), ("wikipedia.org", "wikimedia.org")),
 )
 
-APP_DOMAINS = MappingProxyType({name: domains for name, *_, domains in _HOST_APPS})
-_SUFFIXES = {}
-for _name, *_rest, _domains in _HOST_APPS:
-    for _domain in _domains:
-        if _domain in _SUFFIXES:
-            raise ValueError("Duplicate host-catalog domain " + _domain)
-        _SUFFIXES[_domain] = _name
+# An entry is (name, category, subcategory, technology, risk, description, characteristics, domains[, web_fronts]).
+# `domains` affiliate a server name with the provider's service; `web_fronts` are exact names of the provider's
+# public web presence (marketing, documentation): they affiliate with the provider but never assert that the
+# service's application traffic was observed (D03). A web front wins over the domain it sits in.
+_APP_DOMAINS, _WEB_FRONTS, _SUFFIXES = {}, {}, {}
+APP_DOMAINS = MappingProxyType(_APP_DOMAINS)
+WEB_FRONTS = MappingProxyType(_WEB_FRONTS)
 HOST_SUFFIXES = MappingProxyType(_SUFFIXES)
-del _name, _rest, _domains, _domain, _SUFFIXES
+
+
+def build_tables(entries):
+    """(app_domains, web_fronts, suffixes) for catalog entries given as tuples or dicts; duplicates are errors."""
+    domains, fronts, suffixes = {}, {}, {}
+    for entry in entries:
+        if isinstance(entry, dict):
+            name, entry_domains, entry_fronts = entry["name"], entry["domains"], entry.get("web_fronts", ())
+        else:
+            name, entry_domains, entry_fronts = entry[0], entry[7], entry[8] if len(entry) > 8 else ()
+        if name in domains:
+            raise ValueError("Duplicate host-catalog entry " + name)
+        domains[name] = tuple(entry_domains)
+        for front in entry_fronts:
+            if front in fronts:
+                raise ValueError("Duplicate host-catalog web front " + front)
+            fronts[front] = name
+        for domain in entry_domains:
+            if domain in suffixes:
+                raise ValueError("Duplicate host-catalog domain " + domain)
+            suffixes[domain] = name
+    return domains, fronts, suffixes
+
+
+def rebuild(entries):
+    """D08: run the lookup tables from another release's entries (content.select); the proxies above follow."""
+    domains, fronts, suffixes = build_tables(entries)
+    for table, values in ((_APP_DOMAINS, domains), (_WEB_FRONTS, fronts), (_SUFFIXES, suffixes)):
+        table.clear()
+        table.update(values)
+
+
+rebuild(_HOST_APPS)
+KINDS = ("service", "provider-web")
 
 
 def catalog_entries(make):
     """Application entries for applications.py, built with its `_app` constructor."""
-    return tuple(make(name, category, subcategory, technology, risk, description, characteristics,
+    return tuple(make(entry[0], entry[1], entry[2], entry[3], entry[4], entry[5], entry[6],
                       implicitly_uses=("ssl", "web-browsing"))
-                 for name, category, subcategory, technology, risk, description, characteristics, _ in _HOST_APPS)
+                 for entry in _HOST_APPS)
 
 
-def application_for_host(hostname):
-    """Catalog application for a normalized server name (longest label-boundary suffix), or None."""
+def attribution_for_host(hostname):
+    """(provider, kind) for a normalized server name, or None.
+
+    kind is "provider-web" for an exact web-front name and "service" for a name under a service domain
+    (longest label-boundary suffix). Shared hosting and tenant domains are deliberately absent, so an
+    unknown tenant or subdomain yields None rather than an affiliation it does not have.
+    """
+    provider = WEB_FRONTS.get(hostname)
+    if provider is not None:
+        return provider, "provider-web"
     position = 0
     while True:
         name = HOST_SUFFIXES.get(hostname[position:])
         if name is not None:
-            return name
+            return name, "service"
         dot = hostname.find(".", position)
         if dot < 0:
             return None
         position = dot + 1
+
+
+def application_for_host(hostname):
+    """Catalog application whose service a normalized server name affiliates with, or None.
+
+    A provider's web front returns None here: it names the provider (see attribution_for_host), not an
+    application whose activity was observed.
+    """
+    found = attribution_for_host(hostname)
+    return found[0] if found is not None and found[1] == "service" else None

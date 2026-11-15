@@ -13,7 +13,7 @@ profile, never an authenticated product identity.
 from typing import NamedTuple, Optional, Tuple
 from types import MappingProxyType
 from .applications import APPLICATIONS, OUTCOMES, Application, application_name, custom_application, host_application
-from .host_apps import APP_DOMAINS, application_for_host
+from .host_apps import APP_DOMAINS, application_for_host, attribution_for_host
 from .media import RPC_HTTP_METHOD_NAMES, WEBDAV_METHOD_NAMES
 from .model import Observation
 from .risks import flow_risks
@@ -41,6 +41,7 @@ class Verdict(NamedTuple):
     reasons: Tuple[str, ...]
     shifted_from: Optional[str] = None  # application whose structural boundary announced this one (CONNECT, STARTTLS, ...)
     risks: Tuple[str, ...] = ()         # RISKS.md flow risks derived from the verdict and the directional evidence
+    attribution: Optional[dict] = None  # D03: provider affiliation, application family and observed activity, kept apart
 
     @property
     def identified(self):
@@ -153,7 +154,40 @@ def _port_usage(application, transport, server_port):
     return "standard" if application.uses_port(transport, server_port) else "nonstandard"
 
 
-def _build(application, transport, server_port, status, client, server, reasons, shifted_from=None):
+ACTIVITIES = ("unobserved", "http-request", "authenticated-plaintext")
+_WEB_FRONT_REASON = "Server name is the provider's public web presence (client-asserted); no service activity is asserted"
+_ACTIVITY_REASON = "Provider affiliation comes from the client-asserted server name; the service's own activity was not observed"
+
+
+def _activity(observation):
+    """What was actually observed on this direction, independent of any name the client asserted."""
+    if observation is None:
+        return "unobserved"
+    if any(e.source.startswith("decrypted") and e.field == "application_protocol" for e in observation.evidence):
+        return "authenticated-plaintext"
+    if observation.application_protocol and observation.application_protocol.startswith("http") and observation.encryption is None:
+        return "http-request"
+    return "unobserved"
+
+
+def _attribution(observation, application):
+    """Provider affiliation (from the server name), application family and observed activity, as separate facts (D03).
+
+    None when the name affiliates with no catalog provider. The carrier verdict is unchanged for a provider's
+    web front: affiliation is recorded, the service application is not asserted.
+    """
+    if observation is None or not observation.hostname or _evidence(observation, "tls_ech") == "outer":
+        return None
+    found = attribution_for_host(observation.hostname)
+    if found is None:
+        return None
+    provider, kind = found
+    entry = APPLICATIONS[provider]
+    return {"provider": provider, "kind": kind, "family": entry.subcategory, "activity": _activity(observation),
+            "asserted_by": "client-server-name"}
+
+
+def _build(application, transport, server_port, status, client, server, reasons, shifted_from=None, attribution=None):
     implicitly_uses = application.implicitly_uses
     port_usage = _port_usage(application, transport, server_port)
     if shifted_from is not None and shifted_from != application.name:
@@ -169,7 +203,7 @@ def _build(application, transport, server_port, status, client, server, reasons,
                    _label(client) if client is not None and client.status == "identified" else None,
                    _label(server) if server is not None and server.status == "identified" else None,
                    (client.encryption if client is not None else None) or (server.encryption if server is not None else None),
-                   tuple(reasons), shifted_from)
+                   tuple(reasons), shifted_from, (), attribution)
 
 
 def _outcome(name, transport, status, reasons, client=None, server=None):
@@ -229,13 +263,18 @@ def _session_verdict(client, server, transport, server_port, client_bytes, serve
             if other is not None and other.name != application.name and other.name not in application.implicitly_uses:
                 reasons.append("Server direction identified as " + other.name)
         reasons.append(chosen.reason)
+        attribution = _attribution(chosen, application)
         if application.name in APP_DOMAINS and application.container is not None:
             reasons.append(_HOST_REASON)
+            if attribution is not None and attribution["activity"] == "unobserved":
+                reasons.append(_ACTIVITY_REASON)
+        elif attribution is not None and attribution["kind"] == "provider-web":
+            reasons.append(_WEB_FRONT_REASON)
         for obs in (client, server):
             if obs is not None and obs.status == "invalidated":
                 reasons.append("One direction was invalidated: " + obs.reason)
         shifted_from = _shifted_from(chosen) or (_shifted_from(identified[1]) if len(identified) == 2 else None)
-        return _build(application, transport, server_port, "identified", client, server, reasons, shifted_from)
+        return _build(application, transport, server_port, "identified", client, server, reasons, shifted_from, attribution)
     observations = [obs for obs in (client, server) if obs is not None]
     candidate_sets = [_candidates(obs) for obs in observations]
     candidate_sets = [item for item in candidate_sets if item]
@@ -265,6 +304,22 @@ def _session_verdict(client, server, transport, server_port, client_bytes, serve
                     ["No application payload observed"], client, server)
 
 
+def midstream_outcome(transport, family):
+    """D05: a midstream segment matched a family whose profile needs its initial message. That is an incomplete
+    observation of the connection, not an identification and not an unsupported protocol."""
+    return _outcome("incomplete", transport, "midstream",
+                    ["Connection observed midstream: the segment matched the {} layout, but that profile is written for the "
+                     "initial message and is not accepted without an observed start".format(family)])
+
+
+def unobserved_start_outcome(transport, reason):
+    """D05: a midstream connection whose bytes matched no profile. Unsupported protocol and unobserved start are
+    indistinguishable here, so the outcome says so instead of claiming unknown-{tcp,udp}."""
+    return _outcome("incomplete", transport, "midstream",
+                    ["Connection observed midstream and no message boundary matched a supported layout; an unsupported "
+                     "protocol cannot be told from an unobserved start (" + reason + ")"])
+
+
 def verdict_fields(verdict):
     """Flat JSON-friendly mapping, stable key order, no payload-derived values."""
     return {"app": verdict.app, "category": verdict.category, "subcategory": verdict.subcategory,
@@ -273,4 +328,4 @@ def verdict_fields(verdict):
             "port_usage": verdict.port_usage, "engine_status": verdict.status,
             "client_protocol": verdict.client_protocol, "server_protocol": verdict.server_protocol,
             "encryption": verdict.encryption, "reasons": list(verdict.reasons), "shifted_from": verdict.shifted_from,
-            "risks": list(verdict.risks)}
+            "risks": list(verdict.risks), "attribution": dict(verdict.attribution) if verdict.attribution else None}

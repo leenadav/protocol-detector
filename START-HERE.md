@@ -501,3 +501,9 @@ static-rsa, psk) ואת מצב ההצפנה (aead או cbc) ב־TLS 1.2, TLS 1.3
 PLAIN/DIGEST/SCRAM/EXTERNAL ועוד) ומחלקות הסכמה של Authorization ו־WWW-Authenticate ב־HTTP/1 ו־HTTP/2. סיכונים חדשים:
 `ntlm-authentication`, `http-basic-authentication`, `smb-guest-or-anonymous-session`; סיכון האישורים־בגלוי נמחק ב־bind
 של LDAP שמנגנונו אינו נושא סיסמה. 85 משפחות, 76 אוטומטיות, 99 יישומים, 603 בדיקות עוברות.
+
+עדכון 0.66: הועברו לגרסה הנוכחית התוספות מענף ה-Mac של 0.59: שלוש משפחות UDP של בית חכם (LIFX LAN,
+Tuya LAN 3.3 ו-TP-Link Smart Home), כל אחת עם פרופיל מבני וראיות מאוצר מילים סגור בלבד, ותיקוני פענוח DNS
+(מצביעי דחיסה ליעד SRV ולשם NSEC, התעלמות מביט AA בשאילתות mDNS לפי RFC 6762 18.4, זיהוי probe של שמות
+הפוכים). QUIC באמצע זרם ושולח mDNS לא תקני נשארים לא מזוהים בכוונה. 88 משפחות, 79 אוטומטיות, 156 יישומים,
+754 בדיקות עוברות.

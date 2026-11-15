@@ -89,3 +89,25 @@ class SessionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LazyCompatResultsTests(unittest.TestCase):
+    """D11 follow-up: the legacy per-family table is computed only when read, from the observation of its own feed."""
+
+    def test_table_is_lazy_frozen_per_feed_and_equal_to_the_eager_form(self):
+        from protocol_adapters.sessions import CompatResults, SessionManager, _compat_rows
+        manager = SessionManager()
+        manager.open_connection(A, B, 1000, 5000)
+        first = manager.feed(A, B, 1000, REQUEST[:10])
+        self.assertIsInstance(first.results, CompatResults)
+        self.assertFalse(hasattr(first.results, "__dict__"))         # two references, no rows held
+        second = manager.feed(A, B, 1010, REQUEST[10:])
+        self.assertEqual(first.results[0].status, "NEED_MORE")       # the first snapshot still describes its own feed
+        self.assertEqual(second.results[0].status, "MATCH")
+        self.assertEqual(len(second.results), len(_compat_rows(second.classification, "http")))
+        self.assertEqual(tuple(second.results), tuple(_compat_rows(second.classification, "http")))
+        self.assertEqual(second.results, list(second.results))
+        self.assertEqual(manager.feed(A, B, 1000, REQUEST), second)  # identical retransmission: equal snapshots
+        quiet = SessionManager(compatibility=False)
+        quiet.open_connection(A, B, 1000, 5000)
+        self.assertEqual(quiet.feed(A, B, 1000, REQUEST).results, ())

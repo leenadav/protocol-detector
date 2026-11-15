@@ -40,6 +40,32 @@ Everything left of the decoder is attacker-controlled. Configuration (`Config`,
 plaintext fed through `feed_decrypted()` is trusted to come from the host TLS
 stack. Nothing in the engine performs network I/O.
 
+## Additional boundaries after the v0.65 architecture plan (stages 2–8)
+
+```
+ browser key log (operator-owned regular file) ──▶ KeyLog (O_NOFOLLOW, regular file, owner, 256 KiB,
+                                                    append-only reads, truncation/rotation = error)
+                                                      │ new complete lines only
+                                                      ▼
+                                                 KeyProvider (indexed by client random; release() ends
+                                                 the run; repr/errors never carry secret bytes)
+                                                      │ lookups by (label, random)
+ SessionCoordinator retained tier ──StreamDelta──▶ TlsConnection (typed states; a failure publishes
+                                                      │ nothing further)         PlaintextDelta
+                                                      ▼
+                                                 Inspector(source="decrypted") → layered view
+                                                      │ labels only
+                                                      ▼
+ loopback HTTP (Host/Origin/token, bounded handler pool, bounded job runner) ──▶ browser store
+```
+
+Secrets and plaintext exist in the worker process memory for the run; Python offers no reliable zeroization,
+so the controls are reference release at the end of the run, typed errors with fixed text, telemetry limited
+to counts, and canary tests (`presentation/tests/test_security.py`) over every output channel. The management
+plane authenticates browser origins (Host, Origin, per-process token), not local processes of the same user;
+a multi-user deployment would need real authentication and is out of scope. Capture privilege stays in the
+separate tcpdump process; the application never escalates (no sudo, setuid or helpers).
+
 ## Attacker capabilities considered
 
 A1 sends arbitrary bytes on any port. A2 reorders, duplicates, overlaps or

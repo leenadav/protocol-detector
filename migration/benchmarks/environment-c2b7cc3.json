@@ -1,0 +1,24 @@
+{
+  "recorded": "2026-11-07",
+  "head": "c2b7cc3b4eeae4d17ec60d6ca5dc7164375a61b8",
+  "branch": "claude/v066-smarthome",
+  "host": "claude.ai cloud container",
+  "platform": "Linux-6.18.44-fc-v310-x86_64-with-glibc2.39",
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz, 4 vCPU",
+  "memory_mib": 16086,
+  "python": "3.13.16",
+  "python_39": "3.9.25 (uv-managed, new modules compiled and run)",
+  "node": "v22.22.0",
+  "playwright_chromium": "/opt/pw-browsers/chromium (bundled)",
+  "go": "go1.24.7 linux/amd64 (present; toolchain pin decided in M2)",
+  "commands": {
+    "engine": "python3 -B -m unittest discover -q",
+    "gate": "make check",
+    "fuzz": "python3 -B tools/fuzz_fixtures.py --iterations 2000",
+    "behaviour_diff": "python3 -B tools/compare_engine.py <e7af436 tree>",
+    "sequences": "python3 -B tools/sequence_check.py --iterations 6 --seed 1|2|3",
+    "installed": "python3 -B tools/installed_check.py --require-all",
+    "perf": "python3 -B tools/perf_profile.py",
+    "bench": "python3 -B benchmark_engine.py --iterations 300"
+  }
+}
