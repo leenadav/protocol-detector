@@ -70,6 +70,10 @@ func (t *Tracker) Decided(state *State, label Label) {
 // Now is the tracker's current capture time.
 func (t *Tracker) Now() float64 { return t.now }
 
+// IdleTimeout and MaxUDPFlows are the resolved limits (MaxUDPFlows -1 already replaced by MaxConnections).
+func (t *Tracker) IdleTimeout() float64 { return t.opts.IdleTimeout }
+func (t *Tracker) MaxUDPFlows() int     { return t.opts.MaxUDPFlows }
+
 type snapshot struct {
 	contiguous, pending int
 	next                uint32

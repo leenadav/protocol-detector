@@ -3,7 +3,12 @@
 package testframes
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/hkdf"
+	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"net"
 )
 
@@ -82,4 +87,75 @@ func UDP(srcAddr string, srcPort uint16, dstAddr string, dstPort uint16, payload
 	}
 	binary.BigEndian.PutUint16(udp[6:], sum)
 	return pad(append(append(ethernet(), ipHeader(src, dst, 17, len(udp))...), udp...))
+}
+
+// QUICInitial seals a client Initial (RFC 9001 section 5) around a plaintext frame payload, padded to padTo bytes,
+// with a 4-byte packet number. It derives the Initial keys independently of the engine (test helper).
+func QUICInitial(version uint32, dcid, scid, frames []byte, packetNumber uint32, token []byte, padTo int) []byte {
+	salt := map[uint32]string{1: "38762cf7f55934b34d179ae6a4c80cadccbb7f0a", 0x6b3343cf: "0dede3def700a6db819381be6e269dcbf9bd2ed9"}[version]
+	saltBytes, _ := hex.DecodeString(salt)
+	prefix := map[uint32]string{1: "quic ", 0x6b3343cf: "quicv2 "}[version]
+	expand := func(secret []byte, label string, n int) []byte {
+		full := "tls13 " + label
+		info := append([]byte{byte(n >> 8), byte(n), byte(len(full))}, full...)
+		out, _ := hkdf.Expand(sha256.New, secret, string(append(info, 0)), n)
+		return out
+	}
+	prk, _ := hkdf.Extract(sha256.New, dcid, saltBytes)
+	secret := expand(prk, "client in", 32)
+	key, iv, hp := expand(secret, prefix+"key", 16), expand(secret, prefix+"iv", 12), expand(secret, prefix+"hp", 16)
+	varint := func(v int) []byte {
+		switch {
+		case v < 1<<6:
+			return []byte{byte(v)}
+		case v < 1<<14:
+			return []byte{0x40 | byte(v>>8), byte(v)}
+		default:
+			return []byte{0x80 | byte(v>>24), byte(v >> 16), byte(v >> 8), byte(v)}
+		}
+	}
+	pad := padTo - (7 + len(dcid) + len(scid) + 1 + len(token) + 2 + 4 + len(frames) + 16)
+	payload := append([]byte{}, frames...)
+	if pad > 0 {
+		payload = append(payload, make([]byte, pad)...)
+	}
+	first := byte(0xc3)
+	if version != 1 {
+		first = 0xd3
+	}
+	header := []byte{first, byte(version >> 24), byte(version >> 16), byte(version >> 8), byte(version), byte(len(dcid))}
+	header = append(append(header, dcid...), byte(len(scid)))
+	header = append(append(append(header, scid...), varint(len(token))...), token...)
+	length := 4 + len(payload) + 16
+	header = append(header, 0x40|byte(length>>8), byte(length))
+	header = append(header, byte(packetNumber>>24), byte(packetNumber>>16), byte(packetNumber>>8), byte(packetNumber))
+	nonce := append([]byte{}, iv...)
+	for i := 0; i < 4; i++ {
+		nonce[11-i] ^= byte(packetNumber >> (8 * i))
+	}
+	block, _ := aes.NewCipher(key)
+	gcm, _ := cipher.NewGCM(block)
+	sealed := gcm.Seal(nil, nonce, payload, header)
+	hpBlock, _ := aes.NewCipher(hp)
+	mask := make([]byte, 16)
+	hpBlock.Encrypt(mask, sealed[:16])
+	out := append(append([]byte{}, header...), sealed...)
+	pnOffset := len(header) - 4
+	out[0] ^= mask[0] & 0x0f
+	for i := 0; i < 4; i++ {
+		out[pnOffset+i] ^= mask[1+i]
+	}
+	return out
+}
+
+// CryptoFrames splits handshake bytes into CRYPTO frames at the cut offsets (each under 16384 bytes).
+func CryptoFrames(data []byte, cuts ...int) [][]byte {
+	bounds := append(append([]int{0}, cuts...), len(data))
+	var out [][]byte
+	for i := 0; i+1 < len(bounds); i++ {
+		start, end := bounds[i], bounds[i+1]
+		frame := []byte{6, 0x40 | byte(start>>8), byte(start), 0x40 | byte((end-start)>>8), byte(end - start)}
+		out = append(out, append(frame, data[start:end]...))
+	}
+	return out
 }

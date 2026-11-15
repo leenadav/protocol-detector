@@ -8,6 +8,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/dnsx"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/framed"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/quicx"
 )
 
 // Datagram ports DatagramInspector for the DNS-layout validators; any other candidate the Python
@@ -16,6 +17,8 @@ import (
 type Datagram struct {
 	cfg     contracts.Config
 	Metrics contracts.Metrics
+	// Assembler is the optional bounded cross-datagram QUIC CRYPTO store owned by the host (nil: none).
+	Assembler *quicx.Assembler
 }
 
 // NewDatagram validates the options like New.
@@ -222,9 +225,15 @@ func (d *Datagram) candidates(data []byte, hint string) []string {
 	return out
 }
 
-// Inspect classifies one complete datagram. A NotPorted error means the Go backend cannot give the
-// Python outcome for this payload (a validator it lacks was selected).
+// Inspect classifies one complete datagram without flow scope or time. A NotPorted error means the Go backend
+// cannot give the Python outcome for this payload (a validator it lacks was selected).
 func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, error) {
+	return d.InspectFlow(data, hint, "", nil)
+}
+
+// InspectFlow ports DatagramInspector.inspect with scope and now: scope names the datagram's flow for the QUIC
+// CRYPTO store (the host passes its flow identity, hence direction); now drives the store's idle expiry.
+func (d *Datagram) InspectFlow(data []byte, hint, scope string, now *float64) (contracts.Observation, error) {
 	base := contracts.Initial("udp")
 	base.Scope = "datagram"
 	if hint != "" && !DatagramHints[hint] {
@@ -242,7 +251,7 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 		return base, nil
 	}
 	for _, c := range candidates {
-		if _, ported := framed.DatagramValidators[c]; !datagramValidators[c] && !ported {
+		if _, ported := framed.DatagramValidators[c]; !datagramValidators[c] && !ported && c != "quic" {
 			return base, &parsing.NotPorted{What: "datagram candidate " + c}
 		}
 	}
@@ -250,6 +259,9 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 	type match struct {
 		protocol, encryption, reason string
 		evidence                     []contracts.Evidence
+		hostname                     *string
+		alpn                         []string
+		retracts                     bool
 	}
 	var matches []match
 	type failure struct{ status, reason string }
@@ -259,7 +271,21 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 		d.Metrics.ParserCalls++
 		var found match
 		var err error
-		if validator, ok := framed.DatagramValidators[c]; ok {
+		if c == "quic" {
+			var m *quicx.Match
+			opts := quicx.Options{MaxHeaders: d.cfg.MaxHeaders, MaxBytes: d.cfg.MaxBytes, Decrypt: d.cfg.QUICDecrypt, Fingerprints: d.cfg.Fingerprints}
+			if m, err = quicx.Validate(data, opts, d.Assembler, scope, now); err == nil {
+				found = match{encryption: "quic", reason: m.Reason, alpn: m.ALPN, retracts: m.Retracts}
+				if m.HasHost {
+					found.hostname = str(m.Hostname)
+				}
+				for _, r := range m.Evidence {
+					found.evidence = append(found.evidence, contracts.Evidence{Field: r.Field, Value: r.Value, Source: r.Source, Strength: r.Strength})
+				}
+			} else if np, ok := err.(*parsing.NotPorted); ok {
+				return base, np
+			}
+		} else if validator, ok := framed.DatagramValidators[c]; ok {
 			var m *framed.Datagram
 			if m, err = validator(data, framed.Limits{MaxBytes: d.cfg.MaxBytes, MaxHeaders: d.cfg.MaxHeaders, MaxLine: d.cfg.MaxLine}); err == nil {
 				found = match{protocol: m.Protocol, encryption: m.Encryption, reason: m.Reason}
@@ -306,6 +332,12 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 			}
 		}
 		m := matches[0]
+		if m.retracts {
+			// D02: a contradiction withdraws what this connection asserted; nothing new is derived.
+			base.Status, base.Evidence, base.Reason = contracts.Invalidated, m.evidence, m.reason
+			base.Encryption = str(m.encryption)
+			return base, nil
+		}
 		evidence := m.evidence
 		if hint != "" {
 			evidence = append(evidence, contracts.Evidence{Field: "candidate_hint", Value: hint, Source: "caller", Strength: "context"})
@@ -316,6 +348,12 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 		}
 		if m.encryption != "" {
 			base.Encryption = str(m.encryption)
+		}
+		if m.hostname != nil {
+			base.Hostname = m.hostname
+		}
+		if m.alpn != nil {
+			base.OfferedALPN = m.alpn
 		}
 		return base, nil
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/engine"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/quicx"
 	"github.com/leenadav/protocol-detector/go/internal/session"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
 )
@@ -141,8 +142,22 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 		}
 		udp, _ = engine.NewDatagram(contracts.DefaultConfig())
 	}
+	// D01: the QUIC CRYPTO store is scoped per flow direction and expires with the flow table.
+	maxQUIC := tr.MaxUDPFlows()
+	if maxQUIC > 1024 {
+		maxQUIC = 1024
+	}
+	if maxQUIC < 1 {
+		maxQUIC = 1
+	}
+	udp.Assembler = quicx.NewAssembler(maxQUIC, tr.IdleTimeout())
 	a.udp = udp
 	return a, nil
+}
+
+// quicScope is the flow identity a datagram's QUIC CRYPTO state is kept under (Python passes (source, destination)).
+func quicScope(source, destination transport.Endpoint) string {
+	return source.String() + ">" + destination.String()
 }
 
 // Process handles one decoded packet and returns the adapter message (first segment compared by the harness).
@@ -152,7 +167,10 @@ func (a *Analyzer) Process(timestamp float64, decoded interface{}) string {
 	a.resetTouched()
 	switch p := decoded.(type) {
 	case *transport.UDP:
-		obs, err := a.udp.Inspect(p.Payload, "")
+		// Python Analyzer.process expires idle state (retiring flows resets their QUIC scopes) before inspecting.
+		a.Tracker.Expire(timestamp)
+		now := a.Tracker.Now()
+		obs, err := a.udp.InspectFlow(p.Payload, "", quicScope(p.Source, p.Destination), &now)
 		if err != nil {
 			if np, ok := err.(*parsing.NotPorted); ok && a.NotPorted == nil {
 				a.NotPorted = np
@@ -257,6 +275,10 @@ func (a *Analyzer) closed(c session.Closed) {
 }
 
 func (a *Analyzer) udpSession(flow *session.State, reason string, end float64) {
+	// D01: the flow's CRYPTO state ends with it, in both directions (Codex finding R2: resetting only the
+	// client-to-server scope let a server-direction conflict marker or partial assembly outlive the flow).
+	a.udp.Assembler.Reset(quicScope(flow.Client, flow.Server))
+	a.udp.Assembler.Reset(quicScope(flow.Server, flow.Client))
 	clientObs := flow.Observation
 	serverObs := flow.Observations[flow.Server]
 	var verdict *appid.Verdict

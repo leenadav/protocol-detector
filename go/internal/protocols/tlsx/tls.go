@@ -719,3 +719,21 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 	_ = strings.ToLower
 	return rows, source, reason, nil
 }
+
+// ClientHelloOffer is what a ClientHello body offers (parse_hello with an `offered` list): the SNI, ALPN names
+// and the encrypted_client_hello class. Used by the QUIC Initial validator on the assembled CRYPTO stream.
+type ClientHelloOffer struct {
+	Hostname string
+	HasHost  bool
+	ALPN     []string
+	ECH      string
+}
+
+// ParseClientHello validates a ClientHello body (the handshake message without its 4-byte header).
+func ParseClientHello(body []byte) (*ClientHelloOffer, error) {
+	fields, err := parseHello(body)
+	if err != nil {
+		return nil, err
+	}
+	return &ClientHelloOffer{Hostname: fields.hostname, HasHost: fields.hasHost, ALPN: fields.alpn, ECH: fields.ech}, nil
+}
