@@ -87,8 +87,10 @@ The binary is looked up in `PROTODETECT_GO_BINARY`, then `go/bin/protodetect` of
 what the Go binary declines (exit status 64): `--content-version` rollback and signature patterns its
 regular-expression engine cannot express (possessive and atomic groups, inline flags, repeats above 1000, a
 `$` before the end). `--backend go` never falls back: it reports why instead. `make parity-analyze` compares
-both backends on generated captures and is part of `make go-check`. Live capture (`protodetect live`) and
-the presentation service still run the Python engine.
+both backends on generated captures and is part of `make go-check`. The presentation service's capture
+analysis (`analyze_bytes`) selects its backend the same way through `protodetect present`. Live capture
+(`protodetect live`, and the presentation service's live view) and key-log decryption still run the Python
+engine.
 
 ## New in v0.65 — Applications by server name
 

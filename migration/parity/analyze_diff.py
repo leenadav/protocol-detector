@@ -5,11 +5,14 @@
 Captures are built from the frames of the committed session cases (migration/fixtures/cases.json): one to
 five conversations per file on shifted client addresses, in classic PCAP or pcapng, with idle gaps past the
 flow timeout and seeded faults (dropped, duplicated, reordered, bit-flipped and truncated records, trailing
-garbage). Each capture is analyzed with a seeded option set (JSON or text rows, events only, sessions,
+garbage). Every third capture instead holds conversations built for bounded-prefix tracking (stress_records).
+Each capture is analyzed with a seeded option set (JSON or text rows, events only, sessions,
 hostnames, fingerprints, heuristics, certificates, observation modes, checksum policies, continuation, hints,
 custom signatures, a policy) by the Python reference in process and by the Go binary. Standard output is
-compared byte for byte in both forms (JSON rows and text), and the exit status and error text too. Synthetic
-bytes only.
+compared byte for byte in both forms (JSON rows and text), and the exit status and error text too. The same
+capture then goes through the presentation service's analysis (presentation/server.py analyze_bytes_reference
+against the Go `present` command, with seeded frame, session and event limits): results and refusals must be
+equal but for the measured processing time. Synthetic bytes only.
 """
 import argparse
 import contextlib
@@ -92,6 +95,86 @@ def records_for(rng, sessions):
             records[index][2] = True
         else:
             records[index][0] += rng.choice([-5, 100, 1e6])
+    return records
+
+
+def stress_records(rng):
+    """Conversations built for the bounded-prefix (compact) tracking the presentation service uses: streams past
+    the 64 KiB window, segments before the retained origin or half a sequence space away, overlaps, FIN at and
+    beyond the window, data after FIN, resets, idle gaps around the one-second expiry interval and the timeout,
+    and (rarely) more connections and flows than the tables hold."""
+    from protocol_adapters.make_sample_pcap import frame, udp_frame
+    from protocol_adapters.protocol_fixtures import DATAGRAM_CASES, STREAM_CASES
+    records, now = [], 1700000000.0
+    step = lambda: rng.choice([0, 0, 0.001, 0.4, 0.999, 1.0, 1.5, 59, 119.5, 120, 121])
+    many = rng.random() < 0.04
+    for index in range(rng.choice([260, 300]) if many else rng.choice([1, 1, 2, 3, 6])):
+        client = ("192.0.2.{}".format(1 + index % 250), 40000 + index)
+        server = ("198.51.100.{}".format(1 + index % 3), rng.choice([80, 443, 22, 1883, 5432, 8080, 9000 + index % 50]))
+        if rng.random() < 0.2:
+            payload = rng.choice(DATAGRAM_CASES)[0]
+            for _ in range(rng.choice([1, 1, 2, 3])):
+                records.append([now, udp_frame(client, server, payload), False])
+                now += step()
+                if rng.random() < 0.4:
+                    records.append([now, udp_frame(server, client, rng.choice(DATAGRAM_CASES)[0]), False])
+            continue
+        isn = rng.choice([999, 0xffffffff, 0xfffffff0, 0x7fffffff, rng.randrange(1 << 32)])
+        peer_isn = rng.choice([8999, 0xfffffffe, rng.randrange(1 << 32)])
+        origin, peer_origin = (isn + 1) % (1 << 32), (peer_isn + 1) % (1 << 32)
+        records.append([now, frame(client, server, isn, 0, 2), False])
+        if rng.random() < 0.95:
+            records.append([now, frame(server, client, peer_isn, origin, 18), False])
+        if many:
+            if rng.random() < 0.5:
+                records.append([now + 0.01, frame(client, server, origin, peer_origin, 24, rng.choice(STREAM_CASES)[0]), False])
+            now += rng.choice([0, 0.01, 0.5])
+            continue
+        records.append([now, frame(client, server, origin, peer_origin, 16), False])
+        for source, destination, start, other in ((client, server, origin, peer_origin), (server, client, peer_origin, origin)):
+            if source is server and rng.random() < 0.5:
+                continue
+            data = rng.choice(STREAM_CASES)[0]
+            size = rng.choice([0, 0, 0, 200, 3000, 65536 - len(data), 65537, 70000])
+            data = (data + bytes(rng.randrange(256) for _ in range(min(size, 64))) * (size // 64 + 1))[:max(len(data), size)]
+            segments, offset = [], 0
+            while offset < len(data):
+                length = rng.choice([1, 7, 536, 1400, 1400, 1400, 9000])
+                segments.append((offset, data[offset:offset + length]))
+                offset += length
+            fault = rng.random()
+            if fault < 0.15:
+                rng.shuffle(segments)
+            elif fault < 0.3 and segments:
+                at = rng.randrange(len(segments))
+                segments.insert(at, segments[rng.randrange(len(segments))])
+            elif fault < 0.4 and segments:
+                at = rng.randrange(len(segments))
+                changed = bytes(b ^ 1 for b in segments[at][1])
+                segments.insert(rng.randrange(len(segments) + 1), (segments[at][0], changed))
+            elif fault < 0.5 and len(segments) > 1:
+                del segments[rng.randrange(len(segments))]
+            if rng.random() < 0.3:                       # before the retained origin: wholly, or reaching into it
+                back = rng.choice([1, 5, 2000, 1 << 31, (1 << 31) + 5])
+                body = bytes(back if back < 4000 else 9) + data[:rng.choice([0, 3, 40])]
+                segments.insert(rng.randrange(len(segments) + 1), (-back, body))
+            if rng.random() < 0.1:                       # far beyond the window
+                segments.insert(rng.randrange(len(segments) + 1), (rng.choice([65536, 100000, (1 << 31) - 1, 1 << 31]), b"far"))
+            for offset, body in segments:
+                flags = 24 if rng.random() < 0.9 else rng.choice([16, 24 | 32, 8])
+                records.append([now, frame(source, destination, (start + offset) % (1 << 32), other, flags, body), False])
+                now += rng.choice([0, 0, 0, 0.001, 0.4, 1.0])
+            ending = rng.random()
+            if ending < 0.45:
+                end = len(data) + rng.choice([0, 0, 0, 1, -1, 100000])
+                records.append([now, frame(source, destination, (start + end) % (1 << 32), other, 17, rng.choice([b"", b"", b"x"])), False])
+                if rng.random() < 0.3:
+                    records.append([now, frame(source, destination, (start + len(data) + rng.choice([0, 1, 2])) % (1 << 32), other,
+                                               rng.choice([17, 24]), rng.choice([b"", b"late"])), False])
+            elif ending < 0.55:
+                records.append([now, frame(source, destination, (start + len(data)) % (1 << 32), other, 4), False])
+            now += step()
+        now += step()
     return records
 
 
@@ -186,6 +269,38 @@ def compare(reference_result, go_result):
     return None
 
 
+def present_reference(server, data, limits):
+    """presentation/server.py analyze_bytes on the reference engine: the result, or the exception class and text."""
+    saved = server.MAX_FRAMES, server.MAX_SESSIONS, server.MAX_EVENTS
+    server.MAX_FRAMES, server.MAX_SESSIONS, server.MAX_EVENTS = limits
+    try:
+        result = server.analyze_bytes_reference(data)
+    except CaptureError as error:
+        return {"error_type": "CaptureError", "error": str(error)}
+    except ValueError as error:
+        return {"error_type": "ValueError", "error": str(error)}
+    finally:
+        server.MAX_FRAMES, server.MAX_SESSIONS, server.MAX_EVENTS = saved
+    result["meta"]["processing_ms"] = 0
+    return result
+
+
+def present_problem(server, binary, rng, data):
+    """Compare the Go `present` command with the reference on one capture (text of the result but the timing)."""
+    limits = (20000, 500, 4000) if rng.random() < 0.7 else (rng.choice([0, 3, 20000]), rng.choice([0, 1, 2, 500]), rng.choice([0, 2, 9, 4000]))
+    expected = present_reference(server, data, limits)
+    done = subprocess.run([binary, "present", "--max-frames", str(limits[0]), "--max-sessions", str(limits[1]), "--max-events", str(limits[2])],  # noqa: S603
+                          input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=120)
+    if done.returncode != (3 if "error" in expected else 0):
+        return "present exit status {} for {!r}: {}".format(done.returncode, expected.get("error"), done.stderr.decode("utf-8", "replace")[:200])
+    actual = json.loads(done.stdout)
+    if "meta" in actual:
+        actual["meta"]["processing_ms"] = 0
+    if json.dumps(actual) != json.dumps(expected):
+        return "present result differs (limits {})".format(limits)
+    return None
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
@@ -201,10 +316,12 @@ def main(argv=None):
         signatures_path, policy_path = str(folder / "signatures.json"), str(folder / "policy.json")
         Path(signatures_path).write_text(json.dumps(SIGNATURES), encoding="utf-8")
         Path(policy_path).write_text(json.dumps(POLICY), encoding="utf-8")
-        failures, rows = [], 0
+        failures, rows, presented = [], 0, 0
+        sys.path.insert(0, str(ROOT / "presentation"))
+        import server  # noqa: E402 - the presentation service's reference analysis
         for index in range(args.count):
             capture = folder / "capture-{}-{}.pcap".format(args.seed, index)
-            write_capture(rng, capture, records_for(rng, sessions))
+            write_capture(rng, capture, stress_records(rng) if index % 3 == 2 else records_for(rng, sessions))
             options = options_for(rng, signatures_path, policy_path)
             expected = reference(capture, options)
             done = subprocess.run([args.binary, "analyze", str(capture)] + options, stdout=subprocess.PIPE, stderr=subprocess.PIPE,  # noqa: S603
@@ -213,9 +330,14 @@ def main(argv=None):
             problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")))
             if problem:
                 failures.append("{} {}: {}".format(capture.name, " ".join(options), problem))
+            problem = present_problem(server, args.binary, rng, capture.read_bytes())
+            presented += 1
+            if problem:
+                failures.append("{}: {}".format(capture.name, problem))
         for line in failures[:10]:
             print("analyze mismatch:", line)
-        print("analyze parity: {} captures, {} rows, {} mismatched (seed {})".format(args.count, rows, len(failures), args.seed))
+        print("analyze parity: {} captures, {} rows, {} presentation results, {} mismatched (seed {})".format(
+            args.count, rows, presented, len(failures), args.seed))
         return 1 if failures else 0
 
 

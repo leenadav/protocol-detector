@@ -376,6 +376,11 @@ func ReadFile(path string, visit func(Record) error) error {
 		return err
 	}
 	defer f.Close()
+	return Read(f, visit)
+}
+
+// Read is ReadFile over an open stream, in the reference's 64 KiB chunks.
+func Read(f io.Reader, visit func(Record) error) error {
 	d := NewDecoder()
 	chunk := make([]byte, maxChunk)
 	for {
