@@ -244,6 +244,25 @@ func (p *Parser) ControlField(name string) ([]byte, bool) {
 	return value, ok
 }
 
+// RetainedBytes is the capacity of the line accumulator, the kept request target, a pending SSH KEXINIT
+// buffer with its name lists, and the control-protocol header values (parsing.Retainer).
+func (p *Parser) RetainedBytes() int {
+	n := cap(p.line) + cap(p.target)
+	if p.kexinit != nil {
+		n += cap(p.kexinit.buffer)
+		for _, list := range p.kexinit.lists {
+			n += cap(list)
+		}
+	}
+	if p.control != nil {
+		n += cap(p.control.method)
+		for _, value := range p.control.fields {
+			n += cap(value)
+		}
+	}
+	return n
+}
+
 // Refined reports whether the published identification is complete (false while a KEXINIT is awaited).
 func (p *Parser) Refined() bool { return p.refined }
 

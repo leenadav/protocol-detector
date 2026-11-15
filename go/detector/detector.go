@@ -6,6 +6,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/leenadav/protocol-detector/go/internal/buffer"
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/engine"
 )
@@ -14,6 +15,7 @@ import (
 var (
 	ErrInvalidConfig = errors.New("detector: invalid configuration")
 	ErrAdmission     = errors.New("detector: observation admission refused (flow limit reached)")
+	ErrMemory        = errors.New("detector: observation admission refused (retained-memory budget reached)")
 	ErrDisabled      = errors.New("detector: observation disabled after repeated engine failures")
 	ErrClosed        = errors.New("detector: flow closed")
 	ErrQuarantined   = errors.New("detector: flow quarantined after an engine failure")
@@ -42,7 +44,21 @@ type Config struct {
 	MaxFlows int
 	// PanicLimit disables admission after this many recovered engine panics (0 disables the breaker).
 	PanicLimit int
+	// MaxRetainedPerFlow is the flow allowance: the capacity, in bytes, of the byte buffers the parsers of
+	// both directions of one flow may keep between calls. 0 selects 2 x MaxBytesPerDirection (32 KiB at the
+	// default). It must be at least MaxBytesPerDirection and at most MaxRetainedCeiling. It is a different
+	// unit from MaxBytesPerDirection: that one counts bytes inspected, this one buffer capacity retained.
+	// A direction whose flow would exceed the allowance ends as OutcomeBudgetExhausted with ReasonMemory.
+	MaxRetainedPerFlow int
+	// MaxRetainedTotal is the engine allowance. Admitting a flow reserves one flow allowance from it, and
+	// NewFlow returns ErrMemory when it cannot. 0 selects MaxFlows x MaxRetainedPerFlow (32 MiB at the
+	// default). It must be at least one flow allowance and at most MaxRetainedCeiling; a derived value
+	// above the ceiling is rejected, not clamped.
+	MaxRetainedTotal int
 }
+
+// MaxRetainedCeiling bounds MaxRetainedPerFlow and MaxRetainedTotal: 1 GiB.
+const MaxRetainedCeiling = 1 << 30
 
 // DefaultConfig is the lab starting profile: HTTP/1, TLS and SSH, 16 KiB and 16 reads per direction.
 func DefaultConfig() Config {
@@ -57,11 +73,20 @@ type Engine struct {
 	profile    map[string]bool // never written after New
 	maxFlows   int64
 	panicLimit int64
+	// Memory budget (integration work item #14). Two separately named quantities:
+	//   reservation: one flowAllowance per admitted flow, charged to account at NewFlow before anything
+	//                is allocated and returned exactly once at Close;
+	//   retained:    the buffer capacity the flows' parsers hold right now, tracked inside each flow's
+	//                reservation and never charged to account a second time.
+	flowAllowance int
+	account       *buffer.Account
 
-	active   atomic.Int64
-	admitted atomic.Int64
-	refused  atomic.Int64
-	panics   atomic.Int64
+	active        atomic.Int64
+	admitted      atomic.Int64
+	refused       atomic.Int64
+	refusedMemory atomic.Int64
+	panics        atomic.Int64
+	retained      atomic.Int64
 
 	// testHook runs inside the panic boundary of every engine call (tests only; nil in production).
 	testHook func(op string, d Direction)
@@ -96,8 +121,37 @@ func New(c Config) (*Engine, error) {
 	if _, err := engine.New(cfg, ""); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidConfig, err)
 	}
+	// The memory allowances. All arithmetic is done in int64 on values already bounded above, so it cannot
+	// overflow; a result outside the bounds is an error, never a clamp.
+	if c.MaxRetainedPerFlow < 0 || c.MaxRetainedTotal < 0 {
+		return nil, fmt.Errorf("%w: retained-memory limits cannot be negative", ErrInvalidConfig)
+	}
+	perFlow := int64(c.MaxRetainedPerFlow)
+	if perFlow == 0 {
+		perFlow = 2 * int64(c.MaxBytesPerDirection)
+	}
+	if perFlow < int64(c.MaxBytesPerDirection) || perFlow > MaxRetainedCeiling {
+		return nil, fmt.Errorf("%w: max retained per flow must be %d (max bytes per direction)..%d, got %d",
+			ErrInvalidConfig, c.MaxBytesPerDirection, MaxRetainedCeiling, perFlow)
+	}
+	total := int64(c.MaxRetainedTotal)
+	if total == 0 {
+		total = int64(c.MaxFlows) * perFlow
+		if total > MaxRetainedCeiling {
+			return nil, fmt.Errorf("%w: max flows x max retained per flow is %d bytes, over the %d ceiling; lower one or set max retained total",
+				ErrInvalidConfig, total, MaxRetainedCeiling)
+		}
+	}
+	if total < perFlow || total > MaxRetainedCeiling {
+		return nil, fmt.Errorf("%w: max retained total must be %d (one flow allowance)..%d, got %d",
+			ErrInvalidConfig, perFlow, MaxRetainedCeiling, total)
+	}
+	account, err := buffer.NewAccount("detector engine", int(total))
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidConfig, err)
+	}
 	return &Engine{cfg: cfg, families: append([]string(nil), c.Families...), profile: profile,
-		maxFlows: int64(c.MaxFlows), panicLimit: int64(c.PanicLimit)}, nil
+		maxFlows: int64(c.MaxFlows), panicLimit: int64(c.PanicLimit), flowAllowance: int(perFlow), account: account}, nil
 }
 
 // Families returns a copy of the engine's profile.
@@ -107,12 +161,25 @@ func (e *Engine) Families() []string { return append([]string(nil), e.families..
 type Stats struct {
 	Active, Admitted, Refused, Panics int64
 	Disabled                          bool
+	// RefusedMemory counts the refusals (included in Refused) caused by the engine allowance.
+	RefusedMemory int64
+	// FlowAllowance and EngineAllowance are the configured limits, in bytes.
+	FlowAllowance, EngineAllowance int64
+	// ReservedBytes is the sum of the flow allowances of the admitted flows: Active x FlowAllowance once
+	// every admission in flight has completed.
+	ReservedBytes int64
+	// RetainedBytes is the byte-buffer capacity the parsers of all flows hold right now. It is at most
+	// ReservedBytes. It is not heap or RSS: snapshots, evidence strings and transient allocations are
+	// bounded separately (MaxEvidence, MaxEvidenceValue, MaxOfferedALPN, MaxFlowID).
+	RetainedBytes int64
 }
 
 // Stats reads the counters.
 func (e *Engine) Stats() Stats {
 	return Stats{Active: e.active.Load(), Admitted: e.admitted.Load(), Refused: e.refused.Load(),
-		Panics: e.panics.Load(), Disabled: e.disabled()}
+		Panics: e.panics.Load(), Disabled: e.disabled(), RefusedMemory: e.refusedMemory.Load(),
+		FlowAllowance: int64(e.flowAllowance), EngineAllowance: int64(e.account.Limit()),
+		ReservedBytes: int64(e.account.Used()), RetainedBytes: e.retained.Load()}
 }
 
 func (e *Engine) disabled() bool { return e.panicLimit > 0 && e.panics.Load() >= e.panicLimit }
@@ -137,8 +204,18 @@ func (e *Engine) NewFlow(id string) (*Flow, error) {
 			break
 		}
 	}
+	// Reserve the flow allowance before anything is allocated for the flow. A refusal gives the slot back,
+	// so it leaves neither a count nor a reservation behind, and it never takes memory from a flow already
+	// admitted. The slot is taken first so that the flow limit, when it is the tighter one, is the error
+	// the host sees.
+	if e.account.Reserve(e.flowAllowance) != nil {
+		e.active.Add(-1)
+		e.refused.Add(1)
+		e.refusedMemory.Add(1)
+		return nil, ErrMemory
+	}
 	e.admitted.Add(1)
-	f := &Flow{e: e, id: bounded(trimID(id))}
+	f := &Flow{e: e, id: bounded(trimID(id)), reserved: e.flowAllowance}
 	for _, d := range allDirections {
 		f.dirs[d].snap = initialSnapshot(d)
 	}
@@ -161,6 +238,8 @@ type Flow struct {
 	dirs        [2]direction
 	closed      bool
 	quarantined bool
+	reserved    int // the flow allowance held from the engine account; returned once, at Close
+	retained    int // buffer capacity the two inspectors hold now; at most reserved between calls
 }
 
 type direction struct {
@@ -216,6 +295,8 @@ type Snapshot struct {
 	Directions  [2]DirectionSnapshot
 	Closed      bool
 	Quarantined bool
+	// RetainedBytes is the byte-buffer capacity the flow's parsers hold at the time of the snapshot.
+	RetainedBytes int
 }
 
 // Direction returns the snapshot of d.
@@ -257,6 +338,7 @@ func (f *Flow) Feed(d Direction, data []byte) (Update, error) {
 			ds.in = in
 		}
 		changed = f.absorb(ds, ds.in.Feed(data), ReasonEngine)
+		changed = f.settle(ds) || changed
 	}) {
 		return f.update(d, true), ErrQuarantined
 	}
@@ -281,7 +363,10 @@ func (f *Flow) EndDirection(d Direction, cause EndCause) (Update, error) {
 		return f.update(d, false), nil
 	}
 	changed := false
-	if f.guard("end", d, func() { changed = f.endDirection(ds, cause.sentence(), ReasonEnded) }) {
+	if f.guard("end", d, func() {
+		changed = f.endDirection(ds, cause.sentence(), ReasonEnded)
+		f.settle(nil)
+	}) {
 		return f.update(d, true), ErrQuarantined
 	}
 	return f.update(d, changed), nil
@@ -305,6 +390,7 @@ func (f *Flow) Expire() error {
 			return ErrQuarantined
 		}
 	}
+	f.settle(nil)
 	return nil
 }
 
@@ -333,9 +419,39 @@ func (f *Flow) Close() Snapshot {
 			}
 			ds.in = nil
 		}
+		f.settle(nil)
+		f.e.account.Release(f.reserved) // the one and only release of this flow's reservation
+		f.reserved = 0
 		f.e.active.Add(-1)
 	}
 	return f.snapshot()
+}
+
+// settle brings the flow's retained figure, and the engine's, in line with what the inspectors hold after
+// a call. When fed is the direction that just received bytes and the flow now holds more than its
+// allowance, that direction ends as OutcomeBudgetExhausted with ReasonMemory and its inspector is dropped,
+// which frees its buffers; settle reports whether it did so. The allowance is checked after the call that
+// grew a buffer, so within one Feed a flow can exceed it by at most that call's growth; between calls it
+// never does.
+func (f *Flow) settle(fed *direction) (ended bool) {
+	measure := func() int {
+		n := 0
+		for i := range f.dirs {
+			if in := f.dirs[i].in; in != nil {
+				m, _ := in.RetainedBytes()
+				n += m
+			}
+		}
+		return n
+	}
+	now := measure()
+	if fed != nil && fed.in != nil && now > f.reserved {
+		f.finish(fed, OutcomeBudgetExhausted, ReasonMemory, "Retained parser memory exceeds the flow allowance")
+		now, ended = measure(), true
+	}
+	f.e.retained.Add(int64(now - f.retained))
+	f.retained = now
+	return ended
 }
 
 func (f *Flow) usable() error {
@@ -378,6 +494,8 @@ func (f *Flow) quarantine() {
 		ds.snap = DirectionSnapshot{Direction: d, Outcome: OutcomeFailed, Reason: ReasonPanic, Done: true,
 			BytesFed: ds.snap.BytesFed, BytesInspected: ds.snap.BytesInspected, Revision: ds.snap.Revision}
 	}
+	f.e.retained.Add(int64(-f.retained)) // the inspectors are gone; the reservation stays until Close
+	f.retained = 0
 }
 
 func (f *Flow) endDirection(ds *direction, sentence string, reason Reason) bool {
@@ -498,7 +616,7 @@ func deref(p *string) string {
 }
 
 func (f *Flow) snapshot() Snapshot {
-	s := Snapshot{ID: f.id, Closed: f.closed, Quarantined: f.quarantined}
+	s := Snapshot{ID: f.id, Closed: f.closed, Quarantined: f.quarantined, RetainedBytes: f.retained}
 	for _, d := range allDirections {
 		src := f.dirs[d].snap
 		src.OfferedALPN = append([]string(nil), src.OfferedALPN...)

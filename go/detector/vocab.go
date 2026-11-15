@@ -89,10 +89,12 @@ const (
 	ReasonClosed Reason = "closed"
 	// ReasonPanic: the engine panicked; the flow is quarantined.
 	ReasonPanic Reason = "panic"
+	// ReasonMemory: the flow's parsers would retain more buffer capacity than the flow allowance.
+	ReasonMemory Reason = "memory_budget"
 )
 
 var allReasons = []Reason{ReasonNone, ReasonEngine, ReasonNotPorted, ReasonOutsideProfile, ReasonEnded, ReasonExpired,
-	ReasonClosed, ReasonPanic}
+	ReasonClosed, ReasonPanic, ReasonMemory}
 
 // AllReasons lists every Reason.
 func AllReasons() []Reason { return append([]Reason(nil), allReasons...) }

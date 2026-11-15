@@ -174,6 +174,9 @@ func NewIRC(maxLine int) *IRC { return &IRC{maxLine: maxLine} }
 func (p *IRC) Done() bool              { return p.done }
 func (p *IRC) Result() *parsing.Result { return p.result }
 
+// RetainedBytes is the capacity of the line accumulator (parsing.Retainer).
+func (p *IRC) RetainedBytes() int { return cap(p.line) }
+
 // Feed ports LineParser.feed for protocol "irc".
 func (p *IRC) Feed(data []byte) (int, error) {
 	pos := 0

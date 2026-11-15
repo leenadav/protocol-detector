@@ -21,6 +21,14 @@
 // kept, because it may contain input bytes. Fatal runtime errors (out of memory, concurrent map writes)
 // cannot be recovered by any Go code and are outside this contract.
 //
+// Memory. Admitting a flow reserves one flow allowance (Config.MaxRetainedPerFlow, 32 KiB by default) from
+// the engine allowance (Config.MaxRetainedTotal); NewFlow returns ErrMemory when it cannot, and Close
+// returns the reservation exactly once. Inside the reservation the engine tracks the capacity of the byte
+// buffers the flow's parsers keep between calls; a direction that would take the flow over its allowance
+// ends as OutcomeBudgetExhausted with ReasonMemory. The allowance is checked after the call that grew a
+// buffer, so one Feed can overshoot by that call's growth. This accounts retained parser buffers only. It
+// is not heap or RSS accounting: snapshots, evidence and transient allocations have their own bounds.
+//
 // Results. Snapshot returns a detached copy that shares no memory with the engine. Outcomes, reasons,
 // directions and evidence classes are closed vocabularies with All/Valid/String; they may be used as
 // metric labels. Detail strings, evidence values and hostnames are record fields only, never labels.

@@ -381,6 +381,27 @@ func New(cfg contracts.Config, hint string) (*Inspector, error) {
 
 func (in *Inspector) Terminal() bool { return in.terminal }
 
+// RetainedBytes reports the byte-buffer capacity this inspector keeps between calls (integration work item
+// #14): the dispatch prefix, what the selected parser reports through parsing.Retainer, and the same for
+// the inspector of a protocol shift. complete is false when a selected parser does not report its
+// buffers, so the figure is then a lower bound. It counts retained byte buffers only: not the observation,
+// its evidence rows or strings, and not transient allocations inside a call.
+func (in *Inspector) RetainedBytes() (n int, complete bool) {
+	n, complete = cap(in.prefix), true
+	if in.parser != nil {
+		if r, ok := in.parser.(parsing.Retainer); ok {
+			n += r.RetainedBytes()
+		} else {
+			complete = false
+		}
+	}
+	if in.next != nil {
+		m, ok := in.next.RetainedBytes()
+		n, complete = n+m, complete && ok
+	}
+	return n, complete
+}
+
 func (in *Inspector) publish(obs contracts.Observation, kind contracts.Kind) []contracts.Event {
 	if obs.Equal(in.Observation) {
 		return nil

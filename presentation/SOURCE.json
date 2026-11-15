@@ -1,7 +1,7 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "205e26436b11b0c4c67a922cd17fd4f8e62521b3",
+  "commit": "cce9d3398fb05c054aa13fdd73d4a1c068112668",
   "branch": "claude/culvert-integration-prep",
   "build_digest": "af94b4572e3dafce366785695127435ab5e829b0ee76aedcc29f9b810772df80",
   "components": {

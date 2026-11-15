@@ -57,6 +57,9 @@ func FuzzFlowInvariants(f *testing.F) {
 				}
 				prev[d] = ds
 			}
+			if s.RetainedBytes < 0 || s.RetainedBytes > flow.reserved {
+				t.Fatalf("flow retains %d bytes, allowance %d", s.RetainedBytes, flow.reserved)
+			}
 		}
 		for i := 0; i < len(client) || i < len(server); i += size {
 			if i < len(client) {
@@ -80,6 +83,9 @@ func FuzzFlowInvariants(f *testing.F) {
 		}
 		if flow.dirs[ClientToServer].in != nil || flow.dirs[ServerToClient].in != nil {
 			t.Fatal("close kept an inspector")
+		}
+		if st := e.Stats(); st.RetainedBytes != 0 || st.ReservedBytes != 0 || st.Active != 0 {
+			t.Fatalf("close left memory accounted: %+v", st)
 		}
 		if st := e.Stats(); st.Panics != 0 {
 			t.Fatalf("the engine panicked on input (recovered %d)", st.Panics)

@@ -139,8 +139,10 @@ Done:
 - **#7** modern-client fixture set (reviewed 2026-11-14; next review 2027-02).
 - **#17** `reflect.DeepEqual` removed from the publish path (Go only; event stream unchanged).
 - **#18** facade benchmarks with allocation ceilings, unit tests and split-invariance fuzzing for `tlsx` and `textroute`.
+- **#14** memory budget wired into the facade: flow allowance reserved at admission, retained parser buffers tracked, explicit outcome when exceeded.
+- **#16** content pack embedded and byte-equal to the fixture. The computed, verified digest is **not** done; it waits for a language-neutral definition from the engine lane.
 
-See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: #14 (wiring), #16.
+See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: the computed digest of #16.
 
 ### 4.4 Gate before attaching the real detector (lab phase L4)
 

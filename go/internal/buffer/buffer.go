@@ -42,6 +42,29 @@ func (a *Account) Used() int {
 	return a.used
 }
 
+// Limit is the account's aggregate bound, in bytes.
+func (a *Account) Limit() int { return a.limit }
+
+// Reserve charges n bytes to the account ahead of any allocation, for a caller that admits work against a
+// fixed allowance (integration work item #14: one flow allowance per admitted flow). It fails without
+// charging anything when the account cannot hold n more bytes. Every successful Reserve must be paired
+// with exactly one Release of the same amount. A reservation and the buffers created with NewBounded are
+// charged to the same total; a caller that reserves an allowance must not also create account-charged
+// buffers for the memory the allowance already covers.
+func (a *Account) Reserve(n int) error {
+	if n <= 0 {
+		return errs.New(errs.Invalid, errs.ScopeProcess, "a reservation needs a positive size")
+	}
+	return a.reserve(n)
+}
+
+// Release returns a reservation made with Reserve.
+func (a *Account) Release(n int) {
+	if n > 0 {
+		a.release(n)
+	}
+}
+
 func (a *Account) reserve(n int) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()

@@ -340,6 +340,9 @@ func New(opts Options) (*Parser, error) {
 func (p *Parser) Done() bool              { return p.done }
 func (p *Parser) Result() *parsing.Result { return p.result }
 
+// RetainedBytes is the capacity of the record-header and handshake accumulators (parsing.Retainer).
+func (p *Parser) RetainedBytes() int { return cap(p.recordHeader) + cap(p.handshake) }
+
 // Feed ports TLSParser.feed for the hello (no watch, no continuation).
 func (p *Parser) Feed(data []byte) (int, error) {
 	pos := 0
