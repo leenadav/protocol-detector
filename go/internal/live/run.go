@@ -167,7 +167,7 @@ func Run(stream io.Reader, process *exec.Cmd, stderr io.Reader, pack *content.Pa
 			stopped = true
 			break
 		}
-		monitor.Tick(now)
+		_ = monitor.Tick(now)
 		if cfg.StatsInterval > 0 && now >= nextStats {
 			emit(monitor.Summary(now-start, false, nil, nil))
 			nextStats = now + cfg.StatsInterval
@@ -208,7 +208,7 @@ func Run(stream io.Reader, process *exec.Cmd, stderr io.Reader, pack *content.Pa
 					if cfg.ReplayClock {
 						replayNow = record.Timestamp
 					}
-					monitor.Accept(record, clock())
+					_ = monitor.Accept(record, clock())
 					if cfg.MaxPackets > 0 && monitor.Packets() >= cfg.MaxPackets {
 						stopped = true
 						break
@@ -263,16 +263,16 @@ func Run(stream io.Reader, process *exec.Cmd, stderr io.Reader, pack *content.Pa
 	}
 	drops := diag.stats["dropped_by_kernel"] + diag.stats["dropped_by_interface"]
 	if drops > 0 {
-		monitor.InvalidateAll("Capture reported packet loss; observations may be incomplete", "all_observations_this_capture")
+		_ = monitor.InvalidateAll("Capture reported packet loss; observations may be incomplete", "all_observations_this_capture")
 	}
 	if failure != "" {
-		monitor.InvalidateAll("Capture failed; observations may be incomplete", "all_observations_this_capture")
+		_ = monitor.InvalidateAll("Capture failed; observations may be incomplete", "all_observations_this_capture")
 		emit(Event{Kind: "error", Fields: map[string]interface{}{"type": "error", "reason": failure}})
 	}
 	if naturalEOF {
-		monitor.End("Capture input EOF before initial message completed")
+		_ = monitor.End("Capture input EOF before initial message completed")
 	} else {
-		monitor.End("Capture stopped before initial message completed")
+		_ = monitor.End("Capture stopped before initial message completed")
 	}
 	summary := monitor.Summary(clock()-start, true, diag.stats, diag.order)
 	_, kernel := diag.stats["dropped_by_kernel"]
@@ -322,3 +322,16 @@ func exitStatus(err error) (int, bool) {
 	}
 	return exit.ExitCode(), exit.ExitCode() != 0
 }
+
+// Diagnostics parses tcpdump's standard error: its closing statistics, and a bounded tail of the text.
+type Diagnostics struct{ d diagnostics }
+
+// NewDiagnostics returns an empty parser.
+func NewDiagnostics() *Diagnostics { return &Diagnostics{diagnostics{stats: map[string]int{}}} }
+
+// Feed takes more of the stream; End parses what is left without a line end.
+func (x *Diagnostics) Feed(data []byte) { x.d.feed(data) }
+func (x *Diagnostics) End()             { x.d.line(x.d.pending) }
+
+// Stats are the statistics tcpdump printed and their order.
+func (x *Diagnostics) Stats() (map[string]int, []string) { return x.d.stats, x.d.order }

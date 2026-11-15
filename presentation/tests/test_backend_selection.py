@@ -197,5 +197,31 @@ class DecryptionBackendTests(unittest.TestCase):
             self.assertEqual(analyze_capture(capture, keylog, backend="go")["decrypted"], 1)
 
 
+class LiveDecryptionHandOverTests(unittest.TestCase):
+    """The live decryption worker replaces itself with the Go binary when one is installed."""
+
+    def setUp(self):
+        patcher = mock.patch.dict(os.environ, {"PROTODETECT_GO_BINARY": sys.executable})   # any executable file
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        os.environ.pop("PROTODETECT_BACKEND", None)
+
+    def test_the_binary_takes_the_worker_with_its_arguments_and_nothing_else(self):
+        from poc_decryption import live
+        calls = []
+        reason = live.hand_over_to_go(["--interface", "lo0", "--filter", "tcp", "--duration", "5"], replace=lambda *a: calls.append(a))
+        self.assertEqual(calls, [(sys.executable, [sys.executable, "live-decrypt", "--interface", "lo0", "--filter", "tcp", "--duration", "5"])])
+        self.assertIn("did not take over", reason)
+
+    def test_the_reference_stays_on_request_and_without_a_binary(self):
+        from poc_decryption import live
+        calls = []
+        with mock.patch.dict(os.environ, {"PROTODETECT_BACKEND": "python"}):
+            self.assertEqual(live.hand_over_to_go(["--interface", "lo0"], replace=lambda *a: calls.append(a)), "the reference was requested")
+        with mock.patch.dict(os.environ, {"PROTODETECT_GO_BINARY": __file__ + "-absent"}):
+            self.assertIn("not installed", live.hand_over_to_go(["--interface", "lo0"], replace=lambda *a: calls.append(a)))
+        self.assertEqual(calls, [])
+
+
 if __name__ == "__main__":
     unittest.main()

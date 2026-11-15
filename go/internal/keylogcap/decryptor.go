@@ -244,13 +244,17 @@ func (c *connection) build(pack *content.Pack) *row {
 // decryptor is the one consumer of the coordinator's retained tier.
 type decryptor struct {
 	pack        *content.Pack
-	owner       *coordinator
+	owner       *Tier
 	keys        decrypt.Keys
 	connections map[session.Key]*connection
 	order       []session.Key // insertion order of connections
 	finished    []*connection // closed connections, in close order
 
 	opened, closedCount, recordsAuthenticated, plaintextBytes, workCalls, reportCalls, retracted int
+}
+
+func newDecryptor(pack *content.Pack, owner *Tier, keys decrypt.Keys) *decryptor {
+	return &decryptor{pack: pack, owner: owner, keys: keys, connections: map[session.Key]*connection{}}
 }
 
 func (d *decryptor) forget(key session.Key) {
@@ -348,14 +352,29 @@ func (d *decryptor) finalize(c *connection, progress []progress, final bool) err
 
 func (d *decryptor) workOne(c *connection, quantum int) (bool, error) {
 	before := c.tls.RecordsAuthenticated
+	wasFailed := c.tls.State == decrypt.StateFailed
+	telemetry := d.owner.Telemetry
+	var done func()
+	if telemetry != nil {
+		done = telemetry.Stage("decrypt")
+	}
 	deltas := c.tls.Advance(quantum)
+	if done != nil {
+		done()
+	}
 	for _, delta := range deltas {
 		if err := c.plaintext(delta); err != nil {
 			return false, err
 		}
 		d.plaintextBytes += len(delta.Data)
+		if telemetry != nil {
+			telemetry.Add("bytes.decrypted", len(delta.Data))
+		}
 	}
 	d.recordsAuthenticated += c.tls.RecordsAuthenticated - before
+	if telemetry != nil && !wasFailed && c.tls.State == decrypt.StateFailed && c.tls.ReasonCode == decrypt.AuthenticationFailed {
+		telemetry.Add("decryption.auth_failures", 1)
+	}
 	return len(deltas) > 0 || c.tls.RecordsAuthenticated != before, nil
 }
 
@@ -380,6 +399,9 @@ func (d *decryptor) work(quantum, rounds int) error {
 		if !progressed {
 			break
 		}
+	}
+	if d.owner.Telemetry != nil {
+		d.owner.Telemetry.Set("keys.pending", d.awaitingKeys())
 	}
 	return nil
 }
@@ -410,4 +432,22 @@ func (d *decryptor) rows() []*row {
 		}
 	}
 	return out
+}
+
+// Decryptor is the exported consumer of a retained tier (the live decryption worker's view of it).
+type Decryptor struct{ d *decryptor }
+
+// NewDecryptor attaches a decryptor to a tier.
+func NewDecryptor(pack *content.Pack, tier *Tier, keys decrypt.Keys) *Decryptor {
+	return &Decryptor{newDecryptor(pack, tier, keys)}
+}
+
+// Pump consumes the tier's queued events; Work does one bounded slice of record authentication.
+func (x *Decryptor) Pump() error                    { return x.d.pump() }
+func (x *Decryptor) Work(quantum, rounds int) error { return x.d.work(quantum, rounds) }
+
+// Report is Decryptor.report(frames, skipped) as JSON text; profile replaces the fixed profile sentence when
+// it is not empty (the live snapshot's wording).
+func (x *Decryptor) Report(frames, skipped int, profile string) string {
+	return x.d.report(frames, skipped, profile)
 }

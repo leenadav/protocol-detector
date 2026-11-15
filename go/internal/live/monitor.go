@@ -15,6 +15,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/capture"
 	"github.com/leenadav/protocol-detector/go/internal/content"
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
+	"github.com/leenadav/protocol-detector/go/internal/keylogcap"
 	"github.com/leenadav/protocol-detector/go/internal/policy"
 	"github.com/leenadav/protocol-detector/go/internal/pyjson"
 	"github.com/leenadav/protocol-detector/go/internal/session"
@@ -45,6 +46,8 @@ type Options struct {
 // Event is one emitted event: a JSON object, its layout name and the key orders of the maps the reference
 // fills in first-use order.
 type Event struct {
+	// Raw, when set, is the event already rendered as JSON text (Kind "raw").
+	Raw    string
 	Kind   string // classification, retired, invalidated, session, capture_gap, summary, started, error
 	Fields map[string]interface{}
 	Order  map[string][]string
@@ -84,6 +87,9 @@ type Monitor struct {
 	protocols, apps, risks, policyCounts *counter
 	rejected                             map[string]int
 	flowsMarked                          int
+
+	// tier is the retained reassembly tier a second consumer (the TLS decoder) reads; nil on the plain live path.
+	tier *keylogcap.Tier
 
 	captureID   string
 	generations map[string]int
@@ -218,8 +224,16 @@ func (m *Monitor) retired(row analyzer.Row) {
 		"scope": o.Scope, "candidate_hint": hint(m.opts.TCPHint), "reason": o.Reason, "boundary": "observation_retired"}})
 }
 
-// Accept is CaptureMonitor.accept: one captured record at the clock value now.
-func (m *Monitor) Accept(record capture.Record, now float64) {
+// Retain adds the retained reassembly tier under the budget (CaptureMonitor's `retain`) and returns it.
+func (m *Monitor) Retain(budget keylogcap.Budget) *keylogcap.Tier {
+	m.tier = keylogcap.NewTier(budget, m.opts.IdleTimeout, func(sid string) int { return m.generations[sid] })
+	m.tier.Telemetry = m.an.Telemetry
+	return m.tier
+}
+
+// Accept is CaptureMonitor.accept: one captured record at the clock value now. The error is the retained
+// tier's (its consumer queue overflowed); without a tier it is always nil.
+func (m *Monitor) Accept(record capture.Record, now float64) error {
 	m.counts.add("packets", 1)
 	m.counts.add("captured_bytes", len(record.Data))
 	if record.Truncated() {
@@ -227,14 +241,13 @@ func (m *Monitor) Accept(record capture.Record, now float64) {
 		m.rejected["truncated"]++
 		// A truncated packet cannot be associated with one flow: discard all partial state, require new
 		// handshakes, retract prior active labels.
-		m.InvalidateAll("Capture truncation; active stream observations invalidated", "active_connections")
-		return
+		return m.InvalidateAll("Capture truncation; active stream observations invalidated", "active_connections")
 	}
 	packet, err := transport.Decode(record.Data, record.Linktype, m.opts.Checksums)
 	if err != nil {
 		reject, ok := err.(*transport.Reject)
 		if !ok {
-			return
+			return nil
 		}
 		m.counts.add("unsupported_or_malformed_packets", 1)
 		m.rejected[reject.Kind]++
@@ -242,7 +255,7 @@ func (m *Monitor) Accept(record capture.Record, now float64) {
 			m.flowsMarked++ // D06: the flow never reads as fully inspected
 		}
 		m.drain()
-		return
+		return nil
 	}
 	var source, destination transport.Endpoint
 	var failures []string
@@ -267,16 +280,37 @@ func (m *Monitor) Accept(record capture.Record, now float64) {
 	if now > m.now {
 		m.now = now
 	}
+	if m.tier != nil {
+		m.tier.SetNow(now)
+	}
 	if tcp != nil && tcp.Flags&transport.SYN != 0 && tcp.Flags&transport.ACK == 0 {
-		if key := session.KeyOf(source, destination); m.an.Tracker.TracksTCP(key) {
-			m.an.Tracker.Drop(key, "Connection restarted (new SYN on a tracked tuple)")
-			m.drain()
+		key := session.KeyOf(source, destination)
+		tracked, held := m.an.Tracker.TracksTCP(key), m.tier != nil && m.tier.Holds(key)
+		if tracked || held {
+			const restart = "Connection restarted (new SYN on a tracked tuple)"
+			if tracked {
+				m.an.Tracker.Drop(key, restart)
+				m.drain()
+			}
+			if held {
+				if err := m.tier.Close(key, restart); err != nil {
+					done()
+					return err
+				}
+			}
 			m.generations[sessionid.Identity("tcp", source, destination)]++
 		}
 	}
 	message := m.an.Process(now, packet)
+	var retainErr error
+	if tcp != nil && m.tier != nil {
+		retainErr = m.tier.Retain(tcp)
+	}
 	done()
 	m.drain()
+	if retainErr != nil {
+		return retainErr
+	}
 	switch {
 	case strings.HasPrefix(message, "SKIP"):
 		if payload > 0 {
@@ -304,6 +338,7 @@ func (m *Monitor) Accept(record capture.Record, now float64) {
 		p := &m.an.PeerEvents[i]
 		m.classification(&p.Event, p.Source, p.Destination, transportName, record.Timestamp, server)
 	}
+	return nil
 }
 
 func (m *Monitor) classification(event *contracts.Event, source, destination transport.Endpoint, transportName string, timestamp float64,
@@ -366,7 +401,7 @@ func (m *Monitor) classification(event *contracts.Event, source, destination tra
 
 // InvalidateAll is CaptureMonitor.invalidate_all with the coordinator's gap: name and retract every active
 // session, then drop their state.
-func (m *Monitor) InvalidateAll(reason, scope string) {
+func (m *Monitor) InvalidateAll(reason, scope string) error {
 	tracked := m.an.Tracker.TrackedTCP()
 	active := len(tracked)
 	ids := map[string]bool{}
@@ -388,12 +423,16 @@ func (m *Monitor) InvalidateAll(reason, scope string) {
 		m.finalized[id+"/"+itoa(m.generations[id])] = true // retracted, never finalized
 	}
 	m.an.Reset()
+	if m.tier != nil {
+		return m.tier.Gap(reason)
+	}
+	return nil
 }
 
 // Tick advances the injected time; idle expiration happens here, never on packet arrival alone.
-func (m *Monitor) Tick(now float64) {
+func (m *Monitor) Tick(now float64) error {
 	if m.ended {
-		return
+		return nil
 	}
 	if now > m.now {
 		m.now = now
@@ -402,18 +441,26 @@ func (m *Monitor) Tick(now float64) {
 	m.an.Tracker.Expire(m.now)
 	done()
 	m.drain()
+	if m.tier != nil {
+		return m.tier.Tick(m.now)
+	}
 	m.an.Telemetry.Set("bytes.retained", 0)
 	m.an.Telemetry.Set("queue.depth", 0)
+	return nil
 }
 
 // End finalizes everything still tracked, exactly once.
-func (m *Monitor) End(reason string) {
+func (m *Monitor) End(reason string) error {
 	if m.ended {
-		return
+		return nil
 	}
 	m.ended = true
 	_ = m.an.Finish(reason)
 	m.drain()
+	if m.tier != nil {
+		return m.tier.End(reason)
+	}
+	return nil
 }
 
 // Packets is counts["packets"]; Truncated counts["truncated"].
@@ -426,6 +473,16 @@ func (m *Monitor) AddCount(name string, n int) { m.counts.add(name, n) }
 // Summary is CaptureMonitor.summary: a progress or final summary event. stats is tcpdump's own statistics in
 // the order it printed them (nil: none).
 func (m *Monitor) Summary(elapsed float64, final bool, stats map[string]int, statsOrder []string) Event {
+	return m.summary(elapsed, final, stats, statsOrder, false)
+}
+
+// SummaryWithStats is Summary with the statistics always rendered as an object, empty when tcpdump printed
+// none (the live decryption worker passes its statistics dictionary as it is).
+func (m *Monitor) SummaryWithStats(elapsed float64, final bool, stats map[string]int, statsOrder []string) Event {
+	return m.summary(elapsed, final, stats, statsOrder, true)
+}
+
+func (m *Monitor) summary(elapsed float64, final bool, stats map[string]int, statsOrder []string, always bool) Event {
 	kind := "progress"
 	if final {
 		kind = "summary"
@@ -433,7 +490,7 @@ func (m *Monitor) Summary(elapsed float64, final bool, stats map[string]int, sta
 	tracked, _, flows := m.an.Tracker.Tables()
 	telemetry, telemetryOrder := m.an.Telemetry.Render()
 	var captureStats interface{}
-	if len(stats) > 0 {
+	if len(stats) > 0 || always {
 		rendered := make(map[string]interface{}, len(stats))
 		for key, value := range stats {
 			rendered[key] = value

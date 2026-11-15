@@ -36,7 +36,7 @@ func main() {
 
 func run(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: protodetect version | analyze CAPTURE [options] | present < CAPTURE | decrypt-capture < REQUEST | live ... | cases --file PATH | replay --cases PATH --out PATH")
+		fmt.Fprintln(os.Stderr, "usage: protodetect version | analyze CAPTURE [options] | present < CAPTURE | decrypt-capture < REQUEST | live ... | live-decrypt ... | cases --file PATH | replay --cases PATH --out PATH")
 		return 2
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -53,6 +53,8 @@ func run(args []string) int {
 		return runDecrypt(args[1:], os.Stdin, os.Stdout, os.Stderr)
 	case "live":
 		return runLive(args[1:], os.Stdin, os.Stdout, os.Stderr)
+	case "live-decrypt":
+		return runLiveDecrypt(args[1:], os.Stdin, os.Stdout, os.Stderr)
 	case "cases":
 		fs := flag.NewFlagSet("cases", flag.ContinueOnError)
 		file := fs.String("file", "migration/fixtures/cases.json", "the differential cases file")

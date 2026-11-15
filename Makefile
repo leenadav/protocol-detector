@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -177,10 +177,12 @@ go-check:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/decrypt -run NONE -fuzz FuzzConnectionNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/capture -run NONE -fuzz FuzzDecoderNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/keylogcap -run NONE -fuzz FuzzAnalyzeNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/livedecrypt -run NONE -fuzz FuzzReplayNeverPanics -fuzztime 10s
 	$(MAKE) parity-go
 	$(MAKE) parity-analyze
 	$(MAKE) parity-decrypt
 	$(MAKE) parity-live
+	$(MAKE) parity-live-decrypt
 
 # Migration M8: the Go command-line binary (static, no cgo); go/bin is not tracked
 go-build:
@@ -199,6 +201,11 @@ parity-decrypt: go-build
 # the stream, so every event is a function of its bytes; nothing is captured)
 parity-live: go-build
 	$(PYTHON) -B migration/parity/live_diff.py --binary go/bin/protodetect --count 300 --seed 1
+
+# Migration M8: the Go live decryption worker against the Python reference on replayed scripts (capture chunks, key-log
+# text and ticks with their clock values; in memory only; the reference needs the cryptography extra)
+parity-live-decrypt: go-build
+	$(PYTHON) -B migration/parity/live_decrypt_diff.py --binary go/bin/protodetect --count 300 --seed 1
 
 # Migration M4: the Go backend's results against the Python reference (families it claims; records are M6)
 GO_FAMILIES := http,tls,dns,mdns,netbios-ns,llmnr,ssh,smtp,imap,pop3,ftp,nats,irc,sip,rtsp,telnet,postgresql,rfb,bittorrent,memcached,rsync,fins,afp,zmtp,bolt,stomp,giop,x11,spice,mysql,mongodb,tds,tns,cql,kafka,modbus,dnp3,ethernet-ip,iec-104,opcua,s7comm,mqtt,resp,amqp,onc-rpc,diameter,bgp,openvpn,pptp,fastcgi,dcerpc,websocket,xmpp,syslog,git,netbios-ss,tacacs-plus,socks5,wireguard,bacnet,tftp,ntp,l2tp,coap,rip,rtcp,lifx-lan,tuya-lan,netflow,ipfix,sflow,stun,dhcp,radius,snmp,rtp,ssdp,tplink-smarthome,kerberos,ldap,smb1,smb2,rdp,iso-tsap,ikev2,quic,http2,dtls

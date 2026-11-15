@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "2907724eb68c26751bda30be5c17a4e9e7e260f5",
+  "commit": "9a7ebb996d72ef7c76c71d8a5e8d16be84d769c5",
   "branch": "claude/go-migration",
-  "build_digest": "794f3cc4bb936e1def3af948c20f3704d72e6141a0c98f2796bc7ea248de1be6",
+  "build_digest": "595278e9344fe1b05e40f3197fb3060e630721fdece449057bfceff7935122ab",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -18,7 +18,7 @@
     "presentation": {
       "root": "presentation",
       "version": "0.66.0",
-      "files": 20
+      "files": 21
     },
     "schemas": {
       "root": "schemas",
@@ -538,6 +538,11 @@
       "sha256": "a11fa019529eb17cc4066c8301d009a5b9e066731df5179c95b0bc109e26f34c"
     },
     {
+      "path": "presentation/live_decrypt_smoke_check.py",
+      "component": "presentation",
+      "sha256": "ae267cedaa42bb04000364bdfb71f7072ec13a1ece5acc386b9e0eab846e083c"
+    },
+    {
       "path": "presentation/live_manager.py",
       "component": "presentation",
       "sha256": "704c967ad7cafa86b11b944446784d8092f4b2f81b2a7b018ecdc3ed3eb1a8de"
@@ -580,7 +585,7 @@
     {
       "path": "presentation/poc_decryption/live.py",
       "component": "presentation",
-      "sha256": "85a7262abb6e26d7af20ce4442004d07ae56739466c11bbdebeb099d605e2fca"
+      "sha256": "9e0ca2a6fd3122329867818d4693e34c44982c47d261d9dfb96e9b05a76352a5"
     },
     {
       "path": "presentation/poc_decryption/tls12.py",

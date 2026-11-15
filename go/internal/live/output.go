@@ -31,6 +31,9 @@ var eventOrders = map[string][]string{
 
 // JSON is one event as json.dumps writes it.
 func JSON(e Event) string {
+	if e.Raw != "" {
+		return e.Raw
+	}
 	if e.Kind == "session" {
 		base := analyze.Orders(e.Order)
 		keys := append(analyze.SessionKeys(), "capture_id", "session_id", "generation")

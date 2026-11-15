@@ -12,6 +12,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/reassembly"
 	"github.com/leenadav/protocol-detector/go/internal/session"
 	"github.com/leenadav/protocol-detector/go/internal/sessionid"
+	"github.com/leenadav/protocol-detector/go/internal/telemetry"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
 )
 
@@ -54,21 +55,57 @@ type retained struct {
 	failed         bool
 	sid            string
 	generation     int
+	time           float64 // last activity on the owner's clock
+}
+
+// Tier is the coordinator's retained reassembly tier: the bounded full stream of each TCP connection for a
+// second consumer (the TLS decoder), under an explicit budget. Its owner decides tuple reuse and time.
+type Tier struct {
+	budget      Budget
+	generations func(sid string) int // the owner's current generation of a session id
+	retained    map[session.Key]*retained
+	order       []session.Key // insertion order of retained
+	allocated   int
+	pending     []queued
+	now         float64
+	idle        float64 // seconds a retained connection may stay silent (Tick)
+	// Telemetry receives the tier's counters and histograms (nil: none).
+	Telemetry *telemetry.Telemetry
+
+	RejectedConnections, RejectedBytes int
+}
+
+type queued struct {
+	event
+	at float64 // enqueue time on the owner's clock (D11)
+}
+
+// NewTier builds a retained tier; generations reports the owner's current generation of a session id.
+func NewTier(budget Budget, idleTimeout float64, generations func(string) int) *Tier {
+	return &Tier{budget: budget, generations: generations, retained: map[session.Key]*retained{}, idle: idleTimeout}
+}
+
+// Holds reports whether a connection with this key is retained.
+func (c *Tier) Holds(key session.Key) bool { _, ok := c.retained[key]; return ok }
+
+// Allocated is the bytes all retained streams hold; Limit the aggregate budget; Pending the queued events.
+func (c *Tier) Allocated() int { return c.allocated }
+func (c *Tier) Limit() int     { return c.budget.Aggregate }
+func (c *Tier) Pending() int   { return len(c.pending) }
+
+// SetNow advances the tier's clock (the owner's now).
+func (c *Tier) SetNow(now float64) {
+	if now > c.now {
+		c.now = now
+	}
 }
 
 // coordinator is SessionCoordinator for an offline capture: the analyzer's connection table decides tuple
 // reuse, the retained tier reassembles the bounded full stream for the decryptor.
 type coordinator struct {
+	*Tier
 	an          *analyzer.Analyzer
-	budget      Budget
 	generations map[string]int
-	retained    map[session.Key]*retained
-	order       []session.Key // insertion order of retained
-	allocated   int
-	pending     []event
-	now         float64
-
-	rejectedConnections, rejectedBytes int
 }
 
 func newCoordinator(pack *content.Pack, budget Budget, connections int) (*coordinator, error) {
@@ -77,18 +114,24 @@ func newCoordinator(pack *content.Pack, budget Budget, connections int) (*coordi
 	if err != nil {
 		return nil, err
 	}
-	return &coordinator{an: an, budget: budget, generations: map[string]int{}, retained: map[session.Key]*retained{}}, nil
+	c := &coordinator{an: an, generations: map[string]int{}}
+	c.Tier = NewTier(budget, 60, func(sid string) int { return c.generations[sid] })
+	c.Tier.Telemetry = an.Telemetry
+	return c, nil
 }
 
-func (c *coordinator) queue(e event) error {
+func (c *Tier) queue(e event) error {
 	if len(c.pending) >= c.budget.Pending {
+		if c.Telemetry != nil {
+			c.Telemetry.Add("events.dropped", 1)
+		}
 		return &StreamError{"Retained consumer queue exhausted; the consumer must drain between packets"}
 	}
-	c.pending = append(c.pending, e)
+	c.pending = append(c.pending, queued{e, c.now})
 	return nil
 }
 
-func (c *coordinator) retainedError(key session.Key, state *retained, reason string) error {
+func (c *Tier) retainedError(key session.Key, state *retained, reason string) error {
 	if state.failed {
 		return nil
 	}
@@ -96,7 +139,7 @@ func (c *coordinator) retainedError(key session.Key, state *retained, reason str
 	return c.queue(event{kind: "error", key: key, reason: reason})
 }
 
-func (c *coordinator) progress(state *retained) []progress {
+func (c *Tier) progress(state *retained) []progress {
 	out := make([]progress, 0, len(state.order))
 	for _, endpoint := range state.order {
 		stream := state.streams[endpoint]
@@ -109,7 +152,7 @@ func (c *coordinator) progress(state *retained) []progress {
 	return out
 }
 
-func (c *coordinator) retainedClose(key session.Key, reason string) error {
+func (c *Tier) retainedClose(key session.Key, reason string) error {
 	state, ok := c.retained[key]
 	if !ok {
 		return nil
@@ -129,18 +172,16 @@ func (c *coordinator) retainedClose(key session.Key, reason string) error {
 
 // accept hands one decoded TCP packet to the owner; tuple reuse on a SYN renews the generation.
 func (c *coordinator) accept(packet *transport.TCP, now float64) error {
-	if now > c.now {
-		c.now = now
-	}
+	c.SetNow(now)
 	key := session.KeyOf(packet.Source, packet.Destination)
 	if packet.Flags&transport.SYN != 0 && packet.Flags&transport.ACK == 0 {
-		_, held := c.retained[key]
+		held := c.Holds(key)
 		if tracked := c.an.Tracker.TracksTCP(key); tracked || held {
 			if tracked {
 				c.an.Tracker.Drop(key, restartReason)
 			}
 			if held {
-				if err := c.retainedClose(key, restartReason); err != nil {
+				if err := c.Close(key, restartReason); err != nil {
 					return err
 				}
 			}
@@ -151,11 +192,68 @@ func (c *coordinator) accept(packet *transport.TCP, now float64) error {
 	if c.an.NotPorted != nil {
 		return c.an.NotPorted
 	}
-	return c.retain(key, packet)
+	return c.Retain(packet)
+}
+
+// Close releases a retained connection with the reason (the consumer gets its close event).
+func (c *Tier) Close(key session.Key, reason string) error { return c.retainedClose(key, reason) }
+
+// Retain is the tier's part of accepting one TCP packet.
+func (c *Tier) Retain(packet *transport.TCP) error {
+	return c.retain(session.KeyOf(packet.Source, packet.Destination), packet)
+}
+
+// Tick closes retained connections that stayed silent for the idle timeout and reports the tier's gauges.
+func (c *Tier) Tick(now float64) error {
+	c.SetNow(now)
+	if c.Telemetry != nil {
+		c.Telemetry.Set("bytes.retained", c.allocated)
+		c.Telemetry.Set("queue.depth", len(c.pending))
+	}
+	for _, key := range append([]session.Key{}, c.order...) {
+		if state := c.retained[key]; c.now-state.time >= c.idle {
+			if err := c.retainedClose(key, "Idle timeout; retained stream ended"); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// SessionIDs are the session ids of the retained connections (a capture gap names them).
+func (c *Tier) SessionIDs() []string {
+	out := make([]string, 0, len(c.order))
+	for _, key := range c.order {
+		out = append(out, c.retained[key].sid)
+	}
+	return out
+}
+
+// Gap is a capture gap: every retained connection fails with the reason and is released.
+func (c *Tier) Gap(reason string) error {
+	for _, key := range append([]session.Key{}, c.order...) {
+		if err := c.retainedError(key, c.retained[key], reason); err != nil {
+			return err
+		}
+		if err := c.retainedClose(key, reason); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// End releases every retained connection with the reason.
+func (c *Tier) End(reason string) error {
+	for _, key := range append([]session.Key{}, c.order...) {
+		if err := c.retainedClose(key, reason); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // retain reassembles the bounded full stream for the consumer, under the retention budget.
-func (c *coordinator) retain(key session.Key, packet *transport.TCP) error {
+func (c *Tier) retain(key session.Key, packet *transport.TCP) error {
 	state := c.retained[key]
 	flags := packet.Flags
 	if flags&transport.RST != 0 {
@@ -171,18 +269,19 @@ func (c *coordinator) retain(key session.Key, packet *transport.TCP) error {
 				return nil // SYN-ACK without its SYN: origin unknown
 			}
 			if len(c.retained) >= c.budget.Connections {
-				c.rejectedConnections++
+				c.RejectedConnections++
 				return nil
 			}
 			sid := sessionid.Identity("tcp", packet.Source, packet.Destination)
 			state = &retained{client: packet.Source, server: packet.Destination, streams: map[transport.Endpoint]*reassembly.Stream{},
-				fin: map[transport.Endpoint]uint32{}, sid: sid, generation: c.generations[sid]}
+				fin: map[transport.Endpoint]uint32{}, sid: sid, generation: c.generations(sid), time: c.now}
 			c.retained[key] = state
 			c.order = append(c.order, key)
 			if err := c.queue(event{kind: "open", key: key, client: packet.Source, server: packet.Destination, sid: sid, generation: state.generation}); err != nil {
 				return err
 			}
 		}
+		state.time = c.now
 		if previous, ok := state.streams[packet.Source]; ok {
 			if previous.First() != first {
 				return c.retainedError(key, state, "Connection tuple reuse is outside the POC profile.")
@@ -206,6 +305,7 @@ func (c *coordinator) retain(key session.Key, packet *transport.TCP) error {
 	if state == nil {
 		return nil
 	}
+	state.time = c.now
 	stream := state.streams[packet.Source]
 	if len(packet.Payload) > 0 {
 		switch {
@@ -221,7 +321,7 @@ func (c *coordinator) retain(key session.Key, packet *transport.TCP) error {
 				grow = 0
 			}
 			if c.allocated+2*grow > c.budget.Aggregate {
-				c.rejectedBytes += len(packet.Payload)
+				c.RejectedBytes += len(packet.Payload)
 				if err := c.retainedError(key, state, "Aggregate reassembly budget exhausted; this connection is not decoded."); err != nil {
 					return err
 				}
@@ -255,9 +355,23 @@ func (c *coordinator) retain(key session.Key, packet *transport.TCP) error {
 	return nil
 }
 
-func (c *coordinator) drain() []event {
-	items := c.pending
+// drain hands out the consumer events queued since the last call, in order; each delta exactly once.
+func (c *Tier) drain() []event {
+	items := make([]event, 0, len(c.pending))
+	for _, item := range c.pending {
+		if c.Telemetry != nil {
+			wait := c.now - item.at
+			if wait < 0 {
+				wait = 0
+			}
+			c.Telemetry.Observe("queue.wait_seconds", wait) // D11: capture-clock wait per event
+		}
+		items = append(items, item.event)
+	}
 	c.pending = nil
+	if len(items) > 0 && c.Telemetry != nil {
+		c.Telemetry.Add("queue.drained", len(items))
+	}
 	return items
 }
 
@@ -266,10 +380,5 @@ func (c *coordinator) end(reason string) error {
 	if err := c.an.Finish(reason); err != nil {
 		return err
 	}
-	for _, key := range append([]session.Key{}, c.order...) {
-		if err := c.retainedClose(key, reason); err != nil {
-			return err
-		}
-	}
-	return nil
+	return c.Tier.End(reason)
 }

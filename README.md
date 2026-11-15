@@ -91,8 +91,8 @@ both backends on generated captures and is part of `make go-check`. The presenta
 analysis (`analyze_bytes`, through `protodetect present`) and its key-log decryption analysis
 (`analyze_capture`, through `protodetect decrypt-capture`; `make parity-decrypt`) select their backend the
 same way. Live capture (`protodetect live`, and with it the presentation service's live view) hands the
-capture to the Go binary after validating the options (`make parity-live` compares both on replayed streams);
-live key-log decryption still runs the Python engine.
+capture to the Go binary after validating the options (`make parity-live` compares both on replayed streams),
+and the live key-log decryption worker does the same (`make parity-live-decrypt`).
 
 ## New in v0.65 — Applications by server name
 

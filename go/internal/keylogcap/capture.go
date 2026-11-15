@@ -8,7 +8,6 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/content"
 	"github.com/leenadav/protocol-detector/go/internal/decrypt"
 	"github.com/leenadav/protocol-detector/go/internal/pyjson"
-	"github.com/leenadav/protocol-detector/go/internal/session"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
 )
 
@@ -63,7 +62,7 @@ func Analyze(data []byte, keylog string, pack *content.Pack) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	d := &decryptor{pack: pack, owner: owner, keys: keys, connections: map[session.Key]*connection{}}
+	d := newDecryptor(pack, owner.Tier, keys)
 	decoder, frames, skipped := capture.NewDecoder(), 0, 0
 	for offset := 0; offset < len(data); offset += chunk {
 		end := offset + chunk
@@ -94,7 +93,7 @@ func Analyze(data []byte, keylog string, pack *content.Pack) (string, error) {
 			if err := owner.accept(tcp, record.Timestamp); err != nil {
 				return "", refusal(err)
 			}
-			if owner.rejectedConnections > 0 {
+			if owner.RejectedConnections > 0 {
 				return "", &Refusal{"DecryptionError", "Capture exceeds 64 TCP connections.", decrypt.BudgetExhausted}
 			}
 		}
@@ -117,8 +116,25 @@ func Analyze(data []byte, keylog string, pack *content.Pack) (string, error) {
 	if err := d.work(1<<20, 1); err != nil {
 		return "", refusal(err)
 	}
+	return d.report(frames, skipped, ""), nil
+}
+
+// report is Decryptor.report: the cached rows and the run's counters as JSON text. It parses nothing and
+// authenticates nothing.
+func (d *decryptor) report(frames, skipped int, profile string) string {
+	owner := d.owner
+	if profile == "" {
+		profile = Profile
+	}
+	var done func()
+	if owner.Telemetry != nil {
+		done = owner.Telemetry.Stage("report")
+	}
 	d.reportCalls++
 	rows := d.rows()
+	if done != nil {
+		done()
+	}
 	var b strings.Builder
 	b.WriteString(`{"connections": [`)
 	decrypted := 0
@@ -132,12 +148,12 @@ func Analyze(data []byte, keylog string, pack *content.Pack) (string, error) {
 		b.WriteString(pyjson.Dumps(r.values, "session", rowOrders(r)))
 	}
 	b.WriteString("], ")
-	rest := map[string]interface{}{"frames": frames, "skipped": skipped, "decrypted": decrypted, "profile": Profile,
+	rest := map[string]interface{}{"frames": frames, "skipped": skipped, "decrypted": decrypted, "profile": profile,
 		"counts": map[string]interface{}{"opened": d.opened, "closed": d.closedCount, "records_authenticated": d.recordsAuthenticated,
 			"plaintext_bytes": d.plaintextBytes, "work_calls": d.workCalls, "report_calls": d.reportCalls, "retracted": d.retracted,
 			"awaiting_keys": d.awaitingKeys(), "active": len(d.connections)},
-		"budget": map[string]interface{}{"retained_bytes": owner.allocated, "retained_limit": owner.budget.Aggregate,
-			"rejected_connections": owner.rejectedConnections, "rejected_bytes": owner.rejectedBytes}}
+		"budget": map[string]interface{}{"retained_bytes": owner.Allocated(), "retained_limit": owner.Limit(),
+			"rejected_connections": owner.RejectedConnections, "rejected_bytes": owner.RejectedBytes}}
 	text := pyjson.Dumps(rest, "report", func(path string) []string {
 		switch path {
 		case "report":
@@ -148,5 +164,5 @@ func Analyze(data []byte, keylog string, pack *content.Pack) (string, error) {
 		return []string{"retained_bytes", "retained_limit", "rejected_connections", "rejected_bytes"}
 	})
 	b.WriteString(text[1:])
-	return b.String(), nil
+	return b.String()
 }

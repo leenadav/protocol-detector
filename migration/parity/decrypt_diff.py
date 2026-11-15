@@ -150,7 +150,7 @@ class Generator:
                 size_ = rng.choice([1, 5, 40, len(data), len(data)])
                 records.append(side.record(23, data[offset:offset + size_], rng.choice([0, 0, 3])))
                 offset += size_
-            for _ in range(rng.choice([0, 0, 0, 1, 3])):
+            for _ in range(rng.choice([0, 0, 0, 1, 3, 3, 150])):           # 150: more records than one work slice takes
                 records.append(side.record(23, self.rb(rng.randint(0, 200))))
             if rng.random() < 0.3:
                 records.append(side.record(21, b"\x01\x00"))
@@ -186,7 +186,7 @@ class Generator:
                 size_ = rng.choice([1, 5, 40, len(data), len(data)])
                 records.append(encrypt(side, 23, data[offset:offset + size_]))
                 offset += size_
-            for _ in range(rng.choice([0, 0, 0, 1, 3])):
+            for _ in range(rng.choice([0, 0, 0, 1, 3, 3, 150])):
                 records.append(encrypt(side, 23, self.rb(rng.randint(0, 200))))
             if rng.random() < 0.3:
                 records.append(encrypt(side, 21, b"\x01\x00"))
