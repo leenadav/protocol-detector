@@ -2271,7 +2271,7 @@
         "server"
       ],
       "go": {
-        "notes": "M4: ClientHello and TLS 1.2/1.3 ServerHello/HRR profiles; 128 stream cases matched; record continuation and fingerprints (JA3/JA4, JA3S/JA4S) ported; certificates not ported",
+        "notes": "M4: ClientHello and TLS 1.2/1.3 ServerHello/HRR profiles; 128 stream cases matched; record continuation and fingerprints (JA3/JA4, JA3S/JA4S) ported; certificates ported (TLS 1.2 leaf watch and the RFC 5280 structural profile: 12,584 generated leaves and mutations, 2,500 generated flights and sessions with records, risks and validity compared)",
         "parity": "migration/parity/compare.py --families (exact; records pending M6)",
         "status": "experimental"
       },

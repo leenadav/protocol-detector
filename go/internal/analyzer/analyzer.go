@@ -19,6 +19,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/engine"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/quicx"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/x509x"
 	"github.com/leenadav/protocol-detector/go/internal/session"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
 )
@@ -113,6 +114,7 @@ type Options struct {
 	Session      session.Options
 	Continuation int
 	Fingerprints bool
+	Certificates bool
 }
 
 // New builds an analyzer; options the engine lacks are reported through NotPorted on first use.
@@ -120,6 +122,7 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 	cfg := contracts.DefaultConfig()
 	cfg.Continuation = opts.Continuation
 	cfg.Fingerprints = opts.Fingerprints
+	cfg.Certificates = opts.Certificates
 	a := &Analyzer{pack: pack, cfg: cfg}
 	tr, err := session.NewTracker(opts.Session, func() session.Sink {
 		in, err := engine.New(cfg, "")
@@ -242,8 +245,9 @@ func (a *Analyzer) closed(c session.Closed) {
 			serverFacts = appid.DirectionFacts{ResolvedFamily: s.In.ResolvedFamily(), BytesReceived: s.In.Metrics.BytesReceived, Known: true}
 		}
 	}
-	verdict := appid.SessionVerdict(a.pack, clientObs, serverObs, "tcp", int(state.Server.Port), true,
-		appid.Bytes{N: state.Bytes[state.Client], Known: true}, appid.Bytes{N: state.Bytes[state.Server], Known: true}, state.Ready)
+	start := state.Start // Python passes at=state["start"] for TCP verdicts only (certificate validity)
+	verdict := appid.SessionVerdictAt(a.pack, clientObs, serverObs, "tcp", int(state.Server.Port), true,
+		appid.Bytes{N: state.Bytes[state.Client], Known: true}, appid.Bytes{N: state.Bytes[state.Server], Known: true}, state.Ready, &start)
 	if state.Mode == session.ModeMidstream {
 		if verdict.Identified(a.pack) {
 			proto := ""
@@ -370,6 +374,9 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 	}
 	if len(fingerprints) > 0 {
 		record["fingerprints"] = fingerprints
+	}
+	if certificate := certificateFields(clientObs, serverObs, state.Start); len(certificate) > 0 {
+		record["certificate"] = certificate // structure labels only: no names, serials or keys
 	}
 	a.Records = append(a.Records, record)
 }
@@ -591,4 +598,26 @@ func continuationSummary(client, server *contracts.Observation) map[string]inter
 		}
 	}
 	return summary
+}
+
+// certificateFields ports analyze_pcap.certificate_fields: the tls_certificate_* evidence of both directions without
+// its prefix, plus the validity label at the capture time when both dates and the clock allow it.
+func certificateFields(client, server *contracts.Observation, at float64) map[string]interface{} {
+	certificate := map[string]interface{}{}
+	for _, obs := range []*contracts.Observation{client, server} {
+		if obs == nil {
+			continue
+		}
+		for _, e := range obs.Evidence {
+			if strings.HasPrefix(e.Field, "tls_certificate_") {
+				certificate[e.Field[len("tls_certificate_"):]] = e.Value
+			}
+		}
+	}
+	notBefore, _ := certificate["not_before"].(string)
+	notAfter, _ := certificate["not_after"].(string)
+	if label := x509x.Validity(notBefore, notAfter, &at); label != "" {
+		certificate["validity"] = label
+	}
+	return certificate
 }

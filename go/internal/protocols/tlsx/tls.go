@@ -392,15 +392,14 @@ type Parser struct {
 	done            bool
 	result          *parsing.Result
 	cont            *tlsContinuation // D07: record framing after the hello within Options.Continuation
+	watch           *certificateWatch
+	consumed        int // bytes accepted by earlier Feed calls; the certificate watch inherits the rest of the budget
 	baseExtra       []parsing.Row
 	unrefined       bool // parsers.TLSParser.refined is False until the continuation fed bytes
 }
 
 // New creates the parser; options the Go backend lacks fail at construction with NotPorted.
 func New(opts Options) (*Parser, error) {
-	if opts.Certificates {
-		return nil, &parsing.NotPorted{What: "option certificates (TLS)"}
-	}
 	return &Parser{opts: opts}, nil
 }
 
@@ -410,8 +409,30 @@ func (p *Parser) Result() *parsing.Result { return p.result }
 // Refined reports whether the published identification is complete (false until a continuation fed bytes).
 func (p *Parser) Refined() bool { return !p.unrefined }
 
-// Feed ports TLSParser.feed for the hello and the record-layer continuation (no certificate watch).
+// Feed ports TLSParser.feed: the hello, the TLS 1.2 certificate watch and the record-layer continuation.
 func (p *Parser) Feed(data []byte) (int, error) {
+	if p.watch != nil {
+		consumed, err := p.watch.feed(data)
+		if err != nil {
+			return consumed, err
+		}
+		if p.watch.done {
+			p.result.Extra = append(p.result.Extra, p.watch.evidence...)
+			remaining := p.watch.recordRemaining
+			p.watch, p.result.Continues = nil, false
+			if p.opts.Continuation > 0 {
+				p.startContinuation(remaining)
+				if consumed < len(data) {
+					more, err := p.Feed(data[consumed:])
+					consumed += more
+					if err != nil {
+						return consumed, err
+					}
+				}
+			}
+		}
+		return consumed, nil
+	}
 	if p.cont != nil {
 		consumed := p.cont.feed(data)
 		p.result.Extra = append(append([]parsing.Row{}, p.baseExtra...), p.cont.evidence()...)
@@ -508,14 +529,35 @@ func (p *Parser) Feed(data []byte) (int, error) {
 			}
 			p.handshake = nil
 			p.done = true
-			if p.opts.Continuation > 0 {
-				p.baseExtra = append([]parsing.Row{}, p.result.Extra...)
-				p.cont = newTLSContinuation(p.opts.Continuation, p.recordRemaining)
-				p.unrefined, p.result.Continues = true, true
+			if p.opts.Certificates && p.result.Scope == "server_hello" && hasRow(p.result.Extra, "selected_tls_version", "1.2", "server_hello", "asserted") {
+				// TLS 1.3 encrypts its Certificate message; only a 1.2 flight can be read.
+				p.watch = newCertificateWatch(p.recordRemaining, p.opts.MaxBytes-p.consumed-pos)
+				p.result.Continues = true
+			}
+			if p.watch == nil && p.opts.Continuation > 0 {
+				p.startContinuation(p.recordRemaining)
 			}
 		}
 	}
+	p.consumed += pos
 	return pos, nil
+}
+
+// startContinuation ports TLSParser._start_continuation: the evidence so far is the base, the identification is not
+// refined until the continuation has fed bytes.
+func (p *Parser) startContinuation(recordRemaining int) {
+	p.baseExtra = append([]parsing.Row{}, p.result.Extra...)
+	p.cont = newTLSContinuation(p.opts.Continuation, recordRemaining)
+	p.unrefined, p.result.Continues = true, true
+}
+
+func hasRow(rows []parsing.Row, field, value, provenance, strength string) bool {
+	for _, r := range rows {
+		if r.Field == field && r.Value == value && r.Provenance == provenance && r.Strength == strength {
+			return true
+		}
+	}
+	return false
 }
 
 // --- ServerHello ----------------------------------------------------------------------------------

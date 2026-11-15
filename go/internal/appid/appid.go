@@ -275,8 +275,15 @@ type Bytes struct {
 // SessionVerdict ports appid.session_verdict including flow risks.
 func SessionVerdict(pack *content.Pack, client, server *contracts.Observation, transport string, serverPort int, hasPort bool,
 	clientBytes, serverBytes Bytes, handshakeComplete bool) *Verdict {
+	return SessionVerdictAt(pack, client, server, transport, serverPort, hasPort, clientBytes, serverBytes, handshakeComplete, nil)
+}
+
+// SessionVerdictAt is SessionVerdict with the capture time at (POSIX seconds, nil when the host supplies none), which
+// only certificate validity reads (appid.session_verdict's `at`).
+func SessionVerdictAt(pack *content.Pack, client, server *contracts.Observation, transport string, serverPort int, hasPort bool,
+	clientBytes, serverBytes Bytes, handshakeComplete bool, at *float64) *Verdict {
 	v := sessionVerdict(pack, client, server, transport, serverPort, hasPort, clientBytes, serverBytes, handshakeComplete)
-	v.Risks = FlowRisks(v, client, server)
+	v.Risks = FlowRisks(v, client, server, at)
 	return v
 }
 

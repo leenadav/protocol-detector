@@ -137,6 +137,7 @@ func Session(pack *content.Pack, c *parity.Case) interface{} {
 		Observation  string   `json:"observation"`
 		Continuation int      `json:"continuation"`
 		Fingerprints bool     `json:"fingerprints"`
+		Certificates bool     `json:"certificates"`
 	}
 	if len(c.Options) > 0 {
 		// An option the Go analyzer does not know is reported, never silently dropped.
@@ -146,7 +147,7 @@ func Session(pack *content.Pack, c *parity.Case) interface{} {
 			return Unsupported{"session option not ported in the Go backend: " + err.Error()}
 		}
 	}
-	opts := analyzer.Options{Continuation: options.Continuation, Fingerprints: options.Fingerprints,
+	opts := analyzer.Options{Continuation: options.Continuation, Fingerprints: options.Fingerprints, Certificates: options.Certificates,
 		Session: session.Options{MaxConnections: 32, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1, Observation: options.Observation}}
 	if options.IdleTimeout != nil {
 		opts.Session.IdleTimeout = *options.IdleTimeout
