@@ -9,6 +9,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/protocols/dnsx"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/framed"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/quicx"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
 )
 
 // Datagram ports DatagramInspector for the DNS-layout validators; any other candidate the Python
@@ -251,7 +252,7 @@ func (d *Datagram) InspectFlow(data []byte, hint, scope string, now *float64) (c
 		return base, nil
 	}
 	for _, c := range candidates {
-		if _, ported := framed.DatagramValidators[c]; !datagramValidators[c] && !ported && c != "quic" {
+		if _, ported := framed.DatagramValidators[c]; !datagramValidators[c] && !ported && c != "quic" && c != "dtls" {
 			return base, &parsing.NotPorted{What: "datagram candidate " + c}
 		}
 	}
@@ -281,6 +282,19 @@ func (d *Datagram) InspectFlow(data []byte, hint, scope string, now *float64) (c
 				}
 				for _, r := range m.Evidence {
 					found.evidence = append(found.evidence, contracts.Evidence{Field: r.Field, Value: r.Value, Source: r.Source, Strength: r.Strength})
+				}
+			} else if np, ok := err.(*parsing.NotPorted); ok {
+				return base, np
+			}
+		} else if c == "dtls" {
+			var m *tlsx.DTLSMatch
+			if m, err = tlsx.DTLS(data, d.cfg.MaxBytes, d.cfg.MaxHeaders, d.cfg.Fingerprints); err == nil {
+				found = match{encryption: "dtls", reason: m.Reason, alpn: m.ALPN}
+				if m.HasHost {
+					found.hostname = str(m.Hostname)
+				}
+				for _, r := range m.Rows {
+					found.evidence = append(found.evidence, contracts.Evidence{Field: r.Field, Value: r.Value, Source: r.Provenance, Strength: r.Strength})
 				}
 			} else if np, ok := err.(*parsing.NotPorted); ok {
 				return base, np

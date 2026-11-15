@@ -394,9 +394,9 @@
         "server"
       ],
       "go": {
-        "notes": null,
-        "parity": null,
-        "status": "pending"
+        "notes": "One epoch-zero record with one complete DTLS 1.2 ClientHello (shared TLS SNI/ALPN decoder after removing the cookie), HelloVerifyRequest or ServerHello (shared ServerHello decoder, TLS labels and derived rows dropped); 14 datagram and hint cases matched, plus 12,000 generated datagrams compared outside the committed set; JA4 (fingerprints) not ported",
+        "parity": "migration/parity/compare.py --families (exact)",
+        "status": "experimental"
       },
       "midstream": false,
       "observation_modes": [
