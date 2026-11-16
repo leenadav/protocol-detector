@@ -178,6 +178,11 @@ go-check:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/capture -run NONE -fuzz FuzzDecoderNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/keylogcap -run NONE -fuzz FuzzAnalyzeNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/livedecrypt -run NONE -fuzz FuzzReplayNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/content -run NONE -fuzz FuzzCanonicalIsAFixedPoint -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/content -run NONE -fuzz FuzzParseNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/analyze -run NONE -fuzz FuzzPresentNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/policy -run NONE -fuzz FuzzPolicyNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/signatures -run NONE -fuzz FuzzDocumentNeverPanics -fuzztime 10s
 	$(MAKE) parity-go
 	$(MAKE) parity-analyze
 	$(MAKE) parity-decrypt
