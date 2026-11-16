@@ -7,7 +7,13 @@ Shell conditionals are not allowed in ci.yml (workflow policy rule 13), so that 
 here, where it has a self-test.
 
     go_ci.py go [--summary FILE]      the `go-engine` job: `make go-check` (gofmt, vet,
-                                      go test -race, fuzz smoke, then `make parity-go`)
+                                      go test -race, fuzz smoke, then `make parity-go`) on the
+                                      build compiler
+    go_ci.py minimum [--summary FILE] the `go-minimum` job: `make go-check-minimum` (vet and
+                                      go test -race) on the declared minimum Go
+    go_ci.py minimum-version [--github-output FILE]
+                                      the release the `go-minimum` job installs: the minimum,
+                                      or the scanner pin when there is no separate minimum
     go_ci.py oracle [--summary FILE]  each `tests (python ...)` job: the committed parity
                                       fixtures replayed through the Python reference on that
                                       interpreter (issue #2 R6: the oracle must hold across the
@@ -18,12 +24,22 @@ Decisions, checked in this order:
 - no `go/go.mod`, no tracked `.go` file outside tools/scanners and no migration fixtures:
   nothing to check, success, and the summary says so;
 - `.go` sources or migration fixtures without `go/go.mod`: failure (a partial migration tree);
-- `go/go.mod` whose `go` directive differs from tools/scanners/go.mod: failure (one Go toolchain
-  for the scanners and the engine; tools/check_go_drift.py keeps that one current);
-- the installed `go version` differs from the directive: failure (setup-go and GOTOOLCHAIN=local
-  must give exactly the pinned toolchain, never a download chosen by go.mod);
-- the Makefile lacks the `go-check` target, or the oracle tool is missing: failure;
+- a go.mod (go/go.mod or tools/scanners/go.mod) without exactly one `go` directive, with a
+  `toolchain` line that is not one goX.Y[.Z] release, or whose `go` line is above its `toolchain`:
+  failure. The `go` line is the minimum Go the module needs and the `toolchain` line the compiler
+  it is built with, implicitly the `go` line when absent (https://go.dev/doc/toolchain); Go itself
+  accepts a `toolchain` below `go` silently, so this tool refuses it;
+- go mode: go/go.mod's build compiler differs from the one tools/scanners/go.mod builds with:
+  failure (one build toolchain for the scanners and the engine; tools/check_go_drift.py keeps it
+  current), and so does an installed `go version` other than that compiler (setup-go and
+  GOTOOLCHAIN=local must give exactly the pinned toolchain, never a download chosen by go.mod);
+- minimum mode: a minimum equal to the build compiler is already tested by the go mode, so there is
+  nothing more to check (success, said in the summary); a lower one must be an exact X.Y.Z release,
+  equal to the installed `go version`, with a `go-check-minimum` Makefile target;
+- the Makefile lacks the mode's target, or the oracle tool is missing: failure;
 - otherwise the target runs, and its exit status is this tool's.
+The Go jobs also set GOPROXY=off: the engine has no module dependency, so any toolchain or module
+download a target would trigger fails instead of fetching a second Go mid-job.
 Standard library only; Python 3.9 syntax.
 """
 import argparse
@@ -43,12 +59,42 @@ COMPARE = Path("migration/parity/compare.py")
 REPORT = Path("migration/parity/go-report.json")
 DIRECTIVE = re.compile(r"^go\s+(\d+\.\d+(?:\.\d+)?)\s*$", re.M)
 GO_VERSION = re.compile(r"\bgo version go(\d+\.\d+(?:\.\d+)?)\s")
+TOOLCHAIN_LINE = re.compile(r"^toolchain\b.*$", re.M)
+TOOLCHAIN = re.compile(r"^toolchain\s+go(\d+\.\d+(?:\.\d+)?)\s*$")
+EXACT = re.compile(r"^\d+\.\d+\.\d+$")
 TARGET = re.compile(r"^go-check\s*:", re.M)
+MINIMUM_TARGET = re.compile(r"^go-check-minimum\s*:", re.M)
 
 
 def directive(text):
     found = DIRECTIVE.findall(text or "")
     return found[0] if len(found) == 1 else None
+
+
+def version_key(version):
+    """Go's order for the releases these files name: 1.27 (the language version) < 1.27.0 < 1.27.4."""
+    return tuple(int(part) for part in version.split("."))
+
+
+def module_versions(text, name):
+    """(minimum, build, problems) for one go.mod: the `go` line is the minimum Go the module needs, the
+    `toolchain` line the compiler it is built with, implicitly the `go` line when there is none."""
+    minimum = directive(text)
+    if minimum is None:
+        return None, None, ["{} has no single `go` directive".format(name)]
+    lines = TOOLCHAIN_LINE.findall(text or "")
+    if not lines:
+        return minimum, minimum, []
+    if len(lines) > 1:
+        return minimum, None, ["{} has more than one `toolchain` line".format(name)]
+    match = TOOLCHAIN.match(lines[0].strip())
+    if match is None:
+        return minimum, None, ["{}: `{}` does not name one goX.Y[.Z] release".format(name, lines[0].strip())]
+    build = match.group(1)
+    if version_key(minimum) > version_key(build):
+        return minimum, None, ["{} states go {} above its toolchain go{}: the minimum cannot exceed the compiler "
+                               "it is built with".format(name, minimum, build)]
+    return minimum, build, []
 
 
 def decide(mode, tree):
@@ -70,20 +116,40 @@ def decide(mode, tree):
             GO_MOD, FIXTURES, COMPARE))
     if mode == "oracle":
         return ("fail", problems) if problems else ("run", [])
-    wanted, pinned = directive(module), directive(tree.get("scanner_mod"))
-    if wanted is None:
-        problems.append("{} has no single `go` directive".format(GO_MOD))
-    elif wanted != pinned:
-        problems.append("{} declares go {} but {} pins go {}: one Go toolchain for the scanners and the engine".format(
-            GO_MOD, wanted, SCANNER_MOD, pinned))
+    minimum, build, found = module_versions(module, GO_MOD)
+    _, pinned, scanner_found = module_versions(tree.get("scanner_mod"), SCANNER_MOD)
+    problems += found + scanner_found
+    if mode == "minimum":
+        if build is not None and minimum == build and not problems:
+            return ("same", [])
+        wanted, target, label = minimum, MINIMUM_TARGET, "declares as its minimum"
+        if minimum is not None and not EXACT.match(minimum):
+            problems.append("{} declares go {}: the minimum tested in CI must be an exact X.Y.Z release".format(GO_MOD, minimum))
+            wanted = None
+    else:
+        wanted, target, label = build, TARGET, "builds with"
+        if build is not None and pinned is not None and build != pinned:
+            problems.append("{} builds with go {} but {} builds with go {}: one Go toolchain for the scanners and the "
+                            "engine".format(GO_MOD, build, SCANNER_MOD, pinned))
     installed = GO_VERSION.search(tree.get("go_version") or "")
     if installed is None:
         problems.append("`go version` gave no version: {!r}".format((tree.get("go_version") or "")[:120]))
     elif wanted is not None and installed.group(1) != wanted:
-        problems.append("installed go {} differs from the go {} that {} declares".format(installed.group(1), wanted, GO_MOD))
-    if not TARGET.search(tree.get("makefile") or ""):
-        problems.append("Makefile has no `go-check` target")
+        problems.append("installed go {} differs from the go {} that {} {}".format(installed.group(1), wanted, GO_MOD, label))
+    if not target.search(tree.get("makefile") or ""):
+        problems.append("Makefile has no `{}` target".format("go-check-minimum" if mode == "minimum" else "go-check"))
     return ("fail", problems) if problems else ("run", [])
+
+
+def minimum_version(tree):
+    """The release the go-minimum job installs: go/go.mod's minimum when it is an exact release below the build
+    compiler, otherwise the scanner pin (minimum mode then skips, or fails with the reason). Only digits and dots
+    are ever returned, so the value is safe to hand to setup-go."""
+    _, pinned, _ = module_versions(tree.get("scanner_mod"), SCANNER_MOD)
+    minimum, build, problems = module_versions(tree.get("go_mod"), GO_MOD)
+    if tree.get("go_mod") is not None and not problems and minimum != build and EXACT.match(minimum):
+        return minimum
+    return pinned if pinned is not None and EXACT.match(pinned) else None
 
 
 def read(path):
@@ -109,7 +175,7 @@ def go_version():
 def survey(mode):
     tree = {"go_mod": read(GO_MOD), "scanner_mod": read(SCANNER_MOD), "makefile": read("Makefile"),
             "go_sources": tracked_go_sources(), "fixtures": FIXTURES.is_file(), "compare": COMPARE.is_file()}
-    if mode == "go" and tree["go_mod"] is not None:
+    if mode in ("go", "minimum") and tree["go_mod"] is not None:
         tree["go_version"] = go_version()
     return tree
 
@@ -195,11 +261,18 @@ def parity_lines():
     return [line] + ["- FAILED: " + problem for problem in problems], problems
 
 
+TITLES = {"go": "### Go engine (M10)", "minimum": "### Go engine on its declared minimum Go"}
+
+
 def run(mode, summary):
-    title = "### Go engine (M10)" if mode == "go" else "### Parity oracle on python {}".format(sys.version.split()[0])
+    title = TITLES.get(mode) or "### Parity oracle on python {}".format(sys.version.split()[0])
     action, problems = decide(mode, survey(mode))
     if action == "skip":
         summarise(summary, [title, "", "No Go module, Go sources or migration fixtures on this commit: nothing to check."])
+        return 0
+    if action == "same":
+        summarise(summary, [title, "", "{} declares no minimum below the compiler it builds with: the go-engine job's "
+                                       "run is the minimum run, nothing more to check.".format(GO_MOD)])
         return 0
     if action == "fail":
         summarise(summary, [title, ""] + ["- FAILED: " + problem for problem in problems])
@@ -210,6 +283,8 @@ def run(mode, summary):
             summarise(summary, [title, "", "- FAILED: " + stale])
             return 1
         command = ["make", "go-check", "PYTHON=" + sys.executable]
+    elif mode == "minimum":
+        command = ["make", "go-check-minimum"]
     else:
         command = [sys.executable, "-B", str(COMPARE), "--backend", "python", "--cases", str(FIXTURES)]
     code = subprocess.run(command, check=False).returncode  # noqa: S603
@@ -230,6 +305,35 @@ def self_test():
     assert decide("go", empty) == ("skip", [])
     assert decide("oracle", empty) == ("skip", [])
     assert decide("go", full) == ("run", [])
+    culvert = "module x\n\ngo 1.27.0\n\ntoolchain go1.27.4\n"
+    culvert_tree = dict(full, go_mod=culvert, makefile="go-check:\n\tgo test\ngo-check-minimum:\n\tgo vet\n")
+    assert decide("go", culvert_tree) == ("run", [])                   # toolchain present: it is the build compiler
+    assert decide("go", dict(full, go_mod="module x\n\ngo 1.27.4\n\ntoolchain go1.27.4\n")) == ("run", [])
+    assert decide("go", dict(full, scanner_mod="module m\n\ngo 1.27.0\n\ntoolchain go1.27.4\n")) == ("run", [])
+    assert module_versions("module x\n\ngo 1.27.4\n", GO_MOD) == ("1.27.4", "1.27.4", [])   # fallback: no toolchain line
+    assert module_versions(culvert, GO_MOD) == ("1.27.0", "1.27.4", [])
+    assert module_versions("module x\n\ngo 1.27\n\ntoolchain go1.27.0\n", GO_MOD) == ("1.27", "1.27.0", [])
+    # the minimum mode: one explicitly installed Go per job, never the compiler standing in for the minimum
+    minimum_tree = dict(culvert_tree, go_version="go version go1.27.0 linux/amd64\n")
+    assert decide("minimum", minimum_tree) == ("run", [])
+    assert decide("minimum", full) == ("same", [])                     # no separate minimum: go-engine covers it
+    assert decide("minimum", empty) == ("skip", [])
+    minimum_cases = {
+        "compiler installed instead": (culvert_tree, "differs from the go 1.27.0 that go/go.mod declares as its minimum"),
+        "target missing": (dict(minimum_tree, makefile="go-check:\n\tgo test\n"), "no `go-check-minimum` target"),
+        "minimum not exact": (dict(minimum_tree, go_mod="module x\n\ngo 1.27\n\ntoolchain go1.27.4\n"), "exact X.Y.Z"),
+        "minimum above the toolchain": (dict(minimum_tree, go_mod="module x\n\ngo 1.27.5\n\ntoolchain go1.27.4\n"),
+                                        "above its toolchain"),
+        "partial tree": (dict(minimum_tree, fixtures=False), "the parity oracle is part of the Go gate"),
+    }
+    for label, (tree, expected) in minimum_cases.items():
+        action, problems = decide("minimum", tree)
+        assert action == "fail" and any(expected in problem for problem in problems), (label, action, problems)
+    assert minimum_version(culvert_tree) == "1.27.0"
+    for label, tree in {"no minimum": full, "no module": empty, "minimum not exact": minimum_cases["minimum not exact"][0],
+                        "minimum above": minimum_cases["minimum above the toolchain"][0]}.items():
+        assert minimum_version(tree) == "1.27.4", (label, minimum_version(tree))
+    assert minimum_version(dict(full, scanner_mod="module m\n\ngo 1.27.4 $(id)\n")) is None
     assert decide("oracle", dict(full, go_version=None, makefile="")) == ("run", [])
     cases = {
         "module deleted, sources stay": (dict(full, go_mod=None), "Go source file(s) are tracked"),
@@ -242,6 +346,16 @@ def self_test():
         "downloaded toolchain": (dict(full, go_version="go version go1.28.1 linux/amd64\n"), "differs from the go 1.27.4"),
         "no go binary": (dict(full, go_version="go version failed: [Errno 2]"), "gave no version"),
         "target removed": (dict(full, makefile="check:\n\tgo test\n"), "no `go-check` target"),
+        # the build compiler is the `toolchain` line when there is one (Culvert working plan #3)
+        "toolchain line differs": (dict(full, go_mod=culvert.replace("go1.27.4", "go1.27.3")), "builds with go 1.27.3"),
+        "installed the minimum": (dict(culvert_tree, go_version="go version go1.27.0 linux/amd64\n"),
+                                  "differs from the go 1.27.4 that go/go.mod builds with"),
+        "minimum above the toolchain": (dict(full, go_mod="module x\n\ngo 1.27.5\n\ntoolchain go1.27.4\n"), "above its toolchain"),
+        "two toolchain lines": (dict(full, go_mod="module x\ngo 1.27.0\ntoolchain go1.27.4\ntoolchain go1.27.3\n"),
+                                "more than one `toolchain`"),
+        "toolchain not a release": (dict(full, go_mod="module x\n\ngo 1.27.0\n\ntoolchain default\n"), "does not name one"),
+        "scanner minimum above its toolchain": (dict(full, scanner_mod="module m\n\ngo 1.27.5\n\ntoolchain go1.27.4\n"),
+                                                "tools/scanners/go.mod states go 1.27.5 above"),
     }
     for label, (tree, expected) in cases.items():
         action, problems = decide("go", tree)
@@ -282,17 +396,40 @@ def self_test():
     stale_regression()
     assert directive("module x\n\ngo 1.27\n") == "1.27"
     assert GO_VERSION.search("go version go1.27.4 darwin/arm64 ").group(1) == "1.27.4"
-    print("go_ci self-test: ok ({} tree refusals, 15 report refusals, 3 end-to-end runs)".format(len(cases) + 1))
+    minimum_regression()
+    print("go_ci self-test: ok ({} tree refusals, {} minimum refusals, 15 report refusals, 5 end-to-end runs)".format(
+        len(cases) + 1, len(minimum_cases)))
     return 0
+
+
+def scratch_run(mode, files):
+    """Run this tool's `mode` in a scratch git tree holding `files` (a stub `bin/go` among them), from outside the
+    checkout; (exit status, output, tree root). The caller removes the root."""
+    for tool in ("git", "make"):
+        if shutil.which(tool) is None:
+            raise AssertionError("the end-to-end self-test needs `{}` on PATH".format(tool))
+    root = Path(tempfile.mkdtemp(prefix="go_ci_selftest_"))
+    for path, text in files.items():
+        target = root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+    (root / "bin/go").chmod(0o755)
+    subprocess.run(["git", "init", "-q"], cwd=str(root), check=True)  # noqa: S603,S607
+    subprocess.run(["git", "add", "-A"], cwd=str(root), check=True)  # noqa: S603,S607
+    env = dict(os.environ, PATH=str(root / "bin") + os.pathsep + os.environ.get("PATH", ""))
+    result = subprocess.run([sys.executable, "-B", str(Path(__file__).resolve()), mode], cwd=str(root), env=env,  # noqa: S603
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False, timeout=120)
+    return result.returncode, result.stdout.decode("utf-8", "replace"), root
+
+
+def stub_go(version):
+    return "#!/bin/sh\necho 'go version go{} linux/amd64'\n".format(version)
 
 
 def stale_regression():
     """End to end, in a scratch git tree with a stub `go` (issue #7 M10 review of eaa8a99): a passing
     report left from an earlier run must not pass a `go-check` that no longer runs parity, and a fresh
     report must describe the committed fixtures; a fresh matching report passes."""
-    for tool in ("git", "make"):
-        if shutil.which(tool) is None:
-            raise AssertionError("the end-to-end self-test needs `{}` on PATH".format(tool))
     passing = {"ok": True, "compared": 2, "matched": 2, "mismatched": 0, "extra": 0, "unsupported": 1}
     copy = "go-check:\n\tcp fresh.json {}\n".format(REPORT)
     targets = {
@@ -300,41 +437,54 @@ def stale_regression():
         "fresh report for other fixtures": (copy, dict(passing, compared=4084, matched=4084), 1),
         "fresh matching report": (copy, passing, 0),
     }
-    here = Path(__file__).resolve()
     for label, (makefile, fresh, wanted) in targets.items():
-        root = Path(tempfile.mkdtemp(prefix="go_ci_selftest_"))
-        try:
-            for path, text in {"go/go.mod": "module x\n\ngo 1.27.4\n", "tools/scanners/go.mod": "module s\n\ngo 1.27.4\n",
-                               "go/main.go": "package main\n", "Makefile": makefile, "fresh.json": json.dumps(fresh),
-                               str(FIXTURES): json.dumps({"cases": [{"id": "a"}, {"id": "b"}, {"id": "c"}]}),
-                               str(COMPARE): "import sys\nsys.exit(99)\n",
-                               str(REPORT): json.dumps(dict(passing, compared=3, matched=3, unsupported=0)),
-                               "bin/go": "#!/bin/sh\necho 'go version go1.27.4 linux/amd64'\n"}.items():
-                target = root / path
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text(text, encoding="utf-8")
-            (root / "bin/go").chmod(0o755)
-            subprocess.run(["git", "init", "-q"], cwd=str(root), check=True)  # noqa: S603,S607
-            subprocess.run(["git", "add", "-A"], cwd=str(root), check=True)  # noqa: S603,S607
-            env = dict(os.environ, PATH=str(root / "bin") + os.pathsep + os.environ.get("PATH", ""))
-            result = subprocess.run([sys.executable, "-B", str(here), "go"], cwd=str(root), env=env,  # noqa: S603
-                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False, timeout=120)
-            output = result.stdout.decode("utf-8", "replace")
-            assert result.returncode == wanted, (label, result.returncode, output)
-        finally:
-            shutil.rmtree(str(root), ignore_errors=True)
+        code, output, root = scratch_run("go", {
+            "go/go.mod": "module x\n\ngo 1.27.4\n", "tools/scanners/go.mod": "module s\n\ngo 1.27.4\n",
+            "go/main.go": "package main\n", "Makefile": makefile, "fresh.json": json.dumps(fresh),
+            str(FIXTURES): json.dumps({"cases": [{"id": "a"}, {"id": "b"}, {"id": "c"}]}),
+            str(COMPARE): "import sys\nsys.exit(99)\n",
+            str(REPORT): json.dumps(dict(passing, compared=3, matched=3, unsupported=0)),
+            "bin/go": stub_go("1.27.4")})
+        shutil.rmtree(str(root), ignore_errors=True)
+        assert code == wanted, (label, code, output)
+
+
+def minimum_regression():
+    """End to end: the minimum mode runs `go-check-minimum` only on exactly the declared minimum Go, and refuses,
+    without running the target, when the build compiler stands in for it."""
+    for label, (installed, wanted, ran) in {"minimum installed": ("1.27.0", 0, True),
+                                             "compiler installed instead": ("1.27.4", 1, False)}.items():
+        code, output, root = scratch_run("minimum", {
+            "go/go.mod": "module x\n\ngo 1.27.0\n\ntoolchain go1.27.4\n", "tools/scanners/go.mod": "module s\n\ngo 1.27.4\n",
+            "go/main.go": "package main\n", "Makefile": "go-check:\n\tfalse\ngo-check-minimum:\n\ttouch ran.txt\n",
+            str(FIXTURES): json.dumps({"cases": []}), str(COMPARE): "import sys\nsys.exit(99)\n",
+            "bin/go": stub_go(installed)})
+        marker = (root / "ran.txt").exists()
+        shutil.rmtree(str(root), ignore_errors=True)
+        assert code == wanted and marker == ran, (label, code, marker, output)
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("mode", nargs="?", choices=("go", "oracle"))
+    parser.add_argument("mode", nargs="?", choices=("go", "minimum", "oracle", "minimum-version"))
     parser.add_argument("--summary", help="append a markdown summary here (GITHUB_STEP_SUMMARY)")
+    parser.add_argument("--github-output", help="minimum-version: append `version=X.Y.Z` here (GITHUB_OUTPUT)")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args(argv)
     if args.self_test:
         return self_test()
     if args.mode is None:
-        parser.error("a mode (go or oracle) or --self-test is required")
+        parser.error("a mode (go, minimum, oracle or minimum-version) or --self-test is required")
+    if args.mode == "minimum-version":
+        version = minimum_version({"go_mod": read(GO_MOD), "scanner_mod": read(SCANNER_MOD)})
+        if version is None:
+            print("minimum-version: {} pins no exact Go release".format(SCANNER_MOD))
+            return 1
+        if args.github_output:
+            with open(args.github_output, "a", encoding="utf-8") as stream:
+                stream.write("version={}\n".format(version))
+        print("minimum-version: go {}".format(version))
+        return 0
     return run(args.mode, args.summary)
 
 
