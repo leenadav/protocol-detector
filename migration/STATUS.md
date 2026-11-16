@@ -418,6 +418,23 @@ gates pass, host-named applications are added, the Python port-table cache is fi
 | Engine gate | implemented | the `go-engine` job runs `make go-check`, which now also runs the capture, signature, decryption and key-log adapter fuzz targets, `make parity-analyze` and `make parity-decrypt` (Go binary against the Python reference). The job installs the hash-pinned decryption extra for the reference side of `parity-decrypt`; its first hosted run is the one on the commit that adds it. |
 | Vulnerability scan | implemented in CI; first hosted run passed (`34ea6b0`, ci run 397) | `toolchain-audit` runs the pinned govulncheck in source mode over `go/` (`go.mod`/`go.sum` as committed). The workflow lock was regenerated in the same change (rule 14). It could not be run in this session (blocked by the session's permission policy), so the first result is the hosted run on this commit. |
 
+## Performance budgets aligned with Culvert (2026-11-16)
+
+Lee, 2026-11-16: the detector will merge into Culvert, so its release thresholds follow Culvert's rather than
+a target of this repository's own. Sources: Culvert's benchgate convention (`//go:build benchgate` tests run as
+`go test -tags benchgate -run 'TestBenchGate_' -count=1 -p 1`, gating only deterministic quantities, timing
+judged by interleaved `benchstat` and never hard-gated on shared runners) and the per-flow engine budgets of the
+integration plan §9 (`docs/integration/PROTODETECT-CULVERT-WORKING-PLAN.md` on `claude/culvert-integration-prep`):
+at most 64 allocations per flow, at most 4 KiB retained after the observation, CPU p99 at most 50 µs (stated
+there as a hypothesis to measure), 16 KiB observed and 16 feed calls per direction.
+
+| item | state | evidence |
+|---|---|---|
+| Gate | implemented | `make bench-gate` (`go/internal/bench/benchgate_test.go`, in `make go-check`): on the shared workloads (`migration/benchmarks/workloads.json`) plus an SSH banner + KEXINIT flow and an unidentified 16 × 1 KiB flow, each through `engine.New`, its feeds and `End`. Correctness is asserted first. Gated: allocations per flow (`testing.Benchmark`) against the 64 budget and, per workload, a regression ceiling of the count measured on go1.27.4 plus 4 (the headroom Culvert's own allocation gates leave); retained heap per finished flow over 2,000 kept inspectors against 4 KiB. Reported only: p50/p99 per flow over 20,000 samples. |
+| Allocations per flow | within budget | http_small 26, http_fragmented 38, tls_whole 33, tls_fragmented 37, http_after_identification 26, ssh_banner_kexinit 34, unknown_16x1KiB 10. The gate found the SSH flow at 90: the KEXINIT posture built a set per name-list. It now scans the validated lists (`c63ca05`), proven equal to the previous code by an oracle test (20,000 generated cases) and a fuzz target in `go-check`; parity unchanged. |
+| Retained per finished flow | within budget | 631–1,406 bytes. |
+| CPU p99 per flow (report only) | measured, three workloads over the hypothesis | One 4 vCPU container, garbage collector on, local CPU work only, not SWG latency: http_small 35.5 µs, tls_whole 49.2 µs, http_after_identification 33.9 µs, unknown 7.7 µs within 50 µs; tls_fragmented 55.6 µs, ssh_banner_kexinit 75.1 µs, http_fragmented 219 µs over it. With `GOGC=off` the first two fall to 35.6 µs and 38.0 µs, so their tail is collection pauses landing in a sample, not the parse; p50 is 3.8 µs and 6.6 µs. http_fragmented feeds 6,050 bytes in 190 calls, far past the plan's 16 feed calls per direction, so it is outside the facade's envelope; it is kept as a stress workload. Not gated, by Culvert's convention. |
+
 ## Open after M7
 
 - Default-backend switch, merge and deployment: Lee's decision (AGENTS.md); the branch makes no switch.
@@ -436,5 +453,7 @@ gates pass, host-named applications are added, the Python port-table cache is fi
 - Mac checkout patch set (reset, labels): needs a push or a description to reconcile with `c2b7cc3`.
 - Codex round-3 result on `726007d`: pending (issue #2).
 - Independent labelled corpus (D09): blocked on input.
-- Release thresholds (latency, throughput, memory): unspecified by design; relative results only.
+- Release thresholds: aligned with Culvert (above); allocations and retained bytes are gated. Open for the
+  integration: whether the plan's p99 hypothesis is meant per flow with collection pauses included, which
+  decides whether tls_fragmented and the SSH flow meet it; it is reported, not gated.
 - Dedicated migration PR: to be opened only when authorized in the working session (plan §1); the branch `claude/go-migration` exists and is pushed.
