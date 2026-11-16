@@ -43,8 +43,8 @@ func TestEmbeddedBytesAreACopy(t *testing.T) {
 	}
 }
 
-// Host-supplied bytes get the same validation, and a digest inside them is not treated as proof.
-func TestSuppliedPackIsValidatedAndTheDigestProvesNothing(t *testing.T) {
+// Host-supplied bytes get the same validation, including the stated digests.
+func TestSuppliedPackIsValidatedAndItsStatedDigestsAreChecked(t *testing.T) {
 	good := EmbeddedBytes()
 	if _, err := ParseSupplied(good); err != nil {
 		t.Fatal(err)
@@ -60,8 +60,8 @@ func TestSuppliedPackIsValidatedAndTheDigestProvesNothing(t *testing.T) {
 			t.Errorf("%s: accepted", name)
 		}
 	}
-	// Tampered content that keeps the original digest string is accepted as a structurally valid pack: the
-	// digest is a carried identifier, and this test pins that nothing here presents it as verification.
+	// Tampered content that keeps the stated digests is refused: the loader recomputes the application
+	// component (migration/CONTENT-DIGEST.md). That is self-consistency; the pin is tested in pin_test.go.
 	original, _ := Embedded()
 	app := ""
 	for name := range original.Applications {
@@ -71,10 +71,9 @@ func TestSuppliedPackIsValidatedAndTheDigestProvesNothing(t *testing.T) {
 	}
 	tampered := bytes.Replace(good, []byte(`"`+app+`"`), []byte(`"`+app+`-x"`), 1)
 	if bytes.Equal(tampered, good) {
-		t.Skip("could not build a tampered pack")
+		t.Fatal("could not build a tampered pack")
 	}
-	pack, err := ParseSupplied(tampered)
-	if err == nil && pack.Release.Digest != original.Release.Digest {
-		t.Fatal("digest changed without recomputation")
+	if _, err := ParseSupplied(tampered); err == nil {
+		t.Fatal("a pack whose application table no longer matches its stated component was accepted")
 	}
 }

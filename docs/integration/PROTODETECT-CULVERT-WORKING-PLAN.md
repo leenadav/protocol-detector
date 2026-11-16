@@ -140,9 +140,9 @@ Done:
 - **#17** `reflect.DeepEqual` removed from the publish path (Go only; event stream unchanged).
 - **#18** facade benchmarks with allocation ceilings, unit tests and split-invariance fuzzing for `tlsx` and `textroute`.
 - **#14** memory budget wired into the facade: flow allowance reserved at admission, retained parser buffers tracked, explicit outcome when exceeded.
-- **#16** content pack embedded and byte-equal to the fixture. The computed, verified digest is **not** done; it waits for a language-neutral definition from the engine lane.
+- **#16** content pack embedded and byte-equal to the fixture; its pack digest (`migration/CONTENT-DIGEST.md`, defined by the engine lane on 2026-11-16) is computed and compared with a build constant before use, and a host can load its own bytes against a digest it pinned (`content.ParsePinned`). The pin is integrity only: not semantic truth, publisher identity, coverage or rollback protection.
 
-See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: the computed digest of #16.
+See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: none of 4.3a's items; the #16 digest code awaits review on this branch.
 
 ### 4.4 Gate before attaching the real detector (lab phase L4)
 
