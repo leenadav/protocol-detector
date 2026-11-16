@@ -196,7 +196,20 @@ func TestKeyLogReadsAppendOnlyAndRefusesRotationTruncationAndLinks(t *testing.T)
 	}
 }
 
+func TestReplayRefusesClockValuesThatAreNotFiniteTimes(t *testing.T) {
+	for _, now := range []float64{math.NaN(), math.Inf(1), math.Inf(-1), -1} {
+		status, events, text := replay(t, append(op('T', now, nil), op('E', 1, nil)...))
+		if status != 0 || len(events) != 0 {
+			t.Errorf("clock %v: status %d, output %q", now, status, text)
+		}
+	}
+	if _, events, _ := replay(t, op('T', 5, nil)); len(events) != 2 {
+		t.Errorf("a finite clock value was refused: %v", events)
+	}
+}
+
 func FuzzReplayNeverPanics(f *testing.F) {
+	f.Add(op('T', math.NaN(), nil))
 	capture := stream(frame(true, 999, 0, 2, ""), frame(false, 8999, 1000, 18, ""), frame(true, 1000, 9000, 24, "\x16\x03\x01\x00\x05hello"))
 	f.Add(append(append(op('K', 1, []byte("CLIENT_RANDOM 00 00\n")), op('P', 2, capture)...), op('E', 3, nil)...))
 	f.Add(append(op('P', 1, capture[:40]), op('T', 70, nil)...))

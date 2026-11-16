@@ -106,11 +106,14 @@ func Replay(script io.Reader, pack *content.Pack, captureID string, out io.Write
 		}
 		now := math.Float64frombits(binary.BigEndian.Uint64(header[1:9]))
 		size := binary.BigEndian.Uint32(header[9:13])
-		if size > maxOperation {
-			return 0 // a declared length is never trusted with an allocation: the script ends here
+		if size > maxOperation || math.IsNaN(now) || math.IsInf(now, 0) || now < 0 {
+			// A declared length is never trusted with an allocation, and a clock value that is not a finite
+			// time would be published as one (NaN is not JSON): the script ends here.
+			return 0
 		}
-		data := make([]byte, size)
-		if _, err := io.ReadFull(reader, data); err != nil {
+		// Memory follows the bytes that are really there, not the declared length.
+		data, err := io.ReadAll(io.LimitReader(reader, int64(size)))
+		if err != nil || len(data) != int(size) {
 			return 0
 		}
 		var failure error
