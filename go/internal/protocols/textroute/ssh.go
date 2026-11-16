@@ -26,9 +26,12 @@ type kexInit struct {
 	hasLen   bool
 	done     bool
 	lists    [][]byte
+	credit   *parsing.Credit // the flow allowance the buffer and the lists grow from (nil: unlimited)
 }
 
-func newKexInit(maxBytes int) *kexInit { return &kexInit{maxBytes: maxBytes, needed: 4} }
+func newKexInit(maxBytes int, credit *parsing.Credit) *kexInit {
+	return &kexInit{maxBytes: maxBytes, needed: 4, credit: credit}
+}
 
 func (k *kexInit) feed(data []byte) (int, error) {
 	pos := 0
@@ -37,7 +40,10 @@ func (k *kexInit) feed(data []byte) (int, error) {
 		if amount > len(data)-pos {
 			amount = len(data) - pos
 		}
-		k.buffer = append(k.buffer, data[pos:pos+amount]...)
+		var err error
+		if k.buffer, err = k.credit.Append(k.buffer, data[pos:pos+amount]); err != nil {
+			return pos, err
+		}
 		pos += amount
 		if len(k.buffer) < k.needed {
 			break
@@ -97,7 +103,14 @@ func (k *kexInit) validate(packet []byte) error {
 				}
 			}
 		}
-		lists = append(lists, append([]byte{}, value...))
+		copied, err := k.credit.Copy(value)
+		if err != nil {
+			return err
+		}
+		if copied == nil { // an empty list is kept as an empty, non-nil value, as before
+			copied = []byte{}
+		}
+		lists = append(lists, copied)
 		pos += size
 	}
 	if pos+5 > payloadEnd || packet[pos] > 1 || packet[pos+1] != 0 || packet[pos+2] != 0 || packet[pos+3] != 0 || packet[pos+4] != 0 {

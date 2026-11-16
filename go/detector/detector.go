@@ -9,6 +9,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/buffer"
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/engine"
+	"github.com/leenadav/protocol-detector/go/internal/parsing"
 )
 
 // Errors returned by this package. Compare with errors.Is.
@@ -216,6 +217,7 @@ func (e *Engine) NewFlow(id string) (*Flow, error) {
 	}
 	e.admitted.Add(1)
 	f := &Flow{e: e, id: bounded(trimID(id)), reserved: e.flowAllowance}
+	f.credit.Reset(f.reserved)
 	for _, d := range allDirections {
 		f.dirs[d].snap = initialSnapshot(d)
 	}
@@ -240,6 +242,9 @@ type Flow struct {
 	quarantined bool
 	reserved    int // the flow allowance held from the engine account; returned once, at Close
 	retained    int // buffer capacity the two inspectors hold now; at most reserved between calls
+	// credit is the flow allowance as the inspectors draw from it: every covered buffer is charged before it
+	// grows, so the covered buffers never hold more than reserved, not even inside a call (work item #14).
+	credit parsing.Credit
 }
 
 type direction struct {
@@ -335,9 +340,14 @@ func (f *Flow) Feed(d Direction, data []byte) (Update, error) {
 				changed = true
 				return
 			}
+			in.SetCredit(&f.credit)
 			ds.in = in
 		}
 		changed = f.absorb(ds, ds.in.Feed(data), ReasonEngine)
+		if f.credit.Denied() { // a covered buffer could not grow inside the allowance: nothing was allocated for it
+			f.finish(ds, OutcomeBudgetExhausted, ReasonMemory, memoryDetail)
+			changed = true
+		}
 		changed = f.settle(ds) || changed
 	}) {
 		return f.update(d, true), ErrQuarantined
@@ -427,12 +437,21 @@ func (f *Flow) Close() Snapshot {
 	return f.snapshot()
 }
 
+// memoryDetail is the detail of a direction that ended for the memory allowance.
+const memoryDetail = "Retained parser memory exceeds the flow allowance"
+
 // settle brings the flow's retained figure, and the engine's, in line with what the inspectors hold after
-// a call. When fed is the direction that just received bytes and the flow now holds more than its
-// allowance, that direction ends as OutcomeBudgetExhausted with ReasonMemory and its inspector is dropped,
-// which frees its buffers; settle reports whether it did so. The allowance is checked after the call that
-// grew a buffer, so within one Feed a flow can exceed it by at most that call's growth; between calls it
-// never does.
+// a call, and settles the flow's Credit to it. The allowance itself is enforced before any covered buffer
+// grows (f.credit; a refused growth ends the direction as OutcomeBudgetExhausted with ReasonMemory and
+// allocates nothing), so the covered buffers never hold more than the allowance, inside a call or between
+// calls. The check here is the second line: when fed is the direction that just received bytes and the
+// measured figure is above the allowance (a buffer that grew outside the Credit), that direction ends the
+// same way and its inspector is dropped; settle reports whether it did so.
+//
+// Covered are the buffers parsing.Retainer reports, of the parsers that take a Credit (TLS, the text route
+// with HTTP, SSH, SMTP and the control protocols, IRC) and the dispatch prefix. A parser of another family
+// reports nothing and takes no Credit; no such family is in the profile, so it ends as OutcomeOutsideProfile
+// after the call that selected it, its growth bounded by that call's bytes.
 func (f *Flow) settle(fed *direction) (ended bool) {
 	measure := func() int {
 		n := 0
@@ -446,11 +465,12 @@ func (f *Flow) settle(fed *direction) (ended bool) {
 	}
 	now := measure()
 	if fed != nil && fed.in != nil && now > f.reserved {
-		f.finish(fed, OutcomeBudgetExhausted, ReasonMemory, "Retained parser memory exceeds the flow allowance")
+		f.finish(fed, OutcomeBudgetExhausted, ReasonMemory, memoryDetail)
 		now, ended = measure(), true
 	}
 	f.e.retained.Add(int64(now - f.retained))
 	f.retained = now
+	f.credit.Settle(now)
 	return ended
 }
 

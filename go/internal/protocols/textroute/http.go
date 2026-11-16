@@ -216,6 +216,7 @@ type Parser struct {
 	kexinit          *kexInit
 	smtpWatched      int
 	control          *controlHeaders
+	credit           *parsing.Credit // the flow allowance every retained buffer grows from (nil: unlimited)
 	maxBytes         int
 }
 
@@ -249,9 +250,10 @@ func (p *Parser) ControlField(name string) ([]byte, bool) {
 // one of them is a buffer this parser owns outright: none is a subslice of a larger allocation, so its
 // capacity is the whole allocation it keeps alive. The host and the first Upgrade token are kept as strings
 // copied from header values and are counted by length. The method is kept only when it is one of the named
-// methods, at most a dozen bytes. Other retained strings are closed vocabulary values.
+// methods, at most a dozen bytes. Other retained strings, the Upgrade token among them, are closed vocabulary
+// values.
 func (p *Parser) RetainedBytes() int {
-	n := cap(p.line) + cap(p.target) + len(p.host) + len(p.upgrade) // the two strings are copies of header values
+	n := cap(p.line) + cap(p.target) + len(p.host) // the host is a copy of a header value
 	if p.kexinit != nil {
 		n += cap(p.kexinit.buffer)
 		for _, list := range p.kexinit.lists {
@@ -266,6 +268,10 @@ func (p *Parser) RetainedBytes() int {
 	}
 	return n
 }
+
+// SetCredit makes every retained buffer of the parser grow from c (parsing.Credited): the line accumulator,
+// the request target, the host, a KEXINIT buffer and its name lists, the control method and header values.
+func (p *Parser) SetCredit(c *parsing.Credit) { p.credit = c }
 
 // Refined reports whether the published identification is complete (false while a KEXINIT is awaited).
 func (p *Parser) Refined() bool { return p.refined }
@@ -307,7 +313,10 @@ func (p *Parser) Feed(data []byte) (int, error) {
 		if len(p.line)+len(piece) > p.opts.MaxLine {
 			return pos, parsing.Budget("Line length budget exceeded")
 		}
-		p.line = append(p.line, piece...)
+		var err error
+		if p.line, err = p.credit.Append(p.line, piece); err != nil {
+			return pos, err
+		}
 		pos = end
 		if newline < 0 {
 			break
@@ -329,7 +338,7 @@ func (p *Parser) Feed(data []byte) (int, error) {
 func (p *Parser) route(line []byte) (bool, error) {
 	isRequest := requestLine.Match(line)
 	if !bytes.HasSuffix(line, []byte("HTTP/1.0")) && !bytes.HasSuffix(line, []byte("HTTP/1.1")) && controlStartRE.Match(line) {
-		control, err := newControlHeaders(line, p.opts.MaxHeaders)
+		control, err := newControlHeaders(line, p.opts.MaxHeaders, p.credit)
 		if err != nil {
 			return true, err
 		}
@@ -363,7 +372,7 @@ func (p *Parser) route(line []byte) (bool, error) {
 		parts := bytes.SplitN(line, []byte("-"), 3)
 		p.protocolName2, p.done, p.reason = "ssh", true, sshReason
 		p.extra = []parsing.Row{{Field: "ssh_version", Value: string(parts[1]), Provenance: "banner", Strength: "structural"}}
-		p.kexinit, p.continues, p.refined = newKexInit(p.maxBytes), true, false
+		p.kexinit, p.continues, p.refined = newKexInit(p.maxBytes, p.credit), true, false
 		return true, nil
 	}
 	if smtpCommands[upper] {
@@ -719,7 +728,10 @@ func (p *Parser) consumeLine(line []byte) error {
 			}
 			// An owned compact copy: a subslice of line would keep the whole copied request line alive
 			// while RetainedBytes counted only the subslice (review of work item #14, R1).
-			p.target = append([]byte(nil), parts[1]...)
+			var err error
+			if p.target, err = p.credit.Copy(parts[1]); err != nil {
+				return err
+			}
 			if p.method != "CONNECT" {
 				label := "extension"
 				if methods[p.method] {
@@ -773,7 +785,9 @@ func (p *Parser) consumeLine(line []byte) error {
 		if p.hostCount > 1 || len(value) == 0 {
 			return parsing.Malformed("Duplicate or empty Host")
 		}
-		if err := p.parseHost(value); err != nil {
+		if err := p.parseHost(value); parsing.IsDenied(err) {
+			return err // the flow allowance, not the authority, refused the host
+		} else if err != nil {
 			return parsing.Malformed("Invalid Host authority")
 		}
 	case "content-type":
@@ -820,7 +834,14 @@ func (p *Parser) consumeLine(line []byte) error {
 			return parsing.Malformed("Invalid or duplicate Upgrade header")
 		}
 		first, _, _ := bytes.Cut(value, []byte(","))
-		p.upgrade, p.hasUpgrade = strings.ToLower(string(bytes.TrimSpace(first))), true
+		// Only the token shiftBoundary compares is kept: a closed value, not a copy of the header (#14).
+		p.upgrade, p.hasUpgrade = "", true
+		switch strings.ToLower(string(bytes.TrimSpace(first))) {
+		case "websocket":
+			p.upgrade = "websocket"
+		case "h2c":
+			p.upgrade = "h2c"
+		}
 	case "connection":
 		for _, tok := range bytes.Split(value, []byte(",")) {
 			if strings.ToLower(string(bytes.TrimSpace(tok))) == "upgrade" {
@@ -919,7 +940,11 @@ func (p *Parser) parseHost(value []byte) error {
 	// An owned compact copy. normalized is a substring of text, the string copy of the whole authority, so
 	// keeping it would keep the port and a trailing dot alive behind a host charged by its own length
 	// (review of work item #14, round 2).
-	p.host, p.hasHost = strings.Clone(normalized), true
+	owned, err := p.credit.String(normalized)
+	if err != nil {
+		return err
+	}
+	p.host, p.hasHost = owned, true
 	return nil
 }
 

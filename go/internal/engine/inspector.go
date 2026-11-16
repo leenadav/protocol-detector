@@ -265,7 +265,16 @@ type Inspector struct {
 	ldapID       int
 	hasLDAPID    bool
 	Announcement *contracts.Observation
+	// credit is the flow allowance the dispatch prefix and every credited parser's retained buffers grow from
+	// (integration work item #14); nil when the caller sets none, which leaves growth unlimited.
+	credit *parsing.Credit
 }
+
+// SetCredit makes this inspector's retained buffers grow from c: the dispatch prefix, the buffers of every
+// parser it creates that implements parsing.Credited, and those of a shifted phase. A growth c refuses ends
+// the inspection as budget_exhausted with the reason of parsing.Denied; the caller tells it from a parser's
+// own budget with Credit.Denied.
+func (in *Inspector) SetCredit(c *parsing.Credit) { in.credit = c }
 
 // LDAPMessageID reports the message id of the LDAP message this inspector identified (Python
 // inspector.correlation["ldap_message_id"]).
@@ -307,6 +316,7 @@ func (in *Inspector) OpenShift(boundary, expected string) bool {
 	announced := carrier
 	in.Announcement = &announced
 	next.hintSource = "shift:" + boundary
+	next.credit = in.credit
 	in.next = next
 	in.terminal = false
 	return true
@@ -576,7 +586,11 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 			return in.finish(in.observation(contracts.Unknown, "Prefix outside supported protocol families"), contracts.Updated)
 		}
 		if candidate == Wait {
-			in.prefix = append(in.prefix, chunk...)
+			grown, err := in.credit.Append(in.prefix, chunk)
+			if err != nil {
+				return in.finish(in.observation(contracts.BudgetExhausted, err.(*parsing.Error).Message), contracts.Updated)
+			}
+			in.prefix = grown
 			in.Metrics.BytesInspected += len(chunk)
 			return nil
 		}
@@ -586,6 +600,9 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 		if err != nil {
 			events, _ := in.failed(err)
 			return events
+		}
+		if c, ok := parser.(parsing.Credited); ok {
+			c.SetCredit(in.credit)
 		}
 		in.parser = parser
 		if previous > 0 {
@@ -653,6 +670,7 @@ func (in *Inspector) beginShift(shift *parsing.Shift, rest []byte) []contracts.E
 		return events
 	}
 	next.hintSource = "shift:" + shift.Boundary
+	next.credit = in.credit
 	in.next = next
 	if len(rest) > 0 {
 		events = append(events, in.forward(rest)...)

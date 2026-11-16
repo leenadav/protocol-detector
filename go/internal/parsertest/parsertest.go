@@ -98,3 +98,65 @@ func Streams(path string, labels ...string) ([][]byte, error) {
 	}
 	return out, nil
 }
+
+// credited is a parser whose retained buffers grow from a Credit and which reports them.
+type credited interface {
+	parsing.Parser
+	parsing.Credited
+	parsing.Retainer
+}
+
+// CheckCredit drives parser over data in pieces of step bytes, as Drive does, with a Credit of limit bytes
+// (integration work item #14). After every call it requires that the parser retains no more than was charged
+// to the Credit since the previous call, so a buffer that grew outside the Credit is reported, and that
+// neither the retained figure nor the most ever charged exceeds limit. The Credit is settled to the measured
+// figure after each call, as the facade does. A growth the Credit refuses must end the run with the error of
+// parsing.Denied; what the same call grew before the refusal was charged and is covered by the checks. It returns "" when every check held, else
+// what failed, and whether a growth was refused.
+func CheckCredit(parser parsing.Parser, data []byte, step, limit int) (failure string, denied bool) {
+	p, ok := parser.(credited)
+	if !ok {
+		return "the parser does not take a Credit or does not report what it retains", false
+	}
+	credit := parsing.NewCredit(limit)
+	p.SetCredit(credit)
+	if step <= 0 || step > len(data) {
+		step = len(data)
+	}
+	continuing := false
+	for pos := 0; pos < len(data); pos += step {
+		end := pos + step
+		if end > len(data) {
+			end = len(data)
+		}
+		for rest := data[pos:end]; len(rest) > 0; {
+			n, err := p.Feed(rest)
+			retained := p.RetainedBytes()
+			switch {
+			case retained > credit.Used():
+				return fmt.Sprintf("retains %d bytes after a call that charged %d", retained, credit.Used()), false
+			case retained > limit || credit.Peak() > limit:
+				return fmt.Sprintf("retains %d, charged at most %d, against a limit of %d", retained, credit.Peak(), limit), false
+			case parsing.IsDenied(err):
+				return "", true
+			case credit.Denied():
+				return fmt.Sprintf("the Credit refused a growth but the parser returned %v", err), true
+			case err != nil:
+				return "", false // the parser's own verdict; not a memory question
+			}
+			credit.Settle(retained)
+			if n <= 0 || n > len(rest) {
+				break
+			}
+			rest = rest[n:]
+			if p.Done() {
+				r := p.Result()
+				continuing = r != nil && r.Continues && r.Shift == nil
+				if !continuing {
+					return "", false
+				}
+			}
+		}
+	}
+	return "", false
+}

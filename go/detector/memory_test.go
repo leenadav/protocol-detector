@@ -144,7 +144,11 @@ func TestFlowAllowanceIsEnforced(t *testing.T) {
 	other := mustFlow(t, e)
 	other.Feed(ClientToServer, httpRequest[:20])
 	f := mustFlow(t, e)
-	line := []byte("GET /" + strings.Repeat("a", 6000)) // an unfinished request line: the parser must keep it
+	// An unfinished request line the parser must keep: 3,005 bytes in a 3,072-byte accumulator. Finishing it
+	// later also copies the 3,001-byte target, 6,144 bytes in all, inside the 8,192-byte allowance. (A 6,000-byte
+	// target would need 12,288 bytes while the request completes; that is refused now, see
+	// TestGrowthIsChargedBeforeItIsAllocated.)
+	line := []byte("GET /" + strings.Repeat("a", 3000))
 	f.Feed(ClientToServer, line)
 	if s := f.Snapshot(); s.Direction(ClientToServer).Done || s.RetainedBytes == 0 || s.RetainedBytes > 8192 {
 		t.Fatalf("first direction: retained %d, %+v", s.RetainedBytes, s.Direction(ClientToServer).Outcome)

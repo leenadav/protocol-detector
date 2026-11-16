@@ -321,7 +321,11 @@ type Parser struct {
 	hasHelloSize    bool
 	done            bool
 	result          *parsing.Result
+	credit          *parsing.Credit // the flow allowance the two accumulators grow from (nil: unlimited)
 }
+
+// SetCredit makes the accumulators grow from c (parsing.Credited).
+func (p *Parser) SetCredit(c *parsing.Credit) { p.credit = c }
 
 // New creates the parser; options the Go backend lacks fail at construction with NotPorted.
 func New(opts Options) (*Parser, error) {
@@ -352,7 +356,10 @@ func (p *Parser) Feed(data []byte) (int, error) {
 			if amount > len(data)-pos {
 				amount = len(data) - pos
 			}
-			p.recordHeader = append(p.recordHeader, data[pos:pos+amount]...)
+			var err error
+			if p.recordHeader, err = p.credit.Append(p.recordHeader, data[pos:pos+amount]); err != nil {
+				return pos, err
+			}
 			pos += amount
 			if len(p.recordHeader) < 5 {
 				break
@@ -379,7 +386,10 @@ func (p *Parser) Feed(data []byte) (int, error) {
 		if len(data)-pos < amount {
 			amount = len(data) - pos
 		}
-		p.handshake = append(p.handshake, data[pos:pos+amount]...)
+		var err error
+		if p.handshake, err = p.credit.Append(p.handshake, data[pos:pos+amount]); err != nil {
+			return pos, err
+		}
 		pos += amount
 		p.recordRemaining -= amount
 		if !p.hasHelloSize && len(p.handshake) == 4 {

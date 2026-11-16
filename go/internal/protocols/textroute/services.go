@@ -375,15 +375,19 @@ type controlHeaders struct {
 	count        int
 	done         bool
 	reason       string
+	credit       *parsing.Credit // the flow allowance the method and the header values are copied from (nil: unlimited)
 }
 
-func newControlHeaders(line []byte, maxHeaders int) (*controlHeaders, error) {
-	c := &controlHeaders{maxHeaders: maxHeaders, fields: map[string][]byte{}, reason: "Waiting for control-protocol headers"}
+func newControlHeaders(line []byte, maxHeaders int, credit *parsing.Credit) (*controlHeaders, error) {
+	c := &controlHeaders{maxHeaders: maxHeaders, fields: map[string][]byte{}, reason: "Waiting for control-protocol headers", credit: credit}
 	c.request = !(bytes.HasPrefix(line, []byte("SIP/")) || bytes.HasPrefix(line, []byte("RTSP/")))
 	var version []byte
 	if c.request {
 		method, _, _ := bytes.Cut(line, []byte(" "))
-		c.method = append([]byte(nil), method...) // owned copy, not a view of the copied line (see Parser.RetainedBytes)
+		var err error
+		if c.method, err = credit.Copy(method); err != nil { // owned copy, not a view of the copied line (see Parser.RetainedBytes)
+			return nil, err
+		}
 		version = line[bytes.LastIndexByte(line, ' ')+1:]
 	} else {
 		version, _, _ = bytes.Cut(line, []byte(" "))
@@ -476,7 +480,11 @@ func (c *controlHeaders) consume(line []byte) error {
 			return parsing.Malformed("Invalid control-protocol Content-Length")
 		}
 		if !seen {
-			c.fields[name] = append([]byte(nil), value...) // owned copy, not a view of the copied header line
+			copied, err := c.credit.Copy(value) // owned copy, not a view of the copied header line
+			if err != nil {
+				return err
+			}
+			c.fields[name] = copied
 		}
 	}
 	return nil
