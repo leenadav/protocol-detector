@@ -141,6 +141,7 @@ Done:
 - **#18** facade benchmarks with allocation ceilings, unit tests and split-invariance fuzzing for `tlsx` and `textroute`.
 - **#14** memory budget wired into the facade: flow allowance reserved at admission, retained parser buffers tracked, explicit outcome when exceeded.
 - **#16** content pack embedded and byte-equal to the fixture; its pack digest (`migration/CONTENT-DIGEST.md`, defined by the engine lane on 2026-11-16) is computed and compared with a build constant before use, and a host can load its own bytes against a digest it pinned (`content.ParsePinned`). The pin is integrity only: not semantic truth, publisher identity, coverage or rollback protection.
+- **#15** read-only registries: `engine.Ported`, `engine.Families` and `framed.DatagramValidators` are unexported behind accessors that return values or copies. `contracts.ConfigRanges` and `engine.DatagramHints` stay exported, because a Python cross-language test reads them by name in the Go source; they are listed in the registry test.
 
 See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: none of 4.3a's items; the #16 digest code awaits review on this branch.
 

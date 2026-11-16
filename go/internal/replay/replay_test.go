@@ -22,7 +22,7 @@ func family(label string) string {
 }
 
 func ported(label string) bool {
-	for _, f := range engine.Families {
+	for _, f := range engine.Families() {
 		if family(label) == f {
 			return true
 		}

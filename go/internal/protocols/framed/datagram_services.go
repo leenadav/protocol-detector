@@ -11,7 +11,7 @@ import (
 func init() {
 	for name, v := range map[string]DatagramValidator{"netflow": netflowDatagram, "sflow": sflowDatagram, "stun": stunDatagram,
 		"dhcp": dhcpDatagram, "radius": radiusDatagram} {
-		DatagramValidators[name] = v
+		datagramValidators[name] = v
 	}
 }
 

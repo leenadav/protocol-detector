@@ -476,7 +476,7 @@ func NewKerberos(maxBytes, maxHeaders int) *Parser {
 		}})
 }
 
-func init() { DatagramValidators["kerberos"] = kerberosDatagram }
+func init() { datagramValidators["kerberos"] = kerberosDatagram }
 
 // kerberosDatagram ports windows.kerberos.
 func kerberosDatagram(data []byte, limits Limits) (*Datagram, error) {

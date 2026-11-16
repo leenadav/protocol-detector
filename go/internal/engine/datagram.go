@@ -242,7 +242,7 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 		return base, nil
 	}
 	for _, c := range candidates {
-		if _, ported := framed.DatagramValidators[c]; !datagramValidators[c] && !ported {
+		if _, ported := framed.DatagramValidatorFor(c); !datagramValidators[c] && !ported {
 			return base, &parsing.NotPorted{What: "datagram candidate " + c}
 		}
 	}
@@ -259,7 +259,7 @@ func (d *Datagram) Inspect(data []byte, hint string) (contracts.Observation, err
 		d.Metrics.ParserCalls++
 		var found match
 		var err error
-		if validator, ok := framed.DatagramValidators[c]; ok {
+		if validator, ok := framed.DatagramValidatorFor(c); ok {
 			var m *framed.Datagram
 			if m, err = validator(data, framed.Limits{MaxBytes: d.cfg.MaxBytes, MaxHeaders: d.cfg.MaxHeaders, MaxLine: d.cfg.MaxLine}); err == nil {
 				found = match{protocol: m.Protocol, encryption: m.Encryption, reason: m.Reason}

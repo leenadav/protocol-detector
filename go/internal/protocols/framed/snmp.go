@@ -7,8 +7,8 @@ import (
 )
 
 func init() {
-	DatagramValidators["snmp"] = snmpDatagram
-	DatagramValidators["rtp"] = rtpDatagram
+	datagramValidators["snmp"] = snmpDatagram
+	datagramValidators["rtp"] = rtpDatagram
 }
 
 // --- BER helpers (framing.ber_length / ber_field) ---------------------------------------------------------

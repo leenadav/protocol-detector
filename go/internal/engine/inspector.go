@@ -7,18 +7,33 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/protocols/framed"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/textroute"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
+	"sort"
 )
 
-// Ported is the set of candidates a caller or a shift may name as a hint: every candidate the factory builds
+// ported is the set of candidates a caller or a shift may name as a hint: every candidate the factory builds
 // except the internal routes (review R5, 2026-11-14: a hand-kept copy of this set had drifted from the factory,
 // so New refused the hint "kerberos" although the parser was ported and dispatch selected it).
-var Ported = map[string]bool{}
+var ported = map[string]bool{}
+
+// IsPorted reports whether name may be given as a hint. The set itself is not exported: a registry another
+// package could write to at run time is shared mutable state (integration work item #15).
+func IsPorted(name string) bool { return ported[name] }
+
+// PortedNames returns a sorted copy of the hint set.
+func PortedNames() []string {
+	names := make([]string, 0, len(ported))
+	for name := range ported {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
 
 // internalCandidates are dispatch routes that are not registry names; Python rejects them as hints too.
 var internalCandidates = map[string]bool{"git_text": true, "tpkt": true}
 
-// Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
-var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
+// families are the families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
+var families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
 	"postgresql", "rfb", "bittorrent", "memcached", "rsync", "fins", "afp", "zmtp", "bolt", "stomp",
 	"giop", "x11", "spice", "mysql", "mongodb", "tds", "tns", "cql", "kafka",
 	"modbus", "dnp3", "ethernet-ip", "iec-104", "opcua", "s7comm",
@@ -28,6 +43,9 @@ var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"netbios-ss", "tacacs-plus", "socks5", "wireguard", "bacnet",
 	"tftp", "ntp", "l2tp", "coap", "rip", "rtcp", "lifx-lan", "tuya-lan",
 	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap", "smb1", "smb2", "rdp", "iso-tsap", "ikev2"}
+
+// Families returns a copy of the families the Go backend can identify, in registry order.
+func Families() []string { return append([]string(nil), families...) }
 
 // factories builds the parser of each candidate; it is the single registry of what the Go backend ports.
 var factories map[string]func(cfg contracts.Config) (parsing.Parser, error)
@@ -208,7 +226,7 @@ func init() {
 	}
 	for name := range factories {
 		if !internalCandidates[name] {
-			Ported[name] = true
+			ported[name] = true
 		}
 	}
 }
@@ -373,7 +391,7 @@ func New(cfg contracts.Config, hint string) (*Inspector, error) {
 	if cfg.RetainContexts {
 		return nil, &parsing.NotPorted{What: "option retain_contexts (signatures)"}
 	}
-	if hint != "" && !Ported[hint] {
+	if hint != "" && !ported[hint] {
 		return nil, &parsing.NotPorted{What: "hint " + hint}
 	}
 	return &Inspector{cfg: cfg, hint: hint, hintSource: "caller", source: "wire", Observation: contracts.Initial("tcp"), shiftSource: "wire"}, nil
