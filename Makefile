@@ -183,6 +183,12 @@ go-check:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/analyze -run NONE -fuzz FuzzPresentNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/policy -run NONE -fuzz FuzzPolicyNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/signatures -run NONE -fuzz FuzzDocumentNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/tlsx -run NONE -fuzz FuzzDTLSStaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/hpack -run NONE -fuzz FuzzDecoderStaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzHTTP2StaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzHTTPContinuationStaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/x509x -run NONE -fuzz FuzzLeafProfileStaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/quicx -run NONE -fuzz FuzzValidateStaysBounded -fuzztime 10s
 	$(MAKE) parity-go
 	$(MAKE) parity-analyze
 	$(MAKE) parity-decrypt
