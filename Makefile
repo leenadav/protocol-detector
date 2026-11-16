@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-minimum parity-go
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -158,8 +158,16 @@ content-pack:
 parity:
 	python3 -B migration/parity/compare.py --backend python
 
-# Migration M2: the Go module's own gate (pinned toolchain from go/go.mod; separate from `check` until the CI/CD lane wires it)
-GO_TOOLCHAIN := $(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod)
+# Migration M2: the Go module's own gate. go/go.mod's `go` line is the minimum Go the module needs, its
+# `toolchain` line the compiler it is built with, implicitly the `go` line when absent (go.dev/doc/toolchain).
+# go-check runs on the compiler (ci: go-engine), go-check-minimum on the minimum (ci: go-minimum): one Go per
+# target, each GOTOOLCHAIN naming exactly the Go the job installed, so neither switches Go mid-run.
+GO_TOOLCHAIN := $(or $(shell sed -n 's/^toolchain \(go.*\)$$/\1/p' go/go.mod),$(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod))
+GO_MINIMUM := $(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod)
+go-check-minimum:
+	cd go && GOTOOLCHAIN=$(GO_MINIMUM) go vet ./...
+	cd go && GOTOOLCHAIN=$(GO_MINIMUM) go test -race ./...
+
 go-check:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) sh -c 'test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }'
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go vet ./...

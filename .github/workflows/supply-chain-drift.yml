@@ -17,6 +17,8 @@ on:
       - "requirements-dev.txt"
       - "tools/check_go_drift.py"
       - "tools/scanners/go.mod"
+      - "tools/go_ci.py"          # check_go_drift.py reads both go.mod files through it
+      - "go/go.mod"
   pull_request:
     paths:
       - ".github/workflows/**"   # every workflow holds pinned actions; tools/check_workflow_policy.py enforces this
@@ -24,6 +26,8 @@ on:
       - "requirements-dev.txt"
       - "tools/check_go_drift.py"
       - "tools/scanners/go.mod"
+      - "tools/go_ci.py"          # check_go_drift.py reads both go.mod files through it
+      - "go/go.mod"
 
 permissions:
   contents: read
