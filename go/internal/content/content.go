@@ -119,6 +119,8 @@ type Pack struct {
 	AppDomains      map[string][]string
 	webFronts       map[string]string
 	suffixes        map[string]string
+	// Digests are the pack digest and the verified release digest (migration/CONTENT-DIGEST.md).
+	Digests Digests
 }
 
 func invalid(msg string) error { return errs.New(errs.Invalid, errs.ScopeProcess, msg) }
@@ -237,6 +239,13 @@ func Parse(data []byte) (*Pack, error) {
 		}
 	}
 	p.Categories, p.Technologies, p.Characteristics = raw.Vocabulary.Categories, technologies, characteristics
+	// The digests come last, so a malformed pack keeps its structural error: the three components the tables
+	// determine and the release digest must be the ones the pack states (migration/CONTENT-DIGEST.md).
+	digests, err := ComputeDigests(data)
+	if err != nil {
+		return nil, err
+	}
+	p.Digests = *digests
 	return p, nil
 }
 
