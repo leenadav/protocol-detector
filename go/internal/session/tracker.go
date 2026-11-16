@@ -284,6 +284,20 @@ func (t *Tracker) Finish(reason string) error {
 	return nil
 }
 
+// idle returns the keys of the states that reached the idle timeout, in table (insertion) order.
+func (t *Tracker) idle(table map[Key]*State) []Key {
+	var keys []Key
+	for key, state := range table {
+		if t.now-state.Time >= t.opts.IdleTimeout {
+			keys = append(keys, key)
+		}
+	}
+	if len(keys) > 1 {
+		sort.Slice(keys, func(i, j int) bool { return table[keys[i]].order < table[keys[j]].order })
+	}
+	return keys
+}
+
 // Expire advances time and retires idle states, then idle connections.
 func (t *Tracker) Expire(timestamp float64) {
 	if timestamp > t.now {
@@ -296,13 +310,15 @@ func (t *Tracker) Expire(timestamp float64) {
 	if t.opts.Compact {
 		t.nextExp = t.now + 1
 	}
-	for _, key := range inOrder(t.tracked) {
+	// This runs for every packet, so the tables are only put in order when something expired: the states that
+	// expire, and the table order in which they are retired, are the reference's.
+	for _, key := range t.idle(t.tracked) {
 		if state := t.tracked[key]; state != nil && t.now-state.Time >= t.opts.IdleTimeout {
 			t.Drop(key, ReasonIdle)
 		}
 	}
-	for _, key := range inOrder(t.udpFlows) {
-		if flow := t.udpFlows[key]; t.now-flow.Time >= t.opts.IdleTimeout {
+	for _, key := range t.idle(t.udpFlows) {
+		if flow := t.udpFlows[key]; flow != nil && t.now-flow.Time >= t.opts.IdleTimeout {
 			delete(t.udpFlows, key)
 			t.closed(flow, ReasonIdleUDP, nil, nil)
 		}
