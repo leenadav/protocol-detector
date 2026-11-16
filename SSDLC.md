@@ -92,7 +92,8 @@ request:
 | ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py` (engine and adapter packages, only the `decryption` extra), wheel smoke under 3.13 and 3.9, the complete-product SBOM checked by `tools/check_product_sbom.py` |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
 | ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds |
-| ci | `Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)` | `tools/go_ci.py go`: on the pinned Go 1.27.4, `make go-check` (gofmt, `go vet`, `go test -race`, fuzz smoke, `make parity-go`) and a floor under the parity report; nothing to check on a commit without the migration tree, failure on one with part of it |
+| ci | `Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)` | `tools/go_ci.py go`: on the pinned Go 1.27.4, which must be the compiler go/go.mod builds with (its `toolchain` line, else its `go` line), `make go-check` (gofmt, `go vet`, `go test -race`, fuzz smoke, `make parity-go`) and a floor under the parity report; nothing to check on a commit without the migration tree, failure on one with part of it; `GOPROXY=off`, so no Go is downloaded mid-job |
+| ci | `Go engine on its declared minimum Go (vet, race tests)` | `tools/go_ci.py minimum`: on exactly go/go.mod's `go` line (the declared minimum), installed by setup-go, `make go-check-minimum` (`go vet`, `go test -race`); a minimum equal to the compiler is go-engine's run and passes as such (item 28) |
 | ci | `security requirements gate` | every SR row names an existing test |
 
 Do not mark the `supply-chain-drift` jobs required: that workflow is path
@@ -628,6 +629,48 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      (after this lane's PR) into `claude/go-migration`. That merge also brings the PR #13 gates
      the branch lacks, the build-manifest check among them, which issue #2 R7 found stale on
      `dbe20f3`.
+28. The Go engine's declared minimum, tested on its own Go (Lee authorized this fix,
+   2026-11-16). `claude/culvert-integration-prep` set go/go.mod to `go 1.27.0` with
+   `toolchain go1.27.4` (Culvert working plan #3, ADR 0002: a consumer's `go` line must not be
+   raised by importing the module). Its run 43906142404 failed in go-engine: `go_ci.py` compared
+   the `go` line with the scanner pin, and its `go-check` ran vet and race tests with
+   `GOTOOLCHAIN=go1.27.0` on a 1.27.4 runner, which downloads a second Go mid-job.
+   - **Semantics** (https://go.dev/doc/toolchain): the `go` line "declares the minimum required
+     Go version"; the `toolchain` line is the suggested toolchain, implicitly `go<V>` of the `go`
+     line when absent, and "takes precedence over the `go` line" when choosing one.
+     `GOTOOLCHAIN=<name>` runs the local Go when its version is that name and otherwise
+     downloads it as module `golang.org/toolchain` through `GOPROXY`. Go itself accepts a
+     `toolchain` below `go` silently (checked on 1.24.7), so the tools refuse it.
+     actions/setup-go v6+ also reads `toolchain` first for `go-version-file`.
+   - **Decision: one explicitly installed Go per job.** go-engine keeps the pinned compiler
+     (1.27.4) for the full gate; a new `go-minimum` job installs the minimum with setup-go and
+     runs `make go-check-minimum` (vet and race tests; the Culvert branch adds its consumer module).
+     That is how maintained Go projects test older releases: stretchr/testify's `test-old-go`
+     job, separate from its main build, installs each old Go explicitly with setup-go
+     (`.github/workflows/main.yml`), rather than switching toolchains inside one job. Rejected: letting a job download the minimum through
+     `GOTOOLCHAIN` (a second toolchain fetched mid-job, which `go_ci.py` exists to refuse);
+     dropping the minimum run (the minimum would then be a claim with no test); a literal minimum
+     pin in ci.yml (it would duplicate go/go.mod, the engine lane's file, and go stale on `main`,
+     which has no separate minimum). The minimum is read from go/go.mod by
+     `go_ci.py minimum-version`, which returns only digits and dots, so the value handed to
+     setup-go cannot carry anything else.
+   - **Both Go jobs set `GOPROXY=off`.** The engine module has no dependency and the Culvert
+     consumer module only a local `replace`, so a target asking for any Go other than the
+     installed one now fails ("toolchain not available") instead of downloading it.
+   - **What changed:** `tools/go_ci.py` (the `toolchain` line, else the `go` line, is the build
+     compiler; a minimum above it, a second or malformed `toolchain` line, or an inexact minimum
+     fails; `minimum` and `minimum-version` modes), `tools/check_go_drift.py` (the same reading of
+     both go.mod files through `go_ci.module_versions`; go/go.mod must build with the scanner pin;
+     the only non-release setup-go version allowed is the go-minimum job's output), the Makefile
+     (`GO_TOOLCHAIN` from `toolchain`, `GO_MINIMUM` from `go`, a `go-check-minimum` target),
+     ci.yml (the job, `GOPROXY=off`, the gate's `needs`) and the drift workflow's path filters.
+   - **Tests:** `go_ci.py --self-test` covers a toolchain line present, the fallback without one,
+     a minimum above the toolchain, a differing toolchain, the minimum installed in go-engine and
+     the compiler installed in go-minimum, an inexact minimum, a missing target, and two
+     end-to-end runs; `check_go_drift.py --self-test` covers the same for drift. Measured locally
+     with real toolchains and `GOPROXY=off`: on `main` go-engine passes and go-minimum reports
+     that there is no separate minimum; on the Culvert tree with this change and its Makefile
+     split, go-engine passes on 1.27.4 and go-minimum on 1.27.0, and each refuses the other's Go.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
