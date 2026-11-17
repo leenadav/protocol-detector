@@ -404,20 +404,48 @@ func (f *Flow) Expire() error {
 	return nil
 }
 
-// Snapshot returns a detached copy of the flow.
-func (f *Flow) Snapshot() Snapshot {
+// Snapshot returns a detached copy of the flow. It runs inside the panic boundary like every other call: a
+// panic while it is copied quarantines the flow and returns the quarantined flow's snapshot, which holds no
+// evidence or ALPN lists to copy (working plan item #10).
+func (f *Flow) Snapshot() (s Snapshot) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	defer func() {
+		if recover() != nil { // the panic value is dropped: it may quote input bytes
+			f.quarantine()
+			s = f.quarantinedSnapshot()
+		}
+	}()
+	if f.e.testHook != nil {
+		f.e.testHook("snapshot", ClientToServer)
+	}
 	return f.snapshot()
+}
+
+// quarantinedSnapshot is the snapshot of a quarantined flow, built from fields quarantine itself set: it calls
+// nothing that could fail again.
+func (f *Flow) quarantinedSnapshot() Snapshot {
+	return Snapshot{ID: f.id, Closed: f.closed, Quarantined: true, Directions: [2]DirectionSnapshot{f.dirs[0].snap, f.dirs[1].snap}}
 }
 
 // Close releases all engine state and the flow's admission slot, and returns the final snapshot. A
 // direction that had not decided ends as OutcomeIncomplete with ReasonClosed. Close is idempotent.
-func (f *Flow) Close() Snapshot {
+//
+// Close has two parts (working plan item #10, "what happens when cleanup itself fails"). Settling the
+// directions and dropping the inspectors runs inside the panic boundary; a panic there quarantines the flow,
+// and Close returns its quarantined snapshot. Returning the flow's reservation and admission slot runs after
+// that part on every path, deferred, so a panic cannot keep them: it is counter arithmetic only (the account
+// release clamps at zero), so it has no failure of its own to define. Each is returned exactly once,
+// because the flow is marked closed before either part runs.
+func (f *Flow) Close() (s Snapshot) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if !f.closed {
-		f.closed = true
+	if f.closed { // idempotent: nothing engine-side remains, so this is the plain copy
+		return f.snapshot()
+	}
+	f.closed = true
+	defer f.releaseAdmission()
+	if f.guard("close", ClientToServer, func() {
 		for _, d := range allDirections {
 			ds := &f.dirs[d]
 			switch {
@@ -430,11 +458,20 @@ func (f *Flow) Close() Snapshot {
 			ds.in = nil
 		}
 		f.settle(nil)
-		f.e.account.Release(f.reserved) // the one and only release of this flow's reservation
-		f.reserved = 0
-		f.e.active.Add(-1)
+	}) {
+		return f.quarantinedSnapshot()
 	}
 	return f.snapshot()
+}
+
+// releaseAdmission returns what the flow holds from the engine: its retained figure, its reservation and its
+// admission slot. It runs once, from Close.
+func (f *Flow) releaseAdmission() {
+	f.e.retained.Add(int64(-f.retained))
+	f.retained = 0
+	f.e.account.Release(f.reserved) // the one and only release of this flow's reservation
+	f.reserved = 0
+	f.e.active.Add(-1)
 }
 
 // memoryDetail is the detail of a direction that ended for the memory allowance.
