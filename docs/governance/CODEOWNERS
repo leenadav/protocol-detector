@@ -1,0 +1,46 @@
+# DRAFT, NOT ACTIVE (working plan section 12, 2026-11-17).
+#
+# GitHub reads CODEOWNERS only from .github/, the repository root or docs/, in that order, and uses the first
+# file it finds; this copy in docs/governance/ is therefore ignored. It applies per branch: the file on a pull
+# request's base branch decides the review requests. Every owner needs explicit write access. Patterns follow
+# gitignore rules without `!` or `[ ]`, and the last matching line wins.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# To activate (Lee's decision, then the CI/CD lane, which owns .github/): copy this file to .github/CODEOWNERS
+# on main. Requiring code-owner review is a separate repository setting (branch protection "Require review from
+# Code Owners", or a ruleset); this draft changes no setting.
+#
+# Only @leenadav is named: it is the one account known to have write access. Add a second owner per area once
+# Lee names one; until then every line has the same owner and the file documents who decides what.
+
+# Default: everything.
+*                                   @leenadav
+
+# Python reference engine and adapters: detection behaviour (engine lane).
+/protocol_engine/                   @leenadav
+/protocol_adapters/                 @leenadav
+
+# Go module (engine lane), and its public package, which is the contract Culvert codes against: a change here
+# follows docs/governance/VERSIONING.md.
+/go/                                @leenadav
+/go/detector/                       @leenadav
+/go/go.mod                          @leenadav
+
+# Detection content and its integrity pin (migration/CONTENT-DIGEST.md): a content change is a release change.
+/migration/fixtures/content.json    @leenadav
+/go/internal/content/               @leenadav
+
+# CI, release controller and their policy locks (CI/CD lane).
+/.github/                           @leenadav
+/tools/check_workflow_policy.py     @leenadav
+/tools/workflows.lock.json          @leenadav
+/tools/go_ci.py                     @leenadav
+/tools/check_go_drift.py            @leenadav
+
+# Legal and security posture.
+/LICENSE                            @leenadav
+/NOTICE                             @leenadav
+/go/LICENSE                         @leenadav
+/go/NOTICE                          @leenadav
+/SECURITY.md                        @leenadav
+/docs/governance/                   @leenadav
