@@ -106,6 +106,8 @@ type coordinator struct {
 	*Tier
 	an          *analyzer.Analyzer
 	generations map[string]int
+	published   map[string]int // per session id, the highest generation the analyzer already finalized
+	records     int            // analyzer records already noted in published
 }
 
 func newCoordinator(pack *content.Pack, budget Budget, connections int) (*coordinator, error) {
@@ -114,7 +116,7 @@ func newCoordinator(pack *content.Pack, budget Budget, connections int) (*coordi
 	if err != nil {
 		return nil, err
 	}
-	c := &coordinator{an: an, generations: map[string]int{}}
+	c := &coordinator{an: an, generations: map[string]int{}, published: map[string]int{}}
 	c.Tier = NewTier(budget, 60, func(sid string) int { return c.generations[sid] })
 	c.Tier.Telemetry = an.Telemetry
 	return c, nil
@@ -170,6 +172,36 @@ func (c *Tier) retainedClose(key session.Key, reason string) error {
 	return c.queue(event{kind: "close", key: key, reason: reason, progress: c.progress(state)})
 }
 
+// reused reports whether the tuple's current generation was already finalized.
+func (c *coordinator) reused(sid string) bool {
+	last, ok := c.published[sid]
+	return ok && last >= c.generations[sid]
+}
+
+// noteSessions is the reference coordinator's session sink for what the analyzer finalized since the last call:
+// a record on a reused generation is the next one (a flow that began without a SYN), and each is noted.
+func (c *coordinator) noteSessions() {
+	for ; c.records < len(c.an.Records); c.records++ {
+		record := c.an.Records[c.records]
+		name, _ := record["transport"].(string)
+		sid := sessionid.Identity(name, endpointOf(record["client"]), endpointOf(record["server"]))
+		if c.reused(sid) {
+			c.generations[sid]++
+		}
+		c.published[sid] = c.generations[sid]
+	}
+}
+
+func endpointOf(v interface{}) transport.Endpoint {
+	pair, _ := v.([]interface{})
+	if len(pair) != 2 {
+		return transport.Endpoint{}
+	}
+	addr, _ := pair[0].(string)
+	port, _ := pair[1].(int)
+	return transport.Endpoint{Addr: addr, Port: uint16(port)}
+}
+
 // accept hands one decoded TCP packet to the owner; tuple reuse on a SYN renews the generation.
 func (c *coordinator) accept(packet *transport.TCP, now float64) error {
 	c.SetNow(now)
@@ -179,6 +211,7 @@ func (c *coordinator) accept(packet *transport.TCP, now float64) error {
 		if tracked := c.an.Tracker.TracksTCP(key); tracked || held {
 			if tracked {
 				c.an.Tracker.Drop(key, restartReason)
+				c.noteSessions()
 			}
 			if held {
 				if err := c.Close(key, restartReason); err != nil {
@@ -186,9 +219,14 @@ func (c *coordinator) accept(packet *transport.TCP, now float64) error {
 				}
 			}
 			c.generations[sessionid.Identity("tcp", packet.Source, packet.Destination)]++
+		} else if sid := sessionid.Identity("tcp", packet.Source, packet.Destination); c.reused(sid) {
+			// A new connection on a tuple whose last one already ended: the next generation (the reference's
+			// coordinator), so the retained tier opens it under that generation.
+			c.generations[sid]++
 		}
 	}
 	c.an.Process(now, packet)
+	c.noteSessions()
 	if c.an.NotPorted != nil {
 		return c.an.NotPorted
 	}

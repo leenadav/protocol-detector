@@ -73,7 +73,10 @@ class SessionCoordinator:
         self.retained_allocated = 0
         self.idle_timeout = idle_timeout
         self._pending = deque()         # consumer events: ("open"|"data"|"error"|"close", key, ...)
-        self._retired_sessions = set()       # (session_id, generation) already finalized: never twice
+        # Milestone B: per session id, the highest generation already published or retracted. A flow that starts on
+        # such a tuple is the next generation (it used to be suppressed as a duplicate); one entry per id, not per
+        # generation.
+        self._published = {}
         self._session_hook = analyzer_options.pop("on_session", None)
         # The analyzer must not retain its owner through a bound-method cycle (test_lifecycle guards this
         # with gc disabled): the sink reaches the coordinator through a weak reference, like CaptureMonitor.
@@ -101,6 +104,10 @@ class SessionCoordinator:
         sid = session_identity(transport, client, server)
         return sid, self.generations.current(sid)
 
+    def _reused(self, sid):
+        """The tuple's current generation was already published or retracted: a new flow on it is the next one."""
+        return self._published.get(sid, -1) >= self.generations.current(sid)
+
     def renew(self, transport, client, server):
         """A tracked tuple starts a new connection: the next session on it is a new generation."""
         sid = session_identity(transport, client, server)
@@ -109,14 +116,15 @@ class SessionCoordinator:
 
     # ----- the one session sink --------------------------------------------
     def _on_session(self, record):
-        sid, generation = self.identity(record["transport"], record["client"], record["server"])
-        key = (sid, generation)
-        if key in self._retired_sessions:
-            # The Analyzer can only emit a session once per drop, but a path that both expires and
-            # finishes, or that replays, must still never publish the same (session, generation) twice.
-            self.counts["duplicates_suppressed"] += 1
-            return
-        self._retired_sessions.add(key)
+        sid = session_identity(record["transport"], record["client"], record["server"])
+        if self._reused(sid):
+            # The Analyzer emits one session per tracked flow, so a record for a tuple whose current generation was
+            # already published or retracted is a later flow that began without a SYN to mark it (a UDP flow after
+            # the earlier one expired, a midstream TCP flow): it is the next generation. No (session, generation)
+            # is ever published twice.
+            self.renew(record["transport"], record["client"], record["server"])
+        generation = self.generations.current(sid)
+        self._published[sid] = generation
         self.counts["finalized"] += 1
         record = dict(record, capture_id=self.capture_id, session_id=sid, generation=generation)
         if self._session_hook is not None:
@@ -137,6 +145,10 @@ class SessionCoordinator:
                     self.analyzer.drop(key, "Connection restarted (new SYN on a tracked tuple)")
                 if key in self.retained:
                     self._retained_close(key, "Connection restarted (new SYN on a tracked tuple)")
+                self.renew(transport, packet.source, packet.destination)
+            elif self._reused(session_identity(transport, packet.source, packet.destination)):
+                # A new connection on a tuple whose last one already ended (published or retracted): the next
+                # generation, before the retained tier opens it, so the session and its decrypted rows agree.
                 self.renew(transport, packet.source, packet.destination)
         message = self.analyzer.process(now, packet)
         if transport == "tcp" and self.retain is not None:
@@ -285,7 +297,7 @@ class SessionCoordinator:
         for key in list(self.analyzer.tracked):
             state = self.analyzer.tracked[key]
             sid = session_identity("tcp", state["client"], state["server"])
-            self._retired_sessions.add((sid, self.generations.current(sid)))   # retracted, never finalized
+            self._published[sid] = self.generations.current(sid)   # retracted, never finalized
         self.analyzer.tracked.clear()
         self.analyzer.udp_flows.clear()
         self.analyzer.quic_assembler.clear()

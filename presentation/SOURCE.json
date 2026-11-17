@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "68fb86773aeeae39760a1cffac9117e73b213743",
+  "commit": "ed6b2b8a5ee8a2ba25f5f8f8eb6688e745627202",
   "branch": "claude/go-migration",
-  "build_digest": "ad17d6d091551a0bbd4d2da50e14d41a09b64f63733da7cbbf508addf17642de",
+  "build_digest": "a84d9017257ba56783e35d1a2bdb9854ce900f9f39bb13d400158c0abda72696",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -405,7 +405,7 @@
     {
       "path": "protocol_adapters/coordinator.py",
       "component": "adapters",
-      "sha256": "c41225fda090cb1d991a6ce5de80c350414253e8688fe21f348e068cb404d04d"
+      "sha256": "e7261e695c1da0400a9bc17f9c5c71aed3409b85f1ca1c77cef1a1c986825354"
     },
     {
       "path": "protocol_adapters/detectors.py",

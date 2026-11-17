@@ -93,7 +93,7 @@ type Monitor struct {
 
 	captureID   string
 	generations map[string]int
-	finalized   map[string]bool // session id and generation already published or retracted: never twice
+	published   map[string]int // per session id, the highest generation already published or retracted
 	now         float64
 	ended       bool
 }
@@ -121,7 +121,7 @@ func NewMonitor(pack *content.Pack, opts Options, captureID string, emit func(Ev
 	}
 	return &Monitor{emit: emit, pack: pack, opts: opts, an: an, counts: newCounter(), protocols: newCounter(), apps: newCounter(),
 		risks: newCounter(), policyCounts: newCounter(), rejected: map[string]int{}, captureID: captureID,
-		generations: map[string]int{}, finalized: map[string]bool{}}, nil
+		generations: map[string]int{}, published: map[string]int{}}, nil
 }
 
 // Error is a ValueError of the adapter.
@@ -166,12 +166,14 @@ func (m *Monitor) session(row analyzer.Row) {
 	transportName, _ := record["transport"].(string)
 	client, server := endpointOf(record["client"]), endpointOf(record["server"])
 	sid := sessionid.Identity(transportName, client, server)
-	generation := m.generations[sid]
-	key := sid + "/" + itoa(generation)
-	if m.finalized[key] {
-		return // a path that both expires and finishes must never publish one (session, generation) twice
+	if m.reused(sid) {
+		// One session per tracked flow: a record for a tuple whose current generation was already published or
+		// retracted is a later flow that began without a SYN (a UDP flow after the earlier one expired, a
+		// midstream TCP flow). It is the next generation; no (session, generation) is published twice.
+		m.generations[sid]++
 	}
-	m.finalized[key] = true
+	generation := m.generations[sid]
+	m.published[sid] = generation
 	record["capture_id"], record["session_id"], record["generation"] = m.captureID, sid, generation
 	m.counts.add("sessions", 1)
 	app, _ := record["app"].(string)
@@ -188,6 +190,12 @@ func (m *Monitor) session(row analyzer.Row) {
 	m.emit(Event{Kind: "session", Fields: record, Order: row.Order})
 }
 
+// reused reports whether the tuple's current generation was already published or retracted.
+func (m *Monitor) reused(sid string) bool {
+	last, ok := m.published[sid]
+	return ok && last >= m.generations[sid]
+}
+
 func endpointOf(v interface{}) transport.Endpoint {
 	pair, _ := v.([]interface{})
 	if len(pair) != 2 {
@@ -196,18 +204,6 @@ func endpointOf(v interface{}) transport.Endpoint {
 	addr, _ := pair[0].(string)
 	port, _ := pair[1].(int)
 	return transport.Endpoint{Addr: addr, Port: uint16(port)}
-}
-
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	digits := []byte{}
-	for n > 0 {
-		digits = append([]byte{byte('0' + n%10)}, digits...)
-		n /= 10
-	}
-	return string(digits)
 }
 
 // retired is CaptureMonitor._retired: a direction's terminal observation when tracking of its connection ends.
@@ -299,6 +295,10 @@ func (m *Monitor) Accept(record capture.Record, now float64) error {
 				}
 			}
 			m.generations[sessionid.Identity("tcp", source, destination)]++
+		} else if sid := sessionid.Identity("tcp", source, destination); m.reused(sid) {
+			// A new connection on a tuple whose last one already ended: the next generation, before the retained
+			// tier opens it, so the session and its decrypted rows agree.
+			m.generations[sid]++
 		}
 	}
 	message := m.an.Process(now, packet)
@@ -420,7 +420,7 @@ func (m *Monitor) InvalidateAll(reason, scope string) error {
 	m.counts.add("connections_discarded_after_gap", active)
 	m.an.Telemetry.Add("capture.gaps", 1)
 	for id := range ids {
-		m.finalized[id+"/"+itoa(m.generations[id])] = true // retracted, never finalized
+		m.published[id] = m.generations[id] // retracted, never finalized
 	}
 	m.an.Reset()
 	if m.tier != nil {
