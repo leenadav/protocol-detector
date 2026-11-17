@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -190,12 +190,15 @@ go-check:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/x509x -run NONE -fuzz FuzzLeafProfileStaysBounded -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/quicx -run NONE -fuzz FuzzValidateStaysBounded -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/textroute -run NONE -fuzz FuzzKexinitPostureMatchesTheOracle -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/ojson -run NONE -fuzz FuzzDecodeIsAFixedPoint -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/livectl -run NONE -fuzz FuzzIngestNeverPanics -fuzztime 10s
 	$(MAKE) parity-go
 	$(MAKE) parity-analyze
 	$(MAKE) parity-decrypt
 	$(MAKE) parity-live
 	$(MAKE) parity-live-decrypt
 	$(MAKE) schema-go
+	$(MAKE) parity-control
 	$(MAKE) bench-gate
 
 # Migration M8: the Go command-line binary (static, no cgo); go/bin is not tracked
@@ -220,6 +223,11 @@ parity-live: go-build
 # text and ticks with their clock values; in memory only; the reference needs the cryptography extra)
 parity-live-decrypt: go-build
 	$(PYTHON) -B migration/parity/live_decrypt_diff.py --binary go/bin/protodetect --count 300 --seed 1
+
+# Migration C14: the Go live control plane's run state (event log, reducer, retained views, run-scoped reset) against
+# the reference's LiveManager on worker lines from generated inputs (the reference needs the cryptography extra)
+parity-control: go-build
+	$(PYTHON) -B migration/parity/control_diff.py --binary go/bin/protodetect --count 120 --seed 1
 
 # Performance gates in Culvert's benchgate convention (migration/STATUS.md, performance budgets): allocations and retained
 # bytes per flow are gated, latency is reported

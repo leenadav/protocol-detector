@@ -55,6 +55,8 @@ func run(args []string) int {
 		return runLive(args[1:], os.Stdin, os.Stdout, os.Stderr)
 	case "live-decrypt":
 		return runLiveDecrypt(args[1:], os.Stdin, os.Stdout, os.Stderr)
+	case "control-replay":
+		return runControlReplay(os.Stdin, os.Stdout)
 	case "cases":
 		fs := flag.NewFlagSet("cases", flag.ContinueOnError)
 		file := fs.String("file", "migration/fixtures/cases.json", "the differential cases file")
