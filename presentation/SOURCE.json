@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "9a7ebb996d72ef7c76c71d8a5e8d16be84d769c5",
+  "commit": "68fb86773aeeae39760a1cffac9117e73b213743",
   "branch": "claude/go-migration",
-  "build_digest": "595278e9344fe1b05e40f3197fb3060e630721fdece449057bfceff7935122ab",
+  "build_digest": "ad17d6d091551a0bbd4d2da50e14d41a09b64f63733da7cbbf508addf17642de",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -535,7 +535,7 @@
     {
       "path": "presentation/launch.py",
       "component": "presentation",
-      "sha256": "a11fa019529eb17cc4066c8301d009a5b9e066731df5179c95b0bc109e26f34c"
+      "sha256": "fd54ab3cc0246285d10e0db8f603d47aa985d9a4192b37f370572c48480a8551"
     },
     {
       "path": "presentation/live_decrypt_smoke_check.py",
