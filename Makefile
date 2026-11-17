@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -199,6 +199,7 @@ go-check:
 	$(MAKE) parity-live-decrypt
 	$(MAKE) schema-go
 	$(MAKE) parity-control
+	$(MAKE) parity-server
 	$(MAKE) bench-gate
 
 # Migration M8: the Go command-line binary (static, no cgo); go/bin is not tracked
@@ -228,6 +229,11 @@ parity-live-decrypt: go-build
 # the reference's LiveManager on worker lines from generated inputs (the reference needs the cryptography extra)
 parity-control: go-build
 	$(PYTHON) -B migration/parity/control_diff.py --binary go/bin/protodetect --count 120 --seed 1
+
+# Migration C14/C15: `protodetect serve` against presentation/server.py, request for request (a stand-in tcpdump plays a
+# generated capture: nothing is captured; the reference's decryption cases need the cryptography extra)
+parity-server: go-build
+	$(PYTHON) -B migration/parity/server_diff.py --binary go/bin/protodetect --count 12 --seed 1
 
 # Performance gates in Culvert's benchgate convention (migration/STATUS.md, performance budgets): allocations and retained
 # bytes per flow are gated, latency is reported
