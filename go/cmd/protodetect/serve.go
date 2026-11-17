@@ -6,8 +6,10 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strconv"
+	"syscall"
 
 	"github.com/leenadav/protocol-detector/go/internal/serve"
 )
@@ -82,7 +84,11 @@ func runServe(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		_ = f.Sync()
 	}
 	go server.Serve()
-	<-ctx.Done()
+	// SIGTERM (the launcher's terminate()) ends the service as SIGINT does: the live run's worker, which runs in
+	// its own session, is stopped and the job runner shut down before the process exits.
+	stop, cancel := signal.NotifyContext(ctx, syscall.SIGTERM)
+	defer cancel()
+	<-stop.Done()
 	server.Close()
 	return 0
 }
