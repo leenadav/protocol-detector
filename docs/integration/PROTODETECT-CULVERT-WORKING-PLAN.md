@@ -377,10 +377,23 @@ Publishing or merging is a separate decision.
 
 1. License: MIT or Apache-2.0 (before upstream).
 2. ~~Branch for the detector work~~ Decided (Lee, 2026-11-14): `claude/culvert-integration-prep` from `f239c65`; Culvert lab work on local `lab/protocol-detector`.
-3. First product goal: visibility, or restriction profiles later.
-4. First profile families: HTTP/1, TLS and SSH, plus SMTP as a regression case. Confirm.
+3. ~~First product goal~~ Decided (Lee, 2026-11-17): **visibility only**. The detector identifies and the proxy logs; nothing blocks or restricts traffic. Restriction profiles and enforcement (L7, section 10) are out of scope for now. The lab's per-rule restriction (`lab/culvert/README.md`) stays a local demonstration and is not a deliverable.
+4. First profile families: **proposal for Lee, not approved** (2026-11-17). See "Proposal: first profile families for visibility only" below.
 5. Starting budgets and quality targets: accept section 9 as hypotheses, or adjust.
 6. ~~Lab review~~ Decided (Lee, 2026-11-14): no Codex rounds for Culvert lab changes for now; local tests and gates apply.
+
+### Proposal: first profile families for visibility only (decision 4, for Lee)
+
+Status: a proposal. Nothing here is decided; the public package's profile list is unchanged.
+
+| Treatment | Families | Rationale |
+|---|---|---|
+| **Identified, with evidence** (in the profile) | TLS, HTTP/1, SSH, SMTP | TLS carries most CONNECT-bypass traffic (SNI, offered ALPN, the post-quantum hellos of item #4), HTTP/1 covers plain and tunnelled requests (Host), SSH and SMTP are server-first and exercise the both-directions design (5.2.7); SMTP doubles as the regression case. These are the only four families the public package can admit today: their evidence fields are classified for privacy (`go/detector/evidence.go`) and their identification is tested in `go/detector`. |
+| **Named only** (outside the profile) | every other family the dispatcher recognises by prefix | Visibility is served without new risk: the record carries the family name and `outside_profile`, never evidence. This needs no change; the lab already reports PostgreSQL this way. The name comes from the prefix alone, before its structure is validated, so logs and dashboards must present it as unvalidated, never as an identification. |
+| **Not in this phase** | UDP families (QUIC, DTLS and the rest), SOCKS, inspect-path facts | CONNECT tunnels are TCP, so UDP families are not on the observed path. SOCKS observation needs its consent rule first (section 11), and facts wait for the Culvert team (6.4, and `docs/integration/CULVERT-TEAM-REQUEST.md`). |
+| **Next candidates** | IMAP, POP3, FTP (each with STARTTLS) | Common on proxied ports, and text-routed like SMTP. Each needs an evidence classification and facade tests before it can join a profile; a separate change. |
+
+Why visibility only changes the trade-off: a misidentification no longer blocks anything, so the cost of an error is a wrong log line rather than a broken connection. The cost that remains is privacy and log cardinality, which is why evidence stays limited to classified families and every other family is named without evidence.
 
 ## 14. Immediate next work package
 
@@ -805,7 +818,7 @@ Culvert items, for the Culvert team:
 
 1. **License:** MIT or Apache-2.0 (#1, B1).
 2. **Branch:** `claude/go-migration`, or a new integration branch, for the section 6 work.
-3. **First product goal:** visibility only, or the restriction profiles (Codex's open decision 1).
+3. **First product goal:** visibility only, or the restriction profiles (Codex's open decision 1). *Decided 2026-11-17: visibility only (section 13).*
 4. **Families in the first profile:** recommended HTTP/1, TLS and SSH, with SMTP as a regression case.
 5. **Observing bypassed traffic:** opt-in per rule or decryption profile (recommended), agreed with the Culvert team.
 6. **Budgets and quality targets:** accept the C6/C7 proposals as starting points, or set others with the Culvert team.
