@@ -5,8 +5,10 @@
 package livectl
 
 import (
+	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"sync"
 	"time"
 
@@ -258,4 +260,37 @@ func (s *State) ExpireLease() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.lease = time.Time{}
+}
+
+// EventsSinceBig is events_since for the integers int() admits from a query: any size. A cursor beyond int64
+// can only be ahead of the log: no events, and the cursor is returned as given (max(cursor, last)).
+func (s *State) EventsSinceBig(cursor, limit *big.Int) (*ojson.Object, error) {
+	if cursor.IsInt64() && limit.IsInt64() {
+		return s.EventsSince(cursor.Int64(), limit.Int64())
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.log == nil {
+		return ojson.NewObject("capture_id", nil, "events", []ojson.Value{}, "cursor", ojson.FromInt(0),
+			"reset_required", false, "view", nil), nil
+	}
+	if cursor.Sign() < 0 {
+		return nil, errors.New("cursor must be a non-negative integer")
+	}
+	if !limit.IsInt64() || limit.Int64() < 1 || limit.Int64() > 10_000 {
+		return nil, errors.New("limit outside 1..10000")
+	}
+	page, err := s.log.Read(0, 1) // validates nothing further; only "start" is taken from it
+	if err != nil {
+		return nil, err
+	}
+	view, err := s.log.View()
+	if err != nil {
+		return nil, err
+	}
+	start, _ := page.Get("start")
+	out := ojson.NewObject("events", []ojson.Value{}, "cursor", ojson.Int(cursor.String()), "reset_required", false, "start", start)
+	out.Set("capture_id", s.captureID)
+	out.Set("view", view)
+	return out, nil
 }
