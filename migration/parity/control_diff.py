@@ -36,9 +36,9 @@ def reference(script):
         op, _, arg = line.partition(" ")
         if op == "J":
             try:
-                out.append(json.dumps(json.loads(arg), allow_nan=False))
-            except ValueError:
-                out.append(json.dumps({"error": True}))
+                out.append(json.dumps(json.loads(bytes.fromhex(arg)), allow_nan=False))
+            except ValueError as error:
+                out.append(json.dumps({"error": str(error)}))
         elif op == "N":
             capture_id, phase = arg.split(" ")
             with manager.lock:            # start()'s reset of the retained state, without the worker process
@@ -106,8 +106,31 @@ MALFORMED = [
     {"type": "session", "client": ["10.0.0.9", 9], "server": ["10.0.0.1", 80], "encryption": "tls", "client_protocol": "tls", "app": "tls"},
 ]
 
+def json_documents(rng, count):
+    """Valid documents and byte-level mutations of them: truncations, insertions, invalid UTF-8, encoded
+    surrogates and BOMs. Documents json.loads would read as UTF-16 or UTF-32 are left out (not decoded by Go)."""
+    alphabet = [b"{", b"}", b"[", b"]", b",", b":", b'"', b"\\", b"u", b"d83d", b"de00", b"d800", b"0", b"-", b"e", b".", b"1",
+                b" ", b"\n", b"\x01", b"\xff", b"\xc3", b"\xa9", b"\xed\xa0\x80", b"\xe2\x82", b"\xf0\x9f\x98", b"\xef\xbb\xbf",
+                b"NaN", b"Infinity", b"null", b"tru", b"9" * 40]
+    out = []
+    for _ in range(count):
+        doc = rng.choice(JSON_DOCS).encode("utf-8", "surrogatepass")
+        for _ in range(rng.randint(0, 3)):
+            at = rng.randint(0, len(doc))
+            choice = rng.random()
+            if choice < 0.4:
+                doc = doc[:at] + rng.choice(alphabet) + doc[at:]
+            elif choice < 0.7:
+                doc = doc[:at] + doc[at + rng.randint(1, 3):]
+            else:
+                doc = doc[:at]
+        if json.detect_encoding(doc) in ("utf-8", "utf-8-sig"):
+            out.append(doc)
+    return out
+
+
 JSON_DOCS = ['{"a": 1, "b": [1.5, -0, 1e2, 2E-3, 1.0, 12345678901234567890123], "a": 2}', '{"s": "\\u00e9\\ud83d\\ude00\\n\\"x"}',
-             '[]', '{}', '  {"x" : null , "y":true,"z":false}  ', '{"x": 1,}', '[1 2]', '"\\ud800"', '{"x": 01}', '{"x": "\x01"}',
+             '[]', '{}', '  {"x" : null , "y":true,"z":false}  ', '{"x": 1,}', '[1 2]', '"\\ud800"', '{"x": 01}', '{"x": "\x01"}', '{"a": [1, {"b": "\\ud83d\\ude00"}], "c": -1.5e-3}', '[1, 2, 3]',
              '[NaN]', '[-Infinity]', '{"k": 1e400}', '[0.1, 100000000000000000.0, 1e-7, 123.456e10]', '{"x": "\\/"}', '{"x"', '']
 
 
@@ -147,7 +170,7 @@ def script_for(rng, lines, retention_probe):
     script += ["S", "E 0 500", "X " + json.dumps(capture_ids[0]), "V", "E 0 500"]
     script.append("N {} running".format(capture_ids[1]))
     script += ["I " + line for line in pool[:20]] + ["V", "X " + json.dumps(capture_ids[0]), "X null", "S"]
-    script += ["J " + doc for doc in rng.sample(JSON_DOCS, 4)]
+    script += ["J " + doc.hex() for doc in json_documents(rng, 40)]
     return script
 
 

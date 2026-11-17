@@ -11,7 +11,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"unicode/utf16"
 	"unicode/utf8"
 
 	"github.com/leenadav/protocol-detector/go/internal/pyjson"
@@ -107,8 +106,18 @@ func IntValue(v Value) (int64, bool) {
 // FromInt is the Int for n.
 func FromInt(n int64) Int { return Int(strconv.FormatInt(n, 10)) }
 
-// ErrNotFinite is json.dumps(allow_nan=False) refusing NaN or an infinity.
-var ErrNotFinite = errors.New("Out of range float values are not JSON compliant")
+// NotFiniteError is json.dumps(allow_nan=False) refusing NaN or an infinity (a ValueError).
+type NotFiniteError struct{ Value float64 }
+
+func (e *NotFiniteError) Error() string {
+	text := "nan"
+	if math.IsInf(e.Value, 1) {
+		text = "inf"
+	} else if math.IsInf(e.Value, -1) {
+		text = "-inf"
+	}
+	return "Out of range float values are not JSON compliant: " + text
+}
 
 // Dumps is json.dumps(v, allow_nan=False).
 func Dumps(v Value) (string, error) {
@@ -148,7 +157,7 @@ func write(b *strings.Builder, v Value) error {
 		b.WriteString(strconv.FormatInt(x, 10))
 	case float64:
 		if math.IsNaN(x) || math.IsInf(x, 0) {
-			return ErrNotFinite
+			return &NotFiniteError{x}
 		}
 		b.WriteString(pyjson.Float(x))
 	case []Value:
@@ -209,294 +218,378 @@ func writeString(b *strings.Builder, s string) {
 	b.WriteByte('"')
 }
 
-// SyntaxError is a document json.loads refuses (a ValueError in the reference).
-type SyntaxError struct{ Msg string }
+// SyntaxError is a document json.loads refuses, with the reference's str(error): Kind "json" is a
+// JSONDecodeError ("msg: line L column C (char P)"), "unicode" a UnicodeDecodeError, "value" any other
+// ValueError (the 4300-digit integer limit), "unsupported" an input this port does not decode (UTF-16 or
+// UTF-32, which json.loads detects; workers and browsers send UTF-8).
+type SyntaxError struct {
+	Kind string
+	Msg  string
+}
 
 func (e *SyntaxError) Error() string { return e.Msg }
 
-// MaxDepth bounds nesting; Python's recursion limit refuses deeper documents too (RecursionError).
+// MaxDepth bounds nesting; deeper documents end the reference with RecursionError (not a ValueError).
 const MaxDepth = 512
 
-// Decode is json.loads(data) for UTF-8 input: NaN, Infinity and -Infinity are accepted as Python accepts
-// them, control characters inside strings are refused (strict mode), surrogate escapes pair up.
+// Decode is json.loads(data) for bytes.
 func Decode(data []byte) (Value, error) {
-	if !utf8.Valid(data) {
-		return nil, &SyntaxError{"input is not valid UTF-8"}
-	}
-	d := &decoder{s: string(data)}
-	d.ws()
-	v, err := d.value(0)
+	text, err := decodeBytes(data)
 	if err != nil {
 		return nil, err
 	}
-	d.ws()
-	if d.i != len(d.s) {
-		return nil, &SyntaxError{"Extra data"}
+	d := &decoder{s: text}
+	idx := d.skipWS(0)
+	v, end, err := d.scan(idx, 0)
+	if err != nil {
+		return nil, err
+	}
+	end = d.skipWS(end)
+	if end != len(d.s) {
+		return nil, d.fail("Extra data", end)
 	}
 	return v, nil
 }
 
 type decoder struct {
-	s string
-	i int
+	s []rune // code points; lone surrogates are kept as such (surrogatepass)
 }
 
-func (d *decoder) ws() {
-	for d.i < len(d.s) {
-		switch d.s[d.i] {
+type stopIteration struct{ idx int }
+
+func (e *stopIteration) Error() string { return "stop" }
+
+func (d *decoder) fail(msg string, pos int) error {
+	line, col := 1, pos+1
+	for i := 0; i < pos && i < len(d.s); i++ {
+		if d.s[i] == '\n' {
+			line++
+			col = pos - i
+		}
+	}
+	return &SyntaxError{Kind: "json", Msg: fmt.Sprintf("%s: line %d column %d (char %d)", msg, line, col, pos)}
+}
+
+func (d *decoder) skipWS(i int) int {
+	for i < len(d.s) {
+		switch d.s[i] {
 		case ' ', '\t', '\n', '\r':
-			d.i++
+			i++
 		default:
-			return
+			return i
 		}
 	}
+	return i
 }
 
-func (d *decoder) fail(msg string) error { return &SyntaxError{msg} }
+func (d *decoder) has(i int, word string) bool {
+	if i+len(word) > len(d.s) {
+		return false
+	}
+	for k, c := range word {
+		if d.s[i+k] != c {
+			return false
+		}
+	}
+	return true
+}
 
-func (d *decoder) value(depth int) (Value, error) {
+// scan is scan_once_unicode: the value at idx and the index after it.
+func (d *decoder) scan(idx, depth int) (Value, int, error) {
+	v, end, err := d.scanOnce(idx, depth)
+	if stop, ok := err.(*stopIteration); ok {
+		return nil, 0, d.fail("Expecting value", stop.idx)
+	}
+	return v, end, err
+}
+
+func (d *decoder) scanOnce(idx, depth int) (Value, int, error) {
 	if depth > MaxDepth {
-		return nil, d.fail("maximum nesting depth exceeded")
+		return nil, 0, &SyntaxError{Kind: "recursion", Msg: "maximum recursion depth exceeded while decoding a JSON document from a unicode string"}
 	}
-	if d.i >= len(d.s) {
-		return nil, d.fail("Expecting value")
+	if idx >= len(d.s) {
+		return nil, 0, &stopIteration{idx}
 	}
-	switch c := d.s[d.i]; {
-	case c == '{':
-		return d.object(depth)
-	case c == '[':
-		return d.array(depth)
-	case c == '"':
-		return d.str()
-	case strings.HasPrefix(d.s[d.i:], "null"):
-		d.i += 4
-		return nil, nil
-	case strings.HasPrefix(d.s[d.i:], "true"):
-		d.i += 4
-		return true, nil
-	case strings.HasPrefix(d.s[d.i:], "false"):
-		d.i += 5
-		return false, nil
-	case strings.HasPrefix(d.s[d.i:], "NaN"):
-		d.i += 3
-		return math.NaN(), nil
-	case strings.HasPrefix(d.s[d.i:], "Infinity"):
-		d.i += 8
-		return math.Inf(1), nil
-	case strings.HasPrefix(d.s[d.i:], "-Infinity"):
-		d.i += 9
-		return math.Inf(-1), nil
-	case c == '-' || (c >= '0' && c <= '9'):
-		return d.number()
+	switch d.s[idx] {
+	case '"':
+		str, end, err := d.scanString(idx + 1)
+		return str, end, err
+	case '{':
+		return d.object(idx+1, depth+1)
+	case '[':
+		return d.array(idx+1, depth+1)
+	case 'n':
+		if d.has(idx, "null") {
+			return nil, idx + 4, nil
+		}
+	case 't':
+		if d.has(idx, "true") {
+			return true, idx + 4, nil
+		}
+	case 'f':
+		if d.has(idx, "false") {
+			return false, idx + 5, nil
+		}
+	case 'N':
+		if d.has(idx, "NaN") {
+			return math.NaN(), idx + 3, nil
+		}
+	case 'I':
+		if d.has(idx, "Infinity") {
+			return math.Inf(1), idx + 8, nil
+		}
+	case '-':
+		if d.has(idx, "-Infinity") {
+			return math.Inf(-1), idx + 9, nil
+		}
 	}
-	return nil, d.fail("Expecting value")
+	return d.number(idx)
 }
 
-func digitsAt(s string, i int) int {
-	j := i
-	for j < len(s) && s[j] >= '0' && s[j] <= '9' {
-		j++
-	}
-	return j
-}
+func digit(c rune) bool { return c >= '0' && c <= '9' }
 
-// number follows Python's NUMBER_RE: -?(0|[1-9]\d*)(\.\d+)?([eE][-+]?\d+)?, matched greedily, the rest left
-// to the caller (so "01" is 0 followed by extra data, as in the reference).
-func (d *decoder) number() (Value, error) {
-	start := d.i
-	j := d.i
-	if d.s[j] == '-' {
-		j++
+// number is _match_number_unicode.
+func (d *decoder) number(start int) (Value, int, error) {
+	s, endIdx := d.s, len(d.s)-1
+	idx := start
+	if s[idx] == '-' {
+		idx++
+		if idx > endIdx {
+			return nil, 0, &stopIteration{start}
+		}
 	}
-	if j >= len(d.s) || d.s[j] < '0' || d.s[j] > '9' {
-		return nil, d.fail("Expecting value")
+	switch {
+	case s[idx] >= '1' && s[idx] <= '9':
+		idx++
+		for idx <= endIdx && digit(s[idx]) {
+			idx++
+		}
+	case s[idx] == '0':
+		idx++
+	default:
+		return nil, 0, &stopIteration{start}
 	}
-	if d.s[j] == '0' {
-		j++
-	} else {
-		j = digitsAt(d.s, j)
-	}
-	intEnd := j
 	isFloat := false
-	if j+1 < len(d.s) && d.s[j] == '.' && d.s[j+1] >= '0' && d.s[j+1] <= '9' {
-		j = digitsAt(d.s, j+1)
+	if idx < endIdx && s[idx] == '.' && digit(s[idx+1]) {
 		isFloat = true
-	}
-	if j < len(d.s) && (d.s[j] == 'e' || d.s[j] == 'E') {
-		k := j + 1
-		if k < len(d.s) && (d.s[k] == '+' || d.s[k] == '-') {
-			k++
+		idx += 2
+		for idx <= endIdx && digit(s[idx]) {
+			idx++
 		}
-		if e := digitsAt(d.s, k); e > k {
-			j = e
+	}
+	if idx < endIdx && (s[idx] == 'e' || s[idx] == 'E') {
+		eStart := idx
+		idx++
+		if idx < endIdx && (s[idx] == '-' || s[idx] == '+') {
+			idx++
+		}
+		for idx <= endIdx && digit(s[idx]) {
+			idx++
+		}
+		if digit(s[idx-1]) {
 			isFloat = true
+		} else {
+			idx = eStart
 		}
 	}
-	d.i = j
+	text := string(s[start:idx])
 	if !isFloat {
-		text := d.s[start:intEnd]
+		digits := strings.TrimPrefix(text, "-")
+		if len(digits) > 4300 {
+			return nil, 0, &SyntaxError{Kind: "value", Msg: fmt.Sprintf("Exceeds the limit (4300 digits) for integer string conversion: value has %d digits; use sys.set_int_max_str_digits() to increase the limit", len(digits))}
+		}
 		if text == "-0" {
 			text = "0"
 		}
-		return Int(text), nil
+		return Int(text), idx, nil
 	}
-	f, err := strconv.ParseFloat(d.s[start:j], 64)
+	f, err := strconv.ParseFloat(text, 64)
 	if err != nil && !errors.Is(err, strconv.ErrRange) {
-		return nil, d.fail("invalid number")
+		return nil, 0, &stopIteration{start}
 	}
-	return f, nil // an overflow is ±Inf and an underflow ±0, as float() gives
+	return f, idx, nil // an overflow is ±Inf and an underflow ±0, as float() gives
 }
 
-func (d *decoder) str() (string, error) {
-	d.i++ // opening quote
-	var b strings.Builder
+func hexValue(c rune) (rune, bool) {
+	switch {
+	case c >= '0' && c <= '9':
+		return c - '0', true
+	case c >= 'a' && c <= 'f':
+		return c - 'a' + 10, true
+	case c >= 'A' && c <= 'F':
+		return c - 'A' + 10, true
+	}
+	return 0, false
+}
+
+// scanString is scanstring_unicode(pystr, end, strict=True): end is the index after the opening quote.
+func (d *decoder) scanString(end int) (string, int, error) {
+	s, n := d.s, len(d.s)
+	begin := end - 1
+	var out []rune
 	for {
-		if d.i >= len(d.s) {
-			return "", d.fail("Unterminated string")
-		}
-		c := d.s[d.i]
-		switch {
-		case c == '"':
-			d.i++
-			return b.String(), nil
-		case c < 0x20:
-			return "", d.fail("Invalid control character")
-		case c == '\\':
-			if d.i+1 >= len(d.s) {
-				return "", d.fail("Unterminated string")
+		var c rune
+		next := end
+		for ; next < n; next++ {
+			c = s[next]
+			if c == '"' || c == '\\' {
+				break
+			} else if c <= 0x1f {
+				return "", 0, d.fail("Invalid control character at", next)
 			}
-			e := d.s[d.i+1]
-			d.i += 2
-			switch e {
+		}
+		if next >= n || !(c == '"' || c == '\\') {
+			return "", 0, d.fail("Unterminated string starting at", begin)
+		}
+		out = append(out, s[end:next]...)
+		next++
+		if c == '"' {
+			end = next
+			break
+		}
+		if next == n {
+			return "", 0, d.fail("Unterminated string starting at", begin)
+		}
+		c = s[next]
+		if c != 'u' {
+			end = next + 1
+			switch c {
 			case '"', '\\', '/':
-				b.WriteByte(e)
 			case 'b':
-				b.WriteByte('\b')
+				c = '\b'
 			case 'f':
-				b.WriteByte('\f')
+				c = '\f'
 			case 'n':
-				b.WriteByte('\n')
+				c = '\n'
 			case 'r':
-				b.WriteByte('\r')
+				c = '\r'
 			case 't':
-				b.WriteByte('\t')
-			case 'u':
-				r, ok := d.hex4()
-				if !ok {
-					return "", d.fail("Invalid \\uXXXX escape")
-				}
-				if utf16.IsSurrogate(r) && r < 0xdc00 && strings.HasPrefix(d.s[d.i:], `\u`) {
-					save := d.i
-					d.i += 2
-					if lo, ok := d.hex4(); ok && lo >= 0xdc00 && lo <= 0xdfff {
-						r = utf16.DecodeRune(r, lo)
-					} else {
-						d.i = save
-					}
-				}
-				if utf16.IsSurrogate(r) {
-					// A lone surrogate is a valid Python str but not UTF-8: it is kept as its WTF-8 bytes, which
-					// writeString turns back into the same \uXXXX escape.
-					b.WriteByte(byte(0xe0 | r>>12))
-					b.WriteByte(byte(0x80 | (r>>6)&0x3f))
-					b.WriteByte(byte(0x80 | r&0x3f))
-				} else {
-					b.WriteRune(r)
-				}
+				c = '\t'
 			default:
-				return "", d.fail("Invalid \\escape")
+				return "", 0, d.fail("Invalid \\escape", end-2)
 			}
-		default:
-			r, size := utf8.DecodeRuneInString(d.s[d.i:])
+		} else {
+			c = 0
+			next++
+			end = next + 4
+			if end > n {
+				return "", 0, d.fail("Invalid \\uXXXX escape", next-1)
+			}
+			for ; next < end; next++ {
+				h, ok := hexValue(s[next])
+				if !ok {
+					return "", 0, d.fail("Invalid \\uXXXX escape", end-5)
+				}
+				c = c<<4 | h
+			}
+			if c >= 0xd800 && c <= 0xdbff && end+6 < n && s[next] == '\\' && s[next+1] == 'u' {
+				next += 2
+				var c2 rune
+				end += 6
+				for ; next < end; next++ {
+					h, ok := hexValue(s[next])
+					if !ok {
+						return "", 0, d.fail("Invalid \\uXXXX escape", end-5)
+					}
+					c2 = c2<<4 | h
+				}
+				if c2 >= 0xdc00 && c2 <= 0xdfff {
+					c = 0x10000 + (c-0xd800)<<10 + (c2 - 0xdc00)
+				} else {
+					end -= 6
+				}
+			}
+		}
+		out = append(out, c)
+	}
+	return wtf8(out), end, nil
+}
+
+// wtf8 encodes code points as UTF-8, surrogates included (as their three-byte forms).
+func wtf8(runes []rune) string {
+	var b strings.Builder
+	for _, r := range runes {
+		if r >= 0xd800 && r <= 0xdfff {
+			b.WriteByte(byte(0xe0 | r>>12))
+			b.WriteByte(byte(0x80 | (r>>6)&0x3f))
+			b.WriteByte(byte(0x80 | r&0x3f))
+		} else {
 			b.WriteRune(r)
-			d.i += size
 		}
 	}
+	return b.String()
 }
 
-func (d *decoder) hex4() (rune, bool) {
-	if d.i+4 > len(d.s) {
-		return 0, false
-	}
-	n, err := strconv.ParseUint(d.s[d.i:d.i+4], 16, 32)
-	if err != nil || strings.ContainsAny(d.s[d.i:d.i+4], "+-xX_") {
-		return 0, false
-	}
-	d.i += 4
-	return rune(n), true
-}
-
-func (d *decoder) array(depth int) (Value, error) {
-	d.i++
-	out := []Value{}
-	d.ws()
-	if d.i < len(d.s) && d.s[d.i] == ']' {
-		d.i++
-		return out, nil
-	}
-	for {
-		d.ws()
-		v, err := d.value(depth + 1)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, v)
-		d.ws()
-		if d.i >= len(d.s) {
-			return nil, d.fail("Expecting ',' delimiter")
-		}
-		switch d.s[d.i] {
-		case ',':
-			d.i++
-		case ']':
-			d.i++
-			return out, nil
-		default:
-			return nil, d.fail("Expecting ',' delimiter")
-		}
-	}
-}
-
-func (d *decoder) object(depth int) (Value, error) {
-	d.i++
+func (d *decoder) object(idx, depth int) (Value, int, error) {
+	s, endIdx := d.s, len(d.s)-1
 	out := &Object{vals: map[string]Value{}}
-	d.ws()
-	if d.i < len(d.s) && d.s[d.i] == '}' {
-		d.i++
-		return out, nil
+	idx = d.skipWS(idx)
+	if idx <= endIdx && s[idx] == '}' {
+		return out, idx + 1, nil
 	}
 	for {
-		d.ws()
-		if d.i >= len(d.s) || d.s[d.i] != '"' {
-			return nil, d.fail("Expecting property name enclosed in double quotes")
+		if idx > endIdx || s[idx] != '"' {
+			return nil, 0, d.fail("Expecting property name enclosed in double quotes", idx)
 		}
-		key, err := d.str()
+		key, next, err := d.scanString(idx + 1)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
-		d.ws()
-		if d.i >= len(d.s) || d.s[d.i] != ':' {
-			return nil, d.fail("Expecting ':' delimiter")
+		idx = d.skipWS(next)
+		if idx > endIdx || s[idx] != ':' {
+			return nil, 0, d.fail("Expecting ':' delimiter", idx)
 		}
-		d.i++
-		d.ws()
-		v, err := d.value(depth + 1)
+		idx = d.skipWS(idx + 1)
+		v, next, err := d.scanOnce(idx, depth)
 		if err != nil {
-			return nil, err
+			if stop, ok := err.(*stopIteration); ok {
+				return nil, 0, d.fail("Expecting value", stop.idx)
+			}
+			return nil, 0, err
 		}
 		out.Set(key, v)
-		d.ws()
-		if d.i >= len(d.s) {
-			return nil, d.fail("Expecting ',' delimiter")
+		idx = d.skipWS(next)
+		if idx <= endIdx && s[idx] == '}' {
+			return out, idx + 1, nil
 		}
-		switch d.s[d.i] {
-		case ',':
-			d.i++
-		case '}':
-			d.i++
-			return out, nil
-		default:
-			return nil, d.fail("Expecting ',' delimiter")
+		if idx > endIdx || s[idx] != ',' {
+			return nil, 0, d.fail("Expecting ',' delimiter", idx)
+		}
+		comma := idx
+		idx = d.skipWS(idx + 1)
+		if idx <= endIdx && s[idx] == '}' {
+			return nil, 0, d.fail("Illegal trailing comma before end of object", comma)
+		}
+	}
+}
+
+func (d *decoder) array(idx, depth int) (Value, int, error) {
+	s, endIdx := d.s, len(d.s)-1
+	out := []Value{}
+	idx = d.skipWS(idx)
+	if idx <= endIdx && s[idx] == ']' {
+		return out, idx + 1, nil
+	}
+	for {
+		v, next, err := d.scanOnce(idx, depth)
+		if err != nil {
+			if stop, ok := err.(*stopIteration); ok {
+				return nil, 0, d.fail("Expecting value", stop.idx)
+			}
+			return nil, 0, err
+		}
+		out = append(out, v)
+		idx = d.skipWS(next)
+		if idx <= endIdx && s[idx] == ']' {
+			return out, idx + 1, nil
+		}
+		if idx > endIdx || s[idx] != ',' {
+			return nil, 0, d.fail("Expecting ',' delimiter", idx)
+		}
+		comma := idx
+		idx = d.skipWS(idx + 1)
+		if idx <= endIdx && s[idx] == ']' {
+			return nil, 0, d.fail("Illegal trailing comma before end of array", comma)
 		}
 	}
 }

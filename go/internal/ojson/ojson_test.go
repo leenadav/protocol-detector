@@ -39,7 +39,7 @@ func TestDecodeRefusesWhatPythonRefuses(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v (json.loads accepts it)", in, err)
 		}
-		if _, err := Dumps(v); err != ErrNotFinite {
+		if _, err := Dumps(v); err == nil || !strings.HasPrefix(err.Error(), "Out of range float values are not JSON compliant: ") {
 			t.Errorf("%s: dumps gave %v, want the allow_nan refusal", in, err)
 		}
 	}

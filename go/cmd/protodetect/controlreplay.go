@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"strconv"
@@ -15,7 +16,7 @@ import (
 // writes one JSON line per read: the differential harness (migration/parity/control_diff.py) runs the
 // reference's LiveManager on the same script. No process is started and nothing is captured.
 //
-//	J <json>              echo: the document decoded and written again, or {"error": true}
+//	J <hex>               echo: the document decoded and written again, or {"error": its ValueError text}
 //	N <capture id> <phase> a fresh run (start()'s reset of the retained state), phase is the state shown
 //	I <json>              ingest one worker line (an object)
 //	E <cursor> <limit>    events_since(cursor, limit), or {"error": message}
@@ -40,10 +41,14 @@ func runControlReplay(stdin io.Reader, stdout io.Writer) int {
 		if line != "" {
 			op, arg, _ := strings.Cut(line, " ")
 			switch op {
-			case "J":
-				v, derr := ojson.Decode([]byte(arg))
-				if _, nerr := ojson.Dumps(v); derr != nil || nerr != nil {
-					emit(ojson.NewObject("error", true)) // json.loads or json.dumps(allow_nan=False) refused it
+			case "J": // the document is hex: any bytes, as a request body or a worker line may carry
+				data, _ := hex.DecodeString(arg)
+				v, derr := ojson.Decode(data)
+				if derr == nil {
+					_, derr = ojson.Dumps(v)
+				}
+				if derr != nil {
+					emit(ojson.NewObject("error", derr.Error())) // json.loads' or json.dumps(allow_nan=False)'s ValueError
 				} else {
 					emit(v)
 				}
