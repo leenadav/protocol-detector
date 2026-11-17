@@ -1,5 +1,5 @@
 {
- "started": "2026-11-14 17:20:21 UTC",
+ "started": "2026-11-17 21:07:27 UTC",
  "builds": {
   "A": {
    "label": "unmodified Culvert 52eb9d1",
@@ -71,7 +71,7 @@
      "detail": {
       "body": "470f07670f1679dd"
      },
-     "seconds": 0.07,
+     "seconds": 0.08,
      "detector_ok": true,
      "detector": "no tunnel: nothing to observe",
      "records": [],
@@ -1721,7 +1721,7 @@
       "bytes": 33554437,
       "seconds": 0.17
      },
-     "seconds": 0.33,
+     "seconds": 0.32,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -1731,7 +1731,7 @@
       "sent": "3a69d9e8661fe5c9",
       "received": "3a69d9e8661fe5c9",
       "bytes": 33554437,
-      "seconds": 0.17
+      "seconds": 0.15
      },
      "seconds": 0.31,
      "detector_ok": true,
@@ -1745,7 +1745,7 @@
       "bytes": 33554437,
       "seconds": 0.17
      },
-     "seconds": 0.34,
+     "seconds": 0.32,
      "detector_ok": true,
      "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
      "records": [
@@ -1788,9 +1788,9 @@
       "sent": "3a69d9e8661fe5c9",
       "received": "3a69d9e8661fe5c9",
       "bytes": 33554437,
-      "seconds": 0.16
+      "seconds": 0.18
      },
-     "seconds": 0.32,
+     "seconds": 0.35,
      "detector_ok": true,
      "detector": "client: unknown (engine) \u00b7 server: unknown (engine)",
      "records": [
@@ -1841,7 +1841,7 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.22,
+     "seconds": 0.21,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -1852,7 +1852,7 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.22,
+     "seconds": 0.21,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -1863,7 +1863,7 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.22,
+     "seconds": 0.21,
      "detector_ok": true,
      "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
      "records": [
@@ -1907,7 +1907,7 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.23,
+     "seconds": 0.21,
      "detector_ok": true,
      "detector": "client: budget_exhausted (engine) \u00b7 server: budget_exhausted (engine) \u00b7 never left at 'detecting'",
      "records": [
@@ -1951,7 +1951,7 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.22,
+     "seconds": 0.21,
      "detector_ok": true,
      "detector": "client: failed (panic) \u00b7 server: failed (panic) \u00b7 flow quarantined, tunnel kept relaying",
      "records": [
@@ -2056,7 +2056,7 @@
      "detail": {
       "quiet_seconds": 4.2
      },
-     "seconds": 4.21,
+     "seconds": 4.2,
      "detector_ok": true,
      "detector": "client: incomplete (expired) \u00b7 server: incomplete (expired)",
      "records": [
@@ -2229,7 +2229,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.63,
+     "seconds": 0.59,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -2239,7 +2239,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.66,
+     "seconds": 0.55,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -2249,7 +2249,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.66,
+     "seconds": 0.56,
      "detector_ok": true,
      "detector": "300 records, 0 flows still held by the engine afterwards",
      "records": [
@@ -2275,8 +2275,38 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 4,
-        "admitted": 17,
+        "active": 11,
+        "admitted": 24,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 24
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "schema_version": 1,
+       "engine": "fake",
+       "client": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "fake",
+        "observed_bytes": 2005
+       },
+       "quarantined": false,
+       "engine_stats": {
+        "active": 13,
+        "admitted": 27,
         "refused": 0,
         "panics": 0,
         "disabled": false
@@ -2305,13 +2335,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 3,
-        "admitted": 17,
+        "active": 14,
+        "admitted": 29,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 26
+       "handoffs_total": 28
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2335,43 +2365,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 2,
-        "admitted": 17,
+        "active": 21,
+        "admitted": 37,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 32
-      },
-      {
-       "dest": "origin.lab.test:9000",
-       "forwarded_bytes": [
-        2005,
-        2005
-       ],
-       "schema_version": 1,
-       "engine": "fake",
-       "client": {
-        "outcome": "identified",
-        "reason": "engine",
-        "family": "fake",
-        "observed_bytes": 2005
-       },
-       "server": {
-        "outcome": "identified",
-        "reason": "engine",
-        "family": "fake",
-        "observed_bytes": 2005
-       },
-       "quarantined": false,
-       "engine_stats": {
-        "active": 1,
-        "admitted": 17,
-        "refused": 0,
-        "panics": 0,
-        "disabled": false
-       },
-       "handoffs_total": 32
+       "handoffs_total": 42
       }
      ],
      "record_count": 300
@@ -2382,7 +2382,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.71,
+     "seconds": 0.63,
      "detector_ok": true,
      "detector": "300 records, 0 flows still held by the engine afterwards",
      "records": [
@@ -2408,8 +2408,8 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 1,
-        "admitted": 14,
+        "active": 10,
+        "admitted": 23,
         "refused": 0,
         "panics": 0,
         "disabled": false
@@ -2438,13 +2438,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 9,
-        "admitted": 24,
+        "active": 14,
+        "admitted": 28,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 30
+       "handoffs_total": 28
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2468,13 +2468,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 10,
-        "admitted": 24,
+        "active": 13,
+        "admitted": 28,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 30
+       "handoffs_total": 28
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2498,13 +2498,13 @@
        },
        "quarantined": false,
        "engine_stats": {
-        "active": 9,
-        "admitted": 25,
+        "active": 13,
+        "admitted": 29,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 30
+       "handoffs_total": 33
       }
      ],
      "record_count": 300
@@ -2515,7 +2515,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.59,
+     "seconds": 0.56,
      "detector_ok": true,
      "detector": "300 records, 0 flows still held by the engine afterwards",
      "records": [
@@ -2539,8 +2539,8 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 13,
-        "admitted": 25,
+        "active": 11,
+        "admitted": 23,
         "refused": 0,
         "panics": 21,
         "disabled": false
@@ -2567,13 +2567,13 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 20,
-        "admitted": 33,
+        "active": 13,
+        "admitted": 26,
         "refused": 0,
-        "panics": 34,
+        "panics": 23,
         "disabled": false
        },
-       "handoffs_total": 37
+       "handoffs_total": 26
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2595,13 +2595,13 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 26,
-        "admitted": 40,
+        "active": 24,
+        "admitted": 38,
         "refused": 0,
-        "panics": 39,
+        "panics": 38,
         "disabled": false
        },
-       "handoffs_total": 42
+       "handoffs_total": 41
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2623,13 +2623,13 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 33,
-        "admitted": 48,
+        "active": 24,
+        "admitted": 39,
         "refused": 0,
-        "panics": 39,
+        "panics": 38,
         "disabled": false
        },
-       "handoffs_total": 42
+       "handoffs_total": 41
       }
      ],
      "record_count": 300
@@ -2651,13 +2651,13 @@
       },
       "bytes": "n/a (TLS origin)"
      },
-     "seconds": 0.17,
+     "seconds": 0.19,
      "records": [
       {
        "dest": "secure.lab.test:443",
        "forwarded_bytes": [
         1671,
-        2549
+        2548
        ],
        "schema_version": 1,
        "engine": "real",
@@ -2699,7 +2699,7 @@
         "family": "tls",
         "encryption": "tls",
         "detail": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
-        "observed_bytes": 1921,
+        "observed_bytes": 1920,
         "evidence": [
          {
           "field": "encryption",
@@ -2847,7 +2847,7 @@
        "dest": "secure.lab.test:22",
        "forwarded_bytes": [
         0,
-        0
+        23
        ],
        "schema_version": 1,
        "engine": "real",
@@ -2876,10 +2876,28 @@
         ]
        },
        "server": {
-        "outcome": "incomplete",
-        "reason": "ended",
-        "detail": "Direction ended before identification",
-        "observed_bytes": 0
+        "outcome": "identified",
+        "reason": "engine",
+        "family": "ssh",
+        "protocol": "ssh",
+        "detail": "SSH identification validated; key exchange offers classified, nothing negotiated or verified",
+        "observed_bytes": 23,
+        "evidence": [
+         {
+          "field": "application_protocol",
+          "value": "ssh",
+          "source": "wire",
+          "strength": "structural",
+          "class": "categorical"
+         },
+         {
+          "field": "ssh_version",
+          "value": "2.0",
+          "source": "wire:banner",
+          "strength": "structural",
+          "class": "asserted"
+         }
+        ]
        },
        "quarantined": false,
        "policy": {
@@ -2912,7 +2930,7 @@
       },
       "bytes": 0
      },
-     "seconds": 0.16,
+     "seconds": 0.17,
      "records": [
       {
        "dest": "secure.lab.test:22",
@@ -2970,7 +2988,7 @@
       },
       "bytes": 0
      },
-     "seconds": 0.16,
+     "seconds": 0.17,
      "records": [
       {
        "dest": "secure.lab.test:9000",
@@ -3023,7 +3041,7 @@
       },
       "bytes": 0
      },
-     "seconds": 0.16,
+     "seconds": 0.17,
      "records": [
       {
        "dest": "secure.lab.test:9000",
@@ -3081,7 +3099,7 @@
       },
       "bytes": 0
      },
-     "seconds": 0.16,
+     "seconds": 0.17,
      "records": [
       {
        "dest": "secure.lab.test:9000",
@@ -3163,7 +3181,7 @@
       },
       "bytes": 0
      },
-     "seconds": 0.16,
+     "seconds": 0.17,
      "records": [
       {
        "dest": "secure.lab.test:9000",
@@ -3219,9 +3237,9 @@
       "status": {
        "CONNECT": 200
       },
-      "bytes": 23
+      "bytes": 0
      },
-     "seconds": 0.16,
+     "seconds": 0.17,
      "records": [
       {
        "dest": "monitor.lab.test:22",
@@ -3308,7 +3326,7 @@
       "status": {
        "CONNECT": 200
       },
-      "bytes": 23
+      "bytes": 0
      },
      "seconds": 0.17,
      "records": [
@@ -3356,5 +3374,5 @@
   }
  ],
  "state": "finished",
- "finished": "2026-11-14 17:20:53 UTC"
+ "finished": "2026-11-17 21:07:59 UTC"
 }

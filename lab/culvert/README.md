@@ -53,7 +53,7 @@ Still to test, from the same read: a valid allowed opening followed by another p
 
 `results/index.html` is the check matrix, `results/observatory.html` the same run in the Protocol Observatory's design, and `shots/` holds photos of Culvert's own UI.
 
-84 checks: 84 passed (run of 2026-11-14 17:20 UTC, after work item #4). Earlier runs had 83 passes and one known gap.
+84 checks: 84 passed (run of 2026-11-17 21:07 UTC). That run used a lab binary rebuilt against detector `2faa7cb`, which includes the memory charge before a buffer grows (#14), the read-only registries (#15), the pinned content pack (#16) and the panic boundary for Snapshot and Close (#10). Every one of the 84 cells has the same verdict and the same detector text as the run of 2026-11-14 17:20 UTC (after work item #4). Before that rerun, the lab branch built against the new head, `TestLab` passed under the race detector, and Culvert's tunnel, idle-relay and CONNECT tests (`-run 'Tunnel|Idle|Relay|Bypass|CONNECT|Connect'`) passed under the race detector. Earlier runs had 83 passes and one known gap.
 
 - **Traffic unchanged (builds A–E):** every scenario passed, and the delivered bytes have the same hash on all five builds.
 - **Detector off (A, B):** no detector records.
