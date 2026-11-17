@@ -1051,3 +1051,11 @@ uses the new IPv4-only decoder for supported link types.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) describes exact contracts and remaining gaps.
 Earlier benchmarks and teaching files are historical, not the current hot path.
+
+## Licence
+
+Apache License, Version 2.0: see `LICENSE` and `NOTICE`. The licence covers the
+whole repository, including the Go module under `go/` (which carries its own copy
+of both files, because a Go module is published without the rest of the
+repository) and the detection content pack. Contribution terms are in
+`CONTRIBUTING.md`.

@@ -128,6 +128,7 @@ Three kinds of change:
 ### 4.3a Progress on `claude/culvert-integration-prep`
 
 Done:
+- **#1** licence: Apache-2.0 (Lee, 2026-11-17). `LICENSE` (unmodified Apache text) and `NOTICE` at the root and in `go/`, Python package metadata, contribution terms in `CONTRIBUTING.md`; the content pack is covered.
 - **#2** scope update.
 - **#3** Go minimum, with `-race` at both toolchains.
 - **#8–#13** first public slice in `go/detector`.

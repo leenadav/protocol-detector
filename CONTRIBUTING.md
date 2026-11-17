@@ -61,3 +61,15 @@ base. Reviews focus on size arithmetic against containers, dispatch
 discriminators against existing families, and anything that could leak a
 value from the payload into evidence. Security issues go through SECURITY.md,
 not public issues.
+
+## Licence of contributions
+
+The repository is licensed under the Apache License, Version 2.0 (`LICENSE`;
+`NOTICE` names what it covers, the detection content included). Under section 5
+of that licence, a contribution you intentionally submit for inclusion, by pull
+request, patch or any other means, is licensed under the same terms, with no
+further terms or conditions, unless you state otherwise in writing when you
+submit it. No separate contributor licence agreement is required. Only submit
+work you have the right to license this way, and keep third-party code out
+unless its licence is compatible and recorded (see
+`migration/adr/0002-toolchain-layout-dependencies.md` for the Go module rule).
