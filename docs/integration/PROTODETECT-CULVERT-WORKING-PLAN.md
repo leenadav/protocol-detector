@@ -144,7 +144,11 @@ Done:
 - **#16** content pack embedded and byte-equal to the fixture; its pack digest (`migration/CONTENT-DIGEST.md`, defined by the engine lane on 2026-11-16) is computed and compared with a build constant before use, and a host can load its own bytes against a digest it pinned (`content.ParsePinned`). The pin is integrity only: not semantic truth, publisher identity, coverage or rollback protection.
 - **#15** read-only registries: `engine.Ported`, `engine.Families` and `framed.DatagramValidators` are unexported behind accessors that return values or copies. `contracts.ConfigRanges` and `engine.DatagramHints` stay exported, because a Python cross-language test reads them by name in the Go source; they are listed in the registry test.
 
-See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: none of 4.3a's items; the #16 digest code awaits review on this branch.
+See `migration/STATUS.md`, section "Culvert integration preparation", for the evidence. Open: none of 4.3a's items.
+
+Review queue (Codex is unavailable until Sunday, 2026-11-22; Lee, 2026-11-17):
+- **Frozen milestone `8d28748..725cd95`** (base `d725890`, head `725cd95`): #15 read-only registries (`8d28748`), #14 charge before growth (`7a929a6`), #16 immutability test (`725cd95`). Unchanged since it was frozen; a targeted Medium review. A narrow Codex check on `725cd95` reported the post-Feed memory finding (issue #2 comment 6899752738) repaired; that does not replace the milestone review.
+- **After the milestone**, separate commits for a later round: `7dc52c8` (CI files copied from `main`, PR #28; the CI/CD lane's), `74638c4` (#1 licence, Apache-2.0), `2faa7cb` (#10 Snapshot and Close), `ced7e1e` (lab rerun, lab files only).
 
 ### 4.4 Gate before attaching the real detector (lab phase L4)
 
