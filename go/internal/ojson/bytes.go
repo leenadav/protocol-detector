@@ -10,7 +10,7 @@ func decodeBytes(b []byte) ([]rune, error) {
 		hasPrefix(b, "\xfe\xff"), hasPrefix(b, "\xff\xfe"):
 		return nil, unsupported()
 	case hasPrefix(b, "\xef\xbb\xbf"):
-		return decodeUTF8(b[3:], 3, "utf-8-sig")
+		return decodeUTF8(b[3:], 0, "utf-8") // utf-8-sig strips the BOM, then decodes (and reports) as utf-8
 	case len(b) >= 4 && (b[0] == 0 || b[1] == 0):
 		return nil, unsupported()
 	case len(b) == 2 && (b[0] == 0 || b[1] == 0):
