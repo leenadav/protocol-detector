@@ -80,6 +80,13 @@ refuses a pack when, after the structural validation it already did:
 5. an application or risk object has a field outside the lists above (it would sit outside every digest but
    the pack digest).
 
+An earlier release run by `--content-version` (`content.EmbeddedRelease`: the release's block and server-name
+catalog over the current pack) is checked the same way except in rule 3, where only `host_catalog` is
+recomputed: its `application_catalog`, `families` and `risks` are the components the release was published
+with (C11, 2026-11-18; `protocol_engine.content._RELEASED_COMPONENTS`), because those tables follow the package
+and do not roll back. So the release digest a record pinned to an earlier release carries is reproduced
+exactly, while a server-name catalog that no longer matches its release is refused.
+
 It then exposes `Digests{Pack, Release, Components, Recomputed}`. Verification is self-consistency: it
 proves the tables are the ones the stated digests describe, not who made the pack. Trust comes from the
 consumer comparing `Digests.Pack` with a value it pinned out of band (a build constant, a signed catalog).

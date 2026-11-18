@@ -186,13 +186,52 @@ def _hash(parts):
     return hasher.hexdigest()
 
 
+# C11 (2026-11-18): the components each earlier release was published with, so that its digest, which records
+# pinned to it carry, is reproduced exactly by a rollback. They are the release's content_lock.json while it was
+# current; 2025.10.0, released before the lock existed, as first recorded (799d358). A rollback rebuilds the host
+# catalog, which must equal the recorded host component (check() and component_digests refuse otherwise); the
+# application catalog, families and risks are engine metadata that follow the package (docs/CONTENT-GOVERNANCE.md,
+# "Rollback") and are stated as released. Adding a release moves the previous one here, from its lock.
+_RELEASED_COMPONENTS = MappingProxyType({
+    "2025.10.0": MappingProxyType({
+        "application_catalog": "4e37559adfe72232473e05c2cf77ecc979ae3426b4a6cd5494ec3f17f4517195",
+        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+        "host_catalog": "66f39d536827348c9cd1d3928f36d33b2ef8f1952e15e0dd262ca0c4c8938e5f",
+        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+    "2026.11.0": MappingProxyType({
+        "application_catalog": "4e37559adfe72232473e05c2cf77ecc979ae3426b4a6cd5494ec3f17f4517195",
+        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+        "host_catalog": "928b856e40db5873d64db50ba81dfac5e07e44eb3c5c86b8009340f5eca1f17c",
+        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+    "2026.11.1": MappingProxyType({
+        "application_catalog": "2b61c2aaf2e51fff1ccdaf479673082e6b300cd2649cf960c1f139295bd63b90",
+        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+        "host_catalog": "d90de751d3e9f4ac4602deca7637f3e2164fc6ed7ccd8cb292a99ccd54fa43fe",
+        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+})
+
+
+def _host_component(version):
+    return _hash([entry for entry in host_entries(version)])
+
+
 def component_digests(version=None):
-    """Digest per content component; the host component follows the selected version."""
+    """Digest per content component. The current release's are computed from the tables; an earlier release's
+    are the ones it was published with (C11), after its rebuilt host catalog is checked against them."""
+    version = CURRENT if version is None else version
+    if version != CURRENT:
+        release(version)
+        recorded = _RELEASED_COMPONENTS.get(version)
+        if recorded is None:
+            raise ContentError("content release {} has no recorded components".format(version))
+        if _host_component(version) != recorded["host_catalog"]:
+            raise ContentError("content release {} no longer reproduces its host catalog".format(version))
+        return MappingProxyType(dict(recorded))
     from .applications import APPLICATIONS
     from .catalog import supported_protocols
     from .risks import RISKS
     return MappingProxyType({
-        "host_catalog": _hash([entry for entry in host_entries(version)]),
+        "host_catalog": _host_component(version),
         "application_catalog": _hash([(name, list(app.__dict__.values())) for name, app in sorted(APPLICATIONS.items())]),
         "families": _hash([(item.family, list(item.transports), item.scope, item.profile, item.requires_hint) for item in supported_protocols()]),
         "risks": _hash([(name, list(RISKS[name])) for name in sorted(RISKS)]),
@@ -285,6 +324,15 @@ def check(path=LOCK_PATH):
             build_tables(host_entries(item.version))
         except (ValueError, ContentError) as error:
             problems.append("catalog at {} does not build: {}".format(item.version, error))
+    for item in HISTORY[:-1]:
+        recorded = _RELEASED_COMPONENTS.get(item.version)
+        if recorded is None:
+            problems.append("release {} has no recorded components (move its lock into _RELEASED_COMPONENTS)".format(item.version))
+        elif _host_component(item.version) != recorded["host_catalog"]:
+            problems.append("release {} no longer reproduces its recorded host catalog".format(item.version))
+    for version in _RELEASED_COMPONENTS:
+        if version not in versions[:-1]:
+            problems.append("recorded components for {}, which is not an earlier release".format(version))
     try:
         lock = read_lock(path)
     except (OSError, ValueError):

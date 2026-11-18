@@ -141,7 +141,9 @@ func Load(path string) (*Pack, error) {
 }
 
 // Parse validates pack bytes.
-func Parse(data []byte) (*Pack, error) {
+func Parse(data []byte) (*Pack, error) { return parse(data, false) }
+
+func parse(data []byte, earlier bool) (*Pack, error) {
 	var raw packJSON
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, invalid("content pack is not the expected JSON shape")
@@ -242,7 +244,7 @@ func Parse(data []byte) (*Pack, error) {
 	p.Categories, p.Technologies, p.Characteristics = raw.Vocabulary.Categories, technologies, characteristics
 	// The digests come last, so a malformed pack keeps its structural error: the three components the tables
 	// determine and the release digest must be the ones the pack states (migration/CONTENT-DIGEST.md).
-	digests, err := ComputeDigests(data)
+	digests, err := computeDigests(data, earlier)
 	if err != nil {
 		return nil, err
 	}
@@ -446,8 +448,9 @@ func Releases() []string {
 }
 
 // EmbeddedRelease is the pack as of an earlier content release (content.select in the reference): the current
-// pack with that release's block and server-name catalog laid over it, validated like any pack (its components
-// and release digest are recomputed). The current release is Embedded().
+// pack with that release's block and server-name catalog laid over it. Its server-name catalog must reproduce the
+// release's host component and its release digest is recomputed from the stated components, which are the ones
+// it was published with (C11). The current release is Embedded().
 func EmbeddedRelease(version string) (*Pack, error) {
 	var doc struct {
 		Current  string `json:"current"`
@@ -475,5 +478,5 @@ func EmbeddedRelease(version string) (*Pack, error) {
 	if err != nil {
 		return nil, invalid("content pack cannot be composed")
 	}
-	return Parse(data)
+	return parse(data, true)
 }

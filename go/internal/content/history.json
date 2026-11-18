@@ -1377,12 +1377,12 @@
    },
    "release": {
     "components": {
-     "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
+     "application_catalog": "4e37559adfe72232473e05c2cf77ecc979ae3426b4a6cd5494ec3f17f4517195",
      "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
      "host_catalog": "66f39d536827348c9cd1d3928f36d33b2ef8f1952e15e0dd262ca0c4c8938e5f",
      "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
     },
-    "digest": "5d38359bcadf2419",
+    "digest": "9f8791749a940f5b",
     "released": "2025-10-24",
     "reviewed": "2025-10-24",
     "version": "2025.10.0"
@@ -2799,12 +2799,12 @@
    },
    "release": {
     "components": {
-     "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
+     "application_catalog": "4e37559adfe72232473e05c2cf77ecc979ae3426b4a6cd5494ec3f17f4517195",
      "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
      "host_catalog": "928b856e40db5873d64db50ba81dfac5e07e44eb3c5c86b8009340f5eca1f17c",
      "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
     },
-    "digest": "e4ba10037ef25ee7",
+    "digest": "991c007668d263d1",
     "released": "2026-11-07",
     "reviewed": "2026-11-07",
     "version": "2026.11.0"
@@ -6673,12 +6673,12 @@
    },
    "release": {
     "components": {
-     "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
+     "application_catalog": "2b61c2aaf2e51fff1ccdaf479673082e6b300cd2649cf960c1f139295bd63b90",
      "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
      "host_catalog": "d90de751d3e9f4ac4602deca7637f3e2164fc6ed7ccd8cb292a99ccd54fa43fe",
      "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
     },
-    "digest": "45ad7b6b7d7a027e",
+    "digest": "c4020c2437f3de8d",
     "released": "2026-11-15",
     "reviewed": "2026-11-15",
     "version": "2026.11.1"

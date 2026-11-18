@@ -3,6 +3,8 @@ import json
 import os
 import tempfile
 import unittest
+from types import MappingProxyType
+from unittest import mock
 
 from protocol_adapters.analyze_pcap import Analyzer
 from protocol_adapters.link_packets import decode_frame
@@ -51,8 +53,13 @@ class HistoryAndLockTests(unittest.TestCase):
         self.assertNotEqual(content.digest("2025.10.0"), content.digest(content.CURRENT))
         components = content.component_digests("2025.10.0")
         self.assertNotEqual(components["host_catalog"], content.component_digests()["host_catalog"])
-        for name in ("application_catalog", "families", "risks"):
-            self.assertEqual(components[name], content.component_digests()[name])   # only the host catalog rolls back
+        # Only the host catalog is rebuilt; it must equal the host component the release was published with. The
+        # other components are stated as published (C11), not borrowed from the current release.
+        self.assertEqual(components["host_catalog"], content._hash(list(content.host_entries("2025.10.0"))))
+        self.assertEqual(dict(components), dict(content._RELEASED_COMPONENTS["2025.10.0"]))
+        self.assertNotEqual(components["application_catalog"], content.component_digests()["application_catalog"])
+        for name in ("families", "risks"):
+            self.assertEqual(components[name], content.component_digests()[name])   # unchanged since 2025.10.0
 
     def test_provenance_names_first_release_and_review_date(self):
         provenance = content.host_provenance()
@@ -89,6 +96,50 @@ class RollbackTests(unittest.TestCase):
         self.assertEqual(old["teamviewer"]["web_fronts"], ())
         self.assertTrue(all(entry["web_fronts"] == () for entry in old.values()))     # web fronts arrived with D03
         self.assertEqual(old["whatsapp"], new["whatsapp"])
+
+    def test_earlier_releases_reproduce_their_published_digests(self):
+        """C11 (2026-11-18): a record pinned to an earlier release carries the digest it was published with, so a
+        rollback must reproduce it, also after the application catalog changed. 2026.11.0 and 2026.11.1 are
+        their content_lock.json values while current; 2025.10.0 its first recorded value (799d358)."""
+        from protocol_engine import applications
+        published = {"2025.10.0": "9f8791749a940f5b", "2026.11.0": "991c007668d263d1", "2026.11.1": "c4020c2437f3de8d"}
+        for version, value in published.items():
+            self.assertEqual(content.digest(version), value, version)
+            self.assertEqual(content.select(version), {"version": version, "digest": value})
+        content.select(content.CURRENT)
+        # An application added after these releases moves the current digest only.
+        current = content.digest()
+        added = dict(applications.APPLICATIONS)
+        added["c11-probe"] = next(iter(applications.APPLICATIONS.values()))
+        saved = dict(content._DIGESTS)
+        self.addCleanup(lambda: (content._DIGESTS.clear(), content._DIGESTS.update(saved)))
+        with mock.patch.object(applications, "APPLICATIONS", added):
+            content._DIGESTS.clear()
+            self.assertNotEqual(content.digest(), current)
+            for version, value in published.items():
+                self.assertEqual(content.digest(version), value, version)
+        # A rebuilt host catalog that no longer matches its release is refused, not re-pinned.
+        changed = dict(content._PRIOR_HOST_STATE)
+        changed["2026.11.1"] = MappingProxyType(dict(changed["2026.11.1"], **{"youtube": None}))
+        with mock.patch.object(content, "_PRIOR_HOST_STATE", MappingProxyType(changed)):
+            content._DIGESTS.clear()
+            with self.assertRaisesRegex(content.ContentError, "no longer reproduces"):
+                content.digest("2026.11.1")
+            self.assertTrue(any("2026.11.1 no longer reproduces" in p for p in content.check()))
+
+    def test_a_new_release_is_locked_only_after_its_predecessor_is_recorded(self):
+        """C11: `check_content.py --update` for a new release refuses until the superseded release's locked
+        components are in _RELEASED_COMPONENTS exactly."""
+        recorded = dict(content._RELEASED_COMPONENTS["2026.11.1"])
+        stale = {"version": "2026.11.1", "digest": "c4020c2437f3de8d", "components": dict(recorded, risks="0" * 64)}
+        with mock.patch.object(content, "read_lock", return_value=stale), mock.patch.object(content, "write_lock") as write:
+            self.assertEqual(check_content.main(["--update"]), 1)
+            write.assert_not_called()
+        exact = dict(stale, components=recorded)
+        with mock.patch.object(content, "read_lock", return_value=exact), \
+                mock.patch.object(content, "write_lock", return_value=content.description()) as write:
+            self.assertEqual(check_content.main(["--update"]), 0)
+            write.assert_called_once()
 
     def test_select_runs_the_earlier_catalog_and_restores(self):
         self.assertIsNone(application_for_host("pages.github.io"))
