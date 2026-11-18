@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -84,7 +84,7 @@ docs-counts:
 	$(PYTHON) -B tools/check_docs_counts.py
 
 # Same checks the CI workflow runs, in one command, plus the extended fuzz pass.
-ci-local: check fuzz sequences-extended
+ci-local: check fuzz sequences-extended go-vendor-check
 	$(PYTHON) -B analyze_pcap.py sample-expanded.pcap --events-only --sessions > /dev/null
 	$(PYTHON) -B protodetect.py analyze sample-expanded.pcap --json --sessions | $(PYTHON) -B protodetect.py schema offline-row --validate /dev/stdin
 
@@ -168,38 +168,51 @@ parity:
 
 # Migration M2: the Go module's own gate (pinned toolchain from go/go.mod; separate from `check` until the CI/CD lane wires it)
 GO_TOOLCHAIN := $(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod)
+
+# The engine's one module dependency (golang.org/x/crypto, key-log TLS decryption) is vendored in go/vendor, so
+# every Go build and test here runs with -mod=vendor and needs no module download (CI runs with GOPROXY=off).
+# go-vendor-check re-vendors into go/bin/vendor-check (git-ignored, replaced on each run) and fails when go/vendor
+# differs from what go.mod and go.sum select, or has uncommitted changes. Re-vendoring needs the modules (the
+# module cache or a proxy), so CI runs it in a step that can reach them; the builds and tests never do.
+go-vendor-check:
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=mod go mod vendor -o bin/vendor-check
+	cd go && diff -r bin/vendor-check vendor || { echo "go/vendor is out of sync: run (cd go && go mod vendor) and commit it"; exit 1; }
+	git diff --quiet --exit-code -- go/go.mod go/go.sum go/vendor || { echo "go/vendor, go.mod or go.sum has uncommitted changes"; exit 1; }
+	test -z "$$(git status --porcelain -- go/go.mod go/go.sum go/vendor)" || { echo "go/vendor has untracked or uncommitted files"; exit 1; }
+	@echo "go vendor ok: go/vendor matches go.mod and go.sum"
+
 go-check:
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) sh -c 'test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }'
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go vet ./...
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test -race ./...
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/buffer -run NONE -fuzz FuzzAppendNeverExceedsLimits -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/contracts -run NONE -fuzz FuzzObservationJSONNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/reassembly -run NONE -fuzz FuzzFeedInvariants -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/framed -run NONE -fuzz FuzzFramedNeverPanics -fuzztime 20s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/framed -run NONE -fuzz FuzzKasaNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/framed -run NONE -fuzz FuzzGSSNeverPanics -fuzztime 15s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/transport -run NONE -fuzz FuzzDecodeNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzInspectorNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzSelectNeverPanics -fuzztime 5s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/signatures -run NONE -fuzz FuzzPatternNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/decrypt -run NONE -fuzz FuzzConnectionNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/capture -run NONE -fuzz FuzzDecoderNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/keylogcap -run NONE -fuzz FuzzAnalyzeNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/livedecrypt -run NONE -fuzz FuzzReplayNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/content -run NONE -fuzz FuzzCanonicalIsAFixedPoint -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/content -run NONE -fuzz FuzzParseNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/analyze -run NONE -fuzz FuzzPresentNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/policy -run NONE -fuzz FuzzPolicyNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/signatures -run NONE -fuzz FuzzDocumentNeverPanics -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/tlsx -run NONE -fuzz FuzzDTLSStaysBounded -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/hpack -run NONE -fuzz FuzzDecoderStaysBounded -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzHTTP2StaysBounded -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/engine -run NONE -fuzz FuzzHTTPContinuationStaysBounded -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/x509x -run NONE -fuzz FuzzLeafProfileStaysBounded -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/quicx -run NONE -fuzz FuzzValidateStaysBounded -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/protocols/textroute -run NONE -fuzz FuzzKexinitPostureMatchesTheOracle -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/ojson -run NONE -fuzz FuzzDecodeIsAFixedPoint -fuzztime 10s
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test ./internal/livectl -run NONE -fuzz FuzzIngestNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) sh -c 'files=$$(find . -name "*.go" -not -path "./vendor/*"); test -z "$$(gofmt -l $$files)" || { gofmt -l $$files; exit 1; }'
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go vet ./...
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test -race ./...
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/buffer -run NONE -fuzz FuzzAppendNeverExceedsLimits -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/contracts -run NONE -fuzz FuzzObservationJSONNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/reassembly -run NONE -fuzz FuzzFeedInvariants -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/protocols/framed -run NONE -fuzz FuzzFramedNeverPanics -fuzztime 20s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/protocols/framed -run NONE -fuzz FuzzKasaNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/protocols/framed -run NONE -fuzz FuzzGSSNeverPanics -fuzztime 15s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/transport -run NONE -fuzz FuzzDecodeNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/engine -run NONE -fuzz FuzzInspectorNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/engine -run NONE -fuzz FuzzSelectNeverPanics -fuzztime 5s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/signatures -run NONE -fuzz FuzzPatternNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/decrypt -run NONE -fuzz FuzzConnectionNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/capture -run NONE -fuzz FuzzDecoderNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/keylogcap -run NONE -fuzz FuzzAnalyzeNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/livedecrypt -run NONE -fuzz FuzzReplayNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/content -run NONE -fuzz FuzzCanonicalIsAFixedPoint -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/content -run NONE -fuzz FuzzParseNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/analyze -run NONE -fuzz FuzzPresentNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/policy -run NONE -fuzz FuzzPolicyNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/signatures -run NONE -fuzz FuzzDocumentNeverPanics -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/protocols/tlsx -run NONE -fuzz FuzzDTLSStaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/protocols/hpack -run NONE -fuzz FuzzDecoderStaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/engine -run NONE -fuzz FuzzHTTP2StaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/engine -run NONE -fuzz FuzzHTTPContinuationStaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/protocols/x509x -run NONE -fuzz FuzzLeafProfileStaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/protocols/quicx -run NONE -fuzz FuzzValidateStaysBounded -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/protocols/textroute -run NONE -fuzz FuzzKexinitPostureMatchesTheOracle -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/ojson -run NONE -fuzz FuzzDecodeIsAFixedPoint -fuzztime 10s
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/livectl -run NONE -fuzz FuzzIngestNeverPanics -fuzztime 10s
 	$(MAKE) parity-go
 	$(MAKE) parity-analyze
 	$(MAKE) parity-decrypt
@@ -213,7 +226,7 @@ go-check:
 
 # Migration M8: the Go command-line binary (static, no cgo); go/bin is not tracked
 go-build:
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) CGO_ENABLED=0 go build -trimpath -o bin/protodetect ./cmd/protodetect
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor CGO_ENABLED=0 go build -trimpath -o bin/protodetect ./cmd/protodetect
 
 # Migration M8: the Go `analyze` command against the Python reference on generated captures (rows, exit status, error text)
 parity-analyze: go-build
@@ -250,12 +263,12 @@ adversarial: go-build
 
 # Sustained throughput and memory with 10,000 and 100,000 concurrent flows (synthetic; reported only, never a gate)
 bench-load:
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test -tags loadbench -run 'TestLoad_' -count=1 -p 1 -v -timeout 30m ./internal/bench/
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test -tags loadbench -run 'TestLoad_' -count=1 -p 1 -v -timeout 30m ./internal/bench/
 
 # Performance gates in Culvert's benchgate convention (migration/STATUS.md, performance budgets): allocations and retained
 # bytes per flow are gated, latency is reported
 bench-gate:
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test -tags benchgate -run 'TestBenchGate_' -count=1 -p 1 -v ./internal/bench/
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test -tags benchgate -run 'TestBenchGate_' -count=1 -p 1 -v ./internal/bench/
 
 # Migration C13: every line the Go binary writes validates against the published schemas (schemas/*.json)
 schema-go: go-build
@@ -264,7 +277,7 @@ schema-go: go-build
 # Migration M4: the Go backend's results against the Python reference (families it claims; records are M6)
 GO_FAMILIES := http,tls,dns,mdns,netbios-ns,llmnr,ssh,smtp,imap,pop3,ftp,nats,irc,sip,rtsp,telnet,postgresql,rfb,bittorrent,memcached,rsync,fins,afp,zmtp,bolt,stomp,giop,x11,spice,mysql,mongodb,tds,tns,cql,kafka,modbus,dnp3,ethernet-ip,iec-104,opcua,s7comm,mqtt,resp,amqp,onc-rpc,diameter,bgp,openvpn,pptp,fastcgi,dcerpc,websocket,xmpp,syslog,git,netbios-ss,tacacs-plus,socks5,wireguard,bacnet,tftp,ntp,l2tp,coap,rip,rtcp,lifx-lan,tuya-lan,netflow,ipfix,sflow,stun,dhcp,radius,snmp,rtp,ssdp,tplink-smarthome,kerberos,ldap,smb1,smb2,rdp,iso-tsap,ikev2,quic,http2,dtls
 parity-go:
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go run ./cmd/protodetect replay --cases ../migration/fixtures/cases.json --out ../migration/parity/go-results.json
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go run ./cmd/protodetect replay --cases ../migration/fixtures/cases.json --out ../migration/parity/go-results.json
 	python3 -B migration/parity/compare.py --results migration/parity/go-results.json --families $(GO_FAMILIES) --report migration/parity/go-report.json
 	python3 -B migration/parity/verify_families.py --check migration/CAPABILITIES.json
 
