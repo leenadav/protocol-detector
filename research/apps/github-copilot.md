@@ -1,7 +1,7 @@
 # GitHub Copilot
 
 - Content-pack id today: `github-copilot` (`githubcopilot.com`); GitHub itself is `github`
-- Status: names **READY**, NAME-BASED, batch A. The plan field is PROTOCOL (engine code), in the later queue
+- Status: names **READY**, NAME, batch A. The plan field is **ENGINE-FIELD** (Hermes, 2026-11-18): implemented after the Go migration merge, in Go only
 - Decided (Lee via Hermes, 2026-11-18): the Copilot plan is an extra evidence field, not separate application ids
 - Sources accessed: 2026-11-18
 
@@ -106,10 +106,11 @@ it is cited for the host names only.
 The plan hosts need no entry of their own: they are under `githubcopilot.com`. `default.exp-tas.com`,
 `github.com` and `api.github.com` are unchanged.
 
-### 8b. Plan field (decided; PROTOCOL kind, later queue)
+### 8b. Plan field (decided; ENGINE-FIELD kind, after the Go merge, Go only)
 
-It needs engine code (verdict evidence), not a parser and not content alone. Hermes may want a third kind
-for this, "engine code, no parser". Specification:
+It needs engine or data-model code (verdict evidence), but no parser. Hermes made this a third kind,
+ENGINE-FIELD, with the same policy as PROTOCOL: after the Go migration merge, Go only, tested with these
+vectors. Specification:
 
 - **Field**: `copilot_plan`, a closed set: `individual`, `business`, `enterprise`, `unspecified`.
 - **Derivation**: from the normalized server name that named `github-copilot`, matched on whole labels,

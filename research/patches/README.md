@@ -1,5 +1,8 @@
 # Name-based patches for the Engine lane
 
+Apply in order: A, then B, then (if confirmed) B2. Each patch's pinned-test notes (see batch A) apply
+again with the new release values.
+
 Each patch touches only the content source (`protocol_engine/host_apps.py`, `protocol_engine/content.py`) on
 `claude/go-migration`. The generated files are rebuilt with the repository's own tools, not hand-edited.
 This lane wrote and tested the patches in a scratch worktree; no branch other than `claude/app-research`
@@ -71,3 +74,35 @@ catalog does not roll back), yet it is a component of every historical release d
 `2026.11.1` with digest `45ad…` would no longer match a rollback to `2026.11.1`. This contradicts the
 pinning contract (C11) and should be judged by the Engine lane. It occurs with any catalog change that adds
 an application, not only with this batch.
+
+## Batch B: `batch-b-name-based.patch` (applies on top of batch A)
+
+- **Base**: `claude/go-migration` `6b280a6` with batch A applied. The chain A → B → B2 was checked with `git apply`: all three apply cleanly in order.
+- **Release**: proposes `2026.11.4` with `_PRIOR_HOST_STATE["2026.11.3"]`.
+- **Items**: google-workspace (`googledrive.com`, `sheets.`/`slides.google.com`, the two Drive data-export hosts → `google-drive`);
+  onedrive-drive-personal-business (`skydrive.live.com`, `photos.live.com`, `storage.msn.com` → `ms-onedrive`, whose
+  description becomes "consumer"); webex (`ciscospark.com`, `webexapis.com`, `webexcontent.com`, `ciscosparkcontent.com`);
+  openai (web fronts `help.openai.com` → `openai-chatgpt`, `developers.openai.com` → `openai-platform`).
+- No new application ids; host entries stay at 434.
+
+| Check (scratch, 2026-11-18) | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.11.4, digest `4ee5fb4322c50c0c`, 536 applications, 434 host entries |
+| Rollback to 2026.11.3 | the host catalog equals the batch-A pack's exactly |
+| Name vectors | 26 batch-B vectors, 0 mismatches; the 47 batch-A vectors still pass |
+| Python and Go parity (regenerated cases) | 7338 compared, 7338 matched, both backends |
+
+## Batch B2: `batch-b2-api-split.patch` (on top of B; **pending Hermes's confirmation**)
+
+Extends the decided Anthropic rule (own API id, consistent with OpenAI) to four more vendors whose API
+documentation names an API host: `deepseek-api` (`api.deepseek.com`), `perplexity-api` (`api.perplexity.ai`),
+`mistral-api` (`api.mistral.ai`), `xai-api` (`api.x.ai`, which covers `us.api.x.ai`). It proposes
+release `2026.11.5`; the new entries' prior state is `None`.
+
+| Check (scratch, 2026-11-18) | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.11.5, digest `84532ce4dea4dd22`, 540 applications, 438 host entries |
+| Name vectors | 11 B2 vectors and the 47 batch-A vectors, 0 mismatches |
+| Python and Go parity (regenerated cases) | 7342 compared, 7342 matched, both backends |
+
+If B2 is not confirmed, skip it: B does not depend on it.

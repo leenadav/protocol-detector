@@ -1,7 +1,7 @@
 # OpenAI ChatGPT and OpenAI API
 
 - Content-pack ids today: `openai-chatgpt` (`chatgpt.com`, `chat.openai.com`, `oaiusercontent.com`, `oaistatic.com`; web fronts `openai.com`, `www.openai.com`), `openai-platform` (`api.openai.com`, `platform.openai.com`)
-- Status: `openai-chatgpt` **DONE**, NAME-BASED (all four domains now sourced, no catalog change needed). `openai-platform` is **BLOCKED** (the API docs could not be read)
+- Status: `openai-chatgpt` and `openai-platform` **DONE** for their domains (all sourced, no domain change). Web fronts `help.openai.com` and `developers.openai.com` are **READY**, NAME, batch B
 - Sources accessed: 2026-11-18
 
 ## 1. What it is
@@ -52,7 +52,9 @@ ALPN and handshake structure: not published. `UNVERIFIED`.
 |---|---|---|
 | SNI under `chatgpt.com`, `chat.openai.com`, `oaistatic.com`, `oaiusercontent.com` | **N3** `openai-chatgpt` | Includes Codex in ChatGPT; personal vs business accounts not separable by name (no source) |
 | SNI `cdn.platform.openai.com` | **N2**, attribution risk | Listed for **ChatGPT** [S1], but the pack names it `openai-platform` through `platform.openai.com`. A ChatGPT session may therefore also log `openai-platform` |
-| SNI `api.openai.com`, `platform.openai.com` | **U** | Not in the ChatGPT article; API docs blocked |
+| SNI `api.openai.com` | **N3** `openai-platform` | API base `https://api.openai.com/v1` [S3] |
+| SNI `platform.openai.com` | **N2** `openai-platform` | Developer console: sign-in, API keys, organization settings, all linked from the API reference [S3]. Not API traffic itself |
+| SNI `developers.openai.com`, `help.openai.com` | web fronts (batch B) | API documentation [S3]; help centre [S1]. Not use |
 | `oaistatsig.com`, `openaimerge.com` | **U** | Ownership not stated |
 | UDP 3478 to `chatgpt-voice.json` ranges | **N2**, later phase | IP and port only; UDP is not observed in this phase |
 
@@ -65,7 +67,9 @@ ALPN and handshake structure: not published. `UNVERIFIED`.
 | P3 | SNI `files.oaiusercontent.com` (synthetic label) | `openai-chatgpt` |
 | N1 | SNI `cdn.workos.com`, `js.stripe.com`, `challenges.cloudflare.com` | never an OpenAI application (`js.stripe.com` is `stripe`; the others are unmapped) |
 | N2 | SNI `auth.openai.com` | no application (sign-in; not a front, not a service domain) |
-| N3 | SNI `www.openai.com` | web front of `openai-chatgpt` (affiliation only) |
+| N3 | SNI `www.openai.com`, `help.openai.com` | web front of `openai-chatgpt` (affiliation only; `help.` from batch B) |
+| N3b | SNI `developers.openai.com` | web front of `openai-platform` (batch B); never the API |
+| P4 | SNI `api.openai.com` | `openai-platform` |
 | N4 | SNI `chatgpt.com.example.invalid`, `notchatgpt.com` | no application |
 | N5 | `ech_outer()` with outer SNI `chatgpt.com` | no application |
 | R1 | SNI `cdn.platform.openai.com` | today `openai-platform`: documents the attribution risk in section 5 |
@@ -80,14 +84,25 @@ Every row except N5 (which needs the full engine, not the name lookup) was check
   allowlist and transport statements were relayed by Hermes in this lane's chat on 2026-11-18. This
   lane's own fetch met a Cloudflare challenge, which it did not bypass. Access date 2026-11-18.
 - [S2] `https://openai.com/chatgpt-voice.json`, read directly 2026-11-18.
-- [BLOCKED] `https://platform.openai.com/docs/api-reference/introduction`: Cloudflare challenge page,
-  2026-11-18. Needed to verify `openai-platform`.
+- [S3] OpenAI API reference, "API Overview", `https://developers.openai.com/api/reference/overview` (the
+  redirect target of `platform.openai.com/docs/api-reference/introduction`, per Lee's browser, relayed by
+  Hermes 2026-11-18). **Read directly by this lane on 2026-11-18**: examples `curl https://api.openai.com/v1/models`
+  and `/v1/chat/completions`; response headers `openai-organization`, `openai-processing-ms`,
+  `openai-version`, `x-request-id`; links to `platform.openai.com/login` and
+  `platform.openai.com/settings/organization/api-keys`. Those headers are inside TLS and are request
+  metadata, never identity.
 
 ## 8. Catalog delta and recommendation
 
-- `openai-chatgpt`: **no change**. Its four domains are now sourced [S1].
-- `cdn.platform.openai.com`: the attribution risk is recorded and no change is proposed. Moving it to
-  `openai-chatgpt` would need evidence that the platform does not use it, and none is published.
+- `openai-chatgpt` and `openai-platform` domains: **no change** (all sourced: [S1] and [S3]).
+- Batch B (`research/patches/batch-b-name-based.patch`): web fronts, provider affiliation only:
+
+```python
+("openai-chatgpt", ..., ("chatgpt.com", "chat.openai.com", "oaiusercontent.com", "oaistatic.com"), ("openai.com", "www.openai.com", "help.openai.com")),
+("openai-platform", ..., ("api.openai.com", "platform.openai.com"), ("developers.openai.com",)),
+```
+
+  `developers.openai.com` is the documentation, so it is never attributed to the API itself (Hermes,
+  2026-11-18). Today it and `help.openai.com` are unmapped.
+- `cdn.platform.openai.com`: the attribution risk stays recorded (section 5); no change.
 - Do not add the auth hosts, `oaistatsig.com`, `openaimerge.com` or any third-party name.
-- `openai-platform` stays BLOCKED. A copy of OpenAI's API reference "Introduction" page (base URL) from
-  Lee's browser would unblock it, in the same way as [S1].
