@@ -2,6 +2,7 @@
 
 - Content-pack ids today: `ms-office365`, `outlook-web`, `sharepoint-online`, `ms-teams`, `ms-onedrive`, `azure-ad`, `skype`, `ms-base`
 - Status: **READY**, NAME-BASED, batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`). Teams media over UDP is recorded for a later phase only
+- Implemented: content release 2026.11.3 on `claude/go-migration` (`baa07b9`); verified in the pack at `47b2743`, 2026-11-18
 - Sources accessed: 2026-11-18. Endpoint data version `2026103000` (worldwide instance)
 
 ## 1. What it is

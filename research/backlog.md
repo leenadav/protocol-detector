@@ -28,45 +28,27 @@ score is V × R. `BLOCKED` caps R at 1.
 
 ## Queue
 
-### NAME: READY (next hand-off: batch A, one patch)
+### NAME: READY (batch C, one patch)
 
-Patch: `patches/batch-a-name-based.patch` against `claude/go-migration` `6b280a6`. Release 2026.11.3 is
-proposed. Tested in scratch: content gates, rollback, 47 name vectors, Python and Go parity 7336/7336.
-Pinned test values to update are listed in `patches/README.md`.
-
-| Id | Item | Spec | V | R | Score | Status | Entries |
-|---|---|---|---|---|---|---|---|
-| A1 | GitHub Copilot: service hosts | `apps/github-copilot.md` 8a | 5 | 5 | 25 | READY | 3 `githubusercontent.com` hosts and 7 exact `webpubsub.azure.com` hosts → `github-copilot` |
-| A2 | Microsoft 365: `cloud.microsoft` names | `apps/microsoft-365.md` 8 | 5 | 4 | 20 | READY | `outlook.cloud.microsoft`, `teams.cloud.microsoft`, `lync.com`, `sharepointonline.com`, `svc.ms`, `microsoft365.com`, `cloud.microsoft` |
-| A3 | Microsoft 365: Exchange Online Protection split from web mail | `apps/microsoft-365.md` 8 | 4 | 4 | 16 | READY | new `ms-exchange-online-protection`: `protection.outlook.com`, `mx.microsoft` |
-| A4 | Anthropic API split (decided) | `apps/anthropic-claude.md` 8 | 5 | 4 | 20 | READY | new `anthropic-api`: `api.anthropic.com`, `platform.claude.com` |
-| A5 | Anthropic apps: content host, web fronts | `apps/anthropic-claude.md` 8 | 5 | 4 | 20 | READY | `claudeusercontent.com`; web fronts `claude.com`, `code.claude.com` |
-| A6 | Microsoft Copilot app host | `apps/microsoft-copilot.md` 8 | 5 | 3 | 15 | READY | `copilot.cloud.microsoft` |
-| A7 | Google notebook host | `apps/google-gemini.md` 8 | 5 | 4 | 20 | READY | `notebook.google.com` → `google-notebooklm` |
-| A8 | Dropbox verified domains and web fronts | `apps/dropbox.md` 8 | 4 | 4 | 16 | READY | 7 domains, 6 web fronts |
-| A9 | DocSend and Dropbox Sign | `apps/dropbox.md` 8 | 3 | 4 | 12 | READY | new `docsend`: `docsend.com`; `hellofax.com` → `dropbox-sign` |
-
-### NAME: READY (batch B, after A; one patch)
-
-Patch: `patches/batch-b-name-based.patch`, applied after batch A. Proposes release 2026.11.4. Tested in scratch: content gates, rollback, 26 vectors (plus A's 47), Python and Go parity 7338/7338.
+Patch: `patches/batch-c-name-based.patch` against the current head `47b2743`. Proposes release 2026.11.6. Tested in
+scratch: content gates, rollback with unchanged earlier digests, 31 vectors, Python and Go parity 7418/7418.
 
 | Id | Item | Spec | V | R | Score | Status | Entries |
 |---|---|---|---|---|---|---|---|
-| B1 | Google Drive and Docs editor hosts | `apps/google-workspace.md` 8 | 4 | 4 | 16 | READY | `googledrive.com`, `sheets.google.com`, `slides.google.com`, two `drive-data-export` hosts → `google-drive` |
-| B2 | OneDrive consumer hosts (personal vs business) | `apps/onedrive-drive-personal-business.md` 8 | 5 | 4 | 20 | READY | `skydrive.live.com`, `photos.live.com`, `storage.msn.com` → `ms-onedrive` ("consumer") |
-| B3 | Webex service domains | `apps/webex.md` 8 | 4 | 4 | 16 | READY | `ciscospark.com`, `webexapis.com`, `webexcontent.com`, `ciscosparkcontent.com` |
-| B4 | OpenAI help and developer docs as web fronts | `apps/openai-chatgpt.md` 8 | 3 | 4 | 12 | READY | `help.openai.com` → `openai-chatgpt`, `developers.openai.com` → `openai-platform` (fronts) |
+| C1 | NotebookLM URL (re-sourced) | `apps/google-gemini.md` 8 | 5 | 4 | 20 | READY | `notebook.google.com` → `google-notebooklm` |
+| C2 | ngrok agent hosts | `apps/ngrok.md` 8 | 5 | 5 | 25 | READY | `ngrok-agent.com`, `update.equinox.io` → `ngrok` |
+| C3 | Cloudflare One Client API hosts | `apps/cloudflare-warp.md` 8 | 4 | 4 | 16 | READY | `api.devices.cloudflare.com` and two FedRAMP hosts (exact) |
+| C4 | WeTransfer short links and storage | `apps/wetransfer.md` 8 | 4 | 4 | 16 | READY | `we.tl`, six exact `wt-prod-*-storm` S3 hosts |
+| C5 | Atlassian first-party domains | `apps/atlassian.md` 8 | 4 | 4 | 16 | READY | `atl-paas.net`, `ss-inf.net`, `jira.com`, `teamworkgraph.com` |
+| C6 | Dropbox `www.` web fronts | `apps/dropbox.md` 8 | 2 | 4 | 8 | READY | five `www.` variants |
 
-### NAME: READY pending a decision (batch B2, after B)
+### NAME: DONE (implemented by the Engine lane)
 
-Patch: `patches/batch-b2-api-split.patch`. **Needs Hermes's confirmation** that the Anthropic API-split rule applies to these vendors. Tested: 11 vectors, parity 7342/7342.
-
-| Id | Item | Spec | V | R | Score | Status | Entries |
-|---|---|---|---|---|---|---|---|
-| B5 | DeepSeek API | `apps/deepseek.md` | 5 | 4 | 20 | READY (decision) | new `deepseek-api`: `api.deepseek.com` |
-| B6 | Perplexity API | `apps/perplexity.md` | 4 | 4 | 16 | READY (decision) | new `perplexity-api`: `api.perplexity.ai` |
-| B7 | Mistral AI API | `apps/mistral.md` | 4 | 4 | 16 | READY (decision) | new `mistral-api`: `api.mistral.ai` |
-| B8 | xAI API | `apps/xai-grok.md` | 4 | 4 | 16 | READY (decision) | new `xai-api`: `api.x.ai` |
+| Batch | Items | Release |
+|---|---|---|
+| A | A1 to A9 (except `notebook.google.com`, now C1) | 2026.11.3 (`baa07b9`) |
+| B | B1 to B4 | 2026.11.4 (`6ab434d`) |
+| B2 | B5 to B8 (confirmed by Hermes 2026-11-18, API hosts from vendor docs only) | 2026.11.5 (`7dcabb7`) |
 
 ### NAME: DONE (verified, no catalog change)
 
@@ -80,6 +62,7 @@ Patch: `patches/batch-b2-api-split.patch`. **Needs Hermes's confirmation** that 
 | TeamViewer | `apps/teamviewer.md` | `teamviewer.com` verified |
 | Zoom | `apps/zoom.md` | `zoom.us`, `zoom.com` verified |
 | Gemini, AI Studio | `apps/google-gemini.md` | `gemini.google.com`, `aistudio.google.com` verified |
+| Tailscale | `apps/tailscale.md` | `login.`, `controlplane.`, `log.tailscale.com` verified; `tailscale.io` and DERP names unverified |
 
 ### NAME: PARTIAL or BLOCKED
 
@@ -88,10 +71,17 @@ Patch: `patches/batch-b2-api-split.patch`. **Needs Hermes's confirmation** that 
 | `anthropic.com` / `www.anthropic.com` as web fronts | `apps/anthropic-claude.md` | PARTIAL | `anthropic.com` not readable from this session |
 | `dash.ai` (Dropbox) | `apps/dropbox.md` | PARTIAL | the source does not say what it serves |
 | Unverified current names: `copilot.microsoft.com`, `notebooklm.google.com`, `dropboxusercontent.com`, `zoomgov.com` | respective specs | PARTIAL | primary source not yet found; kept, not removed |
-| Slack (`slack-edge.com`, `slack-msgs.com`, `slack-files.com`) | `apps/slack.md` | PARTIAL | the vendor's URL list is sign-in-only per workspace; a member's copy would verify them |
-| Box | `apps/box.md` | BLOCKED | the firewall article requires sign-in; a copy from Lee would unblock it |
-| WeTransfer | `apps/wetransfer.md` | BLOCKED | the help centre moved to `wetransfer.com`; host to be allowed in batch C |
+| Slack (`slack-edge.com`, `slack-msgs.com`, `slack-files.com`) | `apps/slack.md` | PARTIAL, low priority | sign-in-only list; Lee cannot supply a copy (2026-11-18) |
+| Box | `apps/box.md` | BLOCKED, low priority | sign-in required; Lee cannot supply a copy (2026-11-18) |
 | Chat-app hosts of DeepSeek, Perplexity, Mistral, Grok | B5 to B8 specs | PARTIAL | no primary page names them; they stay under the existing domains |
+| Salesforce | `apps/salesforce.md` | BLOCKED | help article renders empty |
+| Signal | `apps/signal.md` | BLOCKED | bot challenge |
+| WhatsApp | `apps/whatsapp.md` | BLOCKED | FAQ renders empty; article id unconfirmed |
+| Zscaler | `apps/zscaler.md` | BLOCKED | article under maintenance |
+| Splashtop | `apps/splashtop.md` | BLOCKED | support host unreachable |
+| ConnectWise ScreenConnect | `apps/connectwise-screenconnect.md` | PARTIAL | no official cloud allowlist found |
+| RustDesk | `apps/rustdesk.md` | PARTIAL | self-host ports sourced; public server names unverified |
+| Telegram names | `apps/telegram.md` | PARTIAL | no allowlist read |
 
 ### PROTOCOL and ENGINE-FIELD: later queue (after the Go merge; Go-only, vector-tested)
 
@@ -100,19 +90,17 @@ Patch: `patches/batch-b2-api-split.patch`. **Needs Hermes's confirmation** that 
 | GitHub Copilot plan field `copilot_plan` (decided: an evidence field) | `apps/github-copilot.md` 8b | READY, **ENGINE-FIELD** | derives a closed enum from the matched name; no parser |
 | TeamViewer port-5938 protocol | `apps/teamviewer.md` | BLOCKED | vendor publishes no protocol; never to be reconstructed from third-party dissectors |
 | AnyDesk session TLS details (SNI or not) | `apps/anydesk.md` | PARTIAL | not published; research only |
+| Telegram MTProto TCP family (abridged, intermediate, padded intermediate, full with CRC32) | `apps/telegram.md` | READY, **PROTOCOL** | Telegram's own transport specification; obfuscated transport is unidentifiable by design |
+| D09 findings: OpenVPN and CoAP UDP false positives on proprietary UDP; TLS ServerHello invalidation of 2016 suites | `d09-iscx-vpn2016.md` 4.4, 6 | tracked by the Engine lane | post-merge Go-only items (Hermes, 2026-11-18) |
 
-## Research queue (not yet researched, provisional order by V)
+## Research queue
 
-Items 11 to 20 were researched in batch B (above). No claim is made about the rest yet.
+Items 21 to 29 were researched in batch C (above). Remaining, by provisional V:
 
-| Order | Candidate | Group | Expected kind |
-|---|---|---|---|
-| 21 | Atlassian Cloud | collaboration | NAME |
-| 22 | Salesforce | business | NAME |
-| 23 | Tailscale | remote access, tunnel | NAME (WireGuard is already a family) |
-| 24 | Cloudflare WARP / Zero Trust client | tunnel | NAME |
-| 25 | ngrok | tunnel, shadow IT | NAME |
-| 26 | ConnectWise ScreenConnect, Splashtop, RustDesk | remote access | NAME |
-| 27 | Telegram, WhatsApp, Signal | messaging | NAME, maybe PROTOCOL if a vendor publishes a transport specification (not yet checked) |
-| 28 | Zscaler, Netskope and other SSE client tunnels | tunnel | NAME |
-| 29 | WeTransfer and Box (retry) | file sharing | NAME |
+| Order | Candidate | Status |
+|---|---|---|
+| 30 | Netskope client | researched: `goskope.com` DONE; `epdlp-prod.netskope.io` READY for the next patch (`apps/netskope.md`) |
+| 31 | Tailscale DERP relay names | BLOCKED (DERP map host not allowed; low value, likely already under `tailscale.com`) |
+| 32 | Retries: Salesforce, Signal, WhatsApp, Zscaler, Splashtop | BLOCKED (see the table above) |
+
+No unresearched candidates remain in this queue.

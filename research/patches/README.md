@@ -106,3 +106,28 @@ release `2026.11.5`; the new entries' prior state is `None`.
 | Python and Go parity (regenerated cases) | 7342 compared, 7342 matched, both backends |
 
 If B2 is not confirmed, skip it: B does not depend on it.
+
+## Status of A, B and B2
+
+Implemented by the Engine lane on `claude/go-migration`: A as content 2026.11.3 (`baa07b9`), B as 2026.11.4
+(`6ab434d`), B2 as 2026.11.5 (`7dcabb7`). All were verified in the pack at `47b2743`, except
+`notebook.google.com`, which the Engine lane left out of A (now in C). The C11 rollback-digest finding was fixed in
+`d1b63ee`: earlier releases keep their published digests.
+
+## Batch C: `batch-c-name-based.patch`
+
+- **Base**: `claude/go-migration` `47b2743ea7d4cdcecb385e46737f00164e6089f3` (current head, 2026-11-18).
+- **Release**: proposes `2026.11.6` with `_PRIOR_HOST_STATE["2026.11.5"]`, and records 2026.11.5 in
+  `_RELEASED_COMPONENTS` exactly as `content_lock.json` states it (the C11 rule requires that before a new release locks).
+- **Items**: `notebook.google.com` (re-sourced); Dropbox `www.` web-front variants; ngrok `ngrok-agent.com` and
+  `update.equinox.io`; Cloudflare One Client exact API hosts on `cloudflare.com`; Atlassian `atl-paas.net`, `ss-inf.net`,
+  `jira.com`, `teamworkgraph.com`; WeTransfer `we.tl` and six exact S3 bucket hosts. No new application ids.
+
+| Check (scratch, 2026-11-18) | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.11.6, digest `d425b8adc87db36d`, 540 applications, 438 host entries |
+| Rollback to 2026.11.5 | the host catalog equals the head pack's; release digest `39150de086799d99` equals the published one; all earlier release digests unchanged |
+| Name vectors | 31, 0 mismatches |
+| Python and Go parity (regenerated cases) | 7418 compared, 7418 matched, both backends; 88 of 88 families parity-verified |
+| `test_content.py` | 12 tests OK |
+| Go `internal/content` tests | fail only on pinned values: `digest_test.go` `releaseVersion`/`releaseDigest`/`releasePackDigest` → `2026.11.6` / `d425b8adc87db36d` / `db8378c3128f7c51a6cd91e6920e60e3ea29b1b8c0a5b99afe7e942e57102d75`; `history_test.go` gains `2026.11.5` (`39150de086799d99`, 438 hosts) and 2026.11.6 as last |

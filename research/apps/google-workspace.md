@@ -2,6 +2,7 @@
 
 - Content-pack ids today: `google-drive`, `gmail` (`mail.google.com`, `gmail.com`), `google-chat` (`chat.google.com`), `google-meet` (`meet.google.com`), `google-base`
 - Status: **READY**, NAME, batch B (Drive and Docs editor hosts). Gmail and Chat are DONE (verified, no change). One Meet attribution risk is recorded with no change proposed
+- Implemented: content release 2026.11.4 on `claude/go-migration` (`6ab434d`); verified in the pack at `47b2743`, 2026-11-18
 - Sources accessed: 2026-11-18
 
 ## 1. What it is

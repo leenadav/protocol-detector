@@ -1,7 +1,8 @@
 # Dropbox
 
 - Content-pack ids today: `dropbox` (`dropbox.com`, `dropboxapi.com`, `dropboxusercontent.com`, `dropboxstatic.com`), `dropbox-sign` (`hellosign.com`)
-- Status: **READY**, NAME-BASED, batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`). `dash.ai` is PARTIAL (purpose not stated by the source)
+- Status: batch A **DONE** (content 2026.11.3); `www.` web-front variants **READY**, NAME, batch C. `dash.ai` is PARTIAL (purpose not stated by the source)
+- Implemented: content release 2026.11.3 on `claude/go-migration` (`baa07b9`); verified in the pack at `47b2743`, 2026-11-18
 - Sources accessed: 2026-11-18. Pages "Updated Jul 21, 2025" [S1] and "Updated Aug 13, 2026" [S2]
 
 ## 1. What it is
@@ -87,14 +88,18 @@ Exact entries in batch A (`research/patches/batch-a-name-based.patch`, base `cla
  ("dropbox.com", "dropboxapi.com", "dropboxusercontent.com", "dropboxstatic.com",
   "getdropbox.com", "db.tt", "dropboxbusiness.com", "addtodropbox.com", "dropboxcaptcha.com",
   "dropboxexperiment.com", "dropbox-dns.com"),
- ("dropboxforum.com", "dropboxforums.com", "dropboxlegal.com", "dropboxinsiders.com", "dropbox.tech", "learn.dropbox.com")),
+ ("dropboxforum.com", "dropboxforums.com", "dropboxlegal.com", "dropboxinsiders.com", "dropbox.tech", "learn.dropbox.com",
+  # batch C: www variants
+  "www.dropboxforum.com", "www.dropboxforums.com", "www.dropboxlegal.com", "www.dropboxinsiders.com", "www.dropbox.tech")),
 ("docsend", "general-internet", "file-sharing", "browser-based", 3, "DocSend document sharing (Dropbox)",
  ("transfers-files",), ("docsend.com",)),
 ("dropbox-sign", ..., ("hellosign.com", "hellofax.com")),
 ```
 
 - Web fronts are exact names (PROTOCOLS.md v0.65; `host_apps.py`), so only the listed names become
-  affiliation-only. `learn.dropbox.com` wins over the `dropbox.com` domain. `app.hellosign.com` is already
+  affiliation-only. Batch C adds the `www.` variants explicitly (`www.dropboxforum.com`, `www.dropboxforums.com`,
+  `www.dropboxlegal.com`, `www.dropboxinsiders.com`, `www.dropbox.tech`), following the Engine lane's note that
+  `www.dropboxforum.com` mapped to nothing. Other subdomains of these domains stay unmapped (they are not service domains). `learn.dropbox.com` wins over the `dropbox.com` domain. `app.hellosign.com` is already
   covered by `hellosign.com`.
 - `dropboxusercontent.com` is kept but unverified by this lane.
 - Not in batch A: `dash.ai`. The source lists the domain without saying what it serves, so its category

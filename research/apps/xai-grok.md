@@ -1,12 +1,13 @@
 # xAI Grok (grok.com and API)
 
 - Content-pack id today: `xai-grok` (`grok.com`, `x.ai`)
-- Status: API host **READY**, NAME, batch B2 (`research/patches/batch-b2-api-split.patch`), **pending Hermes's confirmation** that the API-split rule decided for Anthropic applies to this vendor. Chat-app hosts are PARTIAL (no primary source names them)
+- Status: API host **READY**, NAME, batch B2 (`research/patches/batch-b2-api-split.patch`), confirmed by Hermes (2026-11-18) for the API hosts confirmed in vendor docs. Chat-app hosts are PARTIAL (no primary source names them)
+- Implemented: content release 2026.11.5 on `claude/go-migration` (`7dcabb7`); verified in the pack at `47b2743`, 2026-11-18
 - Sources accessed: 2026-11-18
 
 ## 1. What it is
 
-xAI's Grok assistant and its developer API. The docs pages read here carry the title "SpaceXSI Docs", and the page metadata names the author organization "SpaceX Super Intelligence" with the URL `https://x.ai` [S1, S2]. This lane records that branding without interpreting it. Chat and programmatic API use are different operator questions, as with OpenAI and Anthropic.
+xAI's Grok assistant and its developer API. The docs pages read here carry the title "SpaceXSI Docs", and the page metadata names the author organization "SpaceX Super Intelligence" with the URL `https://x.ai` [S1, S2]. This lane records that branding without interpreting it. Catalog descriptions stay neutral and domain-based (Hermes, 2026-11-18): the pack uses "xAI (x.ai) developer API". Chat and programmatic API use are different operator questions, as with OpenAI and Anthropic.
 
 ## 2. Transport and ports
 

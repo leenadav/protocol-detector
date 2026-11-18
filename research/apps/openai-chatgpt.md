@@ -2,6 +2,7 @@
 
 - Content-pack ids today: `openai-chatgpt` (`chatgpt.com`, `chat.openai.com`, `oaiusercontent.com`, `oaistatic.com`; web fronts `openai.com`, `www.openai.com`), `openai-platform` (`api.openai.com`, `platform.openai.com`)
 - Status: `openai-chatgpt` and `openai-platform` **DONE** for their domains (all sourced, no domain change). Web fronts `help.openai.com` and `developers.openai.com` are **READY**, NAME, batch B
+- Implemented: content release 2026.11.4 on `claude/go-migration` (`6ab434d`); verified in the pack at `47b2743`, 2026-11-18
 - Sources accessed: 2026-11-18
 
 ## 1. What it is

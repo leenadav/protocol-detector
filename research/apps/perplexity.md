@@ -1,7 +1,8 @@
 # Perplexity
 
 - Content-pack id today: `perplexity` (`perplexity.ai`)
-- Status: API host **READY**, NAME, batch B2 (`research/patches/batch-b2-api-split.patch`), **pending Hermes's confirmation** that the API-split rule decided for Anthropic applies to this vendor. Chat-app hosts are PARTIAL (no primary source names them)
+- Status: API host **READY**, NAME, batch B2 (`research/patches/batch-b2-api-split.patch`), confirmed by Hermes (2026-11-18) for the API hosts confirmed in vendor docs. Chat-app hosts are PARTIAL (no primary source names them)
+- Implemented: content release 2026.11.5 on `claude/go-migration` (`7dcabb7`); verified in the pack at `47b2743`, 2026-11-18
 - Sources accessed: 2026-11-18
 
 ## 1. What it is

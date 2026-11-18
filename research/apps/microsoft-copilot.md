@@ -2,6 +2,7 @@
 
 - Content-pack id today: `ms-copilot` (`copilot.microsoft.com`)
 - Status: **READY**, NAME-BASED, batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`), for `copilot.cloud.microsoft`. Microsoft states that no complete per-feature host list exists, and in-app Copilot stays unobservable
+- Implemented: content release 2026.11.3 on `claude/go-migration` (`baa07b9`); verified in the pack at `47b2743`, 2026-11-18
 - Sources accessed: 2026-11-18. Page "Last updated on 11/05/2026"
 
 ## 1. What it is

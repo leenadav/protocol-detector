@@ -2,6 +2,7 @@
 
 - Content-pack id today: `webex` (`webex.com`, `wbx2.com`)
 - Status: **READY**, NAME, batch B (`research/patches/batch-b-name-based.patch`)
+- Implemented: content release 2026.11.4 on `claude/go-migration` (`6ab434d`); verified in the pack at `47b2743`, 2026-11-18
 - Sources accessed: 2026-11-18. Article revision history, latest entry 11/17/2026
 
 ## 1. What it is

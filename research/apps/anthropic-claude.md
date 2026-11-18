@@ -3,6 +3,7 @@
 - Content-pack id today: `anthropic-claude` (`claude.ai`, `anthropic.com`, `claude.com`); no separate API id
 - Decided (Lee via Hermes, 2026-11-18): `api.anthropic.com` gets its own API id, `anthropic-api`, consistent with `openai-platform`
 - Status: **READY**, NAME-BASED, batch A (`research/patches/batch-a-name-based.patch`). The `anthropic.com` web front is PARTIAL
+- Implemented: content release 2026.11.3 on `claude/go-migration` (`baa07b9`); verified in the pack at `47b2743`, 2026-11-18
 - Sources accessed: 2026-11-18
 
 ## 1. What it is

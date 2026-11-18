@@ -2,6 +2,7 @@
 
 - Content-pack id today: `github-copilot` (`githubcopilot.com`); GitHub itself is `github`
 - Status: names **READY**, NAME, batch A. The plan field is **ENGINE-FIELD** (Hermes, 2026-11-18): implemented after the Go migration merge, in Go only
+- Implemented: content release 2026.11.3 on `claude/go-migration` (`baa07b9`); verified in the pack at `47b2743`, 2026-11-18
 - Decided (Lee via Hermes, 2026-11-18): the Copilot plan is an extra evidence field, not separate application ids
 - Sources accessed: 2026-11-18
 

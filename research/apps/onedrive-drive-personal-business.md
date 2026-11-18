@@ -2,6 +2,7 @@
 
 - Content-pack ids today: `ms-onedrive` (`onedrive.live.com`, `onedrive.com`, `1drv.com`, `1drv.ms`), `sharepoint-online` (`sharepoint.com`, plus batch A), `google-drive` (`drive.google.com`, `docs.google.com`, `drive.usercontent.google.com`)
 - Status: OneDrive **READY**, NAME, batch B (`research/patches/batch-b-name-based.patch`). Google Drive: personal vs business **not separable** (no change for the split; host additions are in `google-workspace.md`)
+- Implemented: content release 2026.11.4 on `claude/go-migration` (`6ab434d`); verified in the pack at `47b2743`, 2026-11-18
 - Sources accessed: 2026-11-18
 
 ## 1. What it is
