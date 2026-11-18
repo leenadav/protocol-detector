@@ -581,7 +581,9 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 		if t.Classified != nil {
 			t.Classified(connection.Directions[source].Sink)
 		}
-		if t.Evidence != nil {
+		if t.Evidence != nil && !t.opts.Compact {
+			// Only a non-compact message prints the per-family table; building it for every packet of a compact
+			// tracker (live capture, the presentation analysis) was most of the per-packet cost under load.
 			evidence = t.Evidence(connection.Directions[source].Sink)
 		}
 	}
