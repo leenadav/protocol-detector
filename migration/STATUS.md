@@ -458,7 +458,9 @@ and Milestone B), `9e51389` (one generation counter per capture, family verifica
 descriptions, content-version rollback), `6b280a6` (the adversarial suite and the load benchmark), `024163f`
 (the case generator's coverage cases for nine families: 88 of 88 parity-verified), `12e1ed0` (the CoAP
 profile held to RFC 7252 in both engines, F-ADV-1), `d1b63ee` (C11: earlier content releases reproduce the
-digests they were published with, both engines), `baa07b9` (content release 2026.11.3, research batch A).
+digests they were published with, both engines), `baa07b9` (content release 2026.11.3, research batch A), `aaa5a7e` (merge-readiness checklist and draft PR
+description, documentation only), `93cbf2a` (Go answers signature repeat counts 1001..4096; `36e2c5e` before it
+rebuilds the Go binary ahead of the presentation suite).
 
 C11 (2026-11-18, research finding): a rollback recomputed an earlier release's digest from the current
 application catalog, so every added application moved it (2026.11.1 published as `c4020c2437f3de8d`, rolled

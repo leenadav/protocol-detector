@@ -84,7 +84,8 @@ dashboard service), `58a4701` (launcher switch, Milestone B), `9e51389` (one gen
 family verification, container signature descriptions, content-version rollback), `6b280a6` (adversarial
 suite, load benchmark), `024163f` (coverage cases: 88 of 88 parity-verified), `12e1ed0` (CoAP profile per RFC
 7252 in both engines, F-ADV-1), `d1b63ee` (C11: earlier releases keep their published digests), `baa07b9`
-(content 2026.11.3, research batch A). The list is kept in migration/STATUS.md.
+(content 2026.11.3, research batch A), `aaa5a7e` (this document), `93cbf2a` (signature repeat counts 1001..4096 in
+Go; `36e2c5e`, the presentation suite rebuilds the Go binary first). The list is kept in migration/STATUS.md.
 
 ## Known open items
 
@@ -96,12 +97,12 @@ suite, load benchmark), `024163f` (coverage cases: 88 of 88 parity-verified), `1
 - **Reference findings left as they are** (STATUS.md): syslog fraction digits differ between Python 3.9 and
   3.11+; `LiveManager.ingest` lets an `IndexError` end the reader; interpreter-specific texts; a worker child
   holding the output pipe. Go behaves as documented in each row.
-- **Still answered by the reference**: signature patterns outside RE2; an external `--content` pack combined
+- **Still answered by the reference**: signature patterns outside RE2 (inline flags, atomic groups, possessive
+  repeats, a non-final `$`; repeat counts up to the rules' 4096 are answered by Go since `93cbf2a`); an external `--content` pack combined
   with `--content-version` (Go declines, exit 64).
 - **Batch A follow-ups for the research lane**: `notebook.google.com` skipped (no source that it is
   NotebookLM); `www.` names of the Dropbox web fronts are not mapped (web fronts are exact names).
-- **Gate ordering**: `make check`'s presentation suite uses whatever `go/bin/protodetect` exists; run `make
-  go-build` (or `make go-check`) first after a content change, or it compares a stale binary.
+- **Gate ordering**: fixed in `36e2c5e` (the presentation suite rebuilds an existing Go binary first).
 - **Production claims**: none. SLOs, capacity, soak at production scale and end-to-end SWG latency are out of
   this repository's evidence (AGENTS.md "Intended limits").
 

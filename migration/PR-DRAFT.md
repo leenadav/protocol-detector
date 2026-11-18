@@ -41,7 +41,7 @@ Benchmarks are local CPU work, not production end-to-end latency.
 ## Review
 
 Frozen snapshots for Codex: `61fd45a`, `fdb90e2`, `68fb867`, `58a4701`, `9e51389`, `6b280a6`, `024163f`,
-`12e1ed0`, `d1b63ee`, `baa07b9` (migration/STATUS.md lists what each contains). No snapshot is approved
+`12e1ed0`, `d1b63ee`, `baa07b9`, `aaa5a7e`, `93cbf2a` (migration/STATUS.md lists what each contains). No snapshot is approved
 until a `CODEX_REVIEW_RESULT` names it.
 
 ## Known limits and open items
