@@ -153,6 +153,7 @@ capabilities:
 # Migration M6: the exported content pack both runtimes load must match the Python content (tools/export_content.py)
 content-pack:
 	python3 -B tools/export_content.py --check migration/fixtures/content.json
+	python3 -B migration/content_history.py --check go/internal/content/history.json
 
 # Migration M1: the Python reference must match the committed differential cases exactly (migration/CONTRACTS.md)
 parity:

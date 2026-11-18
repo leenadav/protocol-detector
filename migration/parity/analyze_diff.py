@@ -229,6 +229,9 @@ def options_for(rng, signatures_path, policy_path):
         options += ["--signatures", signatures_path]
     if rng.random() < 0.25:
         options += ["--policy", policy_path]
+    if rng.random() < 0.15:
+        from protocol_engine import content
+        options += ["--content-version", rng.choice([item.version for item in content.releases()])]
     return options
 
 
@@ -243,6 +246,9 @@ def reference(path, options):
                      continuation=int(value("--continuation", 0)), udp_hint=value("--udp-hint"), tcp_hint=value("--tcp-hint"),
                      crc32c_byte_limit=int(value("--crc32c-byte-limit", 4096)))
     output, status, error = io.StringIO(), 0, ""
+    from protocol_engine import content
+    if "--content-version" in options:
+        content.select(value("--content-version"))        # as main() does, before signatures and policy load
     try:
         if "--signatures" in options:
             arguments["signatures"] = SignatureSet.from_path(value("--signatures"))
@@ -252,6 +258,8 @@ def reference(path, options):
             analyze_pcap.analyze(str(path), **arguments)
     except (OSError, CaptureError, ValueError, PolicyError) as failure:
         status, error = 1, "Capture error: {}\n".format(failure)
+    finally:
+        content.select(content.CURRENT)                   # the selection is process-wide
     return output.getvalue(), status, error
 
 

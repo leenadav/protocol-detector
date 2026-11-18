@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -422,3 +423,57 @@ var embedded []byte
 
 // Embedded parses the content pack built into the binary.
 func Embedded() (*Pack, error) { return Parse(embedded) }
+
+//go:embed history.json
+var embeddedHistory []byte
+
+// Releases lists the content releases this binary can run, oldest first: the earlier ones in history.json
+// (migration/content_history.py) and the current one of pack.json.
+func Releases() []string {
+	var doc struct {
+		Current  string                     `json:"current"`
+		Releases map[string]json.RawMessage `json:"releases"`
+	}
+	if err := json.Unmarshal(embeddedHistory, &doc); err != nil {
+		return nil
+	}
+	out := make([]string, 0, len(doc.Releases)+1)
+	for v := range doc.Releases {
+		out = append(out, v)
+	}
+	sort.Strings(out) // YYYY.MM.N with zero-padded month: lexical order is release order
+	return append(out, doc.Current)
+}
+
+// EmbeddedRelease is the pack as of an earlier content release (content.select in the reference): the current
+// pack with that release's block and server-name catalog laid over it, validated like any pack (its components
+// and release digest are recomputed). The current release is Embedded().
+func EmbeddedRelease(version string) (*Pack, error) {
+	var doc struct {
+		Current  string `json:"current"`
+		Releases map[string]struct {
+			Release     json.RawMessage `json:"release"`
+			HostCatalog json.RawMessage `json:"host_catalog"`
+		} `json:"releases"`
+	}
+	if err := json.Unmarshal(embeddedHistory, &doc); err != nil {
+		return nil, invalid("content history is not the expected JSON shape")
+	}
+	if version == doc.Current {
+		return Embedded()
+	}
+	earlier, ok := doc.Releases[version]
+	if !ok {
+		return nil, invalid("unknown content version " + version)
+	}
+	var pack map[string]json.RawMessage
+	if err := json.Unmarshal(embedded, &pack); err != nil {
+		return nil, invalid("content pack is not the expected JSON shape")
+	}
+	pack["release"], pack["host_catalog"] = earlier.Release, earlier.HostCatalog
+	data, err := json.Marshal(pack)
+	if err != nil {
+		return nil, invalid("content pack cannot be composed")
+	}
+	return Parse(data)
+}

@@ -168,8 +168,17 @@ func runLive(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return fail(err)
 	}
 	if v, ok := values["--content-version"]; ok && v != pack.Release.Version {
-		fmt.Fprintf(stderr, "not ported in the Go backend: --content-version %s (the pack is release %s)\n", v, pack.Release.Version)
-		return exitNotPorted
+		// Rollback (content.select): the server-name catalog of an earlier release, laid over the embedded pack.
+		if _, external := values["--content"]; external {
+			fmt.Fprintf(stderr, "not ported in the Go backend: --content-version %s with --content (the pack is release %s)\n", v, pack.Release.Version)
+			return exitNotPorted
+		}
+		if !knownRelease(v) {
+			return usage("argument --content-version: invalid choice: '" + v + "' (choose from " + releaseChoices() + ")")
+		}
+		if pack, err = content.EmbeddedRelease(v); err != nil {
+			return fail(err)
+		}
 	}
 	if path, ok := values["--signatures"]; ok {
 		text, err := signatures.ReadFile(path)

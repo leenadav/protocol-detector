@@ -1,0 +1,6689 @@
+{
+ "current": "2026.11.2",
+ "releases": {
+  "2025.10.0": {
+   "host_catalog": {
+    "app_domains": {
+     "amazon": [
+      "amazon.com",
+      "media-amazon.com",
+      "ssl-images-amazon.com"
+     ],
+     "amazon-prime-video": [
+      "primevideo.com",
+      "aiv-cdn.net",
+      "aiv-delivery.net"
+     ],
+     "anthropic-claude": [
+      "claude.ai",
+      "anthropic.com",
+      "claude.com"
+     ],
+     "anydesk": [
+      "anydesk.com",
+      "net.anydesk.com"
+     ],
+     "atlassian": [
+      "atlassian.net",
+      "atlassian.com",
+      "bitbucket.org"
+     ],
+     "azure-ad": [
+      "login.microsoftonline.com",
+      "microsoftonline.com",
+      "login.live.com"
+     ],
+     "box": [
+      "box.com",
+      "boxcloud.com",
+      "box.net"
+     ],
+     "discord": [
+      "discord.com",
+      "discord.gg",
+      "discordapp.com",
+      "discordapp.net",
+      "discord.media"
+     ],
+     "disney-plus": [
+      "disneyplus.com",
+      "dssott.com",
+      "bamgrid.com"
+     ],
+     "dropbox": [
+      "dropbox.com",
+      "dropboxapi.com",
+      "dropboxusercontent.com",
+      "dropboxstatic.com"
+     ],
+     "ebay": [
+      "ebay.com",
+      "ebayimg.com",
+      "ebaystatic.com"
+     ],
+     "facebook": [
+      "facebook.com",
+      "fbcdn.net",
+      "fb.com",
+      "facebook.net",
+      "fbsbx.com"
+     ],
+     "github": [
+      "github.com",
+      "githubusercontent.com",
+      "githubassets.com",
+      "github.io"
+     ],
+     "gitlab": [
+      "gitlab.com"
+     ],
+     "gmail": [
+      "mail.google.com",
+      "gmail.com"
+     ],
+     "google-base": [
+      "google.com",
+      "gstatic.com",
+      "googleapis.com",
+      "googleusercontent.com",
+      "gvt1.com",
+      "gvt2.com"
+     ],
+     "google-drive": [
+      "drive.google.com",
+      "docs.google.com",
+      "drive.usercontent.google.com"
+     ],
+     "google-gemini": [
+      "gemini.google.com"
+     ],
+     "google-meet": [
+      "meet.google.com"
+     ],
+     "hulu": [
+      "hulu.com",
+      "hulustream.com"
+     ],
+     "icloud": [
+      "icloud.com",
+      "icloud-content.com"
+     ],
+     "instagram": [
+      "instagram.com",
+      "cdninstagram.com"
+     ],
+     "linkedin": [
+      "linkedin.com",
+      "licdn.com"
+     ],
+     "ms-office365": [
+      "office.com",
+      "office365.com",
+      "office.net",
+      "officeapps.live.com"
+     ],
+     "ms-onedrive": [
+      "onedrive.live.com",
+      "onedrive.com",
+      "1drv.com",
+      "1drv.ms"
+     ],
+     "ms-teams": [
+      "teams.microsoft.com",
+      "teams.live.com",
+      "teams.cdn.office.net"
+     ],
+     "ms-update": [
+      "windowsupdate.com",
+      "update.microsoft.com",
+      "delivery.mp.microsoft.com"
+     ],
+     "netflix": [
+      "netflix.com",
+      "nflxvideo.net",
+      "nflximg.net",
+      "nflxext.com",
+      "nflxso.net"
+     ],
+     "notion": [
+      "notion.so",
+      "notion.site"
+     ],
+     "openai-chatgpt": [
+      "openai.com",
+      "chatgpt.com",
+      "oaiusercontent.com",
+      "oaistatic.com"
+     ],
+     "outlook-web": [
+      "outlook.office365.com",
+      "outlook.office.com",
+      "outlook.live.com",
+      "outlook.com"
+     ],
+     "paypal": [
+      "paypal.com",
+      "paypalobjects.com"
+     ],
+     "pinterest": [
+      "pinterest.com",
+      "pinimg.com"
+     ],
+     "reddit": [
+      "reddit.com",
+      "redd.it",
+      "redditmedia.com",
+      "redditstatic.com"
+     ],
+     "salesforce": [
+      "salesforce.com",
+      "force.com"
+     ],
+     "sharepoint-online": [
+      "sharepoint.com"
+     ],
+     "signal": [
+      "signal.org",
+      "signal.art",
+      "whispersystems.org"
+     ],
+     "skype": [
+      "skype.com",
+      "skypeassets.com"
+     ],
+     "slack": [
+      "slack.com",
+      "slack-edge.com",
+      "slack-msgs.com",
+      "slack-files.com"
+     ],
+     "snapchat": [
+      "snapchat.com",
+      "sc-cdn.net",
+      "snap-dev.net"
+     ],
+     "spotify": [
+      "spotify.com",
+      "scdn.co",
+      "spotifycdn.com",
+      "spotify.design"
+     ],
+     "steam": [
+      "steampowered.com",
+      "steamcommunity.com",
+      "steamcontent.com",
+      "steamstatic.com"
+     ],
+     "teamviewer": [
+      "teamviewer.com"
+     ],
+     "telegram": [
+      "telegram.org",
+      "t.me",
+      "telegram.me",
+      "telesco.pe"
+     ],
+     "tiktok": [
+      "tiktok.com",
+      "tiktokcdn.com",
+      "tiktokv.com",
+      "tiktokcdn-us.com"
+     ],
+     "twitch": [
+      "twitch.tv",
+      "ttvnw.net",
+      "jtvnw.net"
+     ],
+     "twitter": [
+      "twitter.com",
+      "x.com",
+      "twimg.com",
+      "t.co"
+     ],
+     "vimeo": [
+      "vimeo.com",
+      "vimeocdn.com"
+     ],
+     "webex": [
+      "webex.com",
+      "wbx2.com"
+     ],
+     "whatsapp": [
+      "whatsapp.com",
+      "whatsapp.net"
+     ],
+     "wikipedia": [
+      "wikipedia.org",
+      "wikimedia.org"
+     ],
+     "youtube": [
+      "youtube.com",
+      "youtu.be",
+      "googlevideo.com",
+      "ytimg.com",
+      "youtube-nocookie.com"
+     ],
+     "zoom": [
+      "zoom.us",
+      "zoom.com",
+      "zoomgov.com"
+     ]
+    },
+    "entries": [
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "YouTube video streaming",
+      "domains": [
+       "youtube.com",
+       "youtu.be",
+       "googlevideo.com",
+       "ytimg.com",
+       "youtube-nocookie.com"
+      ],
+      "name": "youtube",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Netflix video streaming",
+      "domains": [
+       "netflix.com",
+       "nflxvideo.net",
+       "nflximg.net",
+       "nflxext.com",
+       "nflxso.net"
+      ],
+      "name": "netflix",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Twitch live video streaming",
+      "domains": [
+       "twitch.tv",
+       "ttvnw.net",
+       "jtvnw.net"
+      ],
+      "name": "twitch",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Disney+ video streaming",
+      "domains": [
+       "disneyplus.com",
+       "dssott.com",
+       "bamgrid.com"
+      ],
+      "name": "disney-plus",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Hulu video streaming",
+      "domains": [
+       "hulu.com",
+       "hulustream.com"
+      ],
+      "name": "hulu",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Amazon Prime Video streaming",
+      "domains": [
+       "primevideo.com",
+       "aiv-cdn.net",
+       "aiv-delivery.net"
+      ],
+      "name": "amazon-prime-video",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "transfers-files"
+      ],
+      "description": "Vimeo video hosting",
+      "domains": [
+       "vimeo.com",
+       "vimeocdn.com"
+      ],
+      "name": "vimeo",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "TikTok short-video platform",
+      "domains": [
+       "tiktok.com",
+       "tiktokcdn.com",
+       "tiktokv.com",
+       "tiktokcdn-us.com"
+      ],
+      "name": "tiktok",
+      "risk": 3,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Spotify music and podcast streaming",
+      "domains": [
+       "spotify.com",
+       "scdn.co",
+       "spotifycdn.com",
+       "spotify.design"
+      ],
+      "name": "spotify",
+      "risk": 2,
+      "subcategory": "audio-streaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "transfers-files"
+      ],
+      "description": "Valve Steam store, community and downloads",
+      "domains": [
+       "steampowered.com",
+       "steamcommunity.com",
+       "steamcontent.com",
+       "steamstatic.com"
+      ],
+      "name": "steam",
+      "risk": 3,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "prone-to-misuse"
+      ],
+      "description": "Facebook social network",
+      "domains": [
+       "facebook.com",
+       "fbcdn.net",
+       "fb.com",
+       "facebook.net",
+       "fbsbx.com"
+      ],
+      "name": "facebook",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Instagram photo and video sharing",
+      "domains": [
+       "instagram.com",
+       "cdninstagram.com"
+      ],
+      "name": "instagram",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "X (Twitter) social network",
+      "domains": [
+       "twitter.com",
+       "x.com",
+       "twimg.com",
+       "t.co"
+      ],
+      "name": "twitter",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "LinkedIn professional network",
+      "domains": [
+       "linkedin.com",
+       "licdn.com"
+      ],
+      "name": "linkedin",
+      "risk": 2,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Reddit forums",
+      "domains": [
+       "reddit.com",
+       "redd.it",
+       "redditmedia.com",
+       "redditstatic.com"
+      ],
+      "name": "reddit",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Pinterest image sharing",
+      "domains": [
+       "pinterest.com",
+       "pinimg.com"
+      ],
+      "name": "pinterest",
+      "risk": 2,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Snapchat messaging and stories",
+      "domains": [
+       "snapchat.com",
+       "sc-cdn.net",
+       "snap-dev.net"
+      ],
+      "name": "snapchat",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "WhatsApp messaging and calls",
+      "domains": [
+       "whatsapp.com",
+       "whatsapp.net"
+      ],
+      "name": "whatsapp",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive",
+       "prone-to-misuse"
+      ],
+      "description": "Telegram messaging",
+      "domains": [
+       "telegram.org",
+       "t.me",
+       "telegram.me",
+       "telesco.pe"
+      ],
+      "name": "telegram",
+      "risk": 4,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "Signal end-to-end encrypted messaging",
+      "domains": [
+       "signal.org",
+       "signal.art",
+       "whispersystems.org"
+      ],
+      "name": "signal",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "prone-to-misuse"
+      ],
+      "description": "Discord chat, voice and communities",
+      "domains": [
+       "discord.com",
+       "discord.gg",
+       "discordapp.com",
+       "discordapp.net",
+       "discord.media"
+      ],
+      "name": "discord",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Slack team messaging",
+      "domains": [
+       "slack.com",
+       "slack-edge.com",
+       "slack-msgs.com",
+       "slack-files.com"
+      ],
+      "name": "slack",
+      "risk": 2,
+      "subcategory": "instant-messaging",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "excessive-bandwidth"
+      ],
+      "description": "Zoom meetings",
+      "domains": [
+       "zoom.us",
+       "zoom.com",
+       "zoomgov.com"
+      ],
+      "name": "zoom",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Microsoft Teams chat and meetings",
+      "domains": [
+       "teams.microsoft.com",
+       "teams.live.com",
+       "teams.cdn.office.net"
+      ],
+      "name": "ms-teams",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "Skype calls and messaging",
+      "domains": [
+       "skype.com",
+       "skypeassets.com"
+      ],
+      "name": "skype",
+      "risk": 3,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Cisco Webex meetings",
+      "domains": [
+       "webex.com",
+       "wbx2.com"
+      ],
+      "name": "webex",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Google Meet video meetings",
+      "domains": [
+       "meet.google.com"
+      ],
+      "name": "google-meet",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Gmail web mail",
+      "domains": [
+       "mail.google.com",
+       "gmail.com"
+      ],
+      "name": "gmail",
+      "risk": 2,
+      "subcategory": "email",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Outlook web mail (Microsoft 365 and Outlook.com)",
+      "domains": [
+       "outlook.office365.com",
+       "outlook.office.com",
+       "outlook.live.com",
+       "outlook.com"
+      ],
+      "name": "outlook-web",
+      "risk": 2,
+      "subcategory": "email",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Microsoft 365 web applications",
+      "domains": [
+       "office.com",
+       "office365.com",
+       "office.net",
+       "officeapps.live.com"
+      ],
+      "name": "ms-office365",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "SharePoint Online sites and files",
+      "domains": [
+       "sharepoint.com"
+      ],
+      "name": "sharepoint-online",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Microsoft OneDrive file storage",
+      "domains": [
+       "onedrive.live.com",
+       "onedrive.com",
+       "1drv.com",
+       "1drv.ms"
+      ],
+      "name": "ms-onedrive",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Microsoft Entra ID (Azure AD) sign-in",
+      "domains": [
+       "login.microsoftonline.com",
+       "microsoftonline.com",
+       "login.live.com"
+      ],
+      "name": "azure-ad",
+      "risk": 1,
+      "subcategory": "auth-service",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "excessive-bandwidth"
+      ],
+      "description": "Windows Update and Microsoft software delivery",
+      "domains": [
+       "windowsupdate.com",
+       "update.microsoft.com",
+       "delivery.mp.microsoft.com"
+      ],
+      "name": "ms-update",
+      "risk": 1,
+      "subcategory": "software-development",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Google Drive and Docs",
+      "domains": [
+       "drive.google.com",
+       "docs.google.com",
+       "drive.usercontent.google.com"
+      ],
+      "name": "google-drive",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "pervasive"
+      ],
+      "description": "Google services not mapped to a more specific application",
+      "domains": [
+       "google.com",
+       "gstatic.com",
+       "googleapis.com",
+       "googleusercontent.com",
+       "gvt1.com",
+       "gvt2.com"
+      ],
+      "name": "google-base",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Dropbox file sync and sharing",
+      "domains": [
+       "dropbox.com",
+       "dropboxapi.com",
+       "dropboxusercontent.com",
+       "dropboxstatic.com"
+      ],
+      "name": "dropbox",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Box content management",
+      "domains": [
+       "box.com",
+       "boxcloud.com",
+       "box.net"
+      ],
+      "name": "box",
+      "risk": 2,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Apple iCloud services",
+      "domains": [
+       "icloud.com",
+       "icloud-content.com"
+      ],
+      "name": "icloud",
+      "risk": 2,
+      "subcategory": "file-sharing",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "GitHub code hosting",
+      "domains": [
+       "github.com",
+       "githubusercontent.com",
+       "githubassets.com",
+       "github.io"
+      ],
+      "name": "github",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "GitLab code hosting",
+      "domains": [
+       "gitlab.com"
+      ],
+      "name": "gitlab",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Atlassian cloud (Jira, Confluence, Bitbucket)",
+      "domains": [
+       "atlassian.net",
+       "atlassian.com",
+       "bitbucket.org"
+      ],
+      "name": "atlassian",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Salesforce CRM",
+      "domains": [
+       "salesforce.com",
+       "force.com"
+      ],
+      "name": "salesforce",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Notion workspace",
+      "domains": [
+       "notion.so",
+       "notion.site"
+      ],
+      "name": "notion",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files",
+       "widely-used"
+      ],
+      "description": "OpenAI ChatGPT and API",
+      "domains": [
+       "openai.com",
+       "chatgpt.com",
+       "oaiusercontent.com",
+       "oaistatic.com"
+      ],
+      "name": "openai-chatgpt",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Anthropic Claude",
+      "domains": [
+       "claude.ai",
+       "anthropic.com",
+       "claude.com"
+      ],
+      "name": "anthropic-claude",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Google Gemini",
+      "domains": [
+       "gemini.google.com"
+      ],
+      "name": "google-gemini",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "prone-to-misuse",
+       "used-by-malware"
+      ],
+      "description": "TeamViewer remote control",
+      "domains": [
+       "teamviewer.com"
+      ],
+      "name": "teamviewer",
+      "risk": 4,
+      "subcategory": "remote-access",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "prone-to-misuse",
+       "used-by-malware"
+      ],
+      "description": "AnyDesk remote control",
+      "domains": [
+       "anydesk.com",
+       "net.anydesk.com"
+      ],
+      "name": "anydesk",
+      "risk": 4,
+      "subcategory": "remote-access",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Amazon retail site",
+      "domains": [
+       "amazon.com",
+       "media-amazon.com",
+       "ssl-images-amazon.com"
+      ],
+      "name": "amazon",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [],
+      "description": "eBay marketplace",
+      "domains": [
+       "ebay.com",
+       "ebayimg.com",
+       "ebaystatic.com"
+      ],
+      "name": "ebay",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "PayPal payments",
+      "domains": [
+       "paypal.com",
+       "paypalobjects.com"
+      ],
+      "name": "paypal",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Wikipedia and Wikimedia projects",
+      "domains": [
+       "wikipedia.org",
+       "wikimedia.org"
+      ],
+      "name": "wikipedia",
+      "risk": 1,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     }
+    ],
+    "suffixes": {
+     "1drv.com": "ms-onedrive",
+     "1drv.ms": "ms-onedrive",
+     "aiv-cdn.net": "amazon-prime-video",
+     "aiv-delivery.net": "amazon-prime-video",
+     "amazon.com": "amazon",
+     "anthropic.com": "anthropic-claude",
+     "anydesk.com": "anydesk",
+     "atlassian.com": "atlassian",
+     "atlassian.net": "atlassian",
+     "bamgrid.com": "disney-plus",
+     "bitbucket.org": "atlassian",
+     "box.com": "box",
+     "box.net": "box",
+     "boxcloud.com": "box",
+     "cdninstagram.com": "instagram",
+     "chatgpt.com": "openai-chatgpt",
+     "claude.ai": "anthropic-claude",
+     "claude.com": "anthropic-claude",
+     "delivery.mp.microsoft.com": "ms-update",
+     "discord.com": "discord",
+     "discord.gg": "discord",
+     "discord.media": "discord",
+     "discordapp.com": "discord",
+     "discordapp.net": "discord",
+     "disneyplus.com": "disney-plus",
+     "docs.google.com": "google-drive",
+     "drive.google.com": "google-drive",
+     "drive.usercontent.google.com": "google-drive",
+     "dropbox.com": "dropbox",
+     "dropboxapi.com": "dropbox",
+     "dropboxstatic.com": "dropbox",
+     "dropboxusercontent.com": "dropbox",
+     "dssott.com": "disney-plus",
+     "ebay.com": "ebay",
+     "ebayimg.com": "ebay",
+     "ebaystatic.com": "ebay",
+     "facebook.com": "facebook",
+     "facebook.net": "facebook",
+     "fb.com": "facebook",
+     "fbcdn.net": "facebook",
+     "fbsbx.com": "facebook",
+     "force.com": "salesforce",
+     "gemini.google.com": "google-gemini",
+     "github.com": "github",
+     "github.io": "github",
+     "githubassets.com": "github",
+     "githubusercontent.com": "github",
+     "gitlab.com": "gitlab",
+     "gmail.com": "gmail",
+     "google.com": "google-base",
+     "googleapis.com": "google-base",
+     "googleusercontent.com": "google-base",
+     "googlevideo.com": "youtube",
+     "gstatic.com": "google-base",
+     "gvt1.com": "google-base",
+     "gvt2.com": "google-base",
+     "hulu.com": "hulu",
+     "hulustream.com": "hulu",
+     "icloud-content.com": "icloud",
+     "icloud.com": "icloud",
+     "instagram.com": "instagram",
+     "jtvnw.net": "twitch",
+     "licdn.com": "linkedin",
+     "linkedin.com": "linkedin",
+     "login.live.com": "azure-ad",
+     "login.microsoftonline.com": "azure-ad",
+     "mail.google.com": "gmail",
+     "media-amazon.com": "amazon",
+     "meet.google.com": "google-meet",
+     "microsoftonline.com": "azure-ad",
+     "net.anydesk.com": "anydesk",
+     "netflix.com": "netflix",
+     "nflxext.com": "netflix",
+     "nflximg.net": "netflix",
+     "nflxso.net": "netflix",
+     "nflxvideo.net": "netflix",
+     "notion.site": "notion",
+     "notion.so": "notion",
+     "oaistatic.com": "openai-chatgpt",
+     "oaiusercontent.com": "openai-chatgpt",
+     "office.com": "ms-office365",
+     "office.net": "ms-office365",
+     "office365.com": "ms-office365",
+     "officeapps.live.com": "ms-office365",
+     "onedrive.com": "ms-onedrive",
+     "onedrive.live.com": "ms-onedrive",
+     "openai.com": "openai-chatgpt",
+     "outlook.com": "outlook-web",
+     "outlook.live.com": "outlook-web",
+     "outlook.office.com": "outlook-web",
+     "outlook.office365.com": "outlook-web",
+     "paypal.com": "paypal",
+     "paypalobjects.com": "paypal",
+     "pinimg.com": "pinterest",
+     "pinterest.com": "pinterest",
+     "primevideo.com": "amazon-prime-video",
+     "redd.it": "reddit",
+     "reddit.com": "reddit",
+     "redditmedia.com": "reddit",
+     "redditstatic.com": "reddit",
+     "salesforce.com": "salesforce",
+     "sc-cdn.net": "snapchat",
+     "scdn.co": "spotify",
+     "sharepoint.com": "sharepoint-online",
+     "signal.art": "signal",
+     "signal.org": "signal",
+     "skype.com": "skype",
+     "skypeassets.com": "skype",
+     "slack-edge.com": "slack",
+     "slack-files.com": "slack",
+     "slack-msgs.com": "slack",
+     "slack.com": "slack",
+     "snap-dev.net": "snapchat",
+     "snapchat.com": "snapchat",
+     "spotify.com": "spotify",
+     "spotify.design": "spotify",
+     "spotifycdn.com": "spotify",
+     "ssl-images-amazon.com": "amazon",
+     "steamcommunity.com": "steam",
+     "steamcontent.com": "steam",
+     "steampowered.com": "steam",
+     "steamstatic.com": "steam",
+     "t.co": "twitter",
+     "t.me": "telegram",
+     "teams.cdn.office.net": "ms-teams",
+     "teams.live.com": "ms-teams",
+     "teams.microsoft.com": "ms-teams",
+     "teamviewer.com": "teamviewer",
+     "telegram.me": "telegram",
+     "telegram.org": "telegram",
+     "telesco.pe": "telegram",
+     "tiktok.com": "tiktok",
+     "tiktokcdn-us.com": "tiktok",
+     "tiktokcdn.com": "tiktok",
+     "tiktokv.com": "tiktok",
+     "ttvnw.net": "twitch",
+     "twimg.com": "twitter",
+     "twitch.tv": "twitch",
+     "twitter.com": "twitter",
+     "update.microsoft.com": "ms-update",
+     "vimeo.com": "vimeo",
+     "vimeocdn.com": "vimeo",
+     "wbx2.com": "webex",
+     "webex.com": "webex",
+     "whatsapp.com": "whatsapp",
+     "whatsapp.net": "whatsapp",
+     "whispersystems.org": "signal",
+     "wikimedia.org": "wikipedia",
+     "wikipedia.org": "wikipedia",
+     "windowsupdate.com": "ms-update",
+     "x.com": "twitter",
+     "youtu.be": "youtube",
+     "youtube-nocookie.com": "youtube",
+     "youtube.com": "youtube",
+     "ytimg.com": "youtube",
+     "zoom.com": "zoom",
+     "zoom.us": "zoom",
+     "zoomgov.com": "zoom"
+    },
+    "web_fronts": {}
+   },
+   "release": {
+    "components": {
+     "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
+     "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+     "host_catalog": "66f39d536827348c9cd1d3928f36d33b2ef8f1952e15e0dd262ca0c4c8938e5f",
+     "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
+    },
+    "digest": "5d38359bcadf2419",
+    "released": "2025-10-24",
+    "reviewed": "2025-10-24",
+    "version": "2025.10.0"
+   }
+  },
+  "2026.11.0": {
+   "host_catalog": {
+    "app_domains": {
+     "amazon": [
+      "amazon.com",
+      "media-amazon.com",
+      "ssl-images-amazon.com"
+     ],
+     "amazon-prime-video": [
+      "primevideo.com",
+      "aiv-cdn.net",
+      "aiv-delivery.net"
+     ],
+     "anthropic-claude": [
+      "claude.ai",
+      "anthropic.com",
+      "claude.com"
+     ],
+     "anydesk": [
+      "anydesk.com",
+      "net.anydesk.com"
+     ],
+     "atlassian": [
+      "atlassian.net",
+      "atlassian.com",
+      "bitbucket.org"
+     ],
+     "azure-ad": [
+      "login.microsoftonline.com",
+      "microsoftonline.com",
+      "login.live.com"
+     ],
+     "box": [
+      "box.com",
+      "boxcloud.com",
+      "box.net"
+     ],
+     "discord": [
+      "discord.com",
+      "discord.gg",
+      "discordapp.com",
+      "discordapp.net",
+      "discord.media"
+     ],
+     "disney-plus": [
+      "disneyplus.com",
+      "dssott.com",
+      "bamgrid.com"
+     ],
+     "dropbox": [
+      "dropbox.com",
+      "dropboxapi.com",
+      "dropboxusercontent.com",
+      "dropboxstatic.com"
+     ],
+     "ebay": [
+      "ebay.com",
+      "ebayimg.com",
+      "ebaystatic.com"
+     ],
+     "facebook": [
+      "facebook.com",
+      "fbcdn.net",
+      "fb.com",
+      "facebook.net",
+      "fbsbx.com"
+     ],
+     "github": [
+      "github.com",
+      "githubusercontent.com",
+      "githubassets.com"
+     ],
+     "gitlab": [
+      "gitlab.com"
+     ],
+     "gmail": [
+      "mail.google.com",
+      "gmail.com"
+     ],
+     "google-base": [
+      "google.com",
+      "gstatic.com",
+      "googleapis.com",
+      "googleusercontent.com",
+      "gvt1.com",
+      "gvt2.com"
+     ],
+     "google-drive": [
+      "drive.google.com",
+      "docs.google.com",
+      "drive.usercontent.google.com"
+     ],
+     "google-gemini": [
+      "gemini.google.com"
+     ],
+     "google-meet": [
+      "meet.google.com"
+     ],
+     "hulu": [
+      "hulu.com",
+      "hulustream.com"
+     ],
+     "icloud": [
+      "icloud.com",
+      "icloud-content.com"
+     ],
+     "instagram": [
+      "instagram.com",
+      "cdninstagram.com"
+     ],
+     "linkedin": [
+      "linkedin.com",
+      "licdn.com"
+     ],
+     "ms-office365": [
+      "office.com",
+      "office365.com",
+      "office.net",
+      "officeapps.live.com"
+     ],
+     "ms-onedrive": [
+      "onedrive.live.com",
+      "onedrive.com",
+      "1drv.com",
+      "1drv.ms"
+     ],
+     "ms-teams": [
+      "teams.microsoft.com",
+      "teams.live.com",
+      "teams.cdn.office.net"
+     ],
+     "ms-update": [
+      "windowsupdate.com",
+      "update.microsoft.com",
+      "delivery.mp.microsoft.com"
+     ],
+     "netflix": [
+      "netflix.com",
+      "nflxvideo.net",
+      "nflximg.net",
+      "nflxext.com",
+      "nflxso.net"
+     ],
+     "notion": [
+      "notion.so",
+      "notion.site"
+     ],
+     "openai-chatgpt": [
+      "chatgpt.com",
+      "chat.openai.com",
+      "oaiusercontent.com",
+      "oaistatic.com"
+     ],
+     "openai-platform": [
+      "api.openai.com",
+      "platform.openai.com"
+     ],
+     "outlook-web": [
+      "outlook.office365.com",
+      "outlook.office.com",
+      "outlook.live.com",
+      "outlook.com"
+     ],
+     "paypal": [
+      "paypal.com",
+      "paypalobjects.com"
+     ],
+     "pinterest": [
+      "pinterest.com",
+      "pinimg.com"
+     ],
+     "reddit": [
+      "reddit.com",
+      "redd.it",
+      "redditmedia.com",
+      "redditstatic.com"
+     ],
+     "salesforce": [
+      "salesforce.com",
+      "force.com"
+     ],
+     "sharepoint-online": [
+      "sharepoint.com"
+     ],
+     "signal": [
+      "signal.org",
+      "signal.art",
+      "whispersystems.org"
+     ],
+     "skype": [
+      "skype.com",
+      "skypeassets.com"
+     ],
+     "slack": [
+      "slack.com",
+      "slack-edge.com",
+      "slack-msgs.com",
+      "slack-files.com"
+     ],
+     "snapchat": [
+      "snapchat.com",
+      "sc-cdn.net",
+      "snap-dev.net"
+     ],
+     "spotify": [
+      "spotify.com",
+      "scdn.co",
+      "spotifycdn.com",
+      "spotify.design"
+     ],
+     "steam": [
+      "steampowered.com",
+      "steamcommunity.com",
+      "steamcontent.com",
+      "steamstatic.com"
+     ],
+     "teamviewer": [
+      "teamviewer.com"
+     ],
+     "telegram": [
+      "telegram.org",
+      "t.me",
+      "telegram.me",
+      "telesco.pe"
+     ],
+     "tiktok": [
+      "tiktok.com",
+      "tiktokcdn.com",
+      "tiktokv.com",
+      "tiktokcdn-us.com"
+     ],
+     "twitch": [
+      "twitch.tv",
+      "ttvnw.net",
+      "jtvnw.net"
+     ],
+     "twitter": [
+      "twitter.com",
+      "x.com",
+      "twimg.com",
+      "t.co"
+     ],
+     "vimeo": [
+      "vimeo.com",
+      "vimeocdn.com"
+     ],
+     "webex": [
+      "webex.com",
+      "wbx2.com"
+     ],
+     "whatsapp": [
+      "whatsapp.com",
+      "whatsapp.net"
+     ],
+     "wikipedia": [
+      "wikipedia.org",
+      "wikimedia.org"
+     ],
+     "youtube": [
+      "youtube.com",
+      "youtu.be",
+      "googlevideo.com",
+      "ytimg.com",
+      "youtube-nocookie.com"
+     ],
+     "zoom": [
+      "zoom.us",
+      "zoom.com",
+      "zoomgov.com"
+     ]
+    },
+    "entries": [
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "YouTube video streaming",
+      "domains": [
+       "youtube.com",
+       "youtu.be",
+       "googlevideo.com",
+       "ytimg.com",
+       "youtube-nocookie.com"
+      ],
+      "name": "youtube",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Netflix video streaming",
+      "domains": [
+       "netflix.com",
+       "nflxvideo.net",
+       "nflximg.net",
+       "nflxext.com",
+       "nflxso.net"
+      ],
+      "name": "netflix",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Twitch live video streaming",
+      "domains": [
+       "twitch.tv",
+       "ttvnw.net",
+       "jtvnw.net"
+      ],
+      "name": "twitch",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Disney+ video streaming",
+      "domains": [
+       "disneyplus.com",
+       "dssott.com",
+       "bamgrid.com"
+      ],
+      "name": "disney-plus",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Hulu video streaming",
+      "domains": [
+       "hulu.com",
+       "hulustream.com"
+      ],
+      "name": "hulu",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Amazon Prime Video streaming",
+      "domains": [
+       "primevideo.com",
+       "aiv-cdn.net",
+       "aiv-delivery.net"
+      ],
+      "name": "amazon-prime-video",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "transfers-files"
+      ],
+      "description": "Vimeo video hosting",
+      "domains": [
+       "vimeo.com",
+       "vimeocdn.com"
+      ],
+      "name": "vimeo",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "TikTok short-video platform",
+      "domains": [
+       "tiktok.com",
+       "tiktokcdn.com",
+       "tiktokv.com",
+       "tiktokcdn-us.com"
+      ],
+      "name": "tiktok",
+      "risk": 3,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Spotify music and podcast streaming",
+      "domains": [
+       "spotify.com",
+       "scdn.co",
+       "spotifycdn.com",
+       "spotify.design"
+      ],
+      "name": "spotify",
+      "risk": 2,
+      "subcategory": "audio-streaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "transfers-files"
+      ],
+      "description": "Valve Steam store, community and downloads",
+      "domains": [
+       "steampowered.com",
+       "steamcommunity.com",
+       "steamcontent.com",
+       "steamstatic.com"
+      ],
+      "name": "steam",
+      "risk": 3,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "prone-to-misuse"
+      ],
+      "description": "Facebook social network",
+      "domains": [
+       "facebook.com",
+       "fbcdn.net",
+       "fb.com",
+       "facebook.net",
+       "fbsbx.com"
+      ],
+      "name": "facebook",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Instagram photo and video sharing",
+      "domains": [
+       "instagram.com",
+       "cdninstagram.com"
+      ],
+      "name": "instagram",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "X (Twitter) social network",
+      "domains": [
+       "twitter.com",
+       "x.com",
+       "twimg.com",
+       "t.co"
+      ],
+      "name": "twitter",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "LinkedIn professional network",
+      "domains": [
+       "linkedin.com",
+       "licdn.com"
+      ],
+      "name": "linkedin",
+      "risk": 2,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Reddit forums",
+      "domains": [
+       "reddit.com",
+       "redd.it",
+       "redditmedia.com",
+       "redditstatic.com"
+      ],
+      "name": "reddit",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Pinterest image sharing",
+      "domains": [
+       "pinterest.com",
+       "pinimg.com"
+      ],
+      "name": "pinterest",
+      "risk": 2,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Snapchat messaging and stories",
+      "domains": [
+       "snapchat.com",
+       "sc-cdn.net",
+       "snap-dev.net"
+      ],
+      "name": "snapchat",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "WhatsApp messaging and calls",
+      "domains": [
+       "whatsapp.com",
+       "whatsapp.net"
+      ],
+      "name": "whatsapp",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive",
+       "prone-to-misuse"
+      ],
+      "description": "Telegram messaging",
+      "domains": [
+       "telegram.org",
+       "t.me",
+       "telegram.me",
+       "telesco.pe"
+      ],
+      "name": "telegram",
+      "risk": 4,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "Signal end-to-end encrypted messaging",
+      "domains": [
+       "signal.org",
+       "signal.art",
+       "whispersystems.org"
+      ],
+      "name": "signal",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "prone-to-misuse"
+      ],
+      "description": "Discord chat, voice and communities",
+      "domains": [
+       "discord.com",
+       "discord.gg",
+       "discordapp.com",
+       "discordapp.net",
+       "discord.media"
+      ],
+      "name": "discord",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Slack team messaging",
+      "domains": [
+       "slack.com",
+       "slack-edge.com",
+       "slack-msgs.com",
+       "slack-files.com"
+      ],
+      "name": "slack",
+      "risk": 2,
+      "subcategory": "instant-messaging",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "excessive-bandwidth"
+      ],
+      "description": "Zoom meetings",
+      "domains": [
+       "zoom.us",
+       "zoom.com",
+       "zoomgov.com"
+      ],
+      "name": "zoom",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Microsoft Teams chat and meetings",
+      "domains": [
+       "teams.microsoft.com",
+       "teams.live.com",
+       "teams.cdn.office.net"
+      ],
+      "name": "ms-teams",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "Skype calls and messaging",
+      "domains": [
+       "skype.com",
+       "skypeassets.com"
+      ],
+      "name": "skype",
+      "risk": 3,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Cisco Webex meetings",
+      "domains": [
+       "webex.com",
+       "wbx2.com"
+      ],
+      "name": "webex",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Google Meet video meetings",
+      "domains": [
+       "meet.google.com"
+      ],
+      "name": "google-meet",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Gmail web mail",
+      "domains": [
+       "mail.google.com",
+       "gmail.com"
+      ],
+      "name": "gmail",
+      "risk": 2,
+      "subcategory": "email",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Outlook web mail (Microsoft 365 and Outlook.com)",
+      "domains": [
+       "outlook.office365.com",
+       "outlook.office.com",
+       "outlook.live.com",
+       "outlook.com"
+      ],
+      "name": "outlook-web",
+      "risk": 2,
+      "subcategory": "email",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Microsoft 365 web applications",
+      "domains": [
+       "office.com",
+       "office365.com",
+       "office.net",
+       "officeapps.live.com"
+      ],
+      "name": "ms-office365",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "SharePoint Online sites and files",
+      "domains": [
+       "sharepoint.com"
+      ],
+      "name": "sharepoint-online",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Microsoft OneDrive file storage",
+      "domains": [
+       "onedrive.live.com",
+       "onedrive.com",
+       "1drv.com",
+       "1drv.ms"
+      ],
+      "name": "ms-onedrive",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Microsoft Entra ID (Azure AD) sign-in",
+      "domains": [
+       "login.microsoftonline.com",
+       "microsoftonline.com",
+       "login.live.com"
+      ],
+      "name": "azure-ad",
+      "risk": 1,
+      "subcategory": "auth-service",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "excessive-bandwidth"
+      ],
+      "description": "Windows Update and Microsoft software delivery",
+      "domains": [
+       "windowsupdate.com",
+       "update.microsoft.com",
+       "delivery.mp.microsoft.com"
+      ],
+      "name": "ms-update",
+      "risk": 1,
+      "subcategory": "software-development",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Google Drive and Docs",
+      "domains": [
+       "drive.google.com",
+       "docs.google.com",
+       "drive.usercontent.google.com"
+      ],
+      "name": "google-drive",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "pervasive"
+      ],
+      "description": "Google services not mapped to a more specific application",
+      "domains": [
+       "google.com",
+       "gstatic.com",
+       "googleapis.com",
+       "googleusercontent.com",
+       "gvt1.com",
+       "gvt2.com"
+      ],
+      "name": "google-base",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Dropbox file sync and sharing",
+      "domains": [
+       "dropbox.com",
+       "dropboxapi.com",
+       "dropboxusercontent.com",
+       "dropboxstatic.com"
+      ],
+      "name": "dropbox",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Box content management",
+      "domains": [
+       "box.com",
+       "boxcloud.com",
+       "box.net"
+      ],
+      "name": "box",
+      "risk": 2,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Apple iCloud services",
+      "domains": [
+       "icloud.com",
+       "icloud-content.com"
+      ],
+      "name": "icloud",
+      "risk": 2,
+      "subcategory": "file-sharing",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "GitHub code hosting",
+      "domains": [
+       "github.com",
+       "githubusercontent.com",
+       "githubassets.com"
+      ],
+      "name": "github",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "GitLab code hosting",
+      "domains": [
+       "gitlab.com"
+      ],
+      "name": "gitlab",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Atlassian cloud (Jira, Confluence, Bitbucket)",
+      "domains": [
+       "atlassian.net",
+       "atlassian.com",
+       "bitbucket.org"
+      ],
+      "name": "atlassian",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Salesforce CRM",
+      "domains": [
+       "salesforce.com",
+       "force.com"
+      ],
+      "name": "salesforce",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Notion workspace",
+      "domains": [
+       "notion.so",
+       "notion.site"
+      ],
+      "name": "notion",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files",
+       "widely-used"
+      ],
+      "description": "OpenAI ChatGPT",
+      "domains": [
+       "chatgpt.com",
+       "chat.openai.com",
+       "oaiusercontent.com",
+       "oaistatic.com"
+      ],
+      "name": "openai-chatgpt",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": [
+       "openai.com",
+       "www.openai.com"
+      ]
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "OpenAI developer platform and API",
+      "domains": [
+       "api.openai.com",
+       "platform.openai.com"
+      ],
+      "name": "openai-platform",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Anthropic Claude",
+      "domains": [
+       "claude.ai",
+       "anthropic.com",
+       "claude.com"
+      ],
+      "name": "anthropic-claude",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Google Gemini",
+      "domains": [
+       "gemini.google.com"
+      ],
+      "name": "google-gemini",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "prone-to-misuse",
+       "used-by-malware"
+      ],
+      "description": "TeamViewer remote control",
+      "domains": [
+       "teamviewer.com"
+      ],
+      "name": "teamviewer",
+      "risk": 4,
+      "subcategory": "remote-access",
+      "technology": "client-server",
+      "web_fronts": [
+       "teamviewer.com",
+       "www.teamviewer.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "prone-to-misuse",
+       "used-by-malware"
+      ],
+      "description": "AnyDesk remote control",
+      "domains": [
+       "anydesk.com",
+       "net.anydesk.com"
+      ],
+      "name": "anydesk",
+      "risk": 4,
+      "subcategory": "remote-access",
+      "technology": "client-server",
+      "web_fronts": [
+       "anydesk.com",
+       "www.anydesk.com"
+      ]
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Amazon retail site",
+      "domains": [
+       "amazon.com",
+       "media-amazon.com",
+       "ssl-images-amazon.com"
+      ],
+      "name": "amazon",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [],
+      "description": "eBay marketplace",
+      "domains": [
+       "ebay.com",
+       "ebayimg.com",
+       "ebaystatic.com"
+      ],
+      "name": "ebay",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "PayPal payments",
+      "domains": [
+       "paypal.com",
+       "paypalobjects.com"
+      ],
+      "name": "paypal",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Wikipedia and Wikimedia projects",
+      "domains": [
+       "wikipedia.org",
+       "wikimedia.org"
+      ],
+      "name": "wikipedia",
+      "risk": 1,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     }
+    ],
+    "suffixes": {
+     "1drv.com": "ms-onedrive",
+     "1drv.ms": "ms-onedrive",
+     "aiv-cdn.net": "amazon-prime-video",
+     "aiv-delivery.net": "amazon-prime-video",
+     "amazon.com": "amazon",
+     "anthropic.com": "anthropic-claude",
+     "anydesk.com": "anydesk",
+     "api.openai.com": "openai-platform",
+     "atlassian.com": "atlassian",
+     "atlassian.net": "atlassian",
+     "bamgrid.com": "disney-plus",
+     "bitbucket.org": "atlassian",
+     "box.com": "box",
+     "box.net": "box",
+     "boxcloud.com": "box",
+     "cdninstagram.com": "instagram",
+     "chat.openai.com": "openai-chatgpt",
+     "chatgpt.com": "openai-chatgpt",
+     "claude.ai": "anthropic-claude",
+     "claude.com": "anthropic-claude",
+     "delivery.mp.microsoft.com": "ms-update",
+     "discord.com": "discord",
+     "discord.gg": "discord",
+     "discord.media": "discord",
+     "discordapp.com": "discord",
+     "discordapp.net": "discord",
+     "disneyplus.com": "disney-plus",
+     "docs.google.com": "google-drive",
+     "drive.google.com": "google-drive",
+     "drive.usercontent.google.com": "google-drive",
+     "dropbox.com": "dropbox",
+     "dropboxapi.com": "dropbox",
+     "dropboxstatic.com": "dropbox",
+     "dropboxusercontent.com": "dropbox",
+     "dssott.com": "disney-plus",
+     "ebay.com": "ebay",
+     "ebayimg.com": "ebay",
+     "ebaystatic.com": "ebay",
+     "facebook.com": "facebook",
+     "facebook.net": "facebook",
+     "fb.com": "facebook",
+     "fbcdn.net": "facebook",
+     "fbsbx.com": "facebook",
+     "force.com": "salesforce",
+     "gemini.google.com": "google-gemini",
+     "github.com": "github",
+     "githubassets.com": "github",
+     "githubusercontent.com": "github",
+     "gitlab.com": "gitlab",
+     "gmail.com": "gmail",
+     "google.com": "google-base",
+     "googleapis.com": "google-base",
+     "googleusercontent.com": "google-base",
+     "googlevideo.com": "youtube",
+     "gstatic.com": "google-base",
+     "gvt1.com": "google-base",
+     "gvt2.com": "google-base",
+     "hulu.com": "hulu",
+     "hulustream.com": "hulu",
+     "icloud-content.com": "icloud",
+     "icloud.com": "icloud",
+     "instagram.com": "instagram",
+     "jtvnw.net": "twitch",
+     "licdn.com": "linkedin",
+     "linkedin.com": "linkedin",
+     "login.live.com": "azure-ad",
+     "login.microsoftonline.com": "azure-ad",
+     "mail.google.com": "gmail",
+     "media-amazon.com": "amazon",
+     "meet.google.com": "google-meet",
+     "microsoftonline.com": "azure-ad",
+     "net.anydesk.com": "anydesk",
+     "netflix.com": "netflix",
+     "nflxext.com": "netflix",
+     "nflximg.net": "netflix",
+     "nflxso.net": "netflix",
+     "nflxvideo.net": "netflix",
+     "notion.site": "notion",
+     "notion.so": "notion",
+     "oaistatic.com": "openai-chatgpt",
+     "oaiusercontent.com": "openai-chatgpt",
+     "office.com": "ms-office365",
+     "office.net": "ms-office365",
+     "office365.com": "ms-office365",
+     "officeapps.live.com": "ms-office365",
+     "onedrive.com": "ms-onedrive",
+     "onedrive.live.com": "ms-onedrive",
+     "outlook.com": "outlook-web",
+     "outlook.live.com": "outlook-web",
+     "outlook.office.com": "outlook-web",
+     "outlook.office365.com": "outlook-web",
+     "paypal.com": "paypal",
+     "paypalobjects.com": "paypal",
+     "pinimg.com": "pinterest",
+     "pinterest.com": "pinterest",
+     "platform.openai.com": "openai-platform",
+     "primevideo.com": "amazon-prime-video",
+     "redd.it": "reddit",
+     "reddit.com": "reddit",
+     "redditmedia.com": "reddit",
+     "redditstatic.com": "reddit",
+     "salesforce.com": "salesforce",
+     "sc-cdn.net": "snapchat",
+     "scdn.co": "spotify",
+     "sharepoint.com": "sharepoint-online",
+     "signal.art": "signal",
+     "signal.org": "signal",
+     "skype.com": "skype",
+     "skypeassets.com": "skype",
+     "slack-edge.com": "slack",
+     "slack-files.com": "slack",
+     "slack-msgs.com": "slack",
+     "slack.com": "slack",
+     "snap-dev.net": "snapchat",
+     "snapchat.com": "snapchat",
+     "spotify.com": "spotify",
+     "spotify.design": "spotify",
+     "spotifycdn.com": "spotify",
+     "ssl-images-amazon.com": "amazon",
+     "steamcommunity.com": "steam",
+     "steamcontent.com": "steam",
+     "steampowered.com": "steam",
+     "steamstatic.com": "steam",
+     "t.co": "twitter",
+     "t.me": "telegram",
+     "teams.cdn.office.net": "ms-teams",
+     "teams.live.com": "ms-teams",
+     "teams.microsoft.com": "ms-teams",
+     "teamviewer.com": "teamviewer",
+     "telegram.me": "telegram",
+     "telegram.org": "telegram",
+     "telesco.pe": "telegram",
+     "tiktok.com": "tiktok",
+     "tiktokcdn-us.com": "tiktok",
+     "tiktokcdn.com": "tiktok",
+     "tiktokv.com": "tiktok",
+     "ttvnw.net": "twitch",
+     "twimg.com": "twitter",
+     "twitch.tv": "twitch",
+     "twitter.com": "twitter",
+     "update.microsoft.com": "ms-update",
+     "vimeo.com": "vimeo",
+     "vimeocdn.com": "vimeo",
+     "wbx2.com": "webex",
+     "webex.com": "webex",
+     "whatsapp.com": "whatsapp",
+     "whatsapp.net": "whatsapp",
+     "whispersystems.org": "signal",
+     "wikimedia.org": "wikipedia",
+     "wikipedia.org": "wikipedia",
+     "windowsupdate.com": "ms-update",
+     "x.com": "twitter",
+     "youtu.be": "youtube",
+     "youtube-nocookie.com": "youtube",
+     "youtube.com": "youtube",
+     "ytimg.com": "youtube",
+     "zoom.com": "zoom",
+     "zoom.us": "zoom",
+     "zoomgov.com": "zoom"
+    },
+    "web_fronts": {
+     "anydesk.com": "anydesk",
+     "openai.com": "openai-chatgpt",
+     "teamviewer.com": "teamviewer",
+     "www.anydesk.com": "anydesk",
+     "www.openai.com": "openai-chatgpt",
+     "www.teamviewer.com": "teamviewer"
+    }
+   },
+   "release": {
+    "components": {
+     "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
+     "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+     "host_catalog": "928b856e40db5873d64db50ba81dfac5e07e44eb3c5c86b8009340f5eca1f17c",
+     "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
+    },
+    "digest": "e4ba10037ef25ee7",
+    "released": "2026-11-07",
+    "reviewed": "2026-11-07",
+    "version": "2026.11.0"
+   }
+  },
+  "2026.11.1": {
+   "host_catalog": {
+    "app_domains": {
+     "1password": [
+      "1password.com",
+      "1password.eu"
+     ],
+     "adguard-dns": [
+      "adguard-dns.com",
+      "dns.adguard.com"
+     ],
+     "adobe-cloud": [
+      "adobe.com",
+      "adobelogin.com",
+      "adobe.io"
+     ],
+     "airbnb": [
+      "airbnb.com",
+      "muscache.com"
+     ],
+     "airtable": [
+      "airtable.com"
+     ],
+     "aliexpress": [
+      "aliexpress.com",
+      "aliexpress.us"
+     ],
+     "amazon": [
+      "amazon.com",
+      "media-amazon.com",
+      "ssl-images-amazon.com"
+     ],
+     "amazon-prime-video": [
+      "primevideo.com",
+      "aiv-cdn.net",
+      "aiv-delivery.net"
+     ],
+     "anthropic-claude": [
+      "claude.ai",
+      "anthropic.com",
+      "claude.com"
+     ],
+     "anydesk": [
+      "anydesk.com",
+      "net.anydesk.com"
+     ],
+     "apple-app-store": [
+      "apps.apple.com",
+      "itunes.apple.com"
+     ],
+     "apple-base": [
+      "apple.com",
+      "cdn-apple.com",
+      "mzstatic.com"
+     ],
+     "apple-music": [
+      "music.apple.com"
+     ],
+     "apple-push": [
+      "push.apple.com"
+     ],
+     "apple-tv": [
+      "tv.apple.com"
+     ],
+     "asana": [
+      "asana.com"
+     ],
+     "atlassian": [
+      "atlassian.net",
+      "atlassian.com",
+      "bitbucket.org"
+     ],
+     "auth0": [
+      "auth0.com"
+     ],
+     "azure-ad": [
+      "login.microsoftonline.com",
+      "microsoftonline.com",
+      "login.live.com"
+     ],
+     "baidu": [
+      "baidu.com",
+      "bdstatic.com"
+     ],
+     "battle-net": [
+      "battle.net",
+      "blizzard.com"
+     ],
+     "binance": [
+      "binance.com"
+     ],
+     "bing": [
+      "bing.com",
+      "bing.net"
+     ],
+     "bitwarden": [
+      "bitwarden.com"
+     ],
+     "bluesky": [
+      "bsky.app",
+      "bsky.social"
+     ],
+     "booking": [
+      "booking.com",
+      "bstatic.com"
+     ],
+     "box": [
+      "box.com",
+      "boxcloud.com",
+      "box.net"
+     ],
+     "canva": [
+      "canva.com"
+     ],
+     "character-ai": [
+      "character.ai"
+     ],
+     "chrome-remote-desktop": [
+      "remotedesktop.google.com"
+     ],
+     "cloudflare-dns": [
+      "cloudflare-dns.com",
+      "one.one.one.one"
+     ],
+     "coinbase": [
+      "coinbase.com"
+     ],
+     "dailymotion": [
+      "dailymotion.com",
+      "dmcdn.net"
+     ],
+     "deepseek": [
+      "deepseek.com"
+     ],
+     "deezer": [
+      "deezer.com",
+      "dzcdn.net"
+     ],
+     "discord": [
+      "discord.com",
+      "discord.gg",
+      "discordapp.com",
+      "discordapp.net",
+      "discord.media"
+     ],
+     "disney-plus": [
+      "disneyplus.com",
+      "dssott.com",
+      "bamgrid.com"
+     ],
+     "docker-hub": [
+      "docker.com",
+      "docker.io"
+     ],
+     "docusign": [
+      "docusign.com",
+      "docusign.net"
+     ],
+     "dropbox": [
+      "dropbox.com",
+      "dropboxapi.com",
+      "dropboxusercontent.com",
+      "dropboxstatic.com"
+     ],
+     "duckduckgo": [
+      "duckduckgo.com"
+     ],
+     "duo-security": [
+      "duosecurity.com"
+     ],
+     "ea-games": [
+      "ea.com"
+     ],
+     "ebay": [
+      "ebay.com",
+      "ebayimg.com",
+      "ebaystatic.com"
+     ],
+     "epic-games": [
+      "epicgames.com",
+      "fortnite.com",
+      "epicgames.dev"
+     ],
+     "etsy": [
+      "etsy.com",
+      "etsystatic.com"
+     ],
+     "evernote": [
+      "evernote.com"
+     ],
+     "expressvpn": [
+      "expressvpn.com"
+     ],
+     "facebook": [
+      "facebook.com",
+      "fbcdn.net",
+      "fb.com",
+      "facebook.net",
+      "fbsbx.com"
+     ],
+     "facebook-messenger": [
+      "messenger.com"
+     ],
+     "figma": [
+      "figma.com"
+     ],
+     "github": [
+      "github.com",
+      "githubusercontent.com",
+      "githubassets.com"
+     ],
+     "github-copilot": [
+      "githubcopilot.com"
+     ],
+     "gitlab": [
+      "gitlab.com"
+     ],
+     "gmail": [
+      "mail.google.com",
+      "gmail.com"
+     ],
+     "google-accounts": [
+      "accounts.google.com"
+     ],
+     "google-ads": [
+      "doubleclick.net",
+      "googlesyndication.com",
+      "googleadservices.com"
+     ],
+     "google-analytics": [
+      "google-analytics.com",
+      "googletagmanager.com"
+     ],
+     "google-base": [
+      "google.com",
+      "gstatic.com",
+      "googleapis.com",
+      "googleusercontent.com",
+      "gvt1.com",
+      "gvt2.com"
+     ],
+     "google-drive": [
+      "drive.google.com",
+      "docs.google.com",
+      "drive.usercontent.google.com"
+     ],
+     "google-gemini": [
+      "gemini.google.com"
+     ],
+     "google-meet": [
+      "meet.google.com"
+     ],
+     "google-play": [
+      "play.google.com",
+      "play.googleapis.com"
+     ],
+     "google-public-dns": [
+      "dns.google"
+     ],
+     "goto-meeting": [
+      "gotomeeting.com",
+      "goto.com"
+     ],
+     "grammarly": [
+      "grammarly.com",
+      "grammarly.io"
+     ],
+     "hbo-max": [
+      "max.com",
+      "hbomax.com"
+     ],
+     "hubspot": [
+      "hubspot.com"
+     ],
+     "hugging-face": [
+      "huggingface.co",
+      "hf.co"
+     ],
+     "hulu": [
+      "hulu.com",
+      "hulustream.com"
+     ],
+     "icloud": [
+      "icloud.com",
+      "icloud-content.com"
+     ],
+     "instagram": [
+      "instagram.com",
+      "cdninstagram.com"
+     ],
+     "jetbrains": [
+      "jetbrains.com"
+     ],
+     "lastpass": [
+      "lastpass.com"
+     ],
+     "line": [
+      "line.me",
+      "line-scdn.net"
+     ],
+     "linkedin": [
+      "linkedin.com",
+      "licdn.com"
+     ],
+     "logmein": [
+      "logmein.com",
+      "logmeininc.com"
+     ],
+     "matrix-element": [
+      "matrix.org",
+      "element.io"
+     ],
+     "mediafire": [
+      "mediafire.com"
+     ],
+     "mega": [
+      "mega.nz",
+      "mega.io",
+      "mega.co.nz"
+     ],
+     "midjourney": [
+      "midjourney.com"
+     ],
+     "miro": [
+      "miro.com"
+     ],
+     "mistral-ai": [
+      "mistral.ai"
+     ],
+     "monday": [
+      "monday.com"
+     ],
+     "ms-base": [
+      "microsoft.com",
+      "msn.com",
+      "windows.com",
+      "live.com"
+     ],
+     "ms-copilot": [
+      "copilot.microsoft.com"
+     ],
+     "ms-office365": [
+      "office.com",
+      "office365.com",
+      "office.net",
+      "officeapps.live.com"
+     ],
+     "ms-onedrive": [
+      "onedrive.live.com",
+      "onedrive.com",
+      "1drv.com",
+      "1drv.ms"
+     ],
+     "ms-teams": [
+      "teams.microsoft.com",
+      "teams.live.com",
+      "teams.cdn.office.net"
+     ],
+     "ms-update": [
+      "windowsupdate.com",
+      "update.microsoft.com",
+      "delivery.mp.microsoft.com"
+     ],
+     "mullvad": [
+      "mullvad.net"
+     ],
+     "netflix": [
+      "netflix.com",
+      "nflxvideo.net",
+      "nflximg.net",
+      "nflxext.com",
+      "nflxso.net"
+     ],
+     "nextdns": [
+      "nextdns.io"
+     ],
+     "nintendo": [
+      "nintendo.com",
+      "nintendo.net"
+     ],
+     "nordvpn": [
+      "nordvpn.com",
+      "nordcdn.com"
+     ],
+     "notion": [
+      "notion.so",
+      "notion.site"
+     ],
+     "npm": [
+      "npmjs.com",
+      "npmjs.org"
+     ],
+     "okta": [
+      "okta.com",
+      "oktacdn.com",
+      "oktapreview.com"
+     ],
+     "openai-chatgpt": [
+      "chatgpt.com",
+      "chat.openai.com",
+      "oaiusercontent.com",
+      "oaistatic.com"
+     ],
+     "openai-platform": [
+      "api.openai.com",
+      "platform.openai.com"
+     ],
+     "outlook-web": [
+      "outlook.office365.com",
+      "outlook.office.com",
+      "outlook.live.com",
+      "outlook.com"
+     ],
+     "pandora": [
+      "pandora.com"
+     ],
+     "paramount-plus": [
+      "paramountplus.com"
+     ],
+     "pastebin": [
+      "pastebin.com"
+     ],
+     "paypal": [
+      "paypal.com",
+      "paypalobjects.com"
+     ],
+     "pcloud": [
+      "pcloud.com"
+     ],
+     "peacock": [
+      "peacocktv.com"
+     ],
+     "perplexity": [
+      "perplexity.ai"
+     ],
+     "pinterest": [
+      "pinterest.com",
+      "pinimg.com"
+     ],
+     "playstation-network": [
+      "playstation.com",
+      "playstation.net"
+     ],
+     "poe": [
+      "poe.com"
+     ],
+     "proton-mail": [
+      "proton.me",
+      "protonmail.com",
+      "protonmail.ch"
+     ],
+     "proton-vpn": [
+      "protonvpn.com",
+      "protonvpn.net",
+      "protonvpn.ch"
+     ],
+     "pypi": [
+      "pypi.org",
+      "pythonhosted.org"
+     ],
+     "quad9-dns": [
+      "quad9.net"
+     ],
+     "quora": [
+      "quora.com",
+      "quoracdn.net"
+     ],
+     "reddit": [
+      "reddit.com",
+      "redd.it",
+      "redditmedia.com",
+      "redditstatic.com"
+     ],
+     "ringcentral": [
+      "ringcentral.com"
+     ],
+     "riot-games": [
+      "riotgames.com",
+      "leagueoflegends.com"
+     ],
+     "roblox": [
+      "roblox.com",
+      "rbxcdn.com"
+     ],
+     "rustdesk": [
+      "rustdesk.com"
+     ],
+     "salesforce": [
+      "salesforce.com",
+      "force.com"
+     ],
+     "servicenow": [
+      "servicenow.com",
+      "service-now.com"
+     ],
+     "sharepoint-online": [
+      "sharepoint.com"
+     ],
+     "shopify": [
+      "shopify.com"
+     ],
+     "signal": [
+      "signal.org",
+      "signal.art",
+      "whispersystems.org"
+     ],
+     "skype": [
+      "skype.com",
+      "skypeassets.com"
+     ],
+     "slack": [
+      "slack.com",
+      "slack-edge.com",
+      "slack-msgs.com",
+      "slack-files.com"
+     ],
+     "snapchat": [
+      "snapchat.com",
+      "sc-cdn.net",
+      "snap-dev.net"
+     ],
+     "soundcloud": [
+      "soundcloud.com",
+      "sndcdn.com"
+     ],
+     "speedtest": [
+      "speedtest.net",
+      "ooklaserver.net"
+     ],
+     "splashtop": [
+      "splashtop.com"
+     ],
+     "spotify": [
+      "spotify.com",
+      "scdn.co",
+      "spotifycdn.com",
+      "spotify.design"
+     ],
+     "stack-overflow": [
+      "stackoverflow.com",
+      "stackexchange.com",
+      "sstatic.net"
+     ],
+     "steam": [
+      "steampowered.com",
+      "steamcommunity.com",
+      "steamcontent.com",
+      "steamstatic.com"
+     ],
+     "stripe": [
+      "stripe.com",
+      "stripe.network"
+     ],
+     "surfshark": [
+      "surfshark.com"
+     ],
+     "tailscale": [
+      "tailscale.com",
+      "tailscale.io"
+     ],
+     "teamviewer": [
+      "teamviewer.com"
+     ],
+     "telegram": [
+      "telegram.org",
+      "t.me",
+      "telegram.me",
+      "telesco.pe"
+     ],
+     "threads": [
+      "threads.net",
+      "threads.com"
+     ],
+     "threema": [
+      "threema.ch"
+     ],
+     "tiktok": [
+      "tiktok.com",
+      "tiktokcdn.com",
+      "tiktokv.com",
+      "tiktokcdn-us.com"
+     ],
+     "trello": [
+      "trello.com"
+     ],
+     "tumblr": [
+      "tumblr.com"
+     ],
+     "twitch": [
+      "twitch.tv",
+      "ttvnw.net",
+      "jtvnw.net"
+     ],
+     "twitter": [
+      "twitter.com",
+      "x.com",
+      "twimg.com",
+      "t.co"
+     ],
+     "uber": [
+      "uber.com"
+     ],
+     "viber": [
+      "viber.com"
+     ],
+     "vimeo": [
+      "vimeo.com",
+      "vimeocdn.com"
+     ],
+     "vk": [
+      "vk.com",
+      "userapi.com"
+     ],
+     "walmart": [
+      "walmart.com",
+      "walmartimages.com"
+     ],
+     "webex": [
+      "webex.com",
+      "wbx2.com"
+     ],
+     "wechat": [
+      "wechat.com",
+      "weixin.qq.com"
+     ],
+     "weibo": [
+      "weibo.com",
+      "weibo.cn"
+     ],
+     "wetransfer": [
+      "wetransfer.com",
+      "wetransfer.net"
+     ],
+     "whatsapp": [
+      "whatsapp.com",
+      "whatsapp.net"
+     ],
+     "wikipedia": [
+      "wikipedia.org",
+      "wikimedia.org"
+     ],
+     "workday": [
+      "workday.com",
+      "myworkday.com"
+     ],
+     "xai-grok": [
+      "grok.com",
+      "x.ai"
+     ],
+     "xbox-live": [
+      "xboxlive.com",
+      "xbox.com"
+     ],
+     "yahoo": [
+      "yahoo.com",
+      "yimg.com"
+     ],
+     "yahoo-mail": [
+      "mail.yahoo.com"
+     ],
+     "yandex": [
+      "yandex.ru",
+      "yandex.com",
+      "yandex.net"
+     ],
+     "youtube": [
+      "youtube.com",
+      "youtu.be",
+      "googlevideo.com",
+      "ytimg.com",
+      "youtube-nocookie.com"
+     ],
+     "zendesk": [
+      "zendesk.com",
+      "zdassets.com"
+     ],
+     "zerotier": [
+      "zerotier.com"
+     ],
+     "zoho": [
+      "zoho.com",
+      "zoho.eu"
+     ],
+     "zoom": [
+      "zoom.us",
+      "zoom.com",
+      "zoomgov.com"
+     ]
+    },
+    "entries": [
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "YouTube video streaming",
+      "domains": [
+       "youtube.com",
+       "youtu.be",
+       "googlevideo.com",
+       "ytimg.com",
+       "youtube-nocookie.com"
+      ],
+      "name": "youtube",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Netflix video streaming",
+      "domains": [
+       "netflix.com",
+       "nflxvideo.net",
+       "nflximg.net",
+       "nflxext.com",
+       "nflxso.net"
+      ],
+      "name": "netflix",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Twitch live video streaming",
+      "domains": [
+       "twitch.tv",
+       "ttvnw.net",
+       "jtvnw.net"
+      ],
+      "name": "twitch",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Disney+ video streaming",
+      "domains": [
+       "disneyplus.com",
+       "dssott.com",
+       "bamgrid.com"
+      ],
+      "name": "disney-plus",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Hulu video streaming",
+      "domains": [
+       "hulu.com",
+       "hulustream.com"
+      ],
+      "name": "hulu",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Amazon Prime Video streaming",
+      "domains": [
+       "primevideo.com",
+       "aiv-cdn.net",
+       "aiv-delivery.net"
+      ],
+      "name": "amazon-prime-video",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "transfers-files"
+      ],
+      "description": "Vimeo video hosting",
+      "domains": [
+       "vimeo.com",
+       "vimeocdn.com"
+      ],
+      "name": "vimeo",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "TikTok short-video platform",
+      "domains": [
+       "tiktok.com",
+       "tiktokcdn.com",
+       "tiktokv.com",
+       "tiktokcdn-us.com"
+      ],
+      "name": "tiktok",
+      "risk": 3,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Spotify music and podcast streaming",
+      "domains": [
+       "spotify.com",
+       "scdn.co",
+       "spotifycdn.com",
+       "spotify.design"
+      ],
+      "name": "spotify",
+      "risk": 2,
+      "subcategory": "audio-streaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "transfers-files"
+      ],
+      "description": "Valve Steam store, community and downloads",
+      "domains": [
+       "steampowered.com",
+       "steamcommunity.com",
+       "steamcontent.com",
+       "steamstatic.com"
+      ],
+      "name": "steam",
+      "risk": 3,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "prone-to-misuse"
+      ],
+      "description": "Facebook social network",
+      "domains": [
+       "facebook.com",
+       "fbcdn.net",
+       "fb.com",
+       "facebook.net",
+       "fbsbx.com"
+      ],
+      "name": "facebook",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Instagram photo and video sharing",
+      "domains": [
+       "instagram.com",
+       "cdninstagram.com"
+      ],
+      "name": "instagram",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "X (Twitter) social network",
+      "domains": [
+       "twitter.com",
+       "x.com",
+       "twimg.com",
+       "t.co"
+      ],
+      "name": "twitter",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "LinkedIn professional network",
+      "domains": [
+       "linkedin.com",
+       "licdn.com"
+      ],
+      "name": "linkedin",
+      "risk": 2,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Reddit forums",
+      "domains": [
+       "reddit.com",
+       "redd.it",
+       "redditmedia.com",
+       "redditstatic.com"
+      ],
+      "name": "reddit",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Pinterest image sharing",
+      "domains": [
+       "pinterest.com",
+       "pinimg.com"
+      ],
+      "name": "pinterest",
+      "risk": 2,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Snapchat messaging and stories",
+      "domains": [
+       "snapchat.com",
+       "sc-cdn.net",
+       "snap-dev.net"
+      ],
+      "name": "snapchat",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "WhatsApp messaging and calls",
+      "domains": [
+       "whatsapp.com",
+       "whatsapp.net"
+      ],
+      "name": "whatsapp",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive",
+       "prone-to-misuse"
+      ],
+      "description": "Telegram messaging",
+      "domains": [
+       "telegram.org",
+       "t.me",
+       "telegram.me",
+       "telesco.pe"
+      ],
+      "name": "telegram",
+      "risk": 4,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "Signal end-to-end encrypted messaging",
+      "domains": [
+       "signal.org",
+       "signal.art",
+       "whispersystems.org"
+      ],
+      "name": "signal",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "prone-to-misuse"
+      ],
+      "description": "Discord chat, voice and communities",
+      "domains": [
+       "discord.com",
+       "discord.gg",
+       "discordapp.com",
+       "discordapp.net",
+       "discord.media"
+      ],
+      "name": "discord",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Slack team messaging",
+      "domains": [
+       "slack.com",
+       "slack-edge.com",
+       "slack-msgs.com",
+       "slack-files.com"
+      ],
+      "name": "slack",
+      "risk": 2,
+      "subcategory": "instant-messaging",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "excessive-bandwidth"
+      ],
+      "description": "Zoom meetings",
+      "domains": [
+       "zoom.us",
+       "zoom.com",
+       "zoomgov.com"
+      ],
+      "name": "zoom",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Microsoft Teams chat and meetings",
+      "domains": [
+       "teams.microsoft.com",
+       "teams.live.com",
+       "teams.cdn.office.net"
+      ],
+      "name": "ms-teams",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "Skype calls and messaging",
+      "domains": [
+       "skype.com",
+       "skypeassets.com"
+      ],
+      "name": "skype",
+      "risk": 3,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Cisco Webex meetings",
+      "domains": [
+       "webex.com",
+       "wbx2.com"
+      ],
+      "name": "webex",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Google Meet video meetings",
+      "domains": [
+       "meet.google.com"
+      ],
+      "name": "google-meet",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Gmail web mail",
+      "domains": [
+       "mail.google.com",
+       "gmail.com"
+      ],
+      "name": "gmail",
+      "risk": 2,
+      "subcategory": "email",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Outlook web mail (Microsoft 365 and Outlook.com)",
+      "domains": [
+       "outlook.office365.com",
+       "outlook.office.com",
+       "outlook.live.com",
+       "outlook.com"
+      ],
+      "name": "outlook-web",
+      "risk": 2,
+      "subcategory": "email",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Microsoft 365 web applications",
+      "domains": [
+       "office.com",
+       "office365.com",
+       "office.net",
+       "officeapps.live.com"
+      ],
+      "name": "ms-office365",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "SharePoint Online sites and files",
+      "domains": [
+       "sharepoint.com"
+      ],
+      "name": "sharepoint-online",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Microsoft OneDrive file storage",
+      "domains": [
+       "onedrive.live.com",
+       "onedrive.com",
+       "1drv.com",
+       "1drv.ms"
+      ],
+      "name": "ms-onedrive",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Microsoft Entra ID (Azure AD) sign-in",
+      "domains": [
+       "login.microsoftonline.com",
+       "microsoftonline.com",
+       "login.live.com"
+      ],
+      "name": "azure-ad",
+      "risk": 1,
+      "subcategory": "auth-service",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files",
+       "excessive-bandwidth"
+      ],
+      "description": "Windows Update and Microsoft software delivery",
+      "domains": [
+       "windowsupdate.com",
+       "update.microsoft.com",
+       "delivery.mp.microsoft.com"
+      ],
+      "name": "ms-update",
+      "risk": 1,
+      "subcategory": "software-development",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Google Drive and Docs",
+      "domains": [
+       "drive.google.com",
+       "docs.google.com",
+       "drive.usercontent.google.com"
+      ],
+      "name": "google-drive",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "pervasive"
+      ],
+      "description": "Google services not mapped to a more specific application",
+      "domains": [
+       "google.com",
+       "gstatic.com",
+       "googleapis.com",
+       "googleusercontent.com",
+       "gvt1.com",
+       "gvt2.com"
+      ],
+      "name": "google-base",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Dropbox file sync and sharing",
+      "domains": [
+       "dropbox.com",
+       "dropboxapi.com",
+       "dropboxusercontent.com",
+       "dropboxstatic.com"
+      ],
+      "name": "dropbox",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Box content management",
+      "domains": [
+       "box.com",
+       "boxcloud.com",
+       "box.net"
+      ],
+      "name": "box",
+      "risk": 2,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Apple iCloud services",
+      "domains": [
+       "icloud.com",
+       "icloud-content.com"
+      ],
+      "name": "icloud",
+      "risk": 2,
+      "subcategory": "file-sharing",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "GitHub code hosting",
+      "domains": [
+       "github.com",
+       "githubusercontent.com",
+       "githubassets.com"
+      ],
+      "name": "github",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "GitLab code hosting",
+      "domains": [
+       "gitlab.com"
+      ],
+      "name": "gitlab",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Atlassian cloud (Jira, Confluence, Bitbucket)",
+      "domains": [
+       "atlassian.net",
+       "atlassian.com",
+       "bitbucket.org"
+      ],
+      "name": "atlassian",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Salesforce CRM",
+      "domains": [
+       "salesforce.com",
+       "force.com"
+      ],
+      "name": "salesforce",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Notion workspace",
+      "domains": [
+       "notion.so",
+       "notion.site"
+      ],
+      "name": "notion",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files",
+       "widely-used"
+      ],
+      "description": "OpenAI ChatGPT",
+      "domains": [
+       "chatgpt.com",
+       "chat.openai.com",
+       "oaiusercontent.com",
+       "oaistatic.com"
+      ],
+      "name": "openai-chatgpt",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": [
+       "openai.com",
+       "www.openai.com"
+      ]
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "OpenAI developer platform and API",
+      "domains": [
+       "api.openai.com",
+       "platform.openai.com"
+      ],
+      "name": "openai-platform",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Anthropic Claude",
+      "domains": [
+       "claude.ai",
+       "anthropic.com",
+       "claude.com"
+      ],
+      "name": "anthropic-claude",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Google Gemini",
+      "domains": [
+       "gemini.google.com"
+      ],
+      "name": "google-gemini",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "prone-to-misuse",
+       "used-by-malware"
+      ],
+      "description": "TeamViewer remote control",
+      "domains": [
+       "teamviewer.com"
+      ],
+      "name": "teamviewer",
+      "risk": 4,
+      "subcategory": "remote-access",
+      "technology": "client-server",
+      "web_fronts": [
+       "teamviewer.com",
+       "www.teamviewer.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "prone-to-misuse",
+       "used-by-malware"
+      ],
+      "description": "AnyDesk remote control",
+      "domains": [
+       "anydesk.com",
+       "net.anydesk.com"
+      ],
+      "name": "anydesk",
+      "risk": 4,
+      "subcategory": "remote-access",
+      "technology": "client-server",
+      "web_fronts": [
+       "anydesk.com",
+       "www.anydesk.com"
+      ]
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Amazon retail site",
+      "domains": [
+       "amazon.com",
+       "media-amazon.com",
+       "ssl-images-amazon.com"
+      ],
+      "name": "amazon",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [],
+      "description": "eBay marketplace",
+      "domains": [
+       "ebay.com",
+       "ebayimg.com",
+       "ebaystatic.com"
+      ],
+      "name": "ebay",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "PayPal payments",
+      "domains": [
+       "paypal.com",
+       "paypalobjects.com"
+      ],
+      "name": "paypal",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Wikipedia and Wikimedia projects",
+      "domains": [
+       "wikipedia.org",
+       "wikimedia.org"
+      ],
+      "name": "wikipedia",
+      "risk": 1,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Max (HBO Max) video streaming",
+      "domains": [
+       "max.com",
+       "hbomax.com"
+      ],
+      "name": "hbo-max",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Paramount+ video streaming",
+      "domains": [
+       "paramountplus.com"
+      ],
+      "name": "paramount-plus",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Peacock video streaming",
+      "domains": [
+       "peacocktv.com"
+      ],
+      "name": "peacock",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "transfers-files"
+      ],
+      "description": "Dailymotion video hosting",
+      "domains": [
+       "dailymotion.com",
+       "dmcdn.net"
+      ],
+      "name": "dailymotion",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Apple TV+ video streaming",
+      "domains": [
+       "tv.apple.com"
+      ],
+      "name": "apple-tv",
+      "risk": 2,
+      "subcategory": "photo-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Apple Music streaming",
+      "domains": [
+       "music.apple.com"
+      ],
+      "name": "apple-music",
+      "risk": 2,
+      "subcategory": "audio-streaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "transfers-files"
+      ],
+      "description": "SoundCloud audio streaming",
+      "domains": [
+       "soundcloud.com",
+       "sndcdn.com"
+      ],
+      "name": "soundcloud",
+      "risk": 2,
+      "subcategory": "audio-streaming",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Deezer music streaming",
+      "domains": [
+       "deezer.com",
+       "dzcdn.net"
+      ],
+      "name": "deezer",
+      "risk": 2,
+      "subcategory": "audio-streaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Pandora music streaming",
+      "domains": [
+       "pandora.com"
+      ],
+      "name": "pandora",
+      "risk": 2,
+      "subcategory": "audio-streaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "transfers-files"
+      ],
+      "description": "Epic Games store, launcher and Fortnite services",
+      "domains": [
+       "epicgames.com",
+       "fortnite.com",
+       "epicgames.dev"
+      ],
+      "name": "epic-games",
+      "risk": 3,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Roblox game platform",
+      "domains": [
+       "roblox.com",
+       "rbxcdn.com"
+      ],
+      "name": "roblox",
+      "risk": 3,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "Xbox network services",
+      "domains": [
+       "xboxlive.com",
+       "xbox.com"
+      ],
+      "name": "xbox-live",
+      "risk": 2,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth",
+       "widely-used"
+      ],
+      "description": "PlayStation Network services",
+      "domains": [
+       "playstation.com",
+       "playstation.net"
+      ],
+      "name": "playstation-network",
+      "risk": 2,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Nintendo online services",
+      "domains": [
+       "nintendo.com",
+       "nintendo.net"
+      ],
+      "name": "nintendo",
+      "risk": 2,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Electronic Arts game services",
+      "domains": [
+       "ea.com"
+      ],
+      "name": "ea-games",
+      "risk": 2,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Blizzard Battle.net game services",
+      "domains": [
+       "battle.net",
+       "blizzard.com"
+      ],
+      "name": "battle-net",
+      "risk": 2,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "media",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Riot Games services",
+      "domains": [
+       "riotgames.com",
+       "leagueoflegends.com"
+      ],
+      "name": "riot-games",
+      "risk": 2,
+      "subcategory": "gaming",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Threads social network",
+      "domains": [
+       "threads.net",
+       "threads.com"
+      ],
+      "name": "threads",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Tumblr blogging platform",
+      "domains": [
+       "tumblr.com"
+      ],
+      "name": "tumblr",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [],
+      "description": "Quora questions and answers",
+      "domains": [
+       "quora.com",
+       "quoracdn.net"
+      ],
+      "name": "quora",
+      "risk": 2,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "widely-used"
+      ],
+      "description": "VK social network",
+      "domains": [
+       "vk.com",
+       "userapi.com"
+      ],
+      "name": "vk",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Bluesky social network",
+      "domains": [
+       "bsky.app",
+       "bsky.social"
+      ],
+      "name": "bluesky",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "widely-used"
+      ],
+      "description": "Sina Weibo social network",
+      "domains": [
+       "weibo.com",
+       "weibo.cn"
+      ],
+      "name": "weibo",
+      "risk": 3,
+      "subcategory": "social-networking",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Facebook Messenger",
+      "domains": [
+       "messenger.com"
+      ],
+      "name": "facebook-messenger",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "widely-used"
+      ],
+      "description": "LINE messaging and calls",
+      "domains": [
+       "line.me",
+       "line-scdn.net"
+      ],
+      "name": "line",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "widely-used"
+      ],
+      "description": "WeChat messaging",
+      "domains": [
+       "wechat.com",
+       "weixin.qq.com"
+      ],
+      "name": "wechat",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Viber messaging and calls",
+      "domains": [
+       "viber.com"
+      ],
+      "name": "viber",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "Threema encrypted messaging",
+      "domains": [
+       "threema.ch"
+      ],
+      "name": "threema",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Matrix.org homeserver and Element client",
+      "domains": [
+       "matrix.org",
+       "element.io"
+      ],
+      "name": "matrix-element",
+      "risk": 3,
+      "subcategory": "instant-messaging",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "GoTo Meeting",
+      "domains": [
+       "gotomeeting.com",
+       "goto.com"
+      ],
+      "name": "goto-meeting",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [],
+      "description": "RingCentral calls and meetings",
+      "domains": [
+       "ringcentral.com"
+      ],
+      "name": "ringcentral",
+      "risk": 2,
+      "subcategory": "voip-video",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Yahoo Mail web mail",
+      "domains": [
+       "mail.yahoo.com"
+      ],
+      "name": "yahoo-mail",
+      "risk": 2,
+      "subcategory": "email",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "collaboration",
+      "characteristics": [
+       "transfers-files",
+       "evasive"
+      ],
+      "description": "Proton Mail and Proton account services",
+      "domains": [
+       "proton.me",
+       "protonmail.com",
+       "protonmail.ch"
+      ],
+      "name": "proton-mail",
+      "risk": 2,
+      "subcategory": "email",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Zoho business applications and mail",
+      "domains": [
+       "zoho.com",
+       "zoho.eu"
+      ],
+      "name": "zoho",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "transfers-files",
+       "evasive",
+       "prone-to-misuse"
+      ],
+      "description": "MEGA encrypted file storage",
+      "domains": [
+       "mega.nz",
+       "mega.io",
+       "mega.co.nz"
+      ],
+      "name": "mega",
+      "risk": 4,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "WeTransfer file transfer",
+      "domains": [
+       "wetransfer.com",
+       "wetransfer.net"
+      ],
+      "name": "wetransfer",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "transfers-files",
+       "prone-to-misuse"
+      ],
+      "description": "MediaFire file hosting",
+      "domains": [
+       "mediafire.com"
+      ],
+      "name": "mediafire",
+      "risk": 4,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "pCloud file storage",
+      "domains": [
+       "pcloud.com"
+      ],
+      "name": "pcloud",
+      "risk": 3,
+      "subcategory": "file-sharing",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "transfers-files",
+       "prone-to-misuse",
+       "used-by-malware"
+      ],
+      "description": "Pastebin text sharing",
+      "domains": [
+       "pastebin.com"
+      ],
+      "name": "pastebin",
+      "risk": 4,
+      "subcategory": "file-sharing",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "ServiceNow platform",
+      "domains": [
+       "servicenow.com",
+       "service-now.com"
+      ],
+      "name": "servicenow",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "Workday HR and finance",
+      "domains": [
+       "workday.com",
+       "myworkday.com"
+      ],
+      "name": "workday",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "HubSpot CRM",
+      "domains": [
+       "hubspot.com"
+      ],
+      "name": "hubspot",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Zendesk customer service",
+      "domains": [
+       "zendesk.com",
+       "zdassets.com"
+      ],
+      "name": "zendesk",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "DocuSign e-signature",
+      "domains": [
+       "docusign.com",
+       "docusign.net"
+      ],
+      "name": "docusign",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Stripe payments",
+      "domains": [
+       "stripe.com",
+       "stripe.network"
+      ],
+      "name": "stripe",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "Coinbase cryptocurrency exchange",
+      "domains": [
+       "coinbase.com"
+      ],
+      "name": "coinbase",
+      "risk": 3,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "Binance cryptocurrency exchange",
+      "domains": [
+       "binance.com"
+      ],
+      "name": "binance",
+      "risk": 3,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files",
+       "widely-used"
+      ],
+      "description": "Adobe Creative Cloud and account services",
+      "domains": [
+       "adobe.com",
+       "adobelogin.com",
+       "adobe.io"
+      ],
+      "name": "adobe-cloud",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Canva design",
+      "domains": [
+       "canva.com"
+      ],
+      "name": "canva",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Figma design",
+      "domains": [
+       "figma.com"
+      ],
+      "name": "figma",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Miro whiteboard",
+      "domains": [
+       "miro.com"
+      ],
+      "name": "miro",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Trello boards",
+      "domains": [
+       "trello.com"
+      ],
+      "name": "trello",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Asana work management",
+      "domains": [
+       "asana.com"
+      ],
+      "name": "asana",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "monday.com work management",
+      "domains": [
+       "monday.com"
+      ],
+      "name": "monday",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Airtable databases",
+      "domains": [
+       "airtable.com"
+      ],
+      "name": "airtable",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Evernote notes",
+      "domains": [
+       "evernote.com"
+      ],
+      "name": "evernote",
+      "risk": 2,
+      "subcategory": "office-programs",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "pervasive"
+      ],
+      "description": "Grammarly writing assistant",
+      "domains": [
+       "grammarly.com",
+       "grammarly.io"
+      ],
+      "name": "grammarly",
+      "risk": 3,
+      "subcategory": "office-programs",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Docker Hub and registry",
+      "domains": [
+       "docker.com",
+       "docker.io"
+      ],
+      "name": "docker-hub",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "npm package registry",
+      "domains": [
+       "npmjs.com",
+       "npmjs.org"
+      ],
+      "name": "npm",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Python Package Index",
+      "domains": [
+       "pypi.org",
+       "pythonhosted.org"
+      ],
+      "name": "pypi",
+      "risk": 2,
+      "subcategory": "software-development",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Stack Overflow and Stack Exchange",
+      "domains": [
+       "stackoverflow.com",
+       "stackexchange.com",
+       "sstatic.net"
+      ],
+      "name": "stack-overflow",
+      "risk": 1,
+      "subcategory": "software-development",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "JetBrains tools and account services",
+      "domains": [
+       "jetbrains.com"
+      ],
+      "name": "jetbrains",
+      "risk": 1,
+      "subcategory": "software-development",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Apple App Store and iTunes Store",
+      "domains": [
+       "apps.apple.com",
+       "itunes.apple.com"
+      ],
+      "name": "apple-app-store",
+      "risk": 1,
+      "subcategory": "software-development",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used",
+       "transfers-files"
+      ],
+      "description": "Google Play store",
+      "domains": [
+       "play.google.com",
+       "play.googleapis.com"
+      ],
+      "name": "google-play",
+      "risk": 1,
+      "subcategory": "software-development",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Okta sign-in",
+      "domains": [
+       "okta.com",
+       "oktacdn.com",
+       "oktapreview.com"
+      ],
+      "name": "okta",
+      "risk": 1,
+      "subcategory": "auth-service",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "Cisco Duo multi-factor authentication",
+      "domains": [
+       "duosecurity.com"
+      ],
+      "name": "duo-security",
+      "risk": 1,
+      "subcategory": "auth-service",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "Auth0 sign-in",
+      "domains": [
+       "auth0.com"
+      ],
+      "name": "auth0",
+      "risk": 1,
+      "subcategory": "auth-service",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Google account sign-in",
+      "domains": [
+       "accounts.google.com"
+      ],
+      "name": "google-accounts",
+      "risk": 1,
+      "subcategory": "auth-service",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "1Password password manager",
+      "domains": [
+       "1password.com",
+       "1password.eu"
+      ],
+      "name": "1password",
+      "risk": 2,
+      "subcategory": "auth-service",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "LastPass password manager",
+      "domains": [
+       "lastpass.com"
+      ],
+      "name": "lastpass",
+      "risk": 2,
+      "subcategory": "auth-service",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "Bitwarden password manager",
+      "domains": [
+       "bitwarden.com"
+      ],
+      "name": "bitwarden",
+      "risk": 2,
+      "subcategory": "auth-service",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Microsoft Copilot",
+      "domains": [
+       "copilot.microsoft.com"
+      ],
+      "name": "ms-copilot",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "GitHub Copilot",
+      "domains": [
+       "githubcopilot.com"
+      ],
+      "name": "github-copilot",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Perplexity AI",
+      "domains": [
+       "perplexity.ai"
+      ],
+      "name": "perplexity",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Mistral AI",
+      "domains": [
+       "mistral.ai"
+      ],
+      "name": "mistral-ai",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "DeepSeek",
+      "domains": [
+       "deepseek.com"
+      ],
+      "name": "deepseek",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "xAI Grok",
+      "domains": [
+       "grok.com",
+       "x.ai"
+      ],
+      "name": "xai-grok",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Hugging Face models and datasets",
+      "domains": [
+       "huggingface.co",
+       "hf.co"
+      ],
+      "name": "hugging-face",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Midjourney image generation",
+      "domains": [
+       "midjourney.com"
+      ],
+      "name": "midjourney",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "Character.AI",
+      "domains": [
+       "character.ai"
+      ],
+      "name": "character-ai",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [
+       "transfers-files"
+      ],
+      "description": "Quora Poe",
+      "domains": [
+       "poe.com"
+      ],
+      "name": "poe",
+      "risk": 3,
+      "subcategory": "generative-ai",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "prone-to-misuse"
+      ],
+      "description": "LogMeIn remote access",
+      "domains": [
+       "logmein.com",
+       "logmeininc.com"
+      ],
+      "name": "logmein",
+      "risk": 4,
+      "subcategory": "remote-access",
+      "technology": "client-server",
+      "web_fronts": [
+       "logmein.com",
+       "www.logmein.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "prone-to-misuse"
+      ],
+      "description": "Splashtop remote access",
+      "domains": [
+       "splashtop.com"
+      ],
+      "name": "splashtop",
+      "risk": 4,
+      "subcategory": "remote-access",
+      "technology": "client-server",
+      "web_fronts": [
+       "splashtop.com",
+       "www.splashtop.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "prone-to-misuse",
+       "used-by-malware"
+      ],
+      "description": "RustDesk remote control (public servers)",
+      "domains": [
+       "rustdesk.com"
+      ],
+      "name": "rustdesk",
+      "risk": 4,
+      "subcategory": "remote-access",
+      "technology": "client-server",
+      "web_fronts": [
+       "rustdesk.com",
+       "www.rustdesk.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "prone-to-misuse"
+      ],
+      "description": "Chrome Remote Desktop",
+      "domains": [
+       "remotedesktop.google.com"
+      ],
+      "name": "chrome-remote-desktop",
+      "risk": 4,
+      "subcategory": "remote-access",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "evasive"
+      ],
+      "description": "NordVPN",
+      "domains": [
+       "nordvpn.com",
+       "nordcdn.com"
+      ],
+      "name": "nordvpn",
+      "risk": 4,
+      "subcategory": "encrypted-tunnel",
+      "technology": "client-server",
+      "web_fronts": [
+       "nordvpn.com",
+       "www.nordvpn.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "evasive"
+      ],
+      "description": "ExpressVPN",
+      "domains": [
+       "expressvpn.com"
+      ],
+      "name": "expressvpn",
+      "risk": 4,
+      "subcategory": "encrypted-tunnel",
+      "technology": "client-server",
+      "web_fronts": [
+       "expressvpn.com",
+       "www.expressvpn.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "evasive"
+      ],
+      "description": "Proton VPN",
+      "domains": [
+       "protonvpn.com",
+       "protonvpn.net",
+       "protonvpn.ch"
+      ],
+      "name": "proton-vpn",
+      "risk": 4,
+      "subcategory": "encrypted-tunnel",
+      "technology": "client-server",
+      "web_fronts": [
+       "protonvpn.com",
+       "www.protonvpn.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "evasive"
+      ],
+      "description": "Surfshark VPN",
+      "domains": [
+       "surfshark.com"
+      ],
+      "name": "surfshark",
+      "risk": 4,
+      "subcategory": "encrypted-tunnel",
+      "technology": "client-server",
+      "web_fronts": [
+       "surfshark.com",
+       "www.surfshark.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications",
+       "evasive"
+      ],
+      "description": "Mullvad VPN",
+      "domains": [
+       "mullvad.net"
+      ],
+      "name": "mullvad",
+      "risk": 4,
+      "subcategory": "encrypted-tunnel",
+      "technology": "client-server",
+      "web_fronts": [
+       "mullvad.net",
+       "www.mullvad.net"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications"
+      ],
+      "description": "Tailscale coordination and relay servers",
+      "domains": [
+       "tailscale.com",
+       "tailscale.io"
+      ],
+      "name": "tailscale",
+      "risk": 3,
+      "subcategory": "encrypted-tunnel",
+      "technology": "client-server",
+      "web_fronts": [
+       "tailscale.com",
+       "www.tailscale.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "tunnels-other-applications"
+      ],
+      "description": "ZeroTier controller services",
+      "domains": [
+       "zerotier.com"
+      ],
+      "name": "zerotier",
+      "risk": 3,
+      "subcategory": "encrypted-tunnel",
+      "technology": "client-server",
+      "web_fronts": [
+       "zerotier.com",
+       "www.zerotier.com"
+      ]
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "evasive"
+      ],
+      "description": "Cloudflare public DNS resolver (1.1.1.1)",
+      "domains": [
+       "cloudflare-dns.com",
+       "one.one.one.one"
+      ],
+      "name": "cloudflare-dns",
+      "risk": 3,
+      "subcategory": "infrastructure",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "evasive"
+      ],
+      "description": "Google Public DNS resolver",
+      "domains": [
+       "dns.google"
+      ],
+      "name": "google-public-dns",
+      "risk": 3,
+      "subcategory": "infrastructure",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "evasive"
+      ],
+      "description": "Quad9 public DNS resolver",
+      "domains": [
+       "quad9.net"
+      ],
+      "name": "quad9-dns",
+      "risk": 3,
+      "subcategory": "infrastructure",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "evasive"
+      ],
+      "description": "NextDNS resolver",
+      "domains": [
+       "nextdns.io"
+      ],
+      "name": "nextdns",
+      "risk": 3,
+      "subcategory": "infrastructure",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "networking",
+      "characteristics": [
+       "evasive"
+      ],
+      "description": "AdGuard DNS resolver",
+      "domains": [
+       "adguard-dns.com",
+       "dns.adguard.com"
+      ],
+      "name": "adguard-dns",
+      "risk": 3,
+      "subcategory": "infrastructure",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "pervasive"
+      ],
+      "description": "Apple services not mapped to a more specific application",
+      "domains": [
+       "apple.com",
+       "cdn-apple.com",
+       "mzstatic.com"
+      ],
+      "name": "apple-base",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "pervasive"
+      ],
+      "description": "Apple Push Notification service",
+      "domains": [
+       "push.apple.com"
+      ],
+      "name": "apple-push",
+      "risk": 1,
+      "subcategory": "internet-utility",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used",
+       "pervasive"
+      ],
+      "description": "Microsoft services not mapped to a more specific application",
+      "domains": [
+       "microsoft.com",
+       "msn.com",
+       "windows.com",
+       "live.com"
+      ],
+      "name": "ms-base",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Yahoo portal and search",
+      "domains": [
+       "yahoo.com",
+       "yimg.com"
+      ],
+      "name": "yahoo",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Microsoft Bing search",
+      "domains": [
+       "bing.com",
+       "bing.net"
+      ],
+      "name": "bing",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [],
+      "description": "DuckDuckGo search",
+      "domains": [
+       "duckduckgo.com"
+      ],
+      "name": "duckduckgo",
+      "risk": 1,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Baidu search",
+      "domains": [
+       "baidu.com",
+       "bdstatic.com"
+      ],
+      "name": "baidu",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "Yandex search and services",
+      "domains": [
+       "yandex.ru",
+       "yandex.com",
+       "yandex.net"
+      ],
+      "name": "yandex",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "pervasive",
+       "widely-used"
+      ],
+      "description": "Google advertising",
+      "domains": [
+       "doubleclick.net",
+       "googlesyndication.com",
+       "googleadservices.com"
+      ],
+      "name": "google-ads",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "pervasive",
+       "widely-used"
+      ],
+      "description": "Google Analytics and Tag Manager",
+      "domains": [
+       "google-analytics.com",
+       "googletagmanager.com"
+      ],
+      "name": "google-analytics",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "excessive-bandwidth"
+      ],
+      "description": "Ookla Speedtest",
+      "domains": [
+       "speedtest.net",
+       "ooklaserver.net"
+      ],
+      "name": "speedtest",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "client-server",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [
+       "widely-used"
+      ],
+      "description": "AliExpress marketplace",
+      "domains": [
+       "aliexpress.com",
+       "aliexpress.us"
+      ],
+      "name": "aliexpress",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [],
+      "description": "Walmart retail site",
+      "domains": [
+       "walmart.com",
+       "walmartimages.com"
+      ],
+      "name": "walmart",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [],
+      "description": "Etsy marketplace",
+      "domains": [
+       "etsy.com",
+       "etsystatic.com"
+      ],
+      "name": "etsy",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "business-systems",
+      "characteristics": [],
+      "description": "Shopify merchant administration",
+      "domains": [
+       "shopify.com"
+      ],
+      "name": "shopify",
+      "risk": 2,
+      "subcategory": "general-business",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [],
+      "description": "Booking.com travel",
+      "domains": [
+       "booking.com",
+       "bstatic.com"
+      ],
+      "name": "booking",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [],
+      "description": "Airbnb rentals",
+      "domains": [
+       "airbnb.com",
+       "muscache.com"
+      ],
+      "name": "airbnb",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "browser-based",
+      "web_fronts": []
+     },
+     {
+      "category": "general-internet",
+      "characteristics": [],
+      "description": "Uber rides and delivery",
+      "domains": [
+       "uber.com"
+      ],
+      "name": "uber",
+      "risk": 2,
+      "subcategory": "internet-utility",
+      "technology": "client-server",
+      "web_fronts": []
+     }
+    ],
+    "suffixes": {
+     "1drv.com": "ms-onedrive",
+     "1drv.ms": "ms-onedrive",
+     "1password.com": "1password",
+     "1password.eu": "1password",
+     "accounts.google.com": "google-accounts",
+     "adguard-dns.com": "adguard-dns",
+     "adobe.com": "adobe-cloud",
+     "adobe.io": "adobe-cloud",
+     "adobelogin.com": "adobe-cloud",
+     "airbnb.com": "airbnb",
+     "airtable.com": "airtable",
+     "aiv-cdn.net": "amazon-prime-video",
+     "aiv-delivery.net": "amazon-prime-video",
+     "aliexpress.com": "aliexpress",
+     "aliexpress.us": "aliexpress",
+     "amazon.com": "amazon",
+     "anthropic.com": "anthropic-claude",
+     "anydesk.com": "anydesk",
+     "api.openai.com": "openai-platform",
+     "apple.com": "apple-base",
+     "apps.apple.com": "apple-app-store",
+     "asana.com": "asana",
+     "atlassian.com": "atlassian",
+     "atlassian.net": "atlassian",
+     "auth0.com": "auth0",
+     "baidu.com": "baidu",
+     "bamgrid.com": "disney-plus",
+     "battle.net": "battle-net",
+     "bdstatic.com": "baidu",
+     "binance.com": "binance",
+     "bing.com": "bing",
+     "bing.net": "bing",
+     "bitbucket.org": "atlassian",
+     "bitwarden.com": "bitwarden",
+     "blizzard.com": "battle-net",
+     "booking.com": "booking",
+     "box.com": "box",
+     "box.net": "box",
+     "boxcloud.com": "box",
+     "bsky.app": "bluesky",
+     "bsky.social": "bluesky",
+     "bstatic.com": "booking",
+     "canva.com": "canva",
+     "cdn-apple.com": "apple-base",
+     "cdninstagram.com": "instagram",
+     "character.ai": "character-ai",
+     "chat.openai.com": "openai-chatgpt",
+     "chatgpt.com": "openai-chatgpt",
+     "claude.ai": "anthropic-claude",
+     "claude.com": "anthropic-claude",
+     "cloudflare-dns.com": "cloudflare-dns",
+     "coinbase.com": "coinbase",
+     "copilot.microsoft.com": "ms-copilot",
+     "dailymotion.com": "dailymotion",
+     "deepseek.com": "deepseek",
+     "deezer.com": "deezer",
+     "delivery.mp.microsoft.com": "ms-update",
+     "discord.com": "discord",
+     "discord.gg": "discord",
+     "discord.media": "discord",
+     "discordapp.com": "discord",
+     "discordapp.net": "discord",
+     "disneyplus.com": "disney-plus",
+     "dmcdn.net": "dailymotion",
+     "dns.adguard.com": "adguard-dns",
+     "dns.google": "google-public-dns",
+     "docker.com": "docker-hub",
+     "docker.io": "docker-hub",
+     "docs.google.com": "google-drive",
+     "docusign.com": "docusign",
+     "docusign.net": "docusign",
+     "doubleclick.net": "google-ads",
+     "drive.google.com": "google-drive",
+     "drive.usercontent.google.com": "google-drive",
+     "dropbox.com": "dropbox",
+     "dropboxapi.com": "dropbox",
+     "dropboxstatic.com": "dropbox",
+     "dropboxusercontent.com": "dropbox",
+     "dssott.com": "disney-plus",
+     "duckduckgo.com": "duckduckgo",
+     "duosecurity.com": "duo-security",
+     "dzcdn.net": "deezer",
+     "ea.com": "ea-games",
+     "ebay.com": "ebay",
+     "ebayimg.com": "ebay",
+     "ebaystatic.com": "ebay",
+     "element.io": "matrix-element",
+     "epicgames.com": "epic-games",
+     "epicgames.dev": "epic-games",
+     "etsy.com": "etsy",
+     "etsystatic.com": "etsy",
+     "evernote.com": "evernote",
+     "expressvpn.com": "expressvpn",
+     "facebook.com": "facebook",
+     "facebook.net": "facebook",
+     "fb.com": "facebook",
+     "fbcdn.net": "facebook",
+     "fbsbx.com": "facebook",
+     "figma.com": "figma",
+     "force.com": "salesforce",
+     "fortnite.com": "epic-games",
+     "gemini.google.com": "google-gemini",
+     "github.com": "github",
+     "githubassets.com": "github",
+     "githubcopilot.com": "github-copilot",
+     "githubusercontent.com": "github",
+     "gitlab.com": "gitlab",
+     "gmail.com": "gmail",
+     "google-analytics.com": "google-analytics",
+     "google.com": "google-base",
+     "googleadservices.com": "google-ads",
+     "googleapis.com": "google-base",
+     "googlesyndication.com": "google-ads",
+     "googletagmanager.com": "google-analytics",
+     "googleusercontent.com": "google-base",
+     "googlevideo.com": "youtube",
+     "goto.com": "goto-meeting",
+     "gotomeeting.com": "goto-meeting",
+     "grammarly.com": "grammarly",
+     "grammarly.io": "grammarly",
+     "grok.com": "xai-grok",
+     "gstatic.com": "google-base",
+     "gvt1.com": "google-base",
+     "gvt2.com": "google-base",
+     "hbomax.com": "hbo-max",
+     "hf.co": "hugging-face",
+     "hubspot.com": "hubspot",
+     "huggingface.co": "hugging-face",
+     "hulu.com": "hulu",
+     "hulustream.com": "hulu",
+     "icloud-content.com": "icloud",
+     "icloud.com": "icloud",
+     "instagram.com": "instagram",
+     "itunes.apple.com": "apple-app-store",
+     "jetbrains.com": "jetbrains",
+     "jtvnw.net": "twitch",
+     "lastpass.com": "lastpass",
+     "leagueoflegends.com": "riot-games",
+     "licdn.com": "linkedin",
+     "line-scdn.net": "line",
+     "line.me": "line",
+     "linkedin.com": "linkedin",
+     "live.com": "ms-base",
+     "login.live.com": "azure-ad",
+     "login.microsoftonline.com": "azure-ad",
+     "logmein.com": "logmein",
+     "logmeininc.com": "logmein",
+     "mail.google.com": "gmail",
+     "mail.yahoo.com": "yahoo-mail",
+     "matrix.org": "matrix-element",
+     "max.com": "hbo-max",
+     "media-amazon.com": "amazon",
+     "mediafire.com": "mediafire",
+     "meet.google.com": "google-meet",
+     "mega.co.nz": "mega",
+     "mega.io": "mega",
+     "mega.nz": "mega",
+     "messenger.com": "facebook-messenger",
+     "microsoft.com": "ms-base",
+     "microsoftonline.com": "azure-ad",
+     "midjourney.com": "midjourney",
+     "miro.com": "miro",
+     "mistral.ai": "mistral-ai",
+     "monday.com": "monday",
+     "msn.com": "ms-base",
+     "mullvad.net": "mullvad",
+     "muscache.com": "airbnb",
+     "music.apple.com": "apple-music",
+     "myworkday.com": "workday",
+     "mzstatic.com": "apple-base",
+     "net.anydesk.com": "anydesk",
+     "netflix.com": "netflix",
+     "nextdns.io": "nextdns",
+     "nflxext.com": "netflix",
+     "nflximg.net": "netflix",
+     "nflxso.net": "netflix",
+     "nflxvideo.net": "netflix",
+     "nintendo.com": "nintendo",
+     "nintendo.net": "nintendo",
+     "nordcdn.com": "nordvpn",
+     "nordvpn.com": "nordvpn",
+     "notion.site": "notion",
+     "notion.so": "notion",
+     "npmjs.com": "npm",
+     "npmjs.org": "npm",
+     "oaistatic.com": "openai-chatgpt",
+     "oaiusercontent.com": "openai-chatgpt",
+     "office.com": "ms-office365",
+     "office.net": "ms-office365",
+     "office365.com": "ms-office365",
+     "officeapps.live.com": "ms-office365",
+     "okta.com": "okta",
+     "oktacdn.com": "okta",
+     "oktapreview.com": "okta",
+     "one.one.one.one": "cloudflare-dns",
+     "onedrive.com": "ms-onedrive",
+     "onedrive.live.com": "ms-onedrive",
+     "ooklaserver.net": "speedtest",
+     "outlook.com": "outlook-web",
+     "outlook.live.com": "outlook-web",
+     "outlook.office.com": "outlook-web",
+     "outlook.office365.com": "outlook-web",
+     "pandora.com": "pandora",
+     "paramountplus.com": "paramount-plus",
+     "pastebin.com": "pastebin",
+     "paypal.com": "paypal",
+     "paypalobjects.com": "paypal",
+     "pcloud.com": "pcloud",
+     "peacocktv.com": "peacock",
+     "perplexity.ai": "perplexity",
+     "pinimg.com": "pinterest",
+     "pinterest.com": "pinterest",
+     "platform.openai.com": "openai-platform",
+     "play.google.com": "google-play",
+     "play.googleapis.com": "google-play",
+     "playstation.com": "playstation-network",
+     "playstation.net": "playstation-network",
+     "poe.com": "poe",
+     "primevideo.com": "amazon-prime-video",
+     "proton.me": "proton-mail",
+     "protonmail.ch": "proton-mail",
+     "protonmail.com": "proton-mail",
+     "protonvpn.ch": "proton-vpn",
+     "protonvpn.com": "proton-vpn",
+     "protonvpn.net": "proton-vpn",
+     "push.apple.com": "apple-push",
+     "pypi.org": "pypi",
+     "pythonhosted.org": "pypi",
+     "quad9.net": "quad9-dns",
+     "quora.com": "quora",
+     "quoracdn.net": "quora",
+     "rbxcdn.com": "roblox",
+     "redd.it": "reddit",
+     "reddit.com": "reddit",
+     "redditmedia.com": "reddit",
+     "redditstatic.com": "reddit",
+     "remotedesktop.google.com": "chrome-remote-desktop",
+     "ringcentral.com": "ringcentral",
+     "riotgames.com": "riot-games",
+     "roblox.com": "roblox",
+     "rustdesk.com": "rustdesk",
+     "salesforce.com": "salesforce",
+     "sc-cdn.net": "snapchat",
+     "scdn.co": "spotify",
+     "service-now.com": "servicenow",
+     "servicenow.com": "servicenow",
+     "sharepoint.com": "sharepoint-online",
+     "shopify.com": "shopify",
+     "signal.art": "signal",
+     "signal.org": "signal",
+     "skype.com": "skype",
+     "skypeassets.com": "skype",
+     "slack-edge.com": "slack",
+     "slack-files.com": "slack",
+     "slack-msgs.com": "slack",
+     "slack.com": "slack",
+     "snap-dev.net": "snapchat",
+     "snapchat.com": "snapchat",
+     "sndcdn.com": "soundcloud",
+     "soundcloud.com": "soundcloud",
+     "speedtest.net": "speedtest",
+     "splashtop.com": "splashtop",
+     "spotify.com": "spotify",
+     "spotify.design": "spotify",
+     "spotifycdn.com": "spotify",
+     "ssl-images-amazon.com": "amazon",
+     "sstatic.net": "stack-overflow",
+     "stackexchange.com": "stack-overflow",
+     "stackoverflow.com": "stack-overflow",
+     "steamcommunity.com": "steam",
+     "steamcontent.com": "steam",
+     "steampowered.com": "steam",
+     "steamstatic.com": "steam",
+     "stripe.com": "stripe",
+     "stripe.network": "stripe",
+     "surfshark.com": "surfshark",
+     "t.co": "twitter",
+     "t.me": "telegram",
+     "tailscale.com": "tailscale",
+     "tailscale.io": "tailscale",
+     "teams.cdn.office.net": "ms-teams",
+     "teams.live.com": "ms-teams",
+     "teams.microsoft.com": "ms-teams",
+     "teamviewer.com": "teamviewer",
+     "telegram.me": "telegram",
+     "telegram.org": "telegram",
+     "telesco.pe": "telegram",
+     "threads.com": "threads",
+     "threads.net": "threads",
+     "threema.ch": "threema",
+     "tiktok.com": "tiktok",
+     "tiktokcdn-us.com": "tiktok",
+     "tiktokcdn.com": "tiktok",
+     "tiktokv.com": "tiktok",
+     "trello.com": "trello",
+     "ttvnw.net": "twitch",
+     "tumblr.com": "tumblr",
+     "tv.apple.com": "apple-tv",
+     "twimg.com": "twitter",
+     "twitch.tv": "twitch",
+     "twitter.com": "twitter",
+     "uber.com": "uber",
+     "update.microsoft.com": "ms-update",
+     "userapi.com": "vk",
+     "viber.com": "viber",
+     "vimeo.com": "vimeo",
+     "vimeocdn.com": "vimeo",
+     "vk.com": "vk",
+     "walmart.com": "walmart",
+     "walmartimages.com": "walmart",
+     "wbx2.com": "webex",
+     "webex.com": "webex",
+     "wechat.com": "wechat",
+     "weibo.cn": "weibo",
+     "weibo.com": "weibo",
+     "weixin.qq.com": "wechat",
+     "wetransfer.com": "wetransfer",
+     "wetransfer.net": "wetransfer",
+     "whatsapp.com": "whatsapp",
+     "whatsapp.net": "whatsapp",
+     "whispersystems.org": "signal",
+     "wikimedia.org": "wikipedia",
+     "wikipedia.org": "wikipedia",
+     "windows.com": "ms-base",
+     "windowsupdate.com": "ms-update",
+     "workday.com": "workday",
+     "x.ai": "xai-grok",
+     "x.com": "twitter",
+     "xbox.com": "xbox-live",
+     "xboxlive.com": "xbox-live",
+     "yahoo.com": "yahoo",
+     "yandex.com": "yandex",
+     "yandex.net": "yandex",
+     "yandex.ru": "yandex",
+     "yimg.com": "yahoo",
+     "youtu.be": "youtube",
+     "youtube-nocookie.com": "youtube",
+     "youtube.com": "youtube",
+     "ytimg.com": "youtube",
+     "zdassets.com": "zendesk",
+     "zendesk.com": "zendesk",
+     "zerotier.com": "zerotier",
+     "zoho.com": "zoho",
+     "zoho.eu": "zoho",
+     "zoom.com": "zoom",
+     "zoom.us": "zoom",
+     "zoomgov.com": "zoom"
+    },
+    "web_fronts": {
+     "anydesk.com": "anydesk",
+     "expressvpn.com": "expressvpn",
+     "logmein.com": "logmein",
+     "mullvad.net": "mullvad",
+     "nordvpn.com": "nordvpn",
+     "openai.com": "openai-chatgpt",
+     "protonvpn.com": "proton-vpn",
+     "rustdesk.com": "rustdesk",
+     "splashtop.com": "splashtop",
+     "surfshark.com": "surfshark",
+     "tailscale.com": "tailscale",
+     "teamviewer.com": "teamviewer",
+     "www.anydesk.com": "anydesk",
+     "www.expressvpn.com": "expressvpn",
+     "www.logmein.com": "logmein",
+     "www.mullvad.net": "mullvad",
+     "www.nordvpn.com": "nordvpn",
+     "www.openai.com": "openai-chatgpt",
+     "www.protonvpn.com": "proton-vpn",
+     "www.rustdesk.com": "rustdesk",
+     "www.splashtop.com": "splashtop",
+     "www.surfshark.com": "surfshark",
+     "www.tailscale.com": "tailscale",
+     "www.teamviewer.com": "teamviewer",
+     "www.zerotier.com": "zerotier",
+     "zerotier.com": "zerotier"
+    }
+   },
+   "release": {
+    "components": {
+     "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
+     "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+     "host_catalog": "d90de751d3e9f4ac4602deca7637f3e2164fc6ed7ccd8cb292a99ccd54fa43fe",
+     "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
+    },
+    "digest": "45ad7b6b7d7a027e",
+    "released": "2026-11-15",
+    "reviewed": "2026-11-15",
+    "version": "2026.11.1"
+   }
+  }
+ },
+ "schema": 1
+}

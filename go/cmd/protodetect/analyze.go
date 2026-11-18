@@ -50,6 +50,25 @@ func pyInt(text string) (int, bool) {
 	return v, err == nil
 }
 
+// knownRelease reports whether this binary carries the content release (the reference's argparse choices).
+func knownRelease(v string) bool {
+	for _, r := range content.Releases() {
+		if r == v {
+			return true
+		}
+	}
+	return false
+}
+
+// releaseChoices is argparse's "choose from" list (Python 3.13: each choice quoted).
+func releaseChoices() string {
+	quoted := []string{}
+	for _, r := range content.Releases() {
+		quoted = append(quoted, "'"+r+"'")
+	}
+	return strings.Join(quoted, ", ")
+}
+
 // osErrorText renders an I/O error as Python's str(OSError): "[Errno N] Message: 'path'".
 func osErrorText(err error) string {
 	var pathErr *os.PathError
@@ -153,9 +172,17 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 		return fail(err)
 	}
 	if v, ok := values["--content-version"]; ok && v != pack.Release.Version {
-		// Rollback runs an earlier server-name catalog; the pack carries the current release only.
-		fmt.Fprintf(stderr, "not ported in the Go backend: --content-version %s (the pack is release %s)\n", v, pack.Release.Version)
-		return exitNotPorted
+		// Rollback (content.select): the server-name catalog of an earlier release, laid over the embedded pack.
+		if _, external := values["--content"]; external {
+			fmt.Fprintf(stderr, "not ported in the Go backend: --content-version %s with --content (the pack is release %s)\n", v, pack.Release.Version)
+			return exitNotPorted
+		}
+		if !knownRelease(v) {
+			return usage("argument --content-version: invalid choice: '" + v + "' (choose from " + releaseChoices() + ")")
+		}
+		if pack, err = content.EmbeddedRelease(v); err != nil {
+			return fail(err)
+		}
 	}
 	if path, ok := values["--signatures"]; ok {
 		text, err := signatures.ReadFile(path)

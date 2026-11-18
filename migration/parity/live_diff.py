@@ -64,6 +64,10 @@ def options_for(rng, signatures_path, policy_path):
         options["signatures"] = signatures_path
     if rng.random() < 0.25:
         options["policy"] = policy_path
+    options["content_version"] = None
+    if rng.random() < 0.15:
+        from protocol_engine import content
+        options["content_version"] = rng.choice([item.version for item in content.releases()])
     return options, rng.random() < 0.8
 
 
@@ -77,7 +81,8 @@ def arguments(options, as_json):
                        ("--heuristics", "heuristics"), ("--certificates", "certificates")):
         if options[name]:
             out.append(flag)
-    for flag, name in (("--udp-hint", "udp_hint"), ("--tcp-hint", "tcp_hint"), ("--signatures", "signatures"), ("--policy", "policy")):
+    for flag, name in (("--udp-hint", "udp_hint"), ("--tcp-hint", "tcp_hint"), ("--signatures", "signatures"), ("--policy", "policy"),
+                       ("--content-version", "content_version")):
         if options[name]:
             out += [flag, options[name]]
     return out + (["--json"] if as_json else [])
@@ -97,6 +102,9 @@ def reference(path, options, as_json):
     saved = live_capture.time, live_capture.PcapStreamDecoder, coordinator.secrets.token_hex
     live_capture.time, live_capture.PcapStreamDecoder = clock, Decoder
     coordinator.secrets.token_hex = lambda size: CAPTURE_ID
+    from protocol_engine import content
+    if options.get("content_version"):
+        content.select(options["content_version"])        # as main() does, before signatures and policy load
     try:
         with contextlib.redirect_stdout(output), open(path, "rb") as stream:
             emit = (lambda event: print(json.dumps(event), flush=True)) if as_json else live_capture.readable
@@ -114,6 +122,7 @@ def reference(path, options, as_json):
                 policy, options["certificates"], options["observation"], options["checksums"], continuation=options["continuation"])
     finally:
         live_capture.time, live_capture.PcapStreamDecoder, coordinator.secrets.token_hex = saved
+        content.select(content.CURRENT)                   # the selection is process-wide
     return output.getvalue(), status
 
 
