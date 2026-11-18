@@ -1,7 +1,7 @@
 # Microsoft Copilot (formerly Microsoft 365 Copilot and Copilot Chat)
 
 - Content-pack id today: `ms-copilot` (`copilot.microsoft.com`)
-- Status: **PARTIAL**. `copilot.cloud.microsoft` is READY. Microsoft states that no complete per-feature host list exists.
+- Status: **READY**, NAME-BASED, batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`), for `copilot.cloud.microsoft`. Microsoft states that no complete per-feature host list exists, and in-app Copilot stays unobservable
 - Sources accessed: 2026-11-18. Page "Last updated on 11/05/2026"
 
 ## 1. What it is
@@ -76,8 +76,13 @@ licensed from personal use. Logs should say "Copilot app connection", not "Copil
 
 ## 8. Catalog delta and recommendation
 
-- Add `copilot.cloud.microsoft` → `ms-copilot`. It must be longer than a suite-level `cloud.microsoft`
-  entry (see microsoft-365.md), which longest-suffix matching guarantees.
-- Record the provenance of `copilot.microsoft.com` as unverified by this lane, or have the Engine
-  lane cite its source.
-- Do not map `safelinks.protection.outlook.com` to Copilot.
+Exact entry in batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`):
+
+```python
+("ms-copilot", "business-systems", "generative-ai", "browser-based", 3, "Microsoft Copilot", ("transfers-files",),
+ ("copilot.microsoft.com", "copilot.cloud.microsoft")),
+```
+
+`copilot.cloud.microsoft` is longer than the suite-level `cloud.microsoft` (`ms-office365`, same batch),
+so it wins. The provenance of `copilot.microsoft.com` remains unverified by this lane. Do not map
+`safelinks.protection.outlook.com` to Copilot: batch A names it `ms-exchange-online-protection`.

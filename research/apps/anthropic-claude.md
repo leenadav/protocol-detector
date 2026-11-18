@@ -1,7 +1,8 @@
 # Anthropic Claude (claude.ai apps, Claude API, Claude Code)
 
 - Content-pack id today: `anthropic-claude` (`claude.ai`, `anthropic.com`, `claude.com`); no separate API id
-- Status: **READY** for host names and IPv4 ranges
+- Decided (Lee via Hermes, 2026-11-18): `api.anthropic.com` gets its own API id, `anthropic-api`, consistent with `openai-platform`
+- Status: **READY**, NAME-BASED, batch A (`research/patches/batch-a-name-based.patch`). The `anthropic.com` web front is PARTIAL
 - Sources accessed: 2026-11-18
 
 ## 1. What it is
@@ -59,9 +60,10 @@ ALPN: nothing published by Anthropic. `UNVERIFIED`.
   sign-in). So `api.anthropic.com` means "Claude API, including Claude Code", not "developer
   integration" alone. `UNVERIFIED`: which hosts the claude.ai web and mobile chat apps use beyond
   `claude.ai`; no primary page read here lists them.
-- `anthropic.com` (apex) and `claude.com` also serve Anthropic's public website and docs. In the
-  current pack they name the application `anthropic-claude`, so visiting the website or docs counts
-  as using the product.
+- `claude.com` (apex) is Anthropic's product page with sign-in. Fetched directly 2026-11-18, it had the title
+  "Claude by Anthropic | The AI for problem solvers" and showed plans, downloads and "Continue with SSO" [S4].
+  So the apex is provider web presence, not proof of use. `anthropic.com` (apex) could not be fetched from
+  this session (host not allowed). Whether it is marketing only is `UNVERIFIED`.
 - Claude Platform on AWS reaches `aws-external-anthropic.{region}.api.aws`, which resolves to AWS IP
   ranges [S1]. S3 refers to Claude Code sessions on Amazon Bedrock, Google Cloud's Agent Platform and Microsoft Foundry.
   Those connections go to the cloud provider and are not visible as Anthropic.
@@ -77,17 +79,20 @@ ALPN: nothing published by Anthropic. `UNVERIFIED`.
 | SNI `claude.ai` | **N3** Claude apps | Also downloads (`downloads.claude.ai`) |
 | SNI `platform.claude.com`, `sso.claude.com` | **N2** account/console | Sign-in, not use |
 | SNI `*.claudeusercontent.com` | **N3** | Artifacts and the browser-extension bridge |
-| SNI `anthropic.com` apex/`www`, `claude.com` | **N1** | Marketing and docs. Should be a web front, not use |
+| SNI `claude.com` apex, `code.claude.com` | **N1** | Product page and sign-in [S4]; documentation [S3]. Web fronts in batch A |
+| SNI `anthropic.com` apex/`www` | **U** | Not fetched; still a service domain in the pack |
 | Destination in `160.79.104.0/23` or `153.61.224.0/22` | **N2** corroboration | Supporting signal only. Never names an app alone (v0.65 contract) |
 
 ## 6. Synthetic test vectors
 
 | # | Input | Expected |
 |---|---|---|
-| P1 | SNI `api.anthropic.com`, ALPN `h2` | Claude API (today `anthropic-claude`) |
+| P1 | SNI `api.anthropic.com`, ALPN `h2` | `anthropic-api` (today `anthropic-claude`) |
+| P1b | SNI `platform.claude.com` | `anthropic-api` (Console, the counterpart of `platform.openai.com`) |
+| P1c | SNI `sso.claude.com` | `anthropic-claude` (service under `claude.com`) |
 | P2 | SNI `claude.ai`, ALPN `h2`, `http/1.1` | `anthropic-claude` |
 | P3 | SNI `bridge.claudeusercontent.com` | `anthropic-claude` (today unmapped) |
-| N1 | SNI `www.anthropic.com` | web front, no use (proposed) |
+| N1 | SNI `claude.com`, `code.claude.com` | web front of `anthropic-claude` (provider affiliation, no use asserted) |
 | N2 | SNI `claude.ai.example.invalid`, `notclaude.ai` | no application |
 | N3 | `ech_outer()` with outer SNI `claude.ai` | no application |
 
@@ -99,15 +104,23 @@ ALPN: nothing published by Anthropic. `UNVERIFIED`.
   accessed 2026-11-18.
 - [S3] Claude Code Docs, "Enterprise network configuration", section "Network access requirements",
   `https://code.claude.com/docs/en/network-config`, accessed 2026-11-18.
+- [S4] `https://claude.com/`, rendered 2026-11-18 (page title and visible sign-in and plan content).
 
 ## 8. Catalog delta and recommendation
 
-1. Split the API from the apps, as the pack already does for OpenAI: `api.anthropic.com` →
-   `anthropic-api` (new id: generative-ai). This changes reported application names, so it is an
-   Engine-lane decision.
-2. Add `claudeusercontent.com` → `anthropic-claude`, and `mcp-proxy.anthropic.com` →
-   `anthropic-claude` (a connector proxy, not the API).
-3. Make `anthropic.com` (apex and `www`) and `claude.com` web fronts ("provider affiliation only", as `openai.com` already is in PROTOCOLS.md), so
-   that visiting the marketing site is not reported as product use.
-4. Optional corroboration: record the published inbound ranges in content with their source. They are
-   evidence, never identification.
+Decided and in batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`):
+
+```python
+("anthropic-claude", "business-systems", "generative-ai", "browser-based", 3, "Anthropic Claude",
+ ("transfers-files",), ("claude.ai", "anthropic.com", "claude.com", "claudeusercontent.com"), ("claude.com", "code.claude.com")),
+("anthropic-api", "business-systems", "generative-ai", "client-server", 3, "Anthropic Claude developer platform and API",
+ ("transfers-files",), ("api.anthropic.com", "platform.claude.com")),
+```
+
+- `platform.claude.com` goes with the API, as `platform.openai.com` does in `openai-platform` (consistent with
+  the decision). It is the Console and also the OAuth host for claude.ai sign-in [S3]. That is a known
+  imprecision: a claude.ai sign-in token exchange is reported as `anthropic-api`.
+- `mcp-proxy.anthropic.com` needs no entry: it falls under `anthropic.com`, which is `anthropic-claude`.
+- Not in batch A (PARTIAL): making `anthropic.com` and `www.anthropic.com` web fronts. That needs a read
+  of `anthropic.com`, whose host is not allowed in this session.
+- Optional later (not proposed): the published inbound IPv4 ranges as corroborating content.

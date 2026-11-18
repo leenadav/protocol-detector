@@ -1,7 +1,7 @@
 # Microsoft 365 (Exchange Online, SharePoint/OneDrive for Business, Teams, Office)
 
 - Content-pack ids today: `ms-office365`, `outlook-web`, `sharepoint-online`, `ms-teams`, `ms-onedrive`, `azure-ad`, `skype`, `ms-base`
-- Status: **READY** for the host-name recommendations below; Teams media over UDP is recorded for a later phase only
+- Status: **READY**, NAME-BASED, batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`). Teams media over UDP is recorded for a later phase only
 - Sources accessed: 2026-11-18. Endpoint data version `2026103000` (worldwide instance)
 
 ## 1. What it is
@@ -130,6 +130,22 @@ Built with `client_hello_with([...])` (server_name ext 0, ALPN ext 16), TCP 443 
 | `microsoft365.com` (id 147) | unmapped | add, `ms-office365` |
 | `onmicrosoft.com`, `microsoft.com`, `msocdn.com` (50, 78) | `microsoft.com` is `ms-base` | keep as is: too broad to name Microsoft 365 |
 | `cloud.microsoft` (184) | unmapped | add as `ms-office365` (suite level, N2), so that the longer `outlook.`/`teams.`/`copilot.` entries win |
+
+Exact entries in batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`):
+
+```python
+("ms-teams", ..., ("teams.microsoft.com", "teams.live.com", "teams.cdn.office.net", "teams.cloud.microsoft", "lync.com")),
+("outlook-web", ..., ("outlook.office365.com", "outlook.office.com", "outlook.live.com", "outlook.com", "outlook.cloud.microsoft")),
+("ms-exchange-online-protection", "collaboration", "email", "client-server", 1,
+ "Microsoft Exchange Online Protection (mail filtering, Safe Links)", ("widely-used",),
+ ("protection.outlook.com", "mx.microsoft")),
+("ms-office365", ..., ("office.com", "office365.com", "office.net", "officeapps.live.com", "microsoft365.com", "cloud.microsoft")),
+("sharepoint-online", ..., ("sharepoint.com", "sharepointonline.com", "svc.ms")),
+```
+
+`...` stands for the unchanged fields of the existing tuple. The patch has them in full. The metadata of
+the new `ms-exchange-online-protection` (risk 1, `widely-used`, `client-server`) is this lane's proposal;
+the Engine lane may adjust it.
 
 Process note for the Engine lane: the web service is versioned and machine-readable [S2]. The catalog
 could record the data version it was built from (here `2026103000`) as its provenance, instead of

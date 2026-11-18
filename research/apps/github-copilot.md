@@ -1,7 +1,8 @@
 # GitHub Copilot
 
 - Content-pack id today: `github-copilot` (`githubcopilot.com`); GitHub itself is `github`
-- Status: **READY**. GitHub publishes plan-specific host names, the most useful generative-AI finding in this batch.
+- Status: names **READY**, NAME-BASED, batch A. The plan field is PROTOCOL (engine code), in the later queue
+- Decided (Lee via Hermes, 2026-11-18): the Copilot plan is an extra evidence field, not separate application ids
 - Sources accessed: 2026-11-18
 
 ## 1. What it is
@@ -91,14 +92,32 @@ it is cited for the host names only.
 
 ## 8. Catalog delta and recommendation
 
-1. **Plan attribution.** Add the three plan suffixes so that the verdict can carry the plan as a
-   bounded enum (`individual`, `business`, `enterprise`, `unknown`). This is new evidence vocabulary
-   (closed set, no identifier) and needs a decision from the Engine lane on where it belongs:
-   application id variants (`github-copilot-individual`) or an evidence field. Recommended: an
-   evidence field, so that reports keep one application id.
-2. Add `copilot-proxy.githubusercontent.com`, `origin-tracker.githubusercontent.com` and
-   `copilot-telemetry.githubusercontent.com` → `github-copilot` (longer than `githubusercontent.com`).
-3. Add the seven exact `production-copilot-host*.webpubsub.azure.com` names → `github-copilot`. They
-   are exact-host entries on a shared service, which the v0.65 rule allows only because the vendor
-   names them.
-4. Leave `default.exp-tas.com`, `github.com` and `api.github.com` as they are.
+### 8a. Names (NAME-BASED, READY, batch A)
+
+```python
+("github-copilot", "business-systems", "generative-ai", "client-server", 3, "GitHub Copilot", ("transfers-files",),
+ ("githubcopilot.com", "copilot-proxy.githubusercontent.com", "origin-tracker.githubusercontent.com",
+  "copilot-telemetry.githubusercontent.com", "production-copilot-host.webpubsub.azure.com",
+  "production-copilot-host-centralus.webpubsub.azure.com", "production-copilot-host-centralus-02.webpubsub.azure.com",
+  "production-copilot-host-eastasia.webpubsub.azure.com", "production-copilot-host-austriaeast.webpubsub.azure.com",
+  "production-copilot-host-westus.webpubsub.azure.com", "production-copilot-host-westus3.webpubsub.azure.com")),
+```
+
+The plan hosts need no entry of their own: they are under `githubcopilot.com`. `default.exp-tas.com`,
+`github.com` and `api.github.com` are unchanged.
+
+### 8b. Plan field (decided; PROTOCOL kind, later queue)
+
+It needs engine code (verdict evidence), not a parser and not content alone. Hermes may want a third kind
+for this, "engine code, no parser". Specification:
+
+- **Field**: `copilot_plan`, a closed set: `individual`, `business`, `enterprise`, `unspecified`.
+- **Derivation**: from the normalized server name that named `github-copilot`, matched on whole labels,
+  innermost plan label wins. `<x>.individual.githubcopilot.com` → `individual`; `<x>.business.githubcopilot.com`
+  → `business`; `<x>.enterprise.githubcopilot.com` → `enterprise`; any other `githubcopilot.com` name, and the
+  `githubusercontent.com` and `webpubsub.azure.com` Copilot hosts → `unspecified`.
+- **Strength**: `asserted` (client-asserted SNI, like the name itself). The reason text must not include the host.
+- **Never** set from anything but the SNI/Host already used for the catalog; never inferred from absence.
+- **Vectors**: P1 → `individual`, P2 → `business`, `x.enterprise.githubcopilot.com` → `enterprise`,
+  `api.githubcopilot.com` → `unspecified`, P3 and P4 → `unspecified`; `business.example.invalid` and
+  `individual.githubcopilot.com.example.invalid` → no application and no field; ECH outer → no field.

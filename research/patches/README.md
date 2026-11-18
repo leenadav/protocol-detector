@@ -1,0 +1,73 @@
+# Name-based patches for the Engine lane
+
+Each patch touches only the content source (`protocol_engine/host_apps.py`, `protocol_engine/content.py`) on
+`claude/go-migration`. The generated files are rebuilt with the repository's own tools, not hand-edited.
+This lane wrote and tested the patches in a scratch worktree; no branch other than `claude/app-research`
+was changed.
+
+## Batch A: `batch-a-name-based.patch`
+
+- **Base**: `claude/go-migration` `6b280a610c08370e2b26a85544471ff21701637f` (`git apply --check`: clean).
+- **Release**: proposes content release `2026.11.3` (dated 2026-11-18; the Engine lane sets the final dates
+  and review text) with `_PRIOR_HOST_STATE["2026.11.2"]`, so `--content-version 2026.11.2` still rolls back.
+- **Items**: microsoft-365, microsoft-copilot, github-copilot (names only), anthropic-claude (decided
+  `anthropic-api` split), google-gemini (`notebook.google.com`), dropbox (domains, web fronts, `docsend`,
+  `dropbox-sign`). The specs in `research/apps/` give each entry's primary source.
+- **New application ids**: `ms-exchange-online-protection`, `anthropic-api`, `docsend`. Host entries
+  431 → 434; applications 533 → 536.
+
+### Regeneration after applying (the repository's own commands)
+
+```bash
+python3 -B tools/check_content.py --update
+```
+
+```bash
+python3 -B tools/export_content.py --write migration/fixtures/content.json
+```
+
+```bash
+cp migration/fixtures/content.json go/internal/content/pack.json
+```
+
+```bash
+python3 -B migration/content_history.py --write go/internal/content/history.json
+```
+
+```bash
+python3 -B migration/parity/cases.py --write migration/fixtures/cases.json
+```
+
+### Results in scratch (2026-11-18)
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.11.3, digest `d01a416cc693a7c1`, 536 applications, 434 host entries |
+| Rollback | `history.json` release 2026.11.2 host catalog equals the original 2026.11.2 pack's host catalog exactly (host component `82e1abd2…`, unchanged) |
+| Synthetic name vectors (all ten specs) | 47 vectors through `attribution_for_host`, 0 mismatches |
+| `migration/parity/compare.py --backend python` | 7336 compared, 7336 matched |
+| `make parity-go` | 7336 compared, 7336 matched; 79 of 88 families parity-verified |
+| Regenerated cases vs committed | 939 cases differ only in `content.version`; 5 `tls-last-domain` cases change because the entries' last domain changed; the host-catalog sample shifted by 59 added and 41 removed `session/host-catalog/*` cases (the generator samples by position) |
+
+### Pinned values the Engine lane must update (not done here: tests are product code)
+
+- `test_content.py` `RollbackTests`: `len(new) == 431` → 434.
+- `go/internal/content/digest_test.go`: `releaseVersion`, `releaseDigest`, `releasePackDigest` → the 2026.11.3 values.
+- `go/internal/content/history_test.go`: the last release becomes `2026.11.3`. The pinned digests of the
+  earlier releases change (see the observation below). 2026.11.2 keeps 431 hosts.
+
+**Observation for the Engine lane (not a patch issue):** the historical release digests recomputed into
+`history.json` move whenever the application catalog changes, even though each earlier release's host
+catalog is reproduced exactly:
+
+| Release | committed digest | after batch A |
+|---|---|---|
+| 2025.10.0 | `5d38359bcadf2419` | `86cc2f5ee272670d` |
+| 2026.11.0 | `e4ba10037ef25ee7` | `db2714ad250a7919` |
+| 2026.11.1 | `45ad7b6b7d7a027e` | `89ff08935bdf6a13` |
+
+The cause is that `application_catalog` is current-only (CONTENT-GOVERNANCE.md, "Rollback": the application
+catalog does not roll back), yet it is a component of every historical release digest. A record pinned to
+`2026.11.1` with digest `45ad…` would no longer match a rollback to `2026.11.1`. This contradicts the
+pinning contract (C11) and should be judged by the Engine lane. It occurs with any catalog change that adds
+an application, not only with this batch.

@@ -1,7 +1,7 @@
 # Dropbox
 
 - Content-pack ids today: `dropbox` (`dropbox.com`, `dropboxapi.com`, `dropboxusercontent.com`, `dropboxstatic.com`), `dropbox-sign` (`hellosign.com`)
-- Status: **READY**
+- Status: **READY**, NAME-BASED, batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`). `dash.ai` is PARTIAL (purpose not stated by the source)
 - Sources accessed: 2026-11-18. Pages "Updated Jul 21, 2025" [S1] and "Updated Aug 13, 2026" [S2]
 
 ## 1. What it is
@@ -79,12 +79,25 @@ No ALPN or protocol-structure information is published. `UNVERIFIED`.
 
 ## 8. Catalog delta and recommendation
 
-1. Add to `dropbox`: `getdropbox.com`, `db.tt`, `dropboxbusiness.com`, `addtodropbox.com`,
-   `dropboxcaptcha.com`, `dropboxexperiment.com`, `dropbox-dns.com`.
-2. Treat as web fronts ("provider affiliation only"): `dropboxforum.com`, `dropboxforums.com`,
-   `dropboxlegal.com`, `dropboxinsiders.com`, `dropbox.tech`, `learn.dropbox.com`.
-3. `dropboxusercontent.com`: not on Dropbox's verified list. Keep, but mark the provenance unverified
-   until the Engine lane or this lane finds a primary source.
-4. Consider new ids `docsend` (file-sharing) and `dropbox-dash` (`dash.ai`; category to be decided).
-   Add `hellofax.com` and `app.hellosign.com` to `dropbox-sign`.
-5. Do not map the third-party domains (`evidon`, `arkoselabs`, `zendesk`).
+Exact entries in batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`):
+
+```python
+("dropbox", "general-internet", "file-sharing", "client-server", 3, "Dropbox file sync and sharing",
+ ("widely-used", "transfers-files"),
+ ("dropbox.com", "dropboxapi.com", "dropboxusercontent.com", "dropboxstatic.com",
+  "getdropbox.com", "db.tt", "dropboxbusiness.com", "addtodropbox.com", "dropboxcaptcha.com",
+  "dropboxexperiment.com", "dropbox-dns.com"),
+ ("dropboxforum.com", "dropboxforums.com", "dropboxlegal.com", "dropboxinsiders.com", "dropbox.tech", "learn.dropbox.com")),
+("docsend", "general-internet", "file-sharing", "browser-based", 3, "DocSend document sharing (Dropbox)",
+ ("transfers-files",), ("docsend.com",)),
+("dropbox-sign", ..., ("hellosign.com", "hellofax.com")),
+```
+
+- Web fronts are exact names (PROTOCOLS.md v0.65; `host_apps.py`), so only the listed names become
+  affiliation-only. `learn.dropbox.com` wins over the `dropbox.com` domain. `app.hellosign.com` is already
+  covered by `hellosign.com`.
+- `dropboxusercontent.com` is kept but unverified by this lane.
+- Not in batch A: `dash.ai`. The source lists the domain without saying what it serves, so its category
+  is unknown.
+- Third-party domains (`evidon`, `arkoselabs`, `zendesk`) get no entry.
+- `docsend` metadata (risk 3, `transfers-files`) is this lane's proposal; the Engine lane may adjust it.

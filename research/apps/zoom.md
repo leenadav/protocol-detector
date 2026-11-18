@@ -1,7 +1,7 @@
 # Zoom
 
 - Content-pack id today: `zoom` (`zoom.us`, `zoom.com`, `zoomgov.com`)
-- Status: **READY** for web and signalling names. Media is UDP and IP-range based (later phase).
+- Status: **DONE**, NAME-BASED: no catalog change needed. `zoomgov.com` provenance is unverified
 - Sources accessed: 2026-11-18. Page "This article was updated 2026-10-07"
 
 ## 1. What it is

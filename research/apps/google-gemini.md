@@ -1,7 +1,7 @@
 # Google generative AI: Gemini, AI Studio, Notebook
 
 - Content-pack ids today: `google-gemini` (`gemini.google.com`), `google-ai-studio` (`aistudio.google.com`), `google-notebooklm` (`notebooklm.google.com`)
-- Status: **PARTIAL**. Gemini and AI Studio are READY. The Notebook host disagrees with the pack and needs a follow-up.
+- Status: **READY**, NAME-BASED, batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`) (adds `notebook.google.com`). `notebooklm.google.com` remains PARTIAL (unverified, kept)
 - Sources accessed: 2026-11-18. Page "Last updated 2026-11-10 UTC"
 
 ## 1. What it is
@@ -75,10 +75,14 @@ No ALPN, certificate or protocol-structure information is published. `UNVERIFIED
 
 ## 8. Catalog delta and recommendation
 
-1. Keep `gemini.google.com` and `aistudio.google.com`, now with a cited source.
-2. **Notebook discrepancy**: Google's current page lists `notebook.google.com`, and the pack has
-   `notebooklm.google.com`. Next action for this lane: find a primary source for
-   `notebooklm.google.com` (the product's own help pages). Until then, recommend **adding**
-   `notebook.google.com` → `google-notebooklm` and recording `notebooklm.google.com` as unverified.
-   Do not remove it without a source.
-3. Do not map `googleapis.com` subdomains to Gemini without a primary source.
+Exact entry in batch A (`research/patches/batch-a-name-based.patch`, base `claude/go-migration` `6b280a6`):
+
+```python
+("google-notebooklm", "business-systems", "generative-ai", "browser-based", 3, "Google NotebookLM",
+ ("transfers-files",), ("notebooklm.google.com", "notebook.google.com")),
+```
+
+- `gemini.google.com` and `aistudio.google.com` are unchanged, now with a cited source.
+- `notebooklm.google.com` is kept, unverified. Next action for this lane: a primary source for it (the
+  product's own help pages). Do not remove it without one.
+- Do not map `googleapis.com` subdomains to Gemini without a primary source.

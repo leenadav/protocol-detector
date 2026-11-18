@@ -1,7 +1,7 @@
 # AnyDesk
 
 - Content-pack id today: `anydesk` (`anydesk.com`, `net.anydesk.com`; web fronts `anydesk.com`, `www.anydesk.com`)
-- Status: **READY** for the host name and ports. The wire format beyond "TLS" is unpublished.
+- Status: **DONE**, NAME-BASED: no catalog change needed (`net.anydesk.com` verified). The SNI question stays open for research
 - Sources accessed: 2026-11-18. Page "Updated on Jan 21, 2026"
 
 ## 1. What it is

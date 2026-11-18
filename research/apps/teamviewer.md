@@ -1,7 +1,7 @@
 # TeamViewer
 
 - Content-pack id today: `teamviewer` (`teamviewer.com`; web fronts `teamviewer.com`, `www.teamviewer.com`)
-- Status: **PARTIAL**. Host names and ports are READY. The port-5938 protocol is unpublished by the vendor.
+- Status: **DONE**, NAME-BASED: no catalog change needed. The port-5938 protocol is unpublished: no PROTOCOL item possible
 - Sources accessed: 2026-11-18. Page "Last Modified: Jul 17, 2026"
 
 ## 1. What it is
