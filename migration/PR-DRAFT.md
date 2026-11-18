@@ -50,7 +50,10 @@ until a `CODEX_REVIEW_RESULT` names it.
 
 ## Known limits and open items
 
-- D09 (independent labelled corpus) is blocked on input: a release blocker, not claimed here.
+- D09: the first measurement on ISCX VPN-nonVPN 2016 (internal research evaluation only) is in
+  `research/d09-iscx-vpn2016.md`; its findings (UDP OpenVPN and CoAP over-permissiveness, the TLS 1.2 cipher
+  policy that invalidates identified sessions, and others) are post-merge, Go-only items in
+  `migration/POST-MERGE-BACKLOG.md`.
 - F-ADV-1: 0.030% of seeded random datagrams still pass as CoAP (from 0.200%); structurally conforming.
 - Merge mechanics: 7 files conflict with `main` (CI workflow, Makefile, README, REVIEW-SCOPE, SSDLC and two
   generated files); MERGE-READINESS.md gives the plan for each, including `-mod=vendor` for main's

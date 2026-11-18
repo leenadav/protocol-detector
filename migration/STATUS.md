@@ -549,7 +549,14 @@ build tag `loadbench`); not part of `go-check`.
 
 - Mac checkout patch set (reset, labels): needs a push or a description to reconcile with `c2b7cc3`.
 - Codex round-3 result on `726007d`: pending (issue #2).
-- Independent labelled corpus (D09): blocked on input.
+- Independent labelled corpus (D09): the dataset is decided (ISCX VPN-nonVPN 2016, internal research evaluation
+  only; commercial use `UNVERIFIED`; non-commercial or academic-only datasets excluded). First measurement:
+  `research/d09-iscx-vpn2016.md` on `claude/app-research` (engine `2fd9452`; 63 scorable captures, 41 correct,
+  1 wrong, 14 unknown, 7 background). Findings tracked as post-merge, Go-only items PM-1..PM-7 in
+  `migration/POST-MERGE-BACKLOG.md`: P1 UDP OpenVPN and CoAP over-permissiveness, P2 the TLS 1.2 ServerHello
+  cipher policy (an identified TLS session must not become unknown over a posture table), P3 BitTorrent and SIP,
+  P4 pre-RFC 9000 UDP/443 and one XMPP session.
+- Merges (this branch, and the CI/CD lane's PR #30) wait for Codex's Sunday review; Lee then decides.
 - Release thresholds: aligned with Culvert (above); allocations and retained bytes are gated, the p99 per flow
   with collection pauses (Lee, 2026-11-17) is reported.
 - Dedicated migration PR: to be opened only when authorized in the working session (plan §1); the branch `claude/go-migration` exists and is pushed. Merge readiness and the draft description: `migration/MERGE-READINESS.md`, `migration/PR-DRAFT.md` (2026-11-18: 7 files conflict with `main`).

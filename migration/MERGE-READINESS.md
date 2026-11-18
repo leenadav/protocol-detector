@@ -106,8 +106,12 @@ batch B), `7dcabb7` (content 2026.11.5, batch B2). The list is kept in migration
 
 ## Known open items
 
-- **D09, independent labelled corpus**: blocked on input (no independent corpus); release thresholds that
-  depend on it stay unproven. Not a merge blocker by itself, a release blocker.
+- **D09, independent labelled corpus**: no longer blocked. The dataset is decided: ISCX VPN-nonVPN 2016, internal
+  research evaluation only, with no redistribution, no data committed and no commercial right claimed (commercial use
+  stays `UNVERIFIED`; non-commercial or academic-only datasets are excluded). The first measurement is done
+  (`research/d09-iscx-vpn2016.md`, engine `2fd9452`: 63 scorable captures, 41 correct, 1 wrong, 14 unknown, 7
+  background). Its findings are detection changes, so they are post-merge, Go-only items in
+  `migration/POST-MERGE-BACKLOG.md` (PM-1..PM-7). They are tracked work, not merge blockers.
 - **F-ADV-1 residual**: after the RFC 7252 tightening, 6 of 20,000 seeded random datagrams (0.030%, from
   0.200%) and 1 of the suite's 2,000 still pass as CoAP; they conform structurally. Listed in
   `NOISE_FINDINGS`, documented in PROTOCOLS.md.
@@ -139,5 +143,6 @@ batch B), `7dcabb7` (content 2026.11.5, batch B2). The list is kept in migration
       green; `make parity-go` 0 differences; docs counts and manifest regenerated.
 - [ ] Hosted CI green on the merge head, including main's `go-check-minimum` job (with `-mod=vendor`) and the
       vendor check.
-- [ ] D09 and F-ADV-1 acknowledged as open (release, not merge, blockers).
-- [ ] Lee's decision to merge; no deployment follows from it.
+- [ ] F-ADV-1's residual and the D09 findings (POST-MERGE-BACKLOG.md) acknowledged as post-merge work.
+- [ ] Lee's decision to merge, after Codex's review on Sunday (this branch and the CI/CD lane's PR #30); no
+      deployment follows from it.
