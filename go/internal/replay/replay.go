@@ -157,6 +157,8 @@ func Session(pack *content.Pack, c *parity.Case) interface{} {
 		Fingerprints bool     `json:"fingerprints"`
 		Certificates bool     `json:"certificates"`
 		Heuristics   bool     `json:"heuristics"`
+		TCPHint      string   `json:"tcp_hint"`
+		UDPHint      string   `json:"udp_hint"`
 	}
 	if len(c.Options) > 0 {
 		// An option the Go analyzer does not know is reported, never silently dropped.
@@ -168,7 +170,7 @@ func Session(pack *content.Pack, c *parity.Case) interface{} {
 	}
 	opts := analyzer.Options{Continuation: options.Continuation, Fingerprints: options.Fingerprints, Certificates: options.Certificates, Heuristics: options.Heuristics,
 		Session:    session.Options{MaxConnections: 32, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1, Observation: options.Observation},
-		Signatures: sigs}
+		Signatures: sigs, TCPHint: options.TCPHint, UDPHint: options.UDPHint}
 	if options.IdleTimeout != nil {
 		opts.Session.IdleTimeout = *options.IdleTimeout
 	}
