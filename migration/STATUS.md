@@ -479,8 +479,16 @@ the gate computes rather than a label set by hand.
   two carriers in one process (YouTube over TLS, then over QUIC) took the first carrier's ports. The cache is
   keyed by the port list now; `test_appid.PortTablePerCarrierTests` fails without the fix. Go never had it.
 - Signature documents whose description is a JSON object or list: read in Python's key order and rendered
-  as its `str()` since 2026-11-18 (no longer refused). Still answered by the reference: `--content-version`
-  rollback and signature patterns outside RE2.
+  as its `str()` since 2026-11-18 (no longer refused).
+- `--content-version` rollback in Go since 2026-11-18: `go/internal/content/history.json`
+  (`migration/content_history.py`, checked by `make content-pack`) carries each earlier release's block and
+  server-name catalog; `content.EmbeddedRelease` lays it over the embedded pack and validates it (all four
+  releases recompute the reference's digests, `history_test.go`); `parity-analyze` and `parity-live` now draw a
+  content version for about 15% of their runs, 0 differences. With an external `--content` pack the request
+  is still declined (exit 64). The Python adapters' docstrings still name rollback among the requests Go
+  declines; they are reference files and stay as they are.
+- Still answered by the reference: signature patterns outside RE2 (Go's regular-expression engine has no
+  backtracking constructs).
 
 ## Open decisions and blockers
 
