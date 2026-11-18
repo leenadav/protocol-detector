@@ -10,7 +10,9 @@ An `Envelope` gives every event one identity and ordering:
     sequence         position in the capture's log (assigned by the EventLog, never by the producer)
     capture_id       one capture run; ids from different runs never compare
     session_id       deterministic from transport and both endpoints (see session_identity)
-    generation       bumped when the same 5-tuple starts a new connection (SYN after a close)
+    generation       distinguishes flows on one 5-tuple: the session coordinator draws it from one counter per
+                     capture, so (session_id, generation) is unique within a capture and a later flow on the
+                     tuple has a higher generation; a tuple's first session is not necessarily 0
     layer            "transport" | "outer" | "encryption" | "inner" | "application" | "capture"
     revision         monotonic per (session_id, generation): a reducer ignores an older revision
     kind             the payload type (session, classification, capture_gap, error, summary, decryption)

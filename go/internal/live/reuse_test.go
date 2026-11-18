@@ -75,9 +75,50 @@ func TestAConnectionAfterTheTupleClosedIsTheNextGeneration(t *testing.T) {
 	if len(gens) != 3 || gens[0] != 0 || gens[1] != 1 || gens[2] != 2 || len(ids) != 1 {
 		t.Fatalf("generations %v over %d ids", gens, len(ids))
 	}
-	if len(m.published) != 1 {
-		t.Fatalf("the record holds %d entries for one session id", len(m.published))
+	if m.generations.Held() != 0 {
+		t.Fatalf("%d tuples still hold a generation after every flow was published", m.generations.Held())
 	}
+}
+
+// Generations come from one counter per capture: unique across tuples, and only flows in flight hold one.
+func TestGenerationsAreUniquePerCaptureAndTheTableStaysBounded(t *testing.T) {
+	m, events := monitor(t)
+	held := 0
+	n := uint32(len(request))
+	for i := 0; i < 3000; i++ {
+		client := "192.0.2." + itoaTest(1+i%200)
+		port := uint16(40000 + i/200)
+		frames := [][]byte{
+			testframes.TCP(client, port, "198.51.100.20", 80, 1000, 0, 0x02, nil),
+			testframes.TCP("198.51.100.20", 80, client, port, 9000, 1001, 0x12, nil),
+			testframes.TCP(client, port, "198.51.100.20", 80, 1001, 9001, 0x18, []byte(request)),
+			testframes.TCP(client, port, "198.51.100.20", 80, 1001+n, 9001, 0x11, nil),
+			testframes.TCP("198.51.100.20", 80, client, port, 9001, 1002+n, 0x11, nil),
+		}
+		feed(t, m, frames, 10+float64(i), 0)
+		if h := m.generations.Held(); h > held {
+			held = h
+		}
+	}
+	if err := m.End("stop"); err != nil {
+		t.Fatal(err)
+	}
+	seen := map[int]bool{}
+	for _, e := range *events {
+		if e.Kind == "session" {
+			seen[e.Fields["generation"].(int)] = true
+		}
+	}
+	if len(seen) != 3000 || !seen[0] || !seen[2999] || held > 8 || m.generations.Held() != 0 {
+		t.Fatalf("%d distinct generations, at most %d held, %d left", len(seen), held, m.generations.Held())
+	}
+}
+
+func itoaTest(n int) string {
+	if n < 10 {
+		return string(rune('0' + n))
+	}
+	return itoaTest(n/10) + string(rune('0'+n%10))
 }
 
 func TestAUDPFlowAfterTheEarlierOneExpiredIsTheNextGeneration(t *testing.T) {

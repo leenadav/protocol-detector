@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "ed6b2b8a5ee8a2ba25f5f8f8eb6688e745627202",
+  "commit": "58a47010ec3fb8eb02fad965ffb51f4f37a54a91",
   "branch": "claude/go-migration",
-  "build_digest": "a84d9017257ba56783e35d1a2bdb9854ce900f9f39bb13d400158c0abda72696",
+  "build_digest": "f8f66bf038d86590a09b43ec5c854432d5ea0bf7b18d35c648d77ad4f89723ac",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -405,7 +405,7 @@
     {
       "path": "protocol_adapters/coordinator.py",
       "component": "adapters",
-      "sha256": "e7261e695c1da0400a9bc17f9c5c71aed3409b85f1ca1c77cef1a1c986825354"
+      "sha256": "7e98739163045b13caf94d6273861fce46748c72512ddd89ba23b442c2bf2d64"
     },
     {
       "path": "protocol_adapters/detectors.py",
@@ -415,7 +415,7 @@
     {
       "path": "protocol_adapters/events.py",
       "component": "adapters",
-      "sha256": "985f6d9caa3670182239c746eeca7dd5a604bbf76cb2ec95eaf23d678eb31e88"
+      "sha256": "0657066e074da3ac9874b3ce817616d44858cfb418820e2fa6b09465d30e2925"
     },
     {
       "path": "protocol_adapters/layers.py",
@@ -635,7 +635,7 @@
     {
       "path": "schemas/live-event.schema.json",
       "component": "schemas",
-      "sha256": "cd6cbad3fae4ab3c861e02d6a62e60ca25f67269376e5188e217294a4e18261d"
+      "sha256": "769ee0e3cf449f2aed719a42b0b37e1175cbe190ea66a34fda51dc30e6046b21"
     },
     {
       "path": "schemas/offline-row.schema.json",

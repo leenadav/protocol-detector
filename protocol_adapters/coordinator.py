@@ -14,8 +14,12 @@ operations are the ones the review names:
     end(reason)      finalize everything still tracked exactly once (capture stop, EOF, operator stop)
     gap(reason)      capture loss or truncation: retract every active session (named ids) and drop state
 
-Identity: every session carries the coordinator's capture_id and a generation from SessionGenerations,
-bumped when a tracked tuple starts over (SYN on a known key). The Analyzer stays the connection table and
+Identity: every session carries the coordinator's capture_id and a generation drawn from one counter per
+capture (Milestone B, 2026-11-18): a flow takes the counter's next value the first time it needs one (when the
+retained tier opens it, or when its session is published), and the value is released when the session is
+published or retracted. No (session_id, generation) pair repeats in a capture, and the table that maps a tuple
+to its flow's generation holds only tuples with a tracked or retained flow. A tuple's first session is
+therefore not necessarily generation 0; generations of one tuple increase with each later flow on it. The Analyzer stays the connection table and
 the App-ID source; the coordinator adds ownership, identity and exactly-once semantics around it, and
 exposes stream deltas so a second consumer (the TLS decoder, stage 4) reads bytes from the same owner.
 """
@@ -24,7 +28,7 @@ import weakref
 from collections import deque
 
 from .analyze_pcap import Analyzer
-from .events import SessionGenerations, session_identity
+from .events import session_identity
 from .sessions import MODULUS, Stream, StreamError
 
 END_REASON = "Capture stopped before initial message completed"
@@ -62,7 +66,8 @@ class RetentionBudget:
 class SessionCoordinator:
     def __init__(self, analyzer=None, capture_id=None, emit=None, retain=None, idle_timeout=60, **analyzer_options):
         self.capture_id = capture_id or secrets.token_hex(8)
-        self.generations = SessionGenerations()
+        self._next_generation = 0       # one counter per capture: a value is never handed out twice
+        self._active = {}               # session_id -> generation of the flow holding the tuple (tracked or retained)
         self.emit = emit
         self._ended = False
         # Stage 4 (A03/A07): the retained tier. The Analyzer keeps only the bounded initial window and retires a
@@ -73,10 +78,6 @@ class SessionCoordinator:
         self.retained_allocated = 0
         self.idle_timeout = idle_timeout
         self._pending = deque()         # consumer events: ("open"|"data"|"error"|"close", key, ...)
-        # Milestone B: per session id, the highest generation already published or retracted. A flow that starts on
-        # such a tuple is the next generation (it used to be suppressed as a duplicate); one entry per id, not per
-        # generation.
-        self._published = {}
         self._session_hook = analyzer_options.pop("on_session", None)
         # The analyzer must not retain its owner through a bound-method cycle (test_lifecycle guards this
         # with gc disabled): the sink reaches the coordinator through a weak reference, like CaptureMonitor.
@@ -100,31 +101,30 @@ class SessionCoordinator:
                        "retained_rejected_bytes": 0, "retained_errors": 0, "pending_overflow": 0}
 
     # ----- identity ---------------------------------------------------------
+    def _generation(self, sid):
+        """The generation of the flow holding this tuple, drawn from the capture's counter on first use."""
+        generation = self._active.get(sid)
+        if generation is None:
+            generation = self._active[sid] = self._next_generation
+            self._next_generation += 1
+        return generation
+
     def identity(self, transport, client, server):
         sid = session_identity(transport, client, server)
-        return sid, self.generations.current(sid)
-
-    def _reused(self, sid):
-        """The tuple's current generation was already published or retracted: a new flow on it is the next one."""
-        return self._published.get(sid, -1) >= self.generations.current(sid)
+        return sid, self._generation(sid)
 
     def renew(self, transport, client, server):
-        """A tracked tuple starts a new connection: the next session on it is a new generation."""
-        sid = session_identity(transport, client, server)
+        """A tracked tuple starts a new connection: the next flow on it takes a new generation."""
         self.counts["generations"] += 1
-        return self.generations.renew(sid)
+        self._active.pop(session_identity(transport, client, server), None)
 
     # ----- the one session sink --------------------------------------------
     def _on_session(self, record):
         sid = session_identity(record["transport"], record["client"], record["server"])
-        if self._reused(sid):
-            # The Analyzer emits one session per tracked flow, so a record for a tuple whose current generation was
-            # already published or retracted is a later flow that began without a SYN to mark it (a UDP flow after
-            # the earlier one expired, a midstream TCP flow): it is the next generation. No (session, generation)
-            # is ever published twice.
-            self.renew(record["transport"], record["client"], record["server"])
-        generation = self.generations.current(sid)
-        self._published[sid] = generation
+        # The Analyzer emits one session per tracked flow; publishing releases the flow's generation, so a later
+        # flow on the tuple (a new connection, a UDP flow after this one expired) draws a new value.
+        generation = self._generation(sid)
+        del self._active[sid]
         self.counts["finalized"] += 1
         record = dict(record, capture_id=self.capture_id, session_id=sid, generation=generation)
         if self._session_hook is not None:
@@ -145,10 +145,6 @@ class SessionCoordinator:
                     self.analyzer.drop(key, "Connection restarted (new SYN on a tracked tuple)")
                 if key in self.retained:
                     self._retained_close(key, "Connection restarted (new SYN on a tracked tuple)")
-                self.renew(transport, packet.source, packet.destination)
-            elif self._reused(session_identity(transport, packet.source, packet.destination)):
-                # A new connection on a tuple whose last one already ended (published or retracted): the next
-                # generation, before the retained tier opens it, so the session and its decrypted rows agree.
                 self.renew(transport, packet.source, packet.destination)
         message = self.analyzer.process(now, packet)
         if transport == "tcp" and self.retain is not None:
@@ -173,6 +169,8 @@ class SessionCoordinator:
         state = self.retained.pop(key, None)
         if state is None:
             return
+        if key not in self.analyzer.tracked:
+            self._active.pop(state["sid"], None)   # no tracked flow holds the tuple now: release its generation
         for stream in state["streams"].values():
             self.retained_allocated -= stream.allocated
         self.counts["retained_closed"] += 1
@@ -208,7 +206,7 @@ class SessionCoordinator:
                 sid = session_identity("tcp", packet.source, packet.destination)
                 state = self.retained[key] = {"client": packet.source, "server": packet.destination, "streams": {},
                                               "fin": {}, "error": None, "time": self.now, "sid": sid,
-                                              "generation": self.generations.current(sid)}
+                                              "generation": self._generation(sid)}
                 self.counts["retained_opened"] += 1
                 self._queue(("open", key, packet.source, packet.destination, sid, state["generation"]))
             state["time"] = self.now
@@ -297,7 +295,8 @@ class SessionCoordinator:
         for key in list(self.analyzer.tracked):
             state = self.analyzer.tracked[key]
             sid = session_identity("tcp", state["client"], state["server"])
-            self._published[sid] = self.generations.current(sid)   # retracted, never finalized
+            self._generation(sid)           # the retracted flow's generation, drawn now if it had none yet,
+            del self._active[sid]           # is released, never handed out again
         self.analyzer.tracked.clear()
         self.analyzer.udp_flows.clear()
         self.analyzer.quic_assembler.clear()

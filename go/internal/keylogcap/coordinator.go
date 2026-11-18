@@ -62,7 +62,8 @@ type retained struct {
 // second consumer (the TLS decoder), under an explicit budget. Its owner decides tuple reuse and time.
 type Tier struct {
 	budget      Budget
-	generations func(sid string) int // the owner's current generation of a session id
+	generations *Generations           // the owner's session identity
+	tracks      func(session.Key) bool // whether the owner's analyzer still tracks a connection
 	retained    map[session.Key]*retained
 	order       []session.Key // insertion order of retained
 	allocated   int
@@ -80,9 +81,10 @@ type queued struct {
 	at float64 // enqueue time on the owner's clock (D11)
 }
 
-// NewTier builds a retained tier; generations reports the owner's current generation of a session id.
-func NewTier(budget Budget, idleTimeout float64, generations func(string) int) *Tier {
-	return &Tier{budget: budget, generations: generations, retained: map[session.Key]*retained{}, idle: idleTimeout}
+// NewTier builds a retained tier over the owner's generations; tracks reports whether the owner's analyzer still
+// tracks a connection (a closed retained flow no tracked flow holds releases its generation).
+func NewTier(budget Budget, idleTimeout float64, generations *Generations, tracks func(session.Key) bool) *Tier {
+	return &Tier{budget: budget, generations: generations, tracks: tracks, retained: map[session.Key]*retained{}, idle: idleTimeout}
 }
 
 // Holds reports whether a connection with this key is retained.
@@ -105,9 +107,8 @@ func (c *Tier) SetNow(now float64) {
 type coordinator struct {
 	*Tier
 	an          *analyzer.Analyzer
-	generations map[string]int
-	published   map[string]int // per session id, the highest generation the analyzer already finalized
-	records     int            // analyzer records already noted in published
+	generations *Generations
+	records     int // analyzer records already published (their generations released)
 }
 
 func newCoordinator(pack *content.Pack, budget Budget, connections int) (*coordinator, error) {
@@ -116,8 +117,8 @@ func newCoordinator(pack *content.Pack, budget Budget, connections int) (*coordi
 	if err != nil {
 		return nil, err
 	}
-	c := &coordinator{an: an, generations: map[string]int{}, published: map[string]int{}}
-	c.Tier = NewTier(budget, 60, func(sid string) int { return c.generations[sid] })
+	c := &coordinator{an: an, generations: NewGenerations()}
+	c.Tier = NewTier(budget, 60, c.generations, an.Tracker.TracksTCP)
 	c.Tier.Telemetry = an.Telemetry
 	return c, nil
 }
@@ -160,6 +161,9 @@ func (c *Tier) retainedClose(key session.Key, reason string) error {
 		return nil
 	}
 	delete(c.retained, key)
+	if c.tracks != nil && !c.tracks(key) {
+		c.generations.Release(state.sid) // no tracked flow holds the tuple now
+	}
 	for i, k := range c.order {
 		if k == key {
 			c.order = append(c.order[:i], c.order[i+1:]...)
@@ -172,23 +176,13 @@ func (c *Tier) retainedClose(key session.Key, reason string) error {
 	return c.queue(event{kind: "close", key: key, reason: reason, progress: c.progress(state)})
 }
 
-// reused reports whether the tuple's current generation was already finalized.
-func (c *coordinator) reused(sid string) bool {
-	last, ok := c.published[sid]
-	return ok && last >= c.generations[sid]
-}
-
 // noteSessions is the reference coordinator's session sink for what the analyzer finalized since the last call:
-// a record on a reused generation is the next one (a flow that began without a SYN), and each is noted.
+// each session takes (and so releases) its flow's generation, in emission order.
 func (c *coordinator) noteSessions() {
 	for ; c.records < len(c.an.Records); c.records++ {
 		record := c.an.Records[c.records]
 		name, _ := record["transport"].(string)
-		sid := sessionid.Identity(name, endpointOf(record["client"]), endpointOf(record["server"]))
-		if c.reused(sid) {
-			c.generations[sid]++
-		}
-		c.published[sid] = c.generations[sid]
+		c.generations.Publish(sessionid.Identity(name, endpointOf(record["client"]), endpointOf(record["server"])))
 	}
 }
 
@@ -218,11 +212,7 @@ func (c *coordinator) accept(packet *transport.TCP, now float64) error {
 					return err
 				}
 			}
-			c.generations[sessionid.Identity("tcp", packet.Source, packet.Destination)]++
-		} else if sid := sessionid.Identity("tcp", packet.Source, packet.Destination); c.reused(sid) {
-			// A new connection on a tuple whose last one already ended: the next generation (the reference's
-			// coordinator), so the retained tier opens it under that generation.
-			c.generations[sid]++
+			c.generations.Release(sessionid.Identity("tcp", packet.Source, packet.Destination))
 		}
 	}
 	c.an.Process(now, packet)
@@ -312,7 +302,7 @@ func (c *Tier) retain(key session.Key, packet *transport.TCP) error {
 			}
 			sid := sessionid.Identity("tcp", packet.Source, packet.Destination)
 			state = &retained{client: packet.Source, server: packet.Destination, streams: map[transport.Endpoint]*reassembly.Stream{},
-				fin: map[transport.Endpoint]uint32{}, sid: sid, generation: c.generations(sid), time: c.now}
+				fin: map[transport.Endpoint]uint32{}, sid: sid, generation: c.generations.Of(sid), time: c.now}
 			c.retained[key] = state
 			c.order = append(c.order, key)
 			if err := c.queue(event{kind: "open", key: key, client: packet.Source, server: packet.Destination, sid: sid, generation: state.generation}); err != nil {

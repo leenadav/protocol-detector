@@ -1,5 +1,6 @@
-"""Milestone B: a flow that starts on a tuple whose earlier flow was already published or retracted is the next
-generation of that session id, never a suppressed duplicate; the coordinator keeps one entry per session id."""
+"""Milestone B: generations come from one counter per capture (Lee, 2026-11-18). A flow on a tuple whose earlier
+flow was published or retracted gets a later generation, never a suppressed duplicate; no (session_id,
+generation) repeats; the coordinator holds a generation only for tuples with a tracked or retained flow."""
 import unittest
 
 from protocol_adapters import protocol_fixtures as fixtures
@@ -50,7 +51,29 @@ class SessionReuseTests(unittest.TestCase):
         self.assertEqual([s["generation"] for s in found], [0, 1, 2])
         self.assertEqual({s["session_id"] for s in found}, {session_identity("tcp", CLIENT, SERVER)})
         self.assertEqual(coordinator.counts["duplicates_suppressed"], 0)
-        self.assertEqual(len(coordinator._published), 1)               # one entry per session id, not per generation
+        self.assertEqual(coordinator._active, {})                       # nothing held once every flow is published
+
+    def test_generations_are_unique_per_capture_and_the_table_stays_bounded(self):
+        """Distinct tuples draw from the same counter: a tuple's first session need not be generation 0."""
+        emitted = []
+        coordinator = SessionCoordinator(emit=emitted.append, max_connections=8, byte_limit=16384)
+        held = 0
+        for index in range(3000):
+            client = ("192.0.2.{}".format(1 + index % 200), 40000 + index // 200)
+            frames = [frame(client, SERVER, 1000, 0, SYN), frame(SERVER, client, 9000, 1001, SYN | ACK),
+                      frame(client, SERVER, 1001, 9001, 24, REQUEST), frame(client, SERVER, 1001 + len(REQUEST), 9001, FIN | ACK),
+                      frame(SERVER, client, 9001, 1002 + len(REQUEST), FIN | ACK)]
+            for packet in packets(frames):
+                coordinator.accept(packet, 10.0 + index)
+            held = max(held, len(coordinator._active))
+        coordinator.end("stop")
+        found = sessions(emitted)
+        pairs = [(s["session_id"], s["generation"]) for s in found]
+        self.assertEqual(len(found), 3000)
+        self.assertEqual(len(set(pairs)), 3000)
+        self.assertEqual(sorted(s["generation"] for s in found), list(range(3000)))
+        self.assertLessEqual(held, 8)                                   # bounded by the flows in flight, not by the run
+        self.assertEqual(coordinator._active, {})
 
     def test_a_udp_flow_after_the_earlier_one_expired_is_the_next_generation(self):
         datagrams = [udp_frame(DNS_CLIENT, DNS_SERVER, fixtures.DNS), udp_frame(DNS_CLIENT, DNS_SERVER, fixtures.DNS)]

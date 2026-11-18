@@ -1061,8 +1061,9 @@ record states which one produced it (`observation.mode`, `handshake_observed`, `
   matches midstream, and any segment that matches nothing, ends as the outcome `incomplete` with engine status
   `midstream` and a reason that says the start was not observed. An unsupported protocol and an unobserved
   start are not told apart there, and the record says so instead of claiming `unknown-tcp`. A SYN on a tuple
-  under midstream observation ends that observation and starts an ordinary handshake observation (new
-  generation).
+  under midstream observation ends that observation and starts an ordinary handshake observation (a new,
+  higher generation: generations come from one counter per capture, so a tuple's first session is not
+  necessarily generation 0).
 
 Datagram profiles are per message and carry `observation.mode = datagram`. Policies can require a mode with
 the `observation` predicate (POLICY.md).

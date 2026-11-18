@@ -92,8 +92,7 @@ type Monitor struct {
 	tier *keylogcap.Tier
 
 	captureID   string
-	generations map[string]int
-	published   map[string]int // per session id, the highest generation already published or retracted
+	generations *keylogcap.Generations // one counter per capture (Milestone B)
 	now         float64
 	ended       bool
 }
@@ -121,7 +120,7 @@ func NewMonitor(pack *content.Pack, opts Options, captureID string, emit func(Ev
 	}
 	return &Monitor{emit: emit, pack: pack, opts: opts, an: an, counts: newCounter(), protocols: newCounter(), apps: newCounter(),
 		risks: newCounter(), policyCounts: newCounter(), rejected: map[string]int{}, captureID: captureID,
-		generations: map[string]int{}, published: map[string]int{}}, nil
+		generations: keylogcap.NewGenerations()}, nil
 }
 
 // Error is a ValueError of the adapter.
@@ -166,14 +165,9 @@ func (m *Monitor) session(row analyzer.Row) {
 	transportName, _ := record["transport"].(string)
 	client, server := endpointOf(record["client"]), endpointOf(record["server"])
 	sid := sessionid.Identity(transportName, client, server)
-	if m.reused(sid) {
-		// One session per tracked flow: a record for a tuple whose current generation was already published or
-		// retracted is a later flow that began without a SYN (a UDP flow after the earlier one expired, a
-		// midstream TCP flow). It is the next generation; no (session, generation) is published twice.
-		m.generations[sid]++
-	}
-	generation := m.generations[sid]
-	m.published[sid] = generation
+	// One session per tracked flow; publishing releases the flow's generation, so a later flow on the tuple (a
+	// new connection, a UDP flow after this one expired) draws a new value.
+	generation := m.generations.Publish(sid)
 	record["capture_id"], record["session_id"], record["generation"] = m.captureID, sid, generation
 	m.counts.add("sessions", 1)
 	app, _ := record["app"].(string)
@@ -188,12 +182,6 @@ func (m *Monitor) session(row analyzer.Row) {
 		m.policyCounts.add(action, 1)
 	}
 	m.emit(Event{Kind: "session", Fields: record, Order: row.Order})
-}
-
-// reused reports whether the tuple's current generation was already published or retracted.
-func (m *Monitor) reused(sid string) bool {
-	last, ok := m.published[sid]
-	return ok && last >= m.generations[sid]
 }
 
 func endpointOf(v interface{}) transport.Endpoint {
@@ -222,7 +210,7 @@ func (m *Monitor) retired(row analyzer.Row) {
 
 // Retain adds the retained reassembly tier under the budget (CaptureMonitor's `retain`) and returns it.
 func (m *Monitor) Retain(budget keylogcap.Budget) *keylogcap.Tier {
-	m.tier = keylogcap.NewTier(budget, m.opts.IdleTimeout, func(sid string) int { return m.generations[sid] })
+	m.tier = keylogcap.NewTier(budget, m.opts.IdleTimeout, m.generations, m.an.Tracker.TracksTCP)
 	m.tier.Telemetry = m.an.Telemetry
 	return m.tier
 }
@@ -294,14 +282,13 @@ func (m *Monitor) Accept(record capture.Record, now float64) error {
 					return err
 				}
 			}
-			m.generations[sessionid.Identity("tcp", source, destination)]++
-		} else if sid := sessionid.Identity("tcp", source, destination); m.reused(sid) {
-			// A new connection on a tuple whose last one already ended: the next generation, before the retained
-			// tier opens it, so the session and its decrypted rows agree.
-			m.generations[sid]++
+			m.generations.Release(sessionid.Identity("tcp", source, destination))
 		}
 	}
 	message := m.an.Process(now, packet)
+	// The reference's sink publishes sessions inside process(), before the retained tier sees the packet: a
+	// session therefore takes its flow's generation before an RST or FIN on the retained side can release it.
+	m.drain()
 	var retainErr error
 	if tcp != nil && m.tier != nil {
 		retainErr = m.tier.Retain(tcp)
@@ -420,7 +407,7 @@ func (m *Monitor) InvalidateAll(reason, scope string) error {
 	m.counts.add("connections_discarded_after_gap", active)
 	m.an.Telemetry.Add("capture.gaps", 1)
 	for id := range ids {
-		m.published[id] = m.generations[id] // retracted, never finalized
+		m.generations.Publish(id) // retracted, never finalized: its value (drawn now if it had none) is released
 	}
 	m.an.Reset()
 	if m.tier != nil {
