@@ -1022,12 +1022,16 @@
       "go": {
         "notes": "Client preface and initial SETTINGS (identification), then the first HEADERS block decoded with a bounded RFC 7541 HPACK decoder (Huffman, dynamic table); http2-server for the h2c-upgrade shift and prior knowledge (the analyzer's expectation after a client preface); 18 hint cases matched, plus 7,000 generated stream and session scenarios compared outside the committed set; SETTINGS and pseudo-header-order fingerprints ported",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "experimental",
+        "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 9
+            "stream": 9,
+            "session": 4
           },
           "classes": {
+            "session": [
+              "positive"
+            ],
             "stream": [
               "foreign",
               "mutated",
@@ -1035,9 +1039,7 @@
               "truncated"
             ]
           },
-          "shortfall": [
-            "no session-level case"
-          ],
+          "shortfall": [],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -1205,21 +1207,20 @@
       "go": {
         "notes": "M5 batch 13: IPFIX message and set framing (the netflow validator's version 10); 7 datagram cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "experimental",
+        "status": "parity-verified",
         "evidence": {
           "cases": {
-            "datagram": 7
+            "datagram": 10
           },
           "classes": {
             "datagram": [
+              "foreign",
               "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [
-            "datagram cases lack foreign"
-          ],
+          "shortfall": [],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -1762,12 +1763,16 @@
       "go": {
         "notes": "M5 batch 4: uncompressed OP_MSG with CRC-32C (budget checked from the fixed header) and the bounded BSON validator; hint only; 94 stream, 0 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "experimental",
+        "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 105
+            "stream": 105,
+            "session": 4
           },
           "classes": {
+            "session": [
+              "positive"
+            ],
             "stream": [
               "foreign",
               "mutated",
@@ -1775,9 +1780,7 @@
               "truncated"
             ]
           },
-          "shortfall": [
-            "no session-level case"
-          ],
+          "shortfall": [],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -1855,12 +1858,16 @@
       "go": {
         "notes": "M5 batch 4: server HandshakeV10, client HandshakeResponse41 and SSLRequest (mysql-sslrequest shift); hint only; 69 stream, 0 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "experimental",
+        "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 78
+            "stream": 78,
+            "session": 4
           },
           "classes": {
+            "session": [
+              "positive"
+            ],
             "stream": [
               "foreign",
               "mutated",
@@ -1868,9 +1875,7 @@
               "truncated"
             ]
           },
-          "shortfall": [
-            "no session-level case"
-          ],
+          "shortfall": [],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -2558,12 +2563,16 @@
       "go": {
         "notes": "M5 batch 6: one command array of bulk strings (24-byte numeric headers, argument and byte budgets); 41 stream, 0 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "experimental",
+        "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 50
+            "stream": 50,
+            "session": 4
           },
           "classes": {
+            "session": [
+              "positive"
+            ],
             "stream": [
               "foreign",
               "mutated",
@@ -2571,9 +2580,7 @@
               "truncated"
             ]
           },
-          "shortfall": [
-            "no session-level case"
-          ],
+          "shortfall": [],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -2873,12 +2880,16 @@
       "go": {
         "notes": "M5 batch 5: PDU header, ROSCTR, function codes and Setup Communication; hint only (the cotp-connect shift waits for iso-tsap); 54 stream, 0 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "experimental",
+        "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 63
+            "stream": 63,
+            "session": 4
           },
           "classes": {
+            "session": [
+              "positive"
+            ],
             "stream": [
               "foreign",
               "mutated",
@@ -2886,9 +2897,7 @@
               "truncated"
             ]
           },
-          "shortfall": [
-            "no session-level case"
-          ],
+          "shortfall": [],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -3113,22 +3122,24 @@
       "go": {
         "notes": "M5 batch 1: EHLO/HELO identity and the STARTTLS watch into the TLS phase; 45 stream cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "experimental",
+        "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 45
+            "stream": 46,
+            "session": 4
           },
           "classes": {
+            "session": [
+              "positive"
+            ],
             "stream": [
               "foreign",
+              "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [
-            "stream cases lack mutated",
-            "no session-level case"
-          ],
+          "shortfall": [],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -3339,22 +3350,24 @@
       "go": {
         "notes": "M5 batch 1: identification line and KEXINIT posture classes (kex class, weak algorithms, Terrapin); 44 stream, 0 session cases matched; HASSH (fingerprints option) ported",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "experimental",
+        "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 44
+            "stream": 45,
+            "session": 4
           },
           "classes": {
+            "session": [
+              "positive"
+            ],
             "stream": [
               "foreign",
+              "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [
-            "stream cases lack mutated",
-            "no session-level case"
-          ],
+          "shortfall": [],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -3906,12 +3919,16 @@
       "go": {
         "notes": "M5 batch 8: one frame header after the upgrade boundary (shift or hint only); 50 stream, 0 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "experimental",
+        "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 59
+            "stream": 59,
+            "session": 4
           },
           "classes": {
+            "session": [
+              "positive"
+            ],
             "stream": [
               "foreign",
               "mutated",
@@ -3919,9 +3936,7 @@
               "truncated"
             ]
           },
-          "shortfall": [
-            "no session-level case"
-          ],
+          "shortfall": [],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
