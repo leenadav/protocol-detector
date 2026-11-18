@@ -2025,6 +2025,26 @@
   },
   {
    "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "DeepSeek API",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "deepseek-api",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "generative-ai",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
    "category": "media",
    "characteristics": [
     "excessive-bandwidth"
@@ -5282,6 +5302,26 @@
   },
   {
    "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Mistral AI API",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "mistral-api",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "generative-ai",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
    "category": "general-internet",
    "characteristics": [
     "pervasive"
@@ -6740,6 +6780,26 @@
    "standard_ports": [],
    "subcategory": "generative-ai",
    "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Perplexity API",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "perplexity-api",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "generative-ai",
+   "technology": "client-server"
   },
   {
    "aliases": [],
@@ -10336,6 +10396,26 @@
    ],
    "container": null,
    "depends_on": [],
+   "description": "xAI (x.ai) developer API",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "xai-api",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "generative-ai",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
    "description": "xAI Grok",
    "implicitly_uses": [
     "ssl",
@@ -11094,6 +11174,9 @@
    "deepseek": [
     "deepseek.com"
    ],
+   "deepseek-api": [
+    "api.deepseek.com"
+   ],
    "deezer": [
     "deezer.com",
     "dzcdn.net"
@@ -11582,6 +11665,9 @@
    "mistral-ai": [
     "mistral.ai"
    ],
+   "mistral-api": [
+    "api.mistral.ai"
+   ],
    "mixpanel": [
     "mixpanel.com"
    ],
@@ -11790,6 +11876,9 @@
    ],
    "perplexity": [
     "perplexity.ai"
+   ],
+   "perplexity-api": [
+    "api.perplexity.ai"
    ],
    "phind": [
     "phind.com"
@@ -12279,6 +12368,9 @@
    ],
    "writesonic": [
     "writesonic.com"
+   ],
+   "xai-api": [
+    "api.x.ai"
    ],
    "xai-grok": [
     "grok.com",
@@ -14603,6 +14695,66 @@
     "risk": 3,
     "subcategory": "generative-ai",
     "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "DeepSeek API",
+    "domains": [
+     "api.deepseek.com"
+    ],
+    "name": "deepseek-api",
+    "risk": 3,
+    "subcategory": "generative-ai",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "Perplexity API",
+    "domains": [
+     "api.perplexity.ai"
+    ],
+    "name": "perplexity-api",
+    "risk": 3,
+    "subcategory": "generative-ai",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "Mistral AI API",
+    "domains": [
+     "api.mistral.ai"
+    ],
+    "name": "mistral-api",
+    "risk": 3,
+    "subcategory": "generative-ai",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "xAI (x.ai) developer API",
+    "domains": [
+     "api.x.ai"
+    ],
+    "name": "xai-api",
+    "risk": 3,
+    "subcategory": "generative-ai",
+    "technology": "client-server",
     "web_fronts": []
    },
    {
@@ -19197,7 +19349,11 @@
    "anydesk.com": "anydesk",
    "aol.com": "aol",
    "api.anthropic.com": "anthropic-api",
+   "api.deepseek.com": "deepseek-api",
+   "api.mistral.ai": "mistral-api",
    "api.openai.com": "openai-platform",
+   "api.perplexity.ai": "perplexity-api",
+   "api.x.ai": "xai-api",
    "apple.com": "apple-base",
    "apps.apple.com": "apple-app-store",
    "appsflyer.com": "appsflyer",
@@ -20001,15 +20157,15 @@
  },
  "release": {
   "components": {
-   "application_catalog": "5223dae2810e6760888e005a40ef308721c58d38d35d697603c08d1b919da441",
+   "application_catalog": "f96fe05e0855fbec4c13a767f62384f409474c8f19e1e4d202202c1e2e936b41",
    "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-   "host_catalog": "5ef1561c0cafa644c3fd445e67b32a8c5916e7fbf1a41819e6eaac582d67ec12",
+   "host_catalog": "9525e84c0367c0fa43376c6b16358172581f3a4367e17d2e350ea4f35eea35d0",
    "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
   },
-  "digest": "c13a842d11873db6",
+  "digest": "39150de086799d99",
   "released": "2026-11-18",
   "reviewed": "2026-11-18",
-  "version": "2026.11.4"
+  "version": "2026.11.5"
  },
  "risks": {
   "cleartext-credential-protocol": {

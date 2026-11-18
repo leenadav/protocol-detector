@@ -108,16 +108,16 @@ Document (any JSON form of it):
 | SHA-256 of prefix + CJ1 (the pack digest rule applied to this document) | `bfe5d9552aa34d72ac55d185ed3f79afccbe8991c0a73ab6528feba5ce170377` |
 | `H(["x", ["y", [1, null]], {"k": "v"}])` | `77cd6b4c4e0c482824748218f10725708199c628e96dc1c99a9b28804251cc7b` |
 
-Release 2026.11.4 (`migration/fixtures/content.json`, 436,210 bytes; CJ1 is 360,520 bytes):
+Release 2026.11.5 (`migration/fixtures/content.json`, 439,467 bytes; CJ1 is 363,185 bytes):
 
 | quantity | value |
 |---|---|
-| `application_catalog` | `5223dae2810e6760888e005a40ef308721c58d38d35d697603c08d1b919da441` |
+| `application_catalog` | `f96fe05e0855fbec4c13a767f62384f409474c8f19e1e4d202202c1e2e936b41` |
 | `families` (stated) | `3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649` |
-| `host_catalog` | `5ef1561c0cafa644c3fd445e67b32a8c5916e7fbf1a41819e6eaac582d67ec12` |
+| `host_catalog` | `9525e84c0367c0fa43376c6b16358172581f3a4367e17d2e350ea4f35eea35d0` |
 | `risks` | `59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85` |
-| release digest | `c13a842d11873db6` |
-| pack digest | `e92f3412db60b2c5ddbec086d1389779bc24b92068b78f98ea8f6577128c2b87` |
+| release digest | `39150de086799d99` |
+| pack digest | `0eafe3f4b18047e1a4e446c6404d32c4a52cb1f255bca6ea7c65c4d7004d414d` |
 
 ## Limits, stated
 

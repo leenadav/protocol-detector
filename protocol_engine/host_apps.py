@@ -243,6 +243,11 @@ _HOST_APPS = (
     ("perplexity", "business-systems", "generative-ai", "browser-based", 3, "Perplexity AI", ("transfers-files",), ("perplexity.ai",)),
     ("mistral-ai", "business-systems", "generative-ai", "browser-based", 3, "Mistral AI", ("transfers-files",), ("mistral.ai",)),
     ("deepseek", "business-systems", "generative-ai", "browser-based", 3, "DeepSeek", ("transfers-files",), ("deepseek.com",)),
+    # API hosts named by each vendor's API documentation (research/apps/*.md); split as decided for Anthropic.
+    ("deepseek-api", "business-systems", "generative-ai", "client-server", 3, "DeepSeek API", ("transfers-files",), ("api.deepseek.com",)),
+    ("perplexity-api", "business-systems", "generative-ai", "client-server", 3, "Perplexity API", ("transfers-files",), ("api.perplexity.ai",)),
+    ("mistral-api", "business-systems", "generative-ai", "client-server", 3, "Mistral AI API", ("transfers-files",), ("api.mistral.ai",)),
+    ("xai-api", "business-systems", "generative-ai", "client-server", 3, "xAI (x.ai) developer API", ("transfers-files",), ("api.x.ai",)),
     ("xai-grok", "business-systems", "generative-ai", "browser-based", 3, "xAI Grok", ("transfers-files",), ("grok.com", "x.ai")),
     ("hugging-face", "business-systems", "generative-ai", "client-server", 3, "Hugging Face models and datasets", ("transfers-files",), ("huggingface.co", "hf.co")),
     ("midjourney", "business-systems", "generative-ai", "browser-based", 3, "Midjourney image generation", ("transfers-files",), ("midjourney.com",)),
