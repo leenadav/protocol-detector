@@ -468,8 +468,9 @@ the gate computes rather than a label set by hand.
 
 ## Open after M7
 
-- Default-backend switch, merge and deployment: Lee's decision (AGENTS.md); the branch makes no switch.
-- M8 (frontend, API, presentation decryption glue) and M10 (CI, incl. `govulncheck` over `go/`) are other lanes.
+- Default backend: Go wherever its binary is installed, on every runtime path (Lee's decisions of 2026-11-15
+  and 2026-11-17; the launcher since `24e410e`); merge and deployment remain Lee's decision (AGENTS.md).
+- M8 and M10 were done in this session (M8 and M10 tables above).
 - Contracts C14 and C15 have Go evidence since 2026-11-17 (the live control plane above); C16 and C17 since
   2026-11-16. All four are `experimental`, not complete: their gates compare the Go service with the reference,
   and the Python reference stays the fallback.
@@ -477,8 +478,9 @@ the gate computes rather than a label set by hand.
   tables by application name, so a host-named application, configured mapping or custom signature seen over
   two carriers in one process (YouTube over TLS, then over QUIC) took the first carrier's ports. The cache is
   keyed by the port list now; `test_appid.PortTablePerCarrierTests` fails without the fix. Go never had it.
-- Signature documents whose description is a JSON object or list are refused as not ported (Python's
-  `str()` of a dict depends on key order the Go decoder does not keep).
+- Signature documents whose description is a JSON object or list: read in Python's key order and rendered
+  as its `str()` since 2026-11-18 (no longer refused). Still answered by the reference: `--content-version`
+  rollback and signature patterns outside RE2.
 
 ## Open decisions and blockers
 
