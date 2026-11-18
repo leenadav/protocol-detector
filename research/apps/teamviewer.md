@@ -1,0 +1,81 @@
+# TeamViewer
+
+- Content-pack id today: `teamviewer` (`teamviewer.com`; web fronts `teamviewer.com`, `www.teamviewer.com`)
+- Status: **PARTIAL**. Host names and ports are READY. The port-5938 protocol is unpublished by the vendor.
+- Sources accessed: 2026-11-18. Page "Last Modified: Jul 17, 2026"
+
+## 1. What it is
+
+A commercial remote-access, remote-support and device-management product. Same operator concern as
+AnyDesk. The pack already has risk 4, `prone-to-misuse`, `used-by-malware`.
+
+## 2. Transport and ports
+
+As published [S1], "in order of preference":
+
+1. "TCP/UDP port 5938", "the primary port used by TeamViewer". "Your firewall should allow outbound TCP and
+   UDP traffic to `master*.teamviewer.com` and `router*.teamviewer.com`."
+2. "TCP port 443", "Used if port 5938 is not allowed", and also for custom module deployment and
+   update checks. "iOS apps do not use port 443."
+3. "TCP port 80", "Used only as a last resort if both 5938 and 443 are unavailable."
+
+Also: "TeamViewer 13 no longer supports TCP port 443 as a fallback connection method" [S1].
+Connections are outbound from both devices "to TeamViewer servers or directly to each other
+(peer-to-peer)". In peer-to-peer mode "different ports" may appear [S1].
+
+## 3. Observable evidence
+
+- **Host names**: "all TeamViewer IPs resolve to: `*.teamviewer.com`". "These servers use dynamic IP
+  ranges, so a fixed list cannot be provided" [S1]. Named hosts: `master*.teamviewer.com`,
+  `router*.teamviewer.com` (connection), `configdl.teamviewer.com` (configuration download),
+  `webapi.teamviewer.com` (account assignment and API) [S1].
+- **Third-party hosts** for the newer UI: `www.recaptcha.net`, `www.gstatic.com`, `cdn.cookielaw.org` [S1].
+  They are not TeamViewer evidence.
+- **Port 5938 wire format**: TeamViewer publishes no protocol description. `UNVERIFIED` whether
+  it is TLS, and so whether the detector would see a ClientHello at all. The fallback on 443 and 80:
+  also unpublished, `UNVERIFIED`.
+
+## 4. Encrypted-traffic caveats
+
+- Over a CONNECT proxy the client reaches the proxy on its own port. Whether TeamViewer's client
+  uses a configured HTTP proxy, and which CONNECT target it asks for, is not on the page read.
+  `UNVERIFIED`.
+- If the 5938 or 443 transport is not TLS, the detector reports a non-TLS outcome (named-only or
+  unknown), and the CONNECT target is the only name.
+- `*.teamviewer.com` covers both the product and the public website (the pack's web fronts).
+
+## 5. Confidence and false-positive risks
+
+| Observable | Level | Limits |
+|---|---|---|
+| SNI or CONNECT host `master*`/`router*.teamviewer.com` | **N3** remote session | The prefix pattern is the vendor's, and the label boundary needs care: `router5.teamviewer.com` |
+| `configdl.`/`webapi.teamviewer.com` | **N2** management | Configuration and API, not a live session |
+| Other `*.teamviewer.com` | **N2** | Includes the web portal and downloads |
+| CONNECT to TCP 5938 | supporting fact | Port alone never names an app |
+
+## 6. Synthetic test vectors
+
+TLS cases only. No 5938 payload vectors can be written without a primary source:
+
+| # | Input | Expected |
+|---|---|---|
+| P1 | SNI `router12.teamviewer.com` (synthetic number), TCP 443 | `teamviewer` (session) |
+| P2 | SNI `webapi.teamviewer.com` | `teamviewer` |
+| N1 | SNI `www.teamviewer.com` | web front |
+| N2 | SNI `router12.teamviewer.com.example.invalid`, `notteamviewer.com` | no application |
+| N3 | Non-TLS bytes through CONNECT to port 5938 | not identified (never named from the port) |
+
+## 7. Sources
+
+- [S1] TeamViewer Knowledge Base, "Ports and URLs used by TeamViewer",
+  `https://www.teamviewer.com/en/global/support/knowledge-base/teamviewer-remote/troubleshooting/ports-used-by-teamviewer/`
+  (redirected from the `teamviewer-classic` path), "Last Modified: Jul 17, 2026", accessed 2026-11-18.
+
+## 8. Catalog delta and recommendation
+
+1. Names: no change. `teamviewer.com` is verified.
+2. Optional precision: name session hosts (`master*`, `router*`) apart from management hosts. Label
+   *prefix* patterns are not part of the v0.65 matcher (whole labels only), so this would be a matcher
+   change. Not recommended for the visibility phase.
+3. Do not attempt a 5938 structural profile: the protocol is unpublished, and the README source policy
+   forbids reconstructing it from third-party dissectors.

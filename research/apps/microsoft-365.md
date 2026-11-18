@@ -1,0 +1,136 @@
+# Microsoft 365 (Exchange Online, SharePoint/OneDrive for Business, Teams, Office)
+
+- Content-pack ids today: `ms-office365`, `outlook-web`, `sharepoint-online`, `ms-teams`, `ms-onedrive`, `azure-ad`, `skype`, `ms-base`
+- Status: **READY** for the host-name recommendations below; Teams media over UDP is recorded for a later phase only
+- Sources accessed: 2026-11-18. Endpoint data version `2026103000` (worldwide instance)
+
+## 1. What it is
+
+Microsoft's hosted productivity suite: Exchange Online (mail, calendar), SharePoint Online and
+OneDrive for Business (file storage and sharing), Teams (chat, meetings, calling), the Office web and
+desktop apps, and the Microsoft Entra sign-in they all depend on. Microsoft publishes its network
+endpoints as a machine-readable web service, grouped into **service areas** (`Exchange`, `SharePoint`,
+`Skype` = Teams, `Common`) and **categories** (`Optimize`, `Allow`, `Default`) [S1, S2].
+
+## 2. Transport and ports
+
+From the endpoint web service, worldwide, version 2026103000 [S1, S3]:
+
+| id | Service area | Category | TCP | UDP | Host names (as published) |
+|---|---|---|---|---|---|
+| 1 | Exchange | Optimize | 80, 443 | 443 | `outlook.cloud.microsoft`, `outlook.office.com`, `outlook.office365.com` |
+| 2 | Exchange | Allow (not required) | 143, 587, 993, 995 | | `outlook.office365.com`, `smtp.office365.com` (note: "POP3, IMAP4, SMTP Client traffic") |
+| 8 | Exchange | Default | 80, 443 | | `*.outlook.com`, `autodiscover.*.onmicrosoft.com` |
+| 9 | Exchange | Allow | 443 | | `*.protection.outlook.com` |
+| 10 | Exchange | Allow | 25 | | `*.mail.protection.outlook.com`, `*.mx.microsoft` |
+| 11 | Skype (Teams) | Optimize | | 3478, 3479, 3480, 3481 | IP ranges only, no host names |
+| 12 | Skype (Teams) | Allow | 80, 443 | 443 | `*.lync.com`, `*.teams.cloud.microsoft`, `*.teams.microsoft.com`, `teams.cloud.microsoft`, `teams.microsoft.com` |
+| 127 | Skype (Teams) | Default | 80, 443 | | `*.skype.com` |
+| 31 | SharePoint | Optimize | 80, 443 | 443 | `*.sharepoint.com` |
+| 32 | SharePoint | Default (not required) | 443 | | `storage.live.com` (note: OneDrive for Business supportability, telemetry, APIs, embedded links) |
+| 37 | SharePoint | Default | 80, 443 | | `*.sharepointonline.com`, `spoprod-a.akamaihd.net` |
+| 39 | SharePoint | Default | 80, 443 | | `*.svc.ms` |
+| 46 | Common | Allow | 80, 443 | | `*.officeapps.live.com`, `*.online.office.com`, `office.live.com` |
+| 47 | Common | Default | 80, 443 | 443 | `*.office.net` |
+| 56 | Common | Allow | 80, 443 | | 22 sign-in and directory hosts, among them `login.microsoftonline.com`, `login.microsoft.com`, `login.windows.net`, `*.auth.microsoft.com`, `*.msftidentity.com`, `graph.microsoft.com` |
+| 147 | Common | Default | 80, 443 | | `*.office.com`, `www.microsoft365.com` |
+| 184 | Common | Default | 443 | 443 | `*.cloud.microsoft` |
+| 193 | Common | Default | 443 | 443 | `*.static.microsoft`, `*.usercontent.microsoft` |
+| 50, 78 | Common | Default (not required) | 80, 443 | | `*.microsoft.com`, `*.msocdn.com`, `*.onmicrosoft.com` (note on 78: "Some Office 365 features require endpoints within these domains (including CDNs)") |
+| 125 | Common | Default | 80, 443 | | public CA CRL/OCSP hosts (`*.digicert.com`, `crl.globalsign.com`, ...) |
+
+UDP 443 appears on the Optimize/Allow web rows (1, 12, 31) and on 47, 184 and 193. That traffic is
+QUIC and is outside the visibility phase. The Teams media ports (id 11, UDP 3478 to 3481) are
+published only as IP ranges [S1].
+
+## 3. Observable evidence
+
+- **TLS SNI** on TCP 443 is the main evidence. The table above is the authoritative name set. The
+  web service defines `category` as "the connectivity category for the endpoint set" with the valid
+  values `Optimize`, `Allow` and `Default`, and says to follow the highest-priority category when an
+  address appears in several [S2]. The category is a routing priority, not a statement of how
+  specific a name is, so it is not used to set confidence here.
+- **ALPN**: Microsoft publishes no ALPN guidance. The registry values `h2` and `http/1.1` [R-IANA]
+  say nothing specific to Microsoft and are not evidence of the application.
+- **Ports 143/993/995/587 to `outlook.office365.com` and `smtp.office365.com`** (id 2): the detector
+  already identifies IMAP, POP3 and SMTP structurally (family `S`). Inside a CONNECT tunnel the
+  SMTP/IMAP greeting plus the proxy's CONNECT target gives Exchange Online client mail. SMTP is in
+  the visibility-phase profile; IMAP and POP3 are "next candidates" in the working plan.
+- **Certificate names**: not visible in TLS 1.3 [R-8446]. In TLS 1.2 the detector's certificate
+  watch could read them, but Microsoft publishes no certificate SAN list, so a SAN match would be
+  `UNVERIFIED`.
+- **DNS**: the published names are what a client resolves. The proxy sees the CONNECT host, not DNS.
+
+## 4. Encrypted-traffic caveats
+
+- **QUIC**: several rows allow UDP 443 [S1]. A client that moves to QUIC leaves the TCP path the
+  visibility phase observes.
+- **ECH**: Microsoft publishes nothing on ECH. If an outer ClientHello is ever seen, the catalog
+  rule already refuses to map it (PROTOCOLS.md v0.65).
+- **Shared infrastructure**: rows 50 and 78 list `*.microsoft.com` and `*.onmicrosoft.com` as
+  Microsoft 365 dependencies, but those wildcards also serve unrelated Microsoft products. `*.cloud.microsoft`
+  (184) carries several Microsoft 365 apps at once (see `microsoft-copilot.md`). `spoprod-a.akamaihd.net`
+  (37) is a host on a shared CDN domain.
+- **Tenant names**: `<tenant>.sharepoint.com` and `autodiscover.<tenant>.onmicrosoft.com` contain the
+  customer's tenant label. The application name may be logged; the tenant label is an opaque
+  identifier and must not be emitted as identity (AGENTS.md).
+
+## 5. Confidence and false-positive risks
+
+| Observable | Level | Limits |
+|---|---|---|
+| SNI under `sharepoint.com`, `outlook.office365.com`, `outlook.office.com`, `outlook.cloud.microsoft`, `teams.microsoft.com`, `teams.cloud.microsoft`, `lync.com` | **N3** | Vendor-published, product-specific. A client can still assert any SNI (domain fronting); the SNI is an offer. |
+| SNI under `office.com`, `office.net`, `officeapps.live.com`, `cloud.microsoft` | **N2** | Shared by several Microsoft 365 apps. This names the suite, not one app. |
+| `*.protection.outlook.com` | **N2** (Exchange Online Protection) | Not mailbox access. Today it falls under `outlook.com` and is named `outlook-web` (section 8). |
+| `*.microsoft.com`, `*.onmicrosoft.com`, `*.msocdn.com`, CA CRL/OCSP | **N1**, do not map | Shared with all of Microsoft and with public CAs. |
+| UDP 3478 to 3481 to published ranges (Teams media) | **N1**, later phase | IP ranges only. STUN on those ports is also used by unrelated WebRTC services. |
+
+Risk: `*.outlook.com` (row 8) covers both consumer Outlook.com and Exchange Online. Row 97 lists
+`login.live.com` and `account.live.com` as the *consumer* Outlook.com integration. Personal and
+corporate mail cannot be told apart by SNI alone. `UNVERIFIED`: no Microsoft source separates them
+by host name.
+
+## 6. Synthetic test vectors
+
+Built with `client_hello_with([...])` (server_name ext 0, ALPN ext 16), TCP 443 unless stated:
+
+| # | Input | Expected |
+|---|---|---|
+| P1 | SNI `contoso.sharepoint.com`, ALPN `h2` | `sharepoint-online`; the tenant label must not appear in evidence or reasons |
+| P2 | SNI `outlook.cloud.microsoft` | Exchange Online web (today: no mapping; see section 8) |
+| P3 | SNI `teams.cloud.microsoft` | `ms-teams` (today: no mapping) |
+| P4 | SNI `eur.protection.outlook.com` | Exchange Online Protection (today: `outlook-web`) |
+| P5 | SMTP greeting then `EHLO` through CONNECT to `smtp.office365.com:587` | family `smtp`; application only from the proxy's CONNECT target, never from the greeting text |
+| N1 | SNI `sharepoint.com.example.invalid` | no Microsoft application (label boundary) |
+| N2 | SNI `notsharepoint.com` | no Microsoft application |
+| N3 | `ech_outer()` ClientHello with outer SNI `outlook.cloud.microsoft` | no application (ECH outer rule) |
+| N4 | SNI `www.microsoft.com` | `ms-base` only, never a Microsoft 365 app |
+
+## 7. Sources
+
+- [S1] Microsoft 365 endpoints web service, worldwide instance:
+  `https://endpoints.office.com/endpoints/worldwide?clientrequestid=<uuid>` (JSON; ids, service areas,
+  categories, ports, URLs and notes quoted above), accessed 2026-11-18.
+- [S2] Microsoft Learn, "Microsoft 365 IP Address and URL web service":
+  `https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-ip-web-service?view=o365-worldwide`,
+  accessed 2026-11-18 (describes the service, instances, categories and versioning).
+- [S3] Version endpoint `https://endpoints.office.com/version/worldwide?clientrequestid=<uuid>` returned
+  `{"instance":"Worldwide","serviceArea":"O365Default","latest":"2026103000"}`, accessed 2026-11-18.
+- [R-8446] RFC 8446 section 2. [R-IANA] IANA ALPN Protocol IDs. (See README, shared facts.)
+
+## 8. Catalog delta and recommendation
+
+| Name (published) | Current pack | Proposed |
+|---|---|---|
+| `outlook.cloud.microsoft` (id 1) | unmapped (no `cloud.microsoft` suffix) | add, `outlook-web` |
+| `teams.cloud.microsoft` (id 12) | unmapped | add, `ms-teams` |
+| `lync.com` (id 12) | unmapped | add, `ms-teams` (Teams service area) |
+| `protection.outlook.com` (id 9, 10) | falls under `outlook.com` and is named `outlook-web` | add a longer suffix that names Exchange Online Protection (new id, or no app). Port 25 MX traffic is server-to-server, not webmail |
+| `sharepointonline.com`, `svc.ms` (ids 37, 39) | unmapped | add, `sharepoint-online` |
+| `microsoft365.com` (id 147) | unmapped | add, `ms-office365` |
+| `onmicrosoft.com`, `microsoft.com`, `msocdn.com` (50, 78) | `microsoft.com` is `ms-base` | keep as is: too broad to name Microsoft 365 |
+| `cloud.microsoft` (184) | unmapped | add as `ms-office365` (suite level, N2), so that the longer `outlook.`/`teams.`/`copilot.` entries win |
+
+Process note for the Engine lane: the web service is versioned and machine-readable [S2]. The catalog
+could record the data version it was built from (here `2026103000`) as its provenance, instead of
+the current generic "operator-owned-domain" basis.
