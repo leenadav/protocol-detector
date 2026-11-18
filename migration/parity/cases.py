@@ -2796,10 +2796,22 @@ def coverage_cases(existing):
     return cases
 
 
+def coap_profile_cases():
+    """F-ADV-1 (Lee, 2026-11-18): the CoAP profile vectors (protocol_fixtures.COAP_VALID and COAP_INVALID, the
+    random-payload reproducer among them), each unhinted and under the coap hint. Appended after every other case."""
+    from protocol_adapters import protocol_fixtures as F
+    cases = []
+    for name, data in [(n, d) for n, d in F.COAP_VALID] + [(n, d) for n, d, _, _ in F.COAP_INVALID]:
+        for hint in (None, "coap"):
+            cases.append({"id": "datagram/coap-profile/%s%s" % (name, "-hint" if hint else ""), "kind": "datagram", "label": "coap",
+                          "payload": data.hex(), "hint": hint, "config": {}})
+    return cases
+
+
 def generate(limit=None):
     cases = (stream_cases(limit=limit) + datagram_cases(limit=limit) + session_cases(limit=limit) + correlation_session_cases()
              + host_catalog_session_cases())
-    return cases if limit else cases + coverage_cases(cases)
+    return cases if limit else cases + coverage_cases(cases) + coap_profile_cases()
 
 
 def with_expectations(cases):

@@ -136,11 +136,20 @@ class ExpansionTests(unittest.TestCase):
                 inspector.inspect(value)
 
     def test_ambiguous_dns_coap_is_not_arbitrarily_identified(self):
+        from protocol_engine.parsers import ParseError
         from protocol_engine.wire import coap
-        ambiguous = bytearray(DNS)
-        ambiguous[:4] = b"\x41\x01\x81\x80"
-        ambiguous[6:8] = b"\x00\x01"
-        ambiguous += b"\x00" + struct.pack("!HHIH", 1, 1, 0, 4) + bytes(4)
+        # The earlier sample (token length 1) put the question count's low byte where CoAP reads its first
+        # option, option 0, which RFC 7252 reserves; since F-ADV-1 (2026-11-18) that is not CoAP.
+        reserved = bytearray(DNS)
+        reserved[:4] = b"\x41\x01\x81\x80"
+        reserved[6:8] = b"\x00\x01"
+        reserved += b"\x00" + struct.pack("!HHIH", 1, 1, 0, 4) + bytes(4)
+        with self.assertRaisesRegex(ParseError, "Reserved CoAP option number"):
+            coap(bytes(reserved), Config())
+        # Token length 8 covers the DNS counts; CoAP's options are then read from the question name.
+        label = b"k7zx5b4ctzkk6oam89o"
+        ambiguous = bytearray(b"\x48\x01\x81\x80" + struct.pack("!HHHH", 1, 1, 0, 0) + bytes([len(label)]) + label
+                              + b"\x03com\x00\x00\x01\x00\x01" + b"\x00" + struct.pack("!HHIH", 1, 1, 0, 4) + bytes(4))
         data = bytes(ambiguous)
         self.assertEqual(dns(data, Config()).application_protocol, "dns")
         self.assertEqual(coap(data, Config())[0], "coap")
@@ -238,6 +247,22 @@ class ExpansionTests(unittest.TestCase):
         empty = b"\x60\x00\x12\x34"
         self.assertEqual(inspector.inspect(empty).status, "unknown")
         self.assertEqual(inspector.inspect(empty, "coap").application_protocol, "coap")
+
+    def test_coap_profile_follows_rfc7252_codes_and_option_formats(self):
+        """F-ADV-1 (2026-11-18): random datagrams passed the CoAP framing about 0.2% of the time. Valid messages
+        stay identified; unregistered codes, reserved option numbers, option lengths outside their format and
+        repeated non-repeatable options do not, with or without the coap hint."""
+        from protocol_fixtures import COAP_INVALID, COAP_VALID
+        for name, data in COAP_VALID:
+            for hint in (None, "coap"):
+                result = DatagramInspector().inspect(data, hint)
+                self.assertEqual((name, result.application_protocol), (name, "coap"), result)
+        for name, data, status, reason in COAP_INVALID:
+            for hint in (None, "coap"):
+                result = DatagramInspector().inspect(data, hint)
+                self.assertEqual((name, result.status), (name, status), result)
+                self.assertIn(reason, result.reason, name)
+                self.assertIsNone(result.application_protocol, name)
 
     def test_syslog_structure_escapes_and_date(self):
         inspector = DatagramInspector()

@@ -12,6 +12,38 @@ _dhcp[236:240] = b"\x63\x82\x53\x63"
 DHCP = bytes(_dhcp) + b"\x35\x01\x01\xff"
 del _dhcp
 COAP = b"\x41\x01\x12\x34\xaa\xb7sensors"
+# CoAP profile vectors (F-ADV-1, 2026-11-18; RFC 7252, Observe RFC 7641, Block-wise RFC 7959). Valid messages:
+COAP_VALID = (
+    # CON GET coap://sensor.example:5683/sensors/temp?unit=c, Accept: text/plain (0)
+    ("get-uri", b"\x42\x01\x30\x39\x7a\x01" + b"\x3d\x01sensor.example" + b"\x42\x16\x33" + b"\x47sensors"
+     + b"\x04temp" + b"\x46unit=c" + b"\x21\x00"),
+    # ACK 2.05 Content, piggybacked: Content-Format application/json (50), Max-Age 60, ETag, payload
+    ("content-ack", b"\x62\x45\x30\x39\x7a\x01" + b"\x44\x0b\xad\xf0\x0d" + b"\x81\x32" + b"\x21\x3c" + b'\xff{"t":21}'),
+    # NON GET with Observe register (0) on /status
+    ("observe", b"\x51\x01\x00\x07\x99" + b"\x60" + b"\x56status"),
+    # CON 2.05 with Block2 (num 1, more, szx 2) and Size2 1024, payload
+    ("block2", b"\x41\x45\x10\x00\x05" + b"\xd1\x0a\x1a" + b"\x52\x04\x00" + b"\xff" + b"x" * 64),
+    # NON 4.04 Not Found with a diagnostic payload
+    ("not-found", b"\x50\x84\x00\x10" + b"\xffno such resource"),
+    # CON POST /ingest, Content-Format text/plain (0), payload
+    ("post", b"\x40\x02\x00\x2a" + b"\xb6ingest" + b"\x10" + b"\xffhello"),
+    # CON 5.03 Service Unavailable with Max-Age 30
+    ("unavailable", b"\x40\xa3\x00\x2b" + b"\xd1\x01\x1e" + b"\xffbusy"),
+    # CON GET with an elective option this profile does not constrain (65000) after Uri-Path
+    ("unknown-elective", b"\x40\x01\x00\x2c" + b"\xb1a" + b"\xe2\xfc\xd0\x01\x02"),
+)
+# Messages outside the profile: (name, bytes, status, reason fragment). The first is the F-ADV-1 reproducer, a
+# seeded random datagram the earlier profile identified as CoAP.
+COAP_INVALID = (
+    ("f-adv-1-random", bytes.fromhex("655085b84e0ec69b50164b0c53833c26"), "unknown", "Unsupported CoAP code profile"),
+    ("unregistered-code-2.06", b"\x40\x46\x00\x01\xffx", "unknown", "Unsupported CoAP code profile"),
+    ("reserved-option-0", b"\x40\x01\x00\x01\x01x", "malformed", "Reserved CoAP option number"),
+    ("reserved-option-128", b"\x40\x01\x00\x01\xd0\x73", "malformed", "Reserved CoAP option number"),
+    ("uri-port-too-long", b"\x40\x01\x00\x01\x73\x00\x16\x33", "malformed", "CoAP option length outside its format"),
+    ("if-none-match-with-value", b"\x40\x03\x00\x01\x51x", "malformed", "CoAP option length outside its format"),
+    ("uri-host-empty", b"\x40\x01\x00\x01\x30\xffx", "malformed", "CoAP option length outside its format"),
+    ("content-format-twice", b"\x40\x02\x00\x01\xc0\x00\xffx", "malformed", "Repeated non-repeatable CoAP option"),
+)
 SYSLOG = b'<34>1 2026-10-19T12:00:00Z host.example app 123 ID47 [demo@32473 key="value"] synthetic event'
 _startup = b"\x00\x03\x00\x00user\x00demo\x00database\x00example\x00\x00"
 POSTGRESQL = (len(_startup) + 4).to_bytes(4, "big") + _startup

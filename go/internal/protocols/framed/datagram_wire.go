@@ -223,6 +223,25 @@ func l2tpWith(data []byte, budget int) (*Datagram, error) {
 
 // --- CoAP (wire.coap) ------------------------------------------------------------------------------------------
 
+// coapCodes are RFC 7252 section 12.1.2's method and response codes; any other code is outside the profile
+// (F-ADV-1, Lee 2026-11-18). coapReservedOptions are section 12.2's reserved option numbers.
+var coapCodes = map[byte]bool{1: true, 2: true, 3: true, 4: true, 0x41: true, 0x42: true, 0x43: true, 0x44: true, 0x45: true,
+	0x80: true, 0x81: true, 0x82: true, 0x83: true, 0x84: true, 0x85: true, 0x86: true, 0x8c: true, 0x8d: true, 0x8f: true,
+	0xa0: true, 0xa1: true, 0xa2: true, 0xa3: true, 0xa4: true, 0xa5: true}
+var coapReservedOptions = map[int]bool{0: true, 128: true, 132: true, 136: true, 140: true}
+
+// coapOption is an option's format: RFC 7252 table 4 (section 5.10), Observe (RFC 7641), Block2, Block1 and
+// Size2 (RFC 7959). Other option numbers are not constrained.
+type coapOption struct {
+	min, max   int
+	repeatable bool
+}
+
+var coapOptions = map[int]coapOption{1: {0, 8, true}, 3: {1, 255, false}, 4: {1, 8, true}, 5: {0, 0, false}, 6: {0, 3, false},
+	7: {0, 2, false}, 8: {0, 255, true}, 11: {0, 255, true}, 12: {0, 2, false}, 14: {0, 4, false}, 15: {0, 255, true},
+	17: {0, 2, false}, 20: {0, 255, true}, 23: {0, 3, false}, 27: {0, 3, false}, 28: {0, 4, false}, 35: {1, 1034, false},
+	39: {1, 255, false}, 60: {0, 4, false}}
+
 func coapDatagram(data []byte, _ Limits) (*Datagram, error) {
 	if len(data) < 4 || data[0]>>6 != 1 || data[0]&15 > 8 {
 		return nil, parsing.Malformed("Invalid CoAP v1 header/token length")
@@ -235,8 +254,7 @@ func coapDatagram(data []byte, _ Limits) (*Datagram, error) {
 		}
 		return &Datagram{Protocol: "coap", Reason: "CoAP empty-message framing only; no peer authentication", Simple: true}, nil
 	}
-	class := code >> 5
-	if (class != 0 && class != 2 && class != 4 && class != 5) || (class == 0 && (code < 1 || code > 4)) {
+	if !coapCodes[code] {
 		return nil, parsing.Unsupported("Unsupported CoAP code profile")
 	}
 	if kind == 3 || (code < 32 && kind != 0 && kind != 1) {
@@ -262,7 +280,7 @@ func coapDatagram(data []byte, _ Limits) (*Datagram, error) {
 		}
 		return be(data[offset:offset+width]) + base, offset + width, nil
 	}
-	option, count := 0, 0
+	option, count, previous := 0, 0, -1
 	for pos < len(data) {
 		if data[pos] == 255 {
 			if pos+1 == len(data) {
@@ -287,6 +305,18 @@ func coapDatagram(data []byte, _ Limits) (*Datagram, error) {
 		if option > 65535 || next+size > len(data) {
 			return nil, parsing.Malformed("CoAP option outside message or number range")
 		}
+		if coapReservedOptions[option] {
+			return nil, parsing.Malformed("Reserved CoAP option number")
+		}
+		if rule, ok := coapOptions[option]; ok {
+			if size < rule.min || size > rule.max {
+				return nil, parsing.Malformed("CoAP option length outside its format")
+			}
+			if option == previous && !rule.repeatable {
+				return nil, parsing.Malformed("Repeated non-repeatable CoAP option")
+			}
+		}
+		previous = option
 		pos = next + size
 	}
 	return &Datagram{Protocol: "coap", Reason: "CoAP v1 token/options framing validated; option semantics and payload unverified", Simple: true}, nil

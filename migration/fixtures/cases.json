@@ -461059,7 +461059,7 @@
      "evidence": [],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "CoAP option outside message or number range",
+     "reason": "Reserved CoAP option number",
      "scope": "datagram",
      "status": "malformed",
      "transport": "udp"
@@ -489896,7 +489896,7 @@
      "evidence": [],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "CoAP option outside message or number range",
+     "reason": "CoAP option length outside its format",
      "scope": "datagram",
      "status": "malformed",
      "transport": "udp"
@@ -889782,7 +889782,7 @@
      "evidence": [],
      "hostname": null,
      "offered_alpn": [],
-     "reason": "CoAP option outside message or number range",
+     "reason": "CoAP option length outside its format",
      "scope": "datagram",
      "status": "malformed",
      "transport": "udp"
@@ -889793,6 +889793,1158 @@
    "kind": "datagram",
    "label": "ipfix",
    "payload": "474554202f20485454502f312e310d0a486f73743a20612e6578616d706c650d0a0d0a"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 47,
+     "bytes_received": 47,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/get-uri",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "420130397a013d0173656e736f722e6578616d706c654216334773656e736f72730474656d7046756e69743d632100"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 47,
+     "bytes_received": 47,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "coap",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/get-uri-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "420130397a013d0173656e736f722e6578616d706c654216334773656e736f72730474656d7046756e69743d632100"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/content-ack",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "624530397a01440badf00d8132213cff7b2274223a32317d"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 24,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "coap",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/content-ack-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "624530397a01440badf00d8132213cff7b2274223a32317d"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 13,
+     "bytes_received": 13,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/observe",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "51010007996056737461747573"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 13,
+     "bytes_received": 13,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "coap",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/observe-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "51010007996056737461747573"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 76,
+     "bytes_received": 76,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/block2",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4145100005d10a1a520400ff78787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 76,
+     "bytes_received": 76,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "coap",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/block2-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4145100005d10a1a520400ff78787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878787878"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 21,
+     "bytes_received": 21,
+     "candidates_selected": 2,
+     "events_emitted": 0,
+     "parser_calls": 2,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/not-found",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "50840010ff6e6f2073756368207265736f75726365"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 21,
+     "bytes_received": 21,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "coap",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/not-found-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "50840010ff6e6f2073756368207265736f75726365"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 18,
+     "bytes_received": 18,
+     "candidates_selected": 2,
+     "events_emitted": 0,
+     "parser_calls": 2,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/post",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4002002ab6696e6765737410ff68656c6c6f"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 18,
+     "bytes_received": 18,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "coap",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/post-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4002002ab6696e6765737410ff68656c6c6f"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/unavailable",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40a3002bd1011eff62757379"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 12,
+     "bytes_received": 12,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "coap",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/unavailable-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40a3002bd1011eff62757379"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 11,
+     "bytes_received": 11,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/unknown-elective",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4001002cb161e2fcd00102"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 11,
+     "bytes_received": 11,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": "coap",
+     "encryption": null,
+     "evidence": [
+      [
+       "application_protocol",
+       "coap",
+       "wire",
+       "structural"
+      ],
+      [
+       "candidate_hint",
+       "coap",
+       "caller",
+       "context"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP v1 token/options framing validated; option semantics and payload unverified",
+     "scope": "datagram",
+     "status": "identified",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/unknown-elective-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4001002cb161e2fcd00102"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Unsupported CoAP code profile",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/f-adv-1-random",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "655085b84e0ec69b50164b0c53833c26"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 16,
+     "bytes_received": 16,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Unsupported CoAP code profile",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/f-adv-1-random-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "655085b84e0ec69b50164b0c53833c26"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Unsupported CoAP code profile",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/unregistered-code-2.06",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40460001ff78"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Unsupported CoAP code profile",
+     "scope": "datagram",
+     "status": "unknown",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/unregistered-code-2.06-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40460001ff78"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Reserved CoAP option number",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/reserved-option-0",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "400100010178"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Reserved CoAP option number",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/reserved-option-0-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "400100010178"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Reserved CoAP option number",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/reserved-option-128",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40010001d073"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Reserved CoAP option number",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/reserved-option-128-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40010001d073"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP option length outside its format",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/uri-port-too-long",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4001000173001633"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP option length outside its format",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/uri-port-too-long-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4001000173001633"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP option length outside its format",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/if-none-match-with-value",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "400300015178"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 6,
+     "bytes_received": 6,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP option length outside its format",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/if-none-match-with-value-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "400300015178"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 7,
+     "bytes_received": 7,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP option length outside its format",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/uri-host-empty",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4001000130ff78"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 7,
+     "bytes_received": 7,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "CoAP option length outside its format",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/uri-host-empty-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "4001000130ff78"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Repeated non-repeatable CoAP option",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": null,
+   "id": "datagram/coap-profile/content-format-twice",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40020001c000ff78"
+  },
+  {
+   "config": {},
+   "expected": {
+    "metrics": {
+     "bytes_inspected": 8,
+     "bytes_received": 8,
+     "candidates_selected": 1,
+     "events_emitted": 0,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    },
+    "observation": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Repeated non-repeatable CoAP option",
+     "scope": "datagram",
+     "status": "malformed",
+     "transport": "udp"
+    }
+   },
+   "hint": "coap",
+   "id": "datagram/coap-profile/content-format-twice-hint",
+   "kind": "datagram",
+   "label": "coap",
+   "payload": "40020001c000ff78"
   }
  ],
  "reference": {

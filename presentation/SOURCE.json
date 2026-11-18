@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "58a47010ec3fb8eb02fad965ffb51f4f37a54a91",
+  "commit": "024163fd47bf6cc2decc34d6808e982390cf6ddf",
   "branch": "claude/go-migration",
-  "build_digest": "f8f66bf038d86590a09b43ec5c854432d5ea0bf7b18d35c648d77ad4f89723ac",
+  "build_digest": "cfb98bc34fd1e11cd666ea33585c6aceebba929ed3e5422a8d8e07108387b142",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -375,7 +375,7 @@
     {
       "path": "protocol_engine/wire.py",
       "component": "engine",
-      "sha256": "3aa07c20d0aa5c28679cce9da29ff8b917c88160dcb2b42a26ff8a7308ef5730"
+      "sha256": "2bbd90c3fab6904d0964dda4f391b9c31c560076a17403f03068085a53eb5353"
     },
     {
       "path": "protocol_engine/x509.py",
@@ -450,7 +450,7 @@
     {
       "path": "protocol_adapters/protocol_fixtures.py",
       "component": "adapters",
-      "sha256": "648f1731eace4d2fe8047657e787984697d9a670309d4dacfce71ef0b86ae368"
+      "sha256": "04223ffe97439102778262807fef5b077feee58d67fa598b0f4dfb23fa2bfe51"
     },
     {
       "path": "protocol_adapters/proxy_demo.py",
