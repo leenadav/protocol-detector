@@ -1,3 +1,3 @@
-# DRAFT: SSH allowed-signers file for verifying release tags (git -c gpg.ssh.allowedSignersFile=... tag -v).
+# SSH allowed-signers file for verifying release tags (git -c gpg.ssh.allowedSignersFile=... tag -v).
 # Format per line: <principal> namespaces="git" <key type> <public key>
 # Empty until Lee names the release owners and their signing keys (RELEASE-TAGS.md).

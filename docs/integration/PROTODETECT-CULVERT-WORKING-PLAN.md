@@ -347,14 +347,14 @@ None of these are needed for the lab; all are needed before proposing changes to
   - the allocation and lock budget amendment;
   - the single authoritative TLS fact source.
 - **Detector supply chain:**
-  - signed `go/v0.x.y` tags;
+  - signed `go/v0.x.y` tags (procedure adopted 2026-11-18: `docs/governance/RELEASE-TAGS.md`; none created);
   - govulncheck;
   - SBOM and provenance;
   - the standard-library-only test;
   - signed content with anti-rollback before any dynamic update.
-- **Governance:**
-  - CODEOWNERS;
-  - a semver and deprecation policy for the facade;
+- **Governance** (adopted by Lee on 2026-11-18; `docs/governance/`; no tag and no repository setting yet):
+  - CODEOWNERS (`.github/CODEOWNERS`);
+  - a semver and deprecation policy for the facade (`docs/governance/VERSIONING.md`);
   - a compatibility matrix (Culvert × detector × content);
   - coordinated security disclosure;
   - a release owner.
@@ -378,13 +378,13 @@ Publishing or merging is a separate decision.
 1. License: MIT or Apache-2.0 (before upstream).
 2. ~~Branch for the detector work~~ Decided (Lee, 2026-11-14): `claude/culvert-integration-prep` from `f239c65`; Culvert lab work on local `lab/protocol-detector`.
 3. ~~First product goal~~ Decided (Lee, 2026-11-17): **visibility only**. The detector identifies and the proxy logs; nothing blocks or restricts traffic. Restriction profiles and enforcement (L7, section 10) are out of scope for now. The lab's per-rule restriction (`lab/culvert/README.md`) stays a local demonstration and is not a deliverable.
-4. First profile families: **proposal for Lee, not approved** (2026-11-17). See "Proposal: first profile families for visibility only" below.
+4. ~~First profile families~~ Decided (Lee, 2026-11-18): the proposal below is **approved** for the visibility-only phase. TLS, HTTP/1, SSH and SMTP are identified with evidence, and every other recognised family is named without evidence and presented as unvalidated.
 5. Starting budgets and quality targets: accept section 9 as hypotheses, or adjust.
 6. ~~Lab review~~ Decided (Lee, 2026-11-14): no Codex rounds for Culvert lab changes for now; local tests and gates apply.
 
-### Proposal: first profile families for visibility only (decision 4, for Lee)
+### First profile families for visibility only (decision 4)
 
-Status: a proposal. Nothing here is decided; the public package's profile list is unchanged.
+Status: **approved by Lee on 2026-11-18** (proposed 2026-11-17).
 
 | Treatment | Families | Rationale |
 |---|---|---|

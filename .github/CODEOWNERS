@@ -1,6 +1,46 @@
-# Changes to parsing, capture handling and security policy require owner review.
-*                       @leenadav
-/protocol_engine/       @leenadav
-/.github/               @leenadav
-SECURITY.md             @leenadav
-THREAT-MODEL.md         @leenadav
+# Code owners (adopted by Lee, 2026-11-18; working plan section 12, docs/governance/README.md).
+#
+# GitHub reads this file from .github/, the repository root or docs/, in that order, and uses the first it
+# finds. It applies per branch: the file on a pull request's base branch decides the review requests. Every
+# owner needs explicit write access. Patterns follow gitignore rules without `!` or `[ ]`; the last matching
+# line wins.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# This file only requests reviews. Requiring code-owner review is a separate repository setting; see
+# docs/governance/README.md before turning it on while @leenadav is the only owner.
+#
+# Every line of the file this replaced is kept (the whole tree, /protocol_engine/, /.github/, SECURITY.md,
+# THREAT-MODEL.md). Add a second owner per area once Lee names one.
+
+# Default: everything.
+*                                   @leenadav
+
+# Python reference engine and adapters: detection behaviour (engine lane).
+/protocol_engine/                   @leenadav
+/protocol_adapters/                 @leenadav
+
+# Go module (engine lane), and its public package, which is the contract Culvert codes against: a change here
+# follows docs/governance/VERSIONING.md.
+/go/                                @leenadav
+/go/detector/                       @leenadav
+/go/go.mod                          @leenadav
+
+# Detection content and its integrity pin (migration/CONTENT-DIGEST.md): a content change is a release change.
+/migration/fixtures/content.json    @leenadav
+/go/internal/content/               @leenadav
+
+# CI, release controller and their policy locks (CI/CD lane).
+/.github/                           @leenadav
+/tools/check_workflow_policy.py     @leenadav
+/tools/workflows.lock.json          @leenadav
+/tools/go_ci.py                     @leenadav
+/tools/check_go_drift.py            @leenadav
+
+# Legal and security posture.
+/LICENSE                            @leenadav
+/NOTICE                             @leenadav
+/go/LICENSE                         @leenadav
+/go/NOTICE                          @leenadav
+/SECURITY.md                        @leenadav
+/THREAT-MODEL.md                    @leenadav
+/docs/governance/                   @leenadav

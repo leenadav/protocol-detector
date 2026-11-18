@@ -1,7 +1,7 @@
-# Versioning and deprecation policy for the Go module (draft)
+# Versioning and deprecation policy for the Go module
 
-Status: **draft for Lee** (working plan section 12, 2026-11-17). Nothing here is in force until Lee adopts it.
-No tag has been created.
+Status: **in force** (adopted by Lee, 2026-11-18; working plan section 12). No version has been tagged yet;
+the first tag follows `RELEASE-TAGS.md`.
 
 Sources: the Go modules reference (https://go.dev/ref/mod: "Versions", "Module paths", "Major version
 suffixes", "`retract` directive", "Deprecation"), "Publishing a module" (https://go.dev/doc/modules/publishing)
@@ -77,8 +77,7 @@ Each release adds one row (template):
 |---|---|---|---|---|---|---|
 | `go/v0.x.y` | `2026.11.x` | `…` | `1.27.0` | `1.27.4` | `…` | `lab/culvert/results/…` |
 
-## Open points for Lee
+## Points left open at adoption
 
-1. Adopt this policy, or change it.
-2. The v1 criteria above.
-3. Whether a new content pack needs a minor version (proposed) or may ship in a patch.
+1. The v1 criteria above are a proposal; v1.0.0 is Lee's decision when the time comes.
+2. A new content pack takes a minor version, as written above, unless Lee decides otherwise.

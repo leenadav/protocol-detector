@@ -1,7 +1,7 @@
-# Signed release tags for the Go module (draft procedure)
+# Signed release tags for the Go module
 
-Status: **draft for Lee** (working plan section 12, 2026-11-17). No tag has been created, and no repository
-setting has been changed. Tag names and version rules are in `VERSIONING.md`.
+Status: **in force** (adopted by Lee, 2026-11-18; working plan section 12). No tag has been created, and no
+repository setting has been changed. Tag names and version rules are in `VERSIONING.md`.
 
 Sources: GitHub, "Signing tags" and "Telling Git about your signing key"
 (https://docs.github.com/en/authentication/managing-commit-signature-verification); Go, "Publishing a module"
@@ -9,7 +9,8 @@ Sources: GitHub, "Signing tags" and "Telling Git about your signing key"
 
 ## Who and when
 
-- **Who:** Lee, or a release owner Lee names (section 12, "Governance: a release owner"). The tagger's signing key
+- **Who:** Lee, or a release owner Lee names (section 12, "Governance: a release owner"); until one is named,
+  Lee. The tagger's signing key
   is registered on their GitHub account as a *signing* key, so GitHub shows the tag as verified.
 - **When**, all of these:
   1. the commit is on `main` (the repository's release rule for `v*` tags, kept for `go/v*` by this procedure);
@@ -28,8 +29,8 @@ git config --global user.signingkey ~/.ssh/id_ed25519.pub
 ```
 
 GPG works the same way with `git config --global user.signingkey <key id>` and no `gpg.format` line. To check SSH
-signatures locally, Git needs an allowed-signers file; a draft `allowed_signers` file in this directory is to be
-filled with the release owners' public keys when they are named.
+signatures locally, Git needs an allowed-signers file; the `allowed_signers` file in this directory holds the
+release owners' public keys, and is empty until one is added.
 
 ## Creating a release (example: go/v0.1.0)
 
