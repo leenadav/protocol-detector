@@ -1175,6 +1175,14 @@ SCANNER_JOBS = {
 }
 
 
+def in_job(text, job, old, new):
+    """text with the first `old` inside job `job` (from its `  job:` line to the next job) replaced by `new`."""
+    start = text.index("\n  {}:\n".format(job)) + 1
+    end = re.search(r"^  [A-Za-z0-9_-]+:$", text[start + 1:], re.M)
+    stop = start + 1 + end.start() if end else len(text)
+    return text[:start] + text[start:stop].replace(old, new, 1) + text[stop:]
+
+
 def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
     """Rule 15: every scanner job starts with exactly its pinned steps, through its last scanner."""
     if path not in workflows:
@@ -2388,9 +2396,10 @@ def self_test():
                                    "    name: known vulnerabilities in the dev toolchain (pip-audit, govulncheck)\n    env:\n      LANG: C\n", 1),
         "scanner dropped": ci_full.replace("          ruff check --output-format github .\n", "", 1),
         # item 22: the Go-built scanners' build is pinned too
-        "writable modules": ci_full.replace('          GOFLAGS: "-mod=readonly"\n', '          GOFLAGS: "-mod=mod"\n', 1),
-        "workspace on": ci_full.replace('          GOWORK: "off"\n', '          GOWORK: "auto"\n', 1),
-        "old Go": ci_full.replace('          go-version: "1.27.4"\n', '          go-version: "1.24.11"\n', 1),
+        # (anchored in the scanner job: other jobs, such as the tests job's go-build, set up Go first)
+        "writable modules": in_job(ci_full, "static-analysis", '          GOFLAGS: "-mod=readonly"\n', '          GOFLAGS: "-mod=mod"\n'),
+        "workspace on": in_job(ci_full, "static-analysis", '          GOWORK: "off"\n', '          GOWORK: "auto"\n'),
+        "old Go": in_job(ci_full, "static-analysis", '          go-version: "1.27.4"\n', '          go-version: "1.24.11"\n'),
         "build in the checkout": ci_full.replace('          cd "$RUNNER_TEMP/scanners"\n', '          cd tools/scanners\n', 1),
         "govulncheck dropped": ci_full.replace('          "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/gitleaks" | tee -a "$GITHUB_STEP_SUMMARY"\n', "", 1),
         "repository code before govulncheck": ci_full.replace(
