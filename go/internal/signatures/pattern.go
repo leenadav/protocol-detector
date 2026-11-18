@@ -16,7 +16,8 @@ import (
 // on the engine for patterns without backreferences or lookaround, provided every atom denotes the same byte set
 // (Python's bytes semantics: ASCII-only IGNORECASE and \d \w \s, DOTALL). Constructs whose Python meaning RE2
 // cannot express exactly are refused with errNotPorted, never approximated: inline flags, atomic groups,
-// possessive repeats, repeat counts above RE2's 1000, and $ anywhere but at the end of the pattern.
+// possessive repeats and $ anywhere but at the end of the pattern. Repeat counts above RE2's 1000 are split into
+// pieces that denote the same language (writeRepeat), within a bound.
 
 type opcode int
 
@@ -755,6 +756,54 @@ func validGroupName(name string) bool {
 	return true
 }
 
+// RE2 caps a repeat count at 1000. A signature asks only whether a match exists, so a larger count is written as
+// consecutive pieces of at most 1000 that denote the same language: x{m,n} is x{1000}...x{r} (m in all) followed by
+// x{0,1000}...x{0,q} (n-m in all), and x{m,} ends in x*. The expansion is bounded (maxRepeatPieces pieces and
+// maxExpression bytes); a larger one is refused as not ported, as is anything RE2 then rejects as too large.
+const (
+	maxRepeatPieces = 64
+	maxExpression   = 1 << 20
+)
+
+func writeRepeat(b *strings.Builder, body string, min, max int) error {
+	if min <= 1000 && (max == maxRepeat || max <= 1000) {
+		b.WriteString(body)
+		if max == maxRepeat {
+			fmt.Fprintf(b, "{%d,}", min)
+		} else {
+			fmt.Fprintf(b, "{%d,%d}", min, max)
+		}
+		return nil
+	}
+	pieces := (min + 999) / 1000
+	if max != maxRepeat {
+		pieces += (max - min + 999) / 1000
+	} else {
+		pieces++
+	}
+	if pieces > maxRepeatPieces || b.Len()+pieces*(len(body)+12) > maxExpression {
+		return &notPortedError{"repeat count above 1000"}
+	}
+	for left := min; left > 0; left -= 1000 {
+		fmt.Fprintf(b, "%s{%d}", body, minInt(left, 1000))
+	}
+	if max == maxRepeat {
+		b.WriteString(body + "*")
+		return nil
+	}
+	for left := max - min; left > 0; left -= 1000 {
+		fmt.Fprintf(b, "%s{0,%d}", body, minInt(left, 1000))
+	}
+	return nil
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // parsePattern parses a whole pattern (re._parser.parse with flags 0).
 func parsePattern(pattern string) (tree []node, err error) {
 	defer func() {
@@ -997,19 +1046,14 @@ func compileTree(b *strings.Builder, tree []node, ignorecase, final bool) error 
 			}
 			b.WriteString(")")
 		case opRepeat:
-			if n.min > 1000 || (n.max != maxRepeat && n.max > 1000) {
-				return &notPortedError{"repeat count above 1000"}
-			}
-			b.WriteString("(?:")
-			if err := compileTree(b, n.body, ignorecase, false); err != nil {
+			var body strings.Builder
+			body.WriteString("(?:")
+			if err := compileTree(&body, n.body, ignorecase, false); err != nil {
 				return err
 			}
-			b.WriteString(")")
-			switch {
-			case n.max == maxRepeat:
-				fmt.Fprintf(b, "{%d,}", n.min)
-			default:
-				fmt.Fprintf(b, "{%d,%d}", n.min, n.max)
+			body.WriteString(")")
+			if err := writeRepeat(b, body.String(), n.min, n.max); err != nil {
+				return err
 			}
 		case opPossessive:
 			return &notPortedError{"possessive repeat"}

@@ -375,7 +375,7 @@ superseded by the rows below. Every command was run on the head named in the row
 | Fingerprints (JA3/JA4, JA3S/JA4S, HASSH, h2, QUIC/DTLS JA4) | implemented | `0b13a2b`: every committed case re-run with the option, 0 mismatches; `gaps.json` emptied. |
 | Certificates (TLS 1.2 leaf watch, RFC 5280 structural profile, validity risks) | implemented | `9e7432d`: 12,584 generated leaves, 2,500 flights and sessions with records, 0 mismatches. |
 | Heuristics | implemented | `17aa6f1`: 6,000 generated inputs, 0 mismatches; fixed a Unicode case-mapping bug (`ſtarttls` opened a STARTTLS boundary). |
-| Custom signatures (`retain_contexts`) | implemented | `957ff39`: parser contexts, unknown-payload signatures, App-ID metadata, `signature_set` digest, `replay --signatures`. Random 60-signature sets over all 6,584 cases (4 seeds) and over HTTP/2, DTLS, STUN, heuristics and QUIC corpora, 0 mismatches; 20,000 signature documents and 20,000 patterns (accept/reject, digest, every invalid-pattern message). RE2 cannot express possessive or atomic groups, inline flags, repeats above 1000 or a non-final `$`: such a pattern is refused as not ported, never guessed (3.2% of the random pattern corpus). |
+| Custom signatures (`retain_contexts`) | implemented | `957ff39`: parser contexts, unknown-payload signatures, App-ID metadata, `signature_set` digest, `replay --signatures`. Random 60-signature sets over all 6,584 cases (4 seeds) and over HTTP/2, DTLS, STUN, heuristics and QUIC corpora, 0 mismatches; 20,000 signature documents and 20,000 patterns (accept/reject, digest, every invalid-pattern message). RE2 cannot express possessive or atomic groups, inline flags or a non-final `$`: such a pattern is refused as not ported, never guessed (3.2% of the random pattern corpus, which then also counted repeats above 1000; those are answered by Go since 2026-11-18, see "Open after M7"). |
 | Key-log TLS decryption (M7) | implemented (engine) | `4111a70`: `go/internal/decrypt` (KeyProvider, TLS 1.3 and TLS 1.2 ECDHE AES-GCM record engines, TlsConnection states and reason codes) and `Inspector.FeedDecrypted`. 12,300 scripted connection traces, 2,200 key-provider traces and 3,000 `feed_decrypted` traces, 0 divergences; fixed shifted-phase provenance inside decrypted plaintext. `golang.org/x/crypto` added for ChaCha20-Poly1305 only (ADR 0002). The presentation glue (`decryptor.py`, `capture.py`, `live.py`) belongs to M8. |
 | Engine benchmark (M9, engine level) | measured | `bench_compare.py --iterations 200 --rounds 3` on `4111a70`: Go p50 faster by 8.0x (http_small), 36.4x (http_fragmented), 13.5x (tls_whole), 18.1x (tls_fragmented), 9.5x (http_after_identification); local CPU only, not SWG latency. Adapter-level benchmarks are not built yet. |
 
@@ -529,7 +529,16 @@ build tag `loadbench`); not part of `go-check`.
   is still declined (exit 64). The Python adapters' docstrings still name rollback among the requests Go
   declines; they are reference files and stay as they are.
 - Still answered by the reference: signature patterns outside RE2 (Go's regular-expression engine has no
-  backtracking constructs).
+  backtracking constructs): inline flags, atomic groups, possessive repeats and a `$` before the end of the
+  pattern. Repeat counts 1001..4096 (the signature rules' limit) are answered by Go since 2026-11-18: written as
+  pieces of at most 1000 that denote the same language, which suffices because a signature asks only whether a
+  match exists (`writeRepeat` in `go/internal/signatures/pattern.go`; `repeat_test.go` checks nine patterns at
+  19 counts each against CPython's `re`).
+- Reference finding, not changed (2026-11-18): a pattern with an inline `(?i)` compiles case-insensitively, but
+  its literal anchor, the prefilter `Condition.evaluate` checks first, is compared case-sensitively unless the
+  condition's own `case_insensitive` is set; so `(?i)hello world` never matches `HELLO WORLD`. Go refuses inline
+  flags as not ported, so the reference answers such a signature and the behaviour is the same on both
+  backends. Porting inline flags would have to keep this, together with CPython's flag errors and verbose mode.
 
 ## Open decisions and blockers
 
