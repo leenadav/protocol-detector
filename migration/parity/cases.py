@@ -2751,9 +2751,55 @@ def host_catalog_session_cases():
             for name, label, steps in scenarios]
 
 
+COVERAGE_SESSION_FAMILIES = ("http2", "mongodb", "mysql", "resp", "s7comm", "smtp", "ssh", "websocket")
+
+
+def coverage_cases(existing):
+    """Evidence classes nine families lacked (Lee, 2026-11-18; migration/parity/verify_families.py): a
+    session-level case for eight TCP families, a mutated stream for smtp and ssh, foreign datagrams for ipfix.
+    Built from each family's first committed positive case and appended after every other case, with their own
+    random generator, so no existing case changes."""
+    rng = random.Random(20261118)
+
+    def first(family, kind):
+        return next(case for case in existing if case["kind"] == kind and family_of(case["label"]) == family
+                    and case["id"].endswith(("/whole", "/positive")))
+
+    cases = []
+    for family in COVERAGE_SESSION_FAMILIES:
+        source = first(family, "stream")
+        data = b"".join(bytes.fromhex(chunk) for chunk in source["chunks"])
+        options = {"tcp_hint": source["hint"]} if source.get("hint") else {}
+        base = "session/coverage-" + family
+        cuts = sorted({len(data) // 3, 2 * len(data) // 3} - {0, len(data)})
+        flows = [("plain", _tcp_flow(CLIENT, SERVER, data))]
+        if cuts:
+            changed = bytearray(data[:cuts[0]])
+            changed[len(changed) // 2] ^= 0xff
+            conflict = _tcp_flow(CLIENT, SERVER, data, cuts)
+            conflict.insert(4, frame(CLIENT, SERVER, 1000, 9000, 24, bytes(changed)))
+            flows += [("split", _tcp_flow(CLIENT, SERVER, data, cuts)),
+                      ("reordered", _tcp_flow(CLIENT, SERVER, data, cuts, order=list(range(len(cuts) + 1))[::-1])),
+                      ("conflict", conflict)]
+        for name, flow in flows:
+            cases.append({"id": base + "/" + name, "kind": "session", "label": source["label"], "options": dict(options), "finish": "eof",
+                          "packets": [_packet(0.001 * i, f) for i, f in enumerate(flow)]})
+    for family in ("smtp", "ssh"):
+        source = first(family, "stream")
+        data = b"".join(bytes.fromhex(chunk) for chunk in source["chunks"])
+        cases.append({"id": "stream/coverage-" + family + "/mutated", "kind": "stream", "label": source["label"],
+                      "chunks": [_mutate(rng, data).hex()], "hint": source.get("hint"), "config": {}, "end": source.get("end")})
+    source = first("ipfix", "datagram")
+    for name, data in (("dns-query", DNS), ("zeros", bytes(64)), ("text", b"GET / HTTP/1.1\r\nHost: a.example\r\n\r\n")):
+        cases.append({"id": "datagram/coverage-ipfix/" + name, "kind": "datagram", "label": source["label"], "payload": data.hex(),
+                      "hint": None, "config": {}})
+    return cases
+
+
 def generate(limit=None):
-    return (stream_cases(limit=limit) + datagram_cases(limit=limit) + session_cases(limit=limit) + correlation_session_cases()
-            + host_catalog_session_cases())
+    cases = (stream_cases(limit=limit) + datagram_cases(limit=limit) + session_cases(limit=limit) + correlation_session_cases()
+             + host_catalog_session_cases())
+    return cases if limit else cases + coverage_cases(cases)
 
 
 def with_expectations(cases):
