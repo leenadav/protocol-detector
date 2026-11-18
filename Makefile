@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -240,6 +240,10 @@ parity-server: go-build
 # Adversarial identification: inputs built to deceive the detector, judged for honesty and compared between the engines
 adversarial: go-build
 	$(PYTHON) -B migration/parity/adversarial.py --binary go/bin/protodetect
+
+# Sustained throughput and memory with 10,000 and 100,000 concurrent flows (synthetic; reported only, never a gate)
+bench-load:
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go test -tags loadbench -run 'TestLoad_' -count=1 -p 1 -v -timeout 30m ./internal/bench/
 
 # Performance gates in Culvert's benchgate convention (migration/STATUS.md, performance budgets): allocations and retained
 # bytes per flow are gated, latency is reported

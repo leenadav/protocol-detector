@@ -480,6 +480,19 @@ Lee, 2026-11-18: a suite that tries to deceive the detector on purpose, assertin
 | F-ADV-1 | finding, documented, not fixed | CoAP's datagram profile ("CoAP v1 framing, token <=8; tiny messages require coap hint") accepts random datagrams without a hint: 4 of the suite's 2,000 noise payloads, about 0.17% of 20,000 random 8-512-byte datagrams. Reproducer: the UDP payload `655085b84e0ec69b50164b0c53833c26` is identified as coap, unhinted. The Python reference has the same weakness (both engines agree), so neither is changed: tightening the profile is a reference change for Lee. |
 | By design, not a finding | documented | A server name is an offer: a ClientHello naming a known service over an unrelated certificate is attributed to that service with basis `client_assertion` and activity `unobserved`, never authenticated identity (the certificate watch reads structure, not names). Lookalike and punycode names do not map. |
 
+## Throughput under load (2026-11-18)
+
+Lee, 2026-11-18: sustained throughput and memory with many concurrent flows, reported only (Culvert's benchgate
+convention: timing is never a hard gate on shared runners). `make bench-load` (`go/internal/bench/load_test.go`,
+build tag `loadbench`); not part of `go-check`.
+
+| item | state | evidence |
+|---|---|---|
+| Method | implemented | N TCP flows are opened (SYN, SYN-ACK, ACK), then fed in four interleaved rounds (round k sends the k-th payload segment of every flow), so all N are in flight at once and none closes before `Finish`. The flows cycle through four synthetic kinds: an HTTP request in two segments, a TLS ClientHello with a server name in three, an SSH banner and KEXINIT in two, and 512 bytes of unidentifiable noise in four (inspected up to its byte budget). Packets are built decoded, so frame decoding is excluded; tracking, reassembly, dispatch, inspection, App-ID and the session record are included, through `analyzer.Process` with compact tracking as the live path uses it. Throughput is payload bytes and segments over the process CPU time (`getrusage`) of the feeding rounds. Memory is the Go heap in use after a collection, sampled after the flows open, after each round and after `Finish`. With 4 workers the flows are sharded over four analyzers on four goroutines (one analyzer is single-threaded, ADR 0001). |
+| Results (one 4 vCPU Xeon 2.10 GHz container, go1.27.4) | measured | 10,000 flows: 17.5 MiB/s and 208k segments/s per core with one worker, 23.6 MiB/s and 279k segments/s per core with four (39 MiB/s on the wall clock); heap 33 MiB once the flows are open, 44 MiB peak (4.66 KB per concurrent flow), 2.1 MiB after `Finish`. 100,000 flows: 17.7 MiB/s and 210k segments/s per core with one worker, 19.6 MiB/s and 232k segments/s per core with four (37 MiB/s wall); heap 331 MiB open, 443 MiB peak (4.65 KB per flow), 16 MiB after `Finish` (map capacity). Memory grows linearly with concurrent flows and stays flat across rounds; throughput per core does not fall from 10k to 100k flows. Local CPU work on synthetic inputs, not SWG end-to-end latency. |
+| Found by it, fixed | fixed (`b2e2280`) | The first run gave 2.6 MiB/s per core: the tracker built the per-family evidence table on every data segment although only non-compact messages print it (29% of the profile, most of the garbage). It is now built only where it is printed; no output changes. |
+| Against the plan | noted | Plan §9 states 4 KiB retained per flow after the observation (gated by `bench-gate`: 0.6-1.4 KB per finished flow). A flow still in flight holds about 4.65 KB here (3.3 KB from the handshake alone, the rest reassembly and parser state); the plan states no in-flight budget. |
+
 ## Open after M7
 
 - Default backend: Go wherever its binary is installed, on every runtime path (Lee's decisions of 2026-11-15
