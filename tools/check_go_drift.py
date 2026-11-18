@@ -4,8 +4,15 @@ Supply-chain drift gate for the Go-built scanners (tools/scanners, items 21 and 
 gitleaks build once ran on a Go release past its support window, and govulncheck only
 reports vulnerabilities already known; this catches the drift itself:
 
-  - every `actions/setup-go` step in ci.yml installs the same `go-version`, and it equals
-    the `go` directive of tools/scanners/go.mod (the builds run with GOTOOLCHAIN=local);
+  - every `actions/setup-go` step in every workflow (ci.yml, nightly-fuzz.yml, ...) that names a
+    release installs the same `go-version`,
+    and it equals the compiler tools/scanners/go.mod builds with: its `toolchain` line, else its
+    `go` line (https://go.dev/doc/toolchain; the builds run with GOTOOLCHAIN=local). The only
+    other form allowed is the go-minimum job's `${{ steps.minimum.outputs.version }}`, the
+    engine's declared minimum, which tools/go_ci.py reads from go/go.mod and checks;
+  - when go/go.mod exists it builds with that same compiler, and in both go.mod files the `go`
+    line (the minimum) is not above the `toolchain` line. The minimum itself is meant to be an
+    older release, so it is tested by the go-minimum job, not held to the newest patch;
   - that release line is one of the two newest stable Go lines (Go supports two), and the
     pin is exactly its newest patch release: an older patch fails (patch releases carry the
     security fixes), and so does a patch the list does not hold (a typo or premature bump).
@@ -23,22 +30,43 @@ import sys
 import urllib.request
 from pathlib import Path
 
-CI = ".github/workflows/ci.yml"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from go_ci import module_versions  # noqa: E402  (one go.mod reading for the drift check and the Go gate)
+
+CI = ".github/workflows"
 GO_MOD = "tools/scanners/go.mod"
+ENGINE_MOD = "go/go.mod"
+MINIMUM_SETUP = "${{ steps.minimum.outputs.version }}"
 TOOLCHAINS = "https://proxy.golang.org/golang.org/toolchain/@v/list"
 LATEST = {"gitleaks": "https://proxy.golang.org/github.com/zricethezav/gitleaks/v8/@latest",
           "govulncheck": "https://proxy.golang.org/golang.org/x/vuln/@latest"}
 SUPPORTED_LINES = 2
 SETUP_GO_VERSION = re.compile(r'^\s+go-version:\s*"?([0-9][0-9.]*)"?\s*(#.*)?$')
-GO_DIRECTIVE = re.compile(r"^go\s+([0-9][0-9.]*)\s*$")
+ANY_GO_VERSION = re.compile(r"^\s+go-version(-file)?:\s*(.*?)\s*$")
 STABLE = re.compile(r"^v0\.0\.1-go(\d+)\.(\d+)\.(\d+)\.linux-amd64$")
 
 
-def pinned_versions(ci_text, gomod_text):
-    """(setup-go versions in ci.yml, the go.mod `go` directive or None)."""
-    versions = [match.group(1) for match in map(SETUP_GO_VERSION.match, ci_text.splitlines()) if match]
-    directive = next((match.group(1) for match in map(GO_DIRECTIVE.match, gomod_text.splitlines()) if match), None)
-    return versions, directive
+def pinned_versions(ci_text, gomod_text, engine_text=None):
+    """(setup-go release versions in ci.yml, the compiler tools/scanners/go.mod builds with or None, problems):
+    problems covers a setup-go version in any other form than a release or the go-minimum job's, a go.mod
+    whose minimum is above its toolchain, and a go/go.mod that builds with another compiler."""
+    versions, problems = [], []
+    for line in ci_text.splitlines():
+        match, other = SETUP_GO_VERSION.match(line), ANY_GO_VERSION.match(line)
+        if match:
+            versions.append(match.group(1))
+        elif other and other.group(2) != MINIMUM_SETUP:
+            problems.append("{}: setup-go `{}` is neither an exact pinned release nor the go-minimum job's {}".format(
+                CI, line.strip(), MINIMUM_SETUP))
+    _, build, found = module_versions(gomod_text, GO_MOD)
+    problems += found
+    if engine_text is not None:
+        _, engine, found = module_versions(engine_text, ENGINE_MOD)
+        problems += found
+        if engine is not None and build is not None and engine != build:
+            problems.append("{} builds with go {} but {} builds with go {}: one Go toolchain for the scanners and the "
+                            "engine".format(ENGINE_MOD, engine, GO_MOD, build))
+    return versions, build, problems
 
 
 def stable_releases(listing):
@@ -52,17 +80,17 @@ def stable_releases(listing):
     return lines
 
 
-def decide(versions, directive, lines):
+def decide(versions, directive, problems, lines):
     """The problems, empty when the pinned Go is consistent, supported and on its newest patch."""
-    problems = []
+    problems = list(problems)
     if not versions:
-        return ["{}: no actions/setup-go go-version found".format(CI)]
+        return problems + ["{}: no actions/setup-go go-version found".format(CI)]
     if len(set(versions)) != 1:
         problems.append("{}: setup-go steps install different Go versions: {}".format(CI, ", ".join(sorted(set(versions)))))
     pinned = versions[0]
     if directive != pinned:
-        problems.append("{}: `go {}` differs from the {} setup-go installs ({}); with GOTOOLCHAIN=local the build would "
-                        "fail or run on another release".format(GO_MOD, directive, CI, pinned))
+        problems.append("{}: builds with `go {}`, which differs from the {} setup-go installs ({}); with GOTOOLCHAIN=local "
+                        "the build would fail or run on another release".format(GO_MOD, directive, CI, pinned))
     parts = pinned.split(".")
     if len(parts) != 3 or not all(part.isdigit() for part in parts):
         return problems + ["{}: go-version {} is not an exact release (major.minor.patch)".format(CI, pinned)]
@@ -98,6 +126,17 @@ def self_test():
     gomod = "module m\n\ngo {}\n\ntool x\n"
     assert decide(*pinned_versions(ci.format("1.27.3") * 2, gomod.format("1.27.3")), lines) == []
     assert decide(*pinned_versions(ci.format("1.26.10"), gomod.format("1.26.10")), lines) == []
+    culvert = "module x\n\ngo 1.27.0\n\ntoolchain go1.27.3\n"
+    minimum_job = ci.format("1.27.3") + "          go-version: ${{ steps.minimum.outputs.version }}\n"
+    assert decide(*pinned_versions(ci.format("1.27.3"), "module m\n\ngo 1.27.0\n\ntoolchain go1.27.3\n"), lines) == []
+    assert decide(*pinned_versions(minimum_job, gomod.format("1.27.3"), culvert), lines) == []
+    assert decide(*pinned_versions(minimum_job, gomod.format("1.27.3"), gomod.format("1.27.3")), lines) == []
+    for label, (engine, expected) in {
+            "engine toolchain differs": (culvert.replace("go1.27.3", "go1.27.2"), "go/go.mod builds with go 1.27.2"),
+            "engine without toolchain differs": (gomod.format("1.27.0"), "go/go.mod builds with go 1.27.0"),
+            "engine minimum above its toolchain": (culvert.replace("go 1.27.0", "go 1.27.9"), "above its toolchain")}.items():
+        found = decide(*pinned_versions(minimum_job, gomod.format("1.27.3"), engine), lines)
+        assert any(expected in problem for problem in found), (label, found)
     for label, (ci_text, gomod_text, expected) in {
         "behind its patch": (ci.format("1.27.2"), gomod.format("1.27.2"), "behind its line's newest patch release 1.27.3"),
         "future patch": (ci.format("1.27.99"), gomod.format("1.27.99"), "not in the Go toolchain list"),
@@ -106,7 +145,14 @@ def self_test():
         "out of support": (ci.format("1.25.9"), gomod.format("1.25.9"), "past its support window"),
         "two setup-go versions": (ci.format("1.27.3") + ci.format("1.26.10"), gomod.format("1.27.3"), "different Go versions"),
         "go.mod differs": (ci.format("1.27.3"), gomod.format("1.26.10"), "differs from"),
-        "go.mod without directive": (ci.format("1.27.3"), "module m\n", "`go None` differs"),
+        "go.mod without directive": (ci.format("1.27.3"), "module m\n", "no single `go` directive"),
+        # the compiler is the `toolchain` line when there is one (go.dev/doc/toolchain)
+        "toolchain behind": (ci.format("1.27.3"), "module m\n\ngo 1.27.0\n\ntoolchain go1.27.2\n", "builds with `go 1.27.2`"),
+        "minimum above the toolchain": (ci.format("1.27.3"), "module m\n\ngo 1.27.5\n\ntoolchain go1.27.3\n", "above its toolchain"),
+        "unknown setup-go form": (ci.format("1.27.3") + "          go-version: ${{ matrix.go }}\n", gomod.format("1.27.3"),
+                                  "neither an exact pinned release"),
+        "setup-go reads go.mod": (ci.format("1.27.3") + "          go-version-file: go/go.mod\n", gomod.format("1.27.3"),
+                                  "neither an exact pinned release"),
         "not an exact release": (ci.format("1.27"), gomod.format("1.27"), "not an exact release"),
         "no setup-go": ("jobs: {}\n", gomod.format("1.27.3"), "no actions/setup-go"),
     }.items():
@@ -119,13 +165,16 @@ def self_test():
 
 
 def main():
-    versions, directive = pinned_versions(Path(CI).read_text(encoding="utf-8"), Path(GO_MOD).read_text(encoding="utf-8"))
+    engine = Path(ENGINE_MOD)
+    workflows = "".join(path.read_text(encoding="utf-8") for path in sorted(Path(CI).glob("*.yml")))
+    versions, directive, found = pinned_versions(workflows, Path(GO_MOD).read_text(encoding="utf-8"),
+                                                 engine.read_text(encoding="utf-8") if engine.is_file() else None)
     try:
         lines = stable_releases(fetch(TOOLCHAINS))
     except OSError as error:
         print("go drift: cannot read {}: {}".format(TOOLCHAINS, error))
         return 1
-    problems = decide(versions, directive, lines)
+    problems = decide(versions, directive, found, lines)
     for name, url in LATEST.items():
         try:
             print("go drift: newest {} release {} (information only)".format(name, json.loads(fetch(url))["Version"]))

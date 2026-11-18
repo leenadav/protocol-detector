@@ -38,7 +38,7 @@ jobs:
         python: ["3.9", "3.11", "3.13"]
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -113,7 +113,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -155,7 +155,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -229,7 +229,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -291,7 +291,7 @@ jobs:
       contents: read
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -351,7 +351,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -388,7 +388,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -448,7 +448,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -490,6 +490,9 @@ jobs:
           python -B tools/check_go_drift.py --self-test
           python -B tools/codeql_gate.py --self-test
           python -B tools/go_ci.py --self-test
+          python -B tools/go_fuzz_long.py --self-test
+          python -B tools/content_gate.py --self-test
+          python -B tools/merge_readiness.py --self-test
           python -B tools/check_release_exposure.py --ref HEAD | tee -a "$GITHUB_STEP_SUMMARY"
           python -B tools/check_workflow_policy.py --self-test
           python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"
@@ -506,7 +509,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -547,38 +550,22 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/gitleaks" | tee -a "$GITHUB_STEP_SUMMARY"
           "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/govulncheck" | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Audit the Go engine module against the Go vulnerability database (govulncheck)
-        # Migration M10: go/ is the product's Go engine and has module dependencies since M7
-        # (golang.org/x/crypto for ChaCha20-Poly1305, golang.org/x/sys indirectly; ADR 0002). Source mode
-        # follows the call graph of every package from go/go.mod and go/go.sum as committed: a known
-        # vulnerability reachable in a dependency or in the pinned standard library fails the job.
-        env:
-          GOPROXY: https://proxy.golang.org
-          GOSUMDB: sum.golang.org
-          GOTOOLCHAIN: local
-          GOFLAGS: "-mod=readonly"
-          GOWORK: "off"
-          GONOSUMDB: ""
-          GOPRIVATE: ""
-          GOINSECURE: ""
-        working-directory: go
-        run: |
-          "$RUNNER_TEMP/bin/govulncheck" ./... | tee -a "$GITHUB_STEP_SUMMARY"
 
   go-engine:
     # Migration M10: the Go engine's own gate on GitHub's runners, on the one Go toolchain the scanner
     # builds use (tools/check_go_drift.py keeps it the newest patch of a supported line; tools/go_ci.py
-    # refuses a go/go.mod that declares another). `make go-check` is gofmt, go vet, go test -race,
-    # the fuzz smoke targets, `make parity-go` (every committed fixture replayed through the Go
-    # engine and compared with the Python reference's answers), `make parity-analyze` and
-    # `make parity-decrypt` (the Go binary against the reference on generated captures and key logs). A commit without the migration tree has
-    # nothing to check and says so in the summary; one with part of it fails.
+    # refuses a go/go.mod that builds with another: its `toolchain` line, else its `go` line). `make
+    # go-check` is gofmt, go vet, go test -race, the fuzz smoke targets and `make parity-go` (every
+    # committed fixture replayed through the Go engine and compared with the Python reference's
+    # answers). A commit without the migration tree has nothing to check and says so in the summary;
+    # one with part of it fails. GOPROXY=off: the engine has no module dependency, so a target asking
+    # for any other Go fails instead of downloading it mid-job.
     name: Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -592,11 +579,9 @@ jobs:
         with:
           go-version: "1.27.4"
           cache: false
-      - name: Install the hash-pinned decryption extra (the Python reference of `make parity-decrypt` decrypts with it)
-        run: python -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt
       - name: Go engine gate (make go-check) and parity report floor
         env:
-          GOPROXY: https://proxy.golang.org
+          GOPROXY: "off"
           GOSUMDB: sum.golang.org
           GOTOOLCHAIN: local
           GOFLAGS: "-mod=readonly"
@@ -606,13 +591,92 @@ jobs:
           GOINSECURE: ""
         run: python -B tools/go_ci.py go --summary "$GITHUB_STEP_SUMMARY"
 
+  go-minimum:
+    # The Go engine on the oldest Go it declares it supports: go/go.mod's `go` line (the minimum,
+    # go.dev/doc/toolchain), installed explicitly by setup-go, as go-engine installs the compiler.
+    # `make go-check-minimum` is go vet and go test -race. tools/go_ci.py reads the release from
+    # go/go.mod (digits and dots only) and refuses an inexact minimum, a minimum above the toolchain,
+    # or any other installed Go; GOPROXY=off keeps the job on that one Go. With no minimum below
+    # the compiler, go-engine's run is the minimum run and this job says so.
+    name: Go engine on its declared minimum Go (vet, race tests)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Read the declared minimum Go
+        id: minimum
+        run: python -B tools/go_ci.py minimum-version --github-output "$GITHUB_OUTPUT"
+      - name: Set up the declared minimum Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ steps.minimum.outputs.version }}
+          cache: false
+      - name: Go engine on its minimum (make go-check-minimum)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: python -B tools/go_ci.py minimum --summary "$GITHUB_STEP_SUMMARY"
+
+  content-pack:
+    # A content release (a research batch) must hold together: the schema, the lock and every
+    # earlier release reproducing its published digest (`make content`), the exported pack and
+    # history (`make content-pack`), the Go copy identical to the export, no duplicate or
+    # conflicting application, alias, host or web-front id, and the Go backend recomputing the
+    # same digests (`go test ./internal/content/...`). tools/content_gate.py; on a commit without
+    # the Go content pack it says there is nothing to check and passes.
+    name: content pack (lock, release history, ids, Python/Go parity)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Content-pack gate
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: python -B tools/content_gate.py --summary "$GITHUB_STEP_SUMMARY"
+
   security-requirements:
     name: security requirements gate
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -632,10 +696,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: always()
-    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, go-engine, security-requirements]
+    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, go-engine, go-minimum, content-pack, security-requirements]
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
       - name: Every ci job must have succeeded
