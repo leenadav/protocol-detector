@@ -1,6 +1,7 @@
 # Merge readiness: `claude/go-migration` into `main` (documentation only)
 
-Written 2026-11-18 at branch head `baa07b9` against `origin/main` `b79e447`. Nothing here merges, rebases,
+Written 2026-11-18; refreshed at branch head `7dcabb7` against `origin/main` `b79e447` (unchanged since the first
+version). Nothing here merges, rebases,
 opens a pull request or changes history: whether and when to merge is Lee's decision (AGENTS.md), and the
 review of the frozen snapshots is Codex's. The draft pull-request text is `migration/PR-DRAFT.md`.
 
@@ -9,21 +10,24 @@ review of the frozen snapshots is Codex's. The draft pull-request text is `migra
 | | |
 |---|---|
 | Merge base | `c121ada` (main's merge of PR #19, the earlier state of this branch) |
-| This branch since the base | 67 commits, 194 files, about +413,000 / −3,300 lines (most of it the regenerated fixtures `migration/fixtures/cases.json`, `content.json`, `go/internal/content/history.json`) |
+| This branch since the base | 77 commits (at `7dcabb7`), now including `go/vendor`, 194+ files, about +413,000 / −3,300 lines (most of it the regenerated fixtures `migration/fixtures/cases.json`, `content.json`, `go/internal/content/history.json`) |
 | `main` since the base | 11 commits, 21 files, +605 / −135 lines: PR #25 (Codex's reference fix R1–R3, `e8830db`), PR #27 (README rewrite, `b7b98ac`), PR #28 (CI/CD lane: the Go minimum-version job, `c58fe65`), two Dependabot bumps (actions group, Playwright) |
 | Trial merge | `git merge-tree --write-tree HEAD origin/main` (no ref changed): **7 files conflict**, everything else merges cleanly |
 
-### Conflicts today (trial merge)
+### Conflicts today (trial merge at `7dcabb7`) and the resolution plan
 
-| File | Hunks | Nature | Owner | Resolution |
-|---|---|---|---|---|
-| `.github/workflows/ci.yml` | 1 | comment block of the Go job: this branch lists the extra gates (parity-analyze, parity-decrypt, ...), main adds the toolchain-line rule and `GOPROXY=off` | CI/CD lane | keep main's wording and add this branch's gate list; see the `GOPROXY=off` blocker below |
-| `Makefile` | 1 | `.PHONY` line: this branch's new targets vs main's `go-check go-check-minimum parity-go` | engine (Makefile) with CI/CD | union of both lists; check that main's `go-check-minimum` target body merged and runs |
-| `README.md` | 3 | main's README rewrite (PR #27, PR #25 counts) vs this branch's counts and rows | engine | take main's structure, then the current numbers (`tools/check_docs_counts.py` decides) |
-| `REVIEW-SCOPE.md` | 1 | test count: 856 here, 833 on main | engine | regenerate from the merged tree's count (856 plus main's new tests) |
-| `SSDLC.md` | 1 | the CI job table: main adds the "declared minimum Go" row | CI/CD lane | keep both rows |
-| `presentation/SOURCE.json` | — | generated build manifest | engine | regenerate: `python3 -B tools/build_manifest.py --write presentation/SOURCE.json` |
-| `tools/workflows.lock.json` | — | generated workflow lock | CI/CD lane | regenerate with the CI/CD lane's tool after `ci.yml` is resolved |
+The same 7 files as at `baa07b9`; the Makefile now has 2 hunks (the vendoring added the second). Resolve on one
+merge commit of `main` into this branch (no rebase, no force-push); the CI/CD lane resolves its own files.
+
+| # | File | Hunks | What each side changed | Owner | Resolution plan |
+|---|---|---|---|---|---|
+| 1 | `.github/workflows/ci.yml` | 1 | the Go job's comment block: here the list of extra gates (parity-analyze, parity-decrypt, ...); main the toolchain-line rule and `GOPROXY=off` | CI/CD lane | keep main's text, including `GOPROXY=off`, and add this branch's gate list. Add one step that runs `make go-vendor-check` where the modules can be reached (module cache or proxy); every other Go step stays offline |
+| 2 | `Makefile` | 2 | hunk 1, `.PHONY`: this branch's targets (go-build, parity-*, schema-go, bench-gate, adversarial, bench-load, go-vendor-check) vs main's `go-check go-check-minimum parity-go`. Hunk 2, the Go block: here the vendoring note and `go-vendor-check`; main the `toolchain`-line `GO_TOOLCHAIN`, `GO_MINIMUM` and `go-check-minimum` | engine, with the CI/CD lane | hunk 1: the union of both lists. Hunk 2: take main's `GO_TOOLCHAIN`/`GO_MINIMUM` definitions and `go-check-minimum`, add `GOFLAGS=-mod=vendor` to both of its commands (without it, it fails under `GOPROXY=off` just like the build), and keep `go-vendor-check` and its note. Then `make go-check`, `make go-check-minimum` and `make go-vendor-check` |
+| 3 | `README.md` | 3 | main's rewrite (PR #27) and PR #25's counts vs this branch's counts and table rows | engine | take main's structure, re-apply this branch's rows (Go default backend, content 2026.11.5), and let `tools/check_docs_counts.py` set the numbers on the merged tree |
+| 4 | `REVIEW-SCOPE.md` | 1 | test count: 856 here, 833 on main | engine | the merged tree's count: 856 plus main's new tests in `test_continuation.py` and `test_quic_isolation.py`, as `check_docs_counts.py` reports it |
+| 5 | `SSDLC.md` | 1 | the CI job table: main adds the "declared minimum Go" row | CI/CD lane | keep both rows; mention the vendor check in the Go engine row |
+| 6 | `presentation/SOURCE.json` | 2 | generated build manifest, both sides regenerated it | engine | do not hand-merge: `python3 -B tools/build_manifest.py --write presentation/SOURCE.json` on the merged tree |
+| 7 | `tools/workflows.lock.json` | 1 | generated workflow lock | CI/CD lane | regenerate with the CI/CD lane's tool after `ci.yml` is resolved |
 
 Auto-merged but needing attention: `protocol_adapters/analyze_pcap.py` and `protocol_engine/continuation.py`
 (main's R1–R3 reference fix), `tools/go_ci.py` and `tools/check_go_drift.py` (main's minimum-Go mode),
@@ -57,10 +61,10 @@ Auto-merged but needing attention: `protocol_adapters/analyze_pcap.py` and `prot
 4. **Dependabot bumps** (actions group, Playwright in `tools/ui-test-deps`) merge cleanly; `make pin-drift`
    and the workflow lock must agree after the merge.
 
-## What is done (branch head `baa07b9`)
+## What is done (branch head `7dcabb7`)
 
-- **Go engine at parity with the Python reference on every committed case**: `make parity-go` 7,404 of 7,404
-  (stream 5,253, datagram 1,122, session 1,029), records included, 0 gaps, 0 approved deltas.
+- **Go engine at parity with the Python reference on every committed case**: `make parity-go` 7,410 of 7,410
+  (stream 5,253, datagram 1,122, session 1,035), records included, 0 gaps, 0 approved deltas.
 - **All 88 families `parity-verified`**, computed from the evidence (`migration/parity/verify_families.py`:
   exact match, four case classes per transport, a session case for TCP families).
 - **Capture-level differentials**, all 0 differences: parity-analyze, parity-decrypt, parity-live,
@@ -71,8 +75,11 @@ Auto-merged but needing attention: `protocol_adapters/analyze_pcap.py` and `prot
 - **Fuzzing**: 25 Go fuzz targets in `make go-check`; the Python seeded fuzz in `make check`.
 - **Default backend**: Go wherever the binary is installed (adapters, presentation, launcher `24e410e`);
   `--backend python` / `PROTODETECT_BACKEND=python` keep the reference.
-- **Content**: release 2026.11.3 (research batch A, `baa07b9`); earlier releases reproduce their published
-  digests (C11, `d1b63ee`); `--content-version` rollback in both engines.
+- **Content**: release 2026.11.5 (research batches A `baa07b9`, B `6ab434d`, B2 `7dcabb7`; 540 applications, 438
+  host entries); earlier releases reproduce their published digests (C11, `d1b63ee`), so batches B and B2
+  re-pinned nothing; `--content-version` rollback in both engines.
+- **Dependencies**: `golang.org/x/crypto` vendored, every Go build and test offline with `-mod=vendor`
+  (`76e467a`, `d65d21a`); `make go-vendor-check` guards the vendor tree.
 - **Contracts C1–C18**: all `experimental` with Go evidence (migration/CONTRACTS.md); none is claimed
   complete.
 
@@ -80,8 +87,8 @@ Auto-merged but needing attention: `protocol_adapters/analyze_pcap.py` and `prot
 
 | Evidence | Status |
 |---|---|
-| Local gates at `baa07b9`: `make check` (856 Python tests, content, docs counts, manifest, coverage matrix, security requirements, policy lint, workflow policy) and `make go-check` (gofmt, vet, race tests, fuzz smoke, every differential above) | passed, this host |
-| Hosted CI on the branch | applies to the commits each run contains; check the run for `baa07b9` before merging |
+| Local gates at `7dcabb7`: `make check` (856 Python tests, content, docs counts, manifest, coverage matrix, security requirements, policy lint, workflow policy) and `make go-check` (gofmt, vet, race tests, fuzz smoke, every differential above) | passed, this host |
+| Hosted CI on the branch | applies to the commits each run contains; check the run for the merge candidate before merging |
 | Independent review (Codex) | **pending** for every snapshot listed below; a missing review, green CI or a merged PR is never approval (AGENTS.md) |
 | govulncheck | runs in CI (M10); not run locally by rule |
 
@@ -93,7 +100,9 @@ family verification, container signature descriptions, content-version rollback)
 suite, load benchmark), `024163f` (coverage cases: 88 of 88 parity-verified), `12e1ed0` (CoAP profile per RFC
 7252 in both engines, F-ADV-1), `d1b63ee` (C11: earlier releases keep their published digests), `baa07b9`
 (content 2026.11.3, research batch A), `aaa5a7e` (this document), `93cbf2a` (signature repeat counts 1001..4096 in
-Go; `36e2c5e`, the presentation suite rebuilds the Go binary first). The list is kept in migration/STATUS.md.
+Go; `36e2c5e`, the presentation suite rebuilds the Go binary first), `76e467a` and `d65d21a` (x/crypto vendored,
+`-mod=vendor`, `go-vendor-check`), `07b216e` (parity-server id canonicalization), `6ab434d` (content 2026.11.4,
+batch B), `7dcabb7` (content 2026.11.5, batch B2). The list is kept in migration/STATUS.md.
 
 ## Known open items
 
@@ -117,11 +126,13 @@ Go; `36e2c5e`, the presentation suite rebuilds the Go binary first). The list is
 ## Checklist before Lee decides
 
 - [ ] Codex results for the frozen snapshots above (issue #2), findings fixed in later SHAs and recorded.
-- [ ] The `GOPROXY=off` / `x/crypto` question settled between the lanes (vendor, proxy exception or cache).
+- [x] The `GOPROXY=off` / `x/crypto` question: vendored (Hermes, 2026-11-18; `76e467a`). Open on the CI/CD
+      side: `-mod=vendor` in main's `go-check-minimum` at merge time, and a CI step for `make go-vendor-check`.
 - [ ] Conflicts resolved as in the table, on a merge commit (no rebase, no force-push), CI/CD-owned files by
       the CI/CD lane.
 - [ ] After the merge: `cases.json` regenerated from the merged reference; `make check` and `make go-check`
       green; `make parity-go` 0 differences; docs counts and manifest regenerated.
-- [ ] Hosted CI green on the merge head, including main's `go-check-minimum` job.
+- [ ] Hosted CI green on the merge head, including main's `go-check-minimum` job (with `-mod=vendor`) and the
+      vendor check.
 - [ ] D09 and F-ADV-1 acknowledged as open (release, not merge, blockers).
 - [ ] Lee's decision to merge; no deployment follows from it.

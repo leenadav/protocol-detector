@@ -460,7 +460,10 @@ descriptions, content-version rollback), `6b280a6` (the adversarial suite and th
 profile held to RFC 7252 in both engines, F-ADV-1), `d1b63ee` (C11: earlier content releases reproduce the
 digests they were published with, both engines), `baa07b9` (content release 2026.11.3, research batch A), `aaa5a7e` (merge-readiness checklist and draft PR
 description, documentation only), `93cbf2a` (Go answers signature repeat counts 1001..4096; `36e2c5e` before it
-rebuilds the Go binary ahead of the presentation suite).
+rebuilds the Go binary ahead of the presentation suite), `76e467a` and `d65d21a` (x/crypto vendored, every Go
+command with `-mod=vendor`, `make go-vendor-check`), `07b216e` (parity-server canonicalizes a job id that begins
+with "L-"), `6ab434d` (content 2026.11.4, research batch B), `7dcabb7` (content 2026.11.5, batch B2: the
+DeepSeek, Perplexity, Mistral and xAI API hosts apart from the chat apps).
 
 C11 (2026-11-18, research finding): a rollback recomputed an earlier release's digest from the current
 application catalog, so every added application moved it (2026.11.1 published as `c4020c2437f3de8d`, rolled
@@ -550,6 +553,6 @@ build tag `loadbench`); not part of `go-check`.
 - Release thresholds: aligned with Culvert (above); allocations and retained bytes are gated, the p99 per flow
   with collection pauses (Lee, 2026-11-17) is reported.
 - Dedicated migration PR: to be opened only when authorized in the working session (plan §1); the branch `claude/go-migration` exists and is pushed. Merge readiness and the draft description: `migration/MERGE-READINESS.md`, `migration/PR-DRAFT.md` (2026-11-18: 7 files conflict with `main`).
-- Merge blocker between the lanes: `go/go.mod` requires `golang.org/x/crypto` (since `4111a70`) while main's Go
-  jobs run with `GOPROXY=off` (`c58fe65`); vendoring, a proxy exception or a CI module cache is a CI/CD and
-  engine decision for Codex.
+- `go/go.mod` requires `golang.org/x/crypto` (since `4111a70`) while main's Go jobs run with `GOPROXY=off`
+  (`c58fe65`): vendored on Hermes's decision (`76e467a`); at merge time main's `go-check-minimum` needs
+  `GOFLAGS=-mod=vendor` too, and CI a step for `make go-vendor-check` (MERGE-READINESS.md).
