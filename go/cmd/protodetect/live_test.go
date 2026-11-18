@@ -169,7 +169,8 @@ func TestLiveReplayOptionsAndRefusals(t *testing.T) {
 		{[]string{"--stdin", "--continuation", "99999999"}, 2},
 		{[]string{"--stdin", "--no-such-option"}, 2},
 		{[]string{"--stdin", "--check"}, 0},
-		{[]string{"--stdin", "--check", "--content-version", "1999.1.0"}, exitNotPorted},
+		{[]string{"--stdin", "--check", "--content-version", "1999.1.0"}, 2}, // an unknown release: argparse's refusal
+		{[]string{"--stdin", "--check", "--content-version", "2025.10.0"}, 0},  // an earlier release is served (rollback)
 		{[]string{"--stdin", "--check", "--policy", "/nonexistent/policy.json"}, 1},
 		{[]string{"--interface", "-evil", "--json"}, 1},
 		{[]string{"--interface", "lo0", "--filter", "", "--json"}, 1},
