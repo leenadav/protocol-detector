@@ -720,6 +720,10 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    under `GOPROXY=off` with no download (parity 7404/7404). CI cannot re-vendor to compare the
    vendor tree's contents without the network; `go mod vendor` and its go.sum check stay the
    engine lane's step, reviewed in its diff.
+   The go-engine job also installs the hash-pinned decryption extra
+   (presentation/requirements-decryption.lock.txt), which the engine lane's `make go-check`
+   needs for `make parity-decrypt`; claude/go-migration carries the same step, so this removes
+   one of the trial merge's ci.yml differences.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
