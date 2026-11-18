@@ -453,8 +453,10 @@ Contracts C14 and C15. Lee assigned M8 (frontend, API) to this session on 2026-1
 | Reference findings, not changed | open | (1) A worker line whose endpoint is not an `[address, port]` pair raises `IndexError` in `LiveManager.ingest` (only `ValueError` is caught): the reader thread ends, closes the pipe and marks the run `stopped` without an error, while the worker runs on until its next write fails or the lease stops it; Go keeps the line out of the log and reads on. (2) The reference's texts are interpreter-specific: Python 3.9 writes another error page and other base64 messages; the Go service follows 3.13 (the CI interpreter). (3) A worker that leaves a child holding its output pipe keeps the reference's job (and the live reader) waiting; the Go runner kills the job's process group. |
 
 Frozen milestone SHAs for Codex (available from Sunday): `61fd45a` (Milestone A), `fdb90e2` (Culvert-aligned
-performance gates), `68fb867` (the Go live control plane and dashboard service), and the head that records the
-launcher switch and Milestone B once its full gate passes.
+performance gates), `68fb867` (the Go live control plane and dashboard service), `58a4701` (the launcher switch
+and Milestone B), `9e51389` (one generation counter per capture, family verification, container signature
+descriptions, content-version rollback), and the head that adds the adversarial suite and the load benchmark
+once its full gate passes.
 
 ## Family verification (2026-11-18)
 
@@ -465,6 +467,18 @@ the gate computes rather than a label set by hand.
 |---|---|---|
 | Rule | implemented | `migration/parity/verify_families.py`, run by `make parity-go` (so in `make go-check`) right after the exact comparison: a family is `parity-verified` when the passing report claims it and every committed case labelled with it matched exactly (no gap, no approved delta), its cases of each transport's kind cover a positive message, a truncated prefix, a mutation and foreign bytes, and a TCP family has a matched session-level case. `--check` fails when a status in `migration/CAPABILITIES.json` differs from the computed one in either direction; `--write` records each family's case counts, classes and shortfall there. `test_verify_families.py`; planted regressions (one unmatched case, a listed gap) each fail the check. Capture-level differentials stay separate gates. |
 | Result | 79 of 88 `parity-verified` | Not verified, for lack of committed cases (the case generator and `cases.json` are reference fixtures): http2, mongodb, mysql, resp, s7comm, websocket (no session-level case); smtp and ssh (no session-level case, no mutated stream case); ipfix (no foreign-bytes datagram case). They stay `experimental` with the shortfall named in CAPABILITIES.json; adding those cases to the reference generator would promote them. |
+
+## Adversarial identification (2026-11-18)
+
+Lee, 2026-11-18: a suite that tries to deceive the detector on purpose, asserting that it either stays honest
+(the identification the bytes support, or an evidence-limited outcome) or is caught misidentifying.
+
+| item | state | evidence |
+|---|---|---|
+| Suite | implemented | `migration/parity/adversarial.py` (`make adversarial`, in `go-check`): 41 built cases in five kinds and 4,000 seeded noise payloads. **mimic**: a request line over binary, a request line alone, an SSH banner prefix, a TLS record header over noise, a handshake type without a ClientHello, zeros, a DNS-over-TCP length over noise, an SMTP-shaped greeting over binary, a response line from the client, a PROXY v1 header before TLS, DNS and QUIC headers over noise. **prefix**: HTTP then TLS, a stray byte before TLS or HTTP, an SSH banner then HTTP, TLS then HTTP. **sni**: a known service's name over an unrelated certificate, a lookalike suffix, a trailing dot, a punycode lookalike, upper case. **port**: SSH on 443, TLS on 80, HTTP on 22, noise on 443/22/445 and UDP 53/443/5004/123, DNS on UDP 443. **fragment**: a ClientHello and a request one byte at a time, a record header split, a handshake across two records, reordered segments, overlaps that rewrite retained bytes. Each case states the outcomes an honest detector may give; a session must also keep a server name a client assertion. A misidentification must be listed as a finding (an unlisted one fails, a listed one that no longer reproduces fails). The Go backend answers every case through `protodetect replay` and must match the reference exactly: 4,041 of 4,041. A planted unlisted finding fails the suite. |
+| Result | 4,037 honest, 1 finding | Every built case is honest in both engines. Where the bytes do support a family (a request line before TLS, an SSH banner before HTTP, TLS on port 80), that family is reported and nothing about the later bytes is claimed, as initial-message inspection specifies; a stray byte before TLS, a PROXY header, noise on well-known ports and every overlap that rewrites retained bytes end evidence-limited; ports never establish identity. |
+| F-ADV-1 | finding, documented, not fixed | CoAP's datagram profile ("CoAP v1 framing, token <=8; tiny messages require coap hint") accepts random datagrams without a hint: 4 of the suite's 2,000 noise payloads, about 0.17% of 20,000 random 8-512-byte datagrams. Reproducer: the UDP payload `655085b84e0ec69b50164b0c53833c26` is identified as coap, unhinted. The Python reference has the same weakness (both engines agree), so neither is changed: tightening the profile is a reference change for Lee. |
+| By design, not a finding | documented | A server name is an offer: a ClientHello naming a known service over an unrelated certificate is attributed to that service with basis `client_assertion` and activity `unobserved`, never authenticated identity (the certificate watch reads structure, not names). Lookalike and punycode names do not map. |
 
 ## Open after M7
 

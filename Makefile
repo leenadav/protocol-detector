@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -201,6 +201,7 @@ go-check:
 	$(MAKE) schema-go
 	$(MAKE) parity-control
 	$(MAKE) parity-server
+	$(MAKE) adversarial
 	$(MAKE) bench-gate
 
 # Migration M8: the Go command-line binary (static, no cgo); go/bin is not tracked
@@ -235,6 +236,10 @@ parity-control: go-build
 # generated capture: nothing is captured; the reference's decryption cases need the cryptography extra)
 parity-server: go-build
 	$(PYTHON) -B migration/parity/server_diff.py --binary go/bin/protodetect --count 12 --seed 1
+
+# Adversarial identification: inputs built to deceive the detector, judged for honesty and compared between the engines
+adversarial: go-build
+	$(PYTHON) -B migration/parity/adversarial.py --binary go/bin/protodetect
 
 # Performance gates in Culvert's benchgate convention (migration/STATUS.md, performance budgets): allocations and retained
 # bytes per flow are gated, latency is reported
