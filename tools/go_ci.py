@@ -38,8 +38,11 @@ Decisions, checked in this order:
   equal to the installed `go version`, with a `go-check-minimum` Makefile target;
 - the Makefile lacks the mode's target, or the oracle tool is missing: failure;
 - otherwise the target runs, and its exit status is this tool's.
-The Go jobs also set GOPROXY=off: the engine has no module dependency, so any toolchain or module
-download a target would trigger fails instead of fetching a second Go mid-job.
+The Go jobs also set GOPROXY=off, so no toolchain or module is downloaded mid-job. A module with
+dependencies must therefore vendor them (go/vendor/modules.txt, written by `go mod vendor`): a
+go/go.mod with a `require` line and no vendor tree fails, and with one the targets run with
+GOFLAGS=-mod=vendor in place of the job's -mod=readonly (go.dev/ref/mod#vendoring; the go command
+then checks vendor/modules.txt against go.mod and reads nothing from the module cache or network).
 Standard library only; Python 3.9 syntax.
 """
 import argparse
@@ -57,6 +60,8 @@ SCANNER_MOD = Path("tools/scanners/go.mod")
 FIXTURES = Path("migration/fixtures/cases.json")
 COMPARE = Path("migration/parity/compare.py")
 REPORT = Path("migration/parity/go-report.json")
+VENDOR = Path("go/vendor/modules.txt")
+REQUIRE = re.compile(r"^require\b", re.M)
 DIRECTIVE = re.compile(r"^go\s+(\d+\.\d+(?:\.\d+)?)\s*$", re.M)
 GO_VERSION = re.compile(r"\bgo version go(\d+\.\d+(?:\.\d+)?)\s")
 TOOLCHAIN_LINE = re.compile(r"^toolchain\b.*$", re.M)
@@ -118,7 +123,7 @@ def decide(mode, tree):
         return ("fail", problems) if problems else ("run", [])
     minimum, build, found = module_versions(module, GO_MOD)
     _, pinned, scanner_found = module_versions(tree.get("scanner_mod"), SCANNER_MOD)
-    problems += found + scanner_found
+    problems += found + scanner_found + vendor_problems(tree)
     if mode == "minimum":
         if build is not None and minimum == build and not problems:
             return ("same", [])
@@ -139,6 +144,33 @@ def decide(mode, tree):
     if not target.search(tree.get("makefile") or ""):
         problems.append("Makefile has no `{}` target".format("go-check-minimum" if mode == "minimum" else "go-check"))
     return ("fail", problems) if problems else ("run", [])
+
+
+def vendor_problems(tree):
+    """A go/go.mod that requires modules must vendor them: the Go jobs run with GOPROXY=off."""
+    if REQUIRE.search(tree.get("go_mod") or "") and not tree.get("vendored"):
+        return ["{} requires modules but {} is missing: the Go jobs run with GOPROXY=off and cannot download them "
+                "(run `go mod vendor` in go/ and commit go/vendor)".format(GO_MOD, VENDOR)]
+    return []
+
+
+def go_env(vendored, base=None):
+    """The environment for a Go target: the job's own, with GOFLAGS=-mod=vendor when go/vendor is committed."""
+    env = dict(os.environ if base is None else base)
+    if vendored:
+        env["GOFLAGS"] = "-mod=vendor"
+    return env
+
+
+def toolchain_problems():
+    """(tree, problems) for a job that needs only the Go module and the pinned compiler (nightly fuzzing, the content
+    gate): go mode's checks without the parity files and the Makefile target, which those jobs do not run. tree is
+    None when there is no go/go.mod."""
+    tree = survey("go")
+    if tree.get("go_mod") is None:
+        return None, []
+    action, problems = decide("go", dict(tree, fixtures=True, compare=True, makefile="go-check:\n"))
+    return tree, problems if action == "fail" else []
 
 
 def minimum_version(tree):
@@ -174,7 +206,8 @@ def go_version():
 
 def survey(mode):
     tree = {"go_mod": read(GO_MOD), "scanner_mod": read(SCANNER_MOD), "makefile": read("Makefile"),
-            "go_sources": tracked_go_sources(), "fixtures": FIXTURES.is_file(), "compare": COMPARE.is_file()}
+            "go_sources": tracked_go_sources(), "fixtures": FIXTURES.is_file(), "compare": COMPARE.is_file(),
+            "vendored": VENDOR.is_file()}
     if mode in ("go", "minimum") and tree["go_mod"] is not None:
         tree["go_version"] = go_version()
     return tree
@@ -287,8 +320,9 @@ def run(mode, summary):
         command = ["make", "go-check-minimum"]
     else:
         command = [sys.executable, "-B", str(COMPARE), "--backend", "python", "--cases", str(FIXTURES)]
-    code = subprocess.run(command, check=False).returncode  # noqa: S603
-    lines, problems = [title, "", "- `{}`: exit {}".format(" ".join(command), code)], []
+    code = subprocess.run(command, check=False, env=go_env(VENDOR.is_file())).returncode  # noqa: S603
+    lines, problems = [title, "", "- `{}`: exit {}{}".format(" ".join(command), code,
+                                                              " (GOFLAGS=-mod=vendor)" if VENDOR.is_file() else "")], []
     if mode == "go":
         report_lines, problems = parity_lines()
         lines += report_lines
@@ -305,6 +339,11 @@ def self_test():
     assert decide("go", empty) == ("skip", [])
     assert decide("oracle", empty) == ("skip", [])
     assert decide("go", full) == ("run", [])
+    crypto = "module x\n\ngo 1.27.4\n\nrequire golang.org/x/crypto v0.59.0\n"
+    assert decide("go", dict(full, go_mod=crypto, vendored=True)) == ("run", [])
+    assert any("go/vendor" in problem for problem in decide("minimum", dict(full, go_mod=crypto))[1])
+    assert go_env(True, {"GOFLAGS": "-mod=readonly", "GOPROXY": "off"}) == {"GOFLAGS": "-mod=vendor", "GOPROXY": "off"}
+    assert go_env(False, {"GOFLAGS": "-mod=readonly"}) == {"GOFLAGS": "-mod=readonly"}
     culvert = "module x\n\ngo 1.27.0\n\ntoolchain go1.27.4\n"
     culvert_tree = dict(full, go_mod=culvert, makefile="go-check:\n\tgo test\ngo-check-minimum:\n\tgo vet\n")
     assert decide("go", culvert_tree) == ("run", [])                   # toolchain present: it is the build compiler
@@ -356,6 +395,8 @@ def self_test():
         "toolchain not a release": (dict(full, go_mod="module x\n\ngo 1.27.0\n\ntoolchain default\n"), "does not name one"),
         "scanner minimum above its toolchain": (dict(full, scanner_mod="module m\n\ngo 1.27.5\n\ntoolchain go1.27.4\n"),
                                                 "tools/scanners/go.mod states go 1.27.5 above"),
+        # GOPROXY=off: a dependency must be vendored (the engine lane's golang.org/x/crypto)
+        "dependency not vendored": (dict(full, go_mod=crypto), "go/vendor/modules.txt is missing"),
     }
     for label, (tree, expected) in cases.items():
         action, problems = decide("go", tree)

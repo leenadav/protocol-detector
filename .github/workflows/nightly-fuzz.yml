@@ -1,5 +1,10 @@
 # Extended seeded fuzzing beyond the unit-test budget. Findings are regressions in
 # bounded parsing (crash, unbounded work, status outside the documented set).
+# Two jobs: the Python mutation fuzz of every fixture, and every Go fuzz target for minutes
+# instead of the per-push gate's seconds (tools/go_fuzz_long.py; failing inputs are uploaded).
+# GitHub runs `schedule` only from the default branch's copy of this file, so a change here
+# takes effect nightly once it is on main; before that, run it with workflow_dispatch on
+# the branch (the file already exists on main, so dispatch can target any ref).
 name: nightly-fuzz
 
 on:
@@ -10,6 +15,9 @@ on:
       iterations:
         description: mutations per fixture
         default: "20000"
+      go_budget:
+        description: minutes of Go fuzzing, split across every fuzz target (1-100)
+        default: "80"
 
 permissions:
   contents: read
@@ -53,3 +61,54 @@ jobs:
             tail -n 5 fuzz.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the fuzz log (seed and failing fixture)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: python-fuzz-log
+          path: fuzz.txt
+          if-no-files-found: ignore
+          retention-days: 14
+
+  go-fuzz:
+    name: extended Go fuzz (every fuzz target)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 130
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Fuzz every Go fuzz target
+        # The ci Go jobs' environment: no download of any module or toolchain (dependencies are
+        # vendored, go_ci.go_env sets -mod=vendor then), on exactly the pinned compiler.
+        env:
+          BUDGET: ${{ github.event.inputs.go_budget || '80' }}
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: python -B tools/go_fuzz_long.py --budget-minutes "$BUDGET" --summary "$GITHUB_STEP_SUMMARY" --out go-fuzz-crashers
+      - name: Upload the failing inputs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: go-fuzz-crashers
+          path: go-fuzz-crashers/
+          if-no-files-found: ignore
+          retention-days: 14

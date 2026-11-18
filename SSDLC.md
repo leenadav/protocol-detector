@@ -94,7 +94,12 @@ request:
 | ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds |
 | ci | `Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)` | `tools/go_ci.py go`: on the pinned Go 1.27.4, which must be the compiler go/go.mod builds with (its `toolchain` line, else its `go` line), `make go-check` (gofmt, `go vet`, `go test -race`, fuzz smoke, `make parity-go`) and a floor under the parity report; nothing to check on a commit without the migration tree, failure on one with part of it; `GOPROXY=off`, so no Go is downloaded mid-job |
 | ci | `Go engine on its declared minimum Go (vet, race tests)` | `tools/go_ci.py minimum`: on exactly go/go.mod's `go` line (the declared minimum), installed by setup-go, `make go-check-minimum` (`go vet`, `go test -race`); a minimum equal to the compiler is go-engine's run and passes as such (item 28) |
+| ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack`, the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...`; nothing to check without the Go content pack (item 30) |
 | ci | `security requirements gate` | every SR row names an existing test |
+
+Not required checks, by design: `nightly-fuzz` (the Python mutation fuzz and every Go fuzz target
+for minutes, item 29) and `merge-readiness` (a daily report-only trial merge of claude/go-migration
+into main, item 31) are scheduled and never run on a pull request.
 
 Do not mark the `supply-chain-drift` jobs required: that workflow is path
 filtered and scheduled, so it does not run on most pull requests and a
@@ -103,7 +108,7 @@ review items (a moved tag, a vanished release, a changed index artifact)
 to be handled on the next working day, never by re-pinning blindly.
 
 Scheduled workflows (the weekly `ci` and `codeql` re-runs, the nightly fuzz,
-`supply-chain-drift`) and Dependabot read their configuration from the
+`supply-chain-drift`, `merge-readiness`) and Dependabot read their configuration from the
 default branch only, so a schedule or `dependabot.yml` change takes effect
 once it is merged to `main`. On a feature branch, `workflow_dispatch` and
 the push/pull-request paths of `supply-chain-drift` are the only way to
@@ -671,6 +676,50 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      with real toolchains and `GOPROXY=off`: on `main` go-engine passes and go-minimum reports
      that there is no separate minimum; on the Culvert tree with this change and its Makefile
      split, go-engine passes on 1.27.4 and go-minimum on 1.27.0, and each refuses the other's Go.
+29. Nightly long fuzzing, Python and Go (Lee via Hermes, 2026-11-18). `nightly-fuzz.yml` keeps its
+   Python job (`tools/fuzz_fixtures.py`, 20000 mutations per fixture; on failure the log with the
+   seed is uploaded) and gains `go-fuzz`: `tools/go_fuzz_long.py` finds every
+   `func FuzzXxx(*testing.F)` under go/ (vendor/ and testdata/ excluded), splits the budget
+   (default 80 minutes, dispatch input 1 to 100) evenly, at least a minute per target, runs every
+   target even after one fails, and copies each new failing input `go test` writes to
+   testdata/fuzz/ into the uploaded `go-fuzz-crashers` artifact (14 days). Same Go environment as
+   the ci Go jobs (pinned 1.27.4, `GOPROXY=off`, vendor aware). `contents: read`, harden-runner,
+   no credential kept, timeouts 60 and 130 minutes. The schedule runs from main's copy only; the
+   file exists on main, so `workflow_dispatch` runs the branch's version before the merge.
+30. Content-pack gate for research batches (`content-pack` ci job, in the gate's needs;
+   `tools/content_gate.py`). A content release is checked five ways: `make content` (schema,
+   lock, every earlier release reproducing its published digest, the engine's C11 fix
+   `d1b63ee`), `make content-pack` (exported pack and history), go/internal/content/pack.json
+   identical to migration/fixtures/content.json, a duplicate and conflict scan (no repeated JSON
+   key; unique application names and aliases, no alias naming an application; host entries
+   unique, naming catalog applications, each domain and web front claimed once; app_domains,
+   suffixes and web_fronts exactly as the entries state; protocol names to catalog
+   applications; history keyed by its own versions; history, pack and lock agree on the current
+   release), and Python/Go parity (`go test ./internal/content/...`: the Go backend recomputes
+   every component and release digest of the same pack and history). Measured on
+   claude/go-migration `cb6707f`: all five pass; changing one earlier release's digest in
+   history.json fails both `make content-pack` and the Go tests. On main, without the Go content
+   pack, it says so and passes; a partial pack fails.
+31. Daily merge-readiness report (`merge-readiness.yml`, `tools/merge_readiness.py`): a trial
+   merge of claude/go-migration into main with `git merge-tree --write-tree` (no working tree,
+   index or ref is touched; the self-test checks that), reported with both commits, the merge
+   base, ahead and behind counts and either clean or every conflicting file. Report only: the
+   job holds `contents: read`, keeps no credential and never pushes, comments or opens anything;
+   a conflict is a warning annotation, not a red run, and only an error (a missing branch, an
+   old git) fails it. Schedule and dispatch start once the file is on main; until then a `push`
+   trigger limited to claude/cicd-next and the file and its tool is the proof run. On
+   2026-11-18 the trial merge of `cb6707f` into main conflicts in 7 files (ci.yml, Makefile,
+   README.md, REVIEW-SCOPE.md, SSDLC.md, presentation/SOURCE.json, tools/workflows.lock.json).
+32. Vendored Go dependencies (the engine lane vendors golang.org/x/crypto). The Go jobs keep
+   `GOPROXY=off`, so a go/go.mod with a `require` line and no go/vendor/modules.txt fails with
+   that reason, and with a vendor tree `tools/go_ci.py` runs the targets with
+   `GOFLAGS=-mod=vendor` in place of `-mod=readonly`: the go command then checks
+   vendor/modules.txt against go.mod and reads no module cache and no network
+   (go.dev/ref/mod#vendoring). The same holds in go-minimum, the content gate and nightly
+   fuzzing. Measured on claude/go-migration `cb6707f` vendored locally: `make go-check` passes
+   under `GOPROXY=off` with no download (parity 7404/7404). CI cannot re-vendor to compare the
+   vendor tree's contents without the network; `go mod vendor` and its go.sum check stay the
+   engine lane's step, reviewed in its diff.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
