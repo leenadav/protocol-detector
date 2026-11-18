@@ -113,6 +113,7 @@ def split(response):
     return "", response
 
 
+LIVE_SESSION_ID = re.compile(r"L-[0-9]{6}")
 VOLATILE_IDS = ("token", "run_id", "capture_id", "id", "instance")
 VOLATILE_TIMES = ("submitted", "started", "finished", "uptime_seconds", "processing_ms", "elapsed_seconds", "first_seconds",
                   "stable_seconds")
@@ -125,7 +126,9 @@ class Normalizer:
         self.ids = {}
 
     def value(self, key, value):
-        if key in VOLATILE_IDS and isinstance(value, str) and (key != "id" or not value.startswith("L-")):
+        # A live session's id is "L-" and six digits (L-{:06d}, kept as it is); a job id is random base64url and can
+        # itself begin with "L-" (about 1 in 4096), which the earlier prefix test left unreplaced (2026-11-18).
+        if key in VOLATILE_IDS and isinstance(value, str) and (key != "id" or not LIVE_SESSION_ID.fullmatch(value)):
             return self.ids.setdefault(value, "<id{}>".format(len(self.ids)))
         if key in VOLATILE_TIMES and isinstance(value, (int, float)) and not isinstance(value, bool):
             return "<time>"
