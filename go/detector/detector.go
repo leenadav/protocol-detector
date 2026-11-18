@@ -61,9 +61,11 @@ type Config struct {
 // MaxRetainedCeiling bounds MaxRetainedPerFlow and MaxRetainedTotal: 1 GiB.
 const MaxRetainedCeiling = 1 << 30
 
-// DefaultConfig is the lab starting profile: HTTP/1, TLS and SSH, 16 KiB and 16 reads per direction.
+// DefaultConfig is the first visibility profile (working plan decision 4, approved 2026-11-18): HTTP/1, TLS,
+// SSH and SMTP identified with evidence, every other family reported as OutcomeOutsideProfile, with 16 KiB and
+// 16 reads per direction. The budgets are the plan's starting hypotheses (section 9), not agreed limits.
 func DefaultConfig() Config {
-	return Config{Families: []string{"http", "tls", "ssh"}, MaxBytesPerDirection: 16384, MaxFeedsPerDirection: 16,
+	return Config{Families: []string{"http", "tls", "ssh", "smtp"}, MaxBytesPerDirection: 16384, MaxFeedsPerDirection: 16,
 		MaxFlows: 1024, PanicLimit: 8}
 }
 

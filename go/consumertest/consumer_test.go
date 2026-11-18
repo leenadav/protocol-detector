@@ -73,11 +73,14 @@ func TestConsumerUsesThePublicPackageWithoutRepositoryFiles(t *testing.T) {
 	for _, c := range []struct {
 		name, outcome, family string
 		client                []byte
-		done                  bool // identified SSH keeps watching for KEXINIT evidence until expiry
+		done                  bool // identified SSH and SMTP keep watching for further evidence until expiry
 	}{
 		{"http", "identified", "http", []byte("GET / HTTP/1.1\r\nHost: consumer.example.test\r\n\r\n"), true},
 		{"ssh", "identified", "ssh", []byte("SSH-2.0-OpenSSH_9.6\r\n"), false},
-		{"smtp outside the default profile", "outside_profile", "smtp", []byte("EHLO client.example.test\r\n"), true},
+		{"smtp", "identified", "smtp", []byte("EHLO client.example.test\r\n"), false}, // in the profile since decision 4; keeps watching, as SSH does
+		// A PostgreSQL startup message (protocol 3.0, user "lab"): a family outside the profile is named, not identified.
+		{"postgresql outside the default profile", "outside_profile", "postgresql",
+			[]byte("\x00\x00\x00\x12\x00\x03\x00\x00user\x00lab\x00\x00"), true},
 		{"silent", "incomplete", "", nil, false},
 	} {
 		flow, err := obs.Begin(c.name)
@@ -94,7 +97,7 @@ func TestConsumerUsesThePublicPackageWithoutRepositoryFiles(t *testing.T) {
 			t.Errorf("%s: %s %q, want %s %q", c.name, outcome, family, c.outcome, c.family)
 		}
 	}
-	if st := engine.Stats(); st.Active != 0 || st.Admitted != 4 {
+	if st := engine.Stats(); st.Active != 0 || st.Admitted != 5 {
 		t.Errorf("stats %+v", st)
 	}
 	if _, err := detector.New(detector.Config{}); !errors.Is(err, detector.ErrInvalidConfig) {
