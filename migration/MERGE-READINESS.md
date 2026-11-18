@@ -38,12 +38,20 @@ Auto-merged but needing attention: `protocol_adapters/analyze_pcap.py` and `prot
    the merge `migration/fixtures/cases.json` must be regenerated from the merged reference and `make
    parity-go` must still report 0 differences; any case that changes is one where the branch's Python and Go
    disagreed without a committed case showing it.
-2. **`GOPROXY=off` in main's Go jobs vs this branch's module dependency (blocker).** `go/go.mod` here requires
-   `golang.org/x/crypto v0.59.0` (key-log TLS decryption, `4111a70`, after the earlier merge); main's CI
-   (`c58fe65`, `tools/go_ci.py`) runs the Go jobs with `GOPROXY=off` on the premise that "the engine has no
-   module dependency". Merged as is, the Go jobs cannot fetch the module. Options for the two lanes (a CI/CD
-   and engine decision, raised to Codex rather than decided here): vendor the dependency (`go mod vendor`,
-   reviewed like code), allow the module proxy for that one module, or a pre-populated module cache in CI.
+2. **`GOPROXY=off` in main's Go jobs vs this branch's module dependency: resolved by vendoring** (Hermes's
+   decision, 2026-11-18; `3a0vendor`). `go/go.mod` requires `golang.org/x/crypto v0.59.0` (key-log TLS
+   decryption, `4111a70`, after the earlier merge), and main's CI (`c58fe65`, `tools/go_ci.py`) runs the Go jobs
+   with `GOPROXY=off`. Of the three options (vendor, a proxy exception for the module, a pre-populated module
+   cache) vendoring is the one that keeps CI's rule intact: the code that is built is in the repository,
+   reviewed and diffed like ours, and no build or test fetches anything. `go mod vendor` vendors only the packages
+   the engine imports (x/crypto chacha20, chacha20poly1305, internal/alias, internal/poly1305; x/sys/cpu: 80
+   files, about 670 KB). Every Go command in the Makefile runs with `GOFLAGS=-mod=vendor`, and `gofmt` skips
+   `go/vendor`. `make go-vendor-check` re-vendors into `build/go-vendor-check` and fails when `go/vendor` is not
+   what `go.mod` and `go.sum` select or has uncommitted changes; it is the one step that needs the modules, so CI
+   runs it where they can be reached (the CI/CD lane has been told to expect `-mod=vendor`). Checked: with
+   `GOPROXY=off` and a module cache holding only the toolchain, the vendored build and the decryption tests
+   pass, and the same build with `-mod=mod` fails with "module lookup disabled by GOPROXY=off". Updating the
+   dependency is now `go get` + `go mod vendor` + review of the vendored diff.
 3. **Test and fixture counts** move on both sides (README, REVIEW-SCOPE, `check_docs_counts.py`): resolve them
    from the merged tree, not by hand-picking a side.
 4. **Dependabot bumps** (actions group, Playwright in `tools/ui-test-deps`) merge cleanly; `make pin-drift`

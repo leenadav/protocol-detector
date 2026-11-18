@@ -171,12 +171,12 @@ GO_TOOLCHAIN := $(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod)
 
 # The engine's one module dependency (golang.org/x/crypto, key-log TLS decryption) is vendored in go/vendor, so
 # every Go build and test here runs with -mod=vendor and needs no module download (CI runs with GOPROXY=off).
-# go-vendor-check re-vendors into go/bin/vendor-check (git-ignored, replaced on each run) and fails when go/vendor
+# go-vendor-check re-vendors into build/go-vendor-check (git-ignored, outside the module, replaced on each run) and fails when go/vendor
 # differs from what go.mod and go.sum select, or has uncommitted changes. Re-vendoring needs the modules (the
 # module cache or a proxy), so CI runs it in a step that can reach them; the builds and tests never do.
 go-vendor-check:
-	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=mod go mod vendor -o bin/vendor-check
-	cd go && diff -r bin/vendor-check vendor || { echo "go/vendor is out of sync: run (cd go && go mod vendor) and commit it"; exit 1; }
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=mod go mod vendor -o ../build/go-vendor-check
+	cd go && diff -r ../build/go-vendor-check vendor || { echo "go/vendor is out of sync: run (cd go && go mod vendor) and commit it"; exit 1; }
 	git diff --quiet --exit-code -- go/go.mod go/go.sum go/vendor || { echo "go/vendor, go.mod or go.sum has uncommitted changes"; exit 1; }
 	test -z "$$(git status --porcelain -- go/go.mod go/go.sum go/vendor)" || { echo "go/vendor has untracked or uncommitted files"; exit 1; }
 	@echo "go vendor ok: go/vendor matches go.mod and go.sum"
