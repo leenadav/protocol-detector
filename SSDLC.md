@@ -724,6 +724,15 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    (presentation/requirements-decryption.lock.txt), which the engine lane's `make go-check`
    needs for `make parity-decrypt`; claude/go-migration carries the same step, so this removes
    one of the trial merge's ci.yml differences.
+   At the engine lane's request (claude/go-migration 76e467a vendors golang.org/x/crypto and
+   passes GOFLAGS=-mod=vendor on every Makefile Go command): a `go-vendor` ci job runs
+   `make go-vendor-check` (re-vendor into build/ and compare with go/vendor, go.mod and go.sum),
+   the one Go target with module access (the module proxy and checksum database written out,
+   nothing private or insecure); and the tests and presentation jobs set up the pinned Go and run
+   `go_ci.py build` (`make go-build`, offline, vendored) before their suites, so the strict run
+   exercises test_launch_backend's Go service instead of skipping it. Without the targets (main
+   today) both say there is nothing to do; a wrong Go still fails. Measured on 12fbc0e: go-build,
+   go-vendor-check and the strict presentation run (86 run, 0 skipped) pass.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm

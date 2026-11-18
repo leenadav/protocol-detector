@@ -11,6 +11,11 @@ here, where it has a self-test.
                                       build compiler
     go_ci.py minimum [--summary FILE] the `go-minimum` job: `make go-check-minimum` (vet and
                                       go test -race) on the declared minimum Go
+    go_ci.py build [--summary FILE]   the tests and presentation jobs: `make go-build` (offline,
+                                      vendored) before the suites that run the Go service
+    go_ci.py vendor-check [--summary FILE]
+                                      the go-vendor job: `make go-vendor-check`, the one target
+                                      with module access (re-vendors and compares with go/vendor)
     go_ci.py minimum-version [--github-output FILE]
                                       the release the `go-minimum` job installs: the minimum,
                                       or the scanner pin when there is no separate minimum
@@ -160,6 +165,47 @@ def go_env(vendored, base=None):
     if vendored:
         env["GOFLAGS"] = "-mod=vendor"
     return env
+
+
+TARGET_MODES = {"build": "go-build", "vendor-check": "go-vendor-check"}
+
+
+def target_decision(mode, tree):
+    """("skip", reason) | ("fail", problems) | ("run", target) for the build and vendor-check modes, from the
+    toolchain checks' tree (None: no go/go.mod) and their problems, tree["toolchain_problems"]."""
+    target = TARGET_MODES[mode]
+    if tree is None:
+        return "skip", "No {} on this commit: nothing to {}.".format(GO_MOD, "build" if mode == "build" else "verify")
+    has_target = re.search(r"^{}\s*:".format(re.escape(target)), tree.get("makefile") or "", re.M) is not None
+    dependencies = bool(REQUIRE.search(tree.get("go_mod") or "")) or bool(tree.get("vendored"))
+    if mode == "vendor-check" and not dependencies:
+        return "skip", "{} requires no module and nothing is vendored: nothing to verify.".format(GO_MOD)
+    problems = list(tree.get("toolchain_problems") or [])
+    if not has_target:
+        if mode == "build":
+            return ("fail", problems) if problems else ("skip", "The Makefile has no `go-build` target: nothing to build.")
+        problems.append("{} has dependencies but the Makefile has no `go-vendor-check` target: a vendor tree must be "
+                        "verified against go.mod and go.sum".format(GO_MOD))
+    return ("fail", problems) if problems else ("run", target)
+
+
+def run_target(mode, summary):
+    title = "### Go {} ({})".format("build" if mode == "build" else "vendor tree", TARGET_MODES[mode])
+    tree, problems = toolchain_problems()
+    if tree is not None:
+        tree["toolchain_problems"] = problems
+    action, detail = target_decision(mode, tree)
+    if action == "skip":
+        summarise(summary, [title, "", detail])
+        return 0
+    if action == "fail":
+        summarise(summary, [title, ""] + ["- FAILED: " + problem for problem in detail])
+        return 1
+    # go-build runs offline on the vendor tree; go-vendor-check is the one target with module access (the job's env).
+    env = go_env(tree.get("vendored")) if mode == "build" else dict(os.environ)
+    code = subprocess.run(["make", detail], check=False, env=env).returncode  # noqa: S603,S607
+    summarise(summary, [title, "", "- `make {}`: exit {}".format(detail, code)])
+    return 0 if code == 0 else 1
 
 
 def toolchain_problems():
@@ -437,6 +483,19 @@ def self_test():
     stale_regression()
     assert directive("module x\n\ngo 1.27\n") == "1.27"
     assert GO_VERSION.search("go version go1.27.4 darwin/arm64 ").group(1) == "1.27.4"
+    target_tree = dict(full, go_mod=crypto, vendored=True, toolchain_problems=[],
+                       makefile="go-build:\n\tgo build\ngo-vendor-check:\n\tgo mod vendor\n")
+    assert target_decision("build", None)[0] == "skip"
+    assert target_decision("build", target_tree) == ("run", "go-build")
+    assert target_decision("vendor-check", target_tree) == ("run", "go-vendor-check")
+    assert target_decision("build", dict(target_tree, makefile="go-check:\n"))[0] == "skip"          # main: no go-build yet
+    assert target_decision("vendor-check", dict(full, toolchain_problems=[]))[0] == "skip"           # no dependency
+    action, found = target_decision("vendor-check", dict(target_tree, makefile="go-build:\n"))
+    assert action == "fail" and "no `go-vendor-check` target" in found[0], found
+    action, found = target_decision("build", dict(target_tree, toolchain_problems=["installed go 1.27.0 differs"]))
+    assert action == "fail" and found == ["installed go 1.27.0 differs"], found
+    action, found = target_decision("build", dict(target_tree, makefile="", toolchain_problems=["wrong go"]))
+    assert action == "fail", found                                                                 # no silent skip past a bad Go
     minimum_regression()
     print("go_ci self-test: ok ({} tree refusals, {} minimum refusals, 15 report refusals, 5 end-to-end runs)".format(
         len(cases) + 1, len(minimum_cases)))
@@ -507,7 +566,7 @@ def minimum_regression():
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("mode", nargs="?", choices=("go", "minimum", "oracle", "minimum-version"))
+    parser.add_argument("mode", nargs="?", choices=("go", "minimum", "oracle", "minimum-version", "build", "vendor-check"))
     parser.add_argument("--summary", help="append a markdown summary here (GITHUB_STEP_SUMMARY)")
     parser.add_argument("--github-output", help="minimum-version: append `version=X.Y.Z` here (GITHUB_OUTPUT)")
     parser.add_argument("--self-test", action="store_true")
@@ -526,6 +585,8 @@ def main(argv=None):
                 stream.write("version={}\n".format(version))
         print("minimum-version: go {}".format(version))
         return 0
+    if args.mode in TARGET_MODES:
+        return run_target(args.mode, args.summary)
     return run(args.mode, args.summary)
 
 
