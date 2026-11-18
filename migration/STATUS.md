@@ -456,8 +456,21 @@ Frozen milestone SHAs for Codex (available from Sunday): `61fd45a` (Milestone A)
 performance gates), `68fb867` (the Go live control plane and dashboard service), `58a4701` (the launcher switch
 and Milestone B), `9e51389` (one generation counter per capture, family verification, container signature
 descriptions, content-version rollback), `6b280a6` (the adversarial suite and the load benchmark), `024163f`
-(the case generator's coverage cases for nine families: 88 of 88 parity-verified), and `12e1ed0` (the CoAP
-profile held to RFC 7252 in both engines, F-ADV-1).
+(the case generator's coverage cases for nine families: 88 of 88 parity-verified), `12e1ed0` (the CoAP
+profile held to RFC 7252 in both engines, F-ADV-1), `d1b63ee` (C11: earlier content releases reproduce the
+digests they were published with, both engines), `baa07b9` (content release 2026.11.3, research batch A).
+
+C11 (2026-11-18, research finding): a rollback recomputed an earlier release's digest from the current
+application catalog, so every added application moved it (2026.11.1 published as `c4020c2437f3de8d`, rolled
+back as `45ad7b6b...`), and a record pinned to that release no longer matched. Fixed in `d1b63ee`: each earlier
+release keeps its published components (`content._RELEASED_COMPONENTS`, from its lock), its rebuilt host
+catalog must reproduce the recorded host component, `check_content.py --update` refuses a new release until
+the superseded one is recorded; Go's `EmbeddedRelease` verifies the same way. All four earlier releases now
+roll back to their published digests (`test_content`, `history_test.go`).
+
+Batch A (`baa07b9`): the research lane's name-based patch (claude/app-research `9c040b2`) applied as content
+only, each entry checked against its spec's source; `notebook.google.com` skipped (no source that it is
+NotebookLM). Release 2026.11.3, 536 applications, 434 host entries; 7,404 cases, Python and Go match all.
 
 ## Family verification (2026-11-18)
 
@@ -525,4 +538,7 @@ build tag `loadbench`); not part of `go-check`.
 - Independent labelled corpus (D09): blocked on input.
 - Release thresholds: aligned with Culvert (above); allocations and retained bytes are gated, the p99 per flow
   with collection pauses (Lee, 2026-11-17) is reported.
-- Dedicated migration PR: to be opened only when authorized in the working session (plan §1); the branch `claude/go-migration` exists and is pushed.
+- Dedicated migration PR: to be opened only when authorized in the working session (plan §1); the branch `claude/go-migration` exists and is pushed. Merge readiness and the draft description: `migration/MERGE-READINESS.md`, `migration/PR-DRAFT.md` (2026-11-18: 7 files conflict with `main`).
+- Merge blocker between the lanes: `go/go.mod` requires `golang.org/x/crypto` (since `4111a70`) while main's Go
+  jobs run with `GOPROXY=off` (`c58fe65`); vendoring, a proxy exception or a CI module cache is a CI/CD and
+  engine decision for Codex.
