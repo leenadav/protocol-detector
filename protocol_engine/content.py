@@ -43,6 +43,12 @@ HISTORY = (
             "management and endpoint security, developer, identity, generative AI, remote access and RMM, VPN and "
             "circumvention, cloud proxies, resolvers, commerce, news, education, advertising and measurement); "
             "remote-access, RMM and VPN apex/www names are web fronts"),
+    Release("2026.11.3", "2026-11-18", "2026-11-18",
+            "application-research lane proposal with primary sources (research/apps on claude/app-research 9c040b2); "
+            "engine-lane review of each spec against its sources; independent review pending",
+            "Microsoft 365 cloud.microsoft names and Exchange Online Protection separated from web mail; Copilot "
+            "app host; GitHub Copilot service hosts; Anthropic API split from the apps; Dropbox verified domains, "
+            "web fronts and DocSend"),
 )
 CURRENT = HISTORY[-1].version
 LOCK_PATH = Path(__file__).with_name("content_lock.json")
@@ -103,6 +109,21 @@ _ADDED_2026_11_2 = (
     "xandr",
 )
 _PRIOR_HOST_STATE = MappingProxyType({
+    "2026.11.2": MappingProxyType({
+        "ms-teams": {"domains": ("teams.microsoft.com", "teams.live.com", "teams.cdn.office.net")},
+        "outlook-web": {"domains": ("outlook.office365.com", "outlook.office.com", "outlook.live.com", "outlook.com")},
+        "ms-exchange-online-protection": None,
+        "ms-office365": {"domains": ("office.com", "office365.com", "office.net", "officeapps.live.com")},
+        "sharepoint-online": {"domains": ("sharepoint.com",)},
+        "ms-copilot": {"domains": ("copilot.microsoft.com",)},
+        "github-copilot": {"domains": ("githubcopilot.com",)},
+        "anthropic-claude": {"domains": ("claude.ai", "anthropic.com", "claude.com"), "web_fronts": ()},
+        "anthropic-api": None,
+        "dropbox": {"domains": ("dropbox.com", "dropboxapi.com", "dropboxusercontent.com", "dropboxstatic.com"),
+                    "web_fronts": ()},
+        "docsend": None,
+        "dropbox-sign": {"domains": ("hellosign.com",)},
+    }),
     "2026.11.1": MappingProxyType({name: None for name in _ADDED_2026_11_2}),
     "2026.11.0": MappingProxyType({name: None for name in _ADDED_2026_11_1}),
     "2025.10.0": MappingProxyType({
@@ -207,6 +228,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
         "application_catalog": "2b61c2aaf2e51fff1ccdaf479673082e6b300cd2649cf960c1f139295bd63b90",
         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
         "host_catalog": "d90de751d3e9f4ac4602deca7637f3e2164fc6ed7ccd8cb292a99ccd54fa43fe",
+        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+    "2026.11.2": MappingProxyType({
+        "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
+        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+        "host_catalog": "82e1abd27dad3f3ee04cb80939a9ab81f099631f06e23d94fb75e6071afd1c7d",
         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
 })
 

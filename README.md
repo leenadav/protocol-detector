@@ -13,7 +13,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Area | What exists | Where to read |
 |---|---|---|
 | Protocol profiles | 88 families (79 automatic, 9 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
-| Application verdicts | App-ID style vocabulary: 533 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
+| Application verdicts | App-ID style vocabulary: 536 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
 | Application shift | CONNECT, WebSocket/h2c upgrade, STARTTLS/STLS/AUTH TLS, PostgreSQL/MySQL SSLRequest, RDP negotiation: the phase after the boundary is inspected and the carrier is kept as `shifted_from` | PROTOCOLS.md (v0.28) |
 | Custom signatures | JSON rules over bounded parser contexts (host, SNI, ALPN, banner, query name, payload prefix) with a safe regex subset | [SIGNATURES.md](SIGNATURES.md) |
 | Fingerprints | JA3/JA4/JA3S/JA4S/HASSH/HTTP2 SETTINGS, opt-in, derived evidence only | [FINGERPRINTS.md](FINGERPRINTS.md) |
@@ -102,7 +102,7 @@ applications (YouTube, Netflix, Teams, Zoom, Slack, WhatsApp, ChatGPT, GitHub,
 Office 365, ...) maps the SNI or Host by DNS label suffix. The name is a client
 assertion and the verdict says so; configured rules win, and encrypted
 ClientHello front names are never mapped.
-88 families, 79 automatic, 533 applications, 856 tests.
+88 families, 79 automatic, 536 applications, 856 tests.
 
 ## New in v0.64 — Weak cipher suites in TLS offers
 

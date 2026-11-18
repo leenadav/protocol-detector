@@ -1,15 +1,15 @@
 {
   "components": {
-    "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
+    "application_catalog": "f82444035f260b95537ed83be8d7e80998c79727272a161b1d529839f797118b",
     "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-    "host_catalog": "82e1abd27dad3f3ee04cb80939a9ab81f099631f06e23d94fb75e6071afd1c7d",
+    "host_catalog": "184c9d5d0812aa155855d75a8b6c0bb2d0f174292868fdbe1ac611f10f4776fb",
     "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
   },
-  "digest": "e0d6e39533a6ae9c",
-  "host_entries": 431,
-  "note": "262 more services on operator-owned domains (media, social, messaging, mail, storage and backup, business, management and endpoint security, developer, identity, generative AI, remote access and RMM, VPN and circumvention, cloud proxies, resolvers, commerce, news, education, advertising and measurement); remote-access, RMM and VPN apex/www names are web fronts",
-  "released": "2026-11-15",
-  "review": "engine-lane self-review against the operator-owned-domain rule; independent review pending",
-  "reviewed": "2026-11-15",
-  "version": "2026.11.2"
+  "digest": "fef8f709d5615a85",
+  "host_entries": 434,
+  "note": "Microsoft 365 cloud.microsoft names and Exchange Online Protection separated from web mail; Copilot app host; GitHub Copilot service hosts; Anthropic API split from the apps; Dropbox verified domains, web fronts and DocSend",
+  "released": "2026-11-18",
+  "review": "application-research lane proposal with primary sources (research/apps on claude/app-research 9c040b2); engine-lane review of each spec against its sources; independent review pending",
+  "reviewed": "2026-11-18",
+  "version": "2026.11.3"
 }

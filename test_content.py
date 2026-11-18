@@ -79,7 +79,7 @@ class RollbackTests(unittest.TestCase):
         old = {entry["name"]: entry for entry in content.host_entries("2025.10.0")}
         new = {entry["name"]: entry for entry in content.host_entries()}
         self.assertEqual(len(old), 53)
-        self.assertEqual(len(new), 431)
+        self.assertEqual(len(new), 434)
         previous = {entry["name"] for entry in content.host_entries("2026.11.0")}
         self.assertEqual(len(previous), 54)                         # 2026.11.1 added 115 services and changed none
         middle = {entry["name"] for entry in content.host_entries("2026.11.1")}
@@ -102,7 +102,8 @@ class RollbackTests(unittest.TestCase):
         rollback must reproduce it, also after the application catalog changed. 2026.11.0 and 2026.11.1 are
         their content_lock.json values while current; 2025.10.0 its first recorded value (799d358)."""
         from protocol_engine import applications
-        published = {"2025.10.0": "9f8791749a940f5b", "2026.11.0": "991c007668d263d1", "2026.11.1": "c4020c2437f3de8d"}
+        published = {"2025.10.0": "9f8791749a940f5b", "2026.11.0": "991c007668d263d1", "2026.11.1": "c4020c2437f3de8d",
+                     "2026.11.2": "e0d6e39533a6ae9c"}
         for version, value in published.items():
             self.assertEqual(content.digest(version), value, version)
             self.assertEqual(content.select(version), {"version": version, "digest": value})

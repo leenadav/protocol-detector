@@ -22,9 +22,9 @@ const (
 	vectorChain     = "77cd6b4c4e0c482824748218f10725708199c628e96dc1c99a9b28804251cc7b"
 
 	// Release 2026.11.2 (migration/fixtures/content.json).
-	releaseVersion    = "2026.11.2"
-	releaseDigest     = "e0d6e39533a6ae9c"
-	releasePackDigest = "0984af6edc1d682143e391675dd0fafb9f23c47a0ed485b110b86a1b4f7af5aa"
+	releaseVersion    = "2026.11.3"
+	releaseDigest     = "fef8f709d5615a85"
+	releasePackDigest = "7623cd45cd9d9f967f837bedafcf44a115a3dea06ad69c909546d255243a0496"
 )
 
 func TestCanonicalEncodingVectors(t *testing.T) {

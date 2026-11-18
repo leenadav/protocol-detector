@@ -416,6 +416,26 @@
    ],
    "container": null,
    "depends_on": [],
+   "description": "Anthropic Claude developer platform and API",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "anthropic-api",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "generative-ai",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
    "description": "Anthropic Claude",
    "implicitly_uses": [
     "ssl",
@@ -2288,6 +2308,26 @@
    "standard_ports": [],
    "subcategory": "software-development",
    "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "transfers-files"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "DocSend document sharing (Dropbox)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "docsend",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "file-sharing",
+   "technology": "browser-based"
   },
   {
    "aliases": [],
@@ -5399,6 +5439,26 @@
    "standard_ports": [],
    "subcategory": "generative-ai",
    "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Microsoft Exchange Online Protection (mail filtering, Safe Links)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ms-exchange-online-protection",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "email",
+   "technology": "client-server"
   },
   {
    "aliases": [],
@@ -10768,10 +10828,15 @@
     "android.com",
     "android.clients.google.com"
    ],
+   "anthropic-api": [
+    "api.anthropic.com",
+    "platform.claude.com"
+   ],
    "anthropic-claude": [
     "claude.ai",
     "anthropic.com",
-    "claude.com"
+    "claude.com",
+    "claudeusercontent.com"
    ],
    "anydesk": [
     "anydesk.com",
@@ -11064,6 +11129,9 @@
     "docker.com",
     "docker.io"
    ],
+   "docsend": [
+    "docsend.com"
+   ],
    "docusign": [
     "docusign.com",
     "docusign.net"
@@ -11078,10 +11146,18 @@
     "dropbox.com",
     "dropboxapi.com",
     "dropboxusercontent.com",
-    "dropboxstatic.com"
+    "dropboxstatic.com",
+    "getdropbox.com",
+    "db.tt",
+    "dropboxbusiness.com",
+    "addtodropbox.com",
+    "dropboxcaptcha.com",
+    "dropboxexperiment.com",
+    "dropbox-dns.com"
    ],
    "dropbox-sign": [
-    "hellosign.com"
+    "hellosign.com",
+    "hellofax.com"
    ],
    "duckduckgo": [
     "duckduckgo.com"
@@ -11180,7 +11256,17 @@
     "githubassets.com"
    ],
    "github-copilot": [
-    "githubcopilot.com"
+    "githubcopilot.com",
+    "copilot-proxy.githubusercontent.com",
+    "origin-tracker.githubusercontent.com",
+    "copilot-telemetry.githubusercontent.com",
+    "production-copilot-host.webpubsub.azure.com",
+    "production-copilot-host-centralus.webpubsub.azure.com",
+    "production-copilot-host-centralus-02.webpubsub.azure.com",
+    "production-copilot-host-eastasia.webpubsub.azure.com",
+    "production-copilot-host-austriaeast.webpubsub.azure.com",
+    "production-copilot-host-westus.webpubsub.azure.com",
+    "production-copilot-host-westus3.webpubsub.azure.com"
    ],
    "gitlab": [
     "gitlab.com"
@@ -11510,13 +11596,20 @@
     "live.com"
    ],
    "ms-copilot": [
-    "copilot.microsoft.com"
+    "copilot.microsoft.com",
+    "copilot.cloud.microsoft"
+   ],
+   "ms-exchange-online-protection": [
+    "protection.outlook.com",
+    "mx.microsoft"
    ],
    "ms-office365": [
     "office.com",
     "office365.com",
     "office.net",
-    "officeapps.live.com"
+    "officeapps.live.com",
+    "microsoft365.com",
+    "cloud.microsoft"
    ],
    "ms-onedrive": [
     "onedrive.live.com",
@@ -11527,7 +11620,9 @@
    "ms-teams": [
     "teams.microsoft.com",
     "teams.live.com",
-    "teams.cdn.office.net"
+    "teams.cdn.office.net",
+    "teams.cloud.microsoft",
+    "lync.com"
    ],
    "ms-telemetry": [
     "events.data.microsoft.com",
@@ -11650,7 +11745,8 @@
     "outlook.office365.com",
     "outlook.office.com",
     "outlook.live.com",
-    "outlook.com"
+    "outlook.com",
+    "outlook.cloud.microsoft"
    ],
    "packagist": [
     "packagist.org"
@@ -11843,7 +11939,9 @@
     "service-now.com"
    ],
    "sharepoint-online": [
-    "sharepoint.com"
+    "sharepoint.com",
+    "sharepointonline.com",
+    "svc.ms"
    ],
    "shein": [
     "shein.com"
@@ -12680,7 +12778,9 @@
     "domains": [
      "teams.microsoft.com",
      "teams.live.com",
-     "teams.cdn.office.net"
+     "teams.cdn.office.net",
+     "teams.cloud.microsoft",
+     "lync.com"
     ],
     "name": "ms-teams",
     "risk": 2,
@@ -12764,12 +12864,29 @@
      "outlook.office365.com",
      "outlook.office.com",
      "outlook.live.com",
-     "outlook.com"
+     "outlook.com",
+     "outlook.cloud.microsoft"
     ],
     "name": "outlook-web",
     "risk": 2,
     "subcategory": "email",
     "technology": "browser-based",
+    "web_fronts": []
+   },
+   {
+    "category": "collaboration",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "Microsoft Exchange Online Protection (mail filtering, Safe Links)",
+    "domains": [
+     "protection.outlook.com",
+     "mx.microsoft"
+    ],
+    "name": "ms-exchange-online-protection",
+    "risk": 1,
+    "subcategory": "email",
+    "technology": "client-server",
     "web_fronts": []
    },
    {
@@ -12783,7 +12900,9 @@
      "office.com",
      "office365.com",
      "office.net",
-     "officeapps.live.com"
+     "officeapps.live.com",
+     "microsoft365.com",
+     "cloud.microsoft"
     ],
     "name": "ms-office365",
     "risk": 2,
@@ -12799,7 +12918,9 @@
     ],
     "description": "SharePoint Online sites and files",
     "domains": [
-     "sharepoint.com"
+     "sharepoint.com",
+     "sharepointonline.com",
+     "svc.ms"
     ],
     "name": "sharepoint-online",
     "risk": 2,
@@ -12912,12 +13033,41 @@
      "dropbox.com",
      "dropboxapi.com",
      "dropboxusercontent.com",
-     "dropboxstatic.com"
+     "dropboxstatic.com",
+     "getdropbox.com",
+     "db.tt",
+     "dropboxbusiness.com",
+     "addtodropbox.com",
+     "dropboxcaptcha.com",
+     "dropboxexperiment.com",
+     "dropbox-dns.com"
     ],
     "name": "dropbox",
     "risk": 3,
     "subcategory": "file-sharing",
     "technology": "client-server",
+    "web_fronts": [
+     "dropboxforum.com",
+     "dropboxforums.com",
+     "dropboxlegal.com",
+     "dropboxinsiders.com",
+     "dropbox.tech",
+     "learn.dropbox.com"
+    ]
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "DocSend document sharing (Dropbox)",
+    "domains": [
+     "docsend.com"
+    ],
+    "name": "docsend",
+    "risk": 3,
+    "subcategory": "file-sharing",
+    "technology": "browser-based",
     "web_fronts": []
    },
    {
@@ -13085,12 +13235,32 @@
     "domains": [
      "claude.ai",
      "anthropic.com",
-     "claude.com"
+     "claude.com",
+     "claudeusercontent.com"
     ],
     "name": "anthropic-claude",
     "risk": 3,
     "subcategory": "generative-ai",
     "technology": "browser-based",
+    "web_fronts": [
+     "claude.com",
+     "code.claude.com"
+    ]
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "transfers-files"
+    ],
+    "description": "Anthropic Claude developer platform and API",
+    "domains": [
+     "api.anthropic.com",
+     "platform.claude.com"
+    ],
+    "name": "anthropic-api",
+    "risk": 3,
+    "subcategory": "generative-ai",
+    "technology": "client-server",
     "web_fronts": []
    },
    {
@@ -14329,7 +14499,8 @@
     ],
     "description": "Microsoft Copilot",
     "domains": [
-     "copilot.microsoft.com"
+     "copilot.microsoft.com",
+     "copilot.cloud.microsoft"
     ],
     "name": "ms-copilot",
     "risk": 3,
@@ -14344,7 +14515,17 @@
     ],
     "description": "GitHub Copilot",
     "domains": [
-     "githubcopilot.com"
+     "githubcopilot.com",
+     "copilot-proxy.githubusercontent.com",
+     "origin-tracker.githubusercontent.com",
+     "copilot-telemetry.githubusercontent.com",
+     "production-copilot-host.webpubsub.azure.com",
+     "production-copilot-host-centralus.webpubsub.azure.com",
+     "production-copilot-host-centralus-02.webpubsub.azure.com",
+     "production-copilot-host-eastasia.webpubsub.azure.com",
+     "production-copilot-host-austriaeast.webpubsub.azure.com",
+     "production-copilot-host-westus.webpubsub.azure.com",
+     "production-copilot-host-westus3.webpubsub.azure.com"
     ],
     "name": "github-copilot",
     "risk": 3,
@@ -16339,7 +16520,8 @@
     ],
     "description": "Dropbox Sign (HelloSign) e-signature",
     "domains": [
-     "hellosign.com"
+     "hellosign.com",
+     "hellofax.com"
     ],
     "name": "dropbox-sign",
     "risk": 2,
@@ -18961,6 +19143,7 @@
    "8x8.vc": "8x8",
    "9gag.com": "9gag",
    "accounts.google.com": "google-accounts",
+   "addtodropbox.com": "dropbox",
    "adguard-dns.com": "adguard-dns",
    "adjust.com": "adjust",
    "adnxs.com": "xandr",
@@ -18986,6 +19169,7 @@
    "anthropic.com": "anthropic-claude",
    "anydesk.com": "anydesk",
    "aol.com": "aol",
+   "api.anthropic.com": "anthropic-api",
    "api.openai.com": "openai-platform",
    "apple.com": "apple-base",
    "apps.apple.com": "apple-app-store",
@@ -19054,8 +19238,10 @@
    "circleci.com": "circleci",
    "claude.ai": "anthropic-claude",
    "claude.com": "anthropic-claude",
+   "claudeusercontent.com": "anthropic-claude",
    "cleanbrowsing.org": "cleanbrowsing-dns",
    "clickup.com": "clickup",
+   "cloud.microsoft": "ms-office365",
    "cloudflare-dns.com": "cloudflare-dns",
    "cloudflareclient.com": "cloudflare-warp",
    "cloudsink.net": "crowdstrike",
@@ -19069,6 +19255,9 @@
    "concursolutions.com": "sap-concur",
    "connectwise.com": "connectwise-control",
    "controld.com": "controld-dns",
+   "copilot-proxy.githubusercontent.com": "github-copilot",
+   "copilot-telemetry.githubusercontent.com": "github-copilot",
+   "copilot.cloud.microsoft": "ms-copilot",
    "copilot.microsoft.com": "ms-copilot",
    "copy.ai": "copy-ai",
    "costco.com": "costco",
@@ -19088,6 +19277,7 @@
    "datadoghq.com": "datadog",
    "datadoghq.eu": "datadog",
    "dazn.com": "dazn",
+   "db.tt": "dropbox",
    "debian.org": "debian",
    "deepseek.com": "deepseek",
    "deezer.com": "deezer",
@@ -19109,6 +19299,7 @@
    "docker.com": "docker-hub",
    "docker.io": "docker-hub",
    "docs.google.com": "google-drive",
+   "docsend.com": "docsend",
    "docusign.com": "docusign",
    "docusign.net": "docusign",
    "doordash.com": "doordash",
@@ -19116,8 +19307,12 @@
    "doubleclick.net": "google-ads",
    "drive.google.com": "google-drive",
    "drive.usercontent.google.com": "google-drive",
+   "dropbox-dns.com": "dropbox",
    "dropbox.com": "dropbox",
    "dropboxapi.com": "dropbox",
+   "dropboxbusiness.com": "dropbox",
+   "dropboxcaptcha.com": "dropbox",
+   "dropboxexperiment.com": "dropbox",
    "dropboxstatic.com": "dropbox",
    "dropboxusercontent.com": "dropbox",
    "dssott.com": "disney-plus",
@@ -19163,6 +19358,7 @@
    "freshservice.com": "freshworks",
    "freshworks.com": "freshworks",
    "gemini.google.com": "google-gemini",
+   "getdropbox.com": "dropbox",
    "getlantern.org": "lantern",
    "getpostman.com": "postman",
    "getscreen.me": "getscreen",
@@ -19206,6 +19402,7 @@
    "gvt2.com": "google-base",
    "hbomax.com": "hbo-max",
    "hdslb.com": "bilibili",
+   "hellofax.com": "dropbox-sign",
    "hellosign.com": "dropbox-sign",
    "heroku.com": "heroku",
    "hf.co": "hugging-face",
@@ -19268,6 +19465,7 @@
    "logmeininc.com": "logmein",
    "lucid.app": "lucid",
    "lucidchart.com": "lucid",
+   "lync.com": "ms-teams",
    "mail.google.com": "gmail",
    "mail.yahoo.com": "yahoo-mail",
    "mail.yandex.com": "yandex-mail",
@@ -19294,6 +19492,7 @@
    "metamask.io": "metamask",
    "mi.com": "xiaomi",
    "microsoft.com": "ms-base",
+   "microsoft365.com": "ms-office365",
    "microsoftonline.com": "azure-ad",
    "midjourney.com": "midjourney",
    "minecraft.net": "minecraft",
@@ -19309,6 +19508,7 @@
    "mullvad.net": "mullvad",
    "muscache.com": "airbnb",
    "music.apple.com": "apple-music",
+   "mx.microsoft": "ms-exchange-online-protection",
    "myworkday.com": "workday",
    "mzstatic.com": "apple-base",
    "namecheap.com": "namecheap",
@@ -19362,7 +19562,9 @@
    "openstreetmap.org": "openstreetmap",
    "openx.net": "openx",
    "oraclecloud.com": "oracle-cloud",
+   "origin-tracker.githubusercontent.com": "github-copilot",
    "outbrain.com": "outbrain",
+   "outlook.cloud.microsoft": "outlook-web",
    "outlook.com": "outlook-web",
    "outlook.live.com": "outlook-web",
    "outlook.office.com": "outlook-web",
@@ -19386,6 +19588,7 @@
    "pingone.com": "ping-identity",
    "pinimg.com": "pinterest",
    "pinterest.com": "pinterest",
+   "platform.claude.com": "anthropic-api",
    "platform.openai.com": "openai-platform",
    "play.google.com": "google-play",
    "play.googleapis.com": "google-play",
@@ -19397,6 +19600,14 @@
    "powerbi.com": "power-bi",
    "primevideo.com": "amazon-prime-video",
    "privateinternetaccess.com": "private-internet-access",
+   "production-copilot-host-austriaeast.webpubsub.azure.com": "github-copilot",
+   "production-copilot-host-centralus-02.webpubsub.azure.com": "github-copilot",
+   "production-copilot-host-centralus.webpubsub.azure.com": "github-copilot",
+   "production-copilot-host-eastasia.webpubsub.azure.com": "github-copilot",
+   "production-copilot-host-westus.webpubsub.azure.com": "github-copilot",
+   "production-copilot-host-westus3.webpubsub.azure.com": "github-copilot",
+   "production-copilot-host.webpubsub.azure.com": "github-copilot",
+   "protection.outlook.com": "ms-exchange-online-protection",
    "proton.me": "proton-mail",
    "protonmail.ch": "proton-mail",
    "protonmail.com": "proton-mail",
@@ -19456,6 +19667,7 @@
    "service-now.com": "servicenow",
    "servicenow.com": "servicenow",
    "sharepoint.com": "sharepoint-online",
+   "sharepointonline.com": "sharepoint-online",
    "shein.com": "shein",
    "shopify.com": "shopify",
    "signal.art": "signal",
@@ -19502,6 +19714,7 @@
    "supremocontrol.com": "supremo",
    "surfshark.com": "surfshark",
    "surveymonkey.com": "surveymonkey",
+   "svc.ms": "sharepoint-online",
    "swcdn.apple.com": "apple-software-update",
    "swscan.apple.com": "apple-software-update",
    "sync.com": "sync-com",
@@ -19516,6 +19729,7 @@
    "taobao.com": "taobao",
    "target.com": "target",
    "teams.cdn.office.net": "ms-teams",
+   "teams.cloud.microsoft": "ms-teams",
    "teams.live.com": "ms-teams",
    "teams.microsoft.com": "ms-teams",
    "teamviewer.com": "teamviewer",
@@ -19642,7 +19856,14 @@
    "anydesk.com": "anydesk",
    "atera.com": "atera",
    "beyondtrust.com": "beyondtrust",
+   "claude.com": "anthropic-claude",
+   "code.claude.com": "anthropic-claude",
    "cyberghostvpn.com": "cyberghost",
+   "dropbox.tech": "dropbox",
+   "dropboxforum.com": "dropbox",
+   "dropboxforums.com": "dropbox",
+   "dropboxinsiders.com": "dropbox",
+   "dropboxlegal.com": "dropbox",
    "dwservice.net": "dwservice",
    "expressvpn.com": "expressvpn",
    "getlantern.org": "lantern",
@@ -19652,6 +19873,7 @@
    "hotspotshield.com": "hotspot-shield",
    "ipvanish.com": "ipvanish",
    "kaseya.com": "kaseya",
+   "learn.dropbox.com": "dropbox",
    "logmein.com": "logmein",
    "mullvad.net": "mullvad",
    "ngrok.com": "ngrok",
@@ -19738,15 +19960,15 @@
  },
  "release": {
   "components": {
-   "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
+   "application_catalog": "f82444035f260b95537ed83be8d7e80998c79727272a161b1d529839f797118b",
    "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-   "host_catalog": "82e1abd27dad3f3ee04cb80939a9ab81f099631f06e23d94fb75e6071afd1c7d",
+   "host_catalog": "184c9d5d0812aa155855d75a8b6c0bb2d0f174292868fdbe1ac611f10f4776fb",
    "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
   },
-  "digest": "e0d6e39533a6ae9c",
-  "released": "2026-11-15",
-  "reviewed": "2026-11-15",
-  "version": "2026.11.2"
+  "digest": "fef8f709d5615a85",
+  "released": "2026-11-18",
+  "reviewed": "2026-11-18",
+  "version": "2026.11.3"
  },
  "risks": {
   "cleartext-credential-protocol": {
