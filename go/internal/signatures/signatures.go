@@ -19,10 +19,12 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
 
 	"github.com/leenadav/protocol-detector/go/internal/content"
+	"github.com/leenadav/protocol-detector/go/internal/ojson"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 )
 
@@ -504,8 +506,29 @@ func FromJSON(text []byte, pack *content.Pack) (*Set, error) {
 	hasher := sha256.New()
 	byFamily := map[string][]indexed{}
 	var familyOrder []string
-	for _, item := range list {
-		s, err := newSignature(item, pack)
+	var ordered []ojson.Value // the items in Python's key order, decoded only when a description is a container
+	for i, item := range list {
+		built := item
+		if m, isMap := item.(map[string]interface{}); isMap {
+			if d, ok := m["description"]; ok && isContainer(d) {
+				if ordered == nil {
+					ordered = orderedItems(text)
+				}
+				if i < len(ordered) {
+					if o, isObject := ordered[i].(*ojson.Object); isObject {
+						if dv, ok := o.Get("description"); ok {
+							copied := make(map[string]interface{}, len(m))
+							for k, v := range m {
+								copied[k] = v
+							}
+							copied["description"] = pyValueRepr(dv) // str() of a dict or list is its repr
+							built = copied
+						}
+					}
+				}
+			}
+		}
+		s, err := newSignature(built, pack)
 		if err != nil {
 			return nil, err
 		}
@@ -644,6 +667,116 @@ func (s *Set) MatchCounted(family string, values Values) (*Signature, int) {
 		}
 	}
 	return nil, evaluated
+}
+
+func isContainer(v interface{}) bool {
+	switch v.(type) {
+	case map[string]interface{}, []interface{}:
+		return true
+	}
+	return false
+}
+
+// orderedItems is the signature list of the document in Python's key order (json.loads keeps insertion order,
+// a repeated key keeps its first position), or nil when the ordered decoder refuses the document.
+func orderedItems(text []byte) []ojson.Value {
+	v, err := ojson.Decode(text)
+	if err != nil {
+		return nil
+	}
+	if o, isObject := v.(*ojson.Object); isObject {
+		v, _ = o.Get("signatures")
+	}
+	list, _ := v.([]ojson.Value)
+	return list
+}
+
+// pyValueRepr is Python's repr() of a decoded JSON value (str() of a dict or list is the repr of its contents).
+func pyValueRepr(v ojson.Value) string {
+	switch x := v.(type) {
+	case nil:
+		return "None"
+	case bool:
+		if x {
+			return "True"
+		}
+		return "False"
+	case ojson.Int:
+		return string(x)
+	case float64:
+		switch {
+		case math.IsNaN(x):
+			return "nan"
+		case math.IsInf(x, 1):
+			return "inf"
+		case math.IsInf(x, -1):
+			return "-inf"
+		}
+		return pyFloatRepr(x)
+	case string:
+		return pyStrRepr(x)
+	case []ojson.Value:
+		parts := make([]string, len(x))
+		for i, e := range x {
+			parts[i] = pyValueRepr(e)
+		}
+		return "[" + strings.Join(parts, ", ") + "]"
+	case *ojson.Object:
+		parts := make([]string, 0, x.Len())
+		for _, k := range x.Keys() {
+			e, _ := x.Get(k)
+			parts = append(parts, pyStrRepr(k)+": "+pyValueRepr(e))
+		}
+		return "{" + strings.Join(parts, ", ") + "}"
+	}
+	return ""
+}
+
+// pyStrRepr is repr(str): quotes chosen as Python chooses them, printable characters as they are, the rest
+// escaped (\xNN, \uNNNN, \UNNNNNNNN); lone surrogates (WTF-8 from ojson) are \udNNN.
+func pyStrRepr(s string) string {
+	quote := byte('\'')
+	if strings.IndexByte(s, '\'') >= 0 && strings.IndexByte(s, '"') < 0 {
+		quote = '"'
+	}
+	var b strings.Builder
+	b.WriteByte(quote)
+	for i := 0; i < len(s); {
+		r, size := utf8.DecodeRuneInString(s[i:])
+		if r == utf8.RuneError && size == 1 && i+2 < len(s) && s[i] == 0xed {
+			r = rune(s[i]&0x0f)<<12 | rune(s[i+1]&0x3f)<<6 | rune(s[i+2]&0x3f)
+			size = 3
+		}
+		i += size
+		switch {
+		case r == rune(quote) || r == '\\':
+			b.WriteByte('\\')
+			b.WriteRune(r)
+		case r == '\t':
+			b.WriteString(`\t`)
+		case r == '\n':
+			b.WriteString(`\n`)
+		case r == '\r':
+			b.WriteString(`\r`)
+		case r < 0x20 || r == 0x7f:
+			fmt.Fprintf(&b, `\x%02x`, r)
+		case r < 0x7f:
+			b.WriteRune(r)
+		case r >= 0xd800 && r <= 0xdfff || !unicode.IsPrint(r):
+			switch {
+			case r <= 0xff:
+				fmt.Fprintf(&b, `\x%02x`, r)
+			case r <= 0xffff:
+				fmt.Fprintf(&b, `\u%04x`, r)
+			default:
+				fmt.Fprintf(&b, `\U%08x`, r)
+			}
+		default:
+			b.WriteRune(r)
+		}
+	}
+	b.WriteByte(quote)
+	return b.String()
 }
 
 // --- Python json.dumps(item, sort_keys=True) and str() for the digest and descriptions ---

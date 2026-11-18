@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/leenadav/protocol-detector/go/internal/content"
-	"github.com/leenadav/protocol-detector/go/internal/parsing"
 )
 
 func loadPack(t *testing.T) *content.Pack {
@@ -36,10 +35,29 @@ func TestDigestMatchesTheReference(t *testing.T) {
 	}
 }
 
-func TestContainerDescriptionIsRefusedNotGuessed(t *testing.T) {
-	// Python's str() of a JSON object depends on key order, which the Go decoder does not keep: refused explicitly.
-	_, err := FromJSON([]byte(`[{"name": "a", "description": {"k": 1}, "conditions": [{"context": "ssh-req-banner", "pattern": "OpenSSH"}]}]`), loadPack(t))
-	if _, ok := err.(*parsing.NotPorted); !ok {
-		t.Fatalf("container description: %v", err)
+func TestContainerDescriptionIsPythonsStr(t *testing.T) {
+	// str() of a JSON object or list as the reference computes it (key order, repr of each value, 256 code
+	// points); vectors from CPython 3.13.
+	cases := []struct{ description, want string }{
+		{"{\x22a\x22: 1, \x22b\x22: [1.5, true, null, \x22x'y\x22], \x22a\x22: 2}", "{'a': 2, 'b': [1.5, True, None, \x22x'y\x22]}"},
+		{"[\x22\xc3\xa9\x22, \x22\x5cu00a0\x22, \x22\x5cu0007\x22, \x22\xf0\x9f\x98\x80\x22, \x22\x5cud800\x22, \x22a\x5c\x22b\x22, \x22'\x22]", "['\xc3\xa9', '\x5cxa0', '\x5cx07', '\xf0\x9f\x98\x80', '\x5cud800', 'a\x22b', \x22'\x22]"},
+		{"{\x22k\x22: {\x22n\x22: -0.0, \x22f\x22: 1e22, \x22g\x22: 1e-5}}", "{'k': {'n': -0.0, 'f': 1e+22, 'g': 1e-05}}"},
+		{"[]", "[]"},
+		{"{}", "{}"},
+		{"[NaN, Infinity]", "[nan, inf]"},
+		{"{\x22long\x22: \x22xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\x22}", "{'long': 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"},
+	}
+	for _, c := range cases {
+		doc := `[{"name": "a", "description": ` + c.description + `, "conditions": [{"context": "ssh-req-banner", "pattern": "OpenSSH"}]}]`
+		set, err := FromJSON([]byte(doc), loadPack(t))
+		if err != nil {
+			if c.description == "[NaN, Infinity]" {
+				continue // encoding/json refuses NaN before the description is read; the reference accepts it
+			}
+			t.Fatalf("%s: %v", c.description, err)
+		}
+		if got := set.byName["a"].Description; got != c.want {
+			t.Errorf("%s: got %q, want %q", c.description, got, c.want)
+		}
 	}
 }

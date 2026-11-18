@@ -39,7 +39,8 @@ SIGNATURES = [
     {"name": "any-get", "conditions": {"or": [{"context": "http-req-method", "operator": "equal-to", "value": "GET"},
                                                {"context": "http2-req-method", "operator": "equal-to", "value": "GET"}]}},
     {"name": "sni-example", "parent": "ssl", "conditions": [{"context": "ssl-req-chello-sni", "pattern": "\\.example", "case_insensitive": True}]},
-    {"name": "openssh", "risk": 4, "conditions": [{"context": "ssh-req-banner", "pattern": "OpenSSH_[0-9]"}]},
+    {"name": "openssh", "risk": 4, "description": {"owner": "ops", "tags": ["remote-access", 1.5, None, "caf\u00e9"]},  # str() of a dict
+     "conditions": [{"context": "ssh-req-banner", "pattern": "OpenSSH_[0-9]"}]},
     {"name": "dns-example", "conditions": [{"context": "dns-req-query-name", "pattern": "example"}, {"context": "dns-req-query-type", "operator": "less-than", "value": 30}]},
     {"name": "tcp-zeros", "conditions": [{"context": "unknown-req-tcp-payload", "pattern": "\\x00\\x00\\x00\\x00\\x00\\x00\\x00"}]},
     {"name": "udp-short", "conditions": [{"context": "unknown-req-udp-payload-length", "operator": "less-than", "value": 64},
