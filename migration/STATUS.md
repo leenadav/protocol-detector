@@ -456,8 +456,8 @@ Frozen milestone SHAs for Codex (available from Sunday): `61fd45a` (Milestone A)
 performance gates), `68fb867` (the Go live control plane and dashboard service), `58a4701` (the launcher switch
 and Milestone B), `9e51389` (one generation counter per capture, family verification, container signature
 descriptions, content-version rollback), `6b280a6` (the adversarial suite and the load benchmark), `024163f`
-(the case generator's coverage cases for nine families: 88 of 88 parity-verified), and the head that tightens
-the CoAP profile in both engines (F-ADV-1) once its full gate passes.
+(the case generator's coverage cases for nine families: 88 of 88 parity-verified), and `12e1ed0` (the CoAP
+profile held to RFC 7252 in both engines, F-ADV-1).
 
 ## Family verification (2026-11-18)
 
