@@ -39,7 +39,7 @@ Auto-merged but needing attention: `protocol_adapters/analyze_pcap.py` and `prot
    parity-go` must still report 0 differences; any case that changes is one where the branch's Python and Go
    disagreed without a committed case showing it.
 2. **`GOPROXY=off` in main's Go jobs vs this branch's module dependency: resolved by vendoring** (Hermes's
-   decision, 2026-11-18; `3a0vendor`). `go/go.mod` requires `golang.org/x/crypto v0.59.0` (key-log TLS
+   decision, 2026-11-18; `76e467a`, `d65d21a`). `go/go.mod` requires `golang.org/x/crypto v0.59.0` (key-log TLS
    decryption, `4111a70`, after the earlier merge), and main's CI (`c58fe65`, `tools/go_ci.py`) runs the Go jobs
    with `GOPROXY=off`. Of the three options (vendor, a proxy exception for the module, a pre-populated module
    cache) vendoring is the one that keeps CI's rule intact: the code that is built is in the repository,
