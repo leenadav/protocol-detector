@@ -456,6 +456,16 @@ Frozen milestone SHAs for Codex (available from Sunday): `61fd45a` (Milestone A)
 performance gates), `68fb867` (the Go live control plane and dashboard service), and the head that records the
 launcher switch and Milestone B once its full gate passes.
 
+## Family verification (2026-11-18)
+
+Routine technical choice under Lee's standing rule: what `parity-verified` means for a family, stated as a check
+the gate computes rather than a label set by hand.
+
+| item | state | evidence |
+|---|---|---|
+| Rule | implemented | `migration/parity/verify_families.py`, run by `make parity-go` (so in `make go-check`) right after the exact comparison: a family is `parity-verified` when the passing report claims it and every committed case labelled with it matched exactly (no gap, no approved delta), its cases of each transport's kind cover a positive message, a truncated prefix, a mutation and foreign bytes, and a TCP family has a matched session-level case. `--check` fails when a status in `migration/CAPABILITIES.json` differs from the computed one in either direction; `--write` records each family's case counts, classes and shortfall there. `test_verify_families.py`; planted regressions (one unmatched case, a listed gap) each fail the check. Capture-level differentials stay separate gates. |
+| Result | 79 of 88 `parity-verified` | Not verified, for lack of committed cases (the case generator and `cases.json` are reference fixtures): http2, mongodb, mysql, resp, s7comm, websocket (no session-level case); smtp and ssh (no session-level case, no mutated stream case); ipfix (no foreign-bytes datagram case). They stay `experimental` with the shortfall named in CAPABILITIES.json; adding those cases to the reference generator would promote them. |
+
 ## Open after M7
 
 - Default-backend switch, merge and deployment: Lee's decision (AGENTS.md); the branch makes no switch.

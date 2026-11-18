@@ -249,6 +249,7 @@ GO_FAMILIES := http,tls,dns,mdns,netbios-ns,llmnr,ssh,smtp,imap,pop3,ftp,nats,ir
 parity-go:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) go run ./cmd/protodetect replay --cases ../migration/fixtures/cases.json --out ../migration/parity/go-results.json
 	python3 -B migration/parity/compare.py --results migration/parity/go-results.json --families $(GO_FAMILIES) --report migration/parity/go-report.json
+	python3 -B migration/parity/verify_families.py --check migration/CAPABILITIES.json
 
 # Migration M4/M9: Python vs Go engine feed loop on identical bytes, alternating rounds (not part of `check`)
 bench-compare:
