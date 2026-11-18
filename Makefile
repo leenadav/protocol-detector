@@ -66,7 +66,14 @@ manifest:
 # instead of silently passing: the canonical CI job installs the extra and always runs it.
 # Explicit dependency detection: the suite's own exit status is the target's exit status (a failing suite can
 # never read as "skipped"); only a missing `cryptography` skips, and says so.
+# The presentation suite runs the Go backend when go/bin/protodetect exists, so a binary built before the latest
+# engine or content change would be compared instead of the tree (2026-11-18): rebuild it first when Go is here.
 presentation-check:
+	@if [ -x go/bin/protodetect ] && command -v go >/dev/null 2>&1; then \
+	  $(MAKE) --no-print-directory go-build; \
+	elif [ -x go/bin/protodetect ]; then \
+	  echo "presentation-check: go/bin/protodetect exists but no Go toolchain is on PATH to rebuild it; it may be stale"; \
+	fi
 	@if $(PYTHON) -c "import cryptography" 2>/dev/null; then \
 	  $(MAKE) --no-print-directory presentation-test PYTHON=$(PYTHON); \
 	else \
