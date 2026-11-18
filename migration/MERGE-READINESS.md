@@ -126,8 +126,13 @@ batch B), `7dcabb7` (content 2026.11.5, batch B2). The list is kept in migration
 ## Checklist before Lee decides
 
 - [ ] Codex results for the frozen snapshots above (issue #2), findings fixed in later SHAs and recorded.
-- [x] The `GOPROXY=off` / `x/crypto` question: vendored (Hermes, 2026-11-18; `76e467a`). Open on the CI/CD
-      side: `-mod=vendor` in main's `go-check-minimum` at merge time, and a CI step for `make go-vendor-check`.
+- [x] The `GOPROXY=off` / `x/crypto` question: vendored (Hermes, 2026-11-18; `76e467a`). CI side done by the
+      CI/CD lane on `claude/cicd-next` `5442d05` (draft PR #30, not merged): a `go-vendor` job runs `make
+      go-vendor-check` with module access (the only Go step with network); the tests (3.9/3.11/3.13) and
+      presentation jobs build the Go binary offline first, so `GoServiceTests` runs instead of being skipped;
+      `go_ci.py` sets `GOFLAGS=-mod=vendor` whenever `go/vendor` exists, which also covers main's
+      `go-check-minimum`. Hosted evidence: probe `claude/cicd-engine-probe` `407bfcc` (`12fbc0e` plus those CI
+      files), run 44388423818 green. Lands with PR #30, so this branch's own CI stays red on those jobs until then.
 - [ ] Conflicts resolved as in the table, on a merge commit (no rebase, no force-push), CI/CD-owned files by
       the CI/CD lane.
 - [ ] After the merge: `cases.json` regenerated from the merged reference; `make check` and `make go-check`
