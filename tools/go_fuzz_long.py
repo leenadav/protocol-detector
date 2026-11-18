@@ -157,7 +157,8 @@ def main(argv=None):
     try:
         budget = parse_budget(args.budget_minutes)
     except ValueError as error:
-        parser.error(str(error))
+        print("go_fuzz_long: {}".format(error), file=sys.stderr)
+        return 2
     return run(budget, args.summary, args.out)
 
 
