@@ -49,6 +49,11 @@ HISTORY = (
             "Microsoft 365 cloud.microsoft names and Exchange Online Protection separated from web mail; Copilot "
             "app host; GitHub Copilot service hosts; Anthropic API split from the apps; Dropbox verified domains, "
             "web fronts and DocSend"),
+    Release("2026.11.4", "2026-11-18", "2026-11-18",
+            "application-research lane proposal with primary sources (research/apps on claude/app-research bb931b9); "
+            "engine-lane review of each spec against its sources; independent review pending",
+            "Google Drive and Docs editor hosts; OneDrive consumer hosts; Webex service domains; OpenAI help and "
+            "developer documentation as web fronts"),
 )
 CURRENT = HISTORY[-1].version
 LOCK_PATH = Path(__file__).with_name("content_lock.json")
@@ -109,6 +114,14 @@ _ADDED_2026_11_2 = (
     "xandr",
 )
 _PRIOR_HOST_STATE = MappingProxyType({
+    "2026.11.3": MappingProxyType({
+        "google-drive": {"domains": ("drive.google.com", "docs.google.com", "drive.usercontent.google.com")},
+        "ms-onedrive": {"description": "Microsoft OneDrive file storage",
+                        "domains": ("onedrive.live.com", "onedrive.com", "1drv.com", "1drv.ms")},
+        "webex": {"domains": ("webex.com", "wbx2.com")},
+        "openai-chatgpt": {"web_fronts": ("openai.com", "www.openai.com")},
+        "openai-platform": {"web_fronts": ()},
+    }),
     "2026.11.2": MappingProxyType({
         "ms-teams": {"domains": ("teams.microsoft.com", "teams.live.com", "teams.cdn.office.net")},
         "outlook-web": {"domains": ("outlook.office365.com", "outlook.office.com", "outlook.live.com", "outlook.com")},
@@ -233,6 +246,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
         "application_catalog": "f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7",
         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
         "host_catalog": "82e1abd27dad3f3ee04cb80939a9ab81f099631f06e23d94fb75e6071afd1c7d",
+        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+    "2026.11.3": MappingProxyType({
+        "application_catalog": "f82444035f260b95537ed83be8d7e80998c79727272a161b1d529839f797118b",
+        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+        "host_catalog": "184c9d5d0812aa155855d75a8b6c0bb2d0f174292868fdbe1ac611f10f4776fb",
         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
 })
 

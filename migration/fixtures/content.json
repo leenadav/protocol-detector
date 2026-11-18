@@ -5490,7 +5490,7 @@
    ],
    "container": null,
    "depends_on": [],
-   "description": "Microsoft OneDrive file storage",
+   "description": "Microsoft OneDrive (consumer) file storage",
    "implicitly_uses": [
     "ssl",
     "web-browsing"
@@ -11327,7 +11327,12 @@
    "google-drive": [
     "drive.google.com",
     "docs.google.com",
-    "drive.usercontent.google.com"
+    "drive.usercontent.google.com",
+    "googledrive.com",
+    "sheets.google.com",
+    "slides.google.com",
+    "drive-data-export.usercontent.google.com",
+    "drive-data-export-eu.usercontent.google.com"
    ],
    "google-gemini": [
     "gemini.google.com"
@@ -11615,7 +11620,10 @@
     "onedrive.live.com",
     "onedrive.com",
     "1drv.com",
-    "1drv.ms"
+    "1drv.ms",
+    "skydrive.live.com",
+    "photos.live.com",
+    "storage.msn.com"
    ],
    "ms-teams": [
     "teams.microsoft.com",
@@ -12218,7 +12226,11 @@
    ],
    "webex": [
     "webex.com",
-    "wbx2.com"
+    "wbx2.com",
+    "ciscospark.com",
+    "webexapis.com",
+    "webexcontent.com",
+    "ciscosparkcontent.com"
    ],
    "wechat": [
     "wechat.com",
@@ -12813,7 +12825,11 @@
     "description": "Cisco Webex meetings",
     "domains": [
      "webex.com",
-     "wbx2.com"
+     "wbx2.com",
+     "ciscospark.com",
+     "webexapis.com",
+     "webexcontent.com",
+     "ciscosparkcontent.com"
     ],
     "name": "webex",
     "risk": 2,
@@ -12934,12 +12950,15 @@
      "widely-used",
      "transfers-files"
     ],
-    "description": "Microsoft OneDrive file storage",
+    "description": "Microsoft OneDrive (consumer) file storage",
     "domains": [
      "onedrive.live.com",
      "onedrive.com",
      "1drv.com",
-     "1drv.ms"
+     "1drv.ms",
+     "skydrive.live.com",
+     "photos.live.com",
+     "storage.msn.com"
     ],
     "name": "ms-onedrive",
     "risk": 3,
@@ -12993,7 +13012,12 @@
     "domains": [
      "drive.google.com",
      "docs.google.com",
-     "drive.usercontent.google.com"
+     "drive.usercontent.google.com",
+     "googledrive.com",
+     "sheets.google.com",
+     "slides.google.com",
+     "drive-data-export.usercontent.google.com",
+     "drive-data-export-eu.usercontent.google.com"
     ],
     "name": "google-drive",
     "risk": 3,
@@ -13207,7 +13231,8 @@
     "technology": "browser-based",
     "web_fronts": [
      "openai.com",
-     "www.openai.com"
+     "www.openai.com",
+     "help.openai.com"
     ]
    },
    {
@@ -13224,7 +13249,9 @@
     "risk": 3,
     "subcategory": "generative-ai",
     "technology": "client-server",
-    "web_fronts": []
+    "web_fronts": [
+     "developers.openai.com"
+    ]
    },
    {
     "category": "business-systems",
@@ -19236,6 +19263,8 @@
    "chatglm.cn": "zhipu-ai",
    "chatgpt.com": "openai-chatgpt",
    "circleci.com": "circleci",
+   "ciscospark.com": "webex",
+   "ciscosparkcontent.com": "webex",
    "claude.ai": "anthropic-claude",
    "claude.com": "anthropic-claude",
    "claudeusercontent.com": "anthropic-claude",
@@ -19305,6 +19334,8 @@
    "doordash.com": "doordash",
    "doubao.com": "doubao",
    "doubleclick.net": "google-ads",
+   "drive-data-export-eu.usercontent.google.com": "google-drive",
+   "drive-data-export.usercontent.google.com": "google-drive",
    "drive.google.com": "google-drive",
    "drive.usercontent.google.com": "google-drive",
    "dropbox-dns.com": "dropbox",
@@ -19380,6 +19411,7 @@
    "google.com": "google-base",
    "googleadservices.com": "google-ads",
    "googleapis.com": "google-base",
+   "googledrive.com": "google-drive",
    "googlesyndication.com": "google-ads",
    "googletagmanager.com": "google-analytics",
    "googleusercontent.com": "google-base",
@@ -19584,6 +19616,7 @@
    "perplexity.ai": "perplexity",
    "phind.com": "phind",
    "photos.google.com": "google-photos",
+   "photos.live.com": "ms-onedrive",
    "pingidentity.com": "ping-identity",
    "pingone.com": "ping-identity",
    "pinimg.com": "pinterest",
@@ -19668,16 +19701,19 @@
    "servicenow.com": "servicenow",
    "sharepoint.com": "sharepoint-online",
    "sharepointonline.com": "sharepoint-online",
+   "sheets.google.com": "google-drive",
    "shein.com": "shein",
    "shopify.com": "shopify",
    "signal.art": "signal",
    "signal.org": "signal",
+   "skydrive.live.com": "ms-onedrive",
    "skype.com": "skype",
    "skypeassets.com": "skype",
    "slack-edge.com": "slack",
    "slack-files.com": "slack",
    "slack-msgs.com": "slack",
    "slack.com": "slack",
+   "slides.google.com": "google-drive",
    "smartsheet.com": "smartsheet",
    "snap-dev.net": "snapchat",
    "snapchat.com": "snapchat",
@@ -19705,6 +19741,7 @@
    "steamcontent.com": "steam",
    "steampowered.com": "steam",
    "steamstatic.com": "steam",
+   "storage.msn.com": "ms-onedrive",
    "strava.com": "strava",
    "stripe.com": "stripe",
    "stripe.network": "stripe",
@@ -19798,6 +19835,8 @@
    "wbx2.com": "webex",
    "weather.com": "weather-com",
    "webex.com": "webex",
+   "webexapis.com": "webex",
+   "webexcontent.com": "webex",
    "wechat.com": "wechat",
    "weibo.cn": "weibo",
    "weibo.com": "weibo",
@@ -19859,6 +19898,7 @@
    "claude.com": "anthropic-claude",
    "code.claude.com": "anthropic-claude",
    "cyberghostvpn.com": "cyberghost",
+   "developers.openai.com": "openai-platform",
    "dropbox.tech": "dropbox",
    "dropboxforum.com": "dropbox",
    "dropboxforums.com": "dropbox",
@@ -19869,6 +19909,7 @@
    "getlantern.org": "lantern",
    "getscreen.me": "getscreen",
    "gotomypc.com": "gotomypc",
+   "help.openai.com": "openai-chatgpt",
    "hide.me": "hide-me",
    "hotspotshield.com": "hotspot-shield",
    "ipvanish.com": "ipvanish",
@@ -19960,15 +20001,15 @@
  },
  "release": {
   "components": {
-   "application_catalog": "f82444035f260b95537ed83be8d7e80998c79727272a161b1d529839f797118b",
+   "application_catalog": "5223dae2810e6760888e005a40ef308721c58d38d35d697603c08d1b919da441",
    "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-   "host_catalog": "184c9d5d0812aa155855d75a8b6c0bb2d0f174292868fdbe1ac611f10f4776fb",
+   "host_catalog": "5ef1561c0cafa644c3fd445e67b32a8c5916e7fbf1a41819e6eaac582d67ec12",
    "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
   },
-  "digest": "fef8f709d5615a85",
+  "digest": "c13a842d11873db6",
   "released": "2026-11-18",
   "reviewed": "2026-11-18",
-  "version": "2026.11.3"
+  "version": "2026.11.4"
  },
  "risks": {
   "cleartext-credential-protocol": {
