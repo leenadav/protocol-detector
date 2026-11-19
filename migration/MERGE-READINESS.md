@@ -1,7 +1,10 @@
 # Merge readiness: `claude/go-migration` into `main` (documentation only)
 
-Written 2026-11-18; refreshed at branch head `7dcabb7` against `origin/main` `b79e447` (unchanged since the first
-version). Nothing here merges, rebases,
+Written 2026-11-18; refreshed at branch head `7dcabb7` against `origin/main` `b79e447`, and again on 2026-11-19 at
+`1437060` against `origin/main` `ddc557d` (PR #30 and PR #31 merged; this branch 87 commits ahead, 21 behind). The trial
+merge (`git merge-tree --write-tree`) still conflicts on the same 7 files with the same hunk counts (the Makefile 2), so the
+plan below stands. `main`'s Makefile still has no `-mod=vendor`; its CI tool sets `GOFLAGS=-mod=vendor` in the job
+environment when `go/vendor` exists, so the merge keeps this branch's explicit flags. Nothing here merges, rebases,
 opens a pull request or changes history: whether and when to merge is Lee's decision (AGENTS.md), and the
 review of the frozen snapshots is Codex's. The draft pull-request text is `migration/PR-DRAFT.md`.
 
@@ -136,7 +139,7 @@ batch B), `7dcabb7` (content 2026.11.5, batch B2). The list is kept in migration
       presentation jobs build the Go binary offline first, so `GoServiceTests` runs instead of being skipped;
       `go_ci.py` sets `GOFLAGS=-mod=vendor` whenever `go/vendor` exists, which also covers main's
       `go-check-minimum`. Hosted evidence: probe `claude/cicd-engine-probe` `407bfcc` (`12fbc0e` plus those CI
-      files), run 44388423818 green. Lands with PR #30, so this branch's own CI stays red on those jobs until then.
+      files), run 44388423818 green. PR #30 is merged into `main` (`7146ce1`); this branch's own CI stays red on the presentation step until `main` is merged in.
 - [ ] Conflicts resolved as in the table, on a merge commit (no rebase, no force-push), CI/CD-owned files by
       the CI/CD lane.
 - [ ] After the merge: `cases.json` regenerated from the merged reference; `make check` and `make go-check`
