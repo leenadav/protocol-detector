@@ -10960,7 +10960,11 @@
    "atlassian": [
     "atlassian.net",
     "atlassian.com",
-    "bitbucket.org"
+    "bitbucket.org",
+    "atl-paas.net",
+    "ss-inf.net",
+    "jira.com",
+    "teamworkgraph.com"
    ],
    "audible": [
     "audible.com"
@@ -11095,7 +11099,10 @@
     "one.one.one.one"
    ],
    "cloudflare-warp": [
-    "cloudflareclient.com"
+    "cloudflareclient.com",
+    "api.devices.cloudflare.com",
+    "api.devices.fed.cloudflare.com",
+    "notifications.devices.fed.cloudflare.com"
    ],
    "cnn": [
     "cnn.com"
@@ -11428,7 +11435,8 @@
     "meet.google.com"
    ],
    "google-notebooklm": [
-    "notebooklm.google.com"
+    "notebooklm.google.com",
+    "notebook.google.com"
    ],
    "google-photos": [
     "photos.google.com"
@@ -11761,7 +11769,9 @@
     "nextdoor.com"
    ],
    "ngrok": [
-    "ngrok.com"
+    "ngrok.com",
+    "ngrok-agent.com",
+    "update.equinox.io"
    ],
    "ninjaone": [
     "ninjaone.com",
@@ -12331,7 +12341,14 @@
    ],
    "wetransfer": [
     "wetransfer.com",
-    "wetransfer.net"
+    "wetransfer.net",
+    "we.tl",
+    "wt-prod-euwest1-storm.s3.amazonaws.com",
+    "wt-prod-euwest1-storm.s3-accelerate.amazonaws.com",
+    "wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com",
+    "wt-prod-useast1-storm.s3.amazonaws.com",
+    "wt-prod-useast1-storm.s3-accelerate.amazonaws.com",
+    "wt-prod-useast1-storm.s3.us-east-1.amazonaws.com"
    ],
    "whatsapp": [
     "whatsapp.com",
@@ -13168,7 +13185,12 @@
      "dropboxlegal.com",
      "dropboxinsiders.com",
      "dropbox.tech",
-     "learn.dropbox.com"
+     "learn.dropbox.com",
+     "www.dropboxforum.com",
+     "www.dropboxforums.com",
+     "www.dropboxlegal.com",
+     "www.dropboxinsiders.com",
+     "www.dropbox.tech"
     ]
    },
    {
@@ -13263,7 +13285,11 @@
     "domains": [
      "atlassian.net",
      "atlassian.com",
-     "bitbucket.org"
+     "bitbucket.org",
+     "atl-paas.net",
+     "ss-inf.net",
+     "jira.com",
+     "teamworkgraph.com"
     ],
     "name": "atlassian",
     "risk": 2,
@@ -14074,7 +14100,14 @@
     "description": "WeTransfer file transfer",
     "domains": [
      "wetransfer.com",
-     "wetransfer.net"
+     "wetransfer.net",
+     "we.tl",
+     "wt-prod-euwest1-storm.s3.amazonaws.com",
+     "wt-prod-euwest1-storm.s3-accelerate.amazonaws.com",
+     "wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com",
+     "wt-prod-useast1-storm.s3.amazonaws.com",
+     "wt-prod-useast1-storm.s3-accelerate.amazonaws.com",
+     "wt-prod-useast1-storm.s3.us-east-1.amazonaws.com"
     ],
     "name": "wetransfer",
     "risk": 3,
@@ -17924,7 +17957,8 @@
     ],
     "description": "Google NotebookLM",
     "domains": [
-     "notebooklm.google.com"
+     "notebooklm.google.com",
+     "notebook.google.com"
     ],
     "name": "google-notebooklm",
     "risk": 3,
@@ -18198,7 +18232,9 @@
     ],
     "description": "ngrok tunnel service control plane",
     "domains": [
-     "ngrok.com"
+     "ngrok.com",
+     "ngrok-agent.com",
+     "update.equinox.io"
     ],
     "name": "ngrok",
     "risk": 4,
@@ -18443,7 +18479,10 @@
     ],
     "description": "Cloudflare WARP client endpoints",
     "domains": [
-     "cloudflareclient.com"
+     "cloudflareclient.com",
+     "api.devices.cloudflare.com",
+     "api.devices.fed.cloudflare.com",
+     "notifications.devices.fed.cloudflare.com"
     ],
     "name": "cloudflare-warp",
     "risk": 3,
@@ -19350,6 +19389,8 @@
    "aol.com": "aol",
    "api.anthropic.com": "anthropic-api",
    "api.deepseek.com": "deepseek-api",
+   "api.devices.cloudflare.com": "cloudflare-warp",
+   "api.devices.fed.cloudflare.com": "cloudflare-warp",
    "api.mistral.ai": "mistral-api",
    "api.openai.com": "openai-platform",
    "api.perplexity.ai": "perplexity-api",
@@ -19361,6 +19402,7 @@
    "asana.com": "asana",
    "assist.zoho.com": "zoho-assist",
    "atera.com": "atera",
+   "atl-paas.net": "atlassian",
    "atlassian.com": "atlassian",
    "atlassian.net": "atlassian",
    "audible.com": "audible",
@@ -19622,6 +19664,7 @@
    "jasper.ai": "jasper-ai",
    "jd.com": "jd-com",
    "jetbrains.com": "jetbrains",
+   "jira.com": "atlassian",
    "jit.si": "jitsi-meet",
    "jtvnw.net": "twitch",
    "jumpcloud.com": "jumpcloud",
@@ -19712,6 +19755,7 @@
    "nflximg.net": "netflix",
    "nflxso.net": "netflix",
    "nflxvideo.net": "netflix",
+   "ngrok-agent.com": "ngrok",
    "ngrok.com": "ngrok",
    "ninjaone.com": "ninjaone",
    "ninjarmm.com": "ninjaone",
@@ -19721,7 +19765,9 @@
    "nordcdn.com": "nordvpn",
    "nordvpn.com": "nordvpn",
    "norton.com": "norton",
+   "notebook.google.com": "google-notebooklm",
    "notebooklm.google.com": "google-notebooklm",
+   "notifications.devices.fed.cloudflare.com": "cloudflare-warp",
    "notion.site": "notion",
    "notion.so": "notion",
    "npmjs.com": "npm",
@@ -19887,6 +19933,7 @@
    "spotify.design": "spotify",
    "spotifycdn.com": "spotify",
    "squarespace.com": "squarespace",
+   "ss-inf.net": "atlassian",
    "ssl-images-amazon.com": "amazon",
    "sstatic.net": "stack-overflow",
    "stability.ai": "stability-ai",
@@ -19926,6 +19973,7 @@
    "teams.live.com": "ms-teams",
    "teams.microsoft.com": "ms-teams",
    "teamviewer.com": "teamviewer",
+   "teamworkgraph.com": "atlassian",
    "telegram.me": "telegram",
    "telegram.org": "telegram",
    "telesco.pe": "telegram",
@@ -19970,6 +20018,7 @@
    "ultrasurf.us": "ultrasurf",
    "unity.com": "unity",
    "unity3d.com": "unity",
+   "update.equinox.io": "ngrok",
    "update.microsoft.com": "ms-update",
    "updates.cdn-apple.com": "apple-software-update",
    "userapi.com": "vk",
@@ -19989,6 +20038,7 @@
    "walmartimages.com": "walmart",
    "waze.com": "waze",
    "wbx2.com": "webex",
+   "we.tl": "wetransfer",
    "weather.com": "weather-com",
    "webex.com": "webex",
    "webexapis.com": "webex",
@@ -20015,6 +20065,12 @@
    "workday.com": "workday",
    "wp.com": "wordpress-com",
    "writesonic.com": "writesonic",
+   "wt-prod-euwest1-storm.s3-accelerate.amazonaws.com": "wetransfer",
+   "wt-prod-euwest1-storm.s3.amazonaws.com": "wetransfer",
+   "wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com": "wetransfer",
+   "wt-prod-useast1-storm.s3-accelerate.amazonaws.com": "wetransfer",
+   "wt-prod-useast1-storm.s3.amazonaws.com": "wetransfer",
+   "wt-prod-useast1-storm.s3.us-east-1.amazonaws.com": "wetransfer",
    "x.ai": "xai-grok",
    "x.com": "twitter",
    "xbox.com": "xbox-live",
@@ -20099,6 +20155,11 @@
    "www.atera.com": "atera",
    "www.beyondtrust.com": "beyondtrust",
    "www.cyberghostvpn.com": "cyberghost",
+   "www.dropbox.tech": "dropbox",
+   "www.dropboxforum.com": "dropbox",
+   "www.dropboxforums.com": "dropbox",
+   "www.dropboxinsiders.com": "dropbox",
+   "www.dropboxlegal.com": "dropbox",
    "www.dwservice.net": "dwservice",
    "www.expressvpn.com": "expressvpn",
    "www.getlantern.org": "lantern",
@@ -20159,13 +20220,13 @@
   "components": {
    "application_catalog": "f96fe05e0855fbec4c13a767f62384f409474c8f19e1e4d202202c1e2e936b41",
    "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-   "host_catalog": "9525e84c0367c0fa43376c6b16358172581f3a4367e17d2e350ea4f35eea35d0",
+   "host_catalog": "f463fce893f7a9d4cd37da585971f6068dd7c112a26975ffba886560b7e5232b",
    "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
   },
-  "digest": "39150de086799d99",
+  "digest": "d425b8adc87db36d",
   "released": "2026-11-18",
   "reviewed": "2026-11-18",
-  "version": "2026.11.5"
+  "version": "2026.11.6"
  },
  "risks": {
   "cleartext-credential-protocol": {

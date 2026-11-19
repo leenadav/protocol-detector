@@ -104,7 +104,8 @@ class RollbackTests(unittest.TestCase):
         from protocol_engine import applications
         published = {"2025.10.0": "9f8791749a940f5b", "2026.11.0": "991c007668d263d1", "2026.11.1": "c4020c2437f3de8d",
                      "2026.11.2": "e0d6e39533a6ae9c", "2026.11.3": "fef8f709d5615a85",
-                     "2026.11.4": "c13a842d11873db6"}
+                     "2026.11.4": "c13a842d11873db6",
+                     "2026.11.5": "39150de086799d99"}
         for version, value in published.items():
             self.assertEqual(content.digest(version), value, version)
             self.assertEqual(content.select(version), {"version": version, "digest": value})

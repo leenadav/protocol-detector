@@ -58,6 +58,11 @@ HISTORY = (
             "application-research lane proposal with primary sources (research/apps on claude/app-research bb931b9); "
             "API split for these vendors decided by Hermes; engine-lane review of each spec; independent review pending",
             "DeepSeek, Perplexity, Mistral AI and xAI API hosts named apart from their chat applications"),
+    Release("2026.11.6", "2026-11-18", "2026-11-18",
+            "application-research lane proposal with primary sources (research/apps on claude/app-research dc75176); "
+            "engine-lane review of each spec against its sources; independent review pending",
+            "notebook.google.com; Dropbox www web fronts; ngrok agent hosts; Cloudflare One Client API hosts; "
+            "Atlassian first-party domains; WeTransfer short links and named storage hosts"),
 )
 CURRENT = HISTORY[-1].version
 LOCK_PATH = Path(__file__).with_name("content_lock.json")
@@ -118,6 +123,15 @@ _ADDED_2026_11_2 = (
     "xandr",
 )
 _PRIOR_HOST_STATE = MappingProxyType({
+    "2026.11.5": MappingProxyType({
+        "google-notebooklm": {"domains": ("notebooklm.google.com",)},
+        "dropbox": {"web_fronts": ("dropboxforum.com", "dropboxforums.com", "dropboxlegal.com", "dropboxinsiders.com",
+                                   "dropbox.tech", "learn.dropbox.com")},
+        "ngrok": {"domains": ("ngrok.com",)},
+        "cloudflare-warp": {"domains": ("cloudflareclient.com",)},
+        "atlassian": {"domains": ("atlassian.net", "atlassian.com", "bitbucket.org")},
+        "wetransfer": {"domains": ("wetransfer.com", "wetransfer.net")},
+    }),
     "2026.11.4": MappingProxyType({"deepseek-api": None, "perplexity-api": None, "mistral-api": None, "xai-api": None}),
     "2026.11.3": MappingProxyType({
         "google-drive": {"domains": ("drive.google.com", "docs.google.com", "drive.usercontent.google.com")},
@@ -261,6 +275,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
         "application_catalog": "5223dae2810e6760888e005a40ef308721c58d38d35d697603c08d1b919da441",
         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
         "host_catalog": "5ef1561c0cafa644c3fd445e67b32a8c5916e7fbf1a41819e6eaac582d67ec12",
+        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+    "2026.11.5": MappingProxyType({
+        "application_catalog": "f96fe05e0855fbec4c13a767f62384f409474c8f19e1e4d202202c1e2e936b41",
+        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+        "host_catalog": "9525e84c0367c0fa43376c6b16358172581f3a4367e17d2e350ea4f35eea35d0",
         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
 })
 
