@@ -1,7 +1,9 @@
 package engine
 
 import (
+	"encoding/binary"
 	"encoding/hex"
+	"hash/crc32"
 	"strconv"
 	"strings"
 	"testing"
@@ -15,7 +17,7 @@ import (
 // once the Go fix makes it pass, pending fails, so the marker is removed and the test becomes a plain assertion.
 // The reproducers are synthetic: no captured bytes (AGENTS.md). Nothing here changes detection code.
 
-func pending(t *testing.T, item string, fixed bool, today string) {
+func pendingItem(t *testing.T, item string, fixed bool, today string) {
 	t.Helper()
 	if fixed {
 		t.Fatalf("%s now behaves as POST-MERGE-BACKLOG.md asks: remove pending() and assert it plainly", item)
@@ -47,30 +49,8 @@ func deref(p *string) string {
 	return *p
 }
 
-// PM-1: a UDP datagram that only starts like an OpenVPN V3 client hard reset (0x50, a session id, one zero byte at
-// the ACK-array offset, then arbitrary bytes) is identified as OpenVPN today. A real V3 reset carries tls-crypt-v2
-// material after the session id, not an empty ACK array, so this shape is not one. The Skype captures of the D09
-// run (research/d09-iscx-vpn2016.md, section 4.4) showed 13 such sessions.
-func TestPM1_UDPOpenVPNNeedsMoreThanTheFirstBytes(t *testing.T) {
-	const skypeLike = "508a31075ce219446b0073dd8fdbecc7777382da96302fcd8379a19dcb2f18724d241789cfe3b1a20a98fb65f673a7bd9da6289f03d487100f0930e13d9907c776537097d732843ba34b7f01a91575a7"
-	o := inspectDatagram(t, skypeLike)
-	pending(t, "PM-1", deref(o.Encryption) != "openvpn", "the datagram is identified as "+deref(o.Encryption)+": "+o.Reason)
-}
-
-// PM-2(a): the six seeded random datagrams (F-ADV-1's set: seed 7, 20,000 datagrams) that still pass as CoAP after
-// the RFC 7252 tightening. Unhinted, none should.
-func TestPM2_RandomDatagramsAreNotCoAP(t *testing.T) {
-	survivors := []string{"664520229687271900f39014d9faad71", "4141f1f4fc4492d867aa50b4006ff6c8", "618c15c4033278dc",
-		"478378f54b306024a1dfe5bad6b622cb928313c114d7a0a8322ea77df95432d8", "40a0f8419b56e0560b133dccc66e2d36",
-		"5802de4bbe18840ebcb86811ff690016"}
-	identified := 0
-	for _, s := range survivors {
-		if deref(inspectDatagram(t, s).ApplicationProtocol) == "coap" {
-			identified++
-		}
-	}
-	pending(t, "PM-2(a)", identified == 0, strconv.Itoa(identified)+" of 6 are identified as CoAP")
-}
+// PM-1 and PM-2(a) are flow-level under the decided UDP flow rule (first datagram per direction, two agreeing
+// datagrams for CoAP and OpenVPN): go/internal/analyzer/postmerge_udp_test.go.
 
 // PM-2(b): a random datagram that the CoAP first-byte probe selected and the profile then refused (F-ADV-1's
 // reproducer) is unknown with code profile-unsupported, blaming CoAP; the D09 run saw 1,736 such UDP sessions. The
@@ -79,7 +59,7 @@ func TestPM2_RefusedWeakProbeIsNoDispatch(t *testing.T) {
 	o := inspectDatagram(t, "655085b84e0ec69b50164b0c53833c26")
 	explained := appid.Explain(&o, appid.DirectionFacts{})
 	code, _ := explained["code"].(string)
-	pending(t, "PM-2(b)", code == "no-dispatch", "the code is "+code+" ("+o.Reason+")")
+	pendingItem(t, "PM-2(b)", code == "no-dispatch", "the code is "+code+" ("+o.Reason+")")
 }
 
 // PM-6: gQUIC (pre-RFC 9000) packets, a Q043 public header and a Q046 long header, end as no-dispatch today, like
@@ -95,5 +75,61 @@ func TestPM6_GoogleQUICIsReportedAsQUICOutsideTheProfile(t *testing.T) {
 			named++
 		}
 	}
-	pending(t, "PM-6", named == 2, strconv.Itoa(named)+" of 2 gQUIC packets name QUIC")
+	pendingItem(t, "PM-6", named == 2, strconv.Itoa(named)+" of 2 gQUIC packets name QUIC")
+}
+
+// PM-8: Telegram MTProto over TCP (research/protocol/telegram-mtproto.md), a new client-direction profile, post-merge
+// and Go-only. The positive vectors are the spec's P1 to P5 and are pending; the negatives must never identify,
+// today or after, and are asserted plainly. P5's CRC is CRC-32/ISO-HDLC (Go's crc32.ChecksumIEEE, zlib's crc32)
+// written little-endian, as MadelineProto's Full transport computes it (crc32b with the digest reversed); Telegram's
+// transport page names only "CRC32", and current tdlib no longer implements the Full transport.
+func mtprotoFinal(t *testing.T, payload string) contracts.Observation {
+	t.Helper()
+	data, err := hex.DecodeString(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in, err := New(contracts.DefaultConfig(), "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	events := append(in.Feed(data), in.End("fin")...)
+	if len(events) == 0 {
+		t.Fatalf("no event for %s", payload)
+	}
+	return events[len(events)-1].Observation
+}
+
+func TestPM8_TelegramMTProtoVectors(t *testing.T) {
+	full := "1c00000000000000000102030405060708090a0b0c0d0e0f21bed445"
+	b, _ := hex.DecodeString(full)
+	if crc := crc32.ChecksumIEEE(b[:24]); binary.LittleEndian.Uint32(b[24:]) != crc {
+		t.Fatalf("P5 CRC: computed %08x, the vector carries %x", crc, b[24:])
+	}
+	for name, payload := range map[string]string{
+		"N1 CRC mismatch":             full[:len(full)-2] + "44",
+		"N3 length 0x7fffffff":        "eeeeeeeeffffff7f" + strings.Repeat("00", 16),
+		"N4 abridged, 3 bytes, end":   "ef02000102",
+		"N5 obfuscated-like 64 bytes": "a1b2c3d4e5f60718" + strings.Repeat("5a", 56),
+		"N6 abridged long header":     "ef7fffff00" + strings.Repeat("01", 8),
+	} {
+		o := mtprotoFinal(t, payload)
+		if strings.HasPrefix(deref(o.ApplicationProtocol), "telegram") {
+			t.Errorf("%s: identified as Telegram: %+v", name, o)
+		}
+	}
+	positives := map[string]string{
+		"P1 abridged":            "ef020001020304050607",
+		"P2 abridged long":       "ef7f800000" + strings.Repeat("ab", 512),
+		"P3 intermediate":        "eeeeeeee10000000000102030405060708090a0b0c0d0e0f",
+		"P4 padded intermediate": "dddddddd13000000000102030405060708090a0b0c0d0e0faabbcc",
+		"P5 full":                full,
+	}
+	identified := 0
+	for _, payload := range positives {
+		if strings.HasPrefix(deref(mtprotoFinal(t, payload).ApplicationProtocol), "telegram") {
+			identified++
+		}
+	}
+	pendingItem(t, "PM-8", identified == len(positives), strconv.Itoa(identified)+" of 5 MTProto vectors are identified (no profile yet)")
 }

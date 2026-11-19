@@ -82,22 +82,77 @@ func serverProtocol(r map[string]interface{}) string {
 	return ""
 }
 
-// PM-3: a server that selects a well-formed TLS 1.2 suite the posture table does not list (0x009c,
-// TLS_RSA_WITH_AES_128_GCM_SHA256, offered by the client) loses its server-side identification today: the session
-// still identifies from the ClientHello, but server_protocol stays empty and no posture is recorded, while a listed
-// suite (0xc02f, the control, asserted plainly) gives server_protocol "tls". The item asks that the server side
-// stay identified, with the suite reported as outside the posture profile. (On a clean flow the unlisted suite does
-// not invalidate the session; the 211 invalidated D09 sessions in research/d09-iscx-vpn2016.md need the re-run to
-// show what invalidated them; see POST-MERGE-BACKLOG.md.)
-func TestPM3_UnlistedTLS12SuiteKeepsTheServerSideIdentification(t *testing.T) {
-	control := tlsSession(t, helloOffering(0x009c, 0xc02f), serverHelloSelecting(0xc02f))
-	if control["engine_status"] != "identified" || serverProtocol(control) != "tls" {
-		t.Fatalf("control session with a listed suite: %v", control)
+// serverHelloVersion is a ServerHello with the given legacy version, suite and compression, without extensions.
+func serverHelloVersion(version, suite uint16, compression byte) []byte {
+	body := []byte{byte(version >> 8), byte(version)}
+	body = append(body, make([]byte, 32)...)
+	body[2] = 0x5a
+	body = append(body, 0, byte(suite>>8), byte(suite), compression)
+	return tlsRecord(append([]byte{2, 0, byte(len(body) >> 8), byte(len(body))}, body...))
+}
+
+func hasRisk(r map[string]interface{}, risk string) bool {
+	switch list := r["risks"].(type) {
+	case []string:
+		for _, x := range list {
+			if x == risk {
+				return true
+			}
+		}
+	case []interface{}:
+		for _, x := range list {
+			if x == risk {
+				return true
+			}
+		}
 	}
-	record := tlsSession(t, helloOffering(0x009c, 0xc02f), serverHelloSelecting(0x009c))
-	if record["engine_status"] != "identified" {
-		t.Fatalf("the session itself is no longer identified: %v", record)
+	return false
+}
+
+// PM-3 under the ServerHello widening Hermes decided (2026-11-19; research/protocol/tls-serverhello-legacy.md): any
+// IANA-registered suite keeps the server-side identification, and TLS 1.0/1.1 or a weak suite becomes a risk mark
+// (RFC 8996), not a lost identification; a malformed ServerHello still identifies nothing. Today only 0x002f and
+// 0xc023..0xc032 at legacy version 0x0303 identify the server side. In every case the session itself stays
+// identified from the ClientHello (asserted plainly); what is at stake is server_protocol and the risks. The guards
+// (a selected SCSV or GREASE value, SSL 3.0, a nonzero compression method) must stay unidentified, today and after.
+func TestPM3_ServerHelloWidening(t *testing.T) {
+	offer := helloOffering(0x009c, 0xcca8, 0xc013, 0x0035, 0x002f, 0x00ff, 0x0a0a, 0xc02f)
+	if control := tlsSession(t, offer, serverHelloVersion(0x0303, 0xc02f, 0)); serverProtocol(control) != "tls" {
+		t.Fatalf("control: a listed suite does not identify the server side: %v", control)
 	}
-	got := serverProtocol(record)
-	pendingItem(t, "PM-3", got == "tls", "server_protocol is "+strconv.Quote(got))
+	for _, guard := range []struct {
+		name           string
+		version, suite uint16
+		compression    byte
+	}{{"V6 TLS_EMPTY_RENEGOTIATION_INFO_SCSV selected", 0x0303, 0x00ff, 0}, {"V7 GREASE 0x0a0a selected", 0x0303, 0x0a0a, 0},
+		{"V8 SSL 3.0", 0x0300, 0x002f, 0}, {"compression method 1", 0x0303, 0xc02f, 1}} {
+		r := tlsSession(t, offer, serverHelloVersion(guard.version, guard.suite, guard.compression))
+		if r["engine_status"] != "identified" || serverProtocol(r) != "" {
+			t.Errorf("%s: must stay unidentified on the server side with the session identified: %v", guard.name, r)
+		}
+	}
+	cases := []struct {
+		name           string
+		version, suite uint16
+		risk           string // a risk the item asks for; "" when none is specified
+	}{
+		{"V1 0x009c TLS_RSA_WITH_AES_128_GCM_SHA256", 0x0303, 0x009c, "tls-no-forward-secrecy"},
+		{"V2 0xcca8 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256", 0x0303, 0xcca8, ""},
+		{"V3 0xc013 TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", 0x0303, 0xc013, ""},
+		{"V4 TLS 1.0 with 0x0035", 0x0301, 0x0035, "tls-deprecated-version-selected"},
+		{"V5 TLS 1.1 with 0x002f", 0x0302, 0x002f, "tls-deprecated-version-selected"},
+	}
+	met, today := 0, ""
+	for _, c := range cases {
+		r := tlsSession(t, offer, serverHelloVersion(c.version, c.suite, 0))
+		if r["engine_status"] != "identified" {
+			t.Fatalf("%s: the session itself is no longer identified: %v", c.name, r)
+		}
+		if serverProtocol(r) == "tls" && (c.risk == "" || hasRisk(r, c.risk)) {
+			met++
+		} else if today == "" {
+			today = c.name + ": server_protocol " + strconv.Quote(serverProtocol(r))
+		}
+	}
+	pendingItem(t, "PM-3", met == len(cases), strconv.Itoa(met)+" of "+strconv.Itoa(len(cases))+" vectors meet the decision ("+today+")")
 }
