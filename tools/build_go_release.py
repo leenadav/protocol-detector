@@ -105,7 +105,7 @@ def run(version, out, summary):
         go_ci.summarise(summary, [title, ""] + ["- FAILED: " + problem for problem in problems])
         return 1
     env = go_ci.go_env(tree.get("vendored"))
-    out = Path(out)
+    out = Path(out).resolve()   # absolute: the builds run with cwd go/, so a relative path would land in go/
     out.mkdir(parents=True, exist_ok=True)
     lines, infos, failed = [title, "", "| file | sha256 | reproducible |", "|---|---|---|"], {}, False
     with tempfile.TemporaryDirectory(prefix="go-release-second-") as second:
