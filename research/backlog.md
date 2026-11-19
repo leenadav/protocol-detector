@@ -114,8 +114,10 @@ Patch: `patches/batch-d-name-based.patch` (release 2026.11.7). Tested: 45 vector
 | GitHub Copilot plan field `copilot_plan` (decided: an evidence field) | `apps/github-copilot.md` 8b | READY, **ENGINE-FIELD** | derives a closed enum from the matched name; no parser |
 | TeamViewer port-5938 protocol | `apps/teamviewer.md` | BLOCKED | vendor publishes no protocol; never to be reconstructed from third-party dissectors |
 | AnyDesk session TLS details (SNI or not) | `apps/anydesk.md` | PARTIAL | not published; research only |
-| Telegram MTProto TCP family (abridged, intermediate, padded intermediate, full with CRC32) | `apps/telegram.md` | READY, **PROTOCOL** | Telegram's own transport specification; obfuscated transport is unidentifiable by design |
-| D09 findings: OpenVPN and CoAP UDP false positives on proprietary UDP; TLS ServerHello invalidation of 2016 suites | `d09-iscx-vpn2016.md` 4.4, 6 | tracked by the Engine lane | post-merge Go-only items (Hermes, 2026-11-18) |
+| Telegram MTProto TCP family | `protocol/telegram-mtproto.md` | READY, **PROTOCOL** | byte-exact vectors; open point: CRC variant and byte order |
+| UDP flow decisions for weak families (CoAP, OpenVPN) | `protocol/udp-flow-decision.md` | READY for decision, **ENGINE-FIELD** | measured random-input rates 1.35e-4 (CoAP) and 0.95e-4 (OpenVPN) per datagram |
+| TLS ServerHello profile widening | `protocol/tls-serverhello-legacy.md` | READY for decision, **PROTOCOL** | accept registered TLS 1.0 to 1.2 suites; RFC 8996 risk instead of invalidation |
+| D09 findings | `d09-iscx-vpn2016.md` 4.4, 6 | tracked by the Engine lane; now specified in `protocol/` | post-merge Go-only items (Hermes, 2026-11-18) |
 
 ## Research queue
 
