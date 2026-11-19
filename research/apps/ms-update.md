@@ -36,7 +36,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F, G and H)
 |---|---|---|
 | P1 | SNI `kv601.prod.do.dsp.mp.microsoft.com`, `tsfe.trafficshaping.dsp.mp.microsoft.com` | `ms-update` (today `ms-base`) |
 | P2 | Host `emdl.ws.microsoft.com` | `ms-update` (today `ms-base`) |
-| P3 | Host `x.dl.delivery.mp.microsoft.com`, `ctldl.windowsupdate.com` | `ms-update` (today `ms-base`) |
+| P3 | Host `x.dl.delivery.mp.microsoft.com`, `ctldl.windowsupdate.com` | `ms-update` (already mapped) |
 
 ## 7. Sources
 
