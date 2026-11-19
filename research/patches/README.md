@@ -237,3 +237,22 @@ as G), with `_PRIOR_HOST_STATE["2026.12.1"]` and `_RELEASED_COMPONENTS["2026.12.
 | `make parity-go` | 7445 matched; 88 of 88 families parity-verified |
 | `python3 -B -m unittest discover -q` | 1 expected failure: pinned host count in `test_content.py` (438 → 447 after D to H) |
 
+## Batch I: `batch-i-name-based.patch` (after H)
+
+Base: `c08773f` plus D to H (apply D → E → F → G → H → I). Placeholder release **`2026.12.3`**, with
+`_PRIOR_HOST_STATE["2026.12.2"]` and `_RELEASED_COMPONENTS["2026.12.2"]`.
+
+- New ids: `ms-virtual-desktop` (`wvd.microsoft.com`, `wvd.azure.us`, `windows.cloud.microsoft`, `windows.static.microsoft`,
+  `infra.windows365.microsoft.com`, `infra.windows365.microsoft.us`, exact `wvdportalstorageblob.blob.core.windows.net`) and
+  `amazon-workspaces` (`amazonworkspaces.com`, `highlander.aws.a2z.com`).
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.12.3, digest `8174ed45fd771e40`, 551 applications, 449 host entries |
+| Pack file | `go/internal/content/pack.json` sha256 `afcccc04450e184fa098a6bb8b6bd472e7ccd225ac18e9430c00113b8a1db906` |
+| Rollback | `history.json` release 2026.12.2 host catalog equals the batch H pack's host catalog exactly |
+| Synthetic name vectors | 18 through `attribution_for_host`, all as expected |
+| `migration/parity/compare.py --backend python` | 7449 compared, 7449 matched |
+| `make parity-go` | 7449 matched; 88 of 88 families parity-verified |
+| `python3 -B -m unittest discover -q` | 856 tests, 1 expected failure: pinned host count (438 → 449 after D to I) |
+

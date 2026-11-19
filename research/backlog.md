@@ -36,6 +36,17 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch I, after H)
+
+Patch: `patches/batch-i-name-based.patch` (placeholder release `2026.12.3`). Tested: 18 vectors, rollback exact, parity
+7449/7449 (Python and Go), 88/88 families parity-verified.
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | I1 | Azure Virtual Desktop / Windows 365 (new id `ms-virtual-desktop`) | `apps/ms-virtual-desktop.md` | 5 | 4 | 20 | READY (moves `windows.cloud.microsoft` off `ms-office365`) |
+| 2 | I2 | Amazon WorkSpaces (new id `amazon-workspaces`) | `apps/amazon-workspaces.md` | 4 | 4 | 16 | READY; DECISION: add the 48 exact regional API hosts? |
+| 3 | - | Fortinet, Datto RMM, N-able | `apps/fortinet-datto-nable.md` | 4 | 1 | | BLOCKED (no page located, 404, 403) |
+
 ### NAME: READY (batch H, after G)
 
 Candidate selection (2026-11-19): high-visibility enterprise services with an official endpoint page this lane can
