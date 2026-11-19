@@ -72,6 +72,9 @@ HISTORY = (
             "application-research lane proposal with primary sources (research/apps on claude/app-research 56abe4e); "
             "engine-lane review of each spec against its sources; independent review pending",
             "Chrome Remote Desktop service host; Bitwarden regional and short-link domains"),
+    Release("2026.11.9", "2026-11-19", "2026-11-19",
+            "engine-lane decision (Hermes, 2026-11-19) on the research lane goto.md question; independent review pending",
+            "goto.com moved from GoTo Meeting to a vendor-level goto id"),
 )
 CURRENT = HISTORY[-1].version
 LOCK_PATH = Path(__file__).with_name("content_lock.json")
@@ -132,6 +135,7 @@ _ADDED_2026_11_2 = (
     "xandr",
 )
 _PRIOR_HOST_STATE = MappingProxyType({
+    "2026.11.8": MappingProxyType({"goto": None, "goto-meeting": {"domains": ("gotomeeting.com", "goto.com", "gotomeet.at", "gotomeet.me", "joingotomeeting.com", "openvoice.com")}}),
     "2026.11.7": MappingProxyType({"chrome-remote-desktop": {"domains": ("remotedesktop.google.com",)}, "bitwarden": {"domains": ("bitwarden.com",)}}),
     "2026.11.6": MappingProxyType({
         "icloud": {"domains": ("icloud.com", "icloud-content.com")},
@@ -316,6 +320,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
         "application_catalog": "64256d2c538ef6ef08be02bb91f4ec870b29f5c4ae521d3926ca6c574831c257",
         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
         "host_catalog": "1eb99a29be91e83193029911562ec4b07d6d9805d6c128807adee4ed11bfcea8",
+        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+    "2026.11.8": MappingProxyType({
+        "application_catalog": "64256d2c538ef6ef08be02bb91f4ec870b29f5c4ae521d3926ca6c574831c257",
+        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+        "host_catalog": "cd96f9a1f4fd6d1fe4b6ad62bfecb6b66e9a4d362119b79f2d05cec8283b8465",
         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
 })
 

@@ -191,7 +191,12 @@ _HOST_APPS = (
      ("transfers-files",), ("matrix.org", "element.io")),
     ("goto-meeting", "collaboration", "voip-video", "client-server", 2, "GoTo Meeting",
      ("excessive-bandwidth",),
-     ("gotomeeting.com", "goto.com", "gotomeet.at", "gotomeet.me", "joingotomeeting.com", "openvoice.com")),
+     ("gotomeeting.com", "gotomeet.at", "gotomeet.me", "joingotomeeting.com", "openvoice.com")),
+    # goto.com is "Product domain used by multiple GoTo products" (GoTo's allowlisting page, research/apps/goto.md),
+    # meetings, remote support and access alike, so it names the vendor, not GoTo Meeting (Hermes, 2026-11-19).
+    ("goto", "general-internet", "internet-utility", "client-server", 2,
+     "GoTo services (GoTo Meeting, GoTo Resolve, LogMeIn and others) not mapped to a more specific application",
+     ("widely-used",), ("goto.com",)),
     ("ringcentral", "collaboration", "voip-video", "client-server", 2, "RingCentral calls and meetings", (), ("ringcentral.com",)),
     # Email.
     ("yahoo-mail", "collaboration", "email", "browser-based", 2, "Yahoo Mail web mail", ("widely-used", "transfers-files"), ("mail.yahoo.com",)),

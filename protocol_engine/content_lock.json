@@ -1,15 +1,15 @@
 {
   "components": {
-    "application_catalog": "64256d2c538ef6ef08be02bb91f4ec870b29f5c4ae521d3926ca6c574831c257",
+    "application_catalog": "7440a3b9622ca9de0537809161862de414c83e950592051c23cb6f3868cc170e",
     "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-    "host_catalog": "cd96f9a1f4fd6d1fe4b6ad62bfecb6b66e9a4d362119b79f2d05cec8283b8465",
+    "host_catalog": "d8627a15e1fe35e9e568641c294ce99df7e8d8226628d0ebf58489d087002694",
     "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
   },
-  "digest": "804f727352bc61e0",
-  "host_entries": 441,
-  "note": "Chrome Remote Desktop service host; Bitwarden regional and short-link domains",
+  "digest": "cdaa5993077d101a",
+  "host_entries": 442,
+  "note": "goto.com moved from GoTo Meeting to a vendor-level goto id",
   "released": "2026-11-19",
-  "review": "application-research lane proposal with primary sources (research/apps on claude/app-research 56abe4e); engine-lane review of each spec against its sources; independent review pending",
+  "review": "engine-lane decision (Hermes, 2026-11-19) on the research lane goto.md question; independent review pending",
   "reviewed": "2026-11-19",
-  "version": "2026.11.8"
+  "version": "2026.11.9"
 }

@@ -79,7 +79,7 @@ class RollbackTests(unittest.TestCase):
         old = {entry["name"]: entry for entry in content.host_entries("2025.10.0")}
         new = {entry["name"]: entry for entry in content.host_entries()}
         self.assertEqual(len(old), 53)
-        self.assertEqual(len(new), 441)
+        self.assertEqual(len(new), 442)
         previous = {entry["name"] for entry in content.host_entries("2026.11.0")}
         self.assertEqual(len(previous), 54)                         # 2026.11.1 added 115 services and changed none
         middle = {entry["name"] for entry in content.host_entries("2026.11.1")}
@@ -107,7 +107,8 @@ class RollbackTests(unittest.TestCase):
                      "2026.11.4": "c13a842d11873db6",
                      "2026.11.5": "39150de086799d99",
                      "2026.11.6": "d425b8adc87db36d",
-                     "2026.11.7": "b2ccbc7842dcffcc"}
+                     "2026.11.7": "b2ccbc7842dcffcc",
+                     "2026.11.8": "804f727352bc61e0"}
         for version, value in published.items():
             self.assertEqual(content.digest(version), value, version)
             self.assertEqual(content.select(version), {"version": version, "digest": value})

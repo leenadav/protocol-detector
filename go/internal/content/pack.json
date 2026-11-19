@@ -3606,6 +3606,26 @@
   },
   {
    "aliases": [],
+   "category": "general-internet",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "GoTo services (GoTo Meeting, GoTo Resolve, LogMeIn and others) not mapped to a more specific application",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "goto",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
    "category": "collaboration",
    "characteristics": [
     "excessive-bandwidth"
@@ -11531,9 +11551,11 @@
    "google-voice": [
     "voice.google.com"
    ],
+   "goto": [
+    "goto.com"
+   ],
    "goto-meeting": [
     "gotomeeting.com",
-    "goto.com",
     "gotomeet.at",
     "gotomeet.me",
     "joingotomeeting.com",
@@ -14150,7 +14172,6 @@
     "description": "GoTo Meeting",
     "domains": [
      "gotomeeting.com",
-     "goto.com",
      "gotomeet.at",
      "gotomeet.me",
      "joingotomeeting.com",
@@ -14159,6 +14180,21 @@
     "name": "goto-meeting",
     "risk": 2,
     "subcategory": "voip-video",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "general-internet",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "GoTo services (GoTo Meeting, GoTo Resolve, LogMeIn and others) not mapped to a more specific application",
+    "domains": [
+     "goto.com"
+    ],
+    "name": "goto",
+    "risk": 2,
+    "subcategory": "internet-utility",
     "technology": "client-server",
     "web_fronts": []
    },
@@ -19861,7 +19897,7 @@
    "googlevideo.com": "youtube",
    "goskope.com": "netskope",
    "gotinder.com": "tinder",
-   "goto.com": "goto-meeting",
+   "goto.com": "goto",
    "gotomeet.at": "goto-meeting",
    "gotomeet.me": "goto-meeting",
    "gotomeeting.com": "goto-meeting",
@@ -20496,15 +20532,15 @@
  },
  "release": {
   "components": {
-   "application_catalog": "64256d2c538ef6ef08be02bb91f4ec870b29f5c4ae521d3926ca6c574831c257",
+   "application_catalog": "7440a3b9622ca9de0537809161862de414c83e950592051c23cb6f3868cc170e",
    "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-   "host_catalog": "cd96f9a1f4fd6d1fe4b6ad62bfecb6b66e9a4d362119b79f2d05cec8283b8465",
+   "host_catalog": "d8627a15e1fe35e9e568641c294ce99df7e8d8226628d0ebf58489d087002694",
    "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
   },
-  "digest": "804f727352bc61e0",
+  "digest": "cdaa5993077d101a",
   "released": "2026-11-19",
   "reviewed": "2026-11-19",
-  "version": "2026.11.8"
+  "version": "2026.11.9"
  },
  "risks": {
   "cleartext-credential-protocol": {
