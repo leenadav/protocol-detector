@@ -1,7 +1,7 @@
 # Netskope Client
 
 - Content-pack id today: `netskope` (`netskope.com`, `goskope.com`)
-- Status: **DONE** for `goskope.com` (verified; no change). Two exact hosts are **READY**, NAME, for the next patch (not in batch C)
+- Status: **DONE** for `goskope.com` (verified; no change). `epdlp-prod.netskope.io` is **READY**, NAME, batch D (`research/patches/batch-d-name-based.patch`)
 - Sources accessed: 2026-11-18
 
 ## 1. What it is
@@ -62,7 +62,7 @@ The page also notes: "We negotiate HTTP/2 for all domains if the origin server s
 
 ## 8. Catalog delta and recommendation
 
-For the next name-based patch (not included in batch C, which was already tested):
+Batch D:
 
 ```python
 ("netskope", ..., ("netskope.com", "goskope.com", "epdlp-prod.netskope.io")),

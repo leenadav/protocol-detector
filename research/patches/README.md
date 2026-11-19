@@ -131,3 +131,22 @@ Implemented by the Engine lane on `claude/go-migration`: A as content 2026.11.3 
 | Python and Go parity (regenerated cases) | 7418 compared, 7418 matched, both backends; 88 of 88 families parity-verified |
 | `test_content.py` | 12 tests OK |
 | Go `internal/content` tests | fail only on pinned values: `digest_test.go` `releaseVersion`/`releaseDigest`/`releasePackDigest` → `2026.11.6` / `d425b8adc87db36d` / `db8378c3128f7c51a6cd91e6920e60e3ea29b1b8c0a5b99afe7e942e57102d75`; `history_test.go` gains `2026.11.5` (`39150de086799d99`, 438 hosts) and 2026.11.6 as last |
+
+## Batch D: `batch-d-name-based.patch` (applies on top of batch C)
+
+- **Base**: `claude/go-migration` `bc65e50` with batch C applied and locked (C's release 2026.11.6, digest
+  `d425b8adc87db36d`, the same as on the earlier base). The chain C → D on `bc65e50` was checked with `git apply`.
+- **Release**: proposes `2026.11.7`, with `_PRIOR_HOST_STATE["2026.11.6"]` and 2026.11.6 recorded in
+  `_RELEASED_COMPONENTS` from C's lock (`host_catalog` `f463fce8…`).
+- **New application ids**: `ms-defender-endpoint`, `ms-intune`, `icloud-private-relay`. Host entries 438 → 441;
+  applications 540 → 543.
+- **Extended entries**: `icloud`, `cursor`, `1password`, `gitlab`, `docker-hub`, `okta`, `notion`, `goto-meeting`,
+  `zscaler`, `figma`, `netskope`.
+
+| Check (scratch, 2026-11-19) | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.11.7, digest `b2ccbc7842dcffcc`, 543 applications, 441 host entries |
+| Earlier release digests | all unchanged (2026.11.6 stays `d425b8adc87db36d`) |
+| Name vectors | 45, 0 mismatches |
+| Python and Go parity (regenerated cases) | 7427 compared, 7427 matched, both backends; 88 of 88 families |
+| Pinned values to update | `test_content.py` host count 438 → 441; Go `digest_test.go` → `2026.11.7` / `b2ccbc7842dcffcc` / `b2250e213c8d7a61e3585d3969a58c42a0fad242bcbb0fe94e2576f803082e24`; `history_test.go` gains 2026.11.6 (`d425b8adc87db36d`, 438 hosts) |

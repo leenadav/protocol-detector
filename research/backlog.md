@@ -42,6 +42,34 @@ scratch: content gates, rollback with unchanged earlier digests, 31 vectors, Pyt
 | C5 | Atlassian first-party domains | `apps/atlassian.md` 8 | 4 | 4 | 16 | READY | `atl-paas.net`, `ss-inf.net`, `jira.com`, `teamworkgraph.com` |
 | C6 | Dropbox `www.` web fronts | `apps/dropbox.md` 8 | 2 | 4 | 8 | READY | five `www.` variants |
 
+### NAME: READY (batch D, after C; one patch)
+
+Candidate selection (2026-11-19): the highest enterprise-visibility apps that this lane had not yet researched,
+in collaboration, remote access, AI tools, file sharing, developer platforms and security agents. Ranked by V × R.
+Patch: `patches/batch-d-name-based.patch` (release 2026.11.7). Tested: 45 vectors, parity 7427/7427.
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | D1 | Microsoft Defender for Endpoint (new id) | `apps/ms-defender-endpoint.md` | 5 | 4 | 20 | READY |
+| 2 | D2 | iCloud Private Relay (new id), iCloud domains | `apps/apple-icloud.md` | 5 | 4 | 20 | READY |
+| 3 | D3 | Cursor | `apps/cursor.md` | 5 | 4 | 20 | READY (records an `accounts.x.ai` attribution risk) |
+| 4 | D4 | Microsoft Intune (new id) | `apps/ms-intune.md` | 4 | 4 | 16 | READY |
+| 5 | D5 | Zscaler clouds and Client Connector | `apps/zscaler.md` | 4 | 4 | 16 | READY |
+| 6 | D6 | Okta regional and government domains | `apps/okta.md` | 4 | 4 | 16 | READY |
+| 7 | D7 | 1Password | `apps/1password.md` | 4 | 4 | 16 | READY |
+| 8 | D8 | GitLab.com | `apps/gitlab.md` | 4 | 4 | 16 | READY |
+| 9 | D9 | Docker Hub and Desktop | `apps/docker-hub.md` | 4 | 4 | 16 | READY |
+| 10 | D10 | Notion | `apps/notion.md` | 4 | 4 | 16 | READY |
+| 11 | D11 | GoTo Meeting | `apps/goto.md` | 4 | 3 | 12 | READY; **DECISION** on `goto.com` attribution |
+| 12 | D12 | Netskope Endpoint DLP host | `apps/netskope.md` | 3 | 4 | 12 | READY |
+| 13 | D13 | Figma for Government | `apps/figma.md` | 3 | 3 | 9 | READY |
+| 14 | - | GoTo Resolve | `blocked-urls.md` #7 | 5 | 1 | 5 | BLOCKED |
+| 15 | - | Gemini API host | `blocked-urls.md` #8 | 5 | 1 | 5 | BLOCKED |
+| 16 | - | Miro | `blocked-urls.md` #5 | 4 | 1 | 4 | BLOCKED |
+| 17 | - | Splashtop | `blocked-urls.md` #4 | 4 | 1 | 4 | BLOCKED |
+| 18 | - | Grammarly | `blocked-urls.md` #6 | 3 | 1 | 3 | BLOCKED |
+| 19 | - | Hugging Face, Duo, Bitwarden, Canva, Chrome Remote Desktop | (next) | 3 to 4 | ? | | queued |
+
 ### NAME: DONE (implemented by the Engine lane)
 
 | Batch | Items | Release |
@@ -74,11 +102,7 @@ scratch: content gates, rollback with unchanged earlier digests, 31 vectors, Pyt
 | Slack (`slack-edge.com`, `slack-msgs.com`, `slack-files.com`) | `apps/slack.md` | PARTIAL, low priority | sign-in-only list; Lee cannot supply a copy (2026-11-18) |
 | Box | `apps/box.md` | BLOCKED, low priority | sign-in required; Lee cannot supply a copy (2026-11-18) |
 | Chat-app hosts of DeepSeek, Perplexity, Mistral, Grok | B5 to B8 specs | PARTIAL | no primary page names them; they stay under the existing domains |
-| Salesforce | `apps/salesforce.md` | BLOCKED | help article renders empty |
-| Signal | `apps/signal.md` | BLOCKED | bot challenge |
-| WhatsApp | `apps/whatsapp.md` | BLOCKED | FAQ renders empty; article id unconfirmed |
-| Zscaler | `apps/zscaler.md` | BLOCKED | article under maintenance |
-| Splashtop | `apps/splashtop.md` | BLOCKED | support host unreachable |
+| Salesforce, Signal, WhatsApp, Splashtop | `blocked-urls.md` | BLOCKED | exact URLs listed for Hermes to relay |
 | ConnectWise ScreenConnect | `apps/connectwise-screenconnect.md` | PARTIAL | no official cloud allowlist found |
 | RustDesk | `apps/rustdesk.md` | PARTIAL | self-host ports sourced; public server names unverified |
 | Telegram names | `apps/telegram.md` | PARTIAL | no allowlist read |

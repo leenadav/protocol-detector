@@ -14,7 +14,7 @@ Splashtop. See the catalog entry for its category.
 
 ## 3. Observable evidence
 
-`support-splashtop.com` was unreachable from the egress proxy ("connect_unreachable") on 2026-11-18. The host is allowed, so this is a reachability failure, not a policy one.
+`support-splashtop.com` was unreachable from the egress proxy on 2026-11-18. The business support host `support-splashtopbusiness.splashtop.com` serves the article but returned a Cloudflare bot challenge on 2026-11-19. The URL is listed in `research/blocked-urls.md`.
 
 ## 4. Encrypted-traffic caveats
 
