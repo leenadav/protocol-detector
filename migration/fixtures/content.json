@@ -4016,6 +4016,27 @@
   },
   {
    "aliases": [],
+   "category": "networking",
+   "characteristics": [
+    "tunnels-other-applications",
+    "evasive"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Apple iCloud Private Relay",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "icloud-private-relay",
+   "risk": 3,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "encrypted-tunnel",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
    "category": "business-systems",
    "characteristics": [
     "transfers-files"
@@ -5482,6 +5503,26 @@
   },
   {
    "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Microsoft Defender for Endpoint",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ms-defender-endpoint",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "management",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
    "category": "collaboration",
    "characteristics": [
     "widely-used"
@@ -5498,6 +5539,26 @@
    "secure_ports": [],
    "standard_ports": [],
    "subcategory": "email",
+   "technology": "client-server"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [
+    "widely-used"
+   ],
+   "container": null,
+   "depends_on": [],
+   "description": "Microsoft Intune device management",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ms-intune",
+   "risk": 1,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "management",
    "technology": "client-server"
   },
   {
@@ -10841,7 +10902,15 @@
   "app_domains": {
    "1password": [
     "1password.com",
-    "1password.eu"
+    "1password.eu",
+    "1password.ca",
+    "1passwordservices.com",
+    "1passwordusercontent.com",
+    "1passwordusercontent.eu",
+    "1passwordusercontent.ca",
+    "1infra.net",
+    "app-updates.agilebits.com",
+    "cache.agilebits.com"
    ],
    "4shared": [
     "4shared.com"
@@ -11152,7 +11221,10 @@
    ],
    "cursor": [
     "cursor.com",
-    "cursor.sh"
+    "cursor.sh",
+    "cursorapi.com",
+    "cursor-cdn.com",
+    "cursorvm.com"
    ],
    "cyberghost": [
     "cyberghostvpn.com"
@@ -11217,7 +11289,8 @@
    ],
    "docker-hub": [
     "docker.com",
-    "docker.io"
+    "docker.io",
+    "dhi.io"
    ],
    "docsend": [
     "docsend.com"
@@ -11320,7 +11393,8 @@
     "fedoraproject.org"
    ],
    "figma": [
-    "figma.com"
+    "figma.com",
+    "figma-gov.com"
    ],
    "file-io": [
     "file.io"
@@ -11359,7 +11433,8 @@
     "production-copilot-host-westus3.webpubsub.azure.com"
    ],
    "gitlab": [
-    "gitlab.com"
+    "gitlab.com",
+    "gitlab-static.net"
    ],
    "gmail": [
     "mail.google.com",
@@ -11453,7 +11528,11 @@
    ],
    "goto-meeting": [
     "gotomeeting.com",
-    "goto.com"
+    "goto.com",
+    "gotomeet.at",
+    "gotomeet.me",
+    "joingotomeeting.com",
+    "openvoice.com"
    ],
    "gotomypc": [
     "gotomypc.com"
@@ -11510,7 +11589,15 @@
    ],
    "icloud": [
     "icloud.com",
-    "icloud-content.com"
+    "icloud-content.com",
+    "apple-cloudkit.com",
+    "apple-livephotoskit.com",
+    "icloud.apple.com",
+    "iwork.apple.com"
+   ],
+   "icloud-private-relay": [
+    "mask.icloud.com",
+    "mask-h2.icloud.com"
    ],
    "idrive": [
     "idrive.com"
@@ -11698,9 +11785,17 @@
     "copilot.microsoft.com",
     "copilot.cloud.microsoft"
    ],
+   "ms-defender-endpoint": [
+    "endpoint.security.microsoft.com",
+    "reflector.defender.microsoft.com"
+   ],
    "ms-exchange-online-protection": [
     "protection.outlook.com",
     "mx.microsoft"
+   ],
+   "ms-intune": [
+    "manage.microsoft.com",
+    "dm.microsoft.com"
    ],
    "ms-office365": [
     "office.com",
@@ -11753,7 +11848,8 @@
    ],
    "netskope": [
     "netskope.com",
-    "goskope.com"
+    "goskope.com",
+    "epdlp-prod.netskope.io"
    ],
    "netsuite": [
     "netsuite.com"
@@ -11793,7 +11889,10 @@
    ],
    "notion": [
     "notion.so",
-    "notion.site"
+    "notion.site",
+    "notion.com",
+    "notionusercontent.com",
+    "secure.notion-static.com"
    ],
    "npm": [
     "npmjs.com",
@@ -11809,7 +11908,10 @@
    "okta": [
     "okta.com",
     "oktacdn.com",
-    "oktapreview.com"
+    "oktapreview.com",
+    "okta-emea.com",
+    "okta-gov.com",
+    "okta.mil"
    ],
    "onelogin": [
     "onelogin.com"
@@ -12462,7 +12564,23 @@
    "zscaler": [
     "zscaler.com",
     "zscaler.net",
-    "zscloud.net"
+    "zscloud.net",
+    "zscalerone.net",
+    "zscalertwo.net",
+    "zscalerthree.net",
+    "zscalerten.net",
+    "zscalerbeta.net",
+    "zscalergov.net",
+    "zpagov.net",
+    "zpatwo.net",
+    "zpabeta.net",
+    "zdxcloud.net",
+    "zdxgov.net",
+    "zdxbeta.net",
+    "zdxten.net",
+    "zslogin.net",
+    "zsloginbeta.net",
+    "zidentitygov.net"
    ]
   },
   "entries": [
@@ -13234,11 +13352,32 @@
     "description": "Apple iCloud services",
     "domains": [
      "icloud.com",
-     "icloud-content.com"
+     "icloud-content.com",
+     "apple-cloudkit.com",
+     "apple-livephotoskit.com",
+     "icloud.apple.com",
+     "iwork.apple.com"
     ],
     "name": "icloud",
     "risk": 2,
     "subcategory": "file-sharing",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "networking",
+    "characteristics": [
+     "tunnels-other-applications",
+     "evasive"
+    ],
+    "description": "Apple iCloud Private Relay",
+    "domains": [
+     "mask.icloud.com",
+     "mask-h2.icloud.com"
+    ],
+    "name": "icloud-private-relay",
+    "risk": 3,
+    "subcategory": "encrypted-tunnel",
     "technology": "client-server",
     "web_fronts": []
    },
@@ -13267,7 +13406,8 @@
     ],
     "description": "GitLab code hosting",
     "domains": [
-     "gitlab.com"
+     "gitlab.com",
+     "gitlab-static.net"
     ],
     "name": "gitlab",
     "risk": 2,
@@ -13322,7 +13462,10 @@
     "description": "Notion workspace",
     "domains": [
      "notion.so",
-     "notion.site"
+     "notion.site",
+     "notion.com",
+     "notionusercontent.com",
+     "secure.notion-static.com"
     ],
     "name": "notion",
     "risk": 2,
@@ -14002,7 +14145,11 @@
     "description": "GoTo Meeting",
     "domains": [
      "gotomeeting.com",
-     "goto.com"
+     "goto.com",
+     "gotomeet.at",
+     "gotomeet.me",
+     "joingotomeeting.com",
+     "openvoice.com"
     ],
     "name": "goto-meeting",
     "risk": 2,
@@ -14318,7 +14465,8 @@
     ],
     "description": "Figma design",
     "domains": [
-     "figma.com"
+     "figma.com",
+     "figma-gov.com"
     ],
     "name": "figma",
     "risk": 2,
@@ -14440,7 +14588,8 @@
     "description": "Docker Hub and registry",
     "domains": [
      "docker.com",
-     "docker.io"
+     "docker.io",
+     "dhi.io"
     ],
     "name": "docker-hub",
     "risk": 2,
@@ -14555,7 +14704,10 @@
     "domains": [
      "okta.com",
      "oktacdn.com",
-     "oktapreview.com"
+     "oktapreview.com",
+     "okta-emea.com",
+     "okta-gov.com",
+     "okta.mil"
     ],
     "name": "okta",
     "risk": 1,
@@ -14610,7 +14762,15 @@
     "description": "1Password password manager",
     "domains": [
      "1password.com",
-     "1password.eu"
+     "1password.eu",
+     "1password.ca",
+     "1passwordservices.com",
+     "1passwordusercontent.com",
+     "1passwordusercontent.eu",
+     "1passwordusercontent.ca",
+     "1infra.net",
+     "app-updates.agilebits.com",
+     "cache.agilebits.com"
     ],
     "name": "1password",
     "risk": 2,
@@ -17728,7 +17888,10 @@
     "description": "Cursor editor services",
     "domains": [
      "cursor.com",
-     "cursor.sh"
+     "cursor.sh",
+     "cursorapi.com",
+     "cursor-cdn.com",
+     "cursorvm.com"
     ],
     "name": "cursor",
     "risk": 3,
@@ -18499,11 +18662,59 @@
     "domains": [
      "zscaler.com",
      "zscaler.net",
-     "zscloud.net"
+     "zscloud.net",
+     "zscalerone.net",
+     "zscalertwo.net",
+     "zscalerthree.net",
+     "zscalerten.net",
+     "zscalerbeta.net",
+     "zscalergov.net",
+     "zpagov.net",
+     "zpatwo.net",
+     "zpabeta.net",
+     "zdxcloud.net",
+     "zdxgov.net",
+     "zdxbeta.net",
+     "zdxten.net",
+     "zslogin.net",
+     "zsloginbeta.net",
+     "zidentitygov.net"
     ],
     "name": "zscaler",
     "risk": 2,
     "subcategory": "proxy",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "Microsoft Defender for Endpoint",
+    "domains": [
+     "endpoint.security.microsoft.com",
+     "reflector.defender.microsoft.com"
+    ],
+    "name": "ms-defender-endpoint",
+    "risk": 1,
+    "subcategory": "management",
+    "technology": "client-server",
+    "web_fronts": []
+   },
+   {
+    "category": "business-systems",
+    "characteristics": [
+     "widely-used"
+    ],
+    "description": "Microsoft Intune device management",
+    "domains": [
+     "manage.microsoft.com",
+     "dm.microsoft.com"
+    ],
+    "name": "ms-intune",
+    "risk": 1,
+    "subcategory": "management",
     "technology": "client-server",
     "web_fronts": []
    },
@@ -18515,7 +18726,8 @@
     "description": "Netskope cloud proxy",
     "domains": [
      "netskope.com",
-     "goskope.com"
+     "goskope.com",
+     "epdlp-prod.netskope.io"
     ],
     "name": "netskope",
     "risk": 2,
@@ -19354,8 +19566,14 @@
   "suffixes": {
    "1drv.com": "ms-onedrive",
    "1drv.ms": "ms-onedrive",
+   "1infra.net": "1password",
+   "1password.ca": "1password",
    "1password.com": "1password",
    "1password.eu": "1password",
+   "1passwordservices.com": "1password",
+   "1passwordusercontent.ca": "1password",
+   "1passwordusercontent.com": "1password",
+   "1passwordusercontent.eu": "1password",
    "4shared.com": "4shared",
    "8x8.com": "8x8",
    "8x8.vc": "8x8",
@@ -19395,6 +19613,9 @@
    "api.openai.com": "openai-platform",
    "api.perplexity.ai": "perplexity-api",
    "api.x.ai": "xai-api",
+   "app-updates.agilebits.com": "1password",
+   "apple-cloudkit.com": "icloud",
+   "apple-livephotoskit.com": "icloud",
    "apple.com": "apple-base",
    "apps.apple.com": "apple-app-store",
    "appsflyer.com": "appsflyer",
@@ -19448,6 +19669,7 @@
    "bsky.social": "bluesky",
    "bstatic.com": "booking",
    "bumble.com": "bumble",
+   "cache.agilebits.com": "1password",
    "calendly.com": "calendly",
    "canonical.com": "ubuntu",
    "canva.com": "canva",
@@ -19495,8 +19717,11 @@
    "criteo.net": "criteo",
    "crowdstrike.com": "crowdstrike",
    "crunchyroll.com": "crunchyroll",
+   "cursor-cdn.com": "cursor",
    "cursor.com": "cursor",
    "cursor.sh": "cursor",
+   "cursorapi.com": "cursor",
+   "cursorvm.com": "cursor",
    "cyberghostvpn.com": "cyberghost",
    "dailymotion.com": "dailymotion",
    "dashlane.com": "dashlane",
@@ -19509,6 +19734,7 @@
    "deepseek.com": "deepseek",
    "deezer.com": "deezer",
    "delivery.mp.microsoft.com": "ms-update",
+   "dhi.io": "docker-hub",
    "dialpad.com": "dialpad",
    "digicert.com": "digicert",
    "digitalocean.com": "digitalocean",
@@ -19519,6 +19745,7 @@
    "discordapp.net": "discord",
    "discoveryplus.com": "discovery-plus",
    "disneyplus.com": "disney-plus",
+   "dm.microsoft.com": "ms-intune",
    "dmcdn.net": "dailymotion",
    "dns.adguard.com": "adguard-dns",
    "dns.google": "google-public-dns",
@@ -19557,6 +19784,8 @@
    "egnyte.com": "egnyte",
    "element.io": "matrix-element",
    "elevenlabs.io": "elevenlabs",
+   "endpoint.security.microsoft.com": "ms-defender-endpoint",
+   "epdlp-prod.netskope.io": "netskope",
    "epicgames.com": "epic-games",
    "epicgames.dev": "epic-games",
    "eset.com": "eset",
@@ -19576,6 +19805,7 @@
    "fbcdn.net": "facebook",
    "fbsbx.com": "facebook",
    "fedoraproject.org": "fedora",
+   "figma-gov.com": "figma",
    "figma.com": "figma",
    "file.io": "file-io",
    "firefox.com": "mozilla",
@@ -19595,6 +19825,7 @@
    "githubassets.com": "github",
    "githubcopilot.com": "github-copilot",
    "githubusercontent.com": "github",
+   "gitlab-static.net": "gitlab",
    "gitlab.com": "gitlab",
    "gmail.com": "gmail",
    "gmx.com": "gmx-mail",
@@ -19617,6 +19848,8 @@
    "goskope.com": "netskope",
    "gotinder.com": "tinder",
    "goto.com": "goto-meeting",
+   "gotomeet.at": "goto-meeting",
+   "gotomeet.me": "goto-meeting",
    "gotomeeting.com": "goto-meeting",
    "gotomypc.com": "gotomypc",
    "gradle.org": "gradle",
@@ -19646,6 +19879,7 @@
    "hulu.com": "hulu",
    "hulustream.com": "hulu",
    "icloud-content.com": "icloud",
+   "icloud.apple.com": "icloud",
    "icloud.com": "icloud",
    "idrive.com": "idrive",
    "iheart.com": "iheartradio",
@@ -19661,11 +19895,13 @@
    "intuit.com": "intuit",
    "ipvanish.com": "ipvanish",
    "itunes.apple.com": "apple-app-store",
+   "iwork.apple.com": "icloud",
    "jasper.ai": "jasper-ai",
    "jd.com": "jd-com",
    "jetbrains.com": "jetbrains",
    "jira.com": "atlassian",
    "jit.si": "jitsi-meet",
+   "joingotomeeting.com": "goto-meeting",
    "jtvnw.net": "twitch",
    "jumpcloud.com": "jumpcloud",
    "kaggle.com": "kaggle",
@@ -19703,8 +19939,11 @@
    "mail.yandex.ru": "yandex-mail",
    "mailchimp.com": "mailchimp",
    "malwarebytes.com": "malwarebytes",
+   "manage.microsoft.com": "ms-intune",
    "maps.google.com": "google-maps",
    "maps.googleapis.com": "google-maps",
+   "mask-h2.icloud.com": "icloud-private-relay",
+   "mask.icloud.com": "icloud-private-relay",
    "matrix.org": "matrix-element",
    "maven.org": "maven-central",
    "max.com": "hbo-max",
@@ -19768,8 +20007,10 @@
    "notebook.google.com": "google-notebooklm",
    "notebooklm.google.com": "google-notebooklm",
    "notifications.devices.fed.cloudflare.com": "cloudflare-warp",
+   "notion.com": "notion",
    "notion.site": "notion",
    "notion.so": "notion",
+   "notionusercontent.com": "notion",
    "npmjs.com": "npm",
    "npmjs.org": "npm",
    "nr-data.net": "new-relic",
@@ -19782,7 +20023,10 @@
    "office.net": "ms-office365",
    "office365.com": "ms-office365",
    "officeapps.live.com": "ms-office365",
+   "okta-emea.com": "okta",
+   "okta-gov.com": "okta",
    "okta.com": "okta",
+   "okta.mil": "okta",
    "oktacdn.com": "okta",
    "oktapreview.com": "okta",
    "one.one.one.one": "cloudflare-dns",
@@ -19794,6 +20038,7 @@
    "opendns.com": "opendns",
    "openrouter.ai": "openrouter",
    "openstreetmap.org": "openstreetmap",
+   "openvoice.com": "goto-meeting",
    "openx.net": "openx",
    "oraclecloud.com": "oracle-cloud",
    "origin-tracker.githubusercontent.com": "github-copilot",
@@ -19868,6 +20113,7 @@
    "reddit.com": "reddit",
    "redditmedia.com": "reddit",
    "redditstatic.com": "reddit",
+   "reflector.defender.microsoft.com": "ms-defender-endpoint",
    "remotedesktop.google.com": "chrome-remote-desktop",
    "remotepc.com": "remotepc",
    "replicate.com": "replicate",
@@ -19891,6 +20137,7 @@
    "scdn.co": "spotify",
    "scorecardresearch.com": "scorecard-research",
    "screenconnect.com": "connectwise-control",
+   "secure.notion-static.com": "notion",
    "segment.com": "segment",
    "segment.io": "segment",
    "sendgrid.com": "sendgrid",
@@ -20090,17 +20337,33 @@
    "ytimg.com": "youtube",
    "zalo.me": "zalo",
    "zdassets.com": "zendesk",
+   "zdxbeta.net": "zscaler",
+   "zdxcloud.net": "zscaler",
+   "zdxgov.net": "zscaler",
+   "zdxten.net": "zscaler",
    "zendesk.com": "zendesk",
    "zerotier.com": "zerotier",
    "zhipuai.cn": "zhipu-ai",
+   "zidentitygov.net": "zscaler",
    "zoho.com": "zoho",
    "zoho.eu": "zoho",
    "zoom.com": "zoom",
    "zoom.us": "zoom",
    "zoomgov.com": "zoom",
+   "zpabeta.net": "zscaler",
+   "zpagov.net": "zscaler",
+   "zpatwo.net": "zscaler",
    "zscaler.com": "zscaler",
    "zscaler.net": "zscaler",
-   "zscloud.net": "zscaler"
+   "zscalerbeta.net": "zscaler",
+   "zscalergov.net": "zscaler",
+   "zscalerone.net": "zscaler",
+   "zscalerten.net": "zscaler",
+   "zscalerthree.net": "zscaler",
+   "zscalertwo.net": "zscaler",
+   "zscloud.net": "zscaler",
+   "zslogin.net": "zscaler",
+   "zsloginbeta.net": "zscaler"
   },
   "web_fronts": {
    "ammyy.com": "ammyy-admin",
@@ -20218,15 +20481,15 @@
  },
  "release": {
   "components": {
-   "application_catalog": "f96fe05e0855fbec4c13a767f62384f409474c8f19e1e4d202202c1e2e936b41",
+   "application_catalog": "64256d2c538ef6ef08be02bb91f4ec870b29f5c4ae521d3926ca6c574831c257",
    "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-   "host_catalog": "f463fce893f7a9d4cd37da585971f6068dd7c112a26975ffba886560b7e5232b",
+   "host_catalog": "1eb99a29be91e83193029911562ec4b07d6d9805d6c128807adee4ed11bfcea8",
    "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
   },
-  "digest": "d425b8adc87db36d",
-  "released": "2026-11-18",
-  "reviewed": "2026-11-18",
-  "version": "2026.11.6"
+  "digest": "b2ccbc7842dcffcc",
+  "released": "2026-11-19",
+  "reviewed": "2026-11-19",
+  "version": "2026.11.7"
  },
  "risks": {
   "cleartext-credential-protocol": {

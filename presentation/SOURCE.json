@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "bc65e50948055d8b0ab63a01f305a31e48eef9e8",
+  "commit": "c08773fc8da8d210c8e66d67190f883e608d7bb4",
   "branch": "claude/go-migration",
-  "build_digest": "6b740f452211401aabb239d7dd3f54441d127022a8a96bf113f80c4f0feb7700",
+  "build_digest": "787807f64146c015fe0b28bb3f714ffd7ab20832a9b08b658253975344814866",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -75,7 +75,7 @@
     {
       "path": "protocol_engine/content.py",
       "component": "engine",
-      "sha256": "3f65fb4d761e1194d2ceede75f731d31f3aed2e2e4f6eda511bdfb13ec2d2acf"
+      "sha256": "62254a807ff2973c2cd9874559f37e56b180171e3c26a00d92b3f8e83e75089d"
     },
     {
       "path": "protocol_engine/continuation.py",
@@ -200,7 +200,7 @@
     {
       "path": "protocol_engine/host_apps.py",
       "component": "engine",
-      "sha256": "83a481701abd485a308d3f590733449c4abb6723839b2cddd4c84724a4bbbf4b"
+      "sha256": "58adc62e24ea2961d46be43773efef609428af348f7f37992c9d745a3f10e7fa"
     },
     {
       "path": "protocol_engine/hpack.py",

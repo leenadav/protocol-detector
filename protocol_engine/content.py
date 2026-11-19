@@ -63,6 +63,11 @@ HISTORY = (
             "engine-lane review of each spec against its sources; independent review pending",
             "notebook.google.com; Dropbox www web fronts; ngrok agent hosts; Cloudflare One Client API hosts; "
             "Atlassian first-party domains; WeTransfer short links and named storage hosts"),
+    Release("2026.11.7", "2026-11-19", "2026-11-19",
+            "application-research lane proposal with primary sources (research/apps on claude/app-research 7a8d4d7); "
+            "engine-lane review of each spec against its sources; independent review pending",
+            "Defender for Endpoint and Intune; iCloud Private Relay apart from iCloud; Cursor, 1Password, GitLab, Docker, "
+            "Okta, Notion, GoTo Meeting, Zscaler, Figma for Government and Netskope hosts from vendor documentation"),
 )
 CURRENT = HISTORY[-1].version
 LOCK_PATH = Path(__file__).with_name("content_lock.json")
@@ -123,6 +128,22 @@ _ADDED_2026_11_2 = (
     "xandr",
 )
 _PRIOR_HOST_STATE = MappingProxyType({
+    "2026.11.6": MappingProxyType({
+        "icloud": {"domains": ("icloud.com", "icloud-content.com")},
+        "icloud-private-relay": None,
+        "cursor": {"domains": ("cursor.com", "cursor.sh")},
+        "1password": {"domains": ("1password.com", "1password.eu")},
+        "gitlab": {"domains": ("gitlab.com",)},
+        "docker-hub": {"domains": ("docker.com", "docker.io")},
+        "okta": {"domains": ("okta.com", "oktacdn.com", "oktapreview.com")},
+        "notion": {"domains": ("notion.so", "notion.site")},
+        "goto-meeting": {"domains": ("gotomeeting.com", "goto.com")},
+        "zscaler": {"domains": ("zscaler.com", "zscaler.net", "zscloud.net")},
+        "figma": {"domains": ("figma.com",)},
+        "netskope": {"domains": ("netskope.com", "goskope.com")},
+        "ms-defender-endpoint": None,
+        "ms-intune": None,
+    }),
     "2026.11.5": MappingProxyType({
         "google-notebooklm": {"domains": ("notebooklm.google.com",)},
         "dropbox": {"web_fronts": ("dropboxforum.com", "dropboxforums.com", "dropboxlegal.com", "dropboxinsiders.com",
@@ -280,6 +301,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
         "application_catalog": "f96fe05e0855fbec4c13a767f62384f409474c8f19e1e4d202202c1e2e936b41",
         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
         "host_catalog": "9525e84c0367c0fa43376c6b16358172581f3a4367e17d2e350ea4f35eea35d0",
+        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+    "2026.11.6": MappingProxyType({
+        "application_catalog": "f96fe05e0855fbec4c13a767f62384f409474c8f19e1e4d202202c1e2e936b41",
+        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+        "host_catalog": "f463fce893f7a9d4cd37da585971f6068dd7c112a26975ffba886560b7e5232b",
         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
 })
 
