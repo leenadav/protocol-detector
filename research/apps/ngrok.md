@@ -58,6 +58,25 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `47b2743` 
 | N2 | SNI `x.ngrok-free.app` (synthetic tenant name) | no application |
 | N3 | `ech_outer()` with outer SNI `connect.ngrok-agent.com` | no application (engine rule; not a name lookup) |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `dashboard.ngrok.com` | one of `ngrok` | `ngrok` | PASS |
+| O+ | `login.ngrok.com` | one of `ngrok` | `ngrok` | PASS |
+| L- | `xngrok.com` | not ngrok (label boundary) | no application | PASS |
+| L- | `ngrok.com.example.invalid` | not ngrok (suffix look-alike) | no application | PASS |
+| L- | `xngrok-agent.com` | not ngrok (label boundary) | no application | PASS |
+| L- | `ngrok-agent.com.example.invalid` | not ngrok (suffix look-alike) | no application | PASS |
+| L- | `xequinox.io` | not ngrok (label boundary) | no application | PASS |
+| L- | `update.equinox.io.example.invalid` | not ngrok (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] ngrok docs, "Running ngrok Behind a Corporate Firewall", `https://ngrok.com/docs/guides/running-behind-firewalls.md`, accessed 2026-11-18.
@@ -70,3 +89,33 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `47b2743` 
  ("tunnels-other-applications", "prone-to-misuse", "used-by-malware"), ("ngrok.com", "ngrok-agent.com", "update.equinox.io"),
  ("ngrok.com", "www.ngrok.com")),
 ```
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `ngrok`): `ngrok.com`, `ngrok-agent.com`, `update.equinox.io`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://dashboard.ngrok.com/login`, loaded 2026-11-19 without signing in: HTTP None (page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://dashboard.ngrok.com/login), final host `chromewebdata`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `dashboard.ngrok.com` | 1 (0) | app-owned | `ngrok` |  |
+| `login.ngrok.com` | 1 (1) | app-owned | `ngrok` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `ngrok`: networking / remote-access, client-server; characteristics `tunnels-other-applications`, `prone-to-misuse`, `used-by-malware`; **risk 4**: carries other traffic or remote control; commonly misused (unsanctioned remote access, data exfiltration); seen in malware campaigns.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

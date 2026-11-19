@@ -64,6 +64,27 @@ No ALPN, certificate or protocol-structure information is published. `UNVERIFIED
 | N2 | SNI `gemini.google.com.example.invalid` | no application |
 | N3 | `ech_outer()` with outer SNI `gemini.google.com` | no application |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `gemini.google.com` | one of `google-gemini`, `google-ai-studio`, `google-notebooklm` | `google-gemini` | PASS |
+| D- | `gemini.gstatic.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
+| D- | `ogads-pa.clients6.google.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
+| D- | `play.google.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-play` | PASS |
+| D- | `www.googletagmanager.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-analytics` | PASS |
+| D- | `www.gstatic.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
+| L- | `xgoogle.com` | not google-gemini/google-ai-studio/google-notebooklm (label boundary) | no application | PASS |
+| L- | `gemini.google.com.example.invalid` | not google-gemini/google-ai-studio/google-notebooklm (suffix look-alike) | no application | PASS |
+| L- | `aistudio.google.com.example.invalid` | not google-gemini/google-ai-studio/google-notebooklm (suffix look-alike) | no application | PASS |
+| L- | `notebooklm.google.com.example.invalid` | not google-gemini/google-ai-studio/google-notebooklm (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Google Workspace Help, "Set up a Google Workspace host name allowlist",
@@ -93,3 +114,39 @@ to NotebookLM. It is re-sourced from [S3] and proposed again in batch C:
 
 Batch G (2026-11-19): the Gemini API reference names `generativelanguage.googleapis.com` as the API host. It is
 proposed as its own id, `google-gemini-api`, in `apps/google-gemini-api.md`; no other `googleapis.com` name maps to Gemini.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `google-gemini`, `google-ai-studio`, `google-notebooklm`): `gemini.google.com`, `aistudio.google.com`, `notebooklm.google.com`, `notebook.google.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://gemini.google.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `gemini.google.com`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `gemini.google.com` | 3 (0) | app-owned | `google-gemini` |  |
+| `gemini.gstatic.com` | 2 (2) | shared vendor infra | `google-base` |  |
+| `ogads-pa.clients6.google.com` | 1 (1) | shared vendor infra | `google-base` |  |
+| `play.google.com` | 2 (2) | shared vendor infra | `google-play` |  |
+| `www.googletagmanager.com` | 1 (1) | shared vendor infra | `google-analytics` |  |
+| `www.gstatic.com` | 4 (0) | shared vendor infra | `google-base` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `google-gemini`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- `google-ai-studio`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- `google-notebooklm`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- Functions separated by name: `google-gemini` (Google Gemini), `google-ai-studio` (Google AI Studio), `google-notebooklm` (Google NotebookLM).
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): `google-analytics`, `google-base`, `google-play`.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

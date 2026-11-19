@@ -68,6 +68,26 @@ Workspace variant.
 
 Checked with `attribution_for_host` in scratch (batch A plus B): all as expected, except N3, which needs the full engine.
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `drive.google.com` | one of `ms-onedrive`, `google-drive` | `google-drive` | PASS |
+| D- | `accounts.google.com` | not ms-onedrive/google-drive (shared vendor infra) | `google-accounts` | PASS |
+| D- | `ssl.gstatic.com` | not ms-onedrive/google-drive (shared vendor infra) | `google-base` | PASS |
+| L- | `xlive.com` | not ms-onedrive/google-drive (label boundary) | no application | PASS |
+| L- | `onedrive.live.com.example.invalid` | not ms-onedrive/google-drive (suffix look-alike) | no application | PASS |
+| L- | `xonedrive.com` | not ms-onedrive/google-drive (label boundary) | no application | PASS |
+| L- | `onedrive.com.example.invalid` | not ms-onedrive/google-drive (suffix look-alike) | no application | PASS |
+| L- | `x1drv.com` | not ms-onedrive/google-drive (label boundary) | no application | PASS |
+| L- | `1drv.com.example.invalid` | not ms-onedrive/google-drive (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Microsoft Learn, "Required URLs and ports for OneDrive consumer",
@@ -88,3 +108,36 @@ Checked with `attribution_for_host` in scratch (batch A plus B): all as expected
 
 The description changes to say "consumer", which records the personal/business distinction already
 present in the catalog (`ms-onedrive` vs `sharepoint-online`). `storage.live.com` stays with `ms-base`.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `ms-onedrive`, `google-drive`): `onedrive.live.com`, `onedrive.com`, `1drv.com`, `1drv.ms`, `skydrive.live.com`, `photos.live.com`, `storage.msn.com`, `drive.google.com`, `docs.google.com`, `drive.usercontent.google.com`, `googledrive.com`, `sheets.google.com`, `slides.google.com`, `drive-data-export.usercontent.google.com`, `drive-data-export-eu.usercontent.google.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://drive.google.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `accounts.google.com`.
+- `https://onedrive.live.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `accounts.google.com` | 4 (0) | shared vendor infra | `google-accounts` |  |
+| `drive.google.com` | 1 (0) | app-owned | `google-drive` |  |
+| `ssl.gstatic.com` | 1 (1) | shared vendor infra | `google-base` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `ms-onedrive`: general-internet / file-sharing, browser-based; characteristics `widely-used`, `transfers-files`; **risk 3**: widely used by enterprises; moves files out of the organisation.
+- `google-drive`: general-internet / file-sharing, browser-based; characteristics `widely-used`, `transfers-files`; **risk 3**: widely used by enterprises; moves files out of the organisation.
+- Functions separated by name: `ms-onedrive` (Microsoft OneDrive (consumer) file storage), `google-drive` (Google Drive and Docs).
+- Variant: consumer and business separated by name (`onedrive.live.com` vs `*.sharepoint.com`).
+- Dependencies (observed, never attributed to this app): `google-accounts`, `google-base`.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

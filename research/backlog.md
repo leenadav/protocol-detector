@@ -30,11 +30,43 @@ score is V × R. `BLOCKED` caps R at 1.
 
 ### Decisions recorded (Hermes, 2026-11-19)
 
+- Method v2 adopted (Lee via Hermes): live verification, dependency mapping, App-ID attributes, change tracking, per-app accuracy and usage-based priority (`README.md`).
+
 - `goto.com` and the other GoTo universal domains get a vendor-level `goto` id (the Engine lane is implementing it).
 - UDP flow rule adopted: first datagram per direction, two consecutive matches for CoAP and OpenVPN, no port gating;
   post-merge, Go only (`protocol/udp-flow-decision.md`).
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
+
+### Method v2 retrofit summary (2026-11-19)
+
+All 63 entries in `apps.json` were retrofitted, including batches A to D, with sections 9 to 11 and the v2
+vectors in section 6 (`tools/retrofit_specs.py`).
+
+| Measure | Result |
+|---|---|
+| Catalog hosts confirmed live (`L`) | **0 of 320** spec catalog names (875 in the whole catalog): BLOCKED. This environment re-terminates TLS and does not permit direct DNS. `live-hosts.txt` (358 names) is ready for `tools/live_verify.py` at an unproxied vantage point |
+| Dead (NXDOMAIN or no answer) | unknown (needs `L`) |
+| CDN-fronted / ECH-capable / `h3` | unknown (needs `L`) |
+| Web clients loaded (pass 1) | 28 entry pages attempted: 18 answered, 10 timed out on a bot check or redirected to a host not on the allowlist. 26 more entry pages are blocked by the allowlist limit (`allowlist-requests.md`) |
+| Hosts observed | 92 (host names only): 47 app-owned and already attributed correctly; **4 app-owned but unmapped**; 41 dependencies (shared vendor sign-in or CDN, or third-party consent, CAPTCHA, telemetry and analytics) |
+| Attributions changed | patch R (DECISION): `copilot.com` → `ms-copilot`, `boxcdn.net` → `box`, `gitlab.net` → `gitlab`. No dependency host was attributed to the app that loaded it |
+| Attribution risks found | `res.cdn.office.net` (Microsoft's shared asset CDN) is loaded by GoTo's web app but reports `ms-office365` through `cdn.office.net`. `play.google.com`, loaded by the Gemini page, reports `google-play` |
+| Vectors | 398 (observed positives, dependency negatives, label-boundary and suffix look-alikes): all pass with R; without R, 4 positives are unmapped |
+| Change tracking | 85 cited pages and 4 feeds recorded in `source-state.json`: 72 pages hashed, 13 unreadable (bot checks, HTTP errors), 3 noisy. Feeds: Microsoft 365 endpoints version `2026103000`; Google `goog.json` / `cloud.json` sync token `1795097172378`; Salesforce `ip-ranges.json` blocked (allowlist limit) |
+| Re-verify by | 2027-02-17 for every spec |
+| D09 per application | `d09-iscx-vpn2016.md` section 8: YouTube 7/7, Netflix 4/4, Vimeo 4/4, Spotify 4/4 captures named; Facebook 8/15; Skype 11/20; Gmail (Thunderbird) 0/4 (open hypothesis: `googlemail.com`) |
+
+### Prioritisation inputs (method v2, item 6)
+
+V is now stated with its reasons: enterprise prevalence (this lane's judgement, no licensed ranking yet),
+risk (section 11 of each spec) and unknown rate. No public ranking is used: Cloudflare Radar is CC BY-NC
+(excluded under LEE-1), and the Tranco licence is unchecked (DECISION in `allowlist-requests.md`).
+
+| Input | Status |
+|---|---|
+| Culvert field data (unknown-session share per server name, top unmapped names) | **placeholder**: not available yet |
+| D09 unknowns per application | available for the ISCX labels only (section 8 of the D09 report) |
 
 ### NAME: READY (batch I, after H)
 

@@ -42,6 +42,28 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 | N1 | SNI `other.azureedge.net` | unmapped (shared CDN) |
 | N2 | SNI `authentication.logmeininc.com` | `logmein` |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `auth.console.gotoresolve.com` | one of `logmein-resolve` | `logmein-resolve` | PASS |
+| O+ | `console.gotoresolve.com` | one of `logmein-resolve` | `logmein-resolve` | PASS |
+| O+ | `tdn.console.gotoresolve.com` | one of `logmein-resolve` | `logmein-resolve` | PASS |
+| D- | `cdn.amplitude.com` | not logmein-resolve (third party) | `amplitude` | PASS |
+| D- | `o173976.ingest.sentry.io` | not logmein-resolve (third party) | `sentry` | PASS |
+| L- | `xgotoresolve.com` | not logmein-resolve (label boundary) | no application | PASS |
+| L- | `gotoresolve.com.example.invalid` | not logmein-resolve (suffix look-alike) | no application | PASS |
+| L- | `xgotoresolveuserfiles.com` | not logmein-resolve (label boundary) | no application | PASS |
+| L- | `gotoresolveuserfiles.com.example.invalid` | not logmein-resolve (suffix look-alike) | no application | PASS |
+| L- | `xhelpdesk.me` | not logmein-resolve (label boundary) | no application | PASS |
+| L- | `helpdesk.me.example.invalid` | not logmein-resolve (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] LogMeIn Support, "Allowlisting and LogMeIn Resolve", `https://support.logmein.com/resolve/help/allowlisting-and-goto-resolve` (redirect target of `https://support.goto.com/resolve/help/allowlisting-and-goto-resolve`), read by Hermes, relayed, 2026-11-19.
@@ -55,3 +77,36 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 ```
 
 For the `goto` vendor id (Engine lane): the page lists `admin.goto.com`, `api.goto.com`, `feedback.goto.com` and `iam.`, `commerce.`, `avatars.servers.getgo.com` as GoTo Admin hosts.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `logmein-resolve`): `gotoresolve.com`, `gotoresolveuserfiles.com`, `helpdesk.me`, `gtre-remoteexecution-userfiles-prod-eu.azureedge.net`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://console.gotoresolve.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `chromewebdata`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `auth.console.gotoresolve.com` | 1 (1) | app-owned | `logmein-resolve` |  |
+| `cdn.amplitude.com` | 1 (1) | third party | `amplitude` |  |
+| `console.gotoresolve.com` | 36 (0) | app-owned | `logmein-resolve` |  |
+| `o173976.ingest.sentry.io` | 1 (1) | third party | `sentry` |  |
+| `tdn.console.gotoresolve.com` | 1 (0) | app-owned | `logmein-resolve` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `logmein-resolve`: networking / remote-access, client-server; characteristics `tunnels-other-applications`, `prone-to-misuse`; **risk 4**: carries other traffic or remote control; commonly misused (unsanctioned remote access, data exfiltration).
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): `amplitude`, `sentry`.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

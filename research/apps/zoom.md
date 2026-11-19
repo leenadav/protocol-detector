@@ -65,6 +65,27 @@ media mostly bypasses the TCP proxy path.
 | N2 | SNI `zoom.us.example.invalid`, `notzoom.us` | no application |
 | N3 | `ech_outer()` with outer SNI `zoom.us` | no application |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `app.zoom.us` | one of `zoom` | `zoom` | PASS |
+| O+ | `st1.zoom.us` | one of `zoom` | `zoom` | PASS |
+| O+ | `us01st-cf.zoom.us` | one of `zoom` | `zoom` | PASS |
+| D- | `www.googletagmanager.com` | not zoom (third party) | `google-analytics` | PASS |
+| L- | `xzoom.us` | not zoom (label boundary) | no application | PASS |
+| L- | `zoom.us.example.invalid` | not zoom (suffix look-alike) | no application | PASS |
+| L- | `xzoom.com` | not zoom (label boundary) | no application | PASS |
+| L- | `zoom.com.example.invalid` | not zoom (suffix look-alike) | no application | PASS |
+| L- | `xzoomgov.com` | not zoom (label boundary) | no application | PASS |
+| L- | `zoomgov.com.example.invalid` | not zoom (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Zoom Support, "Zoom network firewall or proxy server settings" (KB0060548),
@@ -78,3 +99,35 @@ media mostly bypasses the TCP proxy path.
 3. `zoomgov.com`: record as unverified until a Zoom government-cloud source is read (next batch).
 4. Later phase: the published IP ranges and ports could corroborate UDP media once UDP is on the
    observed path. Not now.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `zoom`): `zoom.us`, `zoom.com`, `zoomgov.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://app.zoom.us/wc`, loaded 2026-11-19 without signing in: HTTP 200, final host `app.zoom.us`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `app.zoom.us` | 1 (0) | app-owned | `zoom` |  |
+| `st1.zoom.us` | 7 (7) | app-owned | `zoom` |  |
+| `us01st-cf.zoom.us` | 2 (2) | app-owned | `zoom` |  |
+| `www.googletagmanager.com` | 1 (1) | third party | `google-analytics` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `zoom`: collaboration / voip-video, client-server; characteristics `widely-used`, `excessive-bandwidth`; **risk 2**: widely used by enterprises; high bandwidth.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): `google-analytics`.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

@@ -36,6 +36,23 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F, G and H)
 | P1 | SNI `bifrost-web-v4.gw.postman.co`, `x.pstmn.io` | `postman` (today unmapped) |
 | P2 | SNI `bifrost-v10.getpostman.com`, `bifrost.gw.eu.postman.com` | `postman` |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xpostman.com` | not postman (label boundary) | no application | PASS |
+| L- | `postman.com.example.invalid` | not postman (suffix look-alike) | no application | PASS |
+| L- | `xgetpostman.com` | not postman (label boundary) | no application | PASS |
+| L- | `getpostman.com.example.invalid` | not postman (suffix look-alike) | no application | PASS |
+| L- | `xpostman.co` | not postman (label boundary) | no application | PASS |
+| L- | `postman.co.example.invalid` | not postman (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Postman Docs, "Firewall configuration", `https://learning.postman.com/docs/getting-started/installation/firewall`, accessed 2026-11-19.
@@ -45,3 +62,26 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F, G and H)
 ```python
 ("postman", ..., ("postman.com", "getpostman.com", "postman.co", "pstmn.io")),
 ```
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `postman`): `postman.com`, `getpostman.com`, `postman.co`, `pstmn.io`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://identity.getpostman.com/login`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `postman`: business-systems / software-development, client-server; characteristics `transfers-files`; **risk 2**: moves files out of the organisation.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

@@ -70,6 +70,43 @@ Consequences applied in every spec:
   client-asserted name; a mismatch between the two is a domain-fronting signal Culvert can compare.
   It is not authentication either way.
 
+## Method v2 (Hermes for Lee, 2026-11-19)
+
+Vendor documentation is the starting point, not ground truth. Primary sources still decide what a name
+means. Four checks are added, and each spec records their results:
+
+1. **Live verification** (`tools/live_verify.py`, input `L`). It is passive: DNS lookups and one TLS
+   handshake per name, with no HTTP request and no account. It must run where DNS and TLS are not
+   intercepted. The research cloud environment re-terminates TLS at its egress proxy and does not permit
+   direct DNS, so there the tool runs only in DNS mode through an approved DoH resolver, or is run
+   elsewhere. Flags: `cdn` (name fine, IPs never), `ech` (SNI may vanish), `h3` (QUIC path), `dead`
+   (recommend removal after a second check).
+2. **Dependency mapping** (`tools/observe_web.js`, input `O`). The app's public web client or login page is
+   loaded in headless Chromium with a fresh profile, no sign-in, and only host names kept. Hosts are classed
+   as app-owned, shared vendor infrastructure (sign-in, telemetry, CDN) or third party (analytics,
+   consent, CAPTCHA, payment). Shared and third-party hosts are never attributed to the app; they are listed
+   as its dependencies. The entry hosts must be on the allowlist (`allowlist-requests.md`). Hosts the proxy
+   refuses are still recorded as attempted, so one pass is a lower bound.
+3. **Attributes** (App-ID model): functions separated by name, dependencies, category, characteristics,
+   consumer or business variant, and risk 1 to 5 with a reason. The proposed engine fields are in
+   `protocol/app-attributes.md` (ENGINE-FIELD, post-merge, Go only).
+4. **Change tracking** (`tools/recheck_sources.py`, state in `source-state.json`). It re-fetches every cited
+   page (text hash) and every machine-readable feed (its own version: Microsoft 365 endpoints `latest`,
+   Google `syncToken`, others by hash), and reports changes. Every spec carries a re-verify-by date 90 days
+   out. Pages whose text changes on every fetch are marked noisy in `source-state.json` notes and compared by
+   reading.
+
+**Measured accuracy per app**: section 6 of every spec includes the observed app-owned hosts as positives,
+the observed dependency hosts as negatives (the app must not be reported), and label-boundary and suffix
+look-alikes as negatives. All are checked against `attribution_for_host` on the proposed catalog. D09
+reports per application wherever the dataset's labels name an application (`d09-iscx-vpn2016.md` section 8).
+
+**Prioritisation by real usage**: V (operator value) states its reason: enterprise prevalence, risk, and
+how often the app's traffic appears as unknown in D09 or, later, in Culvert field data (placeholder in
+`backlog.md`; not available yet). A public popularity ranking is used only if its licence passes LEE-1.
+Cloudflare Radar data is CC BY-NC and is excluded. The Tranco list's licence has not been checked by this
+lane (its site is not reachable from this environment), so no ranking is used yet.
+
 ## Confidence scale
 
 | Level | Meaning |
@@ -79,6 +116,8 @@ Consequences applied in every spec:
 | **N1 (name, weak)** | Only broad wildcards, IP ranges, or names that also serve marketing, sign-in or downloads. |
 | **S (structural)** | The protocol bytes are specified in a primary document, so a family profile could validate them. |
 | **U** | No primary source: `UNVERIFIED`; not usable for identification. |
+| **L (live-verified, date)** | Method v2 input, not a level of its own: the name resolved and answered a TLS handshake with SNI from an unproxied client on that date (`tools/live_verify.py`). It never raises a name above its primary-source level. A name that is dead, or whose CNAME chain or certificate lands in a shared CDN or cloud front end, is **capped at N1** for IP use (the name stays usable, its addresses never are). |
+| **O (observed, date)** | Method v2 input: the vendor's own web client contacted the name (`tools/observe_web.js`), or redirected to it. On its own it supports a name only on a vendor-branded domain and only with a Hermes decision; it never establishes identity for a third-party or shared host. |
 
 A spec states one level per observable, not one level per application, and lists the concrete
 false-positive risks that cap it.
@@ -102,6 +141,16 @@ Every spec uses these headings, in this order:
 7. **Sources**: exact URLs, access date, page date
 8. **Catalog delta and recommendation**: current content-pack entry, each difference from the
    primary source, and the change proposed to the Engine lane
+9. **Live verification (L)**: per catalog name, DNS (A/AAAA, CNAME chain, HTTPS/SVCB record) and the
+   TLS handshake (version, ALPN accepted, certificate subject and SANs) with date and flags `cdn`, `ech`,
+   `h3`, `dead`
+10. **Observed web-client hosts**: every host the public web client or login page contacts when loaded
+    without signing in, classed as app-owned, shared vendor infrastructure or third party
+11. **Attributes (App-ID model) and re-verify date**: functions, dependencies, category, characteristics,
+    variant, risk 1 to 5 with its reason, and a re-verify-by date 90 days out
+
+Sections 6 and 9 to 11 are maintained by `tools/retrofit_specs.py` between `method-v2` markers and can be
+regenerated; hand-written text stays outside the markers.
 
 ## Files
 
@@ -109,3 +158,8 @@ Every spec uses these headings, in this order:
 - `backlog.md`: the ranked backlog, scoring and status of every candidate.
 - `apps/*.md`: one spec per candidate.
 - `datasets.md`: labelled public traffic datasets for corpus D09 (task 2).
+- `apps.json`: spec registry (catalog ids and public web-client URLs per spec).
+- `allowlist-requests.md`: network allowlist requests, one batch per approval, with the reason for each host.
+- `source-state.json`: recorded hashes and feed versions for change tracking.
+- `tools/`: `live_verify.py`, `observe_web.js`, `recheck_sources.py`, `retrofit_specs.py`.
+- `protocol/app-attributes.md`: proposed attribute schema (ENGINE-FIELD).

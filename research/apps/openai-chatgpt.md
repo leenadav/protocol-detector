@@ -77,6 +77,26 @@ ALPN and handshake structure: not published. `UNVERIFIED`.
 
 Every row except N5 (which needs the full engine, not the name lookup) was checked against `attribution_for_host` on `claude/go-migration` `6b280a6` in scratch, 2026-11-18. All give the expected result.
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `chatgpt.com` | one of `openai-chatgpt`, `openai-platform` | `openai-chatgpt` | PASS |
+| O+ | `platform.openai.com` | one of `openai-chatgpt`, `openai-platform` | `openai-platform` | PASS |
+| D- | `challenges.cloudflare.com` | not openai-chatgpt/openai-platform (third party) | no application | PASS |
+| L- | `xchatgpt.com` | not openai-chatgpt/openai-platform (label boundary) | no application | PASS |
+| L- | `chatgpt.com.example.invalid` | not openai-chatgpt/openai-platform (suffix look-alike) | no application | PASS |
+| L- | `xopenai.com` | not openai-chatgpt/openai-platform (label boundary) | no application | PASS |
+| L- | `chat.openai.com.example.invalid` | not openai-chatgpt/openai-platform (suffix look-alike) | no application | PASS |
+| L- | `xoaiusercontent.com` | not openai-chatgpt/openai-platform (label boundary) | no application | PASS |
+| L- | `oaiusercontent.com.example.invalid` | not openai-chatgpt/openai-platform (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] OpenAI Help Center, "Network recommendations for ChatGPT errors on web and apps",
@@ -107,3 +127,36 @@ Every row except N5 (which needs the full engine, not the name lookup) was check
   2026-11-18). Today it and `help.openai.com` are unmapped.
 - `cdn.platform.openai.com`: the attribution risk stays recorded (section 5); no change.
 - Do not add the auth hosts, `oaistatsig.com`, `openaimerge.com` or any third-party name.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `openai-chatgpt`, `openai-platform`): `chatgpt.com`, `chat.openai.com`, `oaiusercontent.com`, `oaistatic.com`, `api.openai.com`, `platform.openai.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://chatgpt.com/`, loaded 2026-11-19 without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `chatgpt.com`.
+- `https://platform.openai.com/`, loaded 2026-11-19 without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `platform.openai.com`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `challenges.cloudflare.com` | 8 (7) | third party | no application | Cloudflare Turnstile bot check |
+| `chatgpt.com` | 16 (0) | app-owned | `openai-chatgpt` |  |
+| `platform.openai.com` | 20 (3) | app-owned | `openai-platform` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `openai-chatgpt`: business-systems / generative-ai, browser-based; characteristics `transfers-files`, `widely-used`; **risk 3**: moves files out of the organisation; widely used by enterprises.
+- `openai-platform`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- Functions separated by name: `openai-chatgpt` (OpenAI ChatGPT), `openai-platform` (OpenAI developer platform and API).
+- Variant: web app and API platform separated by name (`chatgpt.com` vs `api.openai.com`, `platform.openai.com`).
+- Dependencies (observed, never attributed to this app): `challenges.cloudflare.com`.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

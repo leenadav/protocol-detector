@@ -31,6 +31,23 @@ Not assessed beyond the README's shared facts.
 None (no catalog change).
 
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `app.grammarly.com` | one of `grammarly` | `grammarly` | PASS |
+| O+ | `www.grammarly.com` | one of `grammarly` | `grammarly` | PASS |
+| L- | `xgrammarly.com` | not grammarly (label boundary) | no application | PASS |
+| L- | `grammarly.com.example.invalid` | not grammarly (suffix look-alike) | no application | PASS |
+| L- | `xgrammarly.io` | not grammarly (label boundary) | no application | PASS |
+| L- | `grammarly.io.example.invalid` | not grammarly (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Grammarly Support, "Network configuration blocks Grammarly services", `https://support.grammarly.com/hc/en-us/articles/115000090271-Network-configuration-blocks-Grammarly-services`, read by Hermes, relayed, 2026-11-19.
@@ -38,3 +55,33 @@ None (no catalog change).
 ## 8. Catalog delta and recommendation
 
 None. Next: the linked "WebSockets Support Q&A for System Administrators" article (URL unknown to this lane).
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `grammarly`): `grammarly.com`, `grammarly.io`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://app.grammarly.com/`, loaded 2026-11-19 without signing in: HTTP None (page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://app.grammarly.com/), final host `chromewebdata`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `app.grammarly.com` | 1 (0) | app-owned | `grammarly` |  |
+| `www.grammarly.com` | 1 (1) | app-owned | `grammarly` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `grammarly`: business-systems / office-programs, browser-based; characteristics `pervasive`; **risk 3**: present on most managed endpoints.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

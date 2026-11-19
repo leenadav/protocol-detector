@@ -97,6 +97,30 @@ ALPN: nothing published by Anthropic. `UNVERIFIED`.
 | N2 | SNI `claude.ai.example.invalid`, `notclaude.ai` | no application |
 | N3 | `ech_outer()` with outer SNI `claude.ai` | no application |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `claude.ai` | one of `anthropic-claude`, `anthropic-api` | `anthropic-claude` | PASS |
+| O+ | `platform.claude.com` | one of `anthropic-claude`, `anthropic-api` | `anthropic-api` | PASS |
+| O+ | `s-cdn.anthropic.com` | one of `anthropic-claude`, `anthropic-api` | `anthropic-claude` | PASS |
+| D- | `accounts.google.com` | not anthropic-claude/anthropic-api (shared vendor infra) | `google-accounts` | PASS |
+| D- | `browser-intake-us5-datadoghq.com` | not anthropic-claude/anthropic-api (third party) | no application | PASS |
+| D- | `challenges.cloudflare.com` | not anthropic-claude/anthropic-api (third party) | no application | PASS |
+| D- | `js.hcaptcha.com` | not anthropic-claude/anthropic-api (third party) | no application | PASS |
+| L- | `xclaude.ai` | not anthropic-claude/anthropic-api (label boundary) | no application | PASS |
+| L- | `claude.ai.example.invalid` | not anthropic-claude/anthropic-api (suffix look-alike) | no application | PASS |
+| L- | `xanthropic.com` | not anthropic-claude/anthropic-api (label boundary) | no application | PASS |
+| L- | `anthropic.com.example.invalid` | not anthropic-claude/anthropic-api (suffix look-alike) | no application | PASS |
+| L- | `xclaude.com` | not anthropic-claude/anthropic-api (label boundary) | no application | PASS |
+| L- | `claude.com.example.invalid` | not anthropic-claude/anthropic-api (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Claude Platform Docs, "IP addresses", `https://platform.claude.com/docs/en/api/ip-addresses`
@@ -125,3 +149,40 @@ Decided and in batch A (`research/patches/batch-a-name-based.patch`, base `claud
 - Not in batch A (PARTIAL): making `anthropic.com` and `www.anthropic.com` web fronts. That needs a read
   of `anthropic.com`, whose host is not allowed in this session.
 - Optional later (not proposed): the published inbound IPv4 ranges as corroborating content.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `anthropic-claude`, `anthropic-api`): `claude.ai`, `anthropic.com`, `claude.com`, `claudeusercontent.com`, `api.anthropic.com`, `platform.claude.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://claude.ai/login`, loaded 2026-11-19 without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `claude.ai`.
+- `https://platform.claude.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `platform.claude.com`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `accounts.google.com` | 1 (0) | shared vendor infra | `google-accounts` |  |
+| `browser-intake-us5-datadoghq.com` | 1 (1) | third party | no application | Datadog browser telemetry |
+| `challenges.cloudflare.com` | 4 (4) | third party | no application | Cloudflare Turnstile bot check |
+| `claude.ai` | 16 (0) | app-owned | `anthropic-claude` |  |
+| `js.hcaptcha.com` | 1 (1) | third party | no application | hCaptcha |
+| `platform.claude.com` | 70 (0) | app-owned | `anthropic-api` |  |
+| `s-cdn.anthropic.com` | 1 (1) | app-owned | `anthropic-claude` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `anthropic-claude`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- `anthropic-api`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- Functions separated by name: `anthropic-claude` (Anthropic Claude), `anthropic-api` (Anthropic Claude developer platform and API).
+- Variant: web app and API/console separated by name (`claude.ai` vs `api.anthropic.com`, `platform.claude.com`).
+- Dependencies (observed, never attributed to this app): `browser-intake-us5-datadoghq.com`, `challenges.cloudflare.com`, `google-accounts`, `js.hcaptcha.com`.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

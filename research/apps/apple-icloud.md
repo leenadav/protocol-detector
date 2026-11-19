@@ -39,6 +39,23 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 | N1 | SNI `www.icloud.com` | `icloud` |
 | N2 | SNI `www.apple.com` | `apple-base` |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xicloud.com` | not icloud/icloud-private-relay (label boundary) | no application | PASS |
+| L- | `icloud.com.example.invalid` | not icloud/icloud-private-relay (suffix look-alike) | no application | PASS |
+| L- | `xicloud-content.com` | not icloud/icloud-private-relay (label boundary) | no application | PASS |
+| L- | `icloud-content.com.example.invalid` | not icloud/icloud-private-relay (suffix look-alike) | no application | PASS |
+| L- | `xapple-cloudkit.com` | not icloud/icloud-private-relay (label boundary) | no application | PASS |
+| L- | `apple-cloudkit.com.example.invalid` | not icloud/icloud-private-relay (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Apple Support, "Use Apple products on enterprise networks", `https://support.apple.com/en-us/101555`, "Published Date: August 07, 2026", accessed 2026-11-19.
@@ -55,3 +72,27 @@ Batch D (`research/patches/batch-d-name-based.patch`; `...` stands for the uncha
 ```
 
 `mask.icloud.com` is longer than `icloud.com`, so it wins.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `icloud`, `icloud-private-relay`): `icloud.com`, `icloud-content.com`, `apple-cloudkit.com`, `apple-livephotoskit.com`, `icloud.apple.com`, `iwork.apple.com`, `mask.icloud.com`, `mask-h2.icloud.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://www.icloud.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `icloud`: general-internet / file-sharing, client-server; characteristics `widely-used`, `transfers-files`; **risk 2**: widely used by enterprises; moves files out of the organisation.
+- `icloud-private-relay`: networking / encrypted-tunnel, client-server; characteristics `tunnels-other-applications`, `evasive`; **risk 3**: carries other traffic or remote control; designed to avoid inspection (relays, proxies or circumvention modes).
+- Functions separated by name: `icloud` (Apple iCloud services), `icloud-private-relay` (Apple iCloud Private Relay).
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

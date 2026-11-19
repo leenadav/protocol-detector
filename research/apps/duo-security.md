@@ -37,6 +37,20 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 | P2 | SNI `www.duo.com` | `duo-security` web front (today unmapped) |
 | N1 | SNI `duo.com` | unmapped |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `admin.duosecurity.com` | one of `duo-security` | `duo-security` | PASS |
+| L- | `xduosecurity.com` | not duo-security (label boundary) | no application | PASS |
+| L- | `duosecurity.com.example.invalid` | not duo-security (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Duo Help, "What are Duo's IP ranges, hostnames, and data residency areas by deployment?", `https://help.duo.com/s/article/1337?language=en_US`, read by Hermes, relayed, 2026-11-19.
@@ -46,3 +60,32 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 ```python
 ("duo-security", ..., (), ("duosecurity.com",), ("www.duo.com",)),
 ```
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `duo-security`): `duosecurity.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://admin.duosecurity.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `admin.duosecurity.com`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `admin.duosecurity.com` | 9 (0) | app-owned | `duo-security` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `duo-security`: business-systems / auth-service, client-server; characteristics none; **risk 1**: no risk-raising characteristic recorded; rating from its category.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

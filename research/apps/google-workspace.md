@@ -55,6 +55,22 @@ TCP 443 (HTTPS) for the service URLs and TCP 80 for CRL/OCSP [S1]. Drive and Sit
 
 Checked in scratch (batch A plus B): all as expected.
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xgoogle.com` | not gmail/google-drive/google-meet/google-accounts (label boundary) | no application | PASS |
+| L- | `mail.google.com.example.invalid` | not gmail/google-drive/google-meet/google-accounts (suffix look-alike) | no application | PASS |
+| L- | `xgmail.com` | not gmail/google-drive/google-meet/google-accounts (label boundary) | no application | PASS |
+| L- | `gmail.com.example.invalid` | not gmail/google-drive/google-meet/google-accounts (suffix look-alike) | no application | PASS |
+| L- | `drive.google.com.example.invalid` | not gmail/google-drive/google-meet/google-accounts (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Google Workspace Help, "Set up a Google Workspace host name allowlist" (see google-gemini.md [S1]), accessed 2026-11-18.
@@ -72,3 +88,30 @@ Checked in scratch (batch A plus B): all as expected.
 
 `sites.google.com`, `calendar.google.com` and `keep.google.com` have no application id. Adding ids is
 possible later; that is a catalog-scope choice, not proposed now.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `gmail`, `google-drive`, `google-meet`, `google-accounts`): `mail.google.com`, `gmail.com`, `drive.google.com`, `docs.google.com`, `drive.usercontent.google.com`, `googledrive.com`, `sheets.google.com`, `slides.google.com`, `drive-data-export.usercontent.google.com`, `drive-data-export-eu.usercontent.google.com`, `meet.google.com`, `accounts.google.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://mail.google.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://meet.google.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `gmail`: collaboration / email, browser-based; characteristics `widely-used`, `transfers-files`; **risk 2**: widely used by enterprises; moves files out of the organisation.
+- `google-drive`: general-internet / file-sharing, browser-based; characteristics `widely-used`, `transfers-files`; **risk 3**: widely used by enterprises; moves files out of the organisation.
+- `google-meet`: collaboration / voip-video, browser-based; characteristics `widely-used`; **risk 2**: widely used by enterprises.
+- `google-accounts`: business-systems / auth-service, browser-based; characteristics `widely-used`; **risk 1**: widely used by enterprises.
+- Functions separated by name: `gmail` (Gmail web mail), `google-drive` (Google Drive and Docs), `google-meet` (Google Meet video meetings), `google-accounts` (Google account sign-in).
+- Variant: not separated by name: consumer Gmail and Workspace share `mail.google.com`.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

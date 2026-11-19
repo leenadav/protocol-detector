@@ -34,6 +34,23 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 |---|---|---|
 | P1 | SNI `acme.okta-emea.com`, `x.okta.mil` | `okta`; the org label is not in the output |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xokta.com` | not okta (label boundary) | no application | PASS |
+| L- | `okta.com.example.invalid` | not okta (suffix look-alike) | no application | PASS |
+| L- | `xoktacdn.com` | not okta (label boundary) | no application | PASS |
+| L- | `oktacdn.com.example.invalid` | not okta (suffix look-alike) | no application | PASS |
+| L- | `xoktapreview.com` | not okta (label boundary) | no application | PASS |
+| L- | `oktapreview.com.example.invalid` | not okta (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Okta Help, "Allow access to Okta IP addresses", `https://help.okta.com/en-us/content/topics/security/ip-address-allow-listing.htm`, accessed 2026-11-19.
@@ -45,3 +62,26 @@ Batch D (`research/patches/batch-d-name-based.patch`; `...` stands for the uncha
 ```python
 ("okta", ..., ("okta.com", "oktacdn.com", "oktapreview.com", "okta-emea.com", "okta-gov.com", "okta.mil")),
 ```
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `okta`): `okta.com`, `oktacdn.com`, `oktapreview.com`, `okta-emea.com`, `okta-gov.com`, `okta.mil`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://login.okta.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `okta`: business-systems / auth-service, browser-based; characteristics `widely-used`; **risk 1**: widely used by enterprises.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

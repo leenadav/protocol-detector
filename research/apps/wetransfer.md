@@ -54,6 +54,25 @@ Checked in scratch (batch C on `47b2743`): all as expected.
 | P2 | SNI `wt-prod-euwest1-storm.s3-accelerate.amazonaws.com` | `wetransfer` |
 | N1 | SNI `s3.amazonaws.com`, `other-bucket.s3.amazonaws.com` | no application |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `cdn.wetransfer.com` | one of `wetransfer` | `wetransfer` | PASS |
+| O+ | `wetransfer.com` | one of `wetransfer` | `wetransfer` | PASS |
+| L- | `xwetransfer.com` | not wetransfer (label boundary) | no application | PASS |
+| L- | `wetransfer.com.example.invalid` | not wetransfer (suffix look-alike) | no application | PASS |
+| L- | `xwetransfer.net` | not wetransfer (label boundary) | no application | PASS |
+| L- | `wetransfer.net.example.invalid` | not wetransfer (suffix look-alike) | no application | PASS |
+| L- | `xwe.tl` | not wetransfer (label boundary) | no application | PASS |
+| L- | `we.tl.example.invalid` | not wetransfer (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] WeTransfer Help Center, "How do I configure a firewall for WeTransfer?",
@@ -70,3 +89,33 @@ Checked in scratch (batch C on `47b2743`): all as expected.
   "wt-prod-useast1-storm.s3.amazonaws.com", "wt-prod-useast1-storm.s3-accelerate.amazonaws.com",
   "wt-prod-useast1-storm.s3.us-east-1.amazonaws.com")),
 ```
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `wetransfer`): `wetransfer.com`, `wetransfer.net`, `we.tl`, `wt-prod-euwest1-storm.s3.amazonaws.com`, `wt-prod-euwest1-storm.s3-accelerate.amazonaws.com`, `wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com`, `wt-prod-useast1-storm.s3.amazonaws.com`, `wt-prod-useast1-storm.s3-accelerate.amazonaws.com`, `wt-prod-useast1-storm.s3.us-east-1.amazonaws.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://wetransfer.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `wetransfer.com`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `cdn.wetransfer.com` | 79 (79) | app-owned | `wetransfer` |  |
+| `wetransfer.com` | 1 (0) | app-owned | `wetransfer` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `wetransfer`: general-internet / file-sharing, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

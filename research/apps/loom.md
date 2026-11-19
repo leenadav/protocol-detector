@@ -42,6 +42,21 @@ Recordings upload to S3. Only the named bucket host is proposed, never the gener
 
 Checked in scratch (`c08773f` plus D, E and F).
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xloom.com` | not loom (label boundary) | no application | PASS |
+| L- | `loom.com.example.invalid` | not loom (suffix look-alike) | no application | PASS |
+| L- | `xamazonaws.com` | not loom (label boundary) | no application | PASS |
+| L- | `loom-media-production.s3-accelerate.amazonaws.com.example.invalid` | not loom (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Atlassian Support (Loom), "Domains, Protocols and Ports required for Loom to work on your servers",
@@ -53,3 +68,26 @@ Checked in scratch (`c08773f` plus D, E and F).
 ("loom", "collaboration", "voip-video", "browser-based", 2, "Loom video messaging",
  ("transfers-files",), ("loom.com", "loom-media-production.s3-accelerate.amazonaws.com")),
 ```
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `loom`): `loom.com`, `loom-media-production.s3-accelerate.amazonaws.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://www.loom.com/login`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `loom`: collaboration / voip-video, browser-based; characteristics `transfers-files`; **risk 2**: moves files out of the organisation.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

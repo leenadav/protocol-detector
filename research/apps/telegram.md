@@ -66,6 +66,23 @@ For the Go profile.
 | N4 | `ef` followed by an inconsistent length | not telegram |
 | N5 | every split point and single-byte chunking of P1 to P5 | same final observation (contract C1) |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xtelegram.org` | not telegram (label boundary) | no application | PASS |
+| L- | `telegram.org.example.invalid` | not telegram (suffix look-alike) | no application | PASS |
+| L- | `xt.me` | not telegram (label boundary) | no application | PASS |
+| L- | `t.me.example.invalid` | not telegram (suffix look-alike) | no application | PASS |
+| L- | `xtelegram.me` | not telegram (label boundary) | no application | PASS |
+| L- | `telegram.me.example.invalid` | not telegram (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Telegram, "MTProto transports", `https://core.telegram.org/mtproto/mtproto-transports.md`, accessed 2026-11-18.
@@ -77,3 +94,26 @@ For the Go profile.
   intermediate and full transports as in section 3, with full-transport CRC32 validation; no obfuscated
   claim. This is a new parser, so it is Go-only after the merge.
 - Names: no change until a Telegram network allowlist is read.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `telegram`): `telegram.org`, `t.me`, `telegram.me`, `telesco.pe`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://web.telegram.org/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `telegram`: collaboration / instant-messaging, client-server; characteristics `transfers-files`, `evasive`, `prone-to-misuse`; **risk 4**: moves files out of the organisation; designed to avoid inspection (relays, proxies or circumvention modes); commonly misused (unsanctioned remote access, data exfiltration).
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

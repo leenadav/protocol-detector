@@ -392,3 +392,45 @@ cannot prove the source, so (b) is "not refuted", not "confirmed".
 The 28 `openvpn` or `coap` sessions of the first run (13 and 15 there; this re-run's tally counts a session that
 matched both once) are still identified inside Skype and VoipBuster UDP flows, the largest at 505,042 packets. This matches the adopted UDP flow rule (two consecutive matches; post-merge, Go only),
 which these builds do not yet contain.
+
+## 8. Per-application results (method v2, item 5)
+
+From the same aggregates as section 7 (engine head `c08773f`, content 2026.11.6; the old build is identical).
+Labels come from capture names (section 2). Only applications that both the label and the catalog name are
+scored. Hangouts, AIM, ICQ and VoipBuster have no catalog id. "App-named sessions" counts every identified
+session with an application name, including protocol-level names such as `dns` and `ssl`. "Largest session"
+is the largest session of the capture.
+
+| Label | Expected app id(s) | Captures | Captures with the app named | Largest session named as the app | Sessions named as the app / all app-named sessions | Top other app names |
+|---|---|---|---|---|---|---|
+| VPN email | `gmail`, `google-accounts` | 2 | 0 | 0 | 0 / 285 | `dns` 152, `ssl` 111, `mozilla` 16, `ocsp` 6 |
+| VPN facebook | `facebook`, `facebook-messenger` | 3 | 2 | 0 | 5 / 1803 | `dns` 1585, `turn` 102, `google-base` 47, `ssl` 26 |
+| VPN netflix | `netflix` | 1 | 1 | 0 | 11 / 75 | `dns` 40, `google-base` 9, `web-browsing` 8, `ssl` 6 |
+| VPN skype | `ms-teams`, `skype` | 6 | 1 | 0 | 13 / 573 | `dns` 460, `ssl` 36, `google-base` 18, `ssdp` 14 |
+| VPN spotify | `spotify` | 1 | 1 | 0 | 4 / 80 | `dns` 42, `google-base` 18, `ssl` 7, `web-browsing` 4 |
+| VPN vimeo | `vimeo` | 2 | 2 | 0 | 8 / 49 | `dns` 26, `google-base` 9, `ssl` 5, `google-accounts` 1 |
+| VPN youtube | `youtube` | 1 | 1 | 0 | 74 / 125 | `dns` 38, `google-base` 11, `google-ads` 1, `ssl` 1 |
+| email | `gmail`, `google-accounts` | 4 | 0 | 0 | 0 / 498 | `dns` 249, `ssl` 192, `netbios-ns` 41, `ssdp` 5 |
+| facebook | `facebook`, `facebook-messenger` | 15 | 8 | 0 | 13 / 1748 | `dns` 1255, `turn` 139, `netbios-ns` 107, `stun` 75 |
+| gmail | `gmail`, `google-accounts` | 3 | 1 | 0 | 2 / 334 | `dns` 292, `google-base` 21, `netbios-ns` 7, `ssl` 6 |
+| netflix | `netflix` | 4 | 4 | 3 | 18 / 106 | `dns` 50, `web-browsing` 24, `netbios-ns` 10, `google-base` 3 |
+| skype | `ms-teams`, `skype` | 20 | 11 | 0 | 86 / 2139 | `dns` 1210, `netbios-ns` 180, `ms-update` 130, `xandr` 127 |
+| spotify | `spotify` | 4 | 4 | 2 | 12 / 147 | `dns` 69, `netbios-ns` 26, `google-base` 16, `ssl` 11 |
+| vimeo | `vimeo` | 4 | 4 | 1 | 123 / 340 | `dns` 139, `ssl` 47, `netbios-ns` 10, `google-ads` 7 |
+| youtube | `youtube` | 7 | 7 | 6 | 65 / 536 | `dns` 374, `google-base` 22, `netbios-ns` 18, `ssl` 15 |
+
+Reading:
+
+- **Streaming apps are named reliably by server name**: YouTube in 7 of 7 captures (largest session in 6),
+  Netflix 4/4 (3), Vimeo 4/4 (1), Spotify 4/4 (2). The largest session is often the CDN flow that carries
+  the media. When the capture-time server name was a shared CDN name, the session gets `google-base` or
+  `ssl`. This is correct behaviour (a shared CDN names no application), and it caps per-app recall.
+- **Facebook and Skype are named in about half their captures** (8 of 15, 11 of 20). Their calls go over
+  STUN/TURN and peer UDP (`turn` 139 and `stun` 75 sessions in the Facebook captures), which carry no name.
+- **Gmail is never named in the Thunderbird email captures** (0 of 4): 192 sessions there end as `ssl` (TLS
+  without a catalog match). Hypothesis, `UNVERIFIED` (server names were not kept): the 2016 client used
+  `googlemail.com` names or sent no SNI. `googlemail.com` is not in the catalog. A re-run that records
+  only the server name of `ssl` sessions in the email captures would settle it. That needs Hermes's OK,
+  because it keeps host names from the dataset.
+- **VPN captures**: the inner traffic is named as well as the non-VPN traffic (VPN YouTube 74 of 125
+  app-named sessions), consistent with section 4's reading that the VPN captures were taken inside the tunnel.

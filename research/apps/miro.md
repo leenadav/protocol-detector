@@ -38,6 +38,23 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 | P2 | SNI `api.us.miro.com` | `miro` |
 | N1 | SNI `realtimeboardhelp.zendesk.com` | `zendesk` |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xmiro.com` | not miro (label boundary) | no application | PASS |
+| L- | `miro.com.example.invalid` | not miro (suffix look-alike) | no application | PASS |
+| L- | `xmiro-apps.com` | not miro (label boundary) | no application | PASS |
+| L- | `miro-apps.com.example.invalid` | not miro (suffix look-alike) | no application | PASS |
+| L- | `xmirostatic.com` | not miro (label boundary) | no application | PASS |
+| L- | `mirostatic.com.example.invalid` | not miro (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Miro Help Center, "Add Miro to allowed apps", `https://help.miro.com/hc/en-us/articles/360017572694-Add-Miro-to-allowed-apps`, read by Hermes, relayed, 2026-11-19.
@@ -48,3 +65,26 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 ```python
 ("miro", ..., ("miro.com", "miro-apps.com", "mirostatic.com", "onlinewhiteboard.com", "realtimeboard.com", "webwhiteboard.com")),
 ```
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `miro`): `miro.com`, `miro-apps.com`, `mirostatic.com`, `onlinewhiteboard.com`, `realtimeboard.com`, `webwhiteboard.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://miro.com/login/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `miro`: business-systems / office-programs, browser-based; characteristics `transfers-files`; **risk 2**: moves files out of the organisation.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

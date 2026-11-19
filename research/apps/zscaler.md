@@ -35,6 +35,23 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 |---|---|---|
 | P1 | SNI `mobile.zscaler.net`, `login.zscalertwo.net`, `x.zdxcloud.net`, `x.zslogin.net` | `zscaler` |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xzscaler.com` | not zscaler (label boundary) | no application | PASS |
+| L- | `zscaler.com.example.invalid` | not zscaler (suffix look-alike) | no application | PASS |
+| L- | `xzscaler.net` | not zscaler (label boundary) | no application | PASS |
+| L- | `zscaler.net.example.invalid` | not zscaler (suffix look-alike) | no application | PASS |
+| L- | `xzscloud.net` | not zscaler (label boundary) | no application | PASS |
+| L- | `zscloud.net.example.invalid` | not zscaler (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Zscaler Config, `https://config.zscaler.com/zscaler.net/zscaler-app` ("Zscaler Client Connector" section and cloud list), accessed 2026-11-19.
@@ -48,3 +65,26 @@ Batch D (`research/patches/batch-d-name-based.patch`; `...` stands for the uncha
                     "zscalerten.net", "zscalerbeta.net", "zscalergov.net", "zpagov.net", "zpatwo.net", "zpabeta.net", "zdxcloud.net",
                     "zdxgov.net", "zdxbeta.net", "zdxten.net", "zslogin.net", "zsloginbeta.net", "zidentitygov.net")),
 ```
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `zscaler`): `zscaler.com`, `zscaler.net`, `zscloud.net`, `zscalerone.net`, `zscalertwo.net`, `zscalerthree.net`, `zscalerten.net`, `zscalerbeta.net`, `zscalergov.net`, `zpagov.net`, `zpatwo.net`, `zpabeta.net`, `zdxcloud.net`, `zdxgov.net`, `zdxbeta.net`, `zdxten.net`, `zslogin.net`, `zsloginbeta.net`, `zidentitygov.net`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+No public web client or login page for this application (desktop agent, tenant-specific console or API only).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `zscaler`: networking / proxy, client-server; characteristics `tunnels-other-applications`; **risk 2**: carries other traffic or remote control.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

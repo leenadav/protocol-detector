@@ -36,6 +36,25 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 | P1 | SNI `api2.cursor.sh`, `marketplace.cursorapi.com`, `x.cursor-cdn.com`, `a.b.cursorvm.com` | `cursor` |
 | R1 | SNI `accounts.x.ai` | `xai-grok` (the recorded risk) |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `cursor.com` | one of `cursor` | `cursor` | PASS |
+| D- | `api.workos.com` | not cursor (third party) | no application | PASS |
+| L- | `xcursor.com` | not cursor (label boundary) | no application | PASS |
+| L- | `cursor.com.example.invalid` | not cursor (suffix look-alike) | no application | PASS |
+| L- | `xcursor.sh` | not cursor (label boundary) | no application | PASS |
+| L- | `cursor.sh.example.invalid` | not cursor (suffix look-alike) | no application | PASS |
+| L- | `xcursorapi.com` | not cursor (label boundary) | no application | PASS |
+| L- | `cursorapi.com.example.invalid` | not cursor (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Cursor docs, "Network configuration", `https://cursor.com/docs/enterprise/network-configuration.md`, accessed 2026-11-19.
@@ -47,3 +66,33 @@ Batch D (`research/patches/batch-d-name-based.patch`; `...` stands for the uncha
 ```python
 ("cursor", ..., ("cursor.com", "cursor.sh", "cursorapi.com", "cursor-cdn.com", "cursorvm.com")),
 ```
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `cursor`): `cursor.com`, `cursor.sh`, `cursorapi.com`, `cursor-cdn.com`, `cursorvm.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://cursor.com/dashboard`, loaded 2026-11-19 without signing in: HTTP None (page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://cursor.com/dashboard), final host `chromewebdata`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `api.workos.com` | 1 (1) | third party | no application | WorkOS, third-party sign-in provider |
+| `cursor.com` | 2 (0) | app-owned | `cursor` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `cursor`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): `api.workos.com`.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

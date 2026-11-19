@@ -41,6 +41,27 @@ SNI only on the CONNECT path (README, shared facts). API keys travel in headers 
 
 P1, P2 and N1 were checked with `attribution_for_host` in scratch (batches A, B and B2 applied): all as expected.
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `cdn.grok.com` | one of `xai-grok`, `xai-api` | `xai-grok` | PASS |
+| O+ | `grok.com` | one of `xai-grok`, `xai-api` | `xai-grok` | PASS |
+| D- | `cdn.cookielaw.org` | not xai-grok/xai-api (third party) | no application | PASS |
+| D- | `static.cloudflareinsights.com` | not xai-grok/xai-api (third party) | no application | PASS |
+| D- | `www.googletagmanager.com` | not xai-grok/xai-api (third party) | `google-analytics` | PASS |
+| L- | `xgrok.com` | not xai-grok/xai-api (label boundary) | no application | PASS |
+| L- | `grok.com.example.invalid` | not xai-grok/xai-api (suffix look-alike) | no application | PASS |
+| L- | `xx.ai` | not xai-grok/xai-api (label boundary) | no application | PASS |
+| L- | `x.ai.example.invalid` | not xai-grok/xai-api (suffix look-alike) | no application | PASS |
+| L- | `api.x.ai.example.invalid` | not xai-grok/xai-api (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] xAI docs overview, `https://docs.x.ai/overview` (redirected from `/docs/overview`), accessed 2026-11-18.
@@ -56,3 +77,37 @@ Batch B2 (pending confirmation):
 
 The description is in the patch. The existing `xai-grok` entry is unchanged. Without B2, the API
 host keeps resolving to `xai-grok` through its domain, which is correct but less precise.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `xai-grok`, `xai-api`): `grok.com`, `x.ai`, `api.x.ai`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://grok.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `grok.com`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `cdn.cookielaw.org` | 1 (1) | third party | no application | OneTrust consent banner |
+| `cdn.grok.com` | 171 (171) | app-owned | `xai-grok` |  |
+| `grok.com` | 5 (0) | app-owned | `xai-grok` |  |
+| `static.cloudflareinsights.com` | 1 (1) | third party | no application | Cloudflare Web Analytics beacon |
+| `www.googletagmanager.com` | 1 (1) | third party | `google-analytics` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `xai-grok`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- `xai-api`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- Functions separated by name: `xai-grok` (xAI Grok), `xai-api` (xAI (x.ai) developer API).
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): `cdn.cookielaw.org`, `google-analytics`, `static.cloudflareinsights.com`.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

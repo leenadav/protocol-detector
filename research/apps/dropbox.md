@@ -70,6 +70,23 @@ No ALPN or protocol-structure information is published. `UNVERIFIED`.
 | N2 | SNI `dropbox.com.example.invalid`, `mydropbox.com` | no application |
 | N3 | `ech_outer()` with outer SNI `www.dropbox.com` | no application |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xdropbox.com` | not dropbox/docsend/dropbox-sign (label boundary) | no application | PASS |
+| L- | `dropbox.com.example.invalid` | not dropbox/docsend/dropbox-sign (suffix look-alike) | no application | PASS |
+| L- | `xdropboxapi.com` | not dropbox/docsend/dropbox-sign (label boundary) | no application | PASS |
+| L- | `dropboxapi.com.example.invalid` | not dropbox/docsend/dropbox-sign (suffix look-alike) | no application | PASS |
+| L- | `xdropboxusercontent.com` | not dropbox/docsend/dropbox-sign (label boundary) | no application | PASS |
+| L- | `dropboxusercontent.com.example.invalid` | not dropbox/docsend/dropbox-sign (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Dropbox Help, "What official domains does Dropbox use?",
@@ -106,3 +123,28 @@ Exact entries in batch A (`research/patches/batch-a-name-based.patch`, base `cla
   is unknown.
 - Third-party domains (`evidon`, `arkoselabs`, `zendesk`) get no entry.
 - `docsend` metadata (risk 3, `transfers-files`) is this lane's proposal; the Engine lane may adjust it.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `dropbox`, `docsend`, `dropbox-sign`): `dropbox.com`, `dropboxapi.com`, `dropboxusercontent.com`, `dropboxstatic.com`, `getdropbox.com`, `db.tt`, `dropboxbusiness.com`, `addtodropbox.com`, `dropboxcaptcha.com`, `dropboxexperiment.com`, `dropbox-dns.com`, `docsend.com`, `hellosign.com`, `hellofax.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://www.dropbox.com/login`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `dropbox`: general-internet / file-sharing, client-server; characteristics `widely-used`, `transfers-files`; **risk 3**: widely used by enterprises; moves files out of the organisation.
+- `docsend`: general-internet / file-sharing, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- `dropbox-sign`: business-systems / office-programs, browser-based; characteristics `transfers-files`; **risk 2**: moves files out of the organisation.
+- Functions separated by name: `dropbox` (Dropbox file sync and sharing), `docsend` (DocSend document sharing (Dropbox)), `dropbox-sign` (Dropbox Sign (HelloSign) e-signature).
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

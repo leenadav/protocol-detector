@@ -41,6 +41,22 @@ SNI only on the CONNECT path (README, shared facts). API keys travel in headers 
 
 P1, P2 and N1 were checked with `attribution_for_host` in scratch (batches A, B and B2 applied): all as expected.
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `chat.mistral.ai` | one of `mistral-ai`, `mistral-api` | `mistral-ai` | PASS |
+| D- | `challenges.cloudflare.com` | not mistral-ai/mistral-api (third party) | no application | PASS |
+| L- | `xmistral.ai` | not mistral-ai/mistral-api (label boundary) | no application | PASS |
+| L- | `mistral.ai.example.invalid` | not mistral-ai/mistral-api (suffix look-alike) | no application | PASS |
+| L- | `api.mistral.ai.example.invalid` | not mistral-ai/mistral-api (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Mistral docs, API reference "Chat", `https://docs.mistral.ai/api` (redirected from `/api/`), accessed 2026-11-18.
@@ -55,3 +71,34 @@ Batch B2 (pending confirmation):
 
 The description is in the patch. The existing `mistral-ai` entry is unchanged. Without B2, the API
 host keeps resolving to `mistral-ai` through its domain, which is correct but less precise.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `mistral-ai`, `mistral-api`): `mistral.ai`, `api.mistral.ai`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://chat.mistral.ai/`, loaded 2026-11-19 without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `chat.mistral.ai`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `challenges.cloudflare.com` | 3 (3) | third party | no application | Cloudflare Turnstile bot check |
+| `chat.mistral.ai` | 13 (0) | app-owned | `mistral-ai` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `mistral-ai`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- `mistral-api`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
+- Functions separated by name: `mistral-ai` (Mistral AI), `mistral-api` (Mistral AI API).
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): `challenges.cloudflare.com`.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

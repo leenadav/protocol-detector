@@ -35,6 +35,33 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 |---|---|---|
 | P1 | SNI `global.gotomeet.me`, `x.openvoice.com` | `goto-meeting` |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `app.goto.com` | one of `goto-meeting`, `gotomypc`, `logmein` | `goto-meeting` | PASS |
+| O+ | `app.gotomeeting.com` | one of `goto-meeting`, `gotomypc`, `logmein` | `goto-meeting` | PASS |
+| O+ | `chameleon.goto.com` | one of `goto-meeting`, `gotomypc`, `logmein` | `goto-meeting` | PASS |
+| O+ | `conferences.goto.com` | one of `goto-meeting`, `gotomypc`, `logmein` | `goto-meeting` | PASS |
+| O+ | `content.ipd.goto.com` | one of `goto-meeting`, `gotomypc`, `logmein` | `goto-meeting` | PASS |
+| D- | `api.jive.com` | not goto-meeting/gotomypc/logmein (shared vendor infra (unmapped)) | no application | PASS |
+| D- | `cdn.userreport.com` | not goto-meeting/gotomypc/logmein (third party) | no application | PASS |
+| D- | `logging.getgo.com` | not goto-meeting/gotomypc/logmein (shared vendor infra (unmapped)) | no application | PASS |
+| D- | `res.cdn.office.net` | not goto-meeting/gotomypc/logmein (shared vendor infra) | `ms-office365` | PASS |
+| D- | `zn39psorncmg7xc7k-logmeinvoc.siteintercept.qualtrics.com` | not goto-meeting/gotomypc/logmein (third party) | no application | PASS |
+| L- | `xgotomeeting.com` | not goto-meeting/gotomypc/logmein (label boundary) | no application | PASS |
+| L- | `gotomeeting.com.example.invalid` | not goto-meeting/gotomypc/logmein (suffix look-alike) | no application | PASS |
+| L- | `xgoto.com` | not goto-meeting/gotomypc/logmein (label boundary) | no application | PASS |
+| L- | `goto.com.example.invalid` | not goto-meeting/gotomypc/logmein (suffix look-alike) | no application | PASS |
+| L- | `xgotomeet.at` | not goto-meeting/gotomypc/logmein (label boundary) | no application | PASS |
+| L- | `gotomeet.at.example.invalid` | not goto-meeting/gotomypc/logmein (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] GoTo Support, "Allowlisting and Firewall Configuration for GoTo Meeting", `https://support.goto.com/meeting/help/allowlisting-and-firewall-configuration`, accessed 2026-11-19.
@@ -48,3 +75,43 @@ Batch D (`research/patches/batch-d-name-based.patch`; `...` stands for the uncha
 ```
 
 **DECISION for Hermes or the Engine lane:** keep `goto.com` in `goto-meeting` (current), or move it and the other universal domains to a vendor-level id (for example `goto`) so that remote-support traffic is not reported as meetings. The patch leaves `goto.com` where it is.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `goto-meeting`, `gotomypc`, `logmein`): `gotomeeting.com`, `goto.com`, `gotomeet.at`, `gotomeet.me`, `joingotomeeting.com`, `openvoice.com`, `gotomypc.com`, `logmein.com`, `logmeininc.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://app.goto.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `app.goto.com`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `api.jive.com` | 3 (3) | shared vendor infra (unmapped) | no application | GoTo Connect API (jive.com), a separate GoTo product |
+| `app.goto.com` | 50 (0) | app-owned | `goto-meeting` |  |
+| `app.gotomeeting.com` | 1 (1) | app-owned | `goto-meeting` |  |
+| `cdn.userreport.com` | 1 (1) | third party | no application | UserReport survey widget |
+| `chameleon.goto.com` | 1 (1) | app-owned | `goto-meeting` |  |
+| `conferences.goto.com` | 2 (2) | app-owned | `goto-meeting` |  |
+| `content.ipd.goto.com` | 1 (1) | app-owned | `goto-meeting` |  |
+| `logging.getgo.com` | 4 (4) | shared vendor infra (unmapped) | no application | GoTo logging (getgo.com; for the Engine lane's goto vendor id) |
+| `res.cdn.office.net` | 3 (3) | shared vendor infra | `ms-office365` |  |
+| `zn39psorncmg7xc7k-logmeinvoc.siteintercept.qualtrics.com` | 1 (1) | third party | no application | Qualtrics survey (customer-named) |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `goto-meeting`: collaboration / voip-video, client-server; characteristics `excessive-bandwidth`; **risk 2**: high bandwidth.
+- `gotomypc`: networking / remote-access, client-server; characteristics `tunnels-other-applications`, `prone-to-misuse`; **risk 4**: carries other traffic or remote control; commonly misused (unsanctioned remote access, data exfiltration).
+- `logmein`: networking / remote-access, client-server; characteristics `tunnels-other-applications`, `prone-to-misuse`; **risk 4**: carries other traffic or remote control; commonly misused (unsanctioned remote access, data exfiltration).
+- Functions separated by name: `goto-meeting` (GoTo Meeting), `gotomypc` (GoToMyPC remote access), `logmein` (LogMeIn remote access).
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): `cdn.userreport.com`, `ms-office365`, `zn39psorncmg7xc7k-logmeinvoc.siteintercept.qualtrics.com`.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

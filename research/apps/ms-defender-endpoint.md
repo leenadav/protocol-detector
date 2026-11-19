@@ -38,6 +38,20 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 | P2 | SNI `reflector.defender.microsoft.com` | `ms-defender-endpoint` |
 | N1 | SNI `security.microsoft.com`, `www.microsoft.com` | `ms-base` (unchanged) |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xmicrosoft.com` | not ms-defender-endpoint (label boundary) | no application | PASS |
+| L- | `endpoint.security.microsoft.com.example.invalid` | not ms-defender-endpoint (suffix look-alike) | no application | PASS |
+| L- | `reflector.defender.microsoft.com.example.invalid` | not ms-defender-endpoint (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Microsoft Learn, "Streamlined device connectivity URLs (commercial)", `https://learn.microsoft.com/en-us/defender-endpoint/streamlined-device-connectivity-urls-commercial`, accessed 2026-11-19.
@@ -52,3 +66,26 @@ Batch D (`research/patches/batch-d-name-based.patch`; `...` stands for the uncha
 ```
 
 Category `business-systems/management`, matching the existing `crowdstrike` and `sentinelone` entries. Metadata is this lane's proposal.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `ms-defender-endpoint`): `endpoint.security.microsoft.com`, `reflector.defender.microsoft.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://security.microsoft.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `ms-defender-endpoint`: business-systems / management, client-server; characteristics `widely-used`; **risk 1**: widely used by enterprises.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

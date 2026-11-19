@@ -40,6 +40,22 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I): all as e
 | N1 | SNI `skylight-client-ds.us-east-1.amazonaws.com` | unmapped (regional hosts not in the patch) |
 | N2 | SNI `d2td7dqidlhjx7.cloudfront.net`, `x.aws.a2z.com` | unmapped |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| O+ | `clients.amazonworkspaces.com` | one of `amazon-workspaces` | `amazon-workspaces` | PASS |
+| L- | `xamazonworkspaces.com` | not amazon-workspaces (label boundary) | no application | PASS |
+| L- | `amazonworkspaces.com.example.invalid` | not amazon-workspaces (suffix look-alike) | no application | PASS |
+| L- | `xa2z.com` | not amazon-workspaces (label boundary) | no application | PASS |
+| L- | `highlander.aws.a2z.com.example.invalid` | not amazon-workspaces (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] AWS documentation, Amazon WorkSpaces Administration Guide, "IP address and port requirements for WorkSpaces", `https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html`, accessed 2026-11-19.
@@ -53,3 +69,32 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I): all as e
 ```
 
 DECISION for Hermes: the page also lists 48 exact regional hosts on shared AWS domains (16 Regions × `skylight-client-ds.<region>.amazonaws.com`, `skylight-client-ds.<region>.api.aws`, `ws-client-service.<region>.amazonaws.com`). They are WorkSpaces-specific (N3) but many; this lane left them out of the patch and can add them if wanted. Without them, a desktop client's directory lookups are unnamed and only its streaming gateways and Web Access are named.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `amazon-workspaces`): `amazonworkspaces.com`, `highlander.aws.a2z.com`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://clients.amazonworkspaces.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `clients.amazonworkspaces.com`.
+
+Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+
+| Host | Requests (refused) | Class | Attribution today | Note |
+|---|---|---|---|---|
+| `clients.amazonworkspaces.com` | 50 (0) | app-owned | `amazon-workspaces` |  |
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `amazon-workspaces`: networking / remote-access, client-server; characteristics `tunnels-other-applications`; **risk 3**: carries other traffic or remote control.
+- Functions separated by name: none beyond the single id.
+- Variant: not separated by name.
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->

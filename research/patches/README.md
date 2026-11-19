@@ -256,3 +256,24 @@ Base: `c08773f` plus D to H (apply D → E → F → G → H → I). Placeholder
 | `make parity-go` | 7449 matched; 88 of 88 families parity-verified |
 | `python3 -B -m unittest discover -q` | 856 tests, 1 expected failure: pinned host count (438 → 449 after D to I) |
 
+## Retrofit batch R: `batch-r-retrofit.patch` (after I)
+
+Method v2 retrofit (dependency mapping, 2026-11-19). These names were observed from the vendors' own web clients
+and are vendor-branded, but no primary document lists them (confidence `O`). **DECISION for Hermes**: whether
+observed-only vendor-branded names enter the catalog. Placeholder release **`2026.12.4`**, with
+`_PRIOR_HOST_STATE["2026.12.3"]` and `_RELEASED_COMPONENTS["2026.12.3"]`.
+
+- `ms-copilot` + `copilot.com` (`copilot.microsoft.com` redirects there);
+- `box` + `boxcdn.net` (`account.box.com` loads its assets from `cdn01.boxcdn.net`);
+- `gitlab` + `gitlab.net` (`gitlab.com` sends its error and analytics telemetry to `new-sentry.gitlab.net` and
+  `snowplowprd.trx.gitlab.net`).
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.12.4, digest `d33a084547582d3f`, 551 applications, 449 host entries |
+| Pack file | sha256 `b7ecd9312d5277031792c18b53a871ad827de6f022dbbcd368240818e3da9b38` |
+| Rollback | release 2026.12.3 host catalog equals the batch I pack exactly |
+| Vectors | 398 method-v2 vectors across all specs (`tools/retrofit_specs.py`), all pass with R applied; without R, 4 positives are unmapped |
+| Parity | 7449/7449 Python and Go; 88/88 families |
+| Unit tests | 1 expected failure: pinned host count (438 → 449) |
+

@@ -107,6 +107,23 @@ Built with `client_hello_with([...])` (server_name ext 0, ALPN ext 16), TCP 443 
 | N3 | `ech_outer()` ClientHello with outer SNI `outlook.cloud.microsoft` | no application (ECH outer rule) |
 | N4 | SNI `www.microsoft.com` | `ms-base` only, never a Microsoft 365 app |
 
+<!-- method-v2-vectors:start -->
+
+### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+
+O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
+
+| Kind | Input SNI | Expected | Result today | Check |
+|---|---|---|---|---|
+| L- | `xoffice.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (label boundary) | no application | PASS |
+| L- | `office.com.example.invalid` | not ms-office365/ms-teams/outlook-web/sharepoint-online (suffix look-alike) | no application | PASS |
+| L- | `xoffice365.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (label boundary) | no application | PASS |
+| L- | `office365.com.example.invalid` | not ms-office365/ms-teams/outlook-web/sharepoint-online (suffix look-alike) | no application | PASS |
+| L- | `xoffice.net` | not ms-office365/ms-teams/outlook-web/sharepoint-online (label boundary) | no application | PASS |
+| L- | `office.net.example.invalid` | not ms-office365/ms-teams/outlook-web/sharepoint-online (suffix look-alike) | no application | PASS |
+
+<!-- method-v2-vectors:end -->
+
 ## 7. Sources
 
 - [S1] Microsoft 365 endpoints web service, worldwide instance:
@@ -151,3 +168,30 @@ the Engine lane may adjust it.
 Process note for the Engine lane: the web service is versioned and machine-readable [S2]. The catalog
 could record the data version it was built from (here `2026103000`) as its provenance, instead of
 the current generic "operator-owned-domain" basis.
+
+<!-- method-v2:start -->
+
+## 9. Live verification (L)
+
+**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+
+Names to verify (catalog domains of `ms-office365`, `ms-teams`, `outlook-web`, `sharepoint-online`): `office.com`, `office365.com`, `office.net`, `officeapps.live.com`, `microsoft365.com`, `cloud.microsoft`, `teams.microsoft.com`, `teams.live.com`, `teams.cdn.office.net`, `teams.cloud.microsoft`, `lync.com`, `outlook.office365.com`, `outlook.office.com`, `outlook.live.com`, `outlook.com`, `outlook.cloud.microsoft`, `sharepoint.com`, `sharepointonline.com`, `svc.ms`.
+
+## 10. Observed web-client hosts (dependency mapping)
+
+- `https://www.office.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://teams.microsoft.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+
+## 11. Attributes (App-ID model) and re-verify date
+
+- `ms-office365`: business-systems / office-programs, browser-based; characteristics `widely-used`, `transfers-files`; **risk 2**: widely used by enterprises; moves files out of the organisation.
+- `ms-teams`: collaboration / voip-video, client-server; characteristics `widely-used`, `transfers-files`; **risk 2**: widely used by enterprises; moves files out of the organisation.
+- `outlook-web`: collaboration / email, browser-based; characteristics `widely-used`, `transfers-files`; **risk 2**: widely used by enterprises; moves files out of the organisation.
+- `sharepoint-online`: business-systems / office-programs, browser-based; characteristics `widely-used`, `transfers-files`; **risk 2**: widely used by enterprises; moves files out of the organisation.
+- Functions separated by name: `ms-office365` (Microsoft 365 web applications), `ms-teams` (Microsoft Teams chat and meetings), `outlook-web` (Outlook web mail (Microsoft 365 and Outlook.com)), `sharepoint-online` (SharePoint Online sites and files).
+- Variant: business (consumer Outlook.com and Skype are separate ids).
+- Dependencies (observed, never attributed to this app): none observed.
+- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
+- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+
+<!-- method-v2:end -->
