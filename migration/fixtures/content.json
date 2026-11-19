@@ -11106,7 +11106,11 @@
     "bitdefender.net"
    ],
    "bitwarden": [
-    "bitwarden.com"
+    "bitwarden.com",
+    "bitwarden.net",
+    "bitwarden.eu",
+    "btwrdn.com",
+    "btwrdn.co"
    ],
    "blackboard": [
     "blackboard.com"
@@ -11152,7 +11156,8 @@
     "character.ai"
    ],
    "chrome-remote-desktop": [
-    "remotedesktop.google.com"
+    "remotedesktop.google.com",
+    "remotedesktop-pa.googleapis.com"
    ],
    "circleci": [
     "circleci.com"
@@ -14796,7 +14801,11 @@
     "characteristics": [],
     "description": "Bitwarden password manager",
     "domains": [
-     "bitwarden.com"
+     "bitwarden.com",
+     "bitwarden.net",
+     "bitwarden.eu",
+     "btwrdn.com",
+     "btwrdn.co"
     ],
     "name": "bitwarden",
     "risk": 2,
@@ -15092,7 +15101,8 @@
     ],
     "description": "Chrome Remote Desktop",
     "domains": [
-     "remotedesktop.google.com"
+     "remotedesktop.google.com",
+     "remotedesktop-pa.googleapis.com"
     ],
     "name": "chrome-remote-desktop",
     "risk": 4,
@@ -19655,6 +19665,8 @@
    "bitdefender.com": "bitdefender",
    "bitdefender.net": "bitdefender",
    "bitwarden.com": "bitwarden",
+   "bitwarden.eu": "bitwarden",
+   "bitwarden.net": "bitwarden",
    "blackboard.com": "blackboard",
    "blizzard.com": "battle-net",
    "bomgar.com": "beyondtrust",
@@ -19668,6 +19680,8 @@
    "bsky.app": "bluesky",
    "bsky.social": "bluesky",
    "bstatic.com": "booking",
+   "btwrdn.co": "bitwarden",
+   "btwrdn.com": "bitwarden",
    "bumble.com": "bumble",
    "cache.agilebits.com": "1password",
    "calendly.com": "calendly",
@@ -20114,6 +20128,7 @@
    "redditmedia.com": "reddit",
    "redditstatic.com": "reddit",
    "reflector.defender.microsoft.com": "ms-defender-endpoint",
+   "remotedesktop-pa.googleapis.com": "chrome-remote-desktop",
    "remotedesktop.google.com": "chrome-remote-desktop",
    "remotepc.com": "remotepc",
    "replicate.com": "replicate",
@@ -20483,13 +20498,13 @@
   "components": {
    "application_catalog": "64256d2c538ef6ef08be02bb91f4ec870b29f5c4ae521d3926ca6c574831c257",
    "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-   "host_catalog": "1eb99a29be91e83193029911562ec4b07d6d9805d6c128807adee4ed11bfcea8",
+   "host_catalog": "cd96f9a1f4fd6d1fe4b6ad62bfecb6b66e9a4d362119b79f2d05cec8283b8465",
    "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"
   },
-  "digest": "b2ccbc7842dcffcc",
+  "digest": "804f727352bc61e0",
   "released": "2026-11-19",
   "reviewed": "2026-11-19",
-  "version": "2026.11.7"
+  "version": "2026.11.8"
  },
  "risks": {
   "cleartext-credential-protocol": {

@@ -256,7 +256,9 @@ _HOST_APPS = (
      (),
      ("1password.com", "1password.eu", "1password.ca", "1passwordservices.com", "1passwordusercontent.com", "1passwordusercontent.eu", "1passwordusercontent.ca", "1infra.net", "app-updates.agilebits.com", "cache.agilebits.com")),
     ("lastpass", "business-systems", "auth-service", "client-server", 2, "LastPass password manager", (), ("lastpass.com",)),
-    ("bitwarden", "business-systems", "auth-service", "client-server", 2, "Bitwarden password manager", (), ("bitwarden.com",)),
+    ("bitwarden", "business-systems", "auth-service", "client-server", 2, "Bitwarden password manager",
+     (),
+     ("bitwarden.com", "bitwarden.net", "bitwarden.eu", "btwrdn.com", "btwrdn.co")),
     # Generative AI.
     ("ms-copilot", "business-systems", "generative-ai", "browser-based", 3, "Microsoft Copilot", ("transfers-files",), ("copilot.microsoft.com", "copilot.cloud.microsoft")),
     ("github-copilot", "business-systems", "generative-ai", "client-server", 3, "GitHub Copilot", ("transfers-files",),
@@ -286,7 +288,8 @@ _HOST_APPS = (
     ("rustdesk", "networking", "remote-access", "client-server", 4, "RustDesk remote control (public servers)",
      ("tunnels-other-applications", "prone-to-misuse", "used-by-malware"), ("rustdesk.com",), ("rustdesk.com", "www.rustdesk.com")),
     ("chrome-remote-desktop", "networking", "remote-access", "browser-based", 4, "Chrome Remote Desktop",
-     ("tunnels-other-applications", "prone-to-misuse"), ("remotedesktop.google.com",)),
+     ("tunnels-other-applications", "prone-to-misuse"),
+     ("remotedesktop.google.com", "remotedesktop-pa.googleapis.com")),
     # VPN and overlay networks (apex and www are marketing sites).
     ("nordvpn", "networking", "encrypted-tunnel", "client-server", 4, "NordVPN",
      ("tunnels-other-applications", "evasive"), ("nordvpn.com", "nordcdn.com"), ("nordvpn.com", "www.nordvpn.com")),

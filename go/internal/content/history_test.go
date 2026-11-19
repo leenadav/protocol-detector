@@ -20,9 +20,10 @@ func TestEarlierReleasesParseWithTheReferenceDigests(t *testing.T) {
 		"2026.11.5": {"39150de086799d99", 438},
 		"2026.11.6": {"d425b8adc87db36d", 438},
 		"2026.11.7": {"b2ccbc7842dcffcc", 441},
+		"2026.11.8": {"804f727352bc61e0", 441},
 	}
 	releases := Releases()
-	if len(releases) != len(want) || releases[len(releases)-1] != "2026.11.7" {
+	if len(releases) != len(want) || releases[len(releases)-1] != "2026.11.8" {
 		t.Fatalf("releases %v", releases)
 	}
 	for _, v := range releases {

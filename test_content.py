@@ -106,7 +106,8 @@ class RollbackTests(unittest.TestCase):
                      "2026.11.2": "e0d6e39533a6ae9c", "2026.11.3": "fef8f709d5615a85",
                      "2026.11.4": "c13a842d11873db6",
                      "2026.11.5": "39150de086799d99",
-                     "2026.11.6": "d425b8adc87db36d"}
+                     "2026.11.6": "d425b8adc87db36d",
+                     "2026.11.7": "b2ccbc7842dcffcc"}
         for version, value in published.items():
             self.assertEqual(content.digest(version), value, version)
             self.assertEqual(content.select(version), {"version": version, "digest": value})
