@@ -23,13 +23,14 @@ Codex review.
 | [04](chunk-04.md) | 2 | Content-pack gate and merge-readiness report logic | 2 tools | 451 | 15 min |
 | [05](chunk-05.md) | 2 | Long fuzzing and performance-history logic | 2 tools | 442 | 15 min |
 | [06](chunk-06.md) | 1 | Dependabot action pin bumps `b97adc8` (PR #26), never reviewed | 6 workflows | 56 | 5 min |
+| [07](chunk-07.md) | 1 | govulncheck over the Go engine module, vendored source (`85e99e9`, after the range, not yet merged) | `ci.yml` | 18 | 5 min |
 
-- **Tier 1** (1,332 lines): Codex must review these chunks. They cover workflow permissions, tokens and secrets
+- **Tier 1** (1,350 lines): Codex must review these chunks. They cover workflow permissions, tokens and secrets
   handling, privilege-sensitive triggers, action pinning, supply-chain steps (vendoring, SBOM, signing,
   provenance), and anything that can push or publish.
 - **Tier 2** (893 lines): a lighter review of CI helper logic. These scripts run with a read-only token and
   write only to job summaries and artifacts.
-- **If budget allows only part:** review 01 → 02 → 03 → 06 (Tier 1). Then 04 and 05 can each stand alone.
+- **If budget allows only part:** review 01 → 02 → 03 → 06 → 07 (Tier 1). Then 04 and 05 can each stand alone.
 
 ## Tier 3: no Codex review needed (gate that covers each)
 
