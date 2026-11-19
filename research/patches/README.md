@@ -150,3 +150,18 @@ Implemented by the Engine lane on `claude/go-migration`: A as content 2026.11.3 
 | Name vectors | 45, 0 mismatches |
 | Python and Go parity (regenerated cases) | 7427 compared, 7427 matched, both backends; 88 of 88 families |
 | Pinned values to update | `test_content.py` host count 438 → 441; Go `digest_test.go` → `2026.11.7` / `b2ccbc7842dcffcc` / `b2250e213c8d7a61e3585d3969a58c42a0fad242bcbb0fe94e2576f803082e24`; `history_test.go` gains 2026.11.6 (`d425b8adc87db36d`, 438 hosts) |
+
+## Batch E: `batch-e-name-based.patch` (applies on top of batch D)
+
+- **Base**: `bc65e50` + C + D (each locked in turn); chain C → D → E checked with `git apply`. Release `2026.11.8`, with
+  `_PRIOR_HOST_STATE["2026.11.7"]` and 2026.11.7 recorded in `_RELEASED_COMPONENTS` from D's lock.
+- **Items**: Chrome Remote Desktop (`remotedesktop-pa.googleapis.com`, exact), Bitwarden (`bitwarden.net`,
+  `bitwarden.eu`, `btwrdn.com`, `btwrdn.co`). No new ids; host entries stay at 441.
+
+| Check (scratch, 2026-11-19) | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.11.8, digest `804f727352bc61e0` |
+| Earlier release digests | unchanged (2026.11.7 stays `b2ccbc7842dcffcc`) |
+| Name vectors | 8, 0 mismatches |
+| Python and Go parity | 7429/7429, both backends |
+| Go pinned values | `digest_test.go` → `2026.11.8` / `804f727352bc61e0` / `9a429d97705aca652fb8d456e6d4cae423fcae905008b08de61fa0cddfc84052`; `history_test.go` gains 2026.11.7 (`b2ccbc7842dcffcc`, 441 hosts) |

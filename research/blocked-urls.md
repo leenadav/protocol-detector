@@ -14,6 +14,9 @@ page's own date). The relayed text is cited as "read by Lee or Hermes, relayed",
 | 6 | Grammarly | `https://support.grammarly.com/hc/en-us/articles/115000090271-Network-configuration-blocks-Grammarly-services` | the page renders without its article body for this lane | the endpoint list (`*.grammarly.com`, `*.grammarly.io`, any others) and WebSocket hosts; the page date |
 | 7 | GoTo Resolve | `https://support.goto.com/resolve/help/allowlisting-and-goto-resolve` | the proxy tunnel fails for this path (the GoTo Meeting page on the same host worked) | the GoTo Resolve domains (`*.gotoresolve.com` and others) and ports |
 | 8 | Google Gemini API | `https://aistudio.google.com/docs/get-started` (where `https://ai.google.dev/gemini-api/docs/quickstart` now redirects) | host not allowed in this session; this lane can request it if preferred | the REST base URL of the Gemini API (host name only), to decide whether a dedicated API host exists |
+| 9 | Canva | `https://www.canva.com/help/allow-canva-through-firewall/` | Cloudflare bot challenge | the domain list (`*.canva.com` and others) with purposes, and the WebSocket note |
+| 10 | Cisco Duo | `https://help.duo.com/s/article/1337` (Duo's IP and hostname article, as Duo's community points to it; not read) | host not allowed in this session; the article id is from community posts, so please confirm it | Duo's service host names (API hostnames are per customer, e.g. `api-XXXXXXXX.duosecurity.com`) and any non-tenant domains |
+| 11 | Hugging Face | **URL unknown**: no official Hugging Face network or firewall page was found | | the official page, if any, naming Hub, CDN and inference host names |
 
 Not listed (decided low priority, 2026-11-18): Box (sign-in required) and Slack (workspace-specific list).
 No longer blocked: Zscaler, now sourced from `https://config.zscaler.com/zscaler.net/zscaler-app` (`apps/zscaler.md`).

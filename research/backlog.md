@@ -68,7 +68,9 @@ Patch: `patches/batch-d-name-based.patch` (release 2026.11.7). Tested: 45 vector
 | 16 | - | Miro | `blocked-urls.md` #5 | 4 | 1 | 4 | BLOCKED |
 | 17 | - | Splashtop | `blocked-urls.md` #4 | 4 | 1 | 4 | BLOCKED |
 | 18 | - | Grammarly | `blocked-urls.md` #6 | 3 | 1 | 3 | BLOCKED |
-| 19 | - | Hugging Face, Duo, Bitwarden, Canva, Chrome Remote Desktop | (next) | 3 to 4 | ? | | queued |
+| 19 | E1 | Chrome Remote Desktop service host | `apps/chrome-remote-desktop.md` | 4 | 4 | 16 | READY (batch E) |
+| 20 | E2 | Bitwarden domains | `apps/bitwarden.md` | 3 | 4 | 12 | READY (batch E) |
+| 21 | - | Canva, Duo, Hugging Face | `blocked-urls.md` #9 to #11 | 3 to 4 | 1 | | BLOCKED |
 
 ### NAME: DONE (implemented by the Engine lane)
 
