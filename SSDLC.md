@@ -733,6 +733,12 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    exercises test_launch_backend's Go service instead of skipping it. Without the targets (main
    today) both say there is nothing to do; a wrong Go still fails. Measured on 12fbc0e: go-build,
    go-vendor-check and the strict presentation run (86 run, 0 skipped) pass.
+   `toolchain-audit` also runs the pinned govulncheck in source mode over go/ (the engine lane's
+   34ea6b0, ported here so ci.yml keeps one writer), with GOFLAGS=-mod=vendor and GOPROXY=off: it
+   analyses exactly the committed vendor tree and fetches only its vulnerability database. Measured:
+   main's go/ and claude/go-migration's vendored go/ report no vulnerability, the latter scanning
+   golang.org/x/crypto v0.59.0 from go/vendor with an empty module cache; with -mod=readonly and
+   GOPROXY=off the module cannot load at all.
 33. Performance history (`perf-history.yml`, `tools/perf_history.py`; Lee via Hermes, 2026-11-19;
    activates with the merge, on every push to main). Each run records the existing measurements
    (tools/perf_profile.py's cpu, bytes and memory sections: CPU p50 per layer per flow, bytes held
