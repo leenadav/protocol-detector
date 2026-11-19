@@ -525,6 +525,9 @@ jobs:
           python -B tools/go_fuzz_long.py --self-test
           python -B tools/content_gate.py --self-test
           python -B tools/merge_readiness.py --self-test
+          python -B tools/perf_history.py --self-test
+          python -B tools/build_go_release.py --self-test
+          python -B tools/release_provenance.py --self-test
           python -B tools/check_release_exposure.py --ref HEAD | tee -a "$GITHUB_STEP_SUMMARY"
           python -B tools/check_workflow_policy.py --self-test
           python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"

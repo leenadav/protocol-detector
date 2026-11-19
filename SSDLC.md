@@ -733,6 +733,32 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    exercises test_launch_backend's Go service instead of skipping it. Without the targets (main
    today) both say there is nothing to do; a wrong Go still fails. Measured on 12fbc0e: go-build,
    go-vendor-check and the strict presentation run (86 run, 0 skipped) pass.
+33. Performance history (`perf-history.yml`, `tools/perf_history.py`; Lee via Hermes, 2026-11-19;
+   activates with the merge, on every push to main). Each run records the existing measurements
+   (tools/perf_profile.py's cpu, bytes and memory sections: CPU p50 per layer per flow, bytes held
+   per connection per state, bytes to identification; and any Go `Benchmark*`, none exists yet) and
+   compares each metric with the median of up to 5 earlier comparable runs: the same Python minor,
+   and for timings the same CPU model, since shared runners differ. Thresholds: bytes and counts
+   fail above +10 %; timings warn above +30 % and fail above +100 % (runner noise; the tracemalloc
+   and bytes figures are the stable signal). The store is the workflow's own artifacts, 90 days:
+   the newest successful run's history on the same branch is downloaded with the runner's `gh`
+   (`actions: read`), extended and uploaded again; nothing is pushed or cached. A failing run
+   uploads nothing, so a regression never becomes the baseline; dispatch input
+   `accept_regression=true` records an intended change. A push trigger on the prep branch
+   registered the workflow, so workflow_dispatch proves it before the merge.
+34. Release pipeline, draft (docs/RELEASING.md; Lee via Hermes, 2026-11-19). The one release
+   controller, publish-release.yml (rule 5 keeps it the only tag workflow), gains in its read-only
+   build job: reproducible Go binaries for five targets (`tools/build_go_release.py`: each built
+   twice with its own GOCACHE and compared; CGO off, -trimpath, no VCS stamp or build id, pinned
+   Go, GOPROXY=off, vendored) and their CycloneDX SBOM from the binaries' own build information,
+   cross-checked against go/vendor/modules.txt; all land in dist/, so SHA256SUMS, the publish
+   job's Sigstore provenance attestation and `gh attestation verify` cover them unchanged (the
+   pinned gate and publish jobs, rules 4 and 8, are untouched). Dry runs (workflow_dispatch, or a
+   push or pull request touching the controller, its tools or go/go.mod) publish nothing and also
+   write an in-toto/SLSA provenance statement over dist/, signed with an Ed25519 key generated
+   for the run (`tools/release_provenance.py`), verified and uploaded as the separate
+   `release-dry-run-<sha>` artifact: a dry run cannot issue the real Sigstore attestation, which
+   writes to the public transparency log. No tag or release was created.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
