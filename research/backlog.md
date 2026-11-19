@@ -28,21 +28,26 @@ score is V × R. `BLOCKED` caps R at 1.
 
 ## Queue
 
-### NAME: READY (batch C, one patch)
+### Decisions recorded (Hermes, 2026-11-19)
 
-Patch: `patches/batch-c-name-based.patch` against the current head `47b2743`. Proposes release 2026.11.6. Tested in
-scratch: content gates, rollback with unchanged earlier digests, 31 vectors, Python and Go parity 7418/7418.
+- `goto.com` and the other GoTo universal domains get a vendor-level `goto` id (the Engine lane is implementing it).
+- UDP flow rule adopted: first datagram per direction, two consecutive matches for CoAP and OpenVPN, no port gating;
+  post-merge, Go only (`protocol/udp-flow-decision.md`).
+- TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
+- Telegram CRC: the Engine lane confirms it against tdlib.
 
-| Id | Item | Spec | V | R | Score | Status | Entries |
+### NAME: READY (batch F, after E; rebased on `c08773f`)
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
 |---|---|---|---|---|---|---|---|
-| C1 | NotebookLM URL (re-sourced) | `apps/google-gemini.md` 8 | 5 | 4 | 20 | READY | `notebook.google.com` → `google-notebooklm` |
-| C2 | ngrok agent hosts | `apps/ngrok.md` 8 | 5 | 5 | 25 | READY | `ngrok-agent.com`, `update.equinox.io` → `ngrok` |
-| C3 | Cloudflare One Client API hosts | `apps/cloudflare-warp.md` 8 | 4 | 4 | 16 | READY | `api.devices.cloudflare.com` and two FedRAMP hosts (exact) |
-| C4 | WeTransfer short links and storage | `apps/wetransfer.md` 8 | 4 | 4 | 16 | READY | `we.tl`, six exact `wt-prod-*-storm` S3 hosts |
-| C5 | Atlassian first-party domains | `apps/atlassian.md` 8 | 4 | 4 | 16 | READY | `atl-paas.net`, `ss-inf.net`, `jira.com`, `teamworkgraph.com` |
-| C6 | Dropbox `www.` web fronts | `apps/dropbox.md` 8 | 2 | 4 | 8 | READY | five `www.` variants |
+| 1 | F1 | Prisma Access agent (new id) | `apps/prisma-access.md` | 4 | 4 | 16 | READY |
+| 2 | F2 | JetBrains AI (new id) | `apps/jetbrains-ai.md` | 4 | 4 | 16 | READY |
+| 3 | F3 | Loom (new id) | `apps/loom.md` | 3 | 4 | 12 | READY |
+| 4 | - | BeyondTrust Remote Support cloud | (verified: `beyondtrustcloud.com` per `https://docs.beyondtrust.com/rs/docs/cloud-network`) | 4 | 4 | | DONE (no change) |
+| 5 | - | Cisco Umbrella, Parsec, Asana, Jamf, Atera | `blocked-urls.md` #12 to #16 | 3 to 5 | 1 | | BLOCKED |
+| 6 | - | Windsurf, Smartsheet, Airtable, npm, PyPI, NinjaOne | no official network page found | | | | PARTIAL |
 
-### NAME: READY (batch D, after C; one patch)
+### NAME: READY (batch D, after C; rebased on `c08773f`, apply D → E → F)
 
 Candidate selection (2026-11-19): the highest enterprise-visibility apps that this lane had not yet researched,
 in collaboration, remote access, AI tools, file sharing, developer platforms and security agents. Ranked by V × R.
@@ -76,6 +81,7 @@ Patch: `patches/batch-d-name-based.patch` (release 2026.11.7). Tested: 45 vector
 
 | Batch | Items | Release |
 |---|---|---|
+| C | C1 to C6 | 2026.11.6 (`b6ed149`) |
 | A | A1 to A9 (except `notebook.google.com`, now C1) | 2026.11.3 (`baa07b9`) |
 | B | B1 to B4 | 2026.11.4 (`6ab434d`) |
 | B2 | B5 to B8 (confirmed by Hermes 2026-11-18, API hosts from vendor docs only) | 2026.11.5 (`7dcabb7`) |

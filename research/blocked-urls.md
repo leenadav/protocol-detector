@@ -17,6 +17,12 @@ page's own date). The relayed text is cited as "read by Lee or Hermes, relayed",
 | 9 | Canva | `https://www.canva.com/help/allow-canva-through-firewall/` | Cloudflare bot challenge | the domain list (`*.canva.com` and others) with purposes, and the WebSocket note |
 | 10 | Cisco Duo | `https://help.duo.com/s/article/1337` (Duo's IP and hostname article, as Duo's community points to it; not read) | host not allowed in this session; the article id is from community posts, so please confirm it | Duo's service host names (API hostnames are per customer, e.g. `api-XXXXXXXX.duosecurity.com`) and any non-tenant domains |
 | 11 | Hugging Face | **URL unknown**: no official Hugging Face network or firewall page was found | | the official page, if any, naming Hub, CDN and inference host names |
+| 12 | Cisco Umbrella (Secure Client / roaming client) | `https://securitydocs.cisco.com/docs/umbrella-sig/olh/152711.dita` (Secure Client prerequisites; old `docs.umbrella.com` links redirect there) and the roaming-client prerequisites (`docs.umbrella.com/deployment-umbrella/docs/prerequisites-5`) | the lists live in child topics this lane cannot reach through the docs API | the host names and ports the client needs (DNS, `*.opendns.com`, `*.umbrella.com` and others), with purposes |
+| 13 | Parsec | `https://support.parsec.app/hc/en-us/articles/32381460716180-Parsec-Connectivity-Requirements` | Cloudflare bot challenge | the host list (`kessel-ws.parsec.app` and others) with ports |
+| 14 | Asana | `https://help.asana.com/s/article/asana-ip-address-ranges-and-hostnames` | page renders empty | the non-FedRAMP host names |
+| 15 | Jamf Pro | `https://learn.jamf.com/r/en-US/technical-articles/Network_Ports_Used_by_Jamf_Pro` | page renders empty (JavaScript app) | the Jamf Cloud host names (`*.jamfcloud.com` and named hosts) |
+| 16 | Atera | `https://support.atera.com/hc/en-us/articles/360015461139` | Cloudflare bot challenge | the agent domains and ports |
 
 Not listed (decided low priority, 2026-11-18): Box (sign-in required) and Slack (workspace-specific list).
+No official network page found (not listed): Smartsheet, Airtable, npm, PyPI, NinjaOne (proxy article not located), Windsurf (proxy settings only, no domain list).
 No longer blocked: Zscaler, now sourced from `https://config.zscaler.com/zscaler.net/zscaler-app` (`apps/zscaler.md`).

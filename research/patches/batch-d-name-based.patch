@@ -1,9 +1,9 @@
 diff --git a/protocol_engine/content.py b/protocol_engine/content.py
-index 4f281a1..2e390a4 100644
+index d2b5ac6..9d42ba9 100644
 --- a/protocol_engine/content.py
 +++ b/protocol_engine/content.py
 @@ -63,6 +63,11 @@ HISTORY = (
-             "engine-lane review pending",
+             "engine-lane review of each spec against its sources; independent review pending",
              "notebook.google.com; Dropbox www web fronts; ngrok agent hosts; Cloudflare One Client API hosts; "
              "Atlassian first-party domains; WeTransfer short links and named storage hosts"),
 +    Release("2026.11.7", "2026-11-19", "2026-11-19",

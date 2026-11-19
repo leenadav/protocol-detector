@@ -165,3 +165,25 @@ Implemented by the Engine lane on `claude/go-migration`: A as content 2026.11.3 
 | Name vectors | 8, 0 mismatches |
 | Python and Go parity | 7429/7429, both backends |
 | Go pinned values | `digest_test.go` → `2026.11.8` / `804f727352bc61e0` / `9a429d97705aca652fb8d456e6d4cae423fcae905008b08de61fa0cddfc84052`; `history_test.go` gains 2026.11.7 (`b2ccbc7842dcffcc`, 441 hosts) |
+
+## Rebase onto `c08773f` (2026-11-19): D, E and F
+
+The Engine lane implemented batch C as content 2026.11.6 (`b6ed149`) with its own release text, so D, E and F were
+rebuilt on `claude/go-migration` `c08773f`. Each script now inserts its release at the end of `HISTORY` instead of
+anchoring on the previous release's text. **Apply in order D → E → F on `c08773f`** (checked with `git apply`).
+
+| Release | Batch | Digest (identical to the earlier build on `bc65e50`) |
+|---|---|---|
+| 2026.11.7 | D | `b2ccbc7842dcffcc` |
+| 2026.11.8 | E | `804f727352bc61e0` |
+| 2026.11.9 | F | `4a2fb63069bd33e5` |
+
+Checks on the rebased state (scratch): content gates ok; earlier release digests unchanged against `c08773f`;
+Python and Go parity 7434/7434, 88 of 88 families. Pinned values after F: `test_content.py` host count 438 → 444;
+Go `digest_test.go` → `2026.11.9` / `4a2fb63069bd33e5` / `8137a3317ade8c38ad024c7108cd98557e200c222345b4dd5c95962311b3210d`;
+`history_test.go` gains 2026.11.6 to 2026.11.8.
+
+## Batch F: `batch-f-name-based.patch` (after E)
+
+New ids `prisma-access` (`epm.gpcloudservice.com`, `filter.paloaltonetworks.com`), `jetbrains-ai` (`api.jetbrains.ai`),
+`loom` (`loom.com`, `loom-media-production.s3-accelerate.amazonaws.com`). Release 2026.11.9. 11 vectors, 0 mismatches.
