@@ -369,8 +369,8 @@ server-side identification. The 211 invalidated sessions were probably reassembl
   whenever the client sends more than about 64 KiB before the session ends. The adopted TLS widening
   (`protocol/tls-serverhello-legacy.md`) removes the cause for the listed suites only.
 - **Recommendations for the Engine lane** (product decisions, not made here):
-  1. a regression test with these vectors: the generator is this lane's scratch script, and the vectors are
-     the four rows above;
+  1. a regression test with these vectors: generator `research/protocol/vectors/tls12_window_pcap.py`
+     (`python3 tls12_window_pcap.py OUT.pcap 009c 66000`; synthetic loopback only), rows as above;
   2. decide whether an overflow of the window **after** a side has already been identified should revoke that
      identification. Today it does for an unlisted cipher, and it clears `client_protocol` even when the session
      is identified (row 2).
