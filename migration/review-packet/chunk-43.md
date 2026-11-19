@@ -31,6 +31,10 @@ and stays with that lane (mailbox #7).
   through `cicd-next` with the port of this step (one writer for `ci.yml`); this branch's copy is resolved to theirs at the merge.
 - `2907724` becomes a no-op at the merge: `main`'s Go engine job already has the same step (`eb18353`).
 - So Codex may treat Q2 as answered and read this chunk for Q1 and Q3 only.
+- Ported (2026-11-19): `claude/cicd-next` `85e99e9` adds the engine-module govulncheck step to the toolchain-audit job with
+  `GOFLAGS=-mod=vendor`, `GOPROXY=off` and only `vuln.go.dev` egress (draft PR #32, the CI/CD packet's chunk-07; hosted ci run
+  44613409761 on `58a1c0d` green, govulncheck clean over the vendored `golang.org/x/crypto v0.59.0`). At the merge, this branch's
+  `ci.yml` hunks from `34ea6b0` and `2907724` resolve to `main`'s.
 
 ## Already run (do not re-run)
 
