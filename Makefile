@@ -117,6 +117,7 @@ workflow-policy:
 	$(PYTHON) -B tools/go_fuzz_long.py --self-test
 	$(PYTHON) -B tools/content_gate.py --self-test
 	$(PYTHON) -B tools/merge_readiness.py --self-test
+	$(PYTHON) -B tools/perf_history.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 
