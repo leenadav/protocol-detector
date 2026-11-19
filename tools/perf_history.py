@@ -54,7 +54,7 @@ def cpu_model():
             if line.startswith("model name"):
                 return line.split(":", 1)[1].strip()
     except OSError:
-        pass
+        pass   # no /proc on this host: fall back to what platform reports
     return platform.processor() or platform.machine()
 
 
@@ -237,10 +237,11 @@ def self_test():
         current, past, out = (Path(scratch, name) for name in ("current.json", "history.jsonl", "out.jsonl"))
         current.write_text(json.dumps(record(memory=1500.0)), encoding="utf-8")
         past.write_text("".join(json.dumps(item) + "\n" for item in history) + "not json\n", encoding="utf-8")
-        assert compare(str(current), str(past), None) == 1
-        assert compare(str(current), str(past), None, accept=True) == 0
-        assert compare(str(current), str(Path(scratch, "missing.jsonl")), None) == 0   # first run: recorded only
-        assert append(str(current), str(past), str(out)) == 0
+        codes = (compare(str(current), str(past), None), compare(str(current), str(past), None, accept=True),
+                 compare(str(current), str(Path(scratch, "missing.jsonl")), None))   # the last: first run, recorded only
+        assert codes == (1, 0, 0), codes
+        written = append(str(current), str(past), str(out))
+        assert written == 0, written
         assert len(read_history(str(out))) == 4
     print("perf_history self-test: ok (metric extraction, Go benchmarks, 12 verdict cases, compare and append)")
     return 0
