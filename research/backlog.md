@@ -36,6 +36,22 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch H, after G)
+
+Candidate selection (2026-11-19): high-visibility enterprise services with an official endpoint page this lane can
+read. Patch: `patches/batch-h-name-based.patch` (placeholder release `2026.12.2`). Tested: 33 vectors (all as
+expected), rollback exact, parity 7445/7445 (Python and Go), 88/88 families parity-verified.
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | H1 | Citrix Cloud (new id `citrix-cloud`) | `apps/citrix-cloud.md` | 5 | 4 | 20 | READY (`cloud.com` suffix at N2) |
+| 2 | H2 | Windows Update / Delivery Optimization names | `apps/ms-update.md` | 5 | 4 | 20 | READY |
+| 3 | H3 | Adobe-hosted domains | `apps/adobe-cloud.md` | 4 | 4 | 16 | READY (web-embedded Adobe domains left out) |
+| 4 | H4 | Postman domains | `apps/postman.md` | 3 | 4 | 12 | READY |
+| 5 | - | Zendesk | `apps/zendesk.md` | 3 | 4 | | DONE (no change) |
+| 6 | - | HubSpot | no official allowlist page found (the guessed knowledge-base URL returns 404) | 3 | | | PARTIAL |
+| 7 | - | Discord, monday.com | help centres return HTTP 403 to this lane | 3 | 1 | | BLOCKED (not yet in `blocked-urls.md`: exact article URLs unknown) |
+
 ### NAME: READY (batch G, after F: pages relayed by Hermes, 2026-11-19)
 
 Patch: `patches/batch-g-name-based.patch` (placeholder release `2026.12.1`, see the version note below). Tested:

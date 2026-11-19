@@ -216,3 +216,24 @@ and F (apply D → E → F → G; `git apply --check` clean on F).
 Pinned values for the Engine lane: `test_content.py` host count 446; Go `digest_test.go` release values for the
 final version number; `history_test.go` last release.
 
+## Batch H: `batch-h-name-based.patch` (after G)
+
+Base: `c08773f` plus D, E, F and G (apply D → E → F → G → H). Release placeholder **`2026.12.2`** (same version note
+as G), with `_PRIOR_HOST_STATE["2026.12.1"]` and `_RELEASED_COMPONENTS["2026.12.1"]`.
+
+- New id: `citrix-cloud` (`cloud.com`, `citrix.com`, `citrixworkspacesapi.net`, `citrixnetworkapi.net`, `nssvc.net`,
+  `xendesktop.net`, `netscalergateway.net`, exact `discovery.cem.cloud.us` and four `*-vus-storage-endpoint.azureedge.net`
+  hosts; web fronts `citrix.com`, `www.citrix.com`).
+- Extended: `ms-update` (+`do.dsp.mp.microsoft.com`, `tsfe.trafficshaping.dsp.mp.microsoft.com`, `emdl.ws.microsoft.com`),
+  `adobe-cloud` (+14 Adobe-hosted domains), `postman` (+`postman.co`, `pstmn.io`).
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.12.2, digest `49b988a98a739ec0`, 549 applications, 447 host entries |
+| Pack file | `go/internal/content/pack.json` sha256 `978d1640ff62569803c926e93940f1178e21b59bb40726c14b7e97cdb1d067d6` |
+| Rollback | `history.json` release 2026.12.1 host catalog equals the batch G pack's host catalog exactly |
+| Synthetic name vectors | 33 through `attribution_for_host`, all as expected |
+| `migration/parity/compare.py --backend python` | 7445 compared, 7445 matched |
+| `make parity-go` | 7445 matched; 88 of 88 families parity-verified |
+| `python3 -B -m unittest discover -q` | 1 expected failure: pinned host count in `test_content.py` (438 → 447 after D to H) |
+
