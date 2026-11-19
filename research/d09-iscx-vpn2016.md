@@ -257,3 +257,138 @@ expectation that VPN flows would be opaque.
    older-but-valid ServerHello is a profile decision. In a visibility product it turns a correct TLS
    identification into an unknown.
 3. Not a defect: pre-RFC 9000 QUIC on UDP/443 is out of the documented profile (v1/v2).
+
+## 7. Re-run on the engine head (2026-11-19): before and after
+
+Requested by Hermes on 2026-11-19, to test two Engine corrections. Same dataset, same registration details
+(the CIC form submitted again from this lane's environment), one archive at a time, each capture deleted after
+analysis and each archive before the next download. The session cookie was deleted at the end. No captures,
+addresses or host names were kept or committed; only the aggregates below.
+
+### Inputs
+
+| | Before | After |
+|---|---|---|
+| Engine | Go `protodetect` from `claude/go-migration` `2fd94529e29020eba4096e890567655b78185d1e` | `claude/go-migration` head `c08773fc8da8d210c8e66d67190f883e608d7bb4` |
+| Content | release `2026.11.2`, digest `e0d6e39533a6ae9c` | release `2026.11.6`, digest `d425b8adc87db36d` |
+| Archives | the five archives of section 1; all five SHA-256 values identical to the first run | same files |
+
+Both builds analysed every capture in the same pass (140 captures, 26,611 session records each, every run
+exit 0).
+
+### Result: no change
+
+The two builds' per-capture outputs are **identical** on all 140 captures (every count, reason code,
+invalidation detail and watched-family record; only run times differ). The "before" column also reproduces
+the first run of this report exactly (largest session: 41 correct, 1 wrong, 14 unknown, 7 background, 77
+evidence-limited; 211 sessions with an invalidated side). This is expected: the D09 corrections are
+post-merge Go-only items, and `c08773f` only prepares their tests ("no detection change").
+
+| Engine status (both builds) | Sessions |
+|---|---|
+| identified | 20,836 |
+| unknown | 4,454 |
+| incomplete | 548 |
+| malformed | 482 |
+| no_handshake | 288 |
+| budget_exhausted | 2 |
+| invalidated | 1 |
+
+### Reason codes, both directions, per session (aggregated; identical in both builds)
+
+Sessions not identified, by `(transport, client code, server code)`, all with session code empty unless noted:
+
+| Sessions | Transport | Client | Server |
+|---|---|---|---|
+| 1,664 | udp | no-dispatch | no-dispatch |
+| 935 | udp | profile-unsupported | profile-unsupported |
+| 796 | udp | profile-unsupported | (none) |
+| 544 | udp | no-dispatch | (none) |
+| 535 | tcp | no-payload | no-payload |
+| 288 | tcp | (none) | (none), session `no-handshake` |
+| 162 | udp | malformed | malformed |
+| **157** | tcp | **invalidated** | **profile-unsupported** |
+| 136 | udp | malformed | (none) |
+| 123 | tcp | no-dispatch | no-dispatch |
+| 69 | udp | no-dispatch | malformed |
+| 44 | tcp | malformed | no-dispatch |
+| 36 | tcp | no-dispatch | malformed |
+| 34 | tcp | malformed | malformed |
+| 32 | udp | ambiguous | ambiguous |
+| 32 | tcp | malformed | invalidated |
+| 30 | tcp | malformed | profile-unsupported |
+| 26 | tcp | no-dispatch | incomplete |
+| 21 | tcp | malformed | incomplete |
+| 20 | tcp | incomplete | no-dispatch |
+| 19 | udp | ambiguous | (none) |
+| 12 | tcp | incomplete | incomplete |
+| 9 | udp | no-dispatch | budget |
+| 9 | tcp | invalidated | no-dispatch |
+| 8 | tcp | incomplete | malformed |
+
+Sessions with an invalidated side: 211 (client side 175, server side 36), by detail (client detail | server detail):
+
+| Sessions | Status | Invalidated side | Details |
+|---|---|---|---|
+| 81 | unknown | client | "Data lies outside the bounded initial stream window" \| "TLS 1.2 cipher outside supported ServerHello profile" |
+| 75 | unknown | client | "Conflicting overlapping bytes; classification invalidated" \| "TLS 1.2 cipher outside supported ServerHello profile" |
+| 30 | malformed | server | "Expected plaintext TLS handshake record" \| "Data lies outside the bounded initial stream window" |
+| 9 | unknown | client | outside window \| "Prefix outside supported protocol families" |
+| 4 | unknown | server | "Prefix outside supported protocol families" \| outside window |
+| 12 | various | client or server | outside window or overlap, with SSH, CRLF, SOCKS5, CQL, BitTorrent, TLS-version or tracking-ended details (1 to 4 each) |
+
+Every one ended with "Tracking ended before initial message completed".
+
+### Correction (a): refuted for sessions over 64 KiB of client data; holds below that
+
+Engine's statement: "An unlisted TLS 1.2 suite does not invalidate a clean session; it only loses the
+server-side identification. The 211 invalidated sessions were probably reassembly or truncation failures."
+
+- **In the dataset**: every TCP session whose server reply had an unlisted TLS 1.2 cipher (188) also lost the
+  client side (157 client `invalidated`, 30 `malformed`, 1 `incomplete`). **None** kept a client-side TLS
+  identification. Of the 175 client-side invalidations, 156 have the unlisted-cipher server code.
+- **Synthetic reproduction** (IPv4 loopback pcap generated by this lane, no captured traffic: clean TCP
+  handshake, valid ClientHello with SNI, in-order data, no loss or overlap, FIN close; both builds give the
+  same result):
+
+| ServerHello cipher | Client application data after the handshake | Result |
+|---|---|---|
+| `0xc02f` (listed) | 0 to 64,000 bytes | identified; client `tls`, server `tls` |
+| `0xc02f` (listed) | 66,000 or more bytes | identified, server `tls`, but **`client_protocol` empty** (no reason code) |
+| `0x009c` (unlisted) | 0 to 64,000 bytes | identified (`ssl`); client `tls`, server empty: as Engine says |
+| `0x009c` (unlisted) | 66,000 or more bytes | **`unknown`, app `unknown-tcp`**; client `invalidated` "Data lies outside the bounded initial stream window", server `profile-unsupported` |
+
+- **Reading**: the window is the 65,536-byte per-direction limit (`go/internal/reassembly/stream.go`, `Feed`).
+  When the ServerHello is not accepted, the session keeps tracking, and the client's ordinary application data
+  then runs past the window and invalidates the client side, which had already been identified. So the 81
+  "outside window" cases are **not** reassembly or truncation failures: the synthetic session has neither. The
+  75 "conflicting overlapping bytes" cases do involve real overlapping retransmissions in the captures. They
+  are only reached because tracking continued after the unaccepted ServerHello. This lane cannot tell from
+  aggregates whether those overlaps are capture artefacts or real conflicts.
+- **Consequence**: a clean TLS 1.2 session with an unlisted cipher is reported `unknown` / `unknown-tcp`
+  whenever the client sends more than about 64 KiB before the session ends. The adopted TLS widening
+  (`protocol/tls-serverhello-legacy.md`) removes the cause for the listed suites only.
+- **Recommendations for the Engine lane** (product decisions, not made here):
+  1. a regression test with these vectors: the generator is this lane's scratch script, and the vectors are
+     the four rows above;
+  2. decide whether an overflow of the window **after** a side has already been identified should revoke that
+     identification. Today it does for an unlisted cipher, and it clears `client_protocol` even when the session
+     is identified (row 2).
+
+### Correction (b): consistent with genuine stray flows (not refuted)
+
+| Family | Capture label | Sessions | Shape (each session) |
+|---|---|---|---|
+| `bittorrent` | VoIP / other (VoipBuster) | 3 | TCP to port 61009; 7 or 8 packets; **68 client bytes**, 0 server bytes; client direction only; closed with FIN in under 1 s |
+| `sip` | File Transfer / FTPS | 2 | UDP to port 5060; 1 datagram of 414 or 416 bytes; client only; idle timeout |
+
+68 bytes is the size of a complete BitTorrent handshake (1 + 19 + 8 + 20 + 20 bytes, BEP 3), sent once and
+unanswered. A single SIP-sized request to the SIP port with no reply fits a stray registration or probe from a
+VoIP client on the capture host. Neither shape is that of a misread larger flow. Without payloads this lane
+cannot prove the source, so (b) is "not refuted", not "confirmed".
+
+### Unchanged findings
+
+The 28 `openvpn` or `coap` sessions of the first run (13 and 15 there; this re-run's tally counts a session that
+matched both once) are still identified inside Skype and VoipBuster UDP flows, the largest at 505,042 packets. This matches the adopted UDP flow rule (two consecutive matches; post-merge, Go only),
+which these builds do not yet contain.
