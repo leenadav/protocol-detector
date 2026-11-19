@@ -18,7 +18,7 @@ into one of these paths for a specific question; read only what it points at.
 | `go/internal/protocols/x509x/testdata/**`, other `**/testdata/**` | generated test corpora | the package tests and fuzz targets that read them |
 | `research/**` (other branch) | the application-research lane's specs and reports, not product code | the content gates above for anything it produced; specs are cited by commit in each content commit |
 | `**/*.md` outside this directory, `docs/**` | documentation | `tools/check_docs_counts.py`; read a section only when a brief names it |
-| `.github/**`, `tools/workflows.lock.json`, the CI tools in `tools/` (see INDEX.md, Tier 3) | the CI/CD lane's files | the CI/CD lane's own packet for PR #30; workflow lint, workflow policy, codeql |
+| `.github/**`, `tools/workflows.lock.json`, the CI tools in `tools/` (see INDEX.md, Tier 3) | the CI/CD lane's files, except this lane's two `ci.yml` edits (chunk-43) | the CI/CD lane's packet (`claude/cicd-next` `3d9a40e`, `docs/review-packet/`) and mailbox #7; workflow lint, workflow policy, codeql |
 | `pyproject.toml`, `requirements-dev.txt`, `.gitignore`, `.pre-commit-config.yaml` | build and tooling metadata | package build job (sdist, wheel, clean install), pip-audit in hash mode |
 | `protocol_adapters/protocol_fixtures.py` | synthetic test vectors | `make check`, `make parity` |
 | `**/*_test.go`, `test_*.py`, `presentation/tests/**` | tests | run in `make go-check` / `make check`; each brief names the tests that answer its questions |

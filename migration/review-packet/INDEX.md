@@ -8,8 +8,8 @@ Documentation only (Lee approved, relayed by Hermes 2026-11-19). The aim is the 
 | Frozen review head | `50ce5c0` (`50ce5c0c3f8885c06ad25fda9474e931f767c1f7`); later commits are documentation (this packet) |
 | Already reviewed inside the range | `e57d294..7afc8f6` (digest delta, no code finding); `framed/ldap.go` is byte-identical to `b0beb3a`, reviewed in 6946510458 (confirm the blob, skip it); `framed/gss.go` entry points inspected there too |
 | Every frozen SHA | listed in `migration/STATUS.md` ("Frozen milestone SHAs"); all lie in `dbe20f3..50ce5c0` and are covered by the chunks below |
-| Size | Tier 1: 29 chunks, about 19063 changed lines; Tier 2: 13 chunks, about 7698; Tier 3: no review |
-| CI/CD lane | PR #30 (merged into `main` as `7146ce1`) has its own packet; link: *to be added when the CI/CD lane publishes it* |
+| Size | Tier 1: 30 chunks (chunk-43 is 34 lines), about 19063 changed lines; Tier 2: 13 chunks, about 7698; Tier 3: no review |
+| CI/CD lane | its own packet: `claude/cicd-next` `3d9a40e`, `docs/review-packet/` (range `e927d44..ddc557d`, the lane's 9 commits, 5 chunks). It owns `.github/**`, `tools/workflows.lock.json` and the CI tools (`go_ci.py`, `check_go_drift.py`, `content_gate.py`, `merge_readiness.py`, `go_fuzz_long.py`, `perf_history.py`, `build_go_release.py`, `release_provenance.py`, `check_workflow_policy.py`); this packet leaves them out, except chunk-43 |
 
 How to use it: take the chunks in the order below, one usage window at a time. Each brief is at most a page: what changed and why, questions to answer, what already ran (do not re-run it), the exact files and line ranges, and what is out of scope. Read the diff with the brief's exact command. Supporting tests are optional reading.
 
@@ -34,7 +34,7 @@ Windows of up to about 2,200 changed lines (Tier 1 first, the most critical firs
 - **Window 7** (about 1960 lines, tier 1): chunk-13, chunk-22, chunk-23
 - **Window 8** (about 2125 lines, tier 1): chunk-16, chunk-17, chunk-18, chunk-19
 - **Window 9** (about 2170 lines, tier 1): chunk-15, chunk-26, chunk-27
-- **Window 10** (about 1401 lines, tier 1): chunk-28, chunk-29
+- **Window 10** (plus chunk-43, 34 lines: this lane's two `ci.yml` edits, which neither packet's range otherwise covers) (about 1401 lines, tier 1): chunk-28, chunk-29
 - **Window 11** (about 1715 lines, tier 2): chunk-39, chunk-40, chunk-41
 - **Window 12** (about 1865 lines, tier 2): chunk-30, chunk-31, chunk-35
 - **Window 13** (about 1953 lines, tier 2): chunk-38, chunk-36, chunk-33
@@ -73,6 +73,7 @@ Windows of up to about 2,200 changed lines (Tier 1 first, the most critical firs
 | 27 | [chunk-27](chunk-27.md) | 1 | 756 | 7 | Capture-level differentials: analyze and decrypt |  |
 | 28 | [chunk-28](chunk-28.md) | 1 | 688 | 4 | Control-plane and dashboard differentials |  |
 | 29 | [chunk-29](chunk-29.md) | 1 | 713 | 5 | Live, schema and adversarial differentials |  |
+| 29a | [chunk-43](chunk-43.md) | 1 | 34 | 2 | This lane's two edits to the CI workflow | supply chain; not in the CI/CD packet's range |
 | 30 | [chunk-39](chunk-39.md) | 2 | 706 | 1 | Dashboard service: HTTP server |  |
 | 31 | [chunk-40](chunk-40.md) | 2 | 601 | 1 | Dashboard service: connections and Python-text compatibility |  |
 | 32 | [chunk-41](chunk-41.md) | 2 | 408 | 51 | Launcher, presentation glue, adapters and the Makefile |  |
