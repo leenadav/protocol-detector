@@ -467,9 +467,9 @@ DeepSeek, Perplexity, Mistral and xAI API hosts apart from the chat apps), `b6ed
 research batch C: notebook.google.com re-sourced, Dropbox www web fronts, ngrok, Cloudflare One Client, Atlassian,
 WeTransfer), `c08773f` (the prepared post-merge tests), `ee1645d` (content 2026.11.7, batch D: Defender for
 Endpoint, Intune, iCloud Private Relay and vendor hosts), `253a91d` (2026.11.8, batch E: Chrome Remote Desktop,
-Bitwarden), `2f6ad4d` (2026.11.9, the vendor-level `goto` id), and the commit that records Hermes's
-2026-11-19 decisions (UDP flow rule, ServerHello widening, Telegram MTProto as PM-8) in POST-MERGE-BACKLOG.md
-with the prepared tests adjusted to them.
+Bitwarden), `2f6ad4d` (2026.11.9, the vendor-level `goto` id), `50ce5c0` (Hermes's 2026-11-19 decisions in
+POST-MERGE-BACKLOG.md, the prepared tests adjusted to them; **the frozen review head of the Codex review packet**), and the
+commit that adds `migration/review-packet/` (documentation only: 42 chunks over `dbe20f3..50ce5c0`, see its INDEX.md).
 
 C11 (2026-11-18, research finding): a rollback recomputed an earlier release's digest from the current
 application catalog, so every added application moved it (2026.11.1 published as `c4020c2437f3de8d`, rolled
