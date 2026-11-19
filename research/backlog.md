@@ -36,6 +36,34 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch G, after F: pages relayed by Hermes, 2026-11-19)
+
+Patch: `patches/batch-g-name-based.patch` (placeholder release `2026.12.1`, see the version note below). Tested:
+40 vectors (all as expected), rollback exact, parity 7441/7441 (Python and Go), 88/88 families parity-verified.
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | G1 | LogMeIn Resolve (new id `logmein-resolve`) | `apps/logmein-resolve.md` | 5 | 4 | 20 | READY |
+| 2 | G2 | Gemini API (new id `google-gemini-api`, exact `generativelanguage.googleapis.com`) | `apps/google-gemini-api.md` | 5 | 4 | 20 | READY (id split mirrors `anthropic-api`) |
+| 3 | G3 | Signal link and sticker domains | `apps/signal.md` | 4 | 4 | 16 | READY |
+| 4 | G4 | Splashtop regional API and relay names | `apps/splashtop.md` | 4 | 4 | 16 | READY |
+| 5 | G5 | Miro domains | `apps/miro.md` | 4 | 4 | 16 | READY |
+| 6 | G6 | Canva domains | `apps/canva.md` | 4 | 4 | 16 | READY |
+| 7 | G7 | Cisco Duo web front `www.duo.com` | `apps/duo-security.md` | 3 | 4 | 12 | READY |
+| 8 | - | Salesforce | `apps/salesforce.md` | 4 | 4 | | DONE (no change); linked "Required Domains" page still unread (`blocked-urls.md` #17) |
+| 9 | - | Grammarly | `apps/grammarly.md` | 3 | 1 | | BLOCKED (the article has no list; `blocked-urls.md` #18) |
+
+**Version note for the Engine lane (finding, product code).** `protocol_engine/content.py` compares release
+versions as strings (`item.version < version` at line 255, `>` at line 276, and `versions != sorted(versions)` in
+`check()` at line 448, on `c08773f`). After D, E and F the next release in November would be `2026.11.10`, which
+sorts before `2026.11.9`. Reproduced in scratch: with `2026.11.10`, `check_content.py --update` still wrote a lock
+whose host count was 431 (the 2026.11.2 state), and `content_history.py` then failed with "content release
+2026.11.2 no longer reproduces its host catalog". The patch therefore uses the placeholder `2026.12.1`. The Engine
+lane decides between a numeric version comparison (with a regression test for `x.y.9` < `x.y.10`) and a
+numbering rule, then renumbers. The Go engine has the same assumption: `go/internal/content/content.go:446` sorts
+release versions with `sort.Strings` under the comment "YYYY.MM.N with zero-padded month: lexical order is release
+order", which holds only while N is at most 9.
+
 ### NAME: READY (batch F, after E; rebased on `c08773f`)
 
 | Rank | Id | Item | Spec | V | R | Score | Status |
@@ -68,14 +96,14 @@ Patch: `patches/batch-d-name-based.patch` (release 2026.11.7). Tested: 45 vector
 | 11 | D11 | GoTo Meeting | `apps/goto.md` | 4 | 3 | 12 | READY; **DECISION** on `goto.com` attribution |
 | 12 | D12 | Netskope Endpoint DLP host | `apps/netskope.md` | 3 | 4 | 12 | READY |
 | 13 | D13 | Figma for Government | `apps/figma.md` | 3 | 3 | 9 | READY |
-| 14 | - | GoTo Resolve | `blocked-urls.md` #7 | 5 | 1 | 5 | BLOCKED |
-| 15 | - | Gemini API host | `blocked-urls.md` #8 | 5 | 1 | 5 | BLOCKED |
-| 16 | - | Miro | `blocked-urls.md` #5 | 4 | 1 | 4 | BLOCKED |
-| 17 | - | Splashtop | `blocked-urls.md` #4 | 4 | 1 | 4 | BLOCKED |
-| 18 | - | Grammarly | `blocked-urls.md` #6 | 3 | 1 | 3 | BLOCKED |
+| 14 | - | GoTo Resolve | `apps/logmein-resolve.md` | 5 | 4 | 20 | READY (batch G1) |
+| 15 | - | Gemini API host | `apps/google-gemini-api.md` | 5 | 4 | 20 | READY (batch G2) |
+| 16 | - | Miro | `apps/miro.md` | 4 | 4 | 16 | READY (batch G5) |
+| 17 | - | Splashtop | `apps/splashtop.md` | 4 | 4 | 16 | READY (batch G4) |
+| 18 | - | Grammarly | `apps/grammarly.md` | 3 | 1 | 3 | BLOCKED (`blocked-urls.md` #18) |
 | 19 | E1 | Chrome Remote Desktop service host | `apps/chrome-remote-desktop.md` | 4 | 4 | 16 | READY (batch E) |
 | 20 | E2 | Bitwarden domains | `apps/bitwarden.md` | 3 | 4 | 12 | READY (batch E) |
-| 21 | - | Canva, Duo, Hugging Face | `blocked-urls.md` #9 to #11 | 3 to 4 | 1 | | BLOCKED |
+| 21 | - | Canva, Duo; Hugging Face | `apps/canva.md`, `apps/duo-security.md`; `blocked-urls.md` #11 | 3 to 4 | | | READY (batch G6, G7); Hugging Face BLOCKED (no page known) |
 
 ### NAME: DONE (implemented by the Engine lane)
 
@@ -110,7 +138,7 @@ Patch: `patches/batch-d-name-based.patch` (release 2026.11.7). Tested: 45 vector
 | Slack (`slack-edge.com`, `slack-msgs.com`, `slack-files.com`) | `apps/slack.md` | PARTIAL, low priority | sign-in-only list; Lee cannot supply a copy (2026-11-18) |
 | Box | `apps/box.md` | BLOCKED, low priority | sign-in required; Lee cannot supply a copy (2026-11-18) |
 | Chat-app hosts of DeepSeek, Perplexity, Mistral, Grok | B5 to B8 specs | PARTIAL | no primary page names them; they stay under the existing domains |
-| Salesforce, Signal, WhatsApp, Splashtop | `blocked-urls.md` | BLOCKED | exact URLs listed for Hermes to relay |
+| WhatsApp | `blocked-urls.md` #3 | BLOCKED | no official page known (Hermes, 2026-11-19); Salesforce, Signal, Splashtop resolved in batch G |
 | ConnectWise ScreenConnect | `apps/connectwise-screenconnect.md` | PARTIAL | no official cloud allowlist found |
 | RustDesk | `apps/rustdesk.md` | PARTIAL | self-host ports sourced; public server names unverified |
 | Telegram names | `apps/telegram.md` | PARTIAL | no allowlist read |
@@ -135,6 +163,6 @@ Items 21 to 29 were researched in batch C (above). Remaining, by provisional V:
 |---|---|---|
 | 30 | Netskope client | researched: `goskope.com` DONE; `epdlp-prod.netskope.io` READY for the next patch (`apps/netskope.md`) |
 | 31 | Tailscale DERP relay names | BLOCKED (DERP map host not allowed; low value, likely already under `tailscale.com`) |
-| 32 | Retries: Salesforce, Signal, WhatsApp, Zscaler, Splashtop | BLOCKED (see the table above) |
+| 32 | Retries: WhatsApp | BLOCKED (Salesforce, Signal, Splashtop done in batch G; Zscaler done) |
 
 No unresearched candidates remain in this queue.

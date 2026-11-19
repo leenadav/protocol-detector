@@ -1,39 +1,49 @@
 # Splashtop
 
 - Content-pack id today: `splashtop` (`splashtop.com`; web fronts apex and `www`)
-- Status: **BLOCKED**, NAME. Low priority; research continues when the source is reachable
-- Sources accessed: 2026-11-18
+- Status: **READY**, NAME, batch G (`research/patches/batch-g-name-based.patch`)
+- Sources: read by Hermes, relayed, 2026-11-19; the page shows "Today, 11:24 AM" (2026-11-19)
 
 ## 1. What it is
 
-Splashtop. See the catalog entry for its category.
+Remote access and remote support ("all Splashtop Cloud-based solutions").
 
 ## 2. Transport and ports
 
-`UNVERIFIED`: the primary source could not be read.
+Required: "Port 443 (TCP) Primary control channel & data relay". Optional: TCP 6783 for same-network direct connections; TCP 9527-9528 local loopback only; "Port 3479 (UDP) & All UDP ports. Splashtop uses QUIC for optimized end-to-end connections". Port 80 (HTTP) for downloads and update checks from CloudFront. "All Splashtop Cloud traffic is outbound only." [S1]
 
 ## 3. Observable evidence
 
-`support-splashtop.com` was unreachable from the egress proxy on 2026-11-18. The business support host `support-splashtopbusiness.splashtop.com` serves the article but returned a Cloudflare bot challenge on 2026-11-19. The URL is listed in `research/blocked-urls.md`.
+Domains [S1]: all regions `*.api.splashtop.com` (API and session services), `*.relay.splashtop.com` (data relay), `update.splashtop.com` and `update-g3.splashtop.com` (auto-updates); EU `*.api.splashtop.eu`; OC `*.api.splashtop.nr`; for China, also `*.api.splashtop.cn` and `*.relay.splashtop.cn`. Installers and updates are hosted on Amazon CloudFront. "Splashtop remote connections use TLS over port 443" and "Splashtop supports RSA-based certificates only".
 
 ## 4. Encrypted-traffic caveats
 
-Not assessed beyond the README's shared facts.
+Only the listed subtrees are proposed for the `.eu`, `.nr` and `.cn` domains (`api.splashtop.eu`, `api.splashtop.nr`, `api.splashtop.cn`, `relay.splashtop.cn`), not their apexes, which the page does not list. CloudFront download hosts are not named on the page and stay unattributed. The end-to-end QUIC path on UDP 3479 is not on UDP 443; whether its Initial carries a Splashtop server name is `UNVERIFIED`.
 
 ## 5. Confidence and false-positive risks
 
-| Observable | Level |
-|---|---|
-| Current pack names | **U** (not verified by this lane) |
+| Observable | Level | Limits |
+|---|---|---|
+| SNI under `splashtop.com` | **N3** | Already mapped |
+| SNI under `api.splashtop.eu`, `api.splashtop.nr`, `api.splashtop.cn`, `relay.splashtop.cn` | **N3** |  |
+| UDP 3479 QUIC | **U** | Not verified |
 
 ## 6. Synthetic test vectors
 
-Pending a readable source.
+Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): all as expected.
+
+| # | Input | Expected |
+|---|---|---|
+| P1 | SNI `st-1.api.splashtop.eu`, `a.api.splashtop.nr`, `a.relay.splashtop.cn` | `splashtop` (today unmapped) |
+| P2 | SNI `update-g3.splashtop.com` | `splashtop` |
+| N1 | SNI `www.splashtop.eu` | unmapped (apex not listed) |
 
 ## 7. Sources
 
-- `https://support-splashtop.com/hc/en-us/articles/115001811966`: unreachable, 2026-11-18
+- [S1] Splashtop Business Support, "What Are the Firewall Exceptions and IP addresses of Splashtop Servers/Services?", `https://support-splashtopbusiness.splashtop.com/hc/en-us/articles/115001811966-What-Are-the-Firewall-Exceptions-and-IP-addresses-of-Splashtop-Servers-Services`, read by Hermes, relayed, 2026-11-19.
 
 ## 8. Catalog delta and recommendation
 
-None. Next: Retry later.
+```python
+("splashtop", ..., ("splashtop.com", "api.splashtop.eu", "api.splashtop.nr", "api.splashtop.cn", "relay.splashtop.cn"), ("splashtop.com", "www.splashtop.com")),
+```

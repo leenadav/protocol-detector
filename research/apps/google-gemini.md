@@ -60,7 +60,7 @@ No ALPN, certificate or protocol-structure information is published. `UNVERIFIED
 | P1 | SNI `gemini.google.com`, ALPN `h2` | `google-gemini` |
 | P2 | SNI `aistudio.google.com` | `google-ai-studio` |
 | P3 | SNI `notebook.google.com` | the notebook application (today: falls to `google-base` via `google.com`) |
-| N1 | SNI `generativelanguage.googleapis.com` | `google-base`, never Gemini (no dedicated host verified) |
+| N1 | SNI `generativelanguage.googleapis.com` | superseded in batch G: now verified as the Gemini API host and proposed as `google-gemini-api` (`apps/google-gemini-api.md`) |
 | N2 | SNI `gemini.google.com.example.invalid` | no application |
 | N3 | `ech_outer()` with outer SNI `gemini.google.com` | no application |
 
@@ -90,3 +90,6 @@ to NotebookLM. It is re-sourced from [S3] and proposed again in batch C:
   here and can be reflected later if the Engine lane wants it.
 - `notebooklm.google.com`: kept, still unverified.
 - Do not map `googleapis.com` subdomains to Gemini without a primary source.
+
+Batch G (2026-11-19): the Gemini API reference names `generativelanguage.googleapis.com` as the API host. It is
+proposed as its own id, `google-gemini-api`, in `apps/google-gemini-api.md`; no other `googleapis.com` name maps to Gemini.

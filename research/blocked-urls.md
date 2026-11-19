@@ -1,27 +1,38 @@
 # Pages this lane cannot read: for Hermes to open and relay
 
-Updated 2026-11-19. This lane does not bypass bot challenges, sign-ins or other access controls. For each page,
-please open the exact URL in a normal browser and relay the parts named below as text (domain names, ports and the
-page's own date). The relayed text is cited as "read by Lee or Hermes, relayed", as was done for OpenAI.
+Updated 2026-11-19 (after the first relay). This lane does not bypass bot challenges, sign-ins or other access
+controls. For each page, please open the exact URL in a normal browser and relay the parts named below as text
+(domain names, ports and the page's own date). The relayed text is cited as "read by Hermes, relayed".
+
+## Still open
 
 | # | Vendor | Exact official URL | Why this lane cannot read it | What is needed from it |
 |---|---|---|---|---|
-| 1 | Salesforce | `https://help.salesforce.com/s/articleView?id=000384438&type=1` (target of the older `https://help.salesforce.com/HTViewSolution?id=000003652`) | client-side app renders empty for this lane | the "Required Domains" (or equivalent) list of Salesforce-operated domains for users (not IP lists); which domains are customer-specific (My Domain, `*.my.salesforce.com`, `*.force.com`, `*.lightning.force.com`); the page's updated date |
-| 2 | Signal | `https://support.signal.org/hc/en-us/articles/360007320291-Firewall-and-Internet-settings` | Cloudflare bot challenge | the host names and ports Signal clients use (chat, calls, attachments, CDN); any statement about censorship-circumvention proxies; the page date |
-| 3 | WhatsApp | **URL unknown**: no consumer WhatsApp network or firewall article was found on `faq.whatsapp.com`. The only official network page found, `https://developers.secure.facebook.com/docs/whatsapp/guides/network-requirements`, now redirects to the WhatsApp Business API on-premises sunset notice (a different product) | no primary page found | if WhatsApp publishes one, the URL of its consumer firewall or network article, and its host names and ports |
-| 4 | Splashtop | `https://support-splashtopbusiness.splashtop.com/hc/en-us/articles/115001811966` ("What Are the Firewall Exceptions and IP addresses of Splashtop Servers/Services?"); the older host `support-splashtop.com` is unreachable | Cloudflare bot challenge on the business support host | the listed domains (wildcards) with their purpose, the ports (TCP 443 and any others), any per-product differences; the page date |
-| 5 | Miro | `https://help.miro.com/hc/articles/360017572694` ("Add Miro to Allowed Domains"), plus the "Miro domains" page it links to | Cloudflare bot challenge | the full Miro domain list from the linked page, and the WebSocket and proxy notes |
-| 6 | Grammarly | `https://support.grammarly.com/hc/en-us/articles/115000090271-Network-configuration-blocks-Grammarly-services` | the page renders without its article body for this lane | the endpoint list (`*.grammarly.com`, `*.grammarly.io`, any others) and WebSocket hosts; the page date |
-| 7 | GoTo Resolve | `https://support.goto.com/resolve/help/allowlisting-and-goto-resolve` | the proxy tunnel fails for this path (the GoTo Meeting page on the same host worked) | the GoTo Resolve domains (`*.gotoresolve.com` and others) and ports |
-| 8 | Google Gemini API | `https://aistudio.google.com/docs/get-started` (where `https://ai.google.dev/gemini-api/docs/quickstart` now redirects) | host not allowed in this session; this lane can request it if preferred | the REST base URL of the Gemini API (host name only), to decide whether a dedicated API host exists |
-| 9 | Canva | `https://www.canva.com/help/allow-canva-through-firewall/` | Cloudflare bot challenge | the domain list (`*.canva.com` and others) with purposes, and the WebSocket note |
-| 10 | Cisco Duo | `https://help.duo.com/s/article/1337` (Duo's IP and hostname article, as Duo's community points to it; not read) | host not allowed in this session; the article id is from community posts, so please confirm it | Duo's service host names (API hostnames are per customer, e.g. `api-XXXXXXXX.duosecurity.com`) and any non-tenant domains |
-| 11 | Hugging Face | **URL unknown**: no official Hugging Face network or firewall page was found | | the official page, if any, naming Hub, CDN and inference host names |
-| 12 | Cisco Umbrella (Secure Client / roaming client) | `https://securitydocs.cisco.com/docs/umbrella-sig/olh/152711.dita` (Secure Client prerequisites; old `docs.umbrella.com` links redirect there) and the roaming-client prerequisites (`docs.umbrella.com/deployment-umbrella/docs/prerequisites-5`) | the lists live in child topics this lane cannot reach through the docs API | the host names and ports the client needs (DNS, `*.opendns.com`, `*.umbrella.com` and others), with purposes |
+| 3 | WhatsApp | **URL unknown**: no consumer WhatsApp network or firewall article was found (Hermes knows none either) | no primary page found | left as is |
+| 11 | Hugging Face | **URL unknown**: no official network or firewall page found (Hermes knows none either) | | left as is |
+| 12 | Cisco Umbrella (Secure Client / roaming client) | `https://securitydocs.cisco.com/docs/umbrella-sig/olh/152711.dita` and the roaming-client prerequisites (`docs.umbrella.com/deployment-umbrella/docs/prerequisites-5`) | the lists live in child topics this lane cannot reach | the host names and ports the client needs (DNS, `*.opendns.com`, `*.umbrella.com` and others), with purposes |
 | 13 | Parsec | `https://support.parsec.app/hc/en-us/articles/32381460716180-Parsec-Connectivity-Requirements` | Cloudflare bot challenge | the host list (`kessel-ws.parsec.app` and others) with ports |
 | 14 | Asana | `https://help.asana.com/s/article/asana-ip-address-ranges-and-hostnames` | page renders empty | the non-FedRAMP host names |
 | 15 | Jamf Pro | `https://learn.jamf.com/r/en-US/technical-articles/Network_Ports_Used_by_Jamf_Pro` | page renders empty (JavaScript app) | the Jamf Cloud host names (`*.jamfcloud.com` and named hosts) |
 | 16 | Atera | `https://support.atera.com/hc/en-us/articles/360015461139` | Cloudflare bot challenge | the agent domains and ports |
+| 17 | Salesforce | the "Salesforce Help Required Domains" page linked from article 000384438 (**URL not in the relayed text**) | client-side app renders empty | its domain list, for any Salesforce-operated domain outside `salesforce.com` and `force.com` |
+| 18 | Grammarly | the "WebSockets Support Q&A for System Administrators" article linked from article 115000090271 (**URL not in the relayed text**) | Grammarly's article body does not render for this lane | any endpoint or WebSocket host list |
+
+Rows 12 to 16 were not in the first relay.
+
+## Resolved by the relay of 2026-11-19
+
+| # | Vendor | Result |
+|---|---|---|
+| 1 | Salesforce (article 000384438) | read; no catalog change (`apps/salesforce.md`); the linked list is row 17 |
+| 2 | Signal | batch G (`apps/signal.md`) |
+| 4 | Splashtop | batch G (`apps/splashtop.md`) |
+| 5 | Miro (both pages) | batch G (`apps/miro.md`) |
+| 6 | Grammarly | read, but the article has no endpoint list (`apps/grammarly.md`); the linked article is row 18 |
+| 7 | GoTo Resolve (redirected to `support.logmein.com`, LogMeIn Resolve) | batch G (`apps/logmein-resolve.md`) |
+| 8 | Google Gemini API | the relayed page did not name the host; this lane then read the API reference itself (`aistudio.google.com` allowed for this session); batch G (`apps/google-gemini-api.md`) |
+| 9 | Canva | batch G (`apps/canva.md`) |
+| 10 | Cisco Duo | batch G (`apps/duo-security.md`) |
 
 Not listed (decided low priority, 2026-11-18): Box (sign-in required) and Slack (workspace-specific list).
 No official network page found (not listed): Smartsheet, Airtable, npm, PyPI, NinjaOne (proxy article not located), Windsurf (proxy settings only, no domain list).

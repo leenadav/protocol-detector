@@ -187,3 +187,32 @@ Go `digest_test.go` → `2026.11.9` / `4a2fb63069bd33e5` / `8137a3317ade8c38ad02
 
 New ids `prisma-access` (`epm.gpcloudservice.com`, `filter.paloaltonetworks.com`), `jetbrains-ai` (`api.jetbrains.ai`),
 `loom` (`loom.com`, `loom-media-production.s3-accelerate.amazonaws.com`). Release 2026.11.9. 11 vectors, 0 mismatches.
+
+## Batch G: `batch-g-name-based.patch` (after F)
+
+Pages relayed by Hermes (2026-11-19), plus the Gemini API reference read by this lane. Base: `c08773f` plus D, E
+and F (apply D → E → F → G; `git apply --check` clean on F).
+
+- New ids: `logmein-resolve` (`gotoresolve.com`, `gotoresolveuserfiles.com`, `helpdesk.me`,
+  `gtre-remoteexecution-userfiles-prod-eu.azureedge.net`) and `google-gemini-api` (`generativelanguage.googleapis.com`).
+- Extended: `signal` (+`signal.group`, `signal.link`, `signal.me`, `signal.tube`), `splashtop` (+`api.splashtop.eu`,
+  `api.splashtop.nr`, `api.splashtop.cn`, `relay.splashtop.cn`), `miro` (+`miro-apps.com`, `mirostatic.com`,
+  `onlinewhiteboard.com`, `realtimeboard.com`, `webwhiteboard.com`), `canva` (+`canvacode.com`, `canva-apps.com`,
+  `canva.link`, `canva.ai`), `duo-security` (web front `www.duo.com`).
+- Release: placeholder **`2026.12.1`**, not `2026.11.10`: `content.py` orders versions as strings, so `2026.11.10`
+  sorts before `2026.11.9` and breaks rollback (see `backlog.md`, batch G version note). `_PRIOR_HOST_STATE["2026.11.9"]`
+  and `_RELEASED_COMPONENTS["2026.11.9"]` are included.
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.12.1, digest `0a516c639a61b39f`, 548 applications, 446 host entries |
+| Pack file | `go/internal/content/pack.json` sha256 `2a8b6f9e649ea4d031397d682e6a1c6f3683247840d6c9c3c5e9c767e6ddf7a2` |
+| Rollback | `history.json` release 2026.11.9 host catalog equals the batch F pack's host catalog exactly |
+| Synthetic name vectors | 40 through `attribution_for_host`, all as expected |
+| `migration/parity/compare.py --backend python` | 7441 compared, 7441 matched |
+| `make parity-go` | 7441 matched; 88 of 88 families parity-verified |
+| `python3 -B -m unittest discover -q` | 856 tests, 1 expected failure: pinned host count in `test_content.py` (438 → 446 after D to G) |
+
+Pinned values for the Engine lane: `test_content.py` host count 446; Go `digest_test.go` release values for the
+final version number; `history_test.go` last release.
+
