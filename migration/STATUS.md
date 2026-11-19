@@ -463,7 +463,10 @@ description, documentation only), `93cbf2a` (Go answers signature repeat counts 
 rebuilds the Go binary ahead of the presentation suite), `76e467a` and `d65d21a` (x/crypto vendored, every Go
 command with `-mod=vendor`, `make go-vendor-check`), `07b216e` (parity-server canonicalizes a job id that begins
 with "L-"), `6ab434d` (content 2026.11.4, research batch B), `7dcabb7` (content 2026.11.5, batch B2: the
-DeepSeek, Perplexity, Mistral and xAI API hosts apart from the chat apps).
+DeepSeek, Perplexity, Mistral and xAI API hosts apart from the chat apps), `b6ed149` (content 2026.11.6,
+research batch C: notebook.google.com re-sourced, Dropbox www web fronts, ngrok, Cloudflare One Client, Atlassian,
+WeTransfer), and the commit that adds the prepared post-merge tests (`postmerge_test.go` in `engine` and
+`analyzer`, POST-MERGE-BACKLOG.md "Prepared tests").
 
 C11 (2026-11-18, research finding): a rollback recomputed an earlier release's digest from the current
 application catalog, so every added application moved it (2026.11.1 published as `c4020c2437f3de8d`, rolled
