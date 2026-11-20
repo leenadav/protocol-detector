@@ -156,6 +156,9 @@ regenerated; hand-written text stays outside the markers.
 
 ## Files
 
+- `LANE-BRIEF.md`: the lane's onboarding brief, read first by every new chat. **Rule: update it at the end of every task**
+  (state, open items, pitfalls), then run the gates it lists, push, and report the SHA.
+
 - `README.md`: this method.
 - `backlog.md`: the ranked backlog, scoring and status of every candidate.
 - `apps/*.md`: one spec per candidate.
@@ -165,3 +168,4 @@ regenerated; hand-written text stays outside the markers.
 - `source-state.json`: recorded hashes and feed versions for change tracking.
 - `tools/`: `live_verify.py`, `observe_web.js`, `recheck_sources.py`, `retrofit_specs.py`.
 - `protocol/app-attributes.md`: proposed attribute schema (ENGINE-FIELD).
+- `observations/`: dependency-mapping outputs (host names, request counts and page status only).
