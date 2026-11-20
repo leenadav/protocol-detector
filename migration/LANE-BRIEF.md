@@ -13,7 +13,7 @@ happens on `claude/go-migration`; draft PR #19 is the engine-lane PR, and issue 
 - **Go** (`go/`) is judged against Python by the parity gates.
 - **The lane owns** `go/`, `migration/`, the product code (`protocol_engine/`, `protocol_adapters/`, `presentation/`),
   the content data and the `Makefile`.
-- **Python detection code is read-only.** The only exceptions are ones Lee approves case by case.
+- **Python detection code is read-only.** The only exceptions are ones Lee approves case by case; they are listed in `migration/STATUS.md` ("Frozen-Python exceptions").
 - **Never touch the CI/CD lane's files:** `.github/**`, `tools/workflows.lock.json` and its CI tools in `tools/`
   (`go_ci.py`, `check_go_drift.py`, `content_gate.py`, `merge_readiness.py`, `go_fuzz_long.py`, `perf_history.py`,
   `build_go_release.py`, `release_provenance.py`, `check_workflow_policy.py`). Changes there go to that lane as a
@@ -37,8 +37,8 @@ happens on `claude/go-migration`; draft PR #19 is the engine-lane PR, and issue 
 - **Vendored dependencies:** `x/crypto` and `x/sys/cpu` live under `go/vendor`, and every Go command runs with
   `-mod=vendor`.
 - **Codex review packet:** complete in `migration/review-packet/` (frozen head `50ce5c0`, 43 chunks).
-- **PRO-31** (`6194fb9`, with the numbering-rule test in `4d8aa29`): Go orders content versions numerically. The Python
-  reference still compares them as strings; under Hermes's numbering rule (§7) the two orders agree.
+- **PRO-31**: both engines order content versions numerically. Go has it in `6194fb9` (plus the numbering-rule test in
+  `4d8aa29`); the Python reference got it in the version-comparison commit, under Lee's exception of 2026-11-20.
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
 
 ## 3. Where things live (reading order)
@@ -61,7 +61,7 @@ Run everything from the repository root. Times are for the cloud container (4 vC
 | Command | What it checks | Runtime |
 |---|---|---|
 | `make go-check` | gofmt, vet, `go test -race`, 28 fuzz targets, parity-go with verify_families, every differential, bench-gate | about 8 min (488 s) |
-| `make check` | the Python suite (860 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
+| `make check` | the Python suite (862 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
 | `make go-vendor-check` | re-vendors into `build/go-vendor-check` and diffs it against `go/vendor` | seconds (module cache warm) |
 | `python3 -B -m unittest discover -q` | the Python suite on its own | part of `make check` |
 
@@ -78,7 +78,6 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
-| The Python reference compares content versions as strings (`content.py` `host_entries`, `host_provenance`, `check()`). The bug is dormant under the numbering rule. | Lee, only if he wants option (a): an explicit exception to the freeze. Hermes chose (b), the numbering rule, on PRO-34. The three `VersionOrderTests` expectedFailure markers come off with that fix. |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -103,7 +102,7 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
   - Then regenerate the lock, `pack.json`, `history.json`, the fixtures, the `CONTENT-DIGEST.md` vectors, the
     `digest_test.go`, `history_test.go` and `test_content.py` pins, and the README/APPID counts.
 - **Content release numbering rule (Hermes, PRO-34):** the version is YYYY.MM.N with a two-digit month and a single-digit N (0 to 9). When N is used up, move on to the next month segment at 0. The version is only a label; the real date is
-  the release's `released` field. App Research's 2026.12.x placeholders stay as they are. `TestEmbeddedReleasesFollowTheNumberingRule` fails on any break, because a 2026.11.10 would silently give the new release the 2026.11.2 catalog in Python.
+  the release's `released` field. App Research's 2026.12.x placeholders stay as they are. `TestEmbeddedReleasesFollowTheNumberingRule` fails on any break. Both engines now compare numerically, so the rule is a policy and no longer a safety net; relaxing it is Hermes's call.
 - **Content items stay name-based until the merge.** Skip a research spec that looks wrong or unclear, note why,
   and don't guess. Describe vendors neutrally by their domain.
 - **The presentation suite needs the Go binary built first**, or `GoServiceTests` skip. `presentation-check` builds it.

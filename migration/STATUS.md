@@ -474,6 +474,17 @@ Bitwarden), `2f6ad4d` (2026.11.9, the vendor-level `goto` id), `50ce5c0` (Hermes
 POST-MERGE-BACKLOG.md, the prepared tests adjusted to them; **the frozen review head of the Codex review packet**), and the
 commit that adds `migration/review-packet/` (documentation only: 42 chunks over `dbe20f3..50ce5c0`, see its INDEX.md); after the packet: `6194fb9` (PRO-31: Go orders content release versions numerically, `CompareVersions`; Python test-only checks, with three expectedFailure tests reproducing the reference's string comparison in `content.py`, which is not changed; outside the packet's range, review as its own diff `git diff e5ae2f6 6194fb9`); `4d8aa29` (PRO-31 numbering rule, Hermes PRO-34: YYYY.MM.N with N 0..9, enforced by `TestEmbeddedReleasesFollowTheNumberingRule`; review as `git diff 4c64c75 4d8aa29`).
 
+Frozen-Python exceptions (Lee-approved edits to the read-only Python reference on this branch; nothing else in it
+changes):
+
+| Exception | Approval | Commits |
+|---|---|---|
+| Launchers start the Go service when its binary is installed (`presentation/launch.py`) and stop a live run on SIGTERM | Lee, 2026-11-17 | `24e410e`, `ed6b2b8` |
+| Case generator: coverage cases for nine families (`migration/parity/cases.py`) | Lee | `024163f` |
+| CoAP profile held to RFC 7252 in both engines (F-ADV-1) | Lee, 2026-11-18 | `12e1ed0` |
+| C11: earlier content releases keep their published components (`protocol_engine/content.py`) | research finding, fixed in both engines | `d1b63ee` |
+| PRO-31: content release versions compared numerically (`protocol_engine/content.py` `compare_versions`, the semantics of Go's `CompareVersions`) | Lee, 2026-11-20, relayed by Hermes | the PRO-31 Python commit, with `6194fb9` |
+
 C11 (2026-11-18, research finding): a rollback recomputed an earlier release's digest from the current
 application catalog, so every added application moved it (2026.11.1 published as `c4020c2437f3de8d`, rolled
 back as `45ad7b6b...`), and a record pinned to that release no longer matched. Fixed in `d1b63ee`: each earlier

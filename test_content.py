@@ -187,11 +187,9 @@ class RollbackTests(unittest.TestCase):
 class VersionOrderTests(unittest.TestCase):
     """PRO-31: a release numbered past N = 9 (2026.11.10 after 2026.11.9).
 
-    The reference (`content.host_entries` and `content.host_provenance`) compares release versions as strings, and
-    `protocol_engine/content.py` is frozen reference code on this branch, so it is not changed here. These tests
-    simulate a 2026.11.10 release over the real tables. The three marked expectedFailure reproduce the string
-    comparison and turn into unexpected successes, which fail the suite, once the reference compares numerically,
-    so their markers are removed with that fix."""
+    These tests simulate a 2026.11.10 release over the real tables. Until the reference compared release versions
+    numerically (`content.compare_versions`, Lee's approval of 2026-11-20), the last three failed: they ran as
+    expectedFailure on 6194fb9 and pass with the fix."""
 
     NEXT = "2026.11.10"
     MARK = "pro31-rollback-marker.invalid"
@@ -214,9 +212,30 @@ class VersionOrderTests(unittest.TestCase):
 
     def test_numeric_order_places_ten_after_nine(self):
         self.assertLess(_numeric_version("2026.11.9"), _numeric_version(self.NEXT))
-        self.assertGreater("2026.11.9", self.NEXT)  # the string order the reference uses today
+        self.assertGreater("2026.11.9", self.NEXT)  # the string order the reference used before PRO-31
+        self.assertEqual(content.compare_versions("2026.11.9", self.NEXT), -1)
 
-    @unittest.expectedFailure
+    def test_compare_versions_matches_go(self):
+        """The table of go/internal/content/version_test.go TestCompareVersionsIsNumeric, same answers."""
+        cases = [("2026.11.9", "2026.11.10", -1), ("2026.11.10", "2026.11.9", 1), ("2026.11.10", "2026.11.10", 0),
+                 ("2026.11.1", "2026.11.10", -1), ("2026.11.10", "2026.11.11", -1), ("2026.11.99", "2026.11.100", -1),
+                 ("2026.9.0", "2026.10.0", -1), ("2025.10.0", "2026.11.0", -1), ("2026.11.9", "2026.12.1", -1),
+                 ("2026.12.0", "2027.1.0", -1), ("2026.11", "2026.11.0", -1), ("2026.11.x", "2026.11.y", -1),
+                 ("2026.11.09", "2026.11.9", -1),
+                 # Go's ParseUint: no sign, no underscore, no non-ASCII digit, at most 2**64 - 1
+                 ("2026.11.+9", "2026.11.10", -1), ("2026.11.1_0", "2026.11.9", -1), ("2026.11.\u0669", "2026.11.10", 1),
+                 ("2026.11.18446744073709551616", "2026.11.2", -1), ("2026.11.18446744073709551615", "2026.11.2", 1)]
+        for a, b, want in cases:
+            self.assertEqual(content.compare_versions(a, b), want, (a, b))
+            self.assertEqual(content.compare_versions(b, a), -want, (b, a))
+
+    def test_the_gate_accepts_a_release_after_nine(self):
+        _, patches = self._simulated()
+        problems = self._run(patches, content.check)
+        self.assertEqual([item.version for item in content.HISTORY][-2:], ["2026.11.9", self.NEXT])
+        # the simulated release has no lock or recorded components, so check() reports those; never the order
+        self.assertNotIn("content releases are not strictly increasing", problems)
+
     def test_the_new_release_itself_keeps_the_current_catalog(self):
         """With string order every earlier release from 2026.11.9 down to 2026.11.2 compares as not less than
         "2026.11.10", so host_entries lays their prior states over the current catalog and the new release itself
@@ -226,7 +245,6 @@ class VersionOrderTests(unittest.TestCase):
         goto = next(entry for entry in entries if entry["name"] == "goto")
         self.assertNotIn(self.MARK, goto["domains"])
 
-    @unittest.expectedFailure
     def test_rolling_back_to_nine_applies_its_prior_state(self):
         """C11 rollback: 2026.11.9 must carry the domain it had then. With string order the loop in host_entries
         stops at 2026.11.10 ("2026.11.10" < "2026.11.9") and 2026.11.9 gets the current catalog."""
@@ -235,7 +253,6 @@ class VersionOrderTests(unittest.TestCase):
         goto = next(entry for entry in entries if entry["name"] == "goto")
         self.assertIn(self.MARK, goto["domains"])
 
-    @unittest.expectedFailure
     def test_provenance_of_the_new_release_covers_every_release(self):
         """With string order host_provenance stops at 2026.11.2 ("2026.11.2" > "2026.11.10") and raises KeyError
         for every entry added since."""

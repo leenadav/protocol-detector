@@ -28,6 +28,13 @@ func TestCompareVersionsIsNumeric(t *testing.T) {
 		{"2026.11", "2026.11.0", -1},
 		{"2026.11.x", "2026.11.y", -1},
 		{"2026.11.09", "2026.11.9", -1}, // numerically equal spellings still have a fixed order
+		// strconv.ParseUint: no sign, no underscore, no non-ASCII digit, at most 2**64 - 1 (test_content.py
+		// VersionOrderTests.test_compare_versions_matches_go has the same table)
+		{"2026.11.+9", "2026.11.10", -1},
+		{"2026.11.1_0", "2026.11.9", -1},
+		{"2026.11.\u0669", "2026.11.10", 1},
+		{"2026.11.18446744073709551616", "2026.11.2", -1},
+		{"2026.11.18446744073709551615", "2026.11.2", 1},
 	}
 	for _, c := range cases {
 		if got := CompareVersions(c.a, c.b); got != c.want {
