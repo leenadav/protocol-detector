@@ -82,13 +82,15 @@ dependency-mapping pass 2 with `web-urls.txt` (59 URLs): `node research/tools/ob
 ### Prioritisation inputs (method v2, item 6)
 
 V is now stated with its reasons: enterprise prevalence (this lane's judgement, no licensed ranking yet),
-risk (section 11 of each spec) and unknown rate. No public ranking is used: Cloudflare Radar is CC BY-NC
-(excluded under LEE-1), and the Tranco licence is unchecked (DECISION in `allowlist-requests.md`).
+risk (section 11 of each spec) and unknown rate. No public ranking is used yet. Cloudflare Radar and the default Tranco list fail LEE-1 (Radar is CC BY-NC;
+Hermes, 2026-11-20). CrUX and the Majestic Million are the chosen sources, each with attribution, once their licences
+are quoted from their own pages (`datasets.md`, "Ranking sources"; `tools/rank_domains.py`, run on the Hermes server).
 
 | Input | Status |
 |---|---|
 | Culvert field data (unknown-session share per server name, top unmapped names) | **placeholder**: not available yet |
 | D09 unknowns per application | available for the ISCX labels only (section 8 of the D09 report) |
+| Public popularity rank (CrUX bucket, Majestic rank) | **pending**: licence quotes from Google's and Majestic's own pages, then the Hermes server run |
 
 ### NAME: READY (batch I, after H)
 

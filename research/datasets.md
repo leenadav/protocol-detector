@@ -146,3 +146,19 @@ round focused on families.
 - [D11] MAWI Working Group Traffic Archive, `https://mawi.wide.ad.jp/mawi/`
 - [D12] CAIDA, "The CAIDA Anonymized Internet Traces Dataset (April 2008 - January 2019)", `https://www.caida.org/catalog/datasets/passive_dataset/`
 - [D13] Wireshark Wiki, "SampleCaptures", `https://wiki.wireshark.org/SampleCaptures`
+
+## Ranking sources for prioritisation (method v2, item 6; 2026-11-20)
+
+| Source | Licence | Status under LEE-1 | Use |
+|---|---|---|---|
+| Tranco default list | combines Cisco Umbrella (free of charge), Majestic (CC BY 3.0), Farsight, Chrome UX Report and Cloudflare Radar (CC BY-NC 4.0), per the attribution section of the tranco-list.eu homepage (read by Hermes, relayed, 2026-11-20) | **fails**: the Radar component is non-commercial | not used |
+| Tranco custom list without Radar | needs an account and API token | not pursued (Hermes, 2026-11-20) | not used |
+| Cloudflare Radar | CC BY-NC 4.0 | **fails** | not used |
+| Chrome UX Report (CrUX) | Tranco states CC BY-SA 4.0; Hermes reports that Google's own CrUX documentation states CC BY 4.0 | `UNVERIFIED` by this lane: `developer.chrome.com` is not reachable from this environment (the allowlist is full) | **pending**: Hermes to quote the licence sentence from Google's CrUX licence page, with its URL and date |
+| Majestic Million | CC BY 3.0 (per Hermes's relay of Tranco's attribution) | `UNVERIFIED` on Majestic's own page (`https://majestic.com/reports/majestic-million`, not reachable from here) | **pending**: Hermes to quote the licence and attribution wording from that page |
+
+Only after both licences are quoted from their own pages: Hermes runs `research/tools/rank_domains.py research/app-domains.json
+OUT.tsv --majestic majestic_million.csv --crux crux.csv` on the server and relays the TSV, which holds ranks only. The
+backlog then shows each app's best rank, with the attribution "Majestic Million (CC BY 3.0), majestic.com" and
+"Chrome UX Report, Google" under the recorded licence. No list content is committed beyond the per-app ranks.
+
