@@ -37,7 +37,7 @@ happens on `claude/go-migration`; draft PR #19 is the engine-lane PR, and issue 
 - **Vendored dependencies:** `x/crypto` and `x/sys/cpu` live under `go/vendor`, and every Go command runs with
   `-mod=vendor`.
 - **Codex review packet:** complete in `migration/review-packet/` (frozen head `50ce5c0`, 43 chunks).
-- **PRO-31** (`6194fb9`, plus the numbering-rule test): Go orders content versions numerically. The Python
+- **PRO-31** (`6194fb9`, with the numbering-rule test in `4d8aa29`): Go orders content versions numerically. The Python
   reference still compares them as strings; under Hermes's numbering rule (§7) the two orders agree.
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
 
@@ -87,7 +87,7 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 
 `61fd45a`, `fdb90e2`, `68fb867`, `58a4701`, `9e51389`, `6b280a6`, `024163f`, `12e1ed0`, `d1b63ee`, `baa07b9`,
 `aaa5a7e`, `93cbf2a` (with `36e2c5e`), `76e467a`, `d65d21a`, `07b216e`, `6ab434d`, `7dcabb7`, `b6ed149`, `c08773f`,
-`ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9` and the numbering-rule commit (PRO-31), each reviewed as its own diff.
+`ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9` and `4d8aa29` (PRO-31), each reviewed as its own diff.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
