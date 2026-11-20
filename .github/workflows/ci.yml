@@ -585,6 +585,24 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/gitleaks" | tee -a "$GITHUB_STEP_SUMMARY"
           "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/govulncheck" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Audit the Go engine module against the Go vulnerability database (govulncheck, vendored source)
+        # Ported from the engine lane's 34ea6b0 (claude/go-migration), so ci.yml keeps one writer. Source mode
+        # follows the call graph of every package in go/, on exactly the committed vendor tree
+        # (GOFLAGS=-mod=vendor; with no dependency, as on main today, the module alone): a known
+        # vulnerability reachable in a dependency or in the pinned standard library fails the job. Modules
+        # are never fetched (GOPROXY=off); govulncheck reads only its vulnerability database (vuln.go.dev).
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=vendor"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        working-directory: go
+        run: |
+          "$RUNNER_TEMP/bin/govulncheck" ./... | tee -a "$GITHUB_STEP_SUMMARY"
 
   go-engine:
     # Migration M10: the Go engine's own gate on GitHub's runners, on the one Go toolchain the scanner
