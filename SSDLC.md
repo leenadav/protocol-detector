@@ -159,6 +159,9 @@ workflow defect, never an engine finding.
 
 ## CI/CD review loop (Codex, issue #7)
 
+Lane memory: `docs/LANE-BRIEF-platform.md` is the first file a new chat for this lane reads. Every task ends by
+updating it (current state, open items, frozen SHAs, pitfalls), committed with the task's last commit.
+
 The CI/CD track has its own review mailbox, separate from the engine's
 issue #2, and follows the same gated loop:
 
