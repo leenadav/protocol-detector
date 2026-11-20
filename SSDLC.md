@@ -245,6 +245,13 @@ issue #2, and follows the same gated loop:
    - Engine findings that need CI changes (`.github/`, the CI tools, the locks) go to this
      lane; CI needs in `go/`, `migration/` or product code go to the engine lane, as a patch
      or a pull request into its branch, never a direct push.
+9. Work intake since 2026-11-20 (Hermes, for Lee; AGENTS.md). This supersedes the check-in
+   timers of steps 5 and 6:
+   - Lanes receive work as Paperclip tasks and work through their queue with no fixed
+     check-in cadence. While a request is open, the mailbox is checked when the lane next works.
+   - Changes reach `main` as small ready-for-review pull requests, one topic each, opened from
+     branches under `claude/` cut from current `origin/main`. Lee merges each one after
+     Hermes's review; the lane never merges, closes, approves or comments on them.
 
 The loop never merges, deploys, deletes branches, or changes branch
 protection, permissions or credentials.

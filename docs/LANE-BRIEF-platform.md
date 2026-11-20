@@ -23,10 +23,14 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-20, after PRO-32)
+## 2. Current state (2026-11-20, after PRO-42)
 
-- `main` = `2b97e2d`. `claude/cicd-next` is `main` plus `078268a` (this brief) and `a5d4b4c` (PRO-32). No lane
-  PR is open.
+- `main` = `2b97e2d`. Three ready-for-review PRs (PRO-42), one topic each, all cut from `main`:
+  - #33 `claude/ci-drop-branch-push-triggers`;
+  - #34 `claude/ci-required-checks-table`;
+  - the docs PR from `claude/docs-lane-brief-agents-scope` (this brief, `AGENTS.md`, `SSDLC.md` step 9).
+
+  `claude/cicd-next` (`46c3122`) holds the same content as #33 and the docs PR, and is superseded by them.
 - **Merged so far:**
 
   | PR | Content |
@@ -39,7 +43,8 @@ their decisions, the policy locks, and the release controller.
   - Every Go job runs with `GOPROXY=off` and the vendor tree; only the `go-vendor` job has module access.
   - Schedules: `nightly-fuzz`, `merge-readiness` (daily trial merge of `claude/go-migration`) and `perf-history`
     (on each push to `main`).
-- **In flight:** nothing. Waiting on Codex's review and on the Engine lane's merge of `claude/go-migration`.
+- **In flight:** the three PRs above, waiting on Hermes's review and Lee's one-tap merge. Also waiting on Codex's
+  review and on the Engine lane's merge of `claude/go-migration`.
 
 ## 3. Where things live (reading order)
 
@@ -74,7 +79,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
-| `078268a` and `a5d4b4c` reach `main` (lane brief; proxy-scope and cadence lines in `AGENTS.md`; branch-limited `push` triggers removed) | A PR, when Hermes or Lee asks for one |
+| PRs #33, #34 and the docs PR merged | Hermes's review, then Lee |
 
 ## 6. Frozen SHAs awaiting Codex
 
@@ -82,7 +87,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   `d7c482c`, `b57b819`, `8a129c7`.
 - **Also:** `b97adc8` (Dependabot pins, chunk 06) and `85e99e9` (govulncheck, chunk 07).
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
-- **Not yet on `main`:** `a5d4b4c` (PRO-32: workflow trigger removal and two `AGENTS.md` lines).
+- **Not yet on `main`:** #33 head `851eddb`; #34 head `a179db6`; the docs PR head (see Paperclip PRO-42).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
@@ -107,3 +112,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   Presentation `test_jobs` can fail under heavy local CPU load, so re-run before suspecting code.
 - **Scheduled-task cleanup:** deleting a scheduled task is denied by the auto-mode classifier; disable it with
   `update_trigger` instead.
+- **Opening PRs:** `gh` is not available in these sessions; open them with the GitHub MCP `create_pull_request`
+  tool, ready for review (`draft: false`). Lee merges and the lane never merges, closes or comments. Before
+  pushing, trial-merge PRs that touch the same files (`SSDLC.md`, the lock) with `git merge-tree`, and check the
+  lock with the policy tool after a real merge.
