@@ -72,6 +72,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 
 | Item | Waits on |
 |---|---|
+| PRO-31 (`6194fb9`, `4d8aa29`, `376a204`) | Hermes's review stage (PRO-45 moved it there on 2026-11-20). Codex reviews `376a204` together with `6194fb9` through the frozen list (PRO-11). Requested changes come back on PRO-31. |
 | Codex review of the packet (`dbe20f3..50ce5c0`) | Codex, from Sunday. Fix rounds are reviewed as the fix diff only. |
 | Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. |
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
