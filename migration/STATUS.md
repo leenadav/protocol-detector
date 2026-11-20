@@ -472,7 +472,7 @@ WeTransfer), `c08773f` (the prepared post-merge tests), `ee1645d` (content 2026.
 Endpoint, Intune, iCloud Private Relay and vendor hosts), `253a91d` (2026.11.8, batch E: Chrome Remote Desktop,
 Bitwarden), `2f6ad4d` (2026.11.9, the vendor-level `goto` id), `50ce5c0` (Hermes's 2026-11-19 decisions in
 POST-MERGE-BACKLOG.md, the prepared tests adjusted to them; **the frozen review head of the Codex review packet**), and the
-commit that adds `migration/review-packet/` (documentation only: 42 chunks over `dbe20f3..50ce5c0`, see its INDEX.md).
+commit that adds `migration/review-packet/` (documentation only: 42 chunks over `dbe20f3..50ce5c0`, see its INDEX.md); after the packet: `6194fb9` (PRO-31: Go orders content release versions numerically, `CompareVersions`; Python test-only checks, with three expectedFailure tests reproducing the reference's string comparison in `content.py`, which is not changed; outside the packet's range, review as its own diff `git diff e5ae2f6 6194fb9`).
 
 C11 (2026-11-18, research finding): a rollback recomputed an earlier release's digest from the current
 application catalog, so every added application moved it (2026.11.1 published as `c4020c2437f3de8d`, rolled
