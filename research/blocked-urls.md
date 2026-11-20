@@ -1,6 +1,6 @@
 # Pages this lane cannot read: for Hermes to open and relay
 
-Updated 2026-11-19 (after the first relay). This lane does not bypass bot challenges, sign-ins or other access
+Updated 2026-11-20 (rows 12 to 18 resolved). This lane does not bypass bot challenges, sign-ins or other access
 controls. For each page, please open the exact URL in a normal browser and relay the parts named below as text
 (domain names, ports and the page's own date). The relayed text is cited as "read by Hermes, relayed".
 
@@ -10,17 +10,10 @@ controls. For each page, please open the exact URL in a normal browser and relay
 |---|---|---|---|---|
 | 3 | WhatsApp | **URL unknown**: no consumer WhatsApp network or firewall article was found (Hermes knows none either) | no primary page found | left as is |
 | 11 | Hugging Face | **URL unknown**: no official network or firewall page found (Hermes knows none either) | | left as is |
-| 12 | Cisco Umbrella (Secure Client / roaming client) | `https://securitydocs.cisco.com/docs/umbrella-sig/olh/152711.dita` and the roaming-client prerequisites (`docs.umbrella.com/deployment-umbrella/docs/prerequisites-5`) | the lists live in child topics this lane cannot reach | the host names and ports the client needs (DNS, `*.opendns.com`, `*.umbrella.com` and others), with purposes |
-| 13 | Parsec | `https://support.parsec.app/hc/en-us/articles/32381460716180-Parsec-Connectivity-Requirements` | Cloudflare bot challenge | the host list (`kessel-ws.parsec.app` and others) with ports |
-| 14 | Asana | `https://help.asana.com/s/article/asana-ip-address-ranges-and-hostnames` | page renders empty | the non-FedRAMP host names |
-| 15 | Jamf Pro | `https://learn.jamf.com/r/en-US/technical-articles/Network_Ports_Used_by_Jamf_Pro` | page renders empty (JavaScript app) | the Jamf Cloud host names (`*.jamfcloud.com` and named hosts) |
-| 16 | Atera | `https://support.atera.com/hc/en-us/articles/360015461139` | Cloudflare bot challenge | the agent domains and ports |
-| 17 | Salesforce | the "Salesforce Help Required Domains" page linked from article 000384438 (**URL not in the relayed text**) | client-side app renders empty | its domain list, for any Salesforce-operated domain outside `salesforce.com` and `force.com` |
-| 18 | Grammarly | the "WebSockets Support Q&A for System Administrators" article linked from article 115000090271 (**URL not in the relayed text**) | Grammarly's article body does not render for this lane | any endpoint or WebSocket host list |
 
-Rows 12 to 16 were not in the first relay.
+Rows 12 to 18 were read by Research Lab from the Hermes server on 2026-11-20 (PRO-29) and are resolved below.
 
-## Resolved by the relay of 2026-11-19
+## Resolved (relays of 2026-11-19 and 2026-11-20)
 
 | # | Vendor | Result |
 |---|---|---|
@@ -33,6 +26,13 @@ Rows 12 to 16 were not in the first relay.
 | 8 | Google Gemini API | the relayed page did not name the host; this lane then read the API reference itself (`aistudio.google.com` allowed for this session); batch G (`apps/google-gemini-api.md`) |
 | 9 | Canva | batch G (`apps/canva.md`) |
 | 10 | Cisco Duo | batch G (`apps/duo-security.md`) |
+| 12 | Cisco Umbrella (three topics: 152386, 152709, 152715) | batch J (`apps/cisco-umbrella.md`): `umbrella.com` added to `opendns`; the resolver IPs are not used |
+| 13 | Parsec (via the Zendesk API) | batch J (`apps/parsec.md`) |
+| 14 | Asana | batch J (`apps/asana.md`) |
+| 15 | Jamf Pro (via the Fluid Topics API) | batch J (`apps/jamf-pro.md`): new id `jamf-pro` |
+| 16 | Atera (agent section) | batch J (`apps/atera.md`) |
+| 17 | Salesforce "Allow the Required Domains" | batch J (`apps/salesforce.md`): 22 domains added |
+| 18 | Grammarly "WebSockets Support Q&A" | batch J (`apps/grammarly.md`): `grammarly.net` added; `coda.io` left out (separate product) |
 
 Not listed (decided low priority, 2026-11-18): Box (sign-in required) and Slack (workspace-specific list).
 No official network page found (not listed): Smartsheet, Airtable, npm, PyPI, NinjaOne (proxy article not located), Windsurf (proxy settings only, no domain list).

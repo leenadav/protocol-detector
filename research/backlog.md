@@ -44,6 +44,22 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch J, after L: rows 12 to 18 read by Research Lab, PRO-29/PRO-35, 2026-11-20)
+
+Patch: `patches/batch-j-relayed-rows-12-18.patch` (placeholder release `2026.12.6`). Tested: 53 targeted vectors (all as
+expected), rollback exact, parity 7455/7455 (Python and Go), 88/88 families. The new names are queued for live
+round 2 (`live-hosts-r2.txt`, batch J block).
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | J1 | Jamf Pro (new id `jamf-pro`) | `apps/jamf-pro.md` | 5 | 4 | 20 | READY |
+| 2 | J2 | Salesforce: 22 Salesforce-operated domains | `apps/salesforce.md` | 5 | 4 | 20 | READY (`site.com` at N2: customer sites) |
+| 3 | J3 | Cisco Umbrella: `umbrella.com` added to `opendns`, description updated | `apps/cisco-umbrella.md` | 4 | 4 | 16 | READY (resolver traffic is by IP; not used) |
+| 4 | J4 | Atera: three exact vendor-named agent hosts | `apps/atera.md` | 4 | 4 | 16 | READY |
+| 5 | J5 | Asana: `asana.plus`, `asanausercontent.com`, `app.asana-gov.com`, six S3 bucket hosts | `apps/asana.md` | 3 | 4 | 12 | READY |
+| 6 | J6 | Parsec: `parsecusercontent.com` | `apps/parsec.md` | 3 | 4 | 12 | READY |
+| 7 | J7 | Grammarly: `grammarly.net` | `apps/grammarly.md` | 3 | 4 | 12 | READY (`coda.io` left out: separate product) |
+
 ### Method v2 retrofit summary (updated 2026-11-20 with live verification)
 
 All 63 entries in `apps.json` (batches A to D included) carry sections 9 to 11 and the v2 vectors (`tools/retrofit_specs.py`).
@@ -160,7 +176,7 @@ order", which holds only while N is at most 9.
 | 2 | F2 | JetBrains AI (new id) | `apps/jetbrains-ai.md` | 4 | 4 | 16 | READY |
 | 3 | F3 | Loom (new id) | `apps/loom.md` | 3 | 4 | 12 | READY |
 | 4 | - | BeyondTrust Remote Support cloud | (verified: `beyondtrustcloud.com` per `https://docs.beyondtrust.com/rs/docs/cloud-network`) | 4 | 4 | | DONE (no change) |
-| 5 | - | Cisco Umbrella, Parsec, Asana, Jamf, Atera | `blocked-urls.md` #12 to #16 | 3 to 5 | 1 | | BLOCKED |
+| 5 | - | Cisco Umbrella, Parsec, Asana, Jamf, Atera | `apps/*` (batch J) | 3 to 5 | 4 | | READY (batch J, 2026-11-20) |
 | 6 | - | Windsurf, Smartsheet, Airtable, npm, PyPI, NinjaOne | no official network page found | | | | PARTIAL |
 
 ### NAME: READY (batch D, after C; rebased on `c08773f`, apply D → E → F)

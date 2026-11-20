@@ -59,3 +59,7 @@ https://web.whatsapp.com/
 https://grok.com/
 https://www.zendesk.com/login/
 https://app.zoom.us/wc
+https://dashboard.umbrella.com/
+https://web.parsec.app/
+https://app.asana.com/
+https://app.atera.com/

@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-20 (PRO-30). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-20 (PRO-35). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -19,10 +19,10 @@ and content-pack patches for the Engine lane.
 
 ## 2. Current state
 
-- Branch head at the time of writing: `2f3cae7` (this brief's own commit follows it; see `git log`).
-- 63 specs in `research/apps/` (registry `research/apps.json`), all retrofitted to method v2 (sections 9 to 11).
-- Content patches A, B, B2 and C are implemented by Engine (releases 2026.11.3 to 2026.11.6). D, E, F, G, H, I, R
-  and L are proposed and **not yet implemented** (placeholder releases up to `2026.12.5`).
+- Branch head: see `git log -1` (this brief is updated in each task's own commit).
+- 68 specs in `research/apps/` (registry `research/apps.json`), all retrofitted to method v2 (sections 9 to 11).
+- Content patches A, B, B2 and C are implemented by Engine (releases 2026.11.3 to 2026.11.6). D, E, F, G, H, I, R, L
+  and J are proposed and **not yet implemented** (placeholder releases up to `2026.12.6`; batch J = vendor pages for rows 12 to 18, PRO-35).
 - D09 (ISCX VPN-nonVPN 2016) has been measured twice: per-family, per-application, and email server names.
 - Live verification round 1 is in (`live-results-2026-11-20.tsv`, run by Hermes): 206 of the 320 spec names are live,
   3 are NXDOMAIN, 28 are CDN-fronted, 2 are ECH-capable, 27 offer h3.
@@ -51,14 +51,14 @@ python3 -B -m unittest discover -q
 (about 30 s; expect `OK` on this branch, which has no product changes.)
 
 ```bash
-git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch && python3 -B tools/check_content.py --update
+git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch && python3 -B tools/check_content.py --update
 ```
-(a few seconds; expect `release 2026.12.5 digest 77906cfc55135041 (449 host entries)`.)
+(a few seconds; expect `release 2026.12.6 digest 3c4bdc65f9b521cf (450 host entries)`.)
 
 ```bash
 python3 -B research/tools/retrofit_specs.py "$SCRATCH/gm" research/observations/pass1-2026-11-19.json
 ```
-(under 1 s; expect `"vectors": 399` and `"fail": []`. Add `--write` to regenerate the spec sections.)
+(under 1 s; expect `"specs": 68`, `"vectors": 431` and `"fail": []`. Add `--write` to regenerate the spec sections.)
 
 Per-patch content checks, run in the scratch checkout and taking about 2 minutes: `make content content-pack`,
 `python3 -B migration/parity/compare.py --backend python`, `make parity-go`, and the unit tests there. The only
@@ -68,14 +68,14 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 
 | Item | Waits on |
 |---|---|
-| Patches D to I, L (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
+| Patches D to I, L, J (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
 | Patch R (`copilot.com`, `boxcdn.net`, `gitlab.net`) | HOLD: live round 2 certificate organisation (Hermes decision 3) |
-| Live round 2 (`live-hosts-r2.txt`, 363 names, 20 probes) | Hermes server run |
+| Live round 2 (`live-hosts-r2.txt`: 363 names with 20 probes, plus 48 batch J names) | Hermes server run |
 | Dependency pass 2 (`web-urls.txt`, 59 URLs) | Hermes server run of `observe_web.js --urls` |
 | Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (2026-11-20, `datasets.md`); waits on the Hermes server run of `rank_domains.py` (Majestic CSV; CrUX via BigQuery) |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
 | Content version ordering | Engine: numeric comparison plus a regression test, then renumber the placeholders |
-| Blocked vendor pages (Umbrella, Parsec, Asana, Jamf, Atera; Salesforce and Grammarly linked pages) | Hermes relay (`blocked-urls.md`) |
+| Blocked vendor pages | only WhatsApp and Hugging Face remain, with no official page known (rows 12 to 18 resolved in batch J) |
 | Culvert field data for prioritisation | not available yet (placeholder in the backlog) |
 
 ## 6. Frozen SHAs awaiting Codex

@@ -38,7 +38,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F, G and H)
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R and L)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 

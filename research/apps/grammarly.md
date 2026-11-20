@@ -1,8 +1,8 @@
 # Grammarly
 
 - Content-pack id today: `grammarly` (`grammarly.com`, `grammarly.io`)
-- Status: **BLOCKED** (no endpoint list in the source), NAME, low priority
-- Sources: read by Hermes, relayed, 2026-11-19; the page shows no date
+- Status: **READY**, NAME, batch J (`research/patches/batch-j-relayed-rows-12-18.patch`): `grammarly.net` added
+- Sources: [G1] read by Hermes, relayed, 2026-11-19; [G2] read by Research Lab from the Hermes server, relayed by Hermes, 2026-11-20 (PRO-29); article updated 2026-11-11 (Zendesk API)
 
 ## 1. What it is
 
@@ -10,30 +10,37 @@ Writing assistant (browser extension, desktop and web).
 
 ## 2. Transport and ports
 
-The page says only that a network administrator "can enable a specific web socket port" [S1]; no port is named.
+"80 and 443 opened" and a proxy that supports WebSockets [G2].
 
 ## 3. Observable evidence
 
-The relayed article body has no domain or endpoint list. It links a "WebSockets Support Q&A for System Administrators" article, which was not relayed [S1].
+[G2]: HTTPS services `*.grammarly.com`, `*.grammarly.io`, `*.grammarly.net`, `*.coda.io`; WebSockets `capi.grammarly.com` (wss paths `/fpws`, `/freews`, `/wstest`) and `dox.grammarly.com` (wss `/documents`). [G1] ("Network configuration blocks Grammarly services") has no list and links to [G2].
 
 ## 4. Encrypted-traffic caveats
 
-Not assessed beyond the README's shared facts.
+`coda.io` is Coda, a separate product of the same company that the page lists among Grammarly's HTTPS services. Mapping it to `grammarly` would report Coda use as Grammarly, so it is **not** proposed here (a separate `coda` id can be researched later). The WebSocket paths are inside TLS and not visible to a passive gateway; only the host names are.
 
 ## 5. Confidence and false-positive risks
 
 | Observable | Level | Limits |
 |---|---|---|
-| Current pack names | **U** | Not verified by this lane |
+| SNI under `grammarly.com`, `grammarly.io` | **N3** | Already mapped |
+| SNI under `grammarly.net` | **N3** |  |
+| `coda.io` | not mapped | Separate product of the same vendor |
 
 ## 6. Synthetic test vectors
 
-None (no catalog change).
+Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L and J): all as expected.
 
+| # | Input | Expected |
+|---|---|---|
+| P1 | SNI `capi.grammarly.com`, `dox.grammarly.com` | `grammarly` |
+| P2 | SNI `x.grammarly.net` | `grammarly` (today unmapped) |
+| N1 | SNI `coda.io`, `xgrammarly.net` | not `grammarly` |
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R and L)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -45,16 +52,21 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | L- | `grammarly.com.example.invalid` | not grammarly (suffix look-alike) | no application | PASS |
 | L- | `xgrammarly.io` | not grammarly (label boundary) | no application | PASS |
 | L- | `grammarly.io.example.invalid` | not grammarly (suffix look-alike) | no application | PASS |
+| L- | `xgrammarly.net` | not grammarly (label boundary) | no application | PASS |
+| L- | `grammarly.net.example.invalid` | not grammarly (suffix look-alike) | no application | PASS |
 
 <!-- method-v2-vectors:end -->
 
 ## 7. Sources
 
-- [S1] Grammarly Support, "Network configuration blocks Grammarly services", `https://support.grammarly.com/hc/en-us/articles/115000090271-Network-configuration-blocks-Grammarly-services`, read by Hermes, relayed, 2026-11-19.
+- [G1] Grammarly Support, "Network configuration blocks Grammarly services", `https://support.grammarly.com/hc/en-us/articles/115000090271-Network-configuration-blocks-Grammarly-services`, read by Hermes, relayed, 2026-11-19.
+- [G2] Grammarly Support, "WebSockets Support Q&A for System Administrators", `https://support.grammarly.com/hc/en-us/articles/115000090311-WebSockets-Support-Q-A-for-System-Administrators`, read by Research Lab from the Hermes server, relayed by Hermes, 2026-11-20 (PRO-29).
 
 ## 8. Catalog delta and recommendation
 
-None. Next: the linked "WebSockets Support Q&A for System Administrators" article (URL unknown to this lane).
+```python
+("grammarly", ..., ("grammarly.com", "grammarly.io", "grammarly.net")),
+```
 
 <!-- method-v2:start -->
 
@@ -66,6 +78,7 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 |---|---|
 | `grammarly.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `www.grammarly.com` (SAN covers name: True) |
 | `grammarly.io` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `grammarly.net` | not in round 1 (added later; in `live-hosts-r2.txt`) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

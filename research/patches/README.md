@@ -307,3 +307,24 @@ line) before applying F. Both of its names are NXDOMAIN (RFC 8020: nothing below
 hold an empty or deleted entry (the parity case generator indexes the first domain, and rollback cannot restore a
 deleted entry).
 
+## Batch J: `batch-j-relayed-rows-12-18.patch` (after L)
+
+Rows 12 to 18 of `blocked-urls.md`, read by Research Lab from the Hermes server, 2026-11-20 (PRO-29). Placeholder release
+**`2026.12.6`**, with `_PRIOR_HOST_STATE["2026.12.5"]` and `_RELEASED_COMPONENTS["2026.12.5"]`. Apply in the order D → E → F → G →
+H → I → R → L → J. If R stays on hold, the Engine lane re-keys the prior states; J touches none of R's entries.
+
+- New id: `jamf-pro` (`jamfcloud.com`, `jamf.com`, exact `sentry.pub.jamf.build`; web fronts `jamf.com`, `www.jamf.com`).
+- Extended: `opendns` (+`umbrella.com`; description "Cisco Umbrella and OpenDNS resolver, roaming client and dashboard"),
+  `parsec` (+`parsecusercontent.com`), `asana` (+`asana.plus`, `asanausercontent.com`, `app.asana-gov.com`, six exact S3 bucket
+  hosts), `atera` (+`atera.pubnubapi.com` and two exact `atera-agent-heartbeat*.servicebus.windows.net` hosts), `salesforce` (+22
+  domains), `grammarly` (+`grammarly.net`).
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.12.6, digest `3c4bdc65f9b521cf`, 552 applications, 450 host entries |
+| Pack file | sha256 `aed41563865eca8a998e3e13e61937887273e949495a5f5ea4e2a97ec6df820e` |
+| Rollback | release 2026.12.5 host catalog equals the batch L pack exactly |
+| Vectors | 53 targeted (all as expected); method-v2 vectors per spec in section 6 |
+| Parity | 7455/7455 Python and Go; 88/88 families |
+| Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 450) |
+

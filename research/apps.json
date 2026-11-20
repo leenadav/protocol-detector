@@ -1,66 +1,551 @@
 {
  "_note": "Method v2 registry: spec file -> catalog ids and public web-client or login URLs (loaded without signing in). Empty web list: no public web client (desktop agent, tenant-specific console, or API only).",
- "1password.md": {"ids": ["1password"], "web": ["https://my.1password.com/signin"]},
- "adobe-cloud.md": {"ids": ["adobe-cloud"], "web": ["https://account.adobe.com/"]},
- "amazon-workspaces.md": {"ids": ["amazon-workspaces"], "web": ["https://clients.amazonworkspaces.com/"]},
- "anthropic-claude.md": {"ids": ["anthropic-claude", "anthropic-api"], "web": ["https://claude.ai/login", "https://platform.claude.com/"]},
- "anydesk.md": {"ids": ["anydesk"], "web": ["https://my.anydesk.com/"]},
- "apple-icloud.md": {"ids": ["icloud", "icloud-private-relay"], "web": ["https://www.icloud.com/"]},
- "atlassian.md": {"ids": ["atlassian"], "web": ["https://id.atlassian.com/login"]},
- "bitwarden.md": {"ids": ["bitwarden"], "web": ["https://vault.bitwarden.com/"]},
- "box.md": {"ids": ["box"], "web": ["https://account.box.com/login"]},
- "canva.md": {"ids": ["canva"], "web": ["https://www.canva.com/login"]},
- "chrome-remote-desktop.md": {"ids": ["chrome-remote-desktop"], "web": ["https://remotedesktop.google.com/"]},
- "citrix-cloud.md": {"ids": ["citrix-cloud"], "web": ["https://citrix.cloud.com/"]},
- "cloudflare-warp.md": {"ids": ["cloudflare-warp"], "web": []},
- "connectwise-screenconnect.md": {"ids": ["connectwise-control"], "web": []},
- "cursor.md": {"ids": ["cursor"], "web": ["https://cursor.com/dashboard"]},
- "deepseek.md": {"ids": ["deepseek"], "web": ["https://chat.deepseek.com/"]},
- "docker-hub.md": {"ids": ["docker-hub"], "web": ["https://hub.docker.com/"]},
- "dropbox.md": {"ids": ["dropbox", "docsend", "dropbox-sign"], "web": ["https://www.dropbox.com/login"]},
- "duo-security.md": {"ids": ["duo-security"], "web": ["https://admin.duosecurity.com/"]},
- "figma.md": {"ids": ["figma"], "web": ["https://www.figma.com/login"]},
- "fortinet-datto-nable.md": {"ids": [], "web": []},
- "github-copilot.md": {"ids": ["github-copilot", "github"], "web": ["https://github.com/copilot"]},
- "gitlab.md": {"ids": ["gitlab"], "web": ["https://gitlab.com/users/sign_in"]},
- "google-gemini-api.md": {"ids": ["google-gemini-api"], "web": ["https://aistudio.google.com/"]},
- "google-gemini.md": {"ids": ["google-gemini", "google-ai-studio", "google-notebooklm"], "web": ["https://gemini.google.com/"]},
- "google-workspace.md": {"ids": ["gmail", "google-drive", "google-meet", "google-accounts"], "web": ["https://mail.google.com/", "https://meet.google.com/"]},
- "goto.md": {"ids": ["goto-meeting", "gotomypc", "logmein"], "web": ["https://app.goto.com/"]},
- "grammarly.md": {"ids": ["grammarly"], "web": ["https://app.grammarly.com/"]},
- "jetbrains-ai.md": {"ids": ["jetbrains-ai", "jetbrains"], "web": ["https://account.jetbrains.com/login"]},
- "logmein-resolve.md": {"ids": ["logmein-resolve"], "web": ["https://console.gotoresolve.com/"]},
- "loom.md": {"ids": ["loom"], "web": ["https://www.loom.com/login"]},
- "microsoft-365.md": {"ids": ["ms-office365", "ms-teams", "outlook-web", "sharepoint-online"], "web": ["https://www.office.com/", "https://teams.microsoft.com/"]},
- "microsoft-copilot.md": {"ids": ["ms-copilot"], "web": ["https://copilot.microsoft.com/"]},
- "miro.md": {"ids": ["miro"], "web": ["https://miro.com/login/"]},
- "mistral.md": {"ids": ["mistral-ai", "mistral-api"], "web": ["https://chat.mistral.ai/"]},
- "ms-defender-endpoint.md": {"ids": ["ms-defender-endpoint"], "web": ["https://security.microsoft.com/"]},
- "ms-intune.md": {"ids": ["ms-intune"], "web": ["https://intune.microsoft.com/"]},
- "ms-update.md": {"ids": ["ms-update"], "web": []},
- "ms-virtual-desktop.md": {"ids": ["ms-virtual-desktop"], "web": ["https://windows.cloud.microsoft/"]},
- "netskope.md": {"ids": ["netskope"], "web": []},
- "ngrok.md": {"ids": ["ngrok"], "web": ["https://dashboard.ngrok.com/login"]},
- "notion.md": {"ids": ["notion"], "web": ["https://www.notion.so/login"]},
- "okta.md": {"ids": ["okta"], "web": ["https://login.okta.com/"]},
- "onedrive-drive-personal-business.md": {"ids": ["ms-onedrive", "google-drive"], "web": ["https://onedrive.live.com/", "https://drive.google.com/"]},
- "openai-chatgpt.md": {"ids": ["openai-chatgpt", "openai-platform"], "web": ["https://chatgpt.com/", "https://platform.openai.com/"]},
- "perplexity.md": {"ids": ["perplexity", "perplexity-api"], "web": ["https://www.perplexity.ai/"]},
- "postman.md": {"ids": ["postman"], "web": ["https://identity.getpostman.com/login"]},
- "prisma-access.md": {"ids": ["prisma-access"], "web": []},
- "rustdesk.md": {"ids": ["rustdesk"], "web": []},
- "salesforce.md": {"ids": ["salesforce"], "web": ["https://login.salesforce.com/"]},
- "signal.md": {"ids": ["signal"], "web": []},
- "slack.md": {"ids": ["slack"], "web": ["https://slack.com/signin"]},
- "splashtop.md": {"ids": ["splashtop"], "web": ["https://my.splashtop.com/login"]},
- "tailscale.md": {"ids": ["tailscale"], "web": ["https://login.tailscale.com/"]},
- "teamviewer.md": {"ids": ["teamviewer"], "web": ["https://login.teamviewer.com/"]},
- "telegram.md": {"ids": ["telegram"], "web": ["https://web.telegram.org/"]},
- "webex.md": {"ids": ["webex"], "web": ["https://web.webex.com/"]},
- "wetransfer.md": {"ids": ["wetransfer"], "web": ["https://wetransfer.com/"]},
- "whatsapp.md": {"ids": ["whatsapp"], "web": ["https://web.whatsapp.com/"]},
- "xai-grok.md": {"ids": ["xai-grok", "xai-api"], "web": ["https://grok.com/"]},
- "zendesk.md": {"ids": ["zendesk"], "web": ["https://www.zendesk.com/login/"]},
- "zoom.md": {"ids": ["zoom"], "web": ["https://app.zoom.us/wc"]},
- "zscaler.md": {"ids": ["zscaler"], "web": []}
+ "1password.md": {
+  "ids": [
+   "1password"
+  ],
+  "web": [
+   "https://my.1password.com/signin"
+  ]
+ },
+ "adobe-cloud.md": {
+  "ids": [
+   "adobe-cloud"
+  ],
+  "web": [
+   "https://account.adobe.com/"
+  ]
+ },
+ "amazon-workspaces.md": {
+  "ids": [
+   "amazon-workspaces"
+  ],
+  "web": [
+   "https://clients.amazonworkspaces.com/"
+  ]
+ },
+ "anthropic-claude.md": {
+  "ids": [
+   "anthropic-claude",
+   "anthropic-api"
+  ],
+  "web": [
+   "https://claude.ai/login",
+   "https://platform.claude.com/"
+  ]
+ },
+ "anydesk.md": {
+  "ids": [
+   "anydesk"
+  ],
+  "web": [
+   "https://my.anydesk.com/"
+  ]
+ },
+ "apple-icloud.md": {
+  "ids": [
+   "icloud",
+   "icloud-private-relay"
+  ],
+  "web": [
+   "https://www.icloud.com/"
+  ]
+ },
+ "atlassian.md": {
+  "ids": [
+   "atlassian"
+  ],
+  "web": [
+   "https://id.atlassian.com/login"
+  ]
+ },
+ "bitwarden.md": {
+  "ids": [
+   "bitwarden"
+  ],
+  "web": [
+   "https://vault.bitwarden.com/"
+  ]
+ },
+ "box.md": {
+  "ids": [
+   "box"
+  ],
+  "web": [
+   "https://account.box.com/login"
+  ]
+ },
+ "canva.md": {
+  "ids": [
+   "canva"
+  ],
+  "web": [
+   "https://www.canva.com/login"
+  ]
+ },
+ "chrome-remote-desktop.md": {
+  "ids": [
+   "chrome-remote-desktop"
+  ],
+  "web": [
+   "https://remotedesktop.google.com/"
+  ]
+ },
+ "citrix-cloud.md": {
+  "ids": [
+   "citrix-cloud"
+  ],
+  "web": [
+   "https://citrix.cloud.com/"
+  ]
+ },
+ "cloudflare-warp.md": {
+  "ids": [
+   "cloudflare-warp"
+  ],
+  "web": []
+ },
+ "connectwise-screenconnect.md": {
+  "ids": [
+   "connectwise-control"
+  ],
+  "web": []
+ },
+ "cursor.md": {
+  "ids": [
+   "cursor"
+  ],
+  "web": [
+   "https://cursor.com/dashboard"
+  ]
+ },
+ "deepseek.md": {
+  "ids": [
+   "deepseek"
+  ],
+  "web": [
+   "https://chat.deepseek.com/"
+  ]
+ },
+ "docker-hub.md": {
+  "ids": [
+   "docker-hub"
+  ],
+  "web": [
+   "https://hub.docker.com/"
+  ]
+ },
+ "dropbox.md": {
+  "ids": [
+   "dropbox",
+   "docsend",
+   "dropbox-sign"
+  ],
+  "web": [
+   "https://www.dropbox.com/login"
+  ]
+ },
+ "duo-security.md": {
+  "ids": [
+   "duo-security"
+  ],
+  "web": [
+   "https://admin.duosecurity.com/"
+  ]
+ },
+ "figma.md": {
+  "ids": [
+   "figma"
+  ],
+  "web": [
+   "https://www.figma.com/login"
+  ]
+ },
+ "fortinet-datto-nable.md": {
+  "ids": [],
+  "web": []
+ },
+ "github-copilot.md": {
+  "ids": [
+   "github-copilot",
+   "github"
+  ],
+  "web": [
+   "https://github.com/copilot"
+  ]
+ },
+ "gitlab.md": {
+  "ids": [
+   "gitlab"
+  ],
+  "web": [
+   "https://gitlab.com/users/sign_in"
+  ]
+ },
+ "google-gemini-api.md": {
+  "ids": [
+   "google-gemini-api"
+  ],
+  "web": [
+   "https://aistudio.google.com/"
+  ]
+ },
+ "google-gemini.md": {
+  "ids": [
+   "google-gemini",
+   "google-ai-studio",
+   "google-notebooklm"
+  ],
+  "web": [
+   "https://gemini.google.com/"
+  ]
+ },
+ "google-workspace.md": {
+  "ids": [
+   "gmail",
+   "google-drive",
+   "google-meet",
+   "google-accounts"
+  ],
+  "web": [
+   "https://mail.google.com/",
+   "https://meet.google.com/"
+  ]
+ },
+ "goto.md": {
+  "ids": [
+   "goto-meeting",
+   "gotomypc",
+   "logmein"
+  ],
+  "web": [
+   "https://app.goto.com/"
+  ]
+ },
+ "grammarly.md": {
+  "ids": [
+   "grammarly"
+  ],
+  "web": [
+   "https://app.grammarly.com/"
+  ]
+ },
+ "jetbrains-ai.md": {
+  "ids": [
+   "jetbrains-ai",
+   "jetbrains"
+  ],
+  "web": [
+   "https://account.jetbrains.com/login"
+  ]
+ },
+ "logmein-resolve.md": {
+  "ids": [
+   "logmein-resolve"
+  ],
+  "web": [
+   "https://console.gotoresolve.com/"
+  ]
+ },
+ "loom.md": {
+  "ids": [
+   "loom"
+  ],
+  "web": [
+   "https://www.loom.com/login"
+  ]
+ },
+ "microsoft-365.md": {
+  "ids": [
+   "ms-office365",
+   "ms-teams",
+   "outlook-web",
+   "sharepoint-online"
+  ],
+  "web": [
+   "https://www.office.com/",
+   "https://teams.microsoft.com/"
+  ]
+ },
+ "microsoft-copilot.md": {
+  "ids": [
+   "ms-copilot"
+  ],
+  "web": [
+   "https://copilot.microsoft.com/"
+  ]
+ },
+ "miro.md": {
+  "ids": [
+   "miro"
+  ],
+  "web": [
+   "https://miro.com/login/"
+  ]
+ },
+ "mistral.md": {
+  "ids": [
+   "mistral-ai",
+   "mistral-api"
+  ],
+  "web": [
+   "https://chat.mistral.ai/"
+  ]
+ },
+ "ms-defender-endpoint.md": {
+  "ids": [
+   "ms-defender-endpoint"
+  ],
+  "web": [
+   "https://security.microsoft.com/"
+  ]
+ },
+ "ms-intune.md": {
+  "ids": [
+   "ms-intune"
+  ],
+  "web": [
+   "https://intune.microsoft.com/"
+  ]
+ },
+ "ms-update.md": {
+  "ids": [
+   "ms-update"
+  ],
+  "web": []
+ },
+ "ms-virtual-desktop.md": {
+  "ids": [
+   "ms-virtual-desktop"
+  ],
+  "web": [
+   "https://windows.cloud.microsoft/"
+  ]
+ },
+ "netskope.md": {
+  "ids": [
+   "netskope"
+  ],
+  "web": []
+ },
+ "ngrok.md": {
+  "ids": [
+   "ngrok"
+  ],
+  "web": [
+   "https://dashboard.ngrok.com/login"
+  ]
+ },
+ "notion.md": {
+  "ids": [
+   "notion"
+  ],
+  "web": [
+   "https://www.notion.so/login"
+  ]
+ },
+ "okta.md": {
+  "ids": [
+   "okta"
+  ],
+  "web": [
+   "https://login.okta.com/"
+  ]
+ },
+ "onedrive-drive-personal-business.md": {
+  "ids": [
+   "ms-onedrive",
+   "google-drive"
+  ],
+  "web": [
+   "https://onedrive.live.com/",
+   "https://drive.google.com/"
+  ]
+ },
+ "openai-chatgpt.md": {
+  "ids": [
+   "openai-chatgpt",
+   "openai-platform"
+  ],
+  "web": [
+   "https://chatgpt.com/",
+   "https://platform.openai.com/"
+  ]
+ },
+ "perplexity.md": {
+  "ids": [
+   "perplexity",
+   "perplexity-api"
+  ],
+  "web": [
+   "https://www.perplexity.ai/"
+  ]
+ },
+ "postman.md": {
+  "ids": [
+   "postman"
+  ],
+  "web": [
+   "https://identity.getpostman.com/login"
+  ]
+ },
+ "prisma-access.md": {
+  "ids": [
+   "prisma-access"
+  ],
+  "web": []
+ },
+ "rustdesk.md": {
+  "ids": [
+   "rustdesk"
+  ],
+  "web": []
+ },
+ "salesforce.md": {
+  "ids": [
+   "salesforce"
+  ],
+  "web": [
+   "https://login.salesforce.com/"
+  ]
+ },
+ "signal.md": {
+  "ids": [
+   "signal"
+  ],
+  "web": []
+ },
+ "slack.md": {
+  "ids": [
+   "slack"
+  ],
+  "web": [
+   "https://slack.com/signin"
+  ]
+ },
+ "splashtop.md": {
+  "ids": [
+   "splashtop"
+  ],
+  "web": [
+   "https://my.splashtop.com/login"
+  ]
+ },
+ "tailscale.md": {
+  "ids": [
+   "tailscale"
+  ],
+  "web": [
+   "https://login.tailscale.com/"
+  ]
+ },
+ "teamviewer.md": {
+  "ids": [
+   "teamviewer"
+  ],
+  "web": [
+   "https://login.teamviewer.com/"
+  ]
+ },
+ "telegram.md": {
+  "ids": [
+   "telegram"
+  ],
+  "web": [
+   "https://web.telegram.org/"
+  ]
+ },
+ "webex.md": {
+  "ids": [
+   "webex"
+  ],
+  "web": [
+   "https://web.webex.com/"
+  ]
+ },
+ "wetransfer.md": {
+  "ids": [
+   "wetransfer"
+  ],
+  "web": [
+   "https://wetransfer.com/"
+  ]
+ },
+ "whatsapp.md": {
+  "ids": [
+   "whatsapp"
+  ],
+  "web": [
+   "https://web.whatsapp.com/"
+  ]
+ },
+ "xai-grok.md": {
+  "ids": [
+   "xai-grok",
+   "xai-api"
+  ],
+  "web": [
+   "https://grok.com/"
+  ]
+ },
+ "zendesk.md": {
+  "ids": [
+   "zendesk"
+  ],
+  "web": [
+   "https://www.zendesk.com/login/"
+  ]
+ },
+ "zoom.md": {
+  "ids": [
+   "zoom"
+  ],
+  "web": [
+   "https://app.zoom.us/wc"
+  ]
+ },
+ "zscaler.md": {
+  "ids": [
+   "zscaler"
+  ],
+  "web": []
+ },
+ "cisco-umbrella.md": {
+  "ids": [
+   "opendns"
+  ],
+  "web": [
+   "https://dashboard.umbrella.com/"
+  ]
+ },
+ "parsec.md": {
+  "ids": [
+   "parsec"
+  ],
+  "web": [
+   "https://web.parsec.app/"
+  ]
+ },
+ "asana.md": {
+  "ids": [
+   "asana"
+  ],
+  "web": [
+   "https://app.asana.com/"
+  ]
+ },
+ "jamf-pro.md": {
+  "ids": [
+   "jamf-pro"
+  ],
+  "web": []
+ },
+ "atera.md": {
+  "ids": [
+   "atera"
+  ],
+  "web": [
+   "https://app.atera.com/"
+  ]
+ }
 }
