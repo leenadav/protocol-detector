@@ -258,7 +258,11 @@ Base: `c08773f` plus D to H (apply D → E → F → G → H → I). Placeholder
 
 ## Retrofit batch R: `batch-r-retrofit.patch` (after I)
 
-Method v2 retrofit (dependency mapping, 2026-11-19). These names were observed from the vendors' own web clients
+Method v2 retrofit (dependency mapping, 2026-11-19). **Status 2026-11-20: HOLD** under Hermes's decision 3 (O-level names only when the
+domain is vendor-owned by certificate subject or SAN, or by an official page). Round 1 shows each name serving a
+certificate for itself (`copilot.com`, `cdn01.boxcdn.net`, `new-sentry.gitlab.net`, `snowplowprd.trx.gitlab.net`), which proves the
+name but not the owner. Round 2 records the certificate subject and issuer organisation; apply R only for the names whose
+certificate organisation is the vendor. These names were observed from the vendors' own web clients
 and are vendor-branded, but no primary document lists them (confidence `O`). **DECISION for Hermes**: whether
 observed-only vendor-branded names enter the catalog. Placeholder release **`2026.12.4`**, with
 `_PRIOR_HOST_STATE["2026.12.3"]` and `_RELEASED_COMPONENTS["2026.12.3"]`.
@@ -276,4 +280,30 @@ observed-only vendor-branded names enter the catalog. Placeholder release **`202
 | Vectors | 398 method-v2 vectors across all specs (`tools/retrofit_specs.py`), all pass with R applied; without R, 4 positives are unmapped |
 | Parity | 7449/7449 Python and Go; 88/88 families |
 | Unit tests | 1 expected failure: pinned host count (438 → 449) |
+
+## Batch L: `batch-l-live-results.patch` (after R; Hermes's live verification 2026-11-20 and decisions 4 and 5)
+
+Source: `research/live-results-2026-11-20.tsv` (live-verified by Hermes from an unproxied vantage, 2026-11-20).
+Placeholder release **`2026.12.5`**, with `_PRIOR_HOST_STATE["2026.12.4"]` and `_RELEASED_COMPONENTS["2026.12.4"]`.
+If R is held, L applies on I after the R hunks are dropped and its prior state is re-keyed by the Engine lane (it
+touches different entries).
+
+- `ms-base` + `cdn.office.net` (decision 4: shared Microsoft asset CDN; `teams.cdn.office.net` stays `ms-teams`);
+- `google-play` loses `play.google.com`, which falls to `google-base` (decision 4); `play.googleapis.com` stays;
+- `ms-update` loses `emdl.ws.microsoft.com` (NXDOMAIN; it falls to `ms-base`);
+- `gmail` + `googlemail.com` (decision 5 result; Gmail Help 10313; N2).
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.12.5, digest `77906cfc55135041`, 551 applications, 449 host entries |
+| Pack file | sha256 `15b7f835462129e8f1de6ea64362e38ccd4abe8bc67e711797a0923f5f82a972` |
+| Rollback | release 2026.12.4 host catalog equals the batch R pack exactly |
+| Vectors | 13 targeted (all as expected) + 399 method-v2 vectors across specs, all pass |
+| Parity | 7448/7448 Python and Go; 88/88 families |
+| Unit tests | 1 expected failure: pinned host count (438 → 449) |
+
+**Amendment to batch F (for the Engine lane):** drop the `prisma-access` entry (and its `_PRIOR_HOST_STATE["2026.11.8"]`
+line) before applying F. Both of its names are NXDOMAIN (RFC 8020: nothing below them exists), and the catalog cannot
+hold an empty or deleted entry (the parity case generator indexes the first domain, and rollback cannot restore a
+deleted entry).
 

@@ -14,7 +14,12 @@ certificate subject CN and SAN list (from this client's own handshake), and flag
   cdn       CNAME chain or certificate points into a shared CDN or cloud front end (name usable, IPs never)
   ech       HTTPS record carries an ech parameter (SNI may be replaced by an ECH outer name)
   h3        HTTPS record alpn includes h3 (QUIC path exists)
-  dead      NXDOMAIN, no address, or TLS fails (recommend removal after a second check)
+  nxdomain  the name does not exist (RCODE 3). Per RFC 8020 nothing below it exists either: recommend removal
+  no-address  the name exists but has no A/AAAA (normal for an apex or suffix entry): NOT dead; the suffix is
+            verified through a documented subdomain given as the line's second field
+  tls-fail  DNS answers but the handshake fails (timeout, certificate mismatch): not removal on its own
+
+HOSTS.txt lines: "NAME" or "NAME PROBE", where PROBE is a documented name under the suffix NAME.
 """
 import base64
 import datetime
@@ -136,8 +141,10 @@ def tls_probe(host):
         with ctx.wrap_socket(raw, server_hostname=host) as tls:
             cert = tls.getpeercert()
             subject = dict(x[0] for x in cert.get("subject", ()))
+            issuer = dict(x[0] for x in cert.get("issuer", ()))
             return {"version": tls.version(), "alpn": tls.selected_alpn_protocol(),
-                    "subject_cn": subject.get("commonName"),
+                    "subject_cn": subject.get("commonName"), "subject_o": subject.get("organizationName"),
+                    "issuer_o": issuer.get("organizationName"),
                     "san": sorted(v for k, v in cert.get("subjectAltName", ()) if k == "DNS")}
 
 
@@ -153,19 +160,22 @@ def verify(host, resolver=None, dns_only=False):
         rec["https"] = [a[2] for a in lookup(host, "HTTPS")[1] if a[0] == "HTTPS"]
     except Exception as exc:  # noqa: BLE001 - recorded, not raised
         rec["dns_error"] = type(exc).__name__
-    if rec.get("rcode") == 3 or (not rec.get("a") and not rec.get("aaaa") and "dns_error" not in rec):
-        rec["flags"].append("dead")
+    if rec.get("rcode") == 3:
+        rec["flags"].append("nxdomain")
+    elif not rec.get("a") and not rec.get("aaaa") and "dns_error" not in rec:
+        rec["flags"].append("no-address")
     if any(is_cdn(c) for c in rec.get("cname_chain", [])):
         rec["flags"].append("cdn")
     if any(h.get("ech") for h in rec.get("https", [])):
         rec["flags"].append("ech")
     if any("h3" in h.get("alpn", []) for h in rec.get("https", [])):
         rec["flags"].append("h3")
-    if not dns_only and "dead" not in rec["flags"]:
+    if not dns_only and not {"nxdomain", "no-address"} & set(rec["flags"]):
         try:
             rec["tls"] = tls_probe(host)
         except Exception as exc:  # noqa: BLE001
             rec["tls_error"] = type(exc).__name__
+            rec["flags"].append("tls-fail")
     return rec
 
 
@@ -178,14 +188,21 @@ def main(argv):
     if (os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")) and not dns_only:
         print("refusing: an HTTPS proxy is set, so a TLS handshake would show the proxy, not the server", file=sys.stderr)
         return 3
-    hosts = [h.strip() for h in open(argv[1]) if h.strip() and not h.startswith("#")]
-    out = [verify(h, resolver, dns_only) for h in hosts]
+    out = []
+    for line in open(argv[1]):
+        if not line.strip() or line.startswith("#"):
+            continue
+        fields = line.split()
+        rec = verify(fields[0], resolver, dns_only)
+        if len(fields) > 1:
+            rec["probe"] = verify(fields[1], resolver, dns_only)
+        out.append(rec)
     with open(argv[2], "w") as fh:
         json.dump(out, fh, indent=1)
         fh.write("\n")
     flags = {}
     for r in out:
-        for f in r["flags"]:
+        for f in r["flags"] + ["probe-" + f for f in r.get("probe", {}).get("flags", [])]:
             flags[f] = flags.get(f, 0) + 1
     print(len(out), "hosts", flags)
     return 0

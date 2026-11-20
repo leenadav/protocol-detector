@@ -57,7 +57,7 @@ Checked in scratch (batch A plus B): all as expected.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R and L)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -67,7 +67,8 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | L- | `mail.google.com.example.invalid` | not gmail/google-drive/google-meet/google-accounts (suffix look-alike) | no application | PASS |
 | L- | `xgmail.com` | not gmail/google-drive/google-meet/google-accounts (label boundary) | no application | PASS |
 | L- | `gmail.com.example.invalid` | not gmail/google-drive/google-meet/google-accounts (suffix look-alike) | no application | PASS |
-| L- | `drive.google.com.example.invalid` | not gmail/google-drive/google-meet/google-accounts (suffix look-alike) | no application | PASS |
+| L- | `xgooglemail.com` | not gmail/google-drive/google-meet/google-accounts (label boundary) | no application | PASS |
+| L- | `googlemail.com.example.invalid` | not gmail/google-drive/google-meet/google-accounts (suffix look-alike) | no application | PASS |
 
 <!-- method-v2-vectors:end -->
 
@@ -89,13 +90,38 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 `sites.google.com`, `calendar.google.com` and `keep.google.com` have no application id. Adding ids is
 possible later; that is a catalog-scope choice, not proposed now.
 
+**Gmail via `googlemail.com` (2026-11-20).** In the D09 email captures, every unnamed TLS session was Gmail
+under `googlemail.com`: `smtp.googlemail.com:465` (250 sessions), `imap.googlemail.com:993` (26) and
+`pop.googlemail.com:995` (18) across 6 captures (aggregate counts only). Gmail Help states: "Messages sent to
+@gmail.com and @googlemail.com are the same. Some countries use @googlemail.com instead"
+(`https://support.google.com/mail/answer/10313`, accessed 2026-11-20). Patch L adds `googlemail.com` to `gmail`
+at **N2**: the page establishes the domain as Gmail's, but not its server names.
+
+**Decision applied (Hermes decision 4):** `play.google.com` is loaded by the Gemini page as shared Google
+infrastructure, and an SNI cannot separate Play Store use from that. Patch L removes it from `google-play`, so it
+falls to vendor-level `google-base`; `google-play` keeps `play.googleapis.com`.
+
 <!-- method-v2:start -->
 
 ## 9. Live verification (L)
 
-**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
-Names to verify (catalog domains of `gmail`, `google-drive`, `google-meet`, `google-accounts`): `mail.google.com`, `gmail.com`, `drive.google.com`, `docs.google.com`, `drive.usercontent.google.com`, `googledrive.com`, `sheets.google.com`, `slides.google.com`, `drive-data-export.usercontent.google.com`, `drive-data-export-eu.usercontent.google.com`, `meet.google.com`, `accounts.google.com`.
+| Catalog name | Live result (2026-11-20) |
+|---|---|
+| `mail.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `mail.google.com` (SAN covers name: True) |
+| `gmail.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `gmail.com` (SAN covers name: True) |
+| `googlemail.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
+| `drive.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
+| `docs.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
+| `drive.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com` (SAN covers name: True) |
+| `googledrive.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.googleusercontent.com` (SAN covers name: True) |
+| `sheets.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
+| `slides.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
+| `drive-data-export.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com` (SAN covers name: True) |
+| `drive-data-export-eu.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com` (SAN covers name: True) |
+| `meet.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
+| `accounts.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `accounts.google.com` (SAN covers name: True) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
@@ -111,7 +137,8 @@ Names to verify (catalog domains of `gmail`, `google-drive`, `google-meet`, `goo
 - Functions separated by name: `gmail` (Gmail web mail), `google-drive` (Google Drive and Docs), `google-meet` (Google Meet video meetings), `google-accounts` (Google account sign-in).
 - Variant: not separated by name: consumer Gmail and Workspace share `mail.google.com`.
 - Dependencies (observed, never attributed to this app): none observed.
-- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
-- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+- Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
+- QUIC path (`h3` in the HTTPS record): none advertised.
+- Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->

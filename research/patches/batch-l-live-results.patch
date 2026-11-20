@@ -1,0 +1,84 @@
+diff --git a/protocol_engine/content.py b/protocol_engine/content.py
+index 1ae5ce5..0d5d5a9 100644
+--- a/protocol_engine/content.py
++++ b/protocol_engine/content.py
+@@ -92,6 +92,10 @@ HISTORY = (
+             "application-research lane proposal, method v2 retrofit (research/apps on claude/app-research); "
+             "engine-lane review pending",
+             "Vendor-owned names observed from the vendors' own web clients: Copilot, Box and GitLab"),
++    Release("2026.12.5", "2026-11-20", "2026-11-20",
++            "application-research lane proposal, live verification by Hermes 2026-11-20 (research/live-results-2026-11-20.tsv); "
++            "engine-lane review pending",
++            "Shared Microsoft CDN and Google Play names to vendor level; NXDOMAIN emdl.ws.microsoft.com removed; googlemail.com for Gmail"),
+ )
+ CURRENT = HISTORY[-1].version
+ LOCK_PATH = Path(__file__).with_name("content_lock.json")
+@@ -152,6 +156,12 @@ _ADDED_2026_11_2 = (
+     "xandr",
+ )
+ _PRIOR_HOST_STATE = MappingProxyType({
++    "2026.12.4": MappingProxyType({
++        "ms-base": {"domains": ("microsoft.com", "msn.com", "windows.com", "live.com")},
++        "gmail": {"domains": ("mail.google.com", "gmail.com")},
++        "google-play": {"domains": ("play.google.com", "play.googleapis.com")},
++        "ms-update": {"domains": ("windowsupdate.com", "update.microsoft.com", "delivery.mp.microsoft.com", "do.dsp.mp.microsoft.com", "tsfe.trafficshaping.dsp.mp.microsoft.com", "emdl.ws.microsoft.com")},
++    }),
+     "2026.12.3": MappingProxyType({
+         "ms-copilot": {"domains": ("copilot.microsoft.com", "copilot.cloud.microsoft")},
+         "box": {"domains": ("box.com", "boxcloud.com", "box.net")},
+@@ -394,6 +404,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
+         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+         "host_catalog": "bc1ae80cc5657c1aae39481b8e13f78b620c361ddc7cd525bce359bb6cafce71",
+         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
++    "2026.12.4": MappingProxyType({
++        "application_catalog": "f57ffff6628558dd870001dca07079ee8e7f261419d7e88bf8b363cd0f738b5b",
++        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
++        "host_catalog": "a10a34f1bca6f98ab25df990fc495fb531326129154a55b43ca670e35e58ef36",
++        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+ })
+ 
+ 
+diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
+index 955b348..d5b9429 100644
+--- a/protocol_engine/host_apps.py
++++ b/protocol_engine/host_apps.py
+@@ -78,7 +78,9 @@ _HOST_APPS = (
+      ("webex.com", "wbx2.com", "ciscospark.com", "webexapis.com", "webexcontent.com", "ciscosparkcontent.com")),
+     ("google-meet", "collaboration", "voip-video", "browser-based", 2, "Google Meet video meetings", ("widely-used",), ("meet.google.com",)),
+     # Email.
+-    ("gmail", "collaboration", "email", "browser-based", 2, "Gmail web mail", ("widely-used", "transfers-files"), ("mail.google.com", "gmail.com")),
++    ("gmail", "collaboration", "email", "browser-based", 2, "Gmail web mail",
++     ("widely-used", "transfers-files"),
++     ("mail.google.com", "gmail.com", "googlemail.com")),
+     ("outlook-web", "collaboration", "email", "browser-based", 2, "Outlook web mail (Microsoft 365 and Outlook.com)",
+      ("widely-used", "transfers-files"), ("outlook.office365.com", "outlook.office.com", "outlook.live.com", "outlook.com",
+                                      "outlook.cloud.microsoft")),
+@@ -100,7 +102,7 @@ _HOST_APPS = (
+      ("widely-used",), ("login.microsoftonline.com", "microsoftonline.com", "login.live.com")),
+     ("ms-update", "business-systems", "software-development", "client-server", 1, "Windows Update and Microsoft software delivery",
+      ("widely-used", "transfers-files", "excessive-bandwidth"),
+-     ("windowsupdate.com", "update.microsoft.com", "delivery.mp.microsoft.com", "do.dsp.mp.microsoft.com", "tsfe.trafficshaping.dsp.mp.microsoft.com", "emdl.ws.microsoft.com")),
++     ("windowsupdate.com", "update.microsoft.com", "delivery.mp.microsoft.com", "do.dsp.mp.microsoft.com", "tsfe.trafficshaping.dsp.mp.microsoft.com")),
+     ("google-drive", "general-internet", "file-sharing", "browser-based", 3, "Google Drive and Docs",
+      ("widely-used", "transfers-files"), ("drive.google.com", "docs.google.com", "drive.usercontent.google.com", "googledrive.com",
+                                      "sheets.google.com", "slides.google.com", "drive-data-export.usercontent.google.com",
+@@ -262,7 +264,8 @@ _HOST_APPS = (
+     ("apple-app-store", "business-systems", "software-development", "client-server", 1, "Apple App Store and iTunes Store",
+      ("widely-used", "transfers-files"), ("apps.apple.com", "itunes.apple.com")),
+     ("google-play", "business-systems", "software-development", "client-server", 1, "Google Play store",
+-     ("widely-used", "transfers-files"), ("play.google.com", "play.googleapis.com")),
++     ("widely-used", "transfers-files"),
++     ("play.googleapis.com",)),
+     # Identity and password managers.
+     ("okta", "business-systems", "auth-service", "browser-based", 1, "Okta sign-in",
+      ("widely-used",),
+@@ -355,7 +358,8 @@ _HOST_APPS = (
+      ("widely-used", "pervasive"), ("apple.com", "cdn-apple.com", "mzstatic.com")),
+     ("apple-push", "general-internet", "internet-utility", "client-server", 1, "Apple Push Notification service", ("widely-used", "pervasive"), ("push.apple.com",)),
+     ("ms-base", "general-internet", "internet-utility", "client-server", 2, "Microsoft services not mapped to a more specific application",
+-     ("widely-used", "pervasive"), ("microsoft.com", "msn.com", "windows.com", "live.com")),
++     ("widely-used", "pervasive"),
++     ("microsoft.com", "msn.com", "windows.com", "live.com", "cdn.office.net")),
+     ("yahoo", "general-internet", "internet-utility", "browser-based", 2, "Yahoo portal and search", ("widely-used",), ("yahoo.com", "yimg.com")),
+     # Search, advertising and measurement.
+     ("bing", "general-internet", "internet-utility", "browser-based", 2, "Microsoft Bing search", ("widely-used",), ("bing.com", "bing.net")),

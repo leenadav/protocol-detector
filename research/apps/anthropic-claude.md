@@ -99,7 +99,7 @@ ALPN: nothing published by Anthropic. `UNVERIFIED`.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R and L)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -154,9 +154,16 @@ Decided and in batch A (`research/patches/batch-a-name-based.patch`, base `claud
 
 ## 9. Live verification (L)
 
-**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
-Names to verify (catalog domains of `anthropic-claude`, `anthropic-api`): `claude.ai`, `anthropic.com`, `claude.com`, `claudeusercontent.com`, `api.anthropic.com`, `platform.claude.com`.
+| Catalog name | Live result (2026-11-20) |
+|---|---|
+| `claude.ai` | **L** resolves; TLSv1.3, ALPN `h2`, cert `claude.ai` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
+| `anthropic.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `anthropic.com` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
+| `claude.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `claude.com` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
+| `claudeusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `claudeusercontent.com` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
+| `api.anthropic.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `api.anthropic.com` (SAN covers name: True) |
+| `platform.claude.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `platform.claude.com` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
@@ -165,15 +172,15 @@ Names to verify (catalog domains of `anthropic-claude`, `anthropic-api`): `claud
 
 Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
 
-| Host | Requests (refused) | Class | Attribution today | Note |
-|---|---|---|---|---|
-| `accounts.google.com` | 1 (0) | shared vendor infra | `google-accounts` |  |
-| `browser-intake-us5-datadoghq.com` | 1 (1) | third party | no application | Datadog browser telemetry |
-| `challenges.cloudflare.com` | 4 (4) | third party | no application | Cloudflare Turnstile bot check |
-| `claude.ai` | 16 (0) | app-owned | `anthropic-claude` |  |
-| `js.hcaptcha.com` | 1 (1) | third party | no application | hCaptcha |
-| `platform.claude.com` | 70 (0) | app-owned | `anthropic-api` |  |
-| `s-cdn.anthropic.com` | 1 (1) | app-owned | `anthropic-claude` |  |
+| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `accounts.google.com` | 1 (0) | shared vendor infra | `google-accounts` |  |  |
+| `browser-intake-us5-datadoghq.com` | 1 (1) | third party | no application | not checked | Datadog browser telemetry |
+| `challenges.cloudflare.com` | 4 (4) | third party | no application | not checked | Cloudflare Turnstile bot check |
+| `claude.ai` | 16 (0) | app-owned | `anthropic-claude` | h3 |  |
+| `js.hcaptcha.com` | 1 (1) | third party | no application | not checked | hCaptcha |
+| `platform.claude.com` | 70 (0) | app-owned | `anthropic-api` | h3 |  |
+| `s-cdn.anthropic.com` | 1 (1) | app-owned | `anthropic-claude` |  |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -182,7 +189,8 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - Functions separated by name: `anthropic-claude` (Anthropic Claude), `anthropic-api` (Anthropic Claude developer platform and API).
 - Variant: web app and API/console separated by name (`claude.ai` vs `api.anthropic.com`, `platform.claude.com`).
 - Dependencies (observed, never attributed to this app): `browser-intake-us5-datadoghq.com`, `challenges.cloudflare.com`, `google-accounts`, `js.hcaptcha.com`.
-- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
-- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+- Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
+- QUIC path (`h3` in the HTTPS record): `claude.ai`, `anthropic.com`, `claude.com`, `claudeusercontent.com`, `platform.claude.com`.
+- Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->

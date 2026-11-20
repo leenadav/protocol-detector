@@ -1,0 +1,359 @@
+host	flags	rcode	cname_last	a_count	https_alpn	ech	tls_ver	alpn	cert_cn	san_count	san_covers_host	tls_error
+1drv.com	-	0	-	1	-	-	-	-	-	0		SSLCertVerificationError
+1drv.ms	-	0	-	1	-	-	TLSv1.3	h2	storage.live.com	139	True	-
+1infra.net	dead	0	-	0	-	-	-	-	-	0		-
+1password.ca	-	0	-	12	-	-	TLSv1.3	h2	1password.ca	2	True	-
+1password.com	-	0	-	1	-	-	TLSv1.3	h2	1password.com	1	True	-
+1password.eu	-	0	-	12	-	-	TLSv1.3	h2	1password.eu	2	True	-
+1passwordservices.com	dead	0	-	0	-	-	-	-	-	0		-
+1passwordusercontent.ca	dead	0	-	0	-	-	-	-	-	0		-
+1passwordusercontent.com	dead	0	-	0	-	-	-	-	-	0		-
+1passwordusercontent.eu	dead	0	-	0	-	-	-	-	-	0		-
+a.slack-edge.com	cdn,h3	0	d29id7n8587nnz.cloudfront.net	4	h2,h3	-	TLSv1.3	h2	slack-edge.com	2	True	-
+account.adobe.com	-	0	-	4	-	-	TLSv1.3	h2	account.adobe.com	8	True	-
+account.box.com	-	0	-	2	-	-	TLSv1.3	h2	box.com	9	True	-
+account.jetbrains.com	-	0	-	2	-	-	TLSv1.3	h2	account.jetbrains.com	1	True	-
+accounts.cloud.com	cdn	0	ctxathpwesteu.westeurope.cloudapp.azure.com	1	-	-	TLSv1.3	http/1.1	accounts.cloud.com	64	True	-
+accounts.google.com	-	0	-	2	-	-	TLSv1.3	h2	accounts.google.com	3	True	-
+addtodropbox.com	dead	0	-	0	-	-	-	-	-	0		-
+admin.duosecurity.com	-	0	-	2	-	-	TLSv1.2	h2	admin.duosecurity.com	1	True	-
+adobe-identity.com	dead	0	-	0	-	-	-	-	-	0		-
+adobe-services.com	dead	0	-	0	-	-	-	-	-	0		-
+adobe.com	-	0	-	4	-	-	TLSv1.3	h2	*.adobe.com	2	True	-
+adobe.io	-	0	-	4	-	-	TLSv1.3	None	adobe.io	29	True	-
+adobecc.com	dead	0	-	0	-	-	-	-	-	0		-
+adobecces.com	dead	0	-	0	-	-	-	-	-	0		-
+adobeccstatic.com	dead	0	-	0	-	-	-	-	-	0		-
+adobeexchange.com	-	0	-	1	-	-	TLSv1.3	h2	exchange.adobe.com	51	True	-
+adobegenuine.com	dead	0	-	0	-	-	-	-	-	0		-
+adobegov.com	-	0	-	1	-	-	TLSv1.3	http/1.1	*.adobegov.com	2	True	-
+adobejanus.com	dead	0	-	0	-	-	-	-	-	0		-
+adobelogin.com	-	0	-	1	-	-	-	-	-	0		SSLCertVerificationError
+adobeoobe.com	dead	0	-	0	-	-	-	-	-	0		-
+adobeprojectm.com	-	0	-	4	-	-	-	-	-	0		SSLCertVerificationError
+adobesc.com	dead	0	-	0	-	-	-	-	-	0		-
+adobess.com	dead	0	-	0	-	-	-	-	-	0		-
+adobesunbreak.com	dead	0	-	0	-	-	-	-	-	0		-
+aistudio.google.com	-	0	-	2	-	-	TLSv1.3	h2	*.google.com	66	True	-
+amazonworkspaces.com	dead	0	-	0	-	-	-	-	-	0		-
+anthropic.com	h3	0	-	2	h2,h3	-	TLSv1.3	h2	anthropic.com	1	True	-
+anydesk.com	-	0	-	4	h2	-	TLSv1.3	h2	anydesk.com	2	True	-
+api.anthropic.com	-	0	-	2	h2	-	TLSv1.3	h2	api.anthropic.com	1	True	-
+api.devices.cloudflare.com	-	0	-	4	h2	-	TLSv1.3	h2	devices.cloudflare.com	2	True	-
+api.devices.fed.cloudflare.com	-	0	-	4	-	-	TLSv1.3	h2	devices.fed.cloudflare.com	2	True	-
+api.jetbrains.ai	cdn,h3	0	dvxdiz880bm14.cloudfront.net	12	h2,h3	-	TLSv1.3	h2	api.jetbrains.ai	3	True	-
+api.mistral.ai	h3	0	-	4	h2,h3	-	TLSv1.3	h2	api.mistral.ai	1	True	-
+api.openai.com	-	0	-	4	-	-	TLSv1.3	h2	api.openai.com	2	True	-
+api.perplexity.ai	h3	0	-	4	h2,h3	-	TLSv1.3	h2	perplexity.ai	3	True	-
+api.splashtop.cn	dead	0	-	0	-	-	-	-	-	0		-
+api.splashtop.eu	dead	0	-	0	-	-	-	-	-	0		-
+api.splashtop.nr	dead	0	-	0	-	-	-	-	-	0		-
+api.x.ai	-	0	-	4	h2	-	TLSv1.3	h2	x.ai	3	True	-
+app-updates.agilebits.com	-	0	app-updates.us.svc.1infra.net	3	-	-	TLSv1.3	http/1.1	app-updates-legacy.us.svc.1infra.net	3	True	-
+app.goto.com	-	0	-	4	-	-	TLSv1.3	h2	app.goto.com	2	True	-
+app.gotomeeting.com	-	0	-	12	-	-	TLSv1.3	h2	app.gotomeeting.com	1	True	-
+app.grammarly.com	-	0	-	3	-	-	TLSv1.3	h2	app.grammarly.com	1	True	-
+app.zoom.us	-	0	-	2	-	-	TLSv1.3	h2	*.zoom.us	2	True	-
+apple-cloudkit.com	-	0	-	1	-	-	-	-	-	0		TimeoutError
+apple-livephotoskit.com	dead	0	-	0	-	-	-	-	-	0		-
+atl-paas.net	-	0	-	3	-	-	TLSv1.3	h2	*.atl-paas.net	2	True	-
+atlassian.com	h3	0	-	4	h2,h3	-	TLSv1.3	h2	*.frontend.public.atl-paas.net	54	True	-
+atlassian.net	-	0	-	1	-	-	TLSv1.3	h2	*.atlassian.net	8	True	-
+auth.console.gotoresolve.com	-	0	-	2	-	-	TLSv1.3	h2	*.console.gotoresolve.com	3	True	-
+b.slack-edge.com	cdn	0	http2.slack.map.fastly.net	4	-	-	TLSv1.3	h2	slack-edge.com	2	True	-
+bitbucket.org	-	0	-	6	-	-	TLSv1.3	h2	*.bitbucket.org	2	True	-
+bitwarden.com	-	0	-	4	-	-	TLSv1.3	h2	bitwarden.com	1	True	-
+bitwarden.eu	ech,h3	0	-	4	h2,h3	ech	TLSv1.3	h2	bitwarden.eu	2	True	-
+bitwarden.net	dead	0	-	0	-	-	-	-	-	0		-
+box.com	-	0	-	2	-	-	TLSv1.3	h2	box.com	9	True	-
+box.net	-	0	-	2	-	-	TLSv1.3	h2	box.net	8	True	-
+boxcdn.net	dead	0	-	0	-	-	-	-	-	0		-
+boxcloud.com	-	0	-	2	-	-	TLSv1.3	h2	*.boxcloud.com	2	True	-
+btwrdn.co	dead	0	-	0	-	-	-	-	-	0		-
+btwrdn.com	-	0	-	2	-	-	TLSv1.3	h2	btwrdn.com	1	True	-
+cache.agilebits.com	-	0	-	12	-	-	TLSv1.3	h2	c.1password.com	3	True	-
+canva-apps.com	dead	0	-	0	-	-	-	-	-	0		-
+canva.ai	-	0	-	4	h2	-	TLSv1.3	h2	canva.ai	2	True	-
+canva.com	-	0	-	12	-	-	TLSv1.3	h2	canva.com	1	True	-
+canva.link	h3	0	-	4	h2,h3	-	TLSv1.3	h2	canva.link	2	True	-
+canvacode.com	-	0	-	4	h2	-	TLSv1.3	h2	canvacode.com	2	True	-
+cdn.grok.com	-	0	-	4	h2	-	TLSv1.3	h2	677e3ce2.sni.cloudflaressl.com	2	True	-
+cdn.wetransfer.com	-	0	-	4	-	-	TLSv1.3	h2	wetransfer.com	2	True	-
+cdn01.boxcdn.net	cdn,h3	0	cdn01.boxcdn.net.cdn.cloudflare.net	4	h2,h3	-	TLSv1.3	h2	cdn01.boxcdn.net	1	True	-
+chameleon.goto.com	-	0	-	4	-	-	TLSv1.3	h2	chameleon.goto.com	1	True	-
+chat.deepseek.com	cdn	0	d3bbv8sr76az5s.cloudfront.net	1	h2	-	TLSv1.3	h2	*.deepseek.com	1	True	-
+chat.mistral.ai	h3	0	-	8	h2,h3	-	TLSv1.3	h2	chat.mistral.ai	1	True	-
+chat.openai.com	cdn	0	chat.openai.com.cdn.cloudflare.net	4	-	-	TLSv1.3	h2	chat.openai.com	2	True	-
+chatgpt.com	-	0	-	4	h2	-	TLSv1.3	h2	chatgpt.com	3	True	-
+ciscospark.com	-	0	-	4	-	-	-	-	-	0		TimeoutError
+ciscosparkcontent.com	dead	0	-	0	-	-	-	-	-	0		-
+citrix.cloud.com	cdn	0	ctxwsp-agw-us-0.eastus.cloudapp.azure.com	1	-	-	TLSv1.3	http/1.1	*.cloud.com	2	True	-
+citrix.com	-	0	-	2	-	-	TLSv1.2	http/1.1	*.cloud.com	34	True	-
+citrixnetworkapi.net	dead	0	-	0	-	-	-	-	-	0		-
+citrixworkspacesapi.net	dead	0	-	0	-	-	-	-	-	0		-
+claude.ai	h3	0	-	2	h2,h3	-	TLSv1.3	h2	claude.ai	3	True	-
+claude.com	h3	0	-	2	h2,h3	-	TLSv1.3	h2	claude.com	3	True	-
+claudeusercontent.com	h3	0	-	2	h2,h3	-	TLSv1.3	h2	claudeusercontent.com	3	True	-
+clients.amazonworkspaces.com	-	0	-	12	-	-	TLSv1.3	h2	clients.amazonworkspaces.com	1	True	-
+cloud.com	-	0	-	4	-	-	TLSv1.3	h2	www.cloud.com	2	True	-
+cloud.microsoft	-	0	-	10	-	-	TLSv1.3	h2	cloud.microsoft	3	True	-
+cloudflareclient.com	-	0	-	4	h2	-	TLSv1.3	h2	cloudflareclient.com	2	True	-
+conferences.goto.com	-	0	-	12	-	-	TLSv1.3	h2	conferences.goto.com	2	True	-
+connectwise.com	-	0	-	1	-	-	TLSv1.3	h2	connectwise.com	1	True	-
+console.gotoresolve.com	-	0	-	12	-	-	TLSv1.3	h2	*.console.gotoresolve.com	3	True	-
+content.ipd.goto.com	-	0	51.138.111.34.bc.googleusercontent.com	1	-	-	TLSv1.3	h2	content.ipd.goto.com	1	True	-
+copilot-proxy.githubusercontent.com	-	0	-	1	-	-	TLSv1.3	h2	*.githubusercontent.com	2	True	-
+copilot-telemetry.githubusercontent.com	-	0	glb-db52c2cf8be544.github.com	1	-	-	TLSv1.3	h2	*.githubusercontent.com	2	True	-
+copilot.cloud.microsoft	cdn	0	mr-z01.tm-azurefd.net	2	-	-	TLSv1.3	h2	copilot.cloud.microsoft	1	True	-
+copilot.com	-	0	-	2	-	-	TLSv1.3	h2	copilot.com	2	True	-
+copilot.microsoft.com	cdn,h3	0	copilot.microsoft.com.cdn.cloudflare.net	4	h2,h3	-	TLSv1.3	h2	copilot.microsoft.com	1	True	-
+cursor-cdn.com	-	0	-	4	h2	-	TLSv1.3	h2	cursor-cdn.com	1	True	-
+cursor.com	-	0	-	1	-	-	TLSv1.3	h2	cursor.com	1	True	-
+cursor.sh	-	0	-	1	-	-	TLSv1.3	h2	cursor.sh	1	True	-
+cursorapi.com	dead	0	-	0	-	-	-	-	-	0		-
+cursorvm.com	dead	0	-	0	-	-	-	-	-	0		-
+dashboard.ngrok.com	-	0	ngrok.ngrok-cname.com	12	-	-	TLSv1.3	h2	dashboard.ngrok.com	1	True	-
+db.tt	-	0	-	2	-	-	TLSv1.3	h2	db.tt	5	True	-
+deepseek.com	-	0	-	1	-	-	TLSv1.3	h2	deepseek.com	1	True	-
+delivery.mp.microsoft.com	dead	0	-	0	-	-	-	-	-	0		-
+dhi.io	-	0	-	2	-	-	TLSv1.3	h2	dhi.io	1	True	-
+discovery.cem.cloud.us	cdn	0	d2h5okjz9875in.cloudfront.net	12	http/1.1	-	TLSv1.3	None	*.cem.cloud.us	2	True	-
+dm.microsoft.com	dead	0	-	0	-	-	-	-	-	0		-
+do.dsp.mp.microsoft.com	dead	0	-	0	-	-	-	-	-	0		-
+docker.com	-	0	-	3	-	-	TLSv1.3	h2	docker.com	2	True	-
+docker.io	-	0	-	6	-	-	TLSv1.3	h2	*.docker.com	8	True	-
+docs.google.com	-	0	-	2	-	-	TLSv1.3	h2	*.google.com	66	True	-
+docsend.com	-	0	-	4	-	-	TLSv1.3	h2	*.docsend.com	2	True	-
+drive-data-export-eu.usercontent.google.com	-	0	-	2	-	-	TLSv1.3	h2	*.usercontent.google.com	16	True	-
+drive-data-export.usercontent.google.com	-	0	-	2	-	-	TLSv1.3	h2	*.usercontent.google.com	16	True	-
+drive.google.com	-	0	-	2	-	-	TLSv1.3	h2	*.google.com	66	True	-
+drive.usercontent.google.com	-	0	-	2	-	-	TLSv1.3	h2	*.usercontent.google.com	16	True	-
+dropbox-dns.com	dead	0	-	0	-	-	-	-	-	0		-
+dropbox.com	-	0	-	2	-	-	TLSv1.3	h2	*.app.dropbox.com	3	True	-
+dropboxapi.com	-	0	-	2	-	-	TLSv1.3	h2	dropboxapi.com	2	True	-
+dropboxbusiness.com	-	0	-	2	-	-	TLSv1.3	h2	*.dropboxbusiness.com	2	True	-
+dropboxcaptcha.com	-	0	-	1	-	-	TLSv1.3	h2	dropboxcaptcha.com	1	True	-
+dropboxexperiment.com	dead	0	-	0	-	-	-	-	-	0		-
+dropboxstatic.com	-	0	-	1	-	-	-	-	-	0		OSError
+dropboxusercontent.com	dead	0	-	0	-	-	-	-	-	0		-
+duosecurity.com	-	0	-	4	-	-	TLSv1.3	None	www.duosecurity.com	2	True	-
+emdl.ws.microsoft.com	dead	3	-	0	-	-	-	-	-	0		-
+endpoint.security.microsoft.com	dead	0	-	0	-	-	-	-	-	0		-
+epdlp-prod.netskope.io	-	0	-	1	-	-	TLSv1.3	h2	epdlp-prod.netskope.io	1	True	-
+epm.gpcloudservice.com	dead	3	-	0	-	-	-	-	-	0		-
+figma-gov.com	h3	0	-	4	h2,h3	-	TLSv1.3	h2	*.figma-gov.com	2	True	-
+figma.com	h3	0	-	4	h2,h3	-	TLSv1.3	h2	*.figma.com	2	True	-
+filter.paloaltonetworks.com	dead	3	-	0	-	-	-	-	-	0		-
+force.com	-	0	-	8	-	-	TLSv1.3	http/1.1	salesforce.com	69	True	-
+gemini.google.com	-	0	-	16	-	-	TLSv1.3	h2	*.google.com	66	True	-
+generativelanguage.googleapis.com	-	0	-	16	-	-	TLSv1.3	h2	upload.video.google.com	17	True	-
+getdropbox.com	-	0	-	2	-	-	TLSv1.3	h2	*.getdropbox.com	2	True	-
+getpostman.com	-	0	-	2	-	-	-	-	-	0		ConnectionResetError
+github.com	-	0	-	1	-	-	TLSv1.3	h2	github.com	2	True	-
+github.githubassets.com	-	0	-	8	-	-	TLSv1.3	h2	*.githubassets.com	2	True	-
+githubassets.com	dead	0	-	0	-	-	-	-	-	0		-
+githubcopilot.com	-	0	-	6	-	-	-	-	-	0		SSLCertVerificationError
+githubusercontent.com	dead	0	-	0	-	-	-	-	-	0		-
+gitlab-static.net	dead	0	-	0	-	-	-	-	-	0		-
+gitlab.com	-	0	-	2	-	-	TLSv1.3	h2	gitlab.com	6	True	-
+gitlab.net	dead	0	-	0	-	-	-	-	-	0		-
+gmail.com	-	0	-	2	-	-	TLSv1.3	h2	gmail.com	2	True	-
+googledrive.com	-	0	-	2	-	-	TLSv1.3	h2	*.googleusercontent.com	154	True	-
+goskope.com	dead	0	-	0	-	-	-	-	-	0		-
+goto.com	-	0	-	1	-	-	TLSv1.3	h2	*.goto.com	2	True	-
+gotomeet.at	dead	0	-	0	-	-	-	-	-	0		-
+gotomeet.me	-	0	-	4	-	-	TLSv1.3	h2	meet.goto.com	4	True	-
+gotomeeting.com	-	0	-	1	-	-	TLSv1.3	h2	www.gotomeeting.com	12	True	-
+gotomypc.com	-	0	-	1	-	-	TLSv1.3	h2	gotomypc.com	1	True	-
+gotoresolve.com	-	0	-	1	-	-	TLSv1.3	h2	www.gotoresolve.com	30	True	-
+gotoresolveuserfiles.com	dead	0	-	0	-	-	-	-	-	0		-
+grammarly.com	-	0	-	4	-	-	TLSv1.3	h2	www.grammarly.com	2	True	-
+grammarly.io	dead	0	-	0	-	-	-	-	-	0		-
+grok.com	h3	0	-	4	h2,h3	-	TLSv1.3	h2	grok.com	2	True	-
+gtre-remoteexecution-userfiles-prod-eu.azureedge.net	cdn	0	mr-afd-azuredge.tm-azurefd.net	2	-	-	TLSv1.3	h2	*.azureedge.net	1	True	-
+hellofax.com	-	0	-	4	-	-	TLSv1.3	h2	*.hellofax.com	2	True	-
+hellosign.com	-	0	-	4	-	-	TLSv1.3	h2	*.hellosign.com	2	True	-
+helpdesk.me	-	0	-	12	-	-	TLSv1.3	h2	helpdesk.me	2	True	-
+highlander.aws.a2z.com	dead	0	-	0	-	-	-	-	-	0		-
+icloud-content.com	-	0	-	1	-	-	TLSv1.3	None	ichat.com	57	True	-
+icloud.apple.com	dead	0	-	0	-	-	-	-	-	0		-
+icloud.com	-	0	-	2	-	-	TLSv1.3	h2	icloud.com	1	True	-
+infra.windows365.microsoft.com	dead	0	blob.core.windows.net	0	-	-	-	-	-	0		-
+infra.windows365.microsoft.us	dead	0	-	0	-	-	-	-	-	0		-
+iwork.apple.com	dead	0	-	0	-	-	-	-	-	0		-
+jetbrains.com	-	0	-	4	-	-	TLSv1.3	h2	jetbrains.com	2	True	-
+jira.com	h3	0	-	1	h2,h3	-	TLSv1.3	h2	*.atlassian.net	64	True	-
+joingotomeeting.com	-	0	-	1	-	-	TLSv1.3	h2	joingotomeeting.com	4	True	-
+login.ngrok.com	-	0	ngrok.ngrok-cname.com	12	-	-	TLSv1.3	h2	login.ngrok.com	1	True	-
+logmein.com	-	0	-	1	-	-	TLSv1.3	h2	logmein.com	5	True	-
+logmeininc.com	-	0	-	1	-	-	TLSv1.3	h2	logmeininc.com	5	True	-
+loom-media-production.s3-accelerate.amazonaws.com	-	0	-	1	-	-	TLSv1.3	None	*.s3-accelerate.amazonaws.com	77	True	-
+loom.com	h3	0	-	12	h2,h3	-	TLSv1.3	h2	loom.com	2	True	-
+lync.com	-	0	-	5	-	-	-	-	-	0		SSLCertVerificationError
+mail.google.com	-	0	-	2	-	-	TLSv1.3	h2	mail.google.com	2	True	-
+manage.microsoft.com	cdn	0	pexsucpeu01.northeurope.cloudapp.azure.com	1	-	-	TLSv1.2	None	EU02.manage.microsoft.com	10	True	-
+mask-h2.icloud.com	-	0	mask.apple-dns.net	16	-	-	-	-	-	0		SSLError
+mask.icloud.com	-	0	mask.apple-dns.net	16	-	-	-	-	-	0		SSLError
+meet.google.com	-	0	-	16	-	-	TLSv1.3	h2	*.google.com	66	True	-
+microsoft365.com	-	0	-	2	-	-	TLSv1.3	h2	m365.cloud.microsoft	20	True	-
+miro-apps.com	dead	0	-	0	-	-	-	-	-	0		-
+miro.com	h3	0	-	4	h2,h3	-	TLSv1.3	h2	miro.com	2	True	-
+mirostatic.com	h3	0	-	12	h2,h3	-	TLSv1.3	h2	mirostatic.com	1	True	-
+mistral.ai	h3	0	-	4	h2,h3	-	TLSv1.3	h2	mistral.ai	2	True	-
+net.anydesk.com	dead	0	-	0	-	-	-	-	-	0		-
+netscalergateway.net	dead	0	-	0	-	-	-	-	-	0		-
+netskope.com	-	0	-	2	-	-	TLSv1.3	h2	netskope.com	3	True	-
+new-sentry.gitlab.net	-	0	-	4	h2	-	TLSv1.3	h2	new-sentry.gitlab.net	1	True	-
+ngrok-agent.com	dead	0	-	0	-	-	-	-	-	0		-
+ngrok.com	-	0	-	12	-	-	TLSv1.3	h2	ngrok.com	1	True	-
+notebook.google.com	-	0	-	2	-	-	TLSv1.3	h2	*.google.com	66	True	-
+notebooklm.google.com	-	0	-	2	-	-	TLSv1.3	h2	*.google.com	66	True	-
+notifications.devices.fed.cloudflare.com	-	0	-	4	-	-	TLSv1.3	h2	devices.fed.cloudflare.com	2	True	-
+notion.com	-	0	-	8	h2	-	TLSv1.3	h2	notion.com	2	True	-
+notion.site	-	0	-	2	h2	-	TLSv1.3	h2	notion.site	2	True	-
+notion.so	-	0	-	8	h2	-	TLSv1.3	h2	notion.so	5	True	-
+notionusercontent.com	dead	0	-	0	-	-	-	-	-	0		-
+nssvc.net	dead	0	-	0	-	-	-	-	-	0		-
+oaistatic.com	h3	0	-	4	h2,h3	-	TLSv1.3	h2	oaistatic.com	2	True	-
+oaiusercontent.com	dead	0	-	0	-	-	-	-	-	0		-
+office.com	-	0	-	2	-	-	TLSv1.3	h2	m365.cloud.microsoft	20	True	-
+office.net	dead	0	-	0	-	-	-	-	-	0		-
+office365.com	-	0	-	2	-	-	TLSv1.3	http/1.1	akaoffice.trafficmanager.net	8	True	-
+officeapps.live.com	cdn	0	wac-0003.wac-msedge.net	4	-	-	TLSv1.3	h2	officeapps.live.com	55	True	-
+okta-emea.com	-	0	-	4	-	-	TLSv1.3	h2	okta.com	3	True	-
+okta-gov.com	dead	0	-	0	-	-	-	-	-	0		-
+okta.com	-	0	-	4	-	-	TLSv1.3	h2	okta.com	3	True	-
+okta.mil	-	0	-	3	-	-	TLSv1.2	h2	*.okta.mil	2	True	-
+oktacdn.com	dead	0	-	0	-	-	-	-	-	0		-
+oktapreview.com	dead	0	-	0	-	-	-	-	-	0		-
+onedrive.com	-	0	-	1	-	-	TLSv1.3	None	onedrive.com	12	True	-
+onedrive.live.com	-	0	dual-spov-0006.spov-msedge.net	2	-	-	TLSv1.3	h2	onedrive.com	12	True	-
+onlinewhiteboard.com	-	0	-	1	-	-	-	-	-	0		TimeoutError
+openvoice.com	-	0	-	1	-	-	TLSv1.3	h2	www.gotomeeting.com	12	True	-
+origin-tracker.githubusercontent.com	-	0	glb-db52c2cf8be544.github.com	1	-	-	TLSv1.3	h2	*.githubusercontent.com	2	True	-
+outlook.cloud.microsoft	-	0	atm.outlook.mira.tm.svc.cloud.microsoft	8	-	-	TLSv1.3	h2	outlook.cloud.microsoft	2	True	-
+outlook.com	-	0	-	9	-	-	TLSv1.3	h2	outlook.com	20	True	-
+outlook.live.com	-	0	atm.outlook.mira.tm.svc.cloud.microsoft	8	-	-	TLSv1.3	h2	outlook.com	20	True	-
+outlook.office.com	-	0	atm.outlook.mira.tm.svc.cloud.microsoft	8	-	-	TLSv1.3	h2	outlook.com	20	True	-
+outlook.office365.com	-	0	atm.outlook.mira.tm.svc.cloud.microsoft	8	-	-	TLSv1.3	h2	outlook.com	20	True	-
+perplexity.ai	h3	0	-	4	h2,h3	-	TLSv1.3	h2	perplexity.ai	2	True	-
+photos.live.com	cdn	0	cosmic-westeurope-ns-93411c4416b1.trafficmanager.net	1	-	-	TLSv1.3	None	onedrive.com	12	True	-
+platform.claude.com	h3	0	-	2	h2,h3	-	TLSv1.3	h2	platform.claude.com	1	True	-
+platform.openai.com	cdn	0	platform.openai.com.cdn.cloudflare.net	4	-	-	TLSv1.3	h2	platform.openai.com	2	True	-
+postman.co	-	0	-	12	-	-	TLSv1.3	h2	*.postman.co	6	True	-
+postman.com	-	0	-	2	-	-	TLSv1.3	h2	postman.com	3	True	-
+prod-aps-vus-storage-endpoint.azureedge.net	cdn	0	hel01r9b.msedge.net	2	-	-	TLSv1.3	h2	*.azureedge.net	1	True	-
+prod-eu-vus-storage-endpoint.azureedge.net	cdn	0	mr-afd-azuredge.tm-azurefd.net	2	-	-	TLSv1.3	h2	*.azureedge.net	1	True	-
+prod-jp-vus-storage-endpoint.azureedge.net	cdn	0	hel01r9b.msedge.net	2	-	-	TLSv1.3	h2	*.azureedge.net	1	True	-
+prod-us-vus-storage-endpoint.azureedge.net	cdn	0	mr-afd-azuredge.tm-azurefd.net	2	-	-	TLSv1.3	h2	*.azureedge.net	1	True	-
+production-copilot-host-austriaeast.webpubsub.azure.com	-	0	production-copilot-host-austriaeast.privatelink.webpubsub.azure.com	2	-	-	TLSv1.3	h2	*.service.signalr.net	4	True	-
+production-copilot-host-centralus-02.webpubsub.azure.com	-	0	production-copilot-host-centralus-02.privatelink.webpubsub.azure.com	2	-	-	TLSv1.3	h2	*.service.signalr.net	4	True	-
+production-copilot-host-centralus.webpubsub.azure.com	-	0	production-copilot-host-centralus.privatelink.webpubsub.azure.com	2	-	-	TLSv1.3	h2	*.service.signalr.net	4	True	-
+production-copilot-host-eastasia.webpubsub.azure.com	-	0	production-copilot-host-eastasia.privatelink.webpubsub.azure.com	2	-	-	TLSv1.3	h2	*.service.signalr.net	4	True	-
+production-copilot-host-westus.webpubsub.azure.com	-	0	production-copilot-host-westus.privatelink.webpubsub.azure.com	2	-	-	TLSv1.3	h2	*.service.signalr.net	4	True	-
+production-copilot-host-westus3.webpubsub.azure.com	-	0	production-copilot-host-westus3.privatelink.webpubsub.azure.com	2	-	-	TLSv1.3	h2	*.service.signalr.net	4	True	-
+production-copilot-host.webpubsub.azure.com	-	0	production-copilot-host.privatelink.webpubsub.azure.com	2	-	-	TLSv1.3	h2	*.service.signalr.net	4	True	-
+pstmn.io	dead	0	-	0	-	-	-	-	-	0		-
+realtimeboard.com	-	0	-	3	h2	-	TLSv1.3	h2	digital-twin-mcp.eu01.miro.com	25	True	-
+reflector.defender.microsoft.com	cdn	0	reflector-appgwv6-prd-aec0a.uaecentral.cloudapp.azure.com	1	-	-	TLSv1.3	h2	reflector.defender.microsoft.com	1	True	-
+relay.splashtop.cn	dead	0	-	0	-	-	-	-	-	0		-
+remotedesktop-pa.googleapis.com	-	0	-	16	-	-	TLSv1.3	h2	upload.video.google.com	17	True	-
+remotedesktop.google.com	cdn	0	www3.l.google.com	2	-	-	TLSv1.3	h2	*.google.com	66	True	-
+res.cdn.office.net	cdn,h3	0	res-stls-prod.edgesuite.net	4	h2,h3	-	TLSv1.3	h2	*.public.cdn.office.net	18	True	-
+resources.jetbrains.com	-	0	-	12	-	-	TLSv1.3	h2	resources.jetbrains.com	2	True	-
+rustdesk.com	-	0	-	4	h2	-	TLSv1.2	h2	rustdesk.com	2	True	-
+s-cdn.anthropic.com	-	0	b-0.hexagon-cdn.com	1	-	-	TLSv1.3	h2	b-0.hexagon-cdn.com	25	True	-
+salesforce.com	-	0	-	8	-	-	TLSv1.3	http/1.1	salesforce.com	69	True	-
+screenconnect.com	-	0	-	3	-	-	TLSv1.3	h2	screenconnect.com	1	True	-
+secure.notion-static.com	dead	0	-	0	-	-	-	-	-	0		-
+sharepoint.com	-	0	-	2	-	-	TLSv1.3	h2	svc.ms	12	True	-
+sharepointonline.com	-	0	-	1	-	-	-	-	-	0		TimeoutError
+sheets.google.com	-	0	-	2	-	-	TLSv1.3	h2	*.google.com	66	True	-
+signal.art	ech,h3	0	-	4	h2,h3	ech	TLSv1.3	h2	signal.art	1	True	-
+signal.group	-	0	-	4	h2	-	TLSv1.3	h2	signal.group	1	True	-
+signal.link	-	0	-	4	h2	-	TLSv1.3	h2	signal.link	1	True	-
+signal.me	-	0	-	4	h2	-	TLSv1.3	h2	signal.me	1	True	-
+signal.org	h3	0	-	4	h2,h3	-	TLSv1.3	h2	signal.org	1	True	-
+signal.tube	-	0	-	4	h2	-	TLSv1.3	h2	signal.tube	1	True	-
+skydrive.live.com	cdn	0	cosmic-westeurope-ns-a3826e656e34.trafficmanager.net	1	-	-	TLSv1.3	None	onedrive.com	12	True	-
+slack-edge.com	dead	0	-	0	-	-	-	-	-	0		-
+slack-files.com	-	0	-	6	-	-	TLSv1.3	h2	slack-files.com	2	True	-
+slack-msgs.com	-	0	-	5	-	-	TLSv1.3	None	slack-msgs.com	2	True	-
+slack.com	-	0	-	6	-	-	TLSv1.3	h2	slack.com	2	True	-
+slides.google.com	-	0	-	2	-	-	TLSv1.3	h2	*.google.com	66	True	-
+snowplowprd.trx.gitlab.net	cdn	0	snowplowprdnlb-1490493263.us-east-2.elb.amazonaws.com	8	-	-	TLSv1.2	h2	snowplowprd.trx.gitlab.net	1	True	-
+splashtop.com	-	0	-	3	-	-	TLSv1.3	h2	*.splashtop.com	2	True	-
+ss-inf.net	dead	0	-	0	-	-	-	-	-	0		-
+st1.zoom.us	-	0	-	4	-	-	TLSv1.3	h2	*.zoom.us	2	True	-
+status.canva.com	cdn	0	status.canva.com.cdn.cloudflare.net	4	h2	-	TLSv1.3	h2	status.canva.com	1	True	-
+storage.msn.com	-	0	ln-0001.ln-msedge.net	2	-	-	TLSv1.3	h2	storage.live.com	139	True	-
+svc.ms	dead	0	-	0	-	-	-	-	-	0		-
+t.me	-	0	-	2	-	-	TLSv1.3	h2	*.t.me	2	True	-
+tailscale.com	-	0	-	3	-	-	TLSv1.2	h2	tailscale.com	3	True	-
+tailscale.io	dead	0	-	0	-	-	-	-	-	0		-
+tdn.console.gotoresolve.com	cdn	0	d1m414htzf82nc.cloudfront.net	4	h2	-	TLSv1.3	h2	*.console.gotoresolve.com	3	True	-
+teams.cdn.office.net	dead	0	-	0	-	-	-	-	-	0		-
+teams.cloud.microsoft	-	0	s-0005.dual-s-msedge.net	4	-	-	TLSv1.3	h2	teams.cloud.microsoft	1	True	-
+teams.live.com	-	0	s-0005.dual-s-msedge.net	4	-	-	TLSv1.3	h2	teams.live.com	1	True	-
+teams.microsoft.com	-	0	s-0005.dual-s-msedge.net	4	-	-	TLSv1.3	h2	teams.microsoft.com	1	True	-
+teamviewer.com	-	0	-	2	-	-	TLSv1.3	h2	*.teamviewer.com	2	True	-
+teamworkgraph.com	-	0	-	4	-	-	TLSv1.3	h2	*.frontend.public.atl-paas.net	54	True	-
+telegram.me	-	0	-	2	-	-	TLSv1.3	h2	*.telegram.me	2	True	-
+telegram.org	-	0	-	2	-	-	TLSv1.3	h2	*.telegram.org	2	True	-
+telesco.pe	-	0	-	1	-	-	TLSv1.3	http/1.1	*.telesco.pe	2	True	-
+tsfe.trafficshaping.dsp.mp.microsoft.com	cdn	0	waws-prod-dm1-4d1733db.sip.p.azurewebsites.windows.net	1	-	-	-	-	-	0		SSLCertVerificationError
+update.equinox.io	cdn	0	update.equinox.io.herokudns.com	4	-	-	TLSv1.3	h2	update.equinox.io	1	True	-
+update.microsoft.com	cdn	0	redir.update.msft.com.trafficmanager.net	1	-	-	TLSv1.2	None	redir.update.microsoft.com	5	True	-
+us01st-cf.zoom.us	-	0	-	12	-	-	TLSv1.3	h2	*.zoom.us	2	True	-
+wbx2.com	-	0	-	4	-	-	-	-	-	0		TimeoutError
+we.tl	-	0	-	4	-	-	TLSv1.3	None	go.wetransfer.com	2	True	-
+webex.com	-	0	-	2	-	-	TLSv1.2	None	webex.com	21	True	-
+webexapis.com	-	0	-	3	-	-	TLSv1.3	h2	api-gateway-k.wbx2.com	5	True	-
+webexcontent.com	dead	0	-	0	-	-	-	-	-	0		-
+webwhiteboard.com	-	0	-	3	h2	-	TLSv1.3	h2	digital-twin-mcp.eu01.miro.com	25	True	-
+wetransfer.com	-	0	-	4	-	-	TLSv1.3	h2	wetransfer.com	2	True	-
+wetransfer.net	-	0	-	4	-	-	-	-	-	0		SSLError
+whatsapp.com	-	0	-	2	-	-	TLSv1.3	h2	*.whatsapp.net	7	True	-
+whatsapp.net	-	0	-	2	-	-	TLSv1.3	h2	*.whatsapp.net	7	True	-
+whispersystems.org	-	0	-	4	h2	-	TLSv1.3	h2	whispersystems.org	2	True	-
+windows.cloud.microsoft	cdn	0	mr-z01.tm-azurefd.net	2	-	-	TLSv1.3	h2	windows.cloud.microsoft	1	True	-
+windows.static.microsoft	dead	0	-	0	-	-	-	-	-	0		-
+windowsupdate.com	dead	0	-	0	-	-	-	-	-	0		-
+wt-prod-euwest1-storm.s3-accelerate.amazonaws.com	-	0	-	1	-	-	TLSv1.3	None	*.s3-accelerate.amazonaws.com	77	True	-
+wt-prod-euwest1-storm.s3.amazonaws.com	cdn	0	s3-3-w.amazonaws.com	8	-	-	TLSv1.3	http/1.1	*.s3-eu-west-1.amazonaws.com	18	True	-
+wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com	cdn	0	s3-r-w.eu-west-1.amazonaws.com	8	-	-	TLSv1.3	http/1.1	*.s3-eu-west-1.amazonaws.com	18	True	-
+wt-prod-useast1-storm.s3-accelerate.amazonaws.com	-	0	-	1	-	-	TLSv1.3	None	*.s3-accelerate.amazonaws.com	77	True	-
+wt-prod-useast1-storm.s3.amazonaws.com	cdn	0	s3-w.us-east-1.amazonaws.com	8	-	-	TLSv1.3	http/1.1	s3.amazonaws.com	18	True	-
+wt-prod-useast1-storm.s3.us-east-1.amazonaws.com	cdn	0	s3-r-w.us-east-1.amazonaws.com	8	-	-	TLSv1.3	http/1.1	s3.amazonaws.com	18	True	-
+wvd.azure.us	dead	0	-	0	-	-	-	-	-	0		-
+wvd.microsoft.com	dead	0	-	0	-	-	-	-	-	0		-
+wvdportalstorageblob.blob.core.windows.net	-	0	blob.mwh20prdstr02a.store.core.windows.net	1	-	-	TLSv1.3	None	*.blob.core.windows.net	53	True	-
+www.adobe.com	cdn	0	a1319.dscr.akamai.net	4	-	-	TLSv1.3	h2	*.adobe.com	2	True	-
+www.canva.com	cdn	0	www.canva.com.cdn.cloudflare.net	4	h2	-	TLSv1.3	h2	*.canva.com	9	True	-
+www.grammarly.com	-	0	-	4	-	-	TLSv1.3	h2	www.grammarly.com	2	True	-
+x.ai	-	0	-	4	h2	-	TLSv1.3	h2	x.ai	3	True	-
+xendesktop.net	dead	0	-	0	-	-	-	-	-	0		-
+zdassets.com	dead	0	-	0	-	-	-	-	-	0		-
+zdxbeta.net	dead	0	-	0	-	-	-	-	-	0		-
+zdxcloud.net	dead	0	-	0	-	-	-	-	-	0		-
+zdxgov.net	dead	0	-	0	-	-	-	-	-	0		-
+zdxten.net	dead	0	-	0	-	-	-	-	-	0		-
+zendesk.com	-	0	-	2	-	-	TLSv1.3	h2	zendesk.com	2	True	-
+zidentitygov.net	dead	0	-	0	-	-	-	-	-	0		-
+zoom.com	-	0	-	1	-	-	TLSv1.2	http/1.1	*.zoom.com	2	True	-
+zoom.us	-	0	-	2	-	-	TLSv1.3	h2	*.zoom.us	2	True	-
+zoomgov.com	-	0	-	1	-	-	TLSv1.3	h2	*.zoomgov.com	2	True	-
+zpabeta.net	dead	0	-	0	-	-	-	-	-	0		-
+zpagov.net	dead	0	-	0	-	-	-	-	-	0		-
+zpatwo.net	dead	0	-	0	-	-	-	-	-	0		-
+zscaler.com	-	0	-	2	-	-	TLSv1.3	h2	www.zscaler.com	3	True	-
+zscaler.net	dead	0	-	0	-	-	-	-	-	0		-
+zscalerbeta.net	-	0	-	2	-	-	-	-	-	0		SSLCertVerificationError
+zscalergov.net	dead	0	-	0	-	-	-	-	-	0		-
+zscalerone.net	dead	0	-	0	-	-	-	-	-	0		-
+zscalerten.net	dead	0	-	0	-	-	-	-	-	0		-
+zscalerthree.net	dead	0	-	0	-	-	-	-	-	0		-
+zscalertwo.net	dead	0	-	0	-	-	-	-	-	0		-
+zscloud.net	dead	0	-	0	-	-	-	-	-	0		-
+zslogin.net	dead	0	-	0	-	-	-	-	-	0		-
+zsloginbeta.net	dead	0	-	0	-	-	-	-	-	0		-

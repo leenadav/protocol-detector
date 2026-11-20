@@ -82,7 +82,7 @@ it is cited for the host names only.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R and L)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -148,9 +148,24 @@ vectors. Specification:
 
 ## 9. Live verification (L)
 
-**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
-Names to verify (catalog domains of `github-copilot`, `github`): `githubcopilot.com`, `copilot-proxy.githubusercontent.com`, `origin-tracker.githubusercontent.com`, `copilot-telemetry.githubusercontent.com`, `production-copilot-host.webpubsub.azure.com`, `production-copilot-host-centralus.webpubsub.azure.com`, `production-copilot-host-centralus-02.webpubsub.azure.com`, `production-copilot-host-eastasia.webpubsub.azure.com`, `production-copilot-host-austriaeast.webpubsub.azure.com`, `production-copilot-host-westus.webpubsub.azure.com`, `production-copilot-host-westus3.webpubsub.azure.com`, `github.com`, `githubusercontent.com`, `githubassets.com`.
+| Catalog name | Live result (2026-11-20) |
+|---|---|
+| `githubcopilot.com` | resolves; TLS handshake failed (SSLCertVerificationError): not a removal reason; round 2 re-checks |
+| `copilot-proxy.githubusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.githubusercontent.com` (SAN covers name: True) |
+| `origin-tracker.githubusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.githubusercontent.com` (SAN covers name: True) |
+| `copilot-telemetry.githubusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.githubusercontent.com` (SAN covers name: True) |
+| `production-copilot-host.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
+| `production-copilot-host-centralus.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
+| `production-copilot-host-centralus-02.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
+| `production-copilot-host-eastasia.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
+| `production-copilot-host-austriaeast.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
+| `production-copilot-host-westus.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
+| `production-copilot-host-westus3.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
+| `github.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `github.com` (SAN covers name: True) |
+| `githubusercontent.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `copilot-proxy.githubusercontent.com` (TLS TLSv1.3, cert `*.githubusercontent.com`) |
+| `githubassets.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `github.githubassets.com` (TLS TLSv1.3, cert `*.githubassets.com`) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
@@ -158,12 +173,12 @@ Names to verify (catalog domains of `github-copilot`, `github`): `githubcopilot.
 
 Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
 
-| Host | Requests (refused) | Class | Attribution today | Note |
-|---|---|---|---|---|
-| `github.com` | 2 (0) | app-owned | `github` |  |
-| `github.githubassets.com` | 70 (70) | app-owned | `github` |  |
-| `images.ctfassets.net` | 11 (11) | third party | no application | Contentful CMS assets |
-| `videos.ctfassets.net` | 2 (2) | third party | no application | Contentful CMS assets |
+| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `github.com` | 2 (0) | app-owned | `github` |  |  |
+| `github.githubassets.com` | 70 (70) | app-owned | `github` |  |  |
+| `images.ctfassets.net` | 11 (11) | third party | no application | not checked | Contentful CMS assets |
+| `videos.ctfassets.net` | 2 (2) | third party | no application | not checked | Contentful CMS assets |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -172,7 +187,8 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - Functions separated by name: `github-copilot` (GitHub Copilot), `github` (GitHub code hosting).
 - Variant: not separated by name.
 - Dependencies (observed, never attributed to this app): `images.ctfassets.net`, `videos.ctfassets.net`.
-- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
-- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+- Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
+- QUIC path (`h3` in the HTTPS record): none advertised.
+- Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->

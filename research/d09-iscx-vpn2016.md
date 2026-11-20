@@ -371,8 +371,8 @@ server-side identification. The 211 invalidated sessions were probably reassembl
 - **Recommendations for the Engine lane** (product decisions, not made here):
   1. a regression test with these vectors: generator `research/protocol/vectors/tls12_window_pcap.py`
      (`python3 tls12_window_pcap.py OUT.pcap 009c 66000`; synthetic loopback only), rows as above;
-  2. decide whether an overflow of the window **after** a side has already been identified should revoke that
-     identification. Today it does for an unlisted cipher, and it clears `client_protocol` even when the session
+  2. **DECISION** (product and security semantics; this lane's recommendation is in `backlog.md`): whether an
+     overflow of the window **after** a side has already been identified should revoke that identification. Today it does for an unlisted cipher, and it clears `client_protocol` even when the session
      is identified (row 2).
 
 ### Correction (b): consistent with genuine stray flows (not refuted)
@@ -434,3 +434,25 @@ Reading:
   because it keeps host names from the dataset.
 - **VPN captures**: the inner traffic is named as well as the non-VPN traffic (VPN YouTube 74 of 125
   app-named sessions), consistent with section 4's reading that the VPN captures were taken inside the tunnel.
+
+## 9. Email captures: server names of the unnamed TLS sessions (2026-11-20)
+
+Hermes's decision 5 (2026-11-20) allowed aggregate server-name counts for the unnamed TLS sessions in the email
+captures, with no addresses and no content. Method: the CIC form was submitted again with the same details; only
+`NonVPN-PCAPs-01.zip` and `VPN-PCAPS-01.zip` were downloaded (SHA-256 identical to section 1); the six email
+captures inside them were extracted one at a time; the engine head build was run with `--hostnames`; the archives
+and the cookie were deleted.
+
+| Server name (TLS SNI) | Port | Unnamed sessions (4 non-VPN + 2 VPN captures) |
+|---|---|---|
+| `smtp.googlemail.com` | 465 | 250 (150 + 100) |
+| `imap.googlemail.com` | 993 | 26 (19 + 7) |
+| `pop.googlemail.com` | 995 | 18 (14 + 4) |
+| no SNI | 13000 | 5 |
+| no SNI | 443 | 4 |
+
+**The `googlemail.com` hypothesis of section 8 is confirmed.** All 294 unnamed TLS sessions that carry an SNI
+are Gmail under `googlemail.com`. Gmail Help confirms that the domain is Gmail's
+(`https://support.google.com/mail/answer/10313`). Patch L adds `googlemail.com` to `gmail` (N2). With L applied, the
+email captures' Gmail sessions are named.
+

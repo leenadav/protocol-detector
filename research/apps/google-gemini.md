@@ -66,7 +66,7 @@ No ALPN, certificate or protocol-structure information is published. `UNVERIFIED
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R and L)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -75,7 +75,7 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | O+ | `gemini.google.com` | one of `google-gemini`, `google-ai-studio`, `google-notebooklm` | `google-gemini` | PASS |
 | D- | `gemini.gstatic.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
 | D- | `ogads-pa.clients6.google.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
-| D- | `play.google.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-play` | PASS |
+| D- | `play.google.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
 | D- | `www.googletagmanager.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-analytics` | PASS |
 | D- | `www.gstatic.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
 | L- | `xgoogle.com` | not google-gemini/google-ai-studio/google-notebooklm (label boundary) | no application | PASS |
@@ -119,9 +119,14 @@ proposed as its own id, `google-gemini-api`, in `apps/google-gemini-api.md`; no 
 
 ## 9. Live verification (L)
 
-**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
-Names to verify (catalog domains of `google-gemini`, `google-ai-studio`, `google-notebooklm`): `gemini.google.com`, `aistudio.google.com`, `notebooklm.google.com`, `notebook.google.com`.
+| Catalog name | Live result (2026-11-20) |
+|---|---|
+| `gemini.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
+| `aistudio.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
+| `notebooklm.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
+| `notebook.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
@@ -129,14 +134,14 @@ Names to verify (catalog domains of `google-gemini`, `google-ai-studio`, `google
 
 Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
 
-| Host | Requests (refused) | Class | Attribution today | Note |
-|---|---|---|---|---|
-| `gemini.google.com` | 3 (0) | app-owned | `google-gemini` |  |
-| `gemini.gstatic.com` | 2 (2) | shared vendor infra | `google-base` |  |
-| `ogads-pa.clients6.google.com` | 1 (1) | shared vendor infra | `google-base` |  |
-| `play.google.com` | 2 (2) | shared vendor infra | `google-play` |  |
-| `www.googletagmanager.com` | 1 (1) | shared vendor infra | `google-analytics` |  |
-| `www.gstatic.com` | 4 (0) | shared vendor infra | `google-base` |  |
+| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `gemini.google.com` | 3 (0) | app-owned | `google-gemini` |  |  |
+| `gemini.gstatic.com` | 2 (2) | shared vendor infra | `google-base` | not checked |  |
+| `ogads-pa.clients6.google.com` | 1 (1) | shared vendor infra | `google-base` | not checked |  |
+| `play.google.com` | 2 (2) | shared vendor infra | `google-base` | not checked |  |
+| `www.googletagmanager.com` | 1 (1) | shared vendor infra | `google-analytics` | not checked |  |
+| `www.gstatic.com` | 4 (0) | shared vendor infra | `google-base` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -145,8 +150,9 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - `google-notebooklm`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: `google-gemini` (Google Gemini), `google-ai-studio` (Google AI Studio), `google-notebooklm` (Google NotebookLM).
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `google-analytics`, `google-base`, `google-play`.
-- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
-- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+- Dependencies (observed, never attributed to this app): `google-analytics`, `google-base`.
+- Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
+- QUIC path (`h3` in the HTTPS record): none advertised.
+- Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->

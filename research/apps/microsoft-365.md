@@ -109,7 +109,7 @@ Built with `client_hello_with([...])` (server_name ext 0, ALPN ext 16), TCP 443 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R and L)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -169,13 +169,38 @@ Process note for the Engine lane: the web service is versioned and machine-reada
 could record the data version it was built from (here `2026103000`) as its provenance, instead of
 the current generic "operator-owned-domain" basis.
 
+**Decision applied (2026-11-20, Hermes decision 4):** `cdn.office.net` is shared Microsoft asset infrastructure.
+Third-party pages load it: GoTo's web app loads `res.cdn.office.net`, whose CNAME goes into Akamai (`edgesuite.net`)
+and whose certificate is `*.public.cdn.office.net`. Patch L moves `cdn.office.net` to the vendor-level `ms-base`.
+`teams.cdn.office.net` stays `ms-teams` (longer suffix), and the rest of `office.net` stays `ms-office365`.
+
 <!-- method-v2:start -->
 
 ## 9. Live verification (L)
 
-**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
-Names to verify (catalog domains of `ms-office365`, `ms-teams`, `outlook-web`, `sharepoint-online`): `office.com`, `office365.com`, `office.net`, `officeapps.live.com`, `microsoft365.com`, `cloud.microsoft`, `teams.microsoft.com`, `teams.live.com`, `teams.cdn.office.net`, `teams.cloud.microsoft`, `lync.com`, `outlook.office365.com`, `outlook.office.com`, `outlook.live.com`, `outlook.com`, `outlook.cloud.microsoft`, `sharepoint.com`, `sharepointonline.com`, `svc.ms`.
+| Catalog name | Live result (2026-11-20) |
+|---|---|
+| `office.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `m365.cloud.microsoft` (SAN covers name: True) |
+| `office365.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `akaoffice.trafficmanager.net` (SAN covers name: True) |
+| `office.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `res.cdn.office.net` (TLS TLSv1.3, cert `*.public.cdn.office.net`, cdn,h3) |
+| `officeapps.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `officeapps.live.com` (SAN covers name: True); CNAME into shared front end `wac-0003.wac-msedge.net`: name usable, IPs never |
+| `microsoft365.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `m365.cloud.microsoft` (SAN covers name: True) |
+| `cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `cloud.microsoft` (SAN covers name: True) |
+| `teams.microsoft.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `teams.microsoft.com` (SAN covers name: True) |
+| `teams.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `teams.live.com` (SAN covers name: True) |
+| `teams.cdn.office.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `teams.cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `teams.cloud.microsoft` (SAN covers name: True) |
+| `lync.com` | resolves; TLS handshake failed (SSLCertVerificationError): not a removal reason; round 2 re-checks |
+| `outlook.office365.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com` (SAN covers name: True) |
+| `outlook.office.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com` (SAN covers name: True) |
+| `outlook.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com` (SAN covers name: True) |
+| `outlook.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com` (SAN covers name: True) |
+| `outlook.cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.cloud.microsoft` (SAN covers name: True) |
+| `sharepoint.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `svc.ms` (SAN covers name: True) |
+| `sharepointonline.com` | resolves; TLS handshake failed (TimeoutError): not a removal reason; round 2 re-checks |
+| `svc.ms` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
@@ -191,7 +216,8 @@ Names to verify (catalog domains of `ms-office365`, `ms-teams`, `outlook-web`, `
 - Functions separated by name: `ms-office365` (Microsoft 365 web applications), `ms-teams` (Microsoft Teams chat and meetings), `outlook-web` (Outlook web mail (Microsoft 365 and Outlook.com)), `sharepoint-online` (SharePoint Online sites and files).
 - Variant: business (consumer Outlook.com and Skype are separate ids).
 - Dependencies (observed, never attributed to this app): none observed.
-- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
-- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+- Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
+- QUIC path (`h3` in the HTTPS record): `office.net`.
+- Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->

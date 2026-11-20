@@ -1,11 +1,15 @@
 // Dependency mapping (method v2, item 2): load a public web-client or login page without signing in and
 // record the host name of every request the page makes, including requests the egress proxy refuses.
 // Only host names, request counts and the final page host are written; no content, cookies or URLs paths.
-// usage: node observe_web.js OUT.json URL [URL ...]
+// usage: node observe_web.js OUT.json URL [URL ...]   or   node observe_web.js OUT.json --urls URLS.txt
+// Without HTTPS_PROXY it connects directly (the pass-2 run on the Hermes server).
 const { chromium } = require('playwright');
 const fs = require('fs');
 (async () => {
-  const [, , out, ...urls] = process.argv;
+  const [, , out, ...rest] = process.argv;
+  const urls = rest[0] === '--urls'
+    ? fs.readFileSync(rest[1], 'utf8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'))
+    : rest;
   const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
   const browser = await chromium.launch({ proxy: proxy ? { server: proxy } : undefined });
   const results = [];

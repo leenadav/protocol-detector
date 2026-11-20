@@ -79,8 +79,10 @@ means. Four checks are added, and each spec records their results:
    handshake per name, with no HTTP request and no account. It must run where DNS and TLS are not
    intercepted. The research cloud environment re-terminates TLS at its egress proxy and does not permit
    direct DNS, so there the tool runs only in DNS mode through an approved DoH resolver, or is run
-   elsewhere. Flags: `cdn` (name fine, IPs never), `ech` (SNI may vanish), `h3` (QUIC path), `dead`
-   (recommend removal after a second check).
+   elsewhere. Flags: `cdn` (name fine, IPs never), `ech` (SNI may vanish), `h3` (QUIC path), `nxdomain`
+   (recommend removal after a second check; RFC 8020), `no-address` (an apex or suffix with no address: normal, not
+   dead; verified through a documented subdomain given as the line's PROBE) and `tls-fail` (not a removal reason).
+   Runs from the Hermes server (Hermes's decision 1, 2026-11-20); this lane writes the tools and host lists.
 2. **Dependency mapping** (`tools/observe_web.js`, input `O`). The app's public web client or login page is
    loaded in headless Chromium with a fresh profile, no sign-in, and only host names kept. Hosts are classed
    as app-owned, shared vendor infrastructure (sign-in, telemetry, CDN) or third party (analytics,

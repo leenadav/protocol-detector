@@ -73,7 +73,11 @@ signing in, for dependency mapping (item 2); **FEED** = vendor machine-readable 
   (`UNVERIFIED`). The remaining R1 hosts in the table above can be added by Lee in the environment settings,
   or in a new environment dedicated to dependency mapping. This lane does not work around the limit.
 
-## Decisions needed (not vendor-owned, so not requested)
+## Decisions needed (not vendor-owned, so not requested): **resolved 2026-11-20**
+
+Hermes's decisions 1, 2 and 6: the live tools and dependency-mapping pass 2 run on the Hermes server (no proxy). No DoH
+resolver or Tranco host is added here, and the allowlist limit is not pursued. Inputs for those runs: `live-hosts-r2.txt`
+and `web-urls.txt`.
 
 | Host | Why | Decision |
 |---|---|---|

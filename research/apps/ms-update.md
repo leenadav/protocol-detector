@@ -40,7 +40,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F, G and H)
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R and L)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -66,13 +66,24 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 ("ms-update", ..., ("windowsupdate.com", "update.microsoft.com", "delivery.mp.microsoft.com", "do.dsp.mp.microsoft.com", "tsfe.trafficshaping.dsp.mp.microsoft.com", "emdl.ws.microsoft.com")),
 ```
 
+**Live result (2026-11-20):** `emdl.ws.microsoft.com` is **NXDOMAIN**. The documentation lists it for
+"Windows 10, version 2004", so it has most likely been retired. Patch L removes it from `ms-update`; it now falls to
+`ms-base`. `tsfe.trafficshaping.dsp.mp.microsoft.com` resolves through an Azure App Service name, but its TLS
+handshake failed certificate verification. It is kept, since that is not a removal reason, and round 2 re-checks it.
+
 <!-- method-v2:start -->
 
 ## 9. Live verification (L)
 
-**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
-Names to verify (catalog domains of `ms-update`): `windowsupdate.com`, `update.microsoft.com`, `delivery.mp.microsoft.com`, `do.dsp.mp.microsoft.com`, `tsfe.trafficshaping.dsp.mp.microsoft.com`, `emdl.ws.microsoft.com`.
+| Catalog name | Live result (2026-11-20) |
+|---|---|
+| `windowsupdate.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `update.microsoft.com` | **L** resolves; TLSv1.2, ALPN `None`, cert `redir.update.microsoft.com` (SAN covers name: True); CNAME into shared front end `redir.update.msft.com.trafficmanager.net`: name usable, IPs never |
+| `delivery.mp.microsoft.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `do.dsp.mp.microsoft.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `tsfe.trafficshaping.dsp.mp.microsoft.com` | resolves; TLS handshake failed (SSLCertVerificationError): not a removal reason; round 2 re-checks; CNAME into shared front end `waws-prod-dm1-4d1733db.sip.p.azurewebsites.windows.net`: name usable, IPs never |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
@@ -84,7 +95,8 @@ No public web client or login page for this application (desktop agent, tenant-s
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
 - Dependencies (observed, never attributed to this app): none observed.
-- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
-- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+- Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
+- QUIC path (`h3` in the HTTPS record): none advertised.
+- Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->

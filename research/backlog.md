@@ -30,6 +30,8 @@ score is V × R. `BLOCKED` caps R at 1.
 
 ### Decisions recorded (Hermes, 2026-11-19)
 
+- Hermes 2026-11-20: live tools and dependency pass 2 run on the Hermes server; observed-only names enter at O only with
+  certificate or official-page ownership; shared vendor CDNs go to vendor-level ids; email server names recorded in aggregate.
 - Method v2 adopted (Lee via Hermes): live verification, dependency mapping, App-ID attributes, change tracking, per-app accuracy and usage-based priority (`README.md`).
 
 - `goto.com` and the other GoTo universal domains get a vendor-level `goto` id (the Engine lane is implementing it).
@@ -38,24 +40,44 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
-### Method v2 retrofit summary (2026-11-19)
+### Method v2 retrofit summary (updated 2026-11-20 with live verification)
 
-All 63 entries in `apps.json` were retrofitted, including batches A to D, with sections 9 to 11 and the v2
-vectors in section 6 (`tools/retrofit_specs.py`).
+All 63 entries in `apps.json` (batches A to D included) carry sections 9 to 11 and the v2 vectors (`tools/retrofit_specs.py`).
+Live data: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`live-results-2026-11-20.tsv`, 358 names).
 
 | Measure | Result |
 |---|---|
-| Catalog hosts confirmed live (`L`) | **0 of 320** spec catalog names (875 in the whole catalog): BLOCKED. This environment re-terminates TLS and does not permit direct DNS. `live-hosts.txt` (358 names) is ready for `tools/live_verify.py` at an unproxied vantage point |
-| Dead (NXDOMAIN or no answer) | unknown (needs `L`) |
-| CDN-fronted / ECH-capable / `h3` | unknown (needs `L`) |
-| Web clients loaded (pass 1) | 28 entry pages attempted: 18 answered, 10 timed out on a bot check or redirected to a host not on the allowlist. 26 more entry pages are blocked by the allowlist limit (`allowlist-requests.md`) |
-| Hosts observed | 92 (host names only): 47 app-owned and already attributed correctly; **4 app-owned but unmapped**; 41 dependencies (shared vendor sign-in or CDN, or third-party consent, CAPTCHA, telemetry and analytics) |
-| Attributions changed | patch R (DECISION): `copilot.com` → `ms-copilot`, `boxcdn.net` → `box`, `gitlab.net` → `gitlab`. No dependency host was attributed to the app that loaded it |
-| Attribution risks found | `res.cdn.office.net` (Microsoft's shared asset CDN) is loaded by GoTo's web app but reports `ms-office365` through `cdn.office.net`. `play.google.com`, loaded by the Gemini page, reports `google-play` |
-| Vectors | 398 (observed positives, dependency negatives, label-boundary and suffix look-alikes): all pass with R; without R, 4 positives are unmapped |
-| Change tracking | 85 cited pages and 4 feeds recorded in `source-state.json`: 72 pages hashed, 13 unreadable (bot checks, HTTP errors), 3 noisy. Feeds: Microsoft 365 endpoints version `2026103000`; Google `goog.json` / `cloud.json` sync token `1795097172378`; Salesforce `ip-ranges.json` blocked (allowlist limit) |
+| Catalog names in the specs | 320 (the round-1 list covers 358 names, including observed hosts) |
+| Confirmed live (`L`: resolves and completes TLS) | **206** |
+| Suffix entries verified through a documented subdomain | **7** (apex has no address, documented subdomain live) |
+| Apex with no address, not yet verified | **87**: normal for suffix entries, **not dead**; 12 have a documented probe queued in round 2, and 75 are documented only as wildcards or bare domains |
+| Resolve, but TLS failed | **17** (7 certificate verification, 5 timeout, 3 SSL, 2 other: apex names serving another name's certificate, or no listener); not removal reasons; round 2 re-checks |
+| NXDOMAIN (recommend removal, RFC 8020) | **3**: `emdl.ws.microsoft.com` (removed in patch L), `epm.gpcloudservice.com` and `filter.paloaltonetworks.com` (Engine lane to drop `prisma-access` from patch F) |
+| CDN- or cloud-fronted (name usable, IPs never) | **28** catalog names (37 of the 358) |
+| ECH-capable (HTTPS record `ech`) | **2**: `bitwarden.eu`, `signal.art` |
+| QUIC advertised (`h3`) | **27** catalog names (28 of the 358) |
+| Hosts observed (dependency mapping, pass 1) | 92: 51 app-owned (47 already mapped, plus the 4 that patch R maps), 41 dependencies |
+| Attributions changed | patch L: `cdn.office.net` → `ms-base`; `play.google.com` → `google-base`; `emdl.ws.microsoft.com` removed; `googlemail.com` → `gmail`. Patch R (`copilot.com`, `boxcdn.net`, `gitlab.net`) on HOLD for certificate organisation (decision 3) |
+| Vectors | 399 v2 vectors, all pass with R and L applied |
+| D09 per application | Gmail in the email captures: 0 of 294 SNI-bearing unnamed sessions before L; all are `*.googlemail.com`, so all are named with L |
 | Re-verify by | 2027-02-17 for every spec |
-| D09 per application | `d09-iscx-vpn2016.md` section 8: YouTube 7/7, Netflix 4/4, Vimeo 4/4, Spotify 4/4 captures named; Facebook 8/15; Skype 11/20; Gmail (Thunderbird) 0/4 (open hypothesis: `googlemail.com`) |
+
+Pending runs (Hermes server): `live-hosts-r2.txt` (363 names, 20 with probes, now recording certificate organisation) and
+dependency-mapping pass 2 with `web-urls.txt` (59 URLs): `node research/tools/observe_web.js OUT.json --urls research/web-urls.txt`.
+
+### Older open items resolved by this lane (Hermes decision 7, 2026-11-20)
+
+- **Content version ordering: recommendation applied.** The Engine lane makes release comparison numeric (per
+  `YYYY.MM.N` component, with a regression test that `x.y.9` sorts before `x.y.10`) in `protocol_engine/content.py` and
+  `go/internal/content/content.go`. Until then the patches keep their sortable placeholders (`2026.12.1` to `2026.12.5`),
+  and the Engine lane renumbers them at implementation.
+- **`google-gemini-api` split: kept** (rationale in `apps/google-gemini-api.md`).
+- **`citrix-cloud` risk: 3** (rationale in `apps/citrix-cloud.md`).
+- **WorkSpaces regional API hosts: left out** (rationale in `apps/amazon-workspaces.md`).
+- **Window-overflow revocation: DECISION** (detection semantics and evasion, so a genuine product and security
+  decision). This lane's recommendation: a side identified from a complete initial message keeps its identification
+  when later data overruns the stream window; the overflow ends tracking for that side and is reported, but does not
+  revoke the identification. Overlap conflicts keep invalidating, as the AGENTS contract requires.
 
 ### Prioritisation inputs (method v2, item 6)
 

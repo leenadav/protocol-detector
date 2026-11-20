@@ -43,7 +43,7 @@ P1, P2 and N1 were checked with `attribution_for_host` in scratch (batches A, B 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-19 against `c08773f` plus batches D to I and retrofit R)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R and L)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -74,9 +74,12 @@ host keeps resolving to `perplexity` through its domain, which is correct but le
 
 ## 9. Live verification (L)
 
-**BLOCKED in the research environment** (2026-11-19): its egress proxy re-terminates TLS, so a handshake would show the proxy, and direct DNS is not permitted. The tool is `research/tools/live_verify.py`; it runs from an unproxied vantage point or, DNS only, through an approved DoH resolver. No host below carries an `L` result yet.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
-Names to verify (catalog domains of `perplexity`, `perplexity-api`): `perplexity.ai`, `api.perplexity.ai`.
+| Catalog name | Live result (2026-11-20) |
+|---|---|
+| `perplexity.ai` | **L** resolves; TLSv1.3, ALPN `h2`, cert `perplexity.ai` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
+| `api.perplexity.ai` | **L** resolves; TLSv1.3, ALPN `h2`, cert `perplexity.ai` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
@@ -89,7 +92,8 @@ Names to verify (catalog domains of `perplexity`, `perplexity-api`): `perplexity
 - Functions separated by name: `perplexity` (Perplexity AI), `perplexity-api` (Perplexity API).
 - Variant: not separated by name.
 - Dependencies (observed, never attributed to this app): none observed.
-- Evasive (ECH, DoH, proxy modes): ECH support unknown until a live HTTPS-record check (section 9); other modes as stated in sections 2 to 4.
-- Re-verify by: **2027-02-17** (`research/tools/recheck_sources.py` tracks the cited pages).
+- Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
+- QUIC path (`h3` in the HTTPS record): `perplexity.ai`, `api.perplexity.ai`.
+- Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->
