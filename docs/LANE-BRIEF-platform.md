@@ -23,9 +23,10 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-20)
+## 2. Current state (2026-11-20, after PRO-32)
 
-- `main` = `2b97e2d`. `claude/cicd-next` is equal to `main` plus this brief. No lane PR is open.
+- `main` = `2b97e2d`. `claude/cicd-next` is `main` plus `078268a` (this brief) and `a5d4b4c` (PRO-32). No lane
+  PR is open.
 - **Merged so far:**
 
   | PR | Content |
@@ -73,8 +74,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
-| Possibly stale `AGENTS.md` lines (proxy exclusion, the "10 minutes" cadence) | An instruction via #7 or #2 |
-| Leftover branch-limited `push` triggers in `merge-readiness.yml` (`claude/cicd-next`) and `perf-history.yml` (`claude/cicd-release-prep`); harmless, read-only | A later cleanup PR |
+| `078268a` and `a5d4b4c` reach `main` (lane brief; proxy-scope and cadence lines in `AGENTS.md`; branch-limited `push` triggers removed) | A PR, when Hermes or Lee asks for one |
 
 ## 6. Frozen SHAs awaiting Codex
 
@@ -82,6 +82,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   `d7c482c`, `b57b819`, `8a129c7`.
 - **Also:** `b97adc8` (Dependabot pins, chunk 06) and `85e99e9` (govulncheck, chunk 07).
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
+- **Not yet on `main`:** `a5d4b4c` (PRO-32: workflow trigger removal and two `AGENTS.md` lines).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
