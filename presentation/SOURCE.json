@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "e8830db4355f4a9498e1c03e452a03d0698122be",
-  "branch": "codex/fix-quic-retirement-http304",
-  "build_digest": "6d9f2621edb6e479727792cf52e03dc11a35ac537da80010eedc64c8758ac1bd",
+  "commit": "2b97e2d6ddac8de2f6d451ed8e0b85ecc5d14a54",
+  "branch": "claude/fix-content-version-order",
+  "build_digest": "a1e6cf216a60ecf19e5a3a9886f9929b645f809e5e378d999c9e4afbf3282951",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -75,7 +75,7 @@
     {
       "path": "protocol_engine/content.py",
       "component": "engine",
-      "sha256": "7d511d6e07ccead8725b15cf44b0ead0861f58cfb18c7bb6452d843515d686d0"
+      "sha256": "56f54e10d3b3be303072fc0a27b39bbbace3ce34513dfb149400a65b0857d38f"
     },
     {
       "path": "protocol_engine/continuation.py",

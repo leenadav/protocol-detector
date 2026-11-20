@@ -3,6 +3,8 @@ import json
 import os
 import tempfile
 import unittest
+from types import MappingProxyType
+from unittest import mock
 
 from protocol_adapters.analyze_pcap import Analyzer
 from protocol_adapters.link_packets import decode_frame
@@ -11,6 +13,12 @@ from protocol_adapters.make_sample_pcap import frame
 from protocol_engine import content
 from protocol_engine.host_apps import APP_DOMAINS, HOST_SUFFIXES, WEB_FRONTS, application_for_host, attribution_for_host, build_tables
 from tools import check_content, schema_check
+
+
+def _numeric_version(version):
+    """YYYY.MM.N as integers: 2026.11.9 sorts before 2026.11.10."""
+    return tuple(int(part) for part in version.split("."))
+
 
 CLIENT, SERVER = ("192.0.2.10", 52000), ("198.51.100.20", 80)
 
@@ -25,7 +33,10 @@ class HistoryAndLockTests(unittest.TestCase):
 
     def test_releases_are_dated_and_ordered(self):
         versions = [item.version for item in content.releases()]
-        self.assertEqual(versions, sorted(versions))
+        for version in versions:
+            self.assertRegex(version, r"^\d{4}\.\d{1,2}\.\d+$")
+        self.assertEqual(versions, sorted(versions, key=_numeric_version))  # numerically, not as strings
+        self.assertEqual(len(set(versions)), len(versions))
         for item in content.releases():
             self.assertRegex(item.released, r"^\d{4}-\d{2}-\d{2}$")
             self.assertRegex(item.reviewed, r"^\d{4}-\d{2}-\d{2}$")
@@ -108,6 +119,61 @@ class RollbackTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_tables([{"name": "a", "domains": ("a.example",), "web_fronts": ("w.example",)},
                           {"name": "b", "domains": ("b.example",), "web_fronts": ("w.example",)}])
+
+
+class VersionOrderTests(unittest.TestCase):
+    """Releases numbered past N = 9: 2026.11.10 comes after 2026.11.9.
+
+    content.py used to compare release versions as strings, so "2026.11.10" sorted before "2026.11.9". These tests
+    simulate two further releases, 2026.11.9 and 2026.11.10, over the real tables (2026.11.9 carried one more
+    domain on the first catalog entry). With string comparison the rollback and the new release get the wrong
+    catalog; each test below fails on the string comparison and passes with content.compare_versions."""
+
+    NINE, TEN = "2026.11.9", "2026.11.10"
+    MARK = "version-order-marker.invalid"
+
+    def setUp(self):
+        self.entry = next(entry for entry in content.host_entries() if entry["domains"])
+        history = content.HISTORY + tuple(content.Release(v, "2026-11-20", "2026-11-20", "simulated release", "test")
+                                          for v in (self.NINE, self.TEN))
+        prior = dict(content._PRIOR_HOST_STATE)
+        prior[self.NINE] = MappingProxyType({self.entry["name"]: {"domains": tuple(self.entry["domains"]) + (self.MARK,)}})
+        for patch in (mock.patch.object(content, "HISTORY", history),
+                      mock.patch.object(content, "_PRIOR_HOST_STATE", MappingProxyType(prior))):
+            patch.start()
+            self.addCleanup(patch.stop)
+
+    def _domains(self, version):
+        return next(entry for entry in content.host_entries(version) if entry["name"] == self.entry["name"])["domains"]
+
+    def test_rolling_back_to_nine_applies_its_prior_state(self):
+        self.assertIn(self.MARK, self._domains(self.NINE))
+
+    def test_the_newest_release_keeps_the_current_catalog(self):
+        self.assertNotIn(self.MARK, self._domains(self.TEN))
+        self.assertEqual(self._domains(self.TEN), self.entry["domains"])
+
+    def test_provenance_of_the_newest_release(self):
+        self.assertEqual(content.host_provenance(self.TEN)[self.entry["name"]]["reviewed"], "2026-11-20")
+
+    def test_the_gate_does_not_flag_ten_after_nine_as_out_of_order(self):
+        # the simulated releases have no lock, so check() reports that; never the order
+        self.assertNotIn("content releases are not strictly increasing", content.check())
+
+    def test_compare_versions(self):
+        """The same table as Go's TestCompareVersionsIsNumeric (go/internal/content/version_test.go on
+        claude/go-migration)."""
+        cases = [("2026.11.9", "2026.11.10", -1), ("2026.11.10", "2026.11.9", 1), ("2026.11.10", "2026.11.10", 0),
+                 ("2026.11.1", "2026.11.10", -1), ("2026.11.10", "2026.11.11", -1), ("2026.11.99", "2026.11.100", -1),
+                 ("2026.9.0", "2026.10.0", -1), ("2025.10.0", "2026.11.0", -1), ("2026.11.9", "2026.12.1", -1),
+                 ("2026.12.0", "2027.1.0", -1), ("2026.11", "2026.11.0", -1), ("2026.11.x", "2026.11.y", -1),
+                 ("2026.11.09", "2026.11.9", -1),
+                 # Go's ParseUint: no sign, no underscore, no non-ASCII digit, at most 2**64 - 1
+                 ("2026.11.+9", "2026.11.10", -1), ("2026.11.1_0", "2026.11.9", -1), ("2026.11.\u0669", "2026.11.10", 1),
+                 ("2026.11.18446744073709551616", "2026.11.2", -1), ("2026.11.18446744073709551615", "2026.11.2", 1)]
+        for a, b, want in cases:
+            self.assertEqual(content.compare_versions(a, b), want, (a, b))
+            self.assertEqual(content.compare_versions(b, a), -want, (b, a))
 
 
 class RecordTests(unittest.TestCase):

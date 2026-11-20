@@ -16,8 +16,10 @@ Rollback covers the server-name catalog, whose earlier states are kept here as
 the differences from the current entries; the application catalog and the family
 inventory change only with engine releases and roll back with the package.
 """
+import functools
 import hashlib
 import json
+import re
 from collections import namedtuple
 from pathlib import Path
 from types import MappingProxyType
@@ -64,6 +66,42 @@ def releases():
     return HISTORY
 
 
+_DECIMAL = re.compile(r"[0-9]+")
+
+
+def _version_component(text):
+    """The component as an unsigned 64-bit decimal (Go's strconv.ParseUint(text, 10, 64)), or None."""
+    if not _DECIMAL.fullmatch(text):
+        return None
+    value = int(text)
+    return value if value < 1 << 64 else None
+
+
+def compare_versions(a, b):
+    """Order content release versions (YYYY.MM.N) by their numeric components: 2026.11.9 before 2026.11.10.
+
+    The same rule as Go's content.CompareVersions: components are compared as decimal integers; a component that
+    is not one falls back to byte order for that component; with the shared components equal, the version with
+    fewer components comes first; numerically equal spellings ("09", "9") are ordered by the strings. Returns -1,
+    0 or 1. (PRO-31, Lee's approval of 2026-11-20: before this, releases were compared as strings.)"""
+    pa, pb = a.split("."), b.split(".")
+    for x, y in zip(pa, pb):
+        nx, ny = _version_component(x), _version_component(y)
+        if nx is not None and ny is not None:
+            if nx != ny:
+                return -1 if nx < ny else 1
+        elif x != y:
+            return -1 if x.encode() < y.encode() else 1
+    if len(pa) != len(pb):
+        return -1 if len(pa) < len(pb) else 1
+    if a == b:
+        return 0
+    return -1 if a.encode() < b.encode() else 1
+
+
+version_key = functools.cmp_to_key(compare_versions)
+
+
 def release(version):
     for item in HISTORY:
         if item.version == version:
@@ -84,7 +122,7 @@ def host_entries(version=None):
     release(version)
     entries = [_entry_dict(entry) for entry in _HOST_APPS]
     for item in reversed(HISTORY):
-        if item.version < version:
+        if compare_versions(item.version, version) < 0:
             break
         prior = _PRIOR_HOST_STATE.get(item.version)
         if not prior:
@@ -105,7 +143,7 @@ def host_provenance(version=None):
     current = {entry["name"] for entry in host_entries(version)}
     first = {}
     for item in HISTORY:
-        if item.version > version:
+        if compare_versions(item.version, version) > 0:
             break
         for entry in host_entries(item.version):
             first.setdefault(entry["name"], item.version)
@@ -198,7 +236,7 @@ def check(path=LOCK_PATH):
     """Problems between the content tables, the release history and the lock file (empty when consistent)."""
     problems = []
     versions = [item.version for item in HISTORY]
-    if versions != sorted(versions) or len(set(versions)) != len(versions):
+    if versions != sorted(versions, key=version_key) or len(set(versions)) != len(versions):
         problems.append("content releases are not strictly increasing")
     for item in HISTORY:
         for field in ("released", "reviewed"):
