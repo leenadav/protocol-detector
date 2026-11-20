@@ -30,6 +30,10 @@ score is V × R. `BLOCKED` caps R at 1.
 
 ### Decisions recorded (Hermes, 2026-11-19)
 
+- Window overflow after identification (D09 (a)), Hermes 2026-11-20 (PRO-30): an identified side keeps its
+  identification; the overflow ends tracking and is flagged; overlap conflicts still invalidate. Engine item
+  `protocol/window-overflow.md` (ENGINE-FIELD, post-merge, Go only, approved parity delta).
+
 - Hermes 2026-11-20: live tools and dependency pass 2 run on the Hermes server; observed-only names enter at O only with
   certificate or official-page ownership; shared vendor CDNs go to vendor-level ids; email server names recorded in aggregate.
 - Method v2 adopted (Lee via Hermes): live verification, dependency mapping, App-ID attributes, change tracking, per-app accuracy and usage-based priority (`README.md`).
@@ -74,8 +78,9 @@ dependency-mapping pass 2 with `web-urls.txt` (59 URLs): `node research/tools/ob
 - **`google-gemini-api` split: kept** (rationale in `apps/google-gemini-api.md`).
 - **`citrix-cloud` risk: 3** (rationale in `apps/citrix-cloud.md`).
 - **WorkSpaces regional API hosts: left out** (rationale in `apps/amazon-workspaces.md`).
-- **Window-overflow revocation: DECISION** (detection semantics and evasion, so a genuine product and security
-  decision). This lane's recommendation: a side identified from a complete initial message keeps its identification
+- **Window-overflow revocation: DECIDED** by Hermes (CTO), 2026-11-20 (Paperclip PRO-30): the recommendation is
+  accepted, and the Engine item is `protocol/window-overflow.md` (ENGINE-FIELD, post-merge, Go only, with an approved parity
+  delta). The accepted recommendation: a side identified from a complete initial message keeps its identification
   when later data overruns the stream window; the overflow ends tracking for that side and is reported, but does not
   revoke the identification. Overlap conflicts keep invalidating, as the AGENTS contract requires.
 
@@ -234,6 +239,7 @@ Patch: `patches/batch-d-name-based.patch` (release 2026.11.7). Tested: 45 vector
 | TeamViewer port-5938 protocol | `apps/teamviewer.md` | BLOCKED | vendor publishes no protocol; never to be reconstructed from third-party dissectors |
 | AnyDesk session TLS details (SNI or not) | `apps/anydesk.md` | PARTIAL | not published; research only |
 | Telegram MTProto TCP family | `protocol/telegram-mtproto.md` | READY, **PROTOCOL** | byte-exact vectors; open point: CRC variant and byte order |
+| Stream-window overflow after identification keeps the identification (D09 (a)) | `protocol/window-overflow.md` | READY (decided by Hermes, PRO-30), **ENGINE-FIELD** | vectors W1 to W6; generator `protocol/vectors/tls12_window_pcap.py`; approved parity delta needed |
 | UDP flow decisions for weak families (CoAP, OpenVPN) | `protocol/udp-flow-decision.md` | READY for decision, **ENGINE-FIELD** | measured random-input rates 1.35e-4 (CoAP) and 0.95e-4 (OpenVPN) per datagram |
 | TLS ServerHello profile widening | `protocol/tls-serverhello-legacy.md` | READY for decision, **PROTOCOL** | accept registered TLS 1.0 to 1.2 suites; RFC 8996 risk instead of invalidation |
 | D09 findings | `d09-iscx-vpn2016.md` 4.4, 6 | tracked by the Engine lane; now specified in `protocol/` | post-merge Go-only items (Hermes, 2026-11-18) |

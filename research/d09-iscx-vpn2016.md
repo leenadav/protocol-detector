@@ -371,8 +371,11 @@ server-side identification. The 211 invalidated sessions were probably reassembl
 - **Recommendations for the Engine lane** (product decisions, not made here):
   1. a regression test with these vectors: generator `research/protocol/vectors/tls12_window_pcap.py`
      (`python3 tls12_window_pcap.py OUT.pcap 009c 66000`; synthetic loopback only), rows as above;
-  2. **DECISION** (product and security semantics; this lane's recommendation is in `backlog.md`): whether an
-     overflow of the window **after** a side has already been identified should revoke that identification. Today it does for an unlisted cipher, and it clears `client_protocol` even when the session
+  2. **Decided by Hermes (CTO), 2026-11-20 (PRO-30):** an overflow of the window after a side has been identified
+     does **not** revoke that identification. It ends tracking for that side and is reported as a flag, while overlap
+     conflicts keep invalidating. Engine item: `research/protocol/window-overflow.md` (post-merge, Go only, approved
+     parity delta), with vectors W1 to W6. The row-2 case (`client_protocol` emptied beyond the window) is covered by
+     the same item. Today it does for an unlisted cipher, and it clears `client_protocol` even when the session
      is identified (row 2).
 
 ### Correction (b): consistent with genuine stray flows (not refuted)

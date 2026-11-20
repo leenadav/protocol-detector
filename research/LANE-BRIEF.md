@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-20. **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-20 (PRO-30). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -35,7 +35,7 @@ and content-pack patches for the Engine lane.
 3. `research/patches/README.md`: every patch with its base, release, digests and checks, plus the Engine amendments.
 4. `research/apps/*.md`: one spec per app; `research/apps.json` maps specs to ids and web URLs.
 5. `research/d09-iscx-vpn2016.md` and `research/datasets.md` (licences, LEE-1, ranking sources).
-6. `research/protocol/`: post-merge PROTOCOL and ENGINE-FIELD specs (`app-attributes.md`, UDP rule, TLS widening, Telegram).
+6. `research/protocol/`: post-merge PROTOCOL and ENGINE-FIELD specs (`app-attributes.md`, `window-overflow.md`, UDP rule, TLS widening, Telegram).
 7. `research/tools/`: `retrofit_specs.py`, `live_verify.py`, `observe_web.js`, `recheck_sources.py`, `rank_domains.py`.
    Their inputs and outputs are `live-hosts*.txt`, `live-results-*.tsv`, `web-urls.txt`, `observations/`,
    `source-state.json` and `app-domains.json`.
@@ -72,8 +72,8 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Patch R (`copilot.com`, `boxcdn.net`, `gitlab.net`) | HOLD: live round 2 certificate organisation (Hermes decision 3) |
 | Live round 2 (`live-hosts-r2.txt`, 363 names, 20 probes) | Hermes server run |
 | Dependency pass 2 (`web-urls.txt`, 59 URLs) | Hermes server run of `observe_web.js --urls` |
-| Ranking (CrUX, Majestic Million) | licence quotes from Google's and Majestic's own pages, then the Hermes run of `rank_domains.py` |
-| Window-overflow revocation (D09 (a)) | **DECISION** for Lee or Hermes (product and security semantics); recommendation in `backlog.md` |
+| Ranking (CrUX, Majestic Million) | Research Lab's verbatim licence quotes (asked under PRO-30), then the LEE-1 verdict in `datasets.md` and the Hermes run of `rank_domains.py` |
+| Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
 | Content version ordering | Engine: numeric comparison plus a regression test, then renumber the placeholders |
 | Blocked vendor pages (Umbrella, Parsec, Asana, Jamf, Atera; Salesforce and Grammarly linked pages) | Hermes relay (`blocked-urls.md`) |
 | Culvert field data for prioritisation | not available yet (placeholder in the backlog) |
