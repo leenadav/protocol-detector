@@ -19,6 +19,13 @@ review of the frozen snapshots is Codex's. The draft pull-request text is `migra
 
 ### Conflicts today (trial merge at `7dcabb7`) and the resolution plan
 
+Re-checked 2026-11-20 against `main` `2b97e2d` (`git merge --no-commit` in a scratch worktree, aborted; no ref
+changed): the same 7 files conflict. `ci.yml` and `workflows.lock.json` now have 2 hunks each, because `main` has
+the CI/CD lane's govulncheck port (`85e99e9`, PR #32), which resolves to `main`'s text. The Makefile, `README.md`,
+`REVIEW-SCOPE.md`, `SSDLC.md` and `SOURCE.json` hunk counts are as in the table. Once PR #39 (the numeric content
+version order on `main`) is merged, `protocol_engine/content.py`, `test_content.py` and `migration/STATUS.md` may also
+conflict. Take this branch's side for all three, since it already contains that fix (`376a204`).
+
 The same 7 files as at `baa07b9`; the Makefile now has 2 hunks (the vendoring added the second). Resolve on one
 merge commit of `main` into this branch (no rebase, no force-push); the CI/CD lane resolves its own files.
 

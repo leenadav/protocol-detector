@@ -74,6 +74,8 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | Item | Waits on |
 |---|---|
 | PRO-31 (`6194fb9`, `4d8aa29`, `376a204`) | Engine work done; Hermes approved it, and PRO-31 is parked. Codex's code review is PRO-58 (under PRO-11), waiting for Codex's quota to come back. If it finds problems, Hermes reopens PRO-31 or opens a new Engine task; if not, PRO-31 closes. |
+| PR #39 `claude/fix-content-version-order` → `main` (`37b3c84`, PRO-44): `376a204` re-applied on `main`, with only `content.py`, its tests and the exception note | Hermes's review, then Lee's one-tap merge. Never merge, close, comment on or approve it ourselves. |
+| Draft PR `claude/go-migration` → `main` (PRO-44) | Codex's review, then Lee's decision. Leave it draft, and don't resolve conflicts on the branch. |
 | Codex review of the packet (`dbe20f3..50ce5c0`) | Codex, from Sunday. Fix rounds are reviewed as the fix diff only. |
 | Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. |
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
