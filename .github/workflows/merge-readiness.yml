@@ -2,21 +2,14 @@
 # runner (tools/merge_readiness.py, `git merge-tree --write-tree`), reported in the job summary
 # as clean or conflicting with every conflicting file. Report only: the job never pushes,
 # comments or opens anything, the token is `contents: read` and checkout keeps no credential.
-# GitHub runs `schedule` and offers `workflow_dispatch` only from the default branch's copy of
-# this file, so both start once it is on main. Until then the `push` trigger, restricted to the
-# CI/CD lane's branch and to this file and its tool, is how a change here is proven.
+# GitHub runs `schedule` from the default branch's copy of this file; a change on a branch is
+# proven with `workflow_dispatch` on that branch (the workflow is registered, so dispatch works).
 name: merge-readiness
 
 on:
   schedule:
     - cron: "41 6 * * *"
   workflow_dispatch:
-  push:
-    branches:
-      - claude/cicd-next
-    paths:
-      - ".github/workflows/merge-readiness.yml"
-      - "tools/merge_readiness.py"
 
 permissions:
   contents: read
