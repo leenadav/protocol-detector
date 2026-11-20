@@ -7,7 +7,8 @@ brief at the end of every task**, in the same push as the task. At a minimum, up
 ## 1. Purpose and scope
 
 This lane finishes and maintains the Python → Go migration of the IPv4-only passive protocol classifier. The work
-happens on `claude/go-migration`; draft PR #19 is the engine-lane PR, and issue #2 is its Codex mailbox.
+happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is closed: it merged an early snapshot
+(`7debf09`) into `main` on 2026-11-15 (`c121ada`). The lane has no open pull request now, and opening one waits on Lee.
 
 - **Python** (`protocol_engine/`, `protocol_adapters/`) stays as the reference and the fallback.
 - **Go** (`go/`) is judged against Python by the parity gates.
@@ -24,8 +25,8 @@ happens on `claude/go-migration`; draft PR #19 is the engine-lane PR, and issue 
 
 ## 2. Current state (2026-11-20)
 
-- **Branch head:** this brief was written on `fa5cb2c`; check `git log -1 origin/claude/go-migration`. Against `main`
-  `2b97e2d`, the branch is 91 commits ahead and 26 behind. Nothing is merged.
+- **Branch head:** last updated on `93937a3`; check `git log -1 origin/claude/go-migration`. Against `main` `2b97e2d`,
+  the branch is 100 commits ahead and 26 behind, with merge base `c121ada` (PR #19). Nothing after `7debf09` is merged.
 - **Done, Milestones A and B:**
   - The Go engine, the CLI `protodetect` and the dashboard service `protodetect serve`.
   - The launcher starts Go when the binary is installed and Python otherwise (`24e410e`, Lee's decision of
