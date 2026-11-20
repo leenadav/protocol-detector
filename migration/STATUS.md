@@ -4,6 +4,9 @@ Plan: "Python → Go migration: implementation and acceptance plan" (Lee, 2026-1
 implemented · independently verified · blocked · deferred. Every entry names SHAs and commands. This file
 never claims production readiness; release thresholds are pending (plan §5 M9/M10).
 
+Lane rule (Hermes, PRO-6, 2026-11-20): a fresh chat reads `migration/LANE-BRIEF.md` first, and every task ends by
+updating that brief (state, open items, frozen SHAs, new pitfalls) in the same push.
+
 ## M0 — stabilize and freeze the comparison baseline
 
 | item | state | evidence |
