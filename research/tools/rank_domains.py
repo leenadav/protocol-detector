@@ -11,8 +11,9 @@ Inputs:
 usage:
   rank_domains.py --export-domains CHECKOUT APP_DOMAINS.json
   rank_domains.py APP_DOMAINS.json OUT.tsv [--majestic FILE] [--crux FILE]
-Nothing but app, domain and rank is written. Attribution for the output: "Majestic Million (CC BY 3.0), majestic.com"
-and "Chrome UX Report, Google (licence as recorded in research/datasets.md)".
+Nothing but app, domain and rank is written. Attribution for the output (LEE-1 verdicts in research/datasets.md):
+"Majestic Million by Majestic (majestic.com), CC BY 3.0" and "Chrome UX Report: CrUX datasets by Google, CC BY 4.0";
+both joined to catalog domains, best rank per application. Majestic CSV: https://downloads.majestic.com/majestic_million.csv
 """
 import csv
 import json

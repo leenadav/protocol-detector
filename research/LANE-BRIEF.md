@@ -72,7 +72,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Patch R (`copilot.com`, `boxcdn.net`, `gitlab.net`) | HOLD: live round 2 certificate organisation (Hermes decision 3) |
 | Live round 2 (`live-hosts-r2.txt`, 363 names, 20 probes) | Hermes server run |
 | Dependency pass 2 (`web-urls.txt`, 59 URLs) | Hermes server run of `observe_web.js --urls` |
-| Ranking (CrUX, Majestic Million) | Research Lab's verbatim licence quotes (asked under PRO-30), then the LEE-1 verdict in `datasets.md` and the Hermes run of `rank_domains.py` |
+| Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (2026-11-20, `datasets.md`); waits on the Hermes server run of `rank_domains.py` (Majestic CSV; CrUX via BigQuery) |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
 | Content version ordering | Engine: numeric comparison plus a regression test, then renumber the placeholders |
 | Blocked vendor pages (Umbrella, Parsec, Asana, Jamf, Atera; Salesforce and Grammarly linked pages) | Hermes relay (`blocked-urls.md`) |

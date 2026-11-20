@@ -154,8 +154,8 @@ round focused on families.
 | Tranco default list | combines Cisco Umbrella (free of charge), Majestic (CC BY 3.0), Farsight, Chrome UX Report and Cloudflare Radar (CC BY-NC 4.0), per the attribution section of the tranco-list.eu homepage (read by Hermes, relayed, 2026-11-20) | **fails**: the Radar component is non-commercial | not used |
 | Tranco custom list without Radar | needs an account and API token | not pursued (Hermes, 2026-11-20) | not used |
 | Cloudflare Radar | CC BY-NC 4.0 | **fails** | not used |
-| Chrome UX Report (CrUX) | Tranco states CC BY-SA 4.0; Hermes reports that Google's own CrUX documentation states CC BY 4.0 | `UNVERIFIED` by this lane: `developer.chrome.com` is not reachable from this environment (the allowlist is full; retried 2026-11-20 with no response). LEE-1 verdict **pending**; asked Research Lab (PRO-30) for the verbatim licence sentence | **pending**: Hermes to quote the licence sentence from Google's CrUX licence page, with its URL and date |
-| Majestic Million | CC BY 3.0 (per Hermes's relay of Tranco's attribution) | `UNVERIFIED` on Majestic's own page (`https://majestic.com/reports/majestic-million`, not reachable from here; retried 2026-11-20). LEE-1 verdict **pending**; asked Research Lab (PRO-30) | **pending**: Hermes to quote the licence and attribution wording from that page |
+| Chrome UX Report (CrUX) | **CC BY 4.0**: "CrUX datasets by Google are licensed under a Creative Commons Attribution 4.0 International License." (`https://developer.chrome.com/docs/crux/methodology`, section "License", page last updated 2024-06-20; read by Research Lab, relayed by Hermes, 2026-11-20). Tranco's "CC BY-SA 4.0" is superseded by Google's own page | **PASS** (commercial use allowed with attribution; no non-commercial clause) | **pending**: Hermes to quote the licence sentence from Google's CrUX licence page, with its URL and date |
+| Majestic Million | **CC BY 3.0 Unported**: "Licensed under a Creative Commons Attribution 3.0 Unported License" (`https://majestic.com/reports/majestic-million`, list "generated on 20 Nov 2026"; read by Research Lab, relayed by Hermes, 2026-11-20). CSV: `https://downloads.majestic.com/majestic_million.csv` (HEAD 200, 80,299,165 bytes, last-modified 2026-11-20 06:00:20 GMT) | **PASS** (commercial use allowed with attribution; the page has no non-commercial clause) | **pending**: Hermes to quote the licence and attribution wording from that page |
 
 Only after both licences are quoted from their own pages: Hermes runs `research/tools/rank_domains.py research/app-domains.json
 OUT.tsv --majestic majestic_million.csv --crux crux.csv` on the server and relays the TSV, which holds ranks only. The
@@ -165,3 +165,27 @@ backlog then shows each app's best rank, with the attribution "Majestic Million 
 LEE-1 verdict rule for these two: **pass** only if the provider's own page states a licence that allows commercial
 use with attribution (CC BY 3.0 or 4.0; CC BY-SA also allows it, with share-alike applying to redistributed
 derivatives, and this lane redistributes no list content). **Fail** on any non-commercial clause or missing licence.
+
+**LEE-1 verdicts (2026-11-20):** CrUX **PASS**, Majestic Million **PASS**, both under the rule above.
+
+- **Attribution used** (neither provider gives its own credit line, so CC BY's standard terms apply: credit, a licence
+  link, and a note of changes): "Chrome UX Report: CrUX datasets by Google, CC BY 4.0
+  (https://creativecommons.org/licenses/by/4.0/); joined to catalog domains, best rank per application" and
+  "Majestic Million by Majestic (majestic.com), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/); joined to
+  catalog domains, best rank per application".
+- **Limits:**
+  - **Majestic:** this lane has not read Majestic's general Terms & Conditions. The verdict rests on the dataset
+    page's licence statement.
+  - **CrUX field coverage:** that the licence covers the `experimental.popularity.rank` field is Research Lab's
+    reading. No page states it explicitly, but the licence covers "CrUX datasets" and names no exception.
+  - **CrUX rank granularity:** the rank is a "Coarse popularity ranking (as of March 2021)" in magnitude buckets
+    (`https://developer.chrome.com/docs/crux/bigquery`, last updated 2026-10-13), not an exact rank.
+  - **CrUX access:** the data is published in BigQuery, which needs a Google Cloud project to query. Getting it is for
+    the Hermes server, not this lane, which uses no accounts.
+- **Use:** ranks only, joined to the catalog domains by `tools/rank_domains.py`. No list content is committed or
+  redistributed.
+- **CrUX export for `rank_domains.py`** (Hermes server; this lane's draft, `UNVERIFIED`: check the table name against
+  `https://developer.chrome.com/docs/crux/bigquery` before running):
+  `SELECT DISTINCT origin, experimental.popularity.rank AS rank FROM \`chrome-ux-report.all.YYYYMM\``, exported as CSV
+  with the header `origin,rank`.
+
