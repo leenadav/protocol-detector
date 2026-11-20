@@ -37,8 +37,8 @@ happens on `claude/go-migration`; draft PR #19 is the engine-lane PR, and issue 
 - **Vendored dependencies:** `x/crypto` and `x/sys/cpu` live under `go/vendor`, and every Go command runs with
   `-mod=vendor`.
 - **Codex review packet:** complete in `migration/review-packet/` (frozen head `50ce5c0`, 43 chunks).
-- **PRO-31** (`6194fb9`): Go orders content versions numerically. The Python reference still compares as strings,
-  so no release past N = 9 can be cut; see §5.
+- **PRO-31** (`6194fb9`, plus the numbering-rule test): Go orders content versions numerically. The Python
+  reference still compares them as strings; under Hermes's numbering rule (§7) the two orders agree.
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
 
 ## 3. Where things live (reading order)
@@ -78,7 +78,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
-| The Python reference compares content versions as strings (`content.py` `host_entries`, `host_provenance`, `check()`). App Research's batches F onward use 2026.12.x placeholders that wait to be renumbered. | Lee or Hermes: approve an exception to edit the frozen `content.py`, or set a numbering rule. Until then, cut no 2026.11.10. The three `VersionOrderTests` expectedFailure markers come off with the fix. |
+| The Python reference compares content versions as strings (`content.py` `host_entries`, `host_provenance`, `check()`). The bug is dormant under the numbering rule. | Lee, only if he wants option (a): an explicit exception to the freeze. Hermes chose (b), the numbering rule, on PRO-34. The three `VersionOrderTests` expectedFailure markers come off with that fix. |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -87,7 +87,7 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 
 `61fd45a`, `fdb90e2`, `68fb867`, `58a4701`, `9e51389`, `6b280a6`, `024163f`, `12e1ed0`, `d1b63ee`, `baa07b9`,
 `aaa5a7e`, `93cbf2a` (with `36e2c5e`), `76e467a`, `d65d21a`, `07b216e`, `6ab434d`, `7dcabb7`, `b6ed149`, `c08773f`,
-`ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9` (PRO-31), reviewed as its own diff.
+`ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9` and the numbering-rule commit (PRO-31), each reviewed as its own diff.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
@@ -102,8 +102,8 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
     `check_content.py --update` refuses.
   - Then regenerate the lock, `pack.json`, `history.json`, the fixtures, the `CONTENT-DIGEST.md` vectors, the
     `digest_test.go`, `history_test.go` and `test_content.py` pins, and the README/APPID counts.
-- **Never number a release past N = 9** (`2026.11.10`) until the reference compares numerically (PRO-31). If you do,
-  the new release silently gets the 2026.11.2 catalog.
+- **Content release numbering rule (Hermes, PRO-34):** the version is YYYY.MM.N with a two-digit month and a single-digit N (0 to 9). When N is used up, move on to the next month segment at 0. The version is only a label; the real date is
+  the release's `released` field. App Research's 2026.12.x placeholders stay as they are. `TestEmbeddedReleasesFollowTheNumberingRule` fails on any break, because a 2026.11.10 would silently give the new release the 2026.11.2 catalog in Python.
 - **Content items stay name-based until the merge.** Skip a research spec that looks wrong or unclear, note why,
   and don't guess. Describe vendors neutrally by their domain.
 - **The presentation suite needs the Go binary built first**, or `GoServiceTests` skip. `presentation-check` builds it.

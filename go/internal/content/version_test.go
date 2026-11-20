@@ -3,6 +3,8 @@ package content
 import (
 	"encoding/json"
 	"reflect"
+	"regexp"
+	"sort"
 	"testing"
 )
 
@@ -63,6 +65,63 @@ func TestEmbeddedReleasesAreNumericallyOrdered(t *testing.T) {
 	for i := 1; i < len(releases); i++ {
 		if CompareVersions(releases[i-1], releases[i]) >= 0 {
 			t.Fatalf("releases out of order at %d: %v", i, releases)
+		}
+	}
+}
+
+// PRO-31 numbering rule (Hermes, PRO-34): a content release is YYYY.MM.N with a two-digit month 01..12 and a
+// single-digit N (0..9); when N is used up, numbering moves on to the next month segment at 0 (the version is a
+// label; the real date is the release's `released` field). Under this rule string order and numeric order agree,
+// so the frozen Python reference (string comparison) and this loader (numeric comparison) order every release the
+// same way. This test reads the embedded pack and history and stops anyone who breaks the rule.
+var numberingRule = regexp.MustCompile(`^[0-9]{4}\.(0[1-9]|1[0-2])\.[0-9]$`)
+
+func TestEmbeddedReleasesFollowTheNumberingRule(t *testing.T) {
+	pack, err := Embedded()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Current  string                     `json:"current"`
+		Releases map[string]json.RawMessage `json:"releases"`
+	}
+	if err := json.Unmarshal(embeddedHistory, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if doc.Current != pack.Release.Version {
+		t.Fatalf("history.json current %q, pack.json release %q", doc.Current, pack.Release.Version)
+	}
+	versions := []string{doc.Current}
+	for v := range doc.Releases {
+		versions = append(versions, v)
+	}
+	for _, v := range versions {
+		if !numberingRule.MatchString(v) {
+			t.Errorf("content release %q breaks the numbering rule YYYY.MM.N (month 01..12, N 0..9)", v)
+		}
+	}
+	numeric := append([]string{}, versions...)
+	sort.SliceStable(numeric, func(i, j int) bool { return CompareVersions(numeric[i], numeric[j]) < 0 })
+	lexical := append([]string{}, versions...)
+	sort.Strings(lexical)
+	if !reflect.DeepEqual(numeric, lexical) {
+		t.Errorf("string order %v differs from numeric order %v", lexical, numeric)
+	}
+	if numeric[len(numeric)-1] != doc.Current {
+		t.Errorf("current release %q is not the newest of %v", doc.Current, numeric)
+	}
+}
+
+// The rule check itself rejects the versions that would split the two orders.
+func TestNumberingRuleRejectsTenAndUnpaddedMonths(t *testing.T) {
+	for _, v := range []string{"2026.11.10", "2026.9.0", "2026.13.0", "2026.00.1", "2026.11", "2026.11.x"} {
+		if numberingRule.MatchString(v) {
+			t.Errorf("%q passes the numbering rule", v)
+		}
+	}
+	for _, v := range []string{"2025.10.0", "2026.11.9", "2026.12.1", "2027.01.0"} {
+		if !numberingRule.MatchString(v) {
+			t.Errorf("%q fails the numbering rule", v)
 		}
 	}
 }
