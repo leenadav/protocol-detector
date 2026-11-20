@@ -25,12 +25,12 @@ their decisions, the policy locks, and the release controller.
 
 ## 2. Current state (2026-11-20, after PRO-42)
 
-- `main` = `2b97e2d`. Three ready-for-review PRs (PRO-42), one topic each, all cut from `main`:
+- `main` = `2b97e2d`. Three ready-for-review PRs (PRO-42; #33 passed `ci gate (all jobs)`), one topic each, all cut from `main`:
   - #33 `claude/ci-drop-branch-push-triggers`;
   - #34 `claude/ci-required-checks-table`;
-  - the docs PR from `claude/docs-lane-brief-agents-scope` (this brief, `AGENTS.md`, `SSDLC.md` step 9).
+  - #35 `claude/docs-lane-brief-agents-scope` (this brief, `AGENTS.md`, `SSDLC.md` step 9).
 
-  `claude/cicd-next` (`46c3122`) holds the same content as #33 and the docs PR, and is superseded by them.
+  `claude/cicd-next` (`46c3122`) holds the same content as #33 and #35, and is superseded by them.
 - **Merged so far:**
 
   | PR | Content |
@@ -79,7 +79,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
-| PRs #33, #34 and the docs PR merged | Hermes's review, then Lee |
+| PRs #33, #34 and #35 merged | Hermes's review, then Lee |
 
 ## 6. Frozen SHAs awaiting Codex
 
@@ -87,7 +87,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   `d7c482c`, `b57b819`, `8a129c7`.
 - **Also:** `b97adc8` (Dependabot pins, chunk 06) and `85e99e9` (govulncheck, chunk 07).
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
-- **Not yet on `main`:** #33 head `851eddb`; #34 head `a179db6`; the docs PR head (see Paperclip PRO-42).
+- **Not yet on `main`:** #33 head `851eddb`; #34 head `a179db6`; #35 head: the latest commit on `claude/docs-lane-brief-agents-scope`.
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
