@@ -431,20 +431,52 @@ var embeddedHistory []byte
 
 // Releases lists the content releases this binary can run, oldest first: the earlier ones in history.json
 // (migration/content_history.py) and the current one of pack.json.
-func Releases() []string {
+func Releases() []string { return releasesOf(embeddedHistory) }
+
+func releasesOf(history []byte) []string {
 	var doc struct {
 		Current  string                     `json:"current"`
 		Releases map[string]json.RawMessage `json:"releases"`
 	}
-	if err := json.Unmarshal(embeddedHistory, &doc); err != nil {
+	if err := json.Unmarshal(history, &doc); err != nil {
 		return nil
 	}
 	out := make([]string, 0, len(doc.Releases)+1)
 	for v := range doc.Releases {
 		out = append(out, v)
 	}
-	sort.Strings(out) // YYYY.MM.N with zero-padded month: lexical order is release order
+	sort.SliceStable(out, func(i, j int) bool { return CompareVersions(out[i], out[j]) < 0 })
 	return append(out, doc.Current)
+}
+
+// CompareVersions orders content release versions (YYYY.MM.N) by their numeric components, so 2026.11.9 comes
+// before 2026.11.10; lexical order holds only while every component has the same width. It returns -1, 0 or 1.
+// Versions are compared component by component as decimal integers; a component that is not one falls back
+// to byte order for that component, and a version with fewer components sorts first when the rest are equal.
+func CompareVersions(a, b string) int {
+	pa, pb := strings.Split(a, "."), strings.Split(b, ".")
+	for k := 0; k < len(pa) && k < len(pb); k++ {
+		x, errx := strconv.ParseUint(pa[k], 10, 64)
+		y, erry := strconv.ParseUint(pb[k], 10, 64)
+		switch {
+		case errx == nil && erry == nil && x != y:
+			if x < y {
+				return -1
+			}
+			return 1
+		case errx == nil && erry == nil:
+			continue
+		case pa[k] != pb[k]:
+			return strings.Compare(pa[k], pb[k])
+		}
+	}
+	switch {
+	case len(pa) < len(pb):
+		return -1
+	case len(pa) > len(pb):
+		return 1
+	}
+	return strings.Compare(a, b) // numerically equal spellings ("09", "9") still get a fixed order
 }
 
 // EmbeddedRelease is the pack as of an earlier content release (content.select in the reference): the current

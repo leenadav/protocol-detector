@@ -17,6 +17,11 @@ from tools import check_content, schema_check
 CLIENT, SERVER = ("192.0.2.10", 52000), ("198.51.100.20", 80)
 
 
+def _numeric_version(version):
+    """YYYY.MM.N as integers: 2026.11.9 sorts before 2026.11.10 (PRO-31)."""
+    return tuple(int(part) for part in version.split("."))
+
+
 class HistoryAndLockTests(unittest.TestCase):
     def test_tables_history_and_lock_agree(self):
         self.assertEqual(content.check(), [])
@@ -27,7 +32,10 @@ class HistoryAndLockTests(unittest.TestCase):
 
     def test_releases_are_dated_and_ordered(self):
         versions = [item.version for item in content.releases()]
-        self.assertEqual(versions, sorted(versions))
+        for version in versions:
+            self.assertRegex(version, r"^\d{4}\.\d{1,2}\.\d+$")
+        self.assertEqual(versions, sorted(versions, key=_numeric_version))  # PRO-31: numerically, not as strings
+        self.assertEqual(len(set(versions)), len(versions))
         for item in content.releases():
             self.assertRegex(item.released, r"^\d{4}-\d{2}-\d{2}$")
             self.assertRegex(item.reviewed, r"^\d{4}-\d{2}-\d{2}$")
@@ -174,6 +182,66 @@ class RollbackTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_tables([{"name": "a", "domains": ("a.example",), "web_fronts": ("w.example",)},
                           {"name": "b", "domains": ("b.example",), "web_fronts": ("w.example",)}])
+
+
+class VersionOrderTests(unittest.TestCase):
+    """PRO-31: a release numbered past N = 9 (2026.11.10 after 2026.11.9).
+
+    The reference (`content.host_entries` and `content.host_provenance`) compares release versions as strings, and
+    `protocol_engine/content.py` is frozen reference code on this branch, so it is not changed here. These tests
+    simulate a 2026.11.10 release over the real tables. The three marked expectedFailure reproduce the string
+    comparison and turn into unexpected successes, which fail the suite, once the reference compares numerically,
+    so their markers are removed with that fix."""
+
+    NEXT = "2026.11.10"
+    MARK = "pro31-rollback-marker.invalid"
+
+    def _simulated(self):
+        """HISTORY with a 2026.11.10 release whose predecessor 2026.11.9 carried one more `goto` domain."""
+        current = content.CURRENT
+        goto = next(entry for entry in content.host_entries() if entry["name"] == "goto")
+        history = content.HISTORY + (content.Release(self.NEXT, "2026-11-20", "2026-11-20", "PRO-31 simulation", "test"),)
+        prior = dict(content._PRIOR_HOST_STATE)
+        prior[current] = MappingProxyType({"goto": {"domains": tuple(goto["domains"]) + (self.MARK,)}})
+        return current, [mock.patch.object(content, "HISTORY", history),
+                         mock.patch.object(content, "_PRIOR_HOST_STATE", MappingProxyType(prior))]
+
+    def _run(self, patches, fn):
+        for patch in patches:
+            patch.start()
+            self.addCleanup(patch.stop)
+        return fn()
+
+    def test_numeric_order_places_ten_after_nine(self):
+        self.assertLess(_numeric_version("2026.11.9"), _numeric_version(self.NEXT))
+        self.assertGreater("2026.11.9", self.NEXT)  # the string order the reference uses today
+
+    @unittest.expectedFailure
+    def test_the_new_release_itself_keeps_the_current_catalog(self):
+        """With string order every earlier release from 2026.11.9 down to 2026.11.2 compares as not less than
+        "2026.11.10", so host_entries lays their prior states over the current catalog and the new release itself
+        gets the 2026.11.2 catalog (no `goto` entry), silently."""
+        _, patches = self._simulated()
+        entries = self._run(patches, lambda: content.host_entries(self.NEXT))
+        goto = next(entry for entry in entries if entry["name"] == "goto")
+        self.assertNotIn(self.MARK, goto["domains"])
+
+    @unittest.expectedFailure
+    def test_rolling_back_to_nine_applies_its_prior_state(self):
+        """C11 rollback: 2026.11.9 must carry the domain it had then. With string order the loop in host_entries
+        stops at 2026.11.10 ("2026.11.10" < "2026.11.9") and 2026.11.9 gets the current catalog."""
+        previous, patches = self._simulated()
+        entries = self._run(patches, lambda: content.host_entries(previous))
+        goto = next(entry for entry in entries if entry["name"] == "goto")
+        self.assertIn(self.MARK, goto["domains"])
+
+    @unittest.expectedFailure
+    def test_provenance_of_the_new_release_covers_every_release(self):
+        """With string order host_provenance stops at 2026.11.2 ("2026.11.2" > "2026.11.10") and raises KeyError
+        for every entry added since."""
+        _, patches = self._simulated()
+        provenance = self._run(patches, lambda: content.host_provenance(self.NEXT))
+        self.assertEqual(provenance["goto"]["since"], "2026.11.9")
 
 
 class RecordTests(unittest.TestCase):

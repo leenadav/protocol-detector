@@ -59,7 +59,7 @@ Run everything from the repository root. Times are for the cloud container (4 vC
 | Command | What it checks | Runtime |
 |---|---|---|
 | `make go-check` | gofmt, vet, `go test -race`, 28 fuzz targets, parity-go with verify_families, every differential, bench-gate | about 8 min (488 s) |
-| `make check` | the Python suite (856 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
+| `make check` | the Python suite (860 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
 | `make go-vendor-check` | re-vendors into `build/go-vendor-check` and diffs it against `go/vendor` | seconds (module cache warm) |
 | `python3 -B -m unittest discover -q` | the Python suite on its own | part of `make check` |
 
