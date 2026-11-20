@@ -79,7 +79,7 @@ Every row except N5 (which needs the full engine, not the name lookup) was check
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -88,6 +88,7 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | O+ | `chatgpt.com` | one of `openai-chatgpt`, `openai-platform` | `openai-chatgpt` | PASS |
 | O+ | `platform.openai.com` | one of `openai-chatgpt`, `openai-platform` | `openai-platform` | PASS |
 | D- | `challenges.cloudflare.com` | not openai-chatgpt/openai-platform (third party) | no application | PASS |
+| D- | `hagen.challenges.cloudflare.com` | not openai-chatgpt/openai-platform (third party (unclassified)) | no application | PASS |
 | L- | `xchatgpt.com` | not openai-chatgpt/openai-platform (label boundary) | no application | PASS |
 | L- | `chatgpt.com.example.invalid` | not openai-chatgpt/openai-platform (suffix look-alike) | no application | PASS |
 | L- | `xopenai.com` | not openai-chatgpt/openai-platform (label boundary) | no application | PASS |
@@ -145,16 +146,17 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://chatgpt.com/`, loaded 2026-11-19 without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `chatgpt.com`.
-- `https://platform.openai.com/`, loaded 2026-11-19 without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `platform.openai.com`.
+- `https://chatgpt.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `chatgpt.com`.
+- `https://platform.openai.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `platform.openai.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `challenges.cloudflare.com` | 8 (7) | third party | no application | not checked | Cloudflare Turnstile bot check |
-| `chatgpt.com` | 16 (0) | app-owned | `openai-chatgpt` |  |  |
-| `platform.openai.com` | 20 (3) | app-owned | `openai-platform` | cdn |  |
+| `challenges.cloudflare.com` | seen | third party | no application | not checked | Cloudflare Turnstile bot check |
+| `chatgpt.com` | seen | app-owned | `openai-chatgpt` |  |  |
+| `hagen.challenges.cloudflare.com` | seen | third party (unclassified) | no application | not checked |  |
+| `platform.openai.com` | seen (some failed) | app-owned | `openai-platform` | cdn |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -162,7 +164,7 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - `openai-platform`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: `openai-chatgpt` (OpenAI ChatGPT), `openai-platform` (OpenAI developer platform and API).
 - Variant: web app and API platform separated by name (`chatgpt.com` vs `api.openai.com`, `platform.openai.com`).
-- Dependencies (observed, never attributed to this app): `challenges.cloudflare.com`.
+- Dependencies (observed, never attributed to this app): `challenges.cloudflare.com`, `hagen.challenges.cloudflare.com`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `oaistatic.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

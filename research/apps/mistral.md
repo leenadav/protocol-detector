@@ -43,7 +43,7 @@ P1, P2 and N1 were checked with `attribution_for_host` in scratch (batches A, B 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -51,6 +51,7 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 |---|---|---|---|---|
 | O+ | `chat.mistral.ai` | one of `mistral-ai`, `mistral-api` | `mistral-ai` | PASS |
 | D- | `challenges.cloudflare.com` | not mistral-ai/mistral-api (third party) | no application | PASS |
+| D- | `hagen.challenges.cloudflare.com` | not mistral-ai/mistral-api (third party (unclassified)) | no application | PASS |
 | L- | `xmistral.ai` | not mistral-ai/mistral-api (label boundary) | no application | PASS |
 | L- | `mistral.ai.example.invalid` | not mistral-ai/mistral-api (suffix look-alike) | no application | PASS |
 | L- | `api.mistral.ai.example.invalid` | not mistral-ai/mistral-api (suffix look-alike) | no application | PASS |
@@ -85,14 +86,15 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://chat.mistral.ai/`, loaded 2026-11-19 without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `chat.mistral.ai`.
+- `https://chat.mistral.ai/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `chat.mistral.ai`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `challenges.cloudflare.com` | 3 (3) | third party | no application | not checked | Cloudflare Turnstile bot check |
-| `chat.mistral.ai` | 13 (0) | app-owned | `mistral-ai` | h3 |  |
+| `challenges.cloudflare.com` | seen | third party | no application | not checked | Cloudflare Turnstile bot check |
+| `chat.mistral.ai` | seen | app-owned | `mistral-ai` | h3 |  |
+| `hagen.challenges.cloudflare.com` | seen | third party (unclassified) | no application | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -100,7 +102,7 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - `mistral-api`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: `mistral-ai` (Mistral AI), `mistral-api` (Mistral AI API).
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `challenges.cloudflare.com`.
+- Dependencies (observed, never attributed to this app): `challenges.cloudflare.com`, `hagen.challenges.cloudflare.com`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `mistral.ai`, `api.mistral.ai`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

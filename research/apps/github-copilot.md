@@ -82,16 +82,23 @@ it is cited for the host names only.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `api.github.com` | one of `github-copilot`, `github` | `github` | PASS |
+| O+ | `collector.github.com` | one of `github-copilot`, `github` | `github` | PASS |
 | O+ | `github.com` | one of `github-copilot`, `github` | `github` | PASS |
 | O+ | `github.githubassets.com` | one of `github-copilot`, `github` | `github` | PASS |
+| D- | `browser.events.data.microsoft.com` | not github-copilot/github (shared vendor infra) | `ms-telemetry` | PASS |
+| D- | `googleads.g.doubleclick.net` | not github-copilot/github (third party) | `google-ads` | PASS |
 | D- | `images.ctfassets.net` | not github-copilot/github (third party) | no application | PASS |
 | D- | `videos.ctfassets.net` | not github-copilot/github (third party) | no application | PASS |
+| D- | `www.google.co.il` | not github-copilot/github (third party (unclassified)) | no application | PASS |
+| D- | `www.google.com` | not github-copilot/github (shared vendor infra) | `google-base` | PASS |
+| D- | `www.googleadservices.com` | not github-copilot/github (third party) | `google-ads` | PASS |
 | L- | `xgithubcopilot.com` | not github-copilot/github (label boundary) | no application | PASS |
 | L- | `githubcopilot.com.example.invalid` | not github-copilot/github (suffix look-alike) | no application | PASS |
 | L- | `xgithubusercontent.com` | not github-copilot/github (label boundary) | no application | PASS |
@@ -169,16 +176,23 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://github.com/copilot`, loaded 2026-11-19 without signing in: HTTP 200, final host `github.com`.
+- `https://github.com/copilot`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `github.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `github.com` | 2 (0) | app-owned | `github` |  |  |
-| `github.githubassets.com` | 70 (70) | app-owned | `github` |  |  |
-| `images.ctfassets.net` | 11 (11) | third party | no application | not checked | Contentful CMS assets |
-| `videos.ctfassets.net` | 2 (2) | third party | no application | not checked | Contentful CMS assets |
+| `api.github.com` | seen (some failed) | app-owned | `github` | not checked |  |
+| `browser.events.data.microsoft.com` | seen | shared vendor infra | `ms-telemetry` | not checked |  |
+| `collector.github.com` | seen | app-owned | `github` | not checked |  |
+| `github.com` | seen | app-owned | `github` |  |  |
+| `github.githubassets.com` | seen | app-owned | `github` |  |  |
+| `googleads.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `images.ctfassets.net` | seen | third party | no application | not checked | Contentful CMS assets |
+| `videos.ctfassets.net` | seen (some failed) | third party | no application | not checked | Contentful CMS assets |
+| `www.google.co.il` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.googleadservices.com` | seen | third party | `google-ads` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -186,7 +200,7 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - `github`: business-systems / software-development, browser-based; characteristics `widely-used`, `transfers-files`; **risk 2**: widely used by enterprises; moves files out of the organisation.
 - Functions separated by name: `github-copilot` (GitHub Copilot), `github` (GitHub code hosting).
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `images.ctfassets.net`, `videos.ctfassets.net`.
+- Dependencies (observed, never attributed to this app): `google-ads`, `google-base`, `images.ctfassets.net`, `ms-telemetry`, `videos.ctfassets.net`, `www.google.co.il`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

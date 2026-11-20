@@ -60,12 +60,15 @@ As published [S1]:
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `my.anydesk.com` | one of `anydesk` | `anydesk` | PASS |
+| D- | `challenges.cloudflare.com` | not anydesk (third party) | no application | PASS |
+| D- | `hagen.challenges.cloudflare.com` | not anydesk (third party (unclassified)) | no application | PASS |
 | L- | `xanydesk.com` | not anydesk (label boundary) | no application | PASS |
 | L- | `anydesk.com.example.invalid` | not anydesk (suffix look-alike) | no application | PASS |
 | L- | `net.anydesk.com.example.invalid` | not anydesk (suffix look-alike) | no application | PASS |
@@ -98,14 +101,22 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://my.anydesk.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://my.anydesk.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `my.anydesk.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `challenges.cloudflare.com` | seen | third party | no application | not checked | Cloudflare Turnstile bot check |
+| `hagen.challenges.cloudflare.com` | seen | third party (unclassified) | no application | not checked |  |
+| `my.anydesk.com` | seen | app-owned | `anydesk` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `anydesk`: networking / remote-access, client-server; characteristics `tunnels-other-applications`, `prone-to-misuse`, `used-by-malware`; **risk 4**: carries other traffic or remote control; commonly misused (unsanctioned remote access, data exfiltration); seen in malware campaigns.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `challenges.cloudflare.com`, `hagen.challenges.cloudflare.com`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

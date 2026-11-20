@@ -41,7 +41,7 @@ Checked in scratch (`c08773f` plus D, E and F).
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -49,7 +49,15 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 |---|---|---|---|---|
 | O+ | `account.jetbrains.com` | one of `jetbrains-ai`, `jetbrains` | `jetbrains` | PASS |
 | O+ | `resources.jetbrains.com` | one of `jetbrains-ai`, `jetbrains` | `jetbrains` | PASS |
+| D- | `426-qvd-114.mktoresp.com` | not jetbrains-ai/jetbrains (third party (unclassified)) | no application | PASS |
+| D- | `analytics.google.com` | not jetbrains-ai/jetbrains (shared vendor infra) | `google-base` | PASS |
+| D- | `bzr.openai.com` | not jetbrains-ai/jetbrains (third party) | no application | PASS |
+| D- | `bzrcdn.openai.com` | not jetbrains-ai/jetbrains (third party) | no application | PASS |
+| D- | `cdn.cookiehub.eu` | not jetbrains-ai/jetbrains (third party (unclassified)) | no application | PASS |
+| D- | `munchkin.marketo.net` | not jetbrains-ai/jetbrains (third party (unclassified)) | no application | PASS |
 | D- | `o245151.ingest.us.sentry.io` | not jetbrains-ai/jetbrains (third party) | `sentry` | PASS |
+| D- | `stats.g.doubleclick.net` | not jetbrains-ai/jetbrains (third party) | `google-ads` | PASS |
+| D- | `www.google.co.il` | not jetbrains-ai/jetbrains (third party (unclassified)) | no application | PASS |
 | D- | `www.googletagmanager.com` | not jetbrains-ai/jetbrains (third party) | `google-analytics` | PASS |
 | L- | `xjetbrains.ai` | not jetbrains-ai/jetbrains (label boundary) | no application | PASS |
 | L- | `api.jetbrains.ai.example.invalid` | not jetbrains-ai/jetbrains (suffix look-alike) | no application | PASS |
@@ -83,16 +91,24 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://account.jetbrains.com/login`, loaded 2026-11-19 without signing in: HTTP 200, final host `account.jetbrains.com`.
+- `https://account.jetbrains.com/login`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `account.jetbrains.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `account.jetbrains.com` | 7 (0) | app-owned | `jetbrains` |  |  |
-| `o245151.ingest.us.sentry.io` | 1 (1) | third party | `sentry` | not checked |  |
-| `resources.jetbrains.com` | 4 (4) | app-owned | `jetbrains` |  |  |
-| `www.googletagmanager.com` | 1 (1) | third party | `google-analytics` | not checked |  |
+| `426-qvd-114.mktoresp.com` | seen | third party (unclassified) | no application | not checked |  |
+| `account.jetbrains.com` | seen | app-owned | `jetbrains` |  |  |
+| `analytics.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `bzr.openai.com` | seen | third party | no application | not checked | OpenAI measurement host loaded by unrelated pages (not mapped: openai.com is a web front only) |
+| `bzrcdn.openai.com` | seen | third party | no application | not checked | as above |
+| `cdn.cookiehub.eu` | seen | third party (unclassified) | no application | not checked |  |
+| `munchkin.marketo.net` | seen | third party (unclassified) | no application | not checked |  |
+| `o245151.ingest.us.sentry.io` | seen | third party | `sentry` | not checked |  |
+| `resources.jetbrains.com` | seen | app-owned | `jetbrains` |  |  |
+| `stats.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `www.google.co.il` | seen | third party (unclassified) | no application | not checked |  |
+| `www.googletagmanager.com` | seen | third party | `google-analytics` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -100,7 +116,7 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - `jetbrains`: business-systems / software-development, client-server; characteristics `transfers-files`; **risk 1**: moves files out of the organisation.
 - Functions separated by name: `jetbrains-ai` (JetBrains AI), `jetbrains` (JetBrains tools and account services).
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `google-analytics`, `sentry`.
+- Dependencies (observed, never attributed to this app): `426-qvd-114.mktoresp.com`, `bzr.openai.com`, `bzrcdn.openai.com`, `cdn.cookiehub.eu`, `google-ads`, `google-analytics`, `google-base`, `munchkin.marketo.net`, `sentry`, `www.google.co.il`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `api.jetbrains.ai`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

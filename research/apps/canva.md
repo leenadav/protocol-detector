@@ -40,7 +40,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -49,6 +49,7 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | O+ | `status.canva.com` | one of `canva` | `canva` | PASS |
 | O+ | `www.canva.com` | one of `canva` | `canva` | PASS |
 | D- | `challenges.cloudflare.com` | not canva (third party) | no application | PASS |
+| D- | `hagen.challenges.cloudflare.com` | not canva (third party (unclassified)) | no application | PASS |
 | L- | `xcanva.com` | not canva (label boundary) | no application | PASS |
 | L- | `canva.com.example.invalid` | not canva (suffix look-alike) | no application | PASS |
 | L- | `xcanvacode.com` | not canva (label boundary) | no application | PASS |
@@ -84,22 +85,23 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://www.canva.com/login`, loaded 2026-11-19 without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `www.canva.com`.
+- `https://www.canva.com/login`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `www.canva.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `challenges.cloudflare.com` | 3 (3) | third party | no application | not checked | Cloudflare Turnstile bot check |
-| `status.canva.com` | 4 (4) | app-owned | `canva` | cdn |  |
-| `www.canva.com` | 15 (0) | app-owned | `canva` | cdn |  |
+| `challenges.cloudflare.com` | seen | third party | no application | not checked | Cloudflare Turnstile bot check |
+| `hagen.challenges.cloudflare.com` | seen | third party (unclassified) | no application | not checked |  |
+| `status.canva.com` | seen | app-owned | `canva` | cdn |  |
+| `www.canva.com` | seen | app-owned | `canva` | cdn |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `canva`: business-systems / office-programs, browser-based; characteristics `transfers-files`; **risk 2**: moves files out of the organisation.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `challenges.cloudflare.com`.
+- Dependencies (observed, never attributed to this app): `challenges.cloudflare.com`, `hagen.challenges.cloudflare.com`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `canva.link`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

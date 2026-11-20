@@ -32,12 +32,14 @@ Pending a readable source.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `static.whatsapp.net` | one of `whatsapp` | `whatsapp` | PASS |
+| O+ | `web.whatsapp.com` | one of `whatsapp` | `whatsapp` | PASS |
 | L- | `xwhatsapp.com` | not whatsapp (label boundary) | no application | PASS |
 | L- | `whatsapp.com.example.invalid` | not whatsapp (suffix look-alike) | no application | PASS |
 | L- | `xwhatsapp.net` | not whatsapp (label boundary) | no application | PASS |
@@ -66,7 +68,14 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://web.whatsapp.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://web.whatsapp.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `web.whatsapp.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `static.whatsapp.net` | seen | app-owned | `whatsapp` | not checked |  |
+| `web.whatsapp.com` | seen | app-owned | `whatsapp` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 

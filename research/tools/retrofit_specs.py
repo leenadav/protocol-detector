@@ -26,12 +26,63 @@ CATALOG = {e[0]: e for e in host_apps._HOST_APPS}
 TODAY = datetime.date(2026, 11, 20)
 REVERIFY = (TODAY + datetime.timedelta(days=90)).isoformat()
 REG = {k: v for k, v in json.loads((ROOT / "apps.json").read_text()).items() if not k.startswith("_")}
-OBS = {r["url"]: r for r in json.loads(obs_path.read_text())}
+def _load_obs(paths):
+    """Observation files in order; a later file replaces an earlier one for the same URL. JSON = observe_web.js
+    output (pass 1, proxied); TSV = the relayed pass-2 table (direct, Hermes server)."""
+    import csv as _c2
+    from urllib.parse import urlparse as _up
+    reg_urls = {}
+    for k, v in json.loads((ROOT / "apps.json").read_text()).items():
+        if not k.startswith("_"):
+            for u in v["web"]:
+                reg_urls[_up(u).hostname] = u
+    out = {}
+    for path in paths:
+        path = Path(path)
+        if path.suffix == ".json":
+            for r in json.loads(path.read_text()):
+                out[r["url"]] = dict(r, source="pass 1 (research cloud, proxied, 2026-11-19)")
+            continue
+        lines = [l for l in path.read_text().splitlines() if l and not l.startswith("#")]
+        for r in _c2.DictReader(lines, delimiter="\t"):
+            url = reg_urls.get(r["page_host"])
+            if not url:
+                continue
+            failed = set(filter(None, (r.get("hosts_with_failed_requests") or "").split(",")))
+            hosts = {}
+            for h in filter(None, ((r.get("first_party_hosts") or "") + "," + (r.get("third_party_hosts") or "")).split(",")):
+                hosts[h] = {"requested": None, "failed": 1 if h in failed else 0}
+            st = r["status"]
+            out[url] = {"url": url, "date": "2026-11-20", "status": st if not st.startswith("ERR") else None,
+                        "error": st[4:].strip() if st.startswith("ERR") else None, "final_host": r["final_host"],
+                        "hosts": hosts, "source": "pass 2 (Hermes server, direct, 2026-11-20)"}
+    return out
+
+
+OBS = _load_obs(str(obs_path).split(","))
 
 # Shared vendor infrastructure: ids that stand for a vendor's common services, sign-in or CDN.
-SHARED_IDS = {"google-base", "google-accounts", "ms-base", "azure-ad", "ms-office365", "google-play", "apple-base"}
+SHARED_IDS = {"google-base", "google-accounts", "ms-base", "azure-ad", "ms-office365", "google-play", "apple-base", "ms-telemetry",
+              "meta-base", "x-base", "linkedin-base", "reddit-base", "quora-base", "tiktok-base", "spotify-base"}
 # Unmapped observed hosts, classified by hand (2026-11-19). "owned:<id>" = vendor-owned name of that app's vendor.
 UNMAPPED = {
+    "dockerstatic.com": ("owned:docker-hub", "Docker static assets (dockerstatic.com); ownership to be shown by certificate in live round 2"),
+    "campaign.slackhq.com": ("owned:slack", "Slack marketing (slackhq.com); ownership to be shown by certificate in live round 2"),
+    "www.zndsk.com": ("owned:zendesk", "Zendesk short domain (zndsk.com); ownership to be shown by certificate in live round 2"),
+    "weblibrary.cdn.getgo.com": ("owned:goto", "GoTo shared web library (getgo.com; for the goto vendor id)"),
+    "aadcdn.msauth.net": ("shared", "Microsoft Entra sign-in CDN"),
+    "aadcdn.msftauth.net": ("shared", "Microsoft Entra sign-in CDN"),
+    "portal.azure.com": ("shared", "Azure portal (Microsoft)"),
+    "c.s-microsoft.com": ("shared", "Microsoft shared assets"),
+    "bzr.openai.com": ("third", "OpenAI measurement host loaded by unrelated pages (not mapped: openai.com is a web front only)"),
+    "bzrcdn.openai.com": ("third", "as above"),
+    "static.ads-twitter.com": ("third", "X advertising tag"),
+    "pixel.byspotify.com": ("third", "Spotify advertising pixel"),
+    "analytics-ipv6.tiktokw.us": ("third", "TikTok pixel"),
+    "commonroom.pplxmeasure.com": ("third", "measurement proxy; owner not verified"),
+    "google.pplxmeasure.com": ("third", "measurement proxy; owner not verified"),
+    "linkedin.pplxmeasure.com": ("third", "measurement proxy; owner not verified"),
+    "meta.pplxmeasure.com": ("third", "measurement proxy; owner not verified"),
     "copilot.com": ("owned:ms-copilot", "first-party redirect target of copilot.microsoft.com"),
     "cdn01.boxcdn.net": ("owned:box", "Box static assets loaded by account.box.com (boxcdn.net)"),
     "new-sentry.gitlab.net": ("owned:gitlab", "GitLab-operated error telemetry on gitlab.net"),
@@ -129,6 +180,8 @@ def classify(host, ids):
         return "app-owned", a, ""
     if host in UNMAPPED:
         kind, why = UNMAPPED[host]
+        if kind == "shared":
+            return "shared vendor infra (unmapped)", a, why
         if kind.startswith("owned:"):
             owner = kind.split(":", 1)[1]
             return ("app-owned (unmapped)" if owner in ids else "shared vendor infra (unmapped)"), a, why
@@ -168,10 +221,10 @@ def build(spec, meta):
             continue
         for h, c in r["hosts"].items():
             o = observed.setdefault(h, {"requested": 0, "failed": 0, "pages": set()})
-            o["requested"] += c["requested"]
+            o["requested"] = None if c["requested"] is None or o["requested"] is None else o["requested"] + c["requested"]
             o["failed"] += c["failed"]
             o["pages"].add(url)
-    rows, pos, neg, fails = [], [], [], []
+    rows, pos, neg, fails, gaps = [], [], [], [], []
     for h in sorted(observed):
         cls, a, why = classify(h, ids)
         rows.append((h, observed[h], cls, a, why))
@@ -186,7 +239,7 @@ def build(spec, meta):
         ok = a in ids
         vec.append(("O+", h, "one of " + ", ".join("`%s`" % i for i in ids), fmt(aid(h)), "PASS" if ok else "GAP (unmapped)"))
         if not ok:
-            fails.append(h)
+            gaps.append(h)
     for h, a, cls in neg:
         ok = a not in ids
         vec.append(("D-", h, "not " + "/".join(ids) + " (%s)" % cls, fmt(a), "PASS" if ok else "FAIL"))
@@ -198,7 +251,7 @@ def build(spec, meta):
         vec.append(("L-", h, "not " + "/".join(ids) + " (%s)" % why, fmt(a), "PASS" if ok else "FAIL"))
         if not ok:
             fails.append(h)
-    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)", ""]
+    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)", ""]
     if vec:
         sec6 += ["O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); "
                  "L- = look-alike or label-boundary name (must not be this app).", "",
@@ -227,15 +280,17 @@ def build(spec, meta):
         missing = [u for u in web if u not in OBS]
         for u in loaded:
             r = OBS[u]
-            s.append("- `%s`, loaded %s without signing in: HTTP %s%s, final host `%s`." % (
-                u, r["date"], r["status"], (" (" + r["error"] + ")") if r["error"] else "", r["final_host"]))
+            s.append("- `%s`, %s, loaded without signing in: HTTP %s%s, final host `%s`." % (
+                u, r.get("source", "pass 1"), r["status"], (" (" + r["error"] + ")") if r["error"] else "", r["final_host"]))
         for u in missing:
-            s.append("- `%s`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1)." % u)
+            s.append("- `%s`: **not yet observed** (added after pass 2; listed in `web-urls.txt` for the next server run)." % u)
         if rows:
-            s += ["", "Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist (\"failed\" below), so hosts that "
-                  "only scripts from a refused host would contact are missing.", "",
-                  "| Host | Requests (refused) | Class | Attribution today | Live flags | Note |", "|---|---|---|---|---|---|"]
-            s += ["| `%s` | %d (%d) | %s | %s | %s | %s |" % (h, o["requested"], o["failed"], c, fmt(a),
+            s += ["", "Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen "
+                  "(\"seen\"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address "
+                  "are a lower bound. Pass 1 rows give requests (refused by the research proxy).", "",
+                  "| Host | Requests | Class | Attribution today | Live flags | Note |", "|---|---|---|---|---|---|"]
+            s += ["| `%s` | %s | %s | %s | %s | %s |" % (h, ("seen" + (" (some failed)" if o["failed"] else "")) if o["requested"] is None
+                                                       else "%d (%d refused)" % (o["requested"], o["failed"]), c, fmt(a),
                                                           ",".join(live_status(h)[1]) if h in LIVE else "not checked", w)
                   for h, o, c, a, w in rows]
     deps = sorted({a for _, _, c, a, _ in rows if c.startswith(("shared", "third")) and a} |
@@ -258,7 +313,7 @@ def build(spec, meta):
               if any("ech" in f for d, t, f in live_rows) else "no ECH parameter in any verified name's HTTPS record (2026-11-20)"),
           "- QUIC path (`h3` in the HTTPS record): %s." % (", ".join("`%s`" % d for d, t, f in live_rows if "h3" in f) or "none advertised"),
           "- Re-verify by: **%s** (`research/tools/recheck_sources.py` tracks the cited pages)." % REVERIFY, "", END]
-    return "\n".join(sec6), "\n".join(s), rows, vec, fails
+    return "\n".join(sec6), "\n".join(s), rows, vec, fails, gaps
 
 
 def splice(text, block, start, end, anchor_heading=None):
@@ -276,7 +331,7 @@ LIVE_SUMMARY = {}
 summary = {"specs": 0, "observed": 0, "owned": 0, "owned_unmapped": [], "deps": 0, "vectors": 0, "fail": []}
 for spec, meta in sorted(REG.items()):
     p = ROOT / "apps" / spec
-    sec6, tail, rows, vec, fails = build(spec, meta)
+    sec6, tail, rows, vec, fails, gaps = build(spec, meta)
     summary["specs"] += 1
     summary["observed"] += len(rows)
     summary["owned"] += sum(1 for r in rows if r[2] == "app-owned")
@@ -284,6 +339,7 @@ for spec, meta in sorted(REG.items()):
     summary["deps"] += sum(1 for r in rows if r[2].startswith(("shared", "third")))
     summary["vectors"] += len(vec)
     summary["fail"] += [(spec, h) for h in fails]
+    summary.setdefault("gaps", []).extend((spec, h) for h in gaps)
     for e in [CATALOG[i] for i in meta["ids"] if i in CATALOG]:
         for d in e[7]:
             LIVE_SUMMARY[d] = live_status(d)

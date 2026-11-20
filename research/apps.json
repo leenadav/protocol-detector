@@ -547,5 +547,17 @@
   "web": [
    "https://app.atera.com/"
   ]
+ },
+ "embedded-trackers.md": {
+  "ids": [
+   "meta-base",
+   "x-base",
+   "linkedin-base",
+   "reddit-base",
+   "quora-base",
+   "tiktok-base",
+   "spotify-base"
+  ],
+  "web": []
  }
 }

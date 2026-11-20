@@ -414,3 +414,26 @@ lightningdesignsystem.com
 grammarly.net
 capi.grammarly.com
 dox.grammarly.com
+# Pass 2 vendor-owned gaps (2026-11-20): certificate organisation decides O-level entry (decision 3):
+dockerstatic.com
+slackhq.com campaign.slackhq.com
+campaign.slackhq.com
+zndsk.com www.zndsk.com
+www.zndsk.com
+# Batch K vendor-level tag hosts:
+connect.facebook.net
+ads.linkedin.com px.ads.linkedin.com
+snap.licdn.com
+t.co
+analytics.twitter.com
+redditstatic.com www.redditstatic.com
+alb.reddit.com
+pixel-config.reddit.com
+a.quora.com
+q.quora.com
+analytics.tiktok.com
+pixels.spotify.com
+bat.bing.com
+c.bing.com
+bat.bing.net
+static.microsoft teams.public.onecdn.static.microsoft

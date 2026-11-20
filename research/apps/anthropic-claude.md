@@ -99,7 +99,7 @@ ALPN: nothing published by Anthropic. `UNVERIFIED`.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -108,10 +108,17 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | O+ | `claude.ai` | one of `anthropic-claude`, `anthropic-api` | `anthropic-claude` | PASS |
 | O+ | `platform.claude.com` | one of `anthropic-claude`, `anthropic-api` | `anthropic-api` | PASS |
 | O+ | `s-cdn.anthropic.com` | one of `anthropic-claude`, `anthropic-api` | `anthropic-claude` | PASS |
+| D- | `15e17cac5f6a.w.hcaptcha.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
+| D- | `251360e3903c.w.hcaptcha.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
+| D- | `655f30477866.w.hcaptcha.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
 | D- | `accounts.google.com` | not anthropic-claude/anthropic-api (shared vendor infra) | `google-accounts` | PASS |
+| D- | `api.hcaptcha.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
 | D- | `browser-intake-us5-datadoghq.com` | not anthropic-claude/anthropic-api (third party) | no application | PASS |
 | D- | `challenges.cloudflare.com` | not anthropic-claude/anthropic-api (third party) | no application | PASS |
+| D- | `e9ec84599f3b.w.hcaptcha.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
+| D- | `hagen.challenges.cloudflare.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
 | D- | `js.hcaptcha.com` | not anthropic-claude/anthropic-api (third party) | no application | PASS |
+| D- | `newassets.hcaptcha.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
 | L- | `xclaude.ai` | not anthropic-claude/anthropic-api (label boundary) | no application | PASS |
 | L- | `claude.ai.example.invalid` | not anthropic-claude/anthropic-api (suffix look-alike) | no application | PASS |
 | L- | `xanthropic.com` | not anthropic-claude/anthropic-api (label boundary) | no application | PASS |
@@ -167,20 +174,27 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://claude.ai/login`, loaded 2026-11-19 without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `claude.ai`.
-- `https://platform.claude.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `platform.claude.com`.
+- `https://claude.ai/login`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `claude.ai`.
+- `https://platform.claude.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `platform.claude.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `accounts.google.com` | 1 (0) | shared vendor infra | `google-accounts` |  |  |
-| `browser-intake-us5-datadoghq.com` | 1 (1) | third party | no application | not checked | Datadog browser telemetry |
-| `challenges.cloudflare.com` | 4 (4) | third party | no application | not checked | Cloudflare Turnstile bot check |
-| `claude.ai` | 16 (0) | app-owned | `anthropic-claude` | h3 |  |
-| `js.hcaptcha.com` | 1 (1) | third party | no application | not checked | hCaptcha |
-| `platform.claude.com` | 70 (0) | app-owned | `anthropic-api` | h3 |  |
-| `s-cdn.anthropic.com` | 1 (1) | app-owned | `anthropic-claude` |  |  |
+| `15e17cac5f6a.w.hcaptcha.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `251360e3903c.w.hcaptcha.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `655f30477866.w.hcaptcha.com` | seen | third party (unclassified) | no application | not checked |  |
+| `accounts.google.com` | seen | shared vendor infra | `google-accounts` |  |  |
+| `api.hcaptcha.com` | seen | third party (unclassified) | no application | not checked |  |
+| `browser-intake-us5-datadoghq.com` | seen | third party | no application | not checked | Datadog browser telemetry |
+| `challenges.cloudflare.com` | seen | third party | no application | not checked | Cloudflare Turnstile bot check |
+| `claude.ai` | seen | app-owned | `anthropic-claude` | h3 |  |
+| `e9ec84599f3b.w.hcaptcha.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `hagen.challenges.cloudflare.com` | seen | third party (unclassified) | no application | not checked |  |
+| `js.hcaptcha.com` | seen | third party | no application | not checked | hCaptcha |
+| `newassets.hcaptcha.com` | seen | third party (unclassified) | no application | not checked |  |
+| `platform.claude.com` | seen | app-owned | `anthropic-api` | h3 |  |
+| `s-cdn.anthropic.com` | seen | app-owned | `anthropic-claude` |  |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -188,7 +202,7 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - `anthropic-api`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: `anthropic-claude` (Anthropic Claude), `anthropic-api` (Anthropic Claude developer platform and API).
 - Variant: web app and API/console separated by name (`claude.ai` vs `api.anthropic.com`, `platform.claude.com`).
-- Dependencies (observed, never attributed to this app): `browser-intake-us5-datadoghq.com`, `challenges.cloudflare.com`, `google-accounts`, `js.hcaptcha.com`.
+- Dependencies (observed, never attributed to this app): `15e17cac5f6a.w.hcaptcha.com`, `251360e3903c.w.hcaptcha.com`, `655f30477866.w.hcaptcha.com`, `api.hcaptcha.com`, `browser-intake-us5-datadoghq.com`, `challenges.cloudflare.com`, `e9ec84599f3b.w.hcaptcha.com`, `google-accounts`, `hagen.challenges.cloudflare.com`, `js.hcaptcha.com`, `newassets.hcaptcha.com`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `claude.ai`, `anthropic.com`, `claude.com`, `claudeusercontent.com`, `platform.claude.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

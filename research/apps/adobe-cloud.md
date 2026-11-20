@@ -41,7 +41,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F, G and H)
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -98,14 +98,14 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://account.adobe.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `account.adobe.com`.
+- `https://account.adobe.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `account.adobe.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `account.adobe.com` | 3 (0) | app-owned | `adobe-cloud` |  |  |
-| `www.adobe.com` | 1 (1) | app-owned | `adobe-cloud` | cdn |  |
+| `account.adobe.com` | seen | app-owned | `adobe-cloud` |  |  |
+| `www.adobe.com` | seen (some failed) | app-owned | `adobe-cloud` | cdn |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 

@@ -41,12 +41,17 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `feedbackws.icloud.com` | one of `icloud`, `icloud-private-relay` | `icloud` | PASS |
+| O+ | `setup.icloud.com` | one of `icloud`, `icloud-private-relay` | `icloud` | PASS |
+| O+ | `www.icloud.com` | one of `icloud`, `icloud-private-relay` | `icloud` | PASS |
+| D- | `appleid.cdn-apple.com` | not icloud/icloud-private-relay (shared vendor infra) | `apple-base` | PASS |
+| D- | `www.apple.com` | not icloud/icloud-private-relay (shared vendor infra) | `apple-base` | PASS |
 | L- | `xicloud.com` | not icloud/icloud-private-relay (label boundary) | no application | PASS |
 | L- | `icloud.com.example.invalid` | not icloud/icloud-private-relay (suffix look-alike) | no application | PASS |
 | L- | `xicloud-content.com` | not icloud/icloud-private-relay (label boundary) | no application | PASS |
@@ -92,7 +97,17 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://www.icloud.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://www.icloud.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `www.icloud.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `appleid.cdn-apple.com` | seen | shared vendor infra | `apple-base` | not checked |  |
+| `feedbackws.icloud.com` | seen | app-owned | `icloud` | not checked |  |
+| `setup.icloud.com` | seen | app-owned | `icloud` | not checked |  |
+| `www.apple.com` | seen | shared vendor infra | `apple-base` | not checked |  |
+| `www.icloud.com` | seen (some failed) | app-owned | `icloud` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -100,7 +115,7 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 - `icloud-private-relay`: networking / encrypted-tunnel, client-server; characteristics `tunnels-other-applications`, `evasive`; **risk 3**: carries other traffic or remote control; designed to avoid inspection (relays, proxies or circumvention modes).
 - Functions separated by name: `icloud` (Apple iCloud services), `icloud-private-relay` (Apple iCloud Private Relay).
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `apple-base`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

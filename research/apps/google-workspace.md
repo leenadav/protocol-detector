@@ -57,12 +57,33 @@ Checked in scratch (batch A plus B): all as expected.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `accounts.google.com` | one of `gmail`, `google-drive`, `google-meet`, `google-accounts` | `google-accounts` | PASS |
+| O+ | `mail.google.com` | one of `gmail`, `google-drive`, `google-meet`, `google-accounts` | `gmail` | PASS |
+| O+ | `meet.google.com` | one of `gmail`, `google-drive`, `google-meet`, `google-accounts` | `google-meet` | PASS |
+| D- | `2507573.fls.doubleclick.net` | not gmail/google-drive/google-meet/google-accounts (third party) | `google-ads` | PASS |
+| D- | `ad.doubleclick.net` | not gmail/google-drive/google-meet/google-accounts (third party) | `google-ads` | PASS |
+| D- | `adservice.google.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
+| D- | `analytics.google.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
+| D- | `apps.google.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
+| D- | `fonts.googleapis.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
+| D- | `fonts.gstatic.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
+| D- | `googleads.g.doubleclick.net` | not gmail/google-drive/google-meet/google-accounts (third party) | `google-ads` | PASS |
+| D- | `lh3.googleusercontent.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
+| D- | `ssl.google-analytics.com` | not gmail/google-drive/google-meet/google-accounts (third party) | `google-analytics` | PASS |
+| D- | `ssl.gstatic.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
+| D- | `stats.g.doubleclick.net` | not gmail/google-drive/google-meet/google-accounts (third party) | `google-ads` | PASS |
+| D- | `storage.googleapis.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
+| D- | `workspace.google.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
+| D- | `www.google.co.il` | not gmail/google-drive/google-meet/google-accounts (third party (unclassified)) | no application | PASS |
+| D- | `www.google.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
+| D- | `www.googletagmanager.com` | not gmail/google-drive/google-meet/google-accounts (third party) | `google-analytics` | PASS |
+| D- | `www.gstatic.com` | not gmail/google-drive/google-meet/google-accounts (shared vendor infra) | `google-base` | PASS |
 | L- | `xgoogle.com` | not gmail/google-drive/google-meet/google-accounts (label boundary) | no application | PASS |
 | L- | `mail.google.com.example.invalid` | not gmail/google-drive/google-meet/google-accounts (suffix look-alike) | no application | PASS |
 | L- | `xgmail.com` | not gmail/google-drive/google-meet/google-accounts (label boundary) | no application | PASS |
@@ -125,8 +146,34 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://mail.google.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
-- `https://meet.google.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://mail.google.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `accounts.google.com`.
+- `https://meet.google.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `workspace.google.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `2507573.fls.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `accounts.google.com` | seen | app-owned | `google-accounts` |  |  |
+| `ad.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `adservice.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `analytics.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `apps.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `fonts.googleapis.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `fonts.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `googleads.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `lh3.googleusercontent.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `mail.google.com` | seen | app-owned | `gmail` |  |  |
+| `meet.google.com` | seen | app-owned | `google-meet` |  |  |
+| `ssl.google-analytics.com` | seen | third party | `google-analytics` | not checked |  |
+| `ssl.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `stats.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `storage.googleapis.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `workspace.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.google.co.il` | seen | third party (unclassified) | no application | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.googletagmanager.com` | seen | third party | `google-analytics` | not checked |  |
+| `www.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -136,7 +183,7 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 - `google-accounts`: business-systems / auth-service, browser-based; characteristics `widely-used`; **risk 1**: widely used by enterprises.
 - Functions separated by name: `gmail` (Gmail web mail), `google-drive` (Google Drive and Docs), `google-meet` (Google Meet video meetings), `google-accounts` (Google account sign-in).
 - Variant: not separated by name: consumer Gmail and Workspace share `mail.google.com`.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `google-ads`, `google-analytics`, `google-base`, `www.google.co.il`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

@@ -70,15 +70,55 @@ Checked with `attribution_for_host` in scratch (batch A plus B): all as expected
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
 | O+ | `drive.google.com` | one of `ms-onedrive`, `google-drive` | `google-drive` | PASS |
+| O+ | `onedrive.live.com` | one of `ms-onedrive`, `google-drive` | `ms-onedrive` | PASS |
+| D- | `accdn-vip.lpsnmedia.net` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
 | D- | `accounts.google.com` | not ms-onedrive/google-drive (shared vendor infra) | `google-accounts` | PASS |
+| D- | `api.company-target.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `assets.adobedtm.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `browser.events.data.microsoft.com` | not ms-onedrive/google-drive (shared vendor infra) | `ms-telemetry` | PASS |
+| D- | `c.bing.com` | not ms-onedrive/google-drive (shared vendor infra) | `ms-base` | PASS |
+| D- | `c.clarity.ms` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `c.s-microsoft.com` | not ms-onedrive/google-drive (shared vendor infra (unmapped)) | no application | PASS |
+| D- | `cdn-dynmedia-1.microsoft.com` | not ms-onedrive/google-drive (shared vendor infra) | `ms-base` | PASS |
+| D- | `dpm.demdex.net` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `dsum-sec.casalemedia.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `edge.adobedc.net` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `id.rlcdn.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `image2.pubmatic.com` | not ms-onedrive/google-drive (third party) | `pubmatic` | PASS |
+| D- | `js.monitor.azure.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `l.clarity.ms` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `login.live.com` | not ms-onedrive/google-drive (shared vendor infra) | `azure-ad` | PASS |
+| D- | `login.microsoftonline.com` | not ms-onedrive/google-drive (shared vendor infra) | `azure-ad` | PASS |
+| D- | `lpcdn-vip.lpsnmedia.net` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `lpcdn.lpsnmedia.net` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `lptag.liveperson.net` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `msftenterprise.sc.omtrdc.net` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `partners.tremorhub.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `pixel.rubiconproject.com` | not ms-onedrive/google-drive (third party) | `magnite` | PASS |
+| D- | `play.vidyard.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `publisher.liveperson.net` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `rum.hlx.page` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `s.company-target.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `scripts.clarity.ms` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `segments.company-target.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
 | D- | `ssl.gstatic.com` | not ms-onedrive/google-drive (shared vendor infra) | `google-base` | PASS |
+| D- | `static-assets.fs.liveperson.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `tag-logger.demandbase.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `tag.demandbase.com` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `target.microsoft.com` | not ms-onedrive/google-drive (shared vendor infra) | `ms-base` | PASS |
+| D- | `uhf-exp-fd-gbcrdgggfbggh0g3.b02.azurefd.net` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `uhf.microsoft.com` | not ms-onedrive/google-drive (shared vendor infra) | `ms-base` | PASS |
+| D- | `va-vip.v.liveperson.net` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `wcpstatic.microsoft.com` | not ms-onedrive/google-drive (shared vendor infra) | `ms-base` | PASS |
+| D- | `www.clarity.ms` | not ms-onedrive/google-drive (third party (unclassified)) | no application | PASS |
+| D- | `www.microsoft.com` | not ms-onedrive/google-drive (shared vendor infra) | `ms-base` | PASS |
 | L- | `xlive.com` | not ms-onedrive/google-drive (label boundary) | no application | PASS |
 | L- | `onedrive.live.com.example.invalid` | not ms-onedrive/google-drive (suffix look-alike) | no application | PASS |
 | L- | `xonedrive.com` | not ms-onedrive/google-drive (label boundary) | no application | PASS |
@@ -135,16 +175,56 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://drive.google.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `accounts.google.com`.
-- `https://onedrive.live.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://onedrive.live.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `www.microsoft.com`.
+- `https://drive.google.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `accounts.google.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `accounts.google.com` | 4 (0) | shared vendor infra | `google-accounts` |  |  |
-| `drive.google.com` | 1 (0) | app-owned | `google-drive` |  |  |
-| `ssl.gstatic.com` | 1 (1) | shared vendor infra | `google-base` | not checked |  |
+| `accdn-vip.lpsnmedia.net` | seen | third party (unclassified) | no application | not checked |  |
+| `accounts.google.com` | seen | shared vendor infra | `google-accounts` |  |  |
+| `api.company-target.com` | seen | third party (unclassified) | no application | not checked |  |
+| `assets.adobedtm.com` | seen | third party (unclassified) | no application | not checked |  |
+| `browser.events.data.microsoft.com` | seen | shared vendor infra | `ms-telemetry` | not checked |  |
+| `c.bing.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `c.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `c.s-microsoft.com` | seen | shared vendor infra (unmapped) | no application | not checked | Microsoft shared assets |
+| `cdn-dynmedia-1.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `dpm.demdex.net` | seen | third party (unclassified) | no application | not checked |  |
+| `drive.google.com` | seen | app-owned | `google-drive` |  |  |
+| `dsum-sec.casalemedia.com` | seen | third party (unclassified) | no application | not checked |  |
+| `edge.adobedc.net` | seen | third party (unclassified) | no application | not checked |  |
+| `id.rlcdn.com` | seen | third party (unclassified) | no application | not checked |  |
+| `image2.pubmatic.com` | seen | third party | `pubmatic` | not checked |  |
+| `js.monitor.azure.com` | seen | third party (unclassified) | no application | not checked |  |
+| `l.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `login.live.com` | seen | shared vendor infra | `azure-ad` | not checked |  |
+| `login.microsoftonline.com` | seen | shared vendor infra | `azure-ad` | not checked |  |
+| `lpcdn-vip.lpsnmedia.net` | seen | third party (unclassified) | no application | not checked |  |
+| `lpcdn.lpsnmedia.net` | seen | third party (unclassified) | no application | not checked |  |
+| `lptag.liveperson.net` | seen | third party (unclassified) | no application | not checked |  |
+| `msftenterprise.sc.omtrdc.net` | seen | third party (unclassified) | no application | not checked |  |
+| `onedrive.live.com` | seen | app-owned | `ms-onedrive` |  |  |
+| `partners.tremorhub.com` | seen | third party (unclassified) | no application | not checked |  |
+| `pixel.rubiconproject.com` | seen | third party | `magnite` | not checked |  |
+| `play.vidyard.com` | seen | third party (unclassified) | no application | not checked |  |
+| `publisher.liveperson.net` | seen | third party (unclassified) | no application | not checked |  |
+| `rum.hlx.page` | seen | third party (unclassified) | no application | not checked |  |
+| `s.company-target.com` | seen | third party (unclassified) | no application | not checked |  |
+| `scripts.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `segments.company-target.com` | seen | third party (unclassified) | no application | not checked |  |
+| `ssl.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `static-assets.fs.liveperson.com` | seen | third party (unclassified) | no application | not checked |  |
+| `tag-logger.demandbase.com` | seen | third party (unclassified) | no application | not checked |  |
+| `tag.demandbase.com` | seen | third party (unclassified) | no application | not checked |  |
+| `target.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `uhf-exp-fd-gbcrdgggfbggh0g3.b02.azurefd.net` | seen | third party (unclassified) | no application | not checked |  |
+| `uhf.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `va-vip.v.liveperson.net` | seen | third party (unclassified) | no application | not checked |  |
+| `wcpstatic.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `www.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `www.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -152,7 +232,7 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - `google-drive`: general-internet / file-sharing, browser-based; characteristics `widely-used`, `transfers-files`; **risk 3**: widely used by enterprises; moves files out of the organisation.
 - Functions separated by name: `ms-onedrive` (Microsoft OneDrive (consumer) file storage), `google-drive` (Google Drive and Docs).
 - Variant: consumer and business separated by name (`onedrive.live.com` vs `*.sharepoint.com`).
-- Dependencies (observed, never attributed to this app): `google-accounts`, `google-base`.
+- Dependencies (observed, never attributed to this app): `accdn-vip.lpsnmedia.net`, `api.company-target.com`, `assets.adobedtm.com`, `azure-ad`, `c.clarity.ms`, `dpm.demdex.net`, `dsum-sec.casalemedia.com`, `edge.adobedc.net`, `google-accounts`, `google-base`, `id.rlcdn.com`, `js.monitor.azure.com`, `l.clarity.ms`, `lpcdn-vip.lpsnmedia.net`, `lpcdn.lpsnmedia.net`, `lptag.liveperson.net`, `magnite`, `ms-base`, `ms-telemetry`, `msftenterprise.sc.omtrdc.net`, `partners.tremorhub.com`, `play.vidyard.com`, `publisher.liveperson.net`, `pubmatic`, `rum.hlx.page`, `s.company-target.com`, `scripts.clarity.ms`, `segments.company-target.com`, `static-assets.fs.liveperson.com`, `tag-logger.demandbase.com`, `tag.demandbase.com`, `uhf-exp-fd-gbcrdgggfbggh0g3.b02.azurefd.net`, `va-vip.v.liveperson.net`, `www.clarity.ms`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

@@ -60,12 +60,13 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `47b2743` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `assets.ngrok.com` | one of `ngrok` | `ngrok` | PASS |
 | O+ | `dashboard.ngrok.com` | one of `ngrok` | `ngrok` | PASS |
 | O+ | `login.ngrok.com` | one of `ngrok` | `ngrok` | PASS |
 | L- | `xngrok.com` | not ngrok (label boundary) | no application | PASS |
@@ -104,14 +105,15 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://dashboard.ngrok.com/login`, loaded 2026-11-19 without signing in: HTTP None (page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://dashboard.ngrok.com/login), final host `chromewebdata`.
+- `https://dashboard.ngrok.com/login`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `login.ngrok.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `dashboard.ngrok.com` | 1 (0) | app-owned | `ngrok` |  |  |
-| `login.ngrok.com` | 1 (1) | app-owned | `ngrok` |  |  |
+| `assets.ngrok.com` | seen | app-owned | `ngrok` | not checked |  |
+| `dashboard.ngrok.com` | seen | app-owned | `ngrok` |  |  |
+| `login.ngrok.com` | seen | app-owned | `ngrok` |  |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 

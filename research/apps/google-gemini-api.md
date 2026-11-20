@@ -39,16 +39,23 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| D- | `ad.doubleclick.net` | not google-gemini-api (shared vendor infra) | `google-ads` | PASS |
 | D- | `aistudio.google.com` | not google-gemini-api (shared vendor infra) | `google-ai-studio` | PASS |
+| D- | `analytics.google.com` | not google-gemini-api (shared vendor infra) | `google-base` | PASS |
 | D- | `apis.google.com` | not google-gemini-api (shared vendor infra) | `google-base` | PASS |
 | D- | `fonts.googleapis.com` | not google-gemini-api (shared vendor infra) | `google-base` | PASS |
 | D- | `fonts.gstatic.com` | not google-gemini-api (shared vendor infra) | `google-base` | PASS |
+| D- | `googleads.g.doubleclick.net` | not google-gemini-api (shared vendor infra) | `google-ads` | PASS |
+| D- | `stats.g.doubleclick.net` | not google-gemini-api (shared vendor infra) | `google-ads` | PASS |
+| D- | `www.google-analytics.com` | not google-gemini-api (shared vendor infra) | `google-analytics` | PASS |
+| D- | `www.google.co.il` | not google-gemini-api (third party (unclassified)) | no application | PASS |
+| D- | `www.google.com` | not google-gemini-api (shared vendor infra) | `google-base` | PASS |
 | D- | `www.googletagmanager.com` | not google-gemini-api (shared vendor infra) | `google-analytics` | PASS |
 | D- | `www.gstatic.com` | not google-gemini-api (shared vendor infra) | `google-base` | PASS |
 | L- | `xgoogleapis.com` | not google-gemini-api (label boundary) | no application | PASS |
@@ -88,25 +95,32 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://aistudio.google.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `aistudio.google.com`.
+- `https://aistudio.google.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `aistudio.google.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `aistudio.google.com` | 2 (0) | shared vendor infra | `google-ai-studio` |  |  |
-| `apis.google.com` | 1 (1) | shared vendor infra | `google-base` | not checked |  |
-| `fonts.googleapis.com` | 3 (0) | shared vendor infra | `google-base` | not checked |  |
-| `fonts.gstatic.com` | 3 (0) | shared vendor infra | `google-base` | not checked |  |
-| `www.googletagmanager.com` | 1 (1) | shared vendor infra | `google-analytics` | not checked |  |
-| `www.gstatic.com` | 31 (5) | shared vendor infra | `google-base` | not checked |  |
+| `ad.doubleclick.net` | seen | shared vendor infra | `google-ads` | not checked |  |
+| `aistudio.google.com` | seen | shared vendor infra | `google-ai-studio` |  |  |
+| `analytics.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `apis.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `fonts.googleapis.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `fonts.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `googleads.g.doubleclick.net` | seen (some failed) | shared vendor infra | `google-ads` | not checked |  |
+| `stats.g.doubleclick.net` | seen | shared vendor infra | `google-ads` | not checked |  |
+| `www.google-analytics.com` | seen | shared vendor infra | `google-analytics` | not checked |  |
+| `www.google.co.il` | seen | third party (unclassified) | no application | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.googletagmanager.com` | seen | shared vendor infra | `google-analytics` | not checked |  |
+| `www.gstatic.com` | seen (some failed) | shared vendor infra | `google-base` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `google-gemini-api`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `google-ai-studio`, `google-analytics`, `google-base`.
+- Dependencies (observed, never attributed to this app): `google-ads`, `google-ai-studio`, `google-analytics`, `google-base`, `www.google.co.il`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

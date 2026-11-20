@@ -56,14 +56,40 @@ Checked in scratch (batch C on `47b2743`): all as expected.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `auth.wetransfer.com` | one of `wetransfer` | `wetransfer` | PASS |
+| O+ | `backgrounds.wetransfer.net` | one of `wetransfer` | `wetransfer` | PASS |
+| O+ | `bsp-proxy.wetransfer.net` | one of `wetransfer` | `wetransfer` | PASS |
 | O+ | `cdn.wetransfer.com` | one of `wetransfer` | `wetransfer` | PASS |
+| O+ | `genie-assets.wetransfer.net` | one of `wetransfer` | `wetransfer` | PASS |
+| O+ | `lebowski.wetransfer.com` | one of `wetransfer` | `wetransfer` | PASS |
+| O+ | `nolan.wetransfer.net` | one of `wetransfer` | `wetransfer` | PASS |
+| O+ | `tagging.wetransfer.com` | one of `wetransfer` | `wetransfer` | PASS |
 | O+ | `wetransfer.com` | one of `wetransfer` | `wetransfer` | PASS |
+| D- | `accounts.google.com` | not wetransfer (shared vendor infra) | `google-accounts` | PASS |
+| D- | `bat.bing.com` | not wetransfer (shared vendor infra) | `ms-base` | PASS |
+| D- | `c.bing.com` | not wetransfer (shared vendor infra) | `ms-base` | PASS |
+| D- | `c.clarity.ms` | not wetransfer (third party (unclassified)) | no application | PASS |
+| D- | `cdn.cookielaw.org` | not wetransfer (third party) | no application | PASS |
+| D- | `ekr.zdassets.com` | not wetransfer (third party) | `zendesk` | PASS |
+| D- | `geolocation.onetrust.com` | not wetransfer (third party) | no application | PASS |
+| D- | `google.com` | not wetransfer (shared vendor infra) | `google-base` | PASS |
+| D- | `js.stripe.com` | not wetransfer (third party) | `stripe` | PASS |
+| D- | `m.stripe.com` | not wetransfer (third party) | `stripe` | PASS |
+| D- | `m.stripe.network` | not wetransfer (third party) | `stripe` | PASS |
+| D- | `pagead2.googlesyndication.com` | not wetransfer (third party) | `google-ads` | PASS |
+| D- | `q.clarity.ms` | not wetransfer (third party (unclassified)) | no application | PASS |
+| D- | `scripts.clarity.ms` | not wetransfer (third party (unclassified)) | no application | PASS |
+| D- | `securepubads.g.doubleclick.net` | not wetransfer (third party) | `google-ads` | PASS |
+| D- | `static.zdassets.com` | not wetransfer (third party) | `zendesk` | PASS |
+| D- | `wetransfer.zendesk.com` | not wetransfer (third party) | `zendesk` | PASS |
+| D- | `www.clarity.ms` | not wetransfer (third party (unclassified)) | no application | PASS |
+| D- | `www.googletagmanager.com` | not wetransfer (third party) | `google-analytics` | PASS |
 | L- | `xwetransfer.com` | not wetransfer (label boundary) | no application | PASS |
 | L- | `wetransfer.com.example.invalid` | not wetransfer (suffix look-alike) | no application | PASS |
 | L- | `xwetransfer.net` | not wetransfer (label boundary) | no application | PASS |
@@ -110,21 +136,47 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://wetransfer.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `wetransfer.com`.
+- `https://wetransfer.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `wetransfer.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `cdn.wetransfer.com` | 79 (79) | app-owned | `wetransfer` |  |  |
-| `wetransfer.com` | 1 (0) | app-owned | `wetransfer` |  |  |
+| `accounts.google.com` | seen | shared vendor infra | `google-accounts` |  |  |
+| `auth.wetransfer.com` | seen | app-owned | `wetransfer` | not checked |  |
+| `backgrounds.wetransfer.net` | seen | app-owned | `wetransfer` | not checked |  |
+| `bat.bing.com` | seen (some failed) | shared vendor infra | `ms-base` | not checked |  |
+| `bsp-proxy.wetransfer.net` | seen | app-owned | `wetransfer` | not checked |  |
+| `c.bing.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `c.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `cdn.cookielaw.org` | seen | third party | no application | not checked | OneTrust consent banner |
+| `cdn.wetransfer.com` | seen | app-owned | `wetransfer` |  |  |
+| `ekr.zdassets.com` | seen | third party | `zendesk` | not checked |  |
+| `genie-assets.wetransfer.net` | seen | app-owned | `wetransfer` | not checked |  |
+| `geolocation.onetrust.com` | seen | third party | no application | not checked | OneTrust consent geolocation |
+| `google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `js.stripe.com` | seen | third party | `stripe` | not checked |  |
+| `lebowski.wetransfer.com` | seen | app-owned | `wetransfer` | not checked |  |
+| `m.stripe.com` | seen | third party | `stripe` | not checked |  |
+| `m.stripe.network` | seen | third party | `stripe` | not checked |  |
+| `nolan.wetransfer.net` | seen | app-owned | `wetransfer` | not checked |  |
+| `pagead2.googlesyndication.com` | seen | third party | `google-ads` | not checked |  |
+| `q.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `scripts.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `securepubads.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `static.zdassets.com` | seen | third party | `zendesk` | not checked |  |
+| `tagging.wetransfer.com` | seen (some failed) | app-owned | `wetransfer` | not checked |  |
+| `wetransfer.com` | seen | app-owned | `wetransfer` |  |  |
+| `wetransfer.zendesk.com` | seen | third party | `zendesk` | not checked |  |
+| `www.clarity.ms` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `www.googletagmanager.com` | seen | third party | `google-analytics` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `wetransfer`: general-internet / file-sharing, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `c.clarity.ms`, `cdn.cookielaw.org`, `geolocation.onetrust.com`, `google-accounts`, `google-ads`, `google-analytics`, `google-base`, `ms-base`, `q.clarity.ms`, `scripts.clarity.ms`, `stripe`, `www.clarity.ms`, `zendesk`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

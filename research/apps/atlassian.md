@@ -50,12 +50,24 @@ Checked in scratch: all as expected.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `api.atlassian.com` | one of `atlassian` | `atlassian` | PASS |
+| O+ | `as.atlassian.com` | one of `atlassian` | `atlassian` | PASS |
+| O+ | `id-frontend.prod-east.frontend.public.atl-paas.net` | one of `atlassian` | `atlassian` | PASS |
+| O+ | `id.atlassian.com` | one of `atlassian` | `atlassian` | PASS |
+| O+ | `xp.atlassian.com` | one of `atlassian` | `atlassian` | PASS |
+| D- | `99a173f17960.d3c8cc30.eu-central-1.token.awswaf.com` | not atlassian (third party (unclassified)) | no application | PASS |
+| D- | `accounts.google.com` | not atlassian (shared vendor infra) | `google-accounts` | PASS |
+| D- | `fonts.gstatic.com` | not atlassian (shared vendor infra) | `google-base` | PASS |
+| D- | `google.com` | not atlassian (shared vendor infra) | `google-base` | PASS |
+| D- | `o55978.ingest.sentry.io` | not atlassian (third party) | `sentry` | PASS |
+| D- | `www.gstatic.com` | not atlassian (shared vendor infra) | `google-base` | PASS |
+| D- | `www.recaptcha.net` | not atlassian (third party (unclassified)) | no application | PASS |
 | L- | `xatlassian.net` | not atlassian (label boundary) | no application | PASS |
 | L- | `atlassian.net.example.invalid` | not atlassian (suffix look-alike) | no application | PASS |
 | L- | `xatlassian.com` | not atlassian (label boundary) | no application | PASS |
@@ -96,14 +108,31 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://id.atlassian.com/login`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://id.atlassian.com/login`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `id.atlassian.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `99a173f17960.d3c8cc30.eu-central-1.token.awswaf.com` | seen | third party (unclassified) | no application | not checked |  |
+| `accounts.google.com` | seen | shared vendor infra | `google-accounts` |  |  |
+| `api.atlassian.com` | seen | app-owned | `atlassian` | not checked |  |
+| `as.atlassian.com` | seen | app-owned | `atlassian` | not checked |  |
+| `fonts.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `id-frontend.prod-east.frontend.public.atl-paas.net` | seen | app-owned | `atlassian` | not checked |  |
+| `id.atlassian.com` | seen | app-owned | `atlassian` | not checked |  |
+| `o55978.ingest.sentry.io` | seen | third party | `sentry` | not checked |  |
+| `www.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.recaptcha.net` | seen | third party (unclassified) | no application | not checked |  |
+| `xp.atlassian.com` | seen | app-owned | `atlassian` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `atlassian`: business-systems / software-development, browser-based; characteristics `widely-used`, `transfers-files`; **risk 2**: widely used by enterprises; moves files out of the organisation.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `99a173f17960.d3c8cc30.eu-central-1.token.awswaf.com`, `google-accounts`, `google-base`, `sentry`, `www.recaptcha.net`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `atlassian.com`, `jira.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

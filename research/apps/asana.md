@@ -41,7 +41,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L and 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -90,7 +90,7 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://app.asana.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://app.asana.com/`: **not yet observed** (added after pass 2; listed in `web-urls.txt` for the next server run).
 
 ## 11. Attributes (App-ID model) and re-verify date
 

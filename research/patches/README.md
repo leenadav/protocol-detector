@@ -328,3 +328,23 @@ H → I → R → L → J. If R stays on hold, the Engine lane re-keys the prior
 | Parity | 7455/7455 Python and Go; 88/88 families |
 | Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 450) |
 
+## Batch K: `batch-k-dependency-pass2.patch` (after J)
+
+Dependency mapping pass 2 (Hermes server, direct, 2026-11-20) and Hermes's decision 4. Placeholder release **`2026.12.7`**, with
+`_PRIOR_HOST_STATE["2026.12.6"]` and `_RELEASED_COMPONENTS["2026.12.6"]`. Apply after J.
+
+- New vendor-level ids: `meta-base` (`connect.facebook.net`), `x-base` (`t.co`, `analytics.twitter.com`), `linkedin-base`
+  (`ads.linkedin.com`, `snap.licdn.com`), `reddit-base` (`redditstatic.com`, `alb.reddit.com`, `pixel-config.reddit.com`),
+  `quora-base` (`a.quora.com`, `q.quora.com`), `tiktok-base` (`analytics.tiktok.com`), `spotify-base` (`pixels.spotify.com`).
+- `twitter` loses `t.co`; `reddit` loses `redditstatic.com`; `ms-base` gains `bat.bing.com`, `c.bing.com`, `bat.bing.net` and
+  `static.microsoft` (`.microsoft` is managed by Microsoft Corporation per the IANA root zone database).
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.12.7, digest `26c9943a20b6e261`, 559 applications, 457 host entries |
+| Pack file | sha256 `7e98b4872052145400edcc33367a5badd4853e5b96665f8b3bbc0d4525ba850c` |
+| Rollback | release 2026.12.6 host catalog equals the batch J pack exactly |
+| Vectors | 35 targeted (all as expected); 1,109 method-v2 vectors across 69 specs, all pass |
+| Parity | 7467/7467 Python and Go; 88/88 families |
+| Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 457) |
+

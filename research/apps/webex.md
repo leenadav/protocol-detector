@@ -72,12 +72,17 @@ The rows other than N3 were checked with `attribution_for_host` in scratch (batc
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `tsa-f.webex.com` | one of `webex` | `webex` | PASS |
+| O+ | `u2c.svc.webex.com` | one of `webex` | `webex` | PASS |
+| O+ | `wdm-k.wbx2.com` | one of `webex` | `webex` | PASS |
+| O+ | `web.webex.com` | one of `webex` | `webex` | PASS |
+| D- | `api.eu.amplitude.com` | not webex (third party) | `amplitude` | PASS |
 | L- | `xwebex.com` | not webex (label boundary) | no application | PASS |
 | L- | `webex.com.example.invalid` | not webex (suffix look-alike) | no application | PASS |
 | L- | `xwbx2.com` | not webex (label boundary) | no application | PASS |
@@ -117,14 +122,24 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://web.webex.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://web.webex.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `web.webex.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `api.eu.amplitude.com` | seen | third party | `amplitude` | not checked |  |
+| `tsa-f.webex.com` | seen | app-owned | `webex` | not checked |  |
+| `u2c.svc.webex.com` | seen | app-owned | `webex` | not checked |  |
+| `wdm-k.wbx2.com` | seen | app-owned | `webex` | not checked |  |
+| `web.webex.com` | seen | app-owned | `webex` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `webex`: collaboration / voip-video, client-server; characteristics `widely-used`; **risk 2**: widely used by enterprises.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `amplitude`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

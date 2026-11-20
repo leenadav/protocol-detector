@@ -44,7 +44,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -52,9 +52,20 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 |---|---|---|---|---|
 | O+ | `auth.console.gotoresolve.com` | one of `logmein-resolve` | `logmein-resolve` | PASS |
 | O+ | `console.gotoresolve.com` | one of `logmein-resolve` | `logmein-resolve` | PASS |
+| O+ | `data.pen.console.gotoresolve.com` | one of `logmein-resolve` | `logmein-resolve` | PASS |
 | O+ | `tdn.console.gotoresolve.com` | one of `logmein-resolve` | `logmein-resolve` | PASS |
+| D- | `ad.doubleclick.net` | not logmein-resolve (third party) | `google-ads` | PASS |
+| D- | `authentication.logmeininc.com` | not logmein-resolve (shared vendor infra) | `logmein` | PASS |
 | D- | `cdn.amplitude.com` | not logmein-resolve (third party) | `amplitude` | PASS |
+| D- | `cdn.pendo.io` | not logmein-resolve (third party (unclassified)) | no application | PASS |
+| D- | `googleads.g.doubleclick.net` | not logmein-resolve (third party) | `google-ads` | PASS |
+| D- | `gs.amplitude.com` | not logmein-resolve (third party) | `amplitude` | PASS |
+| D- | `identity.goto.com` | not logmein-resolve (third party) | `goto-meeting` | PASS |
 | D- | `o173976.ingest.sentry.io` | not logmein-resolve (third party) | `sentry` | PASS |
+| D- | `weblibrary.cdn.getgo.com` | not logmein-resolve (shared vendor infra (unmapped)) | no application | PASS |
+| D- | `www.google.co.il` | not logmein-resolve (third party (unclassified)) | no application | PASS |
+| D- | `www.google.com` | not logmein-resolve (shared vendor infra) | `google-base` | PASS |
+| D- | `www.googletagmanager.com` | not logmein-resolve (third party) | `google-analytics` | PASS |
 | L- | `xgotoresolve.com` | not logmein-resolve (label boundary) | no application | PASS |
 | L- | `gotoresolve.com.example.invalid` | not logmein-resolve (suffix look-alike) | no application | PASS |
 | L- | `xgotoresolveuserfiles.com` | not logmein-resolve (label boundary) | no application | PASS |
@@ -93,24 +104,35 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://console.gotoresolve.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `chromewebdata`.
+- `https://console.gotoresolve.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `identity.goto.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `auth.console.gotoresolve.com` | 1 (1) | app-owned | `logmein-resolve` |  |  |
-| `cdn.amplitude.com` | 1 (1) | third party | `amplitude` | not checked |  |
-| `console.gotoresolve.com` | 36 (0) | app-owned | `logmein-resolve` |  |  |
-| `o173976.ingest.sentry.io` | 1 (1) | third party | `sentry` | not checked |  |
-| `tdn.console.gotoresolve.com` | 1 (0) | app-owned | `logmein-resolve` | cdn |  |
+| `ad.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `auth.console.gotoresolve.com` | seen | app-owned | `logmein-resolve` |  |  |
+| `authentication.logmeininc.com` | seen | shared vendor infra | `logmein` | not checked |  |
+| `cdn.amplitude.com` | seen | third party | `amplitude` | not checked |  |
+| `cdn.pendo.io` | seen | third party (unclassified) | no application | not checked |  |
+| `console.gotoresolve.com` | seen | app-owned | `logmein-resolve` |  |  |
+| `data.pen.console.gotoresolve.com` | seen | app-owned | `logmein-resolve` | not checked |  |
+| `googleads.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `gs.amplitude.com` | seen | third party | `amplitude` | not checked |  |
+| `identity.goto.com` | seen | third party | `goto-meeting` | not checked |  |
+| `o173976.ingest.sentry.io` | seen | third party | `sentry` | not checked |  |
+| `tdn.console.gotoresolve.com` | seen | app-owned | `logmein-resolve` | cdn |  |
+| `weblibrary.cdn.getgo.com` | seen | shared vendor infra (unmapped) | no application | not checked | GoTo shared web library (getgo.com; for the goto vendor id) |
+| `www.google.co.il` | seen | third party (unclassified) | no application | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.googletagmanager.com` | seen | third party | `google-analytics` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `logmein-resolve`: networking / remote-access, client-server; characteristics `tunnels-other-applications`, `prone-to-misuse`; **risk 4**: carries other traffic or remote control; commonly misused (unsanctioned remote access, data exfiltration).
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `amplitude`, `sentry`.
+- Dependencies (observed, never attributed to this app): `amplitude`, `cdn.pendo.io`, `google-ads`, `google-analytics`, `google-base`, `goto-meeting`, `logmein`, `sentry`, `www.google.co.il`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

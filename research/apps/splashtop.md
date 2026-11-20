@@ -40,12 +40,37 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `asset-g3.splashtop.com` | one of `splashtop` | `splashtop` | PASS |
+| O+ | `files.splashtop.com` | one of `splashtop` | `splashtop` | PASS |
+| O+ | `my.splashtop.com` | one of `splashtop` | `splashtop` | PASS |
+| O+ | `rs-api.splashtop.com` | one of `splashtop` | `splashtop` | PASS |
+| O+ | `rs-cdn.splashtop.com` | one of `splashtop` | `splashtop` | PASS |
+| O+ | `rs-dataplane.splashtop.com` | one of `splashtop` | `splashtop` | PASS |
+| O+ | `support-splashtopbusiness.splashtop.com` | one of `splashtop` | `splashtop` | PASS |
+| O+ | `support-splashtoppersonal.splashtop.com` | one of `splashtop` | `splashtop` | PASS |
+| O+ | `support-whiteboard.splashtop.com` | one of `splashtop` | `splashtop` | PASS |
+| D- | `ad.doubleclick.net` | not splashtop (third party) | `google-ads` | PASS |
+| D- | `bat.bing.com` | not splashtop (shared vendor infra) | `ms-base` | PASS |
+| D- | `bat.bing.net` | not splashtop (shared vendor infra) | `ms-base` | PASS |
+| D- | `cmp.osano.com` | not splashtop (third party (unclassified)) | no application | PASS |
+| D- | `cta-service-cms2.hubspot.com` | not splashtop (third party) | `hubspot` | PASS |
+| D- | `d.impct.site` | not splashtop (third party (unclassified)) | no application | PASS |
+| D- | `fonts.gstatic.com` | not splashtop (shared vendor infra) | `google-base` | PASS |
+| D- | `js.hs-banner.com` | not splashtop (third party (unclassified)) | no application | PASS |
+| D- | `js.hs-scripts.com` | not splashtop (third party (unclassified)) | no application | PASS |
+| D- | `js.hubspot.com` | not splashtop (third party) | `hubspot` | PASS |
+| D- | `perf-na1.hsforms.com` | not splashtop (third party (unclassified)) | no application | PASS |
+| D- | `utt.impactcdn.com` | not splashtop (third party (unclassified)) | no application | PASS |
+| D- | `www.google.com` | not splashtop (shared vendor infra) | `google-base` | PASS |
+| D- | `www.googletagmanager.com` | not splashtop (third party) | `google-analytics` | PASS |
+| D- | `www.gstatic.com` | not splashtop (shared vendor infra) | `google-base` | PASS |
+| D- | `www.recaptcha.net` | not splashtop (third party (unclassified)) | no application | PASS |
 | L- | `xsplashtop.com` | not splashtop (label boundary) | no application | PASS |
 | L- | `splashtop.com.example.invalid` | not splashtop (suffix look-alike) | no application | PASS |
 | L- | `xsplashtop.eu` | not splashtop (label boundary) | no application | PASS |
@@ -81,14 +106,44 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://my.splashtop.com/login`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://my.splashtop.com/login`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `my.splashtop.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `ad.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `asset-g3.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
+| `bat.bing.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `bat.bing.net` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `cmp.osano.com` | seen | third party (unclassified) | no application | not checked |  |
+| `cta-service-cms2.hubspot.com` | seen | third party | `hubspot` | not checked |  |
+| `d.impct.site` | seen | third party (unclassified) | no application | not checked |  |
+| `files.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
+| `fonts.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `js.hs-banner.com` | seen | third party (unclassified) | no application | not checked |  |
+| `js.hs-scripts.com` | seen | third party (unclassified) | no application | not checked |  |
+| `js.hubspot.com` | seen | third party | `hubspot` | not checked |  |
+| `my.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
+| `perf-na1.hsforms.com` | seen | third party (unclassified) | no application | not checked |  |
+| `rs-api.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
+| `rs-cdn.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
+| `rs-dataplane.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
+| `support-splashtopbusiness.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
+| `support-splashtoppersonal.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
+| `support-whiteboard.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
+| `utt.impactcdn.com` | seen | third party (unclassified) | no application | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.googletagmanager.com` | seen | third party | `google-analytics` | not checked |  |
+| `www.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.recaptcha.net` | seen | third party (unclassified) | no application | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `splashtop`: networking / remote-access, client-server; characteristics `tunnels-other-applications`, `prone-to-misuse`; **risk 4**: carries other traffic or remote control; commonly misused (unsanctioned remote access, data exfiltration).
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `cmp.osano.com`, `d.impct.site`, `google-ads`, `google-analytics`, `google-base`, `hubspot`, `js.hs-banner.com`, `js.hs-scripts.com`, `ms-base`, `perf-na1.hsforms.com`, `utt.impactcdn.com`, `www.recaptcha.net`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

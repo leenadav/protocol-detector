@@ -109,12 +109,31 @@ Built with `client_hello_with([...])` (server_name ext 0, ALPN ext 16), TCP 443 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `config.teams.microsoft.com` | one of `ms-office365`, `ms-teams`, `outlook-web`, `sharepoint-online` | `ms-teams` | PASS |
+| O+ | `m365.cloud.microsoft` | one of `ms-office365`, `ms-teams`, `outlook-web`, `sharepoint-online` | `ms-office365` | PASS |
+| O+ | `teams.microsoft.com` | one of `ms-office365`, `ms-teams`, `outlook-web`, `sharepoint-online` | `ms-teams` | PASS |
+| O+ | `www.office.com` | one of `ms-office365`, `ms-teams`, `outlook-web`, `sharepoint-online` | `ms-office365` | PASS |
+| D- | `aadcdn.msauth.net` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra (unmapped)) | no application | PASS |
+| D- | `admin.microsoft.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra) | `ms-base` | PASS |
+| D- | `browser.events.data.microsoft.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra) | `ms-telemetry` | PASS |
+| D- | `config.edge.skype.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (third party) | `skype` | PASS |
+| D- | `e.clarity.ms` | not ms-office365/ms-teams/outlook-web/sharepoint-online (third party (unclassified)) | no application | PASS |
+| D- | `eu-mobile.events.data.microsoft.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra) | `ms-telemetry` | PASS |
+| D- | `login.live.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra) | `azure-ad` | PASS |
+| D- | `login.microsoftonline.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra) | `azure-ad` | PASS |
+| D- | `res.cdn.office.net` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra) | `ms-base` | PASS |
+| D- | `scripts.clarity.ms` | not ms-office365/ms-teams/outlook-web/sharepoint-online (third party (unclassified)) | no application | PASS |
+| D- | `teams.events.data.microsoft.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra) | `ms-telemetry` | PASS |
+| D- | `teams.public.onecdn.static.microsoft` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra) | `ms-base` | PASS |
+| D- | `uhf.microsoft.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra) | `ms-base` | PASS |
+| D- | `wcpstatic.microsoft.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (shared vendor infra) | `ms-base` | PASS |
+| D- | `www.clarity.ms` | not ms-office365/ms-teams/outlook-web/sharepoint-online (third party (unclassified)) | no application | PASS |
 | L- | `xoffice.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (label boundary) | no application | PASS |
 | L- | `office.com.example.invalid` | not ms-office365/ms-teams/outlook-web/sharepoint-online (suffix look-alike) | no application | PASS |
 | L- | `xoffice365.com` | not ms-office365/ms-teams/outlook-web/sharepoint-online (label boundary) | no application | PASS |
@@ -204,8 +223,32 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://www.office.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
-- `https://teams.microsoft.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://www.office.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `m365.cloud.microsoft`.
+- `https://teams.microsoft.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `login.microsoftonline.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `aadcdn.msauth.net` | seen | shared vendor infra (unmapped) | no application | not checked | Microsoft Entra sign-in CDN |
+| `admin.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `browser.events.data.microsoft.com` | seen (some failed) | shared vendor infra | `ms-telemetry` | not checked |  |
+| `config.edge.skype.com` | seen | third party | `skype` | not checked |  |
+| `config.teams.microsoft.com` | seen | app-owned | `ms-teams` | not checked |  |
+| `e.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `eu-mobile.events.data.microsoft.com` | seen | shared vendor infra | `ms-telemetry` | not checked |  |
+| `login.live.com` | seen | shared vendor infra | `azure-ad` | not checked |  |
+| `login.microsoftonline.com` | seen | shared vendor infra | `azure-ad` | not checked |  |
+| `m365.cloud.microsoft` | seen | app-owned | `ms-office365` | not checked |  |
+| `res.cdn.office.net` | seen | shared vendor infra | `ms-base` | cdn,h3 |  |
+| `scripts.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `teams.events.data.microsoft.com` | seen (some failed) | shared vendor infra | `ms-telemetry` | not checked |  |
+| `teams.microsoft.com` | seen | app-owned | `ms-teams` |  |  |
+| `teams.public.onecdn.static.microsoft` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `uhf.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `wcpstatic.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `www.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `www.office.com` | seen | app-owned | `ms-office365` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -215,7 +258,7 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 - `sharepoint-online`: business-systems / office-programs, browser-based; characteristics `widely-used`, `transfers-files`; **risk 2**: widely used by enterprises; moves files out of the organisation.
 - Functions separated by name: `ms-office365` (Microsoft 365 web applications), `ms-teams` (Microsoft Teams chat and meetings), `outlook-web` (Outlook web mail (Microsoft 365 and Outlook.com)), `sharepoint-online` (SharePoint Online sites and files).
 - Variant: business (consumer Outlook.com and Skype are separate ids).
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `azure-ad`, `e.clarity.ms`, `ms-base`, `ms-telemetry`, `scripts.clarity.ms`, `skype`, `www.clarity.ms`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `office.net`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

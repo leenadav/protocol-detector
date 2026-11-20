@@ -72,12 +72,62 @@ No ALPN or protocol-structure information is published. `UNVERIFIED`.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `cfl.dropboxstatic.com` | one of `dropbox`, `docsend`, `dropbox-sign` | `dropbox` | PASS |
+| O+ | `dropboxcaptcha.com` | one of `dropbox`, `docsend`, `dropbox-sign` | `dropbox` | PASS |
+| O+ | `fp.dropbox.com` | one of `dropbox`, `docsend`, `dropbox-sign` | `dropbox` | PASS |
+| O+ | `marketing.dropbox.com` | one of `dropbox`, `docsend`, `dropbox-sign` | `dropbox` | PASS |
+| O+ | `www.dropbox.com` | one of `dropbox`, `docsend`, `dropbox-sign` | `dropbox` | PASS |
+| D- | `077-zjt-858.mktoresp.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `10906599.fls.doubleclick.net` | not dropbox/docsend/dropbox-sign (third party) | `google-ads` | PASS |
+| D- | `15932550.fls.doubleclick.net` | not dropbox/docsend/dropbox-sign (third party) | `google-ads` | PASS |
+| D- | `accounts.google.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `google-accounts` | PASS |
+| D- | `ad.doubleclick.net` | not dropbox/docsend/dropbox-sign (third party) | `google-ads` | PASS |
+| D- | `adservice.google.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `google-base` | PASS |
+| D- | `alb.reddit.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `reddit-base` | PASS |
+| D- | `analytics.google.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `google-base` | PASS |
+| D- | `analytics.twitter.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `x-base` | PASS |
+| D- | `assets.adobedtm.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `bttrack.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `cdn.bttrack.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `cj.dotomi.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `configs.knotch.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `connect.facebook.net` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `meta-base` | PASS |
+| D- | `fonts.gstatic.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `google-base` | PASS |
+| D- | `google.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `google-base` | PASS |
+| D- | `googleads.g.doubleclick.net` | not dropbox/docsend/dropbox-sign (third party) | `google-ads` | PASS |
+| D- | `js.qualified.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `js.zi-scripts.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `munchkin.marketo.net` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `pixel-config.reddit.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `reddit-base` | PASS |
+| D- | `play.google.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `google-base` | PASS |
+| D- | `px.ads.linkedin.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `linkedin-base` | PASS |
+| D- | `px4.ads.linkedin.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `linkedin-base` | PASS |
+| D- | `s.yimg.jp` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `siteintercept.qualtrics.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `snap.licdn.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `linkedin-base` | PASS |
+| D- | `static.ads-twitter.com` | not dropbox/docsend/dropbox-sign (third party) | no application | PASS |
+| D- | `static.cloud.coveo.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `static.xingcdn.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `stats.g.doubleclick.net` | not dropbox/docsend/dropbox-sign (third party) | `google-ads` | PASS |
+| D- | `t.co` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `x-base` | PASS |
+| D- | `tags.srv.stackadapt.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `ws.zoominfo.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `www.emjcd.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `www.google.co.il` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `www.google.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `google-base` | PASS |
+| D- | `www.googleadservices.com` | not dropbox/docsend/dropbox-sign (third party) | `google-ads` | PASS |
+| D- | `www.googletagmanager.com` | not dropbox/docsend/dropbox-sign (third party) | `google-analytics` | PASS |
+| D- | `www.gstatic.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `google-base` | PASS |
+| D- | `www.knotch-cdn.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
+| D- | `www.linkedin.com` | not dropbox/docsend/dropbox-sign (third party) | `linkedin` | PASS |
+| D- | `www.redditstatic.com` | not dropbox/docsend/dropbox-sign (shared vendor infra) | `reddit-base` | PASS |
+| D- | `zn9zbcpytdp6xzcnx-dropbox.siteintercept.qualtrics.com` | not dropbox/docsend/dropbox-sign (third party (unclassified)) | no application | PASS |
 | L- | `xdropbox.com` | not dropbox/docsend/dropbox-sign (label boundary) | no application | PASS |
 | L- | `dropbox.com.example.invalid` | not dropbox/docsend/dropbox-sign (suffix look-alike) | no application | PASS |
 | L- | `xdropboxapi.com` | not dropbox/docsend/dropbox-sign (label boundary) | no application | PASS |
@@ -149,7 +199,62 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://www.dropbox.com/login`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://www.dropbox.com/login`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `www.dropbox.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `077-zjt-858.mktoresp.com` | seen | third party (unclassified) | no application | not checked |  |
+| `10906599.fls.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `15932550.fls.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `accounts.google.com` | seen (some failed) | shared vendor infra | `google-accounts` |  |  |
+| `ad.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `adservice.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `alb.reddit.com` | seen | shared vendor infra | `reddit-base` | not checked |  |
+| `analytics.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `analytics.twitter.com` | seen | shared vendor infra | `x-base` | not checked |  |
+| `assets.adobedtm.com` | seen | third party (unclassified) | no application | not checked |  |
+| `bttrack.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `cdn.bttrack.com` | seen | third party (unclassified) | no application | not checked |  |
+| `cfl.dropboxstatic.com` | seen | app-owned | `dropbox` | not checked |  |
+| `cj.dotomi.com` | seen | third party (unclassified) | no application | not checked |  |
+| `configs.knotch.com` | seen | third party (unclassified) | no application | not checked |  |
+| `connect.facebook.net` | seen | shared vendor infra | `meta-base` | not checked |  |
+| `dropboxcaptcha.com` | seen | app-owned | `dropbox` |  |  |
+| `fonts.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `fp.dropbox.com` | seen | app-owned | `dropbox` | not checked |  |
+| `google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `googleads.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `js.qualified.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `js.zi-scripts.com` | seen | third party (unclassified) | no application | not checked |  |
+| `marketing.dropbox.com` | seen | app-owned | `dropbox` | not checked |  |
+| `munchkin.marketo.net` | seen | third party (unclassified) | no application | not checked |  |
+| `pixel-config.reddit.com` | seen | shared vendor infra | `reddit-base` | not checked |  |
+| `play.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `px.ads.linkedin.com` | seen | shared vendor infra | `linkedin-base` | not checked |  |
+| `px4.ads.linkedin.com` | seen | shared vendor infra | `linkedin-base` | not checked |  |
+| `s.yimg.jp` | seen | third party (unclassified) | no application | not checked |  |
+| `siteintercept.qualtrics.com` | seen | third party (unclassified) | no application | not checked |  |
+| `snap.licdn.com` | seen | shared vendor infra | `linkedin-base` | not checked |  |
+| `static.ads-twitter.com` | seen | third party | no application | not checked | X advertising tag |
+| `static.cloud.coveo.com` | seen | third party (unclassified) | no application | not checked |  |
+| `static.xingcdn.com` | seen | third party (unclassified) | no application | not checked |  |
+| `stats.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `t.co` | seen | shared vendor infra | `x-base` | not checked |  |
+| `tags.srv.stackadapt.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `ws.zoominfo.com` | seen | third party (unclassified) | no application | not checked |  |
+| `www.dropbox.com` | seen | app-owned | `dropbox` | not checked |  |
+| `www.emjcd.com` | seen | third party (unclassified) | no application | not checked |  |
+| `www.google.co.il` | seen | third party (unclassified) | no application | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.googleadservices.com` | seen | third party | `google-ads` | not checked |  |
+| `www.googletagmanager.com` | seen | third party | `google-analytics` | not checked |  |
+| `www.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.knotch-cdn.com` | seen | third party (unclassified) | no application | not checked |  |
+| `www.linkedin.com` | seen | third party | `linkedin` | not checked |  |
+| `www.redditstatic.com` | seen | shared vendor infra | `reddit-base` | not checked |  |
+| `zn9zbcpytdp6xzcnx-dropbox.siteintercept.qualtrics.com` | seen | third party (unclassified) | no application | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -158,7 +263,7 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 - `dropbox-sign`: business-systems / office-programs, browser-based; characteristics `transfers-files`; **risk 2**: moves files out of the organisation.
 - Functions separated by name: `dropbox` (Dropbox file sync and sharing), `docsend` (DocSend document sharing (Dropbox)), `dropbox-sign` (Dropbox Sign (HelloSign) e-signature).
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `077-zjt-858.mktoresp.com`, `assets.adobedtm.com`, `bttrack.com`, `cdn.bttrack.com`, `cj.dotomi.com`, `configs.knotch.com`, `google-accounts`, `google-ads`, `google-analytics`, `google-base`, `js.qualified.com`, `js.zi-scripts.com`, `linkedin`, `linkedin-base`, `meta-base`, `munchkin.marketo.net`, `reddit-base`, `s.yimg.jp`, `siteintercept.qualtrics.com`, `static.ads-twitter.com`, `static.cloud.coveo.com`, `static.xingcdn.com`, `tags.srv.stackadapt.com`, `ws.zoominfo.com`, `www.emjcd.com`, `www.google.co.il`, `www.knotch-cdn.com`, `x-base`, `zn9zbcpytdp6xzcnx-dropbox.siteintercept.qualtrics.com`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

@@ -45,16 +45,54 @@ not be logged anyway.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
 | O+ | `a.slack-edge.com` | one of `slack` | `slack` | PASS |
-| O+ | `b.slack-edge.com` | one of `slack` | `slack` | PASS |
+| O+ | `campaign.slackhq.com` | one of `slack` | no application | GAP (unmapped) |
 | O+ | `slack.com` | one of `slack` | `slack` | PASS |
+| D- | `12632256.fls.doubleclick.net` | not slack (third party) | `google-ads` | PASS |
+| D- | `ad.doubleclick.net` | not slack (third party) | `google-ads` | PASS |
+| D- | `adservice.google.com` | not slack (shared vendor infra) | `google-base` | PASS |
+| D- | `alb.reddit.com` | not slack (shared vendor infra) | `reddit-base` | PASS |
+| D- | `analytics.google.com` | not slack (shared vendor infra) | `google-base` | PASS |
+| D- | `api.company-target.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `c.contentsquare.net` | not slack (third party (unclassified)) | no application | PASS |
 | D- | `cdn.cookielaw.org` | not slack (third party) | no application | PASS |
+| D- | `cdn.schemaapp.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `csxd.contentsquare.net` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `data.schemaapp.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `dc.ads.linkedin.com` | not slack (shared vendor infra) | `linkedin-base` | PASS |
+| D- | `dsum-sec.casalemedia.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `geolocation.onetrust.com` | not slack (third party) | no application | PASS |
+| D- | `googleads.g.doubleclick.net` | not slack (third party) | `google-ads` | PASS |
+| D- | `ibc-flow.techtarget.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `id.rlcdn.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `image2.pubmatic.com` | not slack (third party) | `pubmatic` | PASS |
+| D- | `k-aus1.contentsquare.net` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `partners.tremorhub.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `pi.pardot.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `pixel-config.reddit.com` | not slack (shared vendor infra) | `reddit-base` | PASS |
+| D- | `pixel.rubiconproject.com` | not slack (third party) | `magnite` | PASS |
+| D- | `px.ads.linkedin.com` | not slack (shared vendor infra) | `linkedin-base` | PASS |
+| D- | `px4.ads.linkedin.com` | not slack (shared vendor infra) | `linkedin-base` | PASS |
+| D- | `s.company-target.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `segments.company-target.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `snap.licdn.com` | not slack (shared vendor infra) | `linkedin-base` | PASS |
+| D- | `srm.bf.contentsquare.net` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `stats.g.doubleclick.net` | not slack (third party) | `google-ads` | PASS |
+| D- | `t.contentsquare.net` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `tag-logger.demandbase.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `tag.demandbase.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `trk.techtarget.com` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `www.google.co.il` | not slack (third party (unclassified)) | no application | PASS |
+| D- | `www.google.com` | not slack (shared vendor infra) | `google-base` | PASS |
+| D- | `www.googletagmanager.com` | not slack (third party) | `google-analytics` | PASS |
+| D- | `www.linkedin.com` | not slack (third party) | `linkedin` | PASS |
+| D- | `www.redditstatic.com` | not slack (shared vendor infra) | `reddit-base` | PASS |
 | L- | `xslack.com` | not slack (label boundary) | no application | PASS |
 | L- | `slack.com.example.invalid` | not slack (suffix look-alike) | no application | PASS |
 | L- | `xslack-edge.com` | not slack (label boundary) | no application | PASS |
@@ -91,23 +129,61 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://slack.com/signin`, loaded 2026-11-19 without signing in: HTTP 200, final host `slack.com`.
+- `https://slack.com/signin`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `slack.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `a.slack-edge.com` | 24 (24) | app-owned | `slack` | cdn,h3 |  |
-| `b.slack-edge.com` | 12 (12) | app-owned | `slack` | cdn |  |
-| `cdn.cookielaw.org` | 3 (3) | third party | no application | not checked | OneTrust consent banner |
-| `slack.com` | 12 (0) | app-owned | `slack` |  |  |
+| `12632256.fls.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `a.slack-edge.com` | seen | app-owned | `slack` | cdn,h3 |  |
+| `ad.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `adservice.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `alb.reddit.com` | seen | shared vendor infra | `reddit-base` | not checked |  |
+| `analytics.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `api.company-target.com` | seen | third party (unclassified) | no application | not checked |  |
+| `c.contentsquare.net` | seen | third party (unclassified) | no application | not checked |  |
+| `campaign.slackhq.com` | seen | app-owned (unmapped) | no application | not checked | Slack marketing (slackhq.com); ownership to be shown by certificate in live round 2 |
+| `cdn.cookielaw.org` | seen | third party | no application | not checked | OneTrust consent banner |
+| `cdn.schemaapp.com` | seen | third party (unclassified) | no application | not checked |  |
+| `csxd.contentsquare.net` | seen | third party (unclassified) | no application | not checked |  |
+| `data.schemaapp.com` | seen | third party (unclassified) | no application | not checked |  |
+| `dc.ads.linkedin.com` | seen | shared vendor infra | `linkedin-base` | not checked |  |
+| `dsum-sec.casalemedia.com` | seen | third party (unclassified) | no application | not checked |  |
+| `geolocation.onetrust.com` | seen | third party | no application | not checked | OneTrust consent geolocation |
+| `googleads.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `ibc-flow.techtarget.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `id.rlcdn.com` | seen | third party (unclassified) | no application | not checked |  |
+| `image2.pubmatic.com` | seen | third party | `pubmatic` | not checked |  |
+| `k-aus1.contentsquare.net` | seen | third party (unclassified) | no application | not checked |  |
+| `partners.tremorhub.com` | seen | third party (unclassified) | no application | not checked |  |
+| `pi.pardot.com` | seen | third party (unclassified) | no application | not checked |  |
+| `pixel-config.reddit.com` | seen | shared vendor infra | `reddit-base` | not checked |  |
+| `pixel.rubiconproject.com` | seen | third party | `magnite` | not checked |  |
+| `px.ads.linkedin.com` | seen | shared vendor infra | `linkedin-base` | not checked |  |
+| `px4.ads.linkedin.com` | seen | shared vendor infra | `linkedin-base` | not checked |  |
+| `s.company-target.com` | seen | third party (unclassified) | no application | not checked |  |
+| `segments.company-target.com` | seen | third party (unclassified) | no application | not checked |  |
+| `slack.com` | seen | app-owned | `slack` |  |  |
+| `snap.licdn.com` | seen | shared vendor infra | `linkedin-base` | not checked |  |
+| `srm.bf.contentsquare.net` | seen | third party (unclassified) | no application | not checked |  |
+| `stats.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `t.contentsquare.net` | seen | third party (unclassified) | no application | not checked |  |
+| `tag-logger.demandbase.com` | seen | third party (unclassified) | no application | not checked |  |
+| `tag.demandbase.com` | seen | third party (unclassified) | no application | not checked |  |
+| `trk.techtarget.com` | seen | third party (unclassified) | no application | not checked |  |
+| `www.google.co.il` | seen | third party (unclassified) | no application | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.googletagmanager.com` | seen | third party | `google-analytics` | not checked |  |
+| `www.linkedin.com` | seen | third party | `linkedin` | not checked |  |
+| `www.redditstatic.com` | seen | shared vendor infra | `reddit-base` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `slack`: collaboration / instant-messaging, browser-based; characteristics `widely-used`, `transfers-files`; **risk 2**: widely used by enterprises; moves files out of the organisation.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `cdn.cookielaw.org`.
+- Dependencies (observed, never attributed to this app): `api.company-target.com`, `c.contentsquare.net`, `cdn.cookielaw.org`, `cdn.schemaapp.com`, `csxd.contentsquare.net`, `data.schemaapp.com`, `dsum-sec.casalemedia.com`, `geolocation.onetrust.com`, `google-ads`, `google-analytics`, `google-base`, `ibc-flow.techtarget.com`, `id.rlcdn.com`, `k-aus1.contentsquare.net`, `linkedin`, `linkedin-base`, `magnite`, `partners.tremorhub.com`, `pi.pardot.com`, `pubmatic`, `reddit-base`, `s.company-target.com`, `segments.company-target.com`, `srm.bf.contentsquare.net`, `t.contentsquare.net`, `tag-logger.demandbase.com`, `tag.demandbase.com`, `trk.techtarget.com`, `www.google.co.il`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `slack-edge.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

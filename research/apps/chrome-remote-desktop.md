@@ -45,12 +45,18 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `remotedesktop.google.com` | one of `chrome-remote-desktop` | `chrome-remote-desktop` | PASS |
+| D- | `fonts.gstatic.com` | not chrome-remote-desktop (shared vendor infra) | `google-base` | PASS |
+| D- | `ogads-pa.clients6.google.com` | not chrome-remote-desktop (shared vendor infra) | `google-base` | PASS |
+| D- | `play.google.com` | not chrome-remote-desktop (shared vendor infra) | `google-base` | PASS |
+| D- | `ssl.gstatic.com` | not chrome-remote-desktop (shared vendor infra) | `google-base` | PASS |
+| D- | `www.gstatic.com` | not chrome-remote-desktop (shared vendor infra) | `google-base` | PASS |
 | L- | `xgoogle.com` | not chrome-remote-desktop (label boundary) | no application | PASS |
 | L- | `remotedesktop.google.com.example.invalid` | not chrome-remote-desktop (suffix look-alike) | no application | PASS |
 | L- | `xgoogleapis.com` | not chrome-remote-desktop (label boundary) | no application | PASS |
@@ -82,14 +88,25 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://remotedesktop.google.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://remotedesktop.google.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `remotedesktop.google.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `fonts.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `ogads-pa.clients6.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `play.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `remotedesktop.google.com` | seen | app-owned | `chrome-remote-desktop` | cdn |  |
+| `ssl.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `chrome-remote-desktop`: networking / remote-access, browser-based; characteristics `tunnels-other-applications`, `prone-to-misuse`; **risk 4**: carries other traffic or remote control; commonly misused (unsanctioned remote access, data exfiltration).
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `google-base`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

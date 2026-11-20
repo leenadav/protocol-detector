@@ -43,12 +43,39 @@ P1, P2 and N1 were checked with `attribution_for_host` in scratch (batches A, B 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `count.perplexity.ai` | one of `perplexity`, `perplexity-api` | `perplexity` | PASS |
+| O+ | `edge.perplexity.ai` | one of `perplexity`, `perplexity-api` | `perplexity` | PASS |
+| O+ | `experimentation-cdn.perplexity.ai` | one of `perplexity`, `perplexity-api` | `perplexity` | PASS |
+| O+ | `frontend-cdn.perplexity.ai` | one of `perplexity`, `perplexity-api` | `perplexity` | PASS |
+| O+ | `pplx-next-static-public.perplexity.ai` | one of `perplexity`, `perplexity-api` | `perplexity` | PASS |
+| O+ | `r2cdn.perplexity.ai` | one of `perplexity`, `perplexity-api` | `perplexity` | PASS |
+| O+ | `www.perplexity.ai` | one of `perplexity`, `perplexity-api` | `perplexity` | PASS |
+| D- | `accounts.google.com` | not perplexity/perplexity-api (shared vendor infra) | `google-accounts` | PASS |
+| D- | `api.cr-relay.com` | not perplexity/perplexity-api (third party (unclassified)) | no application | PASS |
+| D- | `browser-intake-datadoghq.com` | not perplexity/perplexity-api (third party (unclassified)) | no application | PASS |
+| D- | `cdn.cr-relay.com` | not perplexity/perplexity-api (third party (unclassified)) | no application | PASS |
+| D- | `commonroom.pplxmeasure.com` | not perplexity/perplexity-api (third party) | no application | PASS |
+| D- | `connect.facebook.net` | not perplexity/perplexity-api (shared vendor infra) | `meta-base` | PASS |
+| D- | `fscdn.eppo.cloud` | not perplexity/perplexity-api (third party (unclassified)) | no application | PASS |
+| D- | `google.com` | not perplexity/perplexity-api (shared vendor infra) | `google-base` | PASS |
+| D- | `google.pplxmeasure.com` | not perplexity/perplexity-api (third party) | no application | PASS |
+| D- | `googleads.g.doubleclick.net` | not perplexity/perplexity-api (third party) | `google-ads` | PASS |
+| D- | `linkedin.pplxmeasure.com` | not perplexity/perplexity-api (third party) | no application | PASS |
+| D- | `meta.pplxmeasure.com` | not perplexity/perplexity-api (third party) | no application | PASS |
+| D- | `px.ads.linkedin.com` | not perplexity/perplexity-api (shared vendor infra) | `linkedin-base` | PASS |
+| D- | `sdk-api-v1.singular.net` | not perplexity/perplexity-api (third party (unclassified)) | no application | PASS |
+| D- | `snap.licdn.com` | not perplexity/perplexity-api (shared vendor infra) | `linkedin-base` | PASS |
+| D- | `static.cloudflareinsights.com` | not perplexity/perplexity-api (third party) | no application | PASS |
+| D- | `www.google.co.il` | not perplexity/perplexity-api (third party (unclassified)) | no application | PASS |
+| D- | `www.google.com` | not perplexity/perplexity-api (shared vendor infra) | `google-base` | PASS |
+| D- | `www.googletagmanager.com` | not perplexity/perplexity-api (third party) | `google-analytics` | PASS |
+| D- | `www.linkedin.com` | not perplexity/perplexity-api (third party) | `linkedin` | PASS |
 | L- | `xperplexity.ai` | not perplexity/perplexity-api (label boundary) | no application | PASS |
 | L- | `perplexity.ai.example.invalid` | not perplexity/perplexity-api (suffix look-alike) | no application | PASS |
 | L- | `api.perplexity.ai.example.invalid` | not perplexity/perplexity-api (suffix look-alike) | no application | PASS |
@@ -83,7 +110,39 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://www.perplexity.ai/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://www.perplexity.ai/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `www.perplexity.ai`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `accounts.google.com` | seen | shared vendor infra | `google-accounts` |  |  |
+| `api.cr-relay.com` | seen | third party (unclassified) | no application | not checked |  |
+| `browser-intake-datadoghq.com` | seen | third party (unclassified) | no application | not checked |  |
+| `cdn.cr-relay.com` | seen | third party (unclassified) | no application | not checked |  |
+| `commonroom.pplxmeasure.com` | seen | third party | no application | not checked | measurement proxy; owner not verified |
+| `connect.facebook.net` | seen | shared vendor infra | `meta-base` | not checked |  |
+| `count.perplexity.ai` | seen | app-owned | `perplexity` | not checked |  |
+| `edge.perplexity.ai` | seen | app-owned | `perplexity` | not checked |  |
+| `experimentation-cdn.perplexity.ai` | seen | app-owned | `perplexity` | not checked |  |
+| `frontend-cdn.perplexity.ai` | seen | app-owned | `perplexity` | not checked |  |
+| `fscdn.eppo.cloud` | seen | third party (unclassified) | no application | not checked |  |
+| `google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `google.pplxmeasure.com` | seen | third party | no application | not checked | measurement proxy; owner not verified |
+| `googleads.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `linkedin.pplxmeasure.com` | seen | third party | no application | not checked | measurement proxy; owner not verified |
+| `meta.pplxmeasure.com` | seen | third party | no application | not checked | measurement proxy; owner not verified |
+| `pplx-next-static-public.perplexity.ai` | seen | app-owned | `perplexity` | not checked |  |
+| `px.ads.linkedin.com` | seen | shared vendor infra | `linkedin-base` | not checked |  |
+| `r2cdn.perplexity.ai` | seen | app-owned | `perplexity` | not checked |  |
+| `sdk-api-v1.singular.net` | seen | third party (unclassified) | no application | not checked |  |
+| `snap.licdn.com` | seen | shared vendor infra | `linkedin-base` | not checked |  |
+| `static.cloudflareinsights.com` | seen (some failed) | third party | no application | not checked | Cloudflare Web Analytics beacon |
+| `www.google.co.il` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.googletagmanager.com` | seen | third party | `google-analytics` | not checked |  |
+| `www.linkedin.com` | seen (some failed) | third party | `linkedin` | not checked |  |
+| `www.perplexity.ai` | seen (some failed) | app-owned | `perplexity` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -91,7 +150,7 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 - `perplexity-api`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: `perplexity` (Perplexity AI), `perplexity-api` (Perplexity API).
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `api.cr-relay.com`, `browser-intake-datadoghq.com`, `cdn.cr-relay.com`, `commonroom.pplxmeasure.com`, `fscdn.eppo.cloud`, `google-accounts`, `google-ads`, `google-analytics`, `google-base`, `google.pplxmeasure.com`, `linkedin`, `linkedin-base`, `linkedin.pplxmeasure.com`, `meta-base`, `meta.pplxmeasure.com`, `sdk-api-v1.singular.net`, `static.cloudflareinsights.com`, `www.google.co.il`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `perplexity.ai`, `api.perplexity.ai`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

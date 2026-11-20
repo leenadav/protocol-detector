@@ -49,12 +49,13 @@ over DERP on TCP 443 is visible only as TLS to DERP hosts, whose names are not v
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `login.tailscale.com` | one of `tailscale` | `tailscale` | PASS |
 | L- | `xtailscale.com` | not tailscale (label boundary) | no application | PASS |
 | L- | `tailscale.com.example.invalid` | not tailscale (suffix look-alike) | no application | PASS |
 | L- | `xtailscale.io` | not tailscale (label boundary) | no application | PASS |
@@ -83,7 +84,13 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://login.tailscale.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://login.tailscale.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `login.tailscale.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `login.tailscale.com` | seen | app-owned | `tailscale` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 

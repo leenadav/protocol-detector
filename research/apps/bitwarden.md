@@ -39,12 +39,13 @@ Checked in scratch (`bc65e50` plus C, D and E): all as expected.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `vault.bitwarden.com` | one of `bitwarden` | `bitwarden` | PASS |
 | L- | `xbitwarden.com` | not bitwarden (label boundary) | no application | PASS |
 | L- | `bitwarden.com.example.invalid` | not bitwarden (suffix look-alike) | no application | PASS |
 | L- | `xbitwarden.net` | not bitwarden (label boundary) | no application | PASS |
@@ -80,7 +81,13 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://vault.bitwarden.com/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://vault.bitwarden.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `vault.bitwarden.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `vault.bitwarden.com` | seen | app-owned | `bitwarden` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 

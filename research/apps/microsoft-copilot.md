@@ -68,7 +68,7 @@ licensed from personal use. Logs should say "Copilot app connection", not "Copil
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -76,6 +76,13 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 |---|---|---|---|---|
 | O+ | `copilot.com` | one of `ms-copilot` | `ms-copilot` | PASS |
 | O+ | `copilot.microsoft.com` | one of `ms-copilot` | `ms-copilot` | PASS |
+| D- | `b.clarity.ms` | not ms-copilot (third party (unclassified)) | no application | PASS |
+| D- | `browser.events.data.microsoft.com` | not ms-copilot (shared vendor infra) | `ms-telemetry` | PASS |
+| D- | `res.cdn.office.net` | not ms-copilot (shared vendor infra) | `ms-base` | PASS |
+| D- | `scripts.clarity.ms` | not ms-copilot (third party (unclassified)) | no application | PASS |
+| D- | `uhf.microsoft.com` | not ms-copilot (shared vendor infra) | `ms-base` | PASS |
+| D- | `wcpstatic.microsoft.com` | not ms-copilot (shared vendor infra) | `ms-base` | PASS |
+| D- | `www.clarity.ms` | not ms-copilot (third party (unclassified)) | no application | PASS |
 | L- | `xmicrosoft.com` | not ms-copilot (label boundary) | no application | PASS |
 | L- | `copilot.microsoft.com.example.invalid` | not ms-copilot (suffix look-alike) | no application | PASS |
 | L- | `xcloud.microsoft` | not ms-copilot (label boundary) | no application | PASS |
@@ -121,21 +128,28 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://copilot.microsoft.com/`, loaded 2026-11-19 without signing in: HTTP None (page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://copilot.microsoft.com/), final host `chromewebdata`.
+- `https://copilot.microsoft.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `copilot.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `copilot.com` | 1 (1) | app-owned | `ms-copilot` |  |  |
-| `copilot.microsoft.com` | 1 (0) | app-owned | `ms-copilot` | cdn,h3 |  |
+| `b.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `browser.events.data.microsoft.com` | seen | shared vendor infra | `ms-telemetry` | not checked |  |
+| `copilot.com` | seen | app-owned | `ms-copilot` |  |  |
+| `copilot.microsoft.com` | seen | app-owned | `ms-copilot` | cdn,h3 |  |
+| `res.cdn.office.net` | seen | shared vendor infra | `ms-base` | cdn,h3 |  |
+| `scripts.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
+| `uhf.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `wcpstatic.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `www.clarity.ms` | seen | third party (unclassified) | no application | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `ms-copilot`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `b.clarity.ms`, `ms-base`, `ms-telemetry`, `scripts.clarity.ms`, `www.clarity.ms`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `copilot.microsoft.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

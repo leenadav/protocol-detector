@@ -44,12 +44,22 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I): all as e
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `windows.cloud.microsoft` | one of `ms-virtual-desktop` | `ms-virtual-desktop` | PASS |
+| D- | `aadcdn.msauth.net` | not ms-virtual-desktop (shared vendor infra (unmapped)) | no application | PASS |
+| D- | `browser.events.data.microsoft.com` | not ms-virtual-desktop (shared vendor infra) | `ms-telemetry` | PASS |
+| D- | `ecs.office.com` | not ms-virtual-desktop (shared vendor infra) | `ms-office365` | PASS |
+| D- | `eu-mobile.events.data.microsoft.com` | not ms-virtual-desktop (shared vendor infra) | `ms-telemetry` | PASS |
+| D- | `login.live.com` | not ms-virtual-desktop (shared vendor infra) | `azure-ad` | PASS |
+| D- | `login.microsoftonline.com` | not ms-virtual-desktop (shared vendor infra) | `azure-ad` | PASS |
+| D- | `officeclient.microsoft.com` | not ms-virtual-desktop (shared vendor infra) | `ms-base` | PASS |
+| D- | `res-1.cdn.office.net` | not ms-virtual-desktop (shared vendor infra) | `ms-base` | PASS |
+| D- | `wcpstatic.microsoft.com` | not ms-virtual-desktop (shared vendor infra) | `ms-base` | PASS |
 | L- | `xmicrosoft.com` | not ms-virtual-desktop (label boundary) | no application | PASS |
 | L- | `wvd.microsoft.com.example.invalid` | not ms-virtual-desktop (suffix look-alike) | no application | PASS |
 | L- | `xazure.us` | not ms-virtual-desktop (label boundary) | no application | PASS |
@@ -91,14 +101,29 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://windows.cloud.microsoft/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://windows.cloud.microsoft/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `login.microsoftonline.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `aadcdn.msauth.net` | seen | shared vendor infra (unmapped) | no application | not checked | Microsoft Entra sign-in CDN |
+| `browser.events.data.microsoft.com` | seen (some failed) | shared vendor infra | `ms-telemetry` | not checked |  |
+| `ecs.office.com` | seen | shared vendor infra | `ms-office365` | not checked |  |
+| `eu-mobile.events.data.microsoft.com` | seen | shared vendor infra | `ms-telemetry` | not checked |  |
+| `login.live.com` | seen | shared vendor infra | `azure-ad` | not checked |  |
+| `login.microsoftonline.com` | seen | shared vendor infra | `azure-ad` | not checked |  |
+| `officeclient.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `res-1.cdn.office.net` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `wcpstatic.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
+| `windows.cloud.microsoft` | seen | app-owned | `ms-virtual-desktop` | cdn |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `ms-virtual-desktop`: networking / remote-access, client-server; characteristics `tunnels-other-applications`; **risk 3**: carries other traffic or remote control.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `azure-ad`, `ms-base`, `ms-office365`, `ms-telemetry`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

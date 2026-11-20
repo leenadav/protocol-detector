@@ -67,14 +67,16 @@ media mostly bypasses the TCP proxy path.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
 | O+ | `app.zoom.us` | one of `zoom` | `zoom` | PASS |
+| O+ | `log-gateway.zoom.us` | one of `zoom` | `zoom` | PASS |
 | O+ | `st1.zoom.us` | one of `zoom` | `zoom` | PASS |
+| O+ | `us.telemetry.zoom.us` | one of `zoom` | `zoom` | PASS |
 | O+ | `us01st-cf.zoom.us` | one of `zoom` | `zoom` | PASS |
 | D- | `www.googletagmanager.com` | not zoom (third party) | `google-analytics` | PASS |
 | L- | `xzoom.us` | not zoom (label boundary) | no application | PASS |
@@ -114,16 +116,18 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://app.zoom.us/wc`, loaded 2026-11-19 without signing in: HTTP 200, final host `app.zoom.us`.
+- `https://app.zoom.us/wc`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `app.zoom.us`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `app.zoom.us` | 1 (0) | app-owned | `zoom` |  |  |
-| `st1.zoom.us` | 7 (7) | app-owned | `zoom` |  |  |
-| `us01st-cf.zoom.us` | 2 (2) | app-owned | `zoom` |  |  |
-| `www.googletagmanager.com` | 1 (1) | third party | `google-analytics` | not checked |  |
+| `app.zoom.us` | seen | app-owned | `zoom` |  |  |
+| `log-gateway.zoom.us` | seen | app-owned | `zoom` | not checked |  |
+| `st1.zoom.us` | seen | app-owned | `zoom` |  |  |
+| `us.telemetry.zoom.us` | seen | app-owned | `zoom` | not checked |  |
+| `us01st-cf.zoom.us` | seen | app-owned | `zoom` |  |  |
+| `www.googletagmanager.com` | seen | third party | `google-analytics` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 

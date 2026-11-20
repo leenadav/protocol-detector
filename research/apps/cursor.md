@@ -38,14 +38,18 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `authenticate.cursor.sh` | one of `cursor` | `cursor` | PASS |
+| O+ | `authenticator.cursor.sh` | one of `cursor` | `cursor` | PASS |
 | O+ | `cursor.com` | one of `cursor` | `cursor` | PASS |
 | D- | `api.workos.com` | not cursor (third party) | no application | PASS |
+| D- | `challenges.cloudflare.com` | not cursor (third party) | no application | PASS |
+| D- | `hagen.challenges.cloudflare.com` | not cursor (third party (unclassified)) | no application | PASS |
 | L- | `xcursor.com` | not cursor (label boundary) | no application | PASS |
 | L- | `cursor.com.example.invalid` | not cursor (suffix look-alike) | no application | PASS |
 | L- | `xcursor.sh` | not cursor (label boundary) | no application | PASS |
@@ -83,21 +87,25 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://cursor.com/dashboard`, loaded 2026-11-19 without signing in: HTTP None (page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://cursor.com/dashboard), final host `chromewebdata`.
+- `https://cursor.com/dashboard`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `authenticator.cursor.sh`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `api.workos.com` | 1 (1) | third party | no application | not checked | WorkOS, third-party sign-in provider |
-| `cursor.com` | 2 (0) | app-owned | `cursor` |  |  |
+| `api.workos.com` | seen | third party | no application | not checked | WorkOS, third-party sign-in provider |
+| `authenticate.cursor.sh` | seen | app-owned | `cursor` | not checked |  |
+| `authenticator.cursor.sh` | seen | app-owned | `cursor` | not checked |  |
+| `challenges.cloudflare.com` | seen | third party | no application | not checked | Cloudflare Turnstile bot check |
+| `cursor.com` | seen | app-owned | `cursor` |  |  |
+| `hagen.challenges.cloudflare.com` | seen | third party (unclassified) | no application | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `cursor`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `api.workos.com`.
+- Dependencies (observed, never attributed to this app): `api.workos.com`, `challenges.cloudflare.com`, `hagen.challenges.cloudflare.com`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

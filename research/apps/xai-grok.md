@@ -43,7 +43,7 @@ P1, P2 and N1 were checked with `attribution_for_host` in scratch (batches A, B 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -51,8 +51,22 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 |---|---|---|---|---|
 | O+ | `cdn.grok.com` | one of `xai-grok`, `xai-api` | `xai-grok` | PASS |
 | O+ | `grok.com` | one of `xai-grok`, `xai-api` | `xai-grok` | PASS |
+| D- | `accounts.google.com` | not xai-grok/xai-api (shared vendor infra) | `google-accounts` | PASS |
+| D- | `ad.doubleclick.net` | not xai-grok/xai-api (third party) | `google-ads` | PASS |
 | D- | `cdn.cookielaw.org` | not xai-grok/xai-api (third party) | no application | PASS |
+| D- | `challenges.cloudflare.com` | not xai-grok/xai-api (third party) | no application | PASS |
+| D- | `geolocation.onetrust.com` | not xai-grok/xai-api (third party) | no application | PASS |
+| D- | `google.com` | not xai-grok/xai-api (shared vendor infra) | `google-base` | PASS |
+| D- | `googleads.g.doubleclick.net` | not xai-grok/xai-api (third party) | `google-ads` | PASS |
+| D- | `js.stripe.com` | not xai-grok/xai-api (third party) | `stripe` | PASS |
+| D- | `m.stripe.com` | not xai-grok/xai-api (third party) | `stripe` | PASS |
+| D- | `m.stripe.network` | not xai-grok/xai-api (third party) | `stripe` | PASS |
+| D- | `sgtm-prod-985009374134.us-central1.run.app` | not xai-grok/xai-api (third party (unclassified)) | no application | PASS |
+| D- | `stapecdn.com` | not xai-grok/xai-api (third party (unclassified)) | no application | PASS |
 | D- | `static.cloudflareinsights.com` | not xai-grok/xai-api (third party) | no application | PASS |
+| D- | `tags.srv.stackadapt.com` | not xai-grok/xai-api (third party (unclassified)) | no application | PASS |
+| D- | `www.google.co.il` | not xai-grok/xai-api (third party (unclassified)) | no application | PASS |
+| D- | `www.google.com` | not xai-grok/xai-api (shared vendor infra) | `google-base` | PASS |
 | D- | `www.googletagmanager.com` | not xai-grok/xai-api (third party) | `google-analytics` | PASS |
 | L- | `xgrok.com` | not xai-grok/xai-api (label boundary) | no application | PASS |
 | L- | `grok.com.example.invalid` | not xai-grok/xai-api (suffix look-alike) | no application | PASS |
@@ -92,17 +106,31 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://grok.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `grok.com`.
+- `https://grok.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP None (page.goto: Timeout 45000ms exceeded.), final host `grok.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `cdn.cookielaw.org` | 1 (1) | third party | no application | not checked | OneTrust consent banner |
-| `cdn.grok.com` | 171 (171) | app-owned | `xai-grok` |  |  |
-| `grok.com` | 5 (0) | app-owned | `xai-grok` | h3 |  |
-| `static.cloudflareinsights.com` | 1 (1) | third party | no application | not checked | Cloudflare Web Analytics beacon |
-| `www.googletagmanager.com` | 1 (1) | third party | `google-analytics` | not checked |  |
+| `accounts.google.com` | seen | shared vendor infra | `google-accounts` |  |  |
+| `ad.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `cdn.cookielaw.org` | seen | third party | no application | not checked | OneTrust consent banner |
+| `cdn.grok.com` | seen | app-owned | `xai-grok` |  |  |
+| `challenges.cloudflare.com` | seen | third party | no application | not checked | Cloudflare Turnstile bot check |
+| `geolocation.onetrust.com` | seen | third party | no application | not checked | OneTrust consent geolocation |
+| `google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `googleads.g.doubleclick.net` | seen | third party | `google-ads` | not checked |  |
+| `grok.com` | seen | app-owned | `xai-grok` | h3 |  |
+| `js.stripe.com` | seen | third party | `stripe` | not checked |  |
+| `m.stripe.com` | seen | third party | `stripe` | not checked |  |
+| `m.stripe.network` | seen | third party | `stripe` | not checked |  |
+| `sgtm-prod-985009374134.us-central1.run.app` | seen | third party (unclassified) | no application | not checked |  |
+| `stapecdn.com` | seen | third party (unclassified) | no application | not checked |  |
+| `static.cloudflareinsights.com` | seen | third party | no application | not checked | Cloudflare Web Analytics beacon |
+| `tags.srv.stackadapt.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `www.google.co.il` | seen | third party (unclassified) | no application | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.googletagmanager.com` | seen | third party | `google-analytics` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -110,7 +138,7 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - `xai-api`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: `xai-grok` (xAI Grok), `xai-api` (xAI (x.ai) developer API).
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `cdn.cookielaw.org`, `google-analytics`, `static.cloudflareinsights.com`.
+- Dependencies (observed, never attributed to this app): `cdn.cookielaw.org`, `challenges.cloudflare.com`, `geolocation.onetrust.com`, `google-accounts`, `google-ads`, `google-analytics`, `google-base`, `sgtm-prod-985009374134.us-central1.run.app`, `stapecdn.com`, `static.cloudflareinsights.com`, `stripe`, `tags.srv.stackadapt.com`, `www.google.co.il`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `grok.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

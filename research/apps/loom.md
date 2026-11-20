@@ -44,12 +44,29 @@ Checked in scratch (`c08773f` plus D, E and F).
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `bad-builds.loom.com` | one of `loom` | `loom` | PASS |
+| O+ | `cdn.loom.com` | one of `loom` | `loom` | PASS |
+| O+ | `www.loom.com` | one of `loom` | `loom` | PASS |
+| D- | `accounts.google.com` | not loom (shared vendor infra) | `google-accounts` | PASS |
+| D- | `api-private.atlassian.com` | not loom (third party) | `atlassian` | PASS |
+| D- | `api.atlassian.com` | not loom (third party) | `atlassian` | PASS |
+| D- | `as.atlassian.com` | not loom (third party) | `atlassian` | PASS |
+| D- | `atl-global.atlassian.com` | not loom (third party) | `atlassian` | PASS |
+| D- | `atl-onetrust-wrapper.atlassian.com` | not loom (third party) | `atlassian` | PASS |
+| D- | `browser-intake-datadoghq.com` | not loom (third party (unclassified)) | no application | PASS |
+| D- | `cdn.cookielaw.org` | not loom (third party) | no application | PASS |
+| D- | `ds-cdn.prod-east.frontend.public.atl-paas.net` | not loom (third party) | `atlassian` | PASS |
+| D- | `geolocation.onetrust.com` | not loom (third party) | no application | PASS |
+| D- | `liecbddmkiiihnedobmlmillhodjkdmb` | not loom (third party (unclassified)) | no application | PASS |
+| D- | `o398470.ingest.sentry.io` | not loom (third party) | `sentry` | PASS |
+| D- | `www.atlassian.com` | not loom (third party) | `atlassian` | PASS |
+| D- | `xp.atlassian.com` | not loom (third party) | `atlassian` | PASS |
 | L- | `xloom.com` | not loom (label boundary) | no application | PASS |
 | L- | `loom.com.example.invalid` | not loom (suffix look-alike) | no application | PASS |
 | L- | `xamazonaws.com` | not loom (label boundary) | no application | PASS |
@@ -82,14 +99,36 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://www.loom.com/login`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://www.loom.com/login`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `www.loom.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `accounts.google.com` | seen | shared vendor infra | `google-accounts` |  |  |
+| `api-private.atlassian.com` | seen | third party | `atlassian` | not checked |  |
+| `api.atlassian.com` | seen | third party | `atlassian` | not checked |  |
+| `as.atlassian.com` | seen | third party | `atlassian` | not checked |  |
+| `atl-global.atlassian.com` | seen | third party | `atlassian` | not checked |  |
+| `atl-onetrust-wrapper.atlassian.com` | seen | third party | `atlassian` | not checked |  |
+| `bad-builds.loom.com` | seen | app-owned | `loom` | not checked |  |
+| `browser-intake-datadoghq.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `cdn.cookielaw.org` | seen | third party | no application | not checked | OneTrust consent banner |
+| `cdn.loom.com` | seen | app-owned | `loom` | not checked |  |
+| `ds-cdn.prod-east.frontend.public.atl-paas.net` | seen | third party | `atlassian` | not checked |  |
+| `geolocation.onetrust.com` | seen | third party | no application | not checked | OneTrust consent geolocation |
+| `liecbddmkiiihnedobmlmillhodjkdmb` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `o398470.ingest.sentry.io` | seen | third party | `sentry` | not checked |  |
+| `www.atlassian.com` | seen | third party | `atlassian` | not checked |  |
+| `www.loom.com` | seen | app-owned | `loom` | not checked |  |
+| `xp.atlassian.com` | seen | third party | `atlassian` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `loom`: collaboration / voip-video, browser-based; characteristics `transfers-files`; **risk 2**: moves files out of the organisation.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `atlassian`, `browser-intake-datadoghq.com`, `cdn.cookielaw.org`, `geolocation.onetrust.com`, `google-accounts`, `liecbddmkiiihnedobmlmillhodjkdmb`, `sentry`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `loom.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

@@ -37,7 +37,7 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -47,12 +47,10 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | O+ | `app.gotomeeting.com` | one of `goto-meeting`, `gotomypc`, `logmein` | `goto-meeting` | PASS |
 | O+ | `chameleon.goto.com` | one of `goto-meeting`, `gotomypc`, `logmein` | `goto-meeting` | PASS |
 | O+ | `conferences.goto.com` | one of `goto-meeting`, `gotomypc`, `logmein` | `goto-meeting` | PASS |
-| O+ | `content.ipd.goto.com` | one of `goto-meeting`, `gotomypc`, `logmein` | `goto-meeting` | PASS |
 | D- | `api.jive.com` | not goto-meeting/gotomypc/logmein (shared vendor infra (unmapped)) | no application | PASS |
 | D- | `cdn.userreport.com` | not goto-meeting/gotomypc/logmein (third party) | no application | PASS |
 | D- | `logging.getgo.com` | not goto-meeting/gotomypc/logmein (shared vendor infra (unmapped)) | no application | PASS |
 | D- | `res.cdn.office.net` | not goto-meeting/gotomypc/logmein (shared vendor infra) | `ms-base` | PASS |
-| D- | `zn39psorncmg7xc7k-logmeinvoc.siteintercept.qualtrics.com` | not goto-meeting/gotomypc/logmein (third party) | no application | PASS |
 | L- | `xgotomeeting.com` | not goto-meeting/gotomypc/logmein (label boundary) | no application | PASS |
 | L- | `gotomeeting.com.example.invalid` | not goto-meeting/gotomypc/logmein (suffix look-alike) | no application | PASS |
 | L- | `xgoto.com` | not goto-meeting/gotomypc/logmein (label boundary) | no application | PASS |
@@ -96,22 +94,20 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://app.goto.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `app.goto.com`.
+- `https://app.goto.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `app.goto.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `api.jive.com` | 3 (3) | shared vendor infra (unmapped) | no application | not checked | GoTo Connect API (jive.com), a separate GoTo product |
-| `app.goto.com` | 50 (0) | app-owned | `goto-meeting` |  |  |
-| `app.gotomeeting.com` | 1 (1) | app-owned | `goto-meeting` |  |  |
-| `cdn.userreport.com` | 1 (1) | third party | no application | not checked | UserReport survey widget |
-| `chameleon.goto.com` | 1 (1) | app-owned | `goto-meeting` |  |  |
-| `conferences.goto.com` | 2 (2) | app-owned | `goto-meeting` |  |  |
-| `content.ipd.goto.com` | 1 (1) | app-owned | `goto-meeting` |  |  |
-| `logging.getgo.com` | 4 (4) | shared vendor infra (unmapped) | no application | not checked | GoTo logging (getgo.com; for the Engine lane's goto vendor id) |
-| `res.cdn.office.net` | 3 (3) | shared vendor infra | `ms-base` | cdn,h3 |  |
-| `zn39psorncmg7xc7k-logmeinvoc.siteintercept.qualtrics.com` | 1 (1) | third party | no application | not checked | Qualtrics survey (customer-named) |
+| `api.jive.com` | seen | shared vendor infra (unmapped) | no application | not checked | GoTo Connect API (jive.com), a separate GoTo product |
+| `app.goto.com` | seen | app-owned | `goto-meeting` |  |  |
+| `app.gotomeeting.com` | seen | app-owned | `goto-meeting` |  |  |
+| `cdn.userreport.com` | seen | third party | no application | not checked | UserReport survey widget |
+| `chameleon.goto.com` | seen | app-owned | `goto-meeting` |  |  |
+| `conferences.goto.com` | seen | app-owned | `goto-meeting` |  |  |
+| `logging.getgo.com` | seen | shared vendor infra (unmapped) | no application | not checked | GoTo logging (getgo.com; for the Engine lane's goto vendor id) |
+| `res.cdn.office.net` | seen | shared vendor infra | `ms-base` | cdn,h3 |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -120,7 +116,7 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - `logmein`: networking / remote-access, client-server; characteristics `tunnels-other-applications`, `prone-to-misuse`; **risk 4**: carries other traffic or remote control; commonly misused (unsanctioned remote access, data exfiltration).
 - Functions separated by name: `goto-meeting` (GoTo Meeting), `gotomypc` (GoToMyPC remote access), `logmein` (LogMeIn remote access).
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `cdn.userreport.com`, `ms-base`, `zn39psorncmg7xc7k-logmeinvoc.siteintercept.qualtrics.com`.
+- Dependencies (observed, never attributed to this app): `cdn.userreport.com`, `ms-base`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

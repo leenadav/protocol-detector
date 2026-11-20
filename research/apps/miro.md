@@ -40,12 +40,23 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
+| O+ | `eventhub.eu01.miro.com` | one of `miro` | `miro` | PASS |
+| O+ | `miro.com` | one of `miro` | `miro` | PASS |
+| O+ | `mirostatic.com` | one of `miro` | `miro` | PASS |
+| O+ | `static-website.miro.com` | one of `miro` | `miro` | PASS |
+| D- | `accounts.google.com` | not miro (shared vendor infra) | `google-accounts` | PASS |
+| D- | `appleid.cdn-apple.com` | not miro (shared vendor infra) | `apple-base` | PASS |
+| D- | `fonts.gstatic.com` | not miro (shared vendor infra) | `google-base` | PASS |
+| D- | `google.com` | not miro (shared vendor infra) | `google-base` | PASS |
+| D- | `widget.intercom.io` | not miro (third party) | `intercom` | PASS |
+| D- | `www.google.com` | not miro (shared vendor infra) | `google-base` | PASS |
+| D- | `www.gstatic.com` | not miro (shared vendor infra) | `google-base` | PASS |
 | L- | `xmiro.com` | not miro (label boundary) | no application | PASS |
 | L- | `miro.com.example.invalid` | not miro (suffix look-alike) | no application | PASS |
 | L- | `xmiro-apps.com` | not miro (label boundary) | no application | PASS |
@@ -83,14 +94,30 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://miro.com/login/`: **not loaded**: its host is not yet on the research allowlist (`allowlist-requests.md`, batch R1).
+- `https://miro.com/login/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `miro.com`.
+
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
+
+| Host | Requests | Class | Attribution today | Live flags | Note |
+|---|---|---|---|---|---|
+| `accounts.google.com` | seen | shared vendor infra | `google-accounts` |  |  |
+| `appleid.cdn-apple.com` | seen | shared vendor infra | `apple-base` | not checked |  |
+| `eventhub.eu01.miro.com` | seen | app-owned | `miro` | not checked |  |
+| `fonts.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `miro.com` | seen | app-owned | `miro` | h3 |  |
+| `mirostatic.com` | seen | app-owned | `miro` | h3 |  |
+| `static-website.miro.com` | seen | app-owned | `miro` | not checked |  |
+| `widget.intercom.io` | seen | third party | `intercom` | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `miro`: business-systems / office-programs, browser-based; characteristics `transfers-files`; **risk 2**: moves files out of the organisation.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): none observed.
+- Dependencies (observed, never attributed to this app): `apple-base`, `google-accounts`, `google-base`, `intercom`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `miro.com`, `mirostatic.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

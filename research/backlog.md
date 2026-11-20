@@ -44,6 +44,25 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch K, after J: dependency mapping pass 2, PRO-36, 2026-11-20)
+
+Pass 2: Hermes ran `observe_web.js` over the 59 URLs on its server with a direct connection (`observations/pass2-2026-11-20.tsv`).
+39 pages answered; 20 timed out on a bot or JavaScript challenge from a datacenter address (their host lists are a lower
+bound). Patch: `patches/batch-k-dependency-pass2.patch` (placeholder release `2026.12.7`). Tested: 35 targeted vectors, rollback
+exact, parity 7467/7467 (Python and Go), 88/88 families.
+
+| Measure (pass 2, across all specs) | Result |
+|---|---|
+| Hosts observed (per spec and page) | 764: 159 app-owned and attributed correctly; 602 dependencies; **3 vendor-owned but unmapped** |
+| Dependencies attributed to the app whose page loaded them | **0** (1,109 v2 vectors, all pass) |
+| Consumer-app tag hosts on unrelated pages (before K) | 19 names reported `facebook`, `linkedin`, `twitter`, `reddit`, `quora`, `tiktok`, `spotify` or `bing` on Slack, Dropbox, Figma, Grammarly, Notion, Zendesk, Perplexity, WeTransfer and Splashtop pages; **17 fixed by K** (decision 4); 2 residual (below) |
+| Residual false positives | `www.linkedin.com` (7 pages) and `www.facebook.com` (1 page) are main-site names that tags also call; unchanged |
+| Vendor-owned gaps | `dockerstatic.com` (Docker), `campaign.slackhq.com` (Slack), `www.zndsk.com` (Zendesk): enter at O only after live round 2 shows certificate ownership (decision 3) |
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | K1 | Tag hosts of 7 consumer apps to new vendor-level ids; Bing tags and `static.microsoft` to `ms-base` | `apps/embedded-trackers.md` | 5 | 4 | 20 | READY |
+
 ### NAME: READY (batch J, after L: rows 12 to 18 read by Research Lab, PRO-29/PRO-35, 2026-11-20)
 
 Patch: `patches/batch-j-relayed-rows-12-18.patch` (placeholder release `2026.12.6`). Tested: 53 targeted vectors (all as

@@ -66,16 +66,25 @@ No ALPN, certificate or protocol-structure information is published. `UNVERIFIED
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L and J)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
 | Kind | Input SNI | Expected | Result today | Check |
 |---|---|---|---|---|
 | O+ | `gemini.google.com` | one of `google-gemini`, `google-ai-studio`, `google-notebooklm` | `google-gemini` | PASS |
+| D- | `ad.doubleclick.net` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-ads` | PASS |
+| D- | `analytics.google.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
+| D- | `fonts.gstatic.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
 | D- | `gemini.gstatic.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
+| D- | `lh3.googleusercontent.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
 | D- | `ogads-pa.clients6.google.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
 | D- | `play.google.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
+| D- | `stats.g.doubleclick.net` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-ads` | PASS |
+| D- | `waa-pa.clients6.google.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
+| D- | `www.google-analytics.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-analytics` | PASS |
+| D- | `www.google.co.il` | not google-gemini/google-ai-studio/google-notebooklm (third party (unclassified)) | no application | PASS |
+| D- | `www.google.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
 | D- | `www.googletagmanager.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-analytics` | PASS |
 | D- | `www.gstatic.com` | not google-gemini/google-ai-studio/google-notebooklm (shared vendor infra) | `google-base` | PASS |
 | L- | `xgoogle.com` | not google-gemini/google-ai-studio/google-notebooklm (label boundary) | no application | PASS |
@@ -130,18 +139,27 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research
 
 ## 10. Observed web-client hosts (dependency mapping)
 
-- `https://gemini.google.com/`, loaded 2026-11-19 without signing in: HTTP 200, final host `gemini.google.com`.
+- `https://gemini.google.com/`, pass 2 (Hermes server, direct, 2026-11-20), loaded without signing in: HTTP 200, final host `gemini.google.com`.
 
-Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" below), so hosts that only scripts from a refused host would contact are missing.
+Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it covers; it records hosts seen ("seen"), not request counts. Pages that stopped at a bot or JavaScript challenge from a datacenter address are a lower bound. Pass 1 rows give requests (refused by the research proxy).
 
-| Host | Requests (refused) | Class | Attribution today | Live flags | Note |
+| Host | Requests | Class | Attribution today | Live flags | Note |
 |---|---|---|---|---|---|
-| `gemini.google.com` | 3 (0) | app-owned | `google-gemini` |  |  |
-| `gemini.gstatic.com` | 2 (2) | shared vendor infra | `google-base` | not checked |  |
-| `ogads-pa.clients6.google.com` | 1 (1) | shared vendor infra | `google-base` | not checked |  |
-| `play.google.com` | 2 (2) | shared vendor infra | `google-base` | not checked |  |
-| `www.googletagmanager.com` | 1 (1) | shared vendor infra | `google-analytics` | not checked |  |
-| `www.gstatic.com` | 4 (0) | shared vendor infra | `google-base` | not checked |  |
+| `ad.doubleclick.net` | seen | shared vendor infra | `google-ads` | not checked |  |
+| `analytics.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `fonts.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `gemini.google.com` | seen | app-owned | `google-gemini` |  |  |
+| `gemini.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `lh3.googleusercontent.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `ogads-pa.clients6.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `play.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `stats.g.doubleclick.net` | seen | shared vendor infra | `google-ads` | not checked |  |
+| `waa-pa.clients6.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.google-analytics.com` | seen | shared vendor infra | `google-analytics` | not checked |  |
+| `www.google.co.il` | seen | third party (unclassified) | no application | not checked |  |
+| `www.google.com` | seen | shared vendor infra | `google-base` | not checked |  |
+| `www.googletagmanager.com` | seen | shared vendor infra | `google-analytics` | not checked |  |
+| `www.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
@@ -150,7 +168,7 @@ Pass 1 is a lower bound. The proxy refuses hosts not on the allowlist ("failed" 
 - `google-notebooklm`: business-systems / generative-ai, browser-based; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: `google-gemini` (Google Gemini), `google-ai-studio` (Google AI Studio), `google-notebooklm` (Google NotebookLM).
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `google-analytics`, `google-base`.
+- Dependencies (observed, never attributed to this app): `google-ads`, `google-analytics`, `google-base`, `www.google.co.il`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
