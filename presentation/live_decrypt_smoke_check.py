@@ -39,8 +39,10 @@ def main():
         keylog = folder / 'keys.log'
         keylog.touch(mode=0o600)
         server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_2   # never TLS 1.0 or 1.1, even on loopback
         server_context.load_cert_chain(str(folder / 'cert.pem'), str(folder / 'key.pem'))
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        client_context.minimum_version = ssl.TLSVersion.TLSv1_2
         client_context.check_hostname = False
         client_context.verify_mode = ssl.CERT_NONE          # a throwaway self-signed certificate on loopback
         client_context.keylog_filename = str(keylog)

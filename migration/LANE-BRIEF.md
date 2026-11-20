@@ -75,7 +75,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 |---|---|
 | PRO-31 (`6194fb9`, `4d8aa29`, `376a204`) | Engine work done; Hermes approved it, and PRO-31 is parked. Codex's code review is PRO-58 (under PRO-11), waiting for Codex's quota to come back. If it finds problems, Hermes reopens PRO-31 or opens a new Engine task; if not, PRO-31 closes. |
 | PR #39 `claude/fix-content-version-order` → `main` (`37b3c84`, PRO-44): `376a204` re-applied on `main`, with only `content.py`, its tests and the exception note | Hermes's review, then Lee's one-tap merge. Never merge, close, comment on or approve it ourselves. |
-| Draft PR `claude/go-migration` → `main` (PRO-44) | Codex's review, then Lee's decision. Leave it draft, and don't resolve conflicts on the branch. |
+| Draft PR #40 `claude/go-migration` → `main` (PRO-44) | Codex's review, then Lee's decision. Leave it draft, and don't resolve conflicts on the branch. Its `ci gate` is red only because the tests (3.9, 3.11, 3.13) and presentation jobs skip `GoServiceTests`: this branch's `ci.yml` predates `main`'s `91113bc`, which builds the Go binary first. The fix needs a merge or a CI/CD-lane change, and the decision is with Hermes. CodeQL's high finding (TLS 1.0/1.1 allowed in `presentation/live_decrypt_smoke_check.py`) is fixed. |
 | Codex review of the packet (`dbe20f3..50ce5c0`) | Codex, from Sunday. Fix rounds are reviewed as the fix diff only. |
 | Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. |
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
