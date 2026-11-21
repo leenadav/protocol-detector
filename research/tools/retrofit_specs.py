@@ -66,9 +66,9 @@ SHARED_IDS = {"google-base", "google-accounts", "ms-base", "azure-ad", "ms-offic
               "datadog-base"}
 # Unmapped observed hosts, classified by hand (2026-11-19). "owned:<id>" = vendor-owned name of that app's vendor.
 UNMAPPED = {
-    "dockerstatic.com": ("owned:docker-hub", "Docker static assets (dockerstatic.com); ownership to be shown by certificate in live round 2"),
-    "campaign.slackhq.com": ("owned:slack", "Slack marketing (slackhq.com); ownership to be shown by certificate in live round 2"),
-    "www.zndsk.com": ("owned:zendesk", "Zendesk short domain (zndsk.com); ownership to be shown by certificate in live round 2"),
+    "dockerstatic.com": ("owned:docker-hub", "Docker static assets; NOT mapped: round 3 certificate is domain-validated (no organisation, issuer Amazon), so ownership is not shown (decision 3)"),
+    "campaign.slackhq.com": ("owned:slack", "Slack marketing; NOT mapped: round 3 certificate is domain-validated (no organisation, issuer Let's Encrypt; CNAME to pardot.com)"),
+    "www.zndsk.com": ("owned:zendesk", "Zendesk short domain; NOT mapped: round 3 certificate is domain-validated (no organisation, issuer Google Trust Services)"),
     "weblibrary.cdn.getgo.com": ("owned:goto", "GoTo shared web library (getgo.com; for the goto vendor id)"),
     "aadcdn.msauth.net": ("shared", "Microsoft Entra sign-in CDN"),
     "aadcdn.msftauth.net": ("shared", "Microsoft Entra sign-in CDN"),
@@ -138,14 +138,20 @@ def resolves(r):
 
 
 LIVE2 = {r["host"]: r for r in _csv.DictReader((ROOT / "live-results-2026-11-20-r2.tsv").read_text().splitlines(), delimiter="\t")}
-# Later rounds (comment lines skipped); a name in a later round uses that round's result. Round 4 is partial (see its header).
-LIVE4 = {r["host"]: r for r in _csv.DictReader([l for l in (ROOT / "live-results-2026-11-21-r4.tsv").read_text().splitlines()
-                                                 if not l.startswith("#")], delimiter="\t")}
+# Later rounds (comment lines skipped; columns read by header name); a name uses the latest round that has it.
+
+
+def _later(fname):
+    return {r["host"]: r for r in _csv.DictReader([l for l in (ROOT / fname).read_text().splitlines() if not l.startswith("#")],
+                                                  delimiter="\t")}
+
+
+LATER = [("round 4", _later("live-results-2026-11-21-r4.tsv")), ("round 3", _later("live-results-2026-11-21-r3.tsv"))]
 
 
 def live_status(name):
-    """(L result text, flags list): the latest round that has the name (4, then 2), otherwise round 1."""
-    rnd, r = ("round 4", LIVE4[name]) if name in LIVE4 else ("round 2", LIVE2.get(name))
+    """(L result text, flags list): the latest round that has the name (4, 3, then 2), otherwise round 1."""
+    rnd, r = next(((label, t[name]) for label, t in LATER if name in t), ("round 2", LIVE2.get(name)))
     if r is None:
         return live_status_r1(name)
     flags = [f for f in r["flags"].split(",") if f != "-"]
@@ -160,8 +166,8 @@ def live_status(name):
                     % (probe, rnd, (", " + ",".join(pf)) if pf else "")), flags + pf
         return "apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source)", flags
     parts = []
-    if rnd == "round 4":
-        parts.append("round 4 (2026-11-21)")
+    if rnd != "round 2":
+        parts.append("%s (2026-11-21)" % rnd)
     if "tls-fail" in flags:
         parts.append(("resolves; TLS handshake failed (%s) in both rounds where checked: not a removal reason" % r["tls_error"]) if rnd == "round 2"
                      else "resolves; TLS handshake failed (%s, %s): not a removal reason" % (r["tls_error"], rnd))
@@ -312,8 +318,8 @@ def build(spec, meta):
     web = meta["web"]
     live_rows = [(d,) + live_status(d) for d in domains]
     s = [START, "", "## 9. Live verification (L)", "",
-         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and round 4 "
-         "of 2026-11-21 where it has the name (`research/live-results-2026-11-21-r4.tsv`, partial relay; tool "
+         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 and 4 "
+         "of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `research/live-results-2026-11-21-r4.tsv`; tool "
          "`research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). "
          "`L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never "
          "evidence." % LIVE_CITE, ""]

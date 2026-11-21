@@ -102,7 +102,7 @@ Batch D (`research/patches/batch-d-name-based.patch`; `...` stands for the uncha
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and round 4 of 2026-11-21 where it has the name (`research/live-results-2026-11-21-r4.tsv`, partial relay; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 and 4 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `research/live-results-2026-11-21-r4.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
@@ -129,7 +129,7 @@ Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it cover
 | `cdn.wootric.com` | seen | third party (unclassified) | no application | not checked |  |
 | `desktop.docker.com` | seen | app-owned | `docker-hub` | not checked |  |
 | `djeqr6to3dedg.cloudfront.net` | seen | third party (unclassified) | no application | not checked |  |
-| `dockerstatic.com` | seen | app-owned (unmapped) | no application | not checked | Docker static assets (dockerstatic.com); ownership to be shown by certificate in live round 2 |
+| `dockerstatic.com` | seen | app-owned (unmapped) | no application | not checked | Docker static assets; NOT mapped: round 3 certificate is domain-validated (no organisation, issuer Amazon), so ownership is not shown (decision 3) |
 | `epsilon.6sense.com` | seen | third party (unclassified) | no application | not checked |  |
 | `fonts.googleapis.com` | seen | shared vendor infra | `google-base` | not checked |  |
 | `fonts.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |

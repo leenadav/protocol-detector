@@ -73,20 +73,20 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and round 4 of 2026-11-21 where it has the name (`research/live-results-2026-11-21-r4.tsv`, partial relay; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 and 4 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `research/live-results-2026-11-21-r4.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
 | `asana.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `asana.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
-| `asana.plus` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
-| `asanausercontent.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
-| `app.asana-gov.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
-| `asana-user-private-us-east-1.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
-| `asana-user-private-me-central-1.s3.me-central-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
-| `asana-user-private-ap-northeast-1.s3.ap-northeast-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
-| `asana-user-private-eu-central-1.s3.eu-central-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
-| `asana-user-private-ap-southeast-2.s3.ap-southeast-2.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
-| `asana-user-private-fedramp-prod.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `asana.plus` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `asana.plus`, no subject organisation (domain-validated) (issuer Amazon) |
+| `asanausercontent.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `asanausercontent.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `app.asana-gov.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `app.asana-gov.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `asana-user-private-us-east-1.s3.amazonaws.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `s3.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-w.us-east-1.amazonaws.com`: name usable, IPs never |
+| `asana-user-private-me-central-1.s3.me-central-1.amazonaws.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3.me-central-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-r-w.me-central-1.amazonaws.com`: name usable, IPs never |
+| `asana-user-private-ap-northeast-1.s3.ap-northeast-1.amazonaws.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3-ap-northeast-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-r-w.ap-northeast-1.amazonaws.com`: name usable, IPs never |
+| `asana-user-private-eu-central-1.s3.eu-central-1.amazonaws.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3.eu-central-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-r-w.eu-central-1.amazonaws.com`: name usable, IPs never |
+| `asana-user-private-ap-southeast-2.s3.ap-southeast-2.amazonaws.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3-ap-southeast-2.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-r-w.ap-southeast-2.amazonaws.com`: name usable, IPs never |
+| `asana-user-private-fedramp-prod.s3.amazonaws.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `s3.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-w.us-east-1.amazonaws.com`: name usable, IPs never |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

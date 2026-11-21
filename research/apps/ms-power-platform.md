@@ -77,18 +77,18 @@ Same category, risk and characteristics as `power-bi`.
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and round 4 of 2026-11-21 where it has the name (`research/live-results-2026-11-21-r4.tsv`, partial relay; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 and 4 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `research/live-results-2026-11-21-r4.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `powerapps.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `powerautomate.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `flow.microsoft.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `powerplatform.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `powerplatformusercontent.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `api.bap.microsoft.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `api.admin.powerplatform.microsoft.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `dynamics.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
+| `powerapps.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `videobreakdown.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `powerautomate.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `csharp.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `flow.microsoft.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `flow.microsoft.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `mr-z01.tm-azurefd.net`: name usable, IPs never |
+| `powerplatform.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `vb.dev`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `powerplatformusercontent.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `api.bap.microsoft.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `api.bap.microsoft.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `prdcm001weuigw-tm.trafficmanager.net`: name usable, IPs never |
+| `api.admin.powerplatform.microsoft.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `admin.powerplatform.microsoft.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `mr-z01.tm-azurefd.net`: name usable, IPs never |
+| `dynamics.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `surface.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

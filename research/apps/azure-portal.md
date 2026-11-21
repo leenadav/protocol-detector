@@ -71,17 +71,17 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and round 4 of 2026-11-21 where it has the name (`research/live-results-2026-11-21-r4.tsv`, partial relay; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 and 4 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `research/live-results-2026-11-21-r4.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `portal.azure.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `portal.azure.net` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `ext.azure.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `management.azure.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `hosting.partners.azure.net` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `bmx.azure.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `signup.azure.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
+| `portal.azure.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `portal.azure.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `s-part-0044.p-0010.p-msedge.net`: name usable, IPs never |
+| `portal.azure.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `ext.azure.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `management.azure.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `edge.management.azure.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `arm-0001.arm-msedge.net`: name usable, IPs never |
+| `hosting.partners.azure.net` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hosting.portal.azure.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `part-0034.t-0009.t-msedge.net`: name usable, IPs never |
+| `bmx.azure.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `signup.azure.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `signup.azure.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `waws-prod-sn1-131.southcentralus.cloudapp.azure.com`: name usable, IPs never |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

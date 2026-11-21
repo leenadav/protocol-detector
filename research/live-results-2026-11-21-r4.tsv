@@ -1,7 +1,42 @@
-# Live round 4 (PRO-112, run by Hermes from df91894 with TLS; relayed on PRO-92 as PRO-117, 2026-11-21). PARTIAL: 30 of 66 names.
-# The relay began mid-table: rows 1 to 36 (ddog-gov.com to deviceservices-external.apple.com) are missing; the cut-off row 36 is left out.
-# Column 13 is a_count (named by Hermes, PRO-120). Read by header name, not position.
+# Live round 4 (PRO-112, run by Hermes from df91894 with TLS; results PRO-114; relayed on PRO-92 as PRO-117 and PRO-121, 2026-11-21). 66 of 66 names (live-hosts-r4.txt).
+# Column 13 a_count = number of A records (Hermes, PRO-121). Read by header name, not position.
 host	flags	rcode	cname_tail	tls	alpn	subject_cn	subject_o	issuer_o	san_count	tls_error	probe	a_count
+ddog-gov.com	-	0		TLSv1.3	h2	*.ddog-gov.com	Datadog, Inc.	DigiCert Inc	2		app.ddog-gov.com:	3
+app.ddog-gov.com	-	0		TLSv1.3	h2	*.ddog-gov.com	Datadog, Inc.	DigiCert Inc	2			3
+browser-intake-datadoghq.com	-	0		TLSv1.3	http/1.1	*.browser-intake-datadoghq.com	Datadog, Inc.	DigiCert Inc	2			3
+browser-intake-us3-datadoghq.com	-	0		TLSv1.3	h2	*.browser-intake-us3-datadoghq.com	Datadog, Inc.	DigiCert Inc	2			1
+browser-intake-us5-datadoghq.com	-	0		TLSv1.3	h2	*.browser-intake-us5-datadoghq.com	Datadog, Inc.	DigiCert Inc	2			1
+browser-intake-ap1-datadoghq.com	-	0		TLSv1.3	h2	*.browser-intake-ap1-datadoghq.com	Datadog, Inc.	DigiCert Inc	2			3
+browser-intake-ap2-datadoghq.com	-	0		TLSv1.3	h2	*.browser-intake-ap2-datadoghq.com	Datadog, Inc.	DigiCert Inc	2			3
+browser-intake-uk1-datadoghq.com	-	0		TLSv1.3	h2	*.browser-intake-uk1-datadoghq.com	Datadog, Inc.	DigiCert Inc	2			3
+browser-intake-datadoghq.eu	-	0		TLSv1.3	h2	*.browser-intake-datadoghq.eu	Datadog, Inc.	DigiCert Inc	2			1
+browser-intake-ddog-gov.com	-	0		TLSv1.3	h2	*.browser-intake-ddog-gov.com	Datadog, Inc.	DigiCert Inc	2			3
+browser-intake-us2-ddog-gov.com	-	0		TLSv1.3	h2	*.browser-intake-us2-ddog-gov.com	Datadog, Inc.	DigiCert Inc	2			3
+analysis.windows.net	no-address	0							0			0
+pbidedicated.windows.net	no-address	0							0			0
+datamart.fabric.microsoft.com	no-address	0							0			0
+datawarehouse.fabric.microsoft.com	no-address	0							0			0
+database.fabric.microsoft.com	no-address	0							0			0
+powerquery.microsoft.com	cdn	0	reroute443.trafficmanager.net	TLSv1.3	h2	e.microsoft.com	Microsoft Corporation	Microsoft Corporation	118			2
+powerapps.com	-	0		TLSv1.3	h2	videobreakdown.com	Microsoft Corporation	Microsoft Corporation	172		make.powerapps.com:cdn	5
+make.powerapps.com	cdn	0	mr-z01.tm-azurefd.net	TLSv1.3	h2	make.powerapps.com	Microsoft Corporation	Microsoft Corporation	2			1
+content.powerapps.com	cdn	0	s-part-0034.t-0009.t-msedge.net	TLSv1.3	h2	content.powerapps.com	Microsoft Corporation	Microsoft Corporation	2			1
+powerautomate.com	-	0		TLSv1.3	h2	csharp.net	Microsoft Corporation	Microsoft Corporation	206			5
+flow.microsoft.com	cdn	0	mr-z01.tm-azurefd.net	TLSv1.3	h2	flow.microsoft.com	Microsoft Corporation	Microsoft Corporation	47			1
+powerplatform.com	-	0		TLSv1.3	h2	vb.dev	Microsoft Corporation	Microsoft Corporation	175		api.powerplatform.com:cdn	5
+powerplatformusercontent.com	no-address	0							0			0
+api.bap.microsoft.com	cdn	0	prdcm001weuigw-tm.trafficmanager.net	TLSv1.3	h2	api.bap.microsoft.com	Microsoft Corporation	Microsoft Corporation	2			1
+api.admin.powerplatform.microsoft.com	cdn	0	mr-z01.tm-azurefd.net	TLSv1.3	h2	admin.powerplatform.microsoft.com	Microsoft Corporation	Microsoft Corporation	2			1
+dynamics.com	-	0		TLSv1.3	h2	surface.com	Microsoft Corporation	Microsoft Corporation	211			5
+portal.azure.com	cdn	0	s-part-0044.p-0010.p-msedge.net	TLSv1.3	h2	portal.azure.com	Microsoft Corporation	Microsoft Corporation	29			1
+portal.azure.net	no-address	0							0			0
+ext.azure.com	no-address	0							0			0
+management.azure.com	cdn	0	arm-0001.arm-msedge.net	TLSv1.3	h2	edge.management.azure.com	Microsoft Corporation	Microsoft Corporation	4			1
+hosting.partners.azure.net	cdn	0	part-0034.t-0009.t-msedge.net	TLSv1.3	h2	hosting.portal.azure.net	Microsoft Corporation	Microsoft Corporation	6			2
+bmx.azure.com	no-address	0							0			0
+signup.azure.com	cdn	0	waws-prod-sn1-131.southcentralus.cloudapp.azure.com	TLSv1.3	http/1.1	signup.azure.com	Microsoft Corporation	Microsoft Corporation	1			1
+deviceenrollment.apple.com	-	0	deviceenrollment.v.aaplimg.com	TLSv1.3	http/1.1	deviceenrollment.apple.com	Apple Inc.	Apple Inc.	1			1
+deviceservices-external.apple.com	-	0	ma-deviceservices-external.apple.com	TLSv1.3	http/1.1	deviceservices-external.apple.com	Apple Inc.	Apple Inc.	3			1
 iprofiles.apple.com	-	0	iprofiles.v.aaplimg.com	TLSv1.3	http/1.1	iprofiles.apple.com	Apple Inc.	Apple Inc.	1			1
 mdmenrollment.apple.com	-	0	mdm.fe2.apple-dns.net	TLSv1.3	h2	deploy.apple.com	Apple Inc.	Apple Inc.	10			8
 identity.apple.com	-	0	identity-apple-com.v.aaplimg.com	TLSv1.3	http/1.1	identity.apple.com	Apple Inc.	Apple Inc.	1			1
