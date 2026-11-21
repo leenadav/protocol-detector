@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-21 (PRO-92, batch M; relay of PRO-108 and PRO-109 recorded). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-21 (PRO-92, batch M; live round 4 partial relay PRO-117 merged). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -43,7 +43,7 @@ and content-pack patches for the Engine lane.
 5. `research/d09-iscx-vpn2016.md` and `research/datasets.md` (licences, LEE-1, ranking sources).
 6. `research/protocol/`: post-merge PROTOCOL and ENGINE-FIELD specs (`app-attributes.md`, `window-overflow.md`, UDP rule, TLS widening, Telegram).
 7. `research/tools/`: `retrofit_specs.py`, `live_verify.py`, `observe_web.js`, `recheck_sources.py`, `rank_domains.py`.
-   Their inputs and outputs are `live-hosts*.txt`, `live-results-*.tsv`, `web-urls.txt`, `observations/`,
+   Their inputs and outputs are `live-hosts*.txt`, `live-results-*.tsv` (a later round overrides an earlier one per name), `web-urls.txt`, `observations/`,
    `source-state.json` and `app-domains.json`.
 8. `research/blocked-urls.md` and `research/allowlist-requests.md`: unreadable pages and network requests.
 
@@ -78,7 +78,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Main-integration PRs #42 to #53 (PRO-43) | #42, #43, #52, #53 merged; the rest open, CI gate green; Lee merges after Hermes review (this lane never merges or comments) |
 | Batch M to `main` | not opened: Hermes schedules it after review (PRO-92) |
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
-| Live rounds 1 to 4 | 1 and 2 merged into the specs (`live-results-2026-11-20*.tsv`). 3 and 4 **ran** on the Hermes server (Hermes, 2026-11-21: round 3 PRO-88, results PRO-97; round 4 PRO-112 from `df91894`, results PRO-114). Their per-name tables are in Paperclip only and are not yet in this repository: they wait on a relay as TSV before `retrofit_specs.py` can use them |
+| Live rounds 1 to 4 | 1, 2 and part of 4 are in the specs. Round 4 (PRO-112, from `df91894`): 30 of 66 per-name rows relayed (PRO-117) into `live-results-2026-11-21-r4.tsv` (the relay began mid-table); the other 36 rows and all of round 3 (PRO-88, results PRO-97) wait on a relay as TSV |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
 | Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (2026-11-20, `datasets.md`); waits on the Hermes server run of `rank_domains.py` (Majestic CSV; CrUX via BigQuery) |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |

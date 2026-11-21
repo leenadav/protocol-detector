@@ -78,12 +78,12 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and round 4 of 2026-11-21 where it has the name (`research/live-results-2026-11-21-r4.tsv`, partial relay; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `datadoghq.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `datadoghq.eu` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
+| `datadoghq.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.datadoghq.com`, subject organisation **Datadog, Inc.** (issuer DigiCert Inc) |
+| `datadoghq.eu` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.datadoghq.eu`, subject organisation **Datadog, Inc.** (issuer DigiCert Inc) |
 | `ddog-gov.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
 | `browser-intake-datadoghq.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
 | `browser-intake-us3-datadoghq.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |

@@ -72,18 +72,18 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and round 4 of 2026-11-21 where it has the name (`research/live-results-2026-11-21-r4.tsv`, partial relay; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `codewhisperer.us-east-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `q.us-east-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `q.eu-central-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `q-developer-integration.us-east-1.api.aws` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `amazonq-code-scan-us-east-1-29121b44f7b.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `amazonq-code-scan-eu-central-1-9374e402cc5.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `amazonq-code-transformation-us-east-1-c6160f047e0.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `amazonq-code-transformation-eu-central-1-a0a89cc2b94.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
+| `codewhisperer.us-east-1.amazonaws.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `codewhisperer.us-east-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `q.us-east-1.amazonaws.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `q.us-east-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `q.eu-central-1.amazonaws.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `q.eu-central-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `q-developer-integration.us-east-1.api.aws` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `q-developer-integration.us-east-1.api.aws`, no subject organisation (domain-validated) (issuer Amazon) |
+| `amazonq-code-scan-us-east-1-29121b44f7b.s3.amazonaws.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `s3.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-w.us-east-1.amazonaws.com`: name usable, IPs never |
+| `amazonq-code-scan-eu-central-1-9374e402cc5.s3.amazonaws.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3.eu-central-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-w.eu-central-1.amazonaws.com`: name usable, IPs never |
+| `amazonq-code-transformation-us-east-1-c6160f047e0.s3.amazonaws.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `s3.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-w.us-east-1.amazonaws.com`: name usable, IPs never |
+| `amazonq-code-transformation-eu-central-1-a0a89cc2b94.s3.amazonaws.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3.eu-central-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-w.eu-central-1.amazonaws.com`: name usable, IPs never |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

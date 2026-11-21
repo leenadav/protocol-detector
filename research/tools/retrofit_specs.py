@@ -138,27 +138,33 @@ def resolves(r):
 
 
 LIVE2 = {r["host"]: r for r in _csv.DictReader((ROOT / "live-results-2026-11-20-r2.tsv").read_text().splitlines(), delimiter="\t")}
+# Later rounds (comment lines skipped); a name in a later round uses that round's result. Round 4 is partial (see its header).
+LIVE4 = {r["host"]: r for r in _csv.DictReader([l for l in (ROOT / "live-results-2026-11-21-r4.tsv").read_text().splitlines()
+                                                 if not l.startswith("#")], delimiter="\t")}
 
 
 def live_status(name):
-    """(L result text, flags list): round 2 where it has the name, otherwise round 1."""
-    r = LIVE2.get(name)
+    """(L result text, flags list): the latest round that has the name (4, then 2), otherwise round 1."""
+    rnd, r = ("round 4", LIVE4[name]) if name in LIVE4 else ("round 2", LIVE2.get(name))
     if r is None:
         return live_status_r1(name)
     flags = [f for f in r["flags"].split(",") if f != "-"]
     if "nxdomain" in flags:
         return ("**NXDOMAIN** in both rounds: nothing at or below this name exists (RFC 8020); **recommend removal**"
-                if name in LIVE and LIVE[name]["rcode"] == "3" else "**NXDOMAIN** (round 2): recommend removal (RFC 8020)"), flags
+                if name in LIVE and LIVE[name]["rcode"] == "3" else "**NXDOMAIN** (%s): recommend removal (RFC 8020)" % rnd), flags
     if "no-address" in flags:
         probe, _, pflags = (r.get("probe") or "").partition(":")
         pf = [f for f in pflags.split(",") if f]
         if probe and not {"nxdomain", "no-address", "tls-fail"} & set(pf):
-            return ("apex has no address (normal for a suffix entry); suffix **verified** through documented `%s` (round 2%s)"
-                    % (probe, (", " + ",".join(pf)) if pf else "")), flags + pf
+            return ("apex has no address (normal for a suffix entry); suffix **verified** through documented `%s` (%s%s)"
+                    % (probe, rnd, (", " + ",".join(pf)) if pf else "")), flags + pf
         return "apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source)", flags
     parts = []
+    if rnd == "round 4":
+        parts.append("round 4 (2026-11-21)")
     if "tls-fail" in flags:
-        parts.append("resolves; TLS handshake failed (%s) in both rounds where checked: not a removal reason" % r["tls_error"])
+        parts.append(("resolves; TLS handshake failed (%s) in both rounds where checked: not a removal reason" % r["tls_error"]) if rnd == "round 2"
+                     else "resolves; TLS handshake failed (%s, %s): not a removal reason" % (r["tls_error"], rnd))
     else:
         org = r["subject_o"] if r["subject_o"] not in ("", "None") else None
         parts.append("**L** resolves; %s, ALPN `%s`, cert `%s`, %s (issuer %s)" % (
@@ -306,7 +312,8 @@ def build(spec, meta):
     web = meta["web"]
     live_rows = [(d,) + live_status(d) for d in domains]
     s = [START, "", "## 9. Live verification (L)", "",
-         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool "
+         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and round 4 "
+         "of 2026-11-21 where it has the name (`research/live-results-2026-11-21-r4.tsv`, partial relay; tool "
          "`research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). "
          "`L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never "
          "evidence." % LIVE_CITE, ""]

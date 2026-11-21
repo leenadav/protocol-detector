@@ -74,8 +74,10 @@ Follow-up relayed by Hermes on PRO-92 (2026-11-21):
   20 CDN-fronted, 0 ECH, 3 h3, 8 with no address, and 1 name and 1 probe with failed TLS. Round 4 (PRO-114): 66 names (10 with
   probes), 57 live, 0 NXDOMAIN, 42 name an organisation, 21 CDN-fronted, 0 ECH, 0 h3, 10 with no address. `axm-adm-enroll`,
   `axm-adm-mdm`, `axm-adm-scep` and `axm-app` (`.apple.com`) resolve but fail the TLS handshake, which is not a removal reason (brief §7).
-  The amazonaws and api.aws names have domain-validated certificates, which is expected. Only these aggregates are in this
-  repository; the specs' section 9 is updated once the per-name tables arrive as TSV.
+  The amazonaws and api.aws names have domain-validated certificates, which is expected. Round 4 per-name rows: 30 of 66
+  relayed (PRO-117) and merged into section 9 (`live-results-2026-11-21-r4.tsv`): every relayed Apple name that completed TLS (10) has a certificate
+  naming Apple Inc. (the four `axm-*.apple.com` names fail TLS; the `axm-usercontent-apple.com` apex has no address); `datadoghq.com` and `datadoghq.eu` name Datadog, Inc.; `powerbi.com` names
+  Microsoft Corporation. Round 3 and the first 36 round-4 rows wait on a relay.
 - Research Lab (PRO-108) read rows 24 to 27 (DocuSign, Snowflake, Twilio, Sophos); the page content was not included in the
   relay. Rows 19 to 23, 28 and 29 stay BLOCKED (sign-in, bot challenge or JavaScript-only).
 

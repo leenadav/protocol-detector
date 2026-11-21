@@ -73,26 +73,26 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and round 4 of 2026-11-21 where it has the name (`research/live-results-2026-11-21-r4.tsv`, partial relay; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
 | `deviceenrollment.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
 | `deviceservices-external.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `iprofiles.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `mdmenrollment.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `identity.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `vpp.itunes.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `axm-servicediscovery.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `business.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `school.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `api-business.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `api-school.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `axm-adm-enroll.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `axm-adm-mdm.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `axm-adm-scep.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `axm-app.apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
-| `axm-usercontent-apple.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
+| `iprofiles.apple.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `iprofiles.apple.com`, subject organisation **Apple Inc.** (issuer Apple Inc.) |
+| `mdmenrollment.apple.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `deploy.apple.com`, subject organisation **Apple Inc.** (issuer Apple Inc.) |
+| `identity.apple.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `identity.apple.com`, subject organisation **Apple Inc.** (issuer Apple Inc.) |
+| `vpp.itunes.apple.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `vpp.itunes.apple.com`, subject organisation **Apple Inc.** (issuer Apple Inc.) |
+| `axm-servicediscovery.apple.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `axm-servicediscovery.apple.com`, subject organisation **Apple Inc.** (issuer Apple Inc.) |
+| `business.apple.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `school.apple.com`, subject organisation **Apple Inc.** (issuer Apple Inc.); CNAME into shared front end `a46.dscd.akamai.net`: name usable, IPs never |
+| `school.apple.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `school.apple.com`, subject organisation **Apple Inc.** (issuer Apple Inc.); CNAME into shared front end `a1984.dscd.akamai.net`: name usable, IPs never |
+| `api-business.apple.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `api-business.apple.com`, subject organisation **Apple Inc.** (issuer Apple Inc.) |
+| `api-school.apple.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `api-school.apple.com`, subject organisation **Apple Inc.** (issuer Apple Inc.) |
+| `axm-adm-enroll.apple.com` | round 4 (2026-11-21); resolves; TLS handshake failed (SSLCertVerificationError, round 4): not a removal reason |
+| `axm-adm-mdm.apple.com` | round 4 (2026-11-21); resolves; TLS handshake failed (SSLCertVerificationError, round 4): not a removal reason |
+| `axm-adm-scep.apple.com` | round 4 (2026-11-21); resolves; TLS handshake failed (SSLCertVerificationError, round 4): not a removal reason |
+| `axm-app.apple.com` | round 4 (2026-11-21); resolves; TLS handshake failed (SSLCertVerificationError, round 4): not a removal reason |
+| `axm-usercontent-apple.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `icons.axm-usercontent-apple.com` (round 4) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
