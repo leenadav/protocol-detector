@@ -25,7 +25,7 @@ on:
         description: seed of the randomized Python-vs-Go parity run (digits; empty means this run's id)
         default: ""
       random_count:
-        description: cases in the randomized parity run (1-500000)
+        description: cases in the randomized parity run (1-500000; run in batches of 25000, one seed each)
         default: "50000"
 
 permissions:
@@ -153,6 +153,7 @@ jobs:
         env:
           SEED: ${{ github.event.inputs.random_seed || github.run_id }}
           COUNT: ${{ github.event.inputs.random_count || '50000' }}
+          BATCH: "25000"
           GOPROXY: "off"
           GOSUMDB: sum.golang.org
           GOTOOLCHAIN: local
@@ -162,17 +163,31 @@ jobs:
           GOPRIVATE: ""
           GOINSECURE: ""
         run: |
-          [[ "$SEED" =~ ^[0-9]{1,20}$ ]] || { echo "seed must be digits, got: $SEED"; exit 2; }
+          [[ "$SEED" =~ ^[0-9]{1,18}$ ]] || { echo "seed must be digits, got: $SEED"; exit 2; }
           [[ "$COUNT" =~ ^[0-9]{1,6}$ ]] && (( COUNT >= 1 && COUNT <= 500000 )) || { echo "count must be 1-500000, got: $COUNT"; exit 2; }
-          echo "### Randomized Python-vs-Go parity (seed $SEED, $COUNT cases)" >> "$GITHUB_STEP_SUMMARY"
-          echo "Reproduce: \`make parity-random-long SEED=$SEED COUNT=$COUNT\`" >> "$GITHUB_STEP_SUMMARY"
-          make parity-random-long SEED="$SEED" COUNT="$COUNT" PYTHON=python 2>&1 | tee parity-random.txt
+          # protodetect replay reads at most 64 MiB of cases per process (go/internal/parity MaxDocumentBytes, a
+          # deliberate budget; about 37,000 cases fit), so the run is split into batches of at most 25,000 cases,
+          # each with its own seed (SEED, SEED+1, ...). Each batch is reproducible on its own with its command
+          # below. make does not create build/, where the reports go.
+          mkdir -p build
+          echo "### Randomized Python-vs-Go parity ($COUNT cases from seed $SEED, batches of at most $BATCH)" >> "$GITHUB_STEP_SUMMARY"
+          left=$COUNT
+          seed=$SEED
+          status=0
+          while (( left > 0 )); do
+            count=$(( left < BATCH ? left : BATCH ))
+            echo "- reproduce: \`make parity-random-long SEED=$seed COUNT=$count\`" >> "$GITHUB_STEP_SUMMARY"
+            make parity-random-long SEED="$seed" COUNT="$count" PYTHON=python 2>&1 | tee -a parity-random.txt || status=1
+            left=$(( left - count ))
+            seed=$(( seed + 1 ))
+          done
           {
             echo
             echo '```'
-            tail -n 8 parity-random.txt
+            grep -E "^random differential" parity-random.txt || tail -n 8 parity-random.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
       - name: Upload the mismatch report (seed, failing cases, both answers)
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
