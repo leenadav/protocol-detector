@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-21 (PRO-92, batch M; live round 4 partial relay PRO-117 merged). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-21 (PRO-92, batch M; live round 4 partial relay PRO-117 merged; PRO-120 column name). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -78,7 +78,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Main-integration PRs #42 to #53 (PRO-43) | #42, #43, #52, #53 merged; the rest open, CI gate green; Lee merges after Hermes review (this lane never merges or comments) |
 | Batch M to `main` | not opened: Hermes schedules it after review (PRO-92) |
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
-| Live rounds 1 to 4 | 1, 2 and part of 4 are in the specs. Round 4 (PRO-112, from `df91894`): 30 of 66 per-name rows relayed (PRO-117) into `live-results-2026-11-21-r4.tsv` (the relay began mid-table); the other 36 rows and all of round 3 (PRO-88, results PRO-97) wait on a relay as TSV |
+| Live rounds 1 to 4 | 1, 2 and part of 4 are in the specs. Round 4 (PRO-112, from `df91894`): 30 of 66 rows in `live-results-2026-11-21-r4.tsv` (PRO-117; column 13 is `a_count`, PRO-120). Rows 1 to 36 of round 4 and all 69 rows of round 3 (PRO-97) exist as PRO-92 comments, documents and a Hermes server file (PRO-120), none of which reaches this lane: they wait on the rows pasted into an answer body |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
 | Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (2026-11-20, `datasets.md`); waits on the Hermes server run of `rank_domains.py` (Majestic CSV; CrUX via BigQuery) |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
@@ -109,6 +109,9 @@ the Engine lane when a patch is implemented. The frozen bases it depends on are 
 - CI runs `ruff check .` over the whole repository (including `research/tools`) and gitleaks over full history: run
   both before a PR (pinned ruff from `requirements-dev.txt`; gitleaks built from `tools/scanners`).
 - Look-alike vectors must be built on the registrable part (`xanydesk.com`, not `xnet.anydesk.com`).
+- Only the **text of an answer** reaches this lane. Paperclip comment ids, attached documents and paths on the Hermes server
+  (`/home/hermes/...`) do not: data must be pasted into the answer body (TSV in chunks of at most 25 rows, header first),
+  or committed to a branch this lane can fetch. A relay can be cut off: check row counts against the stated total.
 - Compute every number before writing it; read back paraphrases against the source. Earlier slips (invented counts, an
   overstated licence) were caught this way.
 - D09 data: one archive at a time, delete it afterwards, and commit aggregates only. `NonVPN-PCAPs-02.zip` needs
