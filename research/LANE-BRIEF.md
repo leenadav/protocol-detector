@@ -74,6 +74,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Item | Waits on |
 |---|---|
 | Patches D to I, L, J, K (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
+| Main-integration PRs #42 to #53 (PRO-43) | open, CI gate green; Lee merges after Hermes review (this lane never merges or comments) |
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
 | Live rounds 1 and 2 | done (2026-11-20, `live-results-2026-11-20*.tsv`); round 3 (`live-hosts-r3.txt`, 69 names added later) waits on a Hermes run |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
