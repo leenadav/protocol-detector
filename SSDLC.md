@@ -103,6 +103,7 @@ request:
 | ci | `Go dependency licences (go-licenses; forbidden, restricted, unknown fail)` | `tools/go_deep.py licenses`: go-licenses 2.0.1 from `tools/golint/go-licenses/go.mod` and go.sum, built outside the checkout; any linked module whose licence is forbidden, restricted or unidentified fails; the engine's own module is excluded (item 36) |
 | ci | `Go coverage floors (module and every protocol parser)` | `tools/go_cover.py`: `go test -coverpkg=./... -coverprofile` on the pinned Go and the vendored tree; the module total and each `internal/protocols/*` package at or above its floor in `tools/golint/coverage-floors.json`, every parser package floored (item 38) |
 | ci | `Go API compatibility (apidiff; public breaks need the api-break label)` | `tools/go_api.py`: apidiff from `tools/golint/apidiff/go.mod` and go.sum, built outside the checkout, compares the module API at the base with this commit; an incompatible change to a public (non-internal, non-main) package fails without the `api-break` label; internal changes are reported (item 39) |
+| ci | `External contract compatibility (JSON schemas, protodetect CLI; breaks need the api-break label)` | `tools/contract_check.py`: schemas/*.schema.json ($ref resolved) and the protodetect CLI from its own help output, base vs this commit; a breaking change fails without the `api-break` label, additions are reported (item 40) |
 | ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack`, the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...`; nothing to check without the Go content pack (item 30) |
 | ci | `security requirements gate` | every SR row names an existing test |
 
@@ -879,6 +880,23 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      external contract is the CLI and the JSON schemas in `schemas/`, not a Go import surface.
    - **Negative control:** removing an exported function from a public package fails, and the
      `api-break` label turns it into a pass.
+40. External contract compatibility (`contract-compat` ci job, in the gate's needs; PRO-104 via
+   PRO-131, Hermes, 2026-11-21). The module has no importable Go package, so its real contract is
+   the emitted records (schemas/*.schema.json) and the protodetect CLI. `tools/contract_check.py`
+   compares both at the same base and with the same `api-break` label as go-api (item 39).
+   - **Schemas:** every `$ref` is resolved first, and `oneOf` branches are matched by their `type`
+     const. A removed property, a newly required property, a narrowed type, a removed enum value, a
+     changed const, a restricted additionalProperties, an added or removed branch, a tightened or
+     added bound, and a deleted or renamed file all fail. An optional property, an enum value, a
+     widened type, a loosened bound and description text are reported only.
+   - **CLI:** both binaries are built vendored and offline. The subcommands come from the usage
+     line, and each subcommand's flags from `protodetect <sub> -h`, in Go flag or usage-line
+     format. A removed subcommand or flag, a changed Go flag type or default, a flag that gains or
+     loses its value, and a dropped choice all fail. Additions are reported.
+   - **Today:** 4 schemas, 8 subcommands, 60 flags.
+   - **Negative controls** (scratch clone): the classification event loses `app` and gains a
+     required `tenant`, which gives exit 1, or 0 with the label; `analyze` loses `--heuristics`,
+     with the same result.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
