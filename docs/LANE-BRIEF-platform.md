@@ -23,10 +23,10 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-21, after PRO-73)
+## 2. Current state (2026-11-21, after PRO-77)
 
-- `main` = `8674def`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`);
-  this brief's refresh #41 (`8674def`). The only open lane PR is PRO-73's root `CLAUDE.md` (`claude/docs-claude-md`). `claude/cicd-next` (`46c3122`) is superseded and stale.
+- `main` = `dfaac0d`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`);
+  #41 and #54 (PRO-73) too. Open lane PRs: draft #55 into `claude/go-migration` (PRO-77) and this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
 - **Merged so far:**
 
   | PR | Content |
@@ -40,13 +40,16 @@ their decisions, the policy locks, and the release controller.
   | #35 | This brief; current scope and cadence lines in `AGENTS.md`; SSDLC review-loop step 9 |
   | #38 | `AGENTS.md` "Code Review Rules" for Codex automatic PR review; the Codex-comment rule |
   | #41 | This brief after #33–#38; the 32-bit Go test item |
+  | #54 | Root `CLAUDE.md` importing `AGENTS.md` (PRO-73). Codex's automatic review did not run (usage limit); not required for a docs-only change |
 - **On `main`:**
   - Every Go job runs with `GOPROXY=off` and the vendor tree; only the `go-vendor` job has module access.
   - Schedules: `nightly-fuzz`, `merge-readiness` (daily trial merge of `claude/go-migration`) and `perf-history`
     (on each push to `main`).
-- **In flight:** the `CLAUDE.md` PR (PRO-73). PRO-71 is parked until Engine answers PRO-72. PRO-77 (the
-  `tools/build_go_release.py` per-target module sets Engine needs for PR #40) is awaited; Engine's diff is in hand.
-  Also waiting on Codex's review and on the Engine lane's merge of `claude/go-migration`.
+- **In flight:** draft PR #55 (`claude/cicd-release-per-target-modules` → `claude/go-migration`, head `07cda53`;
+  PRO-77, for Engine's PR #40). It applies Engine's per-target module sets to `tools/build_go_release.py`, adds
+  `go:targets` per SBOM component, and takes `go:sum` from `go/go.sum`, since a `-mod=vendor` build records none.
+  It merges only after code review and Lee's decision. PRO-71 is parked until Engine answers PRO-72. Also waiting
+  on Codex's review and on the Engine lane's merge of `claude/go-migration`.
 
 ## 3. Where things live (reading order)
 
@@ -81,6 +84,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
+| PR #55 merged into `claude/go-migration` (release build per-target modules) | Hermes's review, then Lee |
 | 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -123,3 +127,5 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   in `AGENTS.md` "Code Review Rules" (#38).
 - **Edits after a merge:** a commit pushed to a PR branch after Lee merges it never reaches `main`. Check the PR
   state before adding to its branch; otherwise cut a new branch from `origin/main` (PRO-71: `eae6718` missed #35).
+- **Vendored Go build info:** `go version -m` on a `-mod=vendor` binary records no module `Sum`. Take hashes from
+  `go/go.sum`; per target, the linked modules differ (x/crypto pulls x/sys on amd64 only).
