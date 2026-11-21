@@ -507,6 +507,28 @@ the gate computes rather than a label set by hand.
 | Rule | implemented | `migration/parity/verify_families.py`, run by `make parity-go` (so in `make go-check`) right after the exact comparison: a family is `parity-verified` when the passing report claims it and every committed case labelled with it matched exactly (no gap, no approved delta), its cases of each transport's kind cover a positive message, a truncated prefix, a mutation and foreign bytes, and a TCP family has a matched session-level case. `--check` fails when a status in `migration/CAPABILITIES.json` differs from the computed one in either direction; `--write` records each family's case counts, classes and shortfall there. `test_verify_families.py`; planted regressions (one unmatched case, a listed gap) each fail the check. Capture-level differentials stay separate gates. |
 | Result | 88 of 88 `parity-verified` | On 2026-11-18 79 qualified; the other nine lacked committed cases (http2, mongodb, mysql, resp, s7comm, websocket: no session-level case; smtp and ssh: no session-level case and no mutated stream; ipfix: no foreign-bytes datagram). Lee allowed the case generator (only) to add them: `coverage_cases()` in `migration/parity/cases.py`, 37 cases appended after every other, none changed (the regenerated `cases.json` keeps every earlier case and its order byte for byte); Python and Go match all 7,355 cases, and `verify_families.py --write` promoted the nine. The Go replay now takes the `tcp_hint`/`udp_hint` session options the hinted families need. |
 
+## Randomized differential (PRO-100, 2026-11-22)
+
+Hermes, PRO-100: differential testing with random inputs, the Python reference as the oracle.
+`migration/parity/random_diff.py` draws seeded, valid-shaped client openings:
+- TLS ClientHello records (GREASE, varied server names, ALPN, versions, groups, key shares, padding, unknown,
+  duplicated and ECH extensions, session ids, record versions);
+- HTTP/1.x request heads;
+- SSH identification lines, with an optional KEXINIT;
+- protected QUIC v1/v2 Initials, with reordered CRYPTO frames.
+
+Each case is varied the way traffic arrives: random fragments, truncation with or without the capture-ended
+reason, a correct or wrong hint, or a tight byte budget. The Go engine answers through `protodetect replay`, and
+`compare.py` compares every event, the final observation and the metrics exactly.
+
+| item | state | evidence |
+|---|---|---|
+| CI run | gate | `make parity-random` (seed 1, 2,000 cases, about 3 s) is part of `make go-check`, so the CI `go-engine` job runs it. Seed 1: 2,000 of 2,000 matched. |
+| Long run | available | `make parity-random-long SEED=n COUNT=n`. Seeds 2-11 at 20,000 cases each: 200,000 of 200,000 matched, 0 allowed, about 21 s per 20,000. A nightly job is a CI/CD-lane workflow change (requested). |
+| Allow-list | empty | `migration/parity/random_allow.json`: case id to reason. An entry that no longer mismatches on its seed fails the run. |
+| Self-check | passes | `--plant` alters one reference answer to another valid status; the run must report exactly that case (it does). |
+| Found and fixed | 0 engine mismatches | The first trial had 8 cases Go declined ("not ported: hint http/ftp/redis"). It was a harness error: `cases.run_stream` drops a hint outside `registry.PARSERS`, so stream hints are now drawn from `PARSERS` only. |
+
 ## Adversarial identification (2026-11-18)
 
 Lee, 2026-11-18: a suite that tries to deceive the detector on purpose, asserting that it either stays honest

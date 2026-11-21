@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -244,6 +244,7 @@ go-check:
 	$(MAKE) parity-control
 	$(MAKE) parity-server
 	$(MAKE) adversarial
+	$(MAKE) parity-random
 	$(MAKE) bench-gate
 
 # Migration M8: the Go command-line binary (static, no cgo); go/bin is not tracked
@@ -282,6 +283,20 @@ parity-server: go-build
 # Adversarial identification: inputs built to deceive the detector, judged for honesty and compared between the engines
 adversarial: go-build
 	$(PYTHON) -B migration/parity/adversarial.py --binary go/bin/protodetect
+
+# Randomized differential (PRO-100): seeded valid-shaped TLS, HTTP, SSH and QUIC openings with random fragmentation,
+# truncation, hints and budgets; the Python reference is the oracle and the Go engine must agree on every case
+# outside migration/parity/random_allow.json. CI runs the fixed seed; the long run takes any SEED and COUNT, and a
+# failing seed reproduces exactly.
+RANDOM_SEED ?= 1
+RANDOM_COUNT ?= 2000
+parity-random: go-build
+	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --seed $(RANDOM_SEED) --count $(RANDOM_COUNT)
+
+SEED ?= 1
+COUNT ?= 50000
+parity-random-long: go-build
+	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --seed $(SEED) --count $(COUNT) --report build/random-diff-$(SEED).json
 
 # Sustained throughput and memory with 10,000 and 100,000 concurrent flows (synthetic; reported only, never a gate)
 bench-load:

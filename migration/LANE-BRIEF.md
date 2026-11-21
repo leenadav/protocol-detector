@@ -63,6 +63,7 @@ Run everything from the repository root. Times are for the cloud container (4 vC
 |---|---|---|
 | `make go-check` | gofmt, vet, `go test -race`, 28 fuzz targets, parity-go with verify_families, every differential, bench-gate | about 8 min (488 s) |
 | `make check` | the Python suite (866 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
+| `make parity-random` (in `go-check`) | the randomized differential: seed 1, 2,000 cases, Python reference as oracle (`migration/parity/random_diff.py`, allow-list `random_allow.json`). `make parity-random-long SEED= COUNT=` for longer runs | about 3 s |
 | `make go-vendor-check` | re-vendors into `build/go-vendor-check` and diffs it against `go/vendor` | seconds (module cache warm) |
 | `python3 -B -m unittest discover -q` | the Python suite on its own | part of `make check` |
 
@@ -78,6 +79,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | Draft PR #40 `claude/go-migration` → `main` | Codex's review, then Lee's decision. Keep it draft. PRO-69 merged `main` in (9 conflicts, resolved per `MERGE-READINESS.md`). The CI fix it brought (`91113bc`, the Go build before the tests and presentation suites) lets `GoServiceTests` run instead of skip. |
 | Codex review of the packet (`dbe20f3..50ce5c0`) | Codex, from Sunday. Fix rounds are reviewed as the fix diff only. |
 | `release build` on PR #40 (`publish-release.yml`, not a required check) | the CI/CD lane, PRO-24. Since `030f173` all 5 targets compile. `tools/build_go_release.py` still requires identical module sets, but x/crypto links x/sys on amd64 only. A tested patch (the SBOM lists the union; one version and hash per module) was sent to the CI/CD session on 2026-11-21, to land as a PR into this branch. |
+| Nightly randomized differential (PRO-100) | the CI/CD lane: a step in `nightly-fuzz.yml` running `make parity-random-long SEED=<run id> COUNT=50000`, with the failing seed in the summary. The target is on this branch; the workflow is theirs. |
 | Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. The branch already contains `main` as of `0ef7349`, so the merge itself has no conflicts. |
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
