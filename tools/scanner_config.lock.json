@@ -670,6 +670,20 @@
    "\tgolang.org/x/tools v0.36.0 // indirect",
    "\tk8s.io/klog/v2 v2.90.1 // indirect",
    ")"
+  ],
+  "tools/golint/apidiff/go.mod": [
+   "module protocol-detector/tools/golint/apidiff",
+   "",
+   "go 1.27.4",
+   "",
+   "tool golang.org/x/exp/cmd/apidiff",
+   "",
+   "require (",
+   "\tgolang.org/x/exp v0.0.0-20261113113407-e3970619a1a4 // indirect",
+   "\tgolang.org/x/mod v0.42.0 // indirect",
+   "\tgolang.org/x/sync v0.24.0 // indirect",
+   "\tgolang.org/x/tools v0.52.1-0.20261106145633-d407941a339a // indirect",
+   ")"
   ]
  }
 }
