@@ -25,15 +25,8 @@ their decisions, the policy locks, and the release controller.
 
 ## 2. Current state (2026-11-21, after PRO-71)
 
-- `main` = `2b97e2d`. Three ready-for-review PRs (PRO-42; #33 passed `ci gate (all jobs)`), one topic each, all cut from `main`:
-  - #33 `claude/ci-drop-branch-push-triggers`;
-  - #34 `claude/ci-required-checks-table`;
-  - #35 `claude/docs-lane-brief-agents-scope` (this brief, `AGENTS.md`, `SSDLC.md` step 9).
-
-  PRO-59 adds #38 `claude/docs-codex-review-rules`: the `AGENTS.md` "Code Review Rules" for Codex automatic PR review, and the
-  Codex-comment rule in `SSDLC.md`.
-
-  `claude/cicd-next` (`46c3122`) holds the same content as #33 and #35, and is superseded by them.
+- `main` = `0ef7349`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`).
+  The only open lane PR is the one carrying this update. `claude/cicd-next` (`46c3122`) is superseded and stale.
 - **Merged so far:**
 
   | PR | Content |
@@ -42,12 +35,16 @@ their decisions, the policy locks, and the release controller.
   | #30 | Nightly Go fuzz, content-pack gate, merge readiness, vendored Go, go-vendor and go-build jobs |
   | #31 | Performance history; draft release pipeline: reproducible Go binaries, SBOM, dry-run signing |
   | #32 | govulncheck over the engine's vendored source; Codex review packet |
+  | #33 | Branch-limited `push` triggers removed from `merge-readiness.yml` and `perf-history.yml` |
+  | #34 | `tools/check_required_checks.py`: the SSDLC required-checks tables match the real job names |
+  | #35 | This brief; current scope and cadence lines in `AGENTS.md`; SSDLC review-loop step 9 |
+  | #38 | `AGENTS.md` "Code Review Rules" for Codex automatic PR review; the Codex-comment rule |
 - **On `main`:**
   - Every Go job runs with `GOPROXY=off` and the vendor tree; only the `go-vendor` job has module access.
   - Schedules: `nightly-fuzz`, `merge-readiness` (daily trial merge of `claude/go-migration`) and `perf-history`
     (on each push to `main`).
-- **In flight:** the three PRs above, waiting on Hermes's review and Lee's one-tap merge. Also waiting on Codex's
-  review and on the Engine lane's merge of `claude/go-migration`.
+- **In flight:** nothing of the lane's beyond this brief update. Waiting on Codex's review and on the Engine lane's
+  merge of `claude/go-migration`.
 
 ## 3. Where things live (reading order)
 
@@ -62,7 +59,7 @@ their decisions, the policy locks, and the release controller.
 
 | Command | What it checks | Runtime |
 |---|---|---|
-| `make check PYTHON=python3` | Full product gate: lint, 833 tests, policy, docs counts, manifest, parity, and more | 1–5 min, depending on the machine |
+| `make check PYTHON=python3` | Full product gate: lint, 838 tests, policy, docs counts, manifest, parity, and more | 1–5 min, depending on the machine |
 | `make workflow-policy PYTHON=python3` | Policy rules and the self-tests of every lane tool | ~20 s |
 | `python3 -B tools/check_workflow_policy.py --write-workflow-lock` | Regenerates the lock; run after any workflow edit | — |
 | `actionlint`, `zizmor --persona pedantic`, `tools/check_workflow_yaml.py` | Workflow lint via `make workflow-lint`; needs the hash-pinned dev toolchain (`pip install --require-hashes -r requirements-dev.txt` in a venv) and actionlint 1.7.7 | ~30 s |
@@ -82,7 +79,6 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
-| PRs #33, #34, #35 and #38 merged | Hermes's review, then Lee |
 | 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -91,7 +87,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   `d7c482c`, `b57b819`, `8a129c7`.
 - **Also:** `b97adc8` (Dependabot pins, chunk 06) and `85e99e9` (govulncheck, chunk 07).
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
-- **Not yet on `main`:** #33 head `851eddb`; #34 head `a179db6`; #35 head: the latest commit on `claude/docs-lane-brief-agents-scope`; #38 head `7c33b1a`.
+- **Merged, not yet Codex-reviewed:** #33 `851eddb`, #34 `a179db6`, #35 `d3faff8`..`12a56ae`, #38 `7c33b1a`.
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
@@ -123,3 +119,5 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **Codex review comments on a lane PR:** push the fix to the same branch, then reply in the PR's board task naming
   the commit. Never reply on GitHub: Hermes verifies the fix and resolves the thread. The rules Codex applies are
   in `AGENTS.md` "Code Review Rules" (#38).
+- **Edits after a merge:** a commit pushed to a PR branch after Lee merges it never reaches `main`. Check the PR
+  state before adding to its branch; otherwise cut a new branch from `origin/main` (PRO-71: `eae6718` missed #35).
