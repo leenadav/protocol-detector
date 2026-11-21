@@ -39,7 +39,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L and 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K and M as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -72,9 +72,9 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `parsec.app` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `parsecgaming.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `parsecusercontent.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `parsec.app` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
+| `parsecgaming.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
+| `parsecusercontent.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

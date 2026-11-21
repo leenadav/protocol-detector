@@ -41,7 +41,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L and 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K and M as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -84,28 +84,28 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 
 |---|---|
 | `salesforce.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `salesforce.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
 | `force.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `salesforce.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
-| `salesforceiq.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `forceusercontent.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `force-user-content.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `my.salesforce.app` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforceliveagent.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-experience.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-hub.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-scrt.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-setup.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-sites.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `sfdcopens.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `site.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `svc.sfdcfc.net` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `trailblazer.me` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `trailhead.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `documentforce.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `lightning.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-communities.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `sfdc.sh` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `visualforce.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `sfdcstatic.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `lightningdesignsystem.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `salesforceiq.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `forceusercontent.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `force-user-content.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `my.salesforce.app` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `salesforceliveagent.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `salesforce-experience.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `salesforce-hub.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `salesforce-scrt.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `salesforce-setup.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `salesforce-sites.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `sfdcopens.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `site.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `svc.sfdcfc.net` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `trailblazer.me` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `trailhead.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `documentforce.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `lightning.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `salesforce-communities.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `sfdc.sh` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `visualforce.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `sfdcstatic.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `lightningdesignsystem.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

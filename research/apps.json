@@ -559,5 +559,42 @@
    "spotify-base"
   ],
   "web": []
+ },
+ "datadog.md": {
+  "ids": [
+   "datadog",
+   "datadog-base"
+  ],
+  "web": []
+ },
+ "power-bi.md": {
+  "ids": [
+   "power-bi"
+  ],
+  "web": []
+ },
+ "ms-power-platform.md": {
+  "ids": [
+   "ms-power-platform"
+  ],
+  "web": []
+ },
+ "azure-portal.md": {
+  "ids": [
+   "azure-portal"
+  ],
+  "web": []
+ },
+ "amazon-q-developer.md": {
+  "ids": [
+   "amazon-q-developer"
+  ],
+  "web": []
+ },
+ "apple-device-management.md": {
+  "ids": [
+   "apple-device-management"
+  ],
+  "web": []
  }
 }

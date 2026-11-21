@@ -40,7 +40,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L and 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K and M as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -143,7 +143,7 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 
 |---|---|
 | `grammarly.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `www.grammarly.com`, no subject organisation (domain-validated) (issuer Amazon) |
 | `grammarly.io` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `grammarly.net` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `grammarly.net` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

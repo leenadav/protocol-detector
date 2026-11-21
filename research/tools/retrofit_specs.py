@@ -62,7 +62,8 @@ OBS = _load_obs(str(obs_path).split(","))
 
 # Shared vendor infrastructure: ids that stand for a vendor's common services, sign-in or CDN.
 SHARED_IDS = {"google-base", "google-accounts", "ms-base", "azure-ad", "ms-office365", "google-play", "apple-base", "ms-telemetry",
-              "meta-base", "x-base", "linkedin-base", "reddit-base", "quora-base", "tiktok-base", "spotify-base"}
+              "meta-base", "x-base", "linkedin-base", "reddit-base", "quora-base", "tiktok-base", "spotify-base",
+              "datadog-base"}
 # Unmapped observed hosts, classified by hand (2026-11-19). "owned:<id>" = vendor-owned name of that app's vendor.
 UNMAPPED = {
     "dockerstatic.com": ("owned:docker-hub", "Docker static assets (dockerstatic.com); ownership to be shown by certificate in live round 2"),
@@ -127,6 +128,11 @@ for _line in (ROOT / "live-hosts-r2.txt").read_text().splitlines():
         PROBES[_f[0]] = _f[1]
 
 
+# Names queued for later live rounds (first field of each line), in round order.
+PENDING = [(f, {l.split()[0] for l in (ROOT / f).read_text().splitlines() if l.strip() and not l.startswith("#")})
+           for f in ("live-hosts-r3.txt", "live-hosts-r4.txt")]
+
+
 def resolves(r):
     return r is not None and r["rcode"] == "0" and r["a_count"] not in ("0", "")
 
@@ -171,7 +177,9 @@ def live_status_r1(name):
     """(L result text, flags list) for one catalog or observed name, round 1 only."""
     r = LIVE.get(name)
     if r is None:
-        return "not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run)", []
+        queued = next((f for f, names in PENDING if name in names), None)
+        return ("not yet verified (added after round 2; in `%s` for the next run)" % queued if queued
+                else "not yet verified (added after round 2; not yet queued for a live round)"), []
     flags = [f for f in r["flags"].split(",") if f not in ("-", "dead")]
     if r["rcode"] == "3":
         return "**NXDOMAIN**: nothing at or below this name exists (RFC 8020); recommend removal after round 2 confirms", ["nxdomain"]
@@ -286,7 +294,7 @@ def build(spec, meta):
         vec.append(("L-", h, "not " + "/".join(ids) + " (%s)" % why, fmt(a), "PASS" if ok else "FAIL"))
         if not ok:
             fails.append(h)
-    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)", ""]
+    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K and M as rebuilt 2026-11-21)", ""]
     if vec:
         sec6 += ["O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); "
                  "L- = look-alike or label-boundary name (must not be this app).", "",

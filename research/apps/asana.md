@@ -41,7 +41,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L and 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K and M as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -77,16 +77,16 @@ Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `asana.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `asana.plus` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `asanausercontent.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `app.asana-gov.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `asana-user-private-us-east-1.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `asana-user-private-me-central-1.s3.me-central-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `asana-user-private-ap-northeast-1.s3.ap-northeast-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `asana-user-private-eu-central-1.s3.eu-central-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `asana-user-private-ap-southeast-2.s3.ap-southeast-2.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `asana-user-private-fedramp-prod.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `asana.com` | not yet verified (added after round 2; in `live-hosts-r4.txt` for the next run) |
+| `asana.plus` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `asanausercontent.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `app.asana-gov.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `asana-user-private-us-east-1.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `asana-user-private-me-central-1.s3.me-central-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `asana-user-private-ap-northeast-1.s3.ap-northeast-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `asana-user-private-eu-central-1.s3.eu-central-1.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `asana-user-private-ap-southeast-2.s3.ap-southeast-2.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
+| `asana-user-private-fedramp-prod.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r3.txt` for the next run) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

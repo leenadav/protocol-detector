@@ -44,6 +44,30 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch M, after K: vendor network pages, PRO-92, 2026-11-21)
+
+Six enterprise apps from official network pages read in this session (Datadog, Microsoft Learn, AWS, Apple). Patch:
+`patches/batch-m-name-based.patch` (placeholder release `2026.12.8`, digest `79f36d67c88c72b5`, 462 host entries): 5 new ids
+(`datadog-base`, `ms-power-platform`, `azure-portal`, `apple-device-management`, `amazon-q-developer`), 2 extended (`datadog`,
+`power-bi`), 55 new names. Tested: 47 targeted vector names (all as expected), rollback exact, parity 7479/7479 (Python and Go),
+88/88 families. The new names, and 7 older names no round covered, are queued for live round 4 (`live-hosts-r4.txt`).
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | M1 | Power Platform and Dynamics 365 (new id `ms-power-platform`) | `apps/ms-power-platform.md` | 5 | 4 | 20 | READY (`dynamics.com` at N2) |
+| 2 | M2 | Power BI: back-end API, capacity, Fabric SQL and Power Query names | `apps/power-bi.md` | 4 | 4 | 16 | READY (`powerquery.microsoft.com` at N2) |
+| 3 | M3 | Datadog: `ddog-gov.com`; browser RUM intake to new vendor-level id `datadog-base` (decision 4) | `apps/datadog.md` | 4 | 4 | 16 | READY |
+| 4 | M4 | Apple Business, Apple School Manager and device enrollment (new id `apple-device-management`) | `apps/apple-device-management.md` | 4 | 4 | 16 | READY (exact names; `gdmf` left shared) |
+| 5 | M5 | Azure portal and Resource Manager (new id `azure-portal`) | `apps/azure-portal.md` | 5 | 3 | 15 | READY (`management.azure.com` at N2: also CLI and SDKs) |
+| 6 | M6 | Amazon Q Developer (new id `amazon-q-developer`) | `apps/amazon-q-developer.md` | 4 | 3 | 12 | READY (`q.<region>` for 2 inferred regions, N2) |
+
+Suggested candidates not done in batch M (no spec written; `blocked-urls.md` rows 19 to 29):
+
+| Item | V | R | Score | Status | Missing |
+|---|---|---|---|---|---|
+| ServiceNow, Workday, CrowdStrike Falcon sensor, SentinelOne agent, Cisco Secure Client, DocuSign, Snowflake, Twilio, Sophos Central, Egnyte | 4 to 5 | 1 | 4 to 5 | BLOCKED | the vendors' documentation hosts are not reachable from this session (the allowlist is full); the official network page must be read from the Hermes server |
+| Palo Alto GlobalProtect | 4 | 1 | 4 | PARTIAL | `docs.paloaltonetworks.com` is reachable but renders its pages client-side; no endpoint text was read. Portals and gateways are customer-hosted, so vendor names (if any) are only for the cloud services |
+
 ### NAME: READY (batch K, after J: dependency mapping pass 2, PRO-36, 2026-11-20)
 
 Pass 2: Hermes ran `observe_web.js` over the 59 URLs on its server with a direct connection (`observations/pass2-2026-11-20.tsv`).

@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-21 (PRO-43). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-21 (PRO-92, batch M). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -25,9 +25,10 @@ and content-pack patches for the Engine lane.
 ## 2. Current state
 
 - Branch head: see `git log -1` (this brief is updated in each task's own commit).
-- 69 specs in `research/apps/` (registry `research/apps.json`), all retrofitted to method v2 (sections 9 to 11).
+- 75 specs in `research/apps/` (registry `research/apps.json`), all retrofitted to method v2 (sections 9 to 11).
 - Content patches A, B, B2 and C are implemented by Engine (releases 2026.11.3 to 2026.11.6). D, E, F, G, H, I, R, L,
-  J and K are proposed and **not yet implemented** (placeholder releases up to `2026.12.7`; J = vendor pages for rows 12 to 18, PRO-35; K = dependency pass 2, PRO-36).
+  J, K and M are proposed and **not yet implemented** (placeholder releases up to `2026.12.8`; J = vendor pages for rows 12 to 18, PRO-35; K = dependency pass 2, PRO-36;
+  M = six enterprise apps from vendor network pages, PRO-92).
 - D09 (ISCX VPN-nonVPN 2016) has been measured twice: per-family, per-application, and email server names.
 - Live verification rounds 1 and 2 are in (run by Hermes): of 375 spec names, 207 live (78 with a certificate naming an organisation),
   17 suffixes verified by probe, 2 NXDOMAIN, 30 CDN-fronted, 3 ECH-capable, 28 offer h3; 57 await round 3.
@@ -56,14 +57,14 @@ python3 -B -m unittest discover -q
 (about 30 s; expect `OK` on this branch, which has no product changes.)
 
 ```bash
-git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch ~-/research/patches/batch-k-dependency-pass2.patch && python3 -B tools/check_content.py --update
+git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch ~-/research/patches/batch-k-dependency-pass2.patch ~-/research/patches/batch-m-name-based.patch && python3 -B tools/check_content.py --update
 ```
-(a few seconds; expect `release 2026.12.7 digest be0114651a7bca30 (457 host entries)`.)
+(a few seconds; expect `release 2026.12.8 digest 79f36d67c88c72b5 (462 host entries)`.)
 
 ```bash
 python3 -B research/tools/retrofit_specs.py "$SCRATCH/gm" research/observations/pass1-2026-11-19.json,research/observations/pass2-2026-11-20.tsv
 ```
-(under 1 s; expect `"specs": 69`, `"vectors": 1107`, `"fail": []` and 4 `gaps`. Add `--write` to regenerate the spec sections.)
+(under 1 s; expect `"specs": 75`, `"vectors": 1137`, `"fail": []` and 4 `gaps`. Add `--write` to regenerate the spec sections.)
 
 Per-patch content checks, run in the scratch checkout and taking about 2 minutes: `make content content-pack`,
 `python3 -B migration/parity/compare.py --backend python`, `make parity-go`, and the unit tests there. The only
@@ -73,22 +74,23 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 
 | Item | Waits on |
 |---|---|
-| Patches D to I, L, J, K (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
-| Main-integration PRs #42 to #53 (PRO-43) | open, CI gate green; Lee merges after Hermes review (this lane never merges or comments) |
+| Patches D to I, L, J, K, M (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
+| Main-integration PRs #42 to #53 (PRO-43) | #42, #43, #52, #53 merged; the rest open, CI gate green; Lee merges after Hermes review (this lane never merges or comments) |
+| Batch M to `main` | not opened: Hermes schedules it after review (PRO-92) |
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
-| Live rounds 1 and 2 | done (2026-11-20, `live-results-2026-11-20*.tsv`); round 3 (`live-hosts-r3.txt`, 69 names added later) waits on a Hermes run |
+| Live rounds 1 and 2 | done (2026-11-20, `live-results-2026-11-20*.tsv`); round 3 (`live-hosts-r3.txt`, 69 names) and round 4 (`live-hosts-r4.txt`, 66 names: batch M and 7 older uncovered names) wait on a Hermes run |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
 | Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (2026-11-20, `datasets.md`); waits on the Hermes server run of `rank_domains.py` (Majestic CSV; CrUX via BigQuery) |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
 | Content version ordering | Engine: numeric comparison plus a regression test, then renumber the placeholders |
-| Blocked vendor pages | only WhatsApp and Hugging Face remain, with no official page known (rows 12 to 18 resolved in batch J) |
+| Blocked vendor pages | WhatsApp and Hugging Face (no official page known); rows 19 to 29 (batch M candidates: ServiceNow, Workday, CrowdStrike, SentinelOne, Cisco Secure Client, DocuSign, Snowflake, Twilio, Sophos, Egnyte, GlobalProtect) need a server-side read (Research Lab) |
 | Culvert field data for prioritisation | not available yet (placeholder in the backlog) |
 
 ## 6. Frozen SHAs awaiting Codex
 
 None. This lane does not use the Codex mailbox (Lee, via Hermes: no GitHub communication). Its output is reviewed by
 the Engine lane when a patch is implemented. The frozen bases it depends on are `claude/go-migration`
-`c08773fc8da8d210c8e66d67190f883e608d7bb4` (the base of the D-to-L stack) and `2fd94529e29020eba4096e890567655b78185d1e`
+`c08773fc8da8d210c8e66d67190f883e608d7bb4` (the base of the D-to-M stack) and `2fd94529e29020eba4096e890567655b78185d1e`
 (the first D09 build).
 
 ## 7. Pitfalls learned
@@ -113,5 +115,7 @@ the Engine lane when a patch is implemented. The frozen bases it depends on are 
   `unzip -p` (Deflate64).
 - Tag hosts of consumer apps (pixels, analytics) load on unrelated pages: move them to a vendor-level id (decision 4).
   Main-site names they also call (`www.linkedin.com`) stay a residual false positive.
+- A hyphenated look-alike is its own registrable domain: `browser-intake-datadoghq.eu` is not under `datadoghq.eu`. Check
+  each documented name with `attribution_for_host` before assuming a suffix covers it.
 - Shared CDN, sign-in and telemetry hosts are dependencies, never the app. Observed-only names enter the catalog only
   at `O`, and only with certificate or official-page ownership.
