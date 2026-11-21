@@ -161,6 +161,13 @@ history of the checkout itself, so it needs no pull-request permission. Both are
 configured in ci.yml; a red pull-request run with a green push run on the same commit is a
 workflow defect, never an engine finding.
 
+Codex review comments (automatic review on every opened pull request, P0/P1 only, rules
+in `AGENTS.md` "Code Review Rules"). When a Codex comment on a lane's pull request is
+fixed, the lane pushes the fix to the same branch and replies in that PR's task on the
+board, naming the fixing commit. Lanes do not comment on GitHub, so Hermes verifies the
+fix and resolves the thread. A comment the lane judges wrong gets the same reply, with
+the reason, and the thread stays open for Hermes.
+
 ## CI/CD review loop (Codex, issue #7)
 
 Lane memory: `docs/LANE-BRIEF-platform.md` is the first file a new chat for this lane reads. Every task ends by
