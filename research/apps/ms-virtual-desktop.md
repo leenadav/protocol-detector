@@ -44,7 +44,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I): all as e
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -87,17 +87,17 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `wvd.microsoft.com` | apex has no address (normal for a suffix entry); documented probe `rdbroker.wvd.microsoft.com` queued for round 2 |
+| `wvd.microsoft.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `rdbroker.wvd.microsoft.com` (round 2, cdn) |
 | `wvd.azure.us` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `windows.cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `windows.cloud.microsoft` (SAN covers name: True); CNAME into shared front end `mr-z01.tm-azurefd.net`: name usable, IPs never |
+| `windows.cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `windows.cloud.microsoft`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `mr-z01.tm-azurefd.net`: name usable, IPs never |
 | `windows.static.microsoft` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `infra.windows365.microsoft.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `infra.windows365.microsoft.us` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `wvdportalstorageblob.blob.core.windows.net` | **L** resolves; TLSv1.3, ALPN `None`, cert `*.blob.core.windows.net` (SAN covers name: True) |
+| `wvdportalstorageblob.blob.core.windows.net` | **L** resolves; TLSv1.3, ALPN `None`, cert `*.blob.core.windows.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

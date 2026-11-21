@@ -39,7 +39,7 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -79,20 +79,20 @@ Batch D (`research/patches/batch-d-name-based.patch`; `...` stands for the uncha
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `1password.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `1password.com` (SAN covers name: True) |
-| `1password.eu` | **L** resolves; TLSv1.3, ALPN `h2`, cert `1password.eu` (SAN covers name: True) |
-| `1password.ca` | **L** resolves; TLSv1.3, ALPN `h2`, cert `1password.ca` (SAN covers name: True) |
+| `1password.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `1password.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `1password.eu` | **L** resolves; TLSv1.3, ALPN `h2`, cert `1password.eu`, no subject organisation (domain-validated) (issuer Amazon) |
+| `1password.ca` | **L** resolves; TLSv1.3, ALPN `h2`, cert `1password.ca`, no subject organisation (domain-validated) (issuer Amazon) |
 | `1passwordservices.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `1passwordusercontent.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `1passwordusercontent.eu` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `1passwordusercontent.ca` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `1infra.net` | apex has no address (normal for a suffix entry); documented probe `app-updates.us.svc.1infra.net` queued for round 2 |
-| `app-updates.agilebits.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `app-updates-legacy.us.svc.1infra.net` (SAN covers name: True) |
-| `cache.agilebits.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `c.1password.com` (SAN covers name: True) |
+| `1infra.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `app-updates.us.svc.1infra.net` (round 2) |
+| `app-updates.agilebits.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `app-updates-legacy.us.svc.1infra.net`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `cache.agilebits.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `c.1password.com`, no subject organisation (domain-validated) (issuer Amazon) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

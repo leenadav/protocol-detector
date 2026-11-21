@@ -1,11 +1,11 @@
 diff --git a/protocol_engine/content.py b/protocol_engine/content.py
-index 1ae5ce5..0d5d5a9 100644
+index 96ec4bb..a74c495 100644
 --- a/protocol_engine/content.py
 +++ b/protocol_engine/content.py
 @@ -92,6 +92,10 @@ HISTORY = (
              "application-research lane proposal, method v2 retrofit (research/apps on claude/app-research); "
              "engine-lane review pending",
-             "Vendor-owned names observed from the vendors' own web clients: Copilot, Box and GitLab"),
+             "Vendor-owned name observed from the vendor's own web client, ownership shown by certificate: copilot.com"),
 +    Release("2026.12.5", "2026-11-20", "2026-11-20",
 +            "application-research lane proposal, live verification by Hermes 2026-11-20 (research/live-results-2026-11-20.tsv); "
 +            "engine-lane review pending",
@@ -25,21 +25,21 @@ index 1ae5ce5..0d5d5a9 100644
 +    }),
      "2026.12.3": MappingProxyType({
          "ms-copilot": {"domains": ("copilot.microsoft.com", "copilot.cloud.microsoft")},
-         "box": {"domains": ("box.com", "boxcloud.com", "box.net")},
-@@ -394,6 +404,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
+     }),
+@@ -392,6 +402,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
          "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
          "host_catalog": "bc1ae80cc5657c1aae39481b8e13f78b620c361ddc7cd525bce359bb6cafce71",
          "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
 +    "2026.12.4": MappingProxyType({
 +        "application_catalog": "f57ffff6628558dd870001dca07079ee8e7f261419d7e88bf8b363cd0f738b5b",
 +        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-+        "host_catalog": "a10a34f1bca6f98ab25df990fc495fb531326129154a55b43ca670e35e58ef36",
++        "host_catalog": "6950540a28ac1ea427052c3d06c6492abac5d0defc9a101ca472fe98f1237098",
 +        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
  })
  
  
 diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
-index 955b348..d5b9429 100644
+index b1d993c..0dbcaef 100644
 --- a/protocol_engine/host_apps.py
 +++ b/protocol_engine/host_apps.py
 @@ -78,7 +78,9 @@ _HOST_APPS = (
@@ -62,7 +62,7 @@ index 955b348..d5b9429 100644
      ("google-drive", "general-internet", "file-sharing", "browser-based", 3, "Google Drive and Docs",
       ("widely-used", "transfers-files"), ("drive.google.com", "docs.google.com", "drive.usercontent.google.com", "googledrive.com",
                                       "sheets.google.com", "slides.google.com", "drive-data-export.usercontent.google.com",
-@@ -262,7 +264,8 @@ _HOST_APPS = (
+@@ -260,7 +262,8 @@ _HOST_APPS = (
      ("apple-app-store", "business-systems", "software-development", "client-server", 1, "Apple App Store and iTunes Store",
       ("widely-used", "transfers-files"), ("apps.apple.com", "itunes.apple.com")),
      ("google-play", "business-systems", "software-development", "client-server", 1, "Google Play store",
@@ -72,7 +72,7 @@ index 955b348..d5b9429 100644
      # Identity and password managers.
      ("okta", "business-systems", "auth-service", "browser-based", 1, "Okta sign-in",
       ("widely-used",),
-@@ -355,7 +358,8 @@ _HOST_APPS = (
+@@ -353,7 +356,8 @@ _HOST_APPS = (
       ("widely-used", "pervasive"), ("apple.com", "cdn-apple.com", "mzstatic.com")),
      ("apple-push", "general-internet", "internet-utility", "client-server", 1, "Apple Push Notification service", ("widely-used", "pervasive"), ("push.apple.com",)),
      ("ms-base", "general-internet", "internet-utility", "client-server", 2, "Microsoft services not mapped to a more specific application",

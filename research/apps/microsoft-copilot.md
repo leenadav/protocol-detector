@@ -68,7 +68,7 @@ licensed from personal use. Logs should say "Copilot app connection", not "Copil
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -114,17 +114,19 @@ Exact entry in batch A (`research/patches/batch-a-name-based.patch`, base `claud
 so it wins. The provenance of `copilot.microsoft.com` remains unverified by this lane. Do not map
 `safelinks.protection.outlook.com` to Copilot: batch A names it `ms-exchange-online-protection`.
 
+**Patch R decision (2026-11-21, live round 2):** `copilot.com` enters `ms-copilot` at **O**. The vendor's own web client redirects there (pass 1 and pass 2), and its certificate's subject organisation is **Microsoft Corporation** (issuer Microsoft Corporation). That meets Hermes's decision 3 (ownership by certificate subject).
+
 <!-- method-v2:start -->
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `copilot.microsoft.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `copilot.microsoft.com` (SAN covers name: True); CNAME into shared front end `copilot.microsoft.com.cdn.cloudflare.net`: name usable, IPs never; HTTPS record offers `h3` (QUIC path) |
-| `copilot.cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `copilot.cloud.microsoft` (SAN covers name: True); CNAME into shared front end `mr-z01.tm-azurefd.net`: name usable, IPs never |
-| `copilot.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `copilot.com` (SAN covers name: True) |
+| `copilot.microsoft.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `copilot.microsoft.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `copilot.microsoft.com.cdn.cloudflare.net`: name usable, IPs never; HTTPS record offers `h3` (QUIC path) |
+| `copilot.cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `copilot.cloud.microsoft`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `copilot.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `copilot.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

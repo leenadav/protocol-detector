@@ -39,7 +39,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L and 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -68,13 +68,13 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `parsec.app` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `parsecgaming.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `parsecusercontent.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
+| `parsec.app` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `parsecgaming.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `parsecusercontent.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

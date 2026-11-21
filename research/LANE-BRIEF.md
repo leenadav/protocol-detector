@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-20 (PRO-36). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-21 (PRO-38). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -24,8 +24,8 @@ and content-pack patches for the Engine lane.
 - Content patches A, B, B2 and C are implemented by Engine (releases 2026.11.3 to 2026.11.6). D, E, F, G, H, I, R, L,
   J and K are proposed and **not yet implemented** (placeholder releases up to `2026.12.7`; J = vendor pages for rows 12 to 18, PRO-35; K = dependency pass 2, PRO-36).
 - D09 (ISCX VPN-nonVPN 2016) has been measured twice: per-family, per-application, and email server names.
-- Live verification round 1 is in (`live-results-2026-11-20.tsv`, run by Hermes): 206 of the 320 spec names are live,
-  3 are NXDOMAIN, 28 are CDN-fronted, 2 are ECH-capable, 27 offer h3.
+- Live verification rounds 1 and 2 are in (run by Hermes): of 375 spec names, 207 live (78 with a certificate naming an organisation),
+  17 suffixes verified by probe, 2 NXDOMAIN, 30 CDN-fronted, 3 ECH-capable, 28 offer h3; 57 await round 3.
 - In flight, run by Hermes on the server: live round 2, dependency-mapping pass 2, ranking, and two licence quotes.
 
 ## 3. Where things live (reading order)
@@ -53,12 +53,12 @@ python3 -B -m unittest discover -q
 ```bash
 git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch ~-/research/patches/batch-k-dependency-pass2.patch && python3 -B tools/check_content.py --update
 ```
-(a few seconds; expect `release 2026.12.7 digest 26c9943a20b6e261 (457 host entries)`.)
+(a few seconds; expect `release 2026.12.7 digest be0114651a7bca30 (457 host entries)`.)
 
 ```bash
 python3 -B research/tools/retrofit_specs.py "$SCRATCH/gm" research/observations/pass1-2026-11-19.json,research/observations/pass2-2026-11-20.tsv
 ```
-(under 1 s; expect `"specs": 69`, `"vectors": 1109`, `"fail": []` and 3 `gaps`. Add `--write` to regenerate the spec sections.)
+(under 1 s; expect `"specs": 69`, `"vectors": 1107`, `"fail": []` and 4 `gaps`. Add `--write` to regenerate the spec sections.)
 
 Per-patch content checks, run in the scratch checkout and taking about 2 minutes: `make content content-pack`,
 `python3 -B migration/parity/compare.py --backend python`, `make parity-go`, and the unit tests there. The only
@@ -69,8 +69,8 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Item | Waits on |
 |---|---|
 | Patches D to I, L, J, K (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
-| Patch R (`copilot.com`, `boxcdn.net`, `gitlab.net`) | HOLD: live round 2 certificate organisation (Hermes decision 3) |
-| Live round 2 (`live-hosts-r2.txt`: 363 names with 20 probes, plus 48 batch J names) | Hermes server run |
+| Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
+| Live rounds 1 and 2 | done (2026-11-20, `live-results-2026-11-20*.tsv`); round 3 (`live-hosts-r3.txt`, 69 names added later) waits on a Hermes run |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
 | Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (2026-11-20, `datasets.md`); waits on the Hermes server run of `rank_domains.py` (Majestic CSV; CrUX via BigQuery) |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
@@ -95,6 +95,8 @@ the Engine lane when a patch is implemented. The frozen bases it depends on are 
   `2026.12.x` placeholders.
 - C11: record the previous release's components (`_RELEASED_COMPONENTS`) before locking a new one. An entry cannot be
   emptied or deleted: the parity case generator indexes `domains[0]`, and rollback cannot restore a deleted entry.
+- A certificate proves a vendor owns a name only when its subject organisation names the vendor; domain-validated
+  certificates (Let's Encrypt, Google Trust, Amazon) prove the name only.
 - "No address" is **not dead**: many catalog names are bare suffixes. Only NXDOMAIN (RFC 8020) supports removal.
 - Look-alike vectors must be built on the registrable part (`xanydesk.com`, not `xnet.anydesk.com`).
 - Compute every number before writing it; read back paraphrases against the source. Earlier slips (invented counts, an

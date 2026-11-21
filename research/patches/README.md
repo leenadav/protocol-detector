@@ -258,26 +258,22 @@ Base: `c08773f` plus D to H (apply D → E → F → G → H → I). Placeholder
 
 ## Retrofit batch R: `batch-r-retrofit.patch` (after I)
 
-Method v2 retrofit (dependency mapping, 2026-11-19). **Status 2026-11-20: HOLD** under Hermes's decision 3 (O-level names only when the
-domain is vendor-owned by certificate subject or SAN, or by an official page). Round 1 shows each name serving a
-certificate for itself (`copilot.com`, `cdn01.boxcdn.net`, `new-sentry.gitlab.net`, `snowplowprd.trx.gitlab.net`), which proves the
-name but not the owner. Round 2 records the certificate subject and issuer organisation; apply R only for the names whose
-certificate organisation is the vendor. These names were observed from the vendors' own web clients
-and are vendor-branded, but no primary document lists them (confidence `O`). **DECISION for Hermes**: whether
-observed-only vendor-branded names enter the catalog. Placeholder release **`2026.12.4`**, with
-`_PRIOR_HOST_STATE["2026.12.3"]` and `_RELEASED_COMPONENTS["2026.12.3"]`.
+Method v2 retrofit (dependency mapping, 2026-11-19). **Status 2026-11-21: DECIDED** from live round 2 (certificate organisation, Hermes decision 3), and the patch is **rebuilt
+with `copilot.com` only**: its certificate's subject organisation is Microsoft Corporation. `boxcdn.net` and `gitlab.net` are
+dropped: their names serve domain-validated certificates (no organisation, 1 SAN), so ownership is not shown. L, J and K were
+regenerated on the new R with the same generators. Their content is unchanged except that Box and GitLab no longer gain those
+domains; all digests below are the rebuilt ones. Every release still rolls back exactly, and parity is 7467/7467 on K.
 
 - `ms-copilot` + `copilot.com` (`copilot.microsoft.com` redirects there);
-- `box` + `boxcdn.net` (`account.box.com` loads its assets from `cdn01.boxcdn.net`);
-- `gitlab` + `gitlab.net` (`gitlab.com` sends its error and analytics telemetry to `new-sentry.gitlab.net` and
-  `snowplowprd.trx.gitlab.net`).
+- ~~`box` + `boxcdn.net`~~: dropped (domain-validated certificate; ownership not shown);
+- ~~`gitlab` + `gitlab.net`~~: dropped (domain-validated certificates; ownership not shown).
 
 | Check | Result |
 |---|---|
-| `make content content-pack` | ok: release 2026.12.4, digest `d33a084547582d3f`, 551 applications, 449 host entries |
-| Pack file | sha256 `b7ecd9312d5277031792c18b53a871ad827de6f022dbbcd368240818e3da9b38` |
+| `make content content-pack` | ok: release 2026.12.4, digest `bc82ac28b06298dd`, 551 applications, 449 host entries (rebuilt 2026-11-21, copilot.com only) |
+| Pack file | sha256 `2cb1c2fa112d6441e3e81b7c8eb783d7640bea5c154fcc85a9a00230c6db2ada` |
 | Rollback | release 2026.12.3 host catalog equals the batch I pack exactly |
-| Vectors | 398 method-v2 vectors across all specs (`tools/retrofit_specs.py`), all pass with R applied; without R, 4 positives are unmapped |
+| Vectors | as rebuilt: `copilot.com` → `ms-copilot`; `cdn01.boxcdn.net` and `*.gitlab.net` unmapped (known gaps); all v2 vectors pass (`tools/retrofit_specs.py`) |
 | Parity | 7449/7449 Python and Go; 88/88 families |
 | Unit tests | 1 expected failure: pinned host count (438 → 449) |
 
@@ -295,8 +291,8 @@ touches different entries).
 
 | Check | Result |
 |---|---|
-| `make content content-pack` | ok: release 2026.12.5, digest `77906cfc55135041`, 551 applications, 449 host entries |
-| Pack file | sha256 `15b7f835462129e8f1de6ea64362e38ccd4abe8bc67e711797a0923f5f82a972` |
+| `make content content-pack` | ok: release 2026.12.5, digest `97f96e3e98c3a1ab`, 551 applications, 449 host entries (rebuilt 2026-11-21 on the new R) |
+| Pack file | sha256 `2f7bc2bbbed13d7d8bf04605078aaa08a1b4d0d2f3e8f1b7d7be51078adf605f` |
 | Rollback | release 2026.12.4 host catalog equals the batch R pack exactly |
 | Vectors | 13 targeted (all as expected) + 399 method-v2 vectors across specs, all pass |
 | Parity | 7448/7448 Python and Go; 88/88 families |
@@ -321,8 +317,8 @@ H → I → R → L → J. If R stays on hold, the Engine lane re-keys the prior
 
 | Check | Result |
 |---|---|
-| `make content content-pack` | ok: release 2026.12.6, digest `3c4bdc65f9b521cf`, 552 applications, 450 host entries |
-| Pack file | sha256 `aed41563865eca8a998e3e13e61937887273e949495a5f5ea4e2a97ec6df820e` |
+| `make content content-pack` | ok: release 2026.12.6, digest `c7df2b97e8fc8a01`, 552 applications, 450 host entries (rebuilt 2026-11-21) |
+| Pack file | sha256 `74163f02998688cf3c09f114fc216908cbde6e404335aa0799c3bf21aefea720` |
 | Rollback | release 2026.12.5 host catalog equals the batch L pack exactly |
 | Vectors | 53 targeted (all as expected); method-v2 vectors per spec in section 6 |
 | Parity | 7455/7455 Python and Go; 88/88 families |
@@ -341,8 +337,8 @@ Dependency mapping pass 2 (Hermes server, direct, 2026-11-20) and Hermes's decis
 
 | Check | Result |
 |---|---|
-| `make content content-pack` | ok: release 2026.12.7, digest `26c9943a20b6e261`, 559 applications, 457 host entries |
-| Pack file | sha256 `7e98b4872052145400edcc33367a5badd4853e5b96665f8b3bbc0d4525ba850c` |
+| `make content content-pack` | ok: release 2026.12.7, digest `be0114651a7bca30`, 559 applications, 457 host entries (rebuilt 2026-11-21) |
+| Pack file | sha256 `23779661f466b9a8aa8339604d2a86f4d36ee2f120b2e5f95e67923cf4b88771` |
 | Rollback | release 2026.12.6 host catalog equals the batch J pack exactly |
 | Vectors | 35 targeted (all as expected); 1,109 method-v2 vectors across 69 specs, all pass |
 | Parity | 7467/7467 Python and Go; 88/88 families |

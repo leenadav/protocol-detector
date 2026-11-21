@@ -96,7 +96,8 @@ Live data: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`live-
 | ECH-capable (HTTPS record `ech`) | **2**: `bitwarden.eu`, `signal.art` |
 | QUIC advertised (`h3`) | **27** catalog names (28 of the 358) |
 | Hosts observed (dependency mapping, pass 1) | 92: 51 app-owned (47 already mapped, plus the 4 that patch R maps), 41 dependencies |
-| Attributions changed | patch L: `cdn.office.net` → `ms-base`; `play.google.com` → `google-base`; `emdl.ws.microsoft.com` removed; `googlemail.com` → `gmail`. Patch R (`copilot.com`, `boxcdn.net`, `gitlab.net`) on HOLD for certificate organisation (decision 3) |
+| Live round 2 (Hermes, 2026-11-20, `live-results-2026-11-20-r2.tsv`) | 363 names; flags tls-fail 19, no-address 95, cdn 36, h3 28, ech 2, nxdomain 3. Across the 375 spec catalog names (both rounds): 207 live (78 with a certificate naming an organisation), 17 suffixes verified through documented probes, 75 apexes with no address and no documented probe, 17 TLS failures (not removal), 2 NXDOMAIN in both rounds (`prisma-access`), 57 added later (round 3: `live-hosts-r3.txt`, 69 names) |
+| Attributions changed | patch L: `cdn.office.net` → `ms-base`; `play.google.com` → `google-base`; `emdl.ws.microsoft.com` removed; `googlemail.com` → `gmail`. patch R decided from round 2: `copilot.com` → `ms-copilot` (certificate organisation Microsoft Corporation); `boxcdn.net` and `gitlab.net` dropped (domain-validated certificates) |
 | Vectors | 399 v2 vectors, all pass with R and L applied |
 | D09 per application | Gmail in the email captures: 0 of 294 SNI-bearing unnamed sessions before L; all are `*.googlemail.com`, so all are named with L |
 | Re-verify by | 2027-02-17 for every spec |

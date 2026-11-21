@@ -41,7 +41,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F, G and H)
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -74,23 +74,23 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `adobe.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.adobe.com` (SAN covers name: True) |
-| `adobelogin.com` | resolves; TLS handshake failed (SSLCertVerificationError): not a removal reason; round 2 re-checks |
-| `adobe.io` | **L** resolves; TLSv1.3, ALPN `None`, cert `adobe.io` (SAN covers name: True) |
+| `adobe.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.adobe.com`, subject organisation **Adobe Inc** (issuer DigiCert Inc) |
+| `adobelogin.com` | resolves; TLS handshake failed (SSLCertVerificationError) in both rounds where checked: not a removal reason |
+| `adobe.io` | **L** resolves; TLSv1.3, ALPN `None`, cert `adobe.io`, subject organisation **Adobe Inc.** (issuer DigiCert Inc) |
 | `adobecc.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `adobecces.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `adobeccstatic.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `adobeexchange.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `exchange.adobe.com` (SAN covers name: True) |
+| `adobeexchange.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `exchange.adobe.com`, subject organisation **Adobe Inc.** (issuer DigiCert Inc) |
 | `adobegenuine.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `adobegov.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.adobegov.com` (SAN covers name: True) |
+| `adobegov.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.adobegov.com`, subject organisation **Adobe Inc.** (issuer DigiCert Inc) |
 | `adobe-identity.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `adobejanus.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `adobeoobe.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `adobeprojectm.com` | resolves; TLS handshake failed (SSLCertVerificationError): not a removal reason; round 2 re-checks |
+| `adobeprojectm.com` | resolves; TLS handshake failed (SSLCertVerificationError) in both rounds where checked: not a removal reason |
 | `adobesc.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `adobe-services.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `adobess.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |

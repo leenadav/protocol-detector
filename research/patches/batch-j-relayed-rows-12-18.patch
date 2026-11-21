@@ -1,5 +1,5 @@
 diff --git a/protocol_engine/content.py b/protocol_engine/content.py
-index 0d5d5a9..5b69aae 100644
+index a74c495..9f44241 100644
 --- a/protocol_engine/content.py
 +++ b/protocol_engine/content.py
 @@ -96,6 +96,10 @@ HISTORY = (
@@ -29,23 +29,23 @@ index 0d5d5a9..5b69aae 100644
      "2026.12.4": MappingProxyType({
          "ms-base": {"domains": ("microsoft.com", "msn.com", "windows.com", "live.com")},
          "gmail": {"domains": ("mail.google.com", "gmail.com")},
-@@ -409,6 +422,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
+@@ -407,6 +420,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
          "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-         "host_catalog": "a10a34f1bca6f98ab25df990fc495fb531326129154a55b43ca670e35e58ef36",
+         "host_catalog": "6950540a28ac1ea427052c3d06c6492abac5d0defc9a101ca472fe98f1237098",
          "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
 +    "2026.12.5": MappingProxyType({
 +        "application_catalog": "f57ffff6628558dd870001dca07079ee8e7f261419d7e88bf8b363cd0f738b5b",
 +        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-+        "host_catalog": "1ee7a94209df81fe23f7ef3f6e8dc604998fcdc4200b03b78719eb069bcce506",
++        "host_catalog": "8dfd48b1c734dcfeda9f0b2a678b13f09125a0d85ee3a45e24cfe3081d239b95",
 +        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
  })
  
  
 diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
-index d5b9429..821b33f 100644
+index 0dbcaef..d412765 100644
 --- a/protocol_engine/host_apps.py
 +++ b/protocol_engine/host_apps.py
-@@ -135,7 +135,9 @@ _HOST_APPS = (
+@@ -133,7 +133,9 @@ _HOST_APPS = (
      ("atlassian", "business-systems", "software-development", "browser-based", 2, "Atlassian cloud (Jira, Confluence, Bitbucket)",
       ("widely-used", "transfers-files"), ("atlassian.net", "atlassian.com", "bitbucket.org", "atl-paas.net", "ss-inf.net", "jira.com",
                                       "teamworkgraph.com")),
@@ -56,7 +56,7 @@ index d5b9429..821b33f 100644
      ("notion", "business-systems", "office-programs", "browser-based", 2, "Notion workspace",
       ("transfers-files",),
       ("notion.so", "notion.site", "notion.com", "notionusercontent.com", "secure.notion-static.com")),
-@@ -244,11 +246,15 @@ _HOST_APPS = (
+@@ -242,11 +244,15 @@ _HOST_APPS = (
       ("transfers-files",),
       ("miro.com", "miro-apps.com", "mirostatic.com", "onlinewhiteboard.com", "realtimeboard.com", "webwhiteboard.com")),
      ("trello", "business-systems", "office-programs", "browser-based", 2, "Trello boards", ("transfers-files",), ("trello.com",)),
@@ -74,7 +74,7 @@ index d5b9429..821b33f 100644
      # Software development and delivery.
      ("docker-hub", "business-systems", "software-development", "client-server", 2, "Docker Hub and registry",
       ("transfers-files",),
-@@ -735,7 +741,9 @@ _HOST_APPS = (
+@@ -733,7 +739,9 @@ _HOST_APPS = (
      ("connectwise-control", "networking", "remote-access", "client-server", 4, "ConnectWise ScreenConnect remote control",
       ("tunnels-other-applications", "prone-to-misuse", "used-by-malware"), ("screenconnect.com", "connectwise.com"), ("screenconnect.com", "www.screenconnect.com")),
      ("parsec", "networking", "remote-access", "client-server", 4, "Parsec remote desktop",
@@ -85,7 +85,7 @@ index d5b9429..821b33f 100644
      ("nomachine", "networking", "remote-access", "client-server", 4, "NoMachine remote desktop services",
       ("tunnels-other-applications", "prone-to-misuse"), ("nomachine.com",), ("nomachine.com", "www.nomachine.com")),
      ("remotepc", "networking", "remote-access", "client-server", 4, "RemotePC remote access",
-@@ -747,7 +755,9 @@ _HOST_APPS = (
+@@ -745,7 +753,9 @@ _HOST_APPS = (
      ("supremo", "networking", "remote-access", "client-server", 4, "SupRemo remote control",
       ("tunnels-other-applications", "prone-to-misuse"), ("supremocontrol.com",), ("supremocontrol.com", "www.supremocontrol.com")),
      ("atera", "networking", "remote-access", "client-server", 4, "Atera remote monitoring and management",
@@ -96,7 +96,7 @@ index d5b9429..821b33f 100644
      ("ninjaone", "networking", "remote-access", "client-server", 4, "NinjaOne remote monitoring and management",
       ("tunnels-other-applications", "prone-to-misuse"), ("ninjaone.com", "ninjarmm.com"), ("ninjaone.com", "www.ninjaone.com")),
      ("kaseya", "networking", "remote-access", "client-server", 4, "Kaseya remote monitoring and management",
-@@ -799,11 +809,16 @@ _HOST_APPS = (
+@@ -797,11 +807,16 @@ _HOST_APPS = (
      ("ms-intune", "business-systems", "management", "client-server", 1, "Microsoft Intune device management",
       ("widely-used",),
       ("manage.microsoft.com", "dm.microsoft.com")),

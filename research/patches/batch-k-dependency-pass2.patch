@@ -1,5 +1,5 @@
 diff --git a/protocol_engine/content.py b/protocol_engine/content.py
-index 5b69aae..d8ff401 100644
+index 9f44241..cce1ca5 100644
 --- a/protocol_engine/content.py
 +++ b/protocol_engine/content.py
 @@ -100,6 +100,10 @@ HISTORY = (
@@ -32,20 +32,20 @@ index 5b69aae..d8ff401 100644
      "2026.12.5": MappingProxyType({
          "opendns": {"domains": ("opendns.com",), "description": "Cisco OpenDNS resolver and dashboard"},
          "parsec": {"domains": ("parsec.app", "parsecgaming.com")},
-@@ -427,6 +443,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
+@@ -425,6 +441,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
          "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-         "host_catalog": "1ee7a94209df81fe23f7ef3f6e8dc604998fcdc4200b03b78719eb069bcce506",
+         "host_catalog": "8dfd48b1c734dcfeda9f0b2a678b13f09125a0d85ee3a45e24cfe3081d239b95",
          "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
 +    "2026.12.6": MappingProxyType({
 +        "application_catalog": "7c4d435682da99f191fb5957458fba182ed76a244a94ec9ba9a942d45bc46e40",
 +        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
-+        "host_catalog": "a17e6ff827209f7c89ebdd61477423aff104b5c0c29bc2693a3cb06355c25a77",
++        "host_catalog": "bb1a6db64229f2bf3499a771e0ca0e9fe14ccbed2cffc029142f77ebc856005e",
 +        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
  })
  
  
 diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
-index 821b33f..f1ed913 100644
+index d412765..8db4f1e 100644
 --- a/protocol_engine/host_apps.py
 +++ b/protocol_engine/host_apps.py
 @@ -35,21 +35,41 @@ _HOST_APPS = (
@@ -92,7 +92,7 @@ index 821b33f..f1ed913 100644
      ("pinterest", "collaboration", "social-networking", "browser-based", 2, "Pinterest image sharing", ("transfers-files",), ("pinterest.com", "pinimg.com")),
      ("snapchat", "collaboration", "social-networking", "client-server", 3, "Snapchat messaging and stories",
       ("transfers-files",), ("snapchat.com", "sc-cdn.net", "snap-dev.net")),
-@@ -192,6 +212,9 @@ _HOST_APPS = (
+@@ -190,6 +210,9 @@ _HOST_APPS = (
      ("threads", "collaboration", "social-networking", "browser-based", 3, "Threads social network", ("transfers-files",), ("threads.net", "threads.com")),
      ("tumblr", "collaboration", "social-networking", "browser-based", 3, "Tumblr blogging platform", ("transfers-files",), ("tumblr.com",)),
      ("quora", "collaboration", "social-networking", "browser-based", 2, "Quora questions and answers", (), ("quora.com", "quoracdn.net")),
@@ -102,7 +102,7 @@ index 821b33f..f1ed913 100644
      ("vk", "collaboration", "social-networking", "browser-based", 3, "VK social network", ("transfers-files", "widely-used"), ("vk.com", "userapi.com")),
      ("bluesky", "collaboration", "social-networking", "browser-based", 3, "Bluesky social network", ("transfers-files",), ("bsky.app", "bsky.social")),
      ("weibo", "collaboration", "social-networking", "browser-based", 3, "Sina Weibo social network", ("transfers-files", "widely-used"), ("weibo.com", "weibo.cn")),
-@@ -365,7 +388,7 @@ _HOST_APPS = (
+@@ -363,7 +386,7 @@ _HOST_APPS = (
      ("apple-push", "general-internet", "internet-utility", "client-server", 1, "Apple Push Notification service", ("widely-used", "pervasive"), ("push.apple.com",)),
      ("ms-base", "general-internet", "internet-utility", "client-server", 2, "Microsoft services not mapped to a more specific application",
       ("widely-used", "pervasive"),

@@ -40,7 +40,7 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -76,12 +76,12 @@ Category `business-systems/management`, matching the existing `crowdstrike` and 
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
 | `endpoint.security.microsoft.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `reflector.defender.microsoft.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `reflector.defender.microsoft.com` (SAN covers name: True); CNAME into shared front end `reflector-appgwv6-prd-aec0a.uaecentral.cloudapp.azure.com`: name usable, IPs never |
+| `reflector.defender.microsoft.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `reflector.defender.microsoft.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `reflector-appgwv6-prd-aec0a.uaecentral.cloudapp.azure.com`: name usable, IPs never |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

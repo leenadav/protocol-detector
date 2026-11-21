@@ -83,10 +83,10 @@ UNMAPPED = {
     "google.pplxmeasure.com": ("third", "measurement proxy; owner not verified"),
     "linkedin.pplxmeasure.com": ("third", "measurement proxy; owner not verified"),
     "meta.pplxmeasure.com": ("third", "measurement proxy; owner not verified"),
-    "copilot.com": ("owned:ms-copilot", "first-party redirect target of copilot.microsoft.com"),
-    "cdn01.boxcdn.net": ("owned:box", "Box static assets loaded by account.box.com (boxcdn.net)"),
-    "new-sentry.gitlab.net": ("owned:gitlab", "GitLab-operated error telemetry on gitlab.net"),
-    "snowplowprd.trx.gitlab.net": ("owned:gitlab", "GitLab-operated analytics collector on gitlab.net"),
+    "copilot.com": ("owned:ms-copilot", "first-party redirect target of copilot.microsoft.com; certificate subject organisation Microsoft Corporation (round 2)"),
+    "cdn01.boxcdn.net": ("owned:box", "Box static assets loaded by account.box.com; NOT mapped: round 2 certificate is domain-validated (no organisation, 1 SAN), so ownership is not shown (decision 3)"),
+    "new-sentry.gitlab.net": ("owned:gitlab", "GitLab error telemetry; NOT mapped: round 2 certificate is domain-validated (no organisation, 1 SAN)"),
+    "snowplowprd.trx.gitlab.net": ("owned:gitlab", "GitLab analytics collector; NOT mapped: round 2 certificate is domain-validated (no organisation, 1 SAN)"),
     "logging.getgo.com": ("owned:goto", "GoTo logging (getgo.com; for the Engine lane's goto vendor id)"),
     "api.jive.com": ("owned:goto", "GoTo Connect API (jive.com), a separate GoTo product"),
     "api.workos.com": ("third", "WorkOS, third-party sign-in provider"),
@@ -132,11 +132,47 @@ def resolves(r):
     return r is not None and r["rcode"] == "0" and r["a_count"] not in ("0", "")
 
 
+LIVE2 = {r["host"]: r for r in _csv.DictReader(open(ROOT / "live-results-2026-11-20-r2.tsv"), delimiter="\t")}
+
+
 def live_status(name):
-    """(L result text, flags list) for one catalog or observed name."""
+    """(L result text, flags list): round 2 where it has the name, otherwise round 1."""
+    r = LIVE2.get(name)
+    if r is None:
+        return live_status_r1(name)
+    flags = [f for f in r["flags"].split(",") if f != "-"]
+    if "nxdomain" in flags:
+        return ("**NXDOMAIN** in both rounds: nothing at or below this name exists (RFC 8020); **recommend removal**"
+                if name in LIVE and LIVE[name]["rcode"] == "3" else "**NXDOMAIN** (round 2): recommend removal (RFC 8020)"), flags
+    if "no-address" in flags:
+        probe, _, pflags = (r.get("probe") or "").partition(":")
+        pf = [f for f in pflags.split(",") if f]
+        if probe and not {"nxdomain", "no-address", "tls-fail"} & set(pf):
+            return ("apex has no address (normal for a suffix entry); suffix **verified** through documented `%s` (round 2%s)"
+                    % (probe, (", " + ",".join(pf)) if pf else "")), flags + pf
+        return "apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source)", flags
+    parts = []
+    if "tls-fail" in flags:
+        parts.append("resolves; TLS handshake failed (%s) in both rounds where checked: not a removal reason" % r["tls_error"])
+    else:
+        org = r["subject_o"] if r["subject_o"] not in ("", "None") else None
+        parts.append("**L** resolves; %s, ALPN `%s`, cert `%s`, %s (issuer %s)" % (
+            r["tls"], r["alpn"], r["subject_cn"], ("subject organisation **%s**" % org) if org else "no subject organisation (domain-validated)",
+            r["issuer_o"]))
+    if "cdn" in flags:
+        parts.append("CNAME into shared front end `%s`: name usable, IPs never" % r["cname_tail"])
+    if "ech" in flags:
+        parts.append("HTTPS record carries `ech`: SNI may be an ECH outer name")
+    if "h3" in flags:
+        parts.append("HTTPS record offers `h3` (QUIC path)")
+    return "; ".join(parts), flags
+
+
+def live_status_r1(name):
+    """(L result text, flags list) for one catalog or observed name, round 1 only."""
     r = LIVE.get(name)
     if r is None:
-        return "not in round 1 (added later; in `live-hosts-r2.txt`)", []
+        return "not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run)", []
     flags = [f for f in r["flags"].split(",") if f not in ("-", "dead")]
     if r["rcode"] == "3":
         return "**NXDOMAIN**: nothing at or below this name exists (RFC 8020); recommend removal after round 2 confirms", ["nxdomain"]
@@ -251,7 +287,7 @@ def build(spec, meta):
         vec.append(("L-", h, "not " + "/".join(ids) + " (%s)" % why, fmt(a), "PASS" if ok else "FAIL"))
         if not ok:
             fails.append(h)
-    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)", ""]
+    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)", ""]
     if vec:
         sec6 += ["O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); "
                  "L- = look-alike or label-boundary name (must not be this app).", "",
@@ -263,7 +299,8 @@ def build(spec, meta):
     web = meta["web"]
     live_rows = [(d,) + live_status(d) for d in domains]
     s = [START, "", "## 9. Live verification (L)", "",
-         "Source: %s (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). "
+         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool "
+         "`research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). "
          "`L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never "
          "evidence." % LIVE_CITE, ""]
     if live_rows:
@@ -352,11 +389,13 @@ import collections as _c
 cnt = _c.Counter()
 for d, (t, f) in LIVE_SUMMARY.items():
     if "nxdomain" in f: cnt["nxdomain"] += 1
-    elif "verified" in t and "no-address" in f: cnt["suffix verified via probe"] += 1
+    elif "**verified**" in t and "no-address" in f: cnt["suffix verified via probe"] += 1
     elif "no-address" in f: cnt["apex no address, unprobed"] += 1
     elif "tls-fail" in f: cnt["resolves, TLS failed"] += 1
-    elif t.startswith("not in round 1"): cnt["not in round 1"] += 1
-    else: cnt["live"] += 1
+    elif t.startswith("not yet verified"): cnt["not yet verified"] += 1
+    else:
+        cnt["live"] += 1
+        if "subject organisation **" in t: cnt["live, cert names an organisation"] += 1
     for x in ("cdn", "ech", "h3"):
         if x in f: cnt[x] += 1
 summary["live"] = dict(cnt)

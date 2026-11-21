@@ -82,7 +82,7 @@ it is cited for the host names only.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -155,24 +155,24 @@ vectors. Specification:
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `githubcopilot.com` | resolves; TLS handshake failed (SSLCertVerificationError): not a removal reason; round 2 re-checks |
-| `copilot-proxy.githubusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.githubusercontent.com` (SAN covers name: True) |
-| `origin-tracker.githubusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.githubusercontent.com` (SAN covers name: True) |
-| `copilot-telemetry.githubusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.githubusercontent.com` (SAN covers name: True) |
-| `production-copilot-host.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
-| `production-copilot-host-centralus.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
-| `production-copilot-host-centralus-02.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
-| `production-copilot-host-eastasia.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
-| `production-copilot-host-austriaeast.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
-| `production-copilot-host-westus.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
-| `production-copilot-host-westus3.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net` (SAN covers name: True) |
-| `github.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `github.com` (SAN covers name: True) |
-| `githubusercontent.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `copilot-proxy.githubusercontent.com` (TLS TLSv1.3, cert `*.githubusercontent.com`) |
-| `githubassets.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `github.githubassets.com` (TLS TLSv1.3, cert `*.githubassets.com`) |
+| `githubcopilot.com` | resolves; TLS handshake failed (SSLCertVerificationError) in both rounds where checked: not a removal reason |
+| `copilot-proxy.githubusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.githubusercontent.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `origin-tracker.githubusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.githubusercontent.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `copilot-telemetry.githubusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.githubusercontent.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `production-copilot-host.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `production-copilot-host-centralus.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `production-copilot-host-centralus-02.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `production-copilot-host-eastasia.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `production-copilot-host-austriaeast.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `production-copilot-host-westus.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `production-copilot-host-westus3.webpubsub.azure.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.service.signalr.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `github.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `github.com`, no subject organisation (domain-validated) (issuer Sectigo Limited) |
+| `githubusercontent.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `copilot-proxy.githubusercontent.com` (round 2) |
+| `githubassets.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `github.githubassets.com` (round 2) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

@@ -45,7 +45,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L, J a
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -81,22 +81,22 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `connect.facebook.net` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `t.co` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `analytics.twitter.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `ads.linkedin.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `snap.licdn.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `redditstatic.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `alb.reddit.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `pixel-config.reddit.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `a.quora.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `q.quora.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `analytics.tiktok.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `pixels.spotify.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
+| `connect.facebook.net` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `t.co` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `analytics.twitter.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `ads.linkedin.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `snap.licdn.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `redditstatic.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `alb.reddit.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `pixel-config.reddit.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `a.quora.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `q.quora.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `analytics.tiktok.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `pixels.spotify.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

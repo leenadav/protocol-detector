@@ -109,7 +109,7 @@ Built with `client_hello_with([...])` (server_name ext 0, ALPN ext 16), TCP 443 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -197,28 +197,28 @@ and whose certificate is `*.public.cdn.office.net`. Patch L moves `cdn.office.ne
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `office.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `m365.cloud.microsoft` (SAN covers name: True) |
-| `office365.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `akaoffice.trafficmanager.net` (SAN covers name: True) |
-| `office.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `res.cdn.office.net` (TLS TLSv1.3, cert `*.public.cdn.office.net`, cdn,h3) |
-| `officeapps.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `officeapps.live.com` (SAN covers name: True); CNAME into shared front end `wac-0003.wac-msedge.net`: name usable, IPs never |
-| `microsoft365.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `m365.cloud.microsoft` (SAN covers name: True) |
-| `cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `cloud.microsoft` (SAN covers name: True) |
-| `teams.microsoft.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `teams.microsoft.com` (SAN covers name: True) |
-| `teams.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `teams.live.com` (SAN covers name: True) |
+| `office.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `m365.cloud.microsoft`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `office365.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `akaoffice.trafficmanager.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `office.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `res.cdn.office.net` (round 2, cdn,h3) |
+| `officeapps.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `officeapps.live.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `wac-0003.wac-msedge.net`: name usable, IPs never |
+| `microsoft365.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `m365.cloud.microsoft`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `cloud.microsoft`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `teams.microsoft.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `teams.microsoft.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `teams.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `teams.live.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
 | `teams.cdn.office.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `teams.cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `teams.cloud.microsoft` (SAN covers name: True) |
-| `lync.com` | resolves; TLS handshake failed (SSLCertVerificationError): not a removal reason; round 2 re-checks |
-| `outlook.office365.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com` (SAN covers name: True) |
-| `outlook.office.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com` (SAN covers name: True) |
-| `outlook.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com` (SAN covers name: True) |
-| `outlook.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com` (SAN covers name: True) |
-| `outlook.cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.cloud.microsoft` (SAN covers name: True) |
-| `sharepoint.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `svc.ms` (SAN covers name: True) |
-| `sharepointonline.com` | resolves; TLS handshake failed (TimeoutError): not a removal reason; round 2 re-checks |
+| `teams.cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `teams.cloud.microsoft`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `lync.com` | resolves; TLS handshake failed (SSLCertVerificationError) in both rounds where checked: not a removal reason |
+| `outlook.office365.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com`, subject organisation **Microsoft Corporation** (issuer DigiCert Inc) |
+| `outlook.office.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com`, subject organisation **Microsoft Corporation** (issuer DigiCert Inc) |
+| `outlook.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com`, subject organisation **Microsoft Corporation** (issuer DigiCert Inc) |
+| `outlook.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.com`, subject organisation **Microsoft Corporation** (issuer DigiCert Inc) |
+| `outlook.cloud.microsoft` | **L** resolves; TLSv1.3, ALPN `h2`, cert `outlook.cloud.microsoft`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `sharepoint.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `svc.ms`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `sharepointonline.com` | resolves; TLS handshake failed (TimeoutError) in both rounds where checked: not a removal reason |
 | `svc.ms` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 
 ## 10. Observed web-client hosts (dependency mapping)

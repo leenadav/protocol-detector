@@ -40,7 +40,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -73,15 +73,15 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `canva.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `canva.com` (SAN covers name: True) |
-| `canvacode.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `canvacode.com` (SAN covers name: True) |
+| `canva.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `canva.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `canvacode.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `canvacode.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
 | `canva-apps.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `canva.link` | **L** resolves; TLSv1.3, ALPN `h2`, cert `canva.link` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
-| `canva.ai` | **L** resolves; TLSv1.3, ALPN `h2`, cert `canva.ai` (SAN covers name: True) |
+| `canva.link` | **L** resolves; TLSv1.3, ALPN `h2`, cert `canva.link`, no subject organisation (domain-validated) (issuer Google Trust Services); HTTPS record offers `h3` (QUIC path) |
+| `canva.ai` | **L** resolves; TLSv1.3, ALPN `h2`, cert `canva.ai`, no subject organisation (domain-validated) (issuer Google Trust Services) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

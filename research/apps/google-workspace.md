@@ -57,7 +57,7 @@ Checked in scratch (batch A plus B): all as expected.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -126,23 +126,23 @@ falls to vendor-level `google-base`; `google-play` keeps `play.googleapis.com`.
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `mail.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `mail.google.com` (SAN covers name: True) |
-| `gmail.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `gmail.com` (SAN covers name: True) |
-| `googlemail.com` | not in round 1 (added later; in `live-hosts-r2.txt`) |
-| `drive.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `docs.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `drive.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com` (SAN covers name: True) |
-| `googledrive.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.googleusercontent.com` (SAN covers name: True) |
-| `sheets.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `slides.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `drive-data-export.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com` (SAN covers name: True) |
-| `drive-data-export-eu.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com` (SAN covers name: True) |
-| `meet.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `accounts.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `accounts.google.com` (SAN covers name: True) |
+| `mail.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `mail.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `gmail.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `gmail.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `googlemail.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `googlemail.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `drive.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `docs.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `drive.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `googledrive.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.googleusercontent.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `sheets.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `slides.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `drive-data-export.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `drive-data-export-eu.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `meet.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `accounts.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `accounts.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

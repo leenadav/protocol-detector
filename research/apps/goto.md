@@ -37,7 +37,7 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -78,19 +78,19 @@ Batch D (`research/patches/batch-d-name-based.patch`; `...` stands for the uncha
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `gotomeeting.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `www.gotomeeting.com` (SAN covers name: True) |
-| `goto.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.goto.com` (SAN covers name: True) |
+| `gotomeeting.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `www.gotomeeting.com`, subject organisation **GoTo Technologies USA, LLC** (issuer DigiCert Inc) |
+| `goto.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.goto.com`, subject organisation **GoTo Technologies USA, LLC** (issuer DigiCert Inc) |
 | `gotomeet.at` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `gotomeet.me` | **L** resolves; TLSv1.3, ALPN `h2`, cert `meet.goto.com` (SAN covers name: True) |
-| `joingotomeeting.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `joingotomeeting.com` (SAN covers name: True) |
-| `openvoice.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `www.gotomeeting.com` (SAN covers name: True) |
-| `gotomypc.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `gotomypc.com` (SAN covers name: True) |
-| `logmein.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `logmein.com` (SAN covers name: True) |
-| `logmeininc.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `logmeininc.com` (SAN covers name: True) |
+| `gotomeet.me` | **L** resolves; TLSv1.3, ALPN `h2`, cert `meet.goto.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `joingotomeeting.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `joingotomeeting.com`, subject organisation **GoTo Technologies USA, LLC** (issuer DigiCert Inc) |
+| `openvoice.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `www.gotomeeting.com`, subject organisation **GoTo Technologies USA, LLC** (issuer DigiCert Inc) |
+| `gotomypc.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `gotomypc.com`, subject organisation **GoTo Technologies USA, LLC** (issuer DigiCert Inc) |
+| `logmein.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `logmein.com`, subject organisation **GoTo Technologies USA, LLC** (issuer DigiCert Inc) |
+| `logmeininc.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `logmeininc.com`, subject organisation **GoTo Technologies USA, LLC** (issuer DigiCert Inc) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

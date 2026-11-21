@@ -39,7 +39,7 @@ Checked in scratch (`bc65e50` plus C, D and E): all as expected.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -69,14 +69,14 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `bitwarden.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `bitwarden.com` (SAN covers name: True) |
-| `bitwarden.net` | apex has no address (normal for a suffix entry); documented probe `cdn.bitwarden.net` queued for round 2 |
-| `bitwarden.eu` | **L** resolves; TLSv1.3, ALPN `h2`, cert `bitwarden.eu` (SAN covers name: True); HTTPS record carries `ech`: SNI may be an ECH outer name; HTTPS record offers `h3` (QUIC path) |
-| `btwrdn.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `btwrdn.com` (SAN covers name: True) |
+| `bitwarden.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `bitwarden.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `bitwarden.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `cdn.bitwarden.net` (round 2, ech,h3) |
+| `bitwarden.eu` | **L** resolves; TLSv1.3, ALPN `h2`, cert `bitwarden.eu`, no subject organisation (domain-validated) (issuer Google Trust Services); HTTPS record carries `ech`: SNI may be an ECH outer name; HTTPS record offers `h3` (QUIC path) |
+| `btwrdn.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `btwrdn.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
 | `btwrdn.co` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 
 ## 10. Observed web-client hosts (dependency mapping)
@@ -95,8 +95,8 @@ Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it cover
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
 - Dependencies (observed, never attributed to this app): none observed.
-- Evasive (ECH, DoH, proxy modes): **ECH-capable** names (HTTPS record `ech`, 2026-11-20): `bitwarden.eu`, so `supports-ech` applies and SNI evidence may vanish; other modes as stated in sections 2 to 4.
-- QUIC path (`h3` in the HTTPS record): `bitwarden.eu`.
+- Evasive (ECH, DoH, proxy modes): **ECH-capable** names (HTTPS record `ech`, 2026-11-20): `bitwarden.net`, `bitwarden.eu`, so `supports-ech` applies and SNI evidence may vanish; other modes as stated in sections 2 to 4.
+- QUIC path (`h3` in the HTTPS record): `bitwarden.net`, `bitwarden.eu`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->

@@ -43,7 +43,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F, G and H)
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -91,22 +91,22 @@ Live check supports the `cloud.com` attribution: `citrix.com`'s own certificate 
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `cloud.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `www.cloud.com` (SAN covers name: True) |
-| `citrix.com` | **L** resolves; TLSv1.2, ALPN `http/1.1`, cert `*.cloud.com` (SAN covers name: True) |
+| `cloud.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `www.cloud.com`, subject organisation **Cloud Software Group, Inc.** (issuer DigiCert Inc) |
+| `citrix.com` | **L** resolves; TLSv1.2, ALPN `http/1.1`, cert `*.cloud.com`, subject organisation **Cloud Software Group, Inc.** (issuer DigiCert Inc) |
 | `citrixworkspacesapi.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `citrixnetworkapi.net` | apex has no address (normal for a suffix entry); documented probe `trust.citrixnetworkapi.net` queued for round 2 |
-| `nssvc.net` | apex has no address (normal for a suffix entry); documented probe `global-s.g.nssvc.net` queued for round 2 |
+| `citrixnetworkapi.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `trust.citrixnetworkapi.net` (round 2) |
+| `nssvc.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `global-s.g.nssvc.net` (round 2, cdn) |
 | `xendesktop.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `netscalergateway.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `discovery.cem.cloud.us` | **L** resolves; TLSv1.3, ALPN `None`, cert `*.cem.cloud.us` (SAN covers name: True); CNAME into shared front end `d2h5okjz9875in.cloudfront.net`: name usable, IPs never |
-| `prod-us-vus-storage-endpoint.azureedge.net` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.azureedge.net` (SAN covers name: True); CNAME into shared front end `mr-afd-azuredge.tm-azurefd.net`: name usable, IPs never |
-| `prod-eu-vus-storage-endpoint.azureedge.net` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.azureedge.net` (SAN covers name: True); CNAME into shared front end `mr-afd-azuredge.tm-azurefd.net`: name usable, IPs never |
-| `prod-aps-vus-storage-endpoint.azureedge.net` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.azureedge.net` (SAN covers name: True); CNAME into shared front end `hel01r9b.msedge.net`: name usable, IPs never |
-| `prod-jp-vus-storage-endpoint.azureedge.net` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.azureedge.net` (SAN covers name: True); CNAME into shared front end `hel01r9b.msedge.net`: name usable, IPs never |
+| `discovery.cem.cloud.us` | **L** resolves; TLSv1.3, ALPN `None`, cert `*.cem.cloud.us`, subject organisation **Cloud Software Group, Inc.** (issuer DigiCert Inc); CNAME into shared front end `d2h5okjz9875in.cloudfront.net`: name usable, IPs never |
+| `prod-us-vus-storage-endpoint.azureedge.net` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.azureedge.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `mr-afd-azuredge.tm-azurefd.net`: name usable, IPs never |
+| `prod-eu-vus-storage-endpoint.azureedge.net` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.azureedge.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `mr-afd-azuredge.tm-azurefd.net`: name usable, IPs never |
+| `prod-aps-vus-storage-endpoint.azureedge.net` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.azureedge.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `hel01r9b.msedge.net`: name usable, IPs never |
+| `prod-jp-vus-storage-endpoint.azureedge.net` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.azureedge.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `hel01r9b.msedge.net`: name usable, IPs never |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

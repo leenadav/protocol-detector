@@ -59,7 +59,7 @@ Checked in scratch (batch C on `47b2743`): all as expected.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -93,14 +93,14 @@ Optional, not in the patch: the description could follow the vendor's rename ("C
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `cloudflareclient.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `cloudflareclient.com` (SAN covers name: True) |
-| `api.devices.cloudflare.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `devices.cloudflare.com` (SAN covers name: True) |
-| `api.devices.fed.cloudflare.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `devices.fed.cloudflare.com` (SAN covers name: True) |
-| `notifications.devices.fed.cloudflare.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `devices.fed.cloudflare.com` (SAN covers name: True) |
+| `cloudflareclient.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `cloudflareclient.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `api.devices.cloudflare.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `devices.cloudflare.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `api.devices.fed.cloudflare.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `devices.fed.cloudflare.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `notifications.devices.fed.cloudflare.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `devices.fed.cloudflare.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

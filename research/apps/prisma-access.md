@@ -49,7 +49,7 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `c08773f` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -83,16 +83,18 @@ entry with no names (the parity case generator needs one), and rollback cannot r
 patch cannot remove it cleanly. Re-research when the documentation names live hosts. Round 2 (`live-hosts-r2.txt`)
 re-checks both names first.
 
+**Live round 2 (2026-11-20):** both names are NXDOMAIN again. The recommendation stands: drop the `prisma-access` entry from patch F before applying it.
+
 <!-- method-v2:start -->
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `epm.gpcloudservice.com` | **NXDOMAIN**: nothing at or below this name exists (RFC 8020); recommend removal after round 2 confirms |
-| `filter.paloaltonetworks.com` | **NXDOMAIN**: nothing at or below this name exists (RFC 8020); recommend removal after round 2 confirms |
+| `epm.gpcloudservice.com` | **NXDOMAIN** in both rounds: nothing at or below this name exists (RFC 8020); **recommend removal** |
+| `filter.paloaltonetworks.com` | **NXDOMAIN** in both rounds: nothing at or below this name exists (RFC 8020); **recommend removal** |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

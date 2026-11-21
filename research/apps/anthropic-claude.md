@@ -99,7 +99,7 @@ ALPN: nothing published by Anthropic. `UNVERIFIED`.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -161,16 +161,16 @@ Decided and in batch A (`research/patches/batch-a-name-based.patch`, base `claud
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `claude.ai` | **L** resolves; TLSv1.3, ALPN `h2`, cert `claude.ai` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
-| `anthropic.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `anthropic.com` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
-| `claude.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `claude.com` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
-| `claudeusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `claudeusercontent.com` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
-| `api.anthropic.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `api.anthropic.com` (SAN covers name: True) |
-| `platform.claude.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `platform.claude.com` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
+| `claude.ai` | **L** resolves; TLSv1.3, ALPN `h2`, cert `claude.ai`, no subject organisation (domain-validated) (issuer Let's Encrypt); HTTPS record offers `h3` (QUIC path) |
+| `anthropic.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `anthropic.com`, no subject organisation (domain-validated) (issuer Let's Encrypt); HTTPS record offers `h3` (QUIC path) |
+| `claude.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `claude.com`, no subject organisation (domain-validated) (issuer Google Trust Services); HTTPS record offers `h3` (QUIC path) |
+| `claudeusercontent.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `claudeusercontent.com`, no subject organisation (domain-validated) (issuer Let's Encrypt); HTTPS record offers `h3` (QUIC path) |
+| `api.anthropic.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `api.anthropic.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `platform.claude.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `platform.claude.com`, no subject organisation (domain-validated) (issuer Let's Encrypt); HTTPS record offers `h3` (QUIC path) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

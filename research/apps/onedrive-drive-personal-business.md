@@ -70,7 +70,7 @@ Checked with `attribution_for_host` in scratch (batch A plus B): all as expected
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -153,25 +153,25 @@ present in the catalog (`ms-onedrive` vs `sharepoint-online`). `storage.live.com
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `onedrive.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `onedrive.com` (SAN covers name: True) |
-| `onedrive.com` | **L** resolves; TLSv1.3, ALPN `None`, cert `onedrive.com` (SAN covers name: True) |
-| `1drv.com` | resolves; TLS handshake failed (SSLCertVerificationError): not a removal reason; round 2 re-checks |
-| `1drv.ms` | **L** resolves; TLSv1.3, ALPN `h2`, cert `storage.live.com` (SAN covers name: True) |
-| `skydrive.live.com` | **L** resolves; TLSv1.3, ALPN `None`, cert `onedrive.com` (SAN covers name: True); CNAME into shared front end `cosmic-westeurope-ns-a3826e656e34.trafficmanager.net`: name usable, IPs never |
-| `photos.live.com` | **L** resolves; TLSv1.3, ALPN `None`, cert `onedrive.com` (SAN covers name: True); CNAME into shared front end `cosmic-westeurope-ns-93411c4416b1.trafficmanager.net`: name usable, IPs never |
-| `storage.msn.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `storage.live.com` (SAN covers name: True) |
-| `drive.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `docs.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `drive.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com` (SAN covers name: True) |
-| `googledrive.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.googleusercontent.com` (SAN covers name: True) |
-| `sheets.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `slides.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `drive-data-export.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com` (SAN covers name: True) |
-| `drive-data-export-eu.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com` (SAN covers name: True) |
+| `onedrive.live.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `onedrive.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `onedrive.com` | **L** resolves; TLSv1.3, ALPN `None`, cert `onedrive.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `1drv.com` | resolves; TLS handshake failed (SSLCertVerificationError) in both rounds where checked: not a removal reason |
+| `1drv.ms` | **L** resolves; TLSv1.3, ALPN `h2`, cert `storage.live.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `skydrive.live.com` | **L** resolves; TLSv1.3, ALPN `None`, cert `onedrive.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `cosmic-westeurope-ns-5cf19e8e66cb.trafficmanager.net`: name usable, IPs never |
+| `photos.live.com` | **L** resolves; TLSv1.3, ALPN `None`, cert `onedrive.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `cosmic-westeurope-ns-5cf19e8e66cb.trafficmanager.net`: name usable, IPs never |
+| `storage.msn.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `storage.live.com`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation) |
+| `drive.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `docs.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `drive.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `googledrive.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.googleusercontent.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `sheets.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `slides.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `drive-data-export.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `drive-data-export-eu.usercontent.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.usercontent.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

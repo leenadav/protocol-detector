@@ -56,7 +56,7 @@ Checked in scratch (batch C on `47b2743`): all as expected.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -120,19 +120,19 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `wetransfer.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `wetransfer.com` (SAN covers name: True) |
-| `wetransfer.net` | resolves; TLS handshake failed (SSLError): not a removal reason; round 2 re-checks |
-| `we.tl` | **L** resolves; TLSv1.3, ALPN `None`, cert `go.wetransfer.com` (SAN covers name: True) |
-| `wt-prod-euwest1-storm.s3.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3-eu-west-1.amazonaws.com` (SAN covers name: True); CNAME into shared front end `s3-3-w.amazonaws.com`: name usable, IPs never |
-| `wt-prod-euwest1-storm.s3-accelerate.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `None`, cert `*.s3-accelerate.amazonaws.com` (SAN covers name: True) |
-| `wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3-eu-west-1.amazonaws.com` (SAN covers name: True); CNAME into shared front end `s3-r-w.eu-west-1.amazonaws.com`: name usable, IPs never |
-| `wt-prod-useast1-storm.s3.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `s3.amazonaws.com` (SAN covers name: True); CNAME into shared front end `s3-w.us-east-1.amazonaws.com`: name usable, IPs never |
-| `wt-prod-useast1-storm.s3-accelerate.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `None`, cert `*.s3-accelerate.amazonaws.com` (SAN covers name: True) |
-| `wt-prod-useast1-storm.s3.us-east-1.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `s3.amazonaws.com` (SAN covers name: True); CNAME into shared front end `s3-r-w.us-east-1.amazonaws.com`: name usable, IPs never |
+| `wetransfer.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `wetransfer.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `wetransfer.net` | resolves; TLS handshake failed (SSLError) in both rounds where checked: not a removal reason |
+| `we.tl` | **L** resolves; TLSv1.3, ALPN `None`, cert `go.wetransfer.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `wt-prod-euwest1-storm.s3.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3-eu-west-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-3-w.amazonaws.com`: name usable, IPs never |
+| `wt-prod-euwest1-storm.s3-accelerate.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `None`, cert `*.s3-accelerate.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3-eu-west-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-r-w.eu-west-1.amazonaws.com`: name usable, IPs never |
+| `wt-prod-useast1-storm.s3.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `s3.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-w.us-east-1.amazonaws.com`: name usable, IPs never |
+| `wt-prod-useast1-storm.s3-accelerate.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `None`, cert `*.s3-accelerate.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `wt-prod-useast1-storm.s3.us-east-1.amazonaws.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `s3.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-r-w.us-east-1.amazonaws.com`: name usable, IPs never |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

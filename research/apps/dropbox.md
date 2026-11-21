@@ -72,7 +72,7 @@ No ALPN or protocol-structure information is published. `UNVERIFIED`.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -178,24 +178,24 @@ Exact entries in batch A (`research/patches/batch-a-name-based.patch`, base `cla
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `dropbox.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.app.dropbox.com` (SAN covers name: True) |
-| `dropboxapi.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `dropboxapi.com` (SAN covers name: True) |
+| `dropbox.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.app.dropbox.com`, subject organisation **Dropbox, Inc** (issuer DigiCert, Inc.) |
+| `dropboxapi.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `dropboxapi.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
 | `dropboxusercontent.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `dropboxstatic.com` | resolves; TLS handshake failed (OSError): not a removal reason; round 2 re-checks |
-| `getdropbox.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.getdropbox.com` (SAN covers name: True) |
-| `db.tt` | **L** resolves; TLSv1.3, ALPN `h2`, cert `db.tt` (SAN covers name: True) |
-| `dropboxbusiness.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.dropboxbusiness.com` (SAN covers name: True) |
+| `dropboxstatic.com` | resolves; TLS handshake failed (OSError) in both rounds where checked: not a removal reason |
+| `getdropbox.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.getdropbox.com`, subject organisation **Dropbox, Inc** (issuer DigiCert Inc) |
+| `db.tt` | **L** resolves; TLSv1.3, ALPN `h2`, cert `db.tt`, subject organisation **Dropbox, Inc** (issuer DigiCert Inc) |
+| `dropboxbusiness.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.dropboxbusiness.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
 | `addtodropbox.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `dropboxcaptcha.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `dropboxcaptcha.com` (SAN covers name: True) |
+| `dropboxcaptcha.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `dropboxcaptcha.com`, no subject organisation (domain-validated) (issuer Amazon) |
 | `dropboxexperiment.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
 | `dropbox-dns.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
-| `docsend.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.docsend.com` (SAN covers name: True) |
-| `hellosign.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.hellosign.com` (SAN covers name: True) |
-| `hellofax.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.hellofax.com` (SAN covers name: True) |
+| `docsend.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.docsend.com`, subject organisation **Dropbox, Inc** (issuer DigiCert Inc) |
+| `hellosign.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.hellosign.com`, subject organisation **Dropbox, Inc** (issuer DigiCert Inc) |
+| `hellofax.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.hellofax.com`, subject organisation **Dropbox, Inc** (issuer DigiCert Inc) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

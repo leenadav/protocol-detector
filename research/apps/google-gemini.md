@@ -66,7 +66,7 @@ No ALPN, certificate or protocol-structure information is published. `UNVERIFIED
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -128,14 +128,14 @@ proposed as its own id, `google-gemini-api`, in `apps/google-gemini-api.md`; no 
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `gemini.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `aistudio.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `notebooklm.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
-| `notebook.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com` (SAN covers name: True) |
+| `gemini.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `aistudio.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `notebooklm.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `notebook.google.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `*.google.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

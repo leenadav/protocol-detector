@@ -39,7 +39,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -68,17 +68,17 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `signal.org` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.org` (SAN covers name: True); HTTPS record offers `h3` (QUIC path) |
-| `signal.art` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.art` (SAN covers name: True); HTTPS record carries `ech`: SNI may be an ECH outer name; HTTPS record offers `h3` (QUIC path) |
-| `whispersystems.org` | **L** resolves; TLSv1.3, ALPN `h2`, cert `whispersystems.org` (SAN covers name: True) |
-| `signal.group` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.group` (SAN covers name: True) |
-| `signal.link` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.link` (SAN covers name: True) |
-| `signal.me` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.me` (SAN covers name: True) |
-| `signal.tube` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.tube` (SAN covers name: True) |
+| `signal.org` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.org`, no subject organisation (domain-validated) (issuer Google Trust Services); HTTPS record offers `h3` (QUIC path) |
+| `signal.art` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.art`, no subject organisation (domain-validated) (issuer Google Trust Services); HTTPS record carries `ech`: SNI may be an ECH outer name; HTTPS record offers `h3` (QUIC path) |
+| `whispersystems.org` | **L** resolves; TLSv1.3, ALPN `h2`, cert `whispersystems.org`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `signal.group` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.group`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `signal.link` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.link`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `signal.me` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.me`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `signal.tube` | **L** resolves; TLSv1.3, ALPN `h2`, cert `signal.tube`, no subject organisation (domain-validated) (issuer Google Trust Services) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

@@ -38,7 +38,7 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -51,8 +51,6 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | L- | `gitlab.com.example.invalid` | not gitlab (suffix look-alike) | no application | PASS |
 | L- | `xgitlab-static.net` | not gitlab (label boundary) | no application | PASS |
 | L- | `gitlab-static.net.example.invalid` | not gitlab (suffix look-alike) | no application | PASS |
-| L- | `xgitlab.net` | not gitlab (label boundary) | no application | PASS |
-| L- | `gitlab.net.example.invalid` | not gitlab (suffix look-alike) | no application | PASS |
 
 <!-- method-v2-vectors:end -->
 
@@ -68,17 +66,18 @@ Batch D (`research/patches/batch-d-name-based.patch`; `...` stands for the uncha
 ("gitlab", ..., ("gitlab.com", "gitlab-static.net")),
 ```
 
+**Patch R decision (2026-11-21, live round 2):** `gitlab.net` is **not** added. `new-sentry.gitlab.net` and `snowplowprd.trx.gitlab.net` serve domain-validated certificates (no subject organisation, 1 SAN each), so ownership is not shown (decision 3). Both stay unmapped until a GitLab document names `gitlab.net`.
+
 <!-- method-v2:start -->
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20 (`research/live-results-2026-11-20.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `gitlab.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `gitlab.com` (SAN covers name: True) |
-| `gitlab-static.net` | apex has no address (normal for a suffix entry); documented probe `cdn.registry.gitlab-static.net` queued for round 2 |
-| `gitlab.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `new-sentry.gitlab.net` (TLS TLSv1.3, cert `new-sentry.gitlab.net`) |
+| `gitlab.com` | **L** resolves; TLSv1.3, ALPN `h2`, cert `gitlab.com`, no subject organisation (domain-validated) (issuer Sectigo Limited) |
+| `gitlab-static.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `cdn.registry.gitlab-static.net` (round 2) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
