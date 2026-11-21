@@ -126,8 +126,7 @@ func (r *Runner) pump() {
 		process := exec.CommandContext(ctx, argv[0], argv[1:]...)
 		// The worker and anything it starts are one process group, killed together on cancel or expiry; Wait
 		// is bounded so a straggler holding the output pipe cannot keep the job running.
-		process.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-		process.Cancel = func() error { return syscall.Kill(-process.Process.Pid, syscall.SIGKILL) }
+		ownProcessGroup(process)
 		process.WaitDelay = 2 * time.Second
 		var output limitedBuffer
 		process.Stdout = &output

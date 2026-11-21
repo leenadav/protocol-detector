@@ -173,21 +173,6 @@ func pump(r io.Reader, packets bool, out chan<- piece, quit <-chan struct{}) {
 	}
 }
 
-// limitCPU gives the worker a CPU budget; it only ever lowers the limit.
-func limitCPU(seconds uint64) {
-	var limit syscall.Rlimit
-	if err := syscall.Getrlimit(syscall.RLIMIT_CPU, &limit); err != nil {
-		return
-	}
-	capped := func(value uint64) uint64 {
-		if limit.Max != math.MaxUint64 && value > limit.Max {
-			return limit.Max
-		}
-		return value
-	}
-	_ = syscall.Setrlimit(syscall.RLIMIT_CPU, &syscall.Rlimit{Cur: capped(seconds), Max: capped(seconds + 5)})
-}
-
 // Run is live.py main(): the key-log path arrives as one JSON line on standard input (never in the argument
 // list), tcpdump captures the interface for at most duration seconds, and the worker publishes progress every
 // second and a final report. It returns the exit status: 0, or 1 after a failure.

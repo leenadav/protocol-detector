@@ -180,7 +180,7 @@ func (m *Manager) Start(ifaceValue, durationValue, scopeValue, keylogValue ojson
 	m.begin(hex.EncodeToString(id), iface)
 	m.phase = previous // the reference sets "running" only once the process has started
 	process := exec.Command(argv[0], argv[1:]...)
-	process.SysProcAttr = &syscall.SysProcAttr{Setsid: true} // its own session: the process group to kill
+	ownSession(process) // its own session: the process group to kill
 	process.Stderr = nil
 	reader, writer, err := os.Pipe()
 	if err != nil {
@@ -365,7 +365,7 @@ func (m *Manager) Stop(expected *exec.Cmd, runID ojson.Value) {
 	select {
 	case <-exited:
 	case <-time.After(5 * time.Second):
-		_ = syscall.Kill(-process.Process.Pid, syscall.SIGKILL) // only this run's process group
+		killGroup(process) // only this run's process group
 		select {
 		case <-exited:
 		case <-time.After(2 * time.Second):
