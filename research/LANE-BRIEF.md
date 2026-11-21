@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-21 (PRO-98: Majestic run 1 recorded, `rank_domains.py` export guard; PRO-92 batches M and N). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-21 (PRO-98 review: `rank_domains.py` tests; PRO-98 closes as partially complete). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -59,6 +59,12 @@ python3 -B -m unittest discover -q
 (about 30 s; expect `OK` on this branch, which has no product changes.)
 
 ```bash
+python3 -B -m unittest discover -s research/tools -q
+```
+(under 1 s; expect `OK`, 3 tests: the lane's own tool tests, which the root discovery does not collect because
+`research/` is not a package.)
+
+```bash
 git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch ~-/research/patches/batch-k-dependency-pass2.patch ~-/research/patches/batch-m-name-based.patch ~-/research/patches/batch-n-name-based.patch && python3 -B tools/check_content.py --update
 ```
 (a few seconds; expect `release 2026.12.9 digest 80ecb5542510f862 (462 host entries)`.)
@@ -82,7 +88,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
 | Live rounds 1 to 5 | 1 to 4 done and merged into section 9 (`live-results-2026-11-20*.tsv`, `live-results-2026-11-21-r3.tsv` 69 names, `-r4.tsv` 66 names; relayed in full PRO-117/PRO-121): every name cited by the batch M and earlier specs has a result. Round 5 (`live-hosts-r5.txt`, 12 names, batch N) waits on a Hermes run |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
-| Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (`datasets.md`). Majestic run 1 (PRO-98) is recorded in `ranking/majestic-2026-11-21-run1.tsv` but was looked up with `main`'s catalog: 46 of 69 specs not computed. Run 2 waits on Hermes: `rank_domains.py research/app-domains.json OUT.tsv --majestic majestic_million.csv` (79 specs, no re-export); CrUX still needs BigQuery |
+| Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (`datasets.md`). PRO-98 closed **partially complete**: Majestic run 1 (`ranking/majestic-2026-11-21-run1.tsv`) was looked up with `main`'s catalog, so 22 of 69 specs ranked and 46 not computed. Run 2 is a separate Hermes task: `rank_domains.py research/app-domains.json OUT.tsv --majestic majestic_million.csv` (79 specs, no re-export); CrUX still needs BigQuery |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
 | Content version ordering | Engine: numeric comparison plus a regression test, then renumber the placeholders |
 | Blocked vendor pages | WhatsApp and Hugging Face (no official page known). Rows 19 to 23, 28 and 29 (ServiceNow, Workday, CrowdStrike, SentinelOne, Cisco Secure Client, Egnyte, GlobalProtect) stay blocked (sign-in, bot challenge or JavaScript-only, per Research Lab, PRO-108). Rows 24 to 27 resolved in batch N; DocuSign's domain list is still incomplete |
