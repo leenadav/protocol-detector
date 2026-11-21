@@ -99,6 +99,8 @@ request:
 | ci | `Go engine on its declared minimum Go (vet, race tests)` | `tools/go_ci.py minimum`: on exactly go/go.mod's `go` line (the declared minimum), installed by setup-go, `make go-check-minimum` (`go vet`, `go test -race`); a minimum equal to the compiler is go-engine's run and passes as such (item 28) |
 | ci | `Go vendor tree matches go.mod and go.sum (module proxy, checksum database)` | `tools/go_ci.py vendor-check`: `make go-vendor-check` re-vendors and compares with go/vendor, the one Go step with module access; nothing to verify without dependencies (item 32) |
 | ci | `Go lint and static analysis (golangci-lint, staticcheck, gosec)` | `tools/go_lint.py`: golangci-lint 2.15.0 (`tools/golint/golangci.yml`), staticcheck 2026.2.2 and gosec 2.29.0 (`-nosec`, G104 and G304 excluded with reasons), built from `tools/golint/<tool>/go.mod` and go.sum outside the checkout and run offline on the vendored tree; a finding beyond `tools/golint/baseline.json` or a tool that cannot load the tree fails (item 35) |
+| ci | `Go determinism (race detector, shuffled order, every test twice)` | `tools/go_deep.py determinism`: `go test -race -shuffle=on -count=2 ./...` on the pinned Go and the vendored tree, `GOPROXY=off`; an order-dependent, state-leaking or flaky test fails, with its shuffle seed in the summary (item 36) |
+| ci | `Go dependency licences (go-licenses; forbidden, restricted, unknown fail)` | `tools/go_deep.py licenses`: go-licenses 2.0.1 from `tools/golint/go-licenses/go.mod` and go.sum, built outside the checkout; any linked module whose licence is forbidden, restricted or unidentified fails; the engine's own module is excluded (item 36) |
 | ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack`, the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...`; nothing to check without the Go content pack (item 30) |
 | ci | `security requirements gate` | every SR row names an existing test |
 
@@ -814,6 +816,20 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      staticcheck's file-wide ignore.
    - **Triage:** the baseline's findings go to the Engine lane: the G115 narrowing conversions,
      the unchecked Close and Flush calls, the unused code, and G602 in `quicx` among them.
+36. Go deep gate (Lee via Hermes, PRO-103, 2026-11-21, after Culvert's pr-deep-gate). Two ci jobs,
+   both in the gate's needs and both run by `tools/go_deep.py` on the pinned Go and the vendored
+   tree with `GOPROXY=off`:
+   - **`go-determinism`:** `go test -race -shuffle=on -count=2 ./...`. Every test runs twice, in a
+     random order per run, with the race detector, so an order-dependent, state-leaking or flaky
+     test fails, and the summary names the `-test.shuffle` seed that reproduces it. It takes about
+     2 minutes over 37 packages on `claude/go-migration` `0081f6f`.
+   - **`go-licenses`:** go-licenses 2.0.1, from `tools/golint/go-licenses/go.mod` and go.sum, is
+     built outside the checkout before any repository code runs (rule 15 pins the build; rule 16
+     locks the go.mod). It fails on any linked module whose licence is forbidden, restricted or
+     unidentified. The engine's own module is excluded: it is this repository's code, and the
+     repository has no LICENSE file. Today x/crypto and x/sys are BSD-3-Clause and pass.
+   - **Negative controls:** a test that leaks state into its second run fails the determinism job
+     with its seed, and a vendored LICENSE replaced by an unrecognised text fails the licence job.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm

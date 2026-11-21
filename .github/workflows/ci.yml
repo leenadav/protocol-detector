@@ -784,6 +784,97 @@ jobs:
           python -B tools/go_lint.py --self-test
           python -B tools/go_lint.py --bin "$RUNNER_TEMP/bin" --summary "$GITHUB_STEP_SUMMARY"
 
+  go-determinism:
+    # Culvert's pr-deep-gate determinism rerun: every Go test twice, in a random order per run, with the race
+    # detector (`go test -race -shuffle=on -count=2 ./...`, tools/go_deep.py), on the vendored tree with no
+    # module download. An order-dependent, state-leaking or flaky test fails; the summary names the shuffle
+    # seed that reproduces it.
+    name: Go determinism (race detector, shuffled order, every test twice)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: go test -race -shuffle=on -count=2 (tools/go_deep.py)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          python -B tools/go_deep.py --self-test
+          python -B tools/go_deep.py determinism --summary "$GITHUB_STEP_SUMMARY"
+
+  go-licenses:
+    # Culvert's pr-deep-gate licence blocking: go-licenses 2.0.1, built from tools/golint/go-licenses/go.mod and
+    # go.sum (every module hash checked against the Go checksum database) in a copy outside the checkout before
+    # any repository code runs, checks every module the engine links; a forbidden, restricted or unidentified
+    # licence fails (tools/go_deep.py). The vendored golang.org/x/crypto and golang.org/x/sys are BSD-3-Clause.
+    name: Go dependency licences (go-licenses; forbidden, restricted, unknown fail)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Build the pinned go-licenses (tools/golint/go-licenses)
+        env:
+          GOPROXY: https://proxy.golang.org
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          mkdir -p "$RUNNER_TEMP/golint"
+          cp -r tools/golint/go-licenses "$RUNNER_TEMP/golint/"
+          cd "$RUNNER_TEMP/golint/go-licenses"
+          GOBIN="$RUNNER_TEMP/bin" go install tool
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Check the engine's dependency licences (tools/go_deep.py)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          python -B tools/go_deep.py --self-test
+          python -B tools/go_deep.py licenses --bin "$RUNNER_TEMP/bin" --summary "$GITHUB_STEP_SUMMARY"
+
   content-pack:
     # A content release (a research batch) must hold together: the schema, the lock and every
     # earlier release reproducing its published digest (`make content`), the exported pack and
@@ -848,7 +939,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: always()
-    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, go-engine, go-minimum, go-vendor, go-lint, content-pack, security-requirements]
+    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, go-engine, go-minimum, go-vendor, go-lint, go-determinism, go-licenses, content-pack, security-requirements]
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
