@@ -55,13 +55,17 @@ class HttpContinuation:
     # -- framing of the message that was just completed --
 
     def _body_after(self, message):
+        # RFC 9112 section 6.3: these responses end at the header boundary, regardless
+        # of CL/TE. On a 304 those fields can describe a hypothetical representation.
+        if message.method is None and (100 <= (message.status or 0) < 200 or message.status in (204, 304)):
+            self._skip = 0
+            return
         if message.transfer_encoding:
             self._chunked = True
             self._chunk_state = "size"
             return
         length = message.content_length or 0
-        if message.method is None and message.content_length is None and not (
-                100 <= (message.status or 0) < 200 or message.status in (204, 304)):
+        if message.method is None and message.content_length is None:
             # A response without declared framing is delimited by connection close.
             self._end("close-delimited")
             return

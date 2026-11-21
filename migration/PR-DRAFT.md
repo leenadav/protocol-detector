@@ -37,7 +37,7 @@ is installed; `--backend python` or `PROTODETECT_BACKEND=python` selects the ref
 | parity-analyze, parity-decrypt, parity-live, parity-live-decrypt, schema-go, parity-control, parity-server | 0 differences |
 | `make adversarial` | 4,041 cases, Go equals the reference on all; 1 known finding (F-ADV-1) |
 | `make bench-gate` | allocations and retained bytes within budget; p99 per flow reported |
-| `make check` | 862 Python tests and the repository gates |
+| `make check` | 866 Python tests and the repository gates |
 | Go fuzzing | 25 targets in `make go-check` |
 
 Benchmarks are local CPU work, not production end-to-end latency.

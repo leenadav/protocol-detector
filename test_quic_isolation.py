@@ -11,6 +11,7 @@ from protocol_adapters.link_packets import decode_frame
 from protocol_adapters.make_sample_pcap import udp_frame
 from protocol_engine import Config, DatagramInspector
 from protocol_engine.quic import MAX_FRAGMENTS, V1, QuicAssembler, assemble
+from protocol_engine.policy import Policy
 from test_quic import CLIENT_HELLO, DCID, crypto_frames, protect
 
 SERVER = ("192.0.2.20", 443)
@@ -94,6 +95,63 @@ def feed(analyzer, now, source, data):
 
 
 class PublicPathTests(unittest.TestCase):
+    def test_bidirectional_conflict_withdraws_peer_evidence_and_policy_identity(self):
+        changed = bytearray(CLIENT_HELLO)
+        changed[CUT + 3] ^= 0x55
+        conflict = initial(1, pieces=crypto_frames(bytes(changed), (CUT,)))
+        unverified = bytearray(protect(V1, DCID, b"", b"\x01"))
+        unverified[-1] ^= 1
+        policy = Policy.from_json('{"default":"allow","rules":[{"name":"invalidated","action":"deny",'
+                                  '"match":{"engine_status":["invalidated"]}}]}')
+        for source, destination in ((A, SERVER), (SERVER, A)):
+            for opened_peer in (False, True):
+                with self.subTest(source=source, opened_peer=opened_peer):
+                    records = []
+                    analyzer = Analyzer(on_session=records.append, policy=policy, fingerprints=True, include_hostnames=True)
+                    packets = [(A, SERVER, protect(V1, DCID, b"", b"\x01")),
+                               (source, destination, initial(0)), (source, destination, initial(1))]
+                    peer_packets = [initial(0), initial(1)] if opened_peer else [bytes(unverified)]
+                    packets.extend((destination, source, packet) for packet in peer_packets)
+                    packets.append((source, destination, conflict))
+                    for index, (src, dst, payload) in enumerate(packets):
+                        analyzer.process(index / 10, decode_frame(udp_frame(src, dst, payload)))
+                    self.assertEqual(analyzer.last_classification.status, "invalidated")
+                    # A later peer identification must not restore the withdrawn flow either.
+                    analyzer.process(1, decode_frame(udp_frame(destination, source, bytes(unverified))))
+                    analyzer.finish("eof")
+                    record = records[0]
+                    self.assertEqual((record["engine_status"], record["app"]), ("invalidated", "not-applicable"))
+                    self.assertEqual(record["layers"]["application"]["status"], "invalidated")
+                    self.assertEqual(record["policy"]["action"], "deny")
+                    self.assertEqual(record["policy"]["predicates"]["engine_status"], "invalidated")
+                    self.assertIsNone(record.get("hostname"))
+                    self.assertNotIn("fingerprints", record)
+                    self.assertFalse(record["layers"]["encryption"]["server_name_asserted"])
+                    self.assertEqual(record["layers"]["encryption"]["offered_alpn"], [])
+
+    def test_retirement_resets_both_quic_scopes_with_or_without_session_callback(self):
+        changed = bytearray(CLIENT_HELLO)
+        changed[CUT + 3] ^= 0x55
+        conflict = initial(1, pieces=crypto_frames(bytes(changed), (CUT,)))
+        for expiry in (False, True):
+            for callback in (None, lambda record: None):
+                with self.subTest(expiry=expiry, callback=callback is not None):
+                    analyzer = Analyzer(on_session=callback, idle_timeout=30)
+                    packets = [(A, SERVER, initial(0)), (A, SERVER, initial(1)),
+                               (SERVER, A, initial(0)), (SERVER, A, initial(1)), (SERVER, A, conflict)]
+                    for index, (src, dst, payload) in enumerate(packets):
+                        analyzer.process(index, decode_frame(udp_frame(src, dst, payload)))
+                    self.assertEqual(len(analyzer.quic_assembler.entries), 2)
+                    if expiry:
+                        analyzer.expire(34)  # exact flow-idle boundary, not an assembler >idle expiry
+                    else:
+                        analyzer.finish("eof")
+                    self.assertFalse(analyzer.udp_flows)
+                    self.assertFalse(analyzer.quic_assembler.entries)
+                    analyzer.process(35 if expiry else 5, decode_frame(udp_frame(SERVER, A, initial(0))))
+                    self.assertEqual(analyzer.last_classification.status, "identified")
+                    self.assertIsNone(analyzer.last_classification.hostname)  # no completed hello inherited
+
     def test_same_dcid_on_unrelated_endpoints_never_combines(self):
         analyzer, records, _ = analyzer_with_records()
         first_from_a = feed(analyzer, 0.0, A, initial(0))

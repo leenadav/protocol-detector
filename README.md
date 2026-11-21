@@ -1,14 +1,15 @@
-# Protocol detector v0.38
+# Protocol detector v0.66.0
 
-A standalone Python 3.9+ protocol classification engine and passive observation
-tool. **70 protocol families**, with explicit profiles rather than claims of full
-protocol/session validation. No Python runtime dependencies. Live capture uses
-an installed `tcpdump`; ordinary demos and tests require no capture privileges.
-We are staying in Python. This release does not integrate with or modify an SWG.
+A bounded protocol-classification project with a Python 3.9+ reference engine,
+standalone CLI and passive-observation tool, plus an in-progress Go migration
+for an embeddable detector. The Python engine remains the behavioral reference
+and supported standalone tool; it has no runtime dependencies. Live capture
+uses an installed `tcpdump`; ordinary demos and tests need no capture
+privileges.
 
 Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 
-## Capabilities at v0.30
+## Python reference capabilities (v0.66.0)
 
 | Area | What exists | Where to read |
 |---|---|---|
@@ -21,7 +22,32 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 862 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 866 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+
+## Go migration and Culvert integration
+
+The Go implementation lives in [`go/`](go/) and is being ported against shared
+fixtures from the Python reference. Per-family status is tracked in
+[`migration/CAPABILITIES.json`](migration/CAPABILITIES.json); acceptance work
+and fixture comparisons are documented under [`migration/`](migration/).
+
+All 88 family profiles are `parity-verified` against the committed cases (7,430
+of 7,430 agree; `make parity-go`), and the parity-gap manifest has no entries.
+Fixture parity covers only the committed cases—it does not establish full
+feature parity, external-traffic accuracy, or production readiness. The Go port
+remains experimental, and the Python reference stays the fallback.
+
+The intended Culvert integration is in-process and observation-only: the host
+owns sockets, TLS, policy, timeouts and forwarding; the detector analyzes bytes
+already read and does not forward, block or authorize traffic. The embedding
+integration is still preparation work, not a production SWG plugin.
+
+To run the Go migration gate (formatting, vet, race tests, fuzz targets and
+fixture parity; toolchain selected from `go/go.mod`):
+
+```bash
+make go-check
+```
 
 What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
 non-TCP/UDP classifier, a certificate validator, a signature corpus for named
@@ -37,7 +63,7 @@ make demo
 make protocols
 make interfaces
 make live INTERFACE=en0 DURATION=60
-# One entry point for every tool (v0.30); subcommands forward to the scripts below:
+# Python CLI; subcommands forward to the scripts below:
 python3 -B protodetect.py analyze sample-expanded.pcap --sessions --policy policy-example.json
 python3 -B protodetect.py live --interface en0 --duration 60 --json --heuristics
 python3 -B protodetect.py policy lint policy-example.json --strict
@@ -94,6 +120,16 @@ same way. Live capture (`protodetect live`, and with it the presentation service
 capture to the Go binary after validating the options (`make parity-live` compares both on replayed streams),
 and the live key-log decryption worker does the same (`make parity-live-decrypt`).
 
+## New in v0.66 — Smart-home framing and DNS improvements
+
+The Python reference adds bounded LIFX header and Tuya CRC-32 framing checks,
+and validates TP-Link autokey JSON within explicit size and depth limits. It
+also adds three datagram probes and hardens DNS SRV/NSEC names, mDNS
+authoritative-answer handling and probe detection. See
+[`APPID.md`](APPID.md) and the [v0.66 behavior diff](docs/BEHAVIOUR-DIFF-V066.md).
+
+88 families, 79 automatic, 156 applications, 838 tests.
+
 ## New in v0.65 — Applications by server name
 
 HTTPS, QUIC and HTTP sessions are no longer just `ssl` or `web-browsing` when
@@ -102,7 +138,7 @@ applications (YouTube, Netflix, Teams, Zoom, Slack, WhatsApp, ChatGPT, GitHub,
 Office 365, ...) maps the SNI or Host by DNS label suffix. The name is a client
 assertion and the verdict says so; configured rules win, and encrypted
 ClientHello front names are never mapped.
-88 families, 79 automatic, 544 applications, 862 tests.
+88 families, 79 automatic, 156 applications, 833 tests.
 
 ## New in v0.64 — Weak cipher suites in TLS offers
 

@@ -1,0 +1,45 @@
+# Daily merge-readiness report: a trial merge of claude/go-migration into main inside the
+# runner (tools/merge_readiness.py, `git merge-tree --write-tree`), reported in the job summary
+# as clean or conflicting with every conflicting file. Report only: the job never pushes,
+# comments or opens anything, the token is `contents: read` and checkout keeps no credential.
+# GitHub runs `schedule` from the default branch's copy of this file; a change on a branch is
+# proven with `workflow_dispatch` on that branch (the workflow is registered, so dispatch works).
+name: merge-readiness
+
+on:
+  schedule:
+    - cron: "41 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merge-readiness
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  trial-merge:
+    name: trial merge of claude/go-migration into main (report only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: The tool's offline self-test
+        run: python -B tools/merge_readiness.py --self-test
+      - name: Trial merge (report only)
+        run: python -B tools/merge_readiness.py --base origin/main --head origin/claude/go-migration --summary "$GITHUB_STEP_SUMMARY"

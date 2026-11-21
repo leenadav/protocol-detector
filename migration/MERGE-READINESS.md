@@ -19,6 +19,23 @@ review of the frozen snapshots is Codex's. The draft pull-request text is `migra
 
 ### Conflicts today (trial merge at `7dcabb7`) and the resolution plan
 
+**Done on 2026-11-21 (PRO-69):** `main` `0ef7349` was merged into this branch with one normal merge commit (no rebase,
+no force-push). Each of the 9 conflicting files was resolved in favour of `main`'s intent:
+
+| File | Resolution |
+|---|---|
+| `ci.yml` and `workflows.lock.json` | `main`'s, since both of this branch's edits were already ported to `main` |
+| `SSDLC.md` | `main`'s rows |
+| `Makefile` | the union of the `.PHONY` lists; `main`'s `GO_TOOLCHAIN` and `go-check-minimum`, with `-mod=vendor`; this branch's `go-vendor-check` |
+| `README.md` | `main`'s structure, this branch's Go section, the stale "not merged" paragraph rewritten, `main`'s historical release-note counts |
+| `REVIEW-SCOPE.md` | the merged test count |
+| `test_content.py` and `STATUS.md` | this branch's side, which already carries #39's fix and its exception note |
+| `SOURCE.json` | regenerated |
+
+`content.py` auto-merged to this branch's version. Regenerating `cases.json` from the merged reference reproduces it byte
+for byte (7,430 cases), so `main`'s R1-R3 reference fix changes no committed case. The tables below are the record of
+the plan.
+
 Re-checked 2026-11-20 against `main` `2b97e2d` (`git merge --no-commit` in a scratch worktree, aborted; no ref
 changed): the same 7 files conflict. `ci.yml` and `workflows.lock.json` now have 2 hunks each, because `main` has
 the CI/CD lane's govulncheck port (`85e99e9`, PR #32), which resolves to `main`'s text. The Makefile, `README.md`,

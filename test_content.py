@@ -14,6 +14,12 @@ from protocol_engine import content
 from protocol_engine.host_apps import APP_DOMAINS, HOST_SUFFIXES, WEB_FRONTS, application_for_host, attribution_for_host, build_tables
 from tools import check_content, schema_check
 
+
+def _numeric_version(version):
+    """YYYY.MM.N as integers: 2026.11.9 sorts before 2026.11.10."""
+    return tuple(int(part) for part in version.split("."))
+
+
 CLIENT, SERVER = ("192.0.2.10", 52000), ("198.51.100.20", 80)
 
 

@@ -312,6 +312,7 @@ class Analyzer:
 
     def _udp_session(self, key, flow, reason):
         self.quic_assembler.reset((flow["client"], flow["server"]))     # D01: the flow's CRYPTO state ends with it
+        self.quic_assembler.reset((flow["server"], flow["client"]))
         if self.on_session is None:
             return
         # v0.43: both directions contribute. The client datagram decides as before; a server
@@ -403,8 +404,10 @@ class Analyzer:
             flow["bytes"][packet.source] = flow["bytes"].get(packet.source, 0) + len(packet.payload)
             latest = self.last_classification
             if latest.status == "invalidated":
-                # D02: a contradiction in this direction withdraws the identification it had established.
+                # D02: the flow is withdrawn, including a peer identification retained before the conflict.
+                # Otherwise session_verdict could select that peer and revive the invalidated session.
                 flow["observation"] = latest
+                flow["observations"].clear()
                 flow["observations"][packet.source] = latest
             elif flow["observation"].status == "invalidated" or flow["observations"].get(packet.source, latest).status == "invalidated":
                 # Review round 2: nothing after an invalidation revives the flow; a later identified datagram

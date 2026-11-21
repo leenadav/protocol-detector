@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -121,6 +121,14 @@ workflow-policy:
 	$(PYTHON) -B tools/check_go_drift.py --self-test
 	$(PYTHON) -B tools/codeql_gate.py --self-test
 	$(PYTHON) -B tools/go_ci.py --self-test
+	$(PYTHON) -B tools/go_fuzz_long.py --self-test
+	$(PYTHON) -B tools/content_gate.py --self-test
+	$(PYTHON) -B tools/merge_readiness.py --self-test
+	$(PYTHON) -B tools/perf_history.py --self-test
+	$(PYTHON) -B tools/build_go_release.py --self-test
+	$(PYTHON) -B tools/release_provenance.py --self-test
+	$(PYTHON) -B tools/check_required_checks.py --self-test
+	$(PYTHON) -B tools/check_required_checks.py
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 
@@ -166,8 +174,15 @@ content-pack:
 parity:
 	python3 -B migration/parity/compare.py --backend python
 
-# Migration M2: the Go module's own gate (pinned toolchain from go/go.mod; separate from `check` until the CI/CD lane wires it)
-GO_TOOLCHAIN := $(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod)
+# Migration M2: the Go module's own gate. go/go.mod's `go` line is the minimum Go the module needs, its
+# `toolchain` line the compiler it is built with, implicitly the `go` line when absent (go.dev/doc/toolchain).
+# go-check runs on the compiler (ci: go-engine), go-check-minimum on the minimum (ci: go-minimum): one Go per
+# target, each GOTOOLCHAIN naming exactly the Go the job installed, so neither switches Go mid-run.
+GO_TOOLCHAIN := $(or $(shell sed -n 's/^toolchain \(go.*\)$$/\1/p' go/go.mod),$(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod))
+GO_MINIMUM := $(shell sed -n 's/^go \(.*\)$$/go\1/p' go/go.mod)
+go-check-minimum:
+	cd go && GOTOOLCHAIN=$(GO_MINIMUM) GOFLAGS=-mod=vendor go vet ./...
+	cd go && GOTOOLCHAIN=$(GO_MINIMUM) GOFLAGS=-mod=vendor go test -race ./...
 
 # The engine's one module dependency (golang.org/x/crypto, key-log TLS decryption) is vendored in go/vendor, so
 # every Go build and test here runs with -mod=vendor and needs no module download (CI runs with GOPROXY=off).
