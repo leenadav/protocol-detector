@@ -5,15 +5,14 @@
 # the history of the newest successful run on the same branch is downloaded, extended and uploaded
 # again (90 days). A failing run uploads nothing, so a regression never becomes the baseline; dispatch
 # with accept_regression=true to record an intended change. Read-only token; nothing is pushed.
-# The push trigger on main is the activation. The one on the CI/CD lane's prep branch registered the
-# workflow, so workflow_dispatch could prove it before the merge (GitHub dispatches only registered files).
+# The push trigger on main is the activation; a change on a branch is proven with workflow_dispatch
+# on that branch (the workflow is registered, so dispatch works).
 name: perf-history
 
 on:
   push:
     branches:
       - main
-      - claude/cicd-release-prep
     paths-ignore:
       - "**.md"
   workflow_dispatch:

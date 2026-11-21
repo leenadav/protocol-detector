@@ -706,8 +706,9 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    base, ahead and behind counts and either clean or every conflicting file. Report only: the
    job holds `contents: read`, keeps no credential and never pushes, comments or opens anything;
    a conflict is a warning annotation, not a red run, and only an error (a missing branch, an
-   old git) fails it. Schedule and dispatch start once the file is on main; until then a `push`
-   trigger limited to claude/cicd-next and the file and its tool is the proof run. On
+   old git) fails it. The schedule runs from main's copy; a branch change is proven with
+   workflow_dispatch on the branch (the branch-limited `push` trigger that first registered the
+   workflow was removed once it was on main). On
    2026-11-18 the trial merge of `cb6707f` into main conflicts in 7 files (ci.yml, Makefile,
    README.md, REVIEW-SCOPE.md, SSDLC.md, presentation/SOURCE.json, tools/workflows.lock.json).
 32. Vendored Go dependencies (the engine lane vendors golang.org/x/crypto). The Go jobs keep
@@ -751,7 +752,8 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    (`actions: read`), extended and uploaded again; nothing is pushed or cached. A failing run
    uploads nothing, so a regression never becomes the baseline; dispatch input
    `accept_regression=true` records an intended change. A push trigger on the prep branch
-   registered the workflow, so workflow_dispatch proves it before the merge.
+   registered the workflow so workflow_dispatch could prove it before the merge; it was removed
+   once the workflow was on main.
 34. Release pipeline, draft (docs/RELEASING.md; Lee via Hermes, 2026-11-19). The one release
    controller, publish-release.yml (rule 5 keeps it the only tag workflow), gains in its read-only
    build job: reproducible Go binaries for five targets (`tools/build_go_release.py`: each built
