@@ -33,6 +33,7 @@ URL_RE = re.compile(r"`(https://[^`\s]+)`")
 
 def context():
     ctx = ssl.create_default_context()
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     bundle = Path("/root/.ccr/ca-bundle.crt")
     if bundle.exists():
         ctx.load_verify_locations(str(bundle))
