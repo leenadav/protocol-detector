@@ -70,14 +70,14 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 and 4 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `research/live-results-2026-11-21-r4.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
 | `atera.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `atera.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
-| `atera.pubnubapi.com` | round 3 (2026-11-21); **L** resolves; TLSv1.2, ALPN ``, cert `*.pubnubapi.com`, no subject organisation (domain-validated) (issuer Amazon) |
-| `atera-agent-heartbeat.servicebus.windows.net` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN ``, cert `servicebus.windows.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `ns-prod-am3-az501.westeurope.cloudapp.azure.com`: name usable, IPs never |
-| `atera-agent-heartbeat-cus.servicebus.windows.net` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN ``, cert `servicebus.windows.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `ns-prod-dm2-az501.centralus.cloudapp.azure.com`: name usable, IPs never |
+| `atera.pubnubapi.com` | round 3 (2026-11-21); **L** resolves; TLSv1.2, cert `*.pubnubapi.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `atera-agent-heartbeat.servicebus.windows.net` | round 3 (2026-11-21); **L** resolves; TLSv1.3, cert `servicebus.windows.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `ns-prod-am3-az501.westeurope.cloudapp.azure.com`: name usable, IPs never |
+| `atera-agent-heartbeat-cus.servicebus.windows.net` | round 3 (2026-11-21); **L** resolves; TLSv1.3, cert `servicebus.windows.net`, subject organisation **Microsoft Corporation** (issuer Microsoft Corporation); CNAME into shared front end `ns-prod-dm2-az501.centralus.cloudapp.azure.com`: name usable, IPs never |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

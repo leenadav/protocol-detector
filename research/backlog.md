@@ -58,6 +58,13 @@ older names these specs cite are queued for live round 5 (`live-hosts-r5.txt`).
 | 4 | N4 | Twilio: verified, all names under `twilio.com` | `apps/twilio.md` | 3 | 4 | 12 | DONE (no catalog change) |
 | 5 | N5 | Snowflake: verified, per-account names only | `apps/snowflake.md` | 4 | 3 | 12 | DONE (no catalog change) |
 
+Live round 5 (PRO-135, 2026-11-21, `live-results-2026-11-21-r5.tsv`): 12 names, 11 alive, 0 NXDOMAIN. Ownership by certificate:
+`sdds3.sophosupd.com` (SOPHOS LIMITED), `docusign.com` (DocuSign, Inc.). `docucdn-a.akamaihd.net` presents Akamai's generic
+certificate (shared edge: exact SNI only, N2 unchanged). `alert.hitmanpro.com` runs on Azure App Service with a domain-validated
+certificate (`hitmanpro.com` stays N2). `dc.services.visualstudio.com` is Application Insights telemetry (Microsoft
+certificate), which batch N already maps to `ms-telemetry` rather than a product. `docusign.net` fails TLS (not removal);
+`sophosxl.com` has no address and no documented host to probe (unverified). No catalog change follows.
+
 ### NAME: READY (batch M, after K: vendor network pages, PRO-92, 2026-11-21)
 
 Six enterprise apps from official network pages read in this session (Datadog, Microsoft Learn, AWS, Apple). Patch:

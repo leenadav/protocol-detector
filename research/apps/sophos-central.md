@@ -18,7 +18,7 @@ Sophos's cloud-managed endpoint protection (the page title now reads "Sophos Fus
 
 ## 4. Encrypted-traffic caveats
 
-All MCS, Intelix and live-terminal names fall under `sophos.com`, which is already mapped. The added domains are Sophos's update (`sophosupd`) and lookup (`sophosxl`) services. `hitmanpro.com` is a Sophos product domain that also serves the consumer HitmanPro scanner, so it is **N2** for Sophos Central. `sophosxl` lookups may also travel as DNS queries (port 53 is listed); the engine attributes by TLS SNI only, so those are not covered (`UNVERIFIED` how much of the lookup traffic is DNS). The two Microsoft names are Application Insights telemetry (see batch N: `dc.services.visualstudio.com` moves to `ms-telemetry`); the CA sites are shared.
+All MCS, Intelix and live-terminal names fall under `sophos.com`, which is already mapped. The added domains are Sophos's update (`sophosupd`) and lookup (`sophosxl`) services. `hitmanpro.com` is a Sophos product domain that also serves the consumer HitmanPro scanner, so it is **N2** for Sophos Central. `sophosxl` lookups may also travel as DNS queries (port 53 is listed); the engine attributes by TLS SNI only, so those are not covered (`UNVERIFIED` how much of the lookup traffic is DNS). The two Microsoft names are Application Insights telemetry (see batch N: `dc.services.visualstudio.com` moves to `ms-telemetry`); the CA sites are shared. Live round 5 (2026-11-21): the `sdds3.sophosupd.com` certificate names SOPHOS LIMITED (Akamai front end); `samples.sophosxl.net` (CloudFront), `sdds3.sophosupd.net` (Amazon) and `cloud.sophos.com` (Amazon) have domain-validated certificates; `alert.hitmanpro.com` CNAMEs into Azure App Service (`alertcloud.azurewebsites.net`) with a domain-validated certificate, so `hitmanpro.com` stays **N2** and only the name is used, never the Azure targets or IPs. HitmanPro maps to the same `sophos` id, so it is not counted twice. `sophosxl.com` has no address and the page names no host under it: unverified.
 
 ## 5. Confidence and false-positive risks
 
@@ -73,16 +73,16 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 and 4 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `research/live-results-2026-11-21-r4.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `sophos.com` | not yet verified (added after round 2; in `live-hosts-r5.txt` for the next run) |
-| `sophosxl.com` | not yet verified (added after round 2; in `live-hosts-r5.txt` for the next run) |
-| `sophosxl.net` | not yet verified (added after round 2; in `live-hosts-r5.txt` for the next run) |
-| `sophosupd.com` | not yet verified (added after round 2; in `live-hosts-r5.txt` for the next run) |
-| `sophosupd.net` | not yet verified (added after round 2; in `live-hosts-r5.txt` for the next run) |
-| `hitmanpro.com` | not yet verified (added after round 2; in `live-hosts-r5.txt` for the next run) |
+| `sophos.com` | round 5 (2026-11-21); **L** resolves; TLSv1.2, TLS via documented probe `cloud.sophos.com`, probe cert `central.sophos.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `sophosxl.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `sophosxl.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `samples.sophosxl.net` (round 5, cdn) |
+| `sophosupd.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `sdds3.sophosupd.com` (round 5, cdn); probe certificate subject organisation **SOPHOS LIMITED** |
+| `sophosupd.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `sdds3.sophosupd.net` (round 5) |
+| `hitmanpro.com` | round 5 (2026-11-21); **L** resolves; TLSv1.3, TLS via documented probe `alert.hitmanpro.com`, probe cert `alert.hitmanpro.com`, no subject organisation (domain-validated) (issuer DigiCert Inc) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

@@ -18,7 +18,7 @@ Not stated in the text read. "Because of Akamai, IP allowlisting is no longer su
 
 ## 4. Encrypted-traffic caveats
 
-`docucdn-a.akamaihd.net` carries the vendor's name on Akamai's shared `akamaihd.net`, so it is proposed as an exact name (the bucket-host precedent). `ronp-a.akamaihd.net` does not, and `edgekey.net`, `akamaiedge.net` and Optimizely are shared CDN or third party: none is proposed. The rest of the domain list (likely including `docusign.net`, already mapped) needs a full read.
+`docucdn-a.akamaihd.net` carries the vendor's name on Akamai's shared `akamaihd.net`, so it is proposed as an exact name (the bucket-host precedent). `ronp-a.akamaihd.net` does not, and `edgekey.net`, `akamaiedge.net` and Optimizely are shared CDN or third party: none is proposed. The rest of the domain list (likely including `docusign.net`, already mapped) needs a full read. Live round 5 (2026-11-21): `docucdn-a.akamaihd.net` presents Akamai's generic certificate (`a248.e.akamai.net`, Akamai Technologies) with no DocuSign identity, so it is a shared Akamai edge name: usable only as the exact SNI (**N2**), never the `akamaihd.net` suffix or the IPs. `docusign.com` presents a certificate naming DocuSign, Inc.; `docusign.net` resolves but the handshake fails, which is not a removal reason.
 
 ## 5. Confidence and false-positive risks
 
@@ -71,13 +71,13 @@ The remaining domain list stays open (`blocked-urls.md` row 24).
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 and 4 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `research/live-results-2026-11-21-r4.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `docusign.com` | not yet verified (added after round 2; in `live-hosts-r5.txt` for the next run) |
-| `docusign.net` | not yet verified (added after round 2; in `live-hosts-r5.txt` for the next run) |
-| `docucdn-a.akamaihd.net` | not yet verified (added after round 2; in `live-hosts-r5.txt` for the next run) |
+| `docusign.com` | round 5 (2026-11-21); **L** resolves; TLSv1.3, cert `www.docusign.com`, subject organisation **DocuSign, Inc.** (issuer DigiCert Inc) |
+| `docusign.net` | round 5 (2026-11-21); resolves; TLS handshake failed (error not relayed, round 5): not a removal reason |
+| `docucdn-a.akamaihd.net` | round 5 (2026-11-21); **L** resolves; TLSv1.3, cert `a248.e.akamai.net`, subject organisation **Akamai Technologies, Inc.** (issuer DigiCert Inc); CNAME into shared front end `docucdn-a.akamaihd.net.edgesuite.net>a1737.b.akamai.net`: name usable, IPs never |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

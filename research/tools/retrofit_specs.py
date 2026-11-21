@@ -146,11 +146,12 @@ def _later(fname):
                                                   delimiter="\t")}
 
 
-LATER = [("round 4", _later("live-results-2026-11-21-r4.tsv")), ("round 3", _later("live-results-2026-11-21-r3.tsv"))]
+LATER = [("round 5", _later("live-results-2026-11-21-r5.tsv")), ("round 4", _later("live-results-2026-11-21-r4.tsv")),
+         ("round 3", _later("live-results-2026-11-21-r3.tsv"))]
 
 
 def live_status(name):
-    """(L result text, flags list): the latest round that has the name (4, 3, then 2), otherwise round 1."""
+    """(L result text, flags list): the latest round that has the name (5, 4, 3, then 2), otherwise round 1."""
     rnd, r = next(((label, t[name]) for label, t in LATER if name in t), ("round 2", LIVE2.get(name)))
     if r is None:
         return live_status_r1(name)
@@ -162,20 +163,24 @@ def live_status(name):
         probe, _, pflags = (r.get("probe") or "").partition(":")
         pf = [f for f in pflags.split(",") if f]
         if probe and not {"nxdomain", "no-address", "tls-fail"} & set(pf):
-            return ("apex has no address (normal for a suffix entry); suffix **verified** through documented `%s` (%s%s)"
-                    % (probe, rnd, (", " + ",".join(pf)) if pf else "")), flags + pf
+            org = r.get("subject_o") if r.get("via_probe") == "1" and r.get("subject_o") not in (None, "", "None") else None
+            return ("apex has no address (normal for a suffix entry); suffix **verified** through documented `%s` (%s%s)%s"
+                    % (probe, rnd, (", " + ",".join(pf)) if pf else "",
+                       "; probe certificate subject organisation **%s**" % org if org else "")), flags + pf
         return "apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source)", flags
     parts = []
     if rnd != "round 2":
         parts.append("%s (2026-11-21)" % rnd)
     if "tls-fail" in flags:
         parts.append(("resolves; TLS handshake failed (%s) in both rounds where checked: not a removal reason" % r["tls_error"]) if rnd == "round 2"
-                     else "resolves; TLS handshake failed (%s, %s): not a removal reason" % (r["tls_error"], rnd))
+                     else "resolves; TLS handshake failed (%s, %s): not a removal reason" % (r["tls_error"] or "error not relayed", rnd))
     else:
         org = r["subject_o"] if r["subject_o"] not in ("", "None") else None
-        parts.append("**L** resolves; %s, ALPN `%s`, cert `%s`, %s (issuer %s)" % (
-            r["tls"], r["alpn"], r["subject_cn"], ("subject organisation **%s**" % org) if org else "no subject organisation (domain-validated)",
-            r["issuer_o"]))
+        via = r.get("via_probe") == "1"
+        parts.append("**L** resolves; %s%s, %s `%s`, %s (issuer %s)" % (
+            r["tls"], ", ALPN `%s`" % r["alpn"] if r["alpn"] else "",
+            "TLS via documented probe `%s`, probe cert" % r["probe"].partition(":")[0] if via else "cert", r["subject_cn"],
+            ("subject organisation **%s**" % org) if org else "no subject organisation (domain-validated)", r["issuer_o"]))
     if "cdn" in flags:
         parts.append("CNAME into shared front end `%s`: name usable, IPs never" % r["cname_tail"])
     if "ech" in flags:
@@ -318,8 +323,8 @@ def build(spec, meta):
     web = meta["web"]
     live_rows = [(d,) + live_status(d) for d in domains]
     s = [START, "", "## 9. Live verification (L)", "",
-         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 and 4 "
-         "of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `research/live-results-2026-11-21-r4.tsv`; tool "
+         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 "
+         "of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool "
          "`research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). "
          "`L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never "
          "evidence." % LIVE_CITE, ""]
