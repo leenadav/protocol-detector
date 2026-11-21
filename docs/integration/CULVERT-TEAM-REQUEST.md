@@ -143,12 +143,14 @@ authoritative; we propose the SaaS feed for the application and the detector for
 ## Allocation budget gap
 
 Measured 2026-11-21 on the cloud container (4 vCPU, shared, Go 1.27.4). These are local CPU figures, not production
-latency.
+latency. **Corrected 2026-11-21 (PRO-91):** the detector has two figures, and the earlier text gave only the first.
+They measure different things; `docs/integration/ENGINE-DRIFT-2026-11-21.md` has both tables with their commands.
 
 | Cost | Allocations | Bytes | Source |
 |---|---|---|---|
-| Detector, one TLS flow (`NewFlow`, client and server flights, `Close`) | **191** | 15,369 B, about 15 µs | `go/detector` `BenchmarkFlow/tls`; gate `TestFlowAllocationBudget` ceiling 240 |
-| Detector, HTTP / SSH / unknown flow | 128 / 89 / 15 | 8,581 / 6,706 / 2,352 B | same benchmark |
+| Detector engine core, one flow, benchgate workloads | tls_whole **33**, tls_fragmented 37, http_small 26, http_fragmented 38, ssh_banner_kexinit 34, unknown_16x1KiB 10 | 1,032 to 34,210 B on the trial merge (not reported at `0081f6f`) | engine `claude/go-migration` `0081f6f`, `go test -tags benchgate -run TestBenchGate_AllocationsPerFlow ./internal/bench`; Research Lab, PRO-82, median of 5 |
+| Detector through the public package, one whole TLS flow (`NewFlow`, client and server flights, `Close`) | **191** | 15,369 B, about 15 µs | lane `3efda92`, `go/detector` `BenchmarkFlow/tls`; gate `TestFlowAllocationBudget` ceiling 240; 192 on a trial merge with `0081f6f` |
+| Detector through the public package, HTTP / SSH / unknown flow | 128 / 89 / 15 | 8,581 / 6,706 / 2,352 B | same benchmark |
 | Culvert, one proxied HTTP request (whole forward) | **82** (gate 85) | 10,729 B | `TestBenchGate_HTTPForwardAllocs` |
 | Culvert, policy evaluation at 10 to 10,000 rules | 0 (gate 4) | — | `TestBenchGate_PolicyEvalAllocs` |
 | Culvert, decryption record | 1, or 2 when pseudonymized (gates 1, 2) | 320 to 336 B | `TestBenchGate_DecryptionProjectionAllocs` |
@@ -159,10 +161,11 @@ Culvert's gates run with `go test -tags benchgate` (`pr-fast-gate.yml`, job `ben
 build.
 
 What the gap means:
-- **Per flow, the detector allocates about 2.3 times what Culvert spends on a whole proxied HTTP request.** On an
-  observed bypass tunnel that is new work on a path that today allocates almost nothing per byte.
-- **The working plan's own hypothesis is at most 64 allocations per flow (section 9).** TLS is three times over it,
-  HTTP twice, SSH 1.4 times; only an unknown stream fits.
+- **The engine core fits the working plan's hypothesis of at most 64 allocations per flow (section 9):** 10 to 38 on
+  the benchgate workloads. The engine lane gates it at 64 (PRO-80).
+- **The public package does not, yet.** A whole TLS flow through it costs 191 allocations, about 2.3 times Culvert's
+  whole proxied HTTP request. 54% of them are string copies in `detector.bounded`, which detaches snapshots from
+  engine memory. That is this side's work, once Culvert names its budget.
 - **Residency is not the gap.** The detector's retained bytes peak at 4,112 per flow across the fixtures, inside its
   32 KiB allowance, and drop to zero at `Close`. After the window, the tunnel is back on `idleCopyCounted`, whose
   611.5 B/direction is unchanged. During the window, the lab's tap buffer is 4 KiB per direction, the size of

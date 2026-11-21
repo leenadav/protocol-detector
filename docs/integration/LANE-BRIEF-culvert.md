@@ -29,7 +29,7 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   The Culvert clone's push URL is disabled.
 - **Data:** synthetic and loopback only. The lab's origins are on RFC 5737 addresses.
 
-## 2. Current state (2026-11-21, after PRO-81)
+## 2. Current state (2026-11-21, after PRO-91)
 
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
@@ -41,8 +41,16 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
     unchanged: 84 of 84 checks on 2026-11-17.
 - **Culvert team request** (`docs/integration/CULVERT-TEAM-REQUEST.md`): anchors refreshed at `ef94311`. It
   covers the SNI finding, UDP/HTTP3 and the allocation gap. It is not sent; Lee decides.
-- **Allocation gap:** detector TLS 191 allocations per flow, against Culvert's whole HTTP forward at 82 and the
-  plan's hypothesis of 64. Waiting on Culvert's budget; no tuning toward a number nobody set.
+- **Allocations per flow, two figures** (`docs/integration/ENGINE-DRIFT-2026-11-21.md`):
+  - engine core on the benchgate workloads at `0081f6f`: tls_whole 33, tls_fragmented 37, http_small 26,
+    http_fragmented 38, ssh_banner_kexinit 34, unknown 10 (Research Lab, PRO-82). Inside the plan's 64.
+  - a whole flow through `go/detector` at `3efda92`: TLS 191, HTTP 128, SSH 89, unknown 15. 54% of the TLS count
+    is `detector.bounded`.
+
+  Culvert's whole HTTP forward is 82. Waiting on Culvert's budget before tuning.
+- **Engine drift** (PRO-91): a trial merge with `claude/go-migration` `0081f6f` has 23 conflicting files, and 5 Go
+  packages fail. `go/consumertest` does not build, because the engine's `go.mod` now says `go 1.27.4` and requires
+  `golang.org/x/crypto`. The lab still passes 74 of 74 against the merged tree. See the report.
 
 ## 3. Where things live
 
@@ -67,8 +75,18 @@ The lab, on this container:
 
 Culvert's allocation gates need `-tags benchgate`.
 
-## 5. Open items (all waiting on someone else)
+## 5. Open items
 
+- **Decision (Lee, with the engine lane):** the engine's `go 1.27.4` and `golang.org/x/crypto` against plan items #3
+  and #19. Options are in the drift report, section 5.
+- **Before any merge of the engine branch:** reconcile `tlsx`, `textroute` and `engine` with the engine lane:
+  - credit coverage of the engine's new buffers;
+  - SSH list ownership;
+  - 7 replay mismatches.
+
+  Then this lane's follow-ups from the report, section 5. One of them is a defect in this lane's own test:
+  `TestNoCodeOutsideThePackageWritesAValidatedPack` ignores build tags.
+- **The public package's allocations** (`bounded` first): after Culvert names a budget.
 - Codex's review of the frozen milestone and the queued commits (Sunday).
 - The Culvert team's answers (request items 1 to 6), and Lee's decision to send the request.
 - Repository settings and the first `go/v0.x.y` tag (Lee).
@@ -76,8 +94,8 @@ Culvert's allocation gates need `-tags benchgate`.
 ## 6. Frozen and queued SHAs
 
 - **Frozen milestone:** `8d28748..725cd95` (base `d725890`): #15, #14, #16. Never change it.
-- **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit is added
-  there in the same push.
+- **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
+  (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
 ## 7. Pitfalls
 
@@ -90,3 +108,10 @@ Culvert's allocation gates need `-tags benchgate`.
 - **The permission system refuses some combined commands,** for example a CI-file copy or a push chained with a
   build. Run the safe parts on their own, and stop and report if a write is refused.
 - **Pronouns:** Lee's are not stated. Use neutral wording.
+- **Two allocation figures.** "Allocations per flow" means different things in the two lanes: the engine's
+  benchgate measures the inspector on benchgate workloads; this lane's `BenchmarkFlow` measures a whole flow through
+  `go/detector`. Always quote which, with the commit.
+- **The pitfall above struck again:** a restore step such as `cp .../bin/culvert-lab` placed in the same command as
+  the lab script also matches the script's `pkill -f`. Restore in a separate command.
+- **Merge trials go in a worktree.** Use `git worktree add --detach /home/user/pd-drift <lane head>` and merge
+  there; never on the lane branch.
