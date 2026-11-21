@@ -68,6 +68,17 @@ Suggested candidates not done in batch M (no spec written; `blocked-urls.md` row
 | ServiceNow, Workday, CrowdStrike Falcon sensor, SentinelOne agent, Cisco Secure Client, DocuSign, Snowflake, Twilio, Sophos Central, Egnyte | 4 to 5 | 1 | 4 to 5 | BLOCKED | the vendors' documentation hosts are not reachable from this session (the allowlist is full); the official network page must be read from the Hermes server |
 | Palo Alto GlobalProtect | 4 | 1 | 4 | PARTIAL | `docs.paloaltonetworks.com` is reachable but renders its pages client-side; no endpoint text was read. Portals and gateways are customer-hosted, so vendor names (if any) are only for the cloud services |
 
+Follow-up relayed by Hermes on PRO-92 (2026-11-21):
+
+- Live rounds 3 and 4 ran with TLS. Round 3 (PRO-97): 69 names, 64 live, 0 NXDOMAIN, 32 certificates name an organisation,
+  20 CDN-fronted, 0 ECH, 3 h3, 8 with no address, and 1 name and 1 probe with failed TLS. Round 4 (PRO-114): 66 names (10 with
+  probes), 57 live, 0 NXDOMAIN, 42 name an organisation, 21 CDN-fronted, 0 ECH, 0 h3, 10 with no address. `axm-adm-enroll`,
+  `axm-adm-mdm`, `axm-adm-scep` and `axm-app` (`.apple.com`) resolve but fail the TLS handshake, which is not a removal reason (brief §7).
+  The amazonaws and api.aws names have domain-validated certificates, which is expected. Only these aggregates are in this
+  repository; the specs' section 9 is updated once the per-name tables arrive as TSV.
+- Research Lab (PRO-108) read rows 24 to 27 (DocuSign, Snowflake, Twilio, Sophos); the page content was not included in the
+  relay. Rows 19 to 23, 28 and 29 stay BLOCKED (sign-in, bot challenge or JavaScript-only).
+
 ### NAME: READY (batch K, after J: dependency mapping pass 2, PRO-36, 2026-11-20)
 
 Pass 2: Hermes ran `observe_web.js` over the 59 URLs on its server with a direct connection (`observations/pass2-2026-11-20.tsv`).
