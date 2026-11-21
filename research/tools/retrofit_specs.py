@@ -130,7 +130,7 @@ for _line in (ROOT / "live-hosts-r2.txt").read_text().splitlines():
 
 # Names queued for later live rounds (first field of each line), in round order.
 PENDING = [(f, {l.split()[0] for l in (ROOT / f).read_text().splitlines() if l.strip() and not l.startswith("#")})
-           for f in ("live-hosts-r3.txt", "live-hosts-r4.txt")]
+           for f in ("live-hosts-r3.txt", "live-hosts-r4.txt", "live-hosts-r5.txt")]
 
 
 def resolves(r):
@@ -306,7 +306,7 @@ def build(spec, meta):
         vec.append(("L-", h, "not " + "/".join(ids) + " (%s)" % why, fmt(a), "PASS" if ok else "FAIL"))
         if not ok:
             fails.append(h)
-    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K and M as rebuilt 2026-11-21)", ""]
+    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M and N as rebuilt 2026-11-21)", ""]
     if vec:
         sec6 += ["O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); "
                  "L- = look-alike or label-boundary name (must not be this app).", "",

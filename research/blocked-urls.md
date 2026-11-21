@@ -15,10 +15,6 @@ controls. For each page, please open the exact URL in a normal browser and relay
 | 21 | CrowdStrike Falcon sensor | **URL not located**: the vendor's documentation host is not reachable from this session (allowlist full, 2026-11-21) | host not allowed | the official network, firewall or allowlist page: server names, ports, date (batch M, PRO-92) ; Research Lab (PRO-108): still blocked (sign-in, bot challenge or JavaScript-only) |
 | 22 | SentinelOne agent | **URL not located**: the vendor's documentation host is not reachable from this session (allowlist full, 2026-11-21) | host not allowed | the official network, firewall or allowlist page: server names, ports, date (batch M, PRO-92) ; Research Lab (PRO-108): still blocked (sign-in, bot challenge or JavaScript-only) |
 | 23 | Cisco Secure Client (AnyConnect) | **URL not located**: the vendor's documentation host is not reachable from this session (allowlist full, 2026-11-21) | host not allowed | the official network, firewall or allowlist page: server names, ports, date (batch M, PRO-92) ; Research Lab (PRO-108): still blocked (sign-in, bot challenge or JavaScript-only) |
-| 24 | DocuSign | read by Research Lab on the Hermes server (PRO-108, 2026-11-21) | | content awaits relay to this lane (batch M follow-up) |
-| 25 | Snowflake | read by Research Lab on the Hermes server (PRO-108, 2026-11-21) | | content awaits relay to this lane (batch M follow-up) |
-| 26 | Twilio | read by Research Lab on the Hermes server (PRO-108, 2026-11-21) | | content awaits relay to this lane (batch M follow-up) |
-| 27 | Sophos Central | read by Research Lab on the Hermes server (PRO-108, 2026-11-21) | | content awaits relay to this lane (batch M follow-up) |
 | 28 | Egnyte | **URL not located**: the vendor's documentation host is not reachable from this session (allowlist full, 2026-11-21) | host not allowed | the official network, firewall or allowlist page: server names, ports, date (batch M, PRO-92) ; Research Lab (PRO-108): still blocked (sign-in, bot challenge or JavaScript-only) |
 | 29 | Palo Alto GlobalProtect | **URL not located**: `docs.paloaltonetworks.com` answers but renders client-side | JavaScript-only page | any Palo Alto-operated names the GlobalProtect app reaches (portals and gateways are customer-hosted) ; Research Lab (PRO-108): still blocked (sign-in, bot challenge or JavaScript-only) |
 
@@ -44,6 +40,10 @@ Rows 12 to 18 were read by Research Lab from the Hermes server on 2026-11-20 (PR
 | 16 | Atera (agent section) | batch J (`apps/atera.md`) |
 | 17 | Salesforce "Allow the Required Domains" | batch J (`apps/salesforce.md`): 22 domains added |
 | 18 | Grammarly "WebSockets Support Q&A" | batch J (`apps/grammarly.md`): `grammarly.net` added; `coda.io` left out (separate product) |
+| 24 | DocuSign (PRO-108, relayed PRO-121) | batch N (`apps/docusign.md`): `docucdn-a.akamaihd.net` added; PARTIAL, the domain list was cut off in the extract |
+| 25 | Snowflake | batch N (`apps/snowflake.md`): no fixed list (per-account names from `SYSTEM$ALLOWLIST()`); no change |
+| 26 | Twilio | batch N (`apps/twilio.md`): all names under `twilio.com`; no change (the essential-domains support article returned 403) |
+| 27 | Sophos Central | batch N (`apps/sophos-central.md`): five Sophos domains added; Endpoint/EDR/XDR/MDR section only |
 
 Not listed (decided low priority, 2026-11-18): Box (sign-in required) and Slack (workspace-specific list).
 No official network page found (not listed): Smartsheet, Airtable, npm, PyPI, NinjaOne (proxy article not located), Windsurf (proxy settings only, no domain list).

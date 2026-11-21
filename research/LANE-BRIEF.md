@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-21 (PRO-92, batch M; live round 4 partial relay PRO-117 merged; PRO-120 column name). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-21 (PRO-92: batch M, live rounds 3 and 4 merged, batch N from PRO-121). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -25,14 +25,15 @@ and content-pack patches for the Engine lane.
 ## 2. Current state
 
 - Branch head: see `git log -1` (this brief is updated in each task's own commit).
-- 75 specs in `research/apps/` (registry `research/apps.json`), all retrofitted to method v2 (sections 9 to 11).
+- 79 specs in `research/apps/` (registry `research/apps.json`), all retrofitted to method v2 (sections 9 to 11).
 - Content patches A, B, B2 and C are implemented by Engine (releases 2026.11.3 to 2026.11.6). D, E, F, G, H, I, R, L,
-  J, K and M are proposed and **not yet implemented** (placeholder releases up to `2026.12.8`; J = vendor pages for rows 12 to 18, PRO-35; K = dependency pass 2, PRO-36;
-  M = six enterprise apps from vendor network pages, PRO-92).
+  J, K, M and N are proposed and **not yet implemented** (placeholder releases up to `2026.12.9`; J = vendor pages for rows 12 to 18, PRO-35; K = dependency pass 2, PRO-36;
+  M = six enterprise apps from vendor network pages, PRO-92; N = Sophos, DocuSign, Twilio, Snowflake, PRO-121).
 - D09 (ISCX VPN-nonVPN 2016) has been measured twice: per-family, per-application, and email server names.
-- Live verification rounds 1 and 2 are in (run by Hermes): of 375 spec names, 207 live (78 with a certificate naming an organisation),
-  17 suffixes verified by probe, 2 NXDOMAIN, 30 CDN-fronted, 3 ECH-capable, 28 offer h3; 57 await round 3.
-- In flight, run by Hermes on the server: live round 2, dependency-mapping pass 2, ranking, and two licence quotes.
+- Live verification rounds 1 to 4 are in (run by Hermes): of 444 spec names, 301 live (137 with a certificate naming an organisation),
+  20 suffixes verified by probe, 88 apexes with no address and no probe, 22 TLS failures (not removal), 2 NXDOMAIN, 61 CDN-fronted,
+  3 ECH-capable, 30 offer h3; 11 (batch N) await round 5.
+- In flight, run by Hermes on the server: live round 5 and the ranking run.
 
 ## 3. Where things live (reading order)
 
@@ -57,14 +58,14 @@ python3 -B -m unittest discover -q
 (about 30 s; expect `OK` on this branch, which has no product changes.)
 
 ```bash
-git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch ~-/research/patches/batch-k-dependency-pass2.patch ~-/research/patches/batch-m-name-based.patch && python3 -B tools/check_content.py --update
+git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch ~-/research/patches/batch-k-dependency-pass2.patch ~-/research/patches/batch-m-name-based.patch ~-/research/patches/batch-n-name-based.patch && python3 -B tools/check_content.py --update
 ```
-(a few seconds; expect `release 2026.12.8 digest 79f36d67c88c72b5 (462 host entries)`.)
+(a few seconds; expect `release 2026.12.9 digest 80ecb5542510f862 (462 host entries)`.)
 
 ```bash
 python3 -B research/tools/retrofit_specs.py "$SCRATCH/gm" research/observations/pass1-2026-11-19.json,research/observations/pass2-2026-11-20.tsv
 ```
-(under 1 s; expect `"specs": 75`, `"vectors": 1137`, `"fail": []` and 4 `gaps`. Add `--write` to regenerate the spec sections.)
+(under 1 s; expect `"specs": 79`, `"vectors": 1153`, `"fail": []` and 4 `gaps`. Add `--write` to regenerate the spec sections.)
 
 Per-patch content checks, run in the scratch checkout and taking about 2 minutes: `make content content-pack`,
 `python3 -B migration/parity/compare.py --backend python`, `make parity-go`, and the unit tests there. The only
@@ -74,23 +75,23 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 
 | Item | Waits on |
 |---|---|
-| Patches D to I, L, J, K, M (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
+| Patches D to I, L, J, K, M, N (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
 | Main-integration PRs #42 to #53 (PRO-43) | #42, #43, #52, #53 merged; the rest open, CI gate green; Lee merges after Hermes review (this lane never merges or comments) |
-| Batch M to `main` | not opened: Hermes schedules it after review (PRO-92) |
+| Batches M and N to `main` | not opened: Hermes schedules them after review (PRO-92) |
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
-| Live rounds 1 to 4 | 1, 2 and part of 4 are in the specs. Round 4 (PRO-112, from `df91894`): 30 of 66 rows in `live-results-2026-11-21-r4.tsv` (PRO-117; column 13 is `a_count`, PRO-120). Rows 1 to 36 of round 4 and all 69 rows of round 3 (PRO-97) exist as PRO-92 comments, documents and a Hermes server file (PRO-120), none of which reaches this lane: they wait on the rows pasted into an answer body |
+| Live rounds 1 to 5 | 1 to 4 done and merged into section 9 (`live-results-2026-11-20*.tsv`, `live-results-2026-11-21-r3.tsv` 69 names, `-r4.tsv` 66 names; relayed in full PRO-117/PRO-121): every name cited by the batch M and earlier specs has a result. Round 5 (`live-hosts-r5.txt`, 12 names, batch N) waits on a Hermes run |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
 | Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (2026-11-20, `datasets.md`); waits on the Hermes server run of `rank_domains.py` (Majestic CSV; CrUX via BigQuery) |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
 | Content version ordering | Engine: numeric comparison plus a regression test, then renumber the placeholders |
-| Blocked vendor pages | WhatsApp and Hugging Face (no official page known). Batch M rows 24 to 27 (DocuSign, Snowflake, Twilio, Sophos) were read by Research Lab (PRO-108); the content waits on a relay. Rows 19 to 23, 28 and 29 stay blocked (sign-in, bot challenge or JavaScript-only, per Research Lab; nothing bypassed) |
+| Blocked vendor pages | WhatsApp and Hugging Face (no official page known). Rows 19 to 23, 28 and 29 (ServiceNow, Workday, CrowdStrike, SentinelOne, Cisco Secure Client, Egnyte, GlobalProtect) stay blocked (sign-in, bot challenge or JavaScript-only, per Research Lab, PRO-108). Rows 24 to 27 resolved in batch N; DocuSign's domain list is still incomplete |
 | Culvert field data for prioritisation | not available yet (placeholder in the backlog) |
 
 ## 6. Frozen SHAs awaiting Codex
 
 None. This lane does not use the Codex mailbox (Lee, via Hermes: no GitHub communication). Its output is reviewed by
 the Engine lane when a patch is implemented. The frozen bases it depends on are `claude/go-migration`
-`c08773fc8da8d210c8e66d67190f883e608d7bb4` (the base of the D-to-M stack) and `2fd94529e29020eba4096e890567655b78185d1e`
+`c08773fc8da8d210c8e66d67190f883e608d7bb4` (the base of the D-to-N stack) and `2fd94529e29020eba4096e890567655b78185d1e`
 (the first D09 build).
 
 ## 7. Pitfalls learned

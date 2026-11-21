@@ -200,6 +200,11 @@
   "docker.com",
   "docker.io"
  ],
+ "docusign.md": [
+  "docucdn-a.akamaihd.net",
+  "docusign.com",
+  "docusign.net"
+ ],
  "dropbox.md": [
   "addtodropbox.com",
   "db.tt",
@@ -511,6 +516,17 @@
   "slack-msgs.com",
   "slack.com"
  ],
+ "snowflake.md": [
+  "snowflakecomputing.com"
+ ],
+ "sophos-central.md": [
+  "hitmanpro.com",
+  "sophos.com",
+  "sophosupd.com",
+  "sophosupd.net",
+  "sophosxl.com",
+  "sophosxl.net"
+ ],
  "splashtop.md": [
   "api.splashtop.cn",
   "api.splashtop.eu",
@@ -530,6 +546,9 @@
   "telegram.me",
   "telegram.org",
   "telesco.pe"
+ ],
+ "twilio.md": [
+  "twilio.com"
  ],
  "webex.md": [
   "ciscospark.com",

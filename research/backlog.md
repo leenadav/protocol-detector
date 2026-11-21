@@ -44,6 +44,20 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch N, after M: rows 24 to 27 read by Research Lab, PRO-108/PRO-121, 2026-11-21)
+
+Patch: `patches/batch-n-name-based.patch` (placeholder release `2026.12.9`, digest `80ecb5542510f862`, 462 host entries). Tested:
+22 targeted vector names (all as expected), rollback exact, parity 7480/7480 (Python and Go), 88/88 families. New names and the
+older names these specs cite are queued for live round 5 (`live-hosts-r5.txt`).
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | N1 | Sophos Central: `sophosxl.com`, `sophosxl.net`, `sophosupd.com`, `sophosupd.net`, `hitmanpro.com` | `apps/sophos-central.md` | 4 | 4 | 16 | READY (`hitmanpro.com` at N2) |
+| 2 | N2 | `dc.services.visualstudio.com` (Application Insights telemetry) from `visual-studio` to `ms-telemetry` | `apps/sophos-central.md`, `apps/power-bi.md` | 3 | 4 | 12 | READY (N2; was a mis-attribution) |
+| 3 | N3 | DocuSign: exact `docucdn-a.akamaihd.net` | `apps/docusign.md` | 4 | 2 | 8 | PARTIAL (domain list cut off in the extract) |
+| 4 | N4 | Twilio: verified, all names under `twilio.com` | `apps/twilio.md` | 3 | 4 | 12 | DONE (no catalog change) |
+| 5 | N5 | Snowflake: verified, per-account names only | `apps/snowflake.md` | 4 | 3 | 12 | DONE (no catalog change) |
+
 ### NAME: READY (batch M, after K: vendor network pages, PRO-92, 2026-11-21)
 
 Six enterprise apps from official network pages read in this session (Datadog, Microsoft Learn, AWS, Apple). Patch:
@@ -65,7 +79,7 @@ Suggested candidates not done in batch M (no spec written; `blocked-urls.md` row
 
 | Item | V | R | Score | Status | Missing |
 |---|---|---|---|---|---|
-| ServiceNow, Workday, CrowdStrike Falcon sensor, SentinelOne agent, Cisco Secure Client, DocuSign, Snowflake, Twilio, Sophos Central, Egnyte | 4 to 5 | 1 | 4 to 5 | BLOCKED | the vendors' documentation hosts are not reachable from this session (the allowlist is full); the official network page must be read from the Hermes server |
+| ServiceNow, Workday, CrowdStrike Falcon sensor, SentinelOne agent, Cisco Secure Client, Egnyte (DocuSign, Snowflake, Twilio and Sophos: batch N) | 4 to 5 | 1 | 4 to 5 | BLOCKED | the vendors' documentation hosts are not reachable from this session (the allowlist is full); the official network page must be read from the Hermes server |
 | Palo Alto GlobalProtect | 4 | 1 | 4 | PARTIAL | `docs.paloaltonetworks.com` is reachable but renders its pages client-side; no endpoint text was read. Portals and gateways are customer-hosted, so vendor names (if any) are only for the cloud services |
 
 Follow-up relayed by Hermes on PRO-92 (2026-11-21):
@@ -80,8 +94,7 @@ Follow-up relayed by Hermes on PRO-92 (2026-11-21):
   TLS has a certificate naming its vendor. Decision 3 outcome for the three O-level gaps: `dockerstatic.com`,
   `campaign.slackhq.com` and `www.zndsk.com` have domain-validated certificates, so they stay unmapped (like `cdn01.boxcdn.net`).
   `salesforceiq.com` and `app.salesforceiq.com` fail TLS (`SSLError`): not a removal reason.
-- Research Lab (PRO-108) read rows 24 to 27 (DocuSign, Snowflake, Twilio, Sophos); the page content was not included in the
-  relay. Rows 19 to 23, 28 and 29 stay BLOCKED (sign-in, bot challenge or JavaScript-only).
+- Research Lab (PRO-108) read rows 24 to 27 (DocuSign, Snowflake, Twilio, Sophos); relayed in full as PRO-121 and used in batch N. Rows 19 to 23, 28 and 29 stay BLOCKED (sign-in, bot challenge or JavaScript-only).
 
 ### NAME: READY (batch K, after J: dependency mapping pass 2, PRO-36, 2026-11-20)
 

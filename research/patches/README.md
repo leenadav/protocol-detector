@@ -365,3 +365,24 @@ Apps, Power Automate, Azure portal), AWS (Amazon Q Developer) and Apple (enterpr
 | Vectors | 47 targeted names (all as expected); 1,137 method-v2 vectors across 75 specs, all pass |
 | Parity | 7479/7479 Python and Go; 88/88 families |
 | Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 462) |
+
+## Batch N: `batch-n-name-based.patch` (after M)
+
+Rows 24 to 27 of `blocked-urls.md`, read by Research Lab from the Hermes server (PRO-108) and relayed in full on 2026-11-21
+(PRO-121). Placeholder release **`2026.12.9`**, with `_PRIOR_HOST_STATE["2026.12.8"]` and `_RELEASED_COMPONENTS["2026.12.8"]`.
+Apply after M.
+
+- `sophos` gains `sophosxl.com`, `sophosxl.net`, `sophosupd.com`, `sophosupd.net` and `hitmanpro.com` (N2).
+- `docusign` gains the exact vendor-named CDN host `docucdn-a.akamaihd.net`.
+- `ms-telemetry` gains `dc.services.visualstudio.com` (Application Insights telemetry, listed as such by Power BI and as
+  non-Sophos by Sophos), which today falls to `visual-studio` by its `visualstudio.com` suffix.
+- Twilio and Snowflake: verified, no change.
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.12.9, digest `80ecb5542510f862`, 564 applications, 462 host entries (2026-11-21) |
+| Pack file | sha256 `68e5aa2596b4c5ef90d993fad33be015cc34c1af764d2dace074e99e3bcab5ed` |
+| Rollback | release 2026.12.8 host catalog equals the batch M pack exactly |
+| Vectors | 22 targeted names (all as expected); 1,153 method-v2 vectors across 79 specs, all pass |
+| Parity | 7480/7480 Python and Go; 88/88 families |
+| Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 462) |
