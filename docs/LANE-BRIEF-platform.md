@@ -27,7 +27,7 @@ their decisions, the policy locks, and the release controller.
 
 - `main` = `cf65909`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`);
   #41 and #54 (PRO-73) too. #56 (the brief through PRO-103) is merged. Open lane PRs: drafts #55 (PRO-77) and #57 (PRO-102) into
-  `claude/go-migration`, and the stack on #57: #59 and #60 (PRO-103), #61 and #62 (PRO-104), plus this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
+  `claude/go-migration`, and the stack on #57: #59 and #60 (PRO-103), #61, #62 and #64 (PRO-104), plus this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
 - **Merged so far:**
 
   | PR | Content |
@@ -62,7 +62,9 @@ their decisions, the policy locks, and the release controller.
   `2df7e83`, base #60's branch) adds `go-coverage`: `-coverpkg=./...`, module floor 78.0% (79.0% measured), and a floor for
   every `internal/protocols/*` parser (item 38). Draft #62 (`claude/cicd-go-api`, head `7f75239`, base #61's branch) adds
   `go-api`: apidiff, where a public break fails without the `api-break` label (item 39). The module has no public package
-  yet. PRO-71 is parked until Engine answers PRO-72. Also waiting
+  yet, so draft #64 (`claude/cicd-contract-compat`, head `a5b287a`, base #62's branch; Hermes in PRO-131) adds
+  `contract-compat`: `tools/contract_check.py` compares schemas/*.schema.json ($ref resolved) and the protodetect CLI, read
+  from its own help, at the same base and with the same `api-break` label (item 40). PRO-71 is parked until Engine answers PRO-72. Also waiting
   on Codex's review and on the Engine lane's merge of `claude/go-migration`.
 
 ## 3. Where things live (reading order)
@@ -100,7 +102,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | First real tag release (attest and publish steps have never run) | Lee |
 | PR #55 merged into `claude/go-migration` (release build per-target modules) | Hermes's review, then Lee |
 | PR #57 merged into `claude/go-migration` (go-lint job); the 194 baseline findings fixed or justified | Hermes's review, then Lee; Engine for the findings |
-| The stack merged in order #57 → #59 → #60 → #61 → #62 (each retargets to `claude/go-migration` when its base merges) | Hermes's review, then Lee |
+| The stack merged in order #57 → #59 → #60 → #61 → #62 → #64 (each retargets to `claude/go-migration` when its base merges) | Hermes's review, then Lee |
 | 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
 
 ## 6. Frozen SHAs awaiting Codex
