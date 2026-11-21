@@ -1,0 +1,85 @@
+diff --git a/protocol_engine/content.py b/protocol_engine/content.py
+index a6f127a..6652441 100644
+--- a/protocol_engine/content.py
++++ b/protocol_engine/content.py
+@@ -80,6 +80,10 @@ HISTORY = (
+             "application-research lane proposal with primary sources (research/apps on claude/app-research); "
+             "engine-lane review pending",
+             "Signal, Splashtop, Miro, Canva, Duo, Gemini API and LogMeIn Resolve from vendor pages relayed by Hermes"),
++    Release("2026.12.2", "2026-11-19", "2026-11-19",
++            "application-research lane proposal with primary sources (research/apps on claude/app-research); "
++            "engine-lane review pending",
++            "Windows Update delivery, Adobe, Postman and Citrix Cloud from vendor documentation"),
+ )
+ CURRENT = HISTORY[-1].version
+ LOCK_PATH = Path(__file__).with_name("content_lock.json")
+@@ -140,6 +144,12 @@ _ADDED_2026_11_2 = (
+     "xandr",
+ )
+ _PRIOR_HOST_STATE = MappingProxyType({
++    "2026.12.1": MappingProxyType({
++        "ms-update": {"domains": ("windowsupdate.com", "update.microsoft.com", "delivery.mp.microsoft.com")},
++        "adobe-cloud": {"domains": ("adobe.com", "adobelogin.com", "adobe.io")},
++        "postman": {"domains": ("postman.com", "getpostman.com")},
++        "citrix-cloud": None,
++    }),
+     "2026.11.9": MappingProxyType({
+         "signal": {"domains": ("signal.org", "signal.art", "whispersystems.org")},
+         "splashtop": {"domains": ("splashtop.com",)},
+@@ -352,6 +362,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
+         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+         "host_catalog": "3e94a205ee1885f94eeda00d2caf5f7f7ecabb7018a15c7523ff0e749d0ade05",
+         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
++    "2026.12.1": MappingProxyType({
++        "application_catalog": "d7993c0c32d55e6f7e62088061996d597a9e565e0fd16f2a08fb9e0c3f5b2bab",
++        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
++        "host_catalog": "7f7584ead39ea1989c5ca7d9bda90f956d4f04ab8833b887a023eb08738aab3e",
++        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+ })
+ 
+ 
+diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
+index fc5dd02..c2d982c 100644
+--- a/protocol_engine/host_apps.py
++++ b/protocol_engine/host_apps.py
+@@ -99,7 +99,8 @@ _HOST_APPS = (
+     ("azure-ad", "business-systems", "auth-service", "browser-based", 1, "Microsoft Entra ID (Azure AD) sign-in",
+      ("widely-used",), ("login.microsoftonline.com", "microsoftonline.com", "login.live.com")),
+     ("ms-update", "business-systems", "software-development", "client-server", 1, "Windows Update and Microsoft software delivery",
+-     ("widely-used", "transfers-files", "excessive-bandwidth"), ("windowsupdate.com", "update.microsoft.com", "delivery.mp.microsoft.com")),
++     ("widely-used", "transfers-files", "excessive-bandwidth"),
++     ("windowsupdate.com", "update.microsoft.com", "delivery.mp.microsoft.com", "do.dsp.mp.microsoft.com", "tsfe.trafficshaping.dsp.mp.microsoft.com", "emdl.ws.microsoft.com")),
+     ("google-drive", "general-internet", "file-sharing", "browser-based", 3, "Google Drive and Docs",
+      ("widely-used", "transfers-files"), ("drive.google.com", "docs.google.com", "drive.usercontent.google.com", "googledrive.com",
+                                      "sheets.google.com", "slides.google.com", "drive-data-export.usercontent.google.com",
+@@ -227,7 +228,8 @@ _HOST_APPS = (
+     ("coinbase", "business-systems", "general-business", "browser-based", 3, "Coinbase cryptocurrency exchange", (), ("coinbase.com",)),
+     ("binance", "business-systems", "general-business", "browser-based", 3, "Binance cryptocurrency exchange", (), ("binance.com",)),
+     ("adobe-cloud", "business-systems", "office-programs", "client-server", 2, "Adobe Creative Cloud and account services",
+-     ("transfers-files", "widely-used"), ("adobe.com", "adobelogin.com", "adobe.io")),
++     ("transfers-files", "widely-used"),
++     ("adobe.com", "adobelogin.com", "adobe.io", "adobecc.com", "adobecces.com", "adobeccstatic.com", "adobeexchange.com", "adobegenuine.com", "adobegov.com", "adobe-identity.com", "adobejanus.com", "adobeoobe.com", "adobeprojectm.com", "adobesc.com", "adobe-services.com", "adobess.com", "adobesunbreak.com")),
+     ("canva", "business-systems", "office-programs", "browser-based", 2, "Canva design",
+      ("transfers-files",),
+      ("canva.com", "canvacode.com", "canva-apps.com", "canva.link", "canva.ai")),
+@@ -303,6 +305,10 @@ _HOST_APPS = (
+     ("logmein-resolve", "networking", "remote-access", "client-server", 4, "LogMeIn Resolve remote support",
+      ("tunnels-other-applications", "prone-to-misuse"),
+      ("gotoresolve.com", "gotoresolveuserfiles.com", "helpdesk.me", "gtre-remoteexecution-userfiles-prod-eu.azureedge.net")),
++    ("citrix-cloud", "networking", "remote-access", "client-server", 3, "Citrix Cloud, DaaS and Workspace",
++     ("tunnels-other-applications",),
++     ("cloud.com", "citrix.com", "citrixworkspacesapi.net", "citrixnetworkapi.net", "nssvc.net", "xendesktop.net", "netscalergateway.net", "discovery.cem.cloud.us", "prod-us-vus-storage-endpoint.azureedge.net", "prod-eu-vus-storage-endpoint.azureedge.net", "prod-aps-vus-storage-endpoint.azureedge.net", "prod-jp-vus-storage-endpoint.azureedge.net"),
++     ("citrix.com", "www.citrix.com")),
+     ("splashtop", "networking", "remote-access", "client-server", 4, "Splashtop remote access",
+      ("tunnels-other-applications", "prone-to-misuse"),
+      ("splashtop.com", "api.splashtop.eu", "api.splashtop.nr", "api.splashtop.cn", "relay.splashtop.cn"),
+@@ -623,7 +629,8 @@ _HOST_APPS = (
+     ("visual-studio", "business-systems", "software-development", "client-server", 2, "Visual Studio and VS Code marketplace and services",
+      ("transfers-files",), ("visualstudio.com", "vsassets.io")),
+     ("postman", "business-systems", "software-development", "client-server", 2, "Postman API platform",
+-     ("transfers-files",), ("postman.com", "getpostman.com")),
++     ("transfers-files",),
++     ("postman.com", "getpostman.com", "postman.co", "pstmn.io")),
+     ("sonarcloud", "business-systems", "software-development", "client-server", 2, "SonarCloud code analysis",
+      ("transfers-files",), ("sonarcloud.io",)),
+     ("snyk", "business-systems", "software-development", "client-server", 2, "Snyk security scanning",
