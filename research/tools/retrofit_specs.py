@@ -118,10 +118,10 @@ VARIANT = {
     "openai-chatgpt.md": "web app and API platform separated by name (`chatgpt.com` vs `api.openai.com`, `platform.openai.com`)",
 }
 import csv as _csv
-LIVE = {r["host"]: r for r in _csv.DictReader(open(ROOT / "live-results-2026-11-20.tsv"), delimiter="\t")}
+LIVE = {r["host"]: r for r in _csv.DictReader((ROOT / "live-results-2026-11-20.tsv").read_text().splitlines(), delimiter="\t")}
 LIVE_CITE = "live-verified by Hermes from an unproxied vantage, 2026-11-20"
 PROBES = {}
-for _line in open(ROOT / "live-hosts-r2.txt"):
+for _line in (ROOT / "live-hosts-r2.txt").read_text().splitlines():
     _f = _line.split()
     if len(_f) == 2 and not _line.startswith("#"):
         PROBES[_f[0]] = _f[1]
@@ -131,7 +131,7 @@ def resolves(r):
     return r is not None and r["rcode"] == "0" and r["a_count"] not in ("0", "")
 
 
-LIVE2 = {r["host"]: r for r in _csv.DictReader(open(ROOT / "live-results-2026-11-20-r2.tsv"), delimiter="\t")}
+LIVE2 = {r["host"]: r for r in _csv.DictReader((ROOT / "live-results-2026-11-20-r2.tsv").read_text().splitlines(), delimiter="\t")}
 
 
 def live_status(name):
