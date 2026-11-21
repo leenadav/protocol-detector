@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-21 (PRO-92: batch M, live rounds 3 and 4 merged, batch N from PRO-121). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-21 (PRO-98: Majestic run 1 recorded, `rank_domains.py` export guard; PRO-92 batches M and N). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -33,7 +33,7 @@ and content-pack patches for the Engine lane.
 - Live verification rounds 1 to 4 are in (run by Hermes): of 444 spec names, 301 live (137 with a certificate naming an organisation),
   20 suffixes verified by probe, 88 apexes with no address and no probe, 22 TLS failures (not removal), 2 NXDOMAIN, 61 CDN-fronted,
   3 ECH-capable, 30 offer h3; 11 (batch N) await round 5.
-- In flight, run by Hermes on the server: live round 5 and the ranking run.
+- In flight, run by Hermes on the server: live round 5 and Majestic ranking run 2 (run 1 used the wrong catalog).
 
 ## 3. Where things live (reading order)
 
@@ -43,7 +43,8 @@ and content-pack patches for the Engine lane.
 4. `research/apps/*.md`: one spec per app; `research/apps.json` maps specs to ids and web URLs.
 5. `research/d09-iscx-vpn2016.md` and `research/datasets.md` (licences, LEE-1, ranking sources).
 6. `research/protocol/`: post-merge PROTOCOL and ENGINE-FIELD specs (`app-attributes.md`, `window-overflow.md`, UDP rule, TLS widening, Telegram).
-7. `research/tools/`: `retrofit_specs.py`, `live_verify.py`, `observe_web.js`, `recheck_sources.py`, `rank_domains.py`.
+7. `research/tools/`: `retrofit_specs.py`, `live_verify.py`, `observe_web.js`, `recheck_sources.py`, `rank_domains.py`
+   (ranking output in `research/ranking/`).
    Their inputs and outputs are `live-hosts*.txt`, `live-results-*.tsv` (a later round overrides an earlier one per name), `web-urls.txt`, `observations/`,
    `source-state.json` and `app-domains.json`.
 8. `research/blocked-urls.md` and `research/allowlist-requests.md`: unreadable pages and network requests.
@@ -81,7 +82,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
 | Live rounds 1 to 5 | 1 to 4 done and merged into section 9 (`live-results-2026-11-20*.tsv`, `live-results-2026-11-21-r3.tsv` 69 names, `-r4.tsv` 66 names; relayed in full PRO-117/PRO-121): every name cited by the batch M and earlier specs has a result. Round 5 (`live-hosts-r5.txt`, 12 names, batch N) waits on a Hermes run |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
-| Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (2026-11-20, `datasets.md`); waits on the Hermes server run of `rank_domains.py` (Majestic CSV; CrUX via BigQuery) |
+| Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (`datasets.md`). Majestic run 1 (PRO-98) is recorded in `ranking/majestic-2026-11-21-run1.tsv` but was looked up with `main`'s catalog: 46 of 69 specs not computed. Run 2 waits on Hermes: `rank_domains.py research/app-domains.json OUT.tsv --majestic majestic_million.csv` (79 specs, no re-export); CrUX still needs BigQuery |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
 | Content version ordering | Engine: numeric comparison plus a regression test, then renumber the placeholders |
 | Blocked vendor pages | WhatsApp and Hugging Face (no official page known). Rows 19 to 23, 28 and 29 (ServiceNow, Workday, CrowdStrike, SentinelOne, Cisco Secure Client, Egnyte, GlobalProtect) stay blocked (sign-in, bot challenge or JavaScript-only, per Research Lab, PRO-108). Rows 24 to 27 resolved in batch N; DocuSign's domain list is still incomplete |
@@ -113,6 +114,8 @@ the Engine lane when a patch is implemented. The frozen bases it depends on are 
 - Only the **text of an answer** reaches this lane. Paperclip comment ids, attached documents and paths on the Hermes server
   (`/home/hermes/...`) do not: data must be pasted into the answer body (TSV in chunks of at most 25 rows, header first),
   or committed to a branch this lane can fetch. A relay can be cut off: check row counts against the stated total.
+- A blank in a ranking is ambiguous: check how many domains the spec was looked up with (`domains` column). `main`'s
+  catalog lacks every unmerged patch, so never export app domains from it.
 - Compute every number before writing it; read back paraphrases against the source. Earlier slips (invented counts, an
   overstated licence) were caught this way.
 - D09 data: one archive at a time, delete it afterwards, and commit aggregates only. `NonVPN-PCAPs-02.zip` needs

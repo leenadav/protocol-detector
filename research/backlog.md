@@ -183,7 +183,7 @@ the providers' own pages by Research Lab, 2026-11-20; verdicts and attribution l
 |---|---|
 | Culvert field data (unknown-session share per server name, top unmapped names) | **placeholder**: not available yet |
 | D09 unknowns per application | available for the ISCX labels only (section 8 of the D09 report) |
-| Public popularity rank (CrUX bucket, Majestic rank) | licences **PASS** (2026-11-20); **pending**: the Hermes server run of `tools/rank_domains.py` with `majestic_million.csv` (free download) and a CrUX `origin,rank` export (needs BigQuery on the server) |
+| Public popularity rank (CrUX bucket, Majestic rank) | licences **PASS** (2026-11-20). Majestic run 1 (PRO-98, 2026-11-21; `ranking/majestic-2026-11-21-run1.tsv`) used `main`'s 54-entry catalog, so only 22 of 69 specs were looked up (best ranks: GitHub 10, WhatsApp 23, Google Workspace 24, Telegram 33, Office 64, Zoom 79, Dropbox 93); 46 blanks are **not computed**, not "outside the top 1M". **Pending**: run 2 with the committed `app-domains.json` (79 specs), and CrUX (needs BigQuery on the server) |
 
 ### NAME: READY (batch I, after H)
 
