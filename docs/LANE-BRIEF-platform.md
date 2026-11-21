@@ -23,7 +23,7 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-20, after PRO-59)
+## 2. Current state (2026-11-21, after PRO-71)
 
 - `main` = `2b97e2d`. Three ready-for-review PRs (PRO-42; #33 passed `ci gate (all jobs)`), one topic each, all cut from `main`:
   - #33 `claude/ci-drop-branch-push-triggers`;
@@ -83,6 +83,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
 | PRs #33, #34, #35 and #38 merged | Hermes's review, then Lee |
+| 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
 
 ## 6. Frozen SHAs awaiting Codex
 
