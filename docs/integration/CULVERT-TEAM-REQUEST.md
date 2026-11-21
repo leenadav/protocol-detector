@@ -12,6 +12,29 @@ nothing about actions, verdicts or TLS server corroboration.
 Each item says what we need, why, the form of answer we can use directly, and what stands in for it meanwhile.
 None of the stand-ins invents a Culvert number or a Culvert type.
 
+**Revision of 2026-11-21 (PRO-81):** the anchors below were checked at Culvert `main`
+`ef9431189490f7f85bb32d6fe7e7b6b8be5b0844`, a descendant of the lab's first base `52eb9d1` (101 first-parent commits, mostly pull-request merges, later). The local
+lab was moved to that commit. New sections: "Culvert anchors at `ef94311`", "Found while moving the lab to
+`ef94311`" and "Allocation budget gap".
+
+## Culvert anchors at `ef94311`
+
+| What | Where |
+|---|---|
+| CONNECT-bypass handler, where the raw-stream tap sits | `proxy_tunnel.go:668` `handleTunnelBypass` |
+| Bytes the HTTP server already buffered (the prebuffer the tap must show the engine) | `proxy_tunnel.go:724` |
+| The relay the tap replaces for its window | `proxy_tunnel.go:736` `bidiRelayCounted(destConn, clientConn, clientConn, destConn)` |
+| The copy loop the tap hands back to (splice path) | `proxy_tunnel.go:407` `idleCopyCounted`, unchanged since `52eb9d1` |
+| Relay panic recovery | `proxy_tunnel.go:460` `relayCounted`, unchanged since `52eb9d1` |
+| Shutdown drain registration, new since `52eb9d1` (CHAOS-57) | `proxy_tunnel.go:716` `registerDrainableTunnel(tunnelClassConnectBypass, ...)` |
+| The `TUNNEL_CLOSED` record of a bypass tunnel | `proxy_tunnel.go:742` `recordTunnelCloseGatedDec` |
+| Upstream TLS state on inspect paths (facts, item 1) | `proxy_tunnel.go:1106` `upstreamTLS.ConnectionState()` |
+| Culvert's ClientHello ALPN parser (facts and comparison, item 1) | `internal/alpnpeek/alpn.go:21` `Parse` |
+| Decryption record and its host/SNI redaction (log block, item 2) | `decryption_observability.go:43` (`SNI` field), `:135` (projection), `:489` `redactHost`; ADR-0011 |
+| Destination pseudonymizer | ADR-0044 |
+| SaaS feed categories (taxonomy, item 4) | `internal/saasfeed/saasfeed.go:52` `Category{Name, Hosts}` |
+| SOCKS5 scope | `socks5.go:57`: CONNECT only, UDP ASSOCIATE unsupported |
+
 ## 1. Facts on the inspect paths (plan 5.3, phase L2)
 
 **What.** For each place Culvert already parses traffic, which facts it can hand to the detector, and at which
@@ -62,7 +85,7 @@ inventory below gives each field's class, so the block can be laid out against i
 |---|---|
 | `Outcome`, `Reason`, `Direction` | closed vocabulary: safe as a metric label |
 | `Family`, `ApplicationProtocol`, `Encryption`, `Scope` | bounded registry names: record field, low cardinality |
-| `Hostname` (TLS SNI, HTTP Host, SMTP client identity) | hostname class: pseudonymize before logging |
+| `Hostname` (TLS SNI, HTTP Host, SMTP client identity) | hostname class: pseudonymize before logging (ADR-0044) |
 | `OfferedALPN` (at most 16), `OfferedALPNTruncated` | bounded list from the client's offer: record field |
 | `Evidence` (field, value, source, strength, class) | bounded; values of unclassified fields are withheld by the package |
 | `Detail` | bounded engine sentence: record only, never a label |
@@ -89,13 +112,70 @@ it.
 **Meanwhile.** Every budget is a `detector.Config` field the adapter sets. No detector change is needed to apply
 Culvert's numbers, and the detector does not guess them.
 
-## 4. Which families Culvert wants in the first visibility profile
+## 4. Families and the application taxonomy
 
-**What.** Agreement or changes to the proposal in the working plan (section 13, "Proposal: first profile
-families for visibility only"): TLS, HTTP/1, SSH and SMTP identified with evidence, and every other recognised
-family named without evidence. That proposal is still awaiting Lee's decision.
+**What.** Agreement with the first visibility profile, which Lee approved on 2026-11-18 (working plan section 13):
+TLS, HTTP/1, SSH and SMTP identified with evidence, and every other recognised family named without evidence.
+Also which taxonomy names the application. Culvert's SaaS feed gives host-list categories
+(`internal/saasfeed/saasfeed.go:52`, `Category{Name, Hosts}`). The detector gives the protocol family, plus an
+application from its own content pack. Two application labels on one record would conflict, so one must be
+authoritative; we propose the SaaS feed for the application and the detector for the protocol.
 
 **Why.** What Culvert logs, and how it presents names that are not validated.
+
+## Found while moving the lab to `ef94311`
+
+- **`DecryptionOutcome.SNI` is never assigned in production.** The field is declared at
+  `decryption_observability.go:43` and projected, with redaction, at `:135`. None of the eight constructors sets
+  it: `decryption_observability.go:179`, `:211`, `:233`, `:311`, `:348` and `:437`, and `proxy_tunnel.go:626` and
+  `:971`. The `dec.sni` field is therefore always empty in the record, while the redaction posture
+  (`decryption_redaction.go:218`) lists it in scope. This was first seen at `52eb9d1` and is unchanged. It is
+  Culvert's to fix, as its own change: fill it from `tls.ClientHelloInfo` where the handshake is read. The
+  detector does not depend on it.
+- **The tap point keeps its shape.** `idleCopyCounted` and `relayCounted` are unchanged, so the lab's observed copy
+  still mirrors Culvert's deadline and idle-stamp mechanics. The new shutdown drain (`proxy_tunnel.go:716`)
+  closes both connections on its deadline. The tap's window then ends with the relay; the detector's `Expire`
+  touches no socket. The lab's three hook commits re-applied with no conflict.
+- **No UDP path.** SOCKS5 still offers CONNECT only (`socks5.go:57`), and nothing carries QUIC. HTTP/3 traffic is
+  therefore outside what Culvert can observe or the detector can see. Item 6 below asks how Culvert wants that
+  stated.
+
+## Allocation budget gap
+
+Measured 2026-11-21 on the cloud container (4 vCPU, shared, Go 1.27.4). These are local CPU figures, not production
+latency.
+
+| Cost | Allocations | Bytes | Source |
+|---|---|---|---|
+| Detector, one TLS flow (`NewFlow`, client and server flights, `Close`) | **191** | 15,369 B, about 15 µs | `go/detector` `BenchmarkFlow/tls`; gate `TestFlowAllocationBudget` ceiling 240 |
+| Detector, HTTP / SSH / unknown flow | 128 / 89 / 15 | 8,581 / 6,706 / 2,352 B | same benchmark |
+| Culvert, one proxied HTTP request (whole forward) | **82** (gate 85) | 10,729 B | `TestBenchGate_HTTPForwardAllocs` |
+| Culvert, policy evaluation at 10 to 10,000 rules | 0 (gate 4) | — | `TestBenchGate_PolicyEvalAllocs` |
+| Culvert, decryption record | 1, or 2 when pseudonymized (gates 1, 2) | 320 to 336 B | `TestBenchGate_DecryptionProjectionAllocs` |
+| Culvert, bypass relay residency per direction | — | 611.5 B (ceiling 4,096) | `TestBenchGate_RelayBufferResidency` |
+| Culvert, inspected tunnel read buffers | — | 65,747 B (ceiling 81,920) | `TestBenchGate_InspectReadBufResidency` |
+
+Culvert's gates run with `go test -tags benchgate` (`pr-fast-gate.yml`, job `benchgate`), outside the default test
+build.
+
+What the gap means:
+- **Per flow, the detector allocates about 2.3 times what Culvert spends on a whole proxied HTTP request.** On an
+  observed bypass tunnel that is new work on a path that today allocates almost nothing per byte.
+- **The working plan's own hypothesis is at most 64 allocations per flow (section 9).** TLS is three times over it,
+  HTTP twice, SSH 1.4 times; only an unknown stream fits.
+- **Residency is not the gap.** The detector's retained bytes peak at 4,112 per flow across the fixtures, inside its
+  32 KiB allowance, and drop to zero at `Close`. After the window, the tunnel is back on `idleCopyCounted`, whose
+  611.5 B/direction is unchanged. During the window, the lab's tap buffer is 4 KiB per direction, the size of
+  Culvert's relay ceiling.
+- **Neither side gates the observed tunnel as a whole yet.** A Culvert benchgate for "CONNECT bypass with
+  observation on" would be the comparable figure.
+
+What we need from the Culvert team (item 3):
+- the per-flow allocation and CPU budget they will accept for an observed tunnel;
+- whether it is measured on the whole tunnel or on the detector call alone;
+- whether the gate joins `benchgate`.
+
+The detector will not tune toward a number Culvert has not set.
 
 ## 5. Process
 
@@ -103,3 +183,11 @@ family named without evidence. That proposal is still awaiting Lee's decision.
   thin adapter over `go/detector`.
 - **Fuzzing (C4).** Who adds the detector's fuzz targets to Culvert's nightly fuzz matrix, and when.
 - **Contact.** Who on the Culvert team answers questions on these items.
+
+## 6. UDP and HTTP/3
+
+**What.** Whether Culvert wants the visibility phase to state HTTP/3 (QUIC) as out of view, or to steer clients to
+TCP, for example by refusing QUIC at the network edge.
+
+**Why.** The detector observes only what Culvert relays, and Culvert relays no UDP (`socks5.go:57`). A dashboard that
+shows protocol mix without saying so would overstate coverage.

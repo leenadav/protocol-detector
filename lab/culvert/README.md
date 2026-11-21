@@ -4,6 +4,35 @@ This directory is the backup of a local lab that runs the protocol detector insi
 
 **One deviation from the plan, at Lee's request (2026-11-14):** the plan gates any enforcement behind a separate phase (L7) with a threat model and adversarial qualification. This lab already contains a per-rule protocol restriction with an enforce mode. It is a lab demonstration with the limits listed below, not a qualified control.
 
+## Current lab: visibility only on Culvert `ef94311` (2026-11-21, PRO-81)
+
+The current lab follows decision 3 (visibility only, 2026-11-17). It sits on a second local branch,
+`lab/protocol-detector-ef94311`, head `8a50573c13bb093db2f9d76ba800258d488f2ddf`. The base is Culvert `main`
+`ef9431189490f7f85bb32d6fe7e7b6b8be5b0844`. Push is disabled, and nothing was proposed upstream. The patch is
+`culvert-lab-ef94311.patch` (3 commits):
+
+- the CONNECT-bypass observation hook and the Culvert-owned interface `internal/protodetect` (from `7b9a9af`);
+- evidence and offered ALPN in the lab record (from `b70cd3e`);
+- a short write in the observed copy treated as `io.ErrShortWrite`, the observation half of `1aa9d0e`.
+
+Not carried over: the log-entry block, the UI and the per-rule restriction (`777fa6b`, and the rest of
+`1aa9d0e`). They belong to the restriction demonstration, which is out of scope. The section on that work below
+describes the first lab, on `52eb9d1`; its branch `lab/protocol-detector` is kept unchanged.
+
+Results, in `results-ef94311/`:
+- **Run:** `tools/start-lab-visibility.sh` with `LAB_CULVERT_BASE=ef94311`. Build A is unmodified `ef94311`;
+  builds B to E are the lab binary against detector `0aa53ac`.
+- **74 checks, 74 passed.** These are the 15 observation scenarios on builds A to E. Every cell has the same
+  verdict and detector text as the corresponding cell of the 52eb9d1 run of 2026-11-17.
+- **Byte identity:** the 7 scenarios that record a payload hash delivered the same bytes on all five builds. They
+  include the 1 MiB and 32 MiB echoes, the pipelined CONNECT, the half-close and the 1-byte writes. The other 8
+  record no hash but passed their traffic check on every build: TLS, SSH, SMTP and HTTP inside the tunnel,
+  PostgreSQL, the silent tunnel, the SSRF refusals and the 300-tunnel churn.
+- **Not run:** the 10 restriction cells (builds D and F with rules), because the visibility branch carries no
+  restriction.
+- **Culvert's own tests on the lab branch:** `go test -race -run 'Tunnel|Idle|Relay|Bypass|CONNECT|Connect|Drain' .`
+  passed, 193 tests.
+
 ## What was built on the Culvert lab branch
 
 Base: Culvert `52eb9d1e4482adc9773afc4db77109acad617625`, local branch `lab/protocol-detector` (4 commits, push disabled). The patch is `culvert-lab-52eb9d1.patch`; it leaves out `frontend/dist`, which `npm run build` regenerates.

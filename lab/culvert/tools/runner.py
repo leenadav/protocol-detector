@@ -9,8 +9,14 @@ import hashlib, json, os, random, socket, ssl, sys, threading, time
 
 LAB = "/home/user/culvert-lab"
 ORIGIN = "origin.lab.test"
+# Visibility-only runs (decision 3, 2026-11-17): builds A to E and the observation scenarios only. The per-rule
+# restriction scenarios and builds F and G need the lab's restriction rules, which a visibility-only lab
+# branch does not carry. Set LAB_VISIBILITY_ONLY=1 and LAB_CULVERT_BASE to the Culvert commit build A was built
+# from (tools/start-lab-visibility.sh does both).
+VISIBILITY_ONLY = os.environ.get("LAB_VISIBILITY_ONLY") == "1"
+CULVERT_BASE = os.environ.get("LAB_CULVERT_BASE", "52eb9d1")
 BUILDS = [
-    ("A", 18080, "unmodified Culvert 52eb9d1", None),
+    ("A", 18080, "unmodified Culvert " + CULVERT_BASE, None),
     ("B", 18081, "integrated build, detector off", None),
     ("C", 18082, "integrated build, fake engine", "fake"),
     ("D", 18083, "integrated build, real detector (observe)", "real"),
@@ -39,6 +45,8 @@ def sha(b):
 def proxy_auth(port):
     """Proxy-Authorization for builds whose lab admin was set up (their proxy then requires credentials)."""
     import base64
+    if VISIBILITY_ONLY:  # no admin is set up in a visibility-only run, so no build asks for credentials
+        return b""
     build = {**{b[1]: b[0] for b in BUILDS + POLICY_BUILDS}, **EXTRA_AUTH}.get(port, "")
     path = f"{LAB}/run/admin-{build}.secret"
     if not os.path.exists(path):
@@ -466,10 +474,13 @@ def main():
         hashes = {b: h for b, h in hashes.items() if h}
         row["same_bytes_all_builds"] = (len(set(hashes.values())) == 1) if hashes else None
         save()
-    for build, port, label, kind in POLICY_BUILDS:
-        RESULTS["builds"].setdefault(build, {"label": label, "port": port, "engine": kind or "off"})
-    RESULTS["builds"]["D"]["label"] += " + restriction rules"
-    run_policy()
+    if VISIBILITY_ONLY:
+        RESULTS["visibility_only"] = True
+    else:
+        for build, port, label, kind in POLICY_BUILDS:
+            RESULTS["builds"].setdefault(build, {"label": label, "port": port, "engine": kind or "off"})
+        RESULTS["builds"]["D"]["label"] += " + restriction rules"
+        run_policy()
     RESULTS["state"] = "finished"
     RESULTS["finished"] = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
     save()
