@@ -23,10 +23,10 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-21, after PRO-71)
+## 2. Current state (2026-11-21, after PRO-73)
 
-- `main` = `0ef7349`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`).
-  The only open lane PR is the one carrying this update. `claude/cicd-next` (`46c3122`) is superseded and stale.
+- `main` = `8674def`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`);
+  this brief's refresh #41 (`8674def`). The only open lane PR is PRO-73's root `CLAUDE.md` (`claude/docs-claude-md`). `claude/cicd-next` (`46c3122`) is superseded and stale.
 - **Merged so far:**
 
   | PR | Content |
@@ -39,16 +39,18 @@ their decisions, the policy locks, and the release controller.
   | #34 | `tools/check_required_checks.py`: the SSDLC required-checks tables match the real job names |
   | #35 | This brief; current scope and cadence lines in `AGENTS.md`; SSDLC review-loop step 9 |
   | #38 | `AGENTS.md` "Code Review Rules" for Codex automatic PR review; the Codex-comment rule |
+  | #41 | This brief after #33–#38; the 32-bit Go test item |
 - **On `main`:**
   - Every Go job runs with `GOPROXY=off` and the vendor tree; only the `go-vendor` job has module access.
   - Schedules: `nightly-fuzz`, `merge-readiness` (daily trial merge of `claude/go-migration`) and `perf-history`
     (on each push to `main`).
-- **In flight:** nothing of the lane's beyond this brief update. Waiting on Codex's review and on the Engine lane's
-  merge of `claude/go-migration`.
+- **In flight:** the `CLAUDE.md` PR (PRO-73). PRO-71 is parked until Engine answers PRO-72. PRO-77 (the
+  `tools/build_go_release.py` per-target module sets Engine needs for PR #40) is awaited; Engine's diff is in hand.
+  Also waiting on Codex's review and on the Engine lane's merge of `claude/go-migration`.
 
 ## 3. Where things live (reading order)
 
-1. `AGENTS.md` on `main`: lanes, ownership, mailbox rules. It may be stale on old branches, so read it from `main`.
+1. `CLAUDE.md` (imports `AGENTS.md`) and `AGENTS.md` on `main`: lanes, ownership, mailbox rules. It may be stale on old branches, so read it from `main`.
 2. `SSDLC.md`: controls, the required-checks table, the CI/CD backlog (items 18–34 are the recent ones).
 3. `docs/review-packet/INDEX.md`: what awaits Codex, chunked.
 4. `docs/RELEASING.md`: the release controller and dry runs.
