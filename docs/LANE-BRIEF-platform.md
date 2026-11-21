@@ -23,11 +23,11 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-21, after PRO-103)
+## 2. Current state (2026-11-21, after PRO-104)
 
-- `main` = `dfaac0d`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`);
-  #41 and #54 (PRO-73) too. Open lane PRs: drafts #55 (PRO-77) and #57 (PRO-102) into `claude/go-migration`, #59 stacked on #57 and
-  #60 stacked on #59 (PRO-103), and this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
+- `main` = `cf65909`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`);
+  #41 and #54 (PRO-73) too. #56 (the brief through PRO-103) is merged. Open lane PRs: drafts #55 (PRO-77) and #57 (PRO-102) into
+  `claude/go-migration`, and the stack on #57: #59 and #60 (PRO-103), #61 and #62 (PRO-104), plus this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
 - **Merged so far:**
 
   | PR | Content |
@@ -42,6 +42,7 @@ their decisions, the policy locks, and the release controller.
   | #38 | `AGENTS.md` "Code Review Rules" for Codex automatic PR review; the Codex-comment rule |
   | #41 | This brief after #33–#38; the 32-bit Go test item |
   | #54 | Root `CLAUDE.md` importing `AGENTS.md` (PRO-73). Codex's automatic review did not run (usage limit); not required for a docs-only change |
+  | #56 | This brief through PRO-77, PRO-102 and PRO-103 |
 - **On `main`:**
   - Every Go job runs with `GOPROXY=off` and the vendor tree; only the `go-vendor` job has module access.
   - Schedules: `nightly-fuzz`, `merge-readiness` (daily trial merge of `claude/go-migration`) and `perf-history`
@@ -57,7 +58,11 @@ their decisions, the policy locks, and the release controller.
   -race -shuffle=on -count=2`) and `go-licenses` (go-licenses 2.0.1; forbidden, restricted and unknown fail; x/crypto
   and x/sys are BSD-3-Clause), both via `tools/go_deep.py` (item 36). Draft #60 (`claude/cicd-ci-consistency`, head
   `07a2eed`, base #59's branch) adds `tools/check_ci_consistency.py`: every `uses:` in any spelling pinned with a
-  revision comment, and one Go compiler across go.mod files, setup-go, GOTOOLCHAIN and the policy (item 37). PRO-71 is parked until Engine answers PRO-72. Also waiting
+  revision comment, and one Go compiler across go.mod files, setup-go, GOTOOLCHAIN and the policy (item 37). Draft #61 (`claude/cicd-go-coverage`, head
+  `2df7e83`, base #60's branch) adds `go-coverage`: `-coverpkg=./...`, module floor 78.0% (79.0% measured), and a floor for
+  every `internal/protocols/*` parser (item 38). Draft #62 (`claude/cicd-go-api`, head `7f75239`, base #61's branch) adds
+  `go-api`: apidiff, where a public break fails without the `api-break` label (item 39). The module has no public package
+  yet. PRO-71 is parked until Engine answers PRO-72. Also waiting
   on Codex's review and on the Engine lane's merge of `claude/go-migration`.
 
 ## 3. Where things live (reading order)
@@ -95,7 +100,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | First real tag release (attest and publish steps have never run) | Lee |
 | PR #55 merged into `claude/go-migration` (release build per-target modules) | Hermes's review, then Lee |
 | PR #57 merged into `claude/go-migration` (go-lint job); the 194 baseline findings fixed or justified | Hermes's review, then Lee; Engine for the findings |
-| Stacked #59, then #60, merged after #57 (each retargets to `claude/go-migration` when its base merges) | Hermes's review, then Lee |
+| The stack merged in order #57 → #59 → #60 → #61 → #62 (each retargets to `claude/go-migration` when its base merges) | Hermes's review, then Lee |
 | 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -146,3 +151,8 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **Stacked PRs:** CI PRs into `claude/go-migration` that edit the same `ci.yml` gate line, policy and locks are
   stacked (each PR's base is the previous one's branch), not parallel. Parallel PRs would conflict on every merge.
   ci runs on any `pull_request` base, so stacked PRs get full CI. Update a lower branch by merging, never by rebasing.
+- **Coverage numbers:** measure with `-coverpkg=./...`. Per-package coverage from a package's own tests understates the
+  parsers, which the parity replay exercises: textroute is 4.5% from its own tests, 82.3% with `-coverpkg`. Count a block
+  once across test binaries.
+- **Tool pins and the cooldown:** `@latest` can resolve to a commit from today. Pin one at least 7 days old, as Dependabot's
+  cooldown does (apidiff: x/exp `e3970619a1a4`).
