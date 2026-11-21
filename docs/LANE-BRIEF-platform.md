@@ -23,10 +23,11 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-21, after PRO-73)
+## 2. Current state (2026-11-21, after PRO-103)
 
-- `main` = `8674def`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`);
-  this brief's refresh #41 (`8674def`). The only open lane PR is PRO-73's root `CLAUDE.md` (`claude/docs-claude-md`). `claude/cicd-next` (`46c3122`) is superseded and stale.
+- `main` = `dfaac0d`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`);
+  #41 and #54 (PRO-73) too. Open lane PRs: drafts #55 (PRO-77) and #57 (PRO-102) into `claude/go-migration`, #59 stacked on #57 and
+  #60 stacked on #59 (PRO-103), and this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
 - **Merged so far:**
 
   | PR | Content |
@@ -40,13 +41,24 @@ their decisions, the policy locks, and the release controller.
   | #35 | This brief; current scope and cadence lines in `AGENTS.md`; SSDLC review-loop step 9 |
   | #38 | `AGENTS.md` "Code Review Rules" for Codex automatic PR review; the Codex-comment rule |
   | #41 | This brief after #33–#38; the 32-bit Go test item |
+  | #54 | Root `CLAUDE.md` importing `AGENTS.md` (PRO-73). Codex's automatic review did not run (usage limit); not required for a docs-only change |
 - **On `main`:**
   - Every Go job runs with `GOPROXY=off` and the vendor tree; only the `go-vendor` job has module access.
   - Schedules: `nightly-fuzz`, `merge-readiness` (daily trial merge of `claude/go-migration`) and `perf-history`
     (on each push to `main`).
-- **In flight:** the `CLAUDE.md` PR (PRO-73). PRO-71 is parked until Engine answers PRO-72. PRO-77 (the
-  `tools/build_go_release.py` per-target module sets Engine needs for PR #40) is awaited; Engine's diff is in hand.
-  Also waiting on Codex's review and on the Engine lane's merge of `claude/go-migration`.
+- **In flight:** draft PR #55 (`claude/cicd-release-per-target-modules` → `claude/go-migration`, head `07cda53`;
+  PRO-77, for Engine's PR #40). It applies Engine's per-target module sets to `tools/build_go_release.py`, adds
+  `go:targets` per SBOM component, and takes `go:sum` from `go/go.sum`, since a `-mod=vendor` build records none.
+  It merges only after code review and Lee's decision.
+  Draft PR #57 (`claude/cicd-go-lint` → `claude/go-migration`, head `c050e4d`; PRO-102) adds the `go-lint` ci job:
+  golangci-lint 2.15.0, staticcheck 2026.2.2 and gosec 2.29.0 (pinned modules in `tools/golint/`), `tools/go_lint.py`,
+  and a 194-finding baseline that only shrinks (SSDLC item 35). Engine triages the baseline.
+  Draft #59 (`claude/cicd-go-deep-gate`, head `5dde24e`, base #57's branch; PRO-103) adds `go-determinism` (`go test
+  -race -shuffle=on -count=2`) and `go-licenses` (go-licenses 2.0.1; forbidden, restricted and unknown fail; x/crypto
+  and x/sys are BSD-3-Clause), both via `tools/go_deep.py` (item 36). Draft #60 (`claude/cicd-ci-consistency`, head
+  `07a2eed`, base #59's branch) adds `tools/check_ci_consistency.py`: every `uses:` in any spelling pinned with a
+  revision comment, and one Go compiler across go.mod files, setup-go, GOTOOLCHAIN and the policy (item 37). PRO-71 is parked until Engine answers PRO-72. Also waiting
+  on Codex's review and on the Engine lane's merge of `claude/go-migration`.
 
 ## 3. Where things live (reading order)
 
@@ -81,6 +93,9 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
+| PR #55 merged into `claude/go-migration` (release build per-target modules) | Hermes's review, then Lee |
+| PR #57 merged into `claude/go-migration` (go-lint job); the 194 baseline findings fixed or justified | Hermes's review, then Lee; Engine for the findings |
+| Stacked #59, then #60, merged after #57 (each retargets to `claude/go-migration` when its base merges) | Hermes's review, then Lee |
 | 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -123,3 +138,11 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   in `AGENTS.md` "Code Review Rules" (#38).
 - **Edits after a merge:** a commit pushed to a PR branch after Lee merges it never reaches `main`. Check the PR
   state before adding to its branch; otherwise cut a new branch from `origin/main` (PRO-71: `eae6718` missed #35).
+- **Vendored Go build info:** `go version -m` on a `-mod=vendor` binary records no module `Sum`. Take hashes from
+  `go/go.sum`; per target, the linked modules differ (x/crypto pulls x/sys on amd64 only).
+- **gosec on Go 1.27:** gosec v2.29.0's own x/tools (v0.49.0) cannot read Go 1.27 export data. It then reports 0
+  issues with "Golang errors" set. `tools/golint/gosec/go.mod` raises x/tools to v0.52.0, and `tools/go_lint.py`
+  fails on any load error. Never trust a 0 without checking that the tool loaded the tree.
+- **Stacked PRs:** CI PRs into `claude/go-migration` that edit the same `ci.yml` gate line, policy and locks are
+  stacked (each PR's base is the previous one's branch), not parallel. Parallel PRs would conflict on every merge.
+  ci runs on any `pull_request` base, so stacked PRs get full CI. Update a lower branch by merging, never by rebasing.
