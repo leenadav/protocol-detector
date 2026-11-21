@@ -1,0 +1,55 @@
+diff --git a/protocol_engine/content.py b/protocol_engine/content.py
+index 6652441..e13c8be 100644
+--- a/protocol_engine/content.py
++++ b/protocol_engine/content.py
+@@ -84,6 +84,10 @@ HISTORY = (
+             "application-research lane proposal with primary sources (research/apps on claude/app-research); "
+             "engine-lane review pending",
+             "Windows Update delivery, Adobe, Postman and Citrix Cloud from vendor documentation"),
++    Release("2026.12.3", "2026-11-19", "2026-11-19",
++            "application-research lane proposal with primary sources (research/apps on claude/app-research); "
++            "engine-lane review pending",
++            "Azure Virtual Desktop and Windows 365, and Amazon WorkSpaces, from vendor documentation"),
+ )
+ CURRENT = HISTORY[-1].version
+ LOCK_PATH = Path(__file__).with_name("content_lock.json")
+@@ -144,6 +148,10 @@ _ADDED_2026_11_2 = (
+     "xandr",
+ )
+ _PRIOR_HOST_STATE = MappingProxyType({
++    "2026.12.2": MappingProxyType({
++        "ms-virtual-desktop": None,
++        "amazon-workspaces": None,
++    }),
+     "2026.12.1": MappingProxyType({
+         "ms-update": {"domains": ("windowsupdate.com", "update.microsoft.com", "delivery.mp.microsoft.com")},
+         "adobe-cloud": {"domains": ("adobe.com", "adobelogin.com", "adobe.io")},
+@@ -367,6 +375,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
+         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+         "host_catalog": "7f7584ead39ea1989c5ca7d9bda90f956d4f04ab8833b887a023eb08738aab3e",
+         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
++    "2026.12.2": MappingProxyType({
++        "application_catalog": "1b82b6ebd548ed144aa9957447bb4b164341c47c72bc5d341c0a940e69e5b9b3",
++        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
++        "host_catalog": "817b2ef1816eafca67ca1edcda9d957fd8b80d9d846508c42a77ebf3bef7e7eb",
++        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+ })
+ 
+ 
+diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
+index c2d982c..d1f83f6 100644
+--- a/protocol_engine/host_apps.py
++++ b/protocol_engine/host_apps.py
+@@ -309,6 +309,12 @@ _HOST_APPS = (
+      ("tunnels-other-applications",),
+      ("cloud.com", "citrix.com", "citrixworkspacesapi.net", "citrixnetworkapi.net", "nssvc.net", "xendesktop.net", "netscalergateway.net", "discovery.cem.cloud.us", "prod-us-vus-storage-endpoint.azureedge.net", "prod-eu-vus-storage-endpoint.azureedge.net", "prod-aps-vus-storage-endpoint.azureedge.net", "prod-jp-vus-storage-endpoint.azureedge.net"),
+      ("citrix.com", "www.citrix.com")),
++    ("ms-virtual-desktop", "networking", "remote-access", "client-server", 3, "Azure Virtual Desktop, Windows 365 and Windows App",
++     ("tunnels-other-applications",),
++     ("wvd.microsoft.com", "wvd.azure.us", "windows.cloud.microsoft", "windows.static.microsoft", "infra.windows365.microsoft.com", "infra.windows365.microsoft.us", "wvdportalstorageblob.blob.core.windows.net")),
++    ("amazon-workspaces", "networking", "remote-access", "client-server", 3, "Amazon WorkSpaces",
++     ("tunnels-other-applications",),
++     ("amazonworkspaces.com", "highlander.aws.a2z.com")),
+     ("splashtop", "networking", "remote-access", "client-server", 4, "Splashtop remote access",
+      ("tunnels-other-applications", "prone-to-misuse"),
+      ("splashtop.com", "api.splashtop.eu", "api.splashtop.nr", "api.splashtop.cn", "relay.splashtop.cn"),
