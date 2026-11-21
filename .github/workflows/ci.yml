@@ -531,6 +531,8 @@ jobs:
           python -B tools/check_release_exposure.py --ref HEAD | tee -a "$GITHUB_STEP_SUMMARY"
           python -B tools/check_required_checks.py --self-test
           python -B tools/check_required_checks.py
+          python -B tools/check_ci_consistency.py --self-test
+          python -B tools/check_ci_consistency.py
           python -B tools/check_workflow_policy.py --self-test
           python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Cross-check the workflow policy parser against PyYAML (any disagreement is a policy blind spot)

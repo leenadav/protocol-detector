@@ -830,6 +830,20 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      repository has no LICENSE file. Today x/crypto and x/sys are BSD-3-Clause and pass.
    - **Negative controls:** a test that leaks state into its second run fails the determinism job
      with its seed, and a vendored LICENSE replaced by an unrecognised text fails the licence job.
+37. CI consistency test (`tools/check_ci_consistency.py`, offline, in `make workflow-policy` and the
+   workflow-lint job; PRO-103, after Culvert's workflow_action_pin_test.go and
+   toolchain_consistency_test.go).
+   - **Action pins:** every `uses:` is found, in any YAML spelling: a list item, a mapping key,
+     quoted, or in a flow mapping. Keys and parsed references are counted separately, and any
+     difference fails. Each reference is local (`./`), `docker://` with a sha256 digest, or a
+     40-hex SHA with a `# <revision>` comment.
+   - **One Go compiler:** go/go.mod's `toolchain` line, else its `go` line, must equal every
+     `go-version:` (except go-minimum's), the `go` and `toolchain` lines of tools/scanners and every
+     tools/golint module, and the policy's SETUP_GO. There may be no `go-version-file:`, and every
+     `GOTOOLCHAIN` a workflow sets is `local`.
+   - **Negative controls:** one per rule, in the self-test.
+   - **Overlap:** rule 7 and tools/check_action_pins.py check the SHA itself. tools/check_go_drift.py
+     (online) keeps the compiler current.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
