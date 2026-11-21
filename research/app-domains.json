@@ -1,0 +1,455 @@
+{
+ "1password.md": [
+  "1infra.net",
+  "1password.ca",
+  "1password.com",
+  "1password.eu",
+  "1passwordservices.com",
+  "1passwordusercontent.ca",
+  "1passwordusercontent.com",
+  "1passwordusercontent.eu",
+  "app-updates.agilebits.com",
+  "cache.agilebits.com"
+ ],
+ "adobe-cloud.md": [
+  "adobe-identity.com",
+  "adobe-services.com",
+  "adobe.com",
+  "adobe.io",
+  "adobecc.com",
+  "adobecces.com",
+  "adobeccstatic.com",
+  "adobeexchange.com",
+  "adobegenuine.com",
+  "adobegov.com",
+  "adobejanus.com",
+  "adobelogin.com",
+  "adobeoobe.com",
+  "adobeprojectm.com",
+  "adobesc.com",
+  "adobess.com",
+  "adobesunbreak.com"
+ ],
+ "amazon-workspaces.md": [
+  "amazonworkspaces.com",
+  "highlander.aws.a2z.com"
+ ],
+ "anthropic-claude.md": [
+  "anthropic.com",
+  "api.anthropic.com",
+  "claude.ai",
+  "claude.com",
+  "claudeusercontent.com",
+  "platform.claude.com"
+ ],
+ "anydesk.md": [
+  "anydesk.com",
+  "net.anydesk.com"
+ ],
+ "apple-icloud.md": [
+  "apple-cloudkit.com",
+  "apple-livephotoskit.com",
+  "icloud-content.com",
+  "icloud.apple.com",
+  "icloud.com",
+  "iwork.apple.com",
+  "mask-h2.icloud.com",
+  "mask.icloud.com"
+ ],
+ "atlassian.md": [
+  "atl-paas.net",
+  "atlassian.com",
+  "atlassian.net",
+  "bitbucket.org",
+  "jira.com",
+  "ss-inf.net",
+  "teamworkgraph.com"
+ ],
+ "bitwarden.md": [
+  "bitwarden.com",
+  "bitwarden.eu",
+  "bitwarden.net",
+  "btwrdn.co",
+  "btwrdn.com"
+ ],
+ "box.md": [
+  "box.com",
+  "box.net",
+  "boxcdn.net",
+  "boxcloud.com"
+ ],
+ "canva.md": [
+  "canva-apps.com",
+  "canva.ai",
+  "canva.com",
+  "canva.link",
+  "canvacode.com"
+ ],
+ "chrome-remote-desktop.md": [
+  "remotedesktop-pa.googleapis.com",
+  "remotedesktop.google.com"
+ ],
+ "citrix-cloud.md": [
+  "citrix.com",
+  "citrixnetworkapi.net",
+  "citrixworkspacesapi.net",
+  "cloud.com",
+  "discovery.cem.cloud.us",
+  "netscalergateway.net",
+  "nssvc.net",
+  "prod-aps-vus-storage-endpoint.azureedge.net",
+  "prod-eu-vus-storage-endpoint.azureedge.net",
+  "prod-jp-vus-storage-endpoint.azureedge.net",
+  "prod-us-vus-storage-endpoint.azureedge.net",
+  "xendesktop.net"
+ ],
+ "cloudflare-warp.md": [
+  "api.devices.cloudflare.com",
+  "api.devices.fed.cloudflare.com",
+  "cloudflareclient.com",
+  "notifications.devices.fed.cloudflare.com"
+ ],
+ "connectwise-screenconnect.md": [
+  "connectwise.com",
+  "screenconnect.com"
+ ],
+ "cursor.md": [
+  "cursor-cdn.com",
+  "cursor.com",
+  "cursor.sh",
+  "cursorapi.com",
+  "cursorvm.com"
+ ],
+ "deepseek.md": [
+  "deepseek.com"
+ ],
+ "docker-hub.md": [
+  "dhi.io",
+  "docker.com",
+  "docker.io"
+ ],
+ "dropbox.md": [
+  "addtodropbox.com",
+  "db.tt",
+  "docsend.com",
+  "dropbox-dns.com",
+  "dropbox.com",
+  "dropboxapi.com",
+  "dropboxbusiness.com",
+  "dropboxcaptcha.com",
+  "dropboxexperiment.com",
+  "dropboxstatic.com",
+  "dropboxusercontent.com",
+  "getdropbox.com",
+  "hellofax.com",
+  "hellosign.com"
+ ],
+ "duo-security.md": [
+  "duosecurity.com"
+ ],
+ "figma.md": [
+  "figma-gov.com",
+  "figma.com"
+ ],
+ "fortinet-datto-nable.md": [],
+ "github-copilot.md": [
+  "copilot-proxy.githubusercontent.com",
+  "copilot-telemetry.githubusercontent.com",
+  "github.com",
+  "githubassets.com",
+  "githubcopilot.com",
+  "githubusercontent.com",
+  "origin-tracker.githubusercontent.com",
+  "production-copilot-host-austriaeast.webpubsub.azure.com",
+  "production-copilot-host-centralus-02.webpubsub.azure.com",
+  "production-copilot-host-centralus.webpubsub.azure.com",
+  "production-copilot-host-eastasia.webpubsub.azure.com",
+  "production-copilot-host-westus.webpubsub.azure.com",
+  "production-copilot-host-westus3.webpubsub.azure.com",
+  "production-copilot-host.webpubsub.azure.com"
+ ],
+ "gitlab.md": [
+  "gitlab-static.net",
+  "gitlab.com",
+  "gitlab.net"
+ ],
+ "google-gemini-api.md": [
+  "generativelanguage.googleapis.com"
+ ],
+ "google-gemini.md": [
+  "aistudio.google.com",
+  "gemini.google.com",
+  "notebook.google.com",
+  "notebooklm.google.com"
+ ],
+ "google-workspace.md": [
+  "accounts.google.com",
+  "docs.google.com",
+  "drive-data-export-eu.usercontent.google.com",
+  "drive-data-export.usercontent.google.com",
+  "drive.google.com",
+  "drive.usercontent.google.com",
+  "gmail.com",
+  "googledrive.com",
+  "googlemail.com",
+  "mail.google.com",
+  "meet.google.com",
+  "sheets.google.com",
+  "slides.google.com"
+ ],
+ "goto.md": [
+  "goto.com",
+  "gotomeet.at",
+  "gotomeet.me",
+  "gotomeeting.com",
+  "gotomypc.com",
+  "joingotomeeting.com",
+  "logmein.com",
+  "logmeininc.com",
+  "openvoice.com"
+ ],
+ "grammarly.md": [
+  "grammarly.com",
+  "grammarly.io"
+ ],
+ "jetbrains-ai.md": [
+  "api.jetbrains.ai",
+  "jetbrains.com"
+ ],
+ "logmein-resolve.md": [
+  "gotoresolve.com",
+  "gotoresolveuserfiles.com",
+  "gtre-remoteexecution-userfiles-prod-eu.azureedge.net",
+  "helpdesk.me"
+ ],
+ "loom.md": [
+  "loom-media-production.s3-accelerate.amazonaws.com",
+  "loom.com"
+ ],
+ "microsoft-365.md": [
+  "cloud.microsoft",
+  "lync.com",
+  "microsoft365.com",
+  "office.com",
+  "office.net",
+  "office365.com",
+  "officeapps.live.com",
+  "outlook.cloud.microsoft",
+  "outlook.com",
+  "outlook.live.com",
+  "outlook.office.com",
+  "outlook.office365.com",
+  "sharepoint.com",
+  "sharepointonline.com",
+  "svc.ms",
+  "teams.cdn.office.net",
+  "teams.cloud.microsoft",
+  "teams.live.com",
+  "teams.microsoft.com"
+ ],
+ "microsoft-copilot.md": [
+  "copilot.cloud.microsoft",
+  "copilot.com",
+  "copilot.microsoft.com"
+ ],
+ "miro.md": [
+  "miro-apps.com",
+  "miro.com",
+  "mirostatic.com",
+  "onlinewhiteboard.com",
+  "realtimeboard.com",
+  "webwhiteboard.com"
+ ],
+ "mistral.md": [
+  "api.mistral.ai",
+  "mistral.ai"
+ ],
+ "ms-defender-endpoint.md": [
+  "endpoint.security.microsoft.com",
+  "reflector.defender.microsoft.com"
+ ],
+ "ms-intune.md": [
+  "dm.microsoft.com",
+  "manage.microsoft.com"
+ ],
+ "ms-update.md": [
+  "delivery.mp.microsoft.com",
+  "do.dsp.mp.microsoft.com",
+  "tsfe.trafficshaping.dsp.mp.microsoft.com",
+  "update.microsoft.com",
+  "windowsupdate.com"
+ ],
+ "ms-virtual-desktop.md": [
+  "infra.windows365.microsoft.com",
+  "infra.windows365.microsoft.us",
+  "windows.cloud.microsoft",
+  "windows.static.microsoft",
+  "wvd.azure.us",
+  "wvd.microsoft.com",
+  "wvdportalstorageblob.blob.core.windows.net"
+ ],
+ "netskope.md": [
+  "epdlp-prod.netskope.io",
+  "goskope.com",
+  "netskope.com"
+ ],
+ "ngrok.md": [
+  "ngrok-agent.com",
+  "ngrok.com",
+  "update.equinox.io"
+ ],
+ "notion.md": [
+  "notion.com",
+  "notion.site",
+  "notion.so",
+  "notionusercontent.com",
+  "secure.notion-static.com"
+ ],
+ "okta.md": [
+  "okta-emea.com",
+  "okta-gov.com",
+  "okta.com",
+  "okta.mil",
+  "oktacdn.com",
+  "oktapreview.com"
+ ],
+ "onedrive-drive-personal-business.md": [
+  "1drv.com",
+  "1drv.ms",
+  "docs.google.com",
+  "drive-data-export-eu.usercontent.google.com",
+  "drive-data-export.usercontent.google.com",
+  "drive.google.com",
+  "drive.usercontent.google.com",
+  "googledrive.com",
+  "onedrive.com",
+  "onedrive.live.com",
+  "photos.live.com",
+  "sheets.google.com",
+  "skydrive.live.com",
+  "slides.google.com",
+  "storage.msn.com"
+ ],
+ "openai-chatgpt.md": [
+  "api.openai.com",
+  "chat.openai.com",
+  "chatgpt.com",
+  "oaistatic.com",
+  "oaiusercontent.com",
+  "platform.openai.com"
+ ],
+ "perplexity.md": [
+  "api.perplexity.ai",
+  "perplexity.ai"
+ ],
+ "postman.md": [
+  "getpostman.com",
+  "postman.co",
+  "postman.com",
+  "pstmn.io"
+ ],
+ "prisma-access.md": [
+  "epm.gpcloudservice.com",
+  "filter.paloaltonetworks.com"
+ ],
+ "rustdesk.md": [
+  "rustdesk.com"
+ ],
+ "salesforce.md": [
+  "force.com",
+  "salesforce.com"
+ ],
+ "signal.md": [
+  "signal.art",
+  "signal.group",
+  "signal.link",
+  "signal.me",
+  "signal.org",
+  "signal.tube",
+  "whispersystems.org"
+ ],
+ "slack.md": [
+  "slack-edge.com",
+  "slack-files.com",
+  "slack-msgs.com",
+  "slack.com"
+ ],
+ "splashtop.md": [
+  "api.splashtop.cn",
+  "api.splashtop.eu",
+  "api.splashtop.nr",
+  "relay.splashtop.cn",
+  "splashtop.com"
+ ],
+ "tailscale.md": [
+  "tailscale.com",
+  "tailscale.io"
+ ],
+ "teamviewer.md": [
+  "teamviewer.com"
+ ],
+ "telegram.md": [
+  "t.me",
+  "telegram.me",
+  "telegram.org",
+  "telesco.pe"
+ ],
+ "webex.md": [
+  "ciscospark.com",
+  "ciscosparkcontent.com",
+  "wbx2.com",
+  "webex.com",
+  "webexapis.com",
+  "webexcontent.com"
+ ],
+ "wetransfer.md": [
+  "we.tl",
+  "wetransfer.com",
+  "wetransfer.net",
+  "wt-prod-euwest1-storm.s3-accelerate.amazonaws.com",
+  "wt-prod-euwest1-storm.s3.amazonaws.com",
+  "wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com",
+  "wt-prod-useast1-storm.s3-accelerate.amazonaws.com",
+  "wt-prod-useast1-storm.s3.amazonaws.com",
+  "wt-prod-useast1-storm.s3.us-east-1.amazonaws.com"
+ ],
+ "whatsapp.md": [
+  "whatsapp.com",
+  "whatsapp.net"
+ ],
+ "xai-grok.md": [
+  "api.x.ai",
+  "grok.com",
+  "x.ai"
+ ],
+ "zendesk.md": [
+  "zdassets.com",
+  "zendesk.com"
+ ],
+ "zoom.md": [
+  "zoom.com",
+  "zoom.us",
+  "zoomgov.com"
+ ],
+ "zscaler.md": [
+  "zdxbeta.net",
+  "zdxcloud.net",
+  "zdxgov.net",
+  "zdxten.net",
+  "zidentitygov.net",
+  "zpabeta.net",
+  "zpagov.net",
+  "zpatwo.net",
+  "zscaler.com",
+  "zscaler.net",
+  "zscalerbeta.net",
+  "zscalergov.net",
+  "zscalerone.net",
+  "zscalerten.net",
+  "zscalerthree.net",
+  "zscalertwo.net",
+  "zscloud.net",
+  "zslogin.net",
+  "zsloginbeta.net"
+ ]
+}
