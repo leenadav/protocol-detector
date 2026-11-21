@@ -76,7 +76,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Item | Waits on |
 |---|---|
 | Patches D to I, L, J, K, M, N (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
-| Main-integration PRs #42 to #53 (PRO-43) | #42, #43, #52, #53 merged; the rest open, CI gate green; Lee merges after Hermes review (this lane never merges or comments) |
+| Main-integration PRs #42 to #53 (PRO-43) | all 12 merged (#44 to #51 on 2026-11-21); work since then (batches M and N, live rounds 3 and 4) is on `claude/app-research` only |
 | Batches M and N to `main` | not opened: Hermes schedules them after review (PRO-92) |
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
 | Live rounds 1 to 5 | 1 to 4 done and merged into section 9 (`live-results-2026-11-20*.tsv`, `live-results-2026-11-21-r3.tsv` 69 names, `-r4.tsv` 66 names; relayed in full PRO-117/PRO-121): every name cited by the batch M and earlier specs has a result. Round 5 (`live-hosts-r5.txt`, 12 names, batch N) waits on a Hermes run |
