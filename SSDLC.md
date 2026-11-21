@@ -78,6 +78,9 @@ cannot pass unseen, whatever its spelling, and no settings change is needed. Cod
 | codeql | `CodeQL (python, security-extended)` | security-extended and security-and-quality suites, error level fails |
 | codeql | `CodeQL (actions, security-extended)` | the workflows themselves, analysed by CodeQL's `actions` pack with the same suites; error level fails. Rule 12 of the policy keeps both CodeQL jobs and the push trigger the release checks gate relies on, and pins each job whole (keys, permissions, runner and all seven steps in order, with no workflow env), so no step can rewrite the SARIF or shadow `python3` before the error-level gate reads it |
 
+`tools/check_required_checks.py` (`make workflow-policy`, ci `workflow-lint`) fails when a ci or codeql
+job, each matrix value expanded, has no row in these two tables, or a row names a job that no longer exists.
+
 The jobs the gate covers, every one of which runs on every push and pull
 request:
 
@@ -91,9 +94,10 @@ request:
 | ci | `supply chain (SBOM, licence, pins)` | action pins, CycloneDX SBOM of the development toolchain, zero-runtime-dependency contract |
 | ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py` (engine and adapter packages, only the `decryption` extra), wheel smoke under 3.13 and 3.9, the complete-product SBOM checked by `tools/check_product_sbom.py` |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
-| ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds |
+| ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds, and in source mode over go/ on its vendor tree (`GOFLAGS=-mod=vendor`, `GOPROXY=off`) |
 | ci | `Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)` | `tools/go_ci.py go`: on the pinned Go 1.27.4, which must be the compiler go/go.mod builds with (its `toolchain` line, else its `go` line), `make go-check` (gofmt, `go vet`, `go test -race`, fuzz smoke, `make parity-go`) and a floor under the parity report; nothing to check on a commit without the migration tree, failure on one with part of it; `GOPROXY=off`, so no Go is downloaded mid-job |
 | ci | `Go engine on its declared minimum Go (vet, race tests)` | `tools/go_ci.py minimum`: on exactly go/go.mod's `go` line (the declared minimum), installed by setup-go, `make go-check-minimum` (`go vet`, `go test -race`); a minimum equal to the compiler is go-engine's run and passes as such (item 28) |
+| ci | `Go vendor tree matches go.mod and go.sum (module proxy, checksum database)` | `tools/go_ci.py vendor-check`: `make go-vendor-check` re-vendors and compares with go/vendor, the one Go step with module access; nothing to verify without dependencies (item 32) |
 | ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack`, the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...`; nothing to check without the Go content pack (item 30) |
 | ci | `security requirements gate` | every SR row names an existing test |
 
@@ -157,7 +161,17 @@ history of the checkout itself, so it needs no pull-request permission. Both are
 configured in ci.yml; a red pull-request run with a green push run on the same commit is a
 workflow defect, never an engine finding.
 
+Codex review comments (automatic review on every opened pull request, P0/P1 only, rules
+in `AGENTS.md` "Code Review Rules"). When a Codex comment on a lane's pull request is
+fixed, the lane pushes the fix to the same branch and replies in that PR's task on the
+board, naming the fixing commit. Lanes do not comment on GitHub, so Hermes verifies the
+fix and resolves the thread. A comment the lane judges wrong gets the same reply, with
+the reason, and the thread stays open for Hermes.
+
 ## CI/CD review loop (Codex, issue #7)
+
+Lane memory: `docs/LANE-BRIEF-platform.md` is the first file a new chat for this lane reads. Every task ends by
+updating it (current state, open items, frozen SHAs, pitfalls), committed with the task's last commit.
 
 The CI/CD track has its own review mailbox, separate from the engine's
 issue #2, and follows the same gated loop:
@@ -242,6 +256,13 @@ issue #2, and follows the same gated loop:
    - Engine findings that need CI changes (`.github/`, the CI tools, the locks) go to this
      lane; CI needs in `go/`, `migration/` or product code go to the engine lane, as a patch
      or a pull request into its branch, never a direct push.
+9. Work intake since 2026-11-20 (Hermes, for Lee; AGENTS.md). This supersedes the check-in
+   timers of steps 5 and 6:
+   - Lanes receive work as Paperclip tasks and work through their queue with no fixed
+     check-in cadence. While a request is open, the mailbox is checked when the lane next works.
+   - Changes reach `main` as small ready-for-review pull requests, one topic each, opened from
+     branches under `claude/` cut from current `origin/main`. Lee merges each one after
+     Hermes's review; the lane never merges, closes, approves or comments on them.
 
 The loop never merges, deploys, deletes branches, or changes branch
 protection, permissions or credentials.
@@ -706,8 +727,9 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    base, ahead and behind counts and either clean or every conflicting file. Report only: the
    job holds `contents: read`, keeps no credential and never pushes, comments or opens anything;
    a conflict is a warning annotation, not a red run, and only an error (a missing branch, an
-   old git) fails it. Schedule and dispatch start once the file is on main; until then a `push`
-   trigger limited to claude/cicd-next and the file and its tool is the proof run. On
+   old git) fails it. The schedule runs from main's copy; a branch change is proven with
+   workflow_dispatch on the branch (the branch-limited `push` trigger that first registered the
+   workflow was removed once it was on main). On
    2026-11-18 the trial merge of `cb6707f` into main conflicts in 7 files (ci.yml, Makefile,
    README.md, REVIEW-SCOPE.md, SSDLC.md, presentation/SOURCE.json, tools/workflows.lock.json).
 32. Vendored Go dependencies (the engine lane vendors golang.org/x/crypto). The Go jobs keep
@@ -751,7 +773,8 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    (`actions: read`), extended and uploaded again; nothing is pushed or cached. A failing run
    uploads nothing, so a regression never becomes the baseline; dispatch input
    `accept_regression=true` records an intended change. A push trigger on the prep branch
-   registered the workflow, so workflow_dispatch proves it before the merge.
+   registered the workflow so workflow_dispatch could prove it before the merge; it was removed
+   once the workflow was on main.
 34. Release pipeline, draft (docs/RELEASING.md; Lee via Hermes, 2026-11-19). The one release
    controller, publish-release.yml (rule 5 keeps it the only tag workflow), gains in its read-only
    build job: reproducible Go binaries for five targets (`tools/build_go_release.py`: each built
