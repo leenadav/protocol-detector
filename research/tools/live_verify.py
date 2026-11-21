@@ -18,6 +18,7 @@ certificate subject CN and SAN list (from this client's own handshake), and flag
   no-address  the name exists but has no A/AAAA (normal for an apex or suffix entry): NOT dead; the suffix is
             verified through a documented subdomain given as the line's second field
   tls-fail  DNS answers but the handshake fails (timeout, certificate mismatch): not removal on its own
+            (the client requires TLS 1.2 or later, so a TLS 1.0/1.1-only server also shows as tls-fail)
 
 HOSTS.txt lines: "NAME" or "NAME PROBE", where PROBE is a documented name under the suffix NAME.
 """
@@ -138,6 +139,7 @@ def query_direct(name, qtype):
 
 def tls_probe(host):
     ctx = ssl.create_default_context()
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     ctx.set_alpn_protocols(["h2", "http/1.1"])
     with socket.create_connection((host, 443), timeout=8) as raw:
         with ctx.wrap_socket(raw, server_hostname=host) as tls:
@@ -191,7 +193,9 @@ def main(argv):
         print("refusing: an HTTPS proxy is set, so a TLS handshake would show the proxy, not the server", file=sys.stderr)
         return 3
     out = []
-    for line in open(argv[1]):
+    with open(argv[1]) as fh:
+        lines = fh.readlines()
+    for line in lines:
         if not line.strip() or line.startswith("#"):
             continue
         fields = line.split()

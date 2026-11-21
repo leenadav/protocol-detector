@@ -62,7 +62,8 @@ def export_domains(checkout, out):
 
 def main(argv):
     if argv[1] == "--export-domains":
-        return export_domains(Path(argv[2]), argv[3])
+        export_domains(Path(argv[2]), argv[3])
+        return 0
     apps = json.loads(Path(argv[1]).read_text())
     lists = {}
     if "--majestic" in argv:
