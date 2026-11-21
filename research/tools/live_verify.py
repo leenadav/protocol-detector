@@ -119,9 +119,11 @@ def parse_response(msg):
 
 def query_doh(resolver, name, qtype):
     wire = build_query(name, TYPES[qtype])
+    if not resolver.startswith("https://"):
+        raise ValueError("DoH resolver must be an https:// URL")
     url = resolver + "?dns=" + base64.urlsafe_b64encode(wire).rstrip(b"=").decode()
-    req = urllib.request.Request(url, headers={"accept": "application/dns-message"})
-    with urllib.request.urlopen(req, timeout=10) as resp:
+    req = urllib.request.Request(url, headers={"accept": "application/dns-message"})  # noqa: S310 - https only, checked above
+    with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310 - https only, checked above
         return parse_response(resp.read())
 
 

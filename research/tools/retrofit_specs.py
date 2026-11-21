@@ -11,7 +11,6 @@ against); OBSERVATIONS.json is observe_web.js output. Without --write it prints 
 """
 import datetime
 import json
-import re
 import sys
 from pathlib import Path
 

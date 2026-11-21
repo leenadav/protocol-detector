@@ -40,8 +40,10 @@ def context():
 
 
 def fetch(url):
-    req = urllib.request.Request(url, headers={"user-agent": "research-recheck/1"})
-    with urllib.request.urlopen(req, timeout=40, context=context()) as resp:
+    if not url.startswith("https://"):
+        raise ValueError("only https:// sources are fetched")
+    req = urllib.request.Request(url, headers={"user-agent": "research-recheck/1"})  # noqa: S310 - https only, checked above
+    with urllib.request.urlopen(req, timeout=40, context=context()) as resp:  # noqa: S310 - https only, checked above
         return resp.status, resp.headers.get("etag"), resp.read()
 
 

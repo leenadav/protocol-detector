@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-21 (PRO-38). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-21 (PRO-43). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -12,7 +12,12 @@ and content-pack patches for the Engine lane.
   fast-forward only (no merge, rebase or force-push).
 - **Never touches**: product code, tests, fixtures, workflows, `go/`, `migration/`, `.github/`, or other branches.
   Product changes go to the Engine lane as patches in `research/patches/` via Hermes.
-- **Reporting**: in chat to Hermes. No GitHub issues, comments or PRs, and no settings changes. Routine
+- **Reporting**: in chat to Hermes. No GitHub issues or comments, and no settings changes.
+- **Main integration** (Lee, 2026-11-20, PRO-43): topic PRs to `main` that touch `research/` only. Each branches from
+  `origin/main` under `claude/research-*` and checks out its paths from `claude/app-research`. PRs are ready for review,
+  one topic each, small enough to review in about 15 minutes, and must pass `ci gate (all jobs)`. This lane never merges,
+  closes, comments on or approves a PR: Lee merges after Hermes reviews. `d09-iscx-vpn2016.md` stays off main while CIC
+  commercial use is `UNVERIFIED`. Routine
   research and format questions are decided here; only product, legal or licensing questions go to Lee or Hermes.
 - **Sources**: primary only (RFCs, IANA, vendor docs and feeds). Nothing is copied from nDPI, Wireshark, Suricata,
   Snort or OpenAppID. Unsourced claims are marked `UNVERIFIED`, unreadable sources `SOURCE BLOCKED`. Never guess.
@@ -98,6 +103,8 @@ the Engine lane when a patch is implemented. The frozen bases it depends on are 
 - A certificate proves a vendor owns a name only when its subject organisation names the vendor; domain-validated
   certificates (Let's Encrypt, Google Trust, Amazon) prove the name only.
 - "No address" is **not dead**: many catalog names are bare suffixes. Only NXDOMAIN (RFC 8020) supports removal.
+- CI runs `ruff check .` over the whole repository (including `research/tools`) and gitleaks over full history: run
+  both before a PR (pinned ruff from `requirements-dev.txt`; gitleaks built from `tools/scanners`).
 - Look-alike vectors must be built on the registrable part (`xanydesk.com`, not `xnet.anydesk.com`).
 - Compute every number before writing it; read back paraphrases against the source. Earlier slips (invented counts, an
   overstated licence) were caught this way.
