@@ -284,6 +284,8 @@ adversarial: go-build
 RANDOM_SEED ?= 1
 RANDOM_COUNT ?= 2000
 parity-random: go-build
+	$(PYTHON) -B migration/parity/random_diff.py --self-test
+	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --count 300 --plant
 	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --seed $(RANDOM_SEED) --count $(RANDOM_COUNT)
 
 SEED ?= 1

@@ -63,7 +63,7 @@ Run everything from the repository root. Times are for the cloud container (4 vC
 |---|---|---|
 | `make go-check` | gofmt, vet, `go test -race`, 28 fuzz targets, parity-go with verify_families, every differential, bench-gate | about 8 min (488 s) |
 | `make check` | the Python suite (866 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
-| `make parity-random` (in `go-check`) | the randomized differential: seed 1, 2,000 cases, Python reference as oracle (`migration/parity/random_diff.py`, allow-list `random_allow.json`). `make parity-random-long SEED= COUNT=` for longer runs | about 3 s |
+| `make parity-random` (in `go-check`) | the randomized differential: `--self-test`, `--plant`, then seed 1 at 2,000 cases, with the Python reference as oracle (`migration/parity/random_diff.py`, allow-list `random_allow.json`). `make parity-random-long SEED= COUNT=` for longer runs | about 3 s |
 | `make go-vendor-check` | re-vendors into `build/go-vendor-check` and diffs it against `go/vendor` | seconds (module cache warm) |
 | `python3 -B -m unittest discover -q` | the Python suite on its own | part of `make check` |
 

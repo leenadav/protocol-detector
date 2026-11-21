@@ -523,10 +523,10 @@ reason, a correct or wrong hint, or a tight byte budget. The Go engine answers t
 
 | item | state | evidence |
 |---|---|---|
-| CI run | gate | `make parity-random` (seed 1, 2,000 cases, about 3 s) is part of `make go-check`, so the CI `go-engine` job runs it. Seed 1: 2,000 of 2,000 matched. |
-| Long run | available | `make parity-random-long SEED=n COUNT=n`. Seeds 2-11 at 20,000 cases each: 200,000 of 200,000 matched, 0 allowed, about 21 s per 20,000. A nightly job is a CI/CD-lane workflow change (requested). |
+| CI run | gate | `make parity-random` is part of `make go-check`, so the CI `go-engine` job runs it. It runs three steps: `--self-test` (allow-list rules, stale entries, determinism), `--plant` on 300 cases (the planted difference must be caught), then seed 1 at 2,000 cases, about 3 s. Seed 1: 2,000 of 2,000 matched. |
+| Long run | available | `make parity-random-long SEED=n COUNT=n`. Seeds 2-11 at 20,000 cases each, plus seed 12 at 3,000: 203,000 of 203,000 matched, 0 allowed, about 21 s per 20,000. A nightly job is a CI/CD-lane workflow change (requested). |
 | Allow-list | empty | `migration/parity/random_allow.json`: case id to reason. An entry that no longer mismatches on its seed fails the run. |
-| Self-check | passes | `--plant` alters one reference answer to another valid status; the run must report exactly that case (it does). |
+| Self-checks | pass, in CI | `--plant` alters one reference answer to another valid status, and the run must report exactly that case. `--self-test` checks `judge()`: an allowed mismatch passes, an unlisted one fails, and a listed case that now agrees fails. Removing the stale-entry rule makes it fail. |
 | Found and fixed | 0 engine mismatches | The first trial had 8 cases Go declined ("not ported: hint http/ftp/redis"). It was a harness error: `cases.run_stream` drops a hint outside `registry.PARSERS`, so stream hints are now drawn from `PARSERS` only. |
 
 ## Adversarial identification (2026-11-18)
