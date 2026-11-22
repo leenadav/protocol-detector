@@ -27,6 +27,9 @@ func TestFacadeMatchesTheEngineOnEveryStreamCase(t *testing.T) {
 		if c.Kind != "stream" || c.Hint != nil {
 			continue
 		}
+		if o := c.Config; o.Fingerprints || o.Certificates || o.Continuation > 0 || o.Heuristics || o.RetainContexts {
+			continue // options the facade never enables (detector.go builds its config from contracts.DefaultConfig)
+		}
 		in, err := engine.New(c.Config, "")
 		if err != nil {
 			continue // options the Go backend does not port

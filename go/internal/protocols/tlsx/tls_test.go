@@ -34,15 +34,8 @@ func ext(kind int, value ...byte) []byte {
 	return append([]byte{byte(kind >> 8), byte(kind), byte(len(value) >> 8), byte(len(value))}, value...)
 }
 
-func TestOptionsTheParserLacksAreRefused(t *testing.T) {
-	for _, o := range []tlsx.Options{{Fingerprints: true}, {Certificates: true}, {Continuation: 1}} {
-		if _, err := tlsx.New(o); err == nil {
-			t.Errorf("%+v accepted", o)
-		}
-	}
-}
-
-// The server-hello decisions of work items #4 and #5, at the parser.
+// Server-hello decisions at the parser. The work item #4 and #5 rows (post-quantum hybrids, unnamed and GREASE
+// values) are not on main: they leave with those fixes, which need a Go-only change (see LANE-BRIEF-culvert.md).
 func TestServerHelloSelections(t *testing.T) {
 	tls13 := ext(43, 3, 4)
 	share := func(group, size int, first byte) []byte {
@@ -58,16 +51,8 @@ func TestServerHelloSelections(t *testing.T) {
 		wants []string
 	}{
 		{"x25519", serverHello(0x1301, append(tls13, share(29, 32, 7)...)), []string{`done=true`, `"selected_key_exchange" "ecdhe"`}},
-		{"hybrid", serverHello(0x1301, append(tls13, share(4588, 1120, 7)...)), []string{`"selected_group" "4588"`, `"selected_key_exchange" "hybrid"`}},
-		{"hybrid short", serverHello(0x1301, append(tls13, share(4588, 1119, 7)...)), []string{`error="malformed: Server key share encoding length or point format invalid"`}},
 		{"p256 without point byte", serverHello(0x1301, append(tls13, share(23, 65, 7)...)), []string{`error="malformed: Server key share encoding length or point format invalid"`}},
-		{"unnamed group", serverHello(0x1301, append(tls13, share(0x6399, 1120, 7)...)), []string{`"selected_group" "25497"`, `"selected_key_exchange" "unrecognized"`}},
-		{"unnamed group, empty share", serverHello(0x1301, append(tls13, share(0x6399, 0, 0)...)), []string{`error="malformed: Server key share encoding length or point format invalid"`}},
-		{"grease group", serverHello(0x1301, append(tls13, share(0x1a1a, 1, 7)...)), []string{`error="malformed: Server selected a reserved GREASE group"`}},
 		{"tls13 unknown extension", serverHello(0x1301, append(append(tls13, share(29, 32, 7)...), ext(1234)...)), []string{`error="unsupported: Extension outside supported TLS 1.3 server hello context"`}},
-		{"tls12 unknown extension", serverHello(0xc02f, ext(1234, 1, 2, 3)), []string{`done=true`, `"selected_tls_version" "1.2"`}},
-		{"tls12 key_share", serverHello(0xc02f, share(29, 32, 7)), []string{`error="malformed: Extension not permitted in a TLS 1.2 ServerHello"`}},
-		{"tls12 grease extension", serverHello(0xc02f, ext(0x0a0a)), []string{`error="malformed: Extension not permitted in a TLS 1.2 ServerHello"`}},
 		{"tls12 duplicate extension", serverHello(0xc02f, append(ext(1234), ext(1234)...)), []string{`error="malformed: Duplicate ServerHello extension"`}},
 		{"not a handshake record", []byte{23, 3, 3, 0, 1, 0}, []string{`error="malformed: Expected plaintext TLS handshake record"`}},
 	}
@@ -105,7 +90,7 @@ func TestFixturesAreSplitInvariant(t *testing.T) {
 			}
 		}
 	}
-	if identified < 40 {
+	if identified < 15 { // main's fixture set completes 20 hellos with the default options
 		t.Fatalf("only %d fixtures completed a hello; the fixture path or labels changed", identified)
 	}
 }

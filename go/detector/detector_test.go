@@ -44,7 +44,7 @@ var (
 	sshBanner    = []byte("SSH-2.0-OpenSSH_9.6\r\n")
 	smtpEHLO     = []byte("EHLO client.example.test\r\n")
 	postgres     = []byte{0, 0, 0, 8, 4, 0xd2, 0x16, 0x2f}                     // SSLRequest
-	http2Preface = []byte("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n")                  // selects http2, not ported
+	http2Preface = []byte("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n")                  // selects http2, outside the default profile
 	junk         = []byte("\x01\x02\x03\x04\x05 not a protocol prefix at all") // outside every family
 )
 
@@ -173,7 +173,7 @@ func TestProfileOutcomes(t *testing.T) {
 		{"ssh server first", nil, sshBanner, want{OutcomeIncomplete, ReasonClosed, "", ""}, want{OutcomeIdentified, ReasonEngine, "ssh", ""}},
 		{"smtp client", smtpEHLO, nil, want{OutcomeIdentified, ReasonEngine, "smtp", ""}, want{OutcomeIncomplete, ReasonClosed, "", ""}},
 		{"postgresql", postgres, nil, want{OutcomeOutsideProfile, ReasonOutsideProfile, "postgresql", ""}, want{OutcomeIncomplete, ReasonClosed, "", ""}},
-		{"http2 not ported", http2Preface, nil, want{OutcomeUnsupported, ReasonNotPorted, "", ""}, want{OutcomeIncomplete, ReasonClosed, "", ""}},
+		{"http2", http2Preface, nil, want{OutcomeOutsideProfile, ReasonOutsideProfile, "http2", ""}, want{OutcomeIncomplete, ReasonClosed, "", ""}},
 		{"junk", junk, nil, want{OutcomeUnknown, ReasonEngine, "", ""}, want{OutcomeIncomplete, ReasonClosed, "", ""}},
 	}
 	for _, c := range cases {
@@ -192,37 +192,34 @@ func TestProfileOutcomes(t *testing.T) {
 	}
 }
 
-// TestPostQuantumServerHello is the facade-level regression for integration work item #4: a ServerHello
-// selecting the X25519MLKEM768 hybrid group, the default of current clients and of Go's crypto/tls, is
-// identified in both directions. Until the fix it was reported unknown ("Server key share group outside
-// supported profile"), which the Culvert lab reproduced on a live tunnel.
-func TestPostQuantumServerHello(t *testing.T) {
+// TestPostQuantumServerHelloGap pins a known gap of main's engine. Integration work item #4 (the X25519MLKEM768
+// hybrid group, the default of current clients and of Go's crypto/tls) and #5 (unknown TLS registry values) were
+// fixed on claude/culvert-integration-prep in both the Python reference and Go; they did not land with the
+// branch, because main's Python reference is frozen and the change needs Lee's decision (LANE-BRIEF-culvert.md).
+// Until they land, the client direction is identified and the server direction of a default Go TLS server is
+// unknown. When the fix lands, this test is replaced by the positive one it replaced (commit a51f459).
+func TestPostQuantumServerHelloGap(t *testing.T) {
 	ch, sh := tlsFlights(t, "pq.example.test", []string{"h2"}, nil) // nil: the standard library's default groups
 	s := observe(t, mustEngine(t, allFamilies()), ch, sh)
 	expect(t, "pq", s.Direction(ClientToServer), want{OutcomeIdentified, ReasonEngine, "tls", "pq.example.test"})
 	srv := s.Direction(ServerToClient)
-	expect(t, "pq", srv, want{OutcomeIdentified, ReasonEngine, "tls", ""})
-	got := map[string]string{}
-	for _, ev := range srv.Evidence {
-		got[ev.Field] = ev.Value
-	}
-	if got["selected_group"] != "4588" || got["selected_key_exchange"] != "hybrid" || got["selected_tls_version"] != "1.3" {
-		t.Fatalf("post-quantum ServerHello evidence: %v", got)
+	expect(t, "pq", srv, want{OutcomeUnknown, ReasonEngine, "", ""})
+	if srv.Detail != "Server key share group outside supported profile" {
+		t.Fatalf("post-quantum ServerHello: detail %q", srv.Detail)
 	}
 }
 
-// A Content-Length must fit in int64: the largest value identifies, the next one is malformed in both directions.
-func TestContentLengthOverflowIsMalformed(t *testing.T) {
+// The largest Content-Length that fits in int64 identifies in both directions. (Work item #6, a larger value is
+// malformed, did not land with the branch either; see TestPostQuantumServerHelloGap.)
+func TestContentLengthAtInt64MaxIdentifies(t *testing.T) {
 	e := mustEngine(t, allFamilies())
-	for value, outcome := range map[string]Outcome{"9223372036854775807": OutcomeIdentified, "9223372036854775808": OutcomeMalformed,
-		"99999999999999999999": OutcomeMalformed} {
-		request := []byte("POST /upload HTTP/1.1\r\nHost: a.example\r\nContent-Length: " + value + "\r\n\r\n")
-		response := []byte("HTTP/1.1 200 OK\r\nContent-Length: " + value + "\r\n\r\n")
-		s := observe(t, e, request, response)
-		for _, d := range []Direction{ClientToServer, ServerToClient} {
-			if got := s.Direction(d).Outcome; got != outcome {
-				t.Errorf("Content-Length %s, direction %v: outcome %s, want %s", value, d, got, outcome)
-			}
+	value := "9223372036854775807"
+	request := []byte("POST /upload HTTP/1.1\r\nHost: a.example\r\nContent-Length: " + value + "\r\n\r\n")
+	response := []byte("HTTP/1.1 200 OK\r\nContent-Length: " + value + "\r\n\r\n")
+	s := observe(t, e, request, response)
+	for _, d := range []Direction{ClientToServer, ServerToClient} {
+		if got := s.Direction(d).Outcome; got != OutcomeIdentified {
+			t.Errorf("Content-Length %s, direction %v: outcome %s, want identified", value, d, got)
 		}
 	}
 }

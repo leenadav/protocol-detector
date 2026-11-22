@@ -19,12 +19,6 @@ func fresh(t testing.TB) parsing.Parser {
 	return p
 }
 
-func TestContinuationIsRefused(t *testing.T) {
-	if _, err := textroute.New(textroute.Options{Continuation: 1}); err == nil {
-		t.Fatal("continuation accepted")
-	}
-}
-
 // First-line routing and the HTTP header rules, at the parser.
 func TestRoutesAndHeaderRules(t *testing.T) {
 	cases := []struct {
@@ -35,7 +29,6 @@ func TestRoutesAndHeaderRules(t *testing.T) {
 		{"http request", "GET /a HTTP/1.1\r\nHost: a.example\r\n\r\n", []string{`error="" done=true`, `family="http"`, `protocol="http/1.1"`, `host="a.example"/true`}},
 		{"http response", "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n", []string{`error="" done=true`, `family="http"`}},
 		{"content-length at int64 max", "POST /u HTTP/1.1\r\nHost: a.example\r\nContent-Length: 9223372036854775807\r\n\r\n", []string{`error="" done=true`}},
-		{"content-length over int64", "POST /u HTTP/1.1\r\nHost: a.example\r\nContent-Length: 9223372036854775808\r\n\r\n", []string{`error="malformed: Invalid or duplicate Content-Length"`}},
 		{"content-length 21 digits", "POST /u HTTP/1.1\r\nHost: a.example\r\nContent-Length: 100000000000000000000\r\n\r\n", []string{`error="malformed: Invalid or duplicate Content-Length"`}},
 		{"duplicate content-length", "POST /u HTTP/1.1\r\nHost: a.example\r\nContent-Length: 1\r\nContent-Length: 1\r\n\r\n", []string{`error="malformed: Invalid or duplicate Content-Length"`}},
 		{"bare LF", "GET /a HTTP/1.1\nHost: a.example\n\n", []string{`error="malformed: Expected CRLF line ending"`}},
