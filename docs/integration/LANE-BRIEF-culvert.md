@@ -29,7 +29,7 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   The Culvert clone's push URL is disabled.
 - **Data:** synthetic and loopback only. The lab's origins are on RFC 5737 addresses.
 
-## 2. Current state (2026-11-21, after PRO-91)
+## 2. Current state (2026-11-22, after PRO-91 / PRO-107)
 
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
@@ -77,8 +77,21 @@ Culvert's allocation gates need `-tags benchgate`.
 
 ## 5. Open items
 
-- **Decision (Lee, with the engine lane):** the engine's `go 1.27.4` and `golang.org/x/crypto` against plan items #3
-  and #19. Options are in the drift report, section 5.
+- **Answered for Engine (PRO-107, 2026-11-22), from Culvert `ef94311`, read-only:**
+  - **#19 means (a), compiled code, not (b), the module list.** Culvert already requires `golang.org/x/crypto
+    v0.59.0` and `golang.org/x/sys v0.50.0` (`go.mod:59`, `:61`), the engine's exact versions, so they add nothing
+    to Culvert's graph. Culvert's dependency gate is a licence gate (`pr-deep-gate.yml:426-447`,
+    `go-licenses --disallowed_types=forbidden,restricted`), not a "no modules" rule. On the trial merge,
+    `go list -deps ./detector` shows no non-standard package; only `internal/decrypt` imports `x/crypto`.
+  - **"Standard library only" is our own rule** (ADR 0002 line 39, `TestModuleIsStandardLibraryOnly`). Under (a) the
+    test should check the import graph of `go/detector`, not `go.mod`. If the engine's requirement ever exceeds
+    Culvert's versions, MVS raises Culvert's pin, which is a reviewed dependency bump on their side.
+  - **The Go floor is not settled by Culvert's sources; it goes to Lee.** `go.mod:9-11` says the `go` line is the
+    language minimum and "is not raised to match" the toolchain. `godebug_pins_test.go:67-71` says a patch bump of
+    the `go` line does not invalidate the GODEBUG review, and `toolchain_consistency_test.go:100-103` only needs
+    `toolchain >= go`. So `go 1.27.4` passes Culvert's tests, but importing the module would force their `go` line
+    from 1.27.0 to 1.27.4: the dependency-driven raise `go.mod:14-36` warns about.
+  - **The minimum API is the nine calls the lab adapter uses** (listed in the PRO-107 answer).
 - **Before any merge of the engine branch:** reconcile `tlsx`, `textroute` and `engine` with the engine lane:
   - credit coverage of the engine's new buffers;
   - SSH list ownership;
