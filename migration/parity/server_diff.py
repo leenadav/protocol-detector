@@ -18,7 +18,8 @@ requests go to both, in the same order, from the same script:
 
 Answers are compared as the status line, the headers (Server and Date aside) and the body. JSON bodies are
 compared after replacing what differs by construction: tokens, run, job and instance ids (by order of
-appearance), monotonic times, the lease countdown, wall-clock durations of a run or an analysis, and the
+appearance), monotonic times, the lease countdown, wall-clock durations of a run or an analysis, the measured
+durations inside telemetry histograms (counters, series, bounds and counts are kept; Normalizer.histogram), and the
 "python" field of the health report (the Go service runs no interpreter). The demo capture and showcase are
 random in the reference itself: their answers are compared by shape. Python 3.13 texts are the reference.
 """
@@ -117,6 +118,7 @@ LIVE_SESSION_ID = re.compile(r"L-[0-9]{6}")
 VOLATILE_IDS = ("token", "run_id", "capture_id", "id", "instance")
 VOLATILE_TIMES = ("submitted", "started", "finished", "uptime_seconds", "processing_ms", "elapsed_seconds", "first_seconds",
                   "stable_seconds")
+WALL_CLOCK_COUNTS = ("stage_seconds.tick",)
 
 
 class Normalizer:
@@ -138,9 +140,29 @@ class Normalizer:
             return "<lease>"
         if key == "python":
             return "<interpreter>"
-        if key in ("telemetry", "histograms"):
-            return "<telemetry>"
+        if key == "histograms" and isinstance(value, dict):
+            return OrderedDict((name, self.histogram(name, entry)) for name, entry in value.items())
         return self.walk(value)
+
+    def histogram(self, name, entry):
+        """A telemetry histogram (observability.py). Its observations are durations: wall time for stage_seconds.*,
+        and for the others the capture clock, which in a live run is the time each packet arrived. So the sum,
+        extremes, quantiles and per-bucket counts become markers; the series name, its keys, the bucket bounds and
+        the observation count are kept, except the count of stage_seconds.tick (one tick per wall-clock second).
+        Counters are compared as they are, and so are missing entries and a null in place of an object (PRO-21:
+        the whole telemetry and histograms values used to be one constant)."""
+        if not isinstance(entry, dict):
+            return self.walk(entry)
+        out = OrderedDict()
+        for key, value in entry.items():
+            measured = isinstance(value, (int, float)) and not isinstance(value, bool)
+            if measured and (key in ("sum", "min", "max", "p50", "p95", "p99") or (key == "count" and name in WALL_CLOCK_COUNTS)):
+                out[key] = "<time>"
+            elif key == "buckets" and isinstance(value, list):
+                out[key] = [[pair[0], "<count>"] if isinstance(pair, list) and len(pair) == 2 else self.walk(pair) for pair in value]
+            else:
+                out[key] = self.walk(value)
+        return out
 
     def walk(self, value):
         if isinstance(value, dict):

@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / "migration" / "parity"))
 import analyze_diff  # noqa: E402
 import control_diff  # noqa: E402
 import decrypt_diff  # noqa: E402
+import server_diff  # noqa: E402
 
 
 def quiet(function, *args):
@@ -105,6 +106,46 @@ class ControlWorkerTests(unittest.TestCase):
         self.assertEqual(len(control_diff.checked_lines("live-decrypt", done, (0,), False, self.STREAM)), 2)
         with self.assertRaises(control_diff.WorkerFailure):
             control_diff.checked_lines("live-decrypt", done, (0,), False, self.STREAM + '{"type": "summary", "final": true}\n')
+
+
+def histogram(count, total):
+    return {"count": count, "sum": total, "min": total, "max": total, "p50": 0.001, "p95": 0.001, "p99": 0.001,
+            "buckets": [[0.001, count], ["+inf", 0]]}
+
+
+def state(counters=None, histograms=None):
+    telemetry = {"counters": {"bytes.new": 40, "capture.gaps": 0} if counters is None else counters,
+                 "histograms": {"stage_seconds.packet": histogram(3, 0.0004), "session_lifetime_seconds": histogram(1, 2.5)}
+                 if histograms is None else histograms}
+    return {"state": "stopped", "summary": {"telemetry": telemetry}}
+
+
+class ServerNormalizerTests(unittest.TestCase):
+    """PRO-21: the normalizer replaced whole telemetry and histograms values with one constant."""
+
+    def normal(self, document):
+        return json.dumps(server_diff.Normalizer().walk(document))
+
+    def test_measured_durations_and_the_tick_count_are_the_only_volatile_telemetry(self):
+        timed = state(histograms={"stage_seconds.packet": dict(histogram(3, 0.9), buckets=[[0.001, 1], ["+inf", 2]]),
+                                  "session_lifetime_seconds": histogram(1, 3.5)})
+        self.assertEqual(self.normal(state()), self.normal(timed))
+        ticks = {"stage_seconds.tick": histogram(14, 0.01)}
+        self.assertEqual(self.normal(state(histograms=ticks)), self.normal(state(histograms={"stage_seconds.tick": histogram(6, 0.02)})))
+
+    def test_counters_histogram_entries_and_structure_are_compared(self):
+        for changed in (state(counters={"bytes.new": 41, "capture.gaps": 0}), state(counters={"bytes.new": 40}),
+                        state(histograms={"stage_seconds.packet": histogram(3, 0.0004)}),
+                        state(histograms={"stage_seconds.packet": histogram(4, 0.0004), "session_lifetime_seconds": histogram(1, 2.5)}),
+                        state(histograms={"stage_seconds.packet": histogram(3, 0.0004), "session_lifetime_seconds": histogram(2, 2.5)}),
+                        state(histograms={"stage_seconds.packet": dict(histogram(3, 0.0004), buckets=[[0.005, 3], ["+inf", 0]]),
+                                          "session_lifetime_seconds": histogram(1, 2.5)}),
+                        state(histograms={"stage_seconds.packet": dict(histogram(3, 0.0004), min=None),
+                                          "session_lifetime_seconds": histogram(1, 2.5)}),
+                        state(histograms={"stage_seconds.packet": None, "session_lifetime_seconds": histogram(1, 2.5)}),
+                        {"state": "stopped", "summary": {"telemetry": None}}, {"state": "stopped", "summary": {"telemetry": {}}}):
+            with self.subTest(changed=changed):
+                self.assertNotEqual(self.normal(state()), self.normal(changed))
 
 
 if __name__ == "__main__":
