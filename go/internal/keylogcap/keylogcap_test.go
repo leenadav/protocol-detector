@@ -252,6 +252,20 @@ func TestTupleReuseStartsANewGeneration(t *testing.T) {
 	}
 }
 
+// A retransmitted SYN (same client, same ISN) is the same connection, not tuple reuse: it must not close the
+// retained stream nor start a new generation (Codex PRO-18 P2).
+func TestRetransmittedSYNKeepsTheGeneration(t *testing.T) {
+	client, server, keylog := exchange()
+	frames := conversation(client, server)
+	for _, at := range []int{1, 2} { // before and after the SYN-ACK
+		duplicated := append(append(append([][]byte{}, frames[:at]...), frames[0]), frames[at:]...)
+		out, text := analyzeFrames(t, keylog, duplicated...)
+		if len(out.Connections) != 1 || out.Decrypted != 1 || out.Connections[0]["generation"] != float64(0) {
+			t.Fatalf("SYN repeated at %d: %s", at, text)
+		}
+	}
+}
+
 func FuzzAnalyzeNeverPanics(f *testing.F) {
 	client, server, keylog := exchange()
 	capture := pcap(conversation(client, server)...)
