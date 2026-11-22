@@ -25,5 +25,11 @@ Only MIT-licensed skills are copied (Hermes, PRO-200). Each skill folder carries
 - Not taken: the rest of superpowers (brainstorming, worktrees, finishing-a-development-branch, which offers a local
   merge), Trail of Bits' skills (CC-BY-SA 4.0, share-alike; a separate request if they are needed).
 
+## Loading
+
+The four superpowers skills are listed in every session. The three `golang-*` skills keep upstream's
+`paths: "**/*.go"`, so they are listed only after the session reads or edits a `.go` file (checked in a cloud session
+on `d83cc9e` and in this lane's session). No hook runs and no settings file is involved.
+
 To update: copy the same files from a newer upstream commit, re-apply the two frontmatter removals, and update the
 commit column.

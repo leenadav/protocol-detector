@@ -53,7 +53,7 @@ Project skills in `.claude/skills/` (MIT, upstream and changes in `.claude/skill
 - **New behaviour or a bug fix:** `test-driven-development` (a failing test first; `writing-good-tests` for test anti-patterns).
 - **Done claims:** `verification-before-completion` before DONE, a push or a PR: run the gate and quote its numbers.
 - **Review findings (Codex, Hermes, bots):** `receiving-code-review`: verify each claim against the code before changing it.
-- **Go tests, performance, errors:** `golang-testing`, `golang-performance`, `golang-error-handling`; the
+- **Go tests, performance, errors:** `golang-testing`, `golang-performance`, `golang-error-handling` (listed once a `.go` file is open); the
   repository rules above win (offline Go, vendored dependencies, `parsing.Budget` / `parsing.Malformed`).
 
 ## Keeping this file useful
