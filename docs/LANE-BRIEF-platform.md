@@ -25,6 +25,16 @@ their decisions, the policy locks, and the release controller.
 
 ## 2. Current state (2026-11-22, after PRO-128)
 
+- **PRO-202 (CI speed), step 2:** recovery PR #93 merged (`d3a4dab`), so #59–#64, #75, #76, #89 and #91 are on `main`.
+  Step 2 (`claude/cicd-go-engine-split`) splits the ~10.5-minute `go-engine` job into `go-engine` (`make
+  go-check-static` + `make go-check-race`), `go-fuzz-smoke` (a `["1/3", "2/3", "3/3"]` matrix over `make
+  go-check-fuzz`, sharded by `tools/go_fuzz_smoke.py` from the Makefile's GO_FUZZ_SMOKE list) and `go-parity` (`make
+  go-check-parity`). `make go-check` still runs the four parts in order. `tools/go_fuzz_smoke.py --check-matrix`
+  (workflow-lint, `make workflow-policy`) fails a matrix that drops a shard; a listed target that no test defines
+  fails. Steps 3 (tool-decided docs-only fast path) and 4 (GOMODCACHE cache saved on `main` only) follow as their own PRs.
+- **PRO-194 finding 2** (`build_go_release.py` sets and checks `main.version`): local `5324543`, unpushed, waits on
+  Engine's PRO-195.
+
 - `main` = `2a33183`. PRO-42, PRO-59 and PRO-31 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #37 (`0d32281`), #38 (`51b5e94`), #39 (`0ef7349`);
   #41 and #54 (PRO-73) too. #56 (the brief through PRO-103) and #66 (gitleaks allowlist for the r5 CNAME false positive, PRO-145) are merged.
   Open lane PRs: drafts #55 (PRO-77) and #57 (PRO-102) into `claude/go-migration`, and the stack on #57: #59 and #60 (PRO-103),

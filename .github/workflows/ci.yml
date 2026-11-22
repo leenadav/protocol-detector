@@ -538,6 +538,8 @@ jobs:
           python -B tools/codeql_gate.py --self-test
           python -B tools/go_ci.py --self-test
           python -B tools/go_fuzz_long.py --self-test
+          python -B tools/go_fuzz_smoke.py --self-test
+          python -B tools/go_fuzz_smoke.py --check-matrix .github/workflows/ci.yml
           python -B tools/content_gate.py --self-test
           python -B tools/merge_readiness.py --self-test
           python -B tools/perf_history.py --self-test
@@ -673,14 +675,105 @@ jobs:
     # Migration M10: the Go engine's own gate on GitHub's runners, on the one Go toolchain the scanner
     # builds use (tools/check_go_drift.py keeps it the newest patch of a supported line; tools/go_ci.py
     # refuses a go/go.mod that builds with another: its `toolchain` line, else its `go` line). `make
-    # go-check` is gofmt, go vet, go test -race, the fuzz smoke targets and `make parity-go` (every
-    # committed fixture replayed through the Go engine and compared with the Python reference's
-    # answers). A commit without the migration tree has nothing to check and says so in the summary;
-    # one with part of it fails. GOPROXY=off: the engine has no module dependency, so a target asking
-    # for any other Go fails instead of downloading it mid-job.
-    name: Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)
+    # go-check` runs in three jobs (PRO-202): this one (`make go-check-static`: gofmt, go vet, the mutation
+    # boundary checks; then `make go-check-race`: go test -race), go-fuzz-smoke (`make go-check-fuzz`, one
+    # shard per matrix job) and go-parity (`make go-check-parity`). Each part is the same Makefile target
+    # `make go-check` runs locally, so the three jobs check exactly what one did. A commit without the
+    # migration tree has nothing to check and says so in the summary; one with part of it fails.
+    # GOPROXY=off: the engine's dependency is vendored, so a target asking for any other Go or module
+    # fails instead of downloading it mid-job.
+    name: Go engine (gofmt, vet, race tests)
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 20
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: gofmt, go vet and the mutation boundary checks (make go-check-static)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: python -B tools/go_ci.py go --part static --summary "$GITHUB_STEP_SUMMARY"
+      - name: Race tests (make go-check-race)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: python -B tools/go_ci.py go --part race --summary "$GITHUB_STEP_SUMMARY"
+
+  go-fuzz-smoke:
+    # The fuzz smoke of `make go-check`: every GO_FUZZ_SMOKE target in the Makefile for its seconds, split
+    # into shards by tools/go_fuzz_smoke.py (longest first to the least-loaded shard, fixed, so the shards
+    # are disjoint and together run every target). The matrix must list every shard "1/N" .. "N/N":
+    # `tools/go_fuzz_smoke.py --check-matrix` (workflow-lint job, make workflow-policy) fails otherwise.
+    # The shard reaches the tool through the environment, never expanded into the script.
+    name: Go fuzz smoke (shard ${{ matrix.shard }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["1/3", "2/3", "3/3"]
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Fuzz smoke, one shard (make go-check-fuzz GO_FUZZ_SHARD)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+          SHARD: ${{ matrix.shard }}
+        run: python -B tools/go_ci.py go --part fuzz --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY"
+
+  go-parity:
+    # The parity gates of `make go-check` (`make go-check-parity`): parity-go (every committed fixture
+    # replayed through the Go engine and compared with the Python reference's answers, with a floor under
+    # the parity report), parity-analyze, parity-decrypt, parity-live, parity-live-decrypt, schema-go,
+    # parity-control, parity-server, adversarial, parity-random and bench-gate.
+    name: Go parity with the Python reference (replay, analyze, decrypt, live, schema, random, bench)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
@@ -699,7 +792,7 @@ jobs:
           cache: false
       - name: Install the hash-pinned decryption extra (the Python reference of `make parity-decrypt` decrypts with it)
         run: python -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt
-      - name: Go engine gate (make go-check) and parity report floor
+      - name: Parity gates (make go-check-parity) and parity report floor
         env:
           GOPROXY: "off"
           GOSUMDB: sum.golang.org
@@ -709,7 +802,7 @@ jobs:
           GONOSUMDB: ""
           GOPRIVATE: ""
           GOINSECURE: ""
-        run: python -B tools/go_ci.py go --summary "$GITHUB_STEP_SUMMARY"
+        run: python -B tools/go_ci.py go --part parity --summary "$GITHUB_STEP_SUMMARY"
 
   go-minimum:
     # The Go engine on the oldest Go it declares it supports: go/go.mod's `go` line (the minimum,
@@ -1141,7 +1234,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: always()
-    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, osv-scan, go-engine, go-minimum, go-vendor, go-lint, go-determinism, go-licenses, go-coverage, go-api, contract-compat, content-pack, security-requirements]
+    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, osv-scan, go-engine, go-fuzz-smoke, go-parity, go-minimum, go-vendor, go-lint, go-determinism, go-licenses, go-coverage, go-api, contract-compat, content-pack, security-requirements]
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
