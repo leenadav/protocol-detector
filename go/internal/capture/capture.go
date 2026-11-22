@@ -348,10 +348,13 @@ func (d *Decoder) simple(body []byte) (Record, *Error) {
 		return Record{}, fail("Truncated pcapng simple packet block")
 	}
 	in := d.interfaces[0]
-	original := int(d.order.Uint32(body))
-	captured := original
-	if captured > in.snaplen {
-		captured = in.snaplen
+	// Capped by the snapshot length (at most 1 MiB) as uint32, before it becomes an int: on a 32-bit platform
+	// a length of 2^31 or more would be negative.
+	raw := d.order.Uint32(body)
+	original := int(raw)
+	captured := in.snaplen
+	if uint64(raw) < uint64(in.snaplen) {
+		captured = int(raw)
 	}
 	if 4+((captured+3)&^3) != len(body) {
 		return Record{}, fail("pcapng simple packet length disagrees with its block")
