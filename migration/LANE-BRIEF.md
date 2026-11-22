@@ -28,7 +28,8 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **Branch head:** check `git log -1 origin/claude/go-migration`. On 2026-11-21 (PRO-69) `main` `0ef7349` (41 commits, through PR #39,
   including #39's numeric content-version order) was merged in with a normal merge commit. On 2026-11-22 `main` `2a33183` (PR #66, #36) came
   in as `f5353c5`; PR #55 (per-target module sets in the release build, `07cda53`) was merged in (`b1d69d5`, Lee's
-  approval), then `main` `2c92b17` (PR #66, #71 gitleaks rules, #63, #68) with a normal merge (`b2e36d4`), so the branch is 0 behind `main`.
+  approval), then `main` `2c92b17` (PR #66, #71 gitleaks rules, #63, #68) with a normal merge (`b2e36d4`), and `main` `b2643ed` (through PR #85) as `f255c9d`, so the branch is 0 behind
+  `main` and merges into it without conflicts. PR #40 is ready for review (Lee, 2026-11-22); the merge is Lee's.
   On `b2e36d4` every check on PR #40 passes (44 pass, 1 skipped: `release publish`, which only runs on tags).
 - **Done, Milestones A and B:**
   - The Go engine, the CLI `protodetect` and the dashboard service `protodetect serve`.
