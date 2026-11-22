@@ -1169,6 +1169,19 @@ SCANNER_JOBS = {
                  "zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows | tee zizmor.txt",
                  'echo "zizmor $(zizmor --version | awk \'{print $NF}\'): $(tail -n 1 zizmor.txt)" | tee -a "$GITHUB_STEP_SUMMARY"']},
     ]),
+    # Go lint (golangci-lint, staticcheck, gosec): each built from its tools/golint module (go.sum checked against
+    # the Go checksum database) in a copy outside the checkout, before tools/go_lint.py or any repository code runs
+    "go-lint": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": ['mkdir -p "$RUNNER_TEMP/golint"',
+                 'cp -r tools/golint/golangci-lint tools/golint/staticcheck tools/golint/gosec "$RUNNER_TEMP/golint/"',
+                 'cd "$RUNNER_TEMP/golint/golangci-lint"', 'GOBIN="$RUNNER_TEMP/bin" go install tool',
+                 'cd "$RUNNER_TEMP/golint/staticcheck"', 'GOBIN="$RUNNER_TEMP/bin" go install tool',
+                 'cd "$RUNNER_TEMP/golint/gosec"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
+    ]),
     "toolchain-audit": (SCANNER_JOB_KEYS, None, [
         HARDEN_STEP,
         {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
@@ -1211,19 +1224,26 @@ def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
 # of them means advancing a reviewed baseline; and, whatever the lock says, gitleaks keeps its
 # default rules, and no other file a scanner would load on its own may exist (task 16 round 1).
 SCANNER_LOCK = "tools/scanner_config.lock.json"
-SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml", "tools/scanners/go.mod")
+GO_LINT_MODS = ("tools/golint/golangci-lint/go.mod", "tools/golint/staticcheck/go.mod", "tools/golint/gosec/go.mod")
+SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml", "tools/scanners/go.mod", "tools/golint/golangci.yml",
+                  "tools/golint/baseline.json") + GO_LINT_MODS
 # go.mod directives that would change what the pinned scanners are or how they behave: `replace`
 # substitutes another module for gitleaks or a dependency, `godebug` changes standard-library
 # behaviour (x509, TLS) of the built binaries (item 22).
 GO_MOD_BANNED = re.compile(r"^\s*(replace|godebug)\b")
 # Files a scanner picks up from the tree without being told to: each would bypass the lock.
-SCANNER_AUTOLOAD = re.compile(r"(^|/)(ruff\.toml|\.ruff\.toml|zizmor\.ya?ml|actionlint\.ya?ml|\.gitleaksignore|\.bandit)$")
+SCANNER_AUTOLOAD = re.compile(r"(^|/)(ruff\.toml|\.ruff\.toml|zizmor\.ya?ml|actionlint\.ya?ml|\.gitleaksignore|\.bandit"
+                              r"|\.golangci\.(?:ya?ml|toml|json)|staticcheck\.conf)$")
 # Inline forms that silence a scanner wider than one reviewed line, or that no file uses. The
 # gitleaks token is built, never written, so no repository file has to be exempt from the scan.
 GITLEAKS_INLINE = re.compile(re.escape("gitleaks" + ":allow"), re.I)
 # A blanket noqa comment (no rule code) silences every rule on its line; ruff's PGH004 reports it too
 # (item 20), but this does not depend on whether a blanket noqa can silence PGH004 itself.
-TOOL_INLINE = re.compile(r"#\s*nosec\b|#\s*(?:ruff|flake8)\s*:\s*noqa|#\s*noqa\b(?!\s*:\s*[A-Z])", re.I)
+# For the Go linters (tools/go_lint.py): a nolint directive naming no linter, and staticcheck's file-wide ignore. A
+# //nolint:<linter> // reason stays one reviewed line (golangci-lint's nolintlint requires both); gosec runs with
+# -nosec, so its in-code comments suppress nothing and are refused with bandit's above.
+TOOL_INLINE = re.compile(r"#\s*nosec\b|#\s*(?:ruff|flake8)\s*:\s*noqa|#\s*noqa\b(?!\s*:\s*[A-Z])"
+                         r"|//\s*nolint\b(?!:)|//\s*lint:file-ignore\b", re.I)
 # ruff and bandit never read these; gitleaks scans them, so its token is searched there too.
 SKIP_DIRS = {".git", "__pycache__", "dist", "build"}
 GITLEAKS_KEY = re.compile(r"^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$")
@@ -1365,12 +1385,14 @@ def check_scanner_config(root, lock_text):
         if "useDefault=true" not in section:
             problems.append(".gitleaks.toml: `[extend] useDefault = true` is required (gitleaks' default rules)")
         problems += gitleaks_keys(text)
-    gomod = root / "tools/scanners/go.mod"
-    if gomod.exists():
+    for name in ("tools/scanners/go.mod",) + GO_LINT_MODS:
+        gomod = root / name
+        if not gomod.exists():
+            continue
         for number, line in enumerate(gomod.read_text(encoding="utf-8").splitlines(), 1):
             if GO_MOD_BANNED.match(line):
-                problems.append("tools/scanners/go.mod:{}: `{}` may not change what the pinned scanners are or how they "
-                                "behave".format(number, GO_MOD_BANNED.match(line).group(1)))
+                problems.append("{}:{}: `{}` may not change what the pinned scanners are or how they "
+                                "behave".format(name, number, GO_MOD_BANNED.match(line).group(1)))
     pyproject = root / "pyproject.toml"
     if pyproject.exists():
         outside, inside = [], False
@@ -2476,6 +2498,13 @@ def self_test():
         "repository code before govulncheck": ci_full.replace(
             "      - name: Audit the Go-built scanners against the Go vulnerability database (govulncheck)\n",
             repo_step + "      - name: Audit the Go-built scanners against the Go vulnerability database (govulncheck)\n", 1),
+        # the Go lint tools are built the same way, outside the checkout, before repository code
+        "go lint build in the checkout": in_job(ci_full, "go-lint", '          cd "$RUNNER_TEMP/golint/gosec"\n', '          cd tools/golint/gosec\n'),
+        "go lint tool dropped": in_job(ci_full, "go-lint", '          cd "$RUNNER_TEMP/golint/staticcheck"\n          GOBIN="$RUNNER_TEMP/bin" go install tool\n', ''),
+        "go lint modules writable": in_job(ci_full, "go-lint", '          GOFLAGS: "-mod=readonly"\n', '          GOFLAGS: "-mod=mod"\n'),
+        "repository code before the go lint build": in_job(ci_full, "go-lint",
+            "      - name: Build the pinned golangci-lint, staticcheck and gosec (tools/golint)\n",
+            repo_step + "      - name: Build the pinned golangci-lint, staticcheck and gosec (tools/golint)\n"),
         "self-hosted": ci_full.replace("    name: workflow lint (actionlint, zizmor)\n    runs-on: ubuntu-24.04\n",
                                        "    name: workflow lint (actionlint, zizmor)\n    runs-on: self-hosted\n", 1),
     }.items():
@@ -2568,6 +2597,18 @@ def self_test():
                                  True, "`replace` may not change"),
         "go.mod godebug": ([("tools/scanners/go.mod", lambda t: t + "\ngodebug x509sha1=1\n")], True, "`godebug` may not change"),
         "go.mod missing": ([("tools/scanners/go.mod", lambda t: None)], True, "tools/scanners/go.mod is missing"),
+        # PRO-102: the Go lint configuration, its baseline and its tool modules are locked; nothing else may configure them
+        "golangci exclusion added": ([("tools/golint/golangci.yml", lambda t: t.replace("        - fmt.Fprintln\n", "        - fmt.Fprintln\n        - os.Remove\n", 1))],
+                                     False, "tools/golint/golangci.yml: differs from"),
+        "go lint baseline grown": ([("tools/golint/baseline.json", lambda t: t.replace('{"findings": [\n', '{"findings": [\n{"count": 1, "file": "x.go", '
+                                                                                       '"message": "m", "rule": "G115", "tool": "gosec"},\n', 1))],
+                                   False, "tools/golint/baseline.json: differs from"),
+        "gosec go.mod replace": ([("tools/golint/gosec/go.mod", lambda t: t + "\nreplace github.com/securego/gosec/v2 => ../gosec\n")],
+                                 True, "`replace` may not change"),
+        "golangci config autoloaded": ([("go/.golangci.yml", lambda t: "version: \"2\"\nlinters:\n  default: none\n")], True, "go/.golangci.yml: a scanner loads"),
+        "staticcheck config autoloaded": ([("go/staticcheck.conf", lambda t: 'checks = ["-all"]\n')], True, "go/staticcheck.conf: a scanner loads"),
+        "blanket nolint": ([("go/x.go", lambda t: "package x\n\nvar v = 1 //no" + "lint\n")], True, "silences a scanner"),
+        "staticcheck file-wide ignore": ([("go/x.go", lambda t: "//lint" + ":file-ignore U1000 unused helpers\npackage x\n")], True, "silences a scanner"),
         "PGH004 dropped": ([("pyproject.toml", lambda t: t.replace(', "PGH004"]', "]", 1))], False, "pyproject.toml: differs from"),
         "gitleaks inline allow": ([("protocol_fixtures.py", lambda t: t + '\nTOKEN = "x"  # gitleaks' + ':allow\n')], True, "silences a scanner"),
         # task 16 round 2: gitleaks scans Markdown and build directories too, so its token is found there,

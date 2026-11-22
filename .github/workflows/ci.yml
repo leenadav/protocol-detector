@@ -731,6 +731,65 @@ jobs:
           GOINSECURE: ""
         run: python -B tools/go_ci.py vendor-check --summary "$GITHUB_STEP_SUMMARY"
 
+  go-lint:
+    # Lint and static analysis of the Go engine (go/): golangci-lint 2.15.0 (tools/golint/golangci.yml),
+    # staticcheck 2026.2.2 and gosec 2.29.0 (G104 and G304 excluded, reasons in tools/go_lint.py), each built
+    # from tools/golint/<tool>/go.mod and go.sum (every module hash checked against the Go checksum database)
+    # in a copy outside the checkout, before any repository code runs. They then run on the vendored tree with
+    # no module download. A finding beyond tools/golint/baseline.json fails the job, and so does a tool that
+    # cannot load the tree (gosec's silent all-clear on an export-data mismatch included).
+    name: Go lint and static analysis (golangci-lint, staticcheck, gosec)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Build the pinned golangci-lint, staticcheck and gosec (tools/golint)
+        env:
+          GOPROXY: https://proxy.golang.org
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          mkdir -p "$RUNNER_TEMP/golint"
+          cp -r tools/golint/golangci-lint tools/golint/staticcheck tools/golint/gosec "$RUNNER_TEMP/golint/"
+          cd "$RUNNER_TEMP/golint/golangci-lint"
+          GOBIN="$RUNNER_TEMP/bin" go install tool
+          cd "$RUNNER_TEMP/golint/staticcheck"
+          GOBIN="$RUNNER_TEMP/bin" go install tool
+          cd "$RUNNER_TEMP/golint/gosec"
+          GOBIN="$RUNNER_TEMP/bin" go install tool
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Lint the engine against the baseline (tools/go_lint.py)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          python -B tools/go_lint.py --self-test
+          python -B tools/go_lint.py --bin "$RUNNER_TEMP/bin" --summary "$GITHUB_STEP_SUMMARY"
+
   content-pack:
     # A content release (a research batch) must hold together: the schema, the lock and every
     # earlier release reproducing its published digest (`make content`), the exported pack and
@@ -795,7 +854,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: always()
-    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, go-engine, go-minimum, go-vendor, content-pack, security-requirements]
+    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, go-engine, go-minimum, go-vendor, go-lint, content-pack, security-requirements]
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4

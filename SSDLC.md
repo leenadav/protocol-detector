@@ -98,6 +98,7 @@ request:
 | ci | `Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)` | `tools/go_ci.py go`: on the pinned Go 1.27.4, which must be the compiler go/go.mod builds with (its `toolchain` line, else its `go` line), `make go-check` (gofmt, `go vet`, `go test -race`, fuzz smoke, `make parity-go`) and a floor under the parity report; nothing to check on a commit without the migration tree, failure on one with part of it; `GOPROXY=off`, so no Go is downloaded mid-job |
 | ci | `Go engine on its declared minimum Go (vet, race tests)` | `tools/go_ci.py minimum`: on exactly go/go.mod's `go` line (the declared minimum), installed by setup-go, `make go-check-minimum` (`go vet`, `go test -race`); a minimum equal to the compiler is go-engine's run and passes as such (item 28) |
 | ci | `Go vendor tree matches go.mod and go.sum (module proxy, checksum database)` | `tools/go_ci.py vendor-check`: `make go-vendor-check` re-vendors and compares with go/vendor, the one Go step with module access; nothing to verify without dependencies (item 32) |
+| ci | `Go lint and static analysis (golangci-lint, staticcheck, gosec)` | `tools/go_lint.py`: golangci-lint 2.15.0 (`tools/golint/golangci.yml`), staticcheck 2026.2.2 and gosec 2.29.0 (`-nosec`, G104 and G304 excluded with reasons), built from `tools/golint/<tool>/go.mod` and go.sum outside the checkout and run offline on the vendored tree; a finding beyond `tools/golint/baseline.json` or a tool that cannot load the tree fails (item 35) |
 | ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack`, the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...`; nothing to check without the Go content pack (item 30) |
 | ci | `security requirements gate` | every SR row names an existing test |
 
@@ -788,6 +789,31 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    for the run (`tools/release_provenance.py`), verified and uploaded as the separate
    `release-dry-run-<sha>` artifact: a dry run cannot issue the real Sigstore attestation, which
    writes to the public transparency log. No tag or release was created.
+35. Go lint and static analysis (`go-lint` ci job, in the gate's needs; Lee via Hermes, PRO-102,
+   2026-11-21, after Culvert's PR gates). The job builds golangci-lint 2.15.0, staticcheck
+   2026.2.2 and gosec 2.29.0 from `tools/golint/<tool>/go.mod` and go.sum, one module per tool so
+   each keeps its own dependency versions, in a copy outside the checkout, through the module
+   proxy and checksum database (rule 15 pins the steps up to that build). gosec's own
+   golang.org/x/tools cannot read Go 1.27 export data, so it would report 0 issues on a tree it
+   never loaded; its module raises only that loader to v0.52.0, and `tools/go_lint.py` fails on
+   any load error of any of the three tools. The tools then run on the vendored tree with
+   `GOPROXY=off`.
+   - **Rule set:** errcheck, govet, ineffassign, unused, bodyclose, unconvert, misspell, nolintlint
+     (a nolint must name its linter and give a reason) and gofmt, plus staticcheck's and gosec's
+     default checks.
+   - **Exclusions, each with a reason:** errcheck skips `fmt.Fprint*`, since the writer's Flush or
+     Close stays checked. gosec runs with `-nosec`, so in-code comments suppress nothing. It
+     excludes G104, which duplicates errcheck, and G304, since every opened path comes from the
+     operator and never from traffic; Culvert excludes G304 as well.
+   - **Baseline:** the findings on `claude/go-migration` at `0081f6f` (194: golangci-lint 81,
+     staticcheck 9, gosec 104) are the accepted baseline. Any finding beyond it fails the job,
+     and entries that no longer occur are listed for removal. The baseline only shrinks, through
+     a reviewed `--write-baseline`.
+   - **Rule 16:** it locks the configuration, the baseline and the three go.mod files. It refuses
+     a `.golangci.*` or `staticcheck.conf` that would load on its own, a blanket nolint and
+     staticcheck's file-wide ignore.
+   - **Triage:** the baseline's findings go to the Engine lane: the G115 narrowing conversions,
+     the unchecked Close and Flush calls, the unused code, and G602 in `quicx` among them.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
