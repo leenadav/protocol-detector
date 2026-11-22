@@ -1,0 +1,14 @@
+{
+ "global": 78.0,
+ "packages": {
+  "internal/protocols/dnsx": 80.5,
+  "internal/protocols/fingerprint": 92.6,
+  "internal/protocols/framed": 86.9,
+  "internal/protocols/heuristics": 23.3,
+  "internal/protocols/hpack": 87.6,
+  "internal/protocols/quicx": 88.2,
+  "internal/protocols/textroute": 81.3,
+  "internal/protocols/tlsx": 66.9,
+  "internal/protocols/x509x": 71.8
+ }
+}

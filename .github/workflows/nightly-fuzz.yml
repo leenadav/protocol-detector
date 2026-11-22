@@ -1,7 +1,10 @@
 # Extended seeded fuzzing beyond the unit-test budget. Findings are regressions in
 # bounded parsing (crash, unbounded work, status outside the documented set).
-# Two jobs: the Python mutation fuzz of every fixture, and every Go fuzz target for minutes
-# instead of the per-push gate's seconds (tools/go_fuzz_long.py; failing inputs are uploaded).
+# Three jobs: the Python mutation fuzz of every fixture; every Go fuzz target for minutes
+# instead of the per-push gate's seconds (tools/go_fuzz_long.py; failing inputs are uploaded);
+# and the randomized Python-vs-Go parity run (make parity-random-long, PRO-100/PRO-136: the
+# Python reference as oracle; the report of a failing run, with every mismatched case, is uploaded).
+# None of them is a required check, so a nightly failure never blocks a pull request.
 # GitHub runs `schedule` only from the default branch's copy of this file, so a change here
 # takes effect nightly once it is on main; before that, run it with workflow_dispatch on
 # the branch (the file already exists on main, so dispatch can target any ref).
@@ -18,6 +21,12 @@ on:
       go_budget:
         description: minutes of Go fuzzing, split across every fuzz target (1-100)
         default: "80"
+      random_seed:
+        description: seed of the randomized Python-vs-Go parity run (digits; empty means this run's id)
+        default: ""
+      random_count:
+        description: cases in the randomized parity run (1-500000; run in batches of 25000, one seed each)
+        default: "50000"
 
 permissions:
   contents: read
@@ -110,5 +119,85 @@ jobs:
         with:
           name: go-fuzz-crashers
           path: go-fuzz-crashers/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  parity-random:
+    # make parity-random-long (migration/parity/random_diff.py): valid-shaped TLS ClientHello, HTTP, SSH and QUIC
+    # Initial cases, varied by fragmentation, truncation, hints and budgets, answered by the Python reference and
+    # by the Go binary (`protodetect replay`); any mismatch outside migration/parity/random_allow.json fails. The
+    # seed is this run's id (or the dispatch input) and is written to the summary: the same seed and count
+    # reproduce the run exactly (make parity-random-long SEED=<seed> COUNT=<count>).
+    name: randomized Python-vs-Go parity (long)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Randomized parity, the Python reference as oracle
+        # The ci Go jobs' environment: no module or toolchain download (vendored tree, pinned compiler).
+        # The dispatch inputs reach make only after they are checked to be plain decimal numbers.
+        env:
+          SEED: ${{ github.event.inputs.random_seed || github.run_id }}
+          COUNT: ${{ github.event.inputs.random_count || '50000' }}
+          BATCH: "25000"
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          [[ "$SEED" =~ ^[0-9]{1,18}$ ]] || { echo "seed must be digits, got: $SEED"; exit 2; }
+          if ! [[ "$COUNT" =~ ^[0-9]{1,6}$ ]] || (( COUNT < 1 || COUNT > 500000 )); then
+            echo "count must be 1-500000, got: $COUNT"
+            exit 2
+          fi
+          # protodetect replay reads at most 64 MiB of cases per process (go/internal/parity MaxDocumentBytes, a
+          # deliberate budget; about 37,000 cases fit), so the run is split into batches of at most 25,000 cases,
+          # each with its own seed (SEED, SEED+1, ...). Each batch is reproducible on its own with its command
+          # below. make does not create build/, where the reports go.
+          mkdir -p build
+          echo "### Randomized Python-vs-Go parity ($COUNT cases from seed $SEED, batches of at most $BATCH)" >> "$GITHUB_STEP_SUMMARY"
+          remaining=$COUNT
+          batch_seed=$SEED
+          status=0
+          while (( remaining > 0 )); do
+            batch_count=$(( remaining < BATCH ? remaining : BATCH ))
+            echo "- reproduce: \`make parity-random-long SEED=$batch_seed COUNT=$batch_count\`" >> "$GITHUB_STEP_SUMMARY"
+            make parity-random-long SEED="$batch_seed" COUNT="$batch_count" PYTHON=python 2>&1 | tee -a parity-random.txt || status=1
+            remaining=$(( remaining - batch_count ))
+            batch_seed=$(( batch_seed + 1 ))
+          done
+          {
+            echo
+            echo '```'
+            grep -E "^random differential" parity-random.txt || tail -n 8 parity-random.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+      - name: Upload the mismatch report (seed, failing cases, both answers)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: parity-random-report
+          path: |
+            build/random-diff-*.json
+            parity-random.txt
           if-no-files-found: ignore
           retention-days: 14

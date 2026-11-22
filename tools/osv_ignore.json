@@ -1,0 +1,16 @@
+{
+  "_comment": [
+    "Known vulnerabilities accepted by tools/osv_scan.py (the osv-scan ci job). Each entry names the",
+    "OSV id (or an alias), the lockfile and package it applies to, why the risk is accepted, and when it",
+    "expires (at most 90 days ahead). An expired entry, or one that matches no finding, fails the job."
+  ],
+  "entries": [
+    {
+      "id": "GO-2025-4020",
+      "lockfile": "tools/scanners/go.mod",
+      "package": "github.com/nwaples/rardecode/v2",
+      "reason": "rardecode 2.1.0: unrestricted RAR dictionary sizes allow a denial of service (CVE-2025-11579). It is in the CI-only gitleaks 8.30.1 build, never shipped, and the secret scan reads git history, not RAR archives; govulncheck -mode=binary over the built gitleaks finds no call to the vulnerable symbols (toolchain-audit job, every run). The fix, rardecode 2.2.0, does not build with gitleaks' mholt/archives 0.1.2, so it waits for a gitleaks release that moves archives forward (PRO-128).",
+      "expires": "2026-12-22"
+    }
+  ]
+}
