@@ -125,6 +125,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | The stack merged in order #57 → #59 → #60 → #61 → #62 → #64 → #65 (each retargets to `claude/go-migration` when its base merges) | Hermes's review, then Lee |
 | PR #73 merged into `claude/go-migration` (verify skills, flaky-test policy); a quarantine-expiry checker in CI is a possible follow-up | Hermes's review, then Lee |
 | The stack continued: #75 → #76 after #65 | Hermes's review, then Lee |
+| PRO-136 placement: draft #78 (`claude/cicd-nightly-parity-direct`, head `cd153f8`, base `claude/go-migration` `bb2af2e`) carries #65's three commits directly, per Hermes; #65 stays stacked per Lee's earlier rule. Lee picks one; the other needs only a lock regeneration, and #75 retargets onto #64 if #65 goes. `migration/LANE-BRIEF.md` line 82 is Engine's file | Lee; Engine for its brief |
 | Scorecard `publish_results: true` (needs `id-token: write` and no top-level `defaults:`, rules 5 and 6) | Lee's decision on a policy exception |
 | OSV entry GO-2025-4020 (rardecode in the gitleaks build) expires 2026-12-22 | A gitleaks release whose archives dependency builds with rardecode 2.2.0 |
 | Scorecard follow-ups: one task per check that scores low on the first run (expected: License, Code-Review, Branch-Protection, CII-Best-Practices, Signed-Releases, Packaging) | The first scheduled run on `main` after the stack merges |
