@@ -129,6 +129,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Scorecard `publish_results: true` (needs `id-token: write` and no top-level `defaults:`, rules 5 and 6) | Lee's decision on a policy exception |
 | OSV entry GO-2025-4020 (rardecode in the gitleaks build) expires 2026-12-22 | A gitleaks release whose archives dependency builds with rardecode 2.2.0 |
 | Scorecard follow-ups: one task per check that scores low on the first run (expected: License, Code-Review, Branch-Protection, CII-Best-Practices, Signed-Releases, Packaging) | The first scheduled run on `main` after the stack merges |
+| PR #81 (`claude/cicd-gitleaks-cname-chains`, head `3abf509`, base main; PRO-145/PRO-153): one `[[allowlists]]` entry, AND of path `research/live-results-*.tsv` and a whole-match `host>host` chain, replacing the r5 exact entry; `tools/check_gitleaks_allowlist.py` proves keys and tokens there still flag | Hermes's review, then Lee |
 | Bump `migration/mutation/gremlins/go.mod` (x/sys ≥ 0.44.0, x/text ≥ 0.41.0); then drop its 3 OSV entries before 2026-12-06 | Engine |
 | Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
 | 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
@@ -202,3 +203,5 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **Stack behind go-migration:** gitleaks reads every fetched branch, so a stack branch without go-migration's
   `.gitleaks.toml` allowlist fails static analysis once the known false positives exist on any branch. Merge
   go-migration into the top of the stack (#65), then merge up; never rebase.
+- **gitleaks allowlists:** gitleaks 8.30 refuses `[allowlist]` next to `[[allowlists]]`; use only `[[allowlists]]`. Any synthetic secret or
+  CNAME chain in a test tool must be built at run time, or the repository's own full-history scan reports it.
