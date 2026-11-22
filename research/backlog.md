@@ -44,6 +44,20 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch P, after O: refilled queue, PRO-158, 2026-11-22)
+
+Top 10 candidates by V (ties broken by reachability): BeyondTrust, Kaseya VSA, ManageEngine Endpoint Central, RingCentral,
+Mimecast, Proofpoint, HubSpot, Keeper, LastPass, 8x8. Only two of the ten vendor pages are readable from this session; the
+other eight are BLOCKED with exact URLs for Research Lab (`blocked-urls.md`). Patch: `patches/batch-p-name-based.patch`
+(placeholder release `2026.13.1`, digest `8d149a328ed6e0c8`, 466 host entries). Tested: 16 targeted vector names (all as
+expected), rollback exact, parity 7490/7490 (Python and Go), 88/88 families. 39 names queued for live round 7 (`live-hosts-r7.txt`).
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | P1 | HubSpot tags and hosted-page services to new vendor-level id `hubspot-base` (35 names; decision 4) | `apps/hubspot.md` | 4 | 4 | 16 | READY |
+| 2 | P2 | BeyondTrust Remote Support Cloud: verified, all names under `beyondtrustcloud.com` | `apps/beyondtrust.md` | 5 | 4 | 20 | DONE (no catalog change) |
+| 3 | - | Kaseya VSA, ManageEngine Endpoint Central, RingCentral, Mimecast, Proofpoint, Keeper, LastPass, 8x8 | none yet | 4 to 5 | 1 | 4 to 5 | BLOCKED (pages unreachable; rows 30 to 38) |
+
 ### NAME: READY (batch O, after N: Datto RMM, N-able, FortiClient, read by Research Lab, PRO-95/PRO-106, 2026-11-22)
 
 Patch: `patches/batch-o-name-based.patch` (placeholder release `2026.13.0`, which sorts after `2026.12.9` as a string; digest
@@ -379,4 +393,30 @@ Items 21 to 29 were researched in batch C (above). Remaining, by provisional V:
 | 31 | Tailscale DERP relay names | BLOCKED (DERP map host not allowed; low value, likely already under `tailscale.com`) |
 | 32 | Retries: WhatsApp | BLOCKED (Salesforce, Signal, Splashtop done in batch G; Zscaler done) |
 
-No unresearched candidates remain in this queue.
+Refilled 2026-11-22 (PRO-158). 20 enterprise candidates with no spec in `apps/` (each checked against `apps/` and the catalog;
+most have a bare catalog id already). V is operator value per `README.md` (this lane's judgement: SWG visibility, enterprise
+prevalence, risk). "Reachable" is whether this session can read the vendor page (the egress allowlist is at its cap); exact URLs
+of unreadable pages are in `blocked-urls.md` rows 30 to 44, found by web search (URLs only, no content taken from search).
+
+| Order | Candidate | Catalog id today | V | Official page | Status |
+|---|---|---|---|---|---|
+| 33 | BeyondTrust Remote Support | `beyondtrust` | 5 | reachable | DONE in batch P (`apps/beyondtrust.md`) |
+| 34 | Kaseya VSA | `kaseya` | 5 | not reachable (rows 30, 31) | BLOCKED |
+| 35 | ManageEngine Endpoint Central (Cloud) | none | 5 | not reachable (row 32) | BLOCKED |
+| 36 | RingCentral (RingEX) | `ringcentral` | 5 | not reachable (row 33) | BLOCKED |
+| 37 | Mimecast | none | 5 | not reachable (row 34) | BLOCKED |
+| 38 | Proofpoint Essentials | none | 5 | not reachable (row 35) | BLOCKED |
+| 39 | HubSpot | `hubspot` | 4 | reachable | READY in batch P (`apps/hubspot.md`) |
+| 40 | Keeper | `keeper` | 4 | not reachable (row 36) | BLOCKED |
+| 41 | LastPass | `lastpass` | 4 | not reachable (row 37) | BLOCKED |
+| 42 | 8x8 Work | `8x8` | 4 | not reachable (row 38) | BLOCKED |
+| 43 | Dialpad | `dialpad` | 4 | not reachable (row 39) | BLOCKED |
+| 44 | Freshworks (Freshservice, Freshdesk) | `freshworks` | 4 | not reachable (row 40) | BLOCKED |
+| 45 | KnowBe4 | none | 4 | no single allowlist article found (phish domains are per account) | PARTIAL, URL not located |
+| 46 | Splunk Cloud | `splunk-cloud` | 4 | no current official page found by search (community posts only) | PARTIAL, URL not located |
+| 47 | Dashlane | `dashlane` | 3 | not reachable (row 41) | BLOCKED |
+| 48 | Intercom | `intercom` | 3 | not reachable (row 42) | BLOCKED |
+| 49 | New Relic | `new-relic` | 3 | not reachable (row 43) | BLOCKED |
+| 50 | PagerDuty | `pagerduty` | 3 | not reachable (row 44) | BLOCKED |
+| 51 | Sentry | `sentry` | 3 | not searched in this batch | queued |
+| 52 | Linear | none | 2 | not searched in this batch | queued |

@@ -1,0 +1,43 @@
+# Round 7 for tools/live_verify.py: names added by batch P (research/patches/batch-p-name-based.patch, PRO-158).
+# "NAME PROBE" where HubSpot's page names a host under the domain; the rest are wildcard-only on the page, so the
+# apex is checked as is (no-address is normal for a suffix entry). Run with TLS so certificate organisation is recorded.
+hsadspixel.net
+hs-analytics.net
+hubapi.com feedback.hubapi.com
+hscta.net js.hscta.net
+hscta.com js.hscta.com
+hsctaimages.net eu1.hsctaimages.net
+hs-sites.com
+hs-sites-eu1.com
+hs-sites-na2.com
+hs-sites-na3.com
+hs-sites-ap1.com
+hsappstatic.net static.hsappstatic.net
+usemessages.com
+hs-banner.com
+hubspotusercontent00.net
+hubspotusercontent10.net
+hubspotusercontent20.net
+hubspotusercontent30.net
+hubspotusercontent40.net
+hubspotusercontent-eu1.net
+hubspotusercontent-na2.net
+hubspotusercontent-na3.net
+hubspotusercontent-ap1.net
+hubspot.net cdn2.hubspot.net
+hubspotvideo.com play.hubspotvideo.com
+hscollectedforms.net
+hsleadflows.net
+hsforms.net
+hsforms.com
+hs-scripts.com
+hubspotfeedback.com
+hubspotservicehub.com feedback-eu1.hubspotservicehub.com
+hubspot-no-cache-na2-prod.s3.amazonaws.com
+hubspot-no-cache-na3-prod.s3.amazonaws.com
+hubspot-no-cache-ap1-prod.s3.amazonaws.com
+# Older catalog names cited by the batch P specs that no earlier round covered.
+hubspot.com app.hubspot.com
+beyondtrust.com
+beyondtrustcloud.com
+bomgar.com

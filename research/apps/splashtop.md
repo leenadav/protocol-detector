@@ -40,7 +40,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D, E, F and G): a
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N, O and P as rebuilt 2026-11-22)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -62,10 +62,10 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | D- | `cta-service-cms2.hubspot.com` | not splashtop (third party) | `hubspot` | PASS |
 | D- | `d.impct.site` | not splashtop (third party (unclassified)) | no application | PASS |
 | D- | `fonts.gstatic.com` | not splashtop (shared vendor infra) | `google-base` | PASS |
-| D- | `js.hs-banner.com` | not splashtop (third party (unclassified)) | no application | PASS |
-| D- | `js.hs-scripts.com` | not splashtop (third party (unclassified)) | no application | PASS |
+| D- | `js.hs-banner.com` | not splashtop (shared vendor infra) | `hubspot-base` | PASS |
+| D- | `js.hs-scripts.com` | not splashtop (shared vendor infra) | `hubspot-base` | PASS |
 | D- | `js.hubspot.com` | not splashtop (third party) | `hubspot` | PASS |
-| D- | `perf-na1.hsforms.com` | not splashtop (third party (unclassified)) | no application | PASS |
+| D- | `perf-na1.hsforms.com` | not splashtop (shared vendor infra) | `hubspot-base` | PASS |
 | D- | `utt.impactcdn.com` | not splashtop (third party (unclassified)) | no application | PASS |
 | D- | `www.google.com` | not splashtop (shared vendor infra) | `google-base` | PASS |
 | D- | `www.googletagmanager.com` | not splashtop (third party) | `google-analytics` | PASS |
@@ -121,11 +121,11 @@ Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it cover
 | `d.impct.site` | seen | third party (unclassified) | no application | not checked |  |
 | `files.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
 | `fonts.gstatic.com` | seen | shared vendor infra | `google-base` | not checked |  |
-| `js.hs-banner.com` | seen | third party (unclassified) | no application | not checked |  |
-| `js.hs-scripts.com` | seen | third party (unclassified) | no application | not checked |  |
+| `js.hs-banner.com` | seen | shared vendor infra | `hubspot-base` | not checked |  |
+| `js.hs-scripts.com` | seen | shared vendor infra | `hubspot-base` | not checked |  |
 | `js.hubspot.com` | seen | third party | `hubspot` | not checked |  |
 | `my.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
-| `perf-na1.hsforms.com` | seen | third party (unclassified) | no application | not checked |  |
+| `perf-na1.hsforms.com` | seen | shared vendor infra | `hubspot-base` | not checked |  |
 | `rs-api.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
 | `rs-cdn.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
 | `rs-dataplane.splashtop.com` | seen | app-owned | `splashtop` | not checked |  |
@@ -143,7 +143,7 @@ Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it cover
 - `splashtop`: networking / remote-access, client-server; characteristics `tunnels-other-applications`, `prone-to-misuse`; **risk 4**: carries other traffic or remote control; commonly misused (unsanctioned remote access, data exfiltration).
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `cmp.osano.com`, `d.impct.site`, `google-ads`, `google-analytics`, `google-base`, `hubspot`, `js.hs-banner.com`, `js.hs-scripts.com`, `ms-base`, `perf-na1.hsforms.com`, `utt.impactcdn.com`, `www.recaptcha.net`.
+- Dependencies (observed, never attributed to this app): `cmp.osano.com`, `d.impct.site`, `google-ads`, `google-analytics`, `google-base`, `hubspot`, `hubspot-base`, `ms-base`, `utt.impactcdn.com`, `www.recaptcha.net`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

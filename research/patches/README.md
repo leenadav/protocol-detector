@@ -408,3 +408,22 @@ next string-ordered placeholder is used (not a real month; the Engine lane renum
 | Vectors | 16 targeted names (all as expected); 1,159 method-v2 vectors across 79 specs, all pass |
 | Parity | 7488/7488 Python and Go; 88/88 families |
 | Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 465) |
+
+## Batch P: `batch-p-name-based.patch` (after O)
+
+HubSpot's "SSL and domain security in HubSpot" (knowledge.hubspot.com, last updated 2026-11-19), read in this session on
+2026-11-22 (PRO-158). Placeholder release **`2026.13.1`**, with `_PRIOR_HOST_STATE["2026.13.0"]` and
+`_RELEASED_COMPONENTS["2026.13.0"]`. Apply after O.
+
+- `hubspot-base` (new vendor-level id, after `hubspot`, decision 4): 32 HubSpot tag, form, chat, CTA, cookie-banner, file and
+  video domains plus three exact `hubspot-no-cache-*-prod.s3.amazonaws.com` hosts. `hubspot` is unchanged.
+- BeyondTrust Remote Support Cloud was verified with no change (all names under `beyondtrustcloud.com`).
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.13.1, digest `8d149a328ed6e0c8`, 568 applications, 466 host entries (2026-11-22) |
+| Pack file | sha256 `db856c1c24c9a7cba7fe062f9521db06a1f8a7c787c698efd067a1ec8e4b582d` |
+| Rollback | release 2026.13.0 host catalog equals the batch O pack exactly |
+| Vectors | 16 targeted names (all as expected); 1,171 method-v2 vectors across 81 specs, all pass |
+| Parity | 7490/7490 Python and Go; 88/88 families |
+| Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 466) |

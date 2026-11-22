@@ -63,7 +63,7 @@ OBS = _load_obs(str(obs_path).split(","))
 # Shared vendor infrastructure: ids that stand for a vendor's common services, sign-in or CDN.
 SHARED_IDS = {"google-base", "google-accounts", "ms-base", "azure-ad", "ms-office365", "google-play", "apple-base", "ms-telemetry",
               "meta-base", "x-base", "linkedin-base", "reddit-base", "quora-base", "tiktok-base", "spotify-base",
-              "datadog-base"}
+              "datadog-base", "hubspot-base"}
 # Unmapped observed hosts, classified by hand (2026-11-19). "owned:<id>" = vendor-owned name of that app's vendor.
 UNMAPPED = {
     "dockerstatic.com": ("owned:docker-hub", "Docker static assets; NOT mapped: round 3 certificate is domain-validated (no organisation, issuer Amazon), so ownership is not shown (decision 3)"),
@@ -130,7 +130,7 @@ for _line in (ROOT / "live-hosts-r2.txt").read_text().splitlines():
 
 # Names queued for later live rounds (first field of each line), in round order.
 PENDING = [(f, {l.split()[0] for l in (ROOT / f).read_text().splitlines() if l.strip() and not l.startswith("#")})
-           for f in ("live-hosts-r3.txt", "live-hosts-r4.txt", "live-hosts-r5.txt", "live-hosts-r6.txt")]
+           for f in ("live-hosts-r3.txt", "live-hosts-r4.txt", "live-hosts-r5.txt", "live-hosts-r6.txt", "live-hosts-r7.txt")]
 
 
 def resolves(r):
@@ -330,7 +330,7 @@ def build(spec, meta):
         vec.append(("L-", h, "not " + "/".join(ids) + " (%s)" % why, fmt(a), "PASS" if ok else "FAIL"))
         if not ok:
             fails.append(h)
-    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)", ""]
+    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N, O and P as rebuilt 2026-11-22)", ""]
     if vec:
         sec6 += ["O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); "
                  "L- = look-alike or label-boundary name (must not be this app).", "",

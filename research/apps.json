@@ -624,5 +624,18 @@
    "snowflake"
   ],
   "web": []
+ },
+ "hubspot.md": {
+  "ids": [
+   "hubspot",
+   "hubspot-base"
+  ],
+  "web": []
+ },
+ "beyondtrust.md": {
+  "ids": [
+   "beyondtrust"
+  ],
+  "web": []
  }
 }

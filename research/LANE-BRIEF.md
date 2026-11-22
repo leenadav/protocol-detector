@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-22 (PRO-149: live round 6 and Majestic run 2 merged; PRO-147 topic branches). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-22 (PRO-158: queue refilled, batch P; PRO-149 round 6 and run 2). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -25,16 +25,17 @@ and content-pack patches for the Engine lane.
 ## 2. Current state
 
 - Branch head: see `git log -1` (this brief is updated in each task's own commit).
-- 79 specs in `research/apps/` (registry `research/apps.json`), all retrofitted to method v2 (sections 9 to 11).
+- 81 specs in `research/apps/` (registry `research/apps.json`), all retrofitted to method v2 (sections 9 to 11).
 - Content patches A, B, B2 and C are implemented by Engine (releases 2026.11.3 to 2026.11.6). D, E, F, G, H, I, R, L,
-  J, K, M, N and O are proposed and **not yet implemented** (placeholder releases up to `2026.13.0`, which follows `2026.12.9` as a string; J = vendor pages for rows 12 to 18, PRO-35; K = dependency pass 2, PRO-36;
+  J, K, M, N, O and P are proposed and **not yet implemented** (placeholder releases up to `2026.13.1`; `2026.13.0` follows `2026.12.9` as a string; J = vendor pages for rows 12 to 18, PRO-35; K = dependency pass 2, PRO-36;
   M = six enterprise apps from vendor network pages, PRO-92; N = Sophos, DocuSign, Twilio, Snowflake, PRO-121;
-  O = Datto RMM, N-able, FortiClient, PRO-106).
+  O = Datto RMM, N-able, FortiClient, PRO-106; P = HubSpot tags (`hubspot-base`), PRO-158).
 - D09 (ISCX VPN-nonVPN 2016) has been measured twice: per-family, per-application, and email server names.
 - Live verification rounds 1 to 6 are in (run by Hermes and Research Lab): all 467 spec names have a result: 314 live (140 with a
   certificate naming an organisation), 28 suffixes verified by probe, 90 apexes with no address and no probe, 33 TLS failures (not
   removal), 2 NXDOMAIN, 68 CDN-fronted, 3 ECH-capable, 30 offer h3.
-- Majestic ranking run 2 is in (66 of 79 specs ranked); nothing is in flight on the server.
+- Majestic ranking run 2 is in (66 of 79 specs ranked). Waiting on the server: live round 7 (`live-hosts-r7.txt`, 39 names: batch P
+  and older uncovered names) and Research Lab reads of `blocked-urls.md` rows 30 to 44 (batch P candidates).
 
 ## 3. Where things live (reading order)
 
@@ -66,14 +67,14 @@ python3 -B -m unittest discover -s research/tools -q
 `research/` is not a package.)
 
 ```bash
-git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch ~-/research/patches/batch-k-dependency-pass2.patch ~-/research/patches/batch-m-name-based.patch ~-/research/patches/batch-n-name-based.patch ~-/research/patches/batch-o-name-based.patch && python3 -B tools/check_content.py --update
+git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch ~-/research/patches/batch-k-dependency-pass2.patch ~-/research/patches/batch-m-name-based.patch ~-/research/patches/batch-n-name-based.patch ~-/research/patches/batch-o-name-based.patch ~-/research/patches/batch-p-name-based.patch && python3 -B tools/check_content.py --update
 ```
-(a few seconds; expect `release 2026.13.0 digest 0914c0281fbc029d (465 host entries)`.)
+(a few seconds; expect `release 2026.13.1 digest 8d149a328ed6e0c8 (466 host entries)`.)
 
 ```bash
 python3 -B research/tools/retrofit_specs.py "$SCRATCH/gm" research/observations/pass1-2026-11-19.json,research/observations/pass2-2026-11-20.tsv
 ```
-(under 1 s; expect `"specs": 79`, `"vectors": 1159`, `"fail": []` and 4 `gaps`. Add `--write` to regenerate the spec sections.)
+(under 1 s; expect `"specs": 81`, `"vectors": 1171`, `"fail": []` and 4 `gaps`. Add `--write` to regenerate the spec sections.)
 
 Per-patch content checks, run in the scratch checkout and taking about 2 minutes: `make content content-pack`,
 `python3 -B migration/parity/compare.py --backend python`, `make parity-go`, and the unit tests there. The only
@@ -83,23 +84,23 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 
 | Item | Waits on |
 |---|---|
-| Patches D to I, L, J, K, M, N, O (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
+| Patches D to I, L, J, K, M, N, O, P (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
 | Main-integration PRs #42 to #53 (PRO-43) | all 12 merged (#44 to #51 on 2026-11-21); work since then (batches M and N, live rounds 3 and 4) is on `claude/app-research` only |
-| Batches M, N and O to `main` (PRO-147) | topic branches pushed from `main` `cf65909`, files byte-identical to `claude/app-research` `f701cb9`: `claude/research-08-tools-ranking`, `-09-live-rounds`, `-10-batches-mno` (merge after 09: its section 9 cites the round files), `-11-queue-docs`. Their union is the research diff minus `d09-iscx-vpn2016.md` (held back: CIC licence still conflicting). Hermes opens the PRs; Lee merges |
+| Batches M, N and O to `main` (PRO-147) | topic branches pushed from `main` `cf65909`, files byte-identical to `claude/app-research` `f701cb9`: `claude/research-08-tools-ranking`, `-09-live-rounds`, `-10-batches-mno` (merge after 09: its section 9 cites the round files), `-11-queue-docs`. Their union is the research diff minus `d09-iscx-vpn2016.md` (held back: CIC licence still conflicting). Hermes opens the PRs; Lee merges. Batch P and the round 6 and run 2 work (`1e293aa`, `PRO-149`) are not yet on a topic branch |
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
-| Live rounds 1 to 6 | **done** and merged into section 9 (`live-results-2026-11-20*.tsv`, `-2026-11-21-r3/r4/r5.tsv`, `-2026-11-22-r6.tsv`); round 6 verdicts (PRO-146) restated per name. A new round is needed only for names added later |
+| Live rounds 1 to 6 | **done** and merged into section 9 (`live-results-2026-11-20*.tsv`, `-2026-11-21-r3/r4/r5.tsv`, `-2026-11-22-r6.tsv`); round 6 verdicts (PRO-146) restated per name. Round 7 (`live-hosts-r7.txt`, 39 names, batch P) waits on a run |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
 | Ranking (CrUX, Majestic Million) | Majestic run 2 **done** (PRO-132, `ranking/majestic-2026-11-21-run2.tsv`, 66 of 79 ranked; used in the backlog). Left: run 3 with the current `app-domains.json` (sha256 `ce3e7844…`, adds `fortinet-datto-nable.md`'s 23 domains), and CrUX (needs BigQuery on the server) |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
 | Content version ordering | Engine: numeric comparison plus a regression test, then renumber the placeholders |
-| Blocked vendor pages | WhatsApp and Hugging Face (no official page known). Rows 19 to 23, 28 and 29 (ServiceNow, Workday, CrowdStrike, SentinelOne, Cisco Secure Client, Egnyte, GlobalProtect) stay blocked (sign-in, bot challenge or JavaScript-only, per Research Lab, PRO-108). Rows 24 to 27 resolved in batch N (DocuSign's full list read, PRO-139) |
+| Blocked vendor pages | WhatsApp and Hugging Face (no official page known). Rows 19 to 23, 28 and 29 (ServiceNow, Workday, CrowdStrike, SentinelOne, Cisco Secure Client, Egnyte, GlobalProtect) stay blocked (sign-in, bot challenge or JavaScript-only, per Research Lab, PRO-108). Rows 24 to 27 resolved in batch N (DocuSign's full list read, PRO-139). Rows 30 to 44 (batch P candidates: Kaseya VSA, ManageEngine, RingCentral, Mimecast, Proofpoint, Keeper, LastPass, 8x8, Dialpad, Freshworks, Dashlane, Intercom, New Relic, PagerDuty) wait on Research Lab: each row has the exact URL |
 | Culvert field data for prioritisation | not available yet (placeholder in the backlog) |
 
 ## 6. Frozen SHAs awaiting Codex
 
 None. This lane does not use the Codex mailbox (Lee, via Hermes: no GitHub communication). Its output is reviewed by
 the Engine lane when a patch is implemented. The frozen bases it depends on are `claude/go-migration`
-`c08773fc8da8d210c8e66d67190f883e608d7bb4` (the base of the D-to-O stack) and `2fd94529e29020eba4096e890567655b78185d1e`
+`c08773fc8da8d210c8e66d67190f883e608d7bb4` (the base of the D-to-P stack) and `2fd94529e29020eba4096e890567655b78185d1e`
 (the first D09 build).
 
 ## 7. Pitfalls learned
