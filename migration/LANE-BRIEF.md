@@ -53,8 +53,8 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **Dependency rule (PRO-107, PRO-156):** no non-standard package in the detection path's import graph;
   `TestDetectionPathImportsOnlyTheStandardLibrary` enforces it (ADR 0002). `golang.org/x/crypto` is used only
   by key-log decryption.
-- **SEC-INSP-1 (PRO-129, P0):** parser-driven shift nesting capped at 2 on `claude/fix-sec-insp-1` (PR into this
-  branch); a Go-only parity divergence that awaits Lee's approval.
+- **SEC-INSP-1 (PRO-129, P0):** parser-driven shift nesting capped at 2, merged with PR #87 (`f209bd5`); a Go-only
+  parity divergence (Python nests without bound), to be recorded as approved on PRO-129.
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
 
 ## 3. Where things live (reading order)
