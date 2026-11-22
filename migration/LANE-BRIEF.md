@@ -23,7 +23,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   decision.
 - **Data:** IPv4 and synthetic only. No captured traffic or key logs, ever (`tools/check_no_keylogs.py`).
 
-## 2. Current state (2026-11-21)
+## 2. Current state (2026-11-22)
 
 - **Branch head:** check `git log -1 origin/claude/go-migration`. On 2026-11-21 (PRO-69) `main` `0ef7349` (41 commits, through PR #39,
   including #39's numeric content-version order) was merged in with a normal merge commit. On 2026-11-22 `main` `2a33183` (PR #66, #36) came
@@ -60,6 +60,12 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   divergence; `random_diff.py` accepts it as an approved class), merged into `main` with PR #92 (`c08fe67`).
 - **PRO-189 (Codex PRO-12, P2):** an unknown stream finalizes when the byte budget is spent before the unknown buffer
   fills (Go only, recorded divergence), on `claude/fix-unknown-budget` (PR into `main`).
+- **PRO-201 (Codex Tier-1 P2s, PRO-13 to PRO-21):** on `claude/keen-goodall-f8yhou` (PR into `main`). 18 findings
+  fixed with failing-first tests, 1 already fixed (`b4007de`, regression test added) (32-bit DER and SSH lengths, pcapng lengths, chunked search budget, buffer growth charge,
+  terminal TLS state release, whole-or-nothing key-log append, livedecrypt single reaper, FromJSON 4 MiB cap, content
+  lock fail-closed, bool-vs-number parity compare, and seven parity-tooling gates; 18 real foreign parity cases, 7,448
+  cases). 16 items are DECISIONs because Go matches the frozen Python reference and a fix would be a Go-only divergence
+  (list in §5). No detection output changed.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 
 ## 3. Where things live (reading order)
@@ -108,6 +114,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
+| PRO-201 DECISIONs (Go = Python today; a fix is a Go-only divergence) | Lee: quicx Exhausted before contradiction (`quic.py:119`); sessionid unkeyed BLAKE2s (`events.py:46`); duplicate SYN new generation (`coordinator.py:140`); key-log same-inode truncate-regrow (`live.py:66`); live omits the 64-connection refusal (count still in `budget.rejected_connections`); provisional row not dirtied by Advance (`decryptor.py:206`); inner view on TLS failure (`layers.py:123`); `(?!)` 3.9-3.12 vs 3.13 reference; built-in signature names; description key order vs digest; 4,097th signature built before the count check; pcapng opt_endofopt length; SMB2 empty SESSION_SETUP buffer, SecurityMode 2, combined session flags; IKEv2 proposal number; GSS NegTokenInit without mechTypes. Also: buffer shrink is still charged by difference (design call). |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
 
@@ -117,7 +124,7 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 
 `61fd45a`, `fdb90e2`, `68fb867`, `58a4701`, `9e51389`, `6b280a6`, `024163f`, `12e1ed0`, `d1b63ee`, `baa07b9`,
 `aaa5a7e`, `93cbf2a` (with `36e2c5e`), `76e467a`, `d65d21a`, `07b216e`, `6ab434d`, `7dcabb7`, `b6ed149`, `c08773f`,
-`ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9`, `4d8aa29` and `376a204` (PRO-31), each reviewed as its own diff (`376a204` together with `6194fb9`).
+`ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9`, `4d8aa29` and `376a204` (PRO-31), each reviewed as its own diff (`376a204` together with `6194fb9`). PRO-201: the fix commits from `f4797ef` to the branch head (`git log e5ac90f..`), reviewed as one diff.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
