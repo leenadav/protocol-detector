@@ -767,8 +767,7 @@ AUDIT_RUN = [
     'facts="$RUNNER_TEMP/facts.jsonl"',
     ': > "$facts"',
     'main=$(gh api "repos/${GH_REPO}/git/ref/heads/main" --jq .object.sha) || main="0000000000000000000000000000000000000000"',
-    'gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/main" --jq \'.[].ref\' > "$RUNNER_TEMP/main-refs.txt"'
-    ' || echo "api-error" > "$RUNNER_TEMP/main-refs.txt"',
+    'gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/main" --jq \'.[].ref\' > "$RUNNER_TEMP/main-refs.txt" || echo "api-error" > "$RUNNER_TEMP/main-refs.txt"',
     'jq -nc --arg main "$main" --rawfile others "$RUNNER_TEMP/main-refs.txt" \'{kind: "main", tag: "main", main: $main, others: $others}\' >> "$facts"',
     'gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/v" --jq \'.[].ref\' > "$RUNNER_TEMP/tags.txt"',
     'while IFS= read -r ref; do',
