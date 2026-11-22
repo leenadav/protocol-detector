@@ -1,4 +1,6 @@
 """D08: detection content releases, provenance, lock gate and server-name catalog rollback."""
+import contextlib
+import io
 import json
 import os
 import tempfile
@@ -160,6 +162,36 @@ class RollbackTests(unittest.TestCase):
                 mock.patch.object(content, "write_lock", return_value=content.description()) as write:
             self.assertEqual(check_content.main(["--update"]), 0)
             write.assert_called_once()
+
+    def test_update_fails_closed_without_a_readable_predecessor_lock(self):
+        """PRO-14 (Codex P2): a missing or malformed lock must not skip the C11 predecessor comparison. Only an
+        explicit `--bootstrap`, and only when no lock file exists, writes a first lock."""
+        malformed = [ValueError("not JSON"), OSError("unreadable"), [], "2026.11.1", {},
+                     {"version": "2026.11.1", "digest": "c4020c2437f3de8d"},
+                     {"version": 2026, "digest": "c4020c2437f3de8d", "components": {}},
+                     {"version": "2026.11.1", "digest": "c4020c2437f3de8d", "components": "x"}]
+        for lock in malformed:
+            for argv in (["--update"], ["--update", "--bootstrap"]):
+                with self.subTest(lock=repr(lock), argv=argv):
+                    reader = mock.Mock(side_effect=lock) if isinstance(lock, Exception) else mock.Mock(return_value=lock)
+                    with mock.patch.object(content, "read_lock", reader), mock.patch.object(content, "write_lock") as write, \
+                            contextlib.redirect_stdout(io.StringIO()):
+                        self.assertEqual(check_content.main(argv), 1)
+                        write.assert_not_called()
+        absent = mock.Mock(side_effect=FileNotFoundError("content_lock.json"))
+        with mock.patch.object(content, "read_lock", absent), mock.patch.object(content, "write_lock") as write, \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(check_content.main(["--update"]), 1)
+            write.assert_not_called()
+        with mock.patch.object(content, "read_lock", absent), \
+                mock.patch.object(content, "write_lock", return_value=content.description()) as write, \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(check_content.main(["--update", "--bootstrap"]), 0)
+            write.assert_called_once()
+        with mock.patch.object(content, "read_lock", return_value=content.description()), \
+                mock.patch.object(content, "write_lock") as write, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(check_content.main(["--update", "--bootstrap"]), 1)  # a lock exists: not a first lock
+            write.assert_not_called()
 
     def test_select_runs_the_earlier_catalog_and_restores(self):
         self.assertIsNone(application_for_host("pages.github.io"))
