@@ -1074,6 +1074,8 @@ func compileTree(b *strings.Builder, tree []node, ignorecase, final bool) error 
 				b.WriteString(`\n?\z`) // at the end, or before a final newline
 			}
 		case opFailure:
+			// CPython 3.9..3.12 reject (?!) as ASSERT_NOT; 3.13 parses it as FAILURE and accepts it. Refusing
+			// lets the reference interpreter in use answer (TestEmptyNegativeLookaheadIsNotPorted).
 			return &notPortedError{"empty negative lookahead"}
 		case opAssert, opGroupRef:
 			return &patternError{"Backreferences and lookaround are not allowed"}
