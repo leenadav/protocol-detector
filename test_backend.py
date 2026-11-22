@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
-from unittest import mock
+import unittest.mock as mock
 
 from protocol_adapters import analyze_pcap
 
