@@ -1,5 +1,5 @@
 {
- "started": "2026-11-21 17:36:40 UTC",
+ "started": "2026-11-22 06:35:49 UTC",
  "builds": {
   "A": {
    "label": "unmodified Culvert ef94311",
@@ -127,7 +127,7 @@
        "dest": "origin.lab.test:443",
        "forwarded_bytes": [
         1668,
-        2545
+        2546
        ],
        "engine": "fake",
        "client": {
@@ -140,7 +140,7 @@
         "outcome": "identified",
         "reason": "engine",
         "family": "fake",
-        "observed_bytes": 1920
+        "observed_bytes": 1921
        },
        "engine_stats": {
         "active": 0,
@@ -169,7 +169,7 @@
        "dest": "origin.lab.test:443",
        "forwarded_bytes": [
         1668,
-        2545
+        2546
        ],
        "engine": "real",
        "client": {
@@ -210,7 +210,7 @@
         "family": "tls",
         "encryption": "tls",
         "detail": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
-        "observed_bytes": 1920,
+        "observed_bytes": 1921,
         "evidence": [
          {
           "field": "encryption",
@@ -290,7 +290,7 @@
        "dest": "origin.lab.test:443",
        "forwarded_bytes": [
         1668,
-        2546
+        2547
        ],
        "engine": "fake",
        "client": {
@@ -1513,7 +1513,7 @@
       "received": "d6ae4933fc1fd736",
       "bytes": 200005
      },
-     "seconds": 0.0,
+     "seconds": 0.01,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -1668,7 +1668,7 @@
       "bytes": 33554437,
       "seconds": 0.16
      },
-     "seconds": 0.29,
+     "seconds": 0.32,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -1678,9 +1678,9 @@
       "sent": "3a69d9e8661fe5c9",
       "received": "3a69d9e8661fe5c9",
       "bytes": 33554437,
-      "seconds": 0.15
+      "seconds": 0.18
      },
-     "seconds": 0.28,
+     "seconds": 0.33,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -1690,9 +1690,9 @@
       "sent": "3a69d9e8661fe5c9",
       "received": "3a69d9e8661fe5c9",
       "bytes": 33554437,
-      "seconds": 0.16
+      "seconds": 0.18
      },
-     "seconds": 0.31,
+     "seconds": 0.36,
      "detector_ok": true,
      "detector": "client: identified fake (engine) \u00b7 server: identified fake (engine)",
      "records": [
@@ -1733,9 +1733,9 @@
       "sent": "3a69d9e8661fe5c9",
       "received": "3a69d9e8661fe5c9",
       "bytes": 33554437,
-      "seconds": 0.16
+      "seconds": 0.2
      },
-     "seconds": 0.29,
+     "seconds": 0.35,
      "detector_ok": true,
      "detector": "client: unknown (engine) \u00b7 server: unknown (engine)",
      "records": [
@@ -1795,7 +1795,7 @@
       "received": "4f1133495946c114",
       "bytes": 51
      },
-     "seconds": 0.21,
+     "seconds": 0.22,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -2161,7 +2161,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.51,
+     "seconds": 0.53,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -2171,7 +2171,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.54,
+     "seconds": 0.57,
      "detector_ok": true,
      "detector": "observation off: no detector records"
     },
@@ -2205,8 +2205,8 @@
         "observed_bytes": 2005
        },
        "engine_stats": {
-        "active": 18,
-        "admitted": 31,
+        "active": 7,
+        "admitted": 21,
         "refused": 0,
         "panics": 0,
         "disabled": false
@@ -2233,8 +2233,8 @@
         "observed_bytes": 2005
        },
        "engine_stats": {
-        "active": 17,
-        "admitted": 31,
+        "active": 8,
+        "admitted": 22,
         "refused": 0,
         "panics": 0,
         "disabled": false
@@ -2261,13 +2261,13 @@
         "observed_bytes": 2005
        },
        "engine_stats": {
-        "active": 17,
-        "admitted": 32,
+        "active": 13,
+        "admitted": 30,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 28
+       "handoffs_total": 32
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2289,13 +2289,13 @@
         "observed_bytes": 2005
        },
        "engine_stats": {
-        "active": 25,
-        "admitted": 41,
+        "active": 16,
+        "admitted": 33,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 30
+       "handoffs_total": 32
       }
      ],
      "record_count": 300
@@ -2306,7 +2306,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.52,
+     "seconds": 0.57,
      "detector_ok": true,
      "detector": "300 records, 0 flows still held by the engine afterwards",
      "records": [
@@ -2330,8 +2330,8 @@
         "observed_bytes": 2005
        },
        "engine_stats": {
-        "active": 4,
-        "admitted": 17,
+        "active": 6,
+        "admitted": 19,
         "refused": 0,
         "panics": 0,
         "disabled": false
@@ -2358,69 +2358,69 @@
         "observed_bytes": 2005
        },
        "engine_stats": {
+        "active": 17,
+        "admitted": 31,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 26
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "engine_stats": {
+        "active": 14,
+        "admitted": 33,
+        "refused": 0,
+        "panics": 0,
+        "disabled": false
+       },
+       "handoffs_total": 42
+      },
+      {
+       "dest": "origin.lab.test:9000",
+       "forwarded_bytes": [
+        2005,
+        2005
+       ],
+       "engine": "real",
+       "client": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "server": {
+        "outcome": "unknown",
+        "reason": "engine",
+        "detail": "Prefix outside supported protocol families",
+        "observed_bytes": 2005
+       },
+       "engine_stats": {
         "active": 10,
-        "admitted": 24,
+        "admitted": 33,
         "refused": 0,
         "panics": 0,
         "disabled": false
        },
-       "handoffs_total": 28
-      },
-      {
-       "dest": "origin.lab.test:9000",
-       "forwarded_bytes": [
-        2005,
-        2005
-       ],
-       "engine": "real",
-       "client": {
-        "outcome": "unknown",
-        "reason": "engine",
-        "detail": "Prefix outside supported protocol families",
-        "observed_bytes": 2005
-       },
-       "server": {
-        "outcome": "unknown",
-        "reason": "engine",
-        "detail": "Prefix outside supported protocol families",
-        "observed_bytes": 2005
-       },
-       "engine_stats": {
-        "active": 11,
-        "admitted": 26,
-        "refused": 0,
-        "panics": 0,
-        "disabled": false
-       },
-       "handoffs_total": 28
-      },
-      {
-       "dest": "origin.lab.test:9000",
-       "forwarded_bytes": [
-        2005,
-        2005
-       ],
-       "engine": "real",
-       "client": {
-        "outcome": "unknown",
-        "reason": "engine",
-        "detail": "Prefix outside supported protocol families",
-        "observed_bytes": 2005
-       },
-       "server": {
-        "outcome": "unknown",
-        "reason": "engine",
-        "detail": "Prefix outside supported protocol families",
-        "observed_bytes": 2005
-       },
-       "engine_stats": {
-        "active": 18,
-        "admitted": 34,
-        "refused": 0,
-        "panics": 0,
-        "disabled": false
-       },
-       "handoffs_total": 30
+       "handoffs_total": 46
       }
      ],
      "record_count": 300
@@ -2431,7 +2431,7 @@
       "flows": 300,
       "failed": 0
      },
-     "seconds": 0.48,
+     "seconds": 0.54,
      "detector_ok": true,
      "detector": "300 records, 0 flows still held by the engine afterwards",
      "records": [
@@ -2454,8 +2454,8 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 5,
-        "admitted": 17,
+        "active": 19,
+        "admitted": 31,
         "refused": 0,
         "panics": 23,
         "disabled": false
@@ -2481,13 +2481,13 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 16,
-        "admitted": 29,
+        "active": 20,
+        "admitted": 34,
         "refused": 0,
-        "panics": 25,
+        "panics": 27,
         "disabled": false
        },
-       "handoffs_total": 26
+       "handoffs_total": 28
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2508,13 +2508,13 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 16,
-        "admitted": 30,
+        "active": 21,
+        "admitted": 38,
         "refused": 0,
-        "panics": 31,
+        "panics": 33,
         "disabled": false
        },
-       "handoffs_total": 32
+       "handoffs_total": 34
       },
       {
        "dest": "origin.lab.test:9000",
@@ -2535,13 +2535,13 @@
        },
        "quarantined": true,
        "engine_stats": {
-        "active": 15,
-        "admitted": 30,
+        "active": 20,
+        "admitted": 38,
         "refused": 0,
-        "panics": 31,
+        "panics": 35,
         "disabled": false
        },
-       "handoffs_total": 32
+       "handoffs_total": 36
       }
      ],
      "record_count": 300
@@ -2552,5 +2552,5 @@
  ],
  "state": "finished",
  "visibility_only": true,
- "finished": "2026-11-21 17:37:10 UTC"
+ "finished": "2026-11-22 06:36:20 UTC"
 }

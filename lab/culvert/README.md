@@ -7,13 +7,37 @@ This directory is the backup of a local lab that runs the protocol detector insi
 ## Current lab: visibility only on Culvert `ef94311` (2026-11-21, PRO-81)
 
 The current lab follows decision 3 (visibility only, 2026-11-17). It sits on a second local branch,
-`lab/protocol-detector-ef94311`, head `8a50573c13bb093db2f9d76ba800258d488f2ddf`. The base is Culvert `main`
+`lab/protocol-detector-ef94311`, head `8f828789` (since 2026-11-22; `8a50573c` before SEC-CULV-1/2). The base is Culvert `main`
 `ef9431189490f7f85bb32d6fe7e7b6b8be5b0844`. Push is disabled, and nothing was proposed upstream. The patch is
 `culvert-lab-ef94311.patch` (3 commits):
 
 - the CONNECT-bypass observation hook and the Culvert-owned interface `internal/protodetect` (from `7b9a9af`);
 - evidence and offered ALPN in the lab record (from `b70cd3e`);
-- a short write in the observed copy treated as `io.ErrShortWrite`, the observation half of `1aa9d0e`.
+- a short write in the observed copy treated as `io.ErrShortWrite`, the observation half of `1aa9d0e`;
+- the security review's SEC-CULV-1 and SEC-CULV-2 (PRO-177/PRO-180), described below.
+
+**SEC-CULV-1 (P2).** The engine flow, its admission slot and its 32 KiB reservation were held until the tunnel
+closed. So 4,096 idle tunnels exhausted admission, and every later tunnel went unobserved with no record. The
+fix:
+- the flow is finished when the observation window ends (Expire, then Finish), or when both directions have left
+  observation (handoff or end), whichever is first;
+- its record is kept and logged at tunnel close, with the forwarded bytes;
+- a refused admission relays unobserved and logs a record with `"admission":"refused"` and reason
+  `admission_refused`.
+
+**SEC-CULV-2 (P3).** `host_mismatch` compares the client-asserted host with the CONNECT destination,
+port-normalised (as `52eb9d1`'s `labSignals` did). It is computed on the unredacted record, before the hostnames
+are pseudonymized, and logged as a categorical `signals` entry that carries no host.
+
+**Tests in `protodetect_lab_test.go`:**
+- `TestLabWindowEndReleasesAdmissionWhileTunnelsStayOpen`;
+- `TestLabHandoffReleasesAdmissionBeforeTheWindowEnds`;
+- `TestLabRefusedAdmissionIsLogged`;
+- `TestLabHostMismatchIsComputedBeforeRedaction`;
+- `TestLabSignalsCompareHostsPortNormalised`.
+
+Twenty runs under `-race` are clean. Both SEC-CULV-1 tests fail when the early release is removed, and the
+SEC-CULV-2 test fails when the comparison is moved after redaction.
 
 Not carried over: the log-entry block, the UI and the per-rule restriction (`777fa6b`, and the rest of
 `1aa9d0e`). They belong to the restriction demonstration, which is out of scope. The section on that work below
@@ -31,7 +55,10 @@ Results, in `results-ef94311/`:
 - **Not run:** the 10 restriction cells (builds D and F with rules), because the visibility branch carries no
   restriction.
 - **Culvert's own tests on the lab branch:** `go test -race -run 'Tunnel|Idle|Relay|Bypass|CONNECT|Connect|Drain' .`
-  passed, 193 tests.
+  passed, 193 tests; with `TestLab` added after SEC-CULV-1/2, 198.
+- **Rerun after SEC-CULV-1/2 (2026-11-22):** 74 of 74 again, byte identity on the 7 hashed scenarios, and no cell
+  different. No scenario asserts a host that differs from the CONNECT destination, so no record carries the new
+  signal; the unit tests cover it.
 
 ## What was built on the Culvert lab branch
 

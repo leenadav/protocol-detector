@@ -29,14 +29,14 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   The Culvert clone's push URL is disabled.
 - **Data:** synthetic and loopback only. The lab's origins are on RFC 5737 addresses.
 
-## 2. Current state (2026-11-22, after PRO-151)
+## 2. Current state (2026-11-22, after PRO-180)
 
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
 - **Lab:**
   - **Current:** visibility only, on Culvert `main` `ef94311`. Local branch `lab/protocol-detector-ef94311`, head
-    `8a50573c`, against detector `0aa53ac`. 74 of 74 observation checks pass; Culvert's tunnel, relay and drain
-    tests pass, 193 under `-race`.
+    `8f828789` (SEC-CULV-1/2 fixed, PRO-180). 74 of 74 observation checks pass; Culvert's tunnel, relay and drain
+    tests and the lab tests pass, 198 under `-race`.
   - **First lab:** on `52eb9d1`, branch `lab/protocol-detector`, with the restriction demonstration. Kept
     unchanged: 84 of 84 checks on 2026-11-17.
 - **Culvert team request** (`docs/integration/CULVERT-TEAM-REQUEST.md`): anchors refreshed at `ef94311`. It
@@ -138,6 +138,9 @@ Culvert's allocation gates need `-tags benchgate`.
 - **Detachment rests on immutability.** Go strings are immutable and the engine uses no `unsafe`, so a copy never
   protects a snapshot from input overwrites; it only avoids holding a larger engine allocation alive. If the
   engine ever builds strings with `unsafe`, `TestHeldSnapshotsStayDetached` is the test that must catch it.
+- **Lab flows are held only for the observation window** (SEC-CULV-1). A tunnel's engine flow is finished at
+  window end or handoff, never at tunnel close, and a refused admission still logs a record. The window timer's
+  callback must not read `o.timer`: with a short window it can run before the assignment (a race `-race` caught).
 - **The CI secret scan covers every branch.** The `ci` checkout fetches all history, and gitleaks scans all of it, so
   another lane's commit can fail this branch's gate. Seen on `2fdc5e9` (run 44971293208): `generic-api-key` matched
   in `research/live-results-2026-11-21-r5.tsv` (App Research, commits `655d440`, `75695d3`). Reproduce with

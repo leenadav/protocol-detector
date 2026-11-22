@@ -1,7 +1,7 @@
 From eb37fc681a5df7eefc72baeb607daa42b9a63013 Mon Sep 17 00:00:00 2001
 From: lab <lab@localhost>
 Date: Sat, 14 Nov 2026 15:00:42 +0000
-Subject: [PATCH 1/3] LAB: observe CONNECT-bypass tunnels with a protocol
+Subject: [PATCH 1/4] LAB: observe CONNECT-bypass tunnels with a protocol
  detector (local only)
 
 Local lab branch; not for upstream as-is. Culvert-owned interface in
@@ -555,7 +555,7 @@ index 762148c1..2c170f28 100644
 From 2b69bffaa41d0f6077a0b570515b72643f1545c4 Mon Sep 17 00:00:00 2001
 From: lab <lab@localhost>
 Date: Sat, 14 Nov 2026 15:29:05 +0000
-Subject: [PATCH 2/3] LAB: carry the detector's evidence and offered ALPN in
+Subject: [PATCH 2/4] LAB: carry the detector's evidence and offered ALPN in
  the lab record
 
 Hostname-class evidence goes through redactHost like the hostname field.
@@ -641,7 +641,7 @@ index 40008d64..05c6c335 100644
 From 8a50573c13bb093db2f9d76ba800258d488f2ddf Mon Sep 17 00:00:00 2001
 From: lab <lab@localhost>
 Date: Sat, 21 Nov 2026 17:34:27 +0000
-Subject: [PATCH 3/3] LAB: treat a short write in the observed copy as
+Subject: [PATCH 3/4] LAB: treat a short write in the observed copy as
  io.ErrShortWrite (from 1aa9d0e)
 
 The observation-path half of 1aa9d0e. Its other observation fix (the window
@@ -677,6 +677,464 @@ index 05c6c335..67818c6d 100644
  			total += int64(wn)
  			engineDone := o.flow.Observe(d, buf[:n])
  			if werr != nil {
+-- 
+2.43.0
+
+
+From 8f8287896293a431b81e1f3252af1af3b7d71714 Mon Sep 17 00:00:00 2001
+From: lab <lab@localhost>
+Date: Sun, 22 Nov 2026 06:34:16 +0000
+Subject: [PATCH 4/4] LAB: release the detector flow at window end or handoff;
+ log refused admissions; host_mismatch (SEC-CULV-1, SEC-CULV-2)
+
+SEC-CULV-1 (P2): the engine flow, its admission slot and its 32 KiB
+reservation were held until the tunnel closed, so 4,096 idle tunnels
+exhausted admission and every later tunnel went unobserved with no
+record. The flow is now finished when the observation window ends (the
+timer: Expire, then Finish) or when both directions have left
+observation (handoff or end), whichever is first. Its record is kept
+and logged at tunnel close with the forwarded bytes. A refused admission
+relays unobserved and logs a record with admission "refused" and
+reason admission_refused. The fake engine now reports a finished flow
+as done, as the real engine's closed flow is.
+
+SEC-CULV-2 (P3): host_mismatch, the client-asserted host against the
+CONNECT destination compared port-normalised (52eb9d1's labSignals), is
+computed on the unredacted record before the hostnames are pseudonymized,
+and logged as a categorical signal.
+
+Tests (protodetect_lab_test.go): window end and handoff each release
+admission while the tunnel stays open; refused admission is logged;
+host_mismatch survives redaction and leaks no host; host normalisation
+table. 20 runs under -race. Both SEC-CULV-1 tests fail with the release
+removed, and the SEC-CULV-2 test fails with the comparison moved after
+redaction.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UqaXYypys1mDv9szgRtF6T
+---
+ internal/protodetect/protodetect.go |   6 +
+ protodetect_lab.go                  | 106 ++++++++++++---
+ protodetect_lab_test.go             | 202 ++++++++++++++++++++++++++++
+ 3 files changed, 297 insertions(+), 17 deletions(-)
+ create mode 100644 protodetect_lab_test.go
+
+diff --git a/internal/protodetect/protodetect.go b/internal/protodetect/protodetect.go
+index 7faba392..9ee00cd4 100644
+--- a/internal/protodetect/protodetect.go
++++ b/internal/protodetect/protodetect.go
+@@ -75,6 +75,9 @@ type Record struct {
+ 	Client      DirRecord `json:"client"`
+ 	Server      DirRecord `json:"server"`
+ 	Quarantined bool      `json:"quarantined,omitempty"`
++	// Admission is "refused" when the engine did not admit the tunnel (its flow limit, memory or breaker): the
++	// tunnel relayed unobserved, and this record says so instead of leaving no record at all.
++	Admission string `json:"admission,omitempty"`
+ }
+ 
+ // Stats are engine counters.
+@@ -140,6 +143,9 @@ func (f *fakeFlow) Observe(d Direction, data []byte) bool {
+ 	f.mu.Lock()
+ 	defer f.mu.Unlock()
+ 	f.guard("observe", func() {
++		if f.finished { // a finished flow takes no more bytes, as the real engine's closed flow does
++			f.done[d] = true
++		}
+ 		if f.done[d] {
+ 			return
+ 		}
+diff --git a/protodetect_lab.go b/protodetect_lab.go
+index 67818c6d..6ef5d6a6 100644
+--- a/protodetect_lab.go
++++ b/protodetect_lab.go
+@@ -68,14 +68,26 @@ func labObs() protodetect.Observer {
+ 	return labObserver
+ }
+ 
+-// labObservation is one observed tunnel: the engine flow plus the window timer.
++// labObservation is one observed tunnel: the engine flow, the window timer and, once the flow is
++// released, its final record.
++//
++// The engine's admission slot and flow reservation are held for the observation window only, never for
++// the tunnel's life (SEC-CULV-1): the flow is finished when the window ends (the timer) or when both
++// directions have left observation (handoff or end), whichever comes first. The record it returns is kept
++// here and logged when the tunnel closes, with the forwarded byte counts. Before this, a tunnel held both
++// until it closed, so 4,096 idle tunnels exhausted admission and every later tunnel went unobserved.
+ type labObservation struct {
+-	flow   protodetect.Flow
+-	expiry int64 // monotonic nanos at which the observation window ends
+-	timer  *time.Timer
++	flow    protodetect.Flow // nil when the engine refused admission
++	refused bool
++	expiry  int64 // monotonic nanos at which the observation window ends
++	timer   *time.Timer
++	left    atomic.Int32 // directions that have left observation
++	release sync.Once
++	rec     protodetect.Record // set by finish, read after it
+ }
+ 
+-// labBeginObservation admits a tunnel for observation; nil when observation is off or refused.
++// labBeginObservation admits a tunnel for observation. nil when observation is off; a refused admission
++// returns an observation with no flow, so the tunnel relays unobserved and still logs a record.
+ func labBeginObservation(host string) *labObservation {
+ 	obs := labObs()
+ 	if obs == nil {
+@@ -83,28 +95,55 @@ func labBeginObservation(host string) *labObservation {
+ 	}
+ 	flow, ok := obs.Begin(host)
+ 	if !ok {
+-		return nil
++		return &labObservation{refused: true}
+ 	}
+ 	o := &labObservation{flow: flow, expiry: monoNanos() + int64(labWindow)}
+-	// The timer releases the engine's state when the window ends even if both relay directions
+-	// are blocked (in Read or in Write). Expire only takes the flow's own lock; it touches no
+-	// socket and no deadline, so it cannot end or prolong the tunnel.
+-	o.timer = time.AfterFunc(labWindow, flow.Expire)
++	// The timer ends the window even if both relay directions are blocked (in Read or in Write): Expire
++	// gives undecided directions their expiry outcome, then the flow is finished and its admission slot and
++	// reservation return to the engine. Neither touches a socket or a deadline, so the tunnel is neither ended
++	// nor prolonged.
++	o.timer = time.AfterFunc(labWindow, func() {
++		flow.Expire()
++		o.releaseFlow() // never reads o.timer: with a short window this can run before the assignment above
++	})
+ 	return o
+ }
+ 
++// releaseFlow finishes the engine flow once and keeps its record. Every caller observes the record it set
++// (sync.Once orders the write before every return).
++func (o *labObservation) releaseFlow() {
++	o.release.Do(func() { o.rec = o.flow.Finish() })
++}
++
++// finish stops the window timer and releases the flow. It is called only after labBeginObservation has
++// returned (from the relay goroutines it starts, or at tunnel close), so reading o.timer is ordered after
++// its assignment.
++func (o *labObservation) finish() {
++	if o.timer != nil {
++		o.timer.Stop()
++	}
++	o.releaseFlow()
++}
++
++// leave records that one direction stopped observing; the second one releases the flow.
++func (o *labObservation) leave() {
++	if o.left.Add(1) == 2 {
++		o.finish()
++	}
++}
++
+ // labObservePrebuffer shows the engine the client bytes the HTTP server had already buffered
+ // (they are forwarded by the caller exactly as before).
+ func (o *labObservation) labObservePrebuffer(b []byte) {
+-	if o != nil && len(b) > 0 {
++	if o != nil && o.flow != nil && len(b) > 0 {
+ 		o.flow.Observe(protodetect.ClientToServer, b)
+ 	}
+ }
+ 
+-// labBidiRelay is bidiRelayCounted with an observed prefix on each direction. With o == nil it
+-// IS bidiRelayCounted.
++// labBidiRelay is bidiRelayCounted with an observed prefix on each direction. With no observation, or
++// a refused admission, it IS bidiRelayCounted.
+ func labBidiRelay(o *labObservation, destConn, clientConn net.Conn) (toDest, toClient int64) {
+-	if o == nil {
++	if o == nil || o.flow == nil {
+ 		return bidiRelayCounted(destConn, clientConn, clientConn, destConn)
+ 	}
+ 	shared := newTunnelActivityStamp()
+@@ -163,6 +202,7 @@ func labObservedCopy(o *labObservation, d protodetect.Direction, dst, src net.Co
+ 			engineDone := o.flow.Observe(d, buf[:n])
+ 			if werr != nil {
+ 				o.flow.End(d)
++				o.leave()
+ 				return total
+ 			}
+ 			if engineDone && err == nil {
+@@ -177,15 +217,18 @@ func labObservedCopy(o *labObservation, d protodetect.Direction, dst, src net.Co
+ 					dst.Close() //nolint:errcheck // teardown, as in idleCopyCounted
+ 					src.Close() //nolint:errcheck
+ 					o.flow.End(d)
++					o.leave()
+ 					return total
+ 				}
+ 				continue // loop top decides between "window over" and "keep waiting"
+ 			}
+ 			o.flow.End(d) // EOF or a terminal error
++			o.leave()
+ 			return total
+ 		}
+ 	}
+ 	labHandoffs.Add(1)
++	o.leave() // before the splice path: the engine flow is not held while the tunnel stays open
+ 	return total + idleCopyCounted(dst, src, src, shared)
+ }
+ 
+@@ -195,11 +238,20 @@ func labFinishObservation(o *labObservation, match *PolicyMatch, host string, to
+ 	if o == nil {
+ 		return
+ 	}
+-	o.timer.Stop()
+-	rec := o.flow.Finish()
++	var rec protodetect.Record
++	if o.refused {
++		rec = protodetect.Record{Engine: labObs().Name(), Admission: "refused",
++			Client: protodetect.DirRecord{Outcome: "unobserved", Reason: "admission_refused"},
++			Server: protodetect.DirRecord{Outcome: "unobserved", Reason: "admission_refused"}}
++	} else {
++		o.finish() // normally done already, at window end or handoff; idempotent
++		rec = o.rec
++	}
+ 	if match != nil && !ruleLogsTraffic(match.Rule) {
+ 		return // a rule that does not log traffic does not log observations either
+ 	}
++	// SEC-CULV-2: compared on the unredacted values, before the hostnames are pseudonymized below.
++	signals := labSignals(rec, host)
+ 	redact := decRedactHosts()
+ 	for _, dr := range []*protodetect.DirRecord{&rec.Client, &rec.Server} {
+ 		dr.Hostname = redactHost(dr.Hostname, redact)
+@@ -213,11 +265,31 @@ func labFinishObservation(o *labObservation, match *PolicyMatch, host string, to
+ 		Dest      string   `json:"dest"`
+ 		Forwarded [2]int64 `json:"forwarded_bytes"`
+ 		protodetect.Record
++		Signals  []string          `json:"signals,omitempty"`
+ 		Stats    protodetect.Stats `json:"engine_stats"`
+ 		Handoffs int64             `json:"handoffs_total"`
+-	}{redactHost(host, redact), [2]int64{toDest, toClient}, rec, labObs().Stats(), labHandoffs.Load()})
++	}{redactHost(host, redact), [2]int64{toDest, toClient}, rec, signals, labObs().Stats(), labHandoffs.Load()})
+ 	if err != nil {
+ 		return
+ 	}
+ 	logger.Printf("PROTODETECT %s", line)
+ }
++
++// labHostOnly is a host:port, or a bare host, as a comparable host name: no port, lower case, no trailing dot.
++func labHostOnly(hostport string) string {
++	if h, _, err := net.SplitHostPort(hostport); err == nil {
++		hostport = h
++	}
++	return strings.ToLower(strings.TrimSuffix(hostport, "."))
++}
++
++// labSignals derives the advisory flags from the unredacted record (SEC-CULV-2). host_mismatch: the host the
++// client asserted inside the tunnel (TLS SNI, HTTP Host, ...) differs from the CONNECT destination, compared
++// port-normalised. It is a categorical flag; neither host is written into it, and it decides nothing.
++func labSignals(rec protodetect.Record, dest string) []string {
++	var signals []string
++	if h := rec.Client.Hostname; h != "" && labHostOnly(h) != labHostOnly(dest) {
++		signals = append(signals, "host_mismatch")
++	}
++	return signals
++}
+diff --git a/protodetect_lab_test.go b/protodetect_lab_test.go
+new file mode 100644
+index 00000000..62d5c571
+--- /dev/null
++++ b/protodetect_lab_test.go
+@@ -0,0 +1,202 @@
++package main
++
++// LAB: tests of the visibility-only observation tap (local lab branch; not for upstream as-is).
++
++import (
++	"io"
++	"net"
++	"strings"
++	"sync"
++	"testing"
++	"time"
++
++	"github.com/KidCarmi/Culvert/internal/protodetect"
++)
++
++// withLabObserver installs obs as the lab observer with the given window for one test.
++func withLabObserver(t *testing.T, obs protodetect.Observer, window time.Duration) {
++	t.Helper()
++	labOnce.Do(func() {}) // the environment never configures the observer in tests
++	origObs, origWindow := labObserver, labWindow
++	labObserver, labWindow = obs, window
++	t.Cleanup(func() { labObserver, labWindow = origObs, origWindow })
++}
++
++// labTunnel runs the observed relay between two pipes, as handleTunnelBypass does. The returned peers are
++// the client's and the origin's ends; closing both ends the relay, and wait returns once it has.
++func labTunnel(o *labObservation) (client, origin net.Conn, wait func()) {
++	clientConn, clientPeer := net.Pipe()
++	destConn, destPeer := net.Pipe()
++	var wg sync.WaitGroup
++	wg.Add(1)
++	go func() {
++		defer wg.Done()
++		labBidiRelay(o, destConn, clientConn)
++		clientConn.Close() //nolint:errcheck
++		destConn.Close()   //nolint:errcheck
++	}()
++	return clientPeer, destPeer, func() {
++		clientPeer.Close() //nolint:errcheck
++		destPeer.Close()   //nolint:errcheck
++		wg.Wait()
++	}
++}
++
++func labWaitFor(t *testing.T, what string, cond func() bool) {
++	t.Helper()
++	deadline := time.Now().Add(5 * time.Second)
++	for !cond() {
++		if time.Now().After(deadline) {
++			t.Fatalf("timed out waiting for %s", what)
++		}
++		time.Sleep(5 * time.Millisecond)
++	}
++}
++
++// SEC-CULV-1: idle tunnels must not keep the engine's admission slots past the observation window. Before
++// the fix a flow was finished only when its tunnel closed, so MaxFlows idle tunnels left every later tunnel
++// unobserved (and, with no record, invisible).
++func TestLabWindowEndReleasesAdmissionWhileTunnelsStayOpen(t *testing.T) {
++	fake := &protodetect.Fake{NeedBytes: 16, MaxFlows: 2}
++	withLabObserver(t, fake, 50*time.Millisecond)
++	var obs []*labObservation
++	var waits []func()
++	for i := 0; i < 2; i++ {
++		o := labBeginObservation("origin.lab.test:443")
++		if o == nil || o.flow == nil {
++			t.Fatalf("tunnel %d was not admitted", i)
++		}
++		_, _, wait := labTunnel(o) // both peers stay silent: idle tunnels
++		obs, waits = append(obs, o), append(waits, wait)
++	}
++	if fake.Stats().Active != 2 {
++		t.Fatalf("active %d, want 2", fake.Stats().Active)
++	}
++	labWaitFor(t, "the window to release both admission slots", func() bool { return fake.Stats().Active == 0 })
++	// The two tunnels are still open; a third one is admitted.
++	third := labBeginObservation("origin.lab.test:443")
++	if third == nil || third.flow == nil || third.refused {
++		t.Fatal("a new tunnel was refused while the earlier ones only sat idle past their window")
++	}
++	third.finish()
++	for i, wait := range waits {
++		wait()
++		out := captureLogger(t, func() { labFinishObservation(obs[i], nil, "origin.lab.test:443", 0, 0) })
++		if !strings.Contains(out, "PROTODETECT ") || strings.Contains(out, `"admission"`) {
++			t.Fatalf("tunnel %d: the record kept until close was not logged as observed: %q", i, out)
++		}
++	}
++	if st := fake.Stats(); st.Active != 0 || st.Refused != 0 {
++		t.Fatalf("end state %+v", st)
++	}
++}
++
++// SEC-CULV-1: once both directions are decided and handed back to the splice path, the flow is released at
++// once, long before the window ends, while the tunnel goes on relaying.
++func TestLabHandoffReleasesAdmissionBeforeTheWindowEnds(t *testing.T) {
++	fake := &protodetect.Fake{NeedBytes: 4, MaxFlows: 1}
++	withLabObserver(t, fake, time.Minute)
++	o := labBeginObservation("origin.lab.test:22")
++	client, origin, wait := labTunnel(o)
++	relay := func(from, to net.Conn, msg string) {
++		go from.Write([]byte(msg)) //nolint:errcheck
++		buf := make([]byte, len(msg))
++		if _, err := io.ReadFull(to, buf); err != nil || string(buf) != msg {
++			t.Fatalf("relayed %q %v, want %q", buf, err, msg)
++		}
++	}
++	relay(client, origin, "SSH-2.0-client\r\n")
++	relay(origin, client, "SSH-2.0-server\r\n")
++	labWaitFor(t, "the handoff to release the admission slot", func() bool { return fake.Stats().Active == 0 })
++	relay(client, origin, "after the handoff") // the tunnel still relays, now on the normal copy path
++	if next := labBeginObservation("origin.lab.test:22"); next == nil || next.refused {
++		t.Fatal("the only admission slot is still held after both directions handed off")
++	} else {
++		next.finish()
++	}
++	wait()
++	out := captureLogger(t, func() { labFinishObservation(o, nil, "origin.lab.test:22", 0, 0) })
++	if !strings.Contains(out, `"outcome":"identified"`) {
++		t.Fatalf("the kept record lost the identification: %q", out)
++	}
++}
++
++// SEC-CULV-1: a tunnel the engine refused relays unobserved and still leaves a record.
++func TestLabRefusedAdmissionIsLogged(t *testing.T) {
++	fake := &protodetect.Fake{NeedBytes: 16, MaxFlows: 1}
++	withLabObserver(t, fake, time.Minute)
++	held := labBeginObservation("a.lab.test:443")
++	refused := labBeginObservation("b.lab.test:443")
++	if refused == nil || !refused.refused || refused.flow != nil {
++		t.Fatalf("second tunnel: %+v, want a refused observation", refused)
++	}
++	out := captureLogger(t, func() { labFinishObservation(refused, nil, "b.lab.test:443", 10, 20) })
++	for _, want := range []string{`"admission":"refused"`, `"reason":"admission_refused"`, `"outcome":"unobserved"`, `"forwarded_bytes":[10,20]`} {
++		if !strings.Contains(out, want) {
++			t.Errorf("refused record lacks %s: %q", want, out)
++		}
++	}
++	held.finish()
++	if st := fake.Stats(); st.Active != 0 || st.Refused != 1 {
++		t.Fatalf("end state %+v", st)
++	}
++}
++
++// stubFlow returns a fixed record, so the logging path can be checked with a hostname the fake cannot give.
++type stubFlow struct{ rec protodetect.Record }
++
++func (s stubFlow) Observe(protodetect.Direction, []byte) bool { return true }
++func (s stubFlow) End(protodetect.Direction)                  {}
++func (s stubFlow) Expire()                                    {}
++func (s stubFlow) Finish() protodetect.Record                 { return s.rec }
++
++// SEC-CULV-2: the host comparison is made on the unredacted values. With redaction on, the hostnames are
++// pseudonymized in the record, yet a mismatch is still flagged, and the flag carries no host.
++func TestLabHostMismatchIsComputedBeforeRedaction(t *testing.T) {
++	withLabObserver(t, &protodetect.Fake{}, time.Minute)
++	orig := decRedactHosts()
++	setDecRedactHosts(true)
++	t.Cleanup(func() { setDecRedactHosts(orig) })
++	for _, c := range []struct {
++		sni, dest string
++		mismatch  bool
++	}{
++		{"other.example.test", "origin.lab.test:443", true},
++		{"Origin.Lab.Test.", "origin.lab.test:443", false},
++	} {
++		o := &labObservation{flow: stubFlow{protodetect.Record{Engine: "stub",
++			Client: protodetect.DirRecord{Outcome: "identified", Family: "tls", Hostname: c.sni}}}}
++		out := captureLogger(t, func() { labFinishObservation(o, nil, c.dest, 0, 0) })
++		if got := strings.Contains(out, `"signals":["host_mismatch"]`); got != c.mismatch {
++			t.Errorf("sni %q dest %q: host_mismatch %v, want %v: %q", c.sni, c.dest, got, c.mismatch, out)
++		}
++		if strings.Contains(strings.ToLower(out), strings.ToLower(strings.TrimSuffix(c.sni, "."))) {
++			t.Errorf("sni %q: the plaintext host reached the log with redaction on: %q", c.sni, out)
++		}
++	}
++}
++
++func TestLabSignalsCompareHostsPortNormalised(t *testing.T) {
++	rec := func(host string) protodetect.Record {
++		return protodetect.Record{Client: protodetect.DirRecord{Outcome: "identified", Hostname: host}}
++	}
++	for _, c := range []struct {
++		host, dest string
++		want       bool
++	}{
++		{"a.example.test", "a.example.test:443", false},
++		{"A.Example.Test.", "a.example.test:8443", false},
++		{"a.example.test", "a.example.test", false},
++		{"b.example.test", "a.example.test:443", true},
++		{"a.example.test", "[2001:db8::1]:443", true},
++		{"", "a.example.test:443", false}, // nothing asserted, nothing to compare
++	} {
++		got := false
++		for _, s := range labSignals(rec(c.host), c.dest) {
++			got = got || s == "host_mismatch"
++		}
++		if got != c.want {
++			t.Errorf("host %q dest %q: host_mismatch %v, want %v", c.host, c.dest, got, c.want)
++		}
++	}
++}
 -- 
 2.43.0
 
