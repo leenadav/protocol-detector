@@ -27,7 +27,8 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 
 - **Branch head:** check `git log -1 origin/claude/go-migration`. On 2026-11-21 (PRO-69) `main` `0ef7349` (41 commits, through PR #39,
   including #39's numeric content-version order) was merged in with a normal merge commit, and on 2026-11-22 `main` `2a33183`
-  (PR #66's gitleaks rule, PR #36's release notes) as `f5353c5`, so the branch is 0 behind `main`.
+  (PR #66's gitleaks rule, PR #36's release notes) as `f5353c5`, then `main` `2c92b17` (PR #71, #63, #68) with
+  PR #55 as `b2e36d4`, so the branch is 0 behind `main`.
 - **Done, Milestones A and B:**
   - The Go engine, the CLI `protodetect` and the dashboard service `protodetect serve`.
   - The launcher starts Go when the binary is installed and Python otherwise (`24e410e`, Lee's decision of
@@ -80,9 +81,9 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 |---|---|
 | PRO-31 (`6194fb9`, `4d8aa29`, `376a204`) | Engine work done; Hermes approved it, and PRO-31 is parked. Codex's code review is PRO-58 (under PRO-11), waiting for Codex's quota to come back. If it finds problems, Hermes reopens PRO-31 or opens a new Engine task; if not, PRO-31 closes. |
 | PR #39 `claude/fix-content-version-order` → `main` (`37b3c84`) | merged by Lee on 2026-11-21 (`0ef7349`). It is in this branch since the PRO-69 merge. |
-| Draft PR #40 `claude/go-migration` → `main` | Codex's review, then Lee's decision. Keep it draft. PRO-69 merged `main` in (9 conflicts, resolved per `MERGE-READINESS.md`). The CI fix it brought (`91113bc`, the Go build before the tests and presentation suites) lets `GoServiceTests` run instead of skip. | The secret scan still flags `296227b` (PRO-126's first push, 3 generic-api-key hits on hex case data) on every PR until Hermes's PR #71 merges; then merge `main` in again.
+| Draft PR #40 `claude/go-migration` → `main` | Codex's review, then Lee's decision. Keep it draft. PRO-69 merged `main` in (9 conflicts, resolved per `MERGE-READINESS.md`). The CI fix it brought (`91113bc`, the Go build before the tests and presentation suites) lets `GoServiceTests` run instead of skip. | The secret scan's `296227b` findings (PRO-126's first push, hex case data) are allow-listed by PR #71, merged into this branch with `b2e36d4`.
 | Codex review of the packet (`dbe20f3..50ce5c0`) | Codex, from Sunday. Fix rounds are reviewed as the fix diff only. |
-| `release build` on PR #40 (`publish-release.yml`, not a required check) | the CI/CD lane, PRO-24. Since `030f173` all 5 targets compile. `tools/build_go_release.py` still requires identical module sets, but x/crypto links x/sys on amd64 only. A tested patch (the SBOM lists the union; one version and hash per module) was sent to the CI/CD session on 2026-11-21, to land as a PR into this branch. |
+| `release build` on PR #40 (`publish-release.yml`, not a required check) | done on the engine side: the CI/CD lane's PR #55 (per-target module sets in `tools/build_go_release.py`) is merged into this branch (`b1d69d5`, in `b2e36d4`); confirm `release build` on PR #40's next run. |
 | Nightly randomized differential (PRO-100) | the CI/CD lane: a step in `nightly-fuzz.yml` running `make parity-random-long SEED=<run id> COUNT=50000`, with the failing seed in the summary. The target is on this branch; the workflow is theirs. |
 | Nightly mutation run (PRO-126) | the CI/CD lane: a nightly job running `make mutation MUTATION_ARGS="--summary $GITHUB_STEP_SUMMARY"` and uploading `build/mutation/*.json`. The targets, the tool pin and the baseline are on this branch; the workflow is theirs. |
 | Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. The branch already contains `main` as of `0ef7349`, so the merge itself has no conflicts. |
