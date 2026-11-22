@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "migration" / "parity"))
 
+import adversarial  # noqa: E402
 import analyze_diff  # noqa: E402
 import control_diff  # noqa: E402
 import decrypt_diff  # noqa: E402
@@ -201,6 +202,40 @@ class SchemaInvocationTests(unittest.TestCase):
                                                 ("live", 0, self.LIVE, b"panic: x\n"), ("live", 0, b"", b"")):
             with self.subTest(command=command, status=status, stdout=stdout, stderr=stderr):
                 self.assertIsNotNone(schema_go.invocation_problem(command, status, stdout, stderr))
+
+
+def record(app, basis, status="identified"):
+    return {"app": app, "engine_status": status, "layers": {"application": {"basis": basis}}}
+
+
+class AdversarialJudgeTests(unittest.TestCase):
+    """PRO-21: the outcome branch ran before the basis and "identified yet unknown" checks (the latter was
+    unreachable), an empty record list passed, and a named application could rest on a port hint, a content
+    class or no basis at all."""
+
+    def verdict(self, records, allowed=("ssl",)):
+        return adversarial.judge("session", frozenset(allowed), {"records": records})
+
+    def test_honest_sessions_pass(self):
+        self.assertIsNone(self.verdict([record("ssl", "structural")]))
+        self.assertIsNone(self.verdict([record("youtube", "client_assertion")], {"youtube"}))
+        self.assertIsNone(self.verdict([record("unknown-tcp", "none", "unknown")]))
+        self.assertIsNone(self.verdict([record("not-applicable", "none", "invalidated")]))
+
+    def test_a_session_without_records_fails(self):
+        self.assertEqual(self.verdict([]), "no session record")
+
+    def test_identified_yet_unknown_is_reachable(self):
+        self.assertIn("identified yet unknown", self.verdict([record("unknown-tcp", "none", "identified")]))
+        self.assertIn("identified yet unknown", self.verdict([record("unknown-udp", "none", "identified")]))
+
+    def test_an_outcome_never_carries_an_identity_basis(self):
+        self.assertIn("outcome unknown-tcp with application basis structural", self.verdict([record("unknown-tcp", "structural", "unknown")]))
+
+    def test_a_named_application_rests_on_structure_or_the_clients_assertion(self):
+        for basis in ("port_hint", "content_class", None, "none", "authenticated"):
+            with self.subTest(basis=basis):
+                self.assertIn("application basis", self.verdict([record("ssl", basis)]))
 
 
 if __name__ == "__main__":

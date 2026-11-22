@@ -38,6 +38,11 @@ from protocol_adapters.make_sample_pcap import frame, udp_frame  # noqa: E402
 
 LIMITED = {"unknown", "malformed", "incomplete", "invalidated", "budget_exhausted", "detecting"}
 CLIENT = ("192.0.2.10", 51000)
+# A named application in a session case must rest on the bytes' structure or on the client's own assertion (an
+# SNI or a Host header); a port hint, a content class or no basis is not evidence that the bytes are that
+# application (PRO-21). An evidence-limited outcome carries no identity basis at all.
+NAMED_BASES = ("structural", "client_assertion")
+OUTCOME_BASES = (None, "none")
 
 # Misidentifications this suite knows of: case id -> finding id (see migration/STATUS.md, "Adversarial
 # identification"). A listed case must still misidentify; anything else must be honest.
@@ -167,18 +172,23 @@ def judge(kind, allowed, result):
         named = family(final)
         return None if named in allowed else "identified as {} ({})".format(named, status)
     from protocol_engine.applications import OUTCOMES
+    records = result.get("records") or []
+    if not records:
+        return "no session record"                     # nothing was judged: never honest by default (PRO-21)
     problems = []
-    for record in result["records"]:
+    for record in records:
         app = record.get("app")
-        if app in OUTCOMES:
-            continue                                   # an evidence-limited outcome (unknown-tcp, incomplete, not-applicable, ...)
-        if app not in allowed:
-            problems.append("session app {}".format(app))
-        application = ((record.get("layers") or {}).get("application") or {})
-        if application.get("basis") not in (None, "structural", "client_assertion", "port_hint", "content_class"):
-            problems.append("application basis {}".format(application.get("basis")))
+        basis = ((record.get("layers") or {}).get("application") or {}).get("basis")
         if record.get("engine_status") == "identified" and app in ("unknown-tcp", "unknown-udp"):
             problems.append("identified yet unknown")
+        if app in OUTCOMES:                            # an evidence-limited outcome (unknown-tcp, incomplete, not-applicable, ...)
+            if basis not in OUTCOME_BASES:
+                problems.append("outcome {} with application basis {}".format(app, basis))
+            continue
+        if app not in allowed:
+            problems.append("session app {}".format(app))
+        if basis not in NAMED_BASES:
+            problems.append("application basis {}".format(basis))
     return "; ".join(problems) or None
 
 
