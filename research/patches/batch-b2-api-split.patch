@@ -1,0 +1,39 @@
+diff --git a/protocol_engine/content.py b/protocol_engine/content.py
+index 19210df..8fe828b 100644
+--- a/protocol_engine/content.py
++++ b/protocol_engine/content.py
+@@ -54,6 +54,10 @@ HISTORY = (
+             "engine-lane review pending",
+             "Google Drive and Docs editor hosts; OneDrive consumer hosts; Webex service domains; OpenAI help and "
+             "developer documentation as web fronts"),
++    Release("2026.11.5", "2026-11-18", "2026-11-18",
++            "application-research lane proposal with primary sources (research/apps on claude/app-research); "
++            "engine-lane review pending",
++            "DeepSeek, Perplexity, Mistral AI and xAI API hosts named apart from their chat applications"),
+ )
+ CURRENT = HISTORY[-1].version
+ LOCK_PATH = Path(__file__).with_name("content_lock.json")
+@@ -114,6 +118,7 @@ _ADDED_2026_11_2 = (
+     "xandr",
+ )
+ _PRIOR_HOST_STATE = MappingProxyType({
++    "2026.11.4": MappingProxyType({"deepseek-api": None, "perplexity-api": None, "mistral-api": None, "xai-api": None}),
+     "2026.11.3": MappingProxyType({
+         "google-drive": {"domains": ("drive.google.com", "docs.google.com", "drive.usercontent.google.com")},
+         "ms-onedrive": {"description": "Microsoft OneDrive file storage",
+diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
+index 6430837..30104ee 100644
+--- a/protocol_engine/host_apps.py
++++ b/protocol_engine/host_apps.py
+@@ -243,6 +243,11 @@ _HOST_APPS = (
+     ("perplexity", "business-systems", "generative-ai", "browser-based", 3, "Perplexity AI", ("transfers-files",), ("perplexity.ai",)),
+     ("mistral-ai", "business-systems", "generative-ai", "browser-based", 3, "Mistral AI", ("transfers-files",), ("mistral.ai",)),
+     ("deepseek", "business-systems", "generative-ai", "browser-based", 3, "DeepSeek", ("transfers-files",), ("deepseek.com",)),
++    # API hosts named by each vendor's API documentation (research/apps/*.md); split as decided for Anthropic.
++    ("deepseek-api", "business-systems", "generative-ai", "client-server", 3, "DeepSeek API", ("transfers-files",), ("api.deepseek.com",)),
++    ("perplexity-api", "business-systems", "generative-ai", "client-server", 3, "Perplexity API", ("transfers-files",), ("api.perplexity.ai",)),
++    ("mistral-api", "business-systems", "generative-ai", "client-server", 3, "Mistral AI API", ("transfers-files",), ("api.mistral.ai",)),
++    ("xai-api", "business-systems", "generative-ai", "client-server", 3, "xAI Grok API", ("transfers-files",), ("api.x.ai",)),
+     ("xai-grok", "business-systems", "generative-ai", "browser-based", 3, "xAI Grok", ("transfers-files",), ("grok.com", "x.ai")),
+     ("hugging-face", "business-systems", "generative-ai", "client-server", 3, "Hugging Face models and datasets", ("transfers-files",), ("huggingface.co", "hf.co")),
+     ("midjourney", "business-systems", "generative-ai", "browser-based", 3, "Midjourney image generation", ("transfers-files",), ("midjourney.com",)),
