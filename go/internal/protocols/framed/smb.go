@@ -604,7 +604,9 @@ func smb2SessionSetup(data []byte) ([]parsing.Row, string, error) {
 		}
 		rows = append(rows, row("smb_message", "session-setup-response", "session_setup", "structural"))
 		sessionFlags := u16(66)
-		if sessionFlags&^7 != 0 {
+		// Go-only divergence (Codex PRO-17, PRO-201): MS-SMB2 2.2.6 allows 0 or exactly one of IS_GUEST, IS_NULL
+		// and ENCRYPT_DATA; the Python reference accepts any combination and reports its lowest bit.
+		if sessionFlags != 0 && sessionFlags != 1 && sessionFlags != 2 && sessionFlags != 4 {
 			return nil, "", parsing.Malformed("SESSION_SETUP response session flags outside MS-SMB2")
 		}
 		session := "authenticated"

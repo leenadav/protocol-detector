@@ -111,3 +111,42 @@ func TestSMB2WatchEndsOnForeignOrBadFrames(t *testing.T) {
 		t.Fatalf("budget: %v", err)
 	}
 }
+
+// smb2SessionResponse builds a SESSION_SETUP response carrying token, then pad bytes past the security buffer.
+func smb2SessionResponse(status uint32, sessionFlags uint16, token []byte, pad []byte) []byte {
+	m := make([]byte, 72)
+	copy(m, "\xfeSMB")
+	binary.LittleEndian.PutUint16(m[4:], 64)
+	binary.LittleEndian.PutUint32(m[8:], status)
+	binary.LittleEndian.PutUint16(m[12:], 1)
+	binary.LittleEndian.PutUint32(m[16:], smb2FlagServerToRedir)
+	binary.LittleEndian.PutUint16(m[64:], 9)
+	binary.LittleEndian.PutUint16(m[66:], sessionFlags)
+	if len(token) > 0 {
+		binary.LittleEndian.PutUint16(m[68:], 72)
+	}
+	binary.LittleEndian.PutUint16(m[70:], uint16(len(token)))
+	m = append(append(m, token...), pad...)
+	return append([]byte{0, byte(len(m) >> 16), byte(len(m) >> 8), byte(len(m))}, m...)
+}
+
+// MS-SMB2 2.2.6: SessionFlags "MUST contain either 0 or one of the following values" (IS_GUEST, IS_NULL,
+// ENCRYPT_DATA); a combination such as guest plus encrypted is not a conforming response.
+func TestSMB2SessionSetupResponseSessionFlagsAreExclusive(t *testing.T) {
+	token := ntlmssp(2, 56)
+	for flags, want := range map[uint16]string{0: "authenticated", 1: "guest", 2: "anonymous", 4: "encrypted"} {
+		p := NewSMB2(65536)
+		feedSMB(t, p, smb2NegotiateRequest())
+		if err := feedSMB(t, p, smb2SessionResponse(0, flags, token, nil)); err != nil || extra(p.Result())["smb_session"] != want {
+			t.Errorf("flags %d: %+v %v", flags, p.Result(), err)
+		}
+	}
+	for _, flags := range []uint16{3, 5, 6, 7, 8} {
+		p := NewSMB2(65536)
+		feedSMB(t, p, smb2NegotiateRequest())
+		err := feedSMB(t, p, smb2SessionResponse(0, flags, token, nil))
+		if err == nil || !strings.Contains(err.Error(), "session flags outside MS-SMB2") {
+			t.Errorf("flags %d accepted or wrong error: %v (%+v)", flags, err, p.Result())
+		}
+	}
+}
