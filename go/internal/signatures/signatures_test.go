@@ -1,6 +1,7 @@
 package signatures
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/leenadav/protocol-detector/go/internal/content"
@@ -59,5 +60,21 @@ func TestContainerDescriptionIsPythonsStr(t *testing.T) {
 		if got := set.byName["a"].Description; got != c.want {
 			t.Errorf("%s: got %q, want %q", c.description, got, c.want)
 		}
+	}
+}
+
+// PRO-19 (Codex P2): FromJSON decoded the whole document before any size check, so a caller that did not go
+// through ReadFile could hand it any amount of text. It now refuses more than MaxFile bytes before decoding, with
+// the reference's from_path wording; every CLI path already reads through ReadFile, so no answer changes.
+func TestFromJSONRefusesMoreThanMaxFileBytes(t *testing.T) {
+	pack := loadPack(t)
+	doc := []byte(`[{"name": "a", "conditions": [{"context": "ssh-req-banner", "pattern": "OpenSSH"}]}]`)
+	padded := append(append([]byte{}, doc...), bytes.Repeat([]byte(" "), MaxFile-len(doc))...)
+	if _, err := FromJSON(padded, pack); err != nil {
+		t.Fatalf("a document of exactly MaxFile bytes must load: %v", err)
+	}
+	_, err := FromJSON(append(padded, ' '), pack)
+	if err == nil || err.Error() != fail("Signature file exceeds 4 MiB").Error() {
+		t.Fatalf("a document over MaxFile bytes: %v, want the 4 MiB refusal", err)
 	}
 }

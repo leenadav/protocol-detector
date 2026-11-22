@@ -478,8 +478,13 @@ type Set struct {
 	Count    int
 }
 
-// FromJSON is SignatureSet.from_json over a content pack's vocabularies.
+// FromJSON is SignatureSet.from_json over a content pack's vocabularies. It also applies from_path's MaxFile
+// limit before decoding, so no caller can make it materialize a larger document; every CLI path already reads
+// through ReadFile, which enforces the same limit with the same message.
 func FromJSON(text []byte, pack *content.Pack) (*Set, error) {
+	if len(text) > MaxFile {
+		return nil, fail("Signature file exceeds 4 MiB")
+	}
 	decoder := json.NewDecoder(bytes.NewReader(text))
 	decoder.UseNumber()
 	var document interface{}
