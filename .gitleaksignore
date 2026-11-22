@@ -1,0 +1,7 @@
+# gitleaks false positives, one exact finding per line (fingerprint = commit:path:rule:line).
+# The CI secret scan reads full history of every fetched branch, so a finding on any branch fails every PR.
+#
+# research/live-results-2026-11-21-r5.tsv line 8 (claude/app-research, PRO-135): generic-api-key matched a
+# public DNS CNAME chain (sdds3.sophosupd.com.edgekey.net>e3113.dscd.akamaiedge.net) in live-verify output.
+# Public hostnames, not a credential.
+75695d3db1417f5b2bfa041855767c7afd976964:research/live-results-2026-11-21-r5.tsv:generic-api-key:8
