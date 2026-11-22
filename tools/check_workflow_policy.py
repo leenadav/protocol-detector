@@ -156,6 +156,13 @@
    `workflow-lint` checks out the full history for it (item 19, carried from item 16 round 3).
    A blanket noqa comment without a rule code is refused as well (and ruff selects PGH004);
    a single-line noqa naming its rule code stays a reviewed code change (item 20).
+17. Unambiguous refs (every workflow file, every line, comments and run-block text included;
+   SEC-CI-1): git and the GitHub API resolve a short name through refs/tags/ before the branch, so
+   a tag named `main` (or `origin/main`) would stand in for the branch. So every `compare/` segment
+   compares shell variables holding commit SHAs, or 40-hex SHAs, never a name; no git range
+   (`a..b`, `a...b`) names main or origin/main; a remote-tracking branch is spelled in full
+   (`refs/remotes/origin/...`, never `origin/...`); and a `git/ref/` lookup is `git/ref/heads/...`,
+   so main is read from the branch alone (a tag is listed through `git/matching-refs/tags/`).
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -1596,6 +1603,32 @@ def flow_problem(line):
 FLOW_NODE = re.compile(r"[\[{,]\s*[&*!]")
 
 
+COMPARE_SEGMENT = re.compile(r"compare/([^\s\"']+)")
+COMPARE_PART = re.compile(r"^(?:\$\{[A-Za-z_][A-Za-z0-9_]*\}|\$[A-Za-z_][A-Za-z0-9_]*|[0-9a-f]{40})$")
+MAIN_RANGE = re.compile(r"(?<![\w./-])(?:origin/)?main\.\.\.?|\.\.\.?(?:origin/)?main(?![\w./-])")
+SHORT_REMOTE = re.compile(r"(?<![\w./-])origin/[A-Za-z0-9]")
+GIT_REF_LOOKUP = re.compile(r"git/refs?/(?!heads/)")
+
+
+def check_main_refs(path, text):
+    """Rule 17: no compare, range, remote-tracking name or ref lookup that a same-named tag could shadow."""
+    problems = []
+    for number, line in enumerate(text.splitlines(), 1):
+        where = "{}:{}".format(path, number)
+        for segment in COMPARE_SEGMENT.findall(line):
+            parts = re.split(r"\.{2,3}", segment)
+            if len(parts) != 2 or not all(COMPARE_PART.match(part) for part in parts):
+                problems.append("{}: compare/{} must compare two SHA variables or SHAs, never a ref name such as "
+                                "main (a tag named main would shadow the branch)".format(where, segment))
+        if MAIN_RANGE.search(line):
+            problems.append("{}: a git range names main; compare the SHA of refs/heads/main instead".format(where))
+        if SHORT_REMOTE.search(line):
+            problems.append("{}: a short remote-tracking name (origin/...); spell it refs/remotes/origin/...".format(where))
+        if GIT_REF_LOOKUP.search(line):
+            problems.append("{}: a git/ref lookup outside refs/heads/; read a branch through git/ref/heads/".format(where))
+    return problems
+
+
 def check_encoding(path, text):
     problems = []
     block_indent = None
@@ -1652,6 +1685,7 @@ def main(root, history_base=HISTORY_BASE):
         for name in files:
             problems += check_encoding(name, texts[name])
             problems += check_credentials(name, texts[name])
+            problems += check_main_refs(name, texts[name])
         if RELEASE_WORKFLOW in texts:
             problems += check_release_concurrency(texts[RELEASE_WORKFLOW])
             problems += check_release_provenance(texts[RELEASE_WORKFLOW])
@@ -2079,6 +2113,33 @@ def self_test():
                         "quoted item then pair": '    needs: ["a", b: c]\n'}.items():
         found = check_encoding("w.yml", plain + "jobs2:\n  b:\n    x:\n" + line)
         assert found, (label, found)
+    # rule 17 (SEC-CI-1): a ref a same-named tag could shadow
+    good_refs = ('          MAIN=$(gh api "repos/${GH_REPO}/git/ref/heads/main" --jq .object.sha)\n'
+                 '          STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...${MAIN}" --jq .status)\n'
+                 '          gh api "repos/${GH_REPO}/compare/$base...0123456789abcdef0123456789abcdef01234567"\n'
+                 '          gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/main" --jq \'.[].ref\'\n'
+                 '        run: python -B tools/merge_readiness.py --base refs/remotes/origin/main --head refs/remotes/origin/x\n'
+                 '    name: trial merge of claude/go-migration into main (report only)\n'
+                 '          python -B tools/x.py --main-only domain.example.com\n')
+    assert check_main_refs("w.yml", good_refs) == [], check_main_refs("w.yml", good_refs)
+    bare_main = {
+        "compare head bare main": 'gh api "repos/${GH_REPO}/compare/${SHA}...main"',
+        "compare base bare main": 'gh api "repos/${GH_REPO}/compare/main...${SHA}"',
+        "compare two-dot": 'gh api "repos/${GH_REPO}/compare/${SHA}..main"',
+        "compare heads/main": 'gh api repos/${GH_REPO}/compare/${SHA}...heads/main',
+        "compare refs/tags/main": "gh api 'repos/o/r/compare/${SHA}...refs/tags/main'",
+        "compare one part": 'gh api "repos/${GH_REPO}/compare/${SHA}"',
+        "compare in a comment": "        # compare/<sha>...main",
+        "git diff range": "git diff --name-only main...HEAD",
+        "git log range origin": "git log origin/main..HEAD",
+        "short remote base": "python -B tools/merge_readiness.py --base origin/main",
+        "short remote head": "--head origin/claude/go-migration",
+        "tag lookup": 'gh api "repos/${GH_REPO}/git/ref/tags/main" --jq .object.sha',
+        "bare ref lookup": 'gh api "repos/${GH_REPO}/git/ref/main"',
+        "refs lookup": 'gh api "repos/${GH_REPO}/git/refs/tags/main"',
+    }
+    for label, line in bare_main.items():
+        assert check_main_refs("w.yml", "      - run: " + line + "\n"), label
     # task 5 round 2 and CI/CD task 6: a read-only workflow authenticating with a stored PAT
     pat_job = ("jobs:\n  a:\n    permissions:\n      contents: read\n    steps:\n      - env:\n"
                "          GH_TOKEN: {value}\n        run: gh release create \"$GITHUB_REF_NAME\" dist/*\n")

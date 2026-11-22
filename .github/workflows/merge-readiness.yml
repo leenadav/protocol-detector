@@ -42,4 +42,4 @@ jobs:
       - name: The tool's offline self-test
         run: python -B tools/merge_readiness.py --self-test
       - name: Trial merge (report only)
-        run: python -B tools/merge_readiness.py --base origin/main --head origin/claude/go-migration --summary "$GITHUB_STEP_SUMMARY"
+        run: python -B tools/merge_readiness.py --base refs/remotes/origin/main --head refs/remotes/origin/claude/go-migration --summary "$GITHUB_STEP_SUMMARY"

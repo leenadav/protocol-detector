@@ -974,7 +974,7 @@
    "      - name: The tool's offline self-test",
    "        run: python -B tools/merge_readiness.py --self-test",
    "      - name: Trial merge (report only)",
-   "        run: python -B tools/merge_readiness.py --base origin/main --head origin/claude/go-migration --summary \"$GITHUB_STEP_SUMMARY\""
+   "        run: python -B tools/merge_readiness.py --base refs/remotes/origin/main --head refs/remotes/origin/claude/go-migration --summary \"$GITHUB_STEP_SUMMARY\""
   ],
   ".github/workflows/nightly-fuzz.yml": [
    "# Extended seeded fuzzing beyond the unit-test budget. Findings are regressions in",
@@ -1279,7 +1279,7 @@
    "          python-version: \"3.13\"",
    "      - name: A release tag must point at a commit already on main",
    "        # Tag protection is not enforceable on this plan (SSDLC.md), so the workflow checks it:",
-   "        # compare/<sha>...<main> is \"identical\" or \"ahead\" only when main contains the commit. <main> is the SHA of",
+   "        # compare/${SHA}...${MAIN} is \"identical\" or \"ahead\" only when main contains the commit. MAIN is the SHA of",
    "        # refs/heads/main (git/ref is an exact match), never the bare name, which a tag named main would shadow",
    "        # (SEC-CI-1); a failed lookup leaves an all-zero SHA, which the compare rejects, so a tag fails closed.",
    "        # A tag fails closed on any other answer; dry runs report only. The pull-request head,",

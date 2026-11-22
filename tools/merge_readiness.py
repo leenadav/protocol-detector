@@ -11,6 +11,10 @@ conflicting file. A conflict is the report's subject, not a failure of the job: 
 annotation and the job passes, so a long-lived branch does not mail a red run every day. A missing branch, a
 git older than 2.38 or a failing git command exits 2.
 
+Refs are full names only (`refs/remotes/origin/main`, `refs/heads/x`) or a 40-hex commit: git resolves a
+short name such as `origin/main` through refs/tags/ before refs/remotes/, so a tag named `origin/main`
+would silently replace the branch (SEC-CI-1, policy rule 17).
+
     merge_readiness.py [--base REF] [--head REF] [--summary FILE]
     merge_readiness.py --self-test
 Standard library only; Python 3.9 syntax.
@@ -23,9 +27,9 @@ import subprocess
 import sys
 import tempfile
 
-BASE = "origin/main"
-HEAD = "origin/claude/go-migration"
-REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{0,199}$")
+BASE = "refs/remotes/origin/main"
+HEAD = "refs/remotes/origin/claude/go-migration"
+REF = re.compile(r"^(?:refs/[A-Za-z0-9][A-Za-z0-9._/-]{0,194}|[0-9a-f]{40})$")
 
 
 class GitError(RuntimeError):
@@ -49,7 +53,7 @@ def git_version(cwd=None):
 
 def resolve(ref, cwd=None):
     if not REF.match(ref) or ".." in ref:
-        raise GitError("{!r} is not a branch or ref name".format(ref))
+        raise GitError("{!r} is not a full ref name (refs/...) or a commit SHA".format(ref))
     code, out = git(["rev-parse", "--verify", "--quiet", ref + "^{commit}"], cwd, ok=(0, 1))
     if code != 0:
         raise GitError("{} does not exist in this clone (fetch it first)".format(ref))
@@ -132,25 +136,29 @@ def self_test():
         git(["checkout", "-q", "conflict"], root)
         commit("conflicting side", {"a.txt": "branch\n", "d/e.txt": "x\n"})
         git(["checkout", "-q", "main"], root)
+        git(["tag", "clean", "HEAD"], root)          # a tag spelled like the branch must not replace it
         before = git(["for-each-ref"], root)[1], git(["status", "--porcelain"], root)[1], git(["rev-parse", "HEAD"], root)[1]
-        clean = assess("main", "clean", root)
+        clean = assess("refs/heads/main", "refs/heads/clean", root)
         assert clean["clean"] and clean["conflicts"] == [] and (clean["ahead"], clean["behind"]) == (1, 1), clean
         assert clean["changed"] == 2, clean
-        conflicting = assess("main", "conflict", root)
+        assert clean["head"] == git(["rev-parse", "refs/heads/clean"], root)[1].strip() != clean["base"], clean
+        conflicting = assess("refs/heads/main", "refs/heads/conflict", root)
         assert not conflicting["clean"] and conflicting["conflicts"] == ["a.txt"], conflicting
         assert "**Conflicting**: 1 file(s)" in "\n".join(report_lines("main", "conflict", conflicting))
         assert "**Clean**" in "\n".join(report_lines("main", "clean", clean))
         after = git(["for-each-ref"], root)[1], git(["status", "--porcelain"], root)[1], git(["rev-parse", "HEAD"], root)[1]
         assert before == after, "the trial merge changed a ref, the index or the working tree"
-        for bad in ("missing-branch", "main..clean", "-oops", "a b"):
+        bad_refs = ("refs/heads/missing-branch", "refs/heads/main..refs/heads/clean", "-oops", "refs/heads/a b",
+                    "clean", "main", "origin/main", "deadbeef")
+        for bad in bad_refs:
             try:
-                assess("main", bad, root)
+                assess("refs/heads/main", bad, root)
             except GitError:
                 continue
             raise AssertionError("{!r} was accepted".format(bad))
     finally:
         shutil.rmtree(root, ignore_errors=True)
-    print("merge_readiness self-test: ok (clean, conflicting, refs untouched, 4 bad refs refused)")
+    print("merge_readiness self-test: ok (clean, conflicting, refs untouched, a same-named tag ignored, {} bad refs refused)".format(len(bad_refs)))
     return 0
 
 
