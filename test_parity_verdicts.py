@@ -158,5 +158,37 @@ class ServerProbeTests(unittest.TestCase):
         self.assertTrue(self.server.pool_problem(b""))
 
 
+class SchemaInvocationTests(unittest.TestCase):
+    """Codex PRO-21 P2: schema_go validated whatever lines a run left, whatever its exit status; a crashed or
+    timed-out invocation could pass with fewer (or no) lines."""
+
+    def setUp(self):
+        import schema_go
+        self.schema = schema_go
+
+    def test_finished_invocations_pass(self):
+        problem = self.schema.invocation_problem
+        self.assertIsNone(problem("analyze", completed(0, ['{"frame": 1}'])))
+        self.assertIsNone(problem("analyze", completed(1, ['{"type": "capture_gap"}'], b"Capture error: Incomplete or failed PCAP\n")))
+        self.assertIsNone(problem("live", completed(2, ['{"type": "summary", "capture_quality": "truncated"}'])))
+
+    def test_crashed_or_unexplained_invocations_fail(self):
+        problem = self.schema.invocation_problem
+        self.assertIn("panic", problem("analyze", completed(2, ['{"frame": 1}'], b"panic: index out of range")))
+        self.assertTrue(problem("analyze", completed(1, ['{"frame": 1}'], b"usage: protodetect analyze")))
+        self.assertTrue(problem("analyze", completed(-11, [])))
+        self.assertTrue(problem("analyze", completed(0, [], b"warning")))
+        self.assertTrue(problem("live", completed(0, ['{"type": "classification"}'])))
+        self.assertTrue(problem("live", completed(1, ['{"type": "summary", "capture_quality": "unverified"}'], b"boom")))
+
+    def test_a_timed_out_invocation_is_a_problem_not_a_traceback(self):
+        done, problem = self.schema.invoke("analyze", [sys.executable, "-c", "import time; time.sleep(5)"], timeout=0.2)
+        self.assertIsNone(done)
+        self.assertIn("timed out", problem)
+        done, problem = self.schema.invoke("analyze", [sys.executable, "-c", "print('{}')"], timeout=30)
+        self.assertIsNone(problem)
+        self.assertEqual(done.stdout.strip(), b"{}")
+
+
 if __name__ == "__main__":
     unittest.main()
