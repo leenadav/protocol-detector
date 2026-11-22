@@ -74,6 +74,24 @@ func TestWeakKey(t *testing.T) {
 	}
 }
 
+// Codex PRO-15: a four-octet DER length fits in an int on 32-bit platforms, but adding the content offset
+// overflowed (and 0xffffffff read as -1), so the container guard passed and a negative end panicked at the slice.
+// The reference (unbounded Python ints) refuses every one of these lengths as exceeding the container.
+func TestFourOctetLengthNeverOverflowsTheContainerGuard(t *testing.T) {
+	want := parsing.Malformed("DER element exceeds its container").Error()
+	for _, length := range []string{"7fffffff", "7ffffffa", "80000000", "fffffff0", "ffffffff"} {
+		inner, _ := hex.DecodeString("3084" + length)
+		tbs := append([]byte{0x30, byte(len(inner))}, inner...)
+		der := append([]byte{0x30, byte(len(tbs))}, tbs...)
+		if _, _, _, err := element(der, 4, len(der)); err == nil || err.Error() != want {
+			t.Errorf("length %s: element error %v, want %q", length, err, want)
+		}
+		if _, err := LeafProfile(der); err == nil || err.Error() != want {
+			t.Errorf("length %s: LeafProfile error %v, want %q", length, err, want)
+		}
+	}
+}
+
 func FuzzLeafProfileStaysBounded(f *testing.F) {
 	raw, _ := os.ReadFile("testdata/leaves.json")
 	var doc struct{ Certs []struct{ DER string } }
