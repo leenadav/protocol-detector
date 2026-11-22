@@ -9,10 +9,16 @@ own validator (tools/schema_check.py), with the schema the reference's tests use
 `live --json` events against live-event; session records' `engine_status` is also checked against the reference's
 closed vocabulary (protocol_engine.policy.ENGINE_STATUSES), which the published schema does not enumerate. Options are seeded as in analyze_diff.py and live_diff.py. Nothing
 is captured; nothing in the Python tree is changed or imported for behaviour, only to validate.
+
+Every invocation must also complete (PRO-21): `analyze` exits 0 with nothing on standard error, or 1 with the
+reference's one-line "Capture error: ..." refusal; `live` exits 0, 1 or 2 (live_capture.py) with nothing on
+standard error and its closing summary event. A crash after a valid prefix, or before any row, is a problem of
+its own, whatever the other captures have added to the aggregate counts.
 """
 import argparse
 import json
 import random
+import re
 import subprocess
 import sys
 import tempfile
@@ -34,6 +40,27 @@ REFERENCE_GAPS = ("midstream",)
 # protocol_adapters/live_capture.py publishes an invalidation without events in this layout; the live-event schema
 # requires "app" on every classification, so the reference's own output does not validate either.
 INVALIDATED_KEYS = {"type", "timestamp", "source", "destination", "transport", "status", "protocol", "scope", "reason"}
+
+
+CAPTURE_ERROR = re.compile(r"Capture error: [^\n]*\n")
+
+
+def invocation_problem(command, returncode, stdout, stderr):
+    """Why one `analyze` or `live` run of the Go binary did not complete, or None."""
+    text = stderr.decode("utf-8", "replace")
+    if command == "analyze":
+        if (returncode, text) == (0, "") or (returncode == 1 and CAPTURE_ERROR.fullmatch(text)):
+            return None
+        return "exit status {} with standard error {!r}".format(returncode, text[:200])
+    if returncode not in (0, 1, 2) or text:
+        return "exit status {} with standard error {!r}".format(returncode, text[:200])
+    try:
+        kinds = [json.loads(line).get("type") for line in stdout.decode("utf-8").splitlines() if line]
+    except (ValueError, AttributeError):
+        return "a line that is not a JSON event"
+    if "summary" not in kinds:
+        return "no closing summary event ({} events)".format(len(kinds))
+    return None
 
 
 def main(argv=None):
@@ -68,6 +95,9 @@ def main(argv=None):
                 options.append("--json")
             done = subprocess.run([args.binary, "analyze", str(capture)] + options, stdout=subprocess.PIPE, stderr=subprocess.PIPE,  # noqa: S603
                                   check=False, timeout=120)
+            problem = invocation_problem("analyze", done.returncode, done.stdout, done.stderr)
+            if problem:
+                problems.append("analyze {} {}: {}".format(capture.name, " ".join(options), problem))
             for line in done.stdout.decode("utf-8").splitlines():
                 row = check("offline-row", line, "analyze {} {}".format(capture.name, " ".join(options)))
                 if row.get("type") == "session":
@@ -83,6 +113,9 @@ def main(argv=None):
             with open(capture, "rb") as stream:
                 done = subprocess.run([args.binary, "live"] + live_diff.arguments(live_options, True), stdin=stream,  # noqa: S603
                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=120)
+            problem = invocation_problem("live", done.returncode, done.stdout, done.stderr)
+            if problem:
+                problems.append("live {}: {}".format(capture.name, problem))
             for line in done.stdout.decode("utf-8").splitlines():
                 event = json.loads(line)
                 if set(event) == INVALIDATED_KEYS and event.get("status") == "invalidated" and event.get("type") == "classification":

@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / "migration" / "parity"))
 import analyze_diff  # noqa: E402
 import control_diff  # noqa: E402
 import decrypt_diff  # noqa: E402
+import schema_go  # noqa: E402
 import server_diff  # noqa: E402
 
 
@@ -178,6 +179,28 @@ class ServerProbeTests(unittest.TestCase):
             with self.subTest(answer=answer), self.assertRaises(server_diff.ProbeFailure):
                 server_diff.require_status("go", "admission 0", answer, 202)
         self.assertEqual(server_diff.admission_statuses(), [202] * 6 + [429])
+
+
+class SchemaInvocationTests(unittest.TestCase):
+    """PRO-21: both subprocess return codes were ignored, so a crash after a valid prefix (or before any row)
+    went unnoticed once other captures had filled the aggregate counters."""
+    LIVE = b'{"type": "started"}\n{"type": "summary"}\n'
+
+    def test_a_completed_invocation_has_no_problem(self):
+        self.assertIsNone(schema_go.invocation_problem("analyze", 0, b'{"frame": 1}\n', b""))
+        self.assertIsNone(schema_go.invocation_problem("analyze", 1, b'{"frame": 1}\n', b"Capture error: truncated record\n"))
+        for status in (0, 1, 2):
+            self.assertIsNone(schema_go.invocation_problem("live", status, self.LIVE, b""))
+
+    def test_a_crashed_or_cut_invocation_is_a_problem(self):
+        for command, status, stdout, stderr in (("analyze", 2, b'{"frame": 1}\n', b"panic: index out of range\n"),
+                                                ("analyze", 0, b'{"frame": 1}\n', b"panic: late\n"),
+                                                ("analyze", 1, b"", b"something else\n"), ("analyze", -11, b"", b""),
+                                                ("analyze", 64, b"", b"not ported in the Go backend: x\n"),
+                                                ("live", 2, b'{"type": "started"}\n', b""), ("live", 3, self.LIVE, b""),
+                                                ("live", 0, self.LIVE, b"panic: x\n"), ("live", 0, b"", b"")):
+            with self.subTest(command=command, status=status, stdout=stdout, stderr=stderr):
+                self.assertIsNotNone(schema_go.invocation_problem(command, status, stdout, stderr))
 
 
 if __name__ == "__main__":
