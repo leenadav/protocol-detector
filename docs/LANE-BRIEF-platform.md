@@ -25,7 +25,7 @@ their decisions, the policy locks, and the release controller.
 
 ## 2. Current state (2026-11-21, after PRO-103)
 
-- `main` = `dfaac0d`. PRO-42 and PRO-59 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #38 (`51b5e94`);
+- `main` = `dfaac0d`. PRO-42, PRO-59 and PRO-31 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #37 (`0d32281`), #38 (`51b5e94`), #39 (`0ef7349`);
   #41 and #54 (PRO-73) too. Open lane PRs: drafts #55 (PRO-77) and #57 (PRO-102) into `claude/go-migration`, #59 stacked on #57 and
   #60 stacked on #59 (PRO-103), and this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
 - **Merged so far:**
@@ -39,7 +39,9 @@ their decisions, the policy locks, and the release controller.
   | #33 | Branch-limited `push` triggers removed from `merge-readiness.yml` and `perf-history.yml` |
   | #34 | `tools/check_required_checks.py`: the SSDLC required-checks tables match the real job names |
   | #35 | This brief; current scope and cadence lines in `AGENTS.md`; SSDLC review-loop step 9 |
+  | #37 | `docs/CONTENT-GOVERNANCE.md` matches the release history (`HISTORY` on `main` ends at 2026.11.0) |
   | #38 | `AGENTS.md` "Code Review Rules" for Codex automatic PR review; the Codex-comment rule |
+  | #39 | `protocol_engine/content.py`: numeric version compare (2026.11.9 before 2026.11.10); 5 tests (Lee's exception, 2026-11-20) |
   | #41 | This brief after #33–#38; the 32-bit Go test item |
   | #54 | Root `CLAUDE.md` importing `AGENTS.md` (PRO-73). Codex's automatic review did not run (usage limit); not required for a docs-only change |
 - **On `main`:**
@@ -104,7 +106,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   `d7c482c`, `b57b819`, `8a129c7`.
 - **Also:** `b97adc8` (Dependabot pins, chunk 06) and `85e99e9` (govulncheck, chunk 07).
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
-- **Merged, not yet Codex-reviewed:** #33 `851eddb`, #34 `a179db6`, #35 `d3faff8`..`12a56ae`, #38 `7c33b1a`.
+- **Merged, not yet Codex-reviewed:** #33 `851eddb`, #34 `a179db6`, #35 `d3faff8`..`12a56ae`, #37 `7d04266`, #38 `7c33b1a`, #39 `37b3c84`.
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
