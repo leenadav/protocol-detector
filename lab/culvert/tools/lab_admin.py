@@ -3,6 +3,7 @@
 Usage: lab_admin.py <ui_port> <build>. The generated password is stored in run/admin-<build>.secret (mode 0600)
 and is never printed. Lab only: loopback, throwaway account."""
 import http.cookiejar, json, os, secrets, ssl, sys, urllib.request
+from pathlib import Path
 
 ui, build = int(sys.argv[1]), sys.argv[2]
 scheme = sys.argv[3] if len(sys.argv) > 3 else "https"  # build G serves its UI over plain HTTP for the preview
@@ -26,14 +27,14 @@ secret = f"/home/user/culvert-lab/run/admin-{build}.secret"
 st, status = call("GET", "/api/setup/status")
 if status.get("needsSetup"):
     if os.path.exists(secret):  # after a container restart: keep the password the lab user already has
-        pw = open(secret).read()
+        pw = Path(secret).read_text()
     else:
         pw = "Lab-" + secrets.token_urlsafe(12) + "9aZ"
         fd = os.open(secret, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         os.write(fd, pw.encode()); os.close(fd)
     print("setup:", call("POST", "/api/setup/complete", {"user": "admin", "pass": pw})[0])
 else:
-    pw = open(secret).read()
+    pw = Path(secret).read_text()
 print("login:", call("POST", "/api/auth/login", {"user": "admin", "pass": pw})[0])
 
 st, pol = call("GET", "/api/policy")
@@ -58,7 +59,7 @@ for rule in WANT:
     version = pol.get("version", 0) if isinstance(pol, dict) else 0
     st, out = call("POST", f"/api/policy?ifVersion={version}", rule)
     print("create", rule["name"], st, out if st >= 300 else "")
-st, bad = call("POST", f"/api/policy?ifVersion={version + 99}", {"name": "x"})
+print("a stale policy version is refused:", call("POST", f"/api/policy?ifVersion={version + 99}", {"name": "x"})[0])
 st, pol = call("GET", "/api/policy")
 ver = pol.get("version", 0)
 st, bad = call("POST", f"/api/policy?ifVersion={ver}", {"name": "lab-invalid", "action": "Allow", "sslAction": "Bypass",

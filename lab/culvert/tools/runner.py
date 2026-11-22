@@ -6,6 +6,7 @@ Builds: A unmodified, B integrated with the detector off, C fake engine, D real 
 with an injected panic. All traffic is synthetic and stays on loopback / RFC 5737 addresses.
 """
 import hashlib, json, os, random, socket, ssl, sys, threading, time
+from pathlib import Path
 
 LAB = "/home/user/culvert-lab"
 ORIGIN = "origin.lab.test"
@@ -51,7 +52,7 @@ def proxy_auth(port):
     path = f"{LAB}/run/admin-{build}.secret"
     if not os.path.exists(path):
         return b""
-    return b"Proxy-Authorization: Basic " + base64.b64encode(b"admin:" + open(path, "rb").read()) + b"\r\n"
+    return b"Proxy-Authorization: Basic " + base64.b64encode(b"admin:" + Path(path).read_bytes()) + b"\r\n"
 
 
 def connect(port, dest, extra=b"", timeout=8):
@@ -102,6 +103,7 @@ def s_http_plain(port):
 def s_tls(port):
     s, status = connect(port, ORIGIN + ":443")
     ctx = ssl.create_default_context(cafile=LAB + "/certs/origin.crt")
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     t = ctx.wrap_socket(s, server_hostname=ORIGIN)
     t.sendall(b"GET /tls HTTP/1.1\r\nHost: %s\r\n\r\n" % ORIGIN.encode())
     data = recv_until(t, b"/tls\n")
@@ -274,6 +276,7 @@ def policy_case(port, host, dport, payload=b"", extra=b"", tls=False):
     try:
         if tls:
             ctx = ssl.create_default_context(cafile=LAB + "/certs/origin.crt")
+            ctx.minimum_version = ssl.TLSVersion.TLSv1_2
             t = ctx.wrap_socket(s, server_hostname=host)
             t.sendall(b"GET /policy HTTP/1.1\r\nHost: %s\r\n\r\n" % host.encode())
             out["delivered"] = b"/policy" in recv_until(t, b"/policy\n")

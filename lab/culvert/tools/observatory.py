@@ -5,10 +5,11 @@ Usage: observatory.py <results.json> <presentation/web/styles.css> <out.html>
 The page is self-contained (no network, no external fonts or scripts). Data: synthetic lab traffic only.
 """
 import json, sys
+from pathlib import Path
 
 results, css_path, out = sys.argv[1], sys.argv[2], sys.argv[3]
-r = json.load(open(results))
-css = open(css_path).read()
+r = json.loads(Path(results).read_text())
+css = Path(css_path).read_text()
 
 sessions = []
 for sc in r["scenarios"]:
@@ -172,5 +173,5 @@ render();
 </body>
 </html>
 """
-open(out, "w").write(page.replace("__CSS__", css).replace("__DATA__", data))
+Path(out).write_text(page.replace("__CSS__", css).replace("__DATA__", data))
 print("sessions:", len(sessions))

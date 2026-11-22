@@ -1,7 +1,8 @@
 """Render results.json as one self-contained HTML page (auto-refreshing while the run is in progress)."""
 import html, json, sys
+from pathlib import Path
 src, dst = sys.argv[1], sys.argv[2]
-r = json.load(open(src))
+r = json.loads(Path(src).read_text())
 builds = list(r["builds"].items())
 running = r.get("state") != "finished"
 def cell(x):
@@ -71,4 +72,4 @@ ul{{margin:6px 0 0 18px;padding:0}} .note{{background:var(--card);border:1px sol
 <li>"Known gap" is a real detection gap this lab reproduces: a TLS server reply using the post-quantum key exchange is not recognised yet (work item #4).</li>
 <li>This is one container, not two VMs, and it measures correctness, not performance. Timings are shown for context only.</li></ul></div>
 </body></html>"""
-open(dst, "w").write(page)
+Path(dst).write_text(page)
