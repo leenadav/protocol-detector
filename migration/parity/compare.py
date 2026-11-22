@@ -62,7 +62,8 @@ def family_of(label):
 
 
 def diff(expected, actual, path="$", out=None, limit=200):
-    """Exact structural differences as (path, expected, actual) triples, bounded."""
+    """Exact structural differences as (path, expected, actual) triples, bounded. A boolean never equals a
+    number; 1 and 1.0 are the same JSON number."""
     out = [] if out is None else out
     if len(out) >= limit:
         return out
@@ -79,7 +80,8 @@ def diff(expected, actual, path="$", out=None, limit=200):
             out.append((path + ".length", len(expected), len(actual)))
         for index, (e, a) in enumerate(zip(expected, actual)):
             diff(e, a, "%s[%d]" % (path, index), out, limit)
-    elif expected != actual:
+    elif expected != actual or isinstance(expected, bool) != isinstance(actual, bool):
+        # bool is an int subclass (True == 1), but a JSON boolean and a JSON number are different values.
         out.append((path, expected, actual))
     return out
 

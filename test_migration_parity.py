@@ -135,5 +135,20 @@ class ParityHarnessTests(unittest.TestCase):
         self.assertEqual(shared.read_bytes(), embedded.read_bytes(), "copy migration/fixtures/content.json to go/internal/content/pack.json")
 
 
+
+class DiffTypeStrictnessTests(unittest.TestCase):
+    """PRO-14 (Codex P2): Python's == treats a JSON boolean as its integer (True == 1, False == 0), so a backend
+    that answered a boolean for a numeric field, or a number for a boolean, passed exact parity."""
+
+    def test_a_boolean_never_equals_a_number(self):
+        for expected, actual in ((1, True), (0, False), (True, 1), (False, 0), (1.0, True), (False, 0.0)):
+            with self.subTest(expected=expected, actual=actual):
+                self.assertEqual(compare.diff({"n": [expected]}, {"n": [actual]}), [("$.n[0]", expected, actual)])
+
+    def test_equal_values_of_the_same_kind_still_match(self):
+        self.assertEqual(compare.diff({"a": True, "b": 0, "c": [1, 2.5], "d": None}, {"a": True, "b": 0, "c": [1, 2.5], "d": None}), [])
+        self.assertEqual(compare.diff(1, 1.0), [])  # JSON does not distinguish 1 from 1.0
+
+
 if __name__ == "__main__":
     unittest.main()
