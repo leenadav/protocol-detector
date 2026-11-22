@@ -68,6 +68,14 @@ class ParityHarnessTests(unittest.TestCase):
         self.assertEqual(report["extra"], ["stream/not-a-case"])
         self.assertFalse(report["ok"])
 
+    def test_a_boolean_never_matches_a_number(self):
+        """Codex PRO-14: Python equality has True == 1 and False == 0.0, so a backend that put a JSON boolean
+        where the reference has a number (or the reverse) used to pass exact parity."""
+        for expected, actual in ((1, True), (True, 1), (0, False), (False, 0.0), ({"n": [1]}, {"n": [True]})):
+            with self.subTest(expected=expected, actual=actual):
+                self.assertTrue(compare.diff(expected, actual))
+        self.assertEqual(compare.diff({"n": [1, True, "x"]}, {"n": [1, True, "x"]}), [])
+
     def test_committed_gap_list_names_existing_cases(self):
         gaps = compare.load_gaps(CASES.parent.parent / "parity" / "gaps.json")
         ids = {c["id"] for c in self.doc["cases"]}

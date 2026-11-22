@@ -79,7 +79,8 @@ def diff(expected, actual, path="$", out=None, limit=200):
             out.append((path + ".length", len(expected), len(actual)))
         for index, (e, a) in enumerate(zip(expected, actual)):
             diff(e, a, "%s[%d]" % (path, index), out, limit)
-    elif expected != actual:
+    elif expected != actual or isinstance(expected, bool) != isinstance(actual, bool):
+        # Python has True == 1 and False == 0.0; JSON booleans and numbers are different values.
         out.append((path, expected, actual))
     return out
 
