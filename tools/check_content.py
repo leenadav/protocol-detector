@@ -17,20 +17,28 @@ def main(argv=None):
     parser.add_argument("--update", action="store_true", help="Write the lock for the current release")
     args = parser.parse_args(argv)
     if args.update:
+        current = content.description()
         try:
             lock = content.read_lock()
-        except (OSError, ValueError):
-            lock = None
-        current = content.description()
-        if lock is not None and lock.get("version") == current["version"] and lock.get("digest") != current["digest"]:
+        except (OSError, ValueError) as error:
+            lock, reason = None, str(error)
+        else:
+            reason = "it is not an object with a string version and digest and a components object"
+        if not (isinstance(lock, dict) and isinstance(lock.get("version"), str) and isinstance(lock.get("digest"), str)
+                and isinstance(lock.get("components"), dict)):
+            # C11: without the prior lock nothing shows the superseded release's recorded components match it.
+            print("refusing to lock release {}: the prior content lock cannot be read ({}); restore content_lock.json "
+                  "first".format(current["version"], reason))
+            return 1
+        if lock["version"] == current["version"] and lock["digest"] != current["digest"]:
             print("refusing to re-lock release {}: the content changed; add a new Release to HISTORY first".format(current["version"]))
             return 1
-        if lock is not None and lock.get("version") != current["version"]:
+        if lock["version"] != current["version"]:
             # C11: the release being superseded keeps the components it was published with.
-            recorded = content._RELEASED_COMPONENTS.get(lock.get("version"))
-            if recorded is None or dict(recorded) != lock.get("components"):
+            recorded = content._RELEASED_COMPONENTS.get(lock["version"])
+            if recorded is None or dict(recorded) != lock["components"]:
                 print("refusing to lock release {}: record release {}'s locked components in content._RELEASED_COMPONENTS "
-                      "first, exactly as content_lock.json states them".format(current["version"], lock.get("version")))
+                      "first, exactly as content_lock.json states them".format(current["version"], lock["version"]))
                 return 1
         data = content.write_lock()
         print("content lock written: release {} digest {} ({} host entries)".format(data["version"], data["digest"], data["host_entries"]))
