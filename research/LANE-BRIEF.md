@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-21 (PRO-135: live round 5 merged; PRO-98 closed partially complete). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-22 (PRO-106: batch O; PRO-135 live round 5 merged). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -27,13 +27,14 @@ and content-pack patches for the Engine lane.
 - Branch head: see `git log -1` (this brief is updated in each task's own commit).
 - 79 specs in `research/apps/` (registry `research/apps.json`), all retrofitted to method v2 (sections 9 to 11).
 - Content patches A, B, B2 and C are implemented by Engine (releases 2026.11.3 to 2026.11.6). D, E, F, G, H, I, R, L,
-  J, K, M and N are proposed and **not yet implemented** (placeholder releases up to `2026.12.9`; J = vendor pages for rows 12 to 18, PRO-35; K = dependency pass 2, PRO-36;
-  M = six enterprise apps from vendor network pages, PRO-92; N = Sophos, DocuSign, Twilio, Snowflake, PRO-121).
+  J, K, M, N and O are proposed and **not yet implemented** (placeholder releases up to `2026.13.0`, which follows `2026.12.9` as a string; J = vendor pages for rows 12 to 18, PRO-35; K = dependency pass 2, PRO-36;
+  M = six enterprise apps from vendor network pages, PRO-92; N = Sophos, DocuSign, Twilio, Snowflake, PRO-121;
+  O = Datto RMM, N-able, FortiClient, PRO-106).
 - D09 (ISCX VPN-nonVPN 2016) has been measured twice: per-family, per-application, and email server names.
-- Live verification rounds 1 to 5 are in (run by Hermes): of 444 spec names, every one has a result: 307 live (139 with a
+- Live verification rounds 1 to 5 are in (run by Hermes): of the 444 spec names before batch O, every one has a result: 307 live (139 with a
   certificate naming an organisation), 23 suffixes verified by probe, 89 apexes with no address and no probe, 23 TLS failures (not
-  removal), 2 NXDOMAIN, 64 CDN-fronted, 3 ECH-capable, 30 offer h3.
-- In flight, run by Hermes on the server: Majestic ranking run 2 (run 1 used the wrong catalog).
+  removal), 2 NXDOMAIN, 64 CDN-fronted, 3 ECH-capable, 30 offer h3. Batch O's 23 names await round 6 (`live-hosts-r6.txt`).
+- In flight, run by Hermes on the server: live round 6 and Majestic ranking run 2 (run 1 used the wrong catalog).
 
 ## 3. Where things live (reading order)
 
@@ -65,14 +66,14 @@ python3 -B -m unittest discover -s research/tools -q
 `research/` is not a package.)
 
 ```bash
-git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch ~-/research/patches/batch-k-dependency-pass2.patch ~-/research/patches/batch-m-name-based.patch ~-/research/patches/batch-n-name-based.patch && python3 -B tools/check_content.py --update
+git worktree add --detach "$SCRATCH/gm" c08773fc8da8d210c8e66d67190f883e608d7bb4 && cd "$SCRATCH/gm" && for p in d e f g h i; do git apply ~-/research/patches/batch-$p-name-based.patch; done && git apply ~-/research/patches/batch-r-retrofit.patch ~-/research/patches/batch-l-live-results.patch ~-/research/patches/batch-j-relayed-rows-12-18.patch ~-/research/patches/batch-k-dependency-pass2.patch ~-/research/patches/batch-m-name-based.patch ~-/research/patches/batch-n-name-based.patch ~-/research/patches/batch-o-name-based.patch && python3 -B tools/check_content.py --update
 ```
-(a few seconds; expect `release 2026.12.9 digest 80ecb5542510f862 (462 host entries)`.)
+(a few seconds; expect `release 2026.13.0 digest 0914c0281fbc029d (465 host entries)`.)
 
 ```bash
 python3 -B research/tools/retrofit_specs.py "$SCRATCH/gm" research/observations/pass1-2026-11-19.json,research/observations/pass2-2026-11-20.tsv
 ```
-(under 1 s; expect `"specs": 79`, `"vectors": 1153`, `"fail": []` and 4 `gaps`. Add `--write` to regenerate the spec sections.)
+(under 1 s; expect `"specs": 79`, `"vectors": 1159`, `"fail": []` and 4 `gaps`. Add `--write` to regenerate the spec sections.)
 
 Per-patch content checks, run in the scratch checkout and taking about 2 minutes: `make content content-pack`,
 `python3 -B migration/parity/compare.py --backend python`, `make parity-go`, and the unit tests there. The only
@@ -82,11 +83,11 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 
 | Item | Waits on |
 |---|---|
-| Patches D to I, L, J, K, M, N (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
+| Patches D to I, L, J, K, M, N, O (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
 | Main-integration PRs #42 to #53 (PRO-43) | all 12 merged (#44 to #51 on 2026-11-21); work since then (batches M and N, live rounds 3 and 4) is on `claude/app-research` only |
-| Batches M and N to `main` | not opened: Hermes schedules them after review (PRO-92) |
+| Batches M, N and O to `main` | not opened: Hermes schedules them after review |
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
-| Live rounds 1 to 5 | done and merged into section 9 (`live-results-2026-11-20*.tsv`, `live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; round 5 converted from the PRO-135 columns, `via_probe` marks probe certificates). Open: `sophosxl.com` has no address and no documented host to probe; `docusign.net` fails TLS |
+| Live rounds 1 to 6 | 1 to 5 done and merged into section 9 (`live-results-2026-11-20*.tsv`, `live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; round 5 converted from the PRO-135 columns, `via_probe` marks probe certificates). Open: `sophosxl.com` has no address and no documented host to probe; `docusign.net` fails TLS; round 6 (`live-hosts-r6.txt`, 23 batch O names) waits on a Hermes run |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
 | Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (`datasets.md`). PRO-98 closed **partially complete**: Majestic run 1 (`ranking/majestic-2026-11-21-run1.tsv`) was looked up with `main`'s catalog, so 22 of 69 specs ranked and 46 not computed. Run 2 is a separate Hermes task: `rank_domains.py research/app-domains.json OUT.tsv --majestic majestic_million.csv` (79 specs, no re-export); CrUX still needs BigQuery |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
@@ -98,7 +99,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 
 None. This lane does not use the Codex mailbox (Lee, via Hermes: no GitHub communication). Its output is reviewed by
 the Engine lane when a patch is implemented. The frozen bases it depends on are `claude/go-migration`
-`c08773fc8da8d210c8e66d67190f883e608d7bb4` (the base of the D-to-N stack) and `2fd94529e29020eba4096e890567655b78185d1e`
+`c08773fc8da8d210c8e66d67190f883e608d7bb4` (the base of the D-to-O stack) and `2fd94529e29020eba4096e890567655b78185d1e`
 (the first D09 build).
 
 ## 7. Pitfalls learned
@@ -108,7 +109,7 @@ the Engine lane when a patch is implemented. The frozen bases it depends on are 
 - The allowlist is capped at about 130 hosts: further additions are rejected. Server-side runs replace them. Pages behind
   bot challenges are never bypassed; they go to `blocked-urls.md`.
 - Content versions compare **as strings**: `2026.11.10` sorts before `2026.11.9` and breaks rollback. Hence the
-  `2026.12.x` placeholders.
+  `2026.12.x` placeholders, then `2026.13.0` after `2026.12.9` (batch O).
 - C11: record the previous release's components (`_RELEASED_COMPONENTS`) before locking a new one. An entry cannot be
   emptied or deleted: the parity case generator indexes `domains[0]`, and rollback cannot restore a deleted entry.
 - A certificate proves a vendor owns a name only when its subject organisation names the vendor; domain-validated

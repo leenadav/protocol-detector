@@ -386,3 +386,25 @@ Apply after M.
 | Vectors | 22 targeted names (all as expected); 1,153 method-v2 vectors across 79 specs, all pass |
 | Parity | 7480/7480 Python and Go; 88/88 families |
 | Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 462) |
+
+## Batch O: `batch-o-name-based.patch` (after N)
+
+Datto RMM, N-able and FortiClient network pages read by Research Lab from the Hermes server (PRO-95), relayed on
+2026-11-22 (PRO-106). Placeholder release **`2026.13.0`**: `2026.12.10` would sort before `2026.12.9` as a string, so the
+next string-ordered placeholder is used (not a real month; the Engine lane renumbers after its numeric-ordering fix). With
+`_PRIOR_HOST_STATE["2026.12.9"]` and `_RELEASED_COMPONENTS["2026.12.9"]`. Apply after N.
+
+- `datto-rmm` (new, after `atera`): `centrastage.net`, `rmm.datto.com`; risk 4 with the `atera` characteristics.
+- `n-able` (new, after `datto-rmm`): `n-able.com`, `system-monitor.com`, `systemmonitor.eu.com`, `logicnow.com`,
+  `logicnow.us`, `remote.management`, `beanywhere.com`, `keybox.solarwindsmsp.com`, `swi-rc.cdn-sw.net`,
+  `cloudbackup.management`; web fronts `n-able.com`, `www.n-able.com`; risk 4 with the `atera` characteristics.
+- `forticlient` (new, after `sophos`): 11 exact names under `forticloud.com` and `fortinet.net`; risk 2.
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.13.0, digest `0914c0281fbc029d`, 567 applications, 465 host entries (2026-11-22) |
+| Pack file | sha256 `067b68647797a497e7341e694eb79903cb20d808460db48616bebcfe736668ac` |
+| Rollback | release 2026.12.9 host catalog equals the batch N pack exactly |
+| Vectors | 16 targeted names (all as expected); 1,159 method-v2 vectors across 79 specs, all pass |
+| Parity | 7488/7488 Python and Go; 88/88 families |
+| Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 465) |

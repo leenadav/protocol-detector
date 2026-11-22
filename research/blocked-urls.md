@@ -47,4 +47,5 @@ Rows 12 to 18 were read by Research Lab from the Hermes server on 2026-11-20 (PR
 
 Not listed (decided low priority, 2026-11-18): Box (sign-in required) and Slack (workspace-specific list).
 No official network page found (not listed): Smartsheet, Airtable, npm, PyPI, NinjaOne (proxy article not located), Windsurf (proxy settings only, no domain list).
+Research Lab's PRO-95 search (2026-11-22, batch O in `backlog.md`) confirmed: Smartsheet (connector relay only), Airtable, monday.com and HubSpot (IPs only), NinjaOne (ports only), FortiSASE (ports only), Discord (help centre 403; developer docs only), ConnectWise ScreenConnect (sign-in wall), Telegram and Windsurf (no allowlist).
 No longer blocked: Zscaler, now sourced from `https://config.zscaler.com/zscaler.net/zscaler-app` (`apps/zscaler.md`).

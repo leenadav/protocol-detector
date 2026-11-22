@@ -44,6 +44,29 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch O, after N: Datto RMM, N-able, FortiClient, read by Research Lab, PRO-95/PRO-106, 2026-11-22)
+
+Patch: `patches/batch-o-name-based.patch` (placeholder release `2026.13.0`, which sorts after `2026.12.9` as a string; digest
+`0914c0281fbc029d`, 465 host entries). Tested: 16 targeted vector names (all as expected), rollback exact, parity 7488/7488
+(Python and Go), 88/88 families. 23 new names queued for live round 6 (`live-hosts-r6.txt`).
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | O1 | Datto RMM (new id `datto-rmm`: `centrastage.net`, `rmm.datto.com`) | `apps/fortinet-datto-nable.md` | 5 | 4 | 20 | READY (Syrah platform rows only; other platforms share the suffixes) |
+| 2 | O2 | N-able N-central, N-sight, Take Control (new id `n-able`, 10 names) | `apps/fortinet-datto-nable.md` | 5 | 4 | 20 | READY (five domains at N2 until live round 6 shows ownership) |
+| 3 | O3 | Fortinet FortiClient and EMS Cloud (new id `forticlient`, 11 exact names) | `apps/fortinet-datto-nable.md` | 4 | 4 | 16 | READY (`fortinet.net`, `forticloud.com` stay unmapped: shared with other Fortinet products) |
+
+The rest of PRO-95 adds no names:
+
+| Vendor | Result | Why no catalog change |
+|---|---|---|
+| FortiSASE | PARTIAL: ports only | the page names no hosts |
+| Discord | PARTIAL: developer docs (`gateway.discord.gg`; voice by dynamic address) | already covered by `discord.gg`; help centre returned 403 (not bypassed) |
+| monday.com, HubSpot, Airtable | PARTIAL: IP addresses or an IP API only | the catalog uses no IPs; host lists not found |
+| Smartsheet | PARTIAL: Jira connector relay `aws.relay.smartsheet.com`, `aws.relay.connectors.smartsheet.eu` | US relay already under `smartsheet.com`; the EU relay is a server-to-server connector name, not proposed |
+| NinjaOne | PARTIAL: ports 443 and 7075/TCP for NinjaOne Remote | no host list |
+| ConnectWise ScreenConnect cloud, Telegram, Windsurf | NOT FOUND | sign-in wall, no allowlist text, proxy settings only |
+
 ### NAME: READY (batch N, after M: rows 24 to 27 read by Research Lab, PRO-108/PRO-121, 2026-11-21)
 
 Patch: `patches/batch-n-name-based.patch` (placeholder release `2026.12.9`, digest `80ecb5542510f862`, 462 host entries). Tested:
@@ -201,7 +224,7 @@ Patch: `patches/batch-i-name-based.patch` (placeholder release `2026.12.3`). Tes
 |---|---|---|---|---|---|---|---|
 | 1 | I1 | Azure Virtual Desktop / Windows 365 (new id `ms-virtual-desktop`) | `apps/ms-virtual-desktop.md` | 5 | 4 | 20 | READY (moves `windows.cloud.microsoft` off `ms-office365`) |
 | 2 | I2 | Amazon WorkSpaces (new id `amazon-workspaces`) | `apps/amazon-workspaces.md` | 4 | 4 | 16 | READY; DECISION: add the 48 exact regional API hosts? |
-| 3 | - | Fortinet, Datto RMM, N-able | `apps/fortinet-datto-nable.md` | 4 | 1 | | BLOCKED (no page located, 404, 403) |
+| 3 | - | Fortinet, Datto RMM, N-able | `apps/fortinet-datto-nable.md` | 5 | 4 | 20 | READY in batch O (PRO-106, 2026-11-22) |
 
 ### NAME: READY (batch H, after G)
 
