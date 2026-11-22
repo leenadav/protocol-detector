@@ -110,5 +110,53 @@ class ServerNormalizerTests(unittest.TestCase):
         self.assertFalse(self.same({"histograms": {"a": {"count": 1}}}, {"histograms": {"a": {"count": 2}}}))
 
 
+class FakeService:
+    name = "fake"
+
+    def __init__(self, state=None, job_state="running"):
+        self.state, self.job_state = state or {"state": "running"}, job_state
+
+    def json(self, method, path):
+        return dict(self.state)
+
+    def request(self, method, path, **kwargs):
+        return b'HTTP/1.0 200 OK\r\n\r\n{"state": "%s"}' % self.job_state.encode()
+
+
+def answer(status, state=None):
+    body = b"{}" if state is None else b'{"id": "x", "state": "%s"}' % state.encode()
+    return b"HTTP/1.0 " + status + b"\r\nContent-Type: application/json\r\n\r\n" + body
+
+
+class ServerProbeTests(unittest.TestCase):
+    """Codex PRO-21 P2: a readiness or terminal wait that times out, or a probe whose precondition did not hold
+    (the pool not full, admission not reached), is a failure, never an answer to compare."""
+
+    def setUp(self):
+        import server_diff
+        self.server = server_diff
+
+    def test_waits_that_time_out_fail(self):
+        with self.assertRaises(self.server.ProbeError):
+            self.server.wait_until(FakeService(), lambda state: state["state"] == "stopped", 0.05, "stopped")
+        with self.assertRaises(self.server.ProbeError):
+            self.server.poll_job(FakeService(job_state="running"), "job", 0.05)
+        self.assertEqual(self.server.wait_until(FakeService({"state": "stopped"}), lambda s: s["state"] == "stopped", 1, "stopped")["state"], "stopped")
+        self.assertIn(b"done", self.server.poll_job(FakeService(job_state="done"), "job", 1))
+
+    def test_admission_must_run_two_queue_four_and_refuse_the_seventh(self):
+        good = [answer(b"202 Accepted", "running")] * 2 + [answer(b"202 Accepted", "queued")] * 4 + [answer(b"429 Too Many Requests")]
+        self.assertEqual(self.server.admission_problems(good), [])
+        self.assertTrue(self.server.admission_problems(good[:6] + [answer(b"202 Accepted", "queued")]))     # nothing refused
+        self.assertTrue(self.server.admission_problems([answer(b"202 Accepted", "running")] * 6 + good[6:]))  # nothing queued
+        self.assertTrue(self.server.admission_problems(good[:5]))
+        self.assertTrue(self.server.admission_problems([b""] * 7))
+
+    def test_the_ninth_connection_must_be_refused_by_a_full_pool(self):
+        self.assertEqual(self.server.pool_problem(b"HTTP/1.1 503 Service Unavailable\r\n\r\n{}"), None)
+        self.assertTrue(self.server.pool_problem(b"HTTP/1.1 200 OK\r\n\r\n{}"))
+        self.assertTrue(self.server.pool_problem(b""))
+
+
 if __name__ == "__main__":
     unittest.main()
