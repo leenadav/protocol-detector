@@ -9,7 +9,9 @@ queued SHAs), and a §7 line for every new pitfall.
 The lane prepares the Go detector for in-process use by the Culvert proxy (KidCarmi/Culvert), following
 `docs/integration/PROTODETECT-CULVERT-WORKING-PLAN.md`.
 
-- **Branch:** `claude/culvert-integration-prep`, fast-forward pushes only. Commits are authored as Lee, with the
+- **Branch:** since the Go merge, one `claude/culvert-<PRO-n>-<slug>` per task, cut from `main`, one PR each.
+  `claude/culvert-integration-prep` (head `d10a2b4`) is frozen history; PRO-233 lands it as
+  `claude/culvert-land-main`. Fast-forward pushes only. Commits are authored as Lee, with the
   session trailers.
 - **Scope, decided:**
   - visibility only (decision 3, 2026-11-17);
@@ -29,7 +31,16 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   The Culvert clone's push URL is disabled.
 - **Data:** synthetic and loopback only. The lab's origins are on RFC 5737 addresses.
 
-## 2. Current state (2026-11-22, after PRO-180)
+## 2. Current state (2026-11-22, after PRO-233)
+
+- **Landing on main (PRO-233):** `claude/culvert-land-main` = `d10a2b4` + a merge of `main` `f027a4d` + focused
+  fixes. Kept: `go/detector`, `go/consumertest`, `docs/integration/`, `docs/governance/`, the lab, the licence
+  files, and the engine plumbing the adapter needs (`parsing.Credit`, the read-only registries). Taken from main:
+  CI, `migration/`, the content package (the #16 pin, `embedded.go`, left: main has its own `Embedded`),
+  CODEOWNERS, PROTOCOLS.md and the Python reference. **Not landed:** work items #4 (post-quantum key shares), #5
+  (unknown TLS registry values), #6 (Content-Length overflow) and the #7 fixtures, because they edit the frozen
+  Python reference and the parity fixtures. `TestPostQuantumServerHelloGap` pins the consequence: a default Go
+  TLS server's reply is `unknown` again.
 
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
@@ -78,6 +89,15 @@ Culvert's allocation gates need `-tags benchgate`.
 
 ## 5. Open items
 
+- **DECISION for Lee (PRO-233): re-land #4 to #6.** Either a frozen-Python exception (the branch's
+  `tls_server.py` and `parsers.py` edits, `a51f459`, `58bbf4f`, `4f697a4`, with regenerated fixtures) or a Go-only
+  change with approved entries in `migration/parity/deltas.json`. #4 matters most: modern HTTPS server replies are
+  `unknown` without it. These commits are ancestors of main once PRO-233 merges, so re-landing is a new commit
+  (or a revert of the revert), not a cherry-pick.
+- **Memory accounting of main's new parser state:** `RetainedBytes` of `tlsx` counts the hello accumulators only.
+  The facade never enables certificates or continuation, so their buffers are not reached today; enabling either
+  needs that accounting first.
+
 - **Answered for Engine (PRO-107, 2026-11-22), from Culvert `ef94311`, read-only:**
   - **#19 means (a), compiled code, not (b), the module list.** Culvert already requires `golang.org/x/crypto
     v0.59.0` and `golang.org/x/sys v0.50.0` (`go.mod:59`, `:61`), the engine's exact versions, so they add nothing
@@ -116,6 +136,8 @@ Culvert's allocation gates need `-tags benchgate`.
 ## 6. Frozen and queued SHAs
 
 - **Frozen milestone:** `8d28748..725cd95` (base `d725890`): #15, #14, #16. Never change it.
+- **Frozen for Codex (PRO-233):** merge `378dfb3` (parents `d10a2b4`, `f027a4d`), then `1fa45d2`, `e94e2d9`,
+  `40311a3` and the brief commit on `claude/culvert-land-main`.
 - **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
@@ -148,3 +170,6 @@ Culvert's allocation gates need `-tags benchgate`.
   before changing anything. Never edit `.gitleaks.toml` (CI/CD lane) or another lane's files; ask them instead.
 - **Merge trials go in a worktree.** Use `git worktree add --detach /home/user/pd-drift <lane head>` and merge
   there; never on the lane branch.
+- **A conflict-free merge can still change the reference.** Lane edits to `protocol_engine/` and `test_*.py`
+  auto-merged with no conflict; only the parity replay (7 mismatches) showed them. Diff the merge against `main`
+  for the Python reference and fixtures before anything else.
