@@ -137,7 +137,8 @@ Culvert's allocation gates need `-tags benchgate`.
 
 - **Frozen milestone:** `8d28748..725cd95` (base `d725890`): #15, #14, #16. Never change it.
 - **Frozen for Codex (PRO-233):** merge `378dfb3` (parents `d10a2b4`, `f027a4d`), then `1fa45d2`, `e94e2d9`,
-  `40311a3` and the brief commit on `claude/culvert-land-main`.
+  `40311a3`, the brief commit `10627c6` and `80d6d34` (errcheck in the adapter tests) on
+  `claude/culvert-land-main`; PR leenadav/protocol-detector#97.
 - **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
