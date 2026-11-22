@@ -89,11 +89,13 @@ Culvert's allocation gates need `-tags benchgate`.
 
 ## 5. Open items
 
-- **DECISION for Lee (PRO-233): re-land #4 to #6.** Either a frozen-Python exception (the branch's
-  `tls_server.py` and `parsers.py` edits, `a51f459`, `58bbf4f`, `4f697a4`, with regenerated fixtures) or a Go-only
-  change with approved entries in `migration/parity/deltas.json`. #4 matters most: modern HTTPS server replies are
-  `unknown` without it. These commits are ancestors of main once PRO-233 merges, so re-landing is a new commit
-  (or a revert of the revert), not a cherry-pick.
+- **Decided (Hermes, PRO-235, 2026-11-22): #4 to #6 are re-landed in Go only, by Engine.** The work goes on a new
+  branch from main, with no Python edit and no regenerated fixtures. Each intended difference from the Python
+  reference gets a justified entry in `migration/parity/deltas.json`, reviewed by Codex. This follows Lee's rule of
+  2026-11-22: after #40 the Python reference is frozen, and new behaviour goes to Go. A difference that changes
+  existing Python behaviour, or any Python edit, needs Lee's explicit approval first. Not this lane's work. When
+  #4 lands, `TestPostQuantumServerHelloGap` is replaced by the positive test (commit `a51f459`). The old commits
+  are ancestors of main once PRO-233 merges, so this is new work, not a cherry-pick.
 - **Memory accounting of main's new parser state:** `RetainedBytes` of `tlsx` counts the hello accumulators only.
   The facade never enables certificates or continuation, so their buffers are not reached today; enabling either
   needs that accounting first.
@@ -138,7 +140,8 @@ Culvert's allocation gates need `-tags benchgate`.
 - **Frozen milestone:** `8d28748..725cd95` (base `d725890`): #15, #14, #16. Never change it.
 - **Frozen for Codex (PRO-233):** merge `378dfb3` (parents `d10a2b4`, `f027a4d`), then `1fa45d2`, `e94e2d9`,
   `40311a3`, the brief commit `10627c6` and `80d6d34` (errcheck in the adapter tests) on
-  `claude/culvert-land-main`; PR leenadav/protocol-detector#97.
+  `claude/culvert-land-main`; PR leenadav/protocol-detector#97. Then `60b2305` (merge of main `e5ac90f`) and the
+  brief commit that records the PRO-235 decision.
 - **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
