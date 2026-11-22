@@ -26,9 +26,11 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 ## 2. Current state (2026-11-21)
 
 - **Branch head:** check `git log -1 origin/claude/go-migration`. On 2026-11-21 (PRO-69) `main` `0ef7349` (41 commits, through PR #39,
-  including #39's numeric content-version order) was merged in with a normal merge commit, and on 2026-11-22 `main` `2a33183`
-  (PR #66's gitleaks rule, PR #36's release notes) as `f5353c5`, then `main` `2c92b17` (PR #71, #63, #68) with
-  PR #55 as `b2e36d4`, so the branch is 0 behind `main`.
+  including #39's numeric content-version order) was merged in with a normal merge commit. On 2026-11-22 `main` `2a33183` (PR #66, #36) came in as `f5353c5`;
+  PR #55
+  (per-target module sets in the release build, `07cda53`) was merged in (`b1d69d5`, Lee's approval), then `main`
+  `2c92b17` (PR #66, #71 gitleaks rules, #63, #68) with a normal merge (`b2e36d4`), so the branch is 0 behind `main`.
+  On `b2e36d4` every check on PR #40 passes (44 pass, 1 skipped: `release publish`, which only runs on tags).
 - **Done, Milestones A and B:**
   - The Go engine, the CLI `protodetect` and the dashboard service `protodetect serve`.
   - The launcher starts Go when the binary is installed and Python otherwise (`24e410e`, Lee's decision of
@@ -83,10 +85,10 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PR #39 `claude/fix-content-version-order` → `main` (`37b3c84`) | merged by Lee on 2026-11-21 (`0ef7349`). It is in this branch since the PRO-69 merge. |
 | Draft PR #40 `claude/go-migration` → `main` | Codex's review, then Lee's decision. Keep it draft. PRO-69 merged `main` in (9 conflicts, resolved per `MERGE-READINESS.md`). The CI fix it brought (`91113bc`, the Go build before the tests and presentation suites) lets `GoServiceTests` run instead of skip. | The secret scan's `296227b` findings (PRO-126's first push, hex case data) are allow-listed by PR #71, merged into this branch with `b2e36d4`.
 | Codex review of the packet (`dbe20f3..50ce5c0`) | Codex, from Sunday. Fix rounds are reviewed as the fix diff only. |
-| `release build` on PR #40 (`publish-release.yml`, not a required check) | done on the engine side: the CI/CD lane's PR #55 (per-target module sets in `tools/build_go_release.py`) is merged into this branch (`b1d69d5`, in `b2e36d4`); confirm `release build` on PR #40's next run. |
+| `release build` on PR #40 (`publish-release.yml`, not a required check) | nothing: fixed by PR #55 (`07cda53`, per-target module sets; the SBOM lists the union), merged into this branch on 2026-11-22 (`b1d69d5`). Green on `b2e36d4`. |
 | Nightly randomized differential (PRO-100) | the CI/CD lane: a step in `nightly-fuzz.yml` running `make parity-random-long SEED=<run id> COUNT=50000`, with the failing seed in the summary. The target is on this branch; the workflow is theirs. |
 | Nightly mutation run (PRO-126) | the CI/CD lane (accepted; stacked after #65): a nightly job that builds gremlins in its own step from a copy of `migration/mutation/gremlins/go.mod` and `go.sum`, then runs `make mutation MUTATION_BIN=<that binary> MUTATION_ARGS="--summary $GITHUB_STEP_SUMMARY"` with `GOPROXY=off`, about 30 minutes, uploading `build/mutation/*` always. The targets, the tool pin and the baseline are on this branch; the workflow is theirs. |
-| Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. The branch already contains `main` as of `0ef7349`, so the merge itself has no conflicts. |
+| Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. The branch already contains `main` as of `2c92b17`, so the merge itself has no conflicts. |
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
@@ -144,3 +146,5 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
   - regenerate `presentation/SOURCE.json` and let `tools/check_docs_counts.py` set the README/REVIEW-SCOPE test count;
   - check `migration/parity/cases.py --write <tmp> --head <recorded head>` reproduces `cases.json` byte for byte;
   - `tools/go_ci.py build` refuses a local Go other than go.mod's (this container has 1.24.7), so use `make go-build` locally.
+- **`TestStopKillsTheProcessGroupOfAWorkerThatIgnoresTheInterrupt` (`go/internal/livectl`) flaked once** on `f5353c5`
+  (push run 44986686845: "Capture process exited unexpectedly (-2)"); the pull_request run of the same SHA passed. Watch for a repeat.
