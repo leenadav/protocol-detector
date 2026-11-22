@@ -122,6 +122,7 @@ workflow-policy:
 	$(PYTHON) -B tools/release_provenance.py --self-test
 	$(PYTHON) -B tools/check_required_checks.py --self-test
 	$(PYTHON) -B tools/check_required_checks.py
+	$(PYTHON) -B tools/check_gitleaks_allowlist.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 

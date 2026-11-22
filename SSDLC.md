@@ -90,7 +90,7 @@ request:
 | ci | `presentation with Node and a real browser (no test may skip)` | the presentation suite with Node 22.22.0 and the lock-pinned Playwright 1.64.1 with Chromium, zero skips allowed; the installed whole-product check (`tools/installed_check.py`) |
 | ci | `behaviour diff against the previous commit` | `tools/compare_engine.py` against the parent (and the pull request base) |
 | ci | `per-commit mutation smoke (second seed, python 3.9)` | second-seed mutation diff and a 100-mutation fuzz pass |
-| ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, and gitleaks 8.30.1 (built from the Go module proxy, verified against the Go checksum database) over the full history with inline allows ignored |
+| ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, and gitleaks 8.30.1 (built from the Go module proxy, verified against the Go checksum database) over the full history with inline allows ignored; then `tools/check_gitleaks_allowlist.py` with that gitleaks: a DNS CNAME chain is allowed only in `research/live-results-*.tsv`, and keys, tokens and the same chain in any other file are still reported |
 | ci | `supply chain (SBOM, licence, pins)` | action pins, CycloneDX SBOM of the development toolchain, zero-runtime-dependency contract |
 | ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py` (engine and adapter packages, only the `decryption` extra), wheel smoke under 3.13 and 3.9, the complete-product SBOM checked by `tools/check_product_sbom.py` |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
