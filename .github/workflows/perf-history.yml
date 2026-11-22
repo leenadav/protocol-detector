@@ -1,0 +1,100 @@
+# Performance history: each main run records the existing measurements (tools/perf_profile.py's CPU,
+# memory and bytes-to-identification sections, and any Go benchmark) and compares them with the median
+# of the previous comparable runs (tools/perf_history.py documents the thresholds: bytes and counts fail
+# above +10 %, timings warn above +30 % and fail above +100 %). The store is this workflow's artifacts:
+# the history of the newest successful run on the same branch is downloaded, extended and uploaded
+# again (90 days). A failing run uploads nothing, so a regression never becomes the baseline; dispatch
+# with accept_regression=true to record an intended change. Read-only token; nothing is pushed.
+# The push trigger on main is the activation; a change on a branch is proven with workflow_dispatch
+# on that branch (the workflow is registered, so dispatch works).
+name: perf-history
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
+    inputs:
+      accept_regression:
+        description: record this run's numbers as the baseline even if they regress (true or false)
+        default: "false"
+
+permissions:
+  contents: read
+  actions: read   # list this workflow's earlier runs and download their history artifact
+
+# One run per branch at a time, never cancelled, so the history is a single chain.
+concurrency:
+  group: perf-history-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  record:
+    name: record and compare the performance measurements
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: The tool's offline self-test
+        run: python -B tools/perf_history.py --self-test
+      - name: Measure (perf_profile cpu, bytes, memory; Go benchmarks when there are any)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: python -B tools/perf_history.py measure --out "$RUNNER_TEMP/current.json"
+      - name: Fetch the history of the newest successful run on this branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/previous"
+          RUN=$(gh run list --repo "$GH_REPO" --workflow perf-history.yml --branch "$BRANCH" --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [ -n "$RUN" ]; then
+            gh run download "$RUN" --repo "$GH_REPO" --name perf-history --dir "$RUNNER_TEMP/previous"
+            echo "baseline history from run $RUN" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no earlier successful run on $BRANCH: this run starts the history" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Compare with the baseline (fails on a regression beyond the thresholds)
+        env:
+          ACCEPT: ${{ github.event.inputs.accept_regression || 'false' }}
+        run: python -B tools/perf_history.py compare --current "$RUNNER_TEMP/current.json" --history "$RUNNER_TEMP/previous/history.jsonl" --summary "$GITHUB_STEP_SUMMARY" --accept "$ACCEPT"
+      - name: Extend the history
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          python -B tools/perf_history.py append --current "$RUNNER_TEMP/current.json" --history "$RUNNER_TEMP/previous/history.jsonl" --out "$RUNNER_TEMP/out/history.jsonl"
+          cp "$RUNNER_TEMP/current.json" "$RUNNER_TEMP/out/current.json"
+      - name: Upload the history for the next run
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: perf-history
+          path: ${{ runner.temp }}/out/
+          retention-days: 90
+          if-no-files-found: error

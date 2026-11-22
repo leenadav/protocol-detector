@@ -1,0 +1,635 @@
+{
+ "1password.md": [
+  "1infra.net",
+  "1password.ca",
+  "1password.com",
+  "1password.eu",
+  "1passwordservices.com",
+  "1passwordusercontent.ca",
+  "1passwordusercontent.com",
+  "1passwordusercontent.eu",
+  "app-updates.agilebits.com",
+  "cache.agilebits.com"
+ ],
+ "adobe-cloud.md": [
+  "adobe-identity.com",
+  "adobe-services.com",
+  "adobe.com",
+  "adobe.io",
+  "adobecc.com",
+  "adobecces.com",
+  "adobeccstatic.com",
+  "adobeexchange.com",
+  "adobegenuine.com",
+  "adobegov.com",
+  "adobejanus.com",
+  "adobelogin.com",
+  "adobeoobe.com",
+  "adobeprojectm.com",
+  "adobesc.com",
+  "adobess.com",
+  "adobesunbreak.com"
+ ],
+ "amazon-q-developer.md": [
+  "amazonq-code-scan-eu-central-1-9374e402cc5.s3.amazonaws.com",
+  "amazonq-code-scan-us-east-1-29121b44f7b.s3.amazonaws.com",
+  "amazonq-code-transformation-eu-central-1-a0a89cc2b94.s3.amazonaws.com",
+  "amazonq-code-transformation-us-east-1-c6160f047e0.s3.amazonaws.com",
+  "codewhisperer.us-east-1.amazonaws.com",
+  "q-developer-integration.us-east-1.api.aws",
+  "q.eu-central-1.amazonaws.com",
+  "q.us-east-1.amazonaws.com"
+ ],
+ "amazon-workspaces.md": [
+  "amazonworkspaces.com",
+  "highlander.aws.a2z.com"
+ ],
+ "anthropic-claude.md": [
+  "anthropic.com",
+  "api.anthropic.com",
+  "claude.ai",
+  "claude.com",
+  "claudeusercontent.com",
+  "platform.claude.com"
+ ],
+ "anydesk.md": [
+  "anydesk.com",
+  "net.anydesk.com"
+ ],
+ "apple-device-management.md": [
+  "api-business.apple.com",
+  "api-school.apple.com",
+  "axm-adm-enroll.apple.com",
+  "axm-adm-mdm.apple.com",
+  "axm-adm-scep.apple.com",
+  "axm-app.apple.com",
+  "axm-servicediscovery.apple.com",
+  "axm-usercontent-apple.com",
+  "business.apple.com",
+  "deviceenrollment.apple.com",
+  "deviceservices-external.apple.com",
+  "identity.apple.com",
+  "iprofiles.apple.com",
+  "mdmenrollment.apple.com",
+  "school.apple.com",
+  "vpp.itunes.apple.com"
+ ],
+ "apple-icloud.md": [
+  "apple-cloudkit.com",
+  "apple-livephotoskit.com",
+  "icloud-content.com",
+  "icloud.apple.com",
+  "icloud.com",
+  "iwork.apple.com",
+  "mask-h2.icloud.com",
+  "mask.icloud.com"
+ ],
+ "asana.md": [
+  "app.asana-gov.com",
+  "asana-user-private-ap-northeast-1.s3.ap-northeast-1.amazonaws.com",
+  "asana-user-private-ap-southeast-2.s3.ap-southeast-2.amazonaws.com",
+  "asana-user-private-eu-central-1.s3.eu-central-1.amazonaws.com",
+  "asana-user-private-fedramp-prod.s3.amazonaws.com",
+  "asana-user-private-me-central-1.s3.me-central-1.amazonaws.com",
+  "asana-user-private-us-east-1.s3.amazonaws.com",
+  "asana.com",
+  "asana.plus",
+  "asanausercontent.com"
+ ],
+ "atera.md": [
+  "atera-agent-heartbeat-cus.servicebus.windows.net",
+  "atera-agent-heartbeat.servicebus.windows.net",
+  "atera.com",
+  "atera.pubnubapi.com"
+ ],
+ "atlassian.md": [
+  "atl-paas.net",
+  "atlassian.com",
+  "atlassian.net",
+  "bitbucket.org",
+  "jira.com",
+  "ss-inf.net",
+  "teamworkgraph.com"
+ ],
+ "azure-portal.md": [
+  "bmx.azure.com",
+  "ext.azure.com",
+  "hosting.partners.azure.net",
+  "management.azure.com",
+  "portal.azure.com",
+  "portal.azure.net",
+  "signup.azure.com"
+ ],
+ "bitwarden.md": [
+  "bitwarden.com",
+  "bitwarden.eu",
+  "bitwarden.net",
+  "btwrdn.co",
+  "btwrdn.com"
+ ],
+ "box.md": [
+  "box.com",
+  "box.net",
+  "boxcloud.com"
+ ],
+ "canva.md": [
+  "canva-apps.com",
+  "canva.ai",
+  "canva.com",
+  "canva.link",
+  "canvacode.com"
+ ],
+ "chrome-remote-desktop.md": [
+  "remotedesktop-pa.googleapis.com",
+  "remotedesktop.google.com"
+ ],
+ "cisco-umbrella.md": [
+  "opendns.com",
+  "umbrella.com"
+ ],
+ "citrix-cloud.md": [
+  "citrix.com",
+  "citrixnetworkapi.net",
+  "citrixworkspacesapi.net",
+  "cloud.com",
+  "discovery.cem.cloud.us",
+  "netscalergateway.net",
+  "nssvc.net",
+  "prod-aps-vus-storage-endpoint.azureedge.net",
+  "prod-eu-vus-storage-endpoint.azureedge.net",
+  "prod-jp-vus-storage-endpoint.azureedge.net",
+  "prod-us-vus-storage-endpoint.azureedge.net",
+  "xendesktop.net"
+ ],
+ "cloudflare-warp.md": [
+  "api.devices.cloudflare.com",
+  "api.devices.fed.cloudflare.com",
+  "cloudflareclient.com",
+  "notifications.devices.fed.cloudflare.com"
+ ],
+ "connectwise-screenconnect.md": [
+  "connectwise.com",
+  "screenconnect.com"
+ ],
+ "cursor.md": [
+  "cursor-cdn.com",
+  "cursor.com",
+  "cursor.sh",
+  "cursorapi.com",
+  "cursorvm.com"
+ ],
+ "datadog.md": [
+  "browser-intake-ap1-datadoghq.com",
+  "browser-intake-ap2-datadoghq.com",
+  "browser-intake-datadoghq.com",
+  "browser-intake-datadoghq.eu",
+  "browser-intake-ddog-gov.com",
+  "browser-intake-uk1-datadoghq.com",
+  "browser-intake-us2-ddog-gov.com",
+  "browser-intake-us3-datadoghq.com",
+  "browser-intake-us5-datadoghq.com",
+  "datadoghq.com",
+  "datadoghq.eu",
+  "ddog-gov.com"
+ ],
+ "deepseek.md": [
+  "deepseek.com"
+ ],
+ "docker-hub.md": [
+  "dhi.io",
+  "docker.com",
+  "docker.io"
+ ],
+ "docusign.md": [
+  "docucdn-a.akamaihd.net",
+  "docusign.com",
+  "docusign.net"
+ ],
+ "dropbox.md": [
+  "addtodropbox.com",
+  "db.tt",
+  "docsend.com",
+  "dropbox-dns.com",
+  "dropbox.com",
+  "dropboxapi.com",
+  "dropboxbusiness.com",
+  "dropboxcaptcha.com",
+  "dropboxexperiment.com",
+  "dropboxstatic.com",
+  "dropboxusercontent.com",
+  "getdropbox.com",
+  "hellofax.com",
+  "hellosign.com"
+ ],
+ "duo-security.md": [
+  "duosecurity.com"
+ ],
+ "embedded-trackers.md": [
+  "a.quora.com",
+  "ads.linkedin.com",
+  "alb.reddit.com",
+  "analytics.tiktok.com",
+  "analytics.twitter.com",
+  "connect.facebook.net",
+  "pixel-config.reddit.com",
+  "pixels.spotify.com",
+  "q.quora.com",
+  "redditstatic.com",
+  "snap.licdn.com",
+  "t.co"
+ ],
+ "figma.md": [
+  "figma-gov.com",
+  "figma.com"
+ ],
+ "fortinet-datto-nable.md": [
+  "beanywhere.com",
+  "centrastage.net",
+  "cloudbackup.management",
+  "fcteuguard.fortinet.net",
+  "fcteuupdate.fortinet.net",
+  "fctguard.fortinet.net",
+  "fctupdate.fortinet.net",
+  "fctusguard.fortinet.net",
+  "fctusupdate.fortinet.net",
+  "forticlient-emsproxy.forticloud.com",
+  "forticlient.forticloud.com",
+  "forticlient.fortinet.net",
+  "keybox.solarwindsmsp.com",
+  "logicnow.com",
+  "logicnow.us",
+  "myforticlient.fortinet.net",
+  "n-able.com",
+  "remote.management",
+  "rmm.datto.com",
+  "swi-rc.cdn-sw.net",
+  "system-monitor.com",
+  "systemmonitor.eu.com",
+  "usforticlient.fortinet.net"
+ ],
+ "github-copilot.md": [
+  "copilot-proxy.githubusercontent.com",
+  "copilot-telemetry.githubusercontent.com",
+  "github.com",
+  "githubassets.com",
+  "githubcopilot.com",
+  "githubusercontent.com",
+  "origin-tracker.githubusercontent.com",
+  "production-copilot-host-austriaeast.webpubsub.azure.com",
+  "production-copilot-host-centralus-02.webpubsub.azure.com",
+  "production-copilot-host-centralus.webpubsub.azure.com",
+  "production-copilot-host-eastasia.webpubsub.azure.com",
+  "production-copilot-host-westus.webpubsub.azure.com",
+  "production-copilot-host-westus3.webpubsub.azure.com",
+  "production-copilot-host.webpubsub.azure.com"
+ ],
+ "gitlab.md": [
+  "gitlab-static.net",
+  "gitlab.com"
+ ],
+ "google-gemini-api.md": [
+  "generativelanguage.googleapis.com"
+ ],
+ "google-gemini.md": [
+  "aistudio.google.com",
+  "gemini.google.com",
+  "notebook.google.com",
+  "notebooklm.google.com"
+ ],
+ "google-workspace.md": [
+  "accounts.google.com",
+  "docs.google.com",
+  "drive-data-export-eu.usercontent.google.com",
+  "drive-data-export.usercontent.google.com",
+  "drive.google.com",
+  "drive.usercontent.google.com",
+  "gmail.com",
+  "googledrive.com",
+  "googlemail.com",
+  "mail.google.com",
+  "meet.google.com",
+  "sheets.google.com",
+  "slides.google.com"
+ ],
+ "goto.md": [
+  "goto.com",
+  "gotomeet.at",
+  "gotomeet.me",
+  "gotomeeting.com",
+  "gotomypc.com",
+  "joingotomeeting.com",
+  "logmein.com",
+  "logmeininc.com",
+  "openvoice.com"
+ ],
+ "grammarly.md": [
+  "grammarly.com",
+  "grammarly.io",
+  "grammarly.net"
+ ],
+ "jamf-pro.md": [
+  "jamf.com",
+  "jamfcloud.com",
+  "sentry.pub.jamf.build"
+ ],
+ "jetbrains-ai.md": [
+  "api.jetbrains.ai",
+  "jetbrains.com"
+ ],
+ "logmein-resolve.md": [
+  "gotoresolve.com",
+  "gotoresolveuserfiles.com",
+  "gtre-remoteexecution-userfiles-prod-eu.azureedge.net",
+  "helpdesk.me"
+ ],
+ "loom.md": [
+  "loom-media-production.s3-accelerate.amazonaws.com",
+  "loom.com"
+ ],
+ "microsoft-365.md": [
+  "cloud.microsoft",
+  "lync.com",
+  "microsoft365.com",
+  "office.com",
+  "office.net",
+  "office365.com",
+  "officeapps.live.com",
+  "outlook.cloud.microsoft",
+  "outlook.com",
+  "outlook.live.com",
+  "outlook.office.com",
+  "outlook.office365.com",
+  "sharepoint.com",
+  "sharepointonline.com",
+  "svc.ms",
+  "teams.cdn.office.net",
+  "teams.cloud.microsoft",
+  "teams.live.com",
+  "teams.microsoft.com"
+ ],
+ "microsoft-copilot.md": [
+  "copilot.cloud.microsoft",
+  "copilot.com",
+  "copilot.microsoft.com"
+ ],
+ "miro.md": [
+  "miro-apps.com",
+  "miro.com",
+  "mirostatic.com",
+  "onlinewhiteboard.com",
+  "realtimeboard.com",
+  "webwhiteboard.com"
+ ],
+ "mistral.md": [
+  "api.mistral.ai",
+  "mistral.ai"
+ ],
+ "ms-defender-endpoint.md": [
+  "endpoint.security.microsoft.com",
+  "reflector.defender.microsoft.com"
+ ],
+ "ms-intune.md": [
+  "dm.microsoft.com",
+  "manage.microsoft.com"
+ ],
+ "ms-power-platform.md": [
+  "api.admin.powerplatform.microsoft.com",
+  "api.bap.microsoft.com",
+  "dynamics.com",
+  "flow.microsoft.com",
+  "powerapps.com",
+  "powerautomate.com",
+  "powerplatform.com",
+  "powerplatformusercontent.com"
+ ],
+ "ms-update.md": [
+  "delivery.mp.microsoft.com",
+  "do.dsp.mp.microsoft.com",
+  "tsfe.trafficshaping.dsp.mp.microsoft.com",
+  "update.microsoft.com",
+  "windowsupdate.com"
+ ],
+ "ms-virtual-desktop.md": [
+  "infra.windows365.microsoft.com",
+  "infra.windows365.microsoft.us",
+  "windows.cloud.microsoft",
+  "windows.static.microsoft",
+  "wvd.azure.us",
+  "wvd.microsoft.com",
+  "wvdportalstorageblob.blob.core.windows.net"
+ ],
+ "netskope.md": [
+  "epdlp-prod.netskope.io",
+  "goskope.com",
+  "netskope.com"
+ ],
+ "ngrok.md": [
+  "ngrok-agent.com",
+  "ngrok.com",
+  "update.equinox.io"
+ ],
+ "notion.md": [
+  "notion.com",
+  "notion.site",
+  "notion.so",
+  "notionusercontent.com",
+  "secure.notion-static.com"
+ ],
+ "okta.md": [
+  "okta-emea.com",
+  "okta-gov.com",
+  "okta.com",
+  "okta.mil",
+  "oktacdn.com",
+  "oktapreview.com"
+ ],
+ "onedrive-drive-personal-business.md": [
+  "1drv.com",
+  "1drv.ms",
+  "docs.google.com",
+  "drive-data-export-eu.usercontent.google.com",
+  "drive-data-export.usercontent.google.com",
+  "drive.google.com",
+  "drive.usercontent.google.com",
+  "googledrive.com",
+  "onedrive.com",
+  "onedrive.live.com",
+  "photos.live.com",
+  "sheets.google.com",
+  "skydrive.live.com",
+  "slides.google.com",
+  "storage.msn.com"
+ ],
+ "openai-chatgpt.md": [
+  "api.openai.com",
+  "chat.openai.com",
+  "chatgpt.com",
+  "oaistatic.com",
+  "oaiusercontent.com",
+  "platform.openai.com"
+ ],
+ "parsec.md": [
+  "parsec.app",
+  "parsecgaming.com",
+  "parsecusercontent.com"
+ ],
+ "perplexity.md": [
+  "api.perplexity.ai",
+  "perplexity.ai"
+ ],
+ "postman.md": [
+  "getpostman.com",
+  "postman.co",
+  "postman.com",
+  "pstmn.io"
+ ],
+ "power-bi.md": [
+  "analysis.windows.net",
+  "database.fabric.microsoft.com",
+  "datamart.fabric.microsoft.com",
+  "datawarehouse.fabric.microsoft.com",
+  "pbidedicated.windows.net",
+  "powerbi.com",
+  "powerquery.microsoft.com"
+ ],
+ "prisma-access.md": [
+  "epm.gpcloudservice.com",
+  "filter.paloaltonetworks.com"
+ ],
+ "rustdesk.md": [
+  "rustdesk.com"
+ ],
+ "salesforce.md": [
+  "documentforce.com",
+  "force-user-content.com",
+  "force.com",
+  "forceusercontent.com",
+  "lightning.com",
+  "lightningdesignsystem.com",
+  "my.salesforce.app",
+  "salesforce-communities.com",
+  "salesforce-experience.com",
+  "salesforce-hub.com",
+  "salesforce-scrt.com",
+  "salesforce-setup.com",
+  "salesforce-sites.com",
+  "salesforce.com",
+  "salesforceiq.com",
+  "salesforceliveagent.com",
+  "sfdc.sh",
+  "sfdcopens.com",
+  "sfdcstatic.com",
+  "site.com",
+  "svc.sfdcfc.net",
+  "trailblazer.me",
+  "trailhead.com",
+  "visualforce.com"
+ ],
+ "signal.md": [
+  "signal.art",
+  "signal.group",
+  "signal.link",
+  "signal.me",
+  "signal.org",
+  "signal.tube",
+  "whispersystems.org"
+ ],
+ "slack.md": [
+  "slack-edge.com",
+  "slack-files.com",
+  "slack-msgs.com",
+  "slack.com"
+ ],
+ "snowflake.md": [
+  "snowflakecomputing.com"
+ ],
+ "sophos-central.md": [
+  "hitmanpro.com",
+  "sophos.com",
+  "sophosupd.com",
+  "sophosupd.net",
+  "sophosxl.com",
+  "sophosxl.net"
+ ],
+ "splashtop.md": [
+  "api.splashtop.cn",
+  "api.splashtop.eu",
+  "api.splashtop.nr",
+  "relay.splashtop.cn",
+  "splashtop.com"
+ ],
+ "tailscale.md": [
+  "tailscale.com",
+  "tailscale.io"
+ ],
+ "teamviewer.md": [
+  "teamviewer.com"
+ ],
+ "telegram.md": [
+  "t.me",
+  "telegram.me",
+  "telegram.org",
+  "telesco.pe"
+ ],
+ "twilio.md": [
+  "twilio.com"
+ ],
+ "webex.md": [
+  "ciscospark.com",
+  "ciscosparkcontent.com",
+  "wbx2.com",
+  "webex.com",
+  "webexapis.com",
+  "webexcontent.com"
+ ],
+ "wetransfer.md": [
+  "we.tl",
+  "wetransfer.com",
+  "wetransfer.net",
+  "wt-prod-euwest1-storm.s3-accelerate.amazonaws.com",
+  "wt-prod-euwest1-storm.s3.amazonaws.com",
+  "wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com",
+  "wt-prod-useast1-storm.s3-accelerate.amazonaws.com",
+  "wt-prod-useast1-storm.s3.amazonaws.com",
+  "wt-prod-useast1-storm.s3.us-east-1.amazonaws.com"
+ ],
+ "whatsapp.md": [
+  "whatsapp.com",
+  "whatsapp.net"
+ ],
+ "xai-grok.md": [
+  "api.x.ai",
+  "grok.com",
+  "x.ai"
+ ],
+ "zendesk.md": [
+  "zdassets.com",
+  "zendesk.com"
+ ],
+ "zoom.md": [
+  "zoom.com",
+  "zoom.us",
+  "zoomgov.com"
+ ],
+ "zscaler.md": [
+  "zdxbeta.net",
+  "zdxcloud.net",
+  "zdxgov.net",
+  "zdxten.net",
+  "zidentitygov.net",
+  "zpabeta.net",
+  "zpagov.net",
+  "zpatwo.net",
+  "zscaler.com",
+  "zscaler.net",
+  "zscalerbeta.net",
+  "zscalergov.net",
+  "zscalerone.net",
+  "zscalerten.net",
+  "zscalerthree.net",
+  "zscalertwo.net",
+  "zscloud.net",
+  "zslogin.net",
+  "zsloginbeta.net"
+ ]
+}

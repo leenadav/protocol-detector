@@ -25,6 +25,13 @@ def main(argv=None):
         if lock is not None and lock.get("version") == current["version"] and lock.get("digest") != current["digest"]:
             print("refusing to re-lock release {}: the content changed; add a new Release to HISTORY first".format(current["version"]))
             return 1
+        if lock is not None and lock.get("version") != current["version"]:
+            # C11: the release being superseded keeps the components it was published with.
+            recorded = content._RELEASED_COMPONENTS.get(lock.get("version"))
+            if recorded is None or dict(recorded) != lock.get("components"):
+                print("refusing to lock release {}: record release {}'s locked components in content._RELEASED_COMPONENTS "
+                      "first, exactly as content_lock.json states them".format(current["version"], lock.get("version")))
+                return 1
         data = content.write_lock()
         print("content lock written: release {} digest {} ({} host entries)".format(data["version"], data["digest"], data["host_entries"]))
         return 0

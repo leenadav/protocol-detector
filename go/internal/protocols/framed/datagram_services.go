@@ -428,3 +428,28 @@ func radiusDatagram(data []byte, limits Limits) (*Datagram, error) {
 	return radiusMatch("access-request", "RADIUS Access-Request and supported attributes structurally validated; "+
 		"authenticators, password values, vendor contents and authorization unverified"), nil
 }
+
+// NewSTUN ports binary.STUNParser: one STUN/TURN message over TCP (RFC 8489 framing has no extra length prefix),
+// validated by the datagram profile; its rows keep their values with the "message" provenance.
+func NewSTUN(maxBytes int) *Parser {
+	return newParser(maxBytes, spec{header: 20,
+		size: func(h []byte) (int, error) {
+			if h[0]&0xc0 != 0 || !bytes.Equal(h[4:8], []byte{0x21, 0x12, 0xa4, 0x42}) {
+				return 0, parsing.Malformed("Invalid STUN stream header")
+			}
+			return 20 + be(h[2:4]), nil
+		},
+		validate: func(frame []byte) (*parsing.Result, error) {
+			m, err := stunDatagram(frame, Limits{})
+			if err != nil {
+				return nil, err
+			}
+			r := &parsing.Result{ProtocolName: m.Protocol, Reason: m.Reason, ALPN: []string{}}
+			for _, row := range m.Evidence {
+				if row.Field != "application_protocol" {
+					r.Extra = append(r.Extra, parsing.Row{Field: row.Field, Value: row.Value, Provenance: "message", Strength: row.Strength})
+				}
+			}
+			return r, nil
+		}})
+}

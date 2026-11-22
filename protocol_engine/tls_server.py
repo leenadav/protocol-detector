@@ -7,32 +7,13 @@ HRR_RANDOM = bytes.fromhex('cf21ad74e59a6111be1d8c021e65b891c2a211167abb8c5e079e
 _TLS12_ECC_CIPHERS = frozenset(range(0xc023, 0xc033))
 _TLS12_CIPHERS = frozenset((0x002f,)) | _TLS12_ECC_CIPHERS
 _KEY_SIZES = {23:65, 24:97, 25:133, 29:32, 30:56,
-              256:256, 257:384, 258:512, 259:768, 260:1024,
-              # Integration work item #4 (2026-11-14): the post-quantum hybrid groups current clients and servers
-              # negotiate by default. The size is the SERVER share: the classical share plus the ML-KEM
-              # ciphertext (ML-KEM-768: 1088 bytes, ML-KEM-1024: 1568 bytes).
-              4587:65 + 1088,    # SecP256r1MLKEM768: uncompressed P-256 point, then the ciphertext
-              4588:1088 + 32,    # X25519MLKEM768: the ciphertext, then the X25519 share
-              4589:97 + 1568}    # SecP384r1MLKEM1024: uncompressed P-384 point, then the ciphertext
+              256:256, 257:384, 258:512, 259:768, 260:1024}
 _FFDHE_GROUPS = frozenset(range(256, 261))
-_HYBRID_GROUPS = frozenset((4587, 4588, 4589))
-# Groups whose share starts with an uncompressed SEC1 point (first byte 4).
-_POINT_FIRST_GROUPS = frozenset((23, 24, 25, 4587, 4589))
 # v0.57: key exchange and record protection named by the selected TLS 1.2 suite (RFC 5246, 5289).
 # ECDH_ suites (0xc025..0xc02a, 0xc02d..0xc032) use the certificate's static key: no forward secrecy.
 _TLS12_STATIC_ECDH = frozenset((0xc025, 0xc026, 0xc029, 0xc02a, 0xc02d, 0xc02e, 0xc031, 0xc032))
 _TLS12_AEAD = frozenset(range(0xc02b, 0xc033))
 NO_FORWARD_SECRECY = frozenset(('static-rsa', 'static-ecdh', 'psk'))
-# Integration work item #5 (2026-11-14): unknown registry values are decided per field and position.
-# Extension types that a TLS 1.2 ServerHello can never carry: signature_algorithms is a client offer, the rest
-# exist only in TLS 1.3 messages. Any other type this profile does not interpret is skipped once its framing is
-# validated; nothing is claimed about it.
-_TLS12_FORBIDDEN_EXTENSIONS = frozenset((13, 41, 42, 44, 45, 47, 48, 49, 50, 51))
-
-
-def _grease(value):
-    """RFC 8701 reserved 16-bit values (0x0a0a, 0x1a1a, ... 0xfafa): a client offers them, a server never selects one."""
-    return value & 0x0f0f == 0x0a0a and value >> 8 == value & 0xff
 
 
 def _tls12_key_exchange(cipher):
@@ -88,9 +69,8 @@ def parse_server_hello(body, config, record_versions, record_remaining):
                 if len(value) != 2:
                     raise ParseError('Retry key_share must contain one selected group')
                 group = int.from_bytes(value, 'big')
-                if _grease(group):
-                    raise ParseError('Server selected a reserved GREASE group')
-                # A group this profile does not name is recorded by number only (work item #5).
+                if group not in _KEY_SIZES:
+                    raise UnsupportedPrefix('Retry group outside supported named groups')
                 evidence.append(('requested_group', str(group), source, 'asserted'))
         else:
             if not ({41, 51} & extensions.keys()):
@@ -102,20 +82,13 @@ def parse_server_hello(body, config, record_versions, record_remaining):
                 group = int.from_bytes(value.take(2), 'big')
                 key = value.vector(2)
                 value.end()
-                if _grease(group):
-                    raise ParseError('Server selected a reserved GREASE group')
-                if group in _KEY_SIZES:
-                    if len(key) != _KEY_SIZES[group] or (group in _POINT_FIRST_GROUPS and key[0] != 4):
-                        raise ParseError('Server key share encoding length or point format invalid')
-                    exchange = 'dhe' if group in _FFDHE_GROUPS else 'hybrid' if group in _HYBRID_GROUPS else 'ecdhe'
-                else:
-                    # Work item #5: a group this profile does not name. The key_share framing above is still
-                    # validated and the share must not be empty; the exchange is not given a named class.
-                    if not key:
-                        raise ParseError('Server key share encoding length or point format invalid')
-                    exchange = 'unrecognized'
-                # Key validity / curve membership, DH and KEM checks require the TLS stack.
+                if group not in _KEY_SIZES:
+                    raise UnsupportedPrefix('Server key share group outside supported profile')
+                if len(key) != _KEY_SIZES[group] or (group in (23,24,25) and key[0] != 4):
+                    raise ParseError('Server key share encoding length or point format invalid')
+                # Key validity / curve membership and DH checks require the TLS stack.
                 evidence.append(('selected_group', str(group), source, 'asserted'))
+                exchange = 'dhe' if group in _FFDHE_GROUPS else 'ecdhe'
             else:
                 exchange = 'psk'   # psk_ke: the resumed secret alone keys the session (RFC 8446 4.2.9)
             evidence.extend((('selected_key_exchange', exchange, source, 'asserted'),
@@ -151,9 +124,8 @@ def parse_server_hello(body, config, record_versions, record_remaining):
                     raise ParseError('Empty server ALPN selection')
                 text = name.decode('ascii') if all(32 <= c < 127 for c in name) else 'hex:' + name.hex()
                 evidence.append(('selected_alpn', text, source, 'asserted'))
-            elif kind in _TLS12_FORBIDDEN_EXTENSIONS or _grease(kind):
-                raise ParseError('Extension not permitted in a TLS 1.2 ServerHello')
-            # Work item #5: any other extension type is skipped; its framing was validated above.
+            else:
+                raise UnsupportedPrefix('TLS 1.2 ServerHello extension outside supported profile')
         evidence.extend((('selected_key_exchange', _tls12_key_exchange(cipher), source, 'asserted'),
                          ('selected_cipher_mode', 'aead' if cipher in _TLS12_AEAD else 'cbc', source, 'asserted')))
         version = '1.2'

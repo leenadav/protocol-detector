@@ -81,7 +81,45 @@ def demo_bytes():
     return bytes(data)
 
 
-def analyze_bytes(data):
+def analyze_bytes(data, backend=None):
+    """The sessions, events and meta data of one capture. The Go engine answers when its binary is installed
+    (migration M8; same selection as `protodetect analyze`: `backend`, then PROTODETECT_BACKEND, then Go when
+    go_binary() finds it); the Python reference answers on request, without a binary, and for a request the
+    binary declines. Both produce the same result except meta.processing_ms; refusals raise the same errors."""
+    import os
+    import subprocess
+    from protocol_adapters.analyze_pcap import BACKENDS, GO_NOT_PORTED, go_binary
+    from protocol_adapters.packets import CaptureError
+    requested = backend or os.environ.get("PROTODETECT_BACKEND") or None
+    if requested is not None and requested not in BACKENDS:
+        raise ValueError("Unknown backend {!r}; use go or python".format(requested))
+    binary = None if requested == "python" else go_binary()
+    if binary is None:
+        if requested == "go":
+            raise ValueError("The Go backend binary is not installed (make go-build, or set PROTODETECT_GO_BINARY).")
+        return analyze_bytes_reference(data)
+    command = [binary, "present", "--max-frames", str(MAX_FRAMES), "--max-sessions", str(MAX_SESSIONS), "--max-events", str(MAX_EVENTS)]
+    try:
+        done = subprocess.run(command, input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,  # noqa: S603 - fixed argv, the capture goes to stdin
+                              timeout=WORKER_SECONDS)
+    except subprocess.TimeoutExpired:
+        raise ValueError("Analysis exceeded %d seconds. Use a smaller capture." % WORKER_SECONDS) from None
+    if done.returncode == GO_NOT_PORTED and requested != "go":
+        return analyze_bytes_reference(data)
+    try:
+        result = json.loads(done.stdout) if done.returncode in (0, 3) else None
+    except ValueError:
+        result = None
+    if not isinstance(result, dict) or (done.returncode == 3) != ("error" in result):
+        detail = done.stderr.decode("utf-8", "replace").strip()[:200]
+        raise ValueError("The Go backend failed (status {}){}".format(done.returncode, ": " + detail if detail else ""))
+    if done.returncode == 3:
+        raise (CaptureError if result.get("error_type") == "CaptureError" else ValueError)(str(result["error"]))
+    return result
+
+
+def analyze_bytes_reference(data):
+    """analyze_bytes on the Python reference engine."""
     from protocol_adapters.analyze_pcap import Analyzer
     from protocol_adapters.packets import read_pcap_records, PacketError, CaptureError
     from protocol_adapters.link_packets import decode_frame

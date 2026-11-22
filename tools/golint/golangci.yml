@@ -1,0 +1,48 @@
+# golangci-lint configuration for the Go engine (go/), run by tools/go_lint.py in the `go-lint` ci job.
+# Locked by rule 16 (tools/scanner_config.lock.json): loosening a linter, a setting or an exclusion means
+# advancing a reviewed baseline. golangci-lint is given this file with --config; a .golangci.* file anywhere
+# in the tree is refused by the workflow policy, so no other configuration can load on its own.
+version: "2"
+
+run:
+  timeout: 10m            # the analysis budget; the job's own timeout is above it
+  tests: true             # _test.go files are linted too
+  relative-path-mode: wd  # paths relative to go/, as the baseline records them
+
+formatters:
+  enable:
+    - gofmt               # also enforced by `make go-check`
+
+linters:
+  default: none
+  enable:
+    # correctness
+    - errcheck            # unchecked errors
+    - govet               # go vet's analyzers
+    - ineffassign         # assignments never used
+    - unused              # unused code
+    - bodyclose           # HTTP response bodies not closed
+    - unconvert           # conversions to the same type (hide a type change at the call site)
+    # suppression hygiene: a nolint directive must name its linter and say why (no blanket nolint)
+    - nolintlint
+    - misspell
+    # staticcheck and gosec run as their own pinned tools (tools/go_lint.py), with their full check sets.
+  settings:
+    errcheck:
+      # Writes to the CLI's stdout/stderr and to report writers: a failed write there has no recovery, and the
+      # buffered writer's Flush or Close, which surfaces it, stays checked.
+      exclude-functions:
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+  exclusions:
+    generated: strict
+    paths:
+      - vendor
+
+issues:
+  max-issues-per-linter: 0   # report everything: the baseline compares complete sets
+  max-same-issues: 0

@@ -4,7 +4,8 @@ Supply-chain drift gate for the Go-built scanners (tools/scanners, items 21 and 
 gitleaks build once ran on a Go release past its support window, and govulncheck only
 reports vulnerabilities already known; this catches the drift itself:
 
-  - every `actions/setup-go` step in ci.yml that names a release installs the same `go-version`,
+  - every `actions/setup-go` step in every workflow (ci.yml, nightly-fuzz.yml, ...) that names a
+    release installs the same `go-version`,
     and it equals the compiler tools/scanners/go.mod builds with: its `toolchain` line, else its
     `go` line (https://go.dev/doc/toolchain; the builds run with GOTOOLCHAIN=local). The only
     other form allowed is the go-minimum job's `${{ steps.minimum.outputs.version }}`, the
@@ -32,7 +33,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from go_ci import module_versions  # noqa: E402  (one go.mod reading for the drift check and the Go gate)
 
-CI = ".github/workflows/ci.yml"
+CI = ".github/workflows"
 GO_MOD = "tools/scanners/go.mod"
 ENGINE_MOD = "go/go.mod"
 MINIMUM_SETUP = "${{ steps.minimum.outputs.version }}"
@@ -165,7 +166,8 @@ def self_test():
 
 def main():
     engine = Path(ENGINE_MOD)
-    versions, directive, found = pinned_versions(Path(CI).read_text(encoding="utf-8"), Path(GO_MOD).read_text(encoding="utf-8"),
+    workflows = "".join(path.read_text(encoding="utf-8") for path in sorted(Path(CI).glob("*.yml")))
+    versions, directive, found = pinned_versions(workflows, Path(GO_MOD).read_text(encoding="utf-8"),
                                                  engine.read_text(encoding="utf-8") if engine.is_file() else None)
     try:
         lines = stable_releases(fetch(TOOLCHAINS))

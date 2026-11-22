@@ -233,7 +233,14 @@ func exactKeys(o map[string]interface{}, keys []string, what string) error {
 
 // ComputeDigests computes both digests of a pack and verifies what the pack states about itself: the three
 // components that its tables determine and the release digest. A pack that states anything else is refused.
-func ComputeDigests(data []byte) (*Digests, error) {
+func ComputeDigests(data []byte) (*Digests, error) { return computeDigests(data, false) }
+
+// computeDigests with earlier set verifies an earlier release laid over the current pack (EmbeddedRelease): its
+// server-name catalog is rebuilt and must equal the stated host component, while the application catalog,
+// families and risks are the components the release was published with (C11, protocol_engine.content
+// _RELEASED_COMPONENTS): they follow the package, so they are not derived from the current tables. The release
+// digest is recomputed from the stated components either way.
+func computeDigests(data []byte, earlier bool) (*Digests, error) {
 	value, err := parseStrict(data)
 	if err != nil {
 		return nil, err
@@ -330,6 +337,9 @@ func ComputeDigests(data []byte) (*Digests, error) {
 
 	out := &Digests{Components: components}
 	for _, name := range ComponentNames {
+		if earlier && name != "host_catalog" {
+			continue
+		}
 		if computed, derived := recomputed[name]; derived {
 			if computed != components[name] {
 				return nil, invalid("content pack digest mismatch: component " + name)

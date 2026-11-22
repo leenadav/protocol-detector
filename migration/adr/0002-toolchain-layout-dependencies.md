@@ -13,15 +13,6 @@ Status: accepted for M2 (2026-11-07).
   engine change.
 - 2026-11-10: pin moved to `go 1.27.4` (go.dev/dl lists 1.27.4 and 1.26.11 as supported); toolchain-only commit,
   gates rerun.
-- 2026-11-14 (integration preparation, `docs/integration/PROTODETECT-CULVERT-WORKING-PLAN.md` #3): the build compiler
-  and the language minimum are now separate lines. `toolchain go1.27.4` is the compiler for every gate and result;
-  `go 1.27.0` is the minimum a consumer needs. A consumer's `go` line is raised to the maximum `go` line of its
-  dependencies, and Culvert keeps `go 1.27.0` deliberately because its `go` line selects GODEBUG defaults; the
-  `toolchain` line of a dependency is ignored by consumers. The minimum is not a claim: `make go-check` runs
-  `go vet` and `go test -race ./...` with `GOTOOLCHAIN` set to the `go` line as well as the full gate with the
-  `toolchain` line. Raising the minimum needs a stated reason (a language or standard-library feature, or a
-  security fix that must be enforced on consumers) and the same gates. Security patches of the compiler are
-  taken through the `toolchain` line, which consumers set for themselves.
 
 ## Module and layout
 
@@ -36,13 +27,53 @@ Status: accepted for M2 (2026-11-07).
 
 ## Dependencies
 
-- Pure Go, standard library only in M2. Any third-party module needs: a stated reason, its licence
-  recorded here, a pinned version in `go.sum`, and `govulncheck` in the gate (M10). cgo is off
-  (`CGO_ENABLED=0` for release builds) unless an ADR states a packaging plan.
+- Pure Go. No non-standard package is in the import graph of the detection path: the rule is the PRO-107 decision
+  below, and `TestDetectionPathImportsOnlyTheStandardLibrary` (`go/internal/contracts`) enforces it. The rule
+  is about the import graph, not about `require` lines in `go/go.mod`. A third-party module used outside the
+  detection path needs a stated reason, its licence recorded here, a pinned version in `go.sum` and
+  `govulncheck` in the gate (M10). Today the only such module is `golang.org/x/crypto`, for key-log
+  decryption. cgo is off (`CGO_ENABLED=0` for release builds) unless an ADR states a packaging plan.
 - Cryptography (M7): `crypto/aes`, `crypto/cipher` (GCM), `golang.org/x/crypto` (ChaCha20-Poly1305, HKDF)
   from the Go project; the handwritten Python AES is not ported. The decision is recorded when M7 starts.
+- Decision (M7, 2026-11-15): `go/internal/decrypt` uses the standard library for AES-GCM, HMAC, SHA-2 and
+  HKDF-Expand-Label, and `golang.org/x/crypto` v0.59.0 (BSD-3-Clause, the Go project) only for
+  `chacha20poly1305` (TLS_CHACHA20_POLY1305_SHA256, which the reference decrypts with the `cryptography`
+  package). It pulls `golang.org/x/sys` v0.50.0 (BSD-3-Clause, CPU feature detection) indirectly. Both are
+  pinned in `go/go.sum` and verified against sum.golang.org by the CI `go-engine` job (`-mod=readonly`).
+  `govulncheck` runs over `go/` in the CI `toolchain-audit` job since 2026-11-15 (source mode, the pinned
+  govulncheck build of `tools/scanners`); it was not run locally when the dependency was added.
+- Decision (Hermes, PRO-107, 2026-11-22), for the module Culvert imports:
+  - **The import-graph rule (Culvert's plan item #19, answer (a)).** "Standard library only" means that no
+    non-standard package is compiled into the detection path: the engine, analyzer, session, reassembly,
+    protocols, content, appid and contracts packages, and the public detector package built on them. It does
+    not mean there are no `require` lines in `go/go.mod`.
+    - `golang.org/x/crypto`, and with it `golang.org/x/sys`, stays a requirement, used only by key-log
+      decryption (`internal/decrypt`, through `internal/keylogcap` and `internal/livedecrypt`).
+    - Culvert already requires the same two versions (its go.mod:59 and :61), so importing the detector adds
+      no module to its graph. Its dependency gate is a licence check (`go-licenses`), which both pass.
+    - The rule is checked on the import graph, not on `go.mod`: `TestDetectionPathImportsOnlyTheStandardLibrary`
+      runs `go list -deps` over the detection packages, and over `go/detector` once it exists. It fails on any
+      package outside the module and the standard library. Its control asserts that `internal/decrypt` does
+      import `golang.org/x/crypto`, so a blind check cannot pass (added for PRO-156, 2026-11-22).
+      A newer `x/crypto` or `x/sys` here would raise Culvert's pin through minimum version selection, so a bump
+      is a reviewed change on both sides.
+  - **The floor and toolchain split.** `go/go.mod` states `go 1.27.0`, the language minimum an importer must
+    meet, and `toolchain go1.27.4`, the compiler local and release builds use
+    (https://go.dev/doc/toolchain).
+    - Minimum version selection raises an importer's `go` line to the highest in its graph. Culvert keeps its
+      own line at 1.27.0 and asks that no dependency raise it (its go.mod:9-36).
+    - Security fixes in 1.27.4 still reach every build through the toolchain line: `tools/go_ci.py` and
+      `tools/build_go_release.py` refuse any other installed compiler, and the SBOM records go1.27.4.
+    - `make go-check-minimum` (CI `go-minimum`) vets and tests on exactly 1.27.0, the `go` line.
+    - Both dependencies declare `go 1.26.0`, so neither needs more than the floor.
+    - Verified on 2026-11-22: on 1.27.0, `go vet ./...` exits 0 and `go test ./...` passes 37 of 37 packages;
+      the release binaries are byte-identical to those built before the change.
 
 ## Gates
+
+2026-11-15: `make go-check` also runs `make parity-analyze` and `make parity-decrypt`. The second compares key-log
+decryption with the Python reference, which decrypts with the `cryptography` package, so the CI `go-engine` job
+installs the repository's hash-pinned decryption lock first; the Go module itself gains no dependency from it.
 
 `make go-check` (root Makefile): `gofmt -l`, `go vet`, `go test -race`, and short fuzz runs of every
 `Fuzz*` target; it is separate from `make check` until the CI/CD lane wires the toolchain into the

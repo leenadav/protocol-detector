@@ -97,7 +97,7 @@ class TLSServerTests(unittest.TestCase):
         for extensions in (((0,b'x'),),((23,b'x'),),((35,b'x'),),((65281,b''),),((65281,b'\x01x'),),
                            ((11,b'\0'),),((11,b'\x01\x01'),),((11,b'\x01\0x'),),
                            ((16,b'\0\0'),),((16,b'\0\x01\0'),),((16,b'\0\x06\x02h2\x02h3'),),
-                           ((16,b'\0\x03\x02h2x'),),((23,b''),(23,b'')),((51,b'\0\x1d'),)):
+                           ((16,b'\0\x03\x02h2x'),),((23,b''),(23,b'')),((51,b'\0\x1d'),),((1234,b''),)):
             self.assertNotEqual(inspect(record(hello(extensions))).observation.status,'identified',extensions)
 
     def test_ec_formats_require_ecc_cipher_in_server_hello(self):
@@ -115,193 +115,14 @@ class TLSServerTests(unittest.TestCase):
         for cipher in range(0xc023,0xc033):
             self.assertEqual(inspect(record(hello(((11,b'\1\0'),),cipher=cipher))).observation.status,'identified',cipher)
 
-    def test_post_quantum_hybrid_key_shares(self):
-        # Integration work item #4 (2026-11-14): the hybrid groups current TLS stacks negotiate by default.
-        hybrids=((4588,1120,bytes(1120)),(4587,1153,b'\x04'+bytes(1152)),(4589,1665,b'\x04'+bytes(1664)))
-        for group,size,key in hybrids:
-            e=inspect(record(server13(((51,group.to_bytes(2,'big')+size.to_bytes(2,'big')+key),))))
-            self.assertEqual(e.observation.status,'identified',(group,e.observation))
-            self.assertEqual(evidence(e)['selected_group'],str(group))
-            self.assertEqual(evidence(e)['selected_key_exchange'],'hybrid')
-            self.assertEqual(evidence(e)['selected_tls_version'],'1.3')
-            from protocol_engine.risks import NO_FORWARD_SECRECY
-            self.assertNotIn('hybrid',NO_FORWARD_SECRECY)
-            # A HelloRetryRequest may ask the client for the same group.
-            retry=inspect(record(server13(((51,group.to_bytes(2,'big')),),random_value=RETRY)))
-            self.assertEqual(retry.observation.status,'identified',(group,retry.observation))
-            self.assertEqual(evidence(retry)['requested_group'],str(group))
-            # Exact length only: one byte short, one byte long, and an empty share are malformed.
-            for bad in (key[:-1],key+b'\0',b''):
-                e=inspect(record(server13(((51,group.to_bytes(2,'big')+len(bad).to_bytes(2,'big')+bad),))))
-                self.assertEqual(e.observation.status,'malformed',(group,len(bad),e.observation))
-        # The NIST-curve hybrids start with an uncompressed point; anything else is malformed. X25519MLKEM768
-        # starts with the ML-KEM ciphertext, which has no fixed first byte.
-        for group,size in ((4587,1153),(4589,1665)):
-            for first in (0,2,3):
-                key=bytes([first])+bytes(size-1)
-                e=inspect(record(server13(((51,group.to_bytes(2,'big')+size.to_bytes(2,'big')+key),))))
-                self.assertEqual(e.observation.status,'malformed',(group,first))
-
-    def test_unknown_registry_values_by_position(self):
-        # Integration work item #5 (2026-11-14): an unknown value is decided per field and position.
-        from protocol_engine.risks import NO_FORWARD_SECRECY
-        # TLS 1.3 ServerHello key_share: an unnamed group is recorded by number and gets no named exchange class
-        # (0x6399 is the withdrawn X25519Kyber768Draft00 code point, 0xffff is unassigned).
-        for group,key in ((0x6399,bytes(1120)),(0xffff,b'x'),(0x0200,bytes(1568))):
-            e=inspect(record(server13(((51,group.to_bytes(2,'big')+len(key).to_bytes(2,'big')+key),))))
-            self.assertEqual(e.observation.status,'identified',(group,e.observation))
-            self.assertEqual(evidence(e)['selected_group'],str(group))
-            self.assertEqual(evidence(e)['selected_key_exchange'],'unrecognized')
-            self.assertNotIn('unrecognized',NO_FORWARD_SECRECY)
-            # ... the key_share framing is still validated: empty share, short vector, trailing byte.
-            for value in (group.to_bytes(2,'big')+b'\0\0',group.to_bytes(2,'big')+b'\0\x05abc',
-                          group.to_bytes(2,'big')+b'\0\x01xy',group.to_bytes(2,'big')):
-                e=inspect(record(server13(((51,value),))))
-                self.assertEqual(e.observation.status,'malformed',(group,value))
-            # HelloRetryRequest: the requested group is a bare number.
-            retry=inspect(record(server13(((51,group.to_bytes(2,'big')),),random_value=RETRY)))
-            self.assertEqual(retry.observation.status,'identified',group)
-            self.assertEqual(evidence(retry)['requested_group'],str(group))
-            self.assertNotIn('selected_key_exchange',evidence(retry))
-        # A server never selects a GREASE value (RFC 8701), in either message.
-        for group in (0x0a0a,0x8a8a,0xfafa):
-            e=inspect(record(server13(((51,group.to_bytes(2,'big')+b'\0\x01x'),))))
-            self.assertEqual(e.observation.status,'malformed',group)
-            retry=inspect(record(server13(((51,group.to_bytes(2,'big')),),random_value=RETRY)))
-            self.assertEqual(retry.observation.status,'malformed',group)
-        # Known groups keep their exact lengths.
-        e=inspect(record(server13(((51,b'\0\x1d\0\x1f'+bytes(31)),))))
-        self.assertEqual(e.observation.status,'malformed')
-        # The TLS 1.3 extension sets and cipher list stay closed.
-        for extra in (((16,b'\0\x03\x02h2'),),((1234,b''),),((0x0a0a,b''),)):
-            self.assertEqual(inspect(record(server13(extra+((51,b'\0\x1d\0\x20'+bytes(32)),)))).observation.status,'unknown',extra)
-        # TLS 1.2 ServerHello: an extension type the profile does not interpret is skipped once framed ...
-        base=evidence(inspect(record(hello(((16,b'\0\x03\x02h2'),)))))
-        for extensions in (((1234,b''),),((22,b''),),((18,b'\0\x04abcd'),),((10,b'\0\x02\0\x1d'),),((1234,b'x'*300),(16,b'\0\x03\x02h2'))):
-            e=inspect(record(hello(extensions+(() if any(k==16 for k,_ in extensions) else ((16,b'\0\x03\x02h2'),)))))
-            self.assertEqual(e.observation.status,'identified',extensions)
-            self.assertEqual(evidence(e),base,extensions)      # nothing is claimed about the skipped extension
-        # ... but TLS 1.3-only and client-only types, GREASE types, duplicates and bad framing are malformed.
-        for kind in (13,41,42,44,45,47,48,49,50,51,0x0a0a,0xfafa):
-            self.assertEqual(inspect(record(hello(((kind,b''),)))).observation.status,'malformed',kind)
-        self.assertEqual(inspect(record(hello(((1234,b''),(1234,b''))))).observation.status,'malformed')
-        body=hello(((1234,b'abc'),))
-        self.assertEqual(inspect(record(body[:-5]+b'\0\x04'+body[-3:])).observation.status,'malformed')   # length past the block
-        # The TLS 1.2 cipher list stays closed: the key exchange and cipher mode are read from the suite.
-        self.assertEqual(inspect(record(hello(((1234,b''),),cipher=0x009c))).observation.status,'unknown')
-
-    def test_modern_client_matrix_identifies(self):
-        # Integration work item #7: every hello of the modern-client set identifies, whole and byte by byte,
-        # and the set carries a review date so a stale list is visible.
-        from migration.parity.cases import MODERN_CLIENTS_REVIEWED, modern_client_cases
-        cases=modern_client_cases()
-        names={c['id'].split('/')[2] for c in cases}
-        for client in ('chrome','firefox','safari','curl-openssl','go','java'):
-            self.assertIn('client-'+client,names)
-        self.assertRegex(MODERN_CLIENTS_REVIEWED,r'^20\d\d-\d\d-\d\d$')
-        for case in cases:
-            e=Inspector()
-            for chunk in case['chunks']:e.feed(bytes.fromhex(chunk))
-            self.assertEqual(e.observation.status,'identified',case['id'])
-            self.assertEqual(e.observation.encryption,'tls',case['id'])
-            if '/client-' in case['id']:
-                self.assertEqual(e.observation.hostname,'www.example.com',case['id'])
-                self.assertEqual(e.observation.offered_alpn,('h2','http/1.1'),case['id'])
-        e=inspect(bytes.fromhex(next(c for c in cases if c['id']=='stream/modern/server13-x25519mlkem768/whole')['chunks'][0]))
-        self.assertEqual(evidence(e)['selected_key_exchange'],'hybrid')
-
-    def test_modern_client_fixture_shapes(self):
-        # Review of work item #7 (R1, R2): the fixtures must be well-formed on their own account, in the nested
-        # fields the detector skips as well. This decoder is independent of protocol_engine.
-        from migration.parity.cases import modern_client_cases
-        point_first={23:65,24:97,25:133,4587:65,4589:97}   # group -> length of the leading uncompressed point
-        def vec(data,pos,width):
-            n=int.from_bytes(data[pos:pos+width],'big');end=pos+width+n
-            self.assertLessEqual(end,len(data),'vector runs past its container')
-            return data[pos+width:end],end
-        def whole(data,width):
-            body,end=vec(data,0,width);self.assertEqual(end,len(data),'trailing bytes after a vector');return body
-        def u16s(data):
-            self.assertEqual(len(data)%2,0);self.assertTrue(data);return [int.from_bytes(data[i:i+2],'big') for i in range(0,len(data),2)]
-        def extensions(block):
-            out,pos=[],0
-            while pos<len(block):
-                kind=int.from_bytes(block[pos:pos+2],'big');value,pos=vec(block,pos+2,2);out.append((kind,value))
-            self.assertEqual(len({k for k,_ in out}),len(out),'duplicate extension')
-            return out
-        def hello(data):
-            self.assertEqual(data[0],22);record=whole(data[3:],2)
-            body=whole(record[1:],3);pos=34
-            session,pos=vec(body,pos,1);self.assertLessEqual(len(session),32)
-            return record[0],body,pos
-        def check_shares(value,client):
-            entries=whole(value,2) if client else value
-            pos,groups=0,[]
-            while pos<len(entries):
-                group=int.from_bytes(entries[pos:pos+2],'big');key,pos=vec(entries,pos+2,2)
-                self.assertTrue(key,group);groups.append(group)
-                if group in point_first:
-                    self.assertGreaterEqual(len(key),point_first[group]);self.assertEqual(key[0],4,'group %d share must start with the point format'%group)
-            return groups
-        seen=set()
-        for case in modern_client_cases():
-            name=case['id'].split('/')[2]
-            if name in seen:continue
-            seen.add(name)
-            with self.subTest(name):
-                kind,body,pos=hello(bytes.fromhex(''.join(case['chunks'])))
-                if name.startswith('client-'):
-                    self.assertEqual(kind,1)
-                    ciphers,pos=vec(body,pos,2);u16s(ciphers)
-                    compression,pos=vec(body,pos,1);self.assertEqual(compression,b'\0')
-                    block,pos=vec(body,pos,2);self.assertEqual(pos,len(body))
-                    ext=dict(extensions(block))
-                    groups=u16s(whole(ext[10],2))
-                    shares=check_shares(ext[51],True)
-                    offered=[g for g in groups if g in shares]
-                    self.assertEqual(offered,shares,'key shares must follow the supported_groups order')
-                    u16s(whole(ext[13],2));self.assertIn(0x0304,u16s(whole(ext[43],1)))
-                    names=whole(ext[16],2);p=0
-                    while p<len(names):
-                        proto,p=vec(names,p,1);self.assertTrue(proto)
-                    sni=whole(ext[0],2);self.assertEqual(sni[0],0);self.assertEqual(whole(sni[1:],2),b'www.example.com')
-                    if 5 in ext:                                   # status_request: type, responder list, extensions
-                        self.assertEqual(ext[5][0],1);_,p=vec(ext[5],1,2);_,p=vec(ext[5],p,2);self.assertEqual(p,len(ext[5]))
-                    if 17 in ext:                                  # status_request_v2 (RFC 6961): a list of typed requests
-                        items=whole(ext[17],2);p=0;self.assertTrue(items)
-                        while p<len(items):
-                            self.assertIn(items[p],(1,2));request,p=vec(items,p+1,2)
-                            _,q=vec(request,0,2);_,q=vec(request,q,2);self.assertEqual(q,len(request))
-                    for k,width in ((11,1),(27,1),(34,2),(45,1),(50,2),(17613,2)):
-                        if k in ext:self.assertTrue(whole(ext[k],width),k)
-                    if 28 in ext:self.assertEqual(len(ext[28]),2)
-                else:
-                    self.assertEqual(kind,2)
-                    cipher=int.from_bytes(body[pos:pos+2],'big');self.assertEqual(body[pos+2],0)
-                    block,end=vec(body,pos+3,2);self.assertEqual(end,len(body))
-                    ext=dict(extensions(block))
-                    if 43 in ext:
-                        self.assertEqual(ext[43],b'\x03\x04');self.assertIn(cipher,range(0x1301,0x1304))
-                        if 51 in ext and len(ext[51])>2:check_shares(ext[51],False)
-                    else:
-                        aead=cipher in range(0xc02b,0xc033)
-                        # RFC 7366 section 3: encrypt_then_mac is never selected together with an AEAD suite.
-                        self.assertFalse(22 in ext and aead,'encrypt_then_mac with an AEAD suite')
-                        if 11 in ext:self.assertTrue(whole(ext[11],1))
-                        if 16 in ext:self.assertTrue(whole(whole(ext[16],2),1))
-                        if 18 in ext:
-                            scts=whole(ext[18],2);p=0
-                            while p<len(scts):_,p=vec(scts,p,2)
-        self.assertEqual(len(seen),15)
-
     def test_bad_server13_extension_dependencies_and_shapes(self):
         for extra in ((),((41,b'\0'),),((51,b'\0\x1d'),),((51,b'\0\x1d\0\x1f'+bytes(31)),),
-                      ((51,b'\0\x17\0\x41'+bytes(65)),),((51,b'\xff\xff\0\x00'),),
+                      ((51,b'\0\x17\0\x41'+bytes(65)),),((51,b'\xff\xff\0\x01x'),),
                       ((44,b'\0\x01x'),),((16,b'\0\x03\x02h2'),),((43,b'\x03\x04'),)):
             self.assertNotEqual(inspect(record(server13(extra))).observation.status,'identified',extra)
         for value in (b'',b'\x03\x03',b'\x03\x04x',b'\x03\x05'):
             self.assertNotEqual(inspect(record(hello(((43,value),(41,b'\0\0')),cipher=0x1301))).observation.status,'identified')
-        for extra in ((),((41,b'\0\0'),),((44,b'\0\0'),),((44,b'\0\x02x'),),((51,b'\0\x1d\0\x20'+bytes(32)),),((51,b'\x0a\x0a'),)):
+        for extra in ((),((41,b'\0\0'),),((44,b'\0\0'),),((44,b'\0\x02x'),),((51,b'\0\x1d\0\x20'+bytes(32)),)):
             self.assertNotEqual(inspect(record(server13(extra,random_value=RETRY))).observation.status,'identified',extra)
 
     def test_server13_record_boundary_version_and_interleaving(self):

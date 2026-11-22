@@ -44,6 +44,9 @@ type Shift struct {
 	Expected string // family hint for the next phase, "" for none
 }
 
+// Contexts maps signature context names to []byte (text/raw), int64 (integer) or map[int64]bool (set).
+type Contexts map[string]interface{}
+
 // Parser is one family's incremental recognizer.
 type Parser interface {
 	Feed(data []byte) (int, error) // errors: *Error or *NotPorted
@@ -72,6 +75,10 @@ type Result struct {
 	Scope        string // "" means initial_message
 	Shift        *Shift
 	Continues    bool
+	// Fingerprints are derived rows (Config.fingerprints), published after Extra with the "derived" strength.
+	Fingerprints []Row
+	// Contexts are the bounded signature contexts (Config.retain_contexts), never emitted; nil when not retained.
+	Contexts Contexts
 	// LDAPMessageID is the message id of an LDAP message (HasLDAPMessageID): private host-correlation metadata,
 	// never evidence (binary.LDAPParser.correlation).
 	LDAPMessageID    int

@@ -11,6 +11,7 @@ import (
 
 	"github.com/leenadav/protocol-detector/go/internal/names"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/fingerprint"
 )
 
 const (
@@ -21,11 +22,12 @@ const (
 
 // Options mirrors the Config fields the TLS parser reads.
 type Options struct {
-	MaxBytes     int
-	MaxHeaders   int
-	Fingerprints bool
-	Certificates bool
-	Continuation int
+	MaxBytes       int
+	MaxHeaders     int
+	Fingerprints   bool
+	Certificates   bool
+	Continuation   int
+	RetainContexts bool // signature contexts of the ClientHello (never emitted)
 }
 
 type reader struct {
@@ -113,6 +115,7 @@ func echType(value []byte) (string, error) {
 }
 
 type helloFields struct {
+	info          *fingerprint.ClientHello // collected only when asked (parse_hello with a ClientHelloInfo)
 	hostname      string
 	hasHost       bool
 	alpn          []string
@@ -122,10 +125,26 @@ type helloFields struct {
 	ciphers       []byte
 }
 
-// parseHello ports parse_hello without info collection (fingerprints/contexts are NotPorted upstream).
-func parseHello(body []byte) (*helloFields, error) {
+func u16List(data []byte) ([]int, error) {
+	if len(data)%2 != 0 {
+		return nil, parsing.Malformed("TLS list length is not a multiple of its element width")
+	}
+	out := make([]int, 0, len(data)/2)
+	for i := 0; i < len(data); i += 2 {
+		out = append(out, int(data[i])<<8|int(data[i+1]))
+	}
+	return out, nil
+}
+
+// parseHello ports parse_hello; with collect it also fills the ClientHelloInfo a fingerprint reads, which adds
+// the extension-count budget and strict parsing of the groups, point-format, signature-algorithm and
+// supported-version lists, exactly as the Python collection does.
+func parseHello(body []byte, collect bool) (*helloFields, error) {
 	size := len(body)
 	out := &helloFields{}
+	if collect {
+		out.info = &fingerprint.ClientHello{}
+	}
 	if size < 2 {
 		return nil, parsing.Malformed(errField)
 	}
@@ -170,6 +189,10 @@ func parseHello(body []byte) (*helloFields, error) {
 		return nil, parsing.Malformed("Invalid cipher or compression vector")
 	}
 	out.ciphers = ciphers
+	if collect {
+		out.info.Version = out.legacyVersion
+		out.info.Ciphers, _ = u16List(ciphers) // even length checked above
+	}
 	if pos == size {
 		return out, nil
 	}
@@ -205,6 +228,15 @@ func parseHello(body []byte) (*helloFields, error) {
 			return nil, parsing.Malformed("Duplicate TLS extension")
 		}
 		seen[kind] = true
+		if collect {
+			out.info.Extensions = append(out.info.Extensions, kind)
+			if len(out.info.Extensions) > 128 {
+				return nil, parsing.Budget("ClientHello extension count exceeds inspection limit")
+			}
+		}
+		if err := collectList(out.info, kind, value); err != nil {
+			return nil, err
+		}
 		switch kind {
 		case 43:
 			if len(value) == 0 || int(value[0]) != len(value)-1 || value[0]%2 != 0 {
@@ -212,6 +244,9 @@ func parseHello(body []byte) (*helloFields, error) {
 			}
 			for i := 1; i+1 < len(value); i += 2 {
 				out.supported = append(out.supported, int(value[i])<<8|int(value[i+1]))
+			}
+			if out.info != nil {
+				out.info.SupportedVersions = append([]int{}, out.supported...)
 			}
 		case echExt:
 			ech, err := echType(value)
@@ -285,7 +320,43 @@ func parseHello(body []byte) (*helloFields, error) {
 			out.alpn = protocols
 		}
 	}
+	if collect {
+		out.info.ALPN = out.alpn
+	}
 	return out, nil
+}
+
+// collectList parses the groups (10), point formats (11) and signature algorithms (13) lists into info (nil: no
+// collection). supported_versions (43) is copied after its own validation, which Python runs first.
+func collectList(info *fingerprint.ClientHello, kind int, value []byte) error {
+	if info == nil || (kind != 10 && kind != 11 && kind != 13) {
+		return nil
+	}
+	lists := &reader{data: value}
+	width := 2
+	if kind == 11 {
+		width = 1
+	}
+	list, err := lists.vector(width)
+	if err != nil {
+		return err
+	}
+	switch kind {
+	case 10:
+		if info.Groups, err = u16List(list); err != nil {
+			return err
+		}
+	case 11:
+		info.PointFormats = make([]int, len(list))
+		for i, b := range list {
+			info.PointFormats[i] = int(b)
+		}
+	case 13:
+		if info.SignatureAlgorithms, err = u16List(list); err != nil {
+			return err
+		}
+	}
+	return lists.end()
 }
 
 func isASCII(b []byte) bool {
@@ -321,7 +392,12 @@ type Parser struct {
 	hasHelloSize    bool
 	done            bool
 	result          *parsing.Result
-	credit          *parsing.Credit // the flow allowance the two accumulators grow from (nil: unlimited)
+	credit          *parsing.Credit  // the flow allowance the two accumulators grow from (nil: unlimited)
+	cont            *tlsContinuation // D07: record framing after the hello within Options.Continuation
+	watch           *certificateWatch
+	consumed        int // bytes accepted by earlier Feed calls; the certificate watch inherits the rest of the budget
+	baseExtra       []parsing.Row
+	unrefined       bool // parsers.TLSParser.refined is False until the continuation fed bytes
 }
 
 // SetCredit makes the accumulators grow from c (parsing.Credited).
@@ -329,15 +405,6 @@ func (p *Parser) SetCredit(c *parsing.Credit) { p.credit = c }
 
 // New creates the parser; options the Go backend lacks fail at construction with NotPorted.
 func New(opts Options) (*Parser, error) {
-	if opts.Fingerprints {
-		return nil, &parsing.NotPorted{What: "option fingerprints (TLS)"}
-	}
-	if opts.Certificates {
-		return nil, &parsing.NotPorted{What: "option certificates (TLS)"}
-	}
-	if opts.Continuation != 0 {
-		return nil, &parsing.NotPorted{What: "option continuation (TLS)"}
-	}
 	return &Parser{opts: opts}, nil
 }
 
@@ -347,8 +414,42 @@ func (p *Parser) Result() *parsing.Result { return p.result }
 // RetainedBytes is the capacity of the record-header and handshake accumulators (parsing.Retainer).
 func (p *Parser) RetainedBytes() int { return cap(p.recordHeader) + cap(p.handshake) }
 
-// Feed ports TLSParser.feed for the hello (no watch, no continuation).
+// Refined reports whether the published identification is complete (false until a continuation fed bytes).
+func (p *Parser) Refined() bool { return !p.unrefined }
+
+// Feed ports TLSParser.feed: the hello, the TLS 1.2 certificate watch and the record-layer continuation.
 func (p *Parser) Feed(data []byte) (int, error) {
+	if p.watch != nil {
+		consumed, err := p.watch.feed(data)
+		if err != nil {
+			return consumed, err
+		}
+		if p.watch.done {
+			p.result.Extra = append(p.result.Extra, p.watch.evidence...)
+			remaining := p.watch.recordRemaining
+			p.watch, p.result.Continues = nil, false
+			if p.opts.Continuation > 0 {
+				p.startContinuation(remaining)
+				if consumed < len(data) {
+					more, err := p.Feed(data[consumed:])
+					consumed += more
+					if err != nil {
+						return consumed, err
+					}
+				}
+			}
+		}
+		return consumed, nil
+	}
+	if p.cont != nil {
+		consumed := p.cont.feed(data)
+		p.result.Extra = append(append([]parsing.Row{}, p.baseExtra...), p.cont.evidence()...)
+		p.unrefined = false
+		if p.cont.done {
+			p.cont, p.result.Continues = nil, false
+		}
+		return consumed, nil
+	}
 	pos := 0
 	for pos < len(data) && !p.done {
 		if p.recordRemaining == 0 {
@@ -412,7 +513,7 @@ func (p *Parser) Feed(data []byte) (int, error) {
 		if p.hasHelloSize && len(p.handshake) == p.helloSize+4 {
 			body := p.handshake[4:]
 			if p.handshake[0] == 1 {
-				fields, err := parseHello(body)
+				fields, err := parseHello(body, p.opts.Fingerprints || p.opts.RetainContexts)
 				if err != nil {
 					return pos, err
 				}
@@ -429,6 +530,13 @@ func (p *Parser) Feed(data []byte) (int, error) {
 				}
 				p.result = &parsing.Result{Host: fields.hostname, HasHost: fields.hasHost, ALPN: alpn, Extra: extra,
 					Reason: "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content"}
+				if fields.info != nil && p.opts.RetainContexts {
+					p.result.Contexts = HelloContexts(body, fields.info, fields.hostname, fields.hasHost, fields.alpn)
+				}
+				if fields.info != nil && p.opts.Fingerprints {
+					p.result.Fingerprints = []parsing.Row{{Field: "ja4", Value: fingerprint.JA4(fields.info, "t"), Provenance: "client_hello"},
+						{Field: "ja3", Value: fingerprint.JA3(fields.info), Provenance: "client_hello"}}
+				}
 			} else {
 				rows, scope, reason, err := parseServerHello(body, p.opts, p.recordVersions, p.recordRemaining)
 				if err != nil {
@@ -438,9 +546,35 @@ func (p *Parser) Feed(data []byte) (int, error) {
 			}
 			p.handshake = nil
 			p.done = true
+			if p.opts.Certificates && p.result.Scope == "server_hello" && hasRow(p.result.Extra, "selected_tls_version", "1.2", "server_hello", "asserted") {
+				// TLS 1.3 encrypts its Certificate message; only a 1.2 flight can be read.
+				p.watch = newCertificateWatch(p.recordRemaining, p.opts.MaxBytes-p.consumed-pos)
+				p.result.Continues = true
+			}
+			if p.watch == nil && p.opts.Continuation > 0 {
+				p.startContinuation(p.recordRemaining)
+			}
 		}
 	}
+	p.consumed += pos
 	return pos, nil
+}
+
+// startContinuation ports TLSParser._start_continuation: the evidence so far is the base, the identification is not
+// refined until the continuation has fed bytes.
+func (p *Parser) startContinuation(recordRemaining int) {
+	p.baseExtra = append([]parsing.Row{}, p.result.Extra...)
+	p.cont = newTLSContinuation(p.opts.Continuation, recordRemaining)
+	p.unrefined, p.result.Continues = true, true
+}
+
+func hasRow(rows []parsing.Row, field, value, provenance, strength string) bool {
+	for _, r := range rows {
+		if r.Field == field && r.Value == value && r.Provenance == provenance && r.Strength == strength {
+			return true
+		}
+	}
+	return false
 }
 
 // --- ServerHello ----------------------------------------------------------------------------------
@@ -448,31 +582,7 @@ func (p *Parser) Feed(data []byte) (int, error) {
 var hrrRandom = []byte{0xcf, 0x21, 0xad, 0x74, 0xe5, 0x9a, 0x61, 0x11, 0xbe, 0x1d, 0x8c, 0x02, 0x1e, 0x65, 0xb8, 0x91,
 	0xc2, 0xa2, 0x11, 0x16, 0x7a, 0xbb, 0x8c, 0x5e, 0x07, 0x9e, 0x09, 0xe2, 0xc8, 0xa8, 0x33, 0x9c}
 
-// keySizes is the server key-share length of each supported named group (tls_server._KEY_SIZES). The
-// post-quantum hybrids (integration work item #4, 2026-11-14) carry the classical share plus the ML-KEM
-// ciphertext: 4587 SecP256r1MLKEM768 (65 + 1088), 4588 X25519MLKEM768 (1088 + 32), 4589 SecP384r1MLKEM1024
-// (97 + 1568).
-var keySizes = map[int]int{23: 65, 24: 97, 25: 133, 29: 32, 30: 56, 256: 256, 257: 384, 258: 512, 259: 768, 260: 1024,
-	4587: 1153, 4588: 1120, 4589: 1665}
-
-// hybridGroup reports a post-quantum hybrid group; pointFirstGroup a group whose share starts with an
-// uncompressed SEC1 point (first byte 4).
-func hybridGroup(g int) bool     { return g == 4587 || g == 4588 || g == 4589 }
-func pointFirstGroup(g int) bool { return g == 23 || g == 24 || g == 25 || g == 4587 || g == 4589 }
-
-// Integration work item #5 (2026-11-14): unknown registry values are decided per field and position.
-// grease reports an RFC 8701 reserved 16-bit value; a client offers them, a server never selects one.
-func grease(v int) bool { return v&0x0f0f == 0x0a0a && v>>8 == v&0xff }
-
-// tls12Forbidden reports an extension type a TLS 1.2 ServerHello can never carry: signature_algorithms is a
-// client offer, the rest exist only in TLS 1.3 messages (tls_server._TLS12_FORBIDDEN_EXTENSIONS).
-func tls12Forbidden(kind int) bool {
-	switch kind {
-	case 13, 41, 42, 44, 45, 47, 48, 49, 50, 51:
-		return true
-	}
-	return false
-}
+var keySizes = map[int]int{23: 65, 24: 97, 25: 133, 29: 32, 30: 56, 256: 256, 257: 384, 258: 512, 259: 768, 260: 1024}
 
 func tls12Cipher(c int) bool { return c == 0x002f || (c >= 0xc023 && c < 0xc033) }
 func tls12ECC(c int) bool    { return c >= 0xc023 && c < 0xc033 }
@@ -617,8 +727,8 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 					return nil, "", "", parsing.Malformed("Retry key_share must contain one selected group")
 				}
 				group := int(value[0])<<8 | int(value[1])
-				if grease(group) {
-					return nil, "", "", parsing.Malformed("Server selected a reserved GREASE group")
+				if _, ok := keySizes[group]; !ok {
+					return nil, "", "", parsing.Unsupported("Retry group outside supported named groups")
 				}
 				rows = append(rows, rowsOf("requested_group", fmt.Sprint(group), "asserted"))
 			}
@@ -646,28 +756,18 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 				if err := value.end(); err != nil {
 					return nil, "", "", err
 				}
-				if grease(group) {
-					return nil, "", "", parsing.Malformed("Server selected a reserved GREASE group")
+				size, ok := keySizes[group]
+				if !ok {
+					return nil, "", "", parsing.Unsupported("Server key share group outside supported profile")
 				}
-				if size, ok := keySizes[group]; ok {
-					if len(key) != size || (pointFirstGroup(group) && key[0] != 4) {
-						return nil, "", "", parsing.Malformed("Server key share encoding length or point format invalid")
-					}
-					exchange = "ecdhe"
-					if group >= 256 && group <= 260 {
-						exchange = "dhe"
-					} else if hybridGroup(group) {
-						exchange = "hybrid"
-					}
-				} else {
-					// Work item #5: an unnamed group keeps the validated framing and a non-empty share, and
-					// gets no named exchange class.
-					if len(key) == 0 {
-						return nil, "", "", parsing.Malformed("Server key share encoding length or point format invalid")
-					}
-					exchange = "unrecognized"
+				if len(key) != size || ((group == 23 || group == 24 || group == 25) && key[0] != 4) {
+					return nil, "", "", parsing.Malformed("Server key share encoding length or point format invalid")
 				}
 				rows = append(rows, rowsOf("selected_group", fmt.Sprint(group), "asserted"))
+				exchange = "ecdhe"
+				if group >= 256 && group <= 260 {
+					exchange = "dhe"
+				}
 			}
 			rows = append(rows, rowsOf("selected_key_exchange", exchange, "asserted"), rowsOf("selected_cipher_mode", "aead", "asserted"))
 		}
@@ -732,10 +832,7 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 				}
 				rows = append(rows, rowsOf("selected_alpn", alpnText(name), "asserted"))
 			default:
-				if tls12Forbidden(e.kind) || grease(e.kind) {
-					return nil, "", "", parsing.Malformed("Extension not permitted in a TLS 1.2 ServerHello")
-				}
-				// Work item #5: any other extension type is skipped; its framing was validated above.
+				return nil, "", "", parsing.Unsupported("TLS 1.2 ServerHello extension outside supported profile")
 			}
 		}
 		mode := "cbc"
@@ -745,10 +842,68 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 		rows = append(rows, rowsOf("selected_key_exchange", tls12KeyExchange(cipher), "asserted"), rowsOf("selected_cipher_mode", mode, "asserted"))
 	}
 	rows = append(rows, rowsOf("selected_tls_version", version, "asserted"), rowsOf("selected_cipher", fmt.Sprintf("0x%04x", cipher), "asserted"))
+	if opts.Fingerprints && !retry {
+		var selected []string
+		for _, r := range rows {
+			if r.Field == "selected_alpn" {
+				selected = append(selected, r.Value)
+			}
+		}
+		negotiated := 0x0303
+		if tls13 {
+			negotiated = 0x0304
+		}
+		kinds := make([]int, len(extensions))
+		for i, e := range extensions {
+			kinds[i] = e.kind
+		}
+		rows = append(rows, rowsOf("ja4s", fingerprint.JA4S(negotiated, cipher, kinds, selected, "t"), "derived"),
+			rowsOf("ja3s", fingerprint.JA3S(negotiated, cipher, kinds), "derived"))
+	}
 	reason := "ServerHello structure validated; server selections unauthenticated, handshake completion unverified"
 	if retry {
 		reason = "HelloRetryRequest structure validated; requested changes unverified"
 	}
 	_ = strings.ToLower
 	return rows, source, reason, nil
+}
+
+// ClientHelloOffer is what a ClientHello body offers (parse_hello with an `offered` list): the SNI, ALPN names
+// and the encrypted_client_hello class. Used by the QUIC Initial validator on the assembled CRYPTO stream.
+type ClientHelloOffer struct {
+	Info     *fingerprint.ClientHello
+	Hostname string
+	HasHost  bool
+	ALPN     []string
+	ECH      string
+}
+
+// ParseClientHello validates a ClientHello body (the handshake message without its 4-byte header); collect fills
+// Info for a fingerprint.
+func ParseClientHello(body []byte, collect bool) (*ClientHelloOffer, error) {
+	fields, err := parseHello(body, collect)
+	if err != nil {
+		return nil, err
+	}
+	return &ClientHelloOffer{Info: fields.info, Hostname: fields.hostname, HasHost: fields.hasHost, ALPN: fields.alpn, ECH: fields.ech}, nil
+}
+
+// HelloContexts are the ClientHello signature contexts (TLSParser and quic.quic with retain_contexts).
+func HelloContexts(body []byte, info *fingerprint.ClientHello, host string, hasHost bool, alpn []string) parsing.Contexts {
+	ciphers, extensions := map[int64]bool{}, map[int64]bool{}
+	for _, c := range info.Ciphers {
+		ciphers[int64(c)] = true
+	}
+	for _, e := range info.Extensions {
+		extensions[int64(e)] = true
+	}
+	contexts := parsing.Contexts{"ssl-req-client-hello": append([]byte{}, body...), "ssl-req-version": int64(info.Version),
+		"ssl-req-cipher-suite": ciphers, "ssl-req-client-hello-ext-type": extensions}
+	if hasHost && host != "" {
+		contexts["ssl-req-chello-sni"] = []byte(host)
+	}
+	if len(alpn) > 0 {
+		contexts["ssl-req-alpn"] = []byte(strings.Join(alpn, ","))
+	}
+	return contexts
 }

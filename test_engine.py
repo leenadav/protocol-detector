@@ -133,12 +133,6 @@ class EngineTests(unittest.TestCase):
             inspector = Inspector()
             inspector.feed(HTTP[:-2] + extra + b"\r\n")
             self.assertEqual(inspector.observation.status, "malformed")
-        # A Content-Length must fit in a signed 64-bit integer: 2**63 - 1 is accepted, 2**63 and 20 nines are not.
-        for value, expected in ((b"9223372036854775807", "identified"), (b"09223372036854775807", "identified"),
-                                (b"9223372036854775808", "malformed"), (b"9" * 20, "malformed")):
-            inspector = Inspector()
-            inspector.feed(HTTP[:-2] + b"Content-Length: " + value + b"\r\n\r\n")
-            self.assertEqual(inspector.observation.status, expected, value)
         inspector = Inspector()
         inspector.feed(b"GET /HTTP/1.1 HTTP/1.0\r\n\r\n")
         self.assertEqual(inspector.observation.application_protocol, "http/1.0")

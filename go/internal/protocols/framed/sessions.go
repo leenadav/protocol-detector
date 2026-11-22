@@ -276,7 +276,8 @@ func socksClient(buf []byte) (int, *parsing.Result, error) {
 	return end, &parsing.Result{ProtocolName: "socks5", Scope: "initial_message", ALPN: []string{},
 		Extra: []parsing.Row{row("socks_command", command, "socks_request", "asserted"), row("socks_target", address, "socks_request", "asserted"),
 			row("socks_port", strconv.Itoa(port), "socks_request", "asserted")},
-		Reason: "SOCKS5 client greeting and request validated; method selection, server reply and tunneled protocol unverified"}, nil
+		Reason:   "SOCKS5 client greeting and request validated; method selection, server reply and tunneled protocol unverified",
+		Contexts: parsing.Contexts{"socks-req-target": []byte(address), "socks-req-port": int64(port)}}, nil
 }
 
 func socksServer(buf []byte) (int, *parsing.Result, error) {

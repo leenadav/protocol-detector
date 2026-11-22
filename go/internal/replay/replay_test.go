@@ -103,7 +103,9 @@ func loadGaps(t *testing.T) map[string]string {
 		Schema int               `json:"schema"`
 		Gaps   map[string]string `json:"gaps"`
 	}
-	if err := json.Unmarshal(raw, &document); err != nil || document.Schema != 1 || len(document.Gaps) == 0 {
+	// An empty list is valid: every case is answered (2026-11-15, after the fingerprints port). A missing "gaps"
+	// object is not: the document must still say so explicitly.
+	if err := json.Unmarshal(raw, &document); err != nil || document.Schema != 1 || document.Gaps == nil {
 		t.Fatalf("gaps.json: %v (schema %d, %d entries)", err, document.Schema, len(document.Gaps))
 	}
 	return document.Gaps

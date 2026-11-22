@@ -80,6 +80,13 @@ refuses a pack when, after the structural validation it already did:
 5. an application or risk object has a field outside the lists above (it would sit outside every digest but
    the pack digest).
 
+An earlier release run by `--content-version` (`content.EmbeddedRelease`: the release's block and server-name
+catalog over the current pack) is checked the same way except in rule 3, where only `host_catalog` is
+recomputed: its `application_catalog`, `families` and `risks` are the components the release was published
+with (C11, 2026-11-18; `protocol_engine.content._RELEASED_COMPONENTS`), because those tables follow the package
+and do not roll back. So the release digest a record pinned to an earlier release carries is reproduced
+exactly, while a server-name catalog that no longer matches its release is refused.
+
 It then exposes `Digests{Pack, Release, Components, Recomputed}`. Verification is self-consistency: it
 proves the tables are the ones the stated digests describe, not who made the pack. Trust comes from the
 consumer comparing `Digests.Pack` with a value it pinned out of band (a build constant, a signed catalog).
@@ -101,16 +108,16 @@ Document (any JSON form of it):
 | SHA-256 of prefix + CJ1 (the pack digest rule applied to this document) | `bfe5d9552aa34d72ac55d185ed3f79afccbe8991c0a73ab6528feba5ce170377` |
 | `H(["x", ["y", [1, null]], {"k": "v"}])` | `77cd6b4c4e0c482824748218f10725708199c628e96dc1c99a9b28804251cc7b` |
 
-Release 2026.11.2 (`migration/fixtures/content.json`, 428,202 bytes; CJ1 is 353,546 bytes):
+Release 2026.11.9 (`migration/fixtures/content.json`, 449,787 bytes; CJ1 is 372,036 bytes):
 
 | quantity | value |
 |---|---|
-| `application_catalog` | `f5205651ca01a87a4004caeed18b0b6be38cfd627a565b0d4a007fa209935eb7` |
+| `application_catalog` | `7440a3b9622ca9de0537809161862de414c83e950592051c23cb6f3868cc170e` |
 | `families` (stated) | `3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649` |
-| `host_catalog` | `82e1abd27dad3f3ee04cb80939a9ab81f099631f06e23d94fb75e6071afd1c7d` |
+| `host_catalog` | `d8627a15e1fe35e9e568641c294ce99df7e8d8226628d0ebf58489d087002694` |
 | `risks` | `59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85` |
-| release digest | `e0d6e39533a6ae9c` |
-| pack digest | `0984af6edc1d682143e391675dd0fafb9f23c47a0ed485b110b86a1b4f7af5aa` |
+| release digest | `cdaa5993077d101a` |
+| pack digest | `b05065ebb142d917053ff0999e9c1cde5a762208d36368a59fb9f369e8dc2754` |
 
 ## Limits, stated
 

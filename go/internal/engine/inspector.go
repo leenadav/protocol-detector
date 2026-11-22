@@ -2,11 +2,14 @@ package engine
 
 import (
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
+	"github.com/leenadav/protocol-detector/go/internal/errs"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/dnsx"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/framed"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/heuristics"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/textroute"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
+	"github.com/leenadav/protocol-detector/go/internal/signatures"
 	"sort"
 )
 
@@ -42,7 +45,7 @@ var families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"dcerpc", "websocket", "xmpp", "syslog", "git",
 	"netbios-ss", "tacacs-plus", "socks5", "wireguard", "bacnet",
 	"tftp", "ntp", "l2tp", "coap", "rip", "rtcp", "lifx-lan", "tuya-lan",
-	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap", "smb1", "smb2", "rdp", "iso-tsap", "ikev2"}
+	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap", "smb1", "smb2", "rdp", "iso-tsap", "ikev2", "quic", "http2", "dtls"}
 
 // Families returns a copy of the families the Go backend can identify, in registry order.
 func Families() []string { return append([]string(nil), families...) }
@@ -53,7 +56,7 @@ var factories map[string]func(cfg contracts.Config) (parsing.Parser, error)
 func init() {
 	factories = map[string]func(cfg contracts.Config) (parsing.Parser, error){
 		"text": func(cfg contracts.Config) (parsing.Parser, error) {
-			return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation})
+			return textroute.New(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Continuation: cfg.Continuation, MaxTransactions: cfg.MaxTransactions, Fingerprints: cfg.Fingerprints, RetainContexts: cfg.RetainContexts})
 		},
 		"irc": func(cfg contracts.Config) (parsing.Parser, error) {
 			return textroute.NewIRC(cfg.MaxLine), nil
@@ -190,6 +193,12 @@ func init() {
 		"dcerpc": func(cfg contracts.Config) (parsing.Parser, error) {
 			return framed.NewDCERPC(cfg.MaxBytes, cfg.MaxHeaders), nil
 		},
+		"http2": func(cfg contracts.Config) (parsing.Parser, error) {
+			return textroute.NewHTTP2(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Fingerprints: cfg.Fingerprints, RetainContexts: cfg.RetainContexts}), nil
+		},
+		"http2-server": func(cfg contracts.Config) (parsing.Parser, error) {
+			return textroute.NewHTTP2Server(textroute.Options{MaxLine: cfg.MaxLine, MaxHeaders: cfg.MaxHeaders, MaxBytes: cfg.MaxBytes, Fingerprints: cfg.Fingerprints, RetainContexts: cfg.RetainContexts}), nil
+		},
 		"websocket": func(cfg contracts.Config) (parsing.Parser, error) {
 			return framed.NewWebSocket(), nil
 		},
@@ -218,10 +227,13 @@ func init() {
 		},
 		"tls": func(cfg contracts.Config) (parsing.Parser, error) {
 			return tlsx.New(tlsx.Options{MaxBytes: cfg.MaxBytes, MaxHeaders: cfg.MaxHeaders, Fingerprints: cfg.Fingerprints,
-				Certificates: cfg.Certificates, Continuation: cfg.Continuation})
+				Certificates: cfg.Certificates, Continuation: cfg.Continuation, RetainContexts: cfg.RetainContexts})
 		},
 		"dns": func(cfg contracts.Config) (parsing.Parser, error) {
 			return dnsx.NewTCP(cfg.MaxBytes), nil
+		},
+		"stun": func(cfg contracts.Config) (parsing.Parser, error) {
+			return framed.NewSTUN(cfg.MaxBytes), nil
 		},
 	}
 	for name := range factories {
@@ -240,26 +252,40 @@ func factory(candidate string, cfg contracts.Config) (parsing.Parser, error) {
 
 // Inspector is one direction of one ordered stream (engine.Inspector). Not safe for concurrent use.
 type Inspector struct {
-	cfg         contracts.Config
-	hint        string
-	hintSource  string
-	source      string
-	Observation contracts.Observation
-	Metrics     contracts.Metrics
-	revision    int
-	prefix      []byte
-	parser      parsing.Parser
-	candidate   string
-	terminal    bool
-	Boundary    int // stream offset where a terminal identified message ended (-1: none)
-	hasBoundary bool
-	next        *Inspector
-	carrier     *contracts.Observation
-	shift       string
-	shiftSource string
-	NotPorted   *parsing.NotPorted // set when the Go backend cannot give this direction's outcome
-	resolved    string             // family a text route resolved to before it finished (D12)
-	continuing  bool               // identified; the parser still derives optional evidence or watches for a shift
+	// inner inspects host-supplied decrypted plaintext of an identified TLS envelope (feed_decrypted); outer is
+	// the envelope observation it refines.
+	inner *Inspector
+	outer *contracts.Observation
+	// Signatures are the custom signatures evaluated over the parsers' contexts (nil: none).
+	sigs *signatures.Set
+	// The bounded unknown-payload buffer (Python _unknown): after dispatch fails, heuristics profile up to
+	// unknownLimit bytes before the stream is declared unknown.
+	unknown      []byte
+	hasUnknown   bool
+	unknownLimit int
+	cfg          contracts.Config
+	hint         string
+	hintSource   string
+	source       string
+	Observation  contracts.Observation
+	Metrics      contracts.Metrics
+	revision     int
+	prefix       []byte
+	parser       parsing.Parser
+	candidate    string
+	terminal     bool
+	Boundary     int // stream offset where a terminal identified message ended (-1: none)
+	hasBoundary  bool
+	next         *Inspector
+	carrier      *contracts.Observation
+	shift        string
+	shiftSource  string
+	// depth counts the shifted phases above this one (0 for the outer inspector); beginShift refuses to nest
+	// beyond maxShiftDepth (SEC-INSP-1).
+	depth      int
+	NotPorted  *parsing.NotPorted // set when the Go backend cannot give this direction's outcome
+	resolved   string             // family a text route resolved to before it finished (D12)
+	continuing bool               // identified; the parser still derives optional evidence or watches for a shift
 	// Host-correlation metadata, never emitted: the identifying parser's LDAP message id, and the identification
 	// that announced this inspector's shift (kept after the shifted phase merges; Python Inspector.announcement).
 	ldapID       int
@@ -311,12 +337,17 @@ func (in *Inspector) OpenShift(boundary, expected string) bool {
 		}
 		return false
 	}
+	next.source, next.shiftSource = in.source, in.source // a shifted phase keeps the byte provenance (wire or decrypted)
+	if in.sigs != nil {
+		_ = next.SetSignatures(in.sigs) // same config: cannot fail
+	}
 	carrier := in.Observation
 	in.carrier, in.shift, in.shiftSource = &carrier, boundary, in.source+":peer"
 	announced := carrier
 	in.Announcement = &announced
 	next.hintSource = "shift:" + boundary
 	next.credit = in.credit
+	next.depth = in.depth + 1
 	in.next = next
 	in.terminal = false
 	return true
@@ -334,6 +365,24 @@ func (in *Inspector) Replay(data []byte) ([]contracts.Event, bool) {
 	}
 	in.Metrics.BytesReceived -= len(data)
 	return in.Feed(data), true
+}
+
+// Expect ports Inspector.expect: a host-driven candidate, when the peer direction established which family this one
+// must be (the server side of an HTTP/2 connection with prior knowledge, whose first SETTINGS frame no prefix routes).
+// The candidate only selects the parser; its bytes still have to validate. It is adopted only before any byte
+// arrived and when no hint exists; it reports whether it was adopted.
+func (in *Inspector) Expect(candidate, source string) bool {
+	if _, ok := factories[candidate]; !ok || internalCandidates[candidate] {
+		panic("engine: unsupported expected candidate " + candidate)
+	}
+	if source == "" || len(source) > 64 {
+		panic("engine: expectation source must be a short name")
+	}
+	if in.Metrics.BytesReceived > 0 || in.hint != "" || in.terminal || in.next != nil {
+		return false
+	}
+	in.hint, in.hintSource = candidate, "peer:"+source
+	return true
 }
 
 // HasBoundary reports whether Boundary is set (a terminal identified message ended there).
@@ -378,6 +427,10 @@ func (in *Inspector) continueFeed(chunk []byte) []contracts.Event {
 // familyResolver is implemented by routed parsers that learn their family from the first line.
 type familyResolver interface{ ResolvedFamily() string }
 
+// Candidate is Inspector.candidate: the dispatch candidate ("" before dispatch), or the family a text route
+// resolved to once it identified.
+func (in *Inspector) Candidate() string { return in.candidate }
+
 // ResolvedFamily ports Inspector.resolved_family: the candidate, or what a text route resolved to ("" for none).
 func (in *Inspector) ResolvedFamily() string {
 	if in.candidate == "text" || in.candidate == "git_text" || in.candidate == "tpkt" {
@@ -395,16 +448,25 @@ func New(cfg contracts.Config, hint string) (*Inspector, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-	if cfg.Heuristics {
-		return nil, &parsing.NotPorted{What: "option heuristics"}
-	}
-	if cfg.RetainContexts {
-		return nil, &parsing.NotPorted{What: "option retain_contexts (signatures)"}
-	}
 	if hint != "" && !ported[hint] {
 		return nil, &parsing.NotPorted{What: "hint " + hint}
 	}
-	return &Inspector{cfg: cfg, hint: hint, hintSource: "caller", source: "wire", Observation: contracts.Initial("tcp"), shiftSource: "wire"}, nil
+	in := &Inspector{cfg: cfg, hint: hint, hintSource: "caller", source: "wire", Observation: contracts.Initial("tcp"), shiftSource: "wire"}
+	if cfg.Heuristics {
+		in.unknownLimit = cfg.HeuristicBytes
+	}
+	return in, nil
+}
+
+// NewDecrypted is Inspector(source='decrypted'): an inspector for plaintext a decoder authenticated, whose
+// evidence carries the decrypted provenance.
+func NewDecrypted(cfg contracts.Config) (*Inspector, error) {
+	in, err := New(cfg, "")
+	if err != nil {
+		return nil, err
+	}
+	in.source, in.shiftSource = "decrypted", "decrypted"
+	return in, nil
 }
 
 func (in *Inspector) Terminal() bool { return in.terminal }
@@ -468,8 +530,20 @@ func (in *Inspector) identified() contracts.Observation {
 	} else {
 		protocol = str(r.ProtocolName)
 	}
-	if (in.candidate == "text" || in.candidate == "git_text" || in.candidate == "tpkt") && r.Family != "" {
-		in.candidate = r.Family
+	if in.candidate == "text" || in.candidate == "git_text" || in.candidate == "tpkt" {
+		// Python: self._candidate = parser.family. The Git child is "git"; the TPKT route's family is its
+		// child's protocol name; a text route names its own.
+		family := r.Family
+		if family == "" {
+			if fr, ok := in.parser.(familyResolver); ok {
+				family = fr.ResolvedFamily()
+			} else if in.candidate == "tpkt" {
+				family = r.ProtocolName
+			}
+		}
+		if family != "" {
+			in.candidate = family
+		}
 	}
 	var hostname *string
 	if r.HasHost {
@@ -499,11 +573,19 @@ func (in *Inspector) identified() contracts.Observation {
 	if hostname != nil && *hostname != "" {
 		evidence = append(evidence, contracts.Evidence{Field: "hostname", Value: *hostname, Source: in.source + ":" + hostSource, Strength: "asserted"})
 	}
+	var application *string
+	if match := in.signature(in.candidate, r.Contexts); match != nil {
+		application = str(match.Name)
+		evidence = append(evidence, contracts.Evidence{Field: "application", Value: match.Name, Source: "signature:" + in.candidate, Strength: "configured_signature"})
+	}
 	for _, offered := range alpn {
 		evidence = append(evidence, contracts.Evidence{Field: "offered_alpn", Value: offered, Source: in.source + ":client_hello", Strength: "offered"})
 	}
 	for _, row := range r.Extra {
 		evidence = append(evidence, contracts.Evidence{Field: row.Field, Value: row.Value, Source: in.source + ":" + row.Provenance, Strength: row.Strength})
+	}
+	for _, row := range r.Fingerprints {
+		evidence = append(evidence, contracts.Evidence{Field: row.Field, Value: row.Value, Source: in.source + ":" + row.Provenance, Strength: "derived"})
 	}
 	if evidence == nil {
 		evidence = []contracts.Evidence{}
@@ -512,7 +594,7 @@ func (in *Inspector) identified() contracts.Observation {
 	if scope == "" {
 		scope = "initial_message"
 	}
-	return contracts.Observation{Status: contracts.Identified, Transport: "tcp", Encryption: encryption, ApplicationProtocol: protocol,
+	return contracts.Observation{Status: contracts.Identified, Transport: "tcp", Encryption: encryption, ApplicationProtocol: protocol, Application: application,
 		Hostname: hostname, OfferedALPN: alpn, Evidence: evidence, Reason: r.Reason, Scope: scope}
 }
 
@@ -550,7 +632,7 @@ func joinComma(parts []string) string {
 	return out
 }
 
-// Feed ports Inspector.feed without the signature/heuristic unknown buffer and the continuation paths.
+// Feed ports Inspector.feed (the unknown-payload buffer serves heuristics; signatures are not ported).
 func (in *Inspector) Feed(data []byte) []contracts.Event {
 	in.Metrics.BytesReceived += len(data)
 	if in.terminal || len(data) == 0 {
@@ -568,6 +650,15 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 	if in.next != nil {
 		return in.forward(chunk)
 	}
+	if in.hasUnknown {
+		// Dispatch already failed: collect a bounded prefix for the heuristics; no parser runs here.
+		room := in.unknownLimit - len(in.unknown)
+		take := minInt(maxInt(room, 0), len(chunk))
+		in.unknown = append(in.unknown, chunk[:take]...)
+		in.Metrics.BytesInspected += minInt(room, len(chunk))
+		in.Metrics.ParserCalls++
+		return in.unknownObservation("Prefix outside supported protocol families", in.unknownFull())
+	}
 	previous := 0
 	if in.candidate == "" {
 		previous = len(in.prefix)
@@ -583,6 +674,14 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 		}
 		if candidate == Unknown {
 			in.Metrics.BytesInspected += len(probe) - previous
+			if in.unknownLimit > 0 {
+				in.unknown = append(append([]byte{}, in.prefix...), pySlice(chunk, in.unknownLimit-previous)...)
+				in.hasUnknown = true
+				in.prefix = in.prefix[:0]
+				in.Metrics.BytesInspected += len(in.unknown) - len(probe)
+				in.Metrics.ParserCalls++
+				return in.unknownObservation("Prefix outside supported protocol families", in.unknownFull())
+			}
 			return in.finish(in.observation(contracts.Unknown, "Prefix outside supported protocol families"), contracts.Updated)
 		}
 		if candidate == Wait {
@@ -644,7 +743,20 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 	return nil
 }
 
+// maxShiftDepth bounds parser-driven shift nesting (SEC-INSP-1). Every phase forwards each segment through the
+// phases below it and rebuilds their evidence, so N nested phases cost O(N^2) evidence and O(N^3) work per
+// direction: a stream of CONNECT requests could nest one phase per request. Two levels keep every real case
+// (CONNECT, then TLS or an HTTP Upgrade inside the tunnel); a shift below them identifies the phase that saw it
+// and leaves the rest of the stream uninspected. The Python reference nests without a bound (a recorded parity
+// divergence; no parity case nests at all).
+const maxShiftDepth = 2
+
 func (in *Inspector) beginShift(shift *parsing.Shift, rest []byte) []contracts.Event {
+	if in.depth >= maxShiftDepth {
+		obs := in.identified()
+		obs.Reason += "; a further " + shift.Boundary + " boundary was not followed (shift nesting limit)"
+		return in.finish(obs, contracts.Updated)
+	}
 	events := in.publish(in.identified(), contracts.Updated)
 	in.parser = nil
 	in.continuing = false
@@ -669,8 +781,13 @@ func (in *Inspector) beginShift(shift *parsing.Shift, rest []byte) []contracts.E
 		in.NotPorted, in.terminal = &parsing.NotPorted{What: "shift to " + shift.Expected}, true
 		return events
 	}
+	next.source, next.shiftSource = in.source, in.source // a shifted phase keeps the byte provenance (wire or decrypted)
+	if in.sigs != nil {
+		_ = next.SetSignatures(in.sigs) // same config: cannot fail
+	}
 	next.hintSource = "shift:" + shift.Boundary
 	next.credit = in.credit
+	next.depth = in.depth + 1
 	in.next = next
 	if len(rest) > 0 {
 		events = append(events, in.forward(rest)...)
@@ -745,6 +862,7 @@ func (in *Inspector) mergeShift() []contracts.Event {
 // Invalidate ports Inspector.invalidate: upstream reassembly is no longer trustworthy.
 func (in *Inspector) Invalidate(reason string) []contracts.Event {
 	in.next, in.carrier, in.parser, in.Announcement = nil, nil, nil, nil
+	in.inner, in.outer = nil, nil
 	in.terminal = true
 	in.prefix = in.prefix[:0]
 	return in.publish(in.observation(contracts.Invalidated, reason), contracts.Retracted)
@@ -753,6 +871,11 @@ func (in *Inspector) Invalidate(reason string) []contracts.Event {
 // End ports Inspector.end for the ported paths.
 func (in *Inspector) End(reason string) []contracts.Event {
 	if in.terminal {
+		if in.inner != nil {
+			if events := in.inner.End(reason); len(events) > 0 {
+				return in.mergeInner()
+			}
+		}
 		return nil
 	}
 	if in.next != nil {
@@ -774,7 +897,99 @@ func (in *Inspector) End(reason string) []contracts.Event {
 		}
 		return in.finish(in.refined(), contracts.Refined) // keep the identification; no further evidence
 	}
+	if in.hasUnknown {
+		return in.unknownObservation("Prefix outside supported protocol families", true)
+	}
+	if in.candidate == "" && len(in.prefix) > 0 && in.sigs.Wants("unknown-tcp") {
+		// Dispatch never resolved; the short prefix may still name a custom application.
+		if events := in.unknownFrom(reason, false, in.prefix); events != nil {
+			return events
+		}
+	}
 	return in.finish(in.observation(contracts.Incomplete, reason), contracts.Updated)
+}
+
+// SetSignatures attaches a signature set before any byte is fed (Python's constructor argument). A non-empty set
+// requires Config.retain_contexts; the unknown-payload buffer grows to signature_bytes when unknown-tcp is wanted.
+func (in *Inspector) SetSignatures(set *signatures.Set) error {
+	if set.Len() > 0 && !in.cfg.RetainContexts {
+		return errs.New(errs.Invalid, errs.ScopeProcess, "Signatures require Config(retain_contexts=True)")
+	}
+	in.sigs = set
+	limit := 0
+	if set.Wants("unknown-tcp") {
+		limit = in.cfg.SignatureBytes
+	}
+	if in.cfg.Heuristics && in.cfg.HeuristicBytes > limit {
+		limit = in.cfg.HeuristicBytes
+	}
+	in.unknownLimit = limit
+	return nil
+}
+
+// signature ports Inspector._signature: the first matching signature for a completed parser family, counting the
+// candidates evaluated.
+func (in *Inspector) signature(family string, contexts parsing.Contexts) *signatures.Signature {
+	if in.sigs == nil || contexts == nil || !in.sigs.Wants(family) {
+		return nil
+	}
+	match, evaluated := in.sigs.MatchCounted(family, contexts)
+	in.Metrics.SignatureCandidates += evaluated
+	return match
+}
+
+// unknownObservation ports Inspector._unknown_observation: unknown-payload signatures are consulted over the
+// bounded buffer (a match is terminal); without one the stream stays detecting until the buffer is full (final) or
+// the caller ends it, then it is unknown with heuristic evidence over the buffer.
+// unknownFull reports that the unknown-payload buffer takes no more bytes: it holds unknownLimit bytes, or the
+// byte budget is spent first (max_bytes below heuristic_bytes). PRO-189 (Codex PRO-12, P2): only the first was
+// checked, so a spent budget left the stream "detecting" until End. The verdict is the one End gives for the same
+// bytes. The Python reference waits for close here (a recorded parity divergence; see migration/STATUS.md).
+func (in *Inspector) unknownFull() bool {
+	return len(in.unknown) >= in.unknownLimit || in.Metrics.BytesInspected >= in.cfg.MaxBytes
+}
+
+func (in *Inspector) unknownObservation(reason string, final bool) []contracts.Event {
+	return in.unknownFrom(reason, final, in.unknown)
+}
+
+func (in *Inspector) unknownFrom(reason string, final bool, data []byte) []contracts.Event {
+	if match := in.signature("unknown-tcp", parsing.Contexts{"unknown-req-tcp-payload": append([]byte{}, data...),
+		"unknown-req-tcp-payload-length": int64(len(data))}); match != nil {
+		in.unknown, in.hasUnknown = nil, false
+		o := in.observation(contracts.Identified, "Custom signature matched an unknown payload prefix; no protocol profile validated")
+		o.Application, o.Scope = str(match.Name), "signature_match"
+		o.Evidence = []contracts.Evidence{{Field: "application", Value: match.Name, Source: "signature:unknown-tcp", Strength: "configured_signature"}}
+		if in.hint != "" {
+			o.Evidence = append(o.Evidence, contracts.Evidence{Field: "candidate_hint", Value: in.hint, Source: in.hintSource, Strength: "context"})
+		}
+		return in.finish(o, contracts.Updated)
+	}
+	if !final {
+		return nil
+	}
+	in.unknown, in.hasUnknown = nil, false
+	o := in.observation(contracts.Unknown, reason)
+	if in.cfg.Heuristics {
+		if rows := heuristics.Evidence(data, in.source, in.cfg.HeuristicBytes); rows != nil {
+			o.Evidence = rows
+		}
+	}
+	return in.finish(o, contracts.Updated)
+}
+
+// pySlice is Python's data[:n], where a negative n counts from the end.
+func pySlice(data []byte, n int) []byte {
+	if n < 0 {
+		n += len(data)
+		if n < 0 {
+			n = 0
+		}
+	}
+	if n > len(data) {
+		n = len(data)
+	}
+	return data[:n]
 }
 
 func maxInt(a, b int) int {
@@ -782,4 +997,73 @@ func maxInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// FeedDecrypted ports Inspector.feed_decrypted: authenticated plaintext ONLY from the host TLS stack (or the
+// key-log record engine), from the plaintext stream start, after this inspector identified the TLS envelope. It
+// never decrypts and must never receive encrypted records. The inner inspection's identification refines the
+// envelope; the offered ALPN is never promoted to an observed inner protocol.
+func (in *Inspector) FeedDecrypted(data []byte) ([]contracts.Event, error) {
+	if in.source != "wire" || in.Observation.Encryption == nil || *in.Observation.Encryption != "tls" ||
+		in.Observation.Status == contracts.Invalidated {
+		return nil, errs.New(errs.Invalid, errs.ScopeProcess, "Decrypted data requires a previously identified TLS envelope")
+	}
+	if in.inner == nil {
+		outer := in.Observation
+		in.outer = &outer
+		inner, err := New(in.cfg, "")
+		if err != nil {
+			return nil, err
+		}
+		inner.source, inner.shiftSource = "decrypted", "decrypted"
+		if in.sigs != nil {
+			_ = inner.SetSignatures(in.sigs) // same config: cannot fail
+		}
+		in.inner = inner
+	}
+	events := in.inner.Feed(data)
+	if in.inner.NotPorted != nil {
+		in.NotPorted = in.inner.NotPorted
+		return nil, nil
+	}
+	if len(events) == 0 {
+		return nil, nil
+	}
+	return in.mergeInner(), nil
+}
+
+// mergeInner ports Inspector._merge_inner: the inner observation under the retained TLS envelope. An outer
+// hostname mapping is not kept when a different inner host appears.
+func (in *Inspector) mergeInner() []contracts.Event {
+	outer, inner := *in.outer, in.inner.Observation
+	hasInnerHost := inner.Hostname != nil
+	application := outer.Application
+	if hasInnerHost {
+		application = inner.Application
+	}
+	if inner.Status != contracts.Identified {
+		application = nil
+	}
+	merged := inner
+	evidence := []contracts.Evidence{}
+	for _, e := range outer.Evidence {
+		if e.Field != "application" || (!hasInnerHost && application != nil) {
+			evidence = append(evidence, e)
+		}
+	}
+	merged.Evidence = append(evidence, inner.Evidence...)
+	merged.Encryption, merged.OfferedALPN, merged.Application = str("tls"), outer.OfferedALPN, application
+	if !hasInnerHost {
+		merged.Hostname = outer.Hostname
+	}
+	merged.Reason = "TLS envelope retained; plaintext: " + inner.Reason
+	return in.publish(merged, contracts.Refined)
+}
+
+// DecryptedMetrics are the inner inspection's metrics (nil before any decrypted byte).
+func (in *Inspector) DecryptedMetrics() *contracts.Metrics {
+	if in.inner == nil {
+		return nil
+	}
+	return &in.inner.Metrics
 }

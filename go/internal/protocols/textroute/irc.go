@@ -2,8 +2,8 @@ package textroute
 
 import (
 	"bytes"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 	"regexp"
-	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 )
@@ -87,7 +87,7 @@ func splitMessage(line []byte) ([]byte, bool, string, [][]byte, error) {
 			return nil, false, "", nil, parsing.Budget("IRC message exceeds 15 parameters")
 		}
 	}
-	return prefix, hasPrefix, strings.ToUpper(string(command)), params, nil
+	return prefix, hasPrefix, ascii.Upper(string(command)), params, nil
 }
 
 func validPrefix(prefix []byte) bool {
@@ -105,7 +105,7 @@ func ircClientLine(line []byte) (string, error) {
 		return "", nil
 	}
 	verbB, _, _ := bytes.Cut(line, []byte(" "))
-	verb := strings.ToUpper(string(verbB))
+	verb := ascii.Upper(string(verbB))
 	if verb != "NICK" && verb != "USER" && verb != "CAP" {
 		return "", nil
 	}
@@ -126,10 +126,10 @@ func ircClientLine(line []byte) (string, error) {
 			return "", parsing.Malformed("IRC USER takes user, mode, unused and realname parameters")
 		}
 	default:
-		if len(params) == 0 || !capSubcommands[strings.ToUpper(string(params[0]))] || len(params) > 3 {
+		if len(params) == 0 || !capSubcommands[ascii.Upper(string(params[0]))] || len(params) > 3 {
 			return "", parsing.Malformed("IRC CAP needs a subcommand LS/LIST/REQ/ACK/NAK/END/NEW/DEL")
 		}
-		if strings.ToUpper(string(params[0])) == "LS" && len(params) == 2 && !ircCapVer.Match(params[1]) {
+		if ascii.Upper(string(params[0])) == "LS" && len(params) == 2 && !ircCapVer.Match(params[1]) {
 			return "", parsing.Malformed("IRC CAP LS version must be three digits")
 		}
 	}
@@ -139,7 +139,7 @@ func ircClientLine(line []byte) (string, error) {
 // ircServerNotice ports irc.irc_server_notice.
 func ircServerNotice(line []byte) (string, error) {
 	verbB, _, _ := bytes.Cut(line, []byte(" "))
-	verb := strings.ToUpper(string(verbB))
+	verb := ascii.Upper(string(verbB))
 	if verb != "NOTICE" && verb != "PING" {
 		return "", nil
 	}
@@ -148,7 +148,7 @@ func ircServerNotice(line []byte) (string, error) {
 		return "", err
 	}
 	if command == "NOTICE" {
-		if len(params) != 2 || (strings.ToUpper(string(params[0])) != "AUTH" && string(params[0]) != "*") {
+		if len(params) != 2 || (ascii.Upper(string(params[0])) != "AUTH" && string(params[0]) != "*") {
 			return "", parsing.Malformed("Unprefixed IRC NOTICE before registration targets AUTH or *")
 		}
 		return "notice", nil
@@ -262,7 +262,7 @@ func (p *IRC) consume(line []byte) error {
 			if command == "PING" && (len(params) < 1 || len(params) > 2) {
 				return parsing.Malformed("IRC PING takes one or two parameters")
 			}
-			if command == "CAP" && (len(params) < 2 || !capSubcommands[strings.ToUpper(string(params[1]))]) {
+			if command == "CAP" && (len(params) < 2 || !capSubcommands[ascii.Upper(string(params[1]))]) {
 				return parsing.Malformed("IRC CAP reply needs a target and a subcommand")
 			}
 		} else {

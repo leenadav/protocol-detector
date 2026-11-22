@@ -1,9 +1,9 @@
 package textroute
 
 import (
+	"bytes"
 	"encoding/binary"
 	"regexp"
-	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 )
@@ -80,7 +80,7 @@ func (k *kexInit) validate(packet []byte) error {
 	}
 	pos := 18
 	payloadEnd := len(packet) - padding
-	var lists [][]byte
+	lists := make([][]byte, 0, 10)
 	for i := 0; i < 10; i++ {
 		if pos+4 > payloadEnd {
 			return parsing.Malformed("Truncated SSH KEXINIT name-list")
@@ -97,10 +97,15 @@ func (k *kexInit) validate(packet []byte) error {
 			}
 		}
 		if len(value) > 0 {
-			for _, name := range strings.Split(string(value), ",") {
+			for rest := value; ; {
+				name, tail, more := bytes.Cut(rest, comma)
 				if len(name) < 1 || len(name) > 64 {
 					return parsing.Malformed("SSH KEXINIT name-list has an empty or over-long name")
 				}
+				if !more {
+					break
+				}
+				rest = tail
 			}
 		}
 		copied, err := k.credit.Copy(value)
@@ -175,79 +180,98 @@ var cbcOr64 = func() map[string]bool {
 	return out
 }()
 
-func nameSet(value []byte) map[string]bool {
-	out := map[string]bool{}
-	if len(value) == 0 {
-		return out
-	}
-	for _, n := range strings.Split(string(value), ",") {
-		out[n] = true
-	}
-	return out
-}
+var comma = []byte{','}
 
-func union(a, b map[string]bool) map[string]bool {
-	out := map[string]bool{}
-	for k := range a {
-		out[k] = true
-	}
-	for k := range b {
-		out[k] = true
-	}
-	return out
-}
-
-func intersects(a, b map[string]bool) bool {
-	for k := range a {
-		if b[k] {
+// hasName reports whether a validated name-list (comma-separated, no empty names) contains name.
+func hasName(list []byte, name string) bool {
+	for rest := list; len(rest) > 0; {
+		item, tail, _ := bytes.Cut(rest, comma)
+		if string(item) == name {
 			return true
 		}
+		rest = tail
 	}
 	return false
 }
 
-func cbcWithETM(ciphers, macs map[string]bool) bool {
-	if !intersects(ciphers, cbcOr64) {
-		return false
-	}
-	for m := range macs {
-		if strings.HasSuffix(m, "-etm@openssh.com") {
+// anyIn reports whether a validated name-list has a name in the set (a map lookup with a converted key does
+// not allocate).
+func anyIn(list []byte, names map[string]bool) bool {
+	for rest := list; len(rest) > 0; {
+		item, tail, _ := bytes.Cut(rest, comma)
+		if names[string(item)] {
 			return true
 		}
+		rest = tail
 	}
 	return false
 }
 
-// kexinitPosture ports ssh_posture.kexinit_posture: rows (field, value) from closed sets only.
+func anySuffix(list []byte, suffix string) bool {
+	for rest := list; len(rest) > 0; {
+		item, tail, _ := bytes.Cut(rest, comma)
+		if bytes.HasSuffix(item, []byte(suffix)) {
+			return true
+		}
+		rest = tail
+	}
+	return false
+}
+
+// cbcWithETM is a CBC or 64-bit-block cipher offered with an encrypt-then-MAC mode in one direction.
+func cbcWithETM(ciphers, macs []byte) bool {
+	return anyIn(ciphers, cbcOr64) && anySuffix(macs, "-etm@openssh.com")
+}
+
+// kexinitPosture ports ssh_posture.kexinit_posture: rows (field, value) from closed sets only. Membership is
+// tested on the name-lists directly; the result depends on no iteration order (classes and ranks are ordered
+// tables), so it is the reference's.
 func kexinitPosture(lists [][]byte) []parsing.Row {
-	kex, hostkeys := nameSet(lists[0]), nameSet(lists[1])
-	c2sCiphers, s2cCiphers := nameSet(lists[2]), nameSet(lists[3])
-	c2sMacs, s2cMacs := nameSet(lists[4]), nameSet(lists[5])
-	ciphers, macs := union(c2sCiphers, s2cCiphers), union(c2sMacs, s2cMacs)
-	byList := map[int]map[string]bool{0: kex, 1: hostkeys, 2: ciphers, 4: macs}
-	families := map[string]bool{}
-	for n := range kex {
-		if f, ok := kexFamily[n]; ok {
-			families[f] = true
+	kex, hostkeys := lists[0], lists[1]
+	c2sCiphers, s2cCiphers := lists[2], lists[3]
+	c2sMacs, s2cMacs := lists[4], lists[5]
+	var families [4]bool // indexed like kexRank
+	for rest := kex; len(rest) > 0; {
+		item, tail, _ := bytes.Cut(rest, comma)
+		if f, ok := kexFamily[string(item)]; ok {
+			for i, ranked := range kexRank {
+				if ranked == f {
+					families[i] = true
+				}
+			}
 		}
+		rest = tail
 	}
 	class := "other"
-	for _, f := range kexRank {
-		if families[f] {
+	for i, f := range kexRank {
+		if families[i] {
 			class = f
 			break
 		}
 	}
-	rows := []parsing.Row{{Field: "ssh_kex_class", Value: class, Provenance: "kexinit", Strength: "asserted"}}
+	rows := make([]parsing.Row, 0, 2+len(weakClasses))
+	rows = append(rows, parsing.Row{Field: "ssh_kex_class", Value: class, Provenance: "kexinit", Strength: "asserted"})
 	for _, w := range weakClasses {
-		if intersects(byList[w.index], w.names) {
+		var hit bool
+		switch w.index {
+		case 0:
+			hit = anyIn(kex, w.names)
+		case 1:
+			hit = anyIn(hostkeys, w.names)
+		case 2: // the union of both directions' ciphers
+			hit = anyIn(c2sCiphers, w.names) || anyIn(s2cCiphers, w.names)
+		case 4: // the union of both directions' MACs
+			hit = anyIn(c2sMacs, w.names) || anyIn(s2cMacs, w.names)
+		}
+		if hit {
 			rows = append(rows, parsing.Row{Field: "ssh_weak_algorithm", Value: w.label, Provenance: "kexinit", Strength: "asserted"})
 		}
 	}
 	terrapin := "not-applicable"
-	if kex["kex-strict-c-v00@openssh.com"] || kex["kex-strict-s-v00@openssh.com"] {
+	if hasName(kex, "kex-strict-c-v00@openssh.com") || hasName(kex, "kex-strict-s-v00@openssh.com") {
 		terrapin = "strict"
-	} else if ciphers["chacha20-poly1305@openssh.com"] || cbcWithETM(c2sCiphers, c2sMacs) || cbcWithETM(s2cCiphers, s2cMacs) {
+	} else if hasName(c2sCiphers, "chacha20-poly1305@openssh.com") || hasName(s2cCiphers, "chacha20-poly1305@openssh.com") ||
+		cbcWithETM(c2sCiphers, c2sMacs) || cbcWithETM(s2cCiphers, s2cMacs) {
 		terrapin = "exposed"
 	}
 	return append(rows, parsing.Row{Field: "ssh_terrapin", Value: terrapin, Provenance: "kexinit", Strength: "asserted"})

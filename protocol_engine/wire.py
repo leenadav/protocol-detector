@@ -448,6 +448,22 @@ def dhcp(data, config):
     raise ParseError("DHCP options require END")
 
 
+# RFC 7252 section 12.1.2: the method codes 0.01-0.04 and the response codes 2.01-2.05, 4.00-4.06, 4.12, 4.13,
+# 4.15 and 5.00-5.05. Any other code (including later registrations such as 0.05-0.07, 2.31 and 4.08) is outside
+# this profile (F-ADV-1, Lee 2026-11-18).
+_COAP_CODES = frozenset((1, 2, 3, 4, 0x41, 0x42, 0x43, 0x44, 0x45, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x8c, 0x8d, 0x8f,
+                         0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5))
+# RFC 7252 section 12.2: option numbers reserved; never sent.
+_COAP_RESERVED_OPTIONS = frozenset((0, 128, 132, 136, 140))
+# Option number -> (minimum length, maximum length, repeatable): RFC 7252 table 4 (section 5.10), with Observe
+# (RFC 7641) and Block2, Block1 and Size2 (RFC 7959). A sender must not send an option outside its length range
+# (section 5.4.3) or a non-repeatable option twice (section 5.4.5). Other option numbers are not constrained.
+_COAP_OPTIONS = {1: (0, 8, True), 3: (1, 255, False), 4: (1, 8, True), 5: (0, 0, False), 6: (0, 3, False), 7: (0, 2, False),
+                 8: (0, 255, True), 11: (0, 255, True), 12: (0, 2, False), 14: (0, 4, False), 15: (0, 255, True),
+                 17: (0, 2, False), 20: (0, 255, True), 23: (0, 3, False), 27: (0, 3, False), 28: (0, 4, False),
+                 35: (1, 1034, False), 39: (1, 255, False), 60: (0, 4, False)}
+
+
 def coap(data, config):
     if len(data) < 4 or data[0] >> 6 != 1 or (data[0] & 15) > 8:
         raise ParseError("Invalid CoAP v1 header/token length")
@@ -457,14 +473,14 @@ def coap(data, config):
         if token or len(data) != 4 or kind == 1:
             raise ParseError("Invalid CoAP empty message")
         return "coap", "CoAP empty-message framing only; no peer authentication"
-    if code >> 5 not in (0, 2, 4, 5) or (code >> 5 == 0 and not 1 <= code <= 4):
+    if code not in _COAP_CODES:
         raise UnsupportedPrefix("Unsupported CoAP code profile")
     if kind == 3 or (code < 32 and kind not in (0, 1)):
         raise ParseError("CoAP code conflicts with message type")
     pos = 4 + token
     if pos > len(data):
         raise ParseError("Truncated CoAP token")
-    option, count = 0, 0
+    option, count, previous = 0, 0, None
 
     def extended(value, offset):
         if value < 13:
@@ -490,5 +506,14 @@ def coap(data, config):
         option += delta
         if option > 65535 or pos + size > len(data):
             raise ParseError("CoAP option outside message or number range")
+        if option in _COAP_RESERVED_OPTIONS:
+            raise ParseError("Reserved CoAP option number")
+        rule = _COAP_OPTIONS.get(option)
+        if rule is not None:
+            if not rule[0] <= size <= rule[1]:
+                raise ParseError("CoAP option length outside its format")
+            if option == previous and not rule[2]:
+                raise ParseError("Repeated non-repeatable CoAP option")
+        previous = option
         pos += size
     return "coap", "CoAP v1 token/options framing validated; option semantics and payload unverified"

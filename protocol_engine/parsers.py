@@ -260,9 +260,6 @@ class LineParser:
             if self.content_length is not None or not re.fullmatch(rb"[0-9]{1,20}", value):
                 raise ParseError("Invalid or duplicate Content-Length")
             self.content_length = int(value)
-            if self.content_length > 0x7FFFFFFFFFFFFFFF:
-                # The grammar admits 20 digits; a length no 64-bit consumer can represent is malformed.
-                raise ParseError("Invalid or duplicate Content-Length")
         elif name == b"transfer-encoding":
             if self.transfer_encoding or value.lower() != b"chunked":
                 raise ParseError("Unsupported or duplicate Transfer-Encoding")

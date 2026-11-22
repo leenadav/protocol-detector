@@ -14,7 +14,8 @@
 4. Release provenance (`publish-release.yml`): a job the `publish` job needs, with no job-level
    `if:` or `continue-on-error`, must contain the pinned provenance step: exactly the keys
    `name`, `env` and `run`, the env mapping in PROVENANCE_ENV and the run lines in
-   PROVENANCE_RUN (self-test, compare status, the decision with REF_TYPE, SHA and STATUS),
+   PROVENANCE_RUN (self-test, main's SHA from refs/heads/main, the compare status against that SHA and never
+   the bare name main a tag could shadow (SEC-CI-1), the decision with REF_TYPE, SHA and STATUS),
    and likewise the pinned release-checks step (CHECKS_RUN: the tagged commit's workflow runs
    from the Actions API, the ci and codeql workflows, by path and push event, required by
    `tools/check_release_checks.py`).
@@ -80,8 +81,9 @@
    workflow env and no other job, so no step can shadow the gather step's `gh`): the detective control exists, keeps its daily
    `schedule:` trigger (scheduled runs always use the default branch's copy, which no tag can
    swap), and its `audit` job, with no job-level `if:` or `continue-on-error`, holds the pinned
-   gather-and-decide step (AUDIT_ENV / AUDIT_RUN: every `v*` tag compared with main and
-   resolved to its commit, every published release resolved and downloaded, and every file
+   gather-and-decide step (AUDIT_ENV / AUDIT_RUN: main resolved from refs/heads/main to its SHA, with a
+   tag named main failing the audit (SEC-CI-1), every `v*` tag resolved to its commit and that SHA compared with
+   main's, every published release resolved and downloaded, and every file
    found, hidden ones included, verified against publish-release.yml for that tag and commit,
    then `tools/release_audit.py`).
 11. Parser cross-check (`ci.yml`): the `workflow-lint` job, with no job-level `if:` or
@@ -154,6 +156,13 @@
    `workflow-lint` checks out the full history for it (item 19, carried from item 16 round 3).
    A blanket noqa comment without a rule code is refused as well (and ruff selects PGH004);
    a single-line noqa naming its rule code stays a reviewed code change (item 20).
+17. Unambiguous refs (every workflow file, every line, comments and run-block text included;
+   SEC-CI-1): git and the GitHub API resolve a short name through refs/tags/ before the branch, so
+   a tag named `main` (or `origin/main`) would stand in for the branch. So every `compare/` segment
+   compares shell variables holding commit SHAs, or 40-hex SHAs, never a name; no git range
+   (`a..b`, `a...b`) names main or origin/main; a remote-tracking branch is spelled in full
+   (`refs/remotes/origin/...`, never `origin/...`); and a `git/ref/` lookup is `git/ref/heads/...`,
+   so main is read from the branch alone (a tag is listed through `git/matching-refs/tags/`).
 
 Standard library only; the parser understands the block layout these workflows use
 (two-space indentation, `needs:` as a flow list or a block list, `paths:` as a block list,
@@ -408,7 +417,8 @@ PROVENANCE_ENV = {
 }
 PROVENANCE_RUN = [
     'python -B tools/check_release_ref.py --self-test',
-    'STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...main" --jq .status) || STATUS="api-error"',
+    'MAIN=$(gh api "repos/${GH_REPO}/git/ref/heads/main" --jq .object.sha) || MAIN="0000000000000000000000000000000000000000"',
+    'STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...${MAIN}" --jq .status) || STATUS="api-error"',
     'python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}"'
     ' --summary "${GITHUB_STEP_SUMMARY}"',
 ]
@@ -763,11 +773,14 @@ AUDIT_RUN = [
     'python -B tools/release_audit.py --self-test',
     'facts="$RUNNER_TEMP/facts.jsonl"',
     ': > "$facts"',
+    'main=$(gh api "repos/${GH_REPO}/git/ref/heads/main" --jq .object.sha) || main="0000000000000000000000000000000000000000"',
+    'gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/main" --jq \'.[].ref\' > "$RUNNER_TEMP/main-refs.txt" || echo "api-error" > "$RUNNER_TEMP/main-refs.txt"',
+    'jq -nc --arg main "$main" --rawfile others "$RUNNER_TEMP/main-refs.txt" \'{kind: "main", tag: "main", main: $main, others: $others}\' >> "$facts"',
     'gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/v" --jq \'.[].ref\' > "$RUNNER_TEMP/tags.txt"',
     'while IFS= read -r ref; do',
     'tag="${ref#refs/tags/}"',
-    'status=$(gh api "repos/${GH_REPO}/compare/${tag}...main" --jq .status) || status="api-error"',
     'commit=$(gh api "repos/${GH_REPO}/commits/${ref}" --jq .sha) || commit="api-error"',
+    'status=$(gh api "repos/${GH_REPO}/compare/${commit}...${main}" --jq .status) || status="api-error"',
     'jq -nc --arg tag "$tag" --arg compare "$status" --arg commit "$commit" \'{kind: "tag", tag: $tag, compare: $compare, commit: $commit}\' >> "$facts"',
     'done < "$RUNNER_TEMP/tags.txt"',
     'gh api --paginate "repos/${GH_REPO}/releases?per_page=100" --jq \'.[] | select(.draft | not) | .tag_name\' > "$RUNNER_TEMP/releases.txt"',
@@ -1156,6 +1169,46 @@ SCANNER_JOBS = {
                  "zizmor --no-online-audits --no-progress --persona pedantic --min-severity unknown .github/workflows | tee zizmor.txt",
                  'echo "zizmor $(zizmor --version | awk \'{print $NF}\'): $(tail -n 1 zizmor.txt)" | tee -a "$GITHUB_STEP_SUMMARY"']},
     ]),
+    # Go lint (golangci-lint, staticcheck, gosec): each built from its tools/golint module (go.sum checked against
+    # the Go checksum database) in a copy outside the checkout, before tools/go_lint.py or any repository code runs
+    "go-lint": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": ['mkdir -p "$RUNNER_TEMP/golint"',
+                 'cp -r tools/golint/golangci-lint tools/golint/staticcheck tools/golint/gosec "$RUNNER_TEMP/golint/"',
+                 'cd "$RUNNER_TEMP/golint/golangci-lint"', 'GOBIN="$RUNNER_TEMP/bin" go install tool',
+                 'cd "$RUNNER_TEMP/golint/staticcheck"', 'GOBIN="$RUNNER_TEMP/bin" go install tool',
+                 'cd "$RUNNER_TEMP/golint/gosec"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
+    ]),
+    # Go dependency licences: go-licenses built the same way, before tools/go_deep.py runs
+    "go-licenses": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": ['mkdir -p "$RUNNER_TEMP/golint"', 'cp -r tools/golint/go-licenses "$RUNNER_TEMP/golint/"',
+                 'cd "$RUNNER_TEMP/golint/go-licenses"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
+    ]),
+    # Go API compatibility: apidiff built the same way, before tools/go_api.py runs (a full history for the base)
+    "go-api": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false", "fetch-depth": "0"}},
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": ['mkdir -p "$RUNNER_TEMP/golint"', 'cp -r tools/golint/apidiff "$RUNNER_TEMP/golint/"',
+                 'cd "$RUNNER_TEMP/golint/apidiff"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
+    ]),
+    # Known vulnerabilities in every lockfile: osv-scanner built the same way, before tools/osv_scan.py runs
+    "osv-scan": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": ['mkdir -p "$RUNNER_TEMP/golint"', 'cp -r tools/golint/osv-scanner "$RUNNER_TEMP/golint/"',
+                 'cd "$RUNNER_TEMP/golint/osv-scanner"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
+    ]),
     "toolchain-audit": (SCANNER_JOB_KEYS, None, [
         HARDEN_STEP,
         {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
@@ -1175,6 +1228,14 @@ SCANNER_JOBS = {
 }
 
 
+def in_job(text, job, old, new):
+    """text with the first `old` inside job `job` (from its `  job:` line to the next job) replaced by `new`."""
+    start = text.index("\n  {}:\n".format(job)) + 1
+    end = re.search(r"^  [A-Za-z0-9_-]+:$", text[start + 1:], re.M)
+    stop = start + 1 + end.start() if end else len(text)
+    return text[:start] + text[start:stop].replace(old, new, 1) + text[stop:]
+
+
 def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
     """Rule 15: every scanner job starts with exactly its pinned steps, through its last scanner."""
     if path not in workflows:
@@ -1190,19 +1251,27 @@ def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
 # of them means advancing a reviewed baseline; and, whatever the lock says, gitleaks keeps its
 # default rules, and no other file a scanner would load on its own may exist (task 16 round 1).
 SCANNER_LOCK = "tools/scanner_config.lock.json"
-SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml", "tools/scanners/go.mod")
+GO_LINT_MODS = ("tools/golint/golangci-lint/go.mod", "tools/golint/staticcheck/go.mod", "tools/golint/gosec/go.mod",
+                "tools/golint/go-licenses/go.mod", "tools/golint/apidiff/go.mod", "tools/golint/osv-scanner/go.mod")
+SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml", "tools/scanners/go.mod", "tools/golint/golangci.yml",
+                  "tools/golint/baseline.json", "tools/golint/coverage-floors.json", "tools/osv_ignore.json") + GO_LINT_MODS
 # go.mod directives that would change what the pinned scanners are or how they behave: `replace`
 # substitutes another module for gitleaks or a dependency, `godebug` changes standard-library
 # behaviour (x509, TLS) of the built binaries (item 22).
 GO_MOD_BANNED = re.compile(r"^\s*(replace|godebug)\b")
 # Files a scanner picks up from the tree without being told to: each would bypass the lock.
-SCANNER_AUTOLOAD = re.compile(r"(^|/)(ruff\.toml|\.ruff\.toml|zizmor\.ya?ml|actionlint\.ya?ml|\.gitleaksignore|\.bandit)$")
+SCANNER_AUTOLOAD = re.compile(r"(^|/)(ruff\.toml|\.ruff\.toml|zizmor\.ya?ml|actionlint\.ya?ml|\.gitleaksignore|\.bandit"
+                              r"|\.golangci\.(?:ya?ml|toml|json)|staticcheck\.conf|osv-scanner\.toml)$")
 # Inline forms that silence a scanner wider than one reviewed line, or that no file uses. The
 # gitleaks token is built, never written, so no repository file has to be exempt from the scan.
 GITLEAKS_INLINE = re.compile(re.escape("gitleaks" + ":allow"), re.I)
 # A blanket noqa comment (no rule code) silences every rule on its line; ruff's PGH004 reports it too
 # (item 20), but this does not depend on whether a blanket noqa can silence PGH004 itself.
-TOOL_INLINE = re.compile(r"#\s*nosec\b|#\s*(?:ruff|flake8)\s*:\s*noqa|#\s*noqa\b(?!\s*:\s*[A-Z])", re.I)
+# For the Go linters (tools/go_lint.py): a nolint directive naming no linter, and staticcheck's file-wide ignore. A
+# //nolint:<linter> // reason stays one reviewed line (golangci-lint's nolintlint requires both); gosec runs with
+# -nosec, so its in-code comments suppress nothing and are refused with bandit's above.
+TOOL_INLINE = re.compile(r"#\s*nosec\b|#\s*(?:ruff|flake8)\s*:\s*noqa|#\s*noqa\b(?!\s*:\s*[A-Z])"
+                         r"|//\s*nolint\b(?!:)|//\s*lint:file-ignore\b", re.I)
 # ruff and bandit never read these; gitleaks scans them, so its token is searched there too.
 SKIP_DIRS = {".git", "__pycache__", "dist", "build"}
 GITLEAKS_KEY = re.compile(r"^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$")
@@ -1344,12 +1413,14 @@ def check_scanner_config(root, lock_text):
         if "useDefault=true" not in section:
             problems.append(".gitleaks.toml: `[extend] useDefault = true` is required (gitleaks' default rules)")
         problems += gitleaks_keys(text)
-    gomod = root / "tools/scanners/go.mod"
-    if gomod.exists():
+    for name in ("tools/scanners/go.mod",) + GO_LINT_MODS:
+        gomod = root / name
+        if not gomod.exists():
+            continue
         for number, line in enumerate(gomod.read_text(encoding="utf-8").splitlines(), 1):
             if GO_MOD_BANNED.match(line):
-                problems.append("tools/scanners/go.mod:{}: `{}` may not change what the pinned scanners are or how they "
-                                "behave".format(number, GO_MOD_BANNED.match(line).group(1)))
+                problems.append("{}:{}: `{}` may not change what the pinned scanners are or how they "
+                                "behave".format(name, number, GO_MOD_BANNED.match(line).group(1)))
     pyproject = root / "pyproject.toml"
     if pyproject.exists():
         outside, inside = [], False
@@ -1582,6 +1653,32 @@ def flow_problem(line):
 FLOW_NODE = re.compile(r"[\[{,]\s*[&*!]")
 
 
+COMPARE_SEGMENT = re.compile(r"compare/([^\s\"']+)")
+COMPARE_PART = re.compile(r"^(?:\$\{[A-Za-z_][A-Za-z0-9_]*\}|\$[A-Za-z_][A-Za-z0-9_]*|[0-9a-f]{40})$")
+MAIN_RANGE = re.compile(r"(?<![\w./-])(?:origin/)?main\.\.\.?|\.\.\.?(?:origin/)?main(?![\w./-])")
+SHORT_REMOTE = re.compile(r"(?<![\w./-])origin/[A-Za-z0-9]")
+GIT_REF_LOOKUP = re.compile(r"git/refs?/(?!heads/)")
+
+
+def check_main_refs(path, text):
+    """Rule 17: no compare, range, remote-tracking name or ref lookup that a same-named tag could shadow."""
+    problems = []
+    for number, line in enumerate(text.splitlines(), 1):
+        where = "{}:{}".format(path, number)
+        for segment in COMPARE_SEGMENT.findall(line):
+            parts = re.split(r"\.{2,3}", segment)
+            if len(parts) != 2 or not all(COMPARE_PART.match(part) for part in parts):
+                problems.append("{}: compare/{} must compare two SHA variables or SHAs, never a ref name such as "
+                                "main (a tag named main would shadow the branch)".format(where, segment))
+        if MAIN_RANGE.search(line):
+            problems.append("{}: a git range names main; compare the SHA of refs/heads/main instead".format(where))
+        if SHORT_REMOTE.search(line):
+            problems.append("{}: a short remote-tracking name (origin/...); spell it refs/remotes/origin/...".format(where))
+        if GIT_REF_LOOKUP.search(line):
+            problems.append("{}: a git/ref lookup outside refs/heads/; read a branch through git/ref/heads/".format(where))
+    return problems
+
+
 def check_encoding(path, text):
     problems = []
     block_indent = None
@@ -1638,6 +1735,7 @@ def main(root, history_base=HISTORY_BASE):
         for name in files:
             problems += check_encoding(name, texts[name])
             problems += check_credentials(name, texts[name])
+            problems += check_main_refs(name, texts[name])
         if RELEASE_WORKFLOW in texts:
             problems += check_release_concurrency(texts[RELEASE_WORKFLOW])
             problems += check_release_provenance(texts[RELEASE_WORKFLOW])
@@ -1789,7 +1887,8 @@ def self_test():
         # comment lines are ignored
         run: |
           python -B tools/check_release_ref.py --self-test
-          STATUS=$(gh api "repos/${{GH_REPO}}/compare/${{SHA}}...main" --jq .status) || STATUS="api-error"
+          MAIN=$(gh api "repos/${{GH_REPO}}/git/ref/heads/main" --jq .object.sha) || MAIN="0000000000000000000000000000000000000000"
+          STATUS=$(gh api "repos/${{GH_REPO}}/compare/${{SHA}}...${{MAIN}}" --jq .status) || STATUS="api-error"
           python -B tools/check_release_ref.py --ref-type "${{REF_TYPE}}" --sha "${{SHA}}" --status "${{STATUS}}" --summary "${{GITHUB_STEP_SUMMARY}}"
   other:
     steps:
@@ -1829,7 +1928,10 @@ def self_test():
         "extra line": good.replace(final, final + "\n          exit 0"),
         "alternate command": good.replace(final, final.replace("python -B", "python3 -B")),
         "commented out": good.replace("          " + final, "          # " + final),
-        "status not from compare": good.replace("compare/${SHA}...main", "compare/main...${SHA}"),
+        "status not from compare": good.replace("compare/${SHA}...${MAIN}", "compare/${MAIN}...${SHA}"),
+        # SEC-CI-1: the bare name main resolves to a tag named main when one exists
+        "compare with bare main": good.replace("compare/${SHA}...${MAIN}", "compare/${SHA}...main"),
+        "main not from heads": good.replace("git/ref/heads/main", "git/ref/tags/main"),
         "ref type from input": good.replace("REF_TYPE: ${{ github.ref_type }}", "REF_TYPE: branch"),
         "sha from input": good.replace("SHA: ${{ github.event.pull_request.head.sha || github.sha }}", "SHA: ${{ inputs.sha }}"),
         "env dropped": good.replace("          GH_REPO: ${{ github.repository }}\n", ""),
@@ -2061,6 +2163,33 @@ def self_test():
                         "quoted item then pair": '    needs: ["a", b: c]\n'}.items():
         found = check_encoding("w.yml", plain + "jobs2:\n  b:\n    x:\n" + line)
         assert found, (label, found)
+    # rule 17 (SEC-CI-1): a ref a same-named tag could shadow
+    good_refs = ('          MAIN=$(gh api "repos/${GH_REPO}/git/ref/heads/main" --jq .object.sha)\n'
+                 '          STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...${MAIN}" --jq .status)\n'
+                 '          gh api "repos/${GH_REPO}/compare/$base...0123456789abcdef0123456789abcdef01234567"\n'
+                 '          gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/main" --jq \'.[].ref\'\n'
+                 '        run: python -B tools/merge_readiness.py --base refs/remotes/origin/main --head refs/remotes/origin/x\n'
+                 '    name: trial merge of claude/go-migration into main (report only)\n'
+                 '          python -B tools/x.py --main-only domain.example.com\n')
+    assert check_main_refs("w.yml", good_refs) == [], check_main_refs("w.yml", good_refs)
+    bare_main = {
+        "compare head bare main": 'gh api "repos/${GH_REPO}/compare/${SHA}...main"',
+        "compare base bare main": 'gh api "repos/${GH_REPO}/compare/main...${SHA}"',
+        "compare two-dot": 'gh api "repos/${GH_REPO}/compare/${SHA}..main"',
+        "compare heads/main": 'gh api repos/${GH_REPO}/compare/${SHA}...heads/main',
+        "compare refs/tags/main": "gh api 'repos/o/r/compare/${SHA}...refs/tags/main'",
+        "compare one part": 'gh api "repos/${GH_REPO}/compare/${SHA}"',
+        "compare in a comment": "        # compare/<sha>...main",
+        "git diff range": "git diff --name-only main...HEAD",
+        "git log range origin": "git log origin/main..HEAD",
+        "short remote base": "python -B tools/merge_readiness.py --base origin/main",
+        "short remote head": "--head origin/claude/go-migration",
+        "tag lookup": 'gh api "repos/${GH_REPO}/git/ref/tags/main" --jq .object.sha',
+        "bare ref lookup": 'gh api "repos/${GH_REPO}/git/ref/main"',
+        "refs lookup": 'gh api "repos/${GH_REPO}/git/refs/tags/main"',
+    }
+    for label, line in bare_main.items():
+        assert check_main_refs("w.yml", "      - run: " + line + "\n"), label
     # task 5 round 2 and CI/CD task 6: a read-only workflow authenticating with a stored PAT
     pat_job = ("jobs:\n  a:\n    permissions:\n      contents: read\n    steps:\n      - env:\n"
                "          GH_TOKEN: {value}\n        run: gh release create \"$GITHUB_REF_NAME\" dist/*\n")
@@ -2388,14 +2517,27 @@ def self_test():
                                    "    name: known vulnerabilities in the dev toolchain (pip-audit, govulncheck)\n    env:\n      LANG: C\n", 1),
         "scanner dropped": ci_full.replace("          ruff check --output-format github .\n", "", 1),
         # item 22: the Go-built scanners' build is pinned too
-        "writable modules": ci_full.replace('          GOFLAGS: "-mod=readonly"\n', '          GOFLAGS: "-mod=mod"\n', 1),
-        "workspace on": ci_full.replace('          GOWORK: "off"\n', '          GOWORK: "auto"\n', 1),
-        "old Go": ci_full.replace('          go-version: "1.27.4"\n', '          go-version: "1.24.11"\n', 1),
+        # (anchored in the scanner job: other jobs, such as the tests job's go-build, set up Go first)
+        "writable modules": in_job(ci_full, "static-analysis", '          GOFLAGS: "-mod=readonly"\n', '          GOFLAGS: "-mod=mod"\n'),
+        "workspace on": in_job(ci_full, "static-analysis", '          GOWORK: "off"\n', '          GOWORK: "auto"\n'),
+        "old Go": in_job(ci_full, "static-analysis", '          go-version: "1.27.4"\n', '          go-version: "1.24.11"\n'),
         "build in the checkout": ci_full.replace('          cd "$RUNNER_TEMP/scanners"\n', '          cd tools/scanners\n', 1),
         "govulncheck dropped": ci_full.replace('          "$RUNNER_TEMP/bin/govulncheck" -mode=binary "$RUNNER_TEMP/bin/gitleaks" | tee -a "$GITHUB_STEP_SUMMARY"\n', "", 1),
         "repository code before govulncheck": ci_full.replace(
             "      - name: Audit the Go-built scanners against the Go vulnerability database (govulncheck)\n",
             repo_step + "      - name: Audit the Go-built scanners against the Go vulnerability database (govulncheck)\n", 1),
+        # the Go lint tools are built the same way, outside the checkout, before repository code
+        "go lint build in the checkout": in_job(ci_full, "go-lint", '          cd "$RUNNER_TEMP/golint/gosec"\n', '          cd tools/golint/gosec\n'),
+        "go lint tool dropped": in_job(ci_full, "go-lint", '          cd "$RUNNER_TEMP/golint/staticcheck"\n          GOBIN="$RUNNER_TEMP/bin" go install tool\n', ''),
+        "go lint modules writable": in_job(ci_full, "go-lint", '          GOFLAGS: "-mod=readonly"\n', '          GOFLAGS: "-mod=mod"\n'),
+        "repository code before the go lint build": in_job(ci_full, "go-lint",
+            "      - name: Build the pinned golangci-lint, staticcheck and gosec (tools/golint)\n",
+            repo_step + "      - name: Build the pinned golangci-lint, staticcheck and gosec (tools/golint)\n"),
+        "go-licenses build in the checkout": in_job(ci_full, "go-licenses", '          cd "$RUNNER_TEMP/golint/go-licenses"\n', '          cd tools/golint/go-licenses\n'),
+        "repository code before the go-licenses build": in_job(ci_full, "go-licenses",
+            "      - name: Build the pinned go-licenses (tools/golint/go-licenses)\n",
+            repo_step + "      - name: Build the pinned go-licenses (tools/golint/go-licenses)\n"),
+        "apidiff build in the checkout": in_job(ci_full, "go-api", '          cd "$RUNNER_TEMP/golint/apidiff"\n', '          cd tools/golint/apidiff\n'),
         "self-hosted": ci_full.replace("    name: workflow lint (actionlint, zizmor)\n    runs-on: ubuntu-24.04\n",
                                        "    name: workflow lint (actionlint, zizmor)\n    runs-on: self-hosted\n", 1),
     }.items():
@@ -2488,6 +2630,20 @@ def self_test():
                                  True, "`replace` may not change"),
         "go.mod godebug": ([("tools/scanners/go.mod", lambda t: t + "\ngodebug x509sha1=1\n")], True, "`godebug` may not change"),
         "go.mod missing": ([("tools/scanners/go.mod", lambda t: None)], True, "tools/scanners/go.mod is missing"),
+        # PRO-102: the Go lint configuration, its baseline and its tool modules are locked; nothing else may configure them
+        "golangci exclusion added": ([("tools/golint/golangci.yml", lambda t: t.replace("        - fmt.Fprintln\n", "        - fmt.Fprintln\n        - os.Remove\n", 1))],
+                                     False, "tools/golint/golangci.yml: differs from"),
+        "go lint baseline grown": ([("tools/golint/baseline.json", lambda t: t.replace('{"findings": [\n', '{"findings": [\n{"count": 1, "file": "x.go", '
+                                                                                       '"message": "m", "rule": "G115", "tool": "gosec"},\n', 1))],
+                                   False, "tools/golint/baseline.json: differs from"),
+        "coverage floor lowered": ([("tools/golint/coverage-floors.json", lambda t: t.replace('"global": 78.0', '"global": 50.0', 1))],
+                                   False, "tools/golint/coverage-floors.json: differs from"),
+        "gosec go.mod replace": ([("tools/golint/gosec/go.mod", lambda t: t + "\nreplace github.com/securego/gosec/v2 => ../gosec\n")],
+                                 True, "`replace` may not change"),
+        "golangci config autoloaded": ([("go/.golangci.yml", lambda t: "version: \"2\"\nlinters:\n  default: none\n")], True, "go/.golangci.yml: a scanner loads"),
+        "staticcheck config autoloaded": ([("go/staticcheck.conf", lambda t: 'checks = ["-all"]\n')], True, "go/staticcheck.conf: a scanner loads"),
+        "blanket nolint": ([("go/x.go", lambda t: "package x\n\nvar v = 1 //no" + "lint\n")], True, "silences a scanner"),
+        "staticcheck file-wide ignore": ([("go/x.go", lambda t: "//lint" + ":file-ignore U1000 unused helpers\npackage x\n")], True, "silences a scanner"),
         "PGH004 dropped": ([("pyproject.toml", lambda t: t.replace(', "PGH004"]', "]", 1))], False, "pyproject.toml: differs from"),
         "gitleaks inline allow": ([("protocol_fixtures.py", lambda t: t + '\nTOKEN = "x"  # gitleaks' + ':allow\n')], True, "silences a scanner"),
         # task 16 round 2: gitleaks scans Markdown and build directories too, so its token is found there,

@@ -1,0 +1,71 @@
+# Round 3 for tools/live_verify.py: names added after round 2 ran (batch J, batch K, pass-2 gaps).
+# "NAME PROBE" as before; run with TLS so certificate organisation is recorded (decision 3 for the gaps).
+umbrella.com disthost.umbrella.com
+disthost.umbrella.com
+api.opendns.com
+sync.hydra.opendns.com
+parsecusercontent.com
+kessel-ws.parsec.app
+builds.parsecgaming.com
+asana.plus
+asanausercontent.com
+app.asana-gov.com
+asana-user-private-us-east-1.s3.amazonaws.com
+asana-user-private-me-central-1.s3.me-central-1.amazonaws.com
+asana-user-private-ap-northeast-1.s3.ap-northeast-1.amazonaws.com
+asana-user-private-eu-central-1.s3.eu-central-1.amazonaws.com
+asana-user-private-ap-southeast-2.s3.ap-southeast-2.amazonaws.com
+asana-user-private-fedramp-prod.s3.amazonaws.com
+jamfcloud.com jamf-patch.jamfcloud.com
+jamf.com
+sentry.pub.jamf.build
+atera.com app.atera.com
+atera.pubnubapi.com
+atera-agent-heartbeat.servicebus.windows.net
+atera-agent-heartbeat-cus.servicebus.windows.net
+salesforceiq.com app.salesforceiq.com
+forceusercontent.com
+force-user-content.com
+my.salesforce.app
+salesforceliveagent.com
+salesforce-experience.com
+salesforce-hub.com
+salesforce-scrt.com
+salesforce-setup.com
+salesforce-sites.com
+sfdcopens.com
+site.com trailblazer-identity.my.site.com
+svc.sfdcfc.net
+trailblazer.me
+trailhead.com
+documentforce.com
+lightning.com
+salesforce-communities.com
+sfdc.sh
+visualforce.com
+sfdcstatic.com
+lightningdesignsystem.com
+grammarly.net
+capi.grammarly.com
+dox.grammarly.com
+dockerstatic.com
+slackhq.com campaign.slackhq.com
+campaign.slackhq.com
+zndsk.com www.zndsk.com
+www.zndsk.com
+connect.facebook.net
+ads.linkedin.com px.ads.linkedin.com
+snap.licdn.com
+t.co
+analytics.twitter.com
+redditstatic.com www.redditstatic.com
+alb.reddit.com
+pixel-config.reddit.com
+a.quora.com
+q.quora.com
+analytics.tiktok.com
+pixels.spotify.com
+bat.bing.com
+c.bing.com
+bat.bing.net
+static.microsoft teams.public.onecdn.static.microsoft

@@ -4,6 +4,7 @@
 package replay
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -17,6 +18,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/errs"
 	"github.com/leenadav/protocol-detector/go/internal/parity"
 	"github.com/leenadav/protocol-detector/go/internal/session"
+	"github.com/leenadav/protocol-detector/go/internal/signatures"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
 )
 
@@ -73,6 +75,9 @@ func Stream(c *parity.Case) interface{} {
 		hint = *c.Hint
 	}
 	in, err := engine.New(c.Config, hint)
+	if err == nil && sigs != nil {
+		err = in.SetSignatures(sigs)
+	}
 	if err != nil {
 		return Unsupported{err.Error()}
 	}
@@ -99,6 +104,9 @@ func Stream(c *parity.Case) interface{} {
 // Datagram runs one datagram case.
 func Datagram(c *parity.Case) interface{} {
 	d, err := engine.NewDatagram(c.Config)
+	if err == nil && sigs != nil {
+		err = d.SetSignatures(sigs)
+	}
 	if err != nil {
 		return Unsupported{err.Error()}
 	}
@@ -129,20 +137,40 @@ var packPath = ""
 // SetPackPath points the session replay at another content pack file.
 func SetPackPath(path string) { packPath = path }
 
+// sigText is the signature document applied to every case (nil: none); sigs is it compiled over the run's pack.
+var (
+	sigText []byte
+	sigs    *signatures.Set
+)
+
+// SetSignatures applies a custom signature document (SignatureSet.from_json) to every case of the next Run:
+// stream and datagram inspectors receive the set (their case config must retain contexts, as in Python), and
+// session analyzers take it as the signatures option.
+func SetSignatures(text []byte) { sigText = append([]byte{}, text...) }
+
 // Session runs one session case through the analyzer (tracker + engine + record layer).
 func Session(pack *content.Pack, c *parity.Case) interface{} {
 	var options struct {
 		IdleTimeout  *float64 `json:"idle_timeout"`
 		Observation  string   `json:"observation"`
 		Continuation int      `json:"continuation"`
+		Fingerprints bool     `json:"fingerprints"`
+		Certificates bool     `json:"certificates"`
+		Heuristics   bool     `json:"heuristics"`
+		TCPHint      string   `json:"tcp_hint"`
+		UDPHint      string   `json:"udp_hint"`
 	}
 	if len(c.Options) > 0 {
-		if err := json.Unmarshal(c.Options, &options); err != nil {
-			return Unsupported{"bad options"}
+		// An option the Go analyzer does not know is reported, never silently dropped.
+		decoder := json.NewDecoder(bytes.NewReader(c.Options))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&options); err != nil {
+			return Unsupported{"session option not ported in the Go backend: " + err.Error()}
 		}
 	}
-	opts := analyzer.Options{Continuation: options.Continuation,
-		Session: session.Options{MaxConnections: 32, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1, Observation: options.Observation}}
+	opts := analyzer.Options{Continuation: options.Continuation, Fingerprints: options.Fingerprints, Certificates: options.Certificates, Heuristics: options.Heuristics,
+		Session:    session.Options{MaxConnections: 32, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1, Observation: options.Observation},
+		Signatures: sigs, TCPHint: options.TCPHint, UDPHint: options.UDPHint}
 	if options.IdleTimeout != nil {
 		opts.Session.IdleTimeout = *options.IdleTimeout
 	}
@@ -212,6 +240,17 @@ func Run(ctx context.Context, doc *parity.Document) (*parity.Results, error) {
 		path = filepath.Join(doc.Dir, "content.json")
 	}
 	pack, perr := content.Load(path)
+	sigs = nil
+	if sigText != nil {
+		if perr != nil {
+			return nil, perr // signature vocabularies come from the content pack
+		}
+		set, err := signatures.FromJSON(sigText, pack)
+		if err != nil {
+			return nil, err
+		}
+		sigs = set
+	}
 	out := &parity.Results{Backend: Backend, Results: map[string]json.RawMessage{}}
 	for i := range doc.Cases {
 		if err := ctx.Err(); err != nil {

@@ -25,6 +25,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/engine"
 	"github.com/leenadav/protocol-detector/go/internal/parity"
 	"github.com/leenadav/protocol-detector/go/internal/replay"
+	"github.com/leenadav/protocol-detector/go/internal/signatures"
 )
 
 const version = "0.0.0-m4"
@@ -35,7 +36,7 @@ func main() {
 
 func run(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: protodetect version | cases --file PATH | replay --cases PATH --out PATH")
+		fmt.Fprintln(os.Stderr, "usage: protodetect version | analyze CAPTURE [options] | present < CAPTURE | decrypt-capture < REQUEST | live ... | live-decrypt ... | cases --file PATH | replay --cases PATH --out PATH")
 		return 2
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -44,6 +45,22 @@ func run(args []string) int {
 	case "version":
 		fmt.Printf("protodetect %s (go backend; experimental families: %s; no production use)\n", version, strings.Join(engine.Families(), ", "))
 		return 0
+	case "analyze":
+		return runAnalyze(args[1:], os.Stdout, os.Stderr)
+	case "present":
+		return runPresent(args[1:], os.Stdin, os.Stdout, os.Stderr)
+	case "decrypt-capture":
+		return runDecrypt(args[1:], os.Stdin, os.Stdout, os.Stderr)
+	case "live":
+		return runLive(args[1:], os.Stdin, os.Stdout, os.Stderr)
+	case "live-decrypt":
+		return runLiveDecrypt(args[1:], os.Stdin, os.Stdout, os.Stderr)
+	case "control-replay":
+		return runControlReplay(os.Stdin, os.Stdout)
+	case "serve":
+		return runServe(ctx, args[1:], os.Stdout, os.Stderr)
+	case "serve-worker":
+		return runServeWorker(args[1:], os.Stdin, os.Stdout, os.Stderr)
 	case "cases":
 		fs := flag.NewFlagSet("cases", flag.ContinueOnError)
 		file := fs.String("file", "migration/fixtures/cases.json", "the differential cases file")
@@ -74,9 +91,18 @@ func run(args []string) int {
 		fs := flag.NewFlagSet("replay", flag.ContinueOnError)
 		cases := fs.String("cases", "migration/fixtures/cases.json", "the differential cases file")
 		out := fs.String("out", "", "where to write the results (required)")
+		sigPath := fs.String("signatures", "", "JSON file of custom application signatures applied to every case (as analyze --signatures)")
 		if err := fs.Parse(args[1:]); err != nil || *out == "" {
 			fmt.Fprintln(os.Stderr, "replay: --out is required")
 			return 2
+		}
+		if *sigPath != "" {
+			text, err := signatures.ReadFile(*sigPath)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "replay:", err)
+				return 1
+			}
+			replay.SetSignatures(text)
 		}
 		doc, err := parity.Load(ctx, *cases)
 		if err != nil {
