@@ -7,7 +7,9 @@ GOPROXY=off):
 
   golangci-lint run --config tools/golint/golangci.yml ./...   (the linter set and its settings are in that file)
   staticcheck ./...                                             (its default checks)
-  gosec -nosec -exclude=G104,G304 ./...                         (-nosec: in-code nosec comments are ignored)
+  gosec -nosec -exclude=G104,G304 ./...                         (-nosec: in-code nosec comments are ignored;
+                                                                 nested modules such as go/oracle, which carry
+                                                                 their own go.mod, are excluded with -exclude-dir)
 
 gosec's two excluded rules, with their reasons:
   G104  unhandled errors: the same check as errcheck, which golangci-lint runs with its one documented exclusion
@@ -123,6 +125,33 @@ def compare(current, baseline):
     return current - baseline, baseline - current
 
 
+def nested_modules(root):
+    """Directories under root (relative, sorted) that hold their own go.mod: separate modules, not the engine's.
+
+    golangci-lint and staticcheck stop at a module boundary under ./..., but gosec walks into a nested module and
+    then fails to load it with the engine's -mod=vendor (go/oracle, a test-only module with no vendor tree). Each
+    such directory is excluded from gosec by name, found from the tree, so a new nested module needs no edit here.
+    """
+    root = Path(root)
+    found = []
+    for gomod in root.rglob("go.mod"):
+        parts = gomod.relative_to(root).parts
+        if len(parts) > 1 and "vendor" not in parts:
+            found.append("/".join(parts[:-1]))
+    return sorted(found)
+
+
+def shadowed_packages(listed, root, nested):
+    """Engine package directories (from `go list -f {{.Dir}} ./...`) whose path contains a nested module's name.
+
+    gosec matches -exclude-dir as a pattern anywhere in a path, so excluding "oracle" would also drop an engine
+    package such as internal/oracle; such a package must fail the run, never be skipped silently.
+    """
+    prefix = str(Path(root).resolve()).rstrip("/") + "/"
+    packages = [line[len(prefix):] if line.startswith(prefix) else line for line in listed.splitlines() if line.strip()]
+    return sorted(package for package in packages for name in nested if name in package)
+
+
 def run_tool(command, cwd, env, accept=(0, 1)):
     """(stdout, problem or None) of one tool run; exit codes outside `accept` mean the tool itself failed."""
     result = subprocess.run(command, cwd=str(cwd), env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)  # noqa: S603
@@ -146,8 +175,17 @@ def lint(bin_dir, env, root=GO_ROOT):
     findings, problems = findings + found, problems + parsed
     with tempfile.TemporaryDirectory(prefix="gosec-") as scratch:
         report = Path(scratch, "gosec.json")
-        _, problem = run_tool([str(bin_dir / "gosec"), "-quiet", "-nosec", "-exclude=" + ",".join(GOSEC_EXCLUDES),
-                               "-fmt=json", "-out=" + str(report), "./..."], root, env)
+        nested = nested_modules(root)
+        listed, problem = run_tool(["go", "list", "-f", "{{.Dir}}", "./..."], root, env, accept=(0,))
+        if problem is not None:
+            return findings, problems + [problem]
+        shadowed = shadowed_packages(listed, root, nested)
+        if shadowed:
+            return findings, problems + ["gosec -exclude-dir for a nested module would also skip engine package(s) {}"
+                                         .format(", ".join(shadowed))]
+        excluded = ["-exclude-dir=" + directory for directory in nested]
+        _, problem = run_tool([str(bin_dir / "gosec"), "-quiet", "-nosec", "-exclude=" + ",".join(GOSEC_EXCLUDES)]
+                              + excluded + ["-fmt=json", "-out=" + str(report), "./..."], root, env)
         text = report.read_text(encoding="utf-8") if report.is_file() else ""
         found, parsed = parse_gosec(text, root) if problem is None else ([], [problem])
     return findings + found, problems + parsed
@@ -237,6 +275,13 @@ def self_test():
     assert any("FAILED: gosec could not load" in line for line in summary_lines(counted([]), baseline, ["gosec could not load x"]))
     text = render_baseline(baseline)
     assert text.count("\n") == 4 and text == render_baseline(load_baseline(text)), text   # one line per finding, stable
+    with tempfile.TemporaryDirectory() as tree:
+        for path in ("go.mod", "internal/a/a.go", "oracle/go.mod", "tools/x/go.mod", "vendor/m/go.mod"):
+            Path(tree, path).parent.mkdir(parents=True, exist_ok=True)
+            Path(tree, path).write_text("", encoding="utf-8")
+        assert nested_modules(tree) == ["oracle", "tools/x"], nested_modules(tree)
+    assert shadowed_packages("/r/go\n/r/go/internal/engine\n", "/r/go", ["oracle"]) == []
+    assert shadowed_packages("/r/go/internal/oracle\n", "/r/go", ["oracle"]) == ["internal/oracle"]
     print("go_lint self-test: ok (golangci/staticcheck/gosec parsing, load-failure detection, baseline compare and render)")
     return 0
 
