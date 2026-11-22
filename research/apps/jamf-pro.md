@@ -41,7 +41,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L and 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -73,13 +73,13 @@ Risk 1 and category `management`, the same as `ms-intune`.
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `jamfcloud.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `jamf.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `sentry.pub.jamf.build` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `jamfcloud.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `jamf-patch.jamfcloud.com` (round 3, cdn,h3) |
+| `jamf.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.jamf.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `sentry.pub.jamf.build` | round 3 (2026-11-21); **L** resolves; TLSv1.2, ALPN `h2`, cert `*.pub.jamf.build`, no subject organisation (domain-validated) (issuer Amazon) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
@@ -92,7 +92,7 @@ No public web client or login page for this application (desktop agent, tenant-s
 - Variant: not separated by name.
 - Dependencies (observed, never attributed to this app): none observed.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
-- QUIC path (`h3` in the HTTPS record): none advertised.
+- QUIC path (`h3` in the HTTPS record): `jamfcloud.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->

@@ -344,3 +344,67 @@ Dependency mapping pass 2 (Hermes server, direct, 2026-11-20) and Hermes's decis
 | Parity | 7467/7467 Python and Go; 88/88 families |
 | Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 457) |
 
+
+## Batch M: `batch-m-name-based.patch` (after K)
+
+Vendor network pages read in this session on 2026-11-21 (PRO-92): Datadog, Microsoft Learn (Power BI, Power Platform, Power
+Apps, Power Automate, Azure portal), AWS (Amazon Q Developer) and Apple (enterprise networks). Placeholder release
+**`2026.12.8`**, with `_PRIOR_HOST_STATE["2026.12.7"]` and `_RELEASED_COMPONENTS["2026.12.7"]`. Apply after K.
+
+- New ids: `ms-power-platform` (8 names, `dynamics.com` at N2), `azure-portal` (7 names, `management.azure.com` at N2),
+  `apple-device-management` (16 exact names and the two portal suffixes), `amazon-q-developer` (8 exact names), and the
+  vendor-level `datadog-base` (9 browser RUM intake domains, decision 4).
+- `datadog` gains `ddog-gov.com`; `power-bi` gains `analysis.windows.net`, `pbidedicated.windows.net`, the three
+  `fabric.microsoft.com` SQL subtrees and `powerquery.microsoft.com`.
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.12.8, digest `79f36d67c88c72b5`, 564 applications, 462 host entries (2026-11-21) |
+| Pack file | sha256 `7debfae7fc2144269a55112ffcf1e7a811adece96c2c5f47c114524ac24b6831` |
+| Rollback | release 2026.12.7 host catalog equals the batch K pack exactly |
+| Vectors | 47 targeted names (all as expected); 1,137 method-v2 vectors across 75 specs, all pass |
+| Parity | 7479/7479 Python and Go; 88/88 families |
+| Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 462) |
+
+## Batch N: `batch-n-name-based.patch` (after M)
+
+Rows 24 to 27 of `blocked-urls.md`, read by Research Lab from the Hermes server (PRO-108) and relayed in full on 2026-11-21
+(PRO-121). Placeholder release **`2026.12.9`**, with `_PRIOR_HOST_STATE["2026.12.8"]` and `_RELEASED_COMPONENTS["2026.12.8"]`.
+Apply after M.
+
+- `sophos` gains `sophosxl.com`, `sophosxl.net`, `sophosupd.com`, `sophosupd.net` and `hitmanpro.com` (N2).
+- `docusign` gains the exact vendor-named CDN host `docucdn-a.akamaihd.net`.
+- `ms-telemetry` gains `dc.services.visualstudio.com` (Application Insights telemetry, listed as such by Power BI and as
+  non-Sophos by Sophos), which today falls to `visual-studio` by its `visualstudio.com` suffix.
+- Twilio and Snowflake: verified, no change.
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.12.9, digest `80ecb5542510f862`, 564 applications, 462 host entries (2026-11-21) |
+| Pack file | sha256 `68e5aa2596b4c5ef90d993fad33be015cc34c1af764d2dace074e99e3bcab5ed` |
+| Rollback | release 2026.12.8 host catalog equals the batch M pack exactly |
+| Vectors | 22 targeted names (all as expected); 1,153 method-v2 vectors across 79 specs, all pass |
+| Parity | 7480/7480 Python and Go; 88/88 families |
+| Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 462) |
+
+## Batch O: `batch-o-name-based.patch` (after N)
+
+Datto RMM, N-able and FortiClient network pages read by Research Lab from the Hermes server (PRO-95), relayed on
+2026-11-22 (PRO-106). Placeholder release **`2026.13.0`**: `2026.12.10` would sort before `2026.12.9` as a string, so the
+next string-ordered placeholder is used (not a real month; the Engine lane renumbers after its numeric-ordering fix). With
+`_PRIOR_HOST_STATE["2026.12.9"]` and `_RELEASED_COMPONENTS["2026.12.9"]`. Apply after N.
+
+- `datto-rmm` (new, after `atera`): `centrastage.net`, `rmm.datto.com`; risk 4 with the `atera` characteristics.
+- `n-able` (new, after `datto-rmm`): `n-able.com`, `system-monitor.com`, `systemmonitor.eu.com`, `logicnow.com`,
+  `logicnow.us`, `remote.management`, `beanywhere.com`, `keybox.solarwindsmsp.com`, `swi-rc.cdn-sw.net`,
+  `cloudbackup.management`; web fronts `n-able.com`, `www.n-able.com`; risk 4 with the `atera` characteristics.
+- `forticlient` (new, after `sophos`): 11 exact names under `forticloud.com` and `fortinet.net`; risk 2.
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.13.0, digest `0914c0281fbc029d`, 567 applications, 465 host entries (2026-11-22) |
+| Pack file | sha256 `067b68647797a497e7341e694eb79903cb20d808460db48616bebcfe736668ac` |
+| Rollback | release 2026.12.9 host catalog equals the batch N pack exactly |
+| Vectors | 16 targeted names (all as expected); 1,159 method-v2 vectors across 79 specs, all pass |
+| Parity | 7488/7488 Python and Go; 88/88 families |
+| Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 465) |
