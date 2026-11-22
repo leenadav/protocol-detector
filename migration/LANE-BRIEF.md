@@ -26,7 +26,10 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 ## 2. Current state (2026-11-21)
 
 - **Branch head:** check `git log -1 origin/claude/go-migration`. On 2026-11-21 (PRO-69) `main` `0ef7349` (41 commits, through PR #39,
-  including #39's numeric content-version order) was merged in with a normal merge commit, so the branch is 0 behind `main`.
+  including #39's numeric content-version order) was merged in with a normal merge commit. On 2026-11-22 `main` `2a33183` (PR #66, #36) came
+  in as `f5353c5`; PR #55 (per-target module sets in the release build, `07cda53`) was merged in (`b1d69d5`, Lee's
+  approval), then `main` `2c92b17` (PR #66, #71 gitleaks rules, #63, #68) with a normal merge (`b2e36d4`), so the branch is 0 behind `main`.
+  On `b2e36d4` every check on PR #40 passes (44 pass, 1 skipped: `release publish`, which only runs on tags).
 - **Done, Milestones A and B:**
   - The Go engine, the CLI `protodetect` and the dashboard service `protodetect serve`.
   - The launcher starts Go when the binary is installed and Python otherwise (`24e410e`, Lee's decision of
@@ -40,6 +43,11 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **Codex review packet:** complete in `migration/review-packet/` (frozen head `50ce5c0`, 43 chunks).
 - **PRO-31**: both engines order content versions numerically. Go has it in `6194fb9` (plus the numbering-rule test in
   `4d8aa29`); the Python reference got it in `376a204`, under Lee's exception of 2026-11-20.
+- **PRO-127 (tshark oracle):** `go/oracle`, merged with PR #79 (`d7240ee`); 26 of 26 comparisons agree;
+  the nightly job is with the CI/CD lane.
+- **PRO-126 (mutation testing):** gremlins tooling, the baseline and reference-checked boundary tests for TLS,
+  QUIC and HTTP/1 merged with PR #72 (`bb2af2e`); the nightly job is with the CI/CD lane, and PR #80 (`9b499f8`) moved the
+  pin's x/sys and x/text past the OSV advisories.
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
 
 ## 3. Where things live (reading order)
@@ -63,6 +71,9 @@ Run everything from the repository root. Times are for the cloud container (4 vC
 |---|---|---|
 | `make go-check` | gofmt, vet, `go test -race`, 28 fuzz targets, parity-go with verify_families, every differential, bench-gate | about 8 min (488 s) |
 | `make check` | the Python suite (866 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
+| `make parity-random` (in `go-check`) | the randomized differential: `--self-test`, `--plant`, then seed 1 at 2,000 cases, with the Python reference as oracle (`migration/parity/random_diff.py`, allow-list `random_allow.json`). `make parity-random-long SEED= COUNT=` for longer runs | about 3 s |
+| `make pcap-oracle` (nightly, not in `go-check`) | the tshark oracle (`go/oracle`, its own test-only module): real OpenSSL, curl and quic-go traffic on 127.0.0.1, read by gopacket, fed to the engine and compared with tshark 4.2.2 on SNI, ALPN, TLS version, HTTP Host and QUIC version. It needs the pinned tshark, OpenSSL and curl (`go/oracle/README.md`). Allow-list: `go/oracle/allow.json` | about 3 s |
+| `make mutation` (nightly, not in `go-check`) | gremlins v0.6.0 on the nine parser packages against `migration/mutation/baseline.json` (fails on a drop of more than 5 points). `go-check` runs only `boundaries.py --check` and `mutation.py --self-test`. Regenerate the boundary tests with `python3 -B migration/mutation/boundaries.py` | about 20 min |
 | `make go-vendor-check` | re-vendors into `build/go-vendor-check` and diffs it against `go/vendor` | seconds (module cache warm) |
 | `python3 -B -m unittest discover -q` | the Python suite on its own | part of `make check` |
 
@@ -75,10 +86,13 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 |---|---|
 | PRO-31 (`6194fb9`, `4d8aa29`, `376a204`) | Engine work done; Hermes approved it, and PRO-31 is parked. Codex's code review is PRO-58 (under PRO-11), waiting for Codex's quota to come back. If it finds problems, Hermes reopens PRO-31 or opens a new Engine task; if not, PRO-31 closes. |
 | PR #39 `claude/fix-content-version-order` → `main` (`37b3c84`) | merged by Lee on 2026-11-21 (`0ef7349`). It is in this branch since the PRO-69 merge. |
-| Draft PR #40 `claude/go-migration` → `main` | Codex's review, then Lee's decision. Keep it draft. PRO-69 merged `main` in (9 conflicts, resolved per `MERGE-READINESS.md`). The CI fix it brought (`91113bc`, the Go build before the tests and presentation suites) lets `GoServiceTests` run instead of skip. |
+| Draft PR #40 `claude/go-migration` → `main` | Codex's review, then Lee's decision. Keep it draft. PRO-69 merged `main` in (9 conflicts, resolved per `MERGE-READINESS.md`). The CI fix it brought (`91113bc`, the Go build before the tests and presentation suites) lets `GoServiceTests` run instead of skip. | The secret scan's `296227b` findings (PRO-126's first push, hex case data) are allow-listed by PR #71, merged into this branch with `b2e36d4`.
 | Codex review of the packet (`dbe20f3..50ce5c0`) | Codex, from Sunday. Fix rounds are reviewed as the fix diff only. |
-| `release build` on PR #40 (`publish-release.yml`, not a required check) | the CI/CD lane, PRO-24. Since `030f173` all 5 targets compile. `tools/build_go_release.py` still requires identical module sets, but x/crypto links x/sys on amd64 only. A tested patch (the SBOM lists the union; one version and hash per module) was sent to the CI/CD session on 2026-11-21, to land as a PR into this branch. |
-| Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. The branch already contains `main` as of `0ef7349`, so the merge itself has no conflicts. |
+| `release build` on PR #40 (`publish-release.yml`, not a required check) | nothing: fixed by PR #55 (`07cda53`, per-target module sets; the SBOM lists the union), merged into this branch on 2026-11-22 (`b1d69d5`). Green on `b2e36d4`. |
+| Nightly randomized differential (PRO-100, PRO-136) | the CI/CD lane's PR #78 (`claude/cicd-nightly-parity-direct` → this branch, head `cd153f8`; #65 closed as superseded), then Lee's merge. Its `randomized Python-vs-Go parity (long)` job runs `make parity-random-long` with the run id as seed. Manual run 44995320464: seeds 44995320464 and 44995320465 matched 25,000 of 25,000 each (0 failures), the extended mutation fuzz passed, and the extended Go fuzz over every fuzz target passed (06:49 to 08:09 UTC, no failing inputs). |
+| Nightly tshark oracle (PRO-127) | the CI/CD lane: a nightly job installing `tshark=4.2.2-1.1build3` on ubuntu-24.04 (OpenSSL 3.0.13 and curl 8.5.0 ship with it), building `go/oracle` in a step with module-proxy access, then running `make pcap-oracle` with `ORACLE_REPORT` uploaded. The target and module are on this branch; the workflow is theirs. |
+| Nightly mutation run (PRO-126) | the CI/CD lane (accepted; stacked after #65): a nightly job that builds gremlins in its own step from a copy of `migration/mutation/gremlins/go.mod` and `go.sum`, then runs `make mutation MUTATION_BIN=<that binary> MUTATION_ARGS="--summary $GITHUB_STEP_SUMMARY"` with `GOPROXY=off`, about 30 minutes, uploading `build/mutation/*` always. The targets, the tool pin and the baseline are on this branch; the workflow is theirs. |
+| Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. The branch already contains `main` as of `2c92b17`, so the merge itself has no conflicts. |
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
@@ -120,6 +134,22 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **Never** merge, rebase, force-push, open a PR, tag, release or change a schedule. Post GitHub comments only when
   the task asks for them (the current Hermes rule is none).
 - **Changes to `ci.yml`** go to the CI/CD lane, which ports them (see chunk-43, `34ea6b0` → `85e99e9`).
+- **A QUIC host must attach the CRYPTO store.** `engine.NewDatagram` has no cross-datagram store until the host sets
+  `Assembler` (the analyzer does). Without it, a ClientHello spread over Initials, as quic-go and browsers send it,
+  never completes (PRO-127).
+- **Loopback tests pass `--noproxy '*'` to curl.** This environment sets an HTTPS proxy, so curl would otherwise
+  tunnel 127.0.0.1 requests through it.
+- **A stand-in process announces readiness only after its signal handling is set.** The livectl worker wrote its
+  child file before `trap '' INT`, so a stop right after it failed with -2 on CI (`f5353c5`; fixed in `c99923e`).
+- **Generated test data can trip gitleaks.** A case name with `key`, `token`, `secret` or `auth` followed by a long hex
+  string matches `generic-api-key` (PRO-126, `296227b`; allow-listed by PR #71). Name cases without those words and
+  run the pinned gitleaks 8.30.1 (`tools/scanners`) on the tree before a push.
+- **Per-packet work must not scan a whole store (SEC-QUIC-1).** Index by what the hot path looks up (idle heap,
+  scope index), and prove the new structure against the old implementation kept as a test oracle, with a mutation check.
+- **Go versions (PRO-107):** `go/go.mod` states `go 1.27.0` (the floor Culvert imports at, gated by
+  `make go-check-minimum`) and `toolchain go1.27.4` (the compiler every build and release uses). Never raise the
+  `go` line for a build need; bump the `toolchain` line instead. "Standard library only" is checked on the import
+  graph of the detection packages, not on `go.mod` (ADR 0002).
 - **The release cross-compiles for `windows/amd64`** (`tools/build_go_release.py`, CI/CD lane), as well as linux and
   darwin on `amd64` and `arm64`. Unix-only code (process groups, `RLIMIT_CPU`, the key-log reader) lives in `*_unix.go`
   files with a `!unix` counterpart. Check with `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./cmd/protodetect`.
@@ -127,3 +157,5 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
   - regenerate `presentation/SOURCE.json` and let `tools/check_docs_counts.py` set the README/REVIEW-SCOPE test count;
   - check `migration/parity/cases.py --write <tmp> --head <recorded head>` reproduces `cases.json` byte for byte;
   - `tools/go_ci.py build` refuses a local Go other than go.mod's (this container has 1.24.7), so use `make go-build` locally.
+- **`TestStopKillsTheProcessGroupOfAWorkerThatIgnoresTheInterrupt` (`go/internal/livectl`) flaked once** on `f5353c5`
+  (push run 44986686845: "Capture process exited unexpectedly (-2)"); the pull_request run of the same SHA passed. Watch for a repeat.

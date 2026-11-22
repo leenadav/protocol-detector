@@ -1,0 +1,112 @@
+diff --git a/protocol_engine/content.py b/protocol_engine/content.py
+index 057c199..a6f127a 100644
+--- a/protocol_engine/content.py
++++ b/protocol_engine/content.py
+@@ -76,6 +76,10 @@ HISTORY = (
+             "application-research lane proposal with primary sources (research/apps on claude/app-research); "
+             "engine-lane review pending",
+             "Prisma Access agent, JetBrains AI and Loom from vendor documentation"),
++    Release("2026.12.1", "2026-11-19", "2026-11-19",
++            "application-research lane proposal with primary sources (research/apps on claude/app-research); "
++            "engine-lane review pending",
++            "Signal, Splashtop, Miro, Canva, Duo, Gemini API and LogMeIn Resolve from vendor pages relayed by Hermes"),
+ )
+ CURRENT = HISTORY[-1].version
+ LOCK_PATH = Path(__file__).with_name("content_lock.json")
+@@ -136,6 +140,15 @@ _ADDED_2026_11_2 = (
+     "xandr",
+ )
+ _PRIOR_HOST_STATE = MappingProxyType({
++    "2026.11.9": MappingProxyType({
++        "signal": {"domains": ("signal.org", "signal.art", "whispersystems.org")},
++        "splashtop": {"domains": ("splashtop.com",)},
++        "miro": {"domains": ("miro.com",)},
++        "canva": {"domains": ("canva.com",)},
++        "duo-security": {"web_fronts": ()},
++        "google-gemini-api": None,
++        "logmein-resolve": None,
++    }),
+     "2026.11.8": MappingProxyType({
+         "prisma-access": None,
+         "jetbrains-ai": None,
+@@ -334,6 +347,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
+         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+         "host_catalog": "cd96f9a1f4fd6d1fe4b6ad62bfecb6b66e9a4d362119b79f2d05cec8283b8465",
+         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
++    "2026.11.9": MappingProxyType({
++        "application_catalog": "45805711f8748d383352c462c534b612ad244e8d40b5e45987e83d32ae1db2fd",
++        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
++        "host_catalog": "3e94a205ee1885f94eeda00d2caf5f7f7ecabb7018a15c7523ff0e749d0ade05",
++        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+ })
+ 
+ 
+diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
+index 00cee1d..fc5dd02 100644
+--- a/protocol_engine/host_apps.py
++++ b/protocol_engine/host_apps.py
+@@ -59,7 +59,8 @@ _HOST_APPS = (
+     ("telegram", "collaboration", "instant-messaging", "client-server", 4, "Telegram messaging",
+      ("transfers-files", "evasive", "prone-to-misuse"), ("telegram.org", "t.me", "telegram.me", "telesco.pe")),
+     ("signal", "collaboration", "instant-messaging", "client-server", 3, "Signal end-to-end encrypted messaging",
+-     ("transfers-files", "evasive"), ("signal.org", "signal.art", "whispersystems.org")),
++     ("transfers-files", "evasive"),
++     ("signal.org", "signal.art", "whispersystems.org", "signal.group", "signal.link", "signal.me", "signal.tube")),
+     ("discord", "collaboration", "instant-messaging", "client-server", 3, "Discord chat, voice and communities",
+      ("widely-used", "transfers-files", "prone-to-misuse"), ("discord.com", "discord.gg", "discordapp.com", "discordapp.net", "discord.media")),
+     ("slack", "collaboration", "instant-messaging", "browser-based", 2, "Slack team messaging",
+@@ -144,6 +145,9 @@ _HOST_APPS = (
+     ("anthropic-api", "business-systems", "generative-ai", "client-server", 3, "Anthropic Claude developer platform and API",
+      ("transfers-files",), ("api.anthropic.com", "platform.claude.com")),
+     ("google-gemini", "business-systems", "generative-ai", "browser-based", 3, "Google Gemini", ("transfers-files",), ("gemini.google.com",)),
++    ("google-gemini-api", "business-systems", "generative-ai", "client-server", 3, "Google Gemini API",
++     ("transfers-files",),
++     ("generativelanguage.googleapis.com",)),
+     # Remote access.
+     # D03: the apex and www names are the vendors' marketing sites; they affiliate with the provider but assert no
+     # remote-control activity. Other names under the domain remain service affiliation (activity still unobserved).
+@@ -224,11 +228,15 @@ _HOST_APPS = (
+     ("binance", "business-systems", "general-business", "browser-based", 3, "Binance cryptocurrency exchange", (), ("binance.com",)),
+     ("adobe-cloud", "business-systems", "office-programs", "client-server", 2, "Adobe Creative Cloud and account services",
+      ("transfers-files", "widely-used"), ("adobe.com", "adobelogin.com", "adobe.io")),
+-    ("canva", "business-systems", "office-programs", "browser-based", 2, "Canva design", ("transfers-files",), ("canva.com",)),
++    ("canva", "business-systems", "office-programs", "browser-based", 2, "Canva design",
++     ("transfers-files",),
++     ("canva.com", "canvacode.com", "canva-apps.com", "canva.link", "canva.ai")),
+     ("figma", "business-systems", "office-programs", "browser-based", 2, "Figma design",
+      ("transfers-files",),
+      ("figma.com", "figma-gov.com")),
+-    ("miro", "business-systems", "office-programs", "browser-based", 2, "Miro whiteboard", ("transfers-files",), ("miro.com",)),
++    ("miro", "business-systems", "office-programs", "browser-based", 2, "Miro whiteboard",
++     ("transfers-files",),
++     ("miro.com", "miro-apps.com", "mirostatic.com", "onlinewhiteboard.com", "realtimeboard.com", "webwhiteboard.com")),
+     ("trello", "business-systems", "office-programs", "browser-based", 2, "Trello boards", ("transfers-files",), ("trello.com",)),
+     ("asana", "business-systems", "office-programs", "browser-based", 2, "Asana work management", ("transfers-files",), ("asana.com",)),
+     ("monday", "business-systems", "office-programs", "browser-based", 2, "monday.com work management", ("transfers-files",), ("monday.com",)),
+@@ -255,7 +263,10 @@ _HOST_APPS = (
+     ("okta", "business-systems", "auth-service", "browser-based", 1, "Okta sign-in",
+      ("widely-used",),
+      ("okta.com", "oktacdn.com", "oktapreview.com", "okta-emea.com", "okta-gov.com", "okta.mil")),
+-    ("duo-security", "business-systems", "auth-service", "client-server", 1, "Cisco Duo multi-factor authentication", (), ("duosecurity.com",)),
++    ("duo-security", "business-systems", "auth-service", "client-server", 1, "Cisco Duo multi-factor authentication",
++     (),
++     ("duosecurity.com",),
++     ("www.duo.com",)),
+     ("auth0", "business-systems", "auth-service", "browser-based", 1, "Auth0 sign-in", (), ("auth0.com",)),
+     ("google-accounts", "business-systems", "auth-service", "browser-based", 1, "Google account sign-in", ("widely-used",), ("accounts.google.com",)),
+     ("1password", "business-systems", "auth-service", "client-server", 2, "1Password password manager",
+@@ -289,8 +300,13 @@ _HOST_APPS = (
+     # Remote access (apex and www are the vendors' marketing sites, as for TeamViewer and AnyDesk).
+     ("logmein", "networking", "remote-access", "client-server", 4, "LogMeIn remote access",
+      ("tunnels-other-applications", "prone-to-misuse"), ("logmein.com", "logmeininc.com"), ("logmein.com", "www.logmein.com")),
++    ("logmein-resolve", "networking", "remote-access", "client-server", 4, "LogMeIn Resolve remote support",
++     ("tunnels-other-applications", "prone-to-misuse"),
++     ("gotoresolve.com", "gotoresolveuserfiles.com", "helpdesk.me", "gtre-remoteexecution-userfiles-prod-eu.azureedge.net")),
+     ("splashtop", "networking", "remote-access", "client-server", 4, "Splashtop remote access",
+-     ("tunnels-other-applications", "prone-to-misuse"), ("splashtop.com",), ("splashtop.com", "www.splashtop.com")),
++     ("tunnels-other-applications", "prone-to-misuse"),
++     ("splashtop.com", "api.splashtop.eu", "api.splashtop.nr", "api.splashtop.cn", "relay.splashtop.cn"),
++     ("splashtop.com", "www.splashtop.com")),
+     ("rustdesk", "networking", "remote-access", "client-server", 4, "RustDesk remote control (public servers)",
+      ("tunnels-other-applications", "prone-to-misuse", "used-by-malware"), ("rustdesk.com",), ("rustdesk.com", "www.rustdesk.com")),
+     ("chrome-remote-desktop", "networking", "remote-access", "browser-based", 4, "Chrome Remote Desktop",
