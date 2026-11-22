@@ -29,7 +29,7 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   The Culvert clone's push URL is disabled.
 - **Data:** synthetic and loopback only. The lab's origins are on RFC 5737 addresses.
 
-## 2. Current state (2026-11-22, after PRO-91 / PRO-107)
+## 2. Current state (2026-11-22, after PRO-148)
 
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
@@ -44,8 +44,9 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
 - **Allocations per flow, two figures** (`docs/integration/ENGINE-DRIFT-2026-11-21.md`):
   - engine core on the benchgate workloads at `0081f6f`: tls_whole 33, tls_fragmented 37, http_small 26,
     http_fragmented 38, ssh_banner_kexinit 34, unknown 10 (Research Lab, PRO-82). Inside the plan's 64.
-  - a whole flow through `go/detector` at `3efda92`: TLS 191, HTTP 128, SSH 89, unknown 15. 54% of the TLS count
-    is `detector.bounded`.
+  - a whole flow through `go/detector`: TLS 89, HTTP 76, SSH 53, unknown 11 (PRO-148). It was 191, 128, 89 and 15 at
+    `3efda92`, before the package stopped copying closed-vocabulary and engine-composed strings. The gate
+    ceilings are now 110, 95, 65 and 15.
 
   Culvert's whole HTTP forward is 82. Waiting on Culvert's budget before tuning.
 - **Engine drift** (PRO-91): a trial merge with `claude/go-migration` `0081f6f` has 23 conflicting files, and 5 Go
@@ -99,7 +100,8 @@ Culvert's allocation gates need `-tags benchgate`.
 
   Then this lane's follow-ups from the report, section 5. One of them is a defect in this lane's own test:
   `TestNoCodeOutsideThePackageWritesAValidatedPack` ignores build tags.
-- **The public package's allocations** (`bounded` first): after Culvert names a budget.
+- **The public package's allocations:** done for the copies that bought nothing (PRO-148). The lower floor described
+  in the drift report §4 waits for Culvert's budget and, for two of its three steps, the engine lane.
 - Codex's review of the frozen milestone and the queued commits (Sunday).
 - The Culvert team's answers (request items 1 to 6), and Lee's decision to send the request.
 - Repository settings and the first `go/v0.x.y` tag (Lee).
@@ -126,5 +128,8 @@ Culvert's allocation gates need `-tags benchgate`.
   `go/detector`. Always quote which, with the commit.
 - **The pitfall above struck again:** a restore step such as `cp .../bin/culvert-lab` placed in the same command as
   the lab script also matches the script's `pkill -f`. Restore in a separate command.
+- **Detachment rests on immutability.** Go strings are immutable and the engine uses no `unsafe`, so a copy never
+  protects a snapshot from input overwrites; it only avoids holding a larger engine allocation alive. If the
+  engine ever builds strings with `unsafe`, `TestHeldSnapshotsStayDetached` is the test that must catch it.
 - **Merge trials go in a worktree.** Use `git worktree add --detach /home/user/pd-drift <lane head>` and merge
   there; never on the lane branch.

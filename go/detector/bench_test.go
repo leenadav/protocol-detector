@@ -20,10 +20,10 @@ type flowCase struct {
 func flowCases(t testing.TB) []flowCase {
 	hello, reply := tlsFlights(t, "bench.example.test", []string{"h2", "http/1.1"}, nil)
 	return []flowCase{
-		{"tls", hello, reply, 240},
-		{"http", httpRequest, httpResponse, 160},
-		{"ssh", sshBanner, sshBanner, 115},
-		{"unknown", junk, junk, 25},
+		{"tls", hello, reply, 110},              // 89 measured (96 under -race), 191 before PRO-148
+		{"http", httpRequest, httpResponse, 95}, // 76 (84), 128 before
+		{"ssh", sshBanner, sshBanner, 65},       // 53 (55), 89 before
+		{"unknown", junk, junk, 15},             // 11 (11), 15 before
 	}
 }
 

@@ -628,22 +628,40 @@ func (f *Flow) copyObservation(ds *direction, o contracts.Observation, revision 
 	default:
 		s.Reason = ReasonEngine
 	}
-	s.Detail = bounded(o.Reason)
+	// Every string kept here is either this package's own static copy of a closed-vocabulary value
+	// (canonical) or a copy this package made, reused while the engine reports the same text (keep). Go strings
+	// are immutable and the engine builds none with unsafe, so a snapshot can never change when the flow's
+	// input buffers are reused; the copies only keep a snapshot from holding a larger engine allocation alive.
+	// Copying unchanged values again on every revision bought nothing (work item #14 follow-up, PRO-148).
+	s.Detail = keep(s.Detail, o.Reason)
 	s.Revision = revision
-	s.Family = ""
 	if s.Outcome == OutcomeIdentified {
-		s.Family = bounded(family)
+		s.Family = canonical(familyNames, s.Family, family)
+	} else {
+		s.Family = ""
 	}
-	s.ApplicationProtocol, s.Encryption, s.Hostname = deref(o.ApplicationProtocol), deref(o.Encryption), Hostname(deref(o.Hostname))
-	s.Scope = bounded(o.Scope)
-	s.OfferedALPN, s.OfferedALPNTruncated = nil, len(o.OfferedALPN) > MaxOfferedALPN
+	s.ApplicationProtocol = keepPtr(s.ApplicationProtocol, o.ApplicationProtocol)
+	s.Encryption = labelPtr(o.Encryption)
+	s.Hostname = Hostname(keepPtr(string(s.Hostname), o.Hostname))
+	s.Scope = label(o.Scope)
+	s.OfferedALPNTruncated = len(o.OfferedALPN) > MaxOfferedALPN
+	offered := s.OfferedALPN[:0] // the snapshot's own slice: Snapshot copies it out, so it is reused in place
 	for i, a := range o.OfferedALPN {
 		if i == MaxOfferedALPN {
 			break
 		}
-		s.OfferedALPN = append(s.OfferedALPN, bounded(a))
+		previous := ""
+		if i < len(s.OfferedALPN) {
+			previous = s.OfferedALPN[i]
+		}
+		offered = append(offered, keep(previous, a))
 	}
-	s.Evidence, s.EvidenceTruncated = nil, false
+	s.OfferedALPN = offered
+	if len(s.OfferedALPN) == 0 {
+		s.OfferedALPN = nil
+	}
+	previousEvidence := s.Evidence
+	s.Evidence, s.EvidenceTruncated = s.Evidence[:0], false
 	offers := 0
 	for _, ev := range o.Evidence {
 		if ev.Field == "offered_alpn" { // the same export bound as OfferedALPN, signalled the same way
@@ -658,12 +676,22 @@ func (f *Flow) copyObservation(ds *direction, o contracts.Observation, revision 
 			break
 		}
 		class := classify(ev.Field)
-		value := ""
-		if class != ClassWithheld {
-			value = bounded(ev.Value)
+		var previous Evidence
+		if i := len(s.Evidence); i < len(previousEvidence) {
+			previous = previousEvidence[i] // read before the in-place append below overwrites index i
 		}
-		s.Evidence = append(s.Evidence, Evidence{Field: bounded(ev.Field), Value: value, Source: bounded(ev.Source),
-			Strength: bounded(ev.Strength), Class: class})
+		value := ""
+		switch class {
+		case ClassCategorical: // drawn from a protocol or engine vocabulary, never a slice of flow input
+			value = label(ev.Value)
+		case ClassAsserted, ClassHostname: // bytes a peer chose: a copy this package owns
+			value = keep(previous.Value, ev.Value)
+		}
+		s.Evidence = append(s.Evidence, Evidence{Field: canonical(fieldNames, previous.Field, ev.Field), Value: value,
+			Source: label(ev.Source), Strength: canonical(strengthNames, previous.Strength, ev.Strength), Class: class})
+	}
+	if len(s.Evidence) == 0 {
+		s.Evidence = nil
 	}
 }
 
@@ -672,6 +700,52 @@ func deref(p *string) string {
 		return ""
 	}
 	return bounded(*p)
+}
+
+// keep returns previous when the engine still reports the same text (previous is already a bounded copy this
+// package made), else a bounded copy of next.
+func keep(previous, next string) string {
+	if next == "" {
+		return ""
+	}
+	if len(next) <= MaxEvidenceValue && previous == next {
+		return previous
+	}
+	return bounded(next)
+}
+
+// label returns an engine-composed label as it is: a source label (the byte source and a parser provenance,
+// both constants, joined), an encryption name or a scope. The engine builds none of them from flow input, so
+// holding one holds no input-derived memory; an over-long one is still cut to MaxEvidenceValue.
+func label(s string) string {
+	if len(s) > MaxEvidenceValue {
+		return bounded(s)
+	}
+	return s
+}
+
+func labelPtr(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return label(*p)
+}
+
+// keepPtr is keep for the engine's optional fields.
+func keepPtr(previous string, next *string) string {
+	if next == nil {
+		return ""
+	}
+	return keep(previous, *next)
+}
+
+// canonical returns this package's own static copy of next when next is a value of the closed vocabulary set
+// (no allocation, and nothing of the engine's is held), else keep(previous, next).
+func canonical(set map[string]string, previous, next string) string {
+	if c, ok := set[next]; ok {
+		return c
+	}
+	return keep(previous, next)
 }
 
 func (f *Flow) snapshot() Snapshot {

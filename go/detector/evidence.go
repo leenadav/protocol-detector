@@ -1,6 +1,10 @@
 package detector
 
-import "unicode/utf8"
+import (
+	"unicode/utf8"
+
+	"github.com/leenadav/protocol-detector/go/internal/engine"
+)
 
 // MaxEvidenceValue bounds every evidence value and Detail string copied out of the engine, in bytes.
 const MaxEvidenceValue = 255
@@ -61,6 +65,26 @@ var evidenceClasses = map[string]EvidenceClass{
 }
 
 // classify returns the class of a field, ClassWithheld when unclassified.
+// Closed vocabularies whose values the package keeps as its own static strings (canonical): the classified
+// evidence fields, the evidence strengths and the family names. Built once at init, never written afterwards.
+var (
+	fieldNames    = map[string]string{}
+	strengthNames = map[string]string{}
+	familyNames   = map[string]string{}
+)
+
+func init() {
+	for field := range evidenceClasses {
+		fieldNames[field] = field
+	}
+	for _, strength := range []string{"structural", "asserted", "offered", "context"} {
+		strengthNames[strength] = strength
+	}
+	for _, family := range append(engine.Families(), profileFamilies...) {
+		familyNames[family] = family
+	}
+}
+
 func classify(field string) EvidenceClass {
 	if c, ok := evidenceClasses[field]; ok {
 		return c

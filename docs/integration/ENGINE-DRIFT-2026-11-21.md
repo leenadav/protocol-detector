@@ -110,6 +110,43 @@ What the two tables say:
 - **Culvert's comparable figures at `ef94311`** (`-tags benchgate`): one whole proxied HTTP request costs 82
   allocations (gate 85); policy evaluation costs 0.
 
+### Update 2026-11-22 (PRO-148): the public package's copies
+
+`go/detector` no longer copies strings that cannot hold flow input:
+- **Closed-vocabulary values** (evidence field names, strengths, family names) map to the package's own static
+  strings.
+- **Engine-composed labels** (source labels, encryption names, scopes, categorical evidence values) are kept as
+  the engine made them.
+- **Input-derived values** (hostname, ALPN offers, asserted and hostname-class evidence values, detail) are copied
+  once and reused while unchanged. The snapshot's internal slices are reused across revisions.
+
+Go strings are immutable and the engine uses no `unsafe`, so no held snapshot can change. The copies that remain
+keep a snapshot from holding larger engine allocations. `TestHeldSnapshotsStayDetached` proves the detachment,
+under `-race`, with the input buffers overwritten.
+
+Same command, five runs each, all identical:
+
+| Workload | Before (`f649377`) | After | Gate ceiling (was) |
+|---|---|---|---|
+| TLS | 191 allocs, 15,306 to 15,381 B | **89**, 13,846 to 13,920 B | 110 (240) |
+| HTTP | 128, 8,538 to 8,600 B | **76**, 7,768 to 7,830 B | 95 (160) |
+| SSH | 89, 6,644 to 6,681 B | **53**, 6,119 to 6,157 B | 65 (115) |
+| unknown | 15, 2,352 B | **11**, 2,288 B | 15 (25) |
+
+Under `-race` the counts are 96, 84, 55 and 11; at go1.27.0 they are the same as above.
+
+What is left in a TLS flow is mostly engine-side: the inspector's result building, the parsers' accumulator growth
+(`parsing.Credit.Append`) and the hello parsers.
+
+A lower floor without engine code would take three things:
+- preallocating the snapshot's evidence slice to the engine's row count (a few allocations);
+- skipping the first copy of asserted values, the hostname and ALPN offers. That needs an engine guarantee that
+  these strings are exact-size copies, never slices of a larger buffer (about 6 to 8 per TLS flow);
+- exact-fit accumulator growth in `internal/parsing` when the record or handshake length is already known. That
+  is on the parsers' path, so it should be agreed with the engine lane.
+
+None of this was done, and none of it was tuned against a final budget: Culvert's number is still open.
+
 ## 5. What this asks for
 
 - **A decision (Lee, with the engine lane):** `go 1.27.4` plus `golang.org/x/crypto` in `go/go.mod` against plan
