@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -292,6 +292,12 @@ SEED ?= 1
 COUNT ?= 50000
 parity-random-long: go-build
 	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --seed $(SEED) --count $(COUNT) --report build/random-diff-$(SEED).json
+
+# tshark oracle (PRO-127; nightly, never in go-check): real OpenSSL, curl and quic-go traffic on 127.0.0.1, read by
+# gopacket and fed to the engine, compared with tshark. Its own test-only module (go/oracle); needs tshark 4.2.2,
+# OpenSSL 3.0.13 and curl 8.5.0 (go/oracle/README.md). ORACLE_REPORT=<file> writes every comparison as JSON.
+pcap-oracle:
+	cd go/oracle && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=mod go test -count=1 ./...
 
 # Sustained throughput and memory with 10,000 and 100,000 concurrent flows (synthetic; reported only, never a gate)
 bench-load:
