@@ -1,0 +1,72 @@
+# Live round 3 (PRO-88, run by Hermes with TLS; results PRO-97; relayed on PRO-92 as PRO-121, 2026-11-21). 69 of 69 names (live-hosts-r3.txt).
+# Column 13 a_count = number of A records (Hermes, PRO-121). Read by header name, not position.
+host	flags	rcode	cname_tail	tls	alpn	subject_cn	subject_o	issuer_o	san_count	tls_error	probe	a_count
+umbrella.com	-	0		TLSv1.2	http/1.1	www.umbrella.com	None	Let's Encrypt	13		disthost.umbrella.com:	1
+disthost.umbrella.com	-	0	disthost.qq.opendns.com	TLSv1.2	http/1.1	disthost.umbrella.com	CISCO SYSTEMS, INC.	DigiCert Inc	4			1
+api.opendns.com	-	0		TLSv1.3	h2	api.opendns.com	CISCO SYSTEMS, INC.	DigiCert Inc	28			1
+sync.hydra.opendns.com	-	0		TLSv1.2	http/1.1	sync.hydra.opendns.com	Cisco Systems, Inc	DigiCert Inc	3			2
+parsecusercontent.com	-	0		TLSv1.3	h2	parsecusercontent.com	None	Google Trust Services	2			2
+kessel-ws.parsec.app	-	0		TLSv1.3	h2	kessel-ws.parsec.app	None	Google Trust Services	1			2
+builds.parsecgaming.com	cdn	0	builds.parsecgaming.com.cdn.cloudflare.net	TLSv1.3	h2	builds.parsecgaming.com	None	Google Trust Services	1			2
+asana.plus	-	0		TLSv1.3	h2	asana.plus	None	Amazon	2			4
+asanausercontent.com	-	0		TLSv1.3	h2	asanausercontent.com	None	Amazon	1			4
+app.asana-gov.com	-	0		TLSv1.3	h2	app.asana-gov.com	None	Amazon	1			4
+asana-user-private-us-east-1.s3.amazonaws.com	cdn	0	s3-w.us-east-1.amazonaws.com	TLSv1.3	http/1.1	s3.amazonaws.com	None	Amazon	18			8
+asana-user-private-me-central-1.s3.me-central-1.amazonaws.com	cdn	0	s3-r-w.me-central-1.amazonaws.com	TLSv1.3	http/1.1	*.s3.me-central-1.amazonaws.com	None	Amazon	14			2
+asana-user-private-ap-northeast-1.s3.ap-northeast-1.amazonaws.com	cdn	0	s3-r-w.ap-northeast-1.amazonaws.com	TLSv1.3	http/1.1	*.s3-ap-northeast-1.amazonaws.com	None	Amazon	16			8
+asana-user-private-eu-central-1.s3.eu-central-1.amazonaws.com	cdn	0	s3-r-w.eu-central-1.amazonaws.com	TLSv1.3	http/1.1	*.s3.eu-central-1.amazonaws.com	None	Amazon	16			8
+asana-user-private-ap-southeast-2.s3.ap-southeast-2.amazonaws.com	cdn	0	s3-r-w.ap-southeast-2.amazonaws.com	TLSv1.3	http/1.1	*.s3-ap-southeast-2.amazonaws.com	None	Amazon	16			8
+asana-user-private-fedramp-prod.s3.amazonaws.com	cdn	0	s3-w.us-east-1.amazonaws.com	TLSv1.3	http/1.1	s3.amazonaws.com	None	Amazon	18			8
+jamfcloud.com	no-address	0							0		jamf-patch.jamfcloud.com:cdn,h3	0
+jamf.com	-	0		TLSv1.3	h2	*.jamf.com	None	Amazon	2			3
+sentry.pub.jamf.build	-	0	us-nginx.pub.jamf.build	TLSv1.2	h2	*.pub.jamf.build	None	Amazon	1			2
+atera.com	-	0		TLSv1.3	h2	atera.com	None	Google Trust Services	2		app.atera.com:	2
+atera.pubnubapi.com	-	0	api-tls.pubnubapi.com	TLSv1.2		*.pubnubapi.com	None	Amazon	2			2
+atera-agent-heartbeat.servicebus.windows.net	cdn	0	ns-prod-am3-az501.westeurope.cloudapp.azure.com	TLSv1.3		servicebus.windows.net	Microsoft Corporation	Microsoft Corporation	132			1
+atera-agent-heartbeat-cus.servicebus.windows.net	cdn	0	ns-prod-dm2-az501.centralus.cloudapp.azure.com	TLSv1.3		servicebus.windows.net	Microsoft Corporation	Microsoft Corporation	132			1
+salesforceiq.com	tls-fail	0							0	SSLError	app.salesforceiq.com:tls-fail	3
+forceusercontent.com	-	0		TLSv1.3	h2	hsts.forceusercontent.com	Salesforce, Inc.	DigiCert Inc	2			3
+force-user-content.com	-	0		TLSv1.3	h2	hsts.force-user-content.com	Salesforce, Inc.	DigiCert Inc	2			3
+my.salesforce.app	no-address	0							0			0
+salesforceliveagent.com	-	0		TLSv1.3	h2	hsts.salesforceliveagent.com	Salesforce, Inc.	DigiCert Inc	2			4
+salesforce-experience.com	-	0		TLSv1.3	h2	hsts.salesforce-experience.com	Salesforce, Inc.	DigiCert Inc	2			3
+salesforce-hub.com	-	0		TLSv1.3	h2	hsts.salesforce-hub.com	Salesforce, Inc.	DigiCert Inc	2			3
+salesforce-scrt.com	-	0		TLSv1.3	h2	hsts.salesforce-scrt.com	Salesforce, Inc.	DigiCert Inc	2			3
+salesforce-setup.com	-	0		TLSv1.3	h2	hsts.salesforce-setup.com	Salesforce, Inc.	DigiCert Inc	2			3
+salesforce-sites.com	-	0		TLSv1.3	h2	hsts.salesforce-sites.com	Salesforce, Inc.	DigiCert Inc	2			3
+sfdcopens.com	-	0		TLSv1.3	h2	hsts.sfdcopens.com	Salesforce, Inc.	DigiCert Inc	2			3
+site.com	-	0		TLSv1.3	h2	hsts.site.com	Salesforce, Inc.	DigiCert Inc	2		trailblazer-identity.my.site.com:cdn	4
+svc.sfdcfc.net	no-address	0							0			0
+trailblazer.me	-	0		TLSv1.3	h2	trailblazer.me	Salesforce, Inc.	DigiCert Inc	1			2
+trailhead.com	-	0		TLSv1.2	h2	trailhead.com	None	Let's Encrypt	5			4
+documentforce.com	-	0		TLSv1.3	h2	hsts.documentforce.com	Salesforce, Inc.	DigiCert Inc	2			3
+lightning.com	-	0		TLSv1.3	h2	hsts.lightning.com	Salesforce, Inc.	DigiCert Inc	2			3
+salesforce-communities.com	-	0		TLSv1.3	h2	hsts.salesforce-communities.com	Salesforce, Inc.	DigiCert Inc	2			3
+sfdc.sh	no-address	0							0			0
+visualforce.com	-	0		TLSv1.3	h2	hsts.visualforce.com	Salesforce, Inc.	DigiCert Inc	2			3
+sfdcstatic.com	no-address	0							0			0
+lightningdesignsystem.com	-	0		TLSv1.3	http/1.1	lightningdesignsystem.com	None	Let's Encrypt	1			2
+grammarly.net	-	0		TLSv1.2	h2	grammarly.net	None	Amazon	2			3
+capi.grammarly.com	-	0		TLSv1.3	h2	capi.grammarly.com	None	Amazon	3			8
+dox.grammarly.com	-	0		TLSv1.3	h2	dox.grammarly.com	None	Amazon	2			5
+dockerstatic.com	-	0		TLSv1.3	h2	dockerstatic.com	None	Amazon	2			4
+slackhq.com	-	0		TLSv1.3	h2	slackhq.com	None	Let's Encrypt	2		campaign.slackhq.com:	1
+campaign.slackhq.com	-	0	app-ue1-public.fe.pardot.com	TLSv1.3	http/1.1	campaign.slackhq.com	None	Let's Encrypt	1			5
+zndsk.com	no-address	0							0		www.zndsk.com:	0
+www.zndsk.com	-	0		TLSv1.2	h2	zndsk.com	None	Google Trust Services	2			5
+connect.facebook.net	h3	0	scontent.xx.fbcdn.net	TLSv1.3	h2	*.facebook.com	Meta Platforms, Inc.	DigiCert Inc	11			1
+ads.linkedin.com	cdn	0	www.linkedin.com.cdn.cloudflare.net	TLSv1.3	h2	admin.pointdrive.linkedin.com	Linkedin Corporation	DigiCert Inc	100		px.ads.linkedin.com:cdn	2
+snap.licdn.com	cdn	0	a1916.dscg2.akamai.net	TLSv1.3	h2	*.licdn.com	Linkedin Corporation	DigiCert Inc	2			2
+t.co	-	0		TLSv1.3	h2	t.co	None	Let's Encrypt	1			1
+analytics.twitter.com	-	0	s.twitter.com	TLSv1.3	h2	*.twitter.com	None	Let's Encrypt	3			1
+redditstatic.com	no-address	0							0		www.redditstatic.com:cdn	0
+alb.reddit.com	cdn	0	dualstack.reddit.map.fastly.net	TLSv1.3	h2	*.reddit.com	Reddit, Inc.	DigiCert Inc	2			4
+pixel-config.reddit.com	cdn	0	reddit.map.fastly.net	TLSv1.3	h2	*.reddit.com	Reddit, Inc.	DigiCert Inc	2			4
+a.quora.com	cdn	0	a.quora.com.cdn.cloudflare.net	TLSv1.3	h2	quora.com	None	Google Trust Services	11			2
+q.quora.com	cdn	0	q.quora.com.cdn.cloudflare.net	TLSv1.3	h2	quora.com	None	Google Trust Services	11			2
+analytics.tiktok.com	cdn	0	e35058.api15.akamaiedge.net	TLSv1.3	h2	*.tiktok.com	None	DigiCert Inc	2			9
+pixels.spotify.com	-	0	edge-web.dual-gslb.spotify.com	TLSv1.3	h2	*.spotify.com	Spotify AB	DigiCert Inc	2			1
+bat.bing.com	-	0	ax-0001.ax-msedge.net	TLSv1.3	h2	www.bing.com	Microsoft Corporation	Microsoft Corporation	33			2
+c.bing.com	-	0	ax-0001.ax-msedge.net	TLSv1.3	h2	www.bing.com	Microsoft Corporation	Microsoft Corporation	33			2
+bat.bing.net	-	0	ax-0001.ax-msedge.net	TLSv1.3	h2	bat.bing.net	Microsoft Corporation	Microsoft Corporation	1			2
+static.microsoft	no-address	0							0		teams.public.onecdn.static.microsoft:cdn,h3	0

@@ -507,6 +507,28 @@ the gate computes rather than a label set by hand.
 | Rule | implemented | `migration/parity/verify_families.py`, run by `make parity-go` (so in `make go-check`) right after the exact comparison: a family is `parity-verified` when the passing report claims it and every committed case labelled with it matched exactly (no gap, no approved delta), its cases of each transport's kind cover a positive message, a truncated prefix, a mutation and foreign bytes, and a TCP family has a matched session-level case. `--check` fails when a status in `migration/CAPABILITIES.json` differs from the computed one in either direction; `--write` records each family's case counts, classes and shortfall there. `test_verify_families.py`; planted regressions (one unmatched case, a listed gap) each fail the check. Capture-level differentials stay separate gates. |
 | Result | 88 of 88 `parity-verified` | On 2026-11-18 79 qualified; the other nine lacked committed cases (http2, mongodb, mysql, resp, s7comm, websocket: no session-level case; smtp and ssh: no session-level case and no mutated stream; ipfix: no foreign-bytes datagram). Lee allowed the case generator (only) to add them: `coverage_cases()` in `migration/parity/cases.py`, 37 cases appended after every other, none changed (the regenerated `cases.json` keeps every earlier case and its order byte for byte); Python and Go match all 7,355 cases, and `verify_families.py --write` promoted the nine. The Go replay now takes the `tcp_hint`/`udp_hint` session options the hinted families need. |
 
+## Security review finding SEC-QUIC-1 (PRO-47 and PRO-110, 2026-11-22)
+
+**Finding (Security Reviewer):** the QUIC CRYPTO assembler (`go/internal/protocols/quicx/assembler.go`) scanned every
+held connection on every QUIC datagram (`expire`) and on every flow end (`Reset`). With 1,024 connections held, an
+attacker spraying QUIC datagrams paid about 24 µs of CPU per datagram; with an empty store it is about 15 ns.
+
+**Fix (Go only).** The Python reference's `QuicAssembler` semantics are unchanged:
+- an idle heap ordered by last-seen time, so expiry removes exactly the entries with `now - last > idle`, oldest
+  first, even when capture time runs backwards;
+- a per-scope index, so `Reset(scope)` touches only that flow's entries;
+- the LRU list is unchanged, so eviction stays least-recently-used.
+
+**Evidence:**
+
+| Check | Result |
+|---|---|
+| `TestAssemblerMatchesTheScanningOracle` | The old scanning implementation, kept verbatim as the oracle, answers 40 seeded sequences of 600 random operations (adds with conflicting and over-budget fragments, conflict checks, resets, clears; time forwards, still, jumping and backwards, or absent) exactly as the new one does: statuses, bytes, counts, size and LRU order after every step. |
+| Mutation check | `>=` in place of `>` in expiry fails at seed 1, step 517. A dropped LRU move fails at step 34. |
+| `TestResetAndExpiryTouchOnlyTheirEntries` | Passes. |
+| `BenchmarkAssemblerDatagram` | One expiry check plus one flow-end reset, 1,024 held: 23,385-26,097 ns before, 28-43 ns after, 0 allocations. |
+| Parity | `make go-check` matches 7,430 of 7,430. |
+
 ## Randomized differential (PRO-100, 2026-11-22)
 
 Hermes, PRO-100: differential testing with random inputs, the Python reference as the oracle.
@@ -523,10 +545,10 @@ reason, a correct or wrong hint, or a tight byte budget. The Go engine answers t
 
 | item | state | evidence |
 |---|---|---|
-| CI run | gate | `make parity-random` (seed 1, 2,000 cases, about 3 s) is part of `make go-check`, so the CI `go-engine` job runs it. Seed 1: 2,000 of 2,000 matched. |
-| Long run | available | `make parity-random-long SEED=n COUNT=n`. Seeds 2-11 at 20,000 cases each: 200,000 of 200,000 matched, 0 allowed, about 21 s per 20,000. A nightly job is a CI/CD-lane workflow change (requested). |
+| CI run | gate | `make parity-random` is part of `make go-check`, so the CI `go-engine` job runs it. It runs three steps: `--self-test` (allow-list rules, stale entries, determinism), `--plant` on 300 cases (the planted difference must be caught), then seed 1 at 2,000 cases, about 3 s. Seed 1: 2,000 of 2,000 matched. |
+| Long run | available | `make parity-random-long SEED=n COUNT=n`. Seeds 2-11 at 20,000 cases each, plus seed 12 at 3,000: 203,000 of 203,000 matched, 0 allowed, about 21 s per 20,000. A nightly job is a CI/CD-lane workflow change (requested). |
 | Allow-list | empty | `migration/parity/random_allow.json`: case id to reason. An entry that no longer mismatches on its seed fails the run. |
-| Self-check | passes | `--plant` alters one reference answer to another valid status; the run must report exactly that case (it does). |
+| Self-checks | pass, in CI | `--plant` alters one reference answer to another valid status, and the run must report exactly that case. `--self-test` checks `judge()`: an allowed mismatch passes, an unlisted one fails, and a listed case that now agrees fails. Removing the stale-entry rule makes it fail. |
 | Found and fixed | 0 engine mismatches | The first trial had 8 cases Go declined ("not ported: hint http/ftp/redis"). It was a harness error: `cases.run_stream` drops a hint outside `registry.PARSERS`, so stream hints are now drawn from `PARSERS` only. |
 
 ## Adversarial identification (2026-11-18)
