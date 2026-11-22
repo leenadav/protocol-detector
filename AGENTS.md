@@ -67,6 +67,22 @@ style are left to CI. Each rule names what to flag, why, and the safe path.
    - Safe path: `make workflow-policy` and its lock. A change the policy cannot
      express goes to the CI/CD lane.
 
+## Flaky tests and verify skills
+
+- Never re-run a job or a test to get green. A red run is diagnosed first; a re-run only confirms a failure
+  that happened before any test body ran (checkout, install, runner loss).
+- A test that fails twice intermittently (it fails, and passes on the same commit and input without a code
+  change) is quarantined, not retried. Quarantine is a reviewed change in the owning lane: the test is skipped
+  with a reason that names the tracking issue link and a deadline (`quarantined: <issue URL>, fix by
+  YYYY-MM-DD`), the skip is allow-listed with the same text (`tools/run_tests_strict.py --allow-skip` for
+  Python, `t.Skip` for Go), and the issue records both failing runs. By the deadline the test is fixed and the
+  skip removed; an expired quarantine is a P1 finding.
+- Quarantine never covers a security check, a parity, content or budget gate, or a test that fails every time:
+  those are bugs to fix.
+- Before reporting done, run the repository's verify skills that cover the change, and report their numbers:
+  `.claude/skills/verify-parity`, `verify-content-pack` and `verify-go`, each naming its exact commands and
+  healthy output.
+
 ## Intended limits
 
 This is initial-message inspection, not a complete TCP stack or full-session
