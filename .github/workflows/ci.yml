@@ -3,8 +3,11 @@
 name: ci
 
 on:
+  # One run per change (PRO-202): a push to a branch with an open pull request used to start a push run and a
+  # pull_request run on the same commit (different refs, so different concurrency groups). Branches now run on
+  # their pull request; main on push; a branch without a pull request by workflow_dispatch on its ref.
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
   schedule:
     - cron: "17 3 * * 1"   # weekly re-run catches toolchain drift and new advisories on an unchanged tree
@@ -13,8 +16,11 @@ on:
 permissions:
   contents: read
 
+# A pull request or dispatched run cancels its superseded run on the same ref. A push to main gets a group of its
+# own commit, so no main run is ever cancelled or dropped while queued: every main commit keeps its own gate
+# result, which the release checks read for a tagged commit.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.ref }}
   cancel-in-progress: true
 
 env:
