@@ -26,8 +26,9 @@ artifact in the repository and every security claim has an executable check.
 
 ## Enforced controls and recommended required checks
 
-What is enforced today is what the workflows themselves do: every push and
-pull request runs `ci`, `codeql` and (on workflow, checker or toolchain
+What is enforced today is what the workflows themselves do: every pull request
+and every push to `main` runs `ci` (a branch without a pull request runs it by
+`workflow_dispatch`), every push runs `codeql`, and (on workflow, checker or toolchain
 changes) `supply-chain-drift`, a red check is visible on the commit and the
 pull request, and the release workflow refuses to publish unless its own
 gate, version check and checksum re-verification pass. Nothing currently
@@ -81,8 +82,8 @@ cannot pass unseen, whatever its spelling, and no settings change is needed. Cod
 `tools/check_required_checks.py` (`make workflow-policy`, ci `workflow-lint`) fails when a ci or codeql
 job, each matrix value expanded, has no row in these two tables, or a row names a job that no longer exists.
 
-The jobs the gate covers, every one of which runs on every push and pull
-request:
+The jobs the gate covers, every one of which runs on every pull request and every
+push to `main`:
 
 | Workflow | Job name | Gate |
 |---|---|---|
@@ -160,7 +161,8 @@ the current plan:
 
 ## Pull request events
 
-CI runs on every push and on pull requests. On a pull request the checkout is
+CI runs on pull requests and on pushes to `main`, once per change: a branch push no longer starts a
+second run beside its pull request's (PRO-202). On a pull request the checkout is
 GitHub's synthetic merge commit, so two jobs behave differently from a push:
 the behaviour diff checks out the pull request head and compares it with its
 own parent, then also with the pull request base when that base carries the

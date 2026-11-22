@@ -3,8 +3,11 @@
 name: ci
 
 on:
+  # One run per change (PRO-202): a push to a branch with an open pull request used to start a push run and a
+  # pull_request run on the same commit (different refs, so different concurrency groups). Branches now run on
+  # their pull request; main on push; a branch without a pull request by workflow_dispatch on its ref.
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
     # labeled/unlabeled: the go-api job reads the `api-break` label from the event, and a re-run keeps the
     # labels of its original event, so a label change starts a run of its own
