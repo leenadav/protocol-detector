@@ -551,6 +551,29 @@ reason, a correct or wrong hint, or a tight byte budget. The Go engine answers t
 | Self-checks | pass, in CI | `--plant` alters one reference answer to another valid status, and the run must report exactly that case. `--self-test` checks `judge()`: an allowed mismatch passes, an unlisted one fails, and a listed case that now agrees fails. Removing the stale-entry rule makes it fail. |
 | Found and fixed | 0 engine mismatches | The first trial had 8 cases Go declined ("not ported: hint http/ftp/redis"). It was a harness error: `cases.run_stream` drops a hint outside `registry.PARSERS`, so stream hints are now drawn from `PARSERS` only. |
 
+## tshark oracle on real implementations (PRO-127, 2026-11-22)
+
+Hermes asked for a pcap-based oracle in PRO-127 and chose its data source in PRO-186 (option A).
+- Real, unmodified clients and servers talk on 127.0.0.1 through a recording relay:
+  - OpenSSL 3.0.13 `s_client` and `s_server`;
+  - curl 8.5.0, against `s_server` and Go `net/http`;
+  - quic-go v0.65.0, QUIC v1 and v2.
+- The relay writes a pcap with synthetic Ethernet, IPv4 and TCP/UDP framing into the test's temporary
+  directory. Nothing is committed.
+- gopacket v1.7.7 (BSD-3-Clause) reads and reassembles the pcap, independently of the engine's decoder, and
+  the engine classifies each flow without a hint.
+- tshark 4.2.2 (GPL-2.0, an external process only) dissects the same file.
+- Compared fields: SNI, offered ALPN, the highest offered TLS version, the HTTP Host and the QUIC version.
+- It is a separate test-only module, `go/oracle`: `go/go.mod` and `go/vendor` are unchanged.
+- The full recipe, the tool pins and the licences are in `go/oracle/README.md`.
+
+| item | state | evidence |
+|---|---|---|
+| Comparison | 26 of 26 agree | 10 scenarios: TLS 1.3 and 1.2, no SNI, a 253-byte SNI, 7-, 50-, 100- and 5-byte segments, out-of-order pairs, curl h2 and http/1.1 offers, HTTP/1.1 and 1.0 Host, QUIC v1 and v2. The allow-list is empty. |
+| Self-checks | pass | Planted wrong SNI: the run fails. Listed with a reason: it passes. Listed after it agrees again: it fails (stale entry). An entry no scenario compares also fails. Tool-free unit tests cover the normalisations and the recorder/reader round trip. Five runs under `-race` all pass. |
+| Finding | not an engine bug | quic-go splits and reorders its ClientHello's CRYPTO frames over two Initials. Without the host-owned cross-datagram store (`Datagram.Assembler`), Go and the Python reference both stay at "ClientHello incomplete" with the same output. With the store attached as the analyzer attaches it, the server name and ALPN agree. |
+| Runs | nightly (requested) | `make pcap-oracle`. It needs the three pinned tools and module-proxy access to build, so it isn't part of `go-check`; the nightly job belongs to the CI/CD lane. |
+
 ## Mutation testing (PRO-126, 2026-11-22)
 
 Hermes, PRO-126: mutation testing of the Go protocol parsers with gremlins (github.com/go-gremlins/gremlins
