@@ -1,8 +1,8 @@
 # DocuSign eSignature
 
 - Content-pack id today: `docusign` (`docusign.com`, `docusign.net`)
-- Status: **PARTIAL**, NAME, batch N: `docucdn-a.akamaihd.net` added; the domain list was not read in full
-- Sources: read by Research Lab from the Hermes server, relayed by Hermes (PRO-108, PRO-121), 2026-11-21; no page date found in the extracted text
+- Status: **READY**, NAME, batch N: `docucdn-a.akamaihd.net` added; domain list read in full (PRO-138); open item: `*.docusign.pdfeditor.com`
+- Sources: read by Research Lab from the Hermes server, relayed by Hermes (PRO-108, PRO-121), 2026-11-21; full section re-read by Research Lab from the Hermes server (PRO-138), relayed by Hermes (PRO-139), 2026-11-22; fetched 2026-11-21, HTTP 200, no sign-in; no page date on the page
 
 ## 1. What it is
 
@@ -14,11 +14,11 @@ Not stated in the text read. "Because of Akamai, IP allowlisting is no longer su
 
 ## 3. Observable evidence
 
-[DS] domains from your network to DocuSign: `*.docusign.com` and others; the list was cut off in the extract. Akamai: `*.edgekey.net`, `*.akamaiedge.net`, `docucdn-a.akamaihd.net`, `ronp-a.akamaihd.net`. Optimizely: `*cdn.optimizely.com`. IP ranges, email and inbound (Connect) sections were not extracted.
+[DS] "Allowlists for Docusign eSignature service", full list of 8 entries: connections to DocuSign `*.docusign.com`, `*.docusign.net`, `*.docusign.pdfeditor.com`; Akamai CDN/WAF `*.edgekey.net`, `*.akamaiedge.net`, `docucdn-a.akamaihd.net`, `ronp-a.akamaihd.net`; Optimizely content delivery `*cdn.optimizely.com`. Email and Connect ("Connections from Docusign") are IP ranges only (JSON feed `https://www.docusign.com/trust/ip-ranges.json`); the page has no domain section for either.
 
 ## 4. Encrypted-traffic caveats
 
-`docucdn-a.akamaihd.net` carries the vendor's name on Akamai's shared `akamaihd.net`, so it is proposed as an exact name (the bucket-host precedent). `ronp-a.akamaihd.net` does not, and `edgekey.net`, `akamaiedge.net` and Optimizely are shared CDN or third party: none is proposed. The rest of the domain list (likely including `docusign.net`, already mapped) needs a full read. Live round 5 (2026-11-21): `docucdn-a.akamaihd.net` presents Akamai's generic certificate (`a248.e.akamai.net`, Akamai Technologies) with no DocuSign identity, so it is a shared Akamai edge name: usable only as the exact SNI (**N2**), never the `akamaihd.net` suffix or the IPs. `docusign.com` presents a certificate naming DocuSign, Inc.; `docusign.net` resolves but the handshake fails, which is not a removal reason.
+`docucdn-a.akamaihd.net` carries the vendor's name on Akamai's shared `akamaihd.net`, so it is proposed as an exact name (the bucket-host precedent). `ronp-a.akamaihd.net` does not, and `edgekey.net`, `akamaiedge.net` and Optimizely are shared CDN or third party: none is proposed. `*.docusign.pdfeditor.com` is a DocuSign-listed subtree of `pdfeditor.com`, a registrable domain that is not DocuSign's: it is **not proposed** until live verification shows who operates it (decision 3; queued in `live-hosts-r6.txt`). Connect webhooks and email arrive from DocuSign IP ranges, which the catalog does not use. Live round 5 (2026-11-21): `docucdn-a.akamaihd.net` presents Akamai's generic certificate (`a248.e.akamai.net`, Akamai Technologies) with no DocuSign identity, so it is a shared Akamai edge name: usable only as the exact SNI (**N2**), never the `akamaihd.net` suffix or the IPs. `docusign.com` presents a certificate naming DocuSign, Inc.; `docusign.net` resolves but the handshake fails, which is not a removal reason.
 
 ## 5. Confidence and false-positive risks
 
@@ -65,7 +65,7 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 ("docusign", ..., ("docusign.com", "docusign.net", "docucdn-a.akamaihd.net")),
 ```
 
-The remaining domain list stays open (`blocked-urls.md` row 24).
+Open item: `docusign.pdfeditor.com` (exact subtree, never `pdfeditor.com`) once live round 6 shows its certificate owner.
 
 <!-- method-v2:start -->
 

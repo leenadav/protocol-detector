@@ -25,3 +25,5 @@ usforticlient.fortinet.net
 fctupdate.fortinet.net
 fctusupdate.fortinet.net
 fcteuupdate.fortinet.net
+# DocuSign-listed subtree of a non-DocuSign registrable domain (PRO-139): certificate owner decides any mapping.
+docusign.pdfeditor.com

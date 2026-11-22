@@ -77,7 +77,7 @@ older names these specs cite are queued for live round 5 (`live-hosts-r5.txt`).
 |---|---|---|---|---|---|---|---|
 | 1 | N1 | Sophos Central: `sophosxl.com`, `sophosxl.net`, `sophosupd.com`, `sophosupd.net`, `hitmanpro.com` | `apps/sophos-central.md` | 4 | 4 | 16 | READY (`hitmanpro.com` at N2) |
 | 2 | N2 | `dc.services.visualstudio.com` (Application Insights telemetry) from `visual-studio` to `ms-telemetry` | `apps/sophos-central.md`, `apps/power-bi.md` | 3 | 4 | 12 | READY (N2; was a mis-attribution) |
-| 3 | N3 | DocuSign: exact `docucdn-a.akamaihd.net` | `apps/docusign.md` | 4 | 2 | 8 | PARTIAL (domain list cut off in the extract) |
+| 3 | N3 | DocuSign: exact `docucdn-a.akamaihd.net` | `apps/docusign.md` | 4 | 4 | 16 | READY (full list of 8 read, PRO-138/PRO-139; open: `*.docusign.pdfeditor.com` waits on live round 6) |
 | 4 | N4 | Twilio: verified, all names under `twilio.com` | `apps/twilio.md` | 3 | 4 | 12 | DONE (no catalog change) |
 | 5 | N5 | Snowflake: verified, per-account names only | `apps/snowflake.md` | 4 | 3 | 12 | DONE (no catalog change) |
 

@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-22 (PRO-106: batch O; PRO-135 live round 5 merged). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-22 (PRO-139: DocuSign READY; PRO-106 batch O). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -87,12 +87,12 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Main-integration PRs #42 to #53 (PRO-43) | all 12 merged (#44 to #51 on 2026-11-21); work since then (batches M and N, live rounds 3 and 4) is on `claude/app-research` only |
 | Batches M, N and O to `main` | not opened: Hermes schedules them after review |
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
-| Live rounds 1 to 6 | 1 to 5 done and merged into section 9 (`live-results-2026-11-20*.tsv`, `live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; round 5 converted from the PRO-135 columns, `via_probe` marks probe certificates). Open: `sophosxl.com` has no address and no documented host to probe; `docusign.net` fails TLS; round 6 (`live-hosts-r6.txt`, 23 batch O names) waits on a Hermes run |
+| Live rounds 1 to 6 | 1 to 5 done and merged into section 9 (`live-results-2026-11-20*.tsv`, `live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; round 5 converted from the PRO-135 columns, `via_probe` marks probe certificates). Open: `sophosxl.com` has no address and no documented host to probe; `docusign.net` fails TLS; round 6 (`live-hosts-r6.txt`, 23 batch O names and `docusign.pdfeditor.com`) waits on a Hermes run |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
 | Ranking (CrUX, Majestic Million) | licences PASS LEE-1 (`datasets.md`). PRO-98 closed **partially complete**: Majestic run 1 (`ranking/majestic-2026-11-21-run1.tsv`) was looked up with `main`'s catalog, so 22 of 69 specs ranked and 46 not computed. Run 2 is a separate Hermes task: `rank_domains.py research/app-domains.json OUT.tsv --majestic majestic_million.csv` (79 specs, no re-export); CrUX still needs BigQuery |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
 | Content version ordering | Engine: numeric comparison plus a regression test, then renumber the placeholders |
-| Blocked vendor pages | WhatsApp and Hugging Face (no official page known). Rows 19 to 23, 28 and 29 (ServiceNow, Workday, CrowdStrike, SentinelOne, Cisco Secure Client, Egnyte, GlobalProtect) stay blocked (sign-in, bot challenge or JavaScript-only, per Research Lab, PRO-108). Rows 24 to 27 resolved in batch N; DocuSign's domain list is still incomplete |
+| Blocked vendor pages | WhatsApp and Hugging Face (no official page known). Rows 19 to 23, 28 and 29 (ServiceNow, Workday, CrowdStrike, SentinelOne, Cisco Secure Client, Egnyte, GlobalProtect) stay blocked (sign-in, bot challenge or JavaScript-only, per Research Lab, PRO-108). Rows 24 to 27 resolved in batch N (DocuSign's full list read, PRO-139) |
 | Culvert field data for prioritisation | not available yet (placeholder in the backlog) |
 
 ## 6. Frozen SHAs awaiting Codex
