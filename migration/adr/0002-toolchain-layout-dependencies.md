@@ -39,6 +39,29 @@ Status: accepted for M2 (2026-11-07).
   pinned in `go/go.sum` and verified against sum.golang.org by the CI `go-engine` job (`-mod=readonly`).
   `govulncheck` runs over `go/` in the CI `toolchain-audit` job since 2026-11-15 (source mode, the pinned
   govulncheck build of `tools/scanners`); it was not run locally when the dependency was added.
+- Decision (Hermes, PRO-107, 2026-11-22), for the module Culvert imports:
+  - **The import-graph rule (Culvert's plan item #19, answer (a)).** "Standard library only" means that no
+    non-standard package is compiled into the detection path: the engine, analyzer, session, reassembly,
+    protocols, content, appid and contracts packages, and the public detector package built on them. It does
+    not mean there are no `require` lines in `go/go.mod`.
+    - `golang.org/x/crypto`, and with it `golang.org/x/sys`, stays a requirement, used only by key-log
+      decryption (`internal/decrypt`, through `internal/keylogcap` and `internal/livedecrypt`).
+    - Culvert already requires the same two versions (its go.mod:59 and :61), so importing the detector adds
+      no module to its graph. Its dependency gate is a licence check (`go-licenses`), which both pass.
+    - The rule is checked on the import graph (`go list -deps` of the detection packages), not on `go.mod`.
+      A newer `x/crypto` or `x/sys` here would raise Culvert's pin through minimum version selection, so a bump
+      is a reviewed change on both sides.
+  - **The floor and toolchain split.** `go/go.mod` states `go 1.27.0`, the language minimum an importer must
+    meet, and `toolchain go1.27.4`, the compiler local and release builds use
+    (https://go.dev/doc/toolchain).
+    - Minimum version selection raises an importer's `go` line to the highest in its graph. Culvert keeps its
+      own line at 1.27.0 and asks that no dependency raise it (its go.mod:9-36).
+    - Security fixes in 1.27.4 still reach every build through the toolchain line: `tools/go_ci.py` and
+      `tools/build_go_release.py` refuse any other installed compiler, and the SBOM records go1.27.4.
+    - `make go-check-minimum` (CI `go-minimum`) vets and tests on exactly 1.27.0, the `go` line.
+    - Both dependencies declare `go 1.26.0`, so neither needs more than the floor.
+    - Verified on 2026-11-22: on 1.27.0, `go vet ./...` exits 0 and `go test ./...` passes 37 of 37 packages;
+      the release binaries are byte-identical to those built before the change.
 
 ## Gates
 

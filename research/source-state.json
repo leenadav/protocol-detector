@@ -1,0 +1,706 @@
+{
+ "checked": "2026-11-19",
+ "feeds": {
+  "google-cloud-json": {
+   "date": "2026-11-19",
+   "etag": null,
+   "status": 200,
+   "url": "https://www.gstatic.com/ipranges/cloud.json",
+   "version": "1795097172378 2026-11-19T06:06:12.378031"
+  },
+  "google-goog-json": {
+   "date": "2026-11-19",
+   "etag": null,
+   "status": 200,
+   "url": "https://www.gstatic.com/ipranges/goog.json",
+   "version": "1795097172378 2026-11-19T06:06:12.378031"
+  },
+  "microsoft-365-endpoints": {
+   "date": "2026-11-19",
+   "etag": null,
+   "status": 200,
+   "url": "https://endpoints.office.com/version/Worldwide?clientrequestid=00000000-0000-0000-0000-000000000000",
+   "version": "2026103000"
+  },
+  "salesforce-ip-ranges": {
+   "date": "2026-11-19",
+   "error": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden (agent proxy: no rule or ",
+   "url": "https://ip-ranges.salesforce.com/ip-ranges.json"
+  }
+ },
+ "noisy": [
+  "https://support.google.com/chrome/a/answer/16364503?hl=en",
+  "https://docs.netskope.com/en/netskope-client-network-configuration",
+  "https://help.webex.com/en-us/article/WBX000028782/Network-Requirements-for-Webex-Services"
+ ],
+ "pages": {
+  "https://ai.google.dev/api": {
+   "date": "2026-11-19",
+   "sha256": "f7953a5f40b0106f149b8c6b7c20b5d4ebf5fc02239abff97783495cc33f1212",
+   "specs": [
+    "google-gemini-api.md"
+   ],
+   "status": 200
+  },
+  "https://aistudio.google.com/api-reference.md": {
+   "date": "2026-11-19",
+   "sha256": "9e72c609b288d351154bb6ffe27dd3cf4ed9125854eeb23881e120755f301dbd",
+   "specs": [
+    "google-gemini-api.md"
+   ],
+   "status": 200
+  },
+  "https://aistudio.google.com/docs/get-started.md": {
+   "date": "2026-11-19",
+   "sha256": "275a249e6704365c4fef6d53873669b078daaa0d67aafc3c2bfdda1f82284e02",
+   "specs": [
+    "google-gemini-api.md"
+   ],
+   "status": 200
+  },
+  "https://api-docs.deepseek.com/": {
+   "date": "2026-11-19",
+   "sha256": "d6210cf0a9c4c2dda5714c75adabb0ffa3eb01a8fb9d2bb3817d3c715bf7749e",
+   "specs": [
+    "deepseek.md"
+   ],
+   "status": 200
+  },
+  "https://bitwarden.com/help/bitwarden-addresses/": {
+   "date": "2026-11-19",
+   "sha256": "03d47a26b0658c6fe05fcbe564feae3f0a4dcdd095c45d47d18af1d5d1cc2531",
+   "specs": [
+    "bitwarden.md"
+   ],
+   "status": 200
+  },
+  "https://claude.com/": {
+   "date": "2026-11-19",
+   "sha256": "27c1ce6cf89318aa5214293c7e376d3e6b523c74ade16ebe9a655883b32edd33",
+   "specs": [
+    "anthropic-claude.md"
+   ],
+   "status": 200
+  },
+  "https://code.claude.com/docs/en/network-config": {
+   "date": "2026-11-19",
+   "sha256": "8726a5fe1c3807382befd09bda122223c66a5890abb890052e8f56f4ab88e556",
+   "specs": [
+    "anthropic-claude.md"
+   ],
+   "status": 200
+  },
+  "https://config.zscaler.com/zscaler.net/zscaler-app": {
+   "date": "2026-11-19",
+   "sha256": "d6283e6b87a91f4a645776c5ec77abf93aaf5123c9d53d2b6aec0d43394a85e2",
+   "specs": [
+    "zscaler.md"
+   ],
+   "status": 200
+  },
+  "https://core.telegram.org/mtproto/mtproto-transports.md": {
+   "date": "2026-11-19",
+   "sha256": "f913c0f057be7189de540e71c07c63b3dbf936e0a60423d55d50fcdd77109fab",
+   "specs": [
+    "telegram.md"
+   ],
+   "status": 200
+  },
+  "https://core.telegram.org/mtproto/transports.md": {
+   "date": "2026-11-19",
+   "sha256": "42812937eafbd2e5b83d0f40ea9a35e246208a2f1a7429ac65e5833faf012b84",
+   "specs": [
+    "telegram.md"
+   ],
+   "status": 200
+  },
+  "https://cursor.com/docs/enterprise/network-configuration.md": {
+   "date": "2026-11-19",
+   "sha256": "04a06753cdcd260053ffa222f0f98395e90cf998ecc0a61f8cc2c613800fa432",
+   "specs": [
+    "cursor.md"
+   ],
+   "status": 200
+  },
+  "https://developers.cloudflare.com/cloudflare-one/team-and-resources/devices/cloudflare-one-client/deployment/firewall/index.md": {
+   "date": "2026-11-19",
+   "sha256": "7bdc5bedc2ddfe450c904838a7dfec1be82c91da343799c61d08a3749e979451",
+   "specs": [
+    "cloudflare-warp.md"
+   ],
+   "status": 200
+  },
+  "https://developers.openai.com/api/reference/overview": {
+   "date": "2026-11-19",
+   "sha256": "947c3d48d048d06b295af79d7accba142a9ec9c32976149cf94348edcd18379d",
+   "specs": [
+    "openai-chatgpt.md"
+   ],
+   "status": 200
+  },
+  "https://docs.anthropic.com/en/api/ip-addresses": {
+   "date": "2026-11-19",
+   "sha256": "60396d0b2d5467ec8b91985f7f4d7bada44827596d31e28d3f187e294f9c3dc3",
+   "specs": [
+    "anthropic-claude.md"
+   ],
+   "status": 200
+  },
+  "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html": {
+   "date": "2026-11-19",
+   "sha256": "7926ec593599495355b69ec0e033a020ebc7264091a412aab8bbe9ac4cfa5763",
+   "specs": [
+    "amazon-workspaces.md"
+   ],
+   "status": 200
+  },
+  "https://docs.citrix.com/us/en/citrix-cloud/internet-connectivity-requirements.html": {
+   "date": "2026-11-19",
+   "sha256": "c6fb281c24dcd59ee260623e7c4b47174c121b523add875c1177e2ca4640add9",
+   "specs": [
+    "citrix-cloud.md"
+   ],
+   "status": 200
+  },
+  "https://docs.docker.com/desktop/enterprise/allow-list.md": {
+   "date": "2026-11-19",
+   "sha256": "e97dd03d55112500bccf947f6c9a55f6ec098bdcaadeb8ca1b2a8c62895fa718",
+   "specs": [
+    "docker-hub.md"
+   ],
+   "status": 200
+  },
+  "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses": {
+   "date": "2026-11-19",
+   "sha256": "1acabfc515f6b83251ebd06d8cf0cc2baaae948f608102c89e1436206e44fd4d",
+   "specs": [
+    "github-copilot.md"
+   ],
+   "status": 200
+  },
+  "https://docs.github.com/en/copilot/reference/copilot-allowlist-reference": {
+   "date": "2026-11-19",
+   "sha256": "c81cb1bef512bb02137f9e3f5e734ff88c509460b55d5dea6baa8f748437fe17",
+   "specs": [
+    "github-copilot.md"
+   ],
+   "status": 200
+  },
+  "https://docs.gitlab.com/user/gitlab_com/": {
+   "date": "2026-11-19",
+   "sha256": "8b684e4e60076fdead8cf10848d65d76ff763411f74bc298b287b511d1ac65b0",
+   "specs": [
+    "gitlab.md"
+   ],
+   "status": 200
+  },
+  "https://docs.mistral.ai/api": {
+   "date": "2026-11-19",
+   "sha256": "402580dc4a065f42e2de03d3d6d74e4e09c6a9371e536618b0536661e96fde7f",
+   "specs": [
+    "mistral.md"
+   ],
+   "status": 200
+  },
+  "https://docs.netskope.com/en/netskope-client-network-configuration": {
+   "date": "2026-11-19",
+   "sha256": "efdee9071adb54fadd9a140ef8519b63296b19c0f48b1eda8ec44d64457b4cb5",
+   "specs": [
+    "netskope.md"
+   ],
+   "status": 200
+  },
+  "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports": {
+   "date": "2026-11-19",
+   "sha256": "b9eb8d3813cc3e6bceefaf035c61ad1d6e4b8d14684f83cdedce26de532ce428",
+   "specs": [
+    "prisma-access.md"
+   ],
+   "status": 200
+  },
+  "https://docs.perplexity.ai/docs/getting-started/quickstart": {
+   "date": "2026-11-19",
+   "sha256": "c788c6f9cd33a3da2d49ef11554d13cd3fafdc4273012d4ba6e11c9b2c9b8676",
+   "specs": [
+    "perplexity.md"
+   ],
+   "status": 200
+  },
+  "https://docs.x.ai/developers/advanced-api-usage/regions": {
+   "date": "2026-11-19",
+   "sha256": "7b09a11d4d391ecb8114ddea9d2b486509bd7eb9882f4e0880f51b842ef07771",
+   "specs": [
+    "xai-grok.md"
+   ],
+   "status": 200
+  },
+  "https://docs.x.ai/overview": {
+   "date": "2026-11-19",
+   "sha256": "5135e7792e22024b0aadb64dea5ab3ed572a0375dfb16d91ed73fa8ed5513aaa",
+   "specs": [
+    "xai-grok.md"
+   ],
+   "status": 200
+  },
+  "https://faq.whatsapp.com/1299035810920553": {
+   "date": "2026-11-19",
+   "sha256": "dd2ba05eed190fe1dce72e38f2b3f533b06fc800577941efcabfe03e163f4934",
+   "specs": [
+    "whatsapp.md"
+   ],
+   "status": 200
+  },
+  "https://help.dropbox.com/installs/configuring-firewall": {
+   "date": "2026-11-19",
+   "sha256": "848fb26ec59b28c70106b79ec597017d5047c68c5ddccb73859476a165165afe",
+   "specs": [
+    "dropbox.md"
+   ],
+   "status": 200
+  },
+  "https://help.dropbox.com/security/official-domains": {
+   "date": "2026-11-19",
+   "sha256": "f8774d2733907f25d6e20b0bd47dd289f475c2e0a8fc056147daeefdb1f99e87",
+   "specs": [
+    "dropbox.md"
+   ],
+   "status": 200
+  },
+  "https://help.duo.com/s/article/1337?language=en_US": {
+   "date": "2026-11-19",
+   "error": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden (agent proxy: no rule or ",
+   "specs": [
+    "duo-security.md"
+   ]
+  },
+  "https://help.figma.com/hc/en-us/articles/19424714305943-Adjust-your-network-settings": {
+   "date": "2026-11-19",
+   "sha256": "93c114fbec02406e63aecbee5a899fd298191dce60b7de931029260488f91a25",
+   "specs": [
+    "figma.md"
+   ],
+   "status": 200
+  },
+  "https://help.miro.com/hc/en-us/articles/20857452690706-Miro-domains-reference": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "miro.md"
+   ]
+  },
+  "https://help.miro.com/hc/en-us/articles/360017572694-Add-Miro-to-allowed-apps": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "miro.md"
+   ]
+  },
+  "https://help.okta.com/en-us/content/topics/security/ip-address-allow-listing.htm": {
+   "date": "2026-11-19",
+   "sha256": "39dac76984d87ba0891bd68151dfc4b13fd6033890275188efb9b201729db11f",
+   "specs": [
+    "okta.md"
+   ],
+   "status": 200
+  },
+  "https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "openai-chatgpt.md"
+   ]
+  },
+  "https://help.salesforce.com/s/articleView?id=000384438&type=1": {
+   "date": "2026-11-19",
+   "sha256": "d85a7e6c93530ef549cdb49e124ee7e7759ddbbcc8fc512e93b1192e92a3d4ed",
+   "specs": [
+    "salesforce.md"
+   ],
+   "status": 200
+  },
+  "https://help.webex.com/en-us/article/WBX000028782/Network-Requirements-for-Webex-Services": {
+   "date": "2026-11-19",
+   "sha256": "046acacf5e6e80b4696db61a7022caec2423e4d105d998d57a639763c23d8b75",
+   "specs": [
+    "webex.md"
+   ],
+   "status": 200
+  },
+  "https://helpx.adobe.com/business/enterprise/manage-services/configure-services/network-endpoints.html": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "adobe-cloud.md"
+   ]
+  },
+  "https://helpx.adobe.com/enterprise/kb/network-endpoints.html": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "adobe-cloud.md"
+   ]
+  },
+  "https://knowledge.workspace.google.com/admin/drive/drive-and-sites-firewall-and-proxy-settings?hl=en": {
+   "date": "2026-11-19",
+   "sha256": "6eee5914dbd12e90c404e385bd4525b02faba0078441d981bfef359a6dfb4432",
+   "specs": [
+    "google-workspace.md",
+    "onedrive-drive-personal-business.md"
+   ],
+   "status": 200
+  },
+  "https://knowledge.workspace.google.com/admin/generative-ai/gemini-notebook/turn-gemini-notebook-on-or-off-for-users?hl=en": {
+   "date": "2026-11-19",
+   "sha256": "11f756fef81b304acd9b7a18f831d01cf3372651ad177cf959aa22fcaa97286a",
+   "specs": [
+    "google-gemini.md"
+   ],
+   "status": 200
+  },
+  "https://knowledge.workspace.google.com/admin/getting-started/set-up-a-google-workspace-host-name-allowlist?hl=en": {
+   "date": "2026-11-19",
+   "sha256": "073f4c31d48e84ff08ada525a89a96223c9d9c8636dbefaea6244946e4724ac2",
+   "specs": [
+    "google-gemini.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint": {
+   "date": "2026-11-19",
+   "sha256": "b71760d4e0dc073d39e0e11e1cf35e45d54edb8cb98aa53487dc1ed72c0c83ff",
+   "specs": [
+    "ms-virtual-desktop.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/copilot/plan/microsoft-copilot-requirements": {
+   "date": "2026-11-19",
+   "sha256": "2ef50f2fe5e6cfac573284188a770eda0b93a4ba8b2ca45b16a6d6f7c1d4c32f",
+   "specs": [
+    "microsoft-copilot.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/defender-endpoint/streamlined-device-connectivity-urls-commercial": {
+   "date": "2026-11-19",
+   "sha256": "4b99578cb6dd5cecab6aafac83e726e11d218dde57ddab19a403cdf8c583d7d9",
+   "specs": [
+    "ms-defender-endpoint.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/intune/fundamentals/endpoints": {
+   "date": "2026-11-19",
+   "sha256": "de696036a4d4f1da5a96512aa63ab24933e3d3bb0f82c0c0e00fdfc2107fc14c",
+   "specs": [
+    "ms-intune.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-requirements": {
+   "date": "2026-11-19",
+   "sha256": "2ef50f2fe5e6cfac573284188a770eda0b93a4ba8b2ca45b16a6d6f7c1d4c32f",
+   "specs": [
+    "microsoft-copilot.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-ip-web-service?view=o365-worldwide": {
+   "date": "2026-11-19",
+   "sha256": "a8e2f7b496747f09ae8773edb64d0576f93581ad7e75dcbed15344b64d1bce92",
+   "specs": [
+    "microsoft-365.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/sharepoint/required-urls-and-ports": {
+   "date": "2026-11-19",
+   "sha256": "53a581a805d5eceb7f100680636338bf277eb6e7bb9a1fa0d3fcf46f1c3ea8b9",
+   "specs": [
+    "onedrive-drive-personal-business.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/troubleshoot/windows-client/installing-updates-features-roles/windows-update-issues-troubleshooting": {
+   "date": "2026-11-19",
+   "sha256": "ab99bfdd45aff590a32ef6601fb7e9761b75c9a62fe3b06adaf3bfc3dc6da4df",
+   "specs": [
+    "ms-update.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/windows-365/enterprise/requirements-network": {
+   "date": "2026-11-19",
+   "sha256": "b9cc29a0662a823ea8c37df60b8800c9e2dccf3e99b9622836ca56e54f90522a",
+   "specs": [
+    "ms-virtual-desktop.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/windows/deployment/do/delivery-optimization-endpoints": {
+   "date": "2026-11-19",
+   "sha256": "4b24880e53b33112e02299c4c7c912fd3d36c02b3c0a518f511337ec4e1b498d",
+   "specs": [
+    "ms-update.md"
+   ],
+   "status": 200
+  },
+  "https://learn.microsoft.com/en-us/windows/deployment/do/waas-delivery-optimization-faq": {
+   "date": "2026-11-19",
+   "sha256": "d7995103e0284cf44d09b79276be23a6c01694e8fd3e467b2921f4b60a9a2227",
+   "specs": [
+    "ms-update.md"
+   ],
+   "status": 200
+  },
+  "https://learning.postman.com/docs/getting-started/installation/firewall": {
+   "date": "2026-11-19",
+   "sha256": "f33a97f09222ebb060dcf3c1e8d5f57933a42f2637a1752dbc605a92358aaf25",
+   "specs": [
+    "postman.md"
+   ],
+   "status": 200
+  },
+  "https://ngrok.com/docs/gateway/security-dev-productivity/securing-your-tunnels.md": {
+   "date": "2026-11-19",
+   "sha256": "1a1593e385fe75cbfee2f64835a42ba0ca69d1544dff0bedb1f785902b11eefa",
+   "specs": [
+    "ngrok.md"
+   ],
+   "status": 200
+  },
+  "https://ngrok.com/docs/guides/running-behind-firewalls.md": {
+   "date": "2026-11-19",
+   "sha256": "12d60ca71226c10bb355543d781c902d824f63edbee2142ed4922f61fba0267f",
+   "specs": [
+    "ngrok.md"
+   ],
+   "status": 200
+  },
+  "https://openai.com/chatgpt-voice.json": {
+   "date": "2026-11-19",
+   "sha256": "0852b8be430cb4ae4a68ff8c0169f05bcdc5ce2ab6649cb3fc02d057a50612e7",
+   "specs": [
+    "openai-chatgpt.md"
+   ],
+   "status": 200
+  },
+  "https://platform.claude.com/docs/en/api/ip-addresses": {
+   "date": "2026-11-19",
+   "sha256": "60396d0b2d5467ec8b91985f7f4d7bada44827596d31e28d3f187e294f9c3dc3",
+   "specs": [
+    "anthropic-claude.md"
+   ],
+   "status": 200
+  },
+  "https://platform.claude.com/docs/en/api/overview": {
+   "date": "2026-11-19",
+   "sha256": "d6ecc285527be28214595bbd2ccb65f7d255df71c7ac4b66c6da0fc82d0352b0",
+   "specs": [
+    "anthropic-claude.md"
+   ],
+   "status": 200
+  },
+  "https://rustdesk.com/docs/en/self-host/": {
+   "date": "2026-11-19",
+   "sha256": "6aa3479ea62511eb464f3dafa807c64d6a44d885f6099aad6290d1692e2f5b7d",
+   "specs": [
+    "rustdesk.md"
+   ],
+   "status": 200
+  },
+  "https://slack.com/help/articles/360001603387-Manage-Slack-connection-issues": {
+   "date": "2026-11-19",
+   "sha256": "f08f884a0b0c0d43a20d0939cb0e3e9b9afaad64761a05a2118da6965c675e70",
+   "specs": [
+    "slack.md"
+   ],
+   "status": 200
+  },
+  "https://slack.com/help/articles/360024821873-Approve-Slack-workspaces-for-your-network": {
+   "date": "2026-11-19",
+   "sha256": "32227d6968bb636a585ba25c1ac971798832065f877feb7799f0e35681955a49",
+   "specs": [
+    "slack.md"
+   ],
+   "status": 200
+  },
+  "https://support-splashtopbusiness.splashtop.com/hc/en-us/articles/115001811966-What-Are-the-Firewall-Exceptions-and-IP-addresses-of-Splashtop-Servers-Services": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "splashtop.md"
+   ]
+  },
+  "https://support.1password.com/ports-domains/": {
+   "date": "2026-11-19",
+   "sha256": "9e3741f91dbd59b53605cbe78c90a015364e7a1bb49e9c941a447b3714ce2386",
+   "specs": [
+    "1password.md"
+   ],
+   "status": 200
+  },
+  "https://support.anydesk.com/firewall": {
+   "date": "2026-11-19",
+   "sha256": "940d91220d63ad690d04ac56feedf5a1df37b33154759e3bc3c9fc5dd6fbf6c5",
+   "specs": [
+    "anydesk.md"
+   ],
+   "status": 200
+  },
+  "https://support.apple.com/en-us/101555": {
+   "date": "2026-11-19",
+   "sha256": "4ecf23d7a3909195d89f17f872283fe7231582f252911df5ba6d6ced096caafb",
+   "specs": [
+    "apple-icloud.md"
+   ],
+   "status": 200
+  },
+  "https://support.atlassian.com/loom/kb/domains-protocols-and-ports-required-for-loom-to-work-on-your-servers/": {
+   "date": "2026-11-19",
+   "sha256": "5e65b15c1c19d44aef6067f9ccce2a847eac612cfc90190d4c3dcce2c7e36422",
+   "specs": [
+    "loom.md"
+   ],
+   "status": 200
+  },
+  "https://support.atlassian.com/organization-administration/docs/ip-addresses-and-domains-for-atlassian-cloud-products/": {
+   "date": "2026-11-19",
+   "sha256": "0591ad307beb5a0eea0907d6c9df0e1990bf5fd00fade6349b8a3a46cc01bf16",
+   "specs": [
+    "atlassian.md"
+   ],
+   "status": 200
+  },
+  "https://support.box.com/hc/en-us/articles/33552262497683-Configuring-A-Firewall-For-Box-Applications-and-Services": {
+   "date": "2026-11-19",
+   "error": "URLError: <urlopen error Tunnel connection failed: 403 Forbidden (agent proxy: no rule or ",
+   "specs": [
+    "box.md"
+   ]
+  },
+  "https://support.google.com/chrome/a/answer/16364503?hl=en": {
+   "date": "2026-11-19",
+   "sha256": "955966cab092a7c956d93f13178e5812af57066cfafb318f234327ad3fa8581b",
+   "specs": [
+    "chrome-remote-desktop.md"
+   ],
+   "status": 200
+  },
+  "https://support.goto.com/meeting/help/allowlisting-and-firewall-configuration": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "goto.md"
+   ]
+  },
+  "https://support.goto.com/resolve/help/allowlisting-and-goto-resolve": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "logmein-resolve.md"
+   ]
+  },
+  "https://support.grammarly.com/hc/en-us/articles/115000090271-Network-configuration-blocks-Grammarly-services": {
+   "date": "2026-11-19",
+   "sha256": "dff3c00b5d41ab6de3386ac773a131ebf412ecc674439ac0cc659e2f291164d1",
+   "specs": [
+    "grammarly.md"
+   ],
+   "status": 200
+  },
+  "https://support.logmein.com/resolve/help/allowlisting-and-goto-resolve": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "logmein-resolve.md"
+   ]
+  },
+  "https://support.signal.org/hc/en-us/articles/360007320291-Firewall-and-Internet-settings": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "signal.md"
+   ]
+  },
+  "https://support.zendesk.com/hc/en-us/articles/4408842860186-Configuring-your-firewall-for-use-with-Zendesk": {
+   "date": "2026-11-19",
+   "sha256": "70d287acf503a0ca12aeedb04fa646bf52e6a7a891aa3a83718101426db21999",
+   "specs": [
+    "zendesk.md"
+   ],
+   "status": 200
+  },
+  "https://support.zoom.com/hc/en/article?id=zm_kb&sysparm_article=KB0060548": {
+   "date": "2026-11-19",
+   "sha256": "6002f1477813050c622e48f8ef1566b42ae1784880185c017a6db2fffe8ad1b1",
+   "specs": [
+    "zoom.md"
+   ],
+   "status": 200
+  },
+  "https://tailscale.com/docs/reference/faq/firewall-ports.md": {
+   "date": "2026-11-19",
+   "sha256": "1f9cad718fa91eea50d1ec5f5b0edc71a308bd083365ae06182d3561a900cd36",
+   "specs": [
+    "tailscale.md"
+   ],
+   "status": 200
+  },
+  "https://wetransfer.com/help-center/security-privacy/why-blocked": {
+   "date": "2026-11-19",
+   "sha256": "be51344ef3118ef35160ccf46ea76fa85e1d30a80f29db44a65790f0ed35265a",
+   "specs": [
+    "wetransfer.md"
+   ],
+   "status": 200
+  },
+  "https://wetransfer.com/help-center/troubleshooting/configure-firewall": {
+   "date": "2026-11-19",
+   "sha256": "c39749b413f4ce0d3fef121c983e225ffe9578f02a57d97b0d690a6f97cf7f13",
+   "specs": [
+    "wetransfer.md"
+   ],
+   "status": 200
+  },
+  "https://www.canva.com/help/allow-canva-through-firewall/": {
+   "date": "2026-11-19",
+   "error": "HTTPError: HTTP Error 403: Forbidden",
+   "specs": [
+    "canva.md"
+   ]
+  },
+  "https://www.gstatic.com/ipranges/goog.json": {
+   "date": "2026-11-19",
+   "sha256": "a83780e46a4c1b3304b1f5bf812e2213c5cdce6ac0a12a21db303974576cba3a",
+   "specs": [
+    "google-gemini.md"
+   ],
+   "status": 200
+  },
+  "https://www.jetbrains.com/help/ide-services-cloud/network-access-requirements.html": {
+   "date": "2026-11-19",
+   "sha256": "f554a8450e52f1f4b4008d1f8e9b7fc7afb50d64affd4657db20f8ad70750f00",
+   "specs": [
+    "jetbrains-ai.md"
+   ],
+   "status": 200
+  },
+  "https://www.notion.com/help/allowlist-ip": {
+   "date": "2026-11-19",
+   "sha256": "e8eea2b2f8543f5777c45104fcf5d67886ef0a54b0c8ea3020acfcd3d2f6934c",
+   "specs": [
+    "notion.md"
+   ],
+   "status": 200
+  },
+  "https://www.teamviewer.com/en/global/support/knowledge-base/teamviewer-remote/troubleshooting/ports-used-by-teamviewer/": {
+   "date": "2026-11-19",
+   "sha256": "a6d4341005d74bb7d1171d36c829eef31a05f57018cba030ca513833a1d187df",
+   "specs": [
+    "teamviewer.md"
+   ],
+   "status": 200
+  }
+ }
+}

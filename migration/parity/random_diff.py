@@ -276,15 +276,52 @@ def build(seed, count):
     return out
 
 
+def judge(mismatched, allow, seed, count):
+    """Failures from the mismatches ({case id: compare item}) and the allow-list ({case id: reason}): a mismatch
+    the list does not name, and a listed case of this run (same seed, index below count) that no longer
+    mismatches, so the list cannot go stale."""
+    failures = []
+    for cid in sorted(mismatched):
+        if cid not in allow:
+            failures.append("engines differ on {}: {}".format(cid, mismatched[cid].get("differences", [])[:2]))
+    for cid, reason in sorted(allow.items()):
+        _, _, entry_seed, index = cid.split("/")
+        if entry_seed == str(seed) and int(index) < count and cid not in mismatched:
+            failures.append("{} is allowed ({}) but the engines now agree: remove it".format(cid, reason))
+    return failures
+
+
+def self_test():
+    """The allow-list rules and the generator's determinism, without the Go binary."""
+    item = {"differences": ["final.status"]}
+    allow = {"random/tls/1/00003": "understood"}
+    assert judge({}, {}, 1, 10) == []
+    assert judge({"random/tls/1/00003": item}, allow, 1, 10) == []                      # allowed mismatch
+    assert [f for f in judge({"random/http/1/00004": item}, allow, 1, 10) if "differ on random/http" in f]  # unlisted
+    stale = judge({}, allow, 1, 10)                                                     # listed, now agrees
+    assert len(stale) == 1 and "now agree" in stale[0], stale
+    assert judge({}, allow, 2, 10) == [] and judge({}, allow, 1, 3) == []             # other seed, beyond count
+    first, again = build(5, 40), build(5, 40)
+    assert first == again and first != build(6, 40), "the generator must be deterministic per seed"
+    assert {case["id"].split("/")[1] for case in first} == {name for name, _, _ in GENERATORS}
+    print("random differential self-test: ok (allow-list judgment, stale entries, determinism, generators)")
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--binary", required=True, help="the Go protodetect binary")
+    parser.add_argument("--binary", help="the Go protodetect binary (required unless --self-test)")
+    parser.add_argument("--self-test", action="store_true", help="check the allow-list rules and determinism, then exit")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--count", type=int, default=2000)
     parser.add_argument("--report", help="write the failures and each mismatched case (input and both answers) as JSON here")
     parser.add_argument("--plant", action="store_true",
                         help="self-check: alter the reference's answer to the first case; the run must then fail on it")
     args = parser.parse_args(argv)
+    if args.self_test:
+        return self_test()
+    if not args.binary:
+        parser.error("--binary is required")
     allow = json.loads(ALLOW.read_text(encoding="utf-8"))["allowed"]
     started = time.monotonic()
     doc = json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))
@@ -308,12 +345,7 @@ def main(argv=None):
             return 1
         report = compare.compare(doc, json.loads(out.read_text(encoding="utf-8")))
     mismatched = {item["id"]: item for item in report["mismatched"]}
-    for cid in sorted(mismatched):
-        if cid not in allow:
-            failures.append("engines differ on {}: {}".format(cid, mismatched[cid]["differences"][:2]))
-    for cid, reason in sorted(allow.items()):
-        if cid.split("/")[2] == str(args.seed) and int(cid.split("/")[3]) < args.count and cid not in mismatched:
-            failures.append("{} is allowed ({}) but the engines now agree: remove it".format(cid, reason))
+    failures += judge(mismatched, allow, args.seed, args.count)
     if report["missing"] or report["unsupported"]:
         failures.append("go answered {} cases unsupported, {} missing".format(report["unsupported"], len(report["missing"])))
     kinds = {}
