@@ -120,6 +120,21 @@ func listsFrom(data []byte, names []string) [][]byte {
 	return lists
 }
 
+// Codex PRO-15: a name-list length was converted to int before the bounds check, so on a 32-bit platform
+// 0xffffffff became -1, passed both checks and panicked at the slice. The reference (unbounded Python ints)
+// refuses every such length as exceeding the packet.
+func TestKexinitNameListLengthIsBoundedBeforeConversion(t *testing.T) {
+	want := parsing.Malformed("SSH KEXINIT name-list exceeds packet or profile").Error()
+	for _, size := range []uint32{0xffffffff, 0xfffffffc, 0x80000000, 0x7fffffff, 4097} {
+		packet := append([]byte{4, 20}, make([]byte, 16)...) // padding length, KEXINIT, cookie
+		packet = append(packet, byte(size>>24), byte(size>>16), byte(size>>8), byte(size))
+		packet = append(packet, 0, 0, 0, 0) // padding
+		if err := newKexInit(1 << 20).validate(packet); err == nil || err.Error() != want {
+			t.Errorf("size %#x: validate error %v, want %q", size, err, want)
+		}
+	}
+}
+
 func TestKexinitPostureMatchesTheOracle(t *testing.T) {
 	names := vocabulary()
 	for seed := 0; seed < 20000; seed++ {
