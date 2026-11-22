@@ -55,7 +55,7 @@ func JSON(e Event) string {
 		case path == "summary.input_quality.rejected":
 			return analyze.RejectKinds()
 		case strings.HasPrefix(path, "summary.telemetry.histograms."):
-			return telemetry.HistogramKeys
+			return telemetry.HistogramKeys()
 		}
 		return nil
 	})

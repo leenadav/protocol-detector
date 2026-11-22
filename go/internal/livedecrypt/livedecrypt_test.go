@@ -114,7 +114,7 @@ func TestFailuresAreAFixedCodeAndSentence(t *testing.T) {
 		{"not a pcap stream", op('P', 100, []byte("definitely not a capture stream, long enough to fail the header check")), "internal"},
 	} {
 		status, events, text := replay(t, c.script)
-		if status != 1 || kinds(events) != "capture_gap decryption error" || events[2]["code"] != c.code || events[2]["reason"] != ErrorCodes[c.code] {
+		if status != 1 || kinds(events) != "capture_gap decryption error" || events[2]["code"] != c.code || events[2]["reason"] != errorCodes[c.code] {
 			t.Errorf("%s: status %d, events %s\n%s", c.name, status, kinds(events), text)
 		}
 		if strings.Contains(text, "never-be-echoed") {

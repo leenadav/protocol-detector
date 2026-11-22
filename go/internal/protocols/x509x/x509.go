@@ -56,8 +56,8 @@ var (
 	extendedKeyUsage = oid("551d25")
 	serverAuth       = oid("2b06010505070301")
 	anyKeyUsage      = oid("551d2500")
-	// WeakSignatures are x509.WEAK_SIGNATURES.
-	WeakSignatures = map[string]bool{"md5-rsa": true, "sha1-rsa": true, "ecdsa-sha1": true}
+	// weakSignatures are x509.WEAK_SIGNATURES.
+	weakSignatures = map[string]bool{"md5-rsa": true, "sha1-rsa": true, "ecdsa-sha1": true}
 )
 
 const (
@@ -819,3 +819,6 @@ func WeakKey(label string) bool {
 	}
 	return (family == "rsa" && n < MinRSABits) || (family == "ec" && n < MinECBits)
 }
+
+// IsWeakSignature reports whether a signature algorithm name is in x509.WEAK_SIGNATURES.
+func IsWeakSignature(name string) bool { return weakSignatures[name] }
