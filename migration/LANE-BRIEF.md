@@ -48,8 +48,8 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **PRO-126 (mutation testing):** gremlins tooling, the baseline and reference-checked boundary tests for TLS,
   QUIC and HTTP/1 merged with PR #72 (`bb2af2e`); the nightly job is with the CI/CD lane, and PR #80 (`9b499f8`) moved the
   pin's x/sys and x/text past the OSV advisories.
-- **SEC-CONTENT-1 (PRO-154):** the content-pack loader decodes exact keys only; on `claude/fix-sec-content-1` (PR
-  into this branch).
+- **SEC-CONTENT-1 (PRO-154):** the content-pack loader decodes exact keys only; merged with PR #84
+  (`bc80f45`).
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
 
 ## 3. Where things live (reading order)
