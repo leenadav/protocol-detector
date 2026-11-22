@@ -14,7 +14,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Area | What exists | Where to read |
 |---|---|---|
 | Protocol profiles | 88 families (79 automatic, 9 hint-only or shift-only), each a bounded initial-message structural profile with documented exclusions; TCP reassembly and UDP datagrams, IPv4 only, from live tcpdump, classic PCAP or pcapng | [PROTOCOLS.md](PROTOCOLS.md) |
-| Application verdicts | App-ID style vocabulary: 156 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
+| Application verdicts | App-ID style vocabulary: 544 catalog applications with category, technology, risk, characteristics, ports and dependencies; session outcomes (`unknown-tcp`, `incomplete`, ...); bidirectional correlation of ambiguous text; `port_usage` (application-default) | [APPID.md](APPID.md) |
 | Application shift | CONNECT, WebSocket/h2c upgrade, STARTTLS/STLS/AUTH TLS, PostgreSQL/MySQL SSLRequest, RDP negotiation: the phase after the boundary is inspected and the carrier is kept as `shifted_from` | PROTOCOLS.md (v0.28) |
 | Custom signatures | JSON rules over bounded parser contexts (host, SNI, ALPN, banner, query name, payload prefix) with a safe regex subset | [SIGNATURES.md](SIGNATURES.md) |
 | Fingerprints | JA3/JA4/JA3S/JA4S/HASSH/HTTP2 SETTINGS, opt-in, derived evidence only | [FINGERPRINTS.md](FINGERPRINTS.md) |
@@ -22,7 +22,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 838 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 866 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 ## Go migration and Culvert integration
 
@@ -30,13 +30,13 @@ The Go implementation lives in [`go/`](go/) and is being ported against shared
 fixtures from the Python reference. Per-family status is tracked in
 [`migration/CAPABILITIES.json`](migration/CAPABILITIES.json); acceptance work
 and fixture comparisons are documented under [`migration/`](migration/).
+The package map, data flow and boundaries of the Go engine are in [`docs/GO-ARCHITECTURE.md`](docs/GO-ARCHITECTURE.md).
 
-As of November 15, 2026, the `claude/go-migration` development branch marks all
-88 family profiles `experimental` and has no entries in its parity-gap
-manifest. That head is not merged into `main`; `main` still has pending family
-rows and parity gaps. Fixture parity covers only the committed cases—it does
-not establish full feature parity, external-traffic accuracy, or production
-readiness. The Go port remains experimental.
+All 88 family profiles are `parity-verified` against the committed cases (7,430
+of 7,430 agree; `make parity-go`), and the parity-gap manifest has no entries.
+Fixture parity covers only the committed cases—it does not establish full
+feature parity, external-traffic accuracy, or production readiness. The Go port
+remains experimental, and the Python reference stays the fallback.
 
 The intended Culvert integration is in-process and observation-only: the host
 owns sockets, TLS, policy, timeouts and forwarding; the detector analyzes bytes
@@ -96,6 +96,30 @@ TCP segments and UDP messages on arbitrary ports.
 If capture permission is denied, grant permission to the capture helper according
 to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
 privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+
+## Go engine: the default backend of `analyze` (migration M8)
+
+`protodetect analyze` (and `analyze_pcap.py`) runs the Go engine when its binary is installed and prints the
+same rows, byte for byte, with the same exit status and error text as the Python reference:
+
+```sh
+make go-build                                   # builds go/bin/protodetect (Go toolchain pinned in go/go.mod)
+python3 -B protodetect.py analyze sample.pcap --json --sessions
+python3 -B protodetect.py analyze sample.pcap --backend python     # the reference, on request
+PROTODETECT_BACKEND=python python3 -B protodetect.py analyze sample.pcap
+```
+
+The binary is looked up in `PROTODETECT_GO_BINARY`, then `go/bin/protodetect` of a source checkout, then
+`protodetect-go` on `PATH`. The Python reference runs when asked for, when no binary is installed, and for
+what the Go binary declines (exit status 64): `--content-version` rollback and signature patterns its
+regular-expression engine cannot express (possessive and atomic groups, inline flags, repeats above 1000, a
+`$` before the end). `--backend go` never falls back: it reports why instead. `make parity-analyze` compares
+both backends on generated captures and is part of `make go-check`. The presentation service's capture
+analysis (`analyze_bytes`, through `protodetect present`) and its key-log decryption analysis
+(`analyze_capture`, through `protodetect decrypt-capture`; `make parity-decrypt`) select their backend the
+same way. Live capture (`protodetect live`, and with it the presentation service's live view) hands the
+capture to the Go binary after validating the options (`make parity-live` compares both on replayed streams),
+and the live key-log decryption worker does the same (`make parity-live-decrypt`).
 
 ## New in v0.66 — Smart-home framing and DNS improvements
 

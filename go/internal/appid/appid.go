@@ -1,7 +1,7 @@
 // Package appid ports protocol_engine/appid.py: one or two directional observations become a session
 // verdict (a catalog application or a session outcome) with category, risk and port-usage metadata.
-// It adds no parsing. Custom signatures and RuleIndex mappings are not ported (the Go engine never sets
-// Observation.Application), so the configured-rule branches are absent by construction.
+// It adds no parsing. A custom signature's own metadata names the application it matched; RuleIndex
+// mappings are not ported, so any other Observation.Application is presented as a configured mapping.
 package appid
 
 import (
@@ -10,6 +10,7 @@ import (
 
 	"github.com/leenadav/protocol-detector/go/internal/content"
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
+	"github.com/leenadav/protocol-detector/go/internal/signatures"
 )
 
 // Verdict mirrors appid.Verdict.
@@ -140,7 +141,7 @@ func webApplication(o *contracts.Observation) string {
 	return "web-browsing"
 }
 
-func application(pack *content.Pack, o *contracts.Observation, transport string) *content.Application {
+func application(pack *content.Pack, sigs *signatures.Set, o *contracts.Observation, transport string) *content.Application {
 	base := pack.ApplicationName(deref(o.ApplicationProtocol), deref(o.Encryption))
 	switch base {
 	case "web-browsing":
@@ -163,6 +164,11 @@ func application(pack *content.Pack, o *contracts.Observation, transport string)
 	if o.Application != nil {
 		if base == "" {
 			base = "unknown-" + transport
+		}
+		if sig := sigs.Get(*o.Application); sig != nil {
+			// A signature supplies its own category and risk metadata over its carrier.
+			return pack.SignatureApplication(content.Application{Name: sig.Name, Category: sig.Category, Subcategory: sig.Subcategory,
+				Technology: sig.Technology, Risk: sig.Risk, Description: sig.Description, Characteristics: sig.Characteristics}, sig.Parent, base)
 		}
 		return pack.CustomApplication(*o.Application, base)
 	}
@@ -275,12 +281,26 @@ type Bytes struct {
 // SessionVerdict ports appid.session_verdict including flow risks.
 func SessionVerdict(pack *content.Pack, client, server *contracts.Observation, transport string, serverPort int, hasPort bool,
 	clientBytes, serverBytes Bytes, handshakeComplete bool) *Verdict {
-	v := sessionVerdict(pack, client, server, transport, serverPort, hasPort, clientBytes, serverBytes, handshakeComplete)
-	v.Risks = FlowRisks(v, client, server)
+	return SessionVerdictWith(pack, nil, client, server, transport, serverPort, hasPort, clientBytes, serverBytes, handshakeComplete, nil)
+}
+
+// SessionVerdictAt is SessionVerdict with the capture time at (POSIX seconds, nil when the host supplies none), which
+// only certificate validity reads (appid.session_verdict's `at`).
+func SessionVerdictAt(pack *content.Pack, client, server *contracts.Observation, transport string, serverPort int, hasPort bool,
+	clientBytes, serverBytes Bytes, handshakeComplete bool, at *float64) *Verdict {
+	return SessionVerdictWith(pack, nil, client, server, transport, serverPort, hasPort, clientBytes, serverBytes, handshakeComplete, at)
+}
+
+// SessionVerdictWith is SessionVerdictAt with the custom signature set (nil: none) whose metadata names the
+// applications its signatures matched (appid.session_verdict's `signatures`).
+func SessionVerdictWith(pack *content.Pack, sigs *signatures.Set, client, server *contracts.Observation, transport string, serverPort int,
+	hasPort bool, clientBytes, serverBytes Bytes, handshakeComplete bool, at *float64) *Verdict {
+	v := sessionVerdict(pack, sigs, client, server, transport, serverPort, hasPort, clientBytes, serverBytes, handshakeComplete)
+	v.Risks = FlowRisks(v, client, server, at)
 	return v
 }
 
-func sessionVerdict(pack *content.Pack, client, server *contracts.Observation, transport string, serverPort int, hasPort bool,
+func sessionVerdict(pack *content.Pack, sigs *signatures.Set, client, server *contracts.Observation, transport string, serverPort int, hasPort bool,
 	clientBytes, serverBytes Bytes, handshakeComplete bool) *Verdict {
 	unknownName := "unknown-" + transport
 	var reasons []string
@@ -295,13 +315,13 @@ func sessionVerdict(pack *content.Pack, client, server *contracts.Observation, t
 	}
 	if len(identified) > 0 {
 		chosen := identified[0]
-		app := application(pack, chosen, transport)
+		app := application(pack, sigs, chosen, transport)
 		if app == nil {
 			reasons = append(reasons, "Identified protocol has no catalog entry: "+pyStr(label(chosen)))
 			return outcome(pack, unknownName, string(chosen.Status), reasons)
 		}
 		if len(identified) == 2 {
-			other := application(pack, identified[1], transport)
+			other := application(pack, sigs, identified[1], transport)
 			if other != nil && other.Name != app.Name && !containsString(app.ImplicitlyUses, other.Name) {
 				reasons = append(reasons, "Server direction identified as "+other.Name)
 			}

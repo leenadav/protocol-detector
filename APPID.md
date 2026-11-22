@@ -30,7 +30,7 @@ A verdict names either a catalog application or a session outcome.
 | `web-browsing` | HTTP/1.x or HTTP/2 initial message validated, no configured mapping | web-browsing |
 | `ssl` | TLS ClientHello/ServerHello validated; SNI/ALPN are offers | ssl |
 | `quic` | QUIC Initial validated; ClientHello recovered from Initial protection when possible, `h3` ALPN is an offer | quic |
-| catalog application by server name (v0.65) | The built-in server-name catalog (53 services, `host_apps.py`) refines `ssl`/`quic`/`web-browsing` from the SNI or Host by label-boundary suffix; `base_app` and `implicitly_uses` name the carrier; never for an outer ECH name; configured rules and signatures win | youtube, ms-teams, slack, ... |
+| catalog application by server name (v0.65) | The built-in server-name catalog (442 services since content release 2026.11.9, `host_apps.py`) refines `ssl`/`quic`/`web-browsing` from the SNI or Host by label-boundary suffix; `base_app` and `implicitly_uses` name the carrier; never for an outer ECH name; configured rules and signatures win | youtube, ms-teams, slack, ... |
 | `<configured name>` | `RuleIndex` exact-host mapping on `tls_sni`/`http_host`; `base_app` names the carrier (`ssl`/`web-browsing`), `implicitly_uses` lists it | specific app implicitly using ssl/web-browsing |
 | `<signature name>` | Custom signature matched (SIGNATURES.md); category/risk come from the signature, `base_app` is its `parent` or the family that exposed the contexts, including `unknown-tcp`/`unknown-udp` | custom App-ID |
 | `ssh`, `dns`, `smb`, `rdp`, … | The family's structural profile passed (see catalog aliases for vendor names) | same |
@@ -158,7 +158,7 @@ LAN 3.3 discovery (`tuya-lan`) and TP-Link Smart Home (`tplink-smarthome`), each
 and fixed-vocabulary evidence only, as catalog applications `lifx-lan`, `tuya-lan` and `tplink-smarthome`.
 The DNS layout no longer rejects multicast DNS responses that compress against an SRV target or NSEC next
 name, ignores the AA bit on mDNS queries as RFC 6762 18.4 requires, and recognises reverse-mapping probes.
-Ported onto the v0.65 architecture as a distinct version: 88 families, 79 automatic, 156 applications,
+Ported onto the v0.65 architecture as a distinct version: 88 families, 79 automatic, 544 applications,
 754 tests; the behaviour diff against v0.65 lists exactly the inputs these profiles now classify
 (docs/BEHAVIOUR-DIFF-V066.md).
 

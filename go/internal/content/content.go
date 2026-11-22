@@ -7,10 +7,13 @@
 package content
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -87,8 +90,8 @@ type hostEntry struct {
 }
 
 type packJSON struct {
-	Schema     int `json:"schema"`
-	Release    Release
+	Schema     int     `json:"schema"`
+	Release    Release `json:"release"`
 	Vocabulary struct {
 		Categories      map[string][]string `json:"categories"`
 		Technologies    []string            `json:"technologies"`
@@ -111,9 +114,15 @@ type Pack struct {
 	ProtocolNames map[string]string
 	Outcomes      map[string]bool
 	Risks         map[string]Risk
-	AppDomains    map[string][]string
-	webFronts     map[string]string
-	suffixes      map[string]string
+	// The catalog vocabularies (applications.CATEGORIES, TECHNOLOGIES, CHARACTERISTICS) custom signatures validate against.
+	Categories      map[string][]string
+	Technologies    map[string]bool
+	Characteristics map[string]bool
+	AppDomains      map[string][]string
+	webFronts       map[string]string
+	suffixes        map[string]string
+	// Digests are the pack digest and the verified release digest (migration/CONTENT-DIGEST.md).
+	Digests Digests
 }
 
 func invalid(msg string) error { return errs.New(errs.Invalid, errs.ScopeProcess, msg) }
@@ -133,10 +142,24 @@ func Load(path string) (*Pack, error) {
 }
 
 // Parse validates pack bytes.
-func Parse(data []byte) (*Pack, error) {
+func Parse(data []byte) (*Pack, error) { return parse(data, false) }
+
+func parse(data []byte, earlier bool) (*Pack, error) {
 	var raw packJSON
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, invalid("content pack is not the expected JSON shape")
+	}
+	// SEC-CONTENT-1: encoding/json matches field names case-insensitively, but the digest verification and the
+	// Python reference read exact keys. The pack is therefore decoded again from the strict tree with every key
+	// that names a field only up to case removed, so the tables used are the ones the exact keys hold. When the
+	// strict parse fails, computeDigests below refuses the pack with that error.
+	if tree, err := parseStrict(data); err == nil {
+		var b strings.Builder
+		writeCanonical(&b, exactFields(tree, reflect.TypeOf(raw)))
+		raw = packJSON{}
+		if err := json.Unmarshal([]byte(b.String()), &raw); err != nil {
+			return nil, invalid("content pack is not the expected JSON shape")
+		}
 	}
 	if raw.Schema != 1 {
 		return nil, errs.New(errs.Unsupported, errs.ScopeProcess, fmt.Sprintf("content pack schema %d", raw.Schema))
@@ -231,7 +254,92 @@ func Parse(data []byte) (*Pack, error) {
 			return nil, invalid("risk entry with an unknown severity: " + name)
 		}
 	}
+	p.Categories, p.Technologies, p.Characteristics = raw.Vocabulary.Categories, technologies, characteristics
+	// The digests come last, so a malformed pack keeps its structural error: the three components the tables
+	// determine and the release digest must be the ones the pack states (migration/CONTENT-DIGEST.md).
+	digests, err := computeDigests(data, earlier)
+	if err != nil {
+		return nil, err
+	}
+	if p.Release.Digest != digests.Release { // the reported digest is the verified one (SEC-CONTENT-1)
+		return nil, invalid("content pack digest mismatch: release digest")
+	}
+	p.Digests = *digests
 	return p, nil
+}
+
+// exactFields returns the strict tree with every object key removed that encoding/json would match to a field
+// of t only case-insensitively (strings.EqualFold is the same Unicode simple folding). Exact keys are kept and
+// followed into the field's type; keys that name no field are kept, since encoding/json ignores them as the
+// reference does.
+func exactFields(value interface{}, t reflect.Type) interface{} {
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	switch t.Kind() {
+	case reflect.Struct:
+		object, ok := value.(map[string]interface{})
+		if !ok {
+			return value
+		}
+		out := make(map[string]interface{}, len(object))
+		for key, item := range object {
+			field, exact, known := jsonField(t, key)
+			switch {
+			case !known:
+				out[key] = item
+			case exact:
+				out[key] = exactFields(item, field.Type)
+			}
+		}
+		return out
+	case reflect.Map:
+		object, ok := value.(map[string]interface{})
+		if !ok {
+			return value
+		}
+		out := make(map[string]interface{}, len(object))
+		for key, item := range object {
+			out[key] = exactFields(item, t.Elem())
+		}
+		return out
+	case reflect.Slice:
+		list, ok := value.([]interface{})
+		if !ok {
+			return value
+		}
+		out := make([]interface{}, len(list))
+		for i, item := range list {
+			out[i] = exactFields(item, t.Elem())
+		}
+		return out
+	}
+	return value
+}
+
+// jsonField finds the field of struct t that encoding/json would decode key into, and whether the key is exact.
+func jsonField(t reflect.Type, key string) (reflect.StructField, bool, bool) {
+	var folded reflect.StructField
+	found := false
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		if !field.IsExported() {
+			continue
+		}
+		name := field.Name
+		if tag, _, _ := strings.Cut(field.Tag.Get("json"), ","); tag == "-" {
+			continue
+		} else if tag != "" {
+			name = tag
+		}
+		if name == key {
+			return field, true, true
+		}
+		if !found && strings.EqualFold(name, key) {
+			folded, found = field, true
+		}
+	}
+	return folded, false, found
 }
 
 func nilToEmpty(app *Application) {
@@ -344,6 +452,33 @@ func (p *Pack) CustomApplication(name, container string) *Application {
 		SecurePorts: base.SecurePorts, ImplicitlyUses: []string{container}, DependsOn: []string{}, Container: &c, Aliases: []string{}, ports: base.ports}
 }
 
+// SignatureApplication is a custom signature's application carried over container: the signature's own
+// metadata (an empty description names the carrier), the carrier's ports, and its parent when the catalog has it.
+func (p *Pack) SignatureApplication(sig Application, parent, container string) *Application {
+	carrier := p.Applications[container]
+	if sig.Description == "" {
+		sig.Description = "Custom signature carried over " + container
+	}
+	uses := parent
+	if uses == "" {
+		uses = container
+	}
+	if _, ok := p.Applications[uses]; !ok {
+		uses = container
+	}
+	c := container
+	if _, ok := p.Applications[parent]; ok && parent != "" {
+		c = parent
+	}
+	characteristics := sig.Characteristics
+	if characteristics == nil {
+		characteristics = []string{}
+	}
+	return &Application{Name: sig.Name, Category: sig.Category, Subcategory: sig.Subcategory, Technology: sig.Technology, Risk: sig.Risk,
+		Description: sig.Description, Characteristics: characteristics, StandardPorts: carrier.StandardPorts, SecurePorts: carrier.SecurePorts,
+		ImplicitlyUses: []string{uses}, DependsOn: []string{}, Container: &c, Aliases: []string{}, ports: carrier.ports}
+}
+
 // AttributionForHost returns (provider, kind) for a normalized server name; kind is "provider-web" for an
 // exact web front and "service" for a name under a service domain (longest label-boundary suffix).
 func (p *Pack) AttributionForHost(hostname string) (string, string, bool) {
@@ -370,4 +505,100 @@ func (p *Pack) ApplicationForHost(hostname string) string {
 		return name
 	}
 	return ""
+}
+
+// pack.json is a byte-for-byte copy of migration/fixtures/content.json (TestEmbeddedPackIsTheSharedPack), so
+// the binary carries the detection content of the release it was built from and needs no file at run time.
+//
+//go:embed pack.json
+var embedded []byte
+
+// Embedded parses the content pack built into the binary.
+func Embedded() (*Pack, error) { return Parse(embedded) }
+
+//go:embed history.json
+var embeddedHistory []byte
+
+// Releases lists the content releases this binary can run, oldest first: the earlier ones in history.json
+// (migration/content_history.py) and the current one of pack.json.
+func Releases() []string { return releasesOf(embeddedHistory) }
+
+func releasesOf(history []byte) []string {
+	var doc struct {
+		Current  string                     `json:"current"`
+		Releases map[string]json.RawMessage `json:"releases"`
+	}
+	if err := json.Unmarshal(history, &doc); err != nil {
+		return nil
+	}
+	out := make([]string, 0, len(doc.Releases)+1)
+	for v := range doc.Releases {
+		out = append(out, v)
+	}
+	sort.SliceStable(out, func(i, j int) bool { return CompareVersions(out[i], out[j]) < 0 })
+	return append(out, doc.Current)
+}
+
+// CompareVersions orders content release versions (YYYY.MM.N) by their numeric components, so 2026.11.9 comes
+// before 2026.11.10; lexical order holds only while every component has the same width. It returns -1, 0 or 1.
+// Versions are compared component by component as decimal integers; a component that is not one falls back
+// to byte order for that component, and a version with fewer components sorts first when the rest are equal.
+func CompareVersions(a, b string) int {
+	pa, pb := strings.Split(a, "."), strings.Split(b, ".")
+	for k := 0; k < len(pa) && k < len(pb); k++ {
+		x, errx := strconv.ParseUint(pa[k], 10, 64)
+		y, erry := strconv.ParseUint(pb[k], 10, 64)
+		switch {
+		case errx == nil && erry == nil && x != y:
+			if x < y {
+				return -1
+			}
+			return 1
+		case errx == nil && erry == nil:
+			continue
+		case pa[k] != pb[k]:
+			return strings.Compare(pa[k], pb[k])
+		}
+	}
+	switch {
+	case len(pa) < len(pb):
+		return -1
+	case len(pa) > len(pb):
+		return 1
+	}
+	return strings.Compare(a, b) // numerically equal spellings ("09", "9") still get a fixed order
+}
+
+// EmbeddedRelease is the pack as of an earlier content release (content.select in the reference): the current
+// pack with that release's block and server-name catalog laid over it. Its server-name catalog must reproduce the
+// release's host component and its release digest is recomputed from the stated components, which are the ones
+// it was published with (C11). The current release is Embedded().
+func EmbeddedRelease(version string) (*Pack, error) {
+	var doc struct {
+		Current  string `json:"current"`
+		Releases map[string]struct {
+			Release     json.RawMessage `json:"release"`
+			HostCatalog json.RawMessage `json:"host_catalog"`
+		} `json:"releases"`
+	}
+	if err := json.Unmarshal(embeddedHistory, &doc); err != nil {
+		return nil, invalid("content history is not the expected JSON shape")
+	}
+	if version == doc.Current {
+		return Embedded()
+	}
+	earlier, ok := doc.Releases[version]
+	if !ok {
+		return nil, invalid("unknown content version " + version)
+	}
+	var pack map[string]json.RawMessage
+	if err := json.Unmarshal(embedded, &pack); err != nil {
+		return nil, invalid("content pack is not the expected JSON shape")
+	}
+	pack["release"], pack["host_catalog"] = earlier.Release, earlier.HostCatalog
+	data, err := json.Marshal(pack)
+	if err != nil {
+		return nil, invalid("content pack cannot be composed")
+	}
+	return parse(data, true)
 }

@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
@@ -45,6 +46,7 @@ type State struct {
 	FIN          map[transport.Endpoint]int
 	Mode         string
 	Input        map[string]int
+	InputOrder   []string // the kinds of Input in first-seen order (the reference's dict order)
 	reportedSeen map[transport.Endpoint]snapshot
 	// Decision timing (P2): when the flow was first identified and when its label last changed.
 	FirstDecision float64
@@ -55,6 +57,19 @@ type State struct {
 	// UDP flows: the flow's observation and the first identified (or latest) observation per direction.
 	Observation  *contracts.Observation
 	Observations map[transport.Endpoint]*contracts.Observation
+	// order is the table insertion order: the reference walks its tables in insertion order when several
+	// states expire or finish together, so records come out in that order.
+	order uint64
+}
+
+// inOrder returns the keys of a state table in insertion order.
+func inOrder(table map[Key]*State) []Key {
+	keys := make([]Key, 0, len(table))
+	for key := range table {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool { return table[keys[i]].order < table[keys[j]].order })
+	return keys
 }
 
 // Decided records an identification at the tracker's current time (Python Analyzer._decided).
@@ -70,6 +85,10 @@ func (t *Tracker) Decided(state *State, label Label) {
 // Now is the tracker's current capture time.
 func (t *Tracker) Now() float64 { return t.now }
 
+// IdleTimeout and MaxUDPFlows are the resolved limits (MaxUDPFlows -1 already replaced by MaxConnections).
+func (t *Tracker) IdleTimeout() float64 { return t.opts.IdleTimeout }
+func (t *Tracker) MaxUDPFlows() int     { return t.opts.MaxUDPFlows }
+
 type snapshot struct {
 	contiguous, pending int
 	next                uint32
@@ -83,6 +102,7 @@ type Closed struct {
 	Reason    string
 	End       float64
 	Delivered map[transport.Endpoint]int  // contiguous bytes handed to each direction's sink
+	Stored    map[transport.Endpoint]int  // bytes each direction's window retained (Stream.stored)
 	Sinks     map[transport.Endpoint]Sink // the directions' sinks (nil when no connection was opened)
 }
 
@@ -112,6 +132,18 @@ type Tracker struct {
 	Correlate func(state *State, source transport.Endpoint) []transport.Endpoint
 	factory   func() Sink
 	gen       int
+	created   uint64
+	// Adapter hooks (all optional). Retired runs for each direction when tracking of its connection ends, client
+	// first, after the sink was retired (Python on_retire). Classified names the sink whose observation is the
+	// packet's classification (Analyzer.last_classification) at the moment Python reads it. Evidence renders the
+	// legacy per-family table appended to a data segment's message.
+	Retired func(source, destination transport.Endpoint, sink Sink)
+	// Retiring is the state of the connection Drop is retiring, nil outside Drop and for an untracked key.
+	Retiring   *State
+	Classified func(sink Sink)
+	Evidence   func(sink Sink) string
+	// LastServer is the server endpoint of the packet in progress when tracking knows it (Analyzer.last_server).
+	LastServer *transport.Endpoint
 }
 
 // NewTracker validates the options like the Python constructor.
@@ -156,10 +188,26 @@ func (t *Tracker) Tracked(a, b transport.Endpoint) *State {
 	return t.udpFlows[KeyOf(a, b)]
 }
 
+// TracksTCP reports whether a TCP connection with this key is tracked (key in Analyzer.tracked).
+func (t *Tracker) TracksTCP(key Key) bool { _, ok := t.tracked[key]; return ok }
+
 func (t *Tracker) closed(state *State, reason string, delivered map[transport.Endpoint]int, sinks map[transport.Endpoint]Sink) {
+	t.closedWith(state, reason, delivered, nil, sinks)
+}
+
+func (t *Tracker) closedWith(state *State, reason string, delivered, stored map[transport.Endpoint]int, sinks map[transport.Endpoint]Sink) {
 	if t.onClosed != nil {
-		t.onClosed(Closed{State: state, Reason: reason, End: t.now, Delivered: delivered, Sinks: sinks})
+		t.onClosed(Closed{State: state, Reason: reason, End: t.now, Delivered: delivered, Stored: stored, Sinks: sinks})
 	}
+}
+
+// TrackedTCP are the tracked TCP connections in table order (Analyzer.tracked.values()).
+func (t *Tracker) TrackedTCP() []*State {
+	out := make([]*State, 0, len(t.tracked))
+	for _, key := range inOrder(t.tracked) {
+		out = append(out, t.tracked[key])
+	}
+	return out
 }
 
 // Drop ends tracking of a connection: each direction's sink is ended with the reason.
@@ -167,29 +215,57 @@ func (t *Tracker) Drop(key Key, reason string) {
 	connection := t.manager.Connections[key]
 	state := t.tracked[key]
 	delete(t.tracked, key)
-	var delivered map[transport.Endpoint]int
+	// Lets Retired consumers read the per-direction byte counts of the state being retired (Analyzer.retiring).
+	t.Retiring = state
+	defer func() { t.Retiring = nil }()
+	var delivered, stored map[transport.Endpoint]int
 	var sinks map[transport.Endpoint]Sink
 	if connection != nil {
-		delivered = map[transport.Endpoint]int{}
+		delivered, stored = map[transport.Endpoint]int{}, map[transport.Endpoint]int{}
 		sinks = map[transport.Endpoint]Sink{}
-		for endpoint, d := range connection.Directions {
+		// Client first, as the reference's direction table is ordered.
+		order := []transport.Endpoint{key[0], key[1]}
+		if state != nil {
+			order = []transport.Endpoint{state.Client, state.Server}
+		}
+		for i, endpoint := range order {
+			d := connection.Directions[endpoint]
+			if d == nil {
+				continue
+			}
 			d.Sink.Retire(reason)
+			if t.Retired != nil {
+				t.Retired(endpoint, order[len(order)-1-i], d.Sink)
+			}
 			delivered[endpoint] = d.Stream.Delivered()
+			stored[endpoint] = d.Stream.Stored()
 			sinks[endpoint] = d.Sink
 		}
 		t.manager.release(key)
 	}
 	if state != nil {
-		t.closed(state, reason, delivered, sinks)
+		t.closedWith(state, reason, delivered, stored, sinks)
 	}
 }
 
 func (t *Tracker) reject(key Key, source transport.Endpoint, reason string) string {
 	if c := t.manager.Connections[key]; c != nil {
 		c.Directions[source].Sink.Invalidate(reason)
+		if t.Classified != nil {
+			t.Classified(c.Directions[source].Sink)
+		}
 	}
 	t.Drop(key, reason)
 	return "INVALIDATED: " + reason
+}
+
+// Reset forgets every connection and flow without ending them: a capture gap retracts active observations and
+// requires a newly observed start; it is not a clean end, so no session record is produced (analyze.capture_gap).
+func (t *Tracker) Reset() {
+	t.tracked, t.udpFlows = map[Key]*State{}, map[Key]*State{}
+	for key := range t.manager.Connections {
+		t.manager.release(key)
+	}
 }
 
 // Finish releases all tracking with the reason (1..256 characters).
@@ -197,14 +273,29 @@ func (t *Tracker) Finish(reason string) error {
 	if reason == "" || len(reason) > 256 {
 		return errs.New(errs.Invalid, errs.ScopeCapture, "End reason must contain 1..256 characters")
 	}
-	for key := range t.tracked {
+	for _, key := range inOrder(t.tracked) {
 		t.Drop(key, reason)
 	}
-	for key, flow := range t.udpFlows {
+	for _, key := range inOrder(t.udpFlows) {
+		flow := t.udpFlows[key]
 		delete(t.udpFlows, key)
 		t.closed(flow, reason, nil, nil)
 	}
 	return nil
+}
+
+// idle returns the keys of the states that reached the idle timeout, in table (insertion) order.
+func (t *Tracker) idle(table map[Key]*State) []Key {
+	var keys []Key
+	for key, state := range table {
+		if t.now-state.Time >= t.opts.IdleTimeout {
+			keys = append(keys, key)
+		}
+	}
+	if len(keys) > 1 {
+		sort.Slice(keys, func(i, j int) bool { return table[keys[i]].order < table[keys[j]].order })
+	}
+	return keys
 }
 
 // Expire advances time and retires idle states, then idle connections.
@@ -219,13 +310,15 @@ func (t *Tracker) Expire(timestamp float64) {
 	if t.opts.Compact {
 		t.nextExp = t.now + 1
 	}
-	for key, state := range t.tracked {
-		if t.now-state.Time >= t.opts.IdleTimeout {
+	// This runs for every packet, so the tables are only put in order when something expired: the states that
+	// expire, and the table order in which they are retired, are the reference's.
+	for _, key := range t.idle(t.tracked) {
+		if state := t.tracked[key]; state != nil && t.now-state.Time >= t.opts.IdleTimeout {
 			t.Drop(key, ReasonIdle)
 		}
 	}
-	for key, flow := range t.udpFlows {
-		if t.now-flow.Time >= t.opts.IdleTimeout {
+	for _, key := range t.idle(t.udpFlows) {
+		if flow := t.udpFlows[key]; flow != nil && t.now-flow.Time >= t.opts.IdleTimeout {
 			delete(t.udpFlows, key)
 			t.closed(flow, ReasonIdleUDP, nil, nil)
 		}
@@ -249,6 +342,9 @@ func (t *Tracker) NoteInput(kind string, endpoints *[2]transport.Endpoint) bool 
 	if state.Input == nil {
 		state.Input = map[string]int{}
 	}
+	if _, seen := state.Input[kind]; !seen {
+		state.InputOrder = append(state.InputOrder, kind)
+	}
 	state.Input[kind]++
 	if kind == transport.KindTruncated {
 		if _, tcp := t.tracked[key]; tcp {
@@ -270,6 +366,8 @@ func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP, obs *contracts
 		} else {
 			flow = &State{Transport: "udp", Client: p.Source, Server: p.Destination, Start: t.now, Time: t.now, Ready: true,
 				Bytes: map[transport.Endpoint]int{}, Mode: "", Observation: obs, Observations: map[transport.Endpoint]*contracts.Observation{}}
+			t.created++
+			flow.order = t.created
 			t.udpFlows[key] = flow
 		}
 	}
@@ -325,6 +423,11 @@ func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP, obs *contracts
 			proto = *obs.Encryption
 		}
 	}
+	server := p.Destination
+	if flow != nil {
+		server = flow.Server
+	}
+	t.LastServer = &server
 	return fmt.Sprintf("UDP %s -> %s | %s | %s | %s", p.Source, p.Destination, strings.ToUpper(status), proto, reason)
 }
 
@@ -336,11 +439,14 @@ func newState(client, server transport.Endpoint, now float64) *State {
 // Process handles one TCP segment and returns the Python adapter's message for it (the part before
 // the first " | " is compared by the differential harness).
 func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
+	t.LastServer = nil
 	t.Expire(timestamp)
 	source, destination := p.Source, p.Destination
 	key := KeyOf(source, destination)
 	state := t.tracked[key]
 	if state != nil {
+		server := state.Server
+		t.LastServer = &server
 		state.Packets++
 		if len(p.Payload) > 0 {
 			state.Bytes[source] += len(p.Payload)
@@ -369,7 +475,10 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 		}
 		state = newState(source, destination, t.now)
 		state.ISN, state.HasISN, state.Packets = p.Sequence, true, 1
+		t.created++
+		state.order = t.created
 		t.tracked[key] = state
+		t.LastServer = &destination
 		return "SYN: waiting for SYN-ACK"
 	}
 	if state == nil {
@@ -385,7 +494,10 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 		state = newState(source, destination, t.now)
 		state.Ready, state.Mode, state.Packets = true, ModeMidstream, 1
 		state.Bytes[source] = len(p.Payload)
+		t.created++
+		state.order = t.created
 		t.tracked[key] = state
+		t.LastServer = &destination
 		t.Counts["midstream_connections"]++
 	}
 	state.Time = t.now
@@ -456,9 +568,26 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 	}
 	changed, err := t.manager.Feed(source, destination, p.Sequence, p.Payload, t.now)
 	if err != nil {
+		if t.Classified != nil {
+			t.Classified(connection.Directions[source].Sink)
+		}
 		t.Drop(key, ReasonTrackingEnded)
 		return "INVALIDATED: " + detail(err)
 	}
+	// The reference's snapshot holds the direction's classification and legacy table as they were when the
+	// segment was fed, before any cross-direction correlation; a FIN that ends the direction re-reads both.
+	evidence := ""
+	capture := func() {
+		if t.Classified != nil {
+			t.Classified(connection.Directions[source].Sink)
+		}
+		if t.Evidence != nil && !t.opts.Compact {
+			// Only a non-compact message prints the per-family table; building it for every packet of a compact
+			// tracker (live capture, the presentation analysis) was most of the per-packet cost under load.
+			evidence = t.Evidence(connection.Directions[source].Sink)
+		}
+	}
+	capture()
 	if decider, ok := connection.Directions[source].Sink.(Decider); ok {
 		for _, label := range decider.TakeIdentified() {
 			t.Decided(state, label)
@@ -472,6 +601,7 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 		if t.manager.FinishDirection(source, destination, ReasonFIN) {
 			changed = true
 		}
+		capture()
 	}
 	t.gen++
 	current := snapshot{contiguous: stream.Contiguous(), pending: stream.Pending(), next: stream.NextSequence(), valid: true}
@@ -488,6 +618,9 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 	message := "No new contiguous data"
 	if !t.opts.Compact && changed && (current.contiguous > 0 || current.pending > 0) {
 		message = fmt.Sprintf("%s -> %s | contiguous=%d pending=%d", source, destination, current.contiguous, current.pending)
+		if t.Evidence != nil {
+			message += " | " + evidence
+		}
 	}
 	if len(state.FIN) == 2 {
 		all := true

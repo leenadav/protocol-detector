@@ -5,12 +5,11 @@ import (
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/x509x"
 )
 
 // Flow risks (protocol_engine/risks.py) for the evidence fields the ported families emit plus every
-// field a later family may add that needs no helper the Go backend lacks. Certificate validity and key
-// classification (x509 helpers) are not ported: those fields only appear with the certificates option,
-// which the Go inspector refuses, so their branches are unreachable here.
+// field a later family may add, including the certificate fields of the certificates option (x509x helpers).
 
 var sharing = map[string]bool{"rdp": true, "vnc": true, "smb": true, "ftp": true, "bittorrent": true, "rsync": true, "tftp": true}
 var legacyTLS = map[string]bool{"1.0": true, "1.1": true, "SSL 3.0": true}
@@ -62,8 +61,9 @@ func remove(list []string, v string) []string {
 	return list
 }
 
-// FlowRisks ports risks.flow_risks (sorted, deduplicated). Certificate-validity evaluation is absent (see above).
-func FlowRisks(v *Verdict, client, server *contracts.Observation) []string {
+// FlowRisks ports risks.flow_risks (sorted, deduplicated); at is the capture time certificate validity reads (nil:
+// never evaluated).
+func FlowRisks(v *Verdict, client, server *contracts.Observation, at *float64) []string {
 	found := applicationRisks(v)
 	if v.PortUsage == "nonstandard" {
 		found = append(found, "nonstandard-port")
@@ -115,6 +115,14 @@ func FlowRisks(v *Verdict, client, server *contracts.Observation) []string {
 			case "tls_certificate_self_issued":
 				if value == "yes" {
 					found = append(found, "tls-self-issued-certificate")
+				}
+			case "tls_certificate_key":
+				if x509x.WeakKey(value) {
+					found = append(found, "tls-weak-certificate-key")
+				}
+			case "tls_certificate_signature":
+				if x509x.WeakSignatures[value] {
+					found = append(found, "tls-weak-certificate-signature")
 				}
 			case "modbus_pdu":
 				if value == "exception" {
@@ -239,7 +247,7 @@ func FlowRisks(v *Verdict, client, server *contracts.Observation) []string {
 				if value == "absent" {
 					found = append(found, "tls-certificate-without-san")
 				}
-			case "snmp_security_level", "snmp_usm_discovery", "snmp_pdu":
+			case "tls_certificate_not_before", "tls_certificate_not_after", "snmp_security_level", "snmp_usm_discovery", "snmp_pdu":
 				window[field] = value
 			case "tls_certificate_lifetime_days":
 				if n, ok := atoi(value); ok && n > 398 {
@@ -252,6 +260,13 @@ func FlowRisks(v *Verdict, client, server *contracts.Observation) []string {
 						found = append(found, "obsolete-protocol")
 					}
 				}
+			}
+		}
+		_, hasBefore := window["tls_certificate_not_before"]
+		_, hasAfter := window["tls_certificate_not_after"]
+		if hasBefore || hasAfter {
+			if label := x509x.Validity(window["tls_certificate_not_before"], window["tls_certificate_not_after"], at); label == "expired" || label == "not-yet-valid" {
+				found = append(found, "tls-certificate-outside-validity")
 			}
 		}
 		if level, ok := window["snmp_security_level"]; ok {

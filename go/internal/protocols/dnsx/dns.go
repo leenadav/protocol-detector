@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
 )
@@ -121,7 +122,7 @@ func expandName(data []byte, start, end int) []byte {
 		if length == 0 {
 			break
 		}
-		labels = append(labels, bytes.ToLower(data[pos:pos+length]))
+		labels = append(labels, ascii.LowerBytes(data[pos:pos+length]))
 		pos += length
 	}
 	return bytes.Join(labels, []byte("."))
@@ -515,7 +516,8 @@ func (p *TCP) Feed(data []byte) (int, error) {
 		for i, r := range details.Rows {
 			rows[i] = parsing.Row{Field: r.Field, Value: r.Value, Provenance: "message", Strength: r.Strength}
 		}
-		p.result = &parsing.Result{ProtocolName: "dns", Reason: details.Reason, Extra: rows}
+		p.result = &parsing.Result{ProtocolName: "dns", Reason: details.Reason, Extra: rows,
+			Contexts: parsing.Contexts{"dns-req-query-name": details.QName, "dns-req-query-type": int64(details.QType)}}
 		p.done = true
 		p.buffer = nil
 	}

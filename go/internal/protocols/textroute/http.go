@@ -7,12 +7,14 @@ package textroute
 
 import (
 	"bytes"
+	"github.com/leenadav/protocol-detector/go/internal/ascii"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/names"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
+	"github.com/leenadav/protocol-detector/go/internal/protocols/fingerprint"
 )
 
 // Options mirrors the Config fields the parser reads.
@@ -20,8 +22,12 @@ type Options struct {
 	MaxLine      int
 	MaxHeaders   int
 	MaxBytes     int
-	Continuation int
-	ForceHTTP    bool // parsers.LineParser(config, "http"): skip the first-line route (the SSDP datagram profile)
+	Continuation int // D07 byte budget after an HTTP/1 identification; 0 = off
+	// MaxTransactions caps the HTTP/1 messages a continuation counts per direction (Config.max_transactions).
+	MaxTransactions int
+	ForceHTTP       bool
+	Fingerprints    bool // Config.fingerprints: HASSH over the SSH KEXINIT, the HTTP/2 SETTINGS and pseudo-header order
+	RetainContexts  bool // Config.retain_contexts: bounded signature contexts (never emitted) // parsers.LineParser(config, "http"): skip the first-line route (the SSDP datagram profile)
 }
 
 const token = `[!#$%&'*+.^_` + "`" + `|~0-9A-Za-z-]+`
@@ -91,7 +97,7 @@ func ContentTypeClass(value []byte) string {
 	if i := bytes.IndexByte(media, ';'); i >= 0 {
 		media = media[:i]
 	}
-	m := strings.ToLower(string(bytes.TrimSpace(media)))
+	m := ascii.Lower(string(bytes.TrimSpace(media)))
 	for _, c := range classes {
 		if (c.isPrefix && strings.HasPrefix(m, c.prefix)) || (!c.isPrefix && m == c.prefix) {
 			return c.label
@@ -122,7 +128,7 @@ func authSchemeClass(value []byte) string {
 	if i := bytes.IndexByte(scheme, ','); i >= 0 {
 		scheme = scheme[:i]
 	}
-	s := strings.ToLower(string(bytes.Trim(scheme, "\t")))
+	s := ascii.Lower(string(bytes.Trim(scheme, "\t")))
 	if label, ok := authSchemes[s]; ok {
 		return label
 	}
@@ -159,7 +165,7 @@ func challengeSchemeClasses(value []byte) []string {
 			label = "other"
 		} else if len(tok) > 0 {
 			label = "other"
-			if l, ok := authSchemes[strings.ToLower(string(tok))]; ok {
+			if l, ok := authSchemes[ascii.Lower(string(tok))]; ok {
 				label = l
 			}
 		} else {
@@ -217,6 +223,12 @@ type Parser struct {
 	smtpWatched      int
 	control          *controlHeaders
 	maxBytes         int
+	cont             *httpContinuation // D07: later messages of this direction within Options.Continuation
+	subordinate      bool              // a per-message parser owned by a continuation never starts one itself
+	baseExtra        []parsing.Row     // the identifying message's evidence, before continuation evidence
+	fingerprints     []parsing.Row
+	contexts         parsing.Contexts
+	headerBlock      []byte
 }
 
 // ResolvedFamily is the family the first line resolved to ("text" before that).
@@ -227,12 +239,14 @@ func (p *Parser) ResolvedFamily() string {
 	return p.family
 }
 
-// New creates the text-route parser; the continuation option is NotPorted.
+// New creates the text-route parser. With opts.Continuation an HTTP/1 identification keeps framing later
+// messages of its direction (continuation.go); the other text families ignore the option, as in Python.
 func New(opts Options) (*Parser, error) {
-	if opts.Continuation != 0 {
-		return nil, &parsing.NotPorted{What: "option continuation (HTTP)"}
+	p := &Parser{opts: opts, first: true, reason: "Waiting for complete line", refined: true, maxBytes: opts.MaxBytes}
+	if opts.RetainContexts {
+		p.contexts = parsing.Contexts{}
 	}
-	return &Parser{opts: opts, first: true, reason: "Waiting for complete line", refined: true, maxBytes: opts.MaxBytes}, nil
+	return p, nil
 }
 
 // ControlField returns a control-protocol header value (SIP/RTSP) the route recorded, for the SIP datagram profile.
@@ -253,14 +267,28 @@ func (p *Parser) Done() bool { return p.done }
 func (p *Parser) Result() *parsing.Result {
 	if p.mode == "http" || p.mode == "" {
 		return &parsing.Result{Family: "http", ProtocolName: p.protocolName, Host: p.host, HasHost: p.hasHost, HostSource: "http_host",
-			ALPN: []string{}, Extra: p.extra, Reason: p.reason, Scope: p.scope, Shift: p.shift}
+			ALPN: []string{}, Extra: p.extra, Reason: p.reason, Scope: p.scope, Shift: p.shift, Continues: p.continues, Contexts: p.contexts}
 	}
 	return &parsing.Result{Family: p.family, ProtocolName: p.protocolName2, ALPN: []string{}, Extra: p.extra, Reason: p.reason,
-		Scope: p.scope, Shift: p.shift, Continues: p.continues}
+		Scope: p.scope, Shift: p.shift, Continues: p.continues, Fingerprints: p.fingerprints, Contexts: p.contexts}
 }
 
-// Feed ports LineParser.feed for the HTTP protocol (no SSH/IRC limits, no continuation).
+// Feed ports LineParser.feed (TextParser route, SSH KEXINIT, SMTP watch, HTTP/1 continuation).
 func (p *Parser) Feed(data []byte) (int, error) {
+	if p.cont != nil {
+		consumed := p.cont.feed(data)
+		p.continuationEvidence()
+		if p.cont.done {
+			if p.cont.shift != nil {
+				p.shift, p.scope = p.cont.shift, p.cont.scope
+				if p.scope == "" {
+					p.scope = "initial_message"
+				}
+			}
+			p.cont, p.continues = nil, false
+		}
+		return consumed, nil
+	}
 	if p.continues && p.kexinit != nil {
 		consumed, err := p.kexinit.feed(data)
 		if err != nil {
@@ -268,6 +296,10 @@ func (p *Parser) Feed(data []byte) (int, error) {
 		}
 		if p.kexinit.done {
 			p.extra = append(p.extra, kexinitPosture(p.kexinit.lists)...)
+			if p.opts.Fingerprints {
+				l := p.kexinit.lists
+				p.fingerprints = []parsing.Row{{Field: "hassh", Value: fingerprint.HASSH(l[0], l[2], l[4], l[6]), Provenance: "kexinit"}}
+			}
 			p.refined, p.kexinit, p.continues = true, nil, false
 		}
 		return consumed, nil
@@ -318,7 +350,7 @@ func (p *Parser) route(line []byte) (bool, error) {
 	if i := bytes.IndexByte(line, ' '); i >= 0 {
 		command = line[:i]
 	}
-	upper := strings.ToUpper(string(command))
+	upper := ascii.Upper(string(command))
 	special := bytes.HasPrefix(line, []byte("SSH-")) || smtpCommands[upper]
 	if len(line) > 0 {
 		switch line[0] {
@@ -333,6 +365,9 @@ func (p *Parser) route(line []byte) (bool, error) {
 		p.family, p.mode = "ssh", "ssh"
 		if len(line)+2 > 255 {
 			return true, parsing.Malformed("SSH identification exceeds 255 bytes")
+		}
+		if p.contexts != nil {
+			p.contexts["ssh-req-banner"] = append([]byte{}, line...)
 		}
 		if !sshBanner.Match(line) {
 			return true, parsing.Malformed("Invalid or unsupported SSH identification")
@@ -359,12 +394,15 @@ func (p *Parser) route(line []byte) (bool, error) {
 		p.protocolName2, p.done = "smtp", true
 		p.reason = "SMTP client EHLO/HELO syntax validated; server exchange and message body not inspected"
 		p.extra = []parsing.Row{{Field: "smtp_client_identity", Value: text, Provenance: "smtp_greeting", Strength: "asserted"}}
+		if p.contexts != nil {
+			p.contexts["smtp-req-argument"] = append([]byte{}, identity...)
+		}
 		p.continues = true
 		return true, nil
 	}
 	if len(line) > 0 && (line[0] == 'I' || line[0] == 'i' || line[0] == 'C' || line[0] == 'c') {
 		if m := natsStart.FindSubmatch(line); m != nil {
-			if err := natsHandshake(strings.ToUpper(string(m[1])), m[2], p.opts.MaxHeaders); err != nil {
+			if err := natsHandshake(ascii.Upper(string(m[1])), m[2], p.opts.MaxHeaders); err != nil {
 				return true, err
 			}
 			p.family, p.mode, p.protocolName2, p.scope, p.done, p.reason = "nats", "nats", "nats", "protocol_header", true, natsReason
@@ -403,7 +441,7 @@ func (p *Parser) route(line []byte) (bool, error) {
 	} else if ok {
 		p.family, p.mode, p.protocolName2, p.scope, p.done = "imap", "imap", "imap", "initial_message", true
 		p.reason = "IMAP tagged client command validated; arguments and credentials are not inspected or emitted"
-		if parts := bytes.Split(line, []byte(" ")); len(parts) > 1 && strings.ToUpper(string(parts[1])) == "STARTTLS" {
+		if parts := bytes.Split(line, []byte(" ")); len(parts) > 1 && ascii.Upper(string(parts[1])) == "STARTTLS" {
 			p.shift = &parsing.Shift{Boundary: "starttls", Expected: "tls"}
 		}
 		return true, nil
@@ -462,7 +500,7 @@ func smtpIdentity(identity []byte) (string, bool) {
 	text := string(identity)
 	if strings.HasPrefix(text, "[") && strings.HasSuffix(text, "]") {
 		address := text[1 : len(text)-1]
-		if strings.HasPrefix(strings.ToLower(address), "ipv6:") {
+		if strings.HasPrefix(ascii.Lower(address), "ipv6:") {
 			return text, names.IsIPv6(address[5:])
 		}
 		return text, names.IsIPv4(address)
@@ -480,12 +518,12 @@ func (p *Parser) consumeSMTP(line []byte) error {
 		return parsing.Malformed("SMTP command exceeds 512 bytes")
 	}
 	verbB, _, _ := bytes.Cut(line, []byte(" "))
-	verb := strings.ToUpper(string(verbB))
+	verb := ascii.Upper(string(verbB))
 	if !smtpVerbs[verb] {
 		return parsing.Malformed("Unexpected SMTP command")
 	}
 	if verb == "STARTTLS" {
-		if strings.ToUpper(string(line)) != "STARTTLS" {
+		if ascii.Upper(string(line)) != "STARTTLS" {
 			return parsing.Malformed("STARTTLS takes no parameters")
 		}
 		p.shift = &parsing.Shift{Boundary: "starttls", Expected: "tls"}
@@ -545,11 +583,11 @@ func imapCommand(line []byte, maxLine int) (bool, error) {
 	if len(parts) < 2 || !imapTag.Match(parts[0]) {
 		return false, nil
 	}
-	tag := strings.ToUpper(string(parts[0]))
+	tag := ascii.Upper(string(parts[0]))
 	if tag == "OK" || tag == "NO" || tag == "BAD" {
 		return false, nil
 	}
-	command := strings.ToUpper(string(parts[1]))
+	command := ascii.Upper(string(parts[1]))
 	if !imapCommands[command] {
 		return false, nil
 	}
@@ -589,7 +627,7 @@ func commandLine(line []byte) (string, []string, *parsing.Shift, error) {
 		}
 	}
 	verbB, argument, hasSep := bytes.Cut(line, []byte(" "))
-	verb := strings.ToUpper(string(verbB))
+	verb := ascii.Upper(string(verbB))
 	if !cmdVerb.MatchString(verb) {
 		return "", nil, nil, nil
 	}
@@ -611,7 +649,7 @@ func commandLine(line []byte) (string, []string, *parsing.Shift, error) {
 			}
 		}
 		if verb == "TYPE" {
-			a := strings.ToUpper(string(argument))
+			a := ascii.Upper(string(argument))
 			if len(a) == 0 || !strings.ContainsRune("AIEL", rune(a[0])) {
 				return "", nil, nil, parsing.Malformed("FTP TYPE argument invalid")
 			}
@@ -639,7 +677,7 @@ func commandLine(line []byte) (string, []string, *parsing.Shift, error) {
 			return "", nil, nil, parsing.Malformed("Command requires an argument")
 		}
 		if verb == "AUTH" {
-			switch strings.ToUpper(string(argument)) {
+			switch ascii.Upper(string(argument)) {
 			case "TLS", "SSL", "TLS-C", "TLS-P":
 				return "ftp", []string{"ftp"}, &parsing.Shift{Boundary: "auth-tls", Expected: "tls"}, nil
 			}
@@ -688,7 +726,7 @@ func (p *Parser) consumeLine(line []byte) error {
 			i := bytes.LastIndexByte(line, ' ')
 			version = line[i+1:]
 			parts := bytes.SplitN(line, []byte(" "), 3)
-			p.method = strings.ToUpper(string(parts[0]))
+			p.method = ascii.Upper(string(parts[0]))
 			p.target = parts[1]
 			if p.method != "CONNECT" {
 				label := "extension"
@@ -709,6 +747,24 @@ func (p *Parser) consumeLine(line []byte) error {
 			p.protocolName = "http/1.0"
 		}
 		p.reason = "Start-line validated; waiting for headers"
+		if p.contexts != nil {
+			parts := bytes.SplitN(line, []byte(" "), 3)
+			p.contexts["http-req-version"] = append([]byte{}, version...)
+			if request {
+				p.contexts["http-req-method"] = append([]byte{}, parts[0]...)
+				path, _, _ := bytes.Cut(parts[1], []byte("?"))
+				p.contexts["http-req-uri-path"] = append([]byte{}, path...)
+			} else {
+				status, _ := strconv.Atoi(string(parts[1]))
+				p.contexts["http-rsp-status"] = int64(status)
+				reason := []byte{}
+				if len(parts) > 2 {
+					reason = append(reason, parts[2]...)
+				}
+				p.contexts["http-rsp-reason"] = reason
+			}
+			p.headerBlock = []byte{}
+		}
 		return nil
 	}
 	if len(line) == 0 {
@@ -720,7 +776,30 @@ func (p *Parser) consumeLine(line []byte) error {
 		}
 		p.done = true
 		p.reason = "HTTP start-line and headers validated; body and later requests not inspected"
-		return p.shiftBoundary()
+		if err := p.shiftBoundary(); err != nil {
+			return err
+		}
+		if p.contexts != nil {
+			p.contexts["http-req-headers"] = p.headerBlock
+			if p.hasHost {
+				p.contexts["http-req-host-header"] = []byte(p.host)
+			}
+			if p.hasContentLength {
+				p.contexts["http-req-content-length"] = p.contentLength
+			}
+		}
+		if p.shift == nil && p.opts.Continuation > 0 && !p.subordinate {
+			p.baseExtra = append([]parsing.Row{}, p.extra...)
+			p.cont = newHTTPContinuation(p.opts, p)
+			p.reason = "HTTP start-line and headers validated; later messages framed within the continuation budget"
+			p.refined = false
+			p.continues = !p.cont.done
+			if !p.continues {
+				p.continuationEvidence()
+				p.cont = nil
+			}
+		}
+		return nil
 	}
 	p.headers++
 	if p.headers > p.opts.MaxHeaders {
@@ -735,8 +814,24 @@ func (p *Parser) consumeLine(line []byte) error {
 			return parsing.Malformed("Control byte in header")
 		}
 	}
-	name := strings.ToLower(string(nameB))
+	name := ascii.Lower(string(nameB))
 	value = bytes.Trim(value, " \t")
+	if p.contexts != nil {
+		if len(p.headerBlock) < 4096 { // bounded header block for raw-context signatures
+			line := append(append(append([]byte(name), ": "...), value...), "\r\n"...)
+			if room := 4096 - len(p.headerBlock); len(line) > room {
+				line = line[:room]
+			}
+			p.headerBlock = append(p.headerBlock, line...)
+		}
+		if _, seen := p.contexts["http-req-user-agent-header"]; name == "user-agent" && !seen {
+			agent := value
+			if len(agent) > 1024 {
+				agent = agent[:1024]
+			}
+			p.contexts["http-req-user-agent-header"] = append([]byte{}, agent...)
+		}
+	}
 	switch name {
 	case "host":
 		p.hostCount++
@@ -778,7 +873,7 @@ func (p *Parser) consumeLine(line []byte) error {
 		p.hasContentLength = true
 		p.contentLength, _ = strconv.ParseInt(string(value), 10, 64)
 	case "transfer-encoding":
-		if p.transferEncoding || strings.ToLower(string(value)) != "chunked" {
+		if p.transferEncoding || ascii.Lower(string(value)) != "chunked" {
 			return parsing.Malformed("Unsupported or duplicate Transfer-Encoding")
 		}
 		p.transferEncoding = true
@@ -787,10 +882,10 @@ func (p *Parser) consumeLine(line []byte) error {
 			return parsing.Malformed("Invalid or duplicate Upgrade header")
 		}
 		first, _, _ := bytes.Cut(value, []byte(","))
-		p.upgrade, p.hasUpgrade = strings.ToLower(string(bytes.TrimSpace(first))), true
+		p.upgrade, p.hasUpgrade = ascii.Lower(string(bytes.TrimSpace(first))), true
 	case "connection":
 		for _, tok := range bytes.Split(value, []byte(",")) {
-			if strings.ToLower(string(bytes.TrimSpace(tok))) == "upgrade" {
+			if ascii.Lower(string(bytes.TrimSpace(tok))) == "upgrade" {
 				p.connectionUpg = true
 			}
 		}
@@ -816,6 +911,12 @@ func (p *Parser) consumeLine(line []byte) error {
 		p.h2Settings = true
 	}
 	return nil
+}
+
+// continuationEvidence ports LineParser._continuation_evidence.
+func (p *Parser) continuationEvidence() {
+	p.extra = append(append([]parsing.Row{}, p.baseExtra...), p.cont.evidence()...)
+	p.refined = true
 }
 
 // h2SettingsValue ports the base64url character check `[A-Za-z0-9_\-]{0,1024}` (RE2 caps repeat counts).

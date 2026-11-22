@@ -123,6 +123,12 @@ def _content(as_json):
 
 
 def main(argv=None):
+    arguments = sys.argv[1:] if argv is None else list(argv)
+    if arguments and arguments[0] in ("analyze", "live"):
+        # Everything after these two commands belongs to the adapter. argparse.REMAINDER does not accept an
+        # option as the first remaining argument ("live --stdin", "live --interface eth0"), so they are
+        # delegated before the parser sees them.
+        return _delegate("analyze_pcap" if arguments[0] == "analyze" else "live_capture", arguments[1:])
     parser = argparse.ArgumentParser(prog="protodetect", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
     for name, help_text in (("analyze", "Offline PCAP inspection; remaining options go to analyze_pcap.py"),

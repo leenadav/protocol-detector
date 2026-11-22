@@ -34,7 +34,13 @@ class HostCatalogTests(unittest.TestCase):
         self.assertEqual(application_for_host("eu.teams.microsoft.com"), "ms-teams")
         self.assertEqual(application_for_host("mail.google.com"), "gmail")              # longer suffix beats google.com
         self.assertEqual(application_for_host("www.google.com"), "google-base")
-        for host in ("notyoutube.com", "youtube.com.example.net", "example.org", "com", "microsoft.com", "googlevideo.co"):
+        self.assertEqual(application_for_host("microsoft.com"), "ms-base")              # platform base since 2026.11.1
+        self.assertEqual(application_for_host("copilot.microsoft.com"), "ms-copilot")   # still the longest suffix
+        self.assertEqual(application_for_host("mail.yahoo.com"), "yahoo-mail")
+        self.assertEqual(application_for_host("news.yahoo.com"), "yahoo")
+        self.assertEqual(application_for_host("api.nordvpn.com"), "nordvpn")
+        self.assertIsNone(application_for_host("www.nordvpn.com"))                      # the vendor's marketing site
+        for host in ("notyoutube.com", "youtube.com.example.net", "example.org", "com", "googlevideo.co", "notx.ai", "qq.com"):
             self.assertIsNone(application_for_host(host), host)
 
     def test_catalog_integrity(self):

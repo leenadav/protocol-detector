@@ -33,23 +33,23 @@ func TestHintSelectsButNeverEstablishes(t *testing.T) {
 	if ev := in2.Feed([]byte("GET / HTTP/1.1\r\n\r\n")); len(ev) != 1 || ev[0].Observation.Status != contracts.Malformed {
 		t.Fatalf("a tls hint on HTTP bytes: %+v", ev)
 	}
-	if _, err := New(contracts.DefaultConfig(), "http2"); err == nil { // still unported; smb2 and rdp were the example earlier
-		t.Fatal("unported hint accepted")
+	// Every registry candidate is ported now (stun, http2, smb2 and rdp were the unported example earlier); a name
+	// outside the registry and an internal dispatch route are still refused, as Python refuses them.
+	for _, hint := range []string{"no-such-family", "git_text", "tpkt"} {
+		if _, err := New(contracts.DefaultConfig(), hint); err == nil {
+			t.Fatalf("hint %q accepted", hint)
+		}
 	}
 }
 
-func TestOptionsTheBackendLacksAreRefusedUpFront(t *testing.T) {
+func TestEveryConfigOptionIsAccepted(t *testing.T) {
 	cfg := contracts.DefaultConfig()
-	cfg.Heuristics = true
-	if _, err := New(cfg, ""); err == nil {
-		t.Fatal("heuristics accepted")
+	cfg.RetainContexts, cfg.Fingerprints, cfg.Certificates, cfg.Heuristics = true, true, true, true
+	if _, err := New(cfg, ""); err != nil {
+		t.Fatalf("stream inspector refused a ported option: %v", err)
 	}
-	cfg = contracts.DefaultConfig()
-	cfg.Fingerprints = true
-	in, _ := New(cfg, "")
-	in.Feed([]byte{0x16, 0x03, 0x01, 0x00, 0x05, 0x01})
-	if in.NotPorted == nil {
-		t.Fatal("fingerprints on TLS not reported as unsupported")
+	if _, err := NewDatagram(cfg); err != nil {
+		t.Fatalf("datagram inspector refused a ported option: %v", err)
 	}
 }
 

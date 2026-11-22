@@ -503,7 +503,7 @@
         "generation": {
           "type": "integer",
           "minimum": 0,
-          "description": "Bumped when the same 5-tuple starts a new connection; identity is (session_id, generation)."
+          "description": "Drawn from one counter per capture when the flow first needs it; identity is (session_id, generation), unique within a capture. A later flow on the same 5-tuple has a higher generation; a tuple's first session is not necessarily 0."
         },
         "layers": {
           "$ref": "#/$defs/layers"

@@ -28,6 +28,15 @@ bash 'Start Protocol Observatory.command'
 אין צורך ב־npm או בשירות ענן. פענוח TLS דורש את cryptography כמפורט ב־DECRYPTION.md;
 היא כבר מותקנת ב־Python המצורף ל־Codex במחשב הזה. הקוד תואם Python 3.9 ומעלה.
 
+כשהבינארי של מנוע Go מותקן (`make go-build`, או `PROTODETECT_GO_BINARY`), המפעיל מריץ את השרת של Go
+(`protodetect serve`) כברירת מחדל; בלעדיו הוא מריץ את `server.py`. לשרת Python במפורש:
+
+```sh
+python3 -B launch.py --backend python      # או: PROTODETECT_BACKEND=python
+```
+
+`--backend go` (או `PROTODETECT_BACKEND=go`) לא נופל חזרה ל־Python כשהבינארי חסר.
+
 ## סיפור הצגה של שלוש דקות
 
 1. פתח את Overview: מוצגים נתונים שהמנוע הפיק מ־18 סשנים סינתטיים. 15 מזוהים, שלושה נשארים לא מוכרעים. זה אינו שיעור דיוק על תעבורת לקוח.

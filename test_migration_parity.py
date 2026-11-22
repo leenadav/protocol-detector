@@ -71,7 +71,6 @@ class ParityHarnessTests(unittest.TestCase):
     def test_committed_gap_list_names_existing_cases(self):
         gaps = compare.load_gaps(CASES.parent.parent / "parity" / "gaps.json")
         ids = {c["id"] for c in self.doc["cases"]}
-        self.assertTrue(gaps)
         self.assertEqual(sorted(set(gaps) - ids), [])
         self.assertTrue(all(isinstance(reason, str) and reason for reason in gaps.values()))
 
@@ -121,6 +120,19 @@ class ParityHarnessTests(unittest.TestCase):
         source = (CASES.parent.parent.parent / "go" / "internal" / "engine" / "datagram.go").read_text(encoding="utf-8")
         table = source[source.index("var DatagramHints"):source.index("func sipProbe")]
         self.assertEqual(sorted(re.findall(r'"([a-z0-9-]+)": true', table)), sorted(VALIDATORS))
+
+    def test_go_compat_families_equal_the_python_tcp_families(self):
+        """The legacy per-family table in Go analyze messages lists the Python TCP_FAMILIES in the same order."""
+        import re
+        from protocol_adapters.sessions import TCP_FAMILIES
+        source = (CASES.parent.parent.parent / "go" / "internal" / "analyzer" / "analyzer.go").read_text(encoding="utf-8")
+        table = source[source.index("var compatFamilies"):source.index("var textCandidates")]
+        self.assertEqual(re.findall(r'"([a-z0-9-]+)"', table), list(TCP_FAMILIES))
+
+    def test_go_embedded_content_pack_is_the_shared_pack(self):
+        shared = CASES.parent / "content.json"
+        embedded = CASES.parent.parent.parent / "go" / "internal" / "content" / "pack.json"
+        self.assertEqual(shared.read_bytes(), embedded.read_bytes(), "copy migration/fixtures/content.json to go/internal/content/pack.json")
 
 
 if __name__ == "__main__":

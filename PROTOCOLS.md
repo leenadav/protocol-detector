@@ -1061,8 +1061,9 @@ record states which one produced it (`observation.mode`, `handshake_observed`, `
   matches midstream, and any segment that matches nothing, ends as the outcome `incomplete` with engine status
   `midstream` and a reason that says the start was not observed. An unsupported protocol and an unobserved
   start are not told apart there, and the record says so instead of claiming `unknown-tcp`. A SYN on a tuple
-  under midstream observation ends that observation and starts an ordinary handshake observation (new
-  generation).
+  under midstream observation ends that observation and starts an ordinary handshake observation (a new,
+  higher generation: generations come from one counter per capture, so a tuple's first session is not
+  necessarily generation 0).
 
 Datagram profiles are per message and carry `observation.mode = datagram`. Policies can require a mode with
 the `observation` predicate (POLICY.md).
@@ -1099,3 +1100,24 @@ This is one vertical slice, not a session parser: responses to HEAD, pipelined r
 the other direction, HTTP/1.0 keep-alive without `Content-Length`, trailers' names, record contents and
 anything after a framing error are not modelled. The default path is unchanged (behaviour diff and the
 per-flow cost are the same with the option off).
+
+## CoAP message profile (F-ADV-1, 2026-11-18)
+
+A deliberate detection change, made identically in the Python reference (`protocol_engine/wire.py`) and the Go
+backend (`go/internal/protocols/framed/datagram_wire.go`). The adversarial suite found that random datagrams
+passed the CoAP framing about 0.2% of the time (40 of 20,000 seeded random datagrams). CoAP v1 framing (RFC 7252
+section 3) is now also held to:
+
+- the codes of RFC 7252 section 12.1.2: methods 0.01-0.04 and responses 2.01-2.05, 4.00-4.06, 4.12, 4.13,
+  4.15 and 5.00-5.05; any other code (later registrations such as 0.05-0.07, 2.31 and 4.08 included) is
+  `unknown` ("Unsupported CoAP code profile");
+- no reserved option number (0, 128, 132, 136, 140; section 12.2);
+- each option of RFC 7252 table 4 (section 5.10), Observe (RFC 7641) and Block2, Block1, Size2 (RFC 7959)
+  within its length range (section 5.4.3), and a non-repeatable one at most once (section 5.4.5). Other option
+  numbers are not constrained.
+
+These rules apply with and without the `coap` hint. Valid messages keep the same observation and reason
+(`protocol_fixtures.COAP_VALID`); `COAP_INVALID` holds the random-payload reproducer and one message per rule,
+all of which the earlier profile identified. On the same random set, 6 of 20,000 now pass (0.030%), and 1 of
+the adversarial suite's 2,000: they are structurally conforming messages (a registered code, consistent option
+framing, option numbers outside the table), which no header rule tells apart from real traffic.

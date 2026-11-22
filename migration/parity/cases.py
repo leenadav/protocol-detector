@@ -2718,8 +2718,100 @@ def correlation_session_cases():
     return cases
 
 
+def host_catalog_session_cases():
+    """Server-name catalog (content release 2026.11.1): every entry once as a TLS SNI under its first domain,
+    every web front, HTTP Host for every tenth entry, and names that must not map (a lookalike without a label
+    boundary, a bare public suffix, an unrelated name)."""
+    from protocol_engine.host_apps import _HOST_APPS
+
+    def sni(host):
+        name = host.encode("ascii")
+        return (0, (len(name) + 3).to_bytes(2, "big") + b"\x00" + len(name).to_bytes(2, "big") + name)
+
+    def tls(host):
+        return [("c", client_hello_with([sni(host), (43, b"\x02\x03\x04")])), ("s", _tls_record(_server_hello()))]
+
+    def http(host):
+        return [("c", b"GET / HTTP/1.1\r\nHost: " + host.encode("ascii") + b"\r\n\r\n"), ("s", b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n")]
+
+    scenarios = []
+    for index, entry in enumerate(_HOST_APPS):
+        name, domains, fronts = entry[0], entry[7], entry[8] if len(entry) > 8 else ()
+        scenarios.append((name + "/tls", "tls", tls("edge." + domains[0])))
+        if len(domains) > 1:
+            scenarios.append((name + "/tls-last-domain", "tls", tls(domains[-1])))
+        for front in fronts:
+            scenarios.append((name + "/web-front/" + front, "tls", tls(front)))
+        if index % 10 == 0:
+            scenarios.append((name + "/http", "http", http("www." + domains[0])))
+    for host in ("notyoutube.com", "evilnordvpn.com", "com", "ai", "unlisted.example", "apple.com.example", "xgrok.com"):
+        scenarios.append(("none/" + host, "tls", tls(host)))
+    return [{"id": "session/host-catalog/" + name, "kind": "session", "label": label, "options": {}, "finish": "eof",
+             "packets": [_packet(0.001 * i, f) for i, f in enumerate(_exchange(steps))]}
+            for name, label, steps in scenarios]
+
+
+COVERAGE_SESSION_FAMILIES = ("http2", "mongodb", "mysql", "resp", "s7comm", "smtp", "ssh", "websocket")
+
+
+def coverage_cases(existing):
+    """Evidence classes nine families lacked (Lee, 2026-11-18; migration/parity/verify_families.py): a
+    session-level case for eight TCP families, a mutated stream for smtp and ssh, foreign datagrams for ipfix.
+    Built from each family's first committed positive case and appended after every other case, with their own
+    random generator, so no existing case changes."""
+    rng = random.Random(20261118)
+
+    def first(family, kind):
+        return next(case for case in existing if case["kind"] == kind and family_of(case["label"]) == family
+                    and case["id"].endswith(("/whole", "/positive")))
+
+    cases = []
+    for family in COVERAGE_SESSION_FAMILIES:
+        source = first(family, "stream")
+        data = b"".join(bytes.fromhex(chunk) for chunk in source["chunks"])
+        options = {"tcp_hint": source["hint"]} if source.get("hint") else {}
+        base = "session/coverage-" + family
+        cuts = sorted({len(data) // 3, 2 * len(data) // 3} - {0, len(data)})
+        flows = [("plain", _tcp_flow(CLIENT, SERVER, data))]
+        if cuts:
+            changed = bytearray(data[:cuts[0]])
+            changed[len(changed) // 2] ^= 0xff
+            conflict = _tcp_flow(CLIENT, SERVER, data, cuts)
+            conflict.insert(4, frame(CLIENT, SERVER, 1000, 9000, 24, bytes(changed)))
+            flows += [("split", _tcp_flow(CLIENT, SERVER, data, cuts)),
+                      ("reordered", _tcp_flow(CLIENT, SERVER, data, cuts, order=list(range(len(cuts) + 1))[::-1])),
+                      ("conflict", conflict)]
+        for name, flow in flows:
+            cases.append({"id": base + "/" + name, "kind": "session", "label": source["label"], "options": dict(options), "finish": "eof",
+                          "packets": [_packet(0.001 * i, f) for i, f in enumerate(flow)]})
+    for family in ("smtp", "ssh"):
+        source = first(family, "stream")
+        data = b"".join(bytes.fromhex(chunk) for chunk in source["chunks"])
+        cases.append({"id": "stream/coverage-" + family + "/mutated", "kind": "stream", "label": source["label"],
+                      "chunks": [_mutate(rng, data).hex()], "hint": source.get("hint"), "config": {}, "end": source.get("end")})
+    source = first("ipfix", "datagram")
+    for name, data in (("dns-query", DNS), ("zeros", bytes(64)), ("text", b"GET / HTTP/1.1\r\nHost: a.example\r\n\r\n")):
+        cases.append({"id": "datagram/coverage-ipfix/" + name, "kind": "datagram", "label": source["label"], "payload": data.hex(),
+                      "hint": None, "config": {}})
+    return cases
+
+
+def coap_profile_cases():
+    """F-ADV-1 (Lee, 2026-11-18): the CoAP profile vectors (protocol_fixtures.COAP_VALID and COAP_INVALID, the
+    random-payload reproducer among them), each unhinted and under the coap hint. Appended after every other case."""
+    from protocol_adapters import protocol_fixtures as F
+    cases = []
+    for name, data in [(n, d) for n, d in F.COAP_VALID] + [(n, d) for n, d, _, _ in F.COAP_INVALID]:
+        for hint in (None, "coap"):
+            cases.append({"id": "datagram/coap-profile/%s%s" % (name, "-hint" if hint else ""), "kind": "datagram", "label": "coap",
+                          "payload": data.hex(), "hint": hint, "config": {}})
+    return cases
+
+
 def generate(limit=None):
-    return stream_cases(limit=limit) + datagram_cases(limit=limit) + session_cases(limit=limit) + correlation_session_cases()
+    cases = (stream_cases(limit=limit) + datagram_cases(limit=limit) + session_cases(limit=limit) + correlation_session_cases()
+             + host_catalog_session_cases())
+    return cases if limit else cases + coverage_cases(cases) + coap_profile_cases()
 
 
 def with_expectations(cases):

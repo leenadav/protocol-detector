@@ -48,6 +48,21 @@ func New(first uint32, limit int, prefixOnly bool) (*Stream, error) {
 	return &Stream{first: first, limit: limit, prefixOnly: prefixOnly}, nil
 }
 
+// MaxRetained bounds a retained-tier stream (RetentionBudget.per_direction is at most 1 << 24).
+const MaxRetained = 1 << 24
+
+// NewRetained creates a stream for the retained reassembly tier (coordinator.py: a second consumer reads the
+// whole bounded stream): the same reassembly, a window the retention budget sets, never prefix-only.
+func NewRetained(first uint32, limit int) (*Stream, error) {
+	if limit < 1 || limit > MaxRetained {
+		return nil, errs.New(errs.Invalid, errs.ScopeDirection, "retained stream window must be 1..16777216 bytes")
+	}
+	return &Stream{first: first, limit: limit}, nil
+}
+
+// Buffered is the length of the retained byte array (len(Stream.buffer) in the reference).
+func (s *Stream) Buffered() int { return len(s.buf) }
+
 // Counters as the Python reference exposes them.
 func (s *Stream) First() uint32   { return s.first }
 func (s *Stream) Limit() int      { return s.limit }

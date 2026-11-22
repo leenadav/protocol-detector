@@ -1,0 +1,43 @@
+id	tier	size	commits	title	files
+chunk-01	1	647	6	TLS, DTLS and certificate-continuation parsing (tlsx)	go/internal/protocols/tlsx/certificate.go go/internal/protocols/tlsx/continuation.go go/internal/protocols/tlsx/dtls.go go/internal/protocols/tlsx/tls.go
+chunk-02	1	821	1	X.509 leaf profile (x509x)	go/internal/protocols/x509x/x509.go
+chunk-03	1	610	3	QUIC Initial validation and CRYPTO assembly (quicx)	go/internal/protocols/quicx/assembler.go go/internal/protocols/quicx/quic.go
+chunk-04	1	620	5	HPACK and HTTP/1 request line (hpack, textroute/http.go)	go/internal/protocols/hpack/hpack.go go/internal/protocols/hpack/tables.go go/internal/protocols/textroute/http.go go/internal/protocols/textroute/irc.go go/internal/protocols/textroute/services.go
+chunk-05	1	753	5	HTTP/2 route and SSH posture (textroute/http2.go, ssh.go)	go/internal/protocols/textroute/http2.go go/internal/protocols/textroute/ssh.go
+chunk-06	1	677	3	Continuation, heuristics and fingerprints	go/internal/protocols/fingerprint/fingerprint.go go/internal/protocols/heuristics/heuristics.go go/internal/protocols/textroute/continuation.go
+chunk-07	1	732	6	SMB1/SMB2 negotiation and small framed changes	go/internal/protocols/framed/database.go go/internal/protocols/framed/datagram_services.go go/internal/protocols/framed/datagram_text.go go/internal/protocols/framed/datagram_wire.go go/internal/protocols/framed/kasa.go go/internal/protocols/framed/sessions.go go/internal/protocols/framed/smb.go
+chunk-08	1	596	3	GSS/SPNEGO token classifier	go/internal/ascii/ascii.go go/internal/names/hostname.go go/internal/protocols/dnsx/dns.go go/internal/protocols/framed/gss.go
+chunk-09	1	677	3	LDAP and IKEv2	go/internal/protocols/framed/ikev2.go go/internal/protocols/framed/ldap.go
+chunk-10	1	581	11	TPKT/RDP, datagram dispatch, budgets and contracts	go/internal/buffer/buffer.go go/internal/contracts/contracts.go go/internal/engine/datagram.go go/internal/parsing/parsing.go go/internal/protocols/framed/tpkt.go go/internal/reassembly/stream.go
+chunk-11	1	701	17	Stream inspector (engine/inspector.go)	go/internal/engine/inspector.go
+chunk-12	1	693	12	Session analyzer (analyzer/analyzer.go)	go/internal/analyzer/analyzer.go
+chunk-13	1	559	14	Session tracker, App-ID, session ids, replay	go/internal/appid/appid.go go/internal/appid/layers.go go/internal/appid/risks.go go/internal/replay/replay.go go/internal/session/tracker.go go/internal/sessionid/sessionid.go
+chunk-14	1	708	5	Capture and JSON input decoders (capture, ojson/bytes, pyjson)	go/internal/capture/capture.go go/internal/ojson/bytes.go go/internal/pyjson/pyjson.go
+chunk-15	1	595	2	ojson parser (control-plane JSON)	go/internal/ojson/ojson.go
+chunk-16	1	578	2	Signature patterns, part 1: the re._parser port	go/internal/signatures/pattern.go
+chunk-17	1	574	2	Signature patterns, part 2: compiling to RE2	go/internal/signatures/pattern.go
+chunk-18	1	481	2	Signature documents, part 1: conditions and evaluation	go/internal/signatures/signatures.go
+chunk-19	1	492	2	Signature documents, part 2: loading and the set digest	go/internal/signatures/signatures.go
+chunk-20	1	764	1	TLS record decryption (decrypt/connection.go)	go/internal/decrypt/connection.go
+chunk-21	1	551	4	Key schedule and key-log capture	go/internal/decrypt/keys.go go/internal/keylogcap/capture.go go/internal/keylogcap/generations.go
+chunk-22	1	605	4	Key-log coordinator and live key-log tailing	go/internal/keylogcap/coordinator.go go/internal/livedecrypt/decoder.go go/internal/livedecrypt/keylog.go
+chunk-23	1	796	3	Decryptor and the live decryption run	go/internal/keylogcap/decryptor.go go/internal/livedecrypt/run.go
+chunk-24	1	785	14	Content-pack loader, digests and C11 rollback (both engines)	go/internal/content/content.go go/internal/content/digest.go migration/content_history.py protocol_engine/content.py tools/check_content.py
+chunk-25	1	491	20	Parity comparator, family verification, reference fixes	migration/parity/compare.py migration/parity/gaps.json migration/parity/verify_families.py protocol_adapters/analyze_pcap.py protocol_adapters/coordinator.py protocol_adapters/events.py protocol_adapters/live_capture.py protocol_engine/applications.py protocol_engine/engine.py protocol_engine/extended.py protocol_engine/smarthome.py protocol_engine/wire.py protodetect.py schemas/live-event.schema.json
+chunk-26	1	819	10	Case generator (parity/cases.py)	migration/parity/cases.py
+chunk-27	1	756	7	Capture-level differentials: analyze and decrypt	migration/parity/analyze_diff.py migration/parity/decrypt_diff.py
+chunk-28	1	688	4	Control-plane and dashboard differentials	migration/parity/control_diff.py migration/parity/server_diff.py
+chunk-29	1	713	5	Live, schema and adversarial differentials	migration/parity/adversarial.py migration/parity/live_decrypt_diff.py migration/parity/live_diff.py migration/parity/schema_go.py
+chunk-30	2	563	10	CLI commands, part 1	go/cmd/protodetect/analyze.go go/cmd/protodetect/controlreplay.go go/cmd/protodetect/decrypt.go go/cmd/protodetect/livedecrypt.go go/cmd/protodetect/main.go go/cmd/protodetect/present.go
+chunk-31	2	618	5	CLI commands, part 2: live and serve	go/cmd/protodetect/live.go go/cmd/protodetect/serve.go go/internal/analyze/present.go
+chunk-32	2	638	4	Offline analyze pipeline and telemetry	go/internal/analyze/analyze.go go/internal/telemetry/telemetry.go
+chunk-33	2	676	4	Live monitor and its outputs	go/internal/live/monitor.go go/internal/live/output.go
+chunk-34	2	453	4	Live run loop, job buffers and test frames	go/internal/jobs/buffer.go go/internal/live/run.go go/internal/testframes/testframes.go
+chunk-35	2	684	3	Job runner and live control state	go/internal/jobs/jobs.go go/internal/livectl/state.go
+chunk-36	2	716	1	Event log and reducer	go/internal/events/events.go
+chunk-37	2	674	1	Policy engine	go/internal/policy/policy.go
+chunk-38	2	561	2	Live control process and service worker	go/internal/livectl/process.go go/internal/serve/worker.go
+chunk-39	2	706	1	Dashboard service: HTTP server	go/internal/serve/server.go
+chunk-40	2	601	1	Dashboard service: connections and Python-text compatibility	go/internal/serve/conn.go go/internal/serve/pytext.go
+chunk-41	2	408	51	Launcher, presentation glue, adapters and the Makefile	Makefile presentation/launch.py presentation/live_decrypt_smoke_check.py presentation/poc_decryption/capture.py presentation/poc_decryption/live.py presentation/server.py
+chunk-42	2	400	2	Benchmark and load harness	go/internal/bench/benchgate_test.go go/internal/bench/load_test.go

@@ -55,7 +55,10 @@ as they were at that release before anything is inspected: entries added later d
 changed take their earlier domains and web fronts (the earlier states are kept in `content.py` as the
 differences from the current tables, so rolling back needs no earlier package). The selection is
 process-wide and taken once at start-up; the records of that run pin the rolled-back version and its
-digest. The application catalog, families and risks do not roll back this way: they are engine metadata
+digest. That digest is the one the release was published with (C11, 2026-11-18): an earlier release keeps
+its published components (`_RELEASED_COMPONENTS` in `content.py`, taken from its lock when it is superseded;
+`tools/check_content.py --update` refuses a new release until that is done), and its rebuilt host catalog must
+reproduce the recorded host component or the rollback is refused. The application catalog, families and risks do not roll back this way: they are engine metadata
 and change with the package, whose earlier versions remain installable from the release artifacts.
 
 ## Not covered

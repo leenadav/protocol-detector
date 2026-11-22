@@ -268,5 +268,37 @@ class SessionLedgerTests(unittest.TestCase):
             self.assertFalse(any(json.loads(line).get("type") == "session" for line in output.getvalue().splitlines()))
 
 
+class PortTablePerCarrierTests(unittest.TestCase):
+    """A host-named or custom application carries its carrier's ports; the table must follow the carrier of
+    this verdict, not the carrier that first used the name in the process (found by the Go signature differential)."""
+
+    def test_same_name_over_two_carriers(self):
+        from protocol_engine.applications import custom_application, host_application
+        for make, name in ((host_application, "youtube"), (custom_application, "corp-app")):
+            for order in (("ssl", "quic"), ("quic", "ssl")):
+                with self.subTest(make=make.__name__, order=order):
+                    for carrier in order + order:
+                        app = make(name, carrier)
+                        self.assertEqual(app.uses_port("tcp", 443), carrier == "ssl")
+                        self.assertEqual(app.uses_port("udp", 443), carrier == "quic")
+
+    def test_signature_application_port_usage_is_order_independent(self):
+        from protocol_engine import Config
+        from protocol_engine.appid import session_verdict
+        from protocol_engine.signatures import SignatureSet
+        signatures = SignatureSet.from_json(json.dumps([{"name": "any-http", "conditions": [
+            {"context": "http-req-version", "pattern": "HTTP/1"}]}]))
+        plain = Inspector(Config(retain_contexts=True), signatures=signatures)
+        plain.feed(b"GET / HTTP/1.1\r\nHost: a.example\r\n\r\n")
+        proxied = Inspector(Config(retain_contexts=True), signatures=signatures)
+        proxied.feed(b"CONNECT a.example:443 HTTP/1.1\r\nHost: a.example:443\r\n\r\n")
+        expected = {id(plain): "nonstandard", id(proxied): "standard"}      # 8000 is an http-proxy port only
+        for order in ((plain, proxied), (proxied, plain)):
+            for inspector in order + order:
+                verdict = session_verdict(inspector.observation, None, "tcp", 8000, 40, 0, True, signatures)
+                self.assertEqual(verdict.app, "any-http")
+                self.assertEqual(verdict.port_usage, expected[id(inspector)])
+
+
 if __name__ == "__main__":
     unittest.main()
