@@ -264,9 +264,12 @@ type Inspector struct {
 	carrier      *contracts.Observation
 	shift        string
 	shiftSource  string
-	NotPorted    *parsing.NotPorted // set when the Go backend cannot give this direction's outcome
-	resolved     string             // family a text route resolved to before it finished (D12)
-	continuing   bool               // identified; the parser still derives optional evidence or watches for a shift
+	// depth counts the shifted phases above this one (0 for the outer inspector); beginShift refuses to nest
+	// beyond maxShiftDepth (SEC-INSP-1).
+	depth      int
+	NotPorted  *parsing.NotPorted // set when the Go backend cannot give this direction's outcome
+	resolved   string             // family a text route resolved to before it finished (D12)
+	continuing bool               // identified; the parser still derives optional evidence or watches for a shift
 	// Host-correlation metadata, never emitted: the identifying parser's LDAP message id, and the identification
 	// that announced this inspector's shift (kept after the shifted phase merges; Python Inspector.announcement).
 	ldapID       int
@@ -318,6 +321,7 @@ func (in *Inspector) OpenShift(boundary, expected string) bool {
 	announced := carrier
 	in.Announcement = &announced
 	next.hintSource = "shift:" + boundary
+	next.depth = in.depth + 1
 	in.next = next
 	in.terminal = false
 	return true
@@ -685,7 +689,20 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 	return nil
 }
 
+// maxShiftDepth bounds parser-driven shift nesting (SEC-INSP-1). Every phase forwards each segment through the
+// phases below it and rebuilds their evidence, so N nested phases cost O(N^2) evidence and O(N^3) work per
+// direction: a stream of CONNECT requests could nest one phase per request. Two levels keep every real case
+// (CONNECT, then TLS or an HTTP Upgrade inside the tunnel); a shift below them identifies the phase that saw it
+// and leaves the rest of the stream uninspected. The Python reference nests without a bound (a recorded parity
+// divergence; no parity case nests at all).
+const maxShiftDepth = 2
+
 func (in *Inspector) beginShift(shift *parsing.Shift, rest []byte) []contracts.Event {
+	if in.depth >= maxShiftDepth {
+		obs := in.identified()
+		obs.Reason += "; a further " + shift.Boundary + " boundary was not followed (shift nesting limit)"
+		return in.finish(obs, contracts.Updated)
+	}
 	events := in.publish(in.identified(), contracts.Updated)
 	in.parser = nil
 	in.continuing = false
@@ -715,6 +732,7 @@ func (in *Inspector) beginShift(shift *parsing.Shift, rest []byte) []contracts.E
 		_ = next.SetSignatures(in.sigs) // same config: cannot fail
 	}
 	next.hintSource = "shift:" + shift.Boundary
+	next.depth = in.depth + 1
 	in.next = next
 	if len(rest) > 0 {
 		events = append(events, in.forward(rest)...)

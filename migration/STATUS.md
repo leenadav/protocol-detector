@@ -557,6 +557,26 @@ digest pins.
 | Parity | unchanged | Python never loads pack files: the Go `--content` loader is the only reader. The fix aligns Go with the digest contract's exact keys, so the 7,430 parity cases are unaffected. |
 | Fuzz | `FuzzParseNeverPanics`, 30 s | 2.7 M executions, no failure |
 
+## Security review finding SEC-INSP-1 (PRO-48 and PRO-129, 2026-11-22; P0, blocks PR #40)
+
+**The finding.** Each HTTP CONNECT in a shifted phase (trigger: `textroute/http.go` `shiftBoundary`) opened
+another nested phase. A stream of CONNECT requests on one direction therefore built a chain one phase per
+request, about MaxBytes/45 deep. Each segment was forwarded down the whole chain, and every level rebuilt the
+evidence of the levels below it in `shiftResult`. The cost was O(d²) evidence and O(n³) work per direction.
+
+**The fix** (`go/internal/engine/inspector.go`, Go only):
+- Parser-driven shift nesting stops at `maxShiftDepth` = 2.
+- Two levels keep every real case: a CONNECT tunnel, then TLS or an HTTP Upgrade inside it.
+- A shift below that depth identifies the phase that saw it. Its reason gets "a further <boundary> boundary was
+  not followed (shift nesting limit)", the stream turns terminal, and the rest is not inspected.
+- Host-driven `OpenShift` records the depth as well.
+
+| item | state | evidence |
+|---|---|---|
+| Regression test | `TestRepeatedConnectDoesNotNestWithoutBound` | 1,008 CONNECT requests, one per segment, as many as the default 64 KiB budget admits. On the old code: 2,019 evidence items and about 10 s. With the fix: 7 evidence items, exactly 2 shift markers, the limit named in the reason, and about 6 ms. |
+| Parity | divergence recorded, no case changes | The Python reference nests without a bound, with the same cubic growth. Go now differs from it only at a third nested shift. No parity case nests shifts at all: 146 cases carry one shift marker and none carry two. All 7,430 still match, and `deltas.json` needs no entry. |
+| Approval | **pending Lee** | Lee's PRO-124 approval covered the Go-only QUIC fixes only. Hermes asked Lee to approve this Go-only fix under the same conditions; until the approval is recorded on PRO-129, the task is not DONE. |
+
 ## Randomized differential (PRO-100, 2026-11-22)
 
 Hermes, PRO-100: differential testing with random inputs, the Python reference as the oracle.
