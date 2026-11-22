@@ -96,16 +96,23 @@ push to `main`:
 | ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py` (engine and adapter packages, only the `decryption` extra), wheel smoke under 3.13 and 3.9, the complete-product SBOM checked by `tools/check_product_sbom.py` |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
 | ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds, and in source mode over go/ on its vendor tree (`GOFLAGS=-mod=vendor`, `GOPROXY=off`) |
+| ci | `Known vulnerabilities in every lockfile (osv-scanner; accepted only with a reason and an expiry)` | `tools/osv_scan.py`: osv-scanner 2.7.1 from `tools/golint/osv-scanner/go.mod` and go.sum, built outside the checkout, over every tracked lockfile (requirements, npm, go.mod); a finding fails unless `tools/osv_ignore.json` accepts it for that lockfile and package with a reason and an expiry at most 90 days ahead; an expired or stale entry, or a lockfile it did not read, fails (item 41) |
 | ci | `Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)` | `tools/go_ci.py go`: on the pinned Go 1.27.4, which must be the compiler go/go.mod builds with (its `toolchain` line, else its `go` line), `make go-check` (gofmt, `go vet`, `go test -race`, fuzz smoke, `make parity-go`) and a floor under the parity report; nothing to check on a commit without the migration tree, failure on one with part of it; `GOPROXY=off`, so no Go is downloaded mid-job |
 | ci | `Go engine on its declared minimum Go (vet, race tests)` | `tools/go_ci.py minimum`: on exactly go/go.mod's `go` line (the declared minimum), installed by setup-go, `make go-check-minimum` (`go vet`, `go test -race`); a minimum equal to the compiler is go-engine's run and passes as such (item 28) |
 | ci | `Go vendor tree matches go.mod and go.sum (module proxy, checksum database)` | `tools/go_ci.py vendor-check`: `make go-vendor-check` re-vendors and compares with go/vendor, the one Go step with module access; nothing to verify without dependencies (item 32) |
 | ci | `Go lint and static analysis (golangci-lint, staticcheck, gosec)` | `tools/go_lint.py`: golangci-lint 2.15.0 (`tools/golint/golangci.yml`), staticcheck 2026.2.2 and gosec 2.29.0 (`-nosec`, G104 and G304 excluded with reasons), built from `tools/golint/<tool>/go.mod` and go.sum outside the checkout and run offline on the vendored tree; a finding beyond `tools/golint/baseline.json` or a tool that cannot load the tree fails (item 35) |
+| ci | `Go determinism (race detector, shuffled order, every test twice)` | `tools/go_deep.py determinism`: `go test -race -shuffle=on -count=2 ./...` on the pinned Go and the vendored tree, `GOPROXY=off`; an order-dependent, state-leaking or flaky test fails, with its shuffle seed in the summary (item 36) |
+| ci | `Go dependency licences (go-licenses; forbidden, restricted, unknown fail)` | `tools/go_deep.py licenses`: go-licenses 2.0.1 from `tools/golint/go-licenses/go.mod` and go.sum, built outside the checkout; any linked module whose licence is forbidden, restricted or unidentified fails; the engine's own module is excluded (item 36) |
+| ci | `Go coverage floors (module and every protocol parser)` | `tools/go_cover.py`: `go test -coverpkg=./... -coverprofile` on the pinned Go and the vendored tree; the module total and each `internal/protocols/*` package at or above its floor in `tools/golint/coverage-floors.json`, every parser package floored (item 38) |
+| ci | `Go API compatibility (apidiff; public breaks need the api-break label)` | `tools/go_api.py`: apidiff from `tools/golint/apidiff/go.mod` and go.sum, built outside the checkout, compares the module API at the base with this commit; an incompatible change to a public (non-internal, non-main) package fails without the `api-break` label; internal changes are reported (item 39) |
+| ci | `External contract compatibility (JSON schemas, protodetect CLI; breaks need the api-break label)` | `tools/contract_check.py`: schemas/*.schema.json ($ref resolved) and the protodetect CLI from its own help output, base vs this commit; a breaking change fails without the `api-break` label, additions are reported (item 40) |
 | ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack`, the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...`; nothing to check without the Go content pack (item 30) |
 | ci | `security requirements gate` | every SR row names an existing test |
 
 Not required checks, by design: `nightly-fuzz` (the Python mutation fuzz and every Go fuzz target
 for minutes, item 29) and `merge-readiness` (a daily report-only trial merge of claude/go-migration
-into main, item 31) are scheduled and never run on a pull request.
+into main, item 31) are scheduled and never run on a pull request. Nor is `scorecard` (weekly OpenSSF
+Scorecard, item 42), which runs only on the schedule or by hand.
 
 Do not mark the `supply-chain-drift` jobs required: that workflow is path
 filtered and scheduled, so it does not run on most pull requests and a
@@ -163,6 +170,7 @@ engine (the whole change as one report). The secret scan reads the full
 history of the checkout itself, so it needs no pull-request permission. Both are
 configured in ci.yml; a red pull-request run with a green push run on the same commit is a
 workflow defect, never an engine finding.
+Pull-request runs also start on `labeled` and `unlabeled` (the go-api job's `api-break` label, item 39).
 
 Codex review comments (automatic review on every opened pull request, P0/P1 only, rules
 in `AGENTS.md` "Code Review Rules"). When a Codex comment on a lane's pull request is
@@ -816,6 +824,122 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      staticcheck's file-wide ignore.
    - **Triage:** the baseline's findings go to the Engine lane: the G115 narrowing conversions,
      the unchecked Close and Flush calls, the unused code, and G602 in `quicx` among them.
+36. Go deep gate (Lee via Hermes, PRO-103, 2026-11-21, after Culvert's pr-deep-gate). Two ci jobs,
+   both in the gate's needs and both run by `tools/go_deep.py` on the pinned Go and the vendored
+   tree with `GOPROXY=off`:
+   - **`go-determinism`:** `go test -race -shuffle=on -count=2 ./...`. Every test runs twice, in a
+     random order per run, with the race detector, so an order-dependent, state-leaking or flaky
+     test fails, and the summary names the `-test.shuffle` seed that reproduces it. It takes about
+     2 minutes over 37 packages on `claude/go-migration` `0081f6f`.
+   - **`go-licenses`:** go-licenses 2.0.1, from `tools/golint/go-licenses/go.mod` and go.sum, is
+     built outside the checkout before any repository code runs (rule 15 pins the build; rule 16
+     locks the go.mod). It fails on any linked module whose licence is forbidden, restricted or
+     unidentified. The engine's own module is excluded: it is this repository's code, and the
+     repository has no LICENSE file. Today x/crypto and x/sys are BSD-3-Clause and pass.
+   - **Negative controls:** a test that leaks state into its second run fails the determinism job
+     with its seed, and a vendored LICENSE replaced by an unrecognised text fails the licence job.
+37. CI consistency test (`tools/check_ci_consistency.py`, offline, in `make workflow-policy` and the
+   workflow-lint job; PRO-103, after Culvert's workflow_action_pin_test.go and
+   toolchain_consistency_test.go).
+   - **Action pins:** every `uses:` is found, in any YAML spelling: a list item, a mapping key,
+     quoted, or in a flow mapping. Keys and parsed references are counted separately, and any
+     difference fails. Each reference is local (`./`), `docker://` with a sha256 digest, or a
+     40-hex SHA with a `# <revision>` comment.
+   - **One Go compiler:** go/go.mod's `toolchain` line, else its `go` line, must equal every
+     `go-version:` (except go-minimum's), the `go` and `toolchain` lines of tools/scanners and every
+     tools/golint module, and the policy's SETUP_GO. There may be no `go-version-file:`, and every
+     `GOTOOLCHAIN` a workflow sets is `local`.
+   - **Negative controls:** one per rule, in the self-test.
+   - **Overlap:** rule 7 and tools/check_action_pins.py check the SHA itself. tools/check_go_drift.py
+     (online) keeps the compiler current.
+38. Go coverage floors (`go-coverage` ci job, in the gate's needs; PRO-104, 2026-11-21, after
+   Culvert's coverage-floor.sh).
+   - **Measurement:** `go test -coverpkg=./... -coverprofile` on the vendored tree. -coverpkg credits
+     a parser for the parity replay and engine tests that exercise it. `tools/go_cover.py` counts a
+     block once across test binaries, covered if any binary ran it. Two runs on `claude/go-migration`
+     `0081f6f` gave byte-identical profiles.
+   - **Floors** (`tools/golint/coverage-floors.json`, set at the measured value minus 1.0 point,
+     rounded down to one decimal): the module at 78.0% (measured 79.0% of 20,124 statements) and every
+     `internal/protocols/*` parser: dnsx 80.5, fingerprint 92.6, framed 86.9, heuristics 23.3, hpack
+     87.6, quicx 88.2, textroute 81.3, tlsx 66.9, x509x 71.8.
+   - **Failures:** a total below a floor, a parser package without a floor, or a floor whose package
+     is gone.
+   - **Lock:** rule 16 locks the file, so lowering a floor is a reviewed change. Floors are raised the
+     same way, with `--write-floors`.
+   - **Negative control:** removing quicx's tests drops it to 72.2%, which fails.
+39. Go API compatibility (`go-api` ci job, in the gate's needs; PRO-104). apidiff
+   (golang.org/x/exp/cmd/apidiff at `e3970619a1a4`, 2026-11-13, past the 7-day cooldown) is built from
+   `tools/golint/apidiff/go.mod` and go.sum outside the checkout (rule 15 pins the build; rule 16
+   locks the go.mod).
+   - **Comparison:** `tools/go_api.py` writes the module's API as export data at the base and at this
+     commit, both vendored and offline, and compares them. The base is the merge base with a pull
+     request's base, or a push's first parent.
+   - **Gate:** an incompatible change to a public (non-internal, non-main) package fails unless the
+     pull request carries the `api-break` label. Internal API changes are reported only, since
+     changing internal packages is ordinary refactoring.
+   - **Label refresh:** a re-run keeps its original event's labels, so ci also runs on `labeled` and
+     `unlabeled`.
+   - **Today:** the module has no public package (cmd/protodetect is main; everything else is
+     internal), so the gate holds the line for the first package made importable. The product's
+     external contract is the CLI and the JSON schemas in `schemas/`, not a Go import surface.
+   - **Negative control:** removing an exported function from a public package fails, and the
+     `api-break` label turns it into a pass.
+40. External contract compatibility (`contract-compat` ci job, in the gate's needs; PRO-104 via
+   PRO-131, Hermes, 2026-11-21). The module has no importable Go package, so its real contract is
+   the emitted records (schemas/*.schema.json) and the protodetect CLI. `tools/contract_check.py`
+   compares both at the same base and with the same `api-break` label as go-api (item 39).
+   - **Schemas:** every `$ref` is resolved first, and `oneOf` branches are matched by their `type`
+     const. A removed property, a newly required property, a narrowed type, a removed enum value, a
+     changed const, a restricted additionalProperties, an added or removed branch, a tightened or
+     added bound, and a deleted or renamed file all fail. An optional property, an enum value, a
+     widened type, a loosened bound and description text are reported only.
+   - **CLI:** both binaries are built vendored and offline. The subcommands come from the usage
+     line, and each subcommand's flags from `protodetect <sub> -h`, in Go flag or usage-line
+     format. A removed subcommand or flag, a changed Go flag type or default, a flag that gains or
+     loses its value, and a dropped choice all fail. Additions are reported.
+   - **Today:** 4 schemas, 8 subcommands, 60 flags.
+   - **Negative controls** (scratch clone): the classification event loses `app` and gains a
+     required `tenant`, which gives exit 1, or 0 with the label; `analyze` loses `--heuristics`,
+     with the same result.
+41. Known vulnerabilities in every lockfile (`osv-scan` ci job, in the gate's needs; PRO-128, Hermes,
+   2026-11-22). osv-scanner 2.7.1 (Apache-2.0) is built like the lint tools and reads every lockfile
+   git tracks: requirements*.txt and *.lock.txt, package-lock.json, and each go.mod (the engine and
+   every CI tool module). `tools/osv_scan.py` decides.
+   - **Ignore file:** `tools/osv_ignore.json`, locked with the scanner configuration (rule 16). Each
+     entry names an OSV id or alias, the lockfile and the package, a reason and an expiry at most 90
+     days ahead. An entry applies to that lockfile only, so the same id in shipped code still fails.
+     An expired entry, or one that matches no finding, fails.
+   - **No silent config:** osv-scanner runs with an empty `--config`, and rule 16 bans any
+     `osv-scanner.toml` in the tree. A lockfile osv-scanner did not read fails.
+   - **Reachability:** govulncheck (toolchain-audit) stays the Go reachability check. OSV reports a
+     pinned version; govulncheck reports what the built code calls.
+   - **First run (2026-11-22):** 52 findings, all in CI tool modules; the product's Python, npm and
+     go/go.mod had none. govulncheck found two reachable: x/text in go-licenses and grpc in gosec.
+     Fixed by bumps (x/text, x/mod, x/net in go-licenses; grpc, otel, x/crypto, x/net in gosec and
+     osv-scanner; x/crypto, x/text in tools/scanners), each release at least 7 days old. One stays
+     accepted until 2026-12-22: rardecode 2.1.0 in the gitleaks build (GO-2025-4020), unreachable,
+     whose fix does not build with gitleaks' archives dependency.
+     Three more arrived with go-migration's gremlins module (x/sys, x/text, unreachable); Engine's
+     #80 bumped it (go-migration 9b499f8) and their entries are gone. go/oracle (#79) scans clean.
+   - **Licences:** osv-scanner is a CI-only tool. It links MIT, Apache-2.0, BSD, ISC, MPL-2.0,
+     Unlicense and MIT-0 code, and spdx/tools-golang under Apache-2.0 (dual with GPL-2.0-or-later).
+     Nothing GPL or LGPL is linked or vendored into shipped code.
+42. OpenSSF Scorecard (`scorecard.yml`, weekly on Monday 03:17 UTC and by hand; PRO-128, Hermes,
+   2026-11-22). `ossf/scorecard-action` v2.5.0 (Apache-2.0, `fa7117db`; v2.6.0 is inside the 7-day
+   cooldown) scores the repository's supply-chain posture. The SARIF goes to code scanning
+   (`upload-sarif`, category `scorecard`) and is kept as a 30-day artifact. Not a required check.
+   - **Permissions:** `contents: read`, `actions: read` and `security-events: write` for the upload,
+     the same grant as CodeQL. Nothing else.
+   - **Results stay private** (`publish_results: false`), although the repository is public.
+     Publishing needs `id-token: write` and a workflow with no top-level `defaults:`. Rule 5 bans
+     `id-token: write` outside the release controller (it could sign as this repository), and rule
+     6 requires `defaults: run: shell: bash`. Publishing is Lee's decision on a policy exception.
+   - **Image:** the action runs `ghcr.io/ossf/scorecard-action:v2.5.0` by tag. The action commit is
+     pinned; the image tag is the action's own, signed upstream.
+   - **Follow-ups:** the first run is the evidence. Expected low scores before it: License (no
+     LICENSE file), Code-Review (merges without an approving review), Branch-Protection (not readable
+     with GITHUB_TOKEN), CII-Best-Practices (no badge), Signed-Releases (no release yet) and
+     Packaging. Each low check after the first run becomes its own task.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
