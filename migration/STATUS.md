@@ -372,3 +372,12 @@ TLS decryption (M7); frontend and API integration (M8); adapter-level benchmarks
 - Independent labelled corpus (D09): blocked on input.
 - Release thresholds (latency, throughput, memory): unspecified by design; relative results only.
 - Dedicated migration PR: to be opened only when authorized in the working session (plan §1); the branch `claude/go-migration` exists and is pushed.
+
+## Frozen-Python exception: numeric content version order (PRO-31)
+
+Lee approved this one edit to the read-only Python reference on 2026-11-20 (relayed by Hermes). `protocol_engine/content.py`
+compares content release versions numerically (`compare_versions`, `version_key`, with the semantics of Go's
+`content.CompareVersions` on `claude/go-migration` `6194fb9`) in `host_entries`, `host_provenance` and `check()`. Before
+this, a `2026.11.10` release would have given itself the wrong server-name catalog and broken the rollback to `2026.11.9`.
+Regression tests: `test_content.VersionOrderTests`. The same fix is `376a204` on `claude/go-migration`, where it is listed
+with the other approved exceptions.

@@ -14,12 +14,17 @@ version in `pyproject.toml`.
 
 `protocol_engine/content.py` holds `HISTORY`: one `Release(version, released, reviewed, review, note)` per
 content release, versions `YYYY.MM.N`, dates ISO. `review` says who looked at the content and whether an
-independent review happened; it is written honestly (the current release records an engine-lane self-review
-with the independent review pending on PR #18). `protodetect content` prints the history, the current
+independent review happened; it is written honestly (on `main` the current release, 2026.11.0, records an
+engine-lane self-review with the independent review pending). PR #18 was merged on 2026-11-15; that merge is
+not recorded as an independent review of the content. `protodetect content` prints the history, the current
 digest per component, the lock state and the provenance of every server-name entry: the first release that
 carried it (`since`), the review date of the release in force, the basis (`operator-owned-domain`) and the
 source rule (public domain ownership and the service's own documentation; shared CDNs, cloud hosting and
 tenant domains are excluded by design, see PROTOCOLS.md v0.65 and D03).
+
+On `main`, `HISTORY` ends at 2026.11.0. Releases 2026.11.1 to 2026.11.9 are on `claude/go-migration` only and
+are not in `main` until that branch is merged. Their release notes, with the applications and domains each one
+changes, are in [RELEASE-NOTES-CONTENT.md](RELEASE-NOTES-CONTENT.md).
 
 ## Lock and gate
 

@@ -1,0 +1,364 @@
+host	flags	rcode	cname_tail	tls	alpn	subject_cn	subject_o	issuer_o	san_count	tls_error	probe
+1drv.com	tls-fail	0							0	SSLCertVerificationError
+1drv.ms	-	0		TLSv1.3	h2	storage.live.com	Microsoft Corporation	Microsoft Corporation	139
+1infra.net	no-address	0							0		app-updates.us.svc.1infra.net:
+1password.ca	-	0		TLSv1.3	h2	1password.ca	None	Amazon	2
+1password.com	-	0		TLSv1.3	h2	1password.com	None	Let's Encrypt	1
+1password.eu	-	0		TLSv1.3	h2	1password.eu	None	Amazon	2
+1passwordservices.com	no-address	0							0
+1passwordusercontent.ca	no-address	0							0
+1passwordusercontent.com	no-address	0							0
+1passwordusercontent.eu	no-address	0							0
+a.slack-edge.com	cdn,h3	0	d29id7n8587nnz.cloudfront.net	TLSv1.3	h2	slack-edge.com	None	Let's Encrypt	2
+account.adobe.com	-	0		TLSv1.3	h2	account.adobe.com	Adobe Inc.	DigiCert Inc	8
+account.box.com	-	0		TLSv1.3	h2	box.com	Box, Inc.	DigiCert Inc	9
+account.jetbrains.com	-	0		TLSv1.3	h2	account.jetbrains.com	None	Amazon	1
+accounts.cloud.com	cdn	0	ctxathpwesteu.westeurope.cloudapp.azure.com	TLSv1.3	http/1.1	accounts.cloud.com	Citrix Systems, Inc.	DigiCert Inc	64
+accounts.google.com	-	0		TLSv1.3	h2	accounts.google.com	None	Google Trust Services	3
+addtodropbox.com	no-address	0							0
+admin.duosecurity.com	-	0		TLSv1.2	h2	admin.duosecurity.com	None	Amazon	1
+adobe-identity.com	no-address	0							0
+adobe-services.com	no-address	0							0
+adobe.com	-	0		TLSv1.3	h2	*.adobe.com	Adobe Inc	DigiCert Inc	2
+adobe.io	-	0		TLSv1.3	None	adobe.io	Adobe Inc.	DigiCert Inc	29
+adobecc.com	no-address	0							0
+adobecces.com	no-address	0							0
+adobeccstatic.com	no-address	0							0
+adobeexchange.com	-	0		TLSv1.3	h2	exchange.adobe.com	Adobe Inc.	DigiCert Inc	51
+adobegenuine.com	no-address	0							0
+adobegov.com	-	0		TLSv1.3	http/1.1	*.adobegov.com	Adobe Inc.	DigiCert Inc	2
+adobejanus.com	no-address	0							0
+adobelogin.com	tls-fail	0							0	SSLCertVerificationError
+adobeoobe.com	no-address	0							0
+adobeprojectm.com	tls-fail	0							0	SSLCertVerificationError
+adobesc.com	no-address	0							0
+adobess.com	no-address	0							0
+adobesunbreak.com	no-address	0							0
+aistudio.google.com	-	0		TLSv1.3	h2	*.google.com	None	Google Trust Services	66
+amazonworkspaces.com	no-address	0							0		clients.amazonworkspaces.com:
+anthropic.com	h3	0		TLSv1.3	h2	anthropic.com	None	Let's Encrypt	1
+anydesk.com	-	0		TLSv1.3	h2	anydesk.com	None	Google Trust Services	2
+api.anthropic.com	-	0		TLSv1.3	h2	api.anthropic.com	None	Google Trust Services	1
+api.devices.cloudflare.com	-	0		TLSv1.3	h2	devices.cloudflare.com	None	Google Trust Services	2
+api.devices.fed.cloudflare.com	-	0		TLSv1.3	h2	devices.fed.cloudflare.com	None	Google Trust Services	2
+api.jetbrains.ai	cdn,h3	0	dvxdiz880bm14.cloudfront.net	TLSv1.3	h2	api.jetbrains.ai	None	Amazon	3
+api.mistral.ai	h3	0		TLSv1.3	h2	api.mistral.ai	None	Google Trust Services	1
+api.openai.com	-	0		TLSv1.3	h2	api.openai.com	None	Google Trust Services	2
+api.perplexity.ai	h3	0		TLSv1.3	h2	perplexity.ai	None	Let's Encrypt	3
+api.splashtop.cn	no-address	0							0
+api.splashtop.eu	no-address	0							0
+api.splashtop.nr	no-address	0							0
+api.x.ai	-	0		TLSv1.3	h2	x.ai	None	Google Trust Services	3
+app-updates.agilebits.com	-	0	app-updates.us.svc.1infra.net	TLSv1.3	http/1.1	app-updates-legacy.us.svc.1infra.net	None	Let's Encrypt	3
+app.goto.com	-	0		TLSv1.3	h2	app.goto.com	None	Amazon	2
+app.gotomeeting.com	-	0		TLSv1.3	h2	app.gotomeeting.com	None	Amazon	1
+app.grammarly.com	-	0		TLSv1.3	h2	app.grammarly.com	None	Amazon	1
+app.zoom.us	-	0		TLSv1.3	h2	*.zoom.us	Zoom Communications, Inc.	DigiCert Inc	2
+apple-cloudkit.com	tls-fail	0							0	TimeoutError
+apple-livephotoskit.com	no-address	0							0
+atl-paas.net	-	0		TLSv1.3	h2	*.atl-paas.net	None	Amazon	2
+atlassian.com	h3	0		TLSv1.3	h2	*.frontend.public.atl-paas.net	None	Amazon	54
+atlassian.net	-	0		TLSv1.3	h2	*.atlassian.net	None	Amazon	8
+auth.console.gotoresolve.com	-	0		TLSv1.3	h2	*.console.gotoresolve.com	GoTo Technologies USA, LLC	DigiCert Inc	3
+b.slack-edge.com	cdn	0	http2.slack.map.fastly.net	TLSv1.3	h2	slack-edge.com	None	Let's Encrypt	2
+bitbucket.org	-	0		TLSv1.3	h2	*.bitbucket.org	None	Amazon	2
+bitwarden.com	-	0		TLSv1.3	h2	bitwarden.com	None	Let's Encrypt	1
+bitwarden.eu	ech,h3	0		TLSv1.3	h2	bitwarden.eu	None	Google Trust Services	2
+bitwarden.net	no-address	0							0		cdn.bitwarden.net:ech,h3
+box.com	-	0		TLSv1.3	h2	box.com	Box, Inc.	DigiCert Inc	9
+box.net	-	0		TLSv1.3	h2	box.net	Box, Inc.	DigiCert Inc	8
+boxcdn.net	no-address	0							0		cdn01.boxcdn.net:cdn,h3
+boxcloud.com	-	0		TLSv1.3	h2	*.boxcloud.com	Box, Inc.	DigiCert Inc	2
+btwrdn.co	no-address	0							0
+btwrdn.com	-	0		TLSv1.3	h2	btwrdn.com	None	Let's Encrypt	1
+cache.agilebits.com	-	0		TLSv1.3	h2	c.1password.com	None	Amazon	3
+canva-apps.com	no-address	0							0
+canva.ai	-	0		TLSv1.3	h2	canva.ai	None	Google Trust Services	2
+canva.com	-	0		TLSv1.3	h2	canva.com	None	Amazon	1
+canva.link	h3	0		TLSv1.3	h2	canva.link	None	Google Trust Services	2
+canvacode.com	-	0		TLSv1.3	h2	canvacode.com	None	Google Trust Services	2
+cdn.grok.com	-	0		TLSv1.3	h2	677e3ce2.sni.cloudflaressl.com	None	Google Trust Services	2
+cdn.office.net	no-address	0							0		res.cdn.office.net:cdn,h3
+cdn.wetransfer.com	-	0		TLSv1.3	h2	wetransfer.com	None	Amazon	2
+cdn01.boxcdn.net	cdn,h3	0	cdn01.boxcdn.net.cdn.cloudflare.net	TLSv1.3	h2	cdn01.boxcdn.net	None	Google Trust Services	1
+chameleon.goto.com	-	0		TLSv1.3	h2	chameleon.goto.com	None	Amazon	1
+chat.deepseek.com	cdn	0	d3bbv8sr76az5s.cloudfront.net	TLSv1.3	h2	*.deepseek.com	None	Amazon	1
+chat.mistral.ai	h3	0		TLSv1.3	h2	chat.mistral.ai	None	Google Trust Services	1
+chat.openai.com	cdn	0	chat.openai.com.cdn.cloudflare.net	TLSv1.3	h2	chat.openai.com	None	Google Trust Services	2
+chatgpt.com	-	0		TLSv1.3	h2	chatgpt.com	None	Google Trust Services	3
+ciscospark.com	tls-fail	0							0	TimeoutError
+ciscosparkcontent.com	no-address	0							0
+citrix.cloud.com	cdn	0	ctxwsp-agw-us-0.eastus.cloudapp.azure.com	TLSv1.3	http/1.1	*.cloud.com	Citrix Systems, Inc.	DigiCert Inc	2
+citrix.com	-	0		TLSv1.2	http/1.1	*.cloud.com	Cloud Software Group, Inc.	DigiCert Inc	34
+citrixnetworkapi.net	no-address	0							0		trust.citrixnetworkapi.net:
+citrixworkspacesapi.net	no-address	0							0
+claude.ai	h3	0		TLSv1.3	h2	claude.ai	None	Let's Encrypt	3
+claude.com	h3	0		TLSv1.3	h2	claude.com	None	Google Trust Services	3
+claudeusercontent.com	h3	0		TLSv1.3	h2	claudeusercontent.com	None	Let's Encrypt	3
+clients.amazonworkspaces.com	-	0		TLSv1.3	h2	clients.amazonworkspaces.com	None	Amazon	1
+cloud.com	-	0		TLSv1.3	h2	www.cloud.com	Cloud Software Group, Inc.	DigiCert Inc	2
+cloud.microsoft	-	0		TLSv1.3	h2	cloud.microsoft	Microsoft Corporation	Microsoft Corporation	3
+cloudflareclient.com	-	0		TLSv1.3	h2	cloudflareclient.com	None	Let's Encrypt	2
+conferences.goto.com	-	0		TLSv1.3	h2	conferences.goto.com	None	Amazon	2
+connectwise.com	-	0		TLSv1.3	h2	connectwise.com	None	Google Trust Services	1
+console.gotoresolve.com	-	0		TLSv1.3	h2	*.console.gotoresolve.com	GoTo Technologies USA, LLC	DigiCert Inc	3
+content.ipd.goto.com	-	0	51.138.111.34.bc.googleusercontent.com	TLSv1.3	h2	content.ipd.goto.com	None	Google Trust Services	1
+copilot-proxy.githubusercontent.com	-	0		TLSv1.3	h2	*.githubusercontent.com	None	Let's Encrypt	2
+copilot-telemetry.githubusercontent.com	-	0	glb-db52c2cf8be544.github.com	TLSv1.3	h2	*.githubusercontent.com	None	Let's Encrypt	2
+copilot.cloud.microsoft	-	0	atm.common.mira.tm.svc.cloud.microsoft	TLSv1.3	h2	copilot.cloud.microsoft	Microsoft Corporation	Microsoft Corporation	1
+copilot.com	-	0		TLSv1.3	h2	copilot.com	Microsoft Corporation	Microsoft Corporation	2
+copilot.microsoft.com	cdn,h3	0	copilot.microsoft.com.cdn.cloudflare.net	TLSv1.3	h2	copilot.microsoft.com	Microsoft Corporation	Microsoft Corporation	1
+cursor-cdn.com	-	0		TLSv1.3	h2	cursor-cdn.com	None	Google Trust Services	1
+cursor.com	-	0		TLSv1.3	h2	cursor.com	None	Let's Encrypt	1
+cursor.sh	-	0		TLSv1.3	h2	cursor.sh	None	Let's Encrypt	1
+cursorapi.com	no-address	0							0		marketplace.cursorapi.com:cdn,h3
+cursorvm.com	no-address	0							0
+dashboard.ngrok.com	-	0	ngrok.ngrok-cname.com	TLSv1.3	h2	dashboard.ngrok.com	None	Let's Encrypt	1
+db.tt	-	0		TLSv1.3	h2	db.tt	Dropbox, Inc	DigiCert Inc	5
+deepseek.com	-	0		TLSv1.3	h2	deepseek.com	None	Amazon	1
+delivery.mp.microsoft.com	no-address	0							0
+dhi.io	-	0		TLSv1.3	h2	dhi.io	None	Google Trust Services	1
+discovery.cem.cloud.us	cdn	0	d2h5okjz9875in.cloudfront.net	TLSv1.3	None	*.cem.cloud.us	Cloud Software Group, Inc.	DigiCert Inc	2
+dm.microsoft.com	no-address	0							0
+do.dsp.mp.microsoft.com	no-address	0							0
+docker.com	-	0		TLSv1.3	h2	docker.com	None	Let's Encrypt	2
+docker.io	-	0		TLSv1.3	h2	*.docker.com	None	Amazon	8
+docs.google.com	-	0		TLSv1.3	h2	*.google.com	None	Google Trust Services	66
+docsend.com	-	0		TLSv1.3	h2	*.docsend.com	Dropbox, Inc	DigiCert Inc	2
+drive-data-export-eu.usercontent.google.com	-	0		TLSv1.3	h2	*.usercontent.google.com	None	Google Trust Services	16
+drive-data-export.usercontent.google.com	-	0		TLSv1.3	h2	*.usercontent.google.com	None	Google Trust Services	16
+drive.google.com	-	0		TLSv1.3	h2	*.google.com	None	Google Trust Services	66
+drive.usercontent.google.com	-	0		TLSv1.3	h2	*.usercontent.google.com	None	Google Trust Services	16
+dropbox-dns.com	no-address	0							0
+dropbox.com	-	0		TLSv1.3	h2	*.app.dropbox.com	Dropbox, Inc	DigiCert, Inc.	3
+dropboxapi.com	-	0		TLSv1.3	h2	dropboxapi.com	None	Let's Encrypt	2
+dropboxbusiness.com	-	0		TLSv1.3	h2	*.dropboxbusiness.com	None	Let's Encrypt	2
+dropboxcaptcha.com	-	0		TLSv1.3	h2	dropboxcaptcha.com	None	Amazon	1
+dropboxexperiment.com	no-address	0							0
+dropboxstatic.com	tls-fail	0							0	OSError
+dropboxusercontent.com	no-address	0							0
+duosecurity.com	-	0		TLSv1.3	None	www.duosecurity.com	None	Amazon	2
+emdl.ws.microsoft.com	nxdomain	3							0
+endpoint.security.microsoft.com	no-address	0							0
+epdlp-prod.netskope.io	-	0		TLSv1.3	h2	epdlp-prod.netskope.io	None	Google Trust Services	1
+epm.gpcloudservice.com	nxdomain	3							0
+figma-gov.com	h3	0		TLSv1.3	h2	*.figma-gov.com	None	Amazon	2
+figma.com	h3	0		TLSv1.3	h2	*.figma.com	None	Amazon	2
+filter.paloaltonetworks.com	nxdomain	3							0
+force.com	-	0		TLSv1.3	http/1.1	salesforce.com	Salesforce, Inc.	DigiCert Inc	69
+gemini.google.com	-	0		TLSv1.3	h2	*.google.com	None	Google Trust Services	66
+generativelanguage.googleapis.com	-	0		TLSv1.3	h2	upload.video.google.com	None	Google Trust Services	17
+getdropbox.com	-	0		TLSv1.3	h2	*.getdropbox.com	Dropbox, Inc	DigiCert Inc	2
+getpostman.com	tls-fail	0							0	ConnectionResetError
+github.com	-	0		TLSv1.3	h2	github.com	None	Sectigo Limited	2
+github.githubassets.com	-	0		TLSv1.3	h2	*.githubassets.com	None	Sectigo Limited	2
+githubassets.com	no-address	0							0		github.githubassets.com:
+githubcopilot.com	tls-fail	0							0	SSLCertVerificationError
+githubusercontent.com	no-address	0							0		copilot-proxy.githubusercontent.com:
+gitlab-static.net	no-address	0							0		cdn.registry.gitlab-static.net:
+gitlab.com	-	0		TLSv1.3	h2	gitlab.com	None	Sectigo Limited	6
+gitlab.net	no-address	0							0		new-sentry.gitlab.net:
+gmail.com	-	0		TLSv1.3	h2	gmail.com	None	Google Trust Services	2
+googledrive.com	-	0		TLSv1.3	h2	*.googleusercontent.com	None	Google Trust Services	154
+googlemail.com	-	0		TLSv1.3	h2	googlemail.com	None	Google Trust Services	2
+goskope.com	no-address	0							0		enrollment.goskope.com:
+goto.com	-	0		TLSv1.3	h2	*.goto.com	GoTo Technologies USA, LLC	DigiCert Inc	2
+gotomeet.at	no-address	0							0
+gotomeet.me	-	0		TLSv1.3	h2	meet.goto.com	None	Amazon	4
+gotomeeting.com	-	0		TLSv1.3	h2	www.gotomeeting.com	GoTo Technologies USA, LLC	DigiCert Inc	12
+gotomypc.com	-	0		TLSv1.3	h2	gotomypc.com	GoTo Technologies USA, LLC	DigiCert Inc	1
+gotoresolve.com	-	0		TLSv1.3	h2	www.gotoresolve.com	GoTo Technologies USA, LLC	DigiCert Inc	30
+gotoresolveuserfiles.com	no-address	0							0		remoteexecution.gotoresolveuserfiles.com:cdn
+grammarly.com	-	0		TLSv1.3	h2	www.grammarly.com	None	Amazon	2
+grammarly.io	no-address	0							0
+grok.com	h3	0		TLSv1.3	h2	grok.com	None	Google Trust Services	2
+gtre-remoteexecution-userfiles-prod-eu.azureedge.net	cdn	0	mr-afd-azuredge.tm-azurefd.net	TLSv1.3	h2	*.azureedge.net	Microsoft Corporation	Microsoft Corporation	1
+hellofax.com	-	0		TLSv1.3	h2	*.hellofax.com	Dropbox, Inc	DigiCert Inc	2
+hellosign.com	-	0		TLSv1.3	h2	*.hellosign.com	Dropbox, Inc	DigiCert Inc	2
+helpdesk.me	-	0		TLSv1.3	h2	helpdesk.me	None	Amazon	2
+highlander.aws.a2z.com	no-address	0							0
+icloud-content.com	-	0		TLSv1.3	None	ichat.com	Apple Inc.	Apple Inc.	57
+icloud.apple.com	no-address	0							0
+icloud.com	-	0		TLSv1.3	h2	icloud.com	Apple Inc.	Apple Inc.	1
+imap.googlemail.com	tls-fail	0							0	TimeoutError
+infra.windows365.microsoft.com	no-address	0	blob.core.windows.net						0
+infra.windows365.microsoft.us	no-address	0							0
+iwork.apple.com	no-address	0							0
+jetbrains.com	-	0		TLSv1.3	h2	jetbrains.com	None	Amazon	2
+jira.com	h3	0		TLSv1.3	h2	*.atlassian.net	None	Amazon	64
+joingotomeeting.com	-	0		TLSv1.3	h2	joingotomeeting.com	GoTo Technologies USA, LLC	DigiCert Inc	4
+login.ngrok.com	-	0	ngrok.ngrok-cname.com	TLSv1.3	h2	login.ngrok.com	None	Let's Encrypt	1
+logmein.com	-	0		TLSv1.3	h2	logmein.com	GoTo Technologies USA, LLC	DigiCert Inc	5
+logmeininc.com	-	0		TLSv1.3	h2	logmeininc.com	GoTo Technologies USA, LLC	DigiCert Inc	5
+loom-media-production.s3-accelerate.amazonaws.com	-	0		TLSv1.3	None	*.s3-accelerate.amazonaws.com	None	Amazon	77
+loom.com	h3	0		TLSv1.3	h2	loom.com	None	Amazon	2
+lync.com	tls-fail	0							0	SSLCertVerificationError
+mail.google.com	-	0		TLSv1.3	h2	mail.google.com	None	Google Trust Services	2
+manage.microsoft.com	cdn	0	pexsucpeu01.northeurope.cloudapp.azure.com	TLSv1.2	None	EU01.manage.microsoft.com	Microsoft Corporation	Microsoft Corporation	10
+mask-h2.icloud.com	tls-fail	0	mask.apple-dns.net						0	SSLError
+mask.icloud.com	tls-fail	0	mask.apple-dns.net						0	SSLError
+meet.google.com	-	0		TLSv1.3	h2	*.google.com	None	Google Trust Services	66
+microsoft365.com	-	0		TLSv1.3	h2	m365.cloud.microsoft	Microsoft Corporation	Microsoft Corporation	20
+miro-apps.com	no-address	0							0
+miro.com	h3	0		TLSv1.3	h2	miro.com	None	Amazon	2
+mirostatic.com	h3	0		TLSv1.3	h2	mirostatic.com	None	Amazon	1
+mistral.ai	h3	0		TLSv1.3	h2	mistral.ai	None	Google Trust Services	2
+net.anydesk.com	no-address	0							0
+netscalergateway.net	no-address	0							0
+netskope.com	-	0		TLSv1.3	h2	netskope.com	Netskope, Inc.	GlobalSign nv-sa	3
+new-sentry.gitlab.net	-	0		TLSv1.3	h2	new-sentry.gitlab.net	None	Google Trust Services	1
+ngrok-agent.com	no-address	0							0		crl.ngrok-agent.com:
+ngrok.com	-	0		TLSv1.3	h2	ngrok.com	None	Let's Encrypt	1
+notebook.google.com	-	0		TLSv1.3	h2	*.google.com	None	Google Trust Services	66
+notebooklm.google.com	-	0		TLSv1.3	h2	*.google.com	None	Google Trust Services	66
+notifications.devices.fed.cloudflare.com	-	0		TLSv1.3	h2	devices.fed.cloudflare.com	None	Google Trust Services	2
+notion.com	-	0		TLSv1.3	h2	notion.com	None	Google Trust Services	2
+notion.site	-	0		TLSv1.3	h2	notion.site	None	Google Trust Services	2
+notion.so	-	0		TLSv1.3	h2	notion.so	None	Google Trust Services	5
+notionusercontent.com	no-address	0							0		img.notionusercontent.com:
+nssvc.net	no-address	0							0		global-s.g.nssvc.net:cdn
+oaistatic.com	h3	0		TLSv1.3	h2	oaistatic.com	None	Let's Encrypt	2
+oaiusercontent.com	no-address	0							0
+office.com	-	0		TLSv1.3	h2	m365.cloud.microsoft	Microsoft Corporation	Microsoft Corporation	20
+office.net	no-address	0							0		res.cdn.office.net:cdn,h3
+office365.com	-	0		TLSv1.3	http/1.1	akaoffice.trafficmanager.net	Microsoft Corporation	Microsoft Corporation	8
+officeapps.live.com	cdn	0	wac-0003.wac-msedge.net	TLSv1.3	h2	officeapps.live.com	Microsoft Corporation	Microsoft Corporation	55
+okta-emea.com	-	0		TLSv1.3	h2	okta.com	None	Amazon	3
+okta-gov.com	no-address	0							0
+okta.com	-	0		TLSv1.3	h2	okta.com	None	Amazon	3
+okta.mil	-	0		TLSv1.2	h2	*.okta.mil	Okta, Inc.	DigiCert Inc	2
+oktacdn.com	no-address	0							0
+oktapreview.com	no-address	0							0
+onedrive.com	-	0		TLSv1.3	None	onedrive.com	Microsoft Corporation	Microsoft Corporation	12
+onedrive.live.com	-	0	dual-spov-0006.spov-msedge.net	TLSv1.3	h2	onedrive.com	Microsoft Corporation	Microsoft Corporation	12
+onlinewhiteboard.com	tls-fail	0							0	TimeoutError
+openvoice.com	-	0		TLSv1.3	h2	www.gotomeeting.com	GoTo Technologies USA, LLC	DigiCert Inc	12
+origin-tracker.githubusercontent.com	-	0	glb-db52c2cf8be544.github.com	TLSv1.3	h2	*.githubusercontent.com	None	Let's Encrypt	2
+outlook.cloud.microsoft	-	0	atm.outlook.mira.tm.svc.cloud.microsoft	TLSv1.3	h2	outlook.cloud.microsoft	Microsoft Corporation	Microsoft Corporation	2
+outlook.com	-	0		TLSv1.3	h2	outlook.com	Microsoft Corporation	DigiCert Inc	20
+outlook.live.com	-	0	atm.outlook.mira.tm.svc.cloud.microsoft	TLSv1.3	h2	outlook.com	Microsoft Corporation	DigiCert Inc	20
+outlook.office.com	-	0	atm.outlook.mira.tm.svc.cloud.microsoft	TLSv1.3	h2	outlook.com	Microsoft Corporation	DigiCert Inc	20
+outlook.office365.com	-	0	atm.outlook.mira.tm.svc.cloud.microsoft	TLSv1.3	h2	outlook.com	Microsoft Corporation	DigiCert Inc	20
+perplexity.ai	h3	0		TLSv1.3	h2	perplexity.ai	None	Google Trust Services	2
+photos.live.com	cdn	0	cosmic-westeurope-ns-5cf19e8e66cb.trafficmanager.net	TLSv1.3	None	onedrive.com	Microsoft Corporation	Microsoft Corporation	12
+platform.claude.com	h3	0		TLSv1.3	h2	platform.claude.com	None	Let's Encrypt	1
+platform.openai.com	cdn	0	platform.openai.com.cdn.cloudflare.net	TLSv1.3	h2	platform.openai.com	None	Google Trust Services	2
+play.googleapis.com	-	0		TLSv1.3	h2	upload.video.google.com	None	Google Trust Services	17
+postman.co	-	0		TLSv1.3	h2	*.postman.co	None	Amazon	6
+postman.com	-	0		TLSv1.3	h2	postman.com	None	Let's Encrypt	3
+prod-aps-vus-storage-endpoint.azureedge.net	cdn	0	hel01r9b.msedge.net	TLSv1.3	h2	*.azureedge.net	Microsoft Corporation	Microsoft Corporation	1
+prod-eu-vus-storage-endpoint.azureedge.net	cdn	0	mr-afd-azuredge.tm-azurefd.net	TLSv1.3	h2	*.azureedge.net	Microsoft Corporation	Microsoft Corporation	1
+prod-jp-vus-storage-endpoint.azureedge.net	cdn	0	hel01r9b.msedge.net	TLSv1.3	h2	*.azureedge.net	Microsoft Corporation	Microsoft Corporation	1
+prod-us-vus-storage-endpoint.azureedge.net	cdn	0	mr-afd-azuredge.tm-azurefd.net	TLSv1.3	h2	*.azureedge.net	Microsoft Corporation	Microsoft Corporation	1
+production-copilot-host-austriaeast.webpubsub.azure.com	-	0	production-copilot-host-austriaeast.privatelink.webpubsub.azure.com	TLSv1.3	h2	*.service.signalr.net	Microsoft Corporation	Microsoft Corporation	4
+production-copilot-host-centralus-02.webpubsub.azure.com	-	0	production-copilot-host-centralus-02.privatelink.webpubsub.azure.com	TLSv1.3	h2	*.service.signalr.net	Microsoft Corporation	Microsoft Corporation	4
+production-copilot-host-centralus.webpubsub.azure.com	-	0	production-copilot-host-centralus.privatelink.webpubsub.azure.com	TLSv1.3	h2	*.service.signalr.net	Microsoft Corporation	Microsoft Corporation	4
+production-copilot-host-eastasia.webpubsub.azure.com	-	0	production-copilot-host-eastasia.privatelink.webpubsub.azure.com	TLSv1.3	h2	*.service.signalr.net	Microsoft Corporation	Microsoft Corporation	4
+production-copilot-host-westus.webpubsub.azure.com	-	0	production-copilot-host-westus.privatelink.webpubsub.azure.com	TLSv1.3	h2	*.service.signalr.net	Microsoft Corporation	Microsoft Corporation	4
+production-copilot-host-westus3.webpubsub.azure.com	-	0	production-copilot-host-westus3.privatelink.webpubsub.azure.com	TLSv1.3	h2	*.service.signalr.net	Microsoft Corporation	Microsoft Corporation	4
+production-copilot-host.webpubsub.azure.com	-	0	production-copilot-host.privatelink.webpubsub.azure.com	TLSv1.3	h2	*.service.signalr.net	Microsoft Corporation	Microsoft Corporation	4
+pstmn.io	no-address	0							0
+realtimeboard.com	-	0		TLSv1.3	h2	digital-twin-mcp.eu01.miro.com	None	Amazon	25
+reflector.defender.microsoft.com	cdn	0	reflector-appgwv6-prd-aec0a.uaecentral.cloudapp.azure.com	TLSv1.3	h2	reflector.defender.microsoft.com	Microsoft Corporation	Microsoft Corporation	1
+relay.splashtop.cn	no-address	0							0
+remotedesktop-pa.googleapis.com	-	0		TLSv1.3	h2	upload.video.google.com	None	Google Trust Services	17
+remotedesktop.google.com	cdn	0	www3.l.google.com	TLSv1.3	h2	*.google.com	None	Google Trust Services	66
+res.cdn.office.net	cdn,h3	0	res-stls-prod.edgesuite.net	TLSv1.3	h2	*.public.cdn.office.net	Microsoft Corporation	Microsoft Corporation	18
+resources.jetbrains.com	-	0		TLSv1.3	h2	resources.jetbrains.com	None	Amazon	2
+rustdesk.com	-	0		TLSv1.2	h2	rustdesk.com	None	Google Trust Services	2
+s-cdn.anthropic.com	-	0	b-0.hexagon-cdn.com	TLSv1.3	h2	b-0.hexagon-cdn.com	Sift Science, Inc.	DigiCert Inc	25
+salesforce.com	-	0		TLSv1.3	http/1.1	salesforce.com	Salesforce, Inc.	DigiCert Inc	69
+screenconnect.com	-	0		TLSv1.3	h2	screenconnect.com	None	Amazon	1
+secure.notion-static.com	no-address	0							0
+sharepoint.com	-	0		TLSv1.3	h2	svc.ms	Microsoft Corporation	Microsoft Corporation	12
+sharepointonline.com	tls-fail	0							0	TimeoutError
+sheets.google.com	-	0		TLSv1.3	h2	*.google.com	None	Google Trust Services	66
+signal.art	ech,h3	0		TLSv1.3	h2	signal.art	None	Google Trust Services	1
+signal.group	-	0		TLSv1.3	h2	signal.group	None	Google Trust Services	1
+signal.link	-	0		TLSv1.3	h2	signal.link	None	Google Trust Services	1
+signal.me	-	0		TLSv1.3	h2	signal.me	None	Google Trust Services	1
+signal.org	h3	0		TLSv1.3	h2	signal.org	None	Google Trust Services	1
+signal.tube	-	0		TLSv1.3	h2	signal.tube	None	Google Trust Services	1
+skydrive.live.com	cdn	0	cosmic-westeurope-ns-5cf19e8e66cb.trafficmanager.net	TLSv1.3	None	onedrive.com	Microsoft Corporation	Microsoft Corporation	12
+slack-edge.com	no-address	0							0		a.slack-edge.com:cdn,h3
+slack-files.com	-	0		TLSv1.3	h2	slack-files.com	None	Let's Encrypt	2
+slack-msgs.com	-	0		TLSv1.3	None	slack-msgs.com	None	Let's Encrypt	2
+slack.com	-	0		TLSv1.3	h2	slack.com	None	Let's Encrypt	2
+slides.google.com	-	0		TLSv1.3	h2	*.google.com	None	Google Trust Services	66
+smtp.googlemail.com	tls-fail	0							0	TimeoutError
+snowplowprd.trx.gitlab.net	cdn	0	snowplowprdnlb-1490493263.us-east-2.elb.amazonaws.com	TLSv1.2	h2	snowplowprd.trx.gitlab.net	None	Amazon	1
+splashtop.com	-	0		TLSv1.3	h2	*.splashtop.com	None	Amazon	2
+ss-inf.net	no-address	0							0
+st1.zoom.us	-	0		TLSv1.3	h2	*.zoom.us	Zoom Communications, Inc.	DigiCert Inc	2
+status.canva.com	cdn	0	status.canva.com.cdn.cloudflare.net	TLSv1.3	h2	status.canva.com	None	Google Trust Services	1
+storage.msn.com	-	0	ln-0001.ln-msedge.net	TLSv1.3	h2	storage.live.com	Microsoft Corporation	Microsoft Corporation	139
+svc.ms	no-address	0							0
+t.me	-	0		TLSv1.3	h2	*.t.me	None	GoDaddy.com	2
+tailscale.com	-	0		TLSv1.2	h2	tailscale.com	None	Amazon	3
+tailscale.io	no-address	0							0
+tdn.console.gotoresolve.com	cdn	0	d1m414htzf82nc.cloudfront.net	TLSv1.3	h2	*.console.gotoresolve.com	GoTo Technologies USA, LLC	DigiCert Inc	3
+teams.cdn.office.net	no-address	0							0
+teams.cloud.microsoft	-	0	s-0005.dual-s-msedge.net	TLSv1.3	h2	teams.cloud.microsoft	Microsoft Corporation	Microsoft Corporation	1
+teams.live.com	-	0	s-0005.dual-s-msedge.net	TLSv1.3	h2	teams.live.com	Microsoft Corporation	Microsoft Corporation	1
+teams.microsoft.com	-	0	s-0005.dual-s-msedge.net	TLSv1.3	h2	teams.microsoft.com	Microsoft Corporation	Microsoft Corporation	1
+teamviewer.com	-	0		TLSv1.3	h2	*.teamviewer.com	None	Sectigo Limited	2
+teamworkgraph.com	-	0		TLSv1.3	h2	*.frontend.public.atl-paas.net	None	Amazon	54
+telegram.me	-	0		TLSv1.3	h2	*.telegram.me	None	GoDaddy.com	2
+telegram.org	-	0		TLSv1.3	h2	*.telegram.org	None	GoDaddy.com	2
+telesco.pe	-	0		TLSv1.3	http/1.1	*.telesco.pe	None	GoDaddy.com	2
+tsfe.trafficshaping.dsp.mp.microsoft.com	cdn,tls-fail	0	waws-prod-usw3-97908263.sip.p.azurewebsites.windows.net						0	SSLCertVerificationError
+update.equinox.io	cdn	0	update.equinox.io.herokudns.com	TLSv1.3	h2	update.equinox.io	None	Let's Encrypt	1
+update.microsoft.com	cdn	0	redir.update.msft.com.trafficmanager.net	TLSv1.2	None	redir.update.microsoft.com	Microsoft Corporation	Microsoft Corporation	5
+us01st-cf.zoom.us	-	0		TLSv1.3	h2	*.zoom.us	Zoom Communications, Inc.	DigiCert Inc	2
+wbx2.com	tls-fail	0							0	TimeoutError
+we.tl	-	0		TLSv1.3	None	go.wetransfer.com	None	Amazon	2
+webex.com	-	0		TLSv1.2	None	webex.com	Cisco Systems Inc.	IdenTrust	21
+webexapis.com	-	0		TLSv1.3	h2	api-gateway-k.wbx2.com	Cisco Systems Inc.	IdenTrust	5
+webexcontent.com	no-address	0							0
+webwhiteboard.com	-	0		TLSv1.3	h2	digital-twin-mcp.eu01.miro.com	None	Amazon	25
+wetransfer.com	-	0		TLSv1.3	h2	wetransfer.com	None	Amazon	2
+wetransfer.net	tls-fail	0							0	SSLError
+whatsapp.com	-	0		TLSv1.3	h2	*.whatsapp.net	Meta Platforms, Inc.	DigiCert Inc	7
+whatsapp.net	-	0		TLSv1.3	h2	*.whatsapp.net	Meta Platforms, Inc.	DigiCert Inc	7
+whispersystems.org	-	0		TLSv1.3	h2	whispersystems.org	None	Google Trust Services	2
+windows.cloud.microsoft	cdn	0	mr-z01.tm-azurefd.net	TLSv1.3	h2	windows.cloud.microsoft	Microsoft Corporation	Microsoft Corporation	1
+windows.static.microsoft	no-address	0							0
+windowsupdate.com	no-address	0							0
+wt-prod-euwest1-storm.s3-accelerate.amazonaws.com	-	0		TLSv1.3	None	*.s3-accelerate.amazonaws.com	None	Amazon	77
+wt-prod-euwest1-storm.s3.amazonaws.com	cdn	0	s3-3-w.amazonaws.com	TLSv1.3	http/1.1	*.s3-eu-west-1.amazonaws.com	None	Amazon	18
+wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com	cdn	0	s3-r-w.eu-west-1.amazonaws.com	TLSv1.3	http/1.1	*.s3-eu-west-1.amazonaws.com	None	Amazon	18
+wt-prod-useast1-storm.s3-accelerate.amazonaws.com	-	0		TLSv1.3	None	*.s3-accelerate.amazonaws.com	None	Amazon	77
+wt-prod-useast1-storm.s3.amazonaws.com	cdn	0	s3-w.us-east-1.amazonaws.com	TLSv1.3	http/1.1	s3.amazonaws.com	None	Amazon	18
+wt-prod-useast1-storm.s3.us-east-1.amazonaws.com	cdn	0	s3-r-w.us-east-1.amazonaws.com	TLSv1.3	http/1.1	s3.amazonaws.com	None	Amazon	18
+wvd.azure.us	no-address	0							0
+wvd.microsoft.com	no-address	0							0		rdbroker.wvd.microsoft.com:cdn
+wvdportalstorageblob.blob.core.windows.net	-	0	blob.mwh20prdstr02a.store.core.windows.net	TLSv1.3	None	*.blob.core.windows.net	Microsoft Corporation	Microsoft Corporation	53
+www.adobe.com	cdn	0	a1319.dscr.akamai.net	TLSv1.3	h2	*.adobe.com	Adobe Inc	DigiCert Inc	2
+www.canva.com	cdn	0	www.canva.com.cdn.cloudflare.net	TLSv1.3	h2	*.canva.com	None	Amazon	9
+www.grammarly.com	-	0		TLSv1.3	h2	www.grammarly.com	None	Amazon	2
+x.ai	-	0		TLSv1.3	h2	x.ai	None	Google Trust Services	3
+xendesktop.net	no-address	0							0
+zdassets.com	no-address	0							0		static.zdassets.com:
+zdxbeta.net	no-address	0							0
+zdxcloud.net	no-address	0							0
+zdxgov.net	no-address	0							0
+zdxten.net	no-address	0							0
+zendesk.com	-	0		TLSv1.3	h2	zendesk.com	None	Let's Encrypt	2
+zidentitygov.net	no-address	0							0
+zoom.com	-	0		TLSv1.2	http/1.1	*.zoom.com	Zoom Communications, Inc.	DigiCert Inc	2
+zoom.us	-	0		TLSv1.3	h2	*.zoom.us	Zoom Communications, Inc.	DigiCert Inc	2
+zoomgov.com	-	0		TLSv1.3	h2	*.zoomgov.com	Zoom Communications, Inc.	DigiCert Inc	2
+zpabeta.net	no-address	0							0
+zpagov.net	no-address	0							0
+zpatwo.net	no-address	0							0
+zscaler.com	-	0		TLSv1.3	h2	www.zscaler.com	Zscaler, Inc.	DigiCert Inc	3
+zscaler.net	no-address	0							0
+zscalerbeta.net	tls-fail	0							0	SSLCertVerificationError
+zscalergov.net	no-address	0							0
+zscalerone.net	no-address	0							0
+zscalerten.net	no-address	0							0
+zscalerthree.net	no-address	0							0
+zscalertwo.net	no-address	0							0
+zscloud.net	no-address	0							0
+zslogin.net	no-address	0							0
+zsloginbeta.net	no-address	0							0

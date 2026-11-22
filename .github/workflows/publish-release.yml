@@ -82,7 +82,9 @@ jobs:
           python-version: "3.13"
       - name: A release tag must point at a commit already on main
         # Tag protection is not enforceable on this plan (SSDLC.md), so the workflow checks it:
-        # compare/<sha>...main is "identical" or "ahead" only when main contains the commit.
+        # compare/${SHA}...${MAIN} is "identical" or "ahead" only when main contains the commit. MAIN is the SHA of
+        # refs/heads/main (git/ref is an exact match), never the bare name, which a tag named main would shadow
+        # (SEC-CI-1); a failed lookup leaves an all-zero SHA, which the compare rejects, so a tag fails closed.
         # A tag fails closed on any other answer; dry runs report only. The pull-request head,
         # not GitHub's synthetic merge commit, is what a dry run compares.
         env:
@@ -93,7 +95,8 @@ jobs:
         # tools/check_workflow_policy.py rule 4 pins this step's env and run lines exactly.
         run: |
           python -B tools/check_release_ref.py --self-test
-          STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...main" --jq .status) || STATUS="api-error"
+          MAIN=$(gh api "repos/${GH_REPO}/git/ref/heads/main" --jq .object.sha) || MAIN="0000000000000000000000000000000000000000"
+          STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...${MAIN}" --jq .status) || STATUS="api-error"
           python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}" --summary "${GITHUB_STEP_SUMMARY}"
       - name: The tagged commit's ci and CodeQL workflows must have passed
         # Required checks are not enforceable on this plan (SSDLC.md), and the build job re-runs

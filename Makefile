@@ -120,6 +120,9 @@ workflow-policy:
 	$(PYTHON) -B tools/perf_history.py --self-test
 	$(PYTHON) -B tools/build_go_release.py --self-test
 	$(PYTHON) -B tools/release_provenance.py --self-test
+	$(PYTHON) -B tools/check_required_checks.py --self-test
+	$(PYTHON) -B tools/check_required_checks.py
+	$(PYTHON) -B tools/check_gitleaks_allowlist.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 
