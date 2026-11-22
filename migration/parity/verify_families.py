@@ -10,9 +10,13 @@ records included):
      any of them;
   2. for every transport the family serves (CAPABILITIES.json), the matched cases of that transport's kind
      (tcp: stream, udp: datagram) cover four classes: a positive message, a truncated prefix, a mutated
-     message and foreign bytes;
+     message and foreign bytes. A positive counts only when its expected result identifies the family; foreign
+     bytes count only when they differ from every positive message of the family and kind and are not
+     identified as the family, so a re-chunked
+     replay of the positive (`bytes`, `sevens`, `positive-bytes`) is never foreign evidence (PRO-20);
   3. a TCP family also has at least one matched session-level case (bytes through the adapter's reassembly
-     and the session record).
+     and the session record) whose expected events identify the family: a session case is never credited by
+     its kind alone (PRO-20).
 
 Otherwise it stays `experimental` (some cases match) or `pending` (none is claimed), and the shortfall is
 named. The capture-level differentials (parity-analyze, parity-live, parity-decrypt, parity-live-decrypt,
@@ -35,7 +39,7 @@ CLASSES = {
     "positive": {"whole", "whole-fin", "positive", "plain"},
     "truncated": {"half", "truncated"},
     "mutated": {"mutated", "mutated-1", "mutated-2"},
-    "foreign": {"zeros", "sevens", "bytes", "text", "http-request", "tls-hello", "dns-query", "greeting", "positive-bytes"},
+    "foreign": {"zeros", "text", "http-request", "tls-hello", "dns-query", "greeting"},
 }
 KIND_OF = {"tcp": "stream", "udp": "datagram"}
 
@@ -44,19 +48,59 @@ def load(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+def payload(case):
+    """The bytes a stream or datagram case feeds, whatever its chunking; None for other kinds."""
+    if case["kind"] == "stream":
+        return b"".join(bytes.fromhex(chunk) for chunk in case.get("chunks") or ())
+    if case["kind"] == "datagram":
+        return bytes.fromhex(case.get("payload") or "")
+    return None
+
+
+def identifies(value, family):
+    """Whether an expected result holds an identified observation of the family (anywhere in its events): its
+    application protocol names the family ("mqtt/5.0" for mqtt, "http/2" for http2) or, for an encrypted
+    transport identified without one (tls, dtls, quic, wireguard), its encryption does."""
+    if isinstance(value, dict):
+        if value.get("status") == "identified":
+            protocol = value.get("application_protocol") or ""
+            if family in (family_of(protocol), protocol.replace("/", ""), value.get("encryption")):
+                return True
+        return any(identifies(item, family) for item in value.values())
+    if isinstance(value, list):
+        return any(identifies(item, family) for item in value)
+    return False
+
+
 def evidence(cases, report, gaps, deltas, capabilities):
     """{family: {"status", "cases", "classes", "shortfall"}} from the committed cases and the parity report."""
-    per = defaultdict(lambda: {"cases": defaultdict(int), "classes": defaultdict(set), "touched": []})
+    per = defaultdict(lambda: {"cases": defaultdict(int), "classes": defaultdict(set), "touched": [], "sessions": 0})
+    positives = defaultdict(set)
+    foreign = []
     for case in cases["cases"]:
         family = family_of(case.get("label"))
         entry = per[family]
         entry["cases"][case["kind"]] += 1
         variant = case["id"].rsplit("/", 1)[-1]
-        for name, variants in CLASSES.items():
-            if variant in variants:
-                entry["classes"][case["kind"]].add(name)
+        if case["kind"] == "session":
+            if identifies(case.get("expected"), family):
+                entry["sessions"] += 1
+                entry["classes"]["session"].add("positive")
+        elif variant in CLASSES["positive"]:
+            if identifies(case.get("expected"), family):
+                entry["classes"][case["kind"]].add("positive")
+                positives[(family, case["kind"])].add(payload(case))
+        elif variant in CLASSES["foreign"]:
+            foreign.append((family, case))
+        else:
+            for name in ("truncated", "mutated"):
+                if variant in CLASSES[name]:
+                    entry["classes"][case["kind"]].add(name)
         if case["id"] in gaps or case["id"] in deltas:
             entry["touched"].append(case["id"])
+    for family, case in foreign:
+        if payload(case) not in positives[(family, case["kind"])] and not identifies(case.get("expected"), family):
+            per[family]["classes"][case["kind"]].add("foreign")
     matched = report.get("matched_by_family", {})
     claimed = set(report.get("families", ()))
     out = {}
@@ -81,6 +125,8 @@ def evidence(cases, report, gaps, deltas, capabilities):
                 shortfall.append("{} cases lack {}".format(kind, ", ".join(lacking)))
         if "tcp" in info["transports"] and not counts.get("session"):
             shortfall.append("no session-level case")
+        elif "tcp" in info["transports"] and not entry["sessions"]:
+            shortfall.append("no session-level case identifies the family")
         out[family] = {"status": "experimental" if shortfall else "parity-verified", "cases": counts,
                        "classes": {kind: sorted(names) for kind, names in sorted((entry["classes"] if entry else {}).items())},
                        "shortfall": shortfall}

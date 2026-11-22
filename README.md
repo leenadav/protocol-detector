@@ -22,7 +22,7 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
 | Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
 | Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 866 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, 868 tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 ## Go migration and Culvert integration
 
@@ -32,8 +32,8 @@ fixtures from the Python reference. Per-family status is tracked in
 and fixture comparisons are documented under [`migration/`](migration/).
 The package map, data flow and boundaries of the Go engine are in [`docs/GO-ARCHITECTURE.md`](docs/GO-ARCHITECTURE.md).
 
-All 88 family profiles are `parity-verified` against the committed cases (7,430
-of 7,430 agree; `make parity-go`), and the parity-gap manifest has no entries.
+All 88 family profiles are `parity-verified` against the committed cases (7,448
+of 7,448 agree; `make parity-go`), and the parity-gap manifest has no entries.
 Fixture parity covers only the committed cases—it does not establish full
 feature parity, external-traffic accuracy, or production readiness. The Go port
 remains experimental, and the Python reference stays the fallback.

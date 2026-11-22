@@ -308,7 +308,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "datagram": 18
+            "datagram": 50
           },
           "classes": {
             "datagram": [
@@ -834,7 +834,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 50,
+            "stream": 52,
             "session": 4
           },
           "classes": {
@@ -976,8 +976,8 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 56,
-            "session": 61
+            "stream": 58,
+            "session": 62
           },
           "classes": {
             "session": [
@@ -1163,7 +1163,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 52,
+            "stream": 54,
             "session": 4
           },
           "classes": {
@@ -1908,7 +1908,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 60,
+            "stream": 62,
             "session": 4
           },
           "classes": {
@@ -2291,7 +2291,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 48,
+            "stream": 50,
             "session": 4
           },
           "classes": {
@@ -2443,6 +2443,9 @@
               "mutated",
               "positive",
               "truncated"
+            ],
+            "session": [
+              "positive"
             ]
           },
           "shortfall": [],
@@ -2835,7 +2838,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 26,
+            "stream": 28,
             "session": 4
           },
           "classes": {
@@ -2972,7 +2975,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 34,
+            "stream": 36,
             "datagram": 22,
             "session": 4
           },
@@ -3125,7 +3128,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 46,
+            "stream": 48,
             "session": 4
           },
           "classes": {
@@ -3353,7 +3356,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 45,
+            "stream": 47,
             "session": 4
           },
           "classes": {
@@ -3747,9 +3750,12 @@
         "evidence": {
           "cases": {
             "stream": 138,
-            "session": 690
+            "session": 732
           },
           "classes": {
+            "session": [
+              "positive"
+            ],
             "stream": [
               "foreign",
               "mutated",

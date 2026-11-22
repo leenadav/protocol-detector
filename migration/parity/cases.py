@@ -2751,6 +2751,19 @@ def host_catalog_session_cases():
             for name, label, steps in scenarios]
 
 
+def _identified_source(existing, family, kind):
+    """The family's first committed positive case of the kind, which the reference must identify as the family
+    (PRO-20: the source used to be chosen by label and id suffix alone)."""
+    source = next(case for case in existing if case["kind"] == kind and family_of(case["label"]) == family
+                  and case["id"].endswith(("/whole", "/positive")))
+    result = run_case(source)
+    observation = result.get("final") or result.get("observation") or {}
+    protocol = observation.get("application_protocol") or ""
+    if observation.get("status") != "identified" or family not in (family_of(protocol), protocol.replace("/", ""), observation.get("encryption")):
+        raise ValueError("coverage source %s is not identified as %s by the reference" % (source["id"], family))
+    return source
+
+
 COVERAGE_SESSION_FAMILIES = ("http2", "mongodb", "mysql", "resp", "s7comm", "smtp", "ssh", "websocket")
 
 
@@ -2762,8 +2775,7 @@ def coverage_cases(existing):
     rng = random.Random(20261118)
 
     def first(family, kind):
-        return next(case for case in existing if case["kind"] == kind and family_of(case["label"]) == family
-                    and case["id"].endswith(("/whole", "/positive")))
+        return _identified_source(existing, family, kind)
 
     cases = []
     for family in COVERAGE_SESSION_FAMILIES:
@@ -2808,10 +2820,30 @@ def coap_profile_cases():
     return cases
 
 
+COVERAGE_FOREIGN_FAMILIES = ("ftp", "http", "imap", "nats", "pop3", "rtsp", "sip", "smtp", "ssh")
+
+
+def foreign_coverage_cases(existing):
+    """PRO-20: the only foreign stream evidence of nine text families was a re-chunked replay of their positive
+    message (`bytes`, `sevens`), which migration/parity/verify_families.py no longer counts. Two inputs of other
+    protocols each (64 zero bytes, a TLS ClientHello), fed the way the family's first positive is (its hint and
+    end). Appended after every other case, so no existing case changes."""
+    cases = []
+    for family in COVERAGE_FOREIGN_FAMILIES:
+        source = _identified_source(existing, family, "stream")
+        for name, data in (("zeros", bytes(64)), ("tls-hello", client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]))):
+            cases.append({"id": "stream/coverage-" + family + "/" + name, "kind": "stream", "label": source["label"],
+                          "chunks": [data.hex()], "hint": source.get("hint"), "config": {}, "end": source.get("end")})
+    return cases
+
+
 def generate(limit=None):
     cases = (stream_cases(limit=limit) + datagram_cases(limit=limit) + session_cases(limit=limit) + correlation_session_cases()
              + host_catalog_session_cases())
-    return cases if limit else cases + coverage_cases(cases) + coap_profile_cases()
+    if limit:
+        return cases
+    cases = cases + coverage_cases(cases) + coap_profile_cases()
+    return cases + foreign_coverage_cases(cases)
 
 
 def with_expectations(cases):

@@ -9,8 +9,28 @@ import verify_families  # noqa: E402
 CAPABILITIES = {"families": {"demo": {"transports": ["tcp"]}, "dgram": {"transports": ["udp"]}, "absent": {"transports": ["tcp"]}}}
 
 
-def case(kind, family, variant):
-    return {"id": "{}/0-{}/{}".format(kind, family, variant), "kind": kind, "label": family + "/x"}
+POSITIVE = {"whole": b"DEMO-hello", "positive": b"DGRAM-hello", "plain": None}
+BYTES = {"half": b"DEMO-", "truncated": b"DGRAM", "mutated": b"DEMO-hellp", "mutated-1": b"DGRAM-hellp", "zeros": bytes(8),
+         "text": b"GET / HTTP/1.1\r\n\r\n", "bytes": b"DEMO-hello", "sevens": b"DEMO-hello"}
+
+
+def observation(family, identified):
+    return {"status": "identified" if identified else "unknown", "application_protocol": family + "/x" if identified else None}
+
+
+def case(kind, family, variant, data=None, identified=None):
+    data = POSITIVE.get(variant, BYTES.get(variant)) if data is None else data
+    identified = variant in POSITIVE if identified is None else identified
+    out = {"id": "{}/0-{}/{}".format(kind, family, variant), "kind": kind, "label": family + "/x"}
+    if kind == "stream":
+        out["chunks"] = [data[i:i + 1].hex() for i in range(len(data))] if variant == "bytes" else [data.hex()]
+        out["expected"] = {"final": observation(family, identified)}
+    elif kind == "datagram":
+        out["payload"] = data.hex()
+        out["expected"] = {"observation": observation(family, identified)}
+    else:
+        out["expected"] = {"packets": [{"events": [{"kind": "updated", "observation": observation(family, identified)}]}]}
+    return out
 
 
 def full_cases():
@@ -55,6 +75,44 @@ class VerifyFamiliesTests(unittest.TestCase):
         statuses, computed = self.statuses(no_mutation, report(no_mutation))
         self.assertEqual(statuses["dgram"], "experimental")
         self.assertIn("datagram cases lack mutated", computed["dgram"]["shortfall"])
+
+    def test_a_replay_of_the_positive_bytes_is_not_foreign_evidence(self):
+        """PRO-20: a bytewise or seven-byte re-chunking of the positive (and any case named foreign whose bytes
+        equal a positive) used to count as foreign bytes."""
+        for replay in ("bytes", "sevens"):
+            cases = {"cases": [c for c in full_cases()["cases"] if not c["id"].endswith("/zeros")] + [case("stream", "demo", replay)]}
+            statuses, computed = self.statuses(cases, report(cases))
+            self.assertEqual(statuses["demo"], "experimental", replay)
+            self.assertIn("stream cases lack foreign", computed["demo"]["shortfall"])
+        cases = full_cases()
+        cases["cases"] = [c for c in cases["cases"] if not c["id"].endswith("/text")]
+        cases["cases"].append(case("datagram", "dgram", "text", data=b"DGRAM-hello"))
+        statuses, computed = self.statuses(cases, report(cases))
+        self.assertEqual(statuses["dgram"], "experimental")
+        self.assertIn("datagram cases lack foreign", computed["dgram"]["shortfall"])
+        claimed = full_cases()
+        claimed["cases"] = [c for c in claimed["cases"] if not c["id"].endswith("/zeros")] + [case("stream", "demo", "zeros", identified=True)]
+        self.assertEqual(self.statuses(claimed, report(claimed))[0]["demo"], "experimental")
+
+    def test_a_positive_or_session_case_counts_only_when_it_identifies_the_family(self):
+        """PRO-20: a session case was credited by its kind alone, and a positive by its variant name alone."""
+        cases = full_cases()
+        cases["cases"] = [c for c in cases["cases"] if c["kind"] != "session"] + [case("session", "demo", "plain", identified=False)]
+        statuses, computed = self.statuses(cases, report(cases))
+        self.assertEqual(statuses["demo"], "experimental")
+        self.assertIn("no session-level case identifies the family", computed["demo"]["shortfall"])
+        other = full_cases()
+        other["cases"] = [c for c in other["cases"] if c["kind"] != "session"]
+        foreign_session = case("session", "demo", "plain")
+        foreign_session["expected"]["packets"][0]["events"][0]["observation"]["application_protocol"] = "other/x"
+        other["cases"].append(foreign_session)
+        self.assertEqual(self.statuses(other, report(other))[0]["demo"], "experimental")
+        unknown = full_cases()
+        unknown["cases"] = [c for c in unknown["cases"] if not c["id"].endswith("/positive")]
+        unknown["cases"].append(case("datagram", "dgram", "positive", identified=False))
+        statuses, computed = self.statuses(unknown, report(unknown))
+        self.assertEqual(statuses["dgram"], "experimental")
+        self.assertIn("datagram cases lack positive", computed["dgram"]["shortfall"])
 
 
 if __name__ == "__main__":

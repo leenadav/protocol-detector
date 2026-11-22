@@ -908943,6 +908943,1284 @@
    "kind": "datagram",
    "label": "coap",
    "payload": "40020001c000ff78"
+  },
+  {
+   "chunks": [
+    "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Prefix outside supported protocol families",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Prefix outside supported protocol families",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 64,
+     "candidates_selected": 0,
+     "events_emitted": 1,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-ftp/zeros",
+   "kind": "stream",
+   "label": "ftp"
+  },
+  {
+   "chunks": [
+    "1603030048010000440303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100001500000011000f00000c706572662e6578616d706c65"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "perf.example",
+         "wire:tls_sni",
+         "asserted"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ]
+       ],
+       "hostname": "perf.example",
+       "offered_alpn": [],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "perf.example",
+       "wire:tls_sni",
+       "asserted"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ]
+     ],
+     "hostname": "perf.example",
+     "offered_alpn": [],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 77,
+     "bytes_received": 77,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-ftp/tls-hello",
+   "kind": "stream",
+   "label": "ftp"
+  },
+  {
+   "chunks": [
+    "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Prefix outside supported protocol families",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Prefix outside supported protocol families",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 64,
+     "candidates_selected": 0,
+     "events_emitted": 1,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-http/zeros",
+   "kind": "stream",
+   "label": "http/1.1"
+  },
+  {
+   "chunks": [
+    "1603030048010000440303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100001500000011000f00000c706572662e6578616d706c65"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "perf.example",
+         "wire:tls_sni",
+         "asserted"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ]
+       ],
+       "hostname": "perf.example",
+       "offered_alpn": [],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "perf.example",
+       "wire:tls_sni",
+       "asserted"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ]
+     ],
+     "hostname": "perf.example",
+     "offered_alpn": [],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 77,
+     "bytes_received": 77,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-http/tls-hello",
+   "kind": "stream",
+   "label": "http/1.1"
+  },
+  {
+   "chunks": [
+    "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Prefix outside supported protocol families",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Prefix outside supported protocol families",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 64,
+     "candidates_selected": 0,
+     "events_emitted": 1,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-imap/zeros",
+   "kind": "stream",
+   "label": "imap"
+  },
+  {
+   "chunks": [
+    "1603030048010000440303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100001500000011000f00000c706572662e6578616d706c65"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "perf.example",
+         "wire:tls_sni",
+         "asserted"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ]
+       ],
+       "hostname": "perf.example",
+       "offered_alpn": [],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "perf.example",
+       "wire:tls_sni",
+       "asserted"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ]
+     ],
+     "hostname": "perf.example",
+     "offered_alpn": [],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 77,
+     "bytes_received": 77,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-imap/tls-hello",
+   "kind": "stream",
+   "label": "imap"
+  },
+  {
+   "chunks": [
+    "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Prefix outside supported protocol families",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Prefix outside supported protocol families",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 64,
+     "candidates_selected": 0,
+     "events_emitted": 1,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-nats/zeros",
+   "kind": "stream",
+   "label": "nats"
+  },
+  {
+   "chunks": [
+    "1603030048010000440303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100001500000011000f00000c706572662e6578616d706c65"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "perf.example",
+         "wire:tls_sni",
+         "asserted"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ]
+       ],
+       "hostname": "perf.example",
+       "offered_alpn": [],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "perf.example",
+       "wire:tls_sni",
+       "asserted"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ]
+     ],
+     "hostname": "perf.example",
+     "offered_alpn": [],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 77,
+     "bytes_received": 77,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-nats/tls-hello",
+   "kind": "stream",
+   "label": "nats"
+  },
+  {
+   "chunks": [
+    "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Prefix outside supported protocol families",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Prefix outside supported protocol families",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 64,
+     "candidates_selected": 0,
+     "events_emitted": 1,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-pop3/zeros",
+   "kind": "stream",
+   "label": "pop3"
+  },
+  {
+   "chunks": [
+    "1603030048010000440303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100001500000011000f00000c706572662e6578616d706c65"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "perf.example",
+         "wire:tls_sni",
+         "asserted"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ]
+       ],
+       "hostname": "perf.example",
+       "offered_alpn": [],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "perf.example",
+       "wire:tls_sni",
+       "asserted"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ]
+     ],
+     "hostname": "perf.example",
+     "offered_alpn": [],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 77,
+     "bytes_received": 77,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-pop3/tls-hello",
+   "kind": "stream",
+   "label": "pop3"
+  },
+  {
+   "chunks": [
+    "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Prefix outside supported protocol families",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Prefix outside supported protocol families",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 64,
+     "candidates_selected": 0,
+     "events_emitted": 1,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-rtsp/zeros",
+   "kind": "stream",
+   "label": "rtsp/1.0"
+  },
+  {
+   "chunks": [
+    "1603030048010000440303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100001500000011000f00000c706572662e6578616d706c65"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "perf.example",
+         "wire:tls_sni",
+         "asserted"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ]
+       ],
+       "hostname": "perf.example",
+       "offered_alpn": [],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "perf.example",
+       "wire:tls_sni",
+       "asserted"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ]
+     ],
+     "hostname": "perf.example",
+     "offered_alpn": [],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 77,
+     "bytes_received": 77,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-rtsp/tls-hello",
+   "kind": "stream",
+   "label": "rtsp/1.0"
+  },
+  {
+   "chunks": [
+    "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Prefix outside supported protocol families",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Prefix outside supported protocol families",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 64,
+     "candidates_selected": 0,
+     "events_emitted": 1,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-sip/zeros",
+   "kind": "stream",
+   "label": "sip/2.0"
+  },
+  {
+   "chunks": [
+    "1603030048010000440303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100001500000011000f00000c706572662e6578616d706c65"
+   ],
+   "config": {},
+   "end": null,
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "perf.example",
+         "wire:tls_sni",
+         "asserted"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ]
+       ],
+       "hostname": "perf.example",
+       "offered_alpn": [],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "perf.example",
+       "wire:tls_sni",
+       "asserted"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ]
+     ],
+     "hostname": "perf.example",
+     "offered_alpn": [],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 77,
+     "bytes_received": 77,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-sip/tls-hello",
+   "kind": "stream",
+   "label": "sip/2.0"
+  },
+  {
+   "chunks": [
+    "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Prefix outside supported protocol families",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Prefix outside supported protocol families",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 64,
+     "candidates_selected": 0,
+     "events_emitted": 1,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-smtp/zeros",
+   "kind": "stream",
+   "label": "smtp"
+  },
+  {
+   "chunks": [
+    "1603030048010000440303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100001500000011000f00000c706572662e6578616d706c65"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "perf.example",
+         "wire:tls_sni",
+         "asserted"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ]
+       ],
+       "hostname": "perf.example",
+       "offered_alpn": [],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "perf.example",
+       "wire:tls_sni",
+       "asserted"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ]
+     ],
+     "hostname": "perf.example",
+     "offered_alpn": [],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 77,
+     "bytes_received": 77,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-smtp/tls-hello",
+   "kind": "stream",
+   "label": "smtp"
+  },
+  {
+   "chunks": [
+    "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": null,
+       "evidence": [],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "Prefix outside supported protocol families",
+       "scope": "initial_message",
+       "status": "unknown",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": null,
+     "evidence": [],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "Prefix outside supported protocol families",
+     "scope": "initial_message",
+     "status": "unknown",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 24,
+     "bytes_received": 64,
+     "candidates_selected": 0,
+     "events_emitted": 1,
+     "parser_calls": 0,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-ssh/zeros",
+   "kind": "stream",
+   "label": "ssh"
+  },
+  {
+   "chunks": [
+    "1603030048010000440303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100001500000011000f00000c706572662e6578616d706c65"
+   ],
+   "config": {},
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "hostname",
+         "perf.example",
+         "wire:tls_sni",
+         "asserted"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ]
+       ],
+       "hostname": "perf.example",
+       "offered_alpn": [],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "hostname",
+       "perf.example",
+       "wire:tls_sni",
+       "asserted"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ]
+     ],
+     "hostname": "perf.example",
+     "offered_alpn": [],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 77,
+     "bytes_received": 77,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/coverage-ssh/tls-hello",
+   "kind": "stream",
+   "label": "ssh"
   }
  ],
  "reference": {
