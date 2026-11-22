@@ -91,33 +91,33 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 6 of 2026-11-21 and 2026-11-22 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`, `research/live-results-2026-11-22-r6.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `centrastage.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `rmm.datto.com` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `n-able.com` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `system-monitor.com` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `systemmonitor.eu.com` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `logicnow.com` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `logicnow.us` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `remote.management` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `beanywhere.com` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `keybox.solarwindsmsp.com` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `swi-rc.cdn-sw.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `cloudbackup.management` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `forticlient.forticloud.com` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `forticlient-emsproxy.forticloud.com` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `fctguard.fortinet.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `fctusguard.fortinet.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `fcteuguard.fortinet.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `forticlient.fortinet.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `myforticlient.fortinet.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `usforticlient.fortinet.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `fctupdate.fortinet.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `fctusupdate.fortinet.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
-| `fcteuupdate.fortinet.net` | not yet verified (added after round 2; in `live-hosts-r6.txt` for the next run) |
+| `centrastage.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `syrah.centrastage.net` (round 6); verdict (PRO-146): **supports**, moderately (live; Amazon domain-validated certificate) |
+| `rmm.datto.com` | round 6 (2026-11-22); **L** resolves; TLSv1.3, ALPN `h2`, TLS via documented probe `syrah.rmm.datto.com`, probe cert `syrah.rmm.datto.com`, no subject organisation (domain-validated) (issuer Amazon); verdict (PRO-146): **supports**, moderately (live; Amazon domain-validated certificate) |
+| `n-able.com` | round 6 (2026-11-22); **L** resolves; TLSv1.3, ALPN `http/1.1`, TLS via documented probe `sis.n-able.com`, probe cert `sis.n-able.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `system-monitor.com` | round 6 (2026-11-22); **L** resolves; TLSv1.3, ALPN `h2`, TLS via documented probe `checks-api.us.system-monitor.com`, probe cert `*.us.system-monitor.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `systemmonitor.eu.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `upload1europe1.systemmonitor.eu.com` (round 6, cdn); verdict (PRO-146): stays **N2**: domain-validated certificate, no organisation; promotion needs a vendor page or a WHOIS-class source, not a handshake |
+| `logicnow.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `rm-downloads.logicnow.com` (round 6) |
+| `logicnow.us` | apex has no address (normal for a suffix entry); suffix **verified** through documented `cannonball-us-west-2-push.logicnow.us` (round 6, cdn); verdict (PRO-146): stays **N2**: domain-validated certificate, no organisation; promotion needs a vendor page or a WHOIS-class source, not a handshake |
+| `remote.management` | apex has no address (normal for a suffix entry); suffix **verified** through documented `upload1.am.remote.management` (round 6, cdn); verdict (PRO-146): stays **N2**: domain-validated certificate, no organisation; promotion needs a vendor page or a WHOIS-class source, not a handshake |
+| `beanywhere.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-146): stays **N2**: domain-validated certificate, no organisation; promotion needs a vendor page or a WHOIS-class source, not a handshake |
+| `keybox.solarwindsmsp.com` | round 6 (2026-11-22); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `keybox-ncentral.us-west-2.prd.sharedsvcs.system-monitor.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `swi-rc.cdn-sw.net` | round 6 (2026-11-22); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `swi-rc.cdn-sw.net`, no subject organisation (domain-validated) (issuer DigiCert Inc) |
+| `cloudbackup.management` | round 6 (2026-11-22); **L** resolves; TLSv1.3, ALPN `http/1.1`, TLS via documented probe `integrated.cloudbackup.management`, probe cert `cloudbackup.management`, no subject organisation (domain-validated) (issuer Google Trust Services); verdict (PRO-146): stays **N2**: domain-validated certificate, no organisation; promotion needs a vendor page or a WHOIS-class source, not a handshake |
+| `forticlient.forticloud.com` | round 6 (2026-11-22); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `forticlient.forticloud.com`, subject organisation **Fortinet, Inc.** (issuer DigiCert Inc); CNAME into shared front end `a8003824a2c314586a0a6226b8e83253-0a9dee96d89470ea.elb.us-west-2.amazonaws.com`: name usable, IPs never; verdict (PRO-146): **supports** (certificate organisation Fortinet, Inc.) |
+| `forticlient-emsproxy.forticloud.com` | round 6 (2026-11-22); resolves; TLS handshake failed (SSLEOFError, round 6): not a removal reason |
+| `fctguard.fortinet.net` | round 6 (2026-11-22); resolves; TLS handshake failed (SSLCertVerificationError, round 6): not a removal reason; verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal |
+| `fctusguard.fortinet.net` | round 6 (2026-11-22); resolves; TLS handshake failed (SSLCertVerificationError, round 6): not a removal reason; verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal |
+| `fcteuguard.fortinet.net` | round 6 (2026-11-22); resolves; TLS handshake failed (SSLCertVerificationError, round 6): not a removal reason; verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal |
+| `forticlient.fortinet.net` | round 6 (2026-11-22); resolves; TLS handshake failed (SSLCertVerificationError, round 6): not a removal reason; verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal |
+| `myforticlient.fortinet.net` | round 6 (2026-11-22); resolves; TLS handshake failed (SSLCertVerificationError, round 6): not a removal reason; verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal |
+| `usforticlient.fortinet.net` | round 6 (2026-11-22); resolves; TLS handshake failed (SSLCertVerificationError, round 6): not a removal reason; verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal |
+| `fctupdate.fortinet.net` | round 6 (2026-11-22); resolves; TLS handshake failed (SSLCertVerificationError, round 6): not a removal reason; verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal |
+| `fctusupdate.fortinet.net` | round 6 (2026-11-22); resolves; TLS handshake failed (SSLCertVerificationError, round 6): not a removal reason; verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal |
+| `fcteuupdate.fortinet.net` | round 6 (2026-11-22); resolves; TLS handshake failed (SSLCertVerificationError, round 6): not a removal reason; verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

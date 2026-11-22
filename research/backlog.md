@@ -56,6 +56,13 @@ Patch: `patches/batch-o-name-based.patch` (placeholder release `2026.13.0`, whic
 | 2 | O2 | N-able N-central, N-sight, Take Control (new id `n-able`, 10 names) | `apps/fortinet-datto-nable.md` | 5 | 4 | 20 | READY (five domains at N2 until live round 6 shows ownership) |
 | 3 | O3 | Fortinet FortiClient and EMS Cloud (new id `forticlient`, 11 exact names) | `apps/fortinet-datto-nable.md` | 4 | 4 | 16 | READY (`fortinet.net`, `forticloud.com` stay unmapped: shared with other Fortinet products) |
 
+Live round 6 (PRO-146, 2026-11-22, `live-results-2026-11-22-r6.tsv`, 24 names; verdicts by Hermes, restated in section 9):
+Datto RMM supports, moderately (`centrastage.net`, `rmm.datto.com` live, Amazon domain-validated certificates). The five N2 N-able
+domains stay N2 (domain-validated, no organisation; three behind Cloudflare, `logicnow.us` behind an AWS load balancer,
+`beanywhere.com` with no address; promotion needs a vendor page or a WHOIS-class source). FortiClient: `forticlient.forticloud.com` supports (Fortinet, Inc.); the nine `fortinet.net` names are neutral
+(certificate verification fails, alive in Fortinet's zone; not removal). `docusign.pdfeditor.com` CNAMEs to Nitro
+(`saas-origin.gonitro.com`) with a domain-validated certificate: not mapped. No catalog change.
+
 The rest of PRO-95 adds no names:
 
 | Vendor | Result | Why no catalog change |
@@ -77,7 +84,7 @@ older names these specs cite are queued for live round 5 (`live-hosts-r5.txt`).
 |---|---|---|---|---|---|---|---|
 | 1 | N1 | Sophos Central: `sophosxl.com`, `sophosxl.net`, `sophosupd.com`, `sophosupd.net`, `hitmanpro.com` | `apps/sophos-central.md` | 4 | 4 | 16 | READY (`hitmanpro.com` at N2) |
 | 2 | N2 | `dc.services.visualstudio.com` (Application Insights telemetry) from `visual-studio` to `ms-telemetry` | `apps/sophos-central.md`, `apps/power-bi.md` | 3 | 4 | 12 | READY (N2; was a mis-attribution) |
-| 3 | N3 | DocuSign: exact `docucdn-a.akamaihd.net` | `apps/docusign.md` | 4 | 4 | 16 | READY (full list of 8 read, PRO-138/PRO-139; open: `*.docusign.pdfeditor.com` waits on live round 6) |
+| 3 | N3 | DocuSign: exact `docucdn-a.akamaihd.net` | `apps/docusign.md` | 4 | 4 | 16 | READY (full list of 8 read, PRO-138/PRO-139; `*.docusign.pdfeditor.com` not mapped: Nitro-operated, live round 6) |
 | 4 | N4 | Twilio: verified, all names under `twilio.com` | `apps/twilio.md` | 3 | 4 | 12 | DONE (no catalog change) |
 | 5 | N5 | Snowflake: verified, per-account names only | `apps/snowflake.md` | 4 | 3 | 12 | DONE (no catalog change) |
 
@@ -213,7 +220,7 @@ the providers' own pages by Research Lab, 2026-11-20; verdicts and attribution l
 |---|---|
 | Culvert field data (unknown-session share per server name, top unmapped names) | **placeholder**: not available yet |
 | D09 unknowns per application | available for the ISCX labels only (section 8 of the D09 report) |
-| Public popularity rank (CrUX bucket, Majestic rank) | licences **PASS** (2026-11-20). Majestic run 1 (PRO-98, 2026-11-21; `ranking/majestic-2026-11-21-run1.tsv`) used `main`'s 54-entry catalog, so only 22 of 69 specs were looked up (best ranks: GitHub 10, WhatsApp 23, Google Workspace 24, Telegram 33, Office 64, Zoom 79, Dropbox 93); 46 blanks are **not computed**, not "outside the top 1M". **Pending**: run 2 with the committed `app-domains.json` (79 specs), and CrUX (needs BigQuery on the server) |
+| Public popularity rank (CrUX bucket, Majestic rank) | licences **PASS** (2026-11-20). **Majestic run 2** (PRO-132, 2026-11-21, `ranking/majestic-2026-11-21-run2.tsv`, input the committed `app-domains.json` of 79 specs) replaces run 1's upper bounds: 66 of 79 specs ranked. Best ranks: GitHub (`github-copilot.md`) 10, WhatsApp 23, Google Workspace 24, OneDrive and Google Drive 24 (Google Drive's `docs.google.com`: the spec covers both products), Telegram 33, Adobe 38, Microsoft 365 64, Zoom 79, Dropbox 93, embedded trackers 97 (`t.co`), GitLab 154, Canva 168, ChatGPT 179, Zendesk 203, Docker 269. 12 specs are not in the list for any of their domains (mostly exact subdomains); `fortinet-datto-nable.md` was not computed (domains 0: run 2's input predates batch O; the current export has its 23 domains, for run 3). CrUX still needs BigQuery |
 
 ### NAME: READY (batch I, after H)
 

@@ -40,7 +40,7 @@ Rows 12 to 18 were read by Research Lab from the Hermes server on 2026-11-20 (PR
 | 16 | Atera (agent section) | batch J (`apps/atera.md`) |
 | 17 | Salesforce "Allow the Required Domains" | batch J (`apps/salesforce.md`): 22 domains added |
 | 18 | Grammarly "WebSockets Support Q&A" | batch J (`apps/grammarly.md`): `grammarly.net` added; `coda.io` left out (separate product) |
-| 24 | DocuSign (PRO-108, relayed PRO-121; full re-read PRO-138, relayed PRO-139) | batch N (`apps/docusign.md`): `docucdn-a.akamaihd.net` added; READY: the list has 8 entries, email and Connect are IP ranges only; `*.docusign.pdfeditor.com` waits on live round 6 |
+| 24 | DocuSign (PRO-108, relayed PRO-121; full re-read PRO-138, relayed PRO-139) | batch N (`apps/docusign.md`): `docucdn-a.akamaihd.net` added; READY: the list has 8 entries, email and Connect are IP ranges only; `*.docusign.pdfeditor.com` not mapped (Nitro-operated, live round 6) |
 | 25 | Snowflake | batch N (`apps/snowflake.md`): no fixed list (per-account names from `SYSTEM$ALLOWLIST()`); no change |
 | 26 | Twilio | batch N (`apps/twilio.md`): all names under `twilio.com`; no change (the essential-domains support article returned 403) |
 | 27 | Sophos Central | batch N (`apps/sophos-central.md`): five Sophos domains added; Endpoint/EDR/XDR/MDR section only |

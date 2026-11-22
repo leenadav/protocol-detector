@@ -146,12 +146,31 @@ def _later(fname):
                                                   delimiter="\t")}
 
 
-LATER = [("round 5", _later("live-results-2026-11-21-r5.tsv")), ("round 4", _later("live-results-2026-11-21-r4.tsv")),
+ROUND_DATE = {"round 3": "2026-11-21", "round 4": "2026-11-21", "round 5": "2026-11-21", "round 6": "2026-11-22"}
+LATER = [("round 6", _later("live-results-2026-11-22-r6.tsv")), ("round 5", _later("live-results-2026-11-21-r5.tsv")), ("round 4", _later("live-results-2026-11-21-r4.tsv")),
          ("round 3", _later("live-results-2026-11-21-r3.tsv"))]
 
 
+# Verdicts on round 6 (Hermes, PRO-146, 2026-11-22), restated after the live result of each name.
+_R6_N2 = "verdict (PRO-146): stays **N2**: domain-validated certificate, no organisation; promotion needs a vendor page or a WHOIS-class source, not a handshake"
+_R6_FN = "verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal"
+R6_VERDICT = dict(
+    [(n, _R6_N2) for n in ("systemmonitor.eu.com", "logicnow.us", "remote.management", "beanywhere.com", "cloudbackup.management")]
+    + [(n, "verdict (PRO-146): **supports**, moderately (live; Amazon domain-validated certificate)") for n in ("centrastage.net", "rmm.datto.com")]
+    + [("forticlient.forticloud.com", "verdict (PRO-146): **supports** (certificate organisation Fortinet, Inc.)")]
+    + [(n + ".fortinet.net", _R6_FN) for n in ("fctguard", "fctusguard", "fcteuguard", "forticlient", "myforticlient", "usforticlient",
+                                               "fctupdate", "fctusupdate", "fcteuupdate")])
+
+
 def live_status(name):
-    """(L result text, flags list): the latest round that has the name (5, 4, 3, then 2), otherwise round 1."""
+    text, flags = _live_status(name)
+    if name in R6_VERDICT and name in LATER[0][1]:
+        text += "; " + R6_VERDICT[name]
+    return text, flags
+
+
+def _live_status(name):
+    """(L result text, flags list): the latest round that has the name (6 to 2), otherwise round 1."""
     rnd, r = next(((label, t[name]) for label, t in LATER if name in t), ("round 2", LIVE2.get(name)))
     if r is None:
         return live_status_r1(name)
@@ -170,7 +189,7 @@ def live_status(name):
         return "apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source)", flags
     parts = []
     if rnd != "round 2":
-        parts.append("%s (2026-11-21)" % rnd)
+        parts.append("%s (%s)" % (rnd, ROUND_DATE[rnd]))
     if "tls-fail" in flags:
         parts.append(("resolves; TLS handshake failed (%s) in both rounds where checked: not a removal reason" % r["tls_error"]) if rnd == "round 2"
                      else "resolves; TLS handshake failed (%s, %s): not a removal reason" % (r["tls_error"] or "error not relayed", rnd))
@@ -323,8 +342,8 @@ def build(spec, meta):
     web = meta["web"]
     live_rows = [(d,) + live_status(d) for d in domains]
     s = [START, "", "## 9. Live verification (L)", "",
-         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 "
-         "of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool "
+         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 6 "
+         "of 2026-11-21 and 2026-11-22 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`, `research/live-results-2026-11-22-r6.tsv`; tool "
          "`research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). "
          "`L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never "
          "evidence." % LIVE_CITE, ""]
