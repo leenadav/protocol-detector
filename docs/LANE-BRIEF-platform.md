@@ -31,8 +31,9 @@ their decisions, the policy locks, and the release controller.
   #61, #62 and #64 (PRO-104), #65 (PRO-136); #63 (the brief through PRO-104) is merged. Draft #73 (PRO-105,
   `claude/cicd-verify-flaky-policy`, head `33fcd00`, base `claude/go-migration` `cdb385b`, independent of the stack) adds the
   verify skills and the flaky-test policy (39/39 green); #74 (the brief through PRO-105) is merged. PRO-128 adds two
-  drafts on top of the stack: #75 (`claude/cicd-osv-scanner`, head `ba9717c`, base #65's branch) and #76
-  (`claude/cicd-scorecard`, head `b1402d7`, base #75's branch), plus this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
+  drafts on top of the stack: #75 (`claude/cicd-osv-scanner`, head `71fafdc`, base #65's branch) and #76
+  (`claude/cicd-scorecard`, head `ee40000`, base #75's branch). #65 merged `claude/go-migration` `bb2af2e` (`a7888f8`)
+  for its gitleaks allowlist, plus this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
 - **Merged so far:**
 
   | PR | Content |
@@ -83,7 +84,8 @@ their decisions, the policy locks, and the release controller.
   ignore file `tools/osv_ignore.json`: each entry has a lockfile, package, reason and an expiry at most 90 days ahead; SSDLC
   item 41) and the weekly `scorecard.yml` (scorecard-action v2.5.0, SARIF to code scanning, `publish_results: false`;
   item 42). The first OSV run found 52 groups, all in CI tool modules; bumps fixed all but rardecode 2.1.0 in the gitleaks
-  build (accepted until 2026-12-22).
+  build (accepted until 2026-12-22). Three more came with go-migration's gremlins module (x/sys, x/text; unreachable),
+  accepted until 2026-12-06 while Engine bumps its own module.
 
 ## 3. Where things live (reading order)
 
@@ -126,6 +128,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Scorecard `publish_results: true` (needs `id-token: write` and no top-level `defaults:`, rules 5 and 6) | Lee's decision on a policy exception |
 | OSV entry GO-2025-4020 (rardecode in the gitleaks build) expires 2026-12-22 | A gitleaks release whose archives dependency builds with rardecode 2.2.0 |
 | Scorecard follow-ups: one task per check that scores low on the first run (expected: License, Code-Review, Branch-Protection, CII-Best-Practices, Signed-Releases, Packaging) | The first scheduled run on `main` after the stack merges |
+| Bump `migration/mutation/gremlins/go.mod` (x/sys ≥ 0.44.0, x/text ≥ 0.41.0); then drop its 3 OSV entries before 2026-12-06 | Engine |
 | Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
 | 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
 
@@ -195,3 +198,6 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   unchanged (gitleaks findings old vs new build, the lint baseline, the licence report). rardecode 2.2.0 breaks
   gitleaks' mholt/archives 0.1.2, so the scanners module cannot take it alone.
 - **Scorecard publishing:** `publish_results: true` conflicts with rules 5 and 6; never relax them without Lee.
+- **Stack behind go-migration:** gitleaks reads every fetched branch, so a stack branch without go-migration's
+  `.gitleaks.toml` allowlist fails static analysis once the known false positives exist on any branch. Merge
+  go-migration into the top of the stack (#65), then merge up; never rebase.
