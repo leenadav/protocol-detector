@@ -452,7 +452,7 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 	for k, v := range verdict.Fields() {
 		record[k] = v
 	}
-	record["content"] = map[string]interface{}{"version": a.pack.Release.Version, "digest": a.pack.Release.Digest}
+	record["content"] = map[string]interface{}{"version": a.pack.Release.Version, "digest": a.pack.Digests.Release}
 	mode := state.Mode
 	if mode == "" {
 		mode = session.ModeHandshake
@@ -863,7 +863,7 @@ func CertificateFields(o *contracts.Observation, at float64) (map[string]interfa
 
 // Content is the content release every record of this run names (Analyzer.content).
 func (a *Analyzer) Content() map[string]interface{} {
-	return map[string]interface{}{"version": a.pack.Release.Version, "digest": a.pack.Release.Digest}
+	return map[string]interface{}{"version": a.pack.Release.Version, "digest": a.pack.Digests.Release}
 }
 
 // Signatures is the custom signature set in force (nil: none).

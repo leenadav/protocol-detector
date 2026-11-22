@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -89,8 +90,8 @@ type hostEntry struct {
 }
 
 type packJSON struct {
-	Schema     int `json:"schema"`
-	Release    Release
+	Schema     int     `json:"schema"`
+	Release    Release `json:"release"`
 	Vocabulary struct {
 		Categories      map[string][]string `json:"categories"`
 		Technologies    []string            `json:"technologies"`
@@ -147,6 +148,18 @@ func parse(data []byte, earlier bool) (*Pack, error) {
 	var raw packJSON
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, invalid("content pack is not the expected JSON shape")
+	}
+	// SEC-CONTENT-1: encoding/json matches field names case-insensitively, but the digest verification and the
+	// Python reference read exact keys. The pack is therefore decoded again from the strict tree with every key
+	// that names a field only up to case removed, so the tables used are the ones the exact keys hold. When the
+	// strict parse fails, computeDigests below refuses the pack with that error.
+	if tree, err := parseStrict(data); err == nil {
+		var b strings.Builder
+		writeCanonical(&b, exactFields(tree, reflect.TypeOf(raw)))
+		raw = packJSON{}
+		if err := json.Unmarshal([]byte(b.String()), &raw); err != nil {
+			return nil, invalid("content pack is not the expected JSON shape")
+		}
 	}
 	if raw.Schema != 1 {
 		return nil, errs.New(errs.Unsupported, errs.ScopeProcess, fmt.Sprintf("content pack schema %d", raw.Schema))
@@ -248,8 +261,85 @@ func parse(data []byte, earlier bool) (*Pack, error) {
 	if err != nil {
 		return nil, err
 	}
+	if p.Release.Digest != digests.Release { // the reported digest is the verified one (SEC-CONTENT-1)
+		return nil, invalid("content pack digest mismatch: release digest")
+	}
 	p.Digests = *digests
 	return p, nil
+}
+
+// exactFields returns the strict tree with every object key removed that encoding/json would match to a field
+// of t only case-insensitively (strings.EqualFold is the same Unicode simple folding). Exact keys are kept and
+// followed into the field's type; keys that name no field are kept, since encoding/json ignores them as the
+// reference does.
+func exactFields(value interface{}, t reflect.Type) interface{} {
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	switch t.Kind() {
+	case reflect.Struct:
+		object, ok := value.(map[string]interface{})
+		if !ok {
+			return value
+		}
+		out := make(map[string]interface{}, len(object))
+		for key, item := range object {
+			field, exact, known := jsonField(t, key)
+			switch {
+			case !known:
+				out[key] = item
+			case exact:
+				out[key] = exactFields(item, field.Type)
+			}
+		}
+		return out
+	case reflect.Map:
+		object, ok := value.(map[string]interface{})
+		if !ok {
+			return value
+		}
+		out := make(map[string]interface{}, len(object))
+		for key, item := range object {
+			out[key] = exactFields(item, t.Elem())
+		}
+		return out
+	case reflect.Slice:
+		list, ok := value.([]interface{})
+		if !ok {
+			return value
+		}
+		out := make([]interface{}, len(list))
+		for i, item := range list {
+			out[i] = exactFields(item, t.Elem())
+		}
+		return out
+	}
+	return value
+}
+
+// jsonField finds the field of struct t that encoding/json would decode key into, and whether the key is exact.
+func jsonField(t reflect.Type, key string) (reflect.StructField, bool, bool) {
+	var folded reflect.StructField
+	found := false
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		if !field.IsExported() {
+			continue
+		}
+		name := field.Name
+		if tag, _, _ := strings.Cut(field.Tag.Get("json"), ","); tag == "-" {
+			continue
+		} else if tag != "" {
+			name = tag
+		}
+		if name == key {
+			return field, true, true
+		}
+		if !found && strings.EqualFold(name, key) {
+			folded, found = field, true
+		}
+	}
+	return folded, false, found
 }
 
 func nilToEmpty(app *Application) {

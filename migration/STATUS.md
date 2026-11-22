@@ -529,6 +529,34 @@ attacker spraying QUIC datagrams paid about 24 µs of CPU per datagram; with an 
 | `BenchmarkAssemblerDatagram` | One expiry check plus one flow-end reset, 1,024 held: 23,385-26,097 ns before, 28-43 ns after, 0 allocations. |
 | Parity | `make go-check` matches 7,430 of 7,430. |
 
+## Security review finding SEC-CONTENT-1 (PRO-50 and PRO-154, 2026-11-22)
+
+**The finding.** The Go content-pack loader decoded its tables with `json.Unmarshal`, which matches field names
+case-insensitively, using Unicode simple folding. So `"Release"`, `"Risks"` or `"releaſe"` (U+017F) land in the
+same field as the exact key, and a later variant overrides or merges with it. Digest verification, the content
+gate and the Python reference all read exact keys only. A pack whose exact keys verified could therefore:
+- load other tables from its variant keys;
+- report a forged release version and digest in every record, while the verified digest differed.
+
+The whole-pack digest still covered every key. The gap was between the tables used and the tables the release
+digest pins.
+
+**The fix** (`go/internal/content/content.go`):
+- **Decoding.** The pack is decoded again from the strict tree (`parseStrict`, the tree digest verification reads).
+  `exactFields` first removes every key that names a struct field only up to case, using the same folding as
+  `encoding/json`. Exact keys are kept, and so are keys that name no field. The tables used are exactly the ones
+  the exact keys hold, which is the Python reference's reading.
+- **The `release` field** now has an explicit `json:"release"` tag. Without one, `encoding/json` matched it by
+  its Go name, `Release`.
+- **The reported digest** must equal the verified one, `Digests.Release`. The analyzer, analyze and live records
+  now take it from `Digests.Release`.
+
+| item | state | evidence |
+|---|---|---|
+| Regression test | `TestCaseVariantKeysAreIgnoredLikeTheReference` | A forged `releaſe`, a `protocol_nameſ` table and an upper-case `Risks` table on the committed pack. Before the fix, all three loaded: release `9999.12.31` with digest `0123456789abcdef` while the verified digest was `cdaa5993077d101a`, plus a merged `forged` risk and the forged protocol name. After it, the pack loads with the exact keys' tables and the verified digest. |
+| Parity | unchanged | Python never loads pack files: the Go `--content` loader is the only reader. The fix aligns Go with the digest contract's exact keys, so the 7,430 parity cases are unaffected. |
+| Fuzz | `FuzzParseNeverPanics`, 30 s | 2.7 M executions, no failure |
+
 ## Randomized differential (PRO-100, 2026-11-22)
 
 Hermes, PRO-100: differential testing with random inputs, the Python reference as the oracle.
