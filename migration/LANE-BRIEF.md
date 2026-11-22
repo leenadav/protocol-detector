@@ -43,11 +43,11 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **Codex review packet:** complete in `migration/review-packet/` (frozen head `50ce5c0`, 43 chunks).
 - **PRO-31**: both engines order content versions numerically. Go has it in `6194fb9` (plus the numbering-rule test in
   `4d8aa29`); the Python reference got it in `376a204`, under Lee's exception of 2026-11-20.
-- **PRO-127 (tshark oracle):** `go/oracle` on `claude/pcap-oracle` (PR into this branch); 26 of 26 comparisons agree;
+- **PRO-127 (tshark oracle):** `go/oracle`, merged with PR #79 (`d7240ee`); 26 of 26 comparisons agree;
   the nightly job is with the CI/CD lane.
 - **PRO-126 (mutation testing):** gremlins tooling, the baseline and reference-checked boundary tests for TLS,
-  QUIC and HTTP/1 merged with PR #72 (`bb2af2e`); the nightly job is with the CI/CD lane, and PR #80 bumps the pin's
-  x/sys and x/text for the OSV gate.
+  QUIC and HTTP/1 merged with PR #72 (`bb2af2e`); the nightly job is with the CI/CD lane, and PR #80 (`9b499f8`) moved the
+  pin's x/sys and x/text past the OSV advisories.
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
 
 ## 3. Where things live (reading order)
