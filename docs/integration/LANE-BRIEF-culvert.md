@@ -103,6 +103,8 @@ Culvert's allocation gates need `-tags benchgate`.
 - **The public package's allocations:** done for the copies that bought nothing (PRO-148). The lower floor described
   in the drift report §4 waits for Culvert's budget and, for two of its three steps, the engine lane.
 - Codex's review of the frozen milestone and the queued commits (Sunday).
+- **Hosted `ci` red on `2fdc5e9`** from another lane's commits (secret scan, see §7). Asked App Research and
+  Platform & CI on PRO-148; this lane's own jobs are green.
 - The Culvert team's answers (request items 1 to 6), and Lee's decision to send the request.
 - Repository settings and the first `go/v0.x.y` tag (Lee).
 
@@ -131,5 +133,10 @@ Culvert's allocation gates need `-tags benchgate`.
 - **Detachment rests on immutability.** Go strings are immutable and the engine uses no `unsafe`, so a copy never
   protects a snapshot from input overwrites; it only avoids holding a larger engine allocation alive. If the
   engine ever builds strings with `unsafe`, `TestHeldSnapshotsStayDetached` is the test that must catch it.
+- **The CI secret scan covers every branch.** The `ci` checkout fetches all history, and gitleaks scans all of it, so
+  another lane's commit can fail this branch's gate. Seen on `2fdc5e9` (run 44971293208): `generic-api-key` matched
+  in `research/live-results-2026-11-21-r5.tsv` (App Research, commits `655d440`, `75695d3`). Reproduce with
+  gitleaks 8.30.1 (`git --ignore-gitleaks-allow --redact --exit-code 1 .`) and check `git merge-base --is-ancestor`
+  before changing anything. Never edit `.gitleaks.toml` (CI/CD lane) or another lane's files; ask them instead.
 - **Merge trials go in a worktree.** Use `git worktree add --detach /home/user/pd-drift <lane head>` and merge
   there; never on the lane branch.
