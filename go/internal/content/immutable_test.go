@@ -2,6 +2,7 @@ package content
 
 import (
 	"go/ast"
+	"go/build"
 	"go/importer"
 	"go/parser"
 	"go/token"
@@ -38,6 +39,11 @@ func TestNoCodeOutsideThePackageWritesAValidatedPack(t *testing.T) {
 		}
 		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 			return nil
+		}
+		// Only the files this platform builds: a package with per-platform files declares the same name in
+		// each (livedecrypt's KeyLog), and type-checking them together would fail.
+		if match, err := build.Default.MatchFile(filepath.Dir(path), filepath.Base(path)); err != nil || !match {
+			return err
 		}
 		file, err := parser.ParseFile(fset, path, nil, 0)
 		if err != nil {
