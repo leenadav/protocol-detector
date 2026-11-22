@@ -1178,6 +1178,15 @@ SCANNER_JOBS = {
          "run": ['mkdir -p "$RUNNER_TEMP/golint"', 'cp -r tools/golint/go-licenses "$RUNNER_TEMP/golint/"',
                  'cd "$RUNNER_TEMP/golint/go-licenses"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
     ]),
+    # Go API compatibility: apidiff built the same way, before tools/go_api.py runs (a full history for the base)
+    "go-api": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false", "fetch-depth": "0"}},
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": ['mkdir -p "$RUNNER_TEMP/golint"', 'cp -r tools/golint/apidiff "$RUNNER_TEMP/golint/"',
+                 'cd "$RUNNER_TEMP/golint/apidiff"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
+    ]),
     "toolchain-audit": (SCANNER_JOB_KEYS, None, [
         HARDEN_STEP,
         {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
@@ -1221,7 +1230,7 @@ def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
 # default rules, and no other file a scanner would load on its own may exist (task 16 round 1).
 SCANNER_LOCK = "tools/scanner_config.lock.json"
 GO_LINT_MODS = ("tools/golint/golangci-lint/go.mod", "tools/golint/staticcheck/go.mod", "tools/golint/gosec/go.mod",
-                "tools/golint/go-licenses/go.mod")
+                "tools/golint/go-licenses/go.mod", "tools/golint/apidiff/go.mod")
 SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml", "tools/scanners/go.mod", "tools/golint/golangci.yml",
                   "tools/golint/baseline.json", "tools/golint/coverage-floors.json") + GO_LINT_MODS
 # go.mod directives that would change what the pinned scanners are or how they behave: `replace`
@@ -2448,6 +2457,7 @@ def self_test():
         "repository code before the go-licenses build": in_job(ci_full, "go-licenses",
             "      - name: Build the pinned go-licenses (tools/golint/go-licenses)\n",
             repo_step + "      - name: Build the pinned go-licenses (tools/golint/go-licenses)\n"),
+        "apidiff build in the checkout": in_job(ci_full, "go-api", '          cd "$RUNNER_TEMP/golint/apidiff"\n', '          cd tools/golint/apidiff\n'),
         "self-hosted": ci_full.replace("    name: workflow lint (actionlint, zizmor)\n    runs-on: ubuntu-24.04\n",
                                        "    name: workflow lint (actionlint, zizmor)\n    runs-on: self-hosted\n", 1),
     }.items():

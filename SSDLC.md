@@ -102,6 +102,7 @@ request:
 | ci | `Go determinism (race detector, shuffled order, every test twice)` | `tools/go_deep.py determinism`: `go test -race -shuffle=on -count=2 ./...` on the pinned Go and the vendored tree, `GOPROXY=off`; an order-dependent, state-leaking or flaky test fails, with its shuffle seed in the summary (item 36) |
 | ci | `Go dependency licences (go-licenses; forbidden, restricted, unknown fail)` | `tools/go_deep.py licenses`: go-licenses 2.0.1 from `tools/golint/go-licenses/go.mod` and go.sum, built outside the checkout; any linked module whose licence is forbidden, restricted or unidentified fails; the engine's own module is excluded (item 36) |
 | ci | `Go coverage floors (module and every protocol parser)` | `tools/go_cover.py`: `go test -coverpkg=./... -coverprofile` on the pinned Go and the vendored tree; the module total and each `internal/protocols/*` package at or above its floor in `tools/golint/coverage-floors.json`, every parser package floored (item 38) |
+| ci | `Go API compatibility (apidiff; public breaks need the api-break label)` | `tools/go_api.py`: apidiff from `tools/golint/apidiff/go.mod` and go.sum, built outside the checkout, compares the module API at the base with this commit; an incompatible change to a public (non-internal, non-main) package fails without the `api-break` label; internal changes are reported (item 39) |
 | ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack`, the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...`; nothing to check without the Go content pack (item 30) |
 | ci | `security requirements gate` | every SR row names an existing test |
 
@@ -164,6 +165,7 @@ engine (the whole change as one report). The secret scan reads the full
 history of the checkout itself, so it needs no pull-request permission. Both are
 configured in ci.yml; a red pull-request run with a green push run on the same commit is a
 workflow defect, never an engine finding.
+Pull-request runs also start on `labeled` and `unlabeled` (the go-api job's `api-break` label, item 39).
 
 Codex review comments (automatic review on every opened pull request, P0/P1 only, rules
 in `AGENTS.md` "Code Review Rules"). When a Codex comment on a lane's pull request is
@@ -860,6 +862,23 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    - **Lock:** rule 16 locks the file, so lowering a floor is a reviewed change. Floors are raised the
      same way, with `--write-floors`.
    - **Negative control:** removing quicx's tests drops it to 72.2%, which fails.
+39. Go API compatibility (`go-api` ci job, in the gate's needs; PRO-104). apidiff
+   (golang.org/x/exp/cmd/apidiff at `e3970619a1a4`, 2026-11-13, past the 7-day cooldown) is built from
+   `tools/golint/apidiff/go.mod` and go.sum outside the checkout (rule 15 pins the build; rule 16
+   locks the go.mod).
+   - **Comparison:** `tools/go_api.py` writes the module's API as export data at the base and at this
+     commit, both vendored and offline, and compares them. The base is the merge base with a pull
+     request's base, or a push's first parent.
+   - **Gate:** an incompatible change to a public (non-internal, non-main) package fails unless the
+     pull request carries the `api-break` label. Internal API changes are reported only, since
+     changing internal packages is ordinary refactoring.
+   - **Label refresh:** a re-run keeps its original event's labels, so ci also runs on `labeled` and
+     `unlabeled`.
+   - **Today:** the module has no public package (cmd/protodetect is main; everything else is
+     internal), so the gate holds the line for the first package made importable. The product's
+     external contract is the CLI and the JSON schemas in `schemas/`, not a Go import surface.
+   - **Negative control:** removing an exported function from a public package fails, and the
+     `api-break` label turns it into a pass.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
