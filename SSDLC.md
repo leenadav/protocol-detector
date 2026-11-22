@@ -110,7 +110,8 @@ request:
 
 Not required checks, by design: `nightly-fuzz` (the Python mutation fuzz and every Go fuzz target
 for minutes, item 29) and `merge-readiness` (a daily report-only trial merge of claude/go-migration
-into main, item 31) are scheduled and never run on a pull request.
+into main, item 31) are scheduled and never run on a pull request. Nor is `scorecard` (weekly OpenSSF
+Scorecard, item 42), which runs only on the schedule or by hand.
 
 Do not mark the `supply-chain-drift` jobs required: that workflow is path
 filtered and scheduled, so it does not run on most pull requests and a
@@ -919,6 +920,22 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    - **Licences:** osv-scanner is a CI-only tool. It links MIT, Apache-2.0, BSD, ISC, MPL-2.0,
      Unlicense and MIT-0 code, and spdx/tools-golang under Apache-2.0 (dual with GPL-2.0-or-later).
      Nothing GPL or LGPL is linked or vendored into shipped code.
+42. OpenSSF Scorecard (`scorecard.yml`, weekly on Monday 03:17 UTC and by hand; PRO-128, Hermes,
+   2026-11-22). `ossf/scorecard-action` v2.5.0 (Apache-2.0, `fa7117db`; v2.6.0 is inside the 7-day
+   cooldown) scores the repository's supply-chain posture. The SARIF goes to code scanning
+   (`upload-sarif`, category `scorecard`) and is kept as a 30-day artifact. Not a required check.
+   - **Permissions:** `contents: read`, `actions: read` and `security-events: write` for the upload,
+     the same grant as CodeQL. Nothing else.
+   - **Results stay private** (`publish_results: false`), although the repository is public.
+     Publishing needs `id-token: write` and a workflow with no top-level `defaults:`. Rule 5 bans
+     `id-token: write` outside the release controller (it could sign as this repository), and rule
+     6 requires `defaults: run: shell: bash`. Publishing is Lee's decision on a policy exception.
+   - **Image:** the action runs `ghcr.io/ossf/scorecard-action:v2.5.0` by tag. The action commit is
+     pinned; the image tag is the action's own, signed upstream.
+   - **Follow-ups:** the first run is the evidence. Expected low scores before it: License (no
+     LICENSE file), Code-Review (merges without an approving review), Branch-Protection (not readable
+     with GITHUB_TOKEN), CII-Best-Practices (no badge), Signed-Releases (no release yet) and
+     Packaging. Each low check after the first run becomes its own task.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
