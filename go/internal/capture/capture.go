@@ -7,6 +7,7 @@ package capture
 import (
 	"encoding/binary"
 	"io"
+	"math"
 	"math/big"
 	"os"
 	"strconv"
@@ -151,7 +152,7 @@ func (d *Decoder) parse() ([]Record, *Error) {
 		}
 		// seconds + fraction / resolution, as the reference computes it (one division, one addition).
 		records = append(records, Record{float64(seconds) + float64(fraction)/float64(d.resolution),
-			append([]byte{}, d.buffer[pos+16:end]...), int(original), d.linktype})
+			append([]byte{}, d.buffer[pos+16:end]...), length(original), d.linktype})
 		pos = end
 	}
 	if pos > 0 {
@@ -337,7 +338,7 @@ func (d *Decoder) enhanced(body []byte) (Record, *Error) {
 	if _, err := d.options(body[20+padded:]); err != nil {
 		return Record{}, err
 	}
-	return Record{timestamp(uint64(high)<<32|uint64(low), in.resolution), append([]byte{}, body[20:20+int(captured)]...), int(original), in.linktype}, nil
+	return Record{timestamp(uint64(high)<<32|uint64(low), in.resolution), append([]byte{}, body[20:20+int(captured)]...), length(original), in.linktype}, nil
 }
 
 func (d *Decoder) simple(body []byte) (Record, *Error) {
@@ -348,15 +349,25 @@ func (d *Decoder) simple(body []byte) (Record, *Error) {
 		return Record{}, fail("Truncated pcapng simple packet block")
 	}
 	in := d.interfaces[0]
-	original := int(d.order.Uint32(body))
-	captured := original
-	if captured > in.snaplen {
-		captured = in.snaplen
+	original := d.order.Uint32(body)
+	// The comparison stays in 64 bits: on a 32-bit build int(original) can be negative (Codex PRO-16).
+	captured := in.snaplen
+	if uint64(original) < uint64(in.snaplen) {
+		captured = int(original)
 	}
 	if 4+((captured+3)&^3) != len(body) {
 		return Record{}, fail("pcapng simple packet length disagrees with its block")
 	}
-	return Record{0, append([]byte{}, body[4:4+captured]...), original, in.linktype}, nil
+	return Record{0, append([]byte{}, body[4:4+captured]...), length(original), in.linktype}, nil
+}
+
+// length converts a 32-bit original packet length to int without going negative on a 32-bit build: a value
+// above the platform's int saturates, which keeps Truncated true because no record holds that many bytes.
+func length(v uint32) int {
+	if uint64(v) > uint64(math.MaxInt) {
+		return math.MaxInt
+	}
+	return int(v)
 }
 
 // End closes the decoder; leftover bytes or a missing header are an error.

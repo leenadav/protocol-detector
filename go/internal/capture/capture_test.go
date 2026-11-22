@@ -116,3 +116,40 @@ func FuzzDecoderNeverPanics(f *testing.F) {
 		d.End()
 	})
 }
+
+// Codex PRO-16 (P2): the 32-bit packet lengths were narrowed to int before any check, so on a 32-bit build an
+// original length of 0xFFFFFFFF became -1: a simple packet block with an empty body passed the length check and
+// sliced body[4:3], and a large original length made a truncated record look complete. Run it with GOARCH=386
+// as well as natively.
+func TestThirtyTwoBitLengthsAreNotNarrowedBeforeTheirChecks(t *testing.T) {
+	header := func(snaplen uint32) []byte {
+		section := binary.LittleEndian.AppendUint32(nil, 0x1A2B3C4D)
+		section = append(section, 1, 0, 0, 0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff)
+		iface := binary.LittleEndian.AppendUint32([]byte{1, 0, 0, 0}, snaplen)
+		return append(block(0x0A0D0D0A, section), block(1, iface)...)
+	}
+	huge := binary.LittleEndian.AppendUint32(nil, 0xFFFFFFFF)
+	if _, err := read(t, append(header(0), block(3, huge)...)); err == nil || err.Error() != "pcapng simple packet length disagrees with its block" {
+		t.Fatalf("empty simple packet claiming 4 GiB: %v", err)
+	}
+	records, err := read(t, append(header(4), block(3, append(huge, 'a', 'b', 'c', 'd'))...))
+	if err != nil || len(records) != 1 || string(records[0].Data) != "abcd" || !records[0].Truncated() || records[0].OriginalLength <= 4 {
+		t.Fatalf("simple packet cut to the snapshot length: %+v %v", records, err)
+	}
+	packet := make([]byte, 12)
+	packet = binary.LittleEndian.AppendUint32(packet, 3)
+	packet = append(packet, huge...)
+	packet = append(packet, 'a', 'b', 'c')
+	records, err = read(t, append(header(0), block(6, packet)...))
+	if err != nil || len(records) != 1 || !records[0].Truncated() || records[0].OriginalLength <= 3 {
+		t.Fatalf("enhanced packet with a 4 GiB original length: %+v %v", records, err)
+	}
+	classicHuge := append(classic()[:24], make([]byte, 8)...)
+	classicHuge = binary.LittleEndian.AppendUint32(classicHuge, 1)
+	classicHuge = append(classicHuge, huge...)
+	classicHuge = append(classicHuge, 'z')
+	records, err = read(t, classicHuge)
+	if err != nil || len(records) != 1 || !records[0].Truncated() || records[0].OriginalLength <= 1 {
+		t.Fatalf("classic record with a 4 GiB original length: %+v %v", records, err)
+	}
+}
