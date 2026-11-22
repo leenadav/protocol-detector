@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-22 (PRO-139: DocuSign READY; PRO-106 batch O). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-22 (PRO-147: topic branches 08 to 11 for main; PRO-139 DocuSign READY). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -85,7 +85,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 |---|---|
 | Patches D to I, L, J, K, M, N, O (and R) | the Engine lane, via Hermes (post-review); patch F needs `prisma-access` dropped first (both its names are NXDOMAIN) |
 | Main-integration PRs #42 to #53 (PRO-43) | all 12 merged (#44 to #51 on 2026-11-21); work since then (batches M and N, live rounds 3 and 4) is on `claude/app-research` only |
-| Batches M, N and O to `main` | not opened: Hermes schedules them after review |
+| Batches M, N and O to `main` (PRO-147) | topic branches pushed from `main` `cf65909`, files byte-identical to `claude/app-research` `f701cb9`: `claude/research-08-tools-ranking`, `-09-live-rounds`, `-10-batches-mno` (merge after 09: its section 9 cites the round files), `-11-queue-docs`. Their union is the research diff minus `d09-iscx-vpn2016.md` (held back: CIC licence still conflicting). Hermes opens the PRs; Lee merges |
 | Patch R | decided 2026-11-21 (round 2): `copilot.com` only; stack R, L, J, K rebuilt |
 | Live rounds 1 to 6 | 1 to 5 done and merged into section 9 (`live-results-2026-11-20*.tsv`, `live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; round 5 converted from the PRO-135 columns, `via_probe` marks probe certificates). Open: `sophosxl.com` has no address and no documented host to probe; `docusign.net` fails TLS; round 6 (`live-hosts-r6.txt`, 23 batch O names and `docusign.pdfeditor.com`) waits on a Hermes run |
 | Dependency pass 2 | done (2026-11-20, `observations/pass2-2026-11-20.tsv`, patch K); next run adds the 4 batch J URLs |
