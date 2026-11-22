@@ -207,9 +207,16 @@ func (p *KeyProvider) Append(text string) (int, error) {
 	if p.consumed > MaxKeyLog {
 		return 0, fail("Key log exceeds 256 KiB.", BudgetExhausted)
 	}
-	// As in the reference, secrets indexed before a failing line stay indexed, but the version only moves
-	// when the whole fragment was accepted (the exception skips the increment).
-	added := 0
+	// Contract C16 (Codex PRO-13 P2, PRO-201): an append is atomic. Every line is validated into a staged set
+	// first, and only a fully accepted fragment is indexed and moves the version, so a rejected fragment leaves
+	// no secret visible to Lookup that version-gated waiters would skip. This is a Go-only divergence: the
+	// reference (poc_decryption.KeyProvider.append) keeps the secrets indexed before the failing line.
+	type staged struct {
+		id     keyID
+		secret []byte
+	}
+	var pending []staged
+	fresh := map[keyID][]byte{}
 	for _, line := range pySplitLines(text) {
 		line = strings.TrimFunc(line, isPySpace)
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -217,7 +224,7 @@ func (p *KeyProvider) Append(text string) (int, error) {
 		}
 		parts := strings.FieldsFunc(line, isPySpace)
 		if len(parts) != 3 {
-			return added, fail("Invalid key-log line (secret values are not displayed).", UnsupportedProfile)
+			return 0, fail("Invalid key-log line (secret values are not displayed).", UnsupportedProfile)
 		}
 		label := parts[0]
 		if !labels[label] {
@@ -226,36 +233,43 @@ func (p *KeyProvider) Append(text string) (int, error) {
 		random, ok1 := fromHex(parts[1])
 		secret, ok2 := fromHex(parts[2])
 		if !ok1 || !ok2 {
-			return added, fail("Invalid key-log hexadecimal encoding.", UnsupportedProfile)
+			return 0, fail("Invalid key-log hexadecimal encoding.", UnsupportedProfile)
 		}
 		if len(random) != 32 || (len(secret) != 32 && len(secret) != 48) {
-			return added, fail("Invalid TLS 1.3 secret length.", UnsupportedProfile)
+			return 0, fail("Invalid TLS 1.3 secret length.", UnsupportedProfile)
 		}
 		if label == "CLIENT_RANDOM" && len(secret) != 48 {
-			return added, fail("TLS 1.2 master secret must contain 48 bytes.", UnsupportedProfile)
+			return 0, fail("TLS 1.2 master secret must contain 48 bytes.", UnsupportedProfile)
 		}
 		id := keyID{label, string(random)}
-		if previous, ok := p.keys[id]; ok {
+		previous, ok := p.keys[id]
+		if !ok {
+			previous, ok = fresh[id]
+		}
+		if ok {
 			if !hmac.Equal(previous, secret) {
-				return added, fail("Conflicting secrets for the same connection.", UnsupportedProfile)
+				return 0, fail("Conflicting secrets for the same connection.", UnsupportedProfile)
 			}
 			continue
 		}
-		if len(p.keys) >= MaxEntries {
-			return added, fail("Too many key-log entries.", BudgetExhausted)
+		if len(p.keys)+len(pending) >= MaxEntries {
+			return 0, fail("Too many key-log entries.", BudgetExhausted)
 		}
-		p.keys[id] = secret
-		p.order = append(p.order, id)
-		p.randoms[string(random)] = true
-		if p.Clock != nil {
-			p.indexedAt[id] = p.Clock()
-		}
-		added++
+		fresh[id] = secret
+		pending = append(pending, staged{id, secret})
 	}
-	if added > 0 {
+	for _, s := range pending {
+		p.keys[s.id] = s.secret
+		p.order = append(p.order, s.id)
+		p.randoms[s.id.random] = true
+		if p.Clock != nil {
+			p.indexedAt[s.id] = p.Clock()
+		}
+	}
+	if len(pending) > 0 {
 		p.version++
 	}
-	return added, nil
+	return len(pending), nil
 }
 
 // Lookup implements Keys (KeyProvider.get).

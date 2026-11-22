@@ -254,6 +254,42 @@ func TestKeyProviderBoundsAndRelease(t *testing.T) {
 	}
 }
 
+// An append is atomic (contract C16, Codex PRO-13 P2, PRO-201): a fragment with a malformed line indexes none of
+// its lines and leaves the version alone, so direct lookups and version-gated waiters see the same key set.
+func TestRejectedAppendIndexesNothing(t *testing.T) {
+	first, second := strings.Repeat("ab", 32), strings.Repeat("cd", 32)
+	line := func(random, secret string) string { return "CLIENT_RANDOM " + random + " " + secret + "\n" }
+	cases := []struct{ name, tail, message string }{
+		{"malformed line", "CLIENT_RANDOM x\n", "Invalid key-log line (secret values are not displayed)."},
+		{"bad hex", line(second, "zz"), "Invalid key-log hexadecimal encoding."},
+		{"conflict inside the fragment", line(first, strings.Repeat("02", 48)), "Conflicting secrets for the same connection."},
+	}
+	for _, c := range cases {
+		p := NewKeyProvider()
+		n, err := p.Append(line(first, strings.Repeat("01", 48)) + line(first, strings.Repeat("01", 48)) + c.tail)
+		if err == nil || err.Error() != c.message {
+			t.Fatalf("%s: error %v", c.name, err)
+		}
+		secret, _ := p.Lookup("CLIENT_RANDOM", bytes.Repeat([]byte{0xab}, 32))
+		if n != 0 || p.Len() != 0 || p.Version() != 0 || secret != nil || p.Has(bytes.Repeat([]byte{0xab}, 32)) {
+			t.Fatalf("%s: rejected append left %d added, len %d, v%d, lookup %x", c.name, n, p.Len(), p.Version(), secret)
+		}
+		// The provider still accepts a later valid fragment.
+		if n, err := p.Append(line(first, strings.Repeat("01", 48))); n != 1 || err != nil || p.Version() != 1 {
+			t.Fatalf("%s: later append %d %v v%d", c.name, n, err, p.Version())
+		}
+	}
+	// The entry cap counts the fragment's own new entries too.
+	p := NewKeyProvider()
+	var fragment strings.Builder
+	for i := 0; i <= MaxEntries; i++ {
+		fragment.WriteString(line(fmt.Sprintf("%064x", i), strings.Repeat("01", 48)))
+	}
+	if n, err := p.Append(fragment.String()); err == nil || err.Error() != "Too many key-log entries." || n != 0 || p.Len() != 0 || p.Version() != 0 {
+		t.Fatalf("cap: %d %v len %d v%d", n, err, p.Len(), p.Version())
+	}
+}
+
 func TestKeyExpiry(t *testing.T) {
 	now, age := 0.0, 5.0
 	p := NewKeyProvider()
