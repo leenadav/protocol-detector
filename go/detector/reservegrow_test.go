@@ -20,13 +20,13 @@ func TestGrowthIsChargedBeforeItIsAllocated(t *testing.T) {
 		c.MaxBytesPerDirection, c.MaxFeedsPerDirection, c.MaxRetainedPerFlow = 8192, 4096, 8192
 		e := mustEngine(t, c)
 		f := mustFlow(t, e)
-		f.Feed(ClientToServer, []byte("GET /"+strings.Repeat("a", 6000))) // the client keeps a 6,144-byte line
+		_, _ = f.Feed(ClientToServer, []byte("GET /"+strings.Repeat("a", 6000))) // the client keeps a 6,144-byte line
 		response := []byte("HTTP/1.1 200 " + strings.Repeat("b", 6000) + "\r\nContent-Length: 0\r\n\r\n")
 		if split {
-			f.Feed(ServerToClient, response[:6000])
-			f.Feed(ServerToClient, response[6000:])
+			_, _ = f.Feed(ServerToClient, response[:6000])
+			_, _ = f.Feed(ServerToClient, response[6000:])
 		} else {
-			f.Feed(ServerToClient, response)
+			_, _ = f.Feed(ServerToClient, response)
 		}
 		s := f.Snapshot()
 		if got := s.Direction(ServerToClient); got.Outcome != OutcomeBudgetExhausted || got.Reason != ReasonMemory {
@@ -77,8 +77,8 @@ func TestTheAllowanceIsNeverExceededInsideACall(t *testing.T) {
 				f := mustFlow(t, e)
 				for pos := 0; pos < len(data) && step > 0; pos += step {
 					piece := data[pos:minInt(pos+step, len(data))]
-					f.Feed(ClientToServer, piece)
-					f.Feed(ServerToClient, piece)
+					_, _ = f.Feed(ClientToServer, piece)
+					_, _ = f.Feed(ServerToClient, piece)
 					if f.credit.Peak() > f.reserved {
 						t.Fatalf("%s (allowance %d, step %d): charged %d of %d", cs.ID, allowance, step, f.credit.Peak(), f.reserved)
 					}

@@ -369,7 +369,7 @@ func TestLifecycle(t *testing.T) {
 
 	// Expiry ends both directions without input and leaves later feeds as no-ops.
 	g := mustFlow(t, e)
-	g.Feed(ClientToServer, ch[:10])
+	_, _ = g.Feed(ClientToServer, ch[:10])
 	if err := g.Expire(); err != nil {
 		t.Fatal(err)
 	}
@@ -385,8 +385,8 @@ func TestLifecycle(t *testing.T) {
 
 	// An identification survives expiry and close.
 	h := mustFlow(t, e)
-	h.Feed(ClientToServer, httpRequest)
-	h.Expire()
+	_, _ = h.Feed(ClientToServer, httpRequest)
+	_ = h.Expire()
 	if s := h.Close().Direction(ClientToServer); s.Outcome != OutcomeIdentified || s.Family != "http" {
 		t.Errorf("identification lost at expiry: %+v", s)
 	}
@@ -401,15 +401,15 @@ func TestLifecycle(t *testing.T) {
 func TestEngineStateIsReleasedWhenDone(t *testing.T) {
 	e := mustEngine(t, allFamilies())
 	f := mustFlow(t, e)
-	f.Feed(ClientToServer, httpRequest)
-	f.Feed(ServerToClient, junk)
+	_, _ = f.Feed(ClientToServer, httpRequest)
+	_, _ = f.Feed(ServerToClient, junk)
 	for _, d := range AllDirections() {
 		if f.dirs[d].in != nil {
 			t.Errorf("%s: inspector retained after a final outcome", d)
 		}
 	}
 	g := mustFlow(t, e)
-	g.Feed(ClientToServer, httpRequest[:5])
+	_, _ = g.Feed(ClientToServer, httpRequest[:5])
 	if g.dirs[ClientToServer].in == nil || g.dirs[ServerToClient].in != nil {
 		t.Error("inspectors: the fed direction should hold one, the idle direction none")
 	}
@@ -467,7 +467,7 @@ func TestPanicIsContainedAndQuarantined(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		f.Feed(ClientToServer, httpRequest[:4]) // panics for "feed"
+		_, _ = f.Feed(ClientToServer, httpRequest[:4]) // panics for "feed"
 		var opErr error
 		switch op {
 		case "feed":
@@ -502,11 +502,11 @@ func TestSnapshotIsDetachedAndInputIsBorrowed(t *testing.T) {
 	ch, _ := tlsFlights(t, "detached.example.test", []string{"h2", "http/1.1"}, nil)
 	buf := append([]byte(nil), ch...)
 	f := mustFlow(t, e)
-	f.Feed(ClientToServer, buf[:100])
+	_, _ = f.Feed(ClientToServer, buf[:100])
 	for i := range buf[:100] { // the host reuses its read buffer
 		buf[i] = 0
 	}
-	f.Feed(ClientToServer, ch[100:])
+	_, _ = f.Feed(ClientToServer, ch[100:])
 	s := f.Snapshot()
 	if got := s.Direction(ClientToServer); got.Outcome != OutcomeIdentified || got.Hostname != "detached.example.test" {
 		t.Fatalf("reused input buffer changed the result: %+v", got)
@@ -540,7 +540,7 @@ func TestConcurrentDirectionsExpireAndClose(t *testing.T) {
 				f.Snapshot()
 			}
 			if i%2 == 0 {
-				f.Expire()
+				_ = f.Expire()
 			}
 			f.Close()
 		}(i)
@@ -557,7 +557,7 @@ func feedAll(f *Flow, d Direction, data []byte) {
 		if end > len(data) {
 			end = len(data)
 		}
-		f.Feed(d, data[i:end])
+		_, _ = f.Feed(d, data[i:end])
 	}
 }
 

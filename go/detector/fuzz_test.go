@@ -63,18 +63,18 @@ func FuzzFlowInvariants(f *testing.F) {
 		}
 		for i := 0; i < len(client) || i < len(server); i += size {
 			if i < len(client) {
-				flow.Feed(ClientToServer, client[i:minInt(i+size, len(client))])
+				_, _ = flow.Feed(ClientToServer, client[i:minInt(i+size, len(client))])
 			}
 			if i < len(server) {
-				flow.Feed(ServerToClient, server[i:minInt(i+size, len(server))])
+				_, _ = flow.Feed(ServerToClient, server[i:minInt(i+size, len(server))])
 			}
 			check()
 		}
 		if ops&1 != 0 {
-			flow.EndDirection(ClientToServer, EndEOF)
+			_, _ = flow.EndDirection(ClientToServer, EndEOF)
 		}
 		if ops&2 != 0 {
-			flow.Expire()
+			_ = flow.Expire()
 		}
 		check()
 		final := flow.Close()

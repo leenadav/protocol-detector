@@ -14,7 +14,7 @@ func TestPanicInSnapshotOrCloseIsContained(t *testing.T) {
 		c.MaxFlows, c.PanicLimit = 1, 0 // one slot: a leaked slot would refuse the next flow
 		e := mustEngine(t, c)
 		f := mustFlow(t, e)
-		f.Feed(ClientToServer, httpRequest[:20]) // an unfinished request: the parser holds buffers
+		_, _ = f.Feed(ClientToServer, httpRequest[:20]) // an unfinished request: the parser holds buffers
 		if f.Snapshot().RetainedBytes == 0 {
 			t.Fatalf("%s: the flow retains nothing, the release would go unchecked", op)
 		}

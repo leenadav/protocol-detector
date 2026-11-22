@@ -80,7 +80,7 @@ func TestReservationLifecycle(t *testing.T) {
 func TestQuarantinedFlowKeepsItsReservationUntilClose(t *testing.T) {
 	e := mustEngine(t, allFamilies())
 	f := mustFlow(t, e)
-	f.Feed(ClientToServer, httpRequest[:10]) // buffers something first
+	_, _ = f.Feed(ClientToServer, httpRequest[:10]) // buffers something first
 	if e.Stats().RetainedBytes == 0 {
 		t.Fatal("nothing retained before the panic")
 	}
@@ -89,7 +89,7 @@ func TestQuarantinedFlowKeepsItsReservationUntilClose(t *testing.T) {
 		t.Fatalf("feed: %v", err)
 	}
 	e.testHook = nil
-	if st := e.Stats(); st.RetainedBytes != 0 || st.ReservedBytes != int64(st.FlowAllowance) {
+	if st := e.Stats(); st.RetainedBytes != 0 || st.ReservedBytes != st.FlowAllowance {
 		t.Fatalf("quarantine: %+v", st)
 	}
 	f.Close()
@@ -103,23 +103,23 @@ func TestRetainedFollowsTheParsers(t *testing.T) {
 	e := mustEngine(t, allFamilies())
 	hello, _ := tlsFlights(t, "mem.example.test", []string{"h2"}, nil)
 	f := mustFlow(t, e)
-	f.Feed(ClientToServer, hello[:len(hello)/2])
+	_, _ = f.Feed(ClientToServer, hello[:len(hello)/2])
 	mid := f.Snapshot().RetainedBytes
 	if mid < len(hello)/2-5 || int64(mid) != e.Stats().RetainedBytes {
 		t.Fatalf("half a hello retains %d bytes (engine %d)", mid, e.Stats().RetainedBytes)
 	}
-	f.Feed(ClientToServer, hello[len(hello)/2:])
+	_, _ = f.Feed(ClientToServer, hello[len(hello)/2:])
 	if s := f.Snapshot(); s.Direction(ClientToServer).Outcome != OutcomeIdentified || s.RetainedBytes != 0 || e.Stats().RetainedBytes != 0 {
 		t.Fatalf("a decided direction still retains: %+v engine %+v", s.RetainedBytes, e.Stats())
 	}
 	// Early terminal paths release too: expiry and end of direction.
 	for name, finish := range map[string]func(*Flow){
-		"expire": func(f *Flow) { f.Expire() },
-		"end":    func(f *Flow) { f.EndDirection(ClientToServer, EndEOF) },
+		"expire": func(f *Flow) { _ = f.Expire() },
+		"end":    func(f *Flow) { _, _ = f.EndDirection(ClientToServer, EndEOF) },
 		"close":  func(f *Flow) { f.Close() },
 	} {
 		g := mustFlow(t, e)
-		g.Feed(ClientToServer, hello[:100])
+		_, _ = g.Feed(ClientToServer, hello[:100])
 		if e.Stats().RetainedBytes == 0 {
 			t.Fatalf("%s: nothing retained", name)
 		}
@@ -142,14 +142,14 @@ func TestFlowAllowanceIsEnforced(t *testing.T) {
 	c.MaxBytesPerDirection, c.MaxFeedsPerDirection, c.MaxRetainedPerFlow = 8192, 4096, 8192
 	e := mustEngine(t, c)
 	other := mustFlow(t, e)
-	other.Feed(ClientToServer, httpRequest[:20])
+	_, _ = other.Feed(ClientToServer, httpRequest[:20])
 	f := mustFlow(t, e)
 	// An unfinished request line the parser must keep: 3,005 bytes in a 3,072-byte accumulator. Finishing it
 	// later also copies the 3,001-byte target, 6,144 bytes in all, inside the 8,192-byte allowance. (A 6,000-byte
 	// target would need 12,288 bytes while the request completes; that is refused now, see
 	// TestGrowthIsChargedBeforeItIsAllocated.)
 	line := []byte("GET /" + strings.Repeat("a", 3000))
-	f.Feed(ClientToServer, line)
+	_, _ = f.Feed(ClientToServer, line)
 	if s := f.Snapshot(); s.Direction(ClientToServer).Done || s.RetainedBytes == 0 || s.RetainedBytes > 8192 {
 		t.Fatalf("first direction: retained %d, %+v", s.RetainedBytes, s.Direction(ClientToServer).Outcome)
 	}
@@ -168,7 +168,7 @@ func TestFlowAllowanceIsEnforced(t *testing.T) {
 		t.Fatal("another flow was affected")
 	}
 	// The surviving direction still completes.
-	f.Feed(ClientToServer, []byte(" HTTP/1.1\r\nHost: a.example\r\n\r\n"))
+	_, _ = f.Feed(ClientToServer, []byte(" HTTP/1.1\r\nHost: a.example\r\n\r\n"))
 	if got := f.Snapshot().Direction(ClientToServer); got.Outcome != OutcomeIdentified {
 		t.Fatalf("surviving direction: %+v", got)
 	}
@@ -198,10 +198,10 @@ func TestConcurrentAdmissionFeedAndCloseBalance(t *testing.T) {
 				}
 				var inner sync.WaitGroup
 				inner.Add(2)
-				go func() { defer inner.Done(); f.Feed(ClientToServer, httpRequest[:len(httpRequest)-i%7-1]) }()
-				go func() { defer inner.Done(); f.Feed(ServerToClient, httpResponse[:10+i%20]) }()
+				go func() { defer inner.Done(); _, _ = f.Feed(ClientToServer, httpRequest[:len(httpRequest)-i%7-1]) }()
+				go func() { defer inner.Done(); _, _ = f.Feed(ServerToClient, httpResponse[:10+i%20]) }()
 				if i%3 == 0 {
-					f.Expire()
+					_ = f.Expire()
 				}
 				inner.Wait()
 				if st := e.Stats(); st.RetainedBytes > st.ReservedBytes || st.ReservedBytes > st.EngineAllowance {
@@ -243,8 +243,8 @@ func TestFixturesFitTheDefaultFlowAllowance(t *testing.T) {
 		for _, step := range []int{len(data), 1} {
 			f := mustFlow(t, e)
 			for pos := 0; pos < len(data) && step > 0; pos += step {
-				f.Feed(ClientToServer, data[pos:minInt(pos+step, len(data))])
-				f.Feed(ServerToClient, data[pos:minInt(pos+step, len(data))]) // both directions hold state at once
+				_, _ = f.Feed(ClientToServer, data[pos:minInt(pos+step, len(data))])
+				_, _ = f.Feed(ServerToClient, data[pos:minInt(pos+step, len(data))]) // both directions hold state at once
 				if r := f.Snapshot().RetainedBytes; r > peak {
 					peak, peakID = r, cs.ID
 				}

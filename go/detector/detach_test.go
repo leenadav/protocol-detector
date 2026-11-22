@@ -54,13 +54,13 @@ func TestHeldSnapshotsStayDetached(t *testing.T) {
 	for name, in := range flows {
 		f := mustFlow(t, e)
 		half := len(in[0]) / 2
-		f.Feed(ClientToServer, in[0][:half])
+		_, _ = f.Feed(ClientToServer, in[0][:half])
 		early := f.Snapshot()
 		earlyWant := deepCopy(early)
-		f.Feed(ClientToServer, in[0][half:]) // more revisions: the internal slices are rewritten in place
+		_, _ = f.Feed(ClientToServer, in[0][half:]) // more revisions: the internal slices are rewritten in place
 		mid := f.Snapshot()
 		midWant := deepCopy(mid)
-		f.Feed(ServerToClient, in[1])
+		_, _ = f.Feed(ServerToClient, in[1])
 		closed := f.Close()
 		closedWant := deepCopy(closed)
 		if len(closed.Direction(ClientToServer).Evidence) == 0 {
@@ -79,7 +79,7 @@ func TestHeldSnapshotsStayDetached(t *testing.T) {
 					if err != nil {
 						continue
 					}
-					g.Feed(ClientToServer, buf)
+					_, _ = g.Feed(ClientToServer, buf)
 					g.Close()
 					for j := range buf { // reuse: overwrite, then restore for the next flow
 						buf[j] ^= 0xFF

@@ -32,8 +32,8 @@ func runFlow(e *Engine, c flowCase) Snapshot {
 	if err != nil {
 		panic(err)
 	}
-	f.Feed(ClientToServer, c.client)
-	f.Feed(ServerToClient, c.server)
+	_, _ = f.Feed(ClientToServer, c.client)
+	_, _ = f.Feed(ServerToClient, c.server)
 	return f.Close()
 }
 
@@ -62,10 +62,10 @@ func BenchmarkFlowBytewise(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				f, _ := e.NewFlow("bench")
 				for j := range fc.client {
-					f.Feed(ClientToServer, fc.client[j:j+1])
+					_, _ = f.Feed(ClientToServer, fc.client[j:j+1])
 				}
 				for j := range fc.server {
-					f.Feed(ServerToClient, fc.server[j:j+1])
+					_, _ = f.Feed(ServerToClient, fc.server[j:j+1])
 				}
 				f.Close()
 			}

@@ -22,7 +22,7 @@ func TestNormalizedHostKeepsNoLargerBacking(t *testing.T) {
 		request := []byte("GET / HTTP/1.1\r\nHost: " + host + "\r\n") // headers unfinished: the parser holds the host
 		return func(int) *Flow {
 			f := mustFlow(t, e)
-			f.Feed(ClientToServer, request)
+			_, _ = f.Feed(ClientToServer, request)
 			return f
 		}
 	}

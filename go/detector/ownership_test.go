@@ -46,7 +46,7 @@ var longMethod = []byte(strings.Repeat("X", 6000) + " / HTTP/1.1\r\n")
 
 func feedIn(f *Flow, d Direction, data []byte, step int) {
 	for pos := 0; pos < len(data); pos += step {
-		f.Feed(d, data[pos:minInt(pos+step, len(data))])
+		_, _ = f.Feed(d, data[pos:minInt(pos+step, len(data))])
 	}
 }
 
@@ -85,7 +85,7 @@ func TestRetainedCoversTheBackingAllocations(t *testing.T) {
 			t.Logf("heap per flow %.0f, reported retained %d", per, s.RetainedBytes)
 			// Terminal release: finishing the headers decides the direction and frees the buffers.
 			f := flows[0]
-			f.Feed(d, []byte("Host: a.example\r\n\r\n"))
+			_, _ = f.Feed(d, []byte("Host: a.example\r\n\r\n"))
 			if s := f.Snapshot(); s.Direction(d).Outcome != OutcomeIdentified || s.RetainedBytes != 0 {
 				t.Fatalf("after the headers: outcome %s, retained %d", s.Direction(d).Outcome, s.RetainedBytes)
 			}

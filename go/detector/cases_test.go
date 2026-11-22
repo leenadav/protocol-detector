@@ -54,7 +54,7 @@ func TestFacadeMatchesTheEngineOnEveryStreamCase(t *testing.T) {
 			for _, ev := range in.End(*c.End) {
 				revision = ev.Revision
 			}
-			f.EndDirection(ClientToServer, EndEOF)
+			_, _ = f.EndDirection(ClientToServer, EndEOF)
 		}
 		got := f.Close().Direction(ClientToServer)
 		family := in.ResolvedFamily()
