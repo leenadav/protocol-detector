@@ -1,0 +1,78 @@
+diff --git a/protocol_engine/content.py b/protocol_engine/content.py
+index 43a9bae..19210df 100644
+--- a/protocol_engine/content.py
++++ b/protocol_engine/content.py
+@@ -49,6 +49,11 @@ HISTORY = (
+             "Microsoft 365 cloud.microsoft names and Exchange Online Protection separated from web mail; Copilot "
+             "app host; GitHub Copilot service hosts; Anthropic API split from the apps; Google notebook host; "
+             "Dropbox verified domains, web fronts and DocSend"),
++    Release("2026.11.4", "2026-11-18", "2026-11-18",
++            "application-research lane proposal with primary sources (research/apps on claude/app-research); "
++            "engine-lane review pending",
++            "Google Drive and Docs editor hosts; OneDrive consumer hosts; Webex service domains; OpenAI help and "
++            "developer documentation as web fronts"),
+ )
+ CURRENT = HISTORY[-1].version
+ LOCK_PATH = Path(__file__).with_name("content_lock.json")
+@@ -109,6 +114,14 @@ _ADDED_2026_11_2 = (
+     "xandr",
+ )
+ _PRIOR_HOST_STATE = MappingProxyType({
++    "2026.11.3": MappingProxyType({
++        "google-drive": {"domains": ("drive.google.com", "docs.google.com", "drive.usercontent.google.com")},
++        "ms-onedrive": {"description": "Microsoft OneDrive file storage",
++                        "domains": ("onedrive.live.com", "onedrive.com", "1drv.com", "1drv.ms")},
++        "webex": {"domains": ("webex.com", "wbx2.com")},
++        "openai-chatgpt": {"web_fronts": ("openai.com", "www.openai.com")},
++        "openai-platform": {"web_fronts": ()},
++    }),
+     "2026.11.2": MappingProxyType({
+         "ms-teams": {"domains": ("teams.microsoft.com", "teams.live.com", "teams.cdn.office.net")},
+         "outlook-web": {"domains": ("outlook.office365.com", "outlook.office.com", "outlook.live.com", "outlook.com")},
+diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
+index 13506d6..6430837 100644
+--- a/protocol_engine/host_apps.py
++++ b/protocol_engine/host_apps.py
+@@ -70,7 +70,8 @@ _HOST_APPS = (
+      ("widely-used", "transfers-files"), ("teams.microsoft.com", "teams.live.com", "teams.cdn.office.net", "teams.cloud.microsoft",
+                                      "lync.com")),
+     ("skype", "collaboration", "voip-video", "client-server", 3, "Skype calls and messaging", ("transfers-files", "evasive"), ("skype.com", "skypeassets.com")),
+-    ("webex", "collaboration", "voip-video", "client-server", 2, "Cisco Webex meetings", ("widely-used",), ("webex.com", "wbx2.com")),
++    ("webex", "collaboration", "voip-video", "client-server", 2, "Cisco Webex meetings", ("widely-used",),
++     ("webex.com", "wbx2.com", "ciscospark.com", "webexapis.com", "webexcontent.com", "ciscosparkcontent.com")),
+     ("google-meet", "collaboration", "voip-video", "browser-based", 2, "Google Meet video meetings", ("widely-used",), ("meet.google.com",)),
+     # Email.
+     ("gmail", "collaboration", "email", "browser-based", 2, "Gmail web mail", ("widely-used", "transfers-files"), ("mail.google.com", "gmail.com")),
+@@ -88,14 +89,17 @@ _HOST_APPS = (
+                                      "cloud.microsoft")),
+     ("sharepoint-online", "business-systems", "office-programs", "browser-based", 2, "SharePoint Online sites and files",
+      ("widely-used", "transfers-files"), ("sharepoint.com", "sharepointonline.com", "svc.ms")),
+-    ("ms-onedrive", "general-internet", "file-sharing", "browser-based", 3, "Microsoft OneDrive file storage",
+-     ("widely-used", "transfers-files"), ("onedrive.live.com", "onedrive.com", "1drv.com", "1drv.ms")),
++    ("ms-onedrive", "general-internet", "file-sharing", "browser-based", 3, "Microsoft OneDrive (consumer) file storage",
++     ("widely-used", "transfers-files"), ("onedrive.live.com", "onedrive.com", "1drv.com", "1drv.ms", "skydrive.live.com",
++                                          "photos.live.com", "storage.msn.com")),
+     ("azure-ad", "business-systems", "auth-service", "browser-based", 1, "Microsoft Entra ID (Azure AD) sign-in",
+      ("widely-used",), ("login.microsoftonline.com", "microsoftonline.com", "login.live.com")),
+     ("ms-update", "business-systems", "software-development", "client-server", 1, "Windows Update and Microsoft software delivery",
+      ("widely-used", "transfers-files", "excessive-bandwidth"), ("windowsupdate.com", "update.microsoft.com", "delivery.mp.microsoft.com")),
+     ("google-drive", "general-internet", "file-sharing", "browser-based", 3, "Google Drive and Docs",
+-     ("widely-used", "transfers-files"), ("drive.google.com", "docs.google.com", "drive.usercontent.google.com")),
++     ("widely-used", "transfers-files"), ("drive.google.com", "docs.google.com", "drive.usercontent.google.com", "googledrive.com",
++                                     "sheets.google.com", "slides.google.com", "drive-data-export.usercontent.google.com",
++                                     "drive-data-export-eu.usercontent.google.com")),
+     ("google-base", "general-internet", "internet-utility", "browser-based", 2, "Google services not mapped to a more specific application",
+      ("widely-used", "pervasive"), ("google.com", "gstatic.com", "googleapis.com", "googleusercontent.com", "gvt1.com", "gvt2.com")),
+     ("dropbox", "general-internet", "file-sharing", "client-server", 3, "Dropbox file sync and sharing",
+@@ -118,9 +122,9 @@ _HOST_APPS = (
+     # Generative AI.
+     # D03: ChatGPT (the assistant), the developer platform/API and the provider's web presence are three things.
+     ("openai-chatgpt", "business-systems", "generative-ai", "browser-based", 3, "OpenAI ChatGPT",
+-     ("transfers-files", "widely-used"), ("chatgpt.com", "chat.openai.com", "oaiusercontent.com", "oaistatic.com"), ("openai.com", "www.openai.com")),
++     ("transfers-files", "widely-used"), ("chatgpt.com", "chat.openai.com", "oaiusercontent.com", "oaistatic.com"), ("openai.com", "www.openai.com", "help.openai.com")),
+     ("openai-platform", "business-systems", "generative-ai", "client-server", 3, "OpenAI developer platform and API",
+-     ("transfers-files",), ("api.openai.com", "platform.openai.com")),
++     ("transfers-files",), ("api.openai.com", "platform.openai.com"), ("developers.openai.com",)),
+     ("anthropic-claude", "business-systems", "generative-ai", "browser-based", 3, "Anthropic Claude",
+      ("transfers-files",), ("claude.ai", "anthropic.com", "claude.com", "claudeusercontent.com"), ("claude.com", "code.claude.com")),
+     ("anthropic-api", "business-systems", "generative-ai", "client-server", 3, "Anthropic Claude developer platform and API",
