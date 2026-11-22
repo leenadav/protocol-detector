@@ -2,6 +2,7 @@ package quicx
 
 import (
 	"bytes"
+	"container/heap"
 	"container/list"
 	"sort"
 )
@@ -38,6 +39,30 @@ type entry struct {
 	fragments []Fragment
 	conflict  bool
 	last      float64
+	element   *list.Element // its place in the LRU order
+	slot      int           // its index in the idle heap
+}
+
+// idleHeap orders entries by last-seen time (the oldest first), so expiry visits only the entries it removes.
+type idleHeap []*entry
+
+func (h idleHeap) Len() int           { return len(h) }
+func (h idleHeap) Less(i, j int) bool { return h[i].last < h[j].last }
+func (h idleHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+	h[i].slot, h[j].slot = i, j
+}
+func (h *idleHeap) Push(x any) {
+	e := x.(*entry)
+	e.slot = len(*h)
+	*h = append(*h, e)
+}
+func (h *idleHeap) Pop() any {
+	old := *h
+	e := old[len(old)-1]
+	old[len(old)-1] = nil
+	*h = old[:len(old)-1]
+	return e
 }
 
 // Assembler ports quic.QuicAssembler (contracts C5/C6, D01/D02): a bounded CRYPTO fragment store with one entry
@@ -47,11 +72,17 @@ type entry struct {
 // turns the entry into a sticky conflict marker that answers "conflict" for every later datagram of that
 // connection until the host resets the scope or the entry expires. Lifetime: LRU eviction at MaxConnections, idle
 // expiry when the host supplies time, Reset(scope) when the host ends a flow.
+//
+// SEC-QUIC-1 (PRO-47): the entries are indexed three ways so that no datagram or flow end scans the whole store,
+// with the reference's semantics unchanged: the LRU list (eviction), an idle heap by last-seen time (expiry removes
+// exactly the entries with now-last > IdleSeconds, whatever order time arrives in) and a per-scope index (Reset).
 type Assembler struct {
 	MaxConnections int
 	IdleSeconds    float64
-	order          *list.List // least recently used at the front
-	entries        map[key]*list.Element
+	order          *list.List // least recently used at the front; each element's Value is its *entry
+	entries        map[key]*entry
+	idle           idleHeap
+	scopes         map[string]map[key]*entry
 	Counts         map[string]int
 }
 
@@ -60,8 +91,40 @@ func NewAssembler(maxConnections int, idleSeconds float64) *Assembler {
 	if maxConnections < 1 || idleSeconds <= 0 {
 		panic("quicx: invalid QUIC assembler limits")
 	}
-	return &Assembler{MaxConnections: maxConnections, IdleSeconds: idleSeconds, order: list.New(), entries: map[key]*list.Element{},
-		Counts: map[string]int{"conflicts": 0, "evictions": 0, "expired": 0, "exhausted": 0}}
+	return &Assembler{MaxConnections: maxConnections, IdleSeconds: idleSeconds, order: list.New(), entries: map[key]*entry{},
+		scopes: map[string]map[key]*entry{}, Counts: map[string]int{"conflicts": 0, "evictions": 0, "expired": 0, "exhausted": 0}}
+}
+
+// insert stores a new entry: at the back of the LRU order, in the idle heap and in its scope's index.
+func (a *Assembler) insert(e *entry) {
+	e.element = a.order.PushBack(e)
+	heap.Push(&a.idle, e)
+	a.entries[e.key] = e
+	scope := a.scopes[e.key.scope]
+	if scope == nil {
+		scope = map[key]*entry{}
+		a.scopes[e.key.scope] = scope
+	}
+	scope[e.key] = e
+}
+
+// remove forgets one entry from every index.
+func (a *Assembler) remove(e *entry) {
+	a.order.Remove(e.element)
+	heap.Remove(&a.idle, e.slot)
+	delete(a.entries, e.key)
+	if scope := a.scopes[e.key.scope]; scope != nil {
+		delete(scope, e.key)
+		if len(scope) == 0 {
+			delete(a.scopes, e.key.scope)
+		}
+	}
+}
+
+// touch records a new last-seen time.
+func (a *Assembler) touch(e *entry, now float64) {
+	e.last = now
+	heap.Fix(&a.idle, e.slot)
 }
 
 // Len is the number of connections held.
@@ -70,26 +133,25 @@ func (a *Assembler) Len() int { return len(a.entries) }
 // Clear forgets every connection.
 func (a *Assembler) Clear() {
 	a.order.Init()
-	a.entries = map[key]*list.Element{}
+	a.entries = map[key]*entry{}
+	a.idle = nil
+	a.scopes = map[string]map[key]*entry{}
 }
 
-// Reset forgets every connection of one flow scope (the host ended or restarted the flow).
+// Reset forgets every connection of one flow scope (the host ended or restarted the flow); it visits only that
+// scope's entries.
 func (a *Assembler) Reset(scope string) {
-	for k, el := range a.entries {
-		if k.scope == scope {
-			a.order.Remove(el)
-			delete(a.entries, k)
-		}
+	for _, e := range a.scopes[scope] {
+		a.remove(e)
 	}
 }
 
+// expire removes every entry idle for more than IdleSeconds (quic.QuicAssembler.expire): the heap's oldest entry
+// is the only one that can be next, so it visits only the entries it removes.
 func (a *Assembler) expire(now float64) {
-	for k, el := range a.entries {
-		if now-el.Value.(*entry).last > a.IdleSeconds {
-			a.order.Remove(el)
-			delete(a.entries, k)
-			a.Counts["expired"]++
-		}
+	for len(a.idle) > 0 && now-a.idle[0].last > a.IdleSeconds {
+		a.remove(a.idle[0])
+		a.Counts["expired"]++
 	}
 }
 
@@ -99,16 +161,12 @@ func (a *Assembler) Conflicted(dcid []byte, scope string, version uint32, now *f
 	if now != nil {
 		a.expire(*now)
 	}
-	el := a.entries[key{scope, version, string(dcid)}]
-	if el == nil {
-		return false
-	}
-	e := el.Value.(*entry)
-	if !e.conflict {
+	e := a.entries[key{scope, version, string(dcid)}]
+	if e == nil || !e.conflict {
 		return false
 	}
 	if now != nil {
-		e.last = *now
+		a.touch(e, *now)
 	}
 	return true
 }
@@ -119,28 +177,24 @@ func (a *Assembler) Add(dcid []byte, fragments []Fragment, scope string, version
 		a.expire(*now)
 	}
 	k := key{scope, version, string(dcid)}
-	var e *entry
-	if el := a.entries[k]; el != nil {
-		e = el.Value.(*entry)
-		a.order.Remove(el)
-		delete(a.entries, k)
+	e := a.entries[k]
+	if e != nil {
+		a.order.MoveToBack(e.element) // the reference pops and re-inserts: most recently used
+		if now != nil {
+			a.touch(e, *now)
+		}
 	} else {
 		if len(a.entries) >= a.MaxConnections {
-			oldest := a.order.Front()
-			a.order.Remove(oldest)
-			delete(a.entries, oldest.Value.(*entry).key)
+			a.remove(a.order.Front().Value.(*entry))
 			a.Counts["evictions"]++
 		}
 		e = &entry{key: k}
 		if now != nil {
 			e.last = *now
 		}
-	}
-	if now != nil {
-		e.last = *now
+		a.insert(e)
 	}
 	if e.conflict {
-		a.entries[k] = a.order.PushBack(e)
 		return Conflict, nil
 	}
 	merged := merge(e.fragments, fragments)
@@ -150,6 +204,7 @@ func (a *Assembler) Add(dcid []byte, fragments []Fragment, scope string, version
 	}
 	if len(merged) > MaxFragments || total > MaxCrypto {
 		a.Counts["exhausted"]++
+		a.remove(e)
 		return Exhausted, nil // over budget: this connection is forgotten
 	}
 	status, data := Assemble(merged)
@@ -159,7 +214,6 @@ func (a *Assembler) Add(dcid []byte, fragments []Fragment, scope string, version
 	} else {
 		e.fragments = merged
 	}
-	a.entries[k] = a.order.PushBack(e)
 	return status, data
 }
 
