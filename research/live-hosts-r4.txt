@@ -1,0 +1,70 @@
+# Round 4 for tools/live_verify.py: names added by batch M (PRO-92, research/patches/batch-m-name-based.patch).
+# "NAME PROBE" where the vendor page documents a name under a suffix entry; run with TLS so certificate
+# organisation is recorded (decision 3). Placeholder or wildcard-only suffixes have no probe.
+ddog-gov.com app.ddog-gov.com
+app.ddog-gov.com
+browser-intake-datadoghq.com
+browser-intake-us3-datadoghq.com
+browser-intake-us5-datadoghq.com
+browser-intake-ap1-datadoghq.com
+browser-intake-ap2-datadoghq.com
+browser-intake-uk1-datadoghq.com
+browser-intake-datadoghq.eu
+browser-intake-ddog-gov.com
+browser-intake-us2-ddog-gov.com
+analysis.windows.net
+pbidedicated.windows.net
+datamart.fabric.microsoft.com
+datawarehouse.fabric.microsoft.com
+database.fabric.microsoft.com
+powerquery.microsoft.com
+powerapps.com make.powerapps.com
+make.powerapps.com
+content.powerapps.com
+powerautomate.com
+flow.microsoft.com
+powerplatform.com api.powerplatform.com
+powerplatformusercontent.com
+api.bap.microsoft.com
+api.admin.powerplatform.microsoft.com
+dynamics.com
+portal.azure.com
+portal.azure.net
+ext.azure.com
+management.azure.com
+hosting.partners.azure.net
+bmx.azure.com
+signup.azure.com
+deviceenrollment.apple.com
+deviceservices-external.apple.com
+iprofiles.apple.com
+mdmenrollment.apple.com
+identity.apple.com
+vpp.itunes.apple.com
+axm-servicediscovery.apple.com
+business.apple.com
+school.apple.com ws.school.apple.com
+api-business.apple.com
+api-school.apple.com
+axm-adm-enroll.apple.com
+axm-adm-mdm.apple.com
+axm-adm-scep.apple.com
+axm-app.apple.com
+axm-usercontent-apple.com icons.axm-usercontent-apple.com
+icons.axm-usercontent-apple.com
+codewhisperer.us-east-1.amazonaws.com
+q.us-east-1.amazonaws.com
+q.eu-central-1.amazonaws.com
+q-developer-integration.us-east-1.api.aws
+amazonq-code-scan-us-east-1-29121b44f7b.s3.amazonaws.com
+amazonq-code-scan-eu-central-1-9374e402cc5.s3.amazonaws.com
+amazonq-code-transformation-us-east-1-c6160f047e0.s3.amazonaws.com
+amazonq-code-transformation-eu-central-1-a0a89cc2b94.s3.amazonaws.com
+# Older catalog names cited by batch J and batch M specs that no earlier round covered.
+asana.com app.asana.com
+opendns.com api.opendns.com
+datadoghq.com install.datadoghq.com
+datadoghq.eu app.datadoghq.eu
+parsec.app kessel-api.parsec.app
+parsecgaming.com builds.parsecgaming.com
+powerbi.com api.powerbi.com
