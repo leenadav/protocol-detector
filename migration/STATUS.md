@@ -551,6 +551,44 @@ reason, a correct or wrong hint, or a tight byte budget. The Go engine answers t
 | Self-checks | pass, in CI | `--plant` alters one reference answer to another valid status, and the run must report exactly that case. `--self-test` checks `judge()`: an allowed mismatch passes, an unlisted one fails, and a listed case that now agrees fails. Removing the stale-entry rule makes it fail. |
 | Found and fixed | 0 engine mismatches | The first trial had 8 cases Go declined ("not ported: hint http/ftp/redis"). It was a harness error: `cases.run_stream` drops a hint outside `registry.PARSERS`, so stream hints are now drawn from `PARSERS` only. |
 
+## Mutation testing (PRO-126, 2026-11-22)
+
+Hermes, PRO-126: mutation testing of the Go protocol parsers with gremlins (github.com/go-gremlins/gremlins
+v0.6.0, Apache-2.0). It is test tooling only, pinned in its own module `migration/mutation/gremlins` (`go.sum` pins
+all 22 linked modules: 13 MIT, 5 BSD-3-Clause, 4 Apache-2.0; no GPL or LGPL), installed into `build/` and never
+linked into or vendored with `go/`. `migration/mutation/mutation.py` runs it on each package and compares
+efficacy (killed / (killed + lived)) with `migration/mutation/baseline.json`; a package more than 5 points below its
+baseline, or one with no result, fails the run. It is a nightly job, never a per-PR gate (one full run takes about
+20 minutes, `framed` alone 17).
+
+| package | killed | lived | not covered | efficacy | first run (base `752dcbd`) |
+|---|---|---|---|---|---|
+| tlsx | 192 | 48 | 263 | 80.00% | 99 killed, 69 lived, 58.93% |
+| quicx | 192 | 25 | 6 | 88.48% | 150 killed, 67 lived, 69.12% |
+| textroute | 232 | 111 | 582 | 67.64% | 7 killed, 3 lived, 914 not covered |
+| x509x | 243 | 63 | 56 | 79.41% | same |
+| hpack | 73 | 20 | 6 | 78.49% | same |
+| fingerprint | 28 | 23 | 0 | 54.90% | same |
+| framed | 718 | 507 | 3568 | 58.61% | same |
+| dnsx, heuristics | 0 | 0 | 269, 72 | none covered | tested only from other packages |
+
+The first run's survivors in TLS, QUIC and HTTP/1 sat on comparison boundaries and length arithmetic that no
+package-local test hit exactly. `migration/mutation/boundaries.py` generates one `boundary_test.go` per package
+(73 TLS, 48 QUIC, 105 text-route cases), each on a limit or one past it, with the expected outcome from the Python
+reference, so each case checks the boundary and the parity at once; `make go-check` runs `boundaries.py --check`.
+Survivors that remain are mostly in DTLS (`tlsx/dtls.go`), the QUIC assembler's idle-heap and expiry comparisons, HTTP header classification and the
+non-HTTP text routes. Some are equivalent mutants (`i >= 0` read as `i > 0` before slicing to an empty prefix).
+Run safeguards, each found by an end-to-end `make mutation`:
+- One `hpack` mutant removes an allocation bound, and its test binary grew to 11 GB until the kernel killed it,
+  taking unrelated processes with it. `mutation.py` caps every process it starts at 4 GiB of address space
+  (`--memory-mb`), so such a mutant fails fast and counts as killed.
+- A cached coverage run gives gremlins a near-zero reference time, and then every mutant times out (one run: 8
+  killed, 0 lived, 340 timed out, efficacy "100%"). The test cache is cleared before each package, and a package
+  where more than 25% of the tested mutants time out fails the run.
+- A package with a baseline efficacy that comes back with nothing covered fails (it used to be skipped).
+With these, a full clean run reproduced the baseline exactly in all nine packages (about 21 minutes on 4 cores).
+The nightly workflow step is a CI/CD-lane change (requested).
+
 ## Adversarial identification (2026-11-18)
 
 Lee, 2026-11-18: a suite that tries to deceive the detector on purpose, asserting that it either stays honest
