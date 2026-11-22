@@ -27,9 +27,12 @@ Status: accepted for M2 (2026-11-07).
 
 ## Dependencies
 
-- Pure Go, standard library only in M2. Any third-party module needs: a stated reason, its licence
-  recorded here, a pinned version in `go.sum`, and `govulncheck` in the gate (M10). cgo is off
-  (`CGO_ENABLED=0` for release builds) unless an ADR states a packaging plan.
+- Pure Go. No non-standard package is in the import graph of the detection path: the rule is the PRO-107 decision
+  below, and `TestDetectionPathImportsOnlyTheStandardLibrary` (`go/internal/contracts`) enforces it. The rule
+  is about the import graph, not about `require` lines in `go/go.mod`. A third-party module used outside the
+  detection path needs a stated reason, its licence recorded here, a pinned version in `go.sum` and
+  `govulncheck` in the gate (M10). Today the only such module is `golang.org/x/crypto`, for key-log
+  decryption. cgo is off (`CGO_ENABLED=0` for release builds) unless an ADR states a packaging plan.
 - Cryptography (M7): `crypto/aes`, `crypto/cipher` (GCM), `golang.org/x/crypto` (ChaCha20-Poly1305, HKDF)
   from the Go project; the handwritten Python AES is not ported. The decision is recorded when M7 starts.
 - Decision (M7, 2026-11-15): `go/internal/decrypt` uses the standard library for AES-GCM, HMAC, SHA-2 and
@@ -48,7 +51,10 @@ Status: accepted for M2 (2026-11-07).
       decryption (`internal/decrypt`, through `internal/keylogcap` and `internal/livedecrypt`).
     - Culvert already requires the same two versions (its go.mod:59 and :61), so importing the detector adds
       no module to its graph. Its dependency gate is a licence check (`go-licenses`), which both pass.
-    - The rule is checked on the import graph (`go list -deps` of the detection packages), not on `go.mod`.
+    - The rule is checked on the import graph, not on `go.mod`: `TestDetectionPathImportsOnlyTheStandardLibrary`
+      runs `go list -deps` over the detection packages, and over `go/detector` once it exists. It fails on any
+      package outside the module and the standard library. Its control asserts that `internal/decrypt` does
+      import `golang.org/x/crypto`, so a blind check cannot pass (added for PRO-156, 2026-11-22).
       A newer `x/crypto` or `x/sys` here would raise Culvert's pin through minimum version selection, so a bump
       is a reviewed change on both sides.
   - **The floor and toolchain split.** `go/go.mod` states `go 1.27.0`, the language minimum an importer must
