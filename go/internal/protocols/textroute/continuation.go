@@ -241,16 +241,19 @@ func (c *httpContinuation) feedChunked(data []byte, pos int) int {
 			}
 			continue
 		}
-		newline := bytes.IndexByte(data[pos:], '\n')
-		end := len(data)
+		// Search only the bytes the budget can still admit (Codex PRO-16): a newline past them would end the
+		// piece at the budget all the same, so the bounded search takes exactly the same piece.
+		window := len(data)
+		if pos+c.budget < window {
+			window = pos + c.budget
+		}
+		newline := bytes.IndexByte(data[pos:window], '\n')
+		end := window
 		if newline >= 0 {
 			newline += pos
 			end = newline + 1
 		}
 		limit := end
-		if pos+c.budget < limit {
-			limit = pos + c.budget
-		}
 		piece := data[pos:limit]
 		if len(c.chunkLine)+len(piece) > c.opts.MaxLine {
 			c.end("framing")
