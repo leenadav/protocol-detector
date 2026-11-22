@@ -1187,6 +1187,15 @@ SCANNER_JOBS = {
          "run": ['mkdir -p "$RUNNER_TEMP/golint"', 'cp -r tools/golint/apidiff "$RUNNER_TEMP/golint/"',
                  'cd "$RUNNER_TEMP/golint/apidiff"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
     ]),
+    # Known vulnerabilities in every lockfile: osv-scanner built the same way, before tools/osv_scan.py runs
+    "osv-scan": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": ['mkdir -p "$RUNNER_TEMP/golint"', 'cp -r tools/golint/osv-scanner "$RUNNER_TEMP/golint/"',
+                 'cd "$RUNNER_TEMP/golint/osv-scanner"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
+    ]),
     "toolchain-audit": (SCANNER_JOB_KEYS, None, [
         HARDEN_STEP,
         {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
@@ -1230,16 +1239,16 @@ def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
 # default rules, and no other file a scanner would load on its own may exist (task 16 round 1).
 SCANNER_LOCK = "tools/scanner_config.lock.json"
 GO_LINT_MODS = ("tools/golint/golangci-lint/go.mod", "tools/golint/staticcheck/go.mod", "tools/golint/gosec/go.mod",
-                "tools/golint/go-licenses/go.mod", "tools/golint/apidiff/go.mod")
+                "tools/golint/go-licenses/go.mod", "tools/golint/apidiff/go.mod", "tools/golint/osv-scanner/go.mod")
 SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml", "tools/scanners/go.mod", "tools/golint/golangci.yml",
-                  "tools/golint/baseline.json", "tools/golint/coverage-floors.json") + GO_LINT_MODS
+                  "tools/golint/baseline.json", "tools/golint/coverage-floors.json", "tools/osv_ignore.json") + GO_LINT_MODS
 # go.mod directives that would change what the pinned scanners are or how they behave: `replace`
 # substitutes another module for gitleaks or a dependency, `godebug` changes standard-library
 # behaviour (x509, TLS) of the built binaries (item 22).
 GO_MOD_BANNED = re.compile(r"^\s*(replace|godebug)\b")
 # Files a scanner picks up from the tree without being told to: each would bypass the lock.
 SCANNER_AUTOLOAD = re.compile(r"(^|/)(ruff\.toml|\.ruff\.toml|zizmor\.ya?ml|actionlint\.ya?ml|\.gitleaksignore|\.bandit"
-                              r"|\.golangci\.(?:ya?ml|toml|json)|staticcheck\.conf)$")
+                              r"|\.golangci\.(?:ya?ml|toml|json)|staticcheck\.conf|osv-scanner\.toml)$")
 # Inline forms that silence a scanner wider than one reviewed line, or that no file uses. The
 # gitleaks token is built, never written, so no repository file has to be exempt from the scan.
 GITLEAKS_INLINE = re.compile(re.escape("gitleaks" + ":allow"), re.I)
