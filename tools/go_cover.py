@@ -128,8 +128,9 @@ def run(summary, write):
         text = profile.read_text(encoding="utf-8") if profile.is_file() else ""
     if result.returncode or not text:
         output = result.stdout.decode("utf-8", "replace").strip().splitlines()
+        print("\n".join(output))     # the whole go test output stays in the job log
         go_ci.summarise(summary, [title, "", "- FAILED: go test exited {} (no coverage is measured on failing tests)".format(
-            result.returncode)] + ["- `{}`".format(line) for line in output[-20:]])
+            result.returncode)] + ["- `{}`".format(line) for line in failure_lines(output)])
         return 1
     packages, total = parse_profile(text, module.group(1) if module else None)
     if write:
@@ -141,6 +142,16 @@ def run(summary, write):
     problems = problems_for(packages, total, floors)
     go_ci.summarise(summary, summary_lines(packages, total, floors, problems))
     return 1 if problems else 0
+
+
+FAILURE = re.compile(r"^(--- FAIL|FAIL\s|panic:|fatal error:|\s+\S+_test\.go:\d+:|# \S+|\S+\.go:\d+:\d+: )")
+
+
+def failure_lines(output, limit=60):
+    """The lines of `go test` output that name what failed (failed tests and packages, panics, build errors), in
+    order and at most `limit`; the last 20 lines when none matches, so the summary is never empty."""
+    found = [line for line in output if FAILURE.match(line)]
+    return (found or output[-20:])[:limit]
 
 
 def self_test():
@@ -169,7 +180,16 @@ def self_test():
     lines = summary_lines(dropped, [20, 5], floors, problems_for(dropped, [20, 5], floors))
     assert any(line.startswith("- FAILED:") for line in lines) and "| `internal/protocols/a` | 10 | 50.0% | 99.0% |" in lines, lines
     assert parse_profile("mode: set\n", module) == ({}, [0, 0])
-    print("go_cover self-test: ok (profile merge across test binaries, floors, below-floor, missing parser floor, moved package)")
+    run = ["ok  \texample.com/m/go/a\t0.1s", "--- FAIL: TestX (0.00s)", "    x_test.go:12: got 1, want 2",
+           "FAIL", "FAIL\texample.com/m/go/b\t0.2s", "ok  \texample.com/m/go/c\t0.1s"]
+    assert failure_lines(run) == run[1:3] + run[4:5], failure_lines(run)
+    assert failure_lines(["# example.com/m/go/b", "b/b.go:3:2: undefined: y", "ok  \tx"]) == [
+        "# example.com/m/go/b", "b/b.go:3:2: undefined: y"]
+    assert failure_lines(["panic: boom", "goroutine 1 [running]:"]) == ["panic: boom"]
+    assert failure_lines(["ok  \tx"] * 30) == ["ok  \tx"] * 20
+    assert len(failure_lines(["--- FAIL: T"] * 100)) == 60
+    print("go_cover self-test: ok (profile merge across test binaries, floors, below-floor, missing parser floor, moved package, "
+          "failing tests named in the summary)")
     return 0
 
 
