@@ -1223,7 +1223,7 @@ SCANNER_LOCK = "tools/scanner_config.lock.json"
 GO_LINT_MODS = ("tools/golint/golangci-lint/go.mod", "tools/golint/staticcheck/go.mod", "tools/golint/gosec/go.mod",
                 "tools/golint/go-licenses/go.mod")
 SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml", "tools/scanners/go.mod", "tools/golint/golangci.yml",
-                  "tools/golint/baseline.json") + GO_LINT_MODS
+                  "tools/golint/baseline.json", "tools/golint/coverage-floors.json") + GO_LINT_MODS
 # go.mod directives that would change what the pinned scanners are or how they behave: `replace`
 # substitutes another module for gitleaks or a dependency, `godebug` changes standard-library
 # behaviour (x509, TLS) of the built binaries (item 22).
@@ -2546,6 +2546,8 @@ def self_test():
         "go lint baseline grown": ([("tools/golint/baseline.json", lambda t: t.replace('{"findings": [\n', '{"findings": [\n{"count": 1, "file": "x.go", '
                                                                                        '"message": "m", "rule": "G115", "tool": "gosec"},\n', 1))],
                                    False, "tools/golint/baseline.json: differs from"),
+        "coverage floor lowered": ([("tools/golint/coverage-floors.json", lambda t: t.replace('"global": 78.0', '"global": 50.0', 1))],
+                                   False, "tools/golint/coverage-floors.json: differs from"),
         "gosec go.mod replace": ([("tools/golint/gosec/go.mod", lambda t: t + "\nreplace github.com/securego/gosec/v2 => ../gosec\n")],
                                  True, "`replace` may not change"),
         "golangci config autoloaded": ([("go/.golangci.yml", lambda t: "version: \"2\"\nlinters:\n  default: none\n")], True, "go/.golangci.yml: a scanner loads"),

@@ -101,6 +101,7 @@ request:
 | ci | `Go lint and static analysis (golangci-lint, staticcheck, gosec)` | `tools/go_lint.py`: golangci-lint 2.15.0 (`tools/golint/golangci.yml`), staticcheck 2026.2.2 and gosec 2.29.0 (`-nosec`, G104 and G304 excluded with reasons), built from `tools/golint/<tool>/go.mod` and go.sum outside the checkout and run offline on the vendored tree; a finding beyond `tools/golint/baseline.json` or a tool that cannot load the tree fails (item 35) |
 | ci | `Go determinism (race detector, shuffled order, every test twice)` | `tools/go_deep.py determinism`: `go test -race -shuffle=on -count=2 ./...` on the pinned Go and the vendored tree, `GOPROXY=off`; an order-dependent, state-leaking or flaky test fails, with its shuffle seed in the summary (item 36) |
 | ci | `Go dependency licences (go-licenses; forbidden, restricted, unknown fail)` | `tools/go_deep.py licenses`: go-licenses 2.0.1 from `tools/golint/go-licenses/go.mod` and go.sum, built outside the checkout; any linked module whose licence is forbidden, restricted or unidentified fails; the engine's own module is excluded (item 36) |
+| ci | `Go coverage floors (module and every protocol parser)` | `tools/go_cover.py`: `go test -coverpkg=./... -coverprofile` on the pinned Go and the vendored tree; the module total and each `internal/protocols/*` package at or above its floor in `tools/golint/coverage-floors.json`, every parser package floored (item 38) |
 | ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack`, the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...`; nothing to check without the Go content pack (item 30) |
 | ci | `security requirements gate` | every SR row names an existing test |
 
@@ -844,6 +845,21 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    - **Negative controls:** one per rule, in the self-test.
    - **Overlap:** rule 7 and tools/check_action_pins.py check the SHA itself. tools/check_go_drift.py
      (online) keeps the compiler current.
+38. Go coverage floors (`go-coverage` ci job, in the gate's needs; PRO-104, 2026-11-21, after
+   Culvert's coverage-floor.sh).
+   - **Measurement:** `go test -coverpkg=./... -coverprofile` on the vendored tree. -coverpkg credits
+     a parser for the parity replay and engine tests that exercise it. `tools/go_cover.py` counts a
+     block once across test binaries, covered if any binary ran it. Two runs on `claude/go-migration`
+     `0081f6f` gave byte-identical profiles.
+   - **Floors** (`tools/golint/coverage-floors.json`, set at the measured value minus 1.0 point,
+     rounded down to one decimal): the module at 78.0% (measured 79.0% of 20,124 statements) and every
+     `internal/protocols/*` parser: dnsx 80.5, fingerprint 92.6, framed 86.9, heuristics 23.3, hpack
+     87.6, quicx 88.2, textroute 81.3, tlsx 66.9, x509x 71.8.
+   - **Failures:** a total below a floor, a parser package without a floor, or a floor whose package
+     is gone.
+   - **Lock:** rule 16 locks the file, so lowering a floor is a reviewed change. Floors are raised the
+     same way, with `--write-floors`.
+   - **Negative control:** removing quicx's tests drops it to 72.2%, which fails.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
