@@ -456,8 +456,18 @@ func (c *Connection) Terminal() bool { return c.State == StateComplete || c.Stat
 func (c *Connection) fail(err *Error) {
 	if !c.Terminal() {
 		c.State, c.ReasonCode, c.Reason = StateFailed, err.Code, err.Message
-		c.queued = [2][]record{}
+		c.release()
 	}
+}
+
+// release drops the framers, hello buffers, queued records, traffic keys and key provider once the connection is
+// terminal: no entry point reads them again, and owners keep closed connections only for their labels and counts
+// (Metadata), so a retained terminal connection costs a few words instead of its buffered stream.
+func (c *Connection) release() {
+	c.keys = nil
+	c.framers, c.hellos = [2]*recordFramer{}, [2]*helloCollector{}
+	c.queued, c.dirs = [2][]record{}, [2]direction{}
+	c.random = nil
 }
 
 // Fail ends the connection with a typed reason the owner established (a gap in the reassembled stream).
@@ -713,6 +723,7 @@ func (c *Connection) finish() *Error {
 		}
 	}
 	c.State = StateComplete
+	c.release()
 	return nil
 }
 

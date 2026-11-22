@@ -230,6 +230,79 @@ func TestTypedFailures(t *testing.T) {
 	}
 }
 
+// heavyStateRetained names the per-connection buffers and cryptographic state a terminal connection must not keep:
+// the capture consumer holds closed connections for its report, so only labels and counts may survive.
+func heavyStateRetained(c *Connection) []string {
+	var held []string
+	for side := 0; side < 2; side++ {
+		if c.framers[side] != nil {
+			held = append(held, fmt.Sprintf("framer[%d]", side))
+		}
+		if c.hellos[side] != nil {
+			held = append(held, fmt.Sprintf("hello[%d]", side))
+		}
+		if c.queued[side] != nil {
+			held = append(held, fmt.Sprintf("queued[%d]", side))
+		}
+		if c.dirs[side] != nil {
+			held = append(held, fmt.Sprintf("dir[%d]", side))
+		}
+	}
+	if c.random != nil {
+		held = append(held, "random")
+	}
+	if c.keys != nil {
+		held = append(held, "keys")
+	}
+	return held
+}
+
+func TestTerminalConnectionReleasesHeavyState(t *testing.T) {
+	s := tls13Session(0x1301)
+	keys, err := ReadKeys(s.keylog)
+	if err != nil {
+		t.Fatal(err)
+	}
+	complete := NewConnection(keys, "c", "s")
+	complete.Feed("c", s.client)
+	complete.Feed("s", s.server)
+	for complete.HasWork() {
+		complete.Advance(4096)
+	}
+	if complete.Finish() != StateComplete {
+		t.Fatalf("finish: %s %s", complete.State, complete.Reason)
+	}
+	want := map[string]interface{}{"version": "TLS 1.3", "cipher_suite": "0x1301", "authenticated_records": 8,
+		"client_plaintext_bytes": len(s.request), "server_plaintext_bytes": len(s.reply), "state": StateComplete}
+	if got := complete.Metadata(); fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("complete metadata %v", got)
+	}
+	tampered := append([]byte{}, s.server...)
+	tampered[len(tampered)-3] ^= 1
+	failed := NewConnection(keys, "c", "s")
+	failed.Feed("c", s.client)
+	failed.Feed("s", tampered)
+	for failed.HasWork() {
+		failed.Advance(4096)
+	}
+	if failed.State != StateFailed || failed.ReasonCode != AuthenticationFailed || failed.Metadata()["reason_code"] != AuthenticationFailed {
+		t.Fatalf("tampered: %s %s", failed.State, failed.ReasonCode)
+	}
+	budget := NewConnection(Index{}, "c", "s")
+	budget.Feed("c", make([]byte, MaxStream+1))
+	for name, c := range map[string]*Connection{"complete": complete, "failed": failed, "budget": budget} {
+		if held := heavyStateRetained(c); len(held) != 0 {
+			t.Errorf("%s connection retains %v", name, held)
+		}
+		// Every entry point stays inert after the release.
+		c.Feed("c", []byte{22, 3, 3, 0, 1, 0})
+		c.Fail("gap", Incomplete)
+		if c.HasWork() || c.Advance(8) != nil || c.Finish() != c.State {
+			t.Errorf("%s connection is not inert", name)
+		}
+	}
+}
+
 func TestKeyProviderBoundsAndRelease(t *testing.T) {
 	p := NewKeyProvider()
 	random := strings.Repeat("ab", 32)
