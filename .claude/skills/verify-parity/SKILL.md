@@ -29,7 +29,7 @@ go version   # must print go1.27.4; otherwise put the pinned Go first on PATH (a
 Step 1 checks the committed cases against the Python reference. Step 2 replays them through the Go binary
 (`protodetect replay`), compares the results exactly and checks every family's stated status in
 `migration/CAPABILITIES.json` against that evidence. Step 3 is the differential suite: a self-test, a 300-case
-run with one planted difference that must be caught (a self-check that catches nothing is a failure), and the
+run with one planted difference that must be caught (it prints `random differential FAILED: engines differ on random/tls/1/00000`, which is expected here; a self-check that catches nothing is a failure), and the
 fixed CI run, seed 1 with 2,000 cases.
 
 A changed count is fine when your change explains it (new cases, a new family). Any `mismatched`, `missing`,
