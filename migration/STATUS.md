@@ -608,6 +608,26 @@ record the divergence):
 | Parity | divergence recorded, 0 case changes | No parity case uses an absolute-form target, and every CONNECT case's Host agrees with its target. All 7,430 still match. |
 | Randomized differential | approved-divergence rule | `random_diff.py` accepts a mismatch as SEC-HTTP-1 only when the request has an absolute-form or CONNECT target and every differing path is host attribution (hostname, evidence, application). Any other difference still fails; the self-test covers acceptance and both rejections. Seed 1: 1,972 matched plus 28 approved, 0 failures. Seeds 2 and 3 at 20,000 each: 265 and 225 approved, 0 failures. |
 
+## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
+
+**The finding** (Codex review PRO-12, Tier 1 window 1, `dbe20f3..50ce5c0`; `go/internal/engine/inspector.go`,
+the unknown-buffering branch of `Feed`). After dispatch fails, the unknown-payload buffer collects up to
+`heuristic_bytes` for the heuristics, and the stream is final once the buffer is full. When `max_bytes` is below
+that limit (for example 64 against the default 512), the byte budget ran out first. The buffer then never
+filled, so the stream reported `detecting` for every later byte and only `End` gave a verdict. The Python
+reference behaves the same way (`protocol_engine/engine.py`, the `_unknown` branch of `feed`).
+
+**The fix** (Go only; the Python reference is frozen). `unknownFull` is true when the buffer holds
+`unknownLimit` bytes or the byte budget is spent. The stream then finalizes at the last budgeted byte, with the
+verdict `End` would give for the same bytes: `unknown`, "Prefix outside supported protocol families", and the
+heuristics evidence over the buffered bytes.
+
+| item | state | evidence |
+|---|---|---|
+| Regression test | `TestUnknownBufferFinalizesWhenTheByteBudgetIsExhausted` (3 cases) | `max_bytes` 64, `heuristic_bytes` 512, 160 bytes no family claims: one segment past the budget, the budget spent in the buffering phase, and the budget ending exactly at a segment. Before the fix all 3 stayed `detecting` after 64 bytes. After it each is a terminal `unknown` whose reason and evidence equal `End`'s verdict on the same 64 bytes, and later bytes emit nothing. |
+| Parity | divergence recorded, 0 case changes | Go now gives the verdict when the budget runs out, where Python waits for close. This only happens when `max_bytes` is below the unknown buffer's limit. All 7,430 parity cases still match. |
+| Live harness | modelled-reference rule | In `live`, the stream's `unknown` verdict now arrives as an `updated` classification event, which carries risks and the policy verdict. Python reported it later, as `observation_retired`, which carries neither, and the counters follow. `migration/parity/pro189.py` reruns the frozen reference with only the budget condition added (`modelled()`, with a self-test). `live_diff.py` accepts a mismatching replay only when Go then matches it exactly. Seed 1: 297 matched, 3 approved (all with `--byte-limit 64`), 0 mismatched. |
+
 ## Randomized differential (PRO-100, 2026-11-22)
 
 Hermes, PRO-100: differential testing with random inputs, the Python reference as the oracle.

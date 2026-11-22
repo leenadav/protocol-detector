@@ -610,7 +610,7 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 		in.unknown = append(in.unknown, chunk[:take]...)
 		in.Metrics.BytesInspected += minInt(room, len(chunk))
 		in.Metrics.ParserCalls++
-		return in.unknownObservation("Prefix outside supported protocol families", len(in.unknown) >= in.unknownLimit)
+		return in.unknownObservation("Prefix outside supported protocol families", in.unknownFull())
 	}
 	previous := 0
 	if in.candidate == "" {
@@ -633,7 +633,7 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 				in.prefix = in.prefix[:0]
 				in.Metrics.BytesInspected += len(in.unknown) - len(probe)
 				in.Metrics.ParserCalls++
-				return in.unknownObservation("Prefix outside supported protocol families", len(in.unknown) >= in.unknownLimit)
+				return in.unknownObservation("Prefix outside supported protocol families", in.unknownFull())
 			}
 			return in.finish(in.observation(contracts.Unknown, "Prefix outside supported protocol families"), contracts.Updated)
 		}
@@ -886,6 +886,14 @@ func (in *Inspector) signature(family string, contexts parsing.Contexts) *signat
 // unknownObservation ports Inspector._unknown_observation: unknown-payload signatures are consulted over the
 // bounded buffer (a match is terminal); without one the stream stays detecting until the buffer is full (final) or
 // the caller ends it, then it is unknown with heuristic evidence over the buffer.
+// unknownFull reports that the unknown-payload buffer takes no more bytes: it holds unknownLimit bytes, or the
+// byte budget is spent first (max_bytes below heuristic_bytes). PRO-189 (Codex PRO-12, P2): only the first was
+// checked, so a spent budget left the stream "detecting" until End. The verdict is the one End gives for the same
+// bytes. The Python reference waits for close here (a recorded parity divergence; see migration/STATUS.md).
+func (in *Inspector) unknownFull() bool {
+	return len(in.unknown) >= in.unknownLimit || in.Metrics.BytesInspected >= in.cfg.MaxBytes
+}
+
 func (in *Inspector) unknownObservation(reason string, final bool) []contracts.Event {
 	return in.unknownFrom(reason, final, in.unknown)
 }
