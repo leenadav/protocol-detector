@@ -1182,6 +1182,33 @@ SCANNER_JOBS = {
                  'cd "$RUNNER_TEMP/golint/staticcheck"', 'GOBIN="$RUNNER_TEMP/bin" go install tool',
                  'cd "$RUNNER_TEMP/golint/gosec"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
     ]),
+    # Go dependency licences: go-licenses built the same way, before tools/go_deep.py runs
+    "go-licenses": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": ['mkdir -p "$RUNNER_TEMP/golint"', 'cp -r tools/golint/go-licenses "$RUNNER_TEMP/golint/"',
+                 'cd "$RUNNER_TEMP/golint/go-licenses"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
+    ]),
+    # Go API compatibility: apidiff built the same way, before tools/go_api.py runs (a full history for the base)
+    "go-api": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false", "fetch-depth": "0"}},
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": ['mkdir -p "$RUNNER_TEMP/golint"', 'cp -r tools/golint/apidiff "$RUNNER_TEMP/golint/"',
+                 'cd "$RUNNER_TEMP/golint/apidiff"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
+    ]),
+    # Known vulnerabilities in every lockfile: osv-scanner built the same way, before tools/osv_scan.py runs
+    "osv-scan": (SCANNER_JOB_KEYS, None, [
+        HARDEN_STEP,
+        {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+        SETUP_GO,
+        {"env": GO_BUILD_ENV,
+         "run": ['mkdir -p "$RUNNER_TEMP/golint"', 'cp -r tools/golint/osv-scanner "$RUNNER_TEMP/golint/"',
+                 'cd "$RUNNER_TEMP/golint/osv-scanner"', 'GOBIN="$RUNNER_TEMP/bin" go install tool']},
+    ]),
     "toolchain-audit": (SCANNER_JOB_KEYS, None, [
         HARDEN_STEP,
         {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
@@ -1224,16 +1251,17 @@ def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
 # of them means advancing a reviewed baseline; and, whatever the lock says, gitleaks keeps its
 # default rules, and no other file a scanner would load on its own may exist (task 16 round 1).
 SCANNER_LOCK = "tools/scanner_config.lock.json"
-GO_LINT_MODS = ("tools/golint/golangci-lint/go.mod", "tools/golint/staticcheck/go.mod", "tools/golint/gosec/go.mod")
+GO_LINT_MODS = ("tools/golint/golangci-lint/go.mod", "tools/golint/staticcheck/go.mod", "tools/golint/gosec/go.mod",
+                "tools/golint/go-licenses/go.mod", "tools/golint/apidiff/go.mod", "tools/golint/osv-scanner/go.mod")
 SCANNER_CONFIG = ("pyproject.toml", "bandit.yaml", ".gitleaks.toml", "tools/scanners/go.mod", "tools/golint/golangci.yml",
-                  "tools/golint/baseline.json") + GO_LINT_MODS
+                  "tools/golint/baseline.json", "tools/golint/coverage-floors.json", "tools/osv_ignore.json") + GO_LINT_MODS
 # go.mod directives that would change what the pinned scanners are or how they behave: `replace`
 # substitutes another module for gitleaks or a dependency, `godebug` changes standard-library
 # behaviour (x509, TLS) of the built binaries (item 22).
 GO_MOD_BANNED = re.compile(r"^\s*(replace|godebug)\b")
 # Files a scanner picks up from the tree without being told to: each would bypass the lock.
 SCANNER_AUTOLOAD = re.compile(r"(^|/)(ruff\.toml|\.ruff\.toml|zizmor\.ya?ml|actionlint\.ya?ml|\.gitleaksignore|\.bandit"
-                              r"|\.golangci\.(?:ya?ml|toml|json)|staticcheck\.conf)$")
+                              r"|\.golangci\.(?:ya?ml|toml|json)|staticcheck\.conf|osv-scanner\.toml)$")
 # Inline forms that silence a scanner wider than one reviewed line, or that no file uses. The
 # gitleaks token is built, never written, so no repository file has to be exempt from the scan.
 GITLEAKS_INLINE = re.compile(re.escape("gitleaks" + ":allow"), re.I)
@@ -2505,6 +2533,11 @@ def self_test():
         "repository code before the go lint build": in_job(ci_full, "go-lint",
             "      - name: Build the pinned golangci-lint, staticcheck and gosec (tools/golint)\n",
             repo_step + "      - name: Build the pinned golangci-lint, staticcheck and gosec (tools/golint)\n"),
+        "go-licenses build in the checkout": in_job(ci_full, "go-licenses", '          cd "$RUNNER_TEMP/golint/go-licenses"\n', '          cd tools/golint/go-licenses\n'),
+        "repository code before the go-licenses build": in_job(ci_full, "go-licenses",
+            "      - name: Build the pinned go-licenses (tools/golint/go-licenses)\n",
+            repo_step + "      - name: Build the pinned go-licenses (tools/golint/go-licenses)\n"),
+        "apidiff build in the checkout": in_job(ci_full, "go-api", '          cd "$RUNNER_TEMP/golint/apidiff"\n', '          cd tools/golint/apidiff\n'),
         "self-hosted": ci_full.replace("    name: workflow lint (actionlint, zizmor)\n    runs-on: ubuntu-24.04\n",
                                        "    name: workflow lint (actionlint, zizmor)\n    runs-on: self-hosted\n", 1),
     }.items():
@@ -2603,6 +2636,8 @@ def self_test():
         "go lint baseline grown": ([("tools/golint/baseline.json", lambda t: t.replace('{"findings": [\n', '{"findings": [\n{"count": 1, "file": "x.go", '
                                                                                        '"message": "m", "rule": "G115", "tool": "gosec"},\n', 1))],
                                    False, "tools/golint/baseline.json: differs from"),
+        "coverage floor lowered": ([("tools/golint/coverage-floors.json", lambda t: t.replace('"global": 78.0', '"global": 50.0', 1))],
+                                   False, "tools/golint/coverage-floors.json: differs from"),
         "gosec go.mod replace": ([("tools/golint/gosec/go.mod", lambda t: t + "\nreplace github.com/securego/gosec/v2 => ../gosec\n")],
                                  True, "`replace` may not change"),
         "golangci config autoloaded": ([("go/.golangci.yml", lambda t: "version: \"2\"\nlinters:\n  default: none\n")], True, "go/.golangci.yml: a scanner loads"),

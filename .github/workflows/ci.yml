@@ -9,6 +9,9 @@ on:
   push:
     branches: ["main"]
   pull_request:
+    # labeled/unlabeled: the go-api job reads the `api-break` label from the event, and a re-run keeps the
+    # labels of its original event, so a label change starts a run of its own
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   schedule:
     - cron: "17 3 * * 1"   # weekly re-run catches toolchain drift and new advisories on an unchanged tree
   workflow_dispatch:
@@ -543,6 +546,8 @@ jobs:
           python -B tools/check_release_exposure.py --ref HEAD | tee -a "$GITHUB_STEP_SUMMARY"
           python -B tools/check_required_checks.py --self-test
           python -B tools/check_required_checks.py
+          python -B tools/check_ci_consistency.py --self-test
+          python -B tools/check_ci_consistency.py
           python -B tools/check_workflow_policy.py --self-test
           python -B tools/check_workflow_policy.py | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Cross-check the workflow policy parser against PyYAML (any disagreement is a policy blind spot)
@@ -617,6 +622,52 @@ jobs:
         working-directory: go
         run: |
           "$RUNNER_TEMP/bin/govulncheck" ./... | tee -a "$GITHUB_STEP_SUMMARY"
+
+  osv-scan:
+    # Known vulnerabilities in every committed lockfile (Python requirements, npm, the engine's go.mod and every CI
+    # tool module) from the OSV database: osv-scanner 2.7.1, built from tools/golint/osv-scanner/go.mod and go.sum
+    # (every module hash checked against the Go checksum database) in a copy outside the checkout before any
+    # repository code runs. A finding fails unless tools/osv_ignore.json accepts it for that lockfile and package,
+    # with a reason and an expiry; an expired or stale entry fails too (tools/osv_scan.py, item 41). govulncheck
+    # (toolchain-audit) stays the reachability check for Go.
+    name: Known vulnerabilities in every lockfile (osv-scanner; accepted only with a reason and an expiry)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Build the pinned osv-scanner (tools/golint/osv-scanner)
+        env:
+          GOPROXY: https://proxy.golang.org
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          mkdir -p "$RUNNER_TEMP/golint"
+          cp -r tools/golint/osv-scanner "$RUNNER_TEMP/golint/"
+          cd "$RUNNER_TEMP/golint/osv-scanner"
+          GOBIN="$RUNNER_TEMP/bin" go install tool
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Scan every lockfile against the OSV database (tools/osv_scan.py)
+        run: |
+          python -B tools/osv_scan.py --self-test
+          python -B tools/osv_scan.py --bin "$RUNNER_TEMP/bin" --summary "$GITHUB_STEP_SUMMARY"
 
   go-engine:
     # Migration M10: the Go engine's own gate on GitHub's runners, on the one Go toolchain the scanner
@@ -796,6 +847,236 @@ jobs:
           python -B tools/go_lint.py --self-test
           python -B tools/go_lint.py --bin "$RUNNER_TEMP/bin" --summary "$GITHUB_STEP_SUMMARY"
 
+  go-determinism:
+    # Culvert's pr-deep-gate determinism rerun: every Go test twice, in a random order per run, with the race
+    # detector (`go test -race -shuffle=on -count=2 ./...`, tools/go_deep.py), on the vendored tree with no
+    # module download. An order-dependent, state-leaking or flaky test fails; the summary names the shuffle
+    # seed that reproduces it.
+    name: Go determinism (race detector, shuffled order, every test twice)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: go test -race -shuffle=on -count=2 (tools/go_deep.py)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          python -B tools/go_deep.py --self-test
+          python -B tools/go_deep.py determinism --summary "$GITHUB_STEP_SUMMARY"
+
+  go-licenses:
+    # Culvert's pr-deep-gate licence blocking: go-licenses 2.0.1, built from tools/golint/go-licenses/go.mod and
+    # go.sum (every module hash checked against the Go checksum database) in a copy outside the checkout before
+    # any repository code runs, checks every module the engine links; a forbidden, restricted or unidentified
+    # licence fails (tools/go_deep.py). The vendored golang.org/x/crypto and golang.org/x/sys are BSD-3-Clause.
+    name: Go dependency licences (go-licenses; forbidden, restricted, unknown fail)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Build the pinned go-licenses (tools/golint/go-licenses)
+        env:
+          GOPROXY: https://proxy.golang.org
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          mkdir -p "$RUNNER_TEMP/golint"
+          cp -r tools/golint/go-licenses "$RUNNER_TEMP/golint/"
+          cd "$RUNNER_TEMP/golint/go-licenses"
+          GOBIN="$RUNNER_TEMP/bin" go install tool
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Check the engine's dependency licences (tools/go_deep.py)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          python -B tools/go_deep.py --self-test
+          python -B tools/go_deep.py licenses --bin "$RUNNER_TEMP/bin" --summary "$GITHUB_STEP_SUMMARY"
+
+  go-coverage:
+    # Culvert's coverage floors (coverage-floor.sh): `go test -coverpkg=./... -coverprofile` over the Go engine
+    # on the vendored tree with no module download, reduced by tools/go_cover.py to a module total and a total
+    # per package. The module total and every parser package (internal/protocols/*) must stay at or above its
+    # floor in tools/golint/coverage-floors.json (measured minus 1.0 point; lowering one is a reviewed change).
+    name: Go coverage floors (module and every protocol parser)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Measure coverage and hold the floors (tools/go_cover.py)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          python -B tools/go_cover.py --self-test
+          python -B tools/go_cover.py --summary "$GITHUB_STEP_SUMMARY"
+
+  go-api:
+    # API compatibility of the Go engine module (tools/go_api.py): apidiff, built from tools/golint/apidiff/go.mod
+    # and go.sum outside the checkout before any repository code runs, compares the module's API at the base
+    # (a pull request's base, a push's first parent) with this commit, on the vendored trees with no module
+    # download. An incompatible change to a public (importable, non-main) package fails unless the pull request
+    # carries the `api-break` label; changes to internal packages are reported only. Today every engine package
+    # is internal or main, so the gate holds the line for the first package made public.
+    name: Go API compatibility (apidiff; public breaks need the api-break label)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Build the pinned apidiff (tools/golint/apidiff)
+        env:
+          GOPROXY: https://proxy.golang.org
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          mkdir -p "$RUNNER_TEMP/golint"
+          cp -r tools/golint/apidiff "$RUNNER_TEMP/golint/"
+          cd "$RUNNER_TEMP/golint/apidiff"
+          GOBIN="$RUNNER_TEMP/bin" go install tool
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Compare the module API with the base (tools/go_api.py)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          python -B tools/go_api.py --self-test
+          python -B tools/go_api.py --bin "$RUNNER_TEMP/bin" --summary "$GITHUB_STEP_SUMMARY"
+
+  contract-compat:
+    # The product's external contract (tools/contract_check.py): schemas/*.schema.json with every $ref resolved,
+    # and the protodetect CLI as its own help output reports it (both binaries built vendored and offline),
+    # compared at the base (a pull request's base, a push's first parent) with this commit. A breaking change
+    # (a field removed or newly required, a type, enum, const, bound or oneOf branch changed, a schema file
+    # removed, a subcommand or flag removed, a flag's type or default changed) fails unless the pull request
+    # carries the `api-break` label, like go-api; additions are reported only.
+    name: External contract compatibility (JSON schemas, protodetect CLI; breaks need the api-break label)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up the pinned Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Compare the schemas and the CLI with the base (tools/contract_check.py)
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          python -B tools/contract_check.py --self-test
+          python -B tools/contract_check.py --summary "$GITHUB_STEP_SUMMARY"
+
   content-pack:
     # A content release (a research batch) must hold together: the schema, the lock and every
     # earlier release reproducing its published digest (`make content`), the exported pack and
@@ -860,7 +1141,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: always()
-    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, go-engine, go-minimum, go-vendor, go-lint, content-pack, security-requirements]
+    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, osv-scan, go-engine, go-minimum, go-vendor, go-lint, go-determinism, go-licenses, go-coverage, go-api, contract-compat, content-pack, security-requirements]
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
