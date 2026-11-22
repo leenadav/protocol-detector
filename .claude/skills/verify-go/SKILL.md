@@ -35,12 +35,12 @@ done
 
 | # | Command | What it checks | Healthy output (as of `claude/go-migration` `cdb385b`) |
 |---|---|---|---|
-| 1 | `make go-check PYTHON=python3` | gofmt, `go vet`, `go test -race ./...`, every fuzz smoke target, `parity-go`, `parity-analyze`, `parity-decrypt`, the random differential suite, schema and the other Go gates | exit 0 (about 10 minutes); every test package `ok` or `[no test files]`; no `FAIL` line |
+| 1 | `make go-check PYTHON=python3` | gofmt, `go vet`, `go test -race ./...`, every fuzz smoke target, `parity-go`, `parity-analyze`, `parity-decrypt`, the random differential suite, schema and the other Go gates | exit 0 (about 10 minutes); 66 test packages `ok`, the rest `[no test files]`; `go schema check: 200 captures; … 0 problems (seed 1)`; `adversarial: 4041 cases, 4040 honest, 1 known findings, 0 failures; Go matched the reference on 4041 of 4041`. The line `random differential FAILED: engines differ on random/tls/1/00000` is the planted self-check and is expected (see verify-parity) |
 | 2 | `python3 -B tools/go_lint.py --bin "$B/bin"` | golangci-lint, staticcheck and gosec against `tools/golint/baseline.json` | `No finding beyond the baseline (194 accepted)` (golangci-lint 81, staticcheck 9, gosec 104) |
 | 3 | `python3 -B tools/go_cover.py` | statement coverage with `-coverpkg=./...` against `tools/golint/coverage-floors.json` | `Module: 79.0% of 20144 statements (floor 78.0%)` and `Every floor holds` |
 | 4 | `make bench-gate` | the per-flow budgets: allocations, retained bytes, report latency | `--- PASS` for `TestBenchGate_AllocationsPerFlow`, `TestBenchGate_RetainedBytesPerFinishedFlow` and `TestBenchGate_ReportLatencyPerFlow`, then `ok` |
-| 5 | `python3 -B tools/go_deep.py determinism` | `go test -race -shuffle=on -count=2 ./...`: tests that depend on order or state | `N package(s) passed twice in shuffled order with -race`, no `FAILED` line, exit 0 |
-| 6 | `python3 -B tools/go_deep.py licenses --bin "$B/bin"` | every vendored module's licence (`forbidden`, `restricted`, `unknown` fail) | `N linked module(s); none forbidden, restricted or unidentified (the engine's own module, … is excluded)`, exit 0 |
+| 5 | `python3 -B tools/go_deep.py determinism` | `go test -race -shuffle=on -count=2 ./...`: tests that depend on order or state | `37 package(s) passed twice in shuffled order with -race`, exit 0 (about 2.5 minutes) |
+| 6 | `python3 -B tools/go_deep.py licenses --bin "$B/bin"` | every vendored module's licence (`forbidden`, `restricted`, `unknown` fail) | `golang.org/x/crypto` and `golang.org/x/sys/cpu` BSD-3-Clause, then `2 linked module(s); none forbidden, restricted or unidentified (the engine's own module, github.com/leenadav/protocol-detector/go, is excluded)` |
 
 A changed count is fine when your change explains it. A new lint finding is fixed, never added to the
 baseline to get green (`--write-baseline` is only for removing findings that are gone). A coverage floor is
