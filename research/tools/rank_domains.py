@@ -9,8 +9,11 @@ Inputs:
   --majestic FILE    Majestic Million CSV (header includes GlobalRank and Domain)
   --crux FILE        CrUX top list as CSV with columns origin,rank (rank is CrUX's magnitude bucket: 1000, 5000, ...)
 usage:
-  rank_domains.py --export-domains CHECKOUT APP_DOMAINS.json
-  rank_domains.py APP_DOMAINS.json OUT.tsv [--majestic FILE] [--crux FILE]
+  rank_domains.py APP_DOMAINS.json OUT.tsv [--majestic FILE] [--crux FILE]     (normally with the committed
+                                                                                research/app-domains.json)
+  rank_domains.py --export-domains CHECKOUT APP_DOMAINS.json   (CHECKOUT must carry every proposed patch; refuses
+                                                                otherwise, exit 2)
+The output's last column, domains, is how many catalog domains each spec was looked up with (0 = not computed).
 Nothing but app, domain and rank is written. Attribution for the output (LEE-1 verdicts in research/datasets.md):
 "Majestic Million by Majestic (majestic.com), CC BY 3.0" and "Chrome UX Report: CrUX datasets by Google, CC BY 4.0";
 both joined to catalog domains, best rank per application. Majestic CSV: https://downloads.majestic.com/majestic_million.csv
@@ -56,14 +59,22 @@ def export_domains(checkout, out):
     cat = {e[0]: e[7] for e in host_apps._HOST_APPS}
     reg = json.loads((Path(__file__).resolve().parents[1] / "apps.json").read_text())
     data = {k: sorted({d for i in v["ids"] if i in cat for d in cat[i]}) for k, v in reg.items() if not k.startswith("_")}
+    missing = sorted(k for k, v in reg.items() if not k.startswith("_") and not all(i in cat for i in v["ids"]))
+    if missing:
+        # A checkout without the proposed content patches lacks most ids: its export would rank those specs as blank,
+        # which reads as "not in the list". Refuse rather than write a misleading input.
+        print("refusing: %d of %d specs have ids missing from %s (first: %s). Export from a checkout with every proposed "
+              "patch applied (LANE-BRIEF section 4), or use the committed research/app-domains.json."
+              % (len(missing), len(data), checkout, ", ".join(missing[:5])), file=sys.stderr)
+        return 2
     Path(out).write_text(json.dumps(data, indent=1, sort_keys=True) + "\n")
     print(len(data), "specs")
+    return 0
 
 
 def main(argv):
     if argv[1] == "--export-domains":
-        export_domains(Path(argv[2]), argv[3])
-        return 0
+        return export_domains(Path(argv[2]), argv[3])
     apps = json.loads(Path(argv[1]).read_text())
     lists = {}
     if "--majestic" in argv:
@@ -71,13 +82,14 @@ def main(argv):
     if "--crux" in argv:
         lists["crux_bucket"] = load_crux(argv[argv.index("--crux") + 1])
     with open(argv[2], "w") as fh:
-        fh.write("spec\t" + "\t".join("%s\t%s_host" % (k, k) for k in lists) + "\n")
+        fh.write("spec\t" + "\t".join("%s\t%s_host" % (k, k) for k in lists) + "\tdomains\n")
         for spec, domains in sorted(apps.items()):
             cells = []
             for ranks in lists.values():
                 r, h = best(ranks, domains)
                 cells += ["" if r is None else str(r), h or ""]
-            fh.write(spec + "\t" + "\t".join(cells) + "\n")
+            # domains = how many catalog domains were looked up; 0 means "not computed", never "not in the list"
+            fh.write(spec + "\t" + "\t".join(cells) + "\t%d\n" % len(domains))
     print(len(apps), "specs ranked against", ", ".join(lists) or "no list")
     return 0
 

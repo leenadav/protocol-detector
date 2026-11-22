@@ -158,7 +158,11 @@ round focused on families.
 | Majestic Million | **CC BY 3.0 Unported**: "Licensed under a Creative Commons Attribution 3.0 Unported License" (`https://majestic.com/reports/majestic-million`, list "generated on 20 Nov 2026"; read by Research Lab, relayed by Hermes, 2026-11-20). CSV: `https://downloads.majestic.com/majestic_million.csv` (HEAD 200, 80,299,165 bytes, last-modified 2026-11-20 06:00:20 GMT) | **PASS** (commercial use allowed with attribution; the page has no non-commercial clause) | **pending**: Hermes to quote the licence and attribution wording from that page |
 
 Only after both licences are quoted from their own pages: Hermes runs `research/tools/rank_domains.py research/app-domains.json
-OUT.tsv --majestic majestic_million.csv --crux crux.csv` on the server and relays the TSV, which holds ranks only. The
+OUT.tsv --majestic majestic_million.csv --crux crux.csv` on the server and relays the TSV, which holds ranks only. **Use the committed
+`research/app-domains.json`** (exported from the full proposed stack, LANE-BRIEF section 4); do not re-export from `main` or
+any checkout without the patches. Run 1 (PRO-98, 2026-11-21, Majestic only) did, so 46 of its 69 specs were not looked up
+(`research/ranking/majestic-2026-11-21-run1.tsv`); `--export-domains` now refuses such a checkout (exit 2), and the output's
+`domains` column shows how many domains each spec was looked up with. The
 backlog then shows each app's best rank, with the attribution "Majestic Million (CC BY 3.0), majestic.com" and
 "Chrome UX Report, Google" under the recorded licence. No list content is committed beyond the per-app ranks.
 
