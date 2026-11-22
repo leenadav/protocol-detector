@@ -22,6 +22,11 @@ appearance), monotonic times, the lease countdown, wall-clock durations of a run
 durations inside telemetry histograms (counters, series, bounds and counts are kept; Normalizer.histogram), and the
 "python" field of the health report (the Go service runs no interpreter). The demo capture and showcase are
 random in the reference itself: their answers are compared by shape. Python 3.13 texts are the reference.
+
+A probe that does not reach its state fails the run (PRO-21): every readiness and terminal wait raises
+ProbeFailure on timeout, the admission probe needs six accepted jobs and a seventh refused (202 x 6, 429), the
+first five must finish, and the handler-pool probe needs a 503 from both services, so two services that both
+time out or both answer nothing never compare equal.
 """
 import argparse
 import base64
@@ -214,25 +219,47 @@ class Run:
         return answers[0]
 
 
-def wait_until(service, predicate, timeout=20.0):
+class ProbeFailure(Exception):
+    """A wait or a probe that did not reach the state the differential needs before comparing."""
+
+
+def wait_until(service, predicate, timeout=20.0, what="the awaited live state"):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         state = service.json("GET", "/api/live/state")
         if predicate(state):
             return state
         time.sleep(0.2)
-    return None
+    raise ProbeFailure("{}: {} was not reached within {} s".format(service.name, what, timeout))
 
 
 def poll_job(service, job_id, timeout=60.0):
     deadline = time.monotonic() + timeout
+    state = None
     while time.monotonic() < deadline:
         response = service.request("GET", "/api/jobs/" + job_id)
         head, body = split(response)
-        if json.loads(body).get("state") not in ("queued", "running"):
+        state = json.loads(body).get("state")
+        if state not in ("queued", "running"):
             return response
         time.sleep(0.1)
-    return response
+    raise ProbeFailure("{}: job {} still {} after {} s".format(service.name, job_id, state, timeout))
+
+
+def status_of(response):
+    match = re.match(rb"HTTP/1\.[01] (\d{3}) ", response)
+    return int(match.group(1)) if match else None
+
+
+def require_status(name, label, response, status):
+    """Fail unless the answer's status line has the status the probe exists to observe."""
+    if status_of(response) != status:
+        raise ProbeFailure("{}: {} answered {!r}, expected status {}".format(name, label, response[:80], status))
+
+
+def admission_statuses():
+    """Seven demo jobs against two running and four queued slots: six admitted, the seventh refused."""
+    return [202] * 6 + [429]
 
 
 def static_and_reads(run, rng):
@@ -322,7 +349,8 @@ def live_runs(run, fake):
         response = service.request("POST", "/api/live/start", body=json.dumps(start).encode(), token=True)
         run_ids[service.name] = json.loads(split(response)[1])["run_id"]
         run.normalizers[service.name].walk(json.loads(split(response)[1], object_pairs_hook=OrderedDict))
-        wait_until(service, lambda state: state.get("events_total", 0) > 0 or state.get("sessions_total", 0) > 0, 15)
+        wait_until(service, lambda state: state.get("events_total", 0) > 0 or state.get("sessions_total", 0) > 0, 15,
+                   "the held run's first event or session")
         time.sleep(1.5)                                    # the stand-in has written the whole capture by now
     run.same("start while running", post("/api/live/start", start))
     run.same("heartbeat stale", post("/api/live/heartbeat", {"run_id": "stale"}))
@@ -335,7 +363,7 @@ def live_runs(run, fake):
     run.same("state after stale", lambda s: s.request("GET", "/api/live/state"))
     for service in run.services:
         service.request("POST", "/api/live/stop", body=json.dumps({"run_id": run_ids[service.name]}).encode(), token=True)
-        wait_until(service, lambda state: state["state"] in ("stopped", "failed"), 20)
+        wait_until(service, lambda state: state["state"] in ("stopped", "failed"), 20, "the held run's end after stop")
     run.same("stopped status", lambda s: s.request("GET", "/api/live/status"))
     run.same("stopped events", lambda s: s.request("GET", "/api/live/events?cursor=0&limit=10000"))
     run.same("heartbeat stopped", lambda s: s.request("POST", "/api/live/heartbeat", body=json.dumps({"run_id": run_ids[s.name]}).encode(), token=True))
@@ -346,7 +374,7 @@ def live_runs(run, fake):
     for service in run.services:
         response = service.request("POST", "/api/live/start", body=json.dumps(dict(start, duration=5)).encode(), token=True)
         run.normalizers[service.name].walk(json.loads(split(response)[1], object_pairs_hook=OrderedDict))
-        wait_until(service, lambda state: state["state"] in ("stopped", "failed"), 20)
+        wait_until(service, lambda state: state["state"] in ("stopped", "failed"), 20, "the finishing run's end")
     run.same("finished status", lambda s: s.request("GET", "/api/live/status"))
     run.same("finished events", lambda s: s.request("GET", "/api/live/events?cursor=1&limit=7"))
     run.same("finished state", lambda s: s.request("GET", "/api/live/state"))
@@ -405,6 +433,8 @@ def admission(run):
         for _ in range(7):
             answers.append(service.request("POST", "/api/jobs?kind=demo", body=b"", token=True))
         submitted[service.name] = answers
+        for index, (answer, status) in enumerate(zip(answers, admission_statuses())):
+            require_status(service.name, "admission {}".format(index), answer, status)
     for i in range(7):
         run.same("admission {}".format(i), lambda s, k=i: submitted[s.name][k], shape_only=False)
     ids = {s.name: [str(json.loads(split(a)[1]).get("id")) for a in submitted[s.name]] for s in run.services}
@@ -425,6 +455,7 @@ def handler_pool(run):
         idle = [socket.create_connection(("127.0.0.1", service.port), timeout=30) for _ in range(8)]
         time.sleep(0.3)
         service.pool_answer = service.raw("GET /api/live/state HTTP/1.1\r\nHost: 127.0.0.1:{}\r\n\r\n".format(service.port).encode())
+        require_status(service.name, "the ninth connection", service.pool_answer, 503)
         for connection in idle:
             connection.close()
         time.sleep(0.3)
@@ -475,6 +506,9 @@ def main(argv=None):
             analyses(run, rng, sessions, folder, args.count)
             admission(run)
             handler_pool(run)
+        except ProbeFailure as failure:
+            print("server parity FAILED:", failure)
+            return 1
         finally:
             for service in services:
                 service.stop()

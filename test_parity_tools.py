@@ -148,5 +148,37 @@ class ServerNormalizerTests(unittest.TestCase):
                 self.assertNotEqual(self.normal(state()), self.normal(changed))
 
 
+class StuckService:
+    """A service whose live run never reaches a state and whose jobs never leave the queue."""
+    name = "stuck"
+
+    def json(self, method, path):
+        return {"state": "running", "events_total": 0}
+
+    def request(self, method, path):
+        return b'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{"state": "queued"}'
+
+
+class ServerProbeTests(unittest.TestCase):
+    """PRO-21: readiness and terminal waits returned None (or the last answer) on timeout and the callers went on;
+    the admission and handler-pool probes compared whatever both services answered."""
+
+    def test_a_wait_that_times_out_fails(self):
+        with self.assertRaises(server_diff.ProbeFailure) as caught:
+            server_diff.wait_until(StuckService(), lambda state: state["state"] == "stopped", 0.3, "the run stopped")
+        self.assertIn("the run stopped", str(caught.exception))
+        with self.assertRaises(server_diff.ProbeFailure):
+            server_diff.poll_job(StuckService(), "job", 0.3)
+
+    def test_probe_answers_must_have_the_expected_status(self):
+        accepted = b'HTTP/1.1 202 Accepted\r\nContent-Type: application/json\r\n\r\n{"id": "a", "state": "queued"}'
+        refused = b'HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\n\r\n{"error": "busy"}'
+        server_diff.require_status("go", "admission 0", accepted, 202)
+        for answer in (refused, b"", b"garbage"):
+            with self.subTest(answer=answer), self.assertRaises(server_diff.ProbeFailure):
+                server_diff.require_status("go", "admission 0", answer, 202)
+        self.assertEqual(server_diff.admission_statuses(), [202] * 6 + [429])
+
+
 if __name__ == "__main__":
     unittest.main()
