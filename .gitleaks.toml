@@ -20,6 +20,11 @@ regexes = [
   # CNAME chain "sdds3.sophosupd.com.edgekey.net>e3113.dscd.akamaiedge.net" reads as key=value to generic-api-key
   # ("edgekey" + ">"). Exact public hostname only, so any real secret elsewhere still flags.
   '''^e3113\.dscd\.akamaiedge\.net$''',
+  # Go table tests carry synthetic HTTP/1 messages as hex (go/internal/protocols/textroute/boundary_test.go on
+  # claude/mutation-gremlins 296227b, PRO-126); a case name ending in "key ..." or "tokens" next to the hex reads
+  # as key=value to generic-api-key. Only an all-hex value that decodes to an HTTP/1 start line ("GET ", "POST ",
+  # "HTTP/1.") is allowed, so a hex or base64 secret that is not an HTTP message still flags.
+  '''^(?:47455420|504f535420|485454502f312e)(?:[0-9a-f]{2})+$''',
 ]
 
 # Stage 8 (A16/A10): an NSS key log (SSLKEYLOGFILE) must never be committed. Secrets and client randoms are
