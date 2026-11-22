@@ -13,7 +13,9 @@ number derived from its content, so it is reproducible too. The binaries' target
 
 Files written into --out (the controller's dist/, which it checksums, attests and on a tag publishes):
     protodetect-<version>-<goos>-<goarch>[.exe]    protodetect-<version>-go.cdx.json
-A commit without go/go.mod or go/cmd/protodetect builds nothing and says so.
+A commit without go/go.mod (no Go engine at all) builds nothing and says so. With go/go.mod present, a missing
+go/cmd/protodetect fails the release, as go_ci.py fails on a partial tree: a renamed or deleted main package must
+not publish a tag without its Go binaries.
 
     build_go_release.py --version X.Y.Z [--out DIR] [--summary FILE]
     build_go_release.py --self-test
@@ -95,11 +97,26 @@ def module_problems(infos, vendored):
     return sorted(set(problems))
 
 
+def tree_state(root="."):
+    """("skip", why) without go/go.mod, ("fail", why) with go/go.mod but no main package, else ("build", "")."""
+    root = Path(root)
+    if not (root / "go" / "go.mod").is_file():
+        return "skip", "No go/go.mod on this commit: no Go binary to build."
+    if not (root / "go" / MAIN).is_dir():
+        return "fail", ("go/go.mod is present but go/{} is not: the Go binaries cannot be built, and a release without "
+                        "them must not pass (renamed or deleted main package?)".format(MAIN[2:]))
+    return "build", ""
+
+
 def run(version, out, summary):
     title = "### Go release binaries"
-    if not Path("go/go.mod").is_file() or not Path("go", MAIN).is_dir():
-        go_ci.summarise(summary, [title, "", "No go/go.mod or go/cmd/protodetect on this commit: no Go binary to build."])
+    state, why = tree_state()
+    if state == "skip":
+        go_ci.summarise(summary, [title, "", why])
         return 0
+    if state == "fail":
+        go_ci.summarise(summary, [title, "", "- FAILED: " + why])
+        return 1
     tree, problems = go_ci.toolchain_problems()
     if problems:
         go_ci.summarise(summary, [title, ""] + ["- FAILED: " + problem for problem in problems])
@@ -158,13 +175,23 @@ def self_test():
         assert not VERSION.match(bad), bad
     root = Path(tempfile.mkdtemp(prefix="build_go_release_selftest_"))
     try:
+        assert tree_state(root)[0] == "skip"                                  # no Go engine on the commit at all
+        (root / "go").mkdir()
+        (root / "go" / "go.mod").write_text("module example.invalid/go\n", encoding="utf-8")
+        state, why = tree_state(root)
+        assert state == "fail" and "cmd/protodetect" in why, (state, why)    # go.mod without the main package
+        (root / "go" / "cmd" / "protodetekt").mkdir(parents=True)            # a renamed main package still fails
+        assert tree_state(root)[0] == "fail"
+        (root / "go" / "cmd" / "protodetect").mkdir()
+        assert tree_state(root) == ("build", "")
         (root / "a").write_bytes(b"same")
         (root / "b").write_bytes(b"same")
         (root / "c").write_bytes(b"diff")
         assert sha256(root / "a") == sha256(root / "b") != sha256(root / "c")
     finally:
         shutil.rmtree(str(root), ignore_errors=True)
-    print("build_go_release self-test: ok (SBOM shape and reproducibility, vendor cross-check, version names)")
+    print("build_go_release self-test: ok (SBOM shape and reproducibility, vendor cross-check, version names, "
+          "missing main package fails, no go.mod skips)")
     return 0
 
 
