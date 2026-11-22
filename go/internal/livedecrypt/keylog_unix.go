@@ -4,6 +4,8 @@ package livedecrypt
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"hash"
 	"syscall"
 )
 
@@ -15,6 +17,7 @@ type KeyLog struct {
 	dev, ino uint64
 	offset   int64
 	partial  []byte
+	consumed hash.Hash // SHA-256 of the bytes before offset: a rewrite in place is a truncation
 }
 
 // OpenKeyLog opens a regular file owned by the calling user, without following a symbolic link.
@@ -28,7 +31,7 @@ func OpenKeyLog(path string) (*KeyLog, error) {
 		_ = syscall.Close(fd)
 		return nil, keyLogError("Choose a regular key-log file owned by your user.")
 	}
-	return &KeyLog{path: path, fd: fd, dev: uint64(info.Dev), ino: uint64(info.Ino)}, nil
+	return &KeyLog{path: path, fd: fd, dev: uint64(info.Dev), ino: uint64(info.Ino), consumed: sha256.New()}, nil
 }
 
 // Read returns the complete lines appended since the last read ("" when there are none).
@@ -45,7 +48,22 @@ func (k *KeyLog) Read() (string, error) {
 		return "", keyLogError("Key log was truncated.")
 	case info.Size > MaxKeyLog:
 		return "", &KeyLogError{"Live key log exceeds 256 KiB.", "budget"}
-	case info.Size == k.offset:
+	}
+	// The inode and size alone miss a truncation that regrew, between two polls, to at least the bytes
+	// already read: the bytes before the offset must still be the ones consumed, or the reader would keep
+	// stale secrets and join an old partial line to new bytes (Go-only; live.py checks the size only;
+	// Codex PRO-18 P2). The log is at most 256 KiB, read once per poll.
+	if k.offset > 0 {
+		prefix := make([]byte, k.offset)
+		n, err := syscall.Pread(k.fd, prefix, 0)
+		if err != nil {
+			return "", keyLogError("Key log could not be read.")
+		}
+		if digest := sha256.Sum256(prefix[:n]); int64(n) != k.offset || !bytes.Equal(digest[:], k.consumed.Sum(nil)) {
+			return "", keyLogError("Key log was truncated.")
+		}
+	}
+	if info.Size == k.offset {
 		return "", nil
 	}
 	buffer := make([]byte, MaxKeyLog+1-k.offset)
@@ -54,6 +72,7 @@ func (k *KeyLog) Read() (string, error) {
 		return "", keyLogError("Key log could not be read.")
 	}
 	k.offset += int64(n)
+	k.consumed.Write(buffer[:n])
 	data := append(k.partial, buffer[:n]...)
 	// Browsers append asynchronously; never parse a partly written line.
 	cut := bytes.LastIndexByte(data, '\n') + 1
