@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest import mock
+import unittest.mock as mock
 
 import server
 from protocol_adapters.make_sample_pcap import pcap_bytes, sample_frames
