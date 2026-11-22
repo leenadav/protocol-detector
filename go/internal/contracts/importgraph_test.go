@@ -4,7 +4,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -27,7 +26,13 @@ func foreign(t *testing.T, patterns ...string) []string {
 		t.Fatal(err)
 	}
 	args := append([]string{"list", "-deps", "-f", "{{if not .Standard}}{{.ImportPath}}{{end}}"}, patterns...)
-	cmd := exec.Command(filepath.Join(runtime.GOROOT(), "bin", "go"), args...)
+	// go test puts its own GOROOT/bin first on the test's PATH, so this is the toolchain running the test
+	// (runtime.GOROOT is deprecated since Go 1.24, staticcheck SA1019).
+	goBin, err := exec.LookPath("go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(goBin, args...)
 	cmd.Dir = root
 	out, err := cmd.CombinedOutput()
 	if err != nil {
