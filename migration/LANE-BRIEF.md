@@ -50,6 +50,9 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   pin's x/sys and x/text past the OSV advisories.
 - **SEC-CONTENT-1 (PRO-154):** the content-pack loader decodes exact keys only; merged with PR #84
   (`bc80f45`).
+- **Dependency rule (PRO-107, PRO-156):** no non-standard package in the detection path's import graph;
+  `TestDetectionPathImportsOnlyTheStandardLibrary` enforces it (ADR 0002). `golang.org/x/crypto` is used only
+  by key-log decryption.
 - **SEC-INSP-1 (PRO-129, P0):** parser-driven shift nesting capped at 2 on `claude/fix-sec-insp-1` (PR into this
   branch); a Go-only parity divergence that awaits Lee's approval.
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
