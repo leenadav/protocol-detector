@@ -3,8 +3,9 @@
 Tag protection and required status checks are not enforceable on this repository's plan
 (SSDLC.md, "Enforced controls"), so a tag pushed by any writer, on any commit, reaches the
 release workflow. The release-gate job asks the GitHub compare API, with the read-only
-token, how `main` relates to the tagged commit (`compare/<sha>...main`) and passes the
-answer here:
+token, how main relates to the tagged commit and passes the answer here. main is the SHA of
+refs/heads/main (`git/ref/heads/main`), compared as `compare/<sha>...<main-sha>`; a bare `main`
+would resolve to a tag named main first (SEC-CI-1, policy rule 17):
 
   identical, ahead   the commit is on main (main equals it or descends from it)
   behind, diverged   it is not

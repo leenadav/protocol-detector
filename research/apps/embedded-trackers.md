@@ -45,7 +45,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L, J a
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -81,22 +81,22 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `connect.facebook.net` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `t.co` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `analytics.twitter.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `ads.linkedin.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `snap.licdn.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `redditstatic.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `alb.reddit.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `pixel-config.reddit.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `a.quora.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `q.quora.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `analytics.tiktok.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `pixels.spotify.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `connect.facebook.net` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.facebook.com`, subject organisation **Meta Platforms, Inc.** (issuer DigiCert Inc); HTTPS record offers `h3` (QUIC path) |
+| `t.co` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `t.co`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `analytics.twitter.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.twitter.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `ads.linkedin.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `admin.pointdrive.linkedin.com`, subject organisation **Linkedin Corporation** (issuer DigiCert Inc); CNAME into shared front end `www.linkedin.com.cdn.cloudflare.net`: name usable, IPs never |
+| `snap.licdn.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.licdn.com`, subject organisation **Linkedin Corporation** (issuer DigiCert Inc); CNAME into shared front end `a1916.dscg2.akamai.net`: name usable, IPs never |
+| `redditstatic.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `www.redditstatic.com` (round 3, cdn) |
+| `alb.reddit.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.reddit.com`, subject organisation **Reddit, Inc.** (issuer DigiCert Inc); CNAME into shared front end `dualstack.reddit.map.fastly.net`: name usable, IPs never |
+| `pixel-config.reddit.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.reddit.com`, subject organisation **Reddit, Inc.** (issuer DigiCert Inc); CNAME into shared front end `reddit.map.fastly.net`: name usable, IPs never |
+| `a.quora.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `quora.com`, no subject organisation (domain-validated) (issuer Google Trust Services); CNAME into shared front end `a.quora.com.cdn.cloudflare.net`: name usable, IPs never |
+| `q.quora.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `quora.com`, no subject organisation (domain-validated) (issuer Google Trust Services); CNAME into shared front end `q.quora.com.cdn.cloudflare.net`: name usable, IPs never |
+| `analytics.tiktok.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.tiktok.com`, no subject organisation (domain-validated) (issuer DigiCert Inc); CNAME into shared front end `e35058.api15.akamaiedge.net`: name usable, IPs never |
+| `pixels.spotify.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.spotify.com`, subject organisation **Spotify AB** (issuer DigiCert Inc) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
@@ -115,7 +115,7 @@ No public web client or login page for this application (desktop agent, tenant-s
 - Variant: not separated by name.
 - Dependencies (observed, never attributed to this app): none observed.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
-- QUIC path (`h3` in the HTTPS record): none advertised.
+- QUIC path (`h3` in the HTTPS record): `connect.facebook.net`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->

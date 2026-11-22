@@ -1,0 +1,68 @@
+diff --git a/protocol_engine/content.py b/protocol_engine/content.py
+index 11ccdd5..8ad9908 100644
+--- a/protocol_engine/content.py
++++ b/protocol_engine/content.py
+@@ -108,6 +108,10 @@ HISTORY = (
+             "application-research lane proposal, batch M (PRO-92): vendor network pages for Datadog, Power BI, Power Platform, "
+             "Azure portal, Amazon Q Developer and Apple device management; engine-lane review pending",
+             "New ids datadog-base, ms-power-platform, azure-portal, apple-device-management, amazon-q-developer; datadog and power-bi extended"),
++    Release("2026.12.9", "2026-11-21", "2026-11-21",
++            "application-research lane proposal, batch N (PRO-92 follow-up): vendor pages for Sophos and DocuSign read by "
++            "Research Lab (PRO-108); engine-lane review pending",
++            "sophos and docusign extended; dc.services.visualstudio.com to ms-telemetry"),
+ )
+ CURRENT = HISTORY[-1].version
+ LOCK_PATH = Path(__file__).with_name("content_lock.json")
+@@ -168,6 +172,11 @@ _ADDED_2026_11_2 = (
+     "xandr",
+ )
+ _PRIOR_HOST_STATE = MappingProxyType({
++    "2026.12.8": MappingProxyType({
++        "sophos": {"domains": ("sophos.com",)},
++        "docusign": {"domains": ("docusign.com", "docusign.net")},
++        "ms-telemetry": {"domains": ("events.data.microsoft.com", "vortex.data.microsoft.com")},
++    }),
+     "2026.12.7": MappingProxyType({
+         "datadog": {"domains": ("datadoghq.com", "datadoghq.eu")},
+         "datadog-base": None,
+@@ -464,6 +473,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
+         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+         "host_catalog": "07e7197fa9a9de5939d528106882f388fd7cb54a0fc9a971afe2a4777c92840d",
+         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
++    "2026.12.8": MappingProxyType({
++        "application_catalog": "d4fcf586e15a77ac11f74e3a45378d6854d212bf1d9b6e18ac0eebf5674f01df",
++        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
++        "host_catalog": "3e5ada4f2bad722fadc753684a3dcede00f875ad7cb8c66d3d16f36d53a19af8",
++        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+ })
+ 
+ 
+diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
+index a48f0ec..0910be9 100644
+--- a/protocol_engine/host_apps.py
++++ b/protocol_engine/host_apps.py
+@@ -250,7 +250,9 @@ _HOST_APPS = (
+     ("workday", "business-systems", "general-business", "browser-based", 2, "Workday HR and finance", (), ("workday.com", "myworkday.com")),
+     ("hubspot", "business-systems", "general-business", "browser-based", 2, "HubSpot CRM", (), ("hubspot.com",)),
+     ("zendesk", "business-systems", "general-business", "browser-based", 2, "Zendesk customer service", ("transfers-files",), ("zendesk.com", "zdassets.com")),
+-    ("docusign", "business-systems", "general-business", "browser-based", 2, "DocuSign e-signature", ("transfers-files",), ("docusign.com", "docusign.net")),
++    ("docusign", "business-systems", "general-business", "browser-based", 2, "DocuSign e-signature",
++     ("transfers-files",),
++     ("docusign.com", "docusign.net", "docucdn-a.akamaihd.net")),
+     ("stripe", "business-systems", "general-business", "browser-based", 2, "Stripe payments", ("widely-used",), ("stripe.com", "stripe.network")),
+     ("coinbase", "business-systems", "general-business", "browser-based", 3, "Coinbase cryptocurrency exchange", (), ("coinbase.com",)),
+     ("binance", "business-systems", "general-business", "browser-based", 3, "Binance cryptocurrency exchange", (), ("binance.com",)),
+@@ -635,9 +637,11 @@ _HOST_APPS = (
+     ("eset", "business-systems", "management", "client-server", 2, "ESET security services",
+      (), ("eset.com",)),
+     ("sophos", "business-systems", "management", "client-server", 2, "Sophos security services",
+-     (), ("sophos.com",)),
++     (),
++     ("sophos.com", "sophosxl.com", "sophosxl.net", "sophosupd.com", "sophosupd.net", "hitmanpro.com")),
+     ("ms-telemetry", "business-systems", "management", "client-server", 2, "Microsoft diagnostic data endpoints",
+-     (), ("events.data.microsoft.com", "vortex.data.microsoft.com")),
++     (),
++     ("events.data.microsoft.com", "vortex.data.microsoft.com", "dc.services.visualstudio.com")),
+     ("apple-software-update", "business-systems", "management", "client-server", 2, "Apple software update",
+      (), ("swscan.apple.com", "swcdn.apple.com", "updates.cdn-apple.com")),
+     ("mozilla", "business-systems", "management", "client-server", 2, "Mozilla Firefox services and updates",

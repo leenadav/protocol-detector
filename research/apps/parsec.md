@@ -39,7 +39,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L and 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -68,13 +68,13 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `parsec.app` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `parsecgaming.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `parsecusercontent.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `parsec.app` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `parsec.app`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `parsecgaming.com` | round 4 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `*.parsecgaming.com`, no subject organisation (domain-validated) (issuer Amazon) |
+| `parsecusercontent.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `parsecusercontent.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 

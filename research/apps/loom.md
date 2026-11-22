@@ -44,7 +44,7 @@ Checked in scratch (`c08773f` plus D, E and F).
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -59,7 +59,7 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | D- | `as.atlassian.com` | not loom (third party) | `atlassian` | PASS |
 | D- | `atl-global.atlassian.com` | not loom (third party) | `atlassian` | PASS |
 | D- | `atl-onetrust-wrapper.atlassian.com` | not loom (third party) | `atlassian` | PASS |
-| D- | `browser-intake-datadoghq.com` | not loom (third party (unclassified)) | no application | PASS |
+| D- | `browser-intake-datadoghq.com` | not loom (shared vendor infra) | `datadog-base` | PASS |
 | D- | `cdn.cookielaw.org` | not loom (third party) | no application | PASS |
 | D- | `ds-cdn.prod-east.frontend.public.atl-paas.net` | not loom (third party) | `atlassian` | PASS |
 | D- | `geolocation.onetrust.com` | not loom (third party) | no application | PASS |
@@ -90,7 +90,7 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
@@ -112,7 +112,7 @@ Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it cover
 | `atl-global.atlassian.com` | seen | third party | `atlassian` | not checked |  |
 | `atl-onetrust-wrapper.atlassian.com` | seen | third party | `atlassian` | not checked |  |
 | `bad-builds.loom.com` | seen | app-owned | `loom` | not checked |  |
-| `browser-intake-datadoghq.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
+| `browser-intake-datadoghq.com` | seen (some failed) | shared vendor infra | `datadog-base` | not checked |  |
 | `cdn.cookielaw.org` | seen | third party | no application | not checked | OneTrust consent banner |
 | `cdn.loom.com` | seen | app-owned | `loom` | not checked |  |
 | `ds-cdn.prod-east.frontend.public.atl-paas.net` | seen | third party | `atlassian` | not checked |  |
@@ -128,7 +128,7 @@ Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it cover
 - `loom`: collaboration / voip-video, browser-based; characteristics `transfers-files`; **risk 2**: moves files out of the organisation.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `atlassian`, `browser-intake-datadoghq.com`, `cdn.cookielaw.org`, `geolocation.onetrust.com`, `google-accounts`, `liecbddmkiiihnedobmlmillhodjkdmb`, `sentry`.
+- Dependencies (observed, never attributed to this app): `atlassian`, `cdn.cookielaw.org`, `datadog-base`, `geolocation.onetrust.com`, `google-accounts`, `liecbddmkiiihnedobmlmillhodjkdmb`, `sentry`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `loom.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

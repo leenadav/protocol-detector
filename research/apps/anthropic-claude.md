@@ -99,7 +99,7 @@ ALPN: nothing published by Anthropic. `UNVERIFIED`.
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -113,7 +113,7 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | D- | `655f30477866.w.hcaptcha.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
 | D- | `accounts.google.com` | not anthropic-claude/anthropic-api (shared vendor infra) | `google-accounts` | PASS |
 | D- | `api.hcaptcha.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
-| D- | `browser-intake-us5-datadoghq.com` | not anthropic-claude/anthropic-api (third party) | no application | PASS |
+| D- | `browser-intake-us5-datadoghq.com` | not anthropic-claude/anthropic-api (third party) | `datadog-base` | PASS |
 | D- | `challenges.cloudflare.com` | not anthropic-claude/anthropic-api (third party) | no application | PASS |
 | D- | `e9ec84599f3b.w.hcaptcha.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
 | D- | `hagen.challenges.cloudflare.com` | not anthropic-claude/anthropic-api (third party (unclassified)) | no application | PASS |
@@ -161,7 +161,7 @@ Decided and in batch A (`research/patches/batch-a-name-based.patch`, base `claud
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
@@ -186,7 +186,7 @@ Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it cover
 | `655f30477866.w.hcaptcha.com` | seen | third party (unclassified) | no application | not checked |  |
 | `accounts.google.com` | seen | shared vendor infra | `google-accounts` |  |  |
 | `api.hcaptcha.com` | seen | third party (unclassified) | no application | not checked |  |
-| `browser-intake-us5-datadoghq.com` | seen | third party | no application | not checked | Datadog browser telemetry |
+| `browser-intake-us5-datadoghq.com` | seen | third party | `datadog-base` | not checked | Datadog browser telemetry |
 | `challenges.cloudflare.com` | seen | third party | no application | not checked | Cloudflare Turnstile bot check |
 | `claude.ai` | seen | app-owned | `anthropic-claude` | h3 |  |
 | `e9ec84599f3b.w.hcaptcha.com` | seen (some failed) | third party (unclassified) | no application | not checked |  |
@@ -202,7 +202,7 @@ Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it cover
 - `anthropic-api`: business-systems / generative-ai, client-server; characteristics `transfers-files`; **risk 3**: moves files out of the organisation.
 - Functions separated by name: `anthropic-claude` (Anthropic Claude), `anthropic-api` (Anthropic Claude developer platform and API).
 - Variant: web app and API/console separated by name (`claude.ai` vs `api.anthropic.com`, `platform.claude.com`).
-- Dependencies (observed, never attributed to this app): `15e17cac5f6a.w.hcaptcha.com`, `251360e3903c.w.hcaptcha.com`, `655f30477866.w.hcaptcha.com`, `api.hcaptcha.com`, `browser-intake-us5-datadoghq.com`, `challenges.cloudflare.com`, `e9ec84599f3b.w.hcaptcha.com`, `google-accounts`, `hagen.challenges.cloudflare.com`, `js.hcaptcha.com`, `newassets.hcaptcha.com`.
+- Dependencies (observed, never attributed to this app): `15e17cac5f6a.w.hcaptcha.com`, `251360e3903c.w.hcaptcha.com`, `655f30477866.w.hcaptcha.com`, `api.hcaptcha.com`, `challenges.cloudflare.com`, `datadog-base`, `e9ec84599f3b.w.hcaptcha.com`, `google-accounts`, `hagen.challenges.cloudflare.com`, `js.hcaptcha.com`, `newassets.hcaptcha.com`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): `claude.ai`, `anthropic.com`, `claude.com`, `claudeusercontent.com`, `platform.claude.com`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

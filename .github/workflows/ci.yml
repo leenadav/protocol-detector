@@ -376,6 +376,12 @@ jobs:
           GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8
           cd "$GITHUB_WORKSPACE"
           "$RUNNER_TEMP/bin/gitleaks" git --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: The gitleaks allowlists stay narrow (tools/check_gitleaks_allowlist.py, the pinned gitleaks)
+        # After the scan, so no repository code runs before the scanner (rule 15). A CNAME chain is allowed only in
+        # research/live-results-*.tsv, and keys, tokens and the same chain elsewhere must still be reported.
+        run: |
+          python -B tools/check_gitleaks_allowlist.py --self-test
+          python -B tools/check_gitleaks_allowlist.py --bin "$RUNNER_TEMP/bin" | tee -a "$GITHUB_STEP_SUMMARY"
 
   supply-chain:
     name: supply chain (SBOM, licence, pins)
