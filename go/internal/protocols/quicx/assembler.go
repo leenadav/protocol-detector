@@ -198,6 +198,15 @@ func (a *Assembler) Add(dcid []byte, fragments []Fragment, scope string, version
 		return Conflict, nil
 	}
 	merged := merge(e.fragments, fragments)
+	// Codex PRO-13 P2 (PRO-201), a Go-only ordering: a contradiction with retained bytes is checked before the
+	// budget, so an over-budget datagram that also contradicts keeps the sticky marker (and its retraction) rather
+	// than silently forgetting the connection. merged is sorted by offset; the work is bounded by the retained
+	// MaxFragments plus this datagram's frames.
+	if contradicts(merged) {
+		e.fragments, e.conflict = nil, true
+		a.Counts["conflicts"]++
+		return Conflict, nil
+	}
 	total := 0
 	for _, f := range merged {
 		total += len(f.Data)
@@ -241,11 +250,8 @@ func merge(existing, fragments []Fragment) []Fragment {
 	return merged
 }
 
-// Assemble is quic.assemble: every overlapping pair is compared byte for byte before anything is assembled;
-// complete returns exactly one handshake message from offset zero.
-func Assemble(fragments []Fragment) (string, []byte) {
-	items := append([]Fragment{}, fragments...)
-	sort.SliceStable(items, func(i, j int) bool { return items[i].Offset < items[j].Offset })
+// contradicts reports whether two fragments of items (sorted by offset) disagree on a shared offset.
+func contradicts(items []Fragment) bool {
 	for i, f := range items {
 		end := f.Offset + uint64(len(f.Data))
 		for _, other := range items[i+1:] {
@@ -257,9 +263,20 @@ func Assemble(fragments []Fragment) (string, []byte) {
 				stop = o
 			}
 			if !bytes.Equal(f.Data[other.Offset-f.Offset:stop-f.Offset], other.Data[:stop-other.Offset]) {
-				return Conflict, nil
+				return true
 			}
 		}
+	}
+	return false
+}
+
+// Assemble is quic.assemble: every overlapping pair is compared byte for byte before anything is assembled;
+// complete returns exactly one handshake message from offset zero.
+func Assemble(fragments []Fragment) (string, []byte) {
+	items := append([]Fragment{}, fragments...)
+	sort.SliceStable(items, func(i, j int) bool { return items[i].Offset < items[j].Offset })
+	if contradicts(items) {
+		return Conflict, nil
 	}
 	var data []byte
 	for _, f := range items {
