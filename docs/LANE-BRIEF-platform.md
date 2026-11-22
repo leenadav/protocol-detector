@@ -64,7 +64,7 @@ their decisions, the policy locks, and the release controller.
   `go-api`: apidiff, where a public break fails without the `api-break` label (item 39). The module has no public package
   yet, so draft #64 (`claude/cicd-contract-compat`, head `a5b287a`, base #62's branch; Hermes in PRO-131) adds
   `contract-compat`: `tools/contract_check.py` compares schemas/*.schema.json ($ref resolved) and the protodetect CLI, read
-  from its own help, at the same base and with the same `api-break` label (item 40). Draft #65 (`claude/cicd-nightly-parity-random`, head `e1e833d`, base
+  from its own help, at the same base and with the same `api-break` label (item 40). Draft #65 (`claude/cicd-nightly-parity-random`, head `6fdaa33`, base
   #64's branch; it merges `claude/go-migration` `d7a9290`) adds the nightly `parity-random` job: Engine's
   `make parity-random-long`, 50,000 cases in batches of 25,000 with one seed each. PRO-71 is parked until Engine answers PRO-72. Also waiting
   on Codex's review and on the Engine lane's merge of `claude/go-migration`.
