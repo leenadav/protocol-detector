@@ -1,0 +1,15 @@
+# Round 5 for tools/live_verify.py: names added by batch N (research/patches/batch-n-name-based.patch) and the
+# older catalog names its specs cite that no earlier round covered. "NAME PROBE" where the vendor page documents
+# a name under a suffix entry; run with TLS so certificate organisation is recorded (decision 3).
+sophosxl.com
+sophosxl.net samples.sophosxl.net
+sophosupd.com sdds3.sophosupd.com
+sophosupd.net sdds3.sophosupd.net
+hitmanpro.com alert.hitmanpro.com
+docucdn-a.akamaihd.net
+dc.services.visualstudio.com
+sophos.com cloud.sophos.com
+docusign.com
+docusign.net
+twilio.com global.vss.twilio.com
+snowflakecomputing.com

@@ -1,0 +1,17 @@
+# Live round 5 (PRO-133, run by Hermes from 9a05e06 with TLS, DoH dns.google, no proxy; relayed as PRO-135, 2026-11-21). 12 of 12 names (live-hosts-r5.txt).
+# Converted from the relay's columns (host probe rcode cname_tail addrs flags tls cert_O cert_CN issuer_O https_alpn ech) to the r4 names.
+# via_probe=1: the relay gives the tls, subject_* and issuer_o columns for the probe name, not the apex. alpn (negotiated) and
+# san_count and tls_error were not relayed and are left empty; https_alpn is the DNS HTTPS record's alpn; addrs is the relay's count.
+host	flags	rcode	cname_tail	tls	alpn	subject_cn	subject_o	issuer_o	san_count	tls_error	probe	addrs	via_probe	https_alpn	ech
+sophosxl.com	no-address	0										0			no
+sophosxl.net	no-address	0	d3l392bm11cau0.cloudfront.net	TLSv1.3		samples.sophosxl.net	None	Amazon			samples.sophosxl.net:cdn	4	1	http/1.1	no
+sophosupd.com	no-address	0	sdds3.sophosupd.com.edgekey.net>e3113.dscd.akamaiedge.net	TLSv1.3		12-13.sophosupd.com	SOPHOS LIMITED	GlobalSign nv-sa			sdds3.sophosupd.com:cdn	3	1		no
+sophosupd.net	no-address	0		TLSv1.3		sdds3.sophosupd.net	None	Amazon			sdds3.sophosupd.net:	12	1		no
+hitmanpro.com	-	0	alertcloud.azurewebsites.net>...>westeurope.cloudapp.azure.com	TLSv1.3		alert.hitmanpro.com	None	DigiCert Inc			alert.hitmanpro.com:cdn	1	1		no
+docucdn-a.akamaihd.net	cdn	0	docucdn-a.akamaihd.net.edgesuite.net>a1737.b.akamai.net	TLSv1.3		a248.e.akamai.net	Akamai Technologies, Inc.	DigiCert Inc				2			no
+dc.services.visualstudio.com	cdn	0	dc.applicationinsights.microsoft.com>...>gig-ai-g-prod-westeurope-7-app-v4-tag.westeurope.cloudapp.azure.com	TLSv1.3		in.applicationinsights.azure.com	Microsoft Corporation	Microsoft Corporation				1			no
+sophos.com	-	0		TLSv1.2		central.sophos.com	None	Amazon			cloud.sophos.com:	3	1		no
+docusign.com	-	0		TLSv1.3		www.docusign.com	DocuSign, Inc.	DigiCert Inc				2			no
+docusign.net	tls-fail	0										1			no
+twilio.com	-	0	alb-sdki-ws-gateway-...eu-central-1.elb.amazonaws.com	TLSv1.2		*.vss.twilio.com	None	Amazon			global.vss.twilio.com:cdn	4	1		no
+snowflakecomputing.com	-	0		TLSv1.3		snowflakecomputing.com	None	Let's Encrypt				1			no

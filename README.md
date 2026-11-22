@@ -30,6 +30,7 @@ The Go implementation lives in [`go/`](go/) and is being ported against shared
 fixtures from the Python reference. Per-family status is tracked in
 [`migration/CAPABILITIES.json`](migration/CAPABILITIES.json); acceptance work
 and fixture comparisons are documented under [`migration/`](migration/).
+The package map, data flow and boundaries of the Go engine are in [`docs/GO-ARCHITECTURE.md`](docs/GO-ARCHITECTURE.md).
 
 All 88 family profiles are `parity-verified` against the committed cases (7,430
 of 7,430 agree; `make parity-go`), and the parity-gap manifest has no entries.
