@@ -1,0 +1,29 @@
+# Live round 6 (PRO-146, run by Research Lab on the Hermes server from f701cb9 with TLS, DoH dns.google, no proxy, 2026-11-22).
+# 24 of 24 names (live-hosts-r6.txt: 23 batch O names and docusign.pdfeditor.com from PRO-139). Same columns as r4/r5.
+# via_probe=1: the tls, subject_* and issuer_o columns are the probe name's, not the apex. tls_error comes from the JSON.
+# Committed by Hermes verbatim from the PRO-146 relay; verdicts are in that issue and go into the specs via App Research.
+host	flags	rcode	cname_tail	tls	alpn	subject_cn	subject_o	issuer_o	san_count	tls_error	probe	addrs	via_probe	https_alpn	ech
+centrastage.net	no-address	0		TLSv1.3		*.centrastage.net		Amazon	2		syrah.centrastage.net:	4	1		no
+rmm.datto.com		0		TLSv1.3	h2	syrah.rmm.datto.com		Amazon	2		syrah.rmm.datto.com:	4	1		no
+n-able.com		0	data.cdn-sw.net	TLSv1.3	http/1.1	sis.n-able.com		Let's Encrypt	1		sis.n-able.com:	1	1		no
+system-monitor.com		0	checks-api.us.system-monitor.com.cdn.cloudflare.net	TLSv1.3	h2	*.us.system-monitor.com		Let's Encrypt	2		checks-api.us.system-monitor.com:cdn	2	1		no
+systemmonitor.eu.com	no-address	0	upload1europe1.systemmonitor.eu.com.cdn.cloudflare.net	TLSv1.3	h2	systemmonitor.eu.com		Let's Encrypt	2		upload1europe1.systemmonitor.eu.com:cdn	2	1		no
+logicnow.com	no-address	0	data.cdn-sw.net	TLSv1.3	http/1.1	rm-downloads.logicnow.com		Let's Encrypt	3		rm-downloads.logicnow.com:	1	1		no
+logicnow.us	no-address	0	cb-us-wes-cbloadba-1diu6x5p5dl2s-81389692.us-west-2.elb.amazonaws.com	TLSv1.2		*.logicnow.us		Amazon	2		cannonball-us-west-2-push.logicnow.us:cdn	3	1		no
+remote.management	no-address	0	upload1.am.remote.management.cdn.cloudflare.net	TLSv1.3	h2	am.remote.management		Let's Encrypt	2		upload1.am.remote.management:cdn	2	1		no
+beanywhere.com	no-address	0										0	0		no
+keybox.solarwindsmsp.com		0		TLSv1.3	http/1.1	keybox-ncentral.us-west-2.prd.sharedsvcs.system-monitor.com		Let's Encrypt	2			3	0		no
+swi-rc.cdn-sw.net		0	data.cdn-sw.net	TLSv1.3	http/1.1	swi-rc.cdn-sw.net		DigiCert Inc	2			1	0		no
+cloudbackup.management		0	integrated.cloudbackup.management.cdn.cloudflare.net	TLSv1.3	http/1.1	cloudbackup.management		Google Trust Services	2		integrated.cloudbackup.management:cdn	4	1		no
+forticlient.forticloud.com	cdn	0	a8003824a2c314586a0a6226b8e83253-0a9dee96d89470ea.elb.us-west-2.amazonaws.com	TLSv1.3	http/1.1	forticlient.forticloud.com	Fortinet, Inc.	DigiCert Inc	29			4	0		no
+forticlient-emsproxy.forticloud.com	tls-fail	0	emscloud-japan-proxy-cc.geo.fortinet.net							SSLEOFError		1	0		no
+fctguard.fortinet.net	tls-fail	0	globalguard.fortinet.net.geo.fortinet.net							SSLCertVerificationError		4	0		no
+fctusguard.fortinet.net	tls-fail	0	usguardservice.fortinet.net							SSLCertVerificationError		2	0		no
+fcteuguard.fortinet.net	tls-fail	0	euguardservice.fortinet.net							SSLCertVerificationError		2	0		no
+forticlient.fortinet.net	tls-fail	0								SSLCertVerificationError		2	0		no
+myforticlient.fortinet.net	tls-fail	0								SSLCertVerificationError		2	0		no
+usforticlient.fortinet.net	tls-fail	0								SSLCertVerificationError		1	0		no
+fctupdate.fortinet.net	tls-fail	0								SSLCertVerificationError		2	0		no
+fctusupdate.fortinet.net	tls-fail	0								SSLCertVerificationError		1	0		no
+fcteuupdate.fortinet.net	tls-fail	0								SSLCertVerificationError		1	0		no
+docusign.pdfeditor.com	h3	0	saas-origin.gonitro.com	TLSv1.3	h2	docusign.pdfeditor.com		Google Trust Services	1			2	0	h2,h3	no
