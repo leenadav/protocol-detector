@@ -1,0 +1,4 @@
+{
+  "comment": "Randomized differential mismatches that are understood and accepted: case id (random/<generator>/<seed>/<index>) -> reason. An entry that no longer mismatches on its seed fails the run.",
+  "allowed": {}
+}

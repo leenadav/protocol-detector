@@ -507,6 +507,111 @@ the gate computes rather than a label set by hand.
 | Rule | implemented | `migration/parity/verify_families.py`, run by `make parity-go` (so in `make go-check`) right after the exact comparison: a family is `parity-verified` when the passing report claims it and every committed case labelled with it matched exactly (no gap, no approved delta), its cases of each transport's kind cover a positive message, a truncated prefix, a mutation and foreign bytes, and a TCP family has a matched session-level case. `--check` fails when a status in `migration/CAPABILITIES.json` differs from the computed one in either direction; `--write` records each family's case counts, classes and shortfall there. `test_verify_families.py`; planted regressions (one unmatched case, a listed gap) each fail the check. Capture-level differentials stay separate gates. |
 | Result | 88 of 88 `parity-verified` | On 2026-11-18 79 qualified; the other nine lacked committed cases (http2, mongodb, mysql, resp, s7comm, websocket: no session-level case; smtp and ssh: no session-level case and no mutated stream; ipfix: no foreign-bytes datagram). Lee allowed the case generator (only) to add them: `coverage_cases()` in `migration/parity/cases.py`, 37 cases appended after every other, none changed (the regenerated `cases.json` keeps every earlier case and its order byte for byte); Python and Go match all 7,355 cases, and `verify_families.py --write` promoted the nine. The Go replay now takes the `tcp_hint`/`udp_hint` session options the hinted families need. |
 
+## Security review finding SEC-QUIC-1 (PRO-47 and PRO-110, 2026-11-22)
+
+**Finding (Security Reviewer):** the QUIC CRYPTO assembler (`go/internal/protocols/quicx/assembler.go`) scanned every
+held connection on every QUIC datagram (`expire`) and on every flow end (`Reset`). With 1,024 connections held, an
+attacker spraying QUIC datagrams paid about 24 µs of CPU per datagram; with an empty store it is about 15 ns.
+
+**Fix (Go only).** The Python reference's `QuicAssembler` semantics are unchanged:
+- an idle heap ordered by last-seen time, so expiry removes exactly the entries with `now - last > idle`, oldest
+  first, even when capture time runs backwards;
+- a per-scope index, so `Reset(scope)` touches only that flow's entries;
+- the LRU list is unchanged, so eviction stays least-recently-used.
+
+**Evidence:**
+
+| Check | Result |
+|---|---|
+| `TestAssemblerMatchesTheScanningOracle` | The old scanning implementation, kept verbatim as the oracle, answers 40 seeded sequences of 600 random operations (adds with conflicting and over-budget fragments, conflict checks, resets, clears; time forwards, still, jumping and backwards, or absent) exactly as the new one does: statuses, bytes, counts, size and LRU order after every step. |
+| Mutation check | `>=` in place of `>` in expiry fails at seed 1, step 517. A dropped LRU move fails at step 34. |
+| `TestResetAndExpiryTouchOnlyTheirEntries` | Passes. |
+| `BenchmarkAssemblerDatagram` | One expiry check plus one flow-end reset, 1,024 held: 23,385-26,097 ns before, 28-43 ns after, 0 allocations. |
+| Parity | `make go-check` matches 7,430 of 7,430. |
+
+## Randomized differential (PRO-100, 2026-11-22)
+
+Hermes, PRO-100: differential testing with random inputs, the Python reference as the oracle.
+`migration/parity/random_diff.py` draws seeded, valid-shaped client openings:
+- TLS ClientHello records (GREASE, varied server names, ALPN, versions, groups, key shares, padding, unknown,
+  duplicated and ECH extensions, session ids, record versions);
+- HTTP/1.x request heads;
+- SSH identification lines, with an optional KEXINIT;
+- protected QUIC v1/v2 Initials, with reordered CRYPTO frames.
+
+Each case is varied the way traffic arrives: random fragments, truncation with or without the capture-ended
+reason, a correct or wrong hint, or a tight byte budget. The Go engine answers through `protodetect replay`, and
+`compare.py` compares every event, the final observation and the metrics exactly.
+
+| item | state | evidence |
+|---|---|---|
+| CI run | gate | `make parity-random` is part of `make go-check`, so the CI `go-engine` job runs it. It runs three steps: `--self-test` (allow-list rules, stale entries, determinism), `--plant` on 300 cases (the planted difference must be caught), then seed 1 at 2,000 cases, about 3 s. Seed 1: 2,000 of 2,000 matched. |
+| Long run | available | `make parity-random-long SEED=n COUNT=n`. Seeds 2-11 at 20,000 cases each, plus seed 12 at 3,000: 203,000 of 203,000 matched, 0 allowed, about 21 s per 20,000. A nightly job is a CI/CD-lane workflow change (requested). |
+| Allow-list | empty | `migration/parity/random_allow.json`: case id to reason. An entry that no longer mismatches on its seed fails the run. |
+| Self-checks | pass, in CI | `--plant` alters one reference answer to another valid status, and the run must report exactly that case. `--self-test` checks `judge()`: an allowed mismatch passes, an unlisted one fails, and a listed case that now agrees fails. Removing the stale-entry rule makes it fail. |
+| Found and fixed | 0 engine mismatches | The first trial had 8 cases Go declined ("not ported: hint http/ftp/redis"). It was a harness error: `cases.run_stream` drops a hint outside `registry.PARSERS`, so stream hints are now drawn from `PARSERS` only. |
+
+## tshark oracle on real implementations (PRO-127, 2026-11-22)
+
+Hermes asked for a pcap-based oracle in PRO-127 and chose its data source in PRO-186 (option A).
+- Real, unmodified clients and servers talk on 127.0.0.1 through a recording relay:
+  - OpenSSL 3.0.13 `s_client` and `s_server`;
+  - curl 8.5.0, against `s_server` and Go `net/http`;
+  - quic-go v0.65.0, QUIC v1 and v2.
+- The relay writes a pcap with synthetic Ethernet, IPv4 and TCP/UDP framing into the test's temporary
+  directory. Nothing is committed.
+- gopacket v1.7.7 (BSD-3-Clause) reads and reassembles the pcap, independently of the engine's decoder, and
+  the engine classifies each flow without a hint.
+- tshark 4.2.2 (GPL-2.0, an external process only) dissects the same file.
+- Compared fields: SNI, offered ALPN, the highest offered TLS version, the HTTP Host and the QUIC version.
+- It is a separate test-only module, `go/oracle`: `go/go.mod` and `go/vendor` are unchanged.
+- The full recipe, the tool pins and the licences are in `go/oracle/README.md`.
+
+| item | state | evidence |
+|---|---|---|
+| Comparison | 26 of 26 agree | 10 scenarios: TLS 1.3 and 1.2, no SNI, a 253-byte SNI, 7-, 50-, 100- and 5-byte segments, out-of-order pairs, curl h2 and http/1.1 offers, HTTP/1.1 and 1.0 Host, QUIC v1 and v2. The allow-list is empty. |
+| Self-checks | pass | Planted wrong SNI: the run fails. Listed with a reason: it passes. Listed after it agrees again: it fails (stale entry). An entry no scenario compares also fails. Tool-free unit tests cover the normalisations and the recorder/reader round trip. Five runs under `-race` all pass. |
+| Finding | not an engine bug | quic-go splits and reorders its ClientHello's CRYPTO frames over two Initials. Without the host-owned cross-datagram store (`Datagram.Assembler`), Go and the Python reference both stay at "ClientHello incomplete" with the same output. With the store attached as the analyzer attaches it, the server name and ALPN agree. |
+| Runs | nightly (requested) | `make pcap-oracle`. It needs the three pinned tools and module-proxy access to build, so it isn't part of `go-check`; the nightly job belongs to the CI/CD lane. |
+
+## Mutation testing (PRO-126, 2026-11-22)
+
+Hermes, PRO-126: mutation testing of the Go protocol parsers with gremlins (github.com/go-gremlins/gremlins
+v0.6.0, Apache-2.0). It is test tooling only, pinned in its own module `migration/mutation/gremlins` (`go.sum` pins
+all 22 linked modules: 13 MIT, 5 BSD-3-Clause, 4 Apache-2.0; no GPL or LGPL), installed into `build/` and never
+linked into or vendored with `go/`. `migration/mutation/mutation.py` runs it on each package and compares
+efficacy (killed / (killed + lived)) with `migration/mutation/baseline.json`; a package more than 5 points below its
+baseline, or one with no result, fails the run. It is a nightly job, never a per-PR gate (one full run takes about
+20 minutes, `framed` alone 17).
+
+| package | killed | lived | not covered | efficacy | first run (base `752dcbd`) |
+|---|---|---|---|---|---|
+| tlsx | 192 | 48 | 263 | 80.00% | 99 killed, 69 lived, 58.93% |
+| quicx | 192 | 25 | 6 | 88.48% | 150 killed, 67 lived, 69.12% |
+| textroute | 232 | 111 | 582 | 67.64% | 7 killed, 3 lived, 914 not covered |
+| x509x | 243 | 63 | 56 | 79.41% | same |
+| hpack | 73 | 20 | 6 | 78.49% | same |
+| fingerprint | 28 | 23 | 0 | 54.90% | same |
+| framed | 718 | 507 | 3568 | 58.61% | same |
+| dnsx, heuristics | 0 | 0 | 269, 72 | none covered | tested only from other packages |
+
+The first run's survivors in TLS, QUIC and HTTP/1 sat on comparison boundaries and length arithmetic that no
+package-local test hit exactly. `migration/mutation/boundaries.py` generates one `boundary_test.go` per package
+(73 TLS, 48 QUIC, 105 text-route cases), each on a limit or one past it, with the expected outcome from the Python
+reference, so each case checks the boundary and the parity at once; `make go-check` runs `boundaries.py --check`.
+Survivors that remain are mostly in DTLS (`tlsx/dtls.go`), the QUIC assembler's idle-heap and expiry comparisons, HTTP header classification and the
+non-HTTP text routes. Some are equivalent mutants (`i >= 0` read as `i > 0` before slicing to an empty prefix).
+Run safeguards, each found by an end-to-end `make mutation`:
+- One `hpack` mutant removes an allocation bound, and its test binary grew to 11 GB until the kernel killed it,
+  taking unrelated processes with it. `mutation.py` caps every process it starts at 4 GiB of address space
+  (`--memory-mb`), so such a mutant fails fast and counts as killed.
+- A cached coverage run gives gremlins a near-zero reference time, and then every mutant times out (one run: 8
+  killed, 0 lived, 340 timed out, efficacy "100%"). The test cache is cleared before each package, and a package
+  where more than 25% of the tested mutants time out fails the run.
+- A package with a baseline efficacy that comes back with nothing covered fails (it used to be skipped).
+With these, a full clean run reproduced the baseline exactly in all nine packages (about 21 minutes on 4 cores).
+The nightly workflow step is a CI/CD-lane change (requested).
+
 ## Adversarial identification (2026-11-18)
 
 Lee, 2026-11-18: a suite that tries to deceive the detector on purpose, asserting that it either stays honest
