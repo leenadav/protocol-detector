@@ -44,6 +44,88 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch O, after N: Datto RMM, N-able, FortiClient, read by Research Lab, PRO-95/PRO-106, 2026-11-22)
+
+Patch: `patches/batch-o-name-based.patch` (placeholder release `2026.13.0`, which sorts after `2026.12.9` as a string; digest
+`0914c0281fbc029d`, 465 host entries). Tested: 16 targeted vector names (all as expected), rollback exact, parity 7488/7488
+(Python and Go), 88/88 families. 23 new names queued for live round 6 (`live-hosts-r6.txt`).
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | O1 | Datto RMM (new id `datto-rmm`: `centrastage.net`, `rmm.datto.com`) | `apps/fortinet-datto-nable.md` | 5 | 4 | 20 | READY (Syrah platform rows only; other platforms share the suffixes) |
+| 2 | O2 | N-able N-central, N-sight, Take Control (new id `n-able`, 10 names) | `apps/fortinet-datto-nable.md` | 5 | 4 | 20 | READY (five domains at N2 until live round 6 shows ownership) |
+| 3 | O3 | Fortinet FortiClient and EMS Cloud (new id `forticlient`, 11 exact names) | `apps/fortinet-datto-nable.md` | 4 | 4 | 16 | READY (`fortinet.net`, `forticloud.com` stay unmapped: shared with other Fortinet products) |
+
+The rest of PRO-95 adds no names:
+
+| Vendor | Result | Why no catalog change |
+|---|---|---|
+| FortiSASE | PARTIAL: ports only | the page names no hosts |
+| Discord | PARTIAL: developer docs (`gateway.discord.gg`; voice by dynamic address) | already covered by `discord.gg`; help centre returned 403 (not bypassed) |
+| monday.com, HubSpot, Airtable | PARTIAL: IP addresses or an IP API only | the catalog uses no IPs; host lists not found |
+| Smartsheet | PARTIAL: Jira connector relay `aws.relay.smartsheet.com`, `aws.relay.connectors.smartsheet.eu` | US relay already under `smartsheet.com`; the EU relay is a server-to-server connector name, not proposed |
+| NinjaOne | PARTIAL: ports 443 and 7075/TCP for NinjaOne Remote | no host list |
+| ConnectWise ScreenConnect cloud, Telegram, Windsurf | NOT FOUND | sign-in wall, no allowlist text, proxy settings only |
+
+### NAME: READY (batch N, after M: rows 24 to 27 read by Research Lab, PRO-108/PRO-121, 2026-11-21)
+
+Patch: `patches/batch-n-name-based.patch` (placeholder release `2026.12.9`, digest `80ecb5542510f862`, 462 host entries). Tested:
+22 targeted vector names (all as expected), rollback exact, parity 7480/7480 (Python and Go), 88/88 families. New names and the
+older names these specs cite are queued for live round 5 (`live-hosts-r5.txt`).
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | N1 | Sophos Central: `sophosxl.com`, `sophosxl.net`, `sophosupd.com`, `sophosupd.net`, `hitmanpro.com` | `apps/sophos-central.md` | 4 | 4 | 16 | READY (`hitmanpro.com` at N2) |
+| 2 | N2 | `dc.services.visualstudio.com` (Application Insights telemetry) from `visual-studio` to `ms-telemetry` | `apps/sophos-central.md`, `apps/power-bi.md` | 3 | 4 | 12 | READY (N2; was a mis-attribution) |
+| 3 | N3 | DocuSign: exact `docucdn-a.akamaihd.net` | `apps/docusign.md` | 4 | 4 | 16 | READY (full list of 8 read, PRO-138/PRO-139; open: `*.docusign.pdfeditor.com` waits on live round 6) |
+| 4 | N4 | Twilio: verified, all names under `twilio.com` | `apps/twilio.md` | 3 | 4 | 12 | DONE (no catalog change) |
+| 5 | N5 | Snowflake: verified, per-account names only | `apps/snowflake.md` | 4 | 3 | 12 | DONE (no catalog change) |
+
+Live round 5 (PRO-135, 2026-11-21, `live-results-2026-11-21-r5.tsv`): 12 names, 11 alive, 0 NXDOMAIN. Ownership by certificate:
+`sdds3.sophosupd.com` (SOPHOS LIMITED), `docusign.com` (DocuSign, Inc.). `docucdn-a.akamaihd.net` presents Akamai's generic
+certificate (shared edge: exact SNI only, N2 unchanged). `alert.hitmanpro.com` runs on Azure App Service with a domain-validated
+certificate (`hitmanpro.com` stays N2). `dc.services.visualstudio.com` is Application Insights telemetry (Microsoft
+certificate), which batch N already maps to `ms-telemetry` rather than a product. `docusign.net` fails TLS (not removal);
+`sophosxl.com` has no address and no documented host to probe (unverified). No catalog change follows.
+
+### NAME: READY (batch M, after K: vendor network pages, PRO-92, 2026-11-21)
+
+Six enterprise apps from official network pages read in this session (Datadog, Microsoft Learn, AWS, Apple). Patch:
+`patches/batch-m-name-based.patch` (placeholder release `2026.12.8`, digest `79f36d67c88c72b5`, 462 host entries): 5 new ids
+(`datadog-base`, `ms-power-platform`, `azure-portal`, `apple-device-management`, `amazon-q-developer`), 2 extended (`datadog`,
+`power-bi`), 55 new names. Tested: 47 targeted vector names (all as expected), rollback exact, parity 7479/7479 (Python and Go),
+88/88 families. The new names, and 7 older names no round covered, are queued for live round 4 (`live-hosts-r4.txt`).
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | M1 | Power Platform and Dynamics 365 (new id `ms-power-platform`) | `apps/ms-power-platform.md` | 5 | 4 | 20 | READY (`dynamics.com` at N2) |
+| 2 | M2 | Power BI: back-end API, capacity, Fabric SQL and Power Query names | `apps/power-bi.md` | 4 | 4 | 16 | READY (`powerquery.microsoft.com` at N2) |
+| 3 | M3 | Datadog: `ddog-gov.com`; browser RUM intake to new vendor-level id `datadog-base` (decision 4) | `apps/datadog.md` | 4 | 4 | 16 | READY |
+| 4 | M4 | Apple Business, Apple School Manager and device enrollment (new id `apple-device-management`) | `apps/apple-device-management.md` | 4 | 4 | 16 | READY (exact names; `gdmf` left shared) |
+| 5 | M5 | Azure portal and Resource Manager (new id `azure-portal`) | `apps/azure-portal.md` | 5 | 3 | 15 | READY (`management.azure.com` at N2: also CLI and SDKs) |
+| 6 | M6 | Amazon Q Developer (new id `amazon-q-developer`) | `apps/amazon-q-developer.md` | 4 | 3 | 12 | READY (`q.<region>` for 2 inferred regions, N2) |
+
+Suggested candidates not done in batch M (no spec written; `blocked-urls.md` rows 19 to 29):
+
+| Item | V | R | Score | Status | Missing |
+|---|---|---|---|---|---|
+| ServiceNow, Workday, CrowdStrike Falcon sensor, SentinelOne agent, Cisco Secure Client, Egnyte (DocuSign, Snowflake, Twilio and Sophos: batch N) | 4 to 5 | 1 | 4 to 5 | BLOCKED | the vendors' documentation hosts are not reachable from this session (the allowlist is full); the official network page must be read from the Hermes server |
+| Palo Alto GlobalProtect | 4 | 1 | 4 | PARTIAL | `docs.paloaltonetworks.com` is reachable but renders its pages client-side; no endpoint text was read. Portals and gateways are customer-hosted, so vendor names (if any) are only for the cloud services |
+
+Follow-up relayed by Hermes on PRO-92 (2026-11-21):
+
+- Live rounds 3 and 4 ran with TLS. Round 3 (PRO-97): 69 names, 64 live, 0 NXDOMAIN, 32 certificates name an organisation,
+  20 CDN-fronted, 0 ECH, 3 h3, 8 with no address, and 1 name and 1 probe with failed TLS. Round 4 (PRO-114): 66 names (10 with
+  probes), 57 live, 0 NXDOMAIN, 42 name an organisation, 21 CDN-fronted, 0 ECH, 0 h3, 10 with no address. `axm-adm-enroll`,
+  `axm-adm-mdm`, `axm-adm-scep` and `axm-app` (`.apple.com`) resolve but fail the TLS handshake, which is not a removal reason (brief §7).
+  The amazonaws and api.aws names have domain-validated certificates, which is expected. Per-name tables relayed in full
+  (PRO-117, PRO-121) as `live-results-2026-11-21-r3.tsv` (69) and `-r4.tsv` (66) and merged into section 9: every catalog name
+  cited by a spec now has a live result (none NXDOMAIN). Batch M ownership: every Datadog, Microsoft and Apple name that completed
+  TLS has a certificate naming its vendor. Decision 3 outcome for the three O-level gaps: `dockerstatic.com`,
+  `campaign.slackhq.com` and `www.zndsk.com` have domain-validated certificates, so they stay unmapped (like `cdn01.boxcdn.net`).
+  `salesforceiq.com` and `app.salesforceiq.com` fail TLS (`SSLError`): not a removal reason.
+- Research Lab (PRO-108) read rows 24 to 27 (DocuSign, Snowflake, Twilio, Sophos); relayed in full as PRO-121 and used in batch N. Rows 19 to 23, 28 and 29 stay BLOCKED (sign-in, bot challenge or JavaScript-only).
+
 ### NAME: READY (batch K, after J: dependency mapping pass 2, PRO-36, 2026-11-20)
 
 Pass 2: Hermes ran `observe_web.js` over the 59 URLs on its server with a direct connection (`observations/pass2-2026-11-20.tsv`).
@@ -131,7 +213,7 @@ the providers' own pages by Research Lab, 2026-11-20; verdicts and attribution l
 |---|---|
 | Culvert field data (unknown-session share per server name, top unmapped names) | **placeholder**: not available yet |
 | D09 unknowns per application | available for the ISCX labels only (section 8 of the D09 report) |
-| Public popularity rank (CrUX bucket, Majestic rank) | licences **PASS** (2026-11-20); **pending**: the Hermes server run of `tools/rank_domains.py` with `majestic_million.csv` (free download) and a CrUX `origin,rank` export (needs BigQuery on the server) |
+| Public popularity rank (CrUX bucket, Majestic rank) | licences **PASS** (2026-11-20). Majestic run 1 (PRO-98, 2026-11-21; `ranking/majestic-2026-11-21-run1.tsv`) used `main`'s 54-entry catalog, so only 22 of 69 specs were looked up (best ranks: GitHub 10, WhatsApp 23, Google Workspace 24, Telegram 33, Office 64, Zoom 79, Dropbox 93); 46 blanks are **not computed**, not "outside the top 1M". **Pending**: run 2 with the committed `app-domains.json` (79 specs), and CrUX (needs BigQuery on the server) |
 
 ### NAME: READY (batch I, after H)
 
@@ -142,7 +224,7 @@ Patch: `patches/batch-i-name-based.patch` (placeholder release `2026.12.3`). Tes
 |---|---|---|---|---|---|---|---|
 | 1 | I1 | Azure Virtual Desktop / Windows 365 (new id `ms-virtual-desktop`) | `apps/ms-virtual-desktop.md` | 5 | 4 | 20 | READY (moves `windows.cloud.microsoft` off `ms-office365`) |
 | 2 | I2 | Amazon WorkSpaces (new id `amazon-workspaces`) | `apps/amazon-workspaces.md` | 4 | 4 | 16 | READY; DECISION: add the 48 exact regional API hosts? |
-| 3 | - | Fortinet, Datto RMM, N-able | `apps/fortinet-datto-nable.md` | 4 | 1 | | BLOCKED (no page located, 404, 403) |
+| 3 | - | Fortinet, Datto RMM, N-able | `apps/fortinet-datto-nable.md` | 5 | 4 | 20 | READY in batch O (PRO-106, 2026-11-22) |
 
 ### NAME: READY (batch H, after G)
 
