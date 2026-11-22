@@ -197,10 +197,22 @@ func Run(stdin io.Reader, iface, filter string, duration int, applyLimits bool, 
 	}
 	var process *exec.Cmd
 	var keys *KeyLog
+	// reaped is closed by the one goroutine that calls process.Wait. Once it exists, nothing else waits on the
+	// child or reads its ProcessState: the cleanup kills the child and waits for that goroutine instead.
+	var reaped chan struct{}
 	defer func() {
-		if process != nil && process.ProcessState == nil {
+		switch {
+		case process == nil:
+		case reaped == nil:
 			_ = process.Process.Kill()
 			_ = process.Wait()
+		default:
+			select {
+			case <-reaped:
+			default:
+				_ = process.Process.Kill()
+				<-reaped
+			}
 		}
 		if keys != nil {
 			keys.Close()
@@ -294,13 +306,16 @@ func Run(stdin io.Reader, iface, filter string, duration int, applyLimits bool, 
 				tick = clock() + 1
 			}
 		}
-		exited := make(chan error, 1)
-		go func() { exited <- process.Wait() }()
 		var status error
+		reaped = make(chan struct{})
+		go func() {
+			status = process.Wait()
+			close(reaped)
+		}()
 		select {
-		case status = <-exited:
+		case <-reaped:
 		case <-time.After(3 * time.Second):
-			return fmt.Errorf("tcpdump did not exit")
+			return fmt.Errorf("tcpdump did not exit") // the deferred cleanup kills the child and awaits the waiter
 		}
 		diagnostics.End()
 		stats, order := diagnostics.Stats()
