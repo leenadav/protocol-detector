@@ -278,6 +278,25 @@ def compare(reference_result, go_result):
     return None
 
 
+def positive_rows(output):
+    """Rows of analyze output that carry an identification: a text row naming a parser MATCH, or a JSON row whose
+    classification, event or record has status `identified`."""
+    return sum(1 for row in output.splitlines() if "=MATCH (" in row or '"status": "identified"' in row)
+
+
+def shortfall(captures, python_positive, go_positive):
+    """Why a run without a divergence still proved nothing (Codex PRO-20): no capture was compared, or neither
+    backend's output carried a single identified row."""
+    problems = []
+    if captures < 1:
+        problems.append("no capture was compared (--count {})".format(captures))
+    if python_positive < 1:
+        problems.append("the reference output carried no identified row")
+    if go_positive < 1:
+        problems.append("the Go output carried no identified row")
+    return problems
+
+
 def present_reference(server, data, limits):
     """presentation/server.py analyze_bytes on the reference engine: the result, or the exception class and text."""
     saved = server.MAX_FRAMES, server.MAX_SESSIONS, server.MAX_EVENTS
@@ -325,7 +344,7 @@ def main(argv=None):
         signatures_path, policy_path = str(folder / "signatures.json"), str(folder / "policy.json")
         Path(signatures_path).write_text(json.dumps(SIGNATURES), encoding="utf-8")
         Path(policy_path).write_text(json.dumps(POLICY), encoding="utf-8")
-        failures, rows, presented = [], 0, 0
+        failures, rows, presented, python_positive, go_positive = [], 0, 0, 0, 0
         sys.path.insert(0, str(ROOT / "presentation"))
         import server  # noqa: E402 - the presentation service's reference analysis
         for index in range(args.count):
@@ -336,6 +355,8 @@ def main(argv=None):
             done = subprocess.run([args.binary, "analyze", str(capture)] + options, stdout=subprocess.PIPE, stderr=subprocess.PIPE,  # noqa: S603
                                   check=False, timeout=120)
             rows += expected[0].count("\n")
+            python_positive += positive_rows(expected[0])
+            go_positive += positive_rows(done.stdout.decode("utf-8", "replace"))
             problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")))
             if problem:
                 failures.append("{} {}: {}".format(capture.name, " ".join(options), problem))
@@ -345,9 +366,12 @@ def main(argv=None):
                 failures.append("{}: {}".format(capture.name, problem))
         for line in failures[:10]:
             print("analyze mismatch:", line)
-        print("analyze parity: {} captures, {} rows, {} presentation results, {} mismatched (seed {})".format(
-            args.count, rows, presented, len(failures), args.seed))
-        return 1 if failures else 0
+        problems = shortfall(args.count, python_positive, go_positive)
+        for line in problems:
+            print("analyze parity FAILED:", line)
+        print("analyze parity: {} captures, {} rows ({} identified), {} presentation results, {} mismatched (seed {})".format(
+            args.count, rows, python_positive, presented, len(failures), args.seed))
+        return 1 if failures or problems else 0
 
 
 if __name__ == "__main__":
