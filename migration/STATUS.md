@@ -583,6 +583,31 @@ evidence of the levels below it in `shiftResult`. The cost was O(d²) evidence a
 | Parity | divergence recorded, no case changes | The Python reference nests without a bound, with the same cubic growth. Go now differs from it only at a third nested shift. No parity case nests shifts at all: 146 cases carry one shift marker and none carry two. All 7,430 still match, and `deltas.json` needs no entry. |
 | Approval | approved | Lee approved the Go-only divergence on 2026-11-22 (PRO-129, relayed by Hermes: merge today with only P0 blocking). The fix is `e0aae82`, merged through PR #87 (`f209bd5`). |
 
+## Security review finding SEC-HTTP-1 (PRO-177 and PRO-179, 2026-11-22; P1, blocks PR #40)
+
+**The finding.** The HTTP/1 hostname came from the Host header alone, in both engines. An absolute-form request
+target (`GET http://www.netflix.test/ HTTP/1.1` with `Host: www.youtube.test`) or a CONNECT target was ignored,
+so a client could steer routing and policy with a Host header that names another site. RFC 9112 §3.2.2 says a
+server must ignore Host for an absolute-form target. An HTTP/1.0 absolute-form request without a Host header
+got no hostname at all.
+
+**The fix** (`go/internal/protocols/textroute/http.go`, Go only, Lee's instruction on PRO-179: fix in Go and
+record the divergence):
+- With an absolute-form (`http://`, `https://`) or CONNECT authority-form target, the hostname is the target's
+  authority. It is validated like a Host header: IP literals are never a hostname, and userinfo is dropped.
+- A Host header that names another host, or an IP literal against a named target, or the reverse, adds
+  `http_host_mismatch` = `present`. The disagreeing name itself is never emitted.
+- The hostname evidence says `wire:http_target` when the name came from the target. When the Host header agrees,
+  the output is unchanged and the source stays `wire:http_host`.
+- The signature context `http-req-host-header` keeps the Host header's own value.
+- HTTP/2 `:authority` handling is unchanged.
+
+| item | state | evidence |
+|---|---|---|
+| Regression tests | `TestRequestTargetAuthorityIsTheHostname` (9 cases), `TestAbsoluteFormTargetIsTheObservedHostname` | Before the fix 5 of the 9 cases failed. In the absolute-form and CONNECT cases with a disagreeing Host, the Host header won; with no Host there was no hostname; and an IPv4 target took a named Host. After it all pass, and no disagreeing name appears in any evidence. |
+| Parity | divergence recorded, 0 case changes | No parity case uses an absolute-form target, and every CONNECT case's Host agrees with its target. All 7,430 still match. |
+| Randomized differential | approved-divergence rule | `random_diff.py` accepts a mismatch as SEC-HTTP-1 only when the request has an absolute-form or CONNECT target and every differing path is host attribution (hostname, evidence, application). Any other difference still fails; the self-test covers acceptance and both rejections. Seed 1: 1,972 matched plus 28 approved, 0 failures. Seeds 2 and 3 at 20,000 each: 265 and 225 approved, 0 failures. |
+
 ## Randomized differential (PRO-100, 2026-11-22)
 
 Hermes, PRO-100: differential testing with random inputs, the Python reference as the oracle.
