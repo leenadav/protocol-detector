@@ -35,13 +35,16 @@ The counts above are those of `main` at the time of writing. A changed count is 
 - **Editing the Python reference.** Product Python is frozen. The only exceptions are the Lee-approved list in
   `migration/STATUS.md` ("Frozen-Python exceptions"); otherwise make the change in Go.
 - **Skipping or weakening a failing test**, or adding `--allow-skip`, to get green. Find the cause and fix it.
-  Never disable a security check.
+  The only skip allowed is a quarantine of an intermittent test (below). Never disable a security check.
 - **Rewriting history.** No force-push, rebase or amend of a pushed commit, and no tags. Merge the base branch in
   instead.
 - **Big or mixed PRs.** One topic per PR, reviewable in about 15 minutes, cut from current `origin/main`. Lee
   merges; agents never merge, approve or comment on PRs.
 - **Pushing to a merged PR's branch.** Those commits never reach `main`. Check the PR state first, and cut a new
   branch otherwise.
+- **Re-running a red job until it passes.** Diagnose it. A test that fails twice intermittently is quarantined
+  with an issue link and a deadline (AGENTS.md, "Flaky tests and verify skills"), never retried.
+- **Reporting done without the verify skills.** Run `.claude/skills/verify-*` for what the change touches.
 - **Editing the other lane's files.** Engine owns `go/`, `migration/` and product code; CI/CD owns `.github/`,
   its `tools/` and the locks. Send the other lane a patch instead.
 
