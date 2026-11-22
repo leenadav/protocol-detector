@@ -50,6 +50,8 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   pin's x/sys and x/text past the OSV advisories.
 - **SEC-CONTENT-1 (PRO-154):** the content-pack loader decodes exact keys only; merged with PR #84
   (`bc80f45`).
+- **SEC-INSP-1 (PRO-129, P0):** parser-driven shift nesting capped at 2 on `claude/fix-sec-insp-1` (PR into this
+  branch); a Go-only parity divergence that awaits Lee's approval.
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
 
 ## 3. Where things live (reading order)
@@ -149,6 +151,8 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **`encoding/json` matches field names case-insensitively (SEC-CONTENT-1).** Anything verified by exact keys
   (digests, the reference) must also be decoded by exact keys: the content pack is decoded from the strict tree with
   case-variant keys removed (`exactFields`), and every tagged struct field names its key explicitly.
+- **Nesting driven by the traffic needs a fixed bound (SEC-INSP-1).** A phase that can open a phase (a shift, a
+  tunnel, a continuation) must count its depth: one CONNECT per request nested without limit and cost O(n³).
 - **Per-packet work must not scan a whole store (SEC-QUIC-1).** Index by what the hot path looks up (idle heap,
   scope index), and prove the new structure against the old implementation kept as a test oracle, with a mutation check.
 - **Go versions (PRO-107):** `go/go.mod` states `go 1.27.0` (the floor Culvert imports at, gated by
