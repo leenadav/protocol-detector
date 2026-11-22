@@ -6,9 +6,13 @@ from "the module disappeared while its sources stayed" and from "the gate target
 Shell conditionals are not allowed in ci.yml (workflow policy rule 13), so that decision lives
 here, where it has a self-test.
 
-    go_ci.py go [--summary FILE]      the `go-engine` job: `make go-check` (gofmt, vet,
-                                      go test -race, fuzz smoke, then `make parity-go`) on the
-                                      build compiler
+    go_ci.py go [--part PART] [--shard I/N] [--summary FILE]
+                                      `make go-check` (gofmt, vet, go test -race, fuzz smoke,
+                                      then `make parity-go` and the other parity gates) on the
+                                      build compiler; --part static|race|fuzz|parity runs one
+                                      part (`make go-check-PART`), as the go-engine, go-fuzz-smoke
+                                      and go-parity jobs do, and --shard I/N (fuzz only) runs
+                                      shard I of N of the fuzz smoke (GO_FUZZ_SHARD)
     go_ci.py minimum [--summary FILE] the `go-minimum` job: `make go-check-minimum` (vet and
                                       go test -race) on the declared minimum Go
     go_ci.py build [--summary FILE]   the tests and presentation jobs: `make go-build` (offline,
@@ -73,6 +77,8 @@ TOOLCHAIN_LINE = re.compile(r"^toolchain\b.*$", re.M)
 TOOLCHAIN = re.compile(r"^toolchain\s+go(\d+\.\d+(?:\.\d+)?)\s*$")
 EXACT = re.compile(r"^\d+\.\d+\.\d+$")
 TARGET = re.compile(r"^go-check\s*:", re.M)
+PARTS = ("all", "static", "race", "fuzz", "parity")
+SHARD = re.compile(r"^[1-9][0-9]?/[1-9][0-9]?$")
 MINIMUM_TARGET = re.compile(r"^go-check-minimum\s*:", re.M)
 
 
@@ -107,7 +113,12 @@ def module_versions(text, name):
     return minimum, build, []
 
 
-def decide(mode, tree):
+def part_target(part):
+    """The Makefile target of a go-mode part: go-check for the whole gate, go-check-PART for one part."""
+    return "go-check" if part == "all" else "go-check-" + part
+
+
+def decide(mode, tree, part="all"):
     """tree: {"go_mod", "scanner_mod", "makefile": text or None, "go_sources": [paths],
     "fixtures": bool, "compare": bool, "go_version": `go version` output or None}.
     Returns (action, problems): action is "skip", "run" or "fail"."""
@@ -137,7 +148,8 @@ def decide(mode, tree):
             problems.append("{} declares go {}: the minimum tested in CI must be an exact X.Y.Z release".format(GO_MOD, minimum))
             wanted = None
     else:
-        wanted, target, label = build, TARGET, "builds with"
+        wanted, label = build, "builds with"
+        target = TARGET if part == "all" else re.compile(r"^{}\s*:".format(re.escape(part_target(part))), re.M)
         if build is not None and pinned is not None and build != pinned:
             problems.append("{} builds with go {} but {} builds with go {}: one Go toolchain for the scanners and the "
                             "engine".format(GO_MOD, build, SCANNER_MOD, pinned))
@@ -147,7 +159,7 @@ def decide(mode, tree):
     elif wanted is not None and installed.group(1) != wanted:
         problems.append("installed go {} differs from the go {} that {} {}".format(installed.group(1), wanted, GO_MOD, label))
     if not target.search(tree.get("makefile") or ""):
-        problems.append("Makefile has no `{}` target".format("go-check-minimum" if mode == "minimum" else "go-check"))
+        problems.append("Makefile has no `{}` target".format("go-check-minimum" if mode == "minimum" else part_target(part)))
     return ("fail", problems) if problems else ("run", [])
 
 
@@ -341,11 +353,21 @@ def parity_lines():
 
 
 TITLES = {"go": "### Go engine (M10)", "minimum": "### Go engine on its declared minimum Go"}
+PART_TITLES = {"static": "gofmt, vet, mutation boundaries", "race": "go test -race", "fuzz": "fuzz smoke",
+               "parity": "parity with the Python reference"}
 
 
-def run(mode, summary):
+def go_command(part="all", shard=None):
+    """The make command of a go-mode part; the parity report is read only after a part that writes it."""
+    command = ["make", part_target(part), "PYTHON=" + sys.executable]
+    return command + (["GO_FUZZ_SHARD=" + shard] if shard else [])
+
+
+def run(mode, summary, part="all", shard=None):
     title = TITLES.get(mode) or "### Parity oracle on python {}".format(sys.version.split()[0])
-    action, problems = decide(mode, survey(mode))
+    if mode == "go" and part != "all":
+        title += ": {}{}".format(PART_TITLES[part], ", shard {} of {}".format(*shard.split("/")) if shard else "")
+    action, problems = decide(mode, survey(mode), part)
     if action == "skip":
         summarise(summary, [title, "", "No Go module, Go sources or migration fixtures on this commit: nothing to check."])
         return 0
@@ -356,12 +378,14 @@ def run(mode, summary):
     if action == "fail":
         summarise(summary, [title, ""] + ["- FAILED: " + problem for problem in problems])
         return 1
-    if mode == "go":
+    reads_report = mode == "go" and part in ("all", "parity")
+    if reads_report:
         stale = clear_report()
         if stale:
             summarise(summary, [title, "", "- FAILED: " + stale])
             return 1
-        command = ["make", "go-check", "PYTHON=" + sys.executable]
+    if mode == "go":
+        command = go_command(part, shard)
     elif mode == "minimum":
         command = ["make", "go-check-minimum"]
     else:
@@ -369,7 +393,7 @@ def run(mode, summary):
     code = subprocess.run(command, check=False, env=go_env(VENDOR.is_file())).returncode  # noqa: S603
     lines, problems = [title, "", "- `{}`: exit {}{}".format(" ".join(command), code,
                                                               " (GOFLAGS=-mod=vendor)" if VENDOR.is_file() else "")], []
-    if mode == "go":
+    if reads_report:
         report_lines, problems = parity_lines()
         lines += report_lines
     summarise(summary, lines)
@@ -481,6 +505,21 @@ def self_test():
         found = report_problems(bad, 5366 if label == "other fixtures" else 5365)
         assert any(expected in problem for problem in found), (label, found)
     stale_regression()
+    part_regression()
+    parts = dict(full, makefile="go-check:\n\tgo test\ngo-check-static:\ngo-check-race:\ngo-check-fuzz:\ngo-check-parity:\n")
+    for part in PARTS:
+        assert decide("go", parts, part) == ("run", []), part
+        assert go_command(part)[1] == part_target(part), part
+    assert part_target("all") == "go-check" and part_target("fuzz") == "go-check-fuzz"
+    assert go_command("fuzz", "2/3")[-1] == "GO_FUZZ_SHARD=2/3" and not any("SHARD" in a for a in go_command("race"))
+    action, found = decide("go", full, "race")                        # a part whose target is gone fails, never skips
+    assert action == "fail" and "no `go-check-race` target" in found[0], found
+    assert decide("go", dict(full, makefile="go-check-static-old:\n"), "static")[0] == "fail"
+    assert decide("go", dict(full, makefile="go-check-race:\n"))[0] == "fail"   # go-check-race is not go-check
+    for good in ("1/3", "16/16"):
+        assert SHARD.match(good), good
+    for bad in ("0/3", "1/3 ", "a/b", "1/", "01/3"):
+        assert not SHARD.match(bad), bad
     assert directive("module x\n\ngo 1.27\n") == "1.27"
     assert GO_VERSION.search("go version go1.27.4 darwin/arm64 ").group(1) == "1.27.4"
     target_tree = dict(full, go_mod=crypto, vendored=True, toolchain_problems=[],
@@ -497,12 +536,12 @@ def self_test():
     action, found = target_decision("build", dict(target_tree, makefile="", toolchain_problems=["wrong go"]))
     assert action == "fail", found                                                                 # no silent skip past a bad Go
     minimum_regression()
-    print("go_ci self-test: ok ({} tree refusals, {} minimum refusals, 15 report refusals, 5 end-to-end runs)".format(
+    print("go_ci self-test: ok ({} tree refusals, {} minimum refusals, 15 report refusals, 10 end-to-end runs, 5 parts)".format(
         len(cases) + 1, len(minimum_cases)))
     return 0
 
 
-def scratch_run(mode, files):
+def scratch_run(mode, files, extra=()):
     """Run this tool's `mode` in a scratch git tree holding `files` (a stub `bin/go` among them), from outside the
     checkout; (exit status, output, tree root). The caller removes the root."""
     for tool in ("git", "make"):
@@ -517,7 +556,7 @@ def scratch_run(mode, files):
     subprocess.run(["git", "init", "-q"], cwd=str(root), check=True)  # noqa: S603,S607
     subprocess.run(["git", "add", "-A"], cwd=str(root), check=True)  # noqa: S603,S607
     env = dict(os.environ, PATH=str(root / "bin") + os.pathsep + os.environ.get("PATH", ""))
-    result = subprocess.run([sys.executable, "-B", str(Path(__file__).resolve()), mode], cwd=str(root), env=env,  # noqa: S603
+    result = subprocess.run([sys.executable, "-B", str(Path(__file__).resolve()), mode] + list(extra), cwd=str(root), env=env,  # noqa: S603
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False, timeout=120)
     return result.returncode, result.stdout.decode("utf-8", "replace"), root
 
@@ -549,6 +588,31 @@ def stale_regression():
         assert code == wanted, (label, code, output)
 
 
+def part_regression():
+    """End to end: one part runs its own target only; the parity report is required after the parity part and
+    never read after another part; the fuzz part passes its shard to make."""
+    passing = {"ok": True, "compared": 3, "matched": 3, "mismatched": 0, "extra": 0, "unsupported": 0}
+    makefile = ("go-check-race:\n\t@touch race.ran\ngo-check-parity:\n\t@echo NO_TESTS_EXECUTED\n"
+                "go-check-fuzz:\n\t@echo $(GO_FUZZ_SHARD) > shard.txt\n")
+    for label, (extra, wanted, ran) in {
+            "race part, stale report ignored": (["--part", "race"], 0, "race.ran"),
+            "parity part, only a stale report": (["--part", "parity"], 1, None),
+            "fuzz shard": (["--part", "fuzz", "--shard", "2/3"], 0, "shard.txt"),
+            "shard without the fuzz part": (["--part", "race", "--shard", "2/3"], 2, None),
+            "fuzz shard out of form": (["--part", "fuzz", "--shard", "2-3"], 2, None)}.items():
+        code, output, root = scratch_run("go", {
+            "go/go.mod": "module x\n\ngo 1.27.4\n", "tools/scanners/go.mod": "module s\n\ngo 1.27.4\n",
+            "go/main.go": "package main\n", "Makefile": makefile,
+            str(FIXTURES): json.dumps({"cases": [{"id": "a"}, {"id": "b"}, {"id": "c"}]}),
+            str(COMPARE): "import sys\nsys.exit(99)\n", str(REPORT): json.dumps(passing),
+            "bin/go": stub_go("1.27.4")}, extra)
+        marker = (root / ran).read_text(encoding="utf-8").strip() if ran and (root / ran).exists() else None
+        shutil.rmtree(str(root), ignore_errors=True)
+        assert code == wanted, (label, code, output)
+        assert (marker is not None) == bool(ran), (label, output)
+        assert ran != "shard.txt" or marker == "2/3", (label, marker)
+
+
 def minimum_regression():
     """End to end: the minimum mode runs `go-check-minimum` only on exactly the declared minimum Go, and refuses,
     without running the target, when the build compiler stands in for it."""
@@ -567,6 +631,8 @@ def minimum_regression():
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("mode", nargs="?", choices=("go", "minimum", "oracle", "minimum-version", "build", "vendor-check"))
+    parser.add_argument("--part", choices=PARTS, default="all", help="go mode: one part of `make go-check` (default all)")
+    parser.add_argument("--shard", help="go mode, --part fuzz: run shard I of N of the fuzz smoke")
     parser.add_argument("--summary", help="append a markdown summary here (GITHUB_STEP_SUMMARY)")
     parser.add_argument("--github-output", help="minimum-version: append `version=X.Y.Z` here (GITHUB_OUTPUT)")
     parser.add_argument("--self-test", action="store_true")
@@ -585,9 +651,13 @@ def main(argv=None):
                 stream.write("version={}\n".format(version))
         print("minimum-version: go {}".format(version))
         return 0
+    if (args.part != "all" or args.shard) and args.mode != "go":
+        parser.error("--part and --shard apply to the go mode only")
+    if args.shard is not None and (args.part != "fuzz" or not SHARD.match(args.shard)):
+        parser.error("--shard takes I/N and applies to --part fuzz only")
     if args.mode in TARGET_MODES:
         return run_target(args.mode, args.summary)
-    return run(args.mode, args.summary)
+    return run(args.mode, args.summary, args.part, args.shard)
 
 
 if __name__ == "__main__":
