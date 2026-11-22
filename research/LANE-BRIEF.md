@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-22 (PRO-158: live round 7 merged; batch P). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-22 (PRO-169: blocked-URL status after PRO-168; PRO-158 batch P). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -34,8 +34,8 @@ and content-pack patches for the Engine lane.
 - Live verification rounds 1 to 7 are in (run by Hermes and Research Lab): all 506 spec names have a result: 325 live (140 with a
   certificate naming an organisation), 32 suffixes verified by probe, 114 apexes with no address and no probe, 33 TLS failures (not
   removal), 2 NXDOMAIN, 71 CDN-fronted, 3 ECH-capable, 32 offer h3.
-- Majestic ranking run 2 is in (66 of 79 specs ranked). Waiting on the server: Research Lab's reads of `blocked-urls.md` rows 30 to 44
-  (batch P candidates, PRO-168).
+- Majestic ranking run 2 is in (66 of 79 specs ranked). Research Lab read `blocked-urls.md` rows 30 to 33, 36, 38, 40, 42 to 44
+  (PRO-168); their content waits on a relay to this lane before specs can be written (PRO-169). Rows 34, 35, 37, 39 and 41 stay BLOCKED.
 
 ## 3. Where things live (reading order)
 
@@ -93,7 +93,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Ranking (CrUX, Majestic Million) | Majestic run 2 **done** (PRO-132, `ranking/majestic-2026-11-21-run2.tsv`, 66 of 79 ranked; used in the backlog). Left: run 3 with the current `app-domains.json` (sha256 `ce3e7844…`, adds `fortinet-datto-nable.md`'s 23 domains), and CrUX (needs BigQuery on the server) |
 | Window-overflow item (`protocol/window-overflow.md`) | decided (Hermes, PRO-30, 2026-11-20); Engine implements post-merge, Go only, with an approved parity delta |
 | Content version ordering | Engine: numeric comparison plus a regression test, then renumber the placeholders |
-| Blocked vendor pages | WhatsApp and Hugging Face (no official page known). Rows 19 to 23, 28 and 29 (ServiceNow, Workday, CrowdStrike, SentinelOne, Cisco Secure Client, Egnyte, GlobalProtect) stay blocked (sign-in, bot challenge or JavaScript-only, per Research Lab, PRO-108). Rows 24 to 27 resolved in batch N (DocuSign's full list read, PRO-139). Rows 30 to 44 (batch P candidates: Kaseya VSA, ManageEngine, RingCentral, Mimecast, Proofpoint, Keeper, LastPass, 8x8, Dialpad, Freshworks, Dashlane, Intercom, New Relic, PagerDuty) wait on Research Lab: each row has the exact URL |
+| Blocked vendor pages | WhatsApp and Hugging Face (no official page known). Rows 19 to 23, 28 and 29 (ServiceNow, Workday, CrowdStrike, SentinelOne, Cisco Secure Client, Egnyte, GlobalProtect) stay blocked (sign-in, bot challenge or JavaScript-only, per Research Lab, PRO-108). Rows 24 to 27 resolved in batch N (DocuSign's full list read, PRO-139). Rows 30 to 44 (batch P candidates): read by Research Lab except 34 Mimecast (403), 35 Proofpoint (sign-in), 37 LastPass (incomplete TLS chain), 39 Dialpad (403) and 41 Dashlane (403); the read rows' content must be relayed as text or committed to a branch (PRO-169) |
 | Culvert field data for prioritisation | not available yet (placeholder in the backlog) |
 
 ## 6. Frozen SHAs awaiting Codex

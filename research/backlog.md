@@ -56,7 +56,7 @@ expected), rollback exact, parity 7490/7490 (Python and Go), 88/88 families. 39 
 |---|---|---|---|---|---|---|---|
 | 1 | P1 | HubSpot tags and hosted-page services to new vendor-level id `hubspot-base` (35 names; decision 4) | `apps/hubspot.md` | 4 | 4 | 16 | READY on the vendor page; live round 7 neutral (24 names exist with no address and no documented probe host: the page gives wildcards only, so no probe can be added without guessing) |
 | 2 | P2 | BeyondTrust Remote Support Cloud: verified, all names under `beyondtrustcloud.com` | `apps/beyondtrust.md` | 5 | 4 | 20 | DONE (no catalog change; confirmed by live round 7) |
-| 3 | - | Kaseya VSA, ManageEngine Endpoint Central, RingCentral, Mimecast, Proofpoint, Keeper, LastPass, 8x8 | none yet | 4 to 5 | 1 | 4 to 5 | BLOCKED (pages unreachable; rows 30 to 38) |
+| 3 | - | Kaseya VSA, ManageEngine Endpoint Central, RingCentral, Mimecast, Proofpoint, Keeper, LastPass, 8x8 | none yet | 4 to 5 | 1 | 4 to 5 | Research Lab read rows 30 to 33, 36, 38, 40, 42 to 44 (PRO-168); the content has not reached this lane, so no spec yet (PRO-169). Rows 34 (Mimecast), 35 (Proofpoint), 37 (LastPass), 39 (Dialpad), 41 (Dashlane) stay BLOCKED |
 
 Live round 7 (PRO-167, 2026-11-22, `live-results-2026-11-22-r7.tsv`, 39 names; verdicts by Hermes, restated in section 9): `hubspot-base`
 neutral (24 of its names exist with no address and no probe; `hubapi.com`, `hscta.net`, `hscta.com`, `hsctaimages.net`, `hsappstatic.net`,
