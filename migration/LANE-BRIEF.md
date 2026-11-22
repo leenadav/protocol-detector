@@ -122,6 +122,8 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **Never** merge, rebase, force-push, open a PR, tag, release or change a schedule. Post GitHub comments only when
   the task asks for them (the current Hermes rule is none).
 - **Changes to `ci.yml`** go to the CI/CD lane, which ports them (see chunk-43, `34ea6b0` → `85e99e9`).
+- **Per-packet work must not scan a whole store (SEC-QUIC-1).** Index by what the hot path looks up (idle heap,
+  scope index), and prove the new structure against the old implementation kept as a test oracle, with a mutation check.
 - **Go versions (PRO-107):** `go/go.mod` states `go 1.27.0` (the floor Culvert imports at, gated by
   `make go-check-minimum`) and `toolchain go1.27.4` (the compiler every build and release uses). Never raise the
   `go` line for a build need; bump the `toolchain` line instead. "Standard library only" is checked on the import
