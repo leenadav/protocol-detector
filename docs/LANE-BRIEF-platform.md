@@ -23,14 +23,16 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-22, after PRO-105)
+## 2. Current state (2026-11-22, after PRO-128)
 
 - `main` = `2a33183`. PRO-42, PRO-59 and PRO-31 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #37 (`0d32281`), #38 (`51b5e94`), #39 (`0ef7349`);
   #41 and #54 (PRO-73) too. #56 (the brief through PRO-103) and #66 (gitleaks allowlist for the r5 CNAME false positive, PRO-145) are merged.
   Open lane PRs: drafts #55 (PRO-77) and #57 (PRO-102) into `claude/go-migration`, and the stack on #57: #59 and #60 (PRO-103),
   #61, #62 and #64 (PRO-104), #65 (PRO-136); #63 (the brief through PRO-104) is merged. Draft #73 (PRO-105,
   `claude/cicd-verify-flaky-policy`, head `33fcd00`, base `claude/go-migration` `cdb385b`, independent of the stack) adds the
-  verify skills and the flaky-test policy, plus this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
+  verify skills and the flaky-test policy (39/39 green); #74 (the brief through PRO-105) is merged. PRO-128 adds two
+  drafts on top of the stack: #75 (`claude/cicd-osv-scanner`, head `ba9717c`, base #65's branch) and #76
+  (`claude/cicd-scorecard`, head `b1402d7`, base #75's branch), plus this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
 - **Merged so far:**
 
   | PR | Content |
@@ -77,6 +79,11 @@ their decisions, the policy locks, and the release controller.
   and healthy output an agent checks before reporting done. `AGENTS.md` "Flaky tests and verify skills": never re-run to
   green; a test that fails twice intermittently is quarantined with an issue link and a deadline; no quarantine of a
   security, parity, content or budget gate. `claude/cicd-verify-skills` (`4d4e463`, stacked on #65) is superseded by #73.
+- **PRO-128 (#75, #76):** the `osv-scan` ci job (osv-scanner 2.7.1 from `tools/golint/osv-scanner`, `tools/osv_scan.py`,
+  ignore file `tools/osv_ignore.json`: each entry has a lockfile, package, reason and an expiry at most 90 days ahead; SSDLC
+  item 41) and the weekly `scorecard.yml` (scorecard-action v2.5.0, SARIF to code scanning, `publish_results: false`;
+  item 42). The first OSV run found 52 groups, all in CI tool modules; bumps fixed all but rardecode 2.1.0 in the gitleaks
+  build (accepted until 2026-12-22).
 
 ## 3. Where things live (reading order)
 
@@ -115,6 +122,10 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | PR #57 merged into `claude/go-migration` (go-lint job); the 194 baseline findings fixed or justified | Hermes's review, then Lee; Engine for the findings |
 | The stack merged in order #57 → #59 → #60 → #61 → #62 → #64 → #65 (each retargets to `claude/go-migration` when its base merges) | Hermes's review, then Lee |
 | PR #73 merged into `claude/go-migration` (verify skills, flaky-test policy); a quarantine-expiry checker in CI is a possible follow-up | Hermes's review, then Lee |
+| The stack continued: #75 → #76 after #65 | Hermes's review, then Lee |
+| Scorecard `publish_results: true` (needs `id-token: write` and no top-level `defaults:`, rules 5 and 6) | Lee's decision on a policy exception |
+| OSV entry GO-2025-4020 (rardecode in the gitleaks build) expires 2026-12-22 | A gitleaks release whose archives dependency builds with rardecode 2.2.0 |
+| Scorecard follow-ups: one task per check that scores low on the first run (expected: License, Code-Review, Branch-Protection, CII-Best-Practices, Signed-Releases, Packaging) | The first scheduled run on `main` after the stack merges |
 | Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
 | 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
 
@@ -179,3 +190,8 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   random/tls/1/00000` for its planted 300-case run. That line is expected; the check fails only if the plant is not caught.
 - **Base of a doc-only PR:** a PR that touches no file of the stack goes directly on `claude/go-migration` (Lee's rule).
   Cutting it from the top of the stack drags the stack's lag behind `claude/go-migration` into its diff (139 files for #73).
+- **OSV vs govulncheck:** osv-scanner reports every advisory against a pinned version; govulncheck `-mode=binary` on
+  the built tool says which are reachable. Bump what you can (each release at least 7 days old), and prove behaviour
+  unchanged (gitleaks findings old vs new build, the lint baseline, the licence report). rardecode 2.2.0 breaks
+  gitleaks' mholt/archives 0.1.2, so the scanners module cannot take it alone.
+- **Scorecard publishing:** `publish_results: true` conflicts with rules 5 and 6; never relax them without Lee.
