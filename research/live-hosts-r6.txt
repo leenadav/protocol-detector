@@ -1,0 +1,29 @@
+# Round 6 for tools/live_verify.py: names added by batch O (research/patches/batch-o-name-based.patch).
+# "NAME PROBE" where the vendor page documents a name under a suffix entry; run with TLS so certificate organisation
+# is recorded (decision 3: it matters most for the N2 domains systemmonitor.eu.com, logicnow.us, remote.management,
+# beanywhere.com and cloudbackup.management).
+centrastage.net syrah.centrastage.net
+rmm.datto.com syrah.rmm.datto.com
+n-able.com sis.n-able.com
+system-monitor.com checks-api.us.system-monitor.com
+systemmonitor.eu.com upload1europe1.systemmonitor.eu.com
+logicnow.com rm-downloads.logicnow.com
+logicnow.us cannonball-us-west-2-push.logicnow.us
+remote.management upload1.am.remote.management
+beanywhere.com
+keybox.solarwindsmsp.com
+swi-rc.cdn-sw.net
+cloudbackup.management integrated.cloudbackup.management
+forticlient.forticloud.com
+forticlient-emsproxy.forticloud.com
+fctguard.fortinet.net
+fctusguard.fortinet.net
+fcteuguard.fortinet.net
+forticlient.fortinet.net
+myforticlient.fortinet.net
+usforticlient.fortinet.net
+fctupdate.fortinet.net
+fctusupdate.fortinet.net
+fcteuupdate.fortinet.net
+# DocuSign-listed subtree of a non-DocuSign registrable domain (PRO-139): certificate owner decides any mapping.
+docusign.pdfeditor.com
