@@ -18,8 +18,9 @@ requests go to both, in the same order, from the same script:
 
 Answers are compared as the status line, the headers (Server and Date aside) and the body. JSON bodies are
 compared after replacing what differs by construction: tokens, run, job and instance ids (by order of
-appearance), monotonic times, the lease countdown, wall-clock durations of a run or an analysis, and the
-"python" field of the health report (the Go service runs no interpreter). The demo capture and showcase are
+appearance), monotonic times, the lease countdown, wall-clock durations of a run or an analysis, the
+measurements of telemetry duration histograms (their keys, sample counts and every counter are compared;
+Normalizer.histogram), and the "python" field of the health report (the Go service runs no interpreter). The demo capture and showcase are
 random in the reference itself: their answers are compared by shape. Python 3.13 texts are the reference.
 """
 import argparse
@@ -117,6 +118,9 @@ LIVE_SESSION_ID = re.compile(r"L-[0-9]{6}")
 VOLATILE_IDS = ("token", "run_id", "capture_id", "id", "instance")
 VOLATILE_TIMES = ("submitted", "started", "finished", "uptime_seconds", "processing_ms", "elapsed_seconds", "first_seconds",
                   "stable_seconds")
+STAGE_HISTOGRAM, DURATION_SUFFIX = "stage_seconds.", "_seconds"   # protocol_adapters/observability.py
+DURATION_MEASUREMENTS = ("sum", "min", "max", "p50", "p95", "p99")
+TIMED_COUNTS = ("stage_seconds.tick",)
 
 
 class Normalizer:
@@ -138,9 +142,28 @@ class Normalizer:
             return "<lease>"
         if key == "python":
             return "<interpreter>"
-        if key in ("telemetry", "histograms"):
-            return "<telemetry>"
+        if key == "histograms" and isinstance(value, dict):
+            return OrderedDict((name, self.histogram(name, h)) for name, h in value.items())
         return self.walk(value)
+
+    def histogram(self, name, value):
+        """A duration histogram keeps its keys, sample count and bucket bounds; only its measurements (sum, min,
+        max, quantiles, per-bucket counts) are replaced (Codex PRO-21: the whole telemetry value used to be one
+        constant, so counters, sample counts and every other field were never compared). The services' live
+        runs read the wall clock (no replay clock), so every *_seconds histogram is a wall-clock measurement
+        here. The one sample count that is itself a timing is stage_seconds.tick's: the live loop ticks on
+        every wake-up and every idle 0.25 s, so a held run's tick count grows with elapsed time."""
+        if not (isinstance(value, dict) and (name.startswith(STAGE_HISTOGRAM) or name.endswith(DURATION_SUFFIX))):
+            return self.walk(value)
+        out = OrderedDict()
+        for key, item in value.items():
+            if key == "buckets" and isinstance(item, list):
+                out[key] = [[pair[0], "<time>"] if isinstance(pair, list) and pair else pair for pair in item]
+            elif key in DURATION_MEASUREMENTS or (key == "count" and name in TIMED_COUNTS):
+                out[key] = "<time>"
+            else:
+                out[key] = self.walk(item)
+        return out
 
     def walk(self, value):
         if isinstance(value, dict):

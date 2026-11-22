@@ -70,5 +70,45 @@ class ControlWorkerTests(unittest.TestCase):
                 self.assertIn(done.stderr.decode(), str(raised.exception))
 
 
+def telemetry(counter=3, count=2, total=0.25, extra=None):
+    document = {"telemetry": {"counters": {"bytes.new": counter, "queue.depth": 0},
+                              "histograms": {"stage_seconds.packet": {"count": count, "sum": total, "min": total / 4, "max": total, "p50": 0.1,
+                                                                      "p95": 0.5, "p99": 0.5, "buckets": [[0.1, 1], [0.5, count - 1], ["+inf", 0]]},
+                                             "session_lifetime_seconds": {"count": 1, "sum": 0.004, "min": 0.004, "max": 0.004, "p50": 0.005,
+                                                                          "p95": 0.005, "p99": 0.005, "buckets": [[0.005, 1], ["+inf", 0]]}}}}
+    document["telemetry"].update(extra or {})
+    return document
+
+
+class ServerNormalizerTests(unittest.TestCase):
+    """Codex PRO-21 P2: only wall-clock measurements are normalized away; telemetry structure, keys, counters and
+    sample counts are compared."""
+
+    def same(self, left, right):
+        import server_diff
+        return server_diff.Normalizer().walk(left) == server_diff.Normalizer().walk(right)
+
+    def test_wall_clock_durations_are_normalized(self):
+        self.assertTrue(self.same(telemetry(total=0.25), telemetry(total=0.75)))
+        changed = telemetry()
+        changed["telemetry"]["histograms"]["session_lifetime_seconds"].update(sum=0.009, min=0.009, max=0.009)
+        self.assertTrue(self.same(telemetry(), changed))
+        ticks = [telemetry(extra={"histograms": {"stage_seconds.tick": {"count": n, "sum": n / 10.0}}}) for n in (6, 14)]
+        self.assertTrue(self.same(*ticks))                          # the live loop's idle wake-ups: elapsed time
+
+    def test_counters_counts_keys_and_structure_are_compared(self):
+        self.assertFalse(self.same(telemetry(), telemetry(counter=4)))
+        self.assertFalse(self.same(telemetry(), telemetry(count=3)))
+        self.assertFalse(self.same(telemetry(), telemetry(extra={"counters": {"bytes.new": 3}})))
+        self.assertFalse(self.same(telemetry(), {"telemetry": {"counters": {}, "histograms": {}}}))
+        changed = telemetry()
+        changed["telemetry"]["histograms"]["session_lifetime_seconds"]["count"] = 2
+        self.assertFalse(self.same(telemetry(), changed))
+        changed = telemetry()
+        changed["telemetry"]["histograms"]["session_lifetime_seconds"]["buckets"].pop(0)
+        self.assertFalse(self.same(telemetry(), changed))
+        self.assertFalse(self.same({"histograms": {"a": {"count": 1}}}, {"histograms": {"a": {"count": 2}}}))
+
+
 if __name__ == "__main__":
     unittest.main()
