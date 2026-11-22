@@ -62,11 +62,14 @@ jobs:
           python -B tools/release_audit.py --self-test
           facts="$RUNNER_TEMP/facts.jsonl"
           : > "$facts"
+          main=$(gh api "repos/${GH_REPO}/git/ref/heads/main" --jq .object.sha) || main="0000000000000000000000000000000000000000"
+          gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/main" --jq '.[].ref' > "$RUNNER_TEMP/main-refs.txt" || echo "api-error" > "$RUNNER_TEMP/main-refs.txt"
+          jq -nc --arg main "$main" --rawfile others "$RUNNER_TEMP/main-refs.txt" '{kind: "main", tag: "main", main: $main, others: $others}' >> "$facts"
           gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/v" --jq '.[].ref' > "$RUNNER_TEMP/tags.txt"
           while IFS= read -r ref; do
             tag="${ref#refs/tags/}"
-            status=$(gh api "repos/${GH_REPO}/compare/${tag}...main" --jq .status) || status="api-error"
             commit=$(gh api "repos/${GH_REPO}/commits/${ref}" --jq .sha) || commit="api-error"
+            status=$(gh api "repos/${GH_REPO}/compare/${commit}...${main}" --jq .status) || status="api-error"
             jq -nc --arg tag "$tag" --arg compare "$status" --arg commit "$commit" '{kind: "tag", tag: $tag, compare: $compare, commit: $commit}' >> "$facts"
           done < "$RUNNER_TEMP/tags.txt"
           gh api --paginate "repos/${GH_REPO}/releases?per_page=100" --jq '.[] | select(.draft | not) | .tag_name' > "$RUNNER_TEMP/releases.txt"

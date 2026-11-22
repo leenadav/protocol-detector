@@ -14,7 +14,8 @@
 4. Release provenance (`publish-release.yml`): a job the `publish` job needs, with no job-level
    `if:` or `continue-on-error`, must contain the pinned provenance step: exactly the keys
    `name`, `env` and `run`, the env mapping in PROVENANCE_ENV and the run lines in
-   PROVENANCE_RUN (self-test, compare status, the decision with REF_TYPE, SHA and STATUS),
+   PROVENANCE_RUN (self-test, main's SHA from refs/heads/main, the compare status against that SHA and never
+   the bare name main a tag could shadow (SEC-CI-1), the decision with REF_TYPE, SHA and STATUS),
    and likewise the pinned release-checks step (CHECKS_RUN: the tagged commit's workflow runs
    from the Actions API, the ci and codeql workflows, by path and push event, required by
    `tools/check_release_checks.py`).
@@ -80,8 +81,9 @@
    workflow env and no other job, so no step can shadow the gather step's `gh`): the detective control exists, keeps its daily
    `schedule:` trigger (scheduled runs always use the default branch's copy, which no tag can
    swap), and its `audit` job, with no job-level `if:` or `continue-on-error`, holds the pinned
-   gather-and-decide step (AUDIT_ENV / AUDIT_RUN: every `v*` tag compared with main and
-   resolved to its commit, every published release resolved and downloaded, and every file
+   gather-and-decide step (AUDIT_ENV / AUDIT_RUN: main resolved from refs/heads/main to its SHA, with a
+   tag named main failing the audit (SEC-CI-1), every `v*` tag resolved to its commit and that SHA compared with
+   main's, every published release resolved and downloaded, and every file
    found, hidden ones included, verified against publish-release.yml for that tag and commit,
    then `tools/release_audit.py`).
 11. Parser cross-check (`ci.yml`): the `workflow-lint` job, with no job-level `if:` or
@@ -408,7 +410,8 @@ PROVENANCE_ENV = {
 }
 PROVENANCE_RUN = [
     'python -B tools/check_release_ref.py --self-test',
-    'STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...main" --jq .status) || STATUS="api-error"',
+    'MAIN=$(gh api "repos/${GH_REPO}/git/ref/heads/main" --jq .object.sha) || MAIN="0000000000000000000000000000000000000000"',
+    'STATUS=$(gh api "repos/${GH_REPO}/compare/${SHA}...${MAIN}" --jq .status) || STATUS="api-error"',
     'python -B tools/check_release_ref.py --ref-type "${REF_TYPE}" --sha "${SHA}" --status "${STATUS}"'
     ' --summary "${GITHUB_STEP_SUMMARY}"',
 ]
@@ -763,11 +766,14 @@ AUDIT_RUN = [
     'python -B tools/release_audit.py --self-test',
     'facts="$RUNNER_TEMP/facts.jsonl"',
     ': > "$facts"',
+    'main=$(gh api "repos/${GH_REPO}/git/ref/heads/main" --jq .object.sha) || main="0000000000000000000000000000000000000000"',
+    'gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/main" --jq \'.[].ref\' > "$RUNNER_TEMP/main-refs.txt" || echo "api-error" > "$RUNNER_TEMP/main-refs.txt"',
+    'jq -nc --arg main "$main" --rawfile others "$RUNNER_TEMP/main-refs.txt" \'{kind: "main", tag: "main", main: $main, others: $others}\' >> "$facts"',
     'gh api --paginate "repos/${GH_REPO}/git/matching-refs/tags/v" --jq \'.[].ref\' > "$RUNNER_TEMP/tags.txt"',
     'while IFS= read -r ref; do',
     'tag="${ref#refs/tags/}"',
-    'status=$(gh api "repos/${GH_REPO}/compare/${tag}...main" --jq .status) || status="api-error"',
     'commit=$(gh api "repos/${GH_REPO}/commits/${ref}" --jq .sha) || commit="api-error"',
+    'status=$(gh api "repos/${GH_REPO}/compare/${commit}...${main}" --jq .status) || status="api-error"',
     'jq -nc --arg tag "$tag" --arg compare "$status" --arg commit "$commit" \'{kind: "tag", tag: $tag, compare: $compare, commit: $commit}\' >> "$facts"',
     'done < "$RUNNER_TEMP/tags.txt"',
     'gh api --paginate "repos/${GH_REPO}/releases?per_page=100" --jq \'.[] | select(.draft | not) | .tag_name\' > "$RUNNER_TEMP/releases.txt"',
@@ -1797,7 +1803,8 @@ def self_test():
         # comment lines are ignored
         run: |
           python -B tools/check_release_ref.py --self-test
-          STATUS=$(gh api "repos/${{GH_REPO}}/compare/${{SHA}}...main" --jq .status) || STATUS="api-error"
+          MAIN=$(gh api "repos/${{GH_REPO}}/git/ref/heads/main" --jq .object.sha) || MAIN="0000000000000000000000000000000000000000"
+          STATUS=$(gh api "repos/${{GH_REPO}}/compare/${{SHA}}...${{MAIN}}" --jq .status) || STATUS="api-error"
           python -B tools/check_release_ref.py --ref-type "${{REF_TYPE}}" --sha "${{SHA}}" --status "${{STATUS}}" --summary "${{GITHUB_STEP_SUMMARY}}"
   other:
     steps:
@@ -1837,7 +1844,10 @@ def self_test():
         "extra line": good.replace(final, final + "\n          exit 0"),
         "alternate command": good.replace(final, final.replace("python -B", "python3 -B")),
         "commented out": good.replace("          " + final, "          # " + final),
-        "status not from compare": good.replace("compare/${SHA}...main", "compare/main...${SHA}"),
+        "status not from compare": good.replace("compare/${SHA}...${MAIN}", "compare/${MAIN}...${SHA}"),
+        # SEC-CI-1: the bare name main resolves to a tag named main when one exists
+        "compare with bare main": good.replace("compare/${SHA}...${MAIN}", "compare/${SHA}...main"),
+        "main not from heads": good.replace("git/ref/heads/main", "git/ref/tags/main"),
         "ref type from input": good.replace("REF_TYPE: ${{ github.ref_type }}", "REF_TYPE: branch"),
         "sha from input": good.replace("SHA: ${{ github.event.pull_request.head.sha || github.sha }}", "SHA: ${{ inputs.sha }}"),
         "env dropped": good.replace("          GH_REPO: ${{ github.repository }}\n", ""),
