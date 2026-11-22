@@ -13,6 +13,10 @@ compared byte for byte in both forms (JSON rows and text), and the exit status a
 capture then goes through the presentation service's analysis (presentation/server.py analyze_bytes_reference
 against the Go `present` command, with seeded frame, session and event limits): results and refusals must be
 equal but for the measured processing time. Synthetic bytes only.
+
+Agreement alone is not a pass (PRO-20): the run fails unless captures were requested, the reference wrote
+rows, at least one row identifies a protocol (a known positive) and at least one presentation result is a
+completed analysis, so a run in which both backends answer nothing, or only refusals, cannot pass.
 """
 import argparse
 import contextlib
@@ -278,6 +282,27 @@ def compare(reference_result, go_result):
     return None
 
 
+def positive_rows(output):
+    """The rows of one analyze output that identify a protocol: a JSON row with an identified status, or a
+    text row naming a parser MATCH."""
+    return sum(1 for line in output.splitlines() if '"status": "identified"' in line or "=MATCH (" in line)
+
+
+def coverage_problems(captures, rows, positives, presented):
+    """Why a run with no divergence still proves nothing, as sentences; empty when it covered something."""
+    problems = []
+    if captures <= 0:
+        problems.append("no captures were requested")
+        return problems
+    if rows <= 0:
+        problems.append("the reference produced no rows")
+    if positives <= 0:
+        problems.append("no row identifies a protocol (no known positive)")
+    if presented <= 0:
+        problems.append("no presentation result was a completed analysis")
+    return problems
+
+
 def present_reference(server, data, limits):
     """presentation/server.py analyze_bytes on the reference engine: the result, or the exception class and text."""
     saved = server.MAX_FRAMES, server.MAX_SESSIONS, server.MAX_EVENTS
@@ -295,19 +320,20 @@ def present_reference(server, data, limits):
 
 
 def present_problem(server, binary, rng, data):
-    """Compare the Go `present` command with the reference on one capture (text of the result but the timing)."""
+    """Compare the Go `present` command with the reference on one capture (text of the result but the timing):
+    (problem or None, whether the reference completed the analysis)."""
     limits = (20000, 500, 4000) if rng.random() < 0.7 else (rng.choice([0, 3, 20000]), rng.choice([0, 1, 2, 500]), rng.choice([0, 2, 9, 4000]))
     expected = present_reference(server, data, limits)
     done = subprocess.run([binary, "present", "--max-frames", str(limits[0]), "--max-sessions", str(limits[1]), "--max-events", str(limits[2])],  # noqa: S603
                           input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=120)
     if done.returncode != (3 if "error" in expected else 0):
-        return "present exit status {} for {!r}: {}".format(done.returncode, expected.get("error"), done.stderr.decode("utf-8", "replace")[:200])
+        return "present exit status {} for {!r}: {}".format(done.returncode, expected.get("error"), done.stderr.decode("utf-8", "replace")[:200]), False
     actual = json.loads(done.stdout)
     if "meta" in actual:
         actual["meta"]["processing_ms"] = 0
     if json.dumps(actual) != json.dumps(expected):
-        return "present result differs (limits {})".format(limits)
-    return None
+        return "present result differs (limits {})".format(limits), False
+    return None, "error" not in expected
 
 
 def main(argv=None):
@@ -325,7 +351,7 @@ def main(argv=None):
         signatures_path, policy_path = str(folder / "signatures.json"), str(folder / "policy.json")
         Path(signatures_path).write_text(json.dumps(SIGNATURES), encoding="utf-8")
         Path(policy_path).write_text(json.dumps(POLICY), encoding="utf-8")
-        failures, rows, presented = [], 0, 0
+        failures, rows, positives, presented, completed = [], 0, 0, 0, 0
         sys.path.insert(0, str(ROOT / "presentation"))
         import server  # noqa: E402 - the presentation service's reference analysis
         for index in range(args.count):
@@ -336,18 +362,23 @@ def main(argv=None):
             done = subprocess.run([args.binary, "analyze", str(capture)] + options, stdout=subprocess.PIPE, stderr=subprocess.PIPE,  # noqa: S603
                                   check=False, timeout=120)
             rows += expected[0].count("\n")
+            positives += positive_rows(expected[0])
             problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")))
             if problem:
                 failures.append("{} {}: {}".format(capture.name, " ".join(options), problem))
-            problem = present_problem(server, args.binary, rng, capture.read_bytes())
+            problem, done_analysis = present_problem(server, args.binary, rng, capture.read_bytes())
             presented += 1
+            completed += done_analysis
             if problem:
                 failures.append("{}: {}".format(capture.name, problem))
         for line in failures[:10]:
             print("analyze mismatch:", line)
-        print("analyze parity: {} captures, {} rows, {} presentation results, {} mismatched (seed {})".format(
-            args.count, rows, presented, len(failures), args.seed))
-        return 1 if failures else 0
+        coverage = coverage_problems(args.count, rows, positives, completed)
+        for line in coverage:
+            print("analyze parity FAILED:", line)
+        print("analyze parity: {} captures, {} rows ({} identified), {} presentation results ({} completed), {} mismatched (seed {})".format(
+            args.count, rows, positives, presented, completed, len(failures), args.seed))
+        return 1 if failures or coverage else 0
 
 
 if __name__ == "__main__":

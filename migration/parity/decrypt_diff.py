@@ -12,6 +12,10 @@ The reference (presentation/poc_decryption/capture.py analyze_capture_reference)
 same capture and key log on standard input. Reports must be equal as JSON text, refusals in class, message
 and reason code. Nothing is written to disk and no secret is printed. Needs the `cryptography` package (the
 reference decrypts with it): presentation/requirements-decryption.lock.txt.
+
+Agreement alone is not a pass (PRO-20): the run fails unless captures were requested, the reference reported
+connection rows, at least one connection was decrypted and at least one decrypted connection named its inner
+application (a known positive), so a run that decrypts nothing on either backend cannot pass.
 """
 import argparse
 import hashlib
@@ -360,6 +364,21 @@ def reference(capture, keylog):
         return 3, json.dumps({"error_type": "CaptureError", "error": str(error), "code": ""})
 
 
+def coverage_problems(captures, kinds, applications):
+    """Why a run with no divergence still proves nothing, as sentences; empty when it covered something.
+    kinds counts the reference's connection rows by status (and refusals as "refused")."""
+    if captures <= 0:
+        return ["no captures were requested"]
+    problems = []
+    if not any(count for name, count in kinds.items() if name != "refused"):
+        problems.append("the reference reported no connection rows")
+    if not kinds.get("decrypted"):
+        problems.append("no connection was decrypted (no known positive)")
+    elif not applications:
+        problems.append("no decrypted connection named an inner application")
+    return problems
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
@@ -392,10 +411,13 @@ def main(argv=None):
                 index, args.seed, done.returncode, status, "differ" if actual != expected else "equal"))
     for line in failures[:10]:
         print("decrypt mismatch:", line)
+    coverage = coverage_problems(args.count, kinds, applications)
+    for line in coverage:
+        print("decrypt parity FAILED:", line)
     print("decrypt parity: {} captures, {} mismatched (seed {}); rows by status: {}; inner applications: {}".format(
         args.count, len(failures), args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds)),
         ", ".join(sorted(applications)) or "none"))
-    return 1 if failures else 0
+    return 1 if failures or coverage else 0
 
 
 if __name__ == "__main__":
