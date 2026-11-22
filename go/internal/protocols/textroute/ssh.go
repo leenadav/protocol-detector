@@ -80,13 +80,16 @@ func (k *kexInit) validate(packet []byte) error {
 		if pos+4 > payloadEnd {
 			return parsing.Malformed("Truncated SSH KEXINIT name-list")
 		}
-		// Compared as uint32 before it becomes an int: on a 32-bit platform 0xffffffff would be -1.
+		// Capped at the profile limit as uint32 before it becomes an int: on a 32-bit platform 0xffffffff would be -1.
 		raw := binary.BigEndian.Uint32(packet[pos:])
 		pos += 4
-		if raw > uint32(payloadEnd-pos) || raw > 4096 {
+		if raw > 4096 {
 			return parsing.Malformed("SSH KEXINIT name-list exceeds packet or profile")
 		}
 		size := int(raw)
+		if size > payloadEnd-pos {
+			return parsing.Malformed("SSH KEXINIT name-list exceeds packet or profile")
+		}
 		value := packet[pos : pos+size]
 		for _, b := range value {
 			if b < 0x21 || b > 0x7e {

@@ -31,7 +31,9 @@ func TestKeyLogRefusesATruncationThatRegrewBetweenPolls(t *testing.T) {
 		if _, err := f.WriteString(regrown); err != nil {
 			t.Fatal(err)
 		}
-		f.Close()
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
 		text, err := keys.Read()
 		if typed, ok := err.(*KeyLogError); !ok || typed.Message != "Key log was truncated." || typed.Code != "key_log" {
 			t.Errorf("regrown to %d bytes: %q %#v", len(regrown), text, err)

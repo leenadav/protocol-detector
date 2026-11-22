@@ -183,3 +183,7 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
   (push run 44986686845: "Capture process exited unexpectedly (-2)"); the pull_request run of the same SHA passed. Watch for a repeat.
 - **32-bit findings need a 386 test.** `GOARCH=386 go test` runs on amd64 Linux; the int-narrowing panics (PRO-15, PRO-16) only reproduce there.
 - **Parallel agents must not share scratch files.** Subagents overwrote each other's commit-message files in the shared scratchpad (PRO-201); keep scratch under each worktree's `build/`.
+- **Run the Go linters before a push.** `make go-check` does not run golangci-lint, staticcheck or gosec; the CI
+  `go-lint` job does, against `tools/golint/baseline.json`, and gosec runs with `-nosec`, so a comment cannot waive
+  a finding. Build the pinned tools from `tools/golint/<tool>` (`go install tool`, under `build/`) and run
+  `tools/go_lint.py --bin <dir>` with the pinned Go first on `PATH` (PRO-201: 7 new findings on the first push).

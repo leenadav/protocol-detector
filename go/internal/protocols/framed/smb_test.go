@@ -136,14 +136,18 @@ func TestSMB2SessionSetupResponseSessionFlagsAreExclusive(t *testing.T) {
 	token := ntlmssp(2, 56)
 	for flags, want := range map[uint16]string{0: "authenticated", 1: "guest", 2: "anonymous", 4: "encrypted"} {
 		p := NewSMB2(65536)
-		feedSMB(t, p, smb2NegotiateRequest())
+		if err := feedSMB(t, p, smb2NegotiateRequest()); err != nil {
+			t.Fatalf("flags %d: negotiate: %v", flags, err)
+		}
 		if err := feedSMB(t, p, smb2SessionResponse(0, flags, token, nil)); err != nil || extra(p.Result())["smb_session"] != want {
 			t.Errorf("flags %d: %+v %v", flags, p.Result(), err)
 		}
 	}
 	for _, flags := range []uint16{3, 5, 6, 7, 8} {
 		p := NewSMB2(65536)
-		feedSMB(t, p, smb2NegotiateRequest())
+		if err := feedSMB(t, p, smb2NegotiateRequest()); err != nil {
+			t.Fatalf("flags %d: negotiate: %v", flags, err)
+		}
 		err := feedSMB(t, p, smb2SessionResponse(0, flags, token, nil))
 		if err == nil || !strings.Contains(err.Error(), "session flags outside MS-SMB2") {
 			t.Errorf("flags %d accepted or wrong error: %v (%+v)", flags, err, p.Result())

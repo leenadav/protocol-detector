@@ -208,7 +208,9 @@ func Run(stdin io.Reader, iface, filter string, duration int, applyLimits bool, 
 			_ = process.Wait()
 		case exited != nil && !reaped:
 			_ = process.Process.Kill()
-			<-exited
+			if err := <-exited; err != nil {
+				_ = err // the child was killed; its exit status carries no result
+			}
 		}
 		if keys != nil {
 			keys.Close()

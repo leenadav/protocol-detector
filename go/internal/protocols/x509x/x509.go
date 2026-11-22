@@ -101,10 +101,15 @@ func element(data []byte, pos, limit int) (byte, int, int, error) {
 		}
 		pos += count
 	}
-	if length > uint64(limit-pos) {
+	// No container is 2^31 bytes or more, so a longer element is refused before it becomes an int.
+	if length >= 1<<31 {
 		return 0, 0, 0, fail("DER element exceeds its container")
 	}
-	return tag, pos, pos + int(length), nil
+	size := int(length)
+	if size > limit-pos {
+		return 0, 0, 0, fail("DER element exceeds its container")
+	}
+	return tag, pos, pos + size, nil
 }
 
 func expect(data []byte, pos, limit int, tag byte, what string) (int, int, error) {

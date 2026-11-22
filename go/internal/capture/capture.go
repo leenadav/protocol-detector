@@ -353,8 +353,10 @@ func (d *Decoder) simple(body []byte) (Record, *Error) {
 	raw := d.order.Uint32(body)
 	original := int(raw)
 	captured := in.snaplen
-	if uint64(raw) < uint64(in.snaplen) {
-		captured = int(raw)
+	if raw <= maxSnaplen {
+		if n := int(raw); n < in.snaplen {
+			captured = n
+		}
 	}
 	if 4+((captured+3)&^3) != len(body) {
 		return Record{}, fail("pcapng simple packet length disagrees with its block")
