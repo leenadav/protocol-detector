@@ -1,0 +1,626 @@
+[
+ {
+  "url": "https://account.adobe.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "account.adobe.com",
+  "hosts": {
+   "account.adobe.com": {
+    "requested": 3,
+    "failed": 0
+   },
+   "www.adobe.com": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://clients.amazonworkspaces.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "clients.amazonworkspaces.com",
+  "hosts": {
+   "clients.amazonworkspaces.com": {
+    "requested": 50,
+    "failed": 0
+   }
+  }
+ },
+ {
+  "url": "https://claude.ai/login",
+  "date": "2026-11-19",
+  "status": null,
+  "error": "page.goto: Timeout 45000ms exceeded.",
+  "final_host": "claude.ai",
+  "hosts": {
+   "claude.ai": {
+    "requested": 16,
+    "failed": 0
+   },
+   "challenges.cloudflare.com": {
+    "requested": 4,
+    "failed": 4
+   }
+  }
+ },
+ {
+  "url": "https://platform.claude.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "platform.claude.com",
+  "hosts": {
+   "platform.claude.com": {
+    "requested": 70,
+    "failed": 0
+   },
+   "js.hcaptcha.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "accounts.google.com": {
+    "requested": 1,
+    "failed": 0
+   },
+   "s-cdn.anthropic.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "browser-intake-us5-datadoghq.com": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://account.box.com/login",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "account.box.com",
+  "hosts": {
+   "account.box.com": {
+    "requested": 1,
+    "failed": 0
+   },
+   "cdn01.boxcdn.net": {
+    "requested": 5,
+    "failed": 5
+   }
+  }
+ },
+ {
+  "url": "https://www.canva.com/login",
+  "date": "2026-11-19",
+  "status": null,
+  "error": "page.goto: Timeout 45000ms exceeded.",
+  "final_host": "www.canva.com",
+  "hosts": {
+   "www.canva.com": {
+    "requested": 15,
+    "failed": 0
+   },
+   "status.canva.com": {
+    "requested": 4,
+    "failed": 4
+   },
+   "challenges.cloudflare.com": {
+    "requested": 3,
+    "failed": 3
+   }
+  }
+ },
+ {
+  "url": "https://citrix.cloud.com/",
+  "date": "2026-11-19",
+  "status": null,
+  "error": "page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://citrix.cloud.com/",
+  "final_host": "chromewebdata",
+  "hosts": {
+   "citrix.cloud.com": {
+    "requested": 2,
+    "failed": 0
+   },
+   "accounts.cloud.com": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://cursor.com/dashboard",
+  "date": "2026-11-19",
+  "status": null,
+  "error": "page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://cursor.com/dashboard",
+  "final_host": "chromewebdata",
+  "hosts": {
+   "cursor.com": {
+    "requested": 2,
+    "failed": 0
+   },
+   "api.workos.com": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://chat.deepseek.com/",
+  "date": "2026-11-19",
+  "status": 403,
+  "error": null,
+  "final_host": "chat.deepseek.com",
+  "hosts": {
+   "chat.deepseek.com": {
+    "requested": 1,
+    "failed": 0
+   }
+  }
+ },
+ {
+  "url": "https://admin.duosecurity.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "admin.duosecurity.com",
+  "hosts": {
+   "admin.duosecurity.com": {
+    "requested": 9,
+    "failed": 0
+   }
+  }
+ },
+ {
+  "url": "https://github.com/copilot",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "github.com",
+  "hosts": {
+   "github.com": {
+    "requested": 2,
+    "failed": 0
+   },
+   "github.githubassets.com": {
+    "requested": 70,
+    "failed": 70
+   },
+   "images.ctfassets.net": {
+    "requested": 11,
+    "failed": 11
+   },
+   "videos.ctfassets.net": {
+    "requested": 2,
+    "failed": 2
+   }
+  }
+ },
+ {
+  "url": "https://gitlab.com/users/sign_in",
+  "date": "2026-11-19",
+  "status": 403,
+  "error": null,
+  "final_host": "gitlab.com",
+  "hosts": {
+   "gitlab.com": {
+    "requested": 53,
+    "failed": 0
+   },
+   "challenges.cloudflare.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "cdn.cookielaw.org": {
+    "requested": 2,
+    "failed": 2
+   },
+   "geolocation.onetrust.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "www.googletagmanager.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "new-sentry.gitlab.net": {
+    "requested": 1,
+    "failed": 1
+   },
+   "snowplowprd.trx.gitlab.net": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://aistudio.google.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "aistudio.google.com",
+  "hosts": {
+   "aistudio.google.com": {
+    "requested": 2,
+    "failed": 0
+   },
+   "fonts.googleapis.com": {
+    "requested": 3,
+    "failed": 0
+   },
+   "www.gstatic.com": {
+    "requested": 31,
+    "failed": 5
+   },
+   "apis.google.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "www.googletagmanager.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "fonts.gstatic.com": {
+    "requested": 3,
+    "failed": 0
+   }
+  }
+ },
+ {
+  "url": "https://gemini.google.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "gemini.google.com",
+  "hosts": {
+   "gemini.google.com": {
+    "requested": 3,
+    "failed": 0
+   },
+   "gemini.gstatic.com": {
+    "requested": 2,
+    "failed": 2
+   },
+   "www.gstatic.com": {
+    "requested": 4,
+    "failed": 0
+   },
+   "www.googletagmanager.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "ogads-pa.clients6.google.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "play.google.com": {
+    "requested": 2,
+    "failed": 2
+   }
+  }
+ },
+ {
+  "url": "https://app.goto.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "app.goto.com",
+  "hosts": {
+   "app.goto.com": {
+    "requested": 50,
+    "failed": 0
+   },
+   "res.cdn.office.net": {
+    "requested": 3,
+    "failed": 3
+   },
+   "cdn.userreport.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "chameleon.goto.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "api.jive.com": {
+    "requested": 3,
+    "failed": 3
+   },
+   "logging.getgo.com": {
+    "requested": 4,
+    "failed": 4
+   },
+   "conferences.goto.com": {
+    "requested": 2,
+    "failed": 2
+   },
+   "app.gotomeeting.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "content.ipd.goto.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "zn39psorncmg7xc7k-logmeinvoc.siteintercept.qualtrics.com": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://app.grammarly.com/",
+  "date": "2026-11-19",
+  "status": null,
+  "error": "page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://app.grammarly.com/",
+  "final_host": "chromewebdata",
+  "hosts": {
+   "app.grammarly.com": {
+    "requested": 1,
+    "failed": 0
+   },
+   "www.grammarly.com": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://account.jetbrains.com/login",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "account.jetbrains.com",
+  "hosts": {
+   "account.jetbrains.com": {
+    "requested": 7,
+    "failed": 0
+   },
+   "www.googletagmanager.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "resources.jetbrains.com": {
+    "requested": 4,
+    "failed": 4
+   },
+   "o245151.ingest.us.sentry.io": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://console.gotoresolve.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "chromewebdata",
+  "hosts": {
+   "console.gotoresolve.com": {
+    "requested": 36,
+    "failed": 0
+   },
+   "cdn.amplitude.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "o173976.ingest.sentry.io": {
+    "requested": 1,
+    "failed": 1
+   },
+   "auth.console.gotoresolve.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "tdn.console.gotoresolve.com": {
+    "requested": 1,
+    "failed": 0
+   }
+  }
+ },
+ {
+  "url": "https://copilot.microsoft.com/",
+  "date": "2026-11-19",
+  "status": null,
+  "error": "page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://copilot.microsoft.com/",
+  "final_host": "chromewebdata",
+  "hosts": {
+   "copilot.microsoft.com": {
+    "requested": 1,
+    "failed": 0
+   },
+   "copilot.com": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://chat.mistral.ai/",
+  "date": "2026-11-19",
+  "status": null,
+  "error": "page.goto: Timeout 45000ms exceeded.",
+  "final_host": "chat.mistral.ai",
+  "hosts": {
+   "chat.mistral.ai": {
+    "requested": 13,
+    "failed": 0
+   },
+   "challenges.cloudflare.com": {
+    "requested": 3,
+    "failed": 3
+   }
+  }
+ },
+ {
+  "url": "https://dashboard.ngrok.com/login",
+  "date": "2026-11-19",
+  "status": null,
+  "error": "page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://dashboard.ngrok.com/login",
+  "final_host": "chromewebdata",
+  "hosts": {
+   "dashboard.ngrok.com": {
+    "requested": 1,
+    "failed": 0
+   },
+   "login.ngrok.com": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://drive.google.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "accounts.google.com",
+  "hosts": {
+   "drive.google.com": {
+    "requested": 1,
+    "failed": 0
+   },
+   "accounts.google.com": {
+    "requested": 4,
+    "failed": 0
+   },
+   "ssl.gstatic.com": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://chatgpt.com/",
+  "date": "2026-11-19",
+  "status": null,
+  "error": "page.goto: Timeout 45000ms exceeded.",
+  "final_host": "chatgpt.com",
+  "hosts": {
+   "chatgpt.com": {
+    "requested": 16,
+    "failed": 0
+   },
+   "challenges.cloudflare.com": {
+    "requested": 4,
+    "failed": 4
+   }
+  }
+ },
+ {
+  "url": "https://platform.openai.com/",
+  "date": "2026-11-19",
+  "status": null,
+  "error": "page.goto: Timeout 45000ms exceeded.",
+  "final_host": "platform.openai.com",
+  "hosts": {
+   "platform.openai.com": {
+    "requested": 20,
+    "failed": 3
+   },
+   "challenges.cloudflare.com": {
+    "requested": 4,
+    "failed": 3
+   }
+  }
+ },
+ {
+  "url": "https://slack.com/signin",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "slack.com",
+  "hosts": {
+   "slack.com": {
+    "requested": 12,
+    "failed": 0
+   },
+   "a.slack-edge.com": {
+    "requested": 24,
+    "failed": 24
+   },
+   "cdn.cookielaw.org": {
+    "requested": 3,
+    "failed": 3
+   },
+   "b.slack-edge.com": {
+    "requested": 12,
+    "failed": 12
+   }
+  }
+ },
+ {
+  "url": "https://wetransfer.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "wetransfer.com",
+  "hosts": {
+   "wetransfer.com": {
+    "requested": 1,
+    "failed": 0
+   },
+   "cdn.wetransfer.com": {
+    "requested": 79,
+    "failed": 79
+   }
+  }
+ },
+ {
+  "url": "https://grok.com/",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "grok.com",
+  "hosts": {
+   "grok.com": {
+    "requested": 5,
+    "failed": 0
+   },
+   "cdn.grok.com": {
+    "requested": 171,
+    "failed": 171
+   },
+   "cdn.cookielaw.org": {
+    "requested": 1,
+    "failed": 1
+   },
+   "static.cloudflareinsights.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "www.googletagmanager.com": {
+    "requested": 1,
+    "failed": 1
+   }
+  }
+ },
+ {
+  "url": "https://app.zoom.us/wc",
+  "date": "2026-11-19",
+  "status": 200,
+  "error": null,
+  "final_host": "app.zoom.us",
+  "hosts": {
+   "app.zoom.us": {
+    "requested": 1,
+    "failed": 0
+   },
+   "st1.zoom.us": {
+    "requested": 7,
+    "failed": 7
+   },
+   "www.googletagmanager.com": {
+    "requested": 1,
+    "failed": 1
+   },
+   "us01st-cf.zoom.us": {
+    "requested": 2,
+    "failed": 2
+   }
+  }
+ }
+]

@@ -12,14 +12,16 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/ojson"
 )
 
-// A stand-in worker: writes two events, starts a child in its process group, waits to be interrupted.
+// A stand-in worker: writes two events, starts a child in its process group, waits to be interrupted. The INT
+// trap is set before the child file is written: tests stop the run as soon as that file appears, and an interrupt
+// that arrived before the trap killed the shell (-2) instead of being ignored (seen on CI at f5353c5).
 const holdWorker = `read line
 printf '%s\n' "$line" > "$DIR/stdin"
 echo '{"type": "classification", "client": ["10.0.0.1", 5], "server": ["10.0.0.2", 80], "status": "identified"}'
 echo '{"type": "progress", "packets": 1}'
+if [ -n "$IGNORE_INT" ]; then trap '' INT; else trap 'exit 0' INT; fi
 sleep 300 >/dev/null 2>&1 &
 echo $! > "$DIR/child"
-if [ -n "$IGNORE_INT" ]; then trap '' INT; else trap 'exit 0' INT; fi
 while :; do sleep 0.05; done
 `
 
