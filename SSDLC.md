@@ -95,6 +95,7 @@ request:
 | ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py` (engine and adapter packages, only the `decryption` extra), wheel smoke under 3.13 and 3.9, the complete-product SBOM checked by `tools/check_product_sbom.py` |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
 | ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds, and in source mode over go/ on its vendor tree (`GOFLAGS=-mod=vendor`, `GOPROXY=off`) |
+| ci | `Known vulnerabilities in every lockfile (osv-scanner; accepted only with a reason and an expiry)` | `tools/osv_scan.py`: osv-scanner 2.7.1 from `tools/golint/osv-scanner/go.mod` and go.sum, built outside the checkout, over every tracked lockfile (requirements, npm, go.mod); a finding fails unless `tools/osv_ignore.json` accepts it for that lockfile and package with a reason and an expiry at most 90 days ahead; an expired or stale entry, or a lockfile it did not read, fails (item 41) |
 | ci | `Go engine (gofmt, vet, race tests, fuzz smoke, parity with the Python reference)` | `tools/go_ci.py go`: on the pinned Go 1.27.4, which must be the compiler go/go.mod builds with (its `toolchain` line, else its `go` line), `make go-check` (gofmt, `go vet`, `go test -race`, fuzz smoke, `make parity-go`) and a floor under the parity report; nothing to check on a commit without the migration tree, failure on one with part of it; `GOPROXY=off`, so no Go is downloaded mid-job |
 | ci | `Go engine on its declared minimum Go (vet, race tests)` | `tools/go_ci.py minimum`: on exactly go/go.mod's `go` line (the declared minimum), installed by setup-go, `make go-check-minimum` (`go vet`, `go test -race`); a minimum equal to the compiler is go-engine's run and passes as such (item 28) |
 | ci | `Go vendor tree matches go.mod and go.sum (module proxy, checksum database)` | `tools/go_ci.py vendor-check`: `make go-vendor-check` re-vendors and compares with go/vendor, the one Go step with module access; nothing to verify without dependencies (item 32) |
@@ -897,6 +898,29 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    - **Negative controls** (scratch clone): the classification event loses `app` and gains a
      required `tenant`, which gives exit 1, or 0 with the label; `analyze` loses `--heuristics`,
      with the same result.
+41. Known vulnerabilities in every lockfile (`osv-scan` ci job, in the gate's needs; PRO-128, Hermes,
+   2026-11-22). osv-scanner 2.7.1 (Apache-2.0) is built like the lint tools and reads every lockfile
+   git tracks: requirements*.txt and *.lock.txt, package-lock.json, and each go.mod (the engine and
+   every CI tool module). `tools/osv_scan.py` decides.
+   - **Ignore file:** `tools/osv_ignore.json`, locked with the scanner configuration (rule 16). Each
+     entry names an OSV id or alias, the lockfile and the package, a reason and an expiry at most 90
+     days ahead. An entry applies to that lockfile only, so the same id in shipped code still fails.
+     An expired entry, or one that matches no finding, fails.
+   - **No silent config:** osv-scanner runs with an empty `--config`, and rule 16 bans any
+     `osv-scanner.toml` in the tree. A lockfile osv-scanner did not read fails.
+   - **Reachability:** govulncheck (toolchain-audit) stays the Go reachability check. OSV reports a
+     pinned version; govulncheck reports what the built code calls.
+   - **First run (2026-11-22):** 52 findings, all in CI tool modules; the product's Python, npm and
+     go/go.mod had none. govulncheck found two reachable: x/text in go-licenses and grpc in gosec.
+     Fixed by bumps (x/text, x/mod, x/net in go-licenses; grpc, otel, x/crypto, x/net in gosec and
+     osv-scanner; x/crypto, x/text in tools/scanners), each release at least 7 days old. One stays
+     accepted until 2026-12-22: rardecode 2.1.0 in the gitleaks build (GO-2025-4020), unreachable,
+     whose fix does not build with gitleaks' archives dependency.
+     Three more arrived with go-migration's gremlins module (x/sys, x/text, unreachable); Engine's
+     #80 bumped it (go-migration 9b499f8) and their entries are gone. go/oracle (#79) scans clean.
+   - **Licences:** osv-scanner is a CI-only tool. It links MIT, Apache-2.0, BSD, ISC, MPL-2.0,
+     Unlicense and MIT-0 code, and spdx/tools-golang under Apache-2.0 (dual with GPL-2.0-or-later).
+     Nothing GPL or LGPL is linked or vendored into shipped code.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
