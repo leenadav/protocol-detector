@@ -121,12 +121,24 @@ func (b *Bounded) Append(p []byte) (int, error) {
 // resize moves the retained bytes into a backing array of exactly capacity bytes (capacity >= Len),
 // charging the account for growth before allocating and returning the difference after shrinking. The
 // old array is zeroed. Capacity 0 frees the array.
+//
+// Growth charges the whole new array while the old one is still charged, because both are allocated until
+// the copy is done (Codex PRO-16); the old charge is returned once the old array is dropped. Shrinking
+// allocates at most half of the old capacity and is still charged by the difference only.
 func (b *Bounded) resize(capacity int) error {
 	old := b.data
-	if grow := capacity - cap(old); grow > 0 {
-		if err := b.account.reserve(grow); err != nil {
+	if capacity > cap(old) {
+		if err := b.account.reserve(capacity); err != nil {
 			return err
 		}
+		b.data = make([]byte, len(old), capacity)
+		copy(b.data, old)
+		full := old[:cap(old)]
+		for i := range full {
+			full[i] = 0
+		}
+		b.account.release(cap(old))
+		return nil
 	}
 	if capacity == 0 {
 		b.data = nil

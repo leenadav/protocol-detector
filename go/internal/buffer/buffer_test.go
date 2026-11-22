@@ -138,9 +138,10 @@ func TestAccountFollowsAllocatedCapacity(t *testing.T) {
 }
 
 // Growth is charged as capacity: doubling when the account allows it, the exact need when it does not, nothing
-// when even that does not fit; the per-buffer limit caps the capacity as well as the length.
+// when even that does not fit; the per-buffer limit caps the capacity as well as the length. The old array stays
+// charged until the new one holds the bytes, so each step needs the old and the new capacity at once.
 func TestGrowthIsChargedBeforeItIsAllocated(t *testing.T) {
-	a := account(t, 100)
+	a := account(t, 150)
 	b, _ := NewBounded(a, 64)
 	b.Append(make([]byte, 10))
 	if b.Cap() != 10 || a.Used() != 10 {
@@ -155,12 +156,32 @@ func TestGrowthIsChargedBeforeItIsAllocated(t *testing.T) {
 		t.Fatalf("len %d cap %d used %d", b.Len(), b.Cap(), a.Used())
 	}
 	other, _ := NewBounded(a, 64)
-	other.Append(make([]byte, 45)) // 96 of 100 charged
-	if n, err := b.Append(make([]byte, 3)); n != 3 || err != nil || b.Cap() != 54 || a.Used() != 99 {
+	other.Append(make([]byte, 40)) // 91 of 150 charged: 91+64 does not fit, 91+54 does
+	if n, err := b.Append(make([]byte, 3)); n != 3 || err != nil || b.Cap() != 54 || a.Used() != 94 {
 		t.Fatalf("exact fallback: %d %v cap %d used %d", n, err, b.Cap(), a.Used())
 	}
-	if n, err := b.Append(make([]byte, 5)); n != 0 || err == nil || b.Len() != 54 || a.Used() != 99 {
+	if n, err := b.Append(make([]byte, 5)); n != 0 || err == nil || b.Len() != 54 || a.Used() != 94 { // 94+59 > 150
 		t.Fatalf("refused growth changed state: %d %v len %d used %d", n, err, b.Len(), a.Used())
+	}
+}
+
+// Codex PRO-16 (P2): while a buffer grows, the old and the new backing arrays are both allocated until the copy
+// is done, so the account must cover both. Charging only the difference let a 10-byte buffer double to 20
+// under a 25-byte account while 30 bytes were live; the exact need (10 + 11) is all that fits.
+func TestGrowthChargesBothArraysWhileTheyCoexist(t *testing.T) {
+	a := account(t, 25)
+	b, _ := NewBounded(a, 64)
+	if n, err := b.Append(make([]byte, 10)); n != 10 || err != nil || a.Used() != 10 {
+		t.Fatalf("first append: %d %v used %d", n, err, a.Used())
+	}
+	if n, err := b.Append(make([]byte, 1)); n != 1 || err != nil || b.Cap() != 11 || a.Used() != 11 {
+		t.Fatalf("growth beyond the account while both arrays were live: %d %v cap %d used %d", n, err, b.Cap(), a.Used())
+	}
+	full := account(t, 20)
+	c, _ := NewBounded(full, 64)
+	c.Append(make([]byte, 10))
+	if n, err := c.Append(make([]byte, 1)); n != 0 || !errors.Is(err, &errs.Error{Code: errs.Budget, Scope: errs.ScopeFlow}) || c.Cap() != 10 || full.Used() != 10 {
+		t.Fatalf("10 + 11 bytes coexist under a 20-byte account: %d %v cap %d used %d", n, err, c.Cap(), full.Used())
 	}
 }
 
