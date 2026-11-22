@@ -581,7 +581,7 @@ evidence of the levels below it in `shiftResult`. The cost was O(d²) evidence a
 |---|---|---|
 | Regression test | `TestRepeatedConnectDoesNotNestWithoutBound` | 1,008 CONNECT requests, one per segment, as many as the default 64 KiB budget admits. On the old code: 2,019 evidence items and about 10 s. With the fix: 7 evidence items, exactly 2 shift markers, the limit named in the reason, and about 6 ms. |
 | Parity | divergence recorded, no case changes | The Python reference nests without a bound, with the same cubic growth. Go now differs from it only at a third nested shift. No parity case nests shifts at all: 146 cases carry one shift marker and none carry two. All 7,430 still match, and `deltas.json` needs no entry. |
-| Approval | **pending Lee** | Lee's PRO-124 approval covered the Go-only QUIC fixes only. Hermes asked Lee to approve this Go-only fix under the same conditions; until the approval is recorded on PRO-129, the task is not DONE. |
+| Approval | approved | Lee approved the Go-only divergence on 2026-11-22 (PRO-129, relayed by Hermes: merge today with only P0 blocking). The fix is `e0aae82`, merged through PR #87 (`f209bd5`). |
 
 ## Randomized differential (PRO-100, 2026-11-22)
 
