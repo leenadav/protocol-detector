@@ -179,7 +179,9 @@ func TestGrowthChargesBothArraysWhileTheyCoexist(t *testing.T) {
 	}
 	full := account(t, 20)
 	c, _ := NewBounded(full, 64)
-	c.Append(make([]byte, 10))
+	if n, err := c.Append(make([]byte, 10)); n != 10 || err != nil {
+		t.Fatalf("first append under the 20-byte account: %d %v", n, err)
+	}
 	if n, err := c.Append(make([]byte, 1)); n != 0 || !errors.Is(err, &errs.Error{Code: errs.Budget, Scope: errs.ScopeFlow}) || c.Cap() != 10 || full.Used() != 10 {
 		t.Fatalf("10 + 11 bytes coexist under a 20-byte account: %d %v cap %d used %d", n, err, c.Cap(), full.Used())
 	}

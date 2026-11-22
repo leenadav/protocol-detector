@@ -80,12 +80,13 @@ func element(data []byte, pos, limit int) (byte, int, int, error) {
 	}
 	first := data[pos+1]
 	pos += 2
-	// length is accumulated as uint64 and compared with the room left in the container before any int
-	// arithmetic, so a four-octet length cannot overflow int on 32-bit Go (SEC-X509-1).
-	var length uint64
+	// A long-form length saturates once it exceeds the container, so no shift or sum can overflow int on 32-bit
+	// Go (SEC-X509-1); the error order (minimal encoding, then container) is the reference's.
+	var length int
+	over := false
 	switch {
 	case first < 0x80:
-		length = uint64(first)
+		length = int(first)
 	case first == 0x80:
 		return 0, 0, 0, fail("Indefinite DER length is not valid in a certificate")
 	default:
@@ -94,17 +95,21 @@ func element(data []byte, pos, limit int) (byte, int, int, error) {
 			return 0, 0, 0, fail("DER length encoding invalid")
 		}
 		for _, b := range data[pos : pos+count] {
-			length = length<<8 | uint64(b)
+			if length > limit>>8 {
+				over = true
+				continue
+			}
+			length = length<<8 | int(b)
 		}
-		if length < 0x80 || data[pos] == 0 {
+		if (!over && length < 0x80) || data[pos] == 0 {
 			return 0, 0, 0, fail("DER length is not minimally encoded")
 		}
 		pos += count
 	}
-	if pos > limit || length > uint64(limit-pos) {
+	if over || length > limit-pos {
 		return 0, 0, 0, fail("DER element exceeds its container")
 	}
-	return tag, pos, pos + int(length), nil
+	return tag, pos, pos + length, nil
 }
 
 func expect(data []byte, pos, limit int, tag byte, what string) (int, int, error) {

@@ -350,9 +350,9 @@ func (d *Decoder) simple(body []byte) (Record, *Error) {
 	}
 	in := d.interfaces[0]
 	original := d.order.Uint32(body)
-	// The comparison stays in 64 bits: on a 32-bit build int(original) can be negative (Codex PRO-16).
+	// The comparison is widened to int64: on a 32-bit build int(original) can be negative (Codex PRO-16).
 	captured := in.snaplen
-	if uint64(original) < uint64(in.snaplen) {
+	if int64(original) < int64(in.snaplen) {
 		captured = int(original)
 	}
 	if 4+((captured+3)&^3) != len(body) {
