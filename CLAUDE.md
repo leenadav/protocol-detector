@@ -45,6 +45,17 @@ The counts above are those of `main` at the time of writing. A changed count is 
 - **Editing the other lane's files.** Engine owns `go/`, `migration/` and product code; CI/CD owns `.github/`,
   its `tools/` and the locks. Send the other lane a patch instead.
 
+## Skills to use
+
+Project skills in `.claude/skills/` (MIT, upstream and changes in `.claude/skills/THIRD_PARTY.md`):
+
+- **Debugging:** `systematic-debugging` before any fix; its `root-cause-tracing` and `defense-in-depth` for bugs deep in a call chain.
+- **New behaviour or a bug fix:** `test-driven-development` (a failing test first; `writing-good-tests` for test anti-patterns).
+- **Done claims:** `verification-before-completion` before DONE, a push or a PR: run the gate and quote its numbers.
+- **Review findings (Codex, Hermes, bots):** `receiving-code-review`: verify each claim against the code before changing it.
+- **Go tests, performance, errors:** `golang-testing`, `golang-performance`, `golang-error-handling` (listed once a `.go` file is open); the
+  repository rules above win (offline Go, vendored dependencies, `parsing.Budget` / `parsing.Malformed`).
+
 ## Keeping this file useful
 
 When an agent makes the same mistake twice, the fix goes into this file ("Things Claude gets wrong"), in the same
