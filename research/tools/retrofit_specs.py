@@ -146,8 +146,9 @@ def _later(fname):
                                                   delimiter="\t")}
 
 
-ROUND_DATE = {"round 3": "2026-11-21", "round 4": "2026-11-21", "round 5": "2026-11-21", "round 6": "2026-11-22"}
-LATER = [("round 6", _later("live-results-2026-11-22-r6.tsv")), ("round 5", _later("live-results-2026-11-21-r5.tsv")), ("round 4", _later("live-results-2026-11-21-r4.tsv")),
+ROUND_DATE = {"round 3": "2026-11-21", "round 4": "2026-11-21", "round 5": "2026-11-21", "round 6": "2026-11-22",
+              "round 7": "2026-11-22"}
+LATER = [("round 7", _later("live-results-2026-11-22-r7.tsv")), ("round 6", _later("live-results-2026-11-22-r6.tsv")), ("round 5", _later("live-results-2026-11-21-r5.tsv")), ("round 4", _later("live-results-2026-11-21-r4.tsv")),
          ("round 3", _later("live-results-2026-11-21-r3.tsv"))]
 
 
@@ -162,15 +163,32 @@ R6_VERDICT = dict(
                                                "fctupdate", "fctusupdate", "fcteuupdate")])
 
 
+# Verdicts on round 7 (Hermes, PRO-167, 2026-11-22).
+R7_VERDICT = {"hsappstatic.net": "verdict (PRO-167): stays **N2** (also the HubSpot app's own static assets)",
+              "hubapi.com": "verdict (PRO-167): stays **N2** (also integrations' API traffic)"}
+R7_UNPROBED = ("verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it "
+               "is not live-verified; the mapping rests on the vendor page")
+R7_BEYONDTRUST = "verdict (PRO-167): BeyondTrust confirmed (**DONE**)"
+
+
 def live_status(name):
     text, flags = _live_status(name)
-    if name in R6_VERDICT and name in LATER[0][1]:
+    r7 = dict(LATER)["round 7"].get(name)
+    r6 = dict(LATER)["round 6"]
+    if r7 is not None:
+        if name in R7_VERDICT:
+            text += "; " + R7_VERDICT[name]
+        elif "no-address" in r7["flags"].split(",") and not r7.get("probe"):
+            text += "; " + R7_UNPROBED
+        if name in ("beyondtrust.com", "beyondtrustcloud.com", "bomgar.com"):
+            text += "; " + R7_BEYONDTRUST
+    elif name in R6_VERDICT and name in r6:
         text += "; " + R6_VERDICT[name]
     return text, flags
 
 
 def _live_status(name):
-    """(L result text, flags list): the latest round that has the name (6 to 2), otherwise round 1."""
+    """(L result text, flags list): the latest round that has the name (7 to 2), otherwise round 1."""
     rnd, r = next(((label, t[name]) for label, t in LATER if name in t), ("round 2", LIVE2.get(name)))
     if r is None:
         return live_status_r1(name)
@@ -342,8 +360,8 @@ def build(spec, meta):
     web = meta["web"]
     live_rows = [(d,) + live_status(d) for d in domains]
     s = [START, "", "## 9. Live verification (L)", "",
-         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 6 "
-         "of 2026-11-21 and 2026-11-22 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`, `research/live-results-2026-11-22-r6.tsv`; tool "
+         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 7 "
+         "of 2026-11-21 and 2026-11-22 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`, `research/live-results-2026-11-22-r6.tsv`, `-r7.tsv`; tool "
          "`research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). "
          "`L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never "
          "evidence." % LIVE_CITE, ""]

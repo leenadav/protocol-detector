@@ -54,9 +54,15 @@ expected), rollback exact, parity 7490/7490 (Python and Go), 88/88 families. 39 
 
 | Rank | Id | Item | Spec | V | R | Score | Status |
 |---|---|---|---|---|---|---|---|
-| 1 | P1 | HubSpot tags and hosted-page services to new vendor-level id `hubspot-base` (35 names; decision 4) | `apps/hubspot.md` | 4 | 4 | 16 | READY |
-| 2 | P2 | BeyondTrust Remote Support Cloud: verified, all names under `beyondtrustcloud.com` | `apps/beyondtrust.md` | 5 | 4 | 20 | DONE (no catalog change) |
+| 1 | P1 | HubSpot tags and hosted-page services to new vendor-level id `hubspot-base` (35 names; decision 4) | `apps/hubspot.md` | 4 | 4 | 16 | READY on the vendor page; live round 7 neutral (24 names exist with no address and no documented probe host: the page gives wildcards only, so no probe can be added without guessing) |
+| 2 | P2 | BeyondTrust Remote Support Cloud: verified, all names under `beyondtrustcloud.com` | `apps/beyondtrust.md` | 5 | 4 | 20 | DONE (no catalog change; confirmed by live round 7) |
 | 3 | - | Kaseya VSA, ManageEngine Endpoint Central, RingCentral, Mimecast, Proofpoint, Keeper, LastPass, 8x8 | none yet | 4 to 5 | 1 | 4 to 5 | BLOCKED (pages unreachable; rows 30 to 38) |
+
+Live round 7 (PRO-167, 2026-11-22, `live-results-2026-11-22-r7.tsv`, 39 names; verdicts by Hermes, restated in section 9): `hubspot-base`
+neutral (24 of its names exist with no address and no probe; `hubapi.com`, `hscta.net`, `hscta.com`, `hsctaimages.net`, `hsappstatic.net`,
+`hubspot.net`, `hubspotvideo.com` and `hubspotservicehub.com` answer through the page's own hosts with Google Trust domain-validated
+certificates); `hsappstatic.net` and `hubapi.com` stay N2; BeyondTrust confirmed DONE. Research Lab is reading rows 30 to 44 (PRO-168).
+No catalog change.
 
 ### NAME: READY (batch O, after N: Datto RMM, N-able, FortiClient, read by Research Lab, PRO-95/PRO-106, 2026-11-22)
 

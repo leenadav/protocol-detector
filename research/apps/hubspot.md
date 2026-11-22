@@ -83,46 +83,46 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 6 of 2026-11-21 and 2026-11-22 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`, `research/live-results-2026-11-22-r6.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 7 of 2026-11-21 and 2026-11-22 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`, `research/live-results-2026-11-22-r6.tsv`, `-r7.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
-| `hubspot.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hsadspixel.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hs-analytics.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubapi.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hscta.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hscta.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hsctaimages.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hs-sites.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hs-sites-eu1.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hs-sites-na2.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hs-sites-na3.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hs-sites-ap1.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hsappstatic.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `usemessages.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hs-banner.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotusercontent00.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotusercontent10.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotusercontent20.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotusercontent30.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotusercontent40.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotusercontent-eu1.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotusercontent-na2.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotusercontent-na3.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotusercontent-ap1.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspot.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotvideo.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hscollectedforms.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hsleadflows.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hsforms.net` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hsforms.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hs-scripts.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotfeedback.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspotservicehub.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspot-no-cache-na2-prod.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspot-no-cache-na3-prod.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
-| `hubspot-no-cache-ap1-prod.s3.amazonaws.com` | not yet verified (added after round 2; in `live-hosts-r7.txt` for the next run) |
+| `hubspot.com` | round 7 (2026-11-22); **L** resolves; TLSv1.3, ALPN `h2`, TLS via documented probe `app.hubspot.com`, probe cert `hubspot.com`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `hsadspixel.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hs-analytics.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubapi.com` | round 7 (2026-11-22); **L** resolves; TLSv1.3, ALPN `h2`, TLS via documented probe `feedback.hubapi.com`, probe cert `hubapi.com`, no subject organisation (domain-validated) (issuer Google Trust Services); verdict (PRO-167): stays **N2** (also integrations' API traffic) |
+| `hscta.net` | apex has no address (normal for a suffix entry); suffix **verified** through documented `js.hscta.net` (round 7) |
+| `hscta.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `js.hscta.com` (round 7) |
+| `hsctaimages.net` | round 7 (2026-11-22); **L** resolves; TLSv1.3, ALPN `h2`, TLS via documented probe `eu1.hsctaimages.net`, probe cert `hsctaimages.net`, no subject organisation (domain-validated) (issuer Google Trust Services) |
+| `hs-sites.com` | round 7 (2026-11-22); **L** resolves; TLSv1.3, ALPN `h2`, cert `hs-sites.com`, no subject organisation (domain-validated) (issuer Google Trust Services); HTTPS record offers `h3` (QUIC path) |
+| `hs-sites-eu1.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hs-sites-na2.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hs-sites-na3.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hs-sites-ap1.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hsappstatic.net` | round 7 (2026-11-22); **L** resolves; TLSv1.3, ALPN `h2`, TLS via documented probe `static.hsappstatic.net`, probe cert `hsappstatic.net`, no subject organisation (domain-validated) (issuer Google Trust Services); verdict (PRO-167): stays **N2** (also the HubSpot app's own static assets) |
+| `usemessages.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hs-banner.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotusercontent00.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotusercontent10.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotusercontent20.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotusercontent30.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotusercontent40.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotusercontent-eu1.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotusercontent-na2.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotusercontent-na3.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotusercontent-ap1.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspot.net` | round 7 (2026-11-22); **L** resolves; TLSv1.3, ALPN `h2`, TLS via documented probe `cdn2.hubspot.net`, probe cert `hubspot.net`, no subject organisation (domain-validated) (issuer Google Trust Services); HTTPS record offers `h3` (QUIC path) |
+| `hubspotvideo.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `play.hubspotvideo.com` (round 7) |
+| `hscollectedforms.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hsleadflows.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hsforms.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hsforms.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hs-scripts.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotfeedback.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source); verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it is not live-verified; the mapping rests on the vendor page |
+| `hubspotservicehub.com` | apex has no address (normal for a suffix entry); suffix **verified** through documented `feedback-eu1.hubspotservicehub.com` (round 7) |
+| `hubspot-no-cache-na2-prod.s3.amazonaws.com` | round 7 (2026-11-22); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3-us-west-2.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-us-west-2-w.amazonaws.com`: name usable, IPs never |
+| `hubspot-no-cache-na3-prod.s3.amazonaws.com` | round 7 (2026-11-22); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3.ca-central-1.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-w.ca-central-1.amazonaws.com`: name usable, IPs never |
+| `hubspot-no-cache-ap1-prod.s3.amazonaws.com` | round 7 (2026-11-22); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `*.s3-ap-southeast-2.amazonaws.com`, no subject organisation (domain-validated) (issuer Amazon); CNAME into shared front end `s3-ap-southeast-2-w.amazonaws.com`: name usable, IPs never |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
@@ -136,7 +136,7 @@ No public web client or login page for this application (desktop agent, tenant-s
 - Variant: not separated by name.
 - Dependencies (observed, never attributed to this app): none observed.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
-- QUIC path (`h3` in the HTTPS record): none advertised.
+- QUIC path (`h3` in the HTTPS record): `hs-sites.com`, `hubspot.net`.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).
 
 <!-- method-v2:end -->
