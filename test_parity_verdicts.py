@@ -190,5 +190,43 @@ class SchemaInvocationTests(unittest.TestCase):
         self.assertEqual(done.stdout.strip(), b"{}")
 
 
+def record(app, basis, engine_status="identified"):
+    return {"app": app, "engine_status": engine_status, "layers": {"application": {"basis": basis}}}
+
+
+class AdversarialJudgeTests(unittest.TestCase):
+    """Codex PRO-21 P2: the session judge skipped every check for an outcome record (so "identified yet unknown"
+    was unreachable), passed an empty record list, and let a named application stand on a port hint, a content
+    class or no basis at all."""
+
+    def setUp(self):
+        import adversarial
+        self.judge = adversarial.judge
+
+    def verdict(self, records, allowed=("ssl",)):
+        return self.judge("session", set(allowed), {"records": records})
+
+    def test_honest_sessions_pass(self):
+        self.assertIsNone(self.verdict([record("ssl", "structural")]))
+        self.assertIsNone(self.verdict([record("youtube", "client_assertion")], ("ssl", "youtube")))
+        self.assertIsNone(self.verdict([record("unknown-tcp", "none", "unknown")]))
+        self.assertIsNone(self.verdict([record("not-applicable", "none", "invalidated")]))
+
+    def test_identified_yet_unknown_is_caught(self):
+        self.assertIn("identified yet unknown", self.verdict([record("unknown-tcp", "none", "identified")]))
+        self.assertIn("identified yet unknown", self.verdict([record("unknown-udp", "none", "identified")]))
+
+    def test_an_outcome_must_not_claim_identity_evidence(self):
+        self.assertIn("basis structural", self.verdict([record("unknown-tcp", "structural", "unknown")]))
+
+    def test_an_empty_record_list_fails(self):
+        self.assertIn("no session record", self.verdict([]))
+
+    def test_a_named_application_needs_structural_or_asserted_evidence(self):
+        for basis in ("port_hint", "content_class", None, "heuristic"):
+            self.assertIn("application basis {}".format(basis), self.verdict([record("ssl", basis)]), basis)
+        self.assertIn("session app web-browsing", self.verdict([record("web-browsing", "structural")]))
+
+
 if __name__ == "__main__":
     unittest.main()
