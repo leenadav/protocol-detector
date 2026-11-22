@@ -10,6 +10,12 @@ driven through both implementations with the same script of operations: fresh ru
 current run, a stale run, none or a non-string. Every answer must be the same JSON text. JSON documents are
 also echoed through both decoders and encoders. Nothing is captured; no process is started on the
 reference side.
+
+A worker run that did not complete fails the run instead of feeding both sides the same short stream
+(PRO-21): neither worker may write to standard error or emit no events, and every line must be a JSON event.
+`live` must exit 0, 1 (after an error event) or 2 (drops or truncation, live_capture.py) and include its
+closing summary; `live-decrypt --replay`, whose script may legitimately end before any summary, must give the
+exit status and events of the reference worker on the same script (live_decrypt_diff.reference).
 """
 import argparse
 import json
@@ -69,6 +75,37 @@ def reference(script):
     return out
 
 
+class WorkerFailure(Exception):
+    """A worker run that crashed, failed or stopped before its closing summary."""
+
+
+def worker_problem(command, returncode, stdout, stderr, statuses, summary=True):
+    """Why one worker run cannot serve as input, or None: its exit status, standard error and events."""
+    if returncode not in statuses:
+        return "{} exit status {} (expected one of {}): {}".format(command, returncode, statuses, stderr.decode("utf-8", "replace")[:200])
+    if stderr:
+        return "{} wrote to standard error: {}".format(command, stderr.decode("utf-8", "replace")[:200])
+    lines = [line for line in stdout.decode("utf-8", "replace").splitlines() if line]
+    if not lines:
+        return "{} emitted no events".format(command)
+    try:
+        kinds = [json.loads(line).get("type") for line in lines]
+    except (ValueError, AttributeError):
+        return "{} emitted a line that is not a JSON event".format(command)
+    if summary and "summary" not in kinds:
+        return "{} emitted no summary event ({} events)".format(command, len(lines))
+    return None
+
+
+def checked_lines(command, done, statuses, summary=True, expected=None):
+    problem = worker_problem(command, done.returncode, done.stdout, done.stderr, statuses, summary)
+    if problem is None and expected is not None and live_diff.normalized(done.stdout.decode("utf-8"), True) != live_diff.normalized(expected, True):
+        problem = "{} events differ from the reference worker's on the same script".format(command)
+    if problem:
+        raise WorkerFailure(problem)
+    return [line for line in done.stdout.decode("utf-8").splitlines() if line]
+
+
 def worker_lines(binary, rng, sessions, folder, index, signatures_path, policy_path):
     capture = folder / "capture-{}".format(index)
     analyze_diff.write_capture(rng, capture, analyze_diff.stress_records(rng) if index % 3 == 2 else analyze_diff.records_for(rng, sessions))
@@ -76,18 +113,19 @@ def worker_lines(binary, rng, sessions, folder, index, signatures_path, policy_p
     options["all_events"] = rng.random() < 0.8
     with open(capture, "rb") as stream:
         done = subprocess.run([binary, "live"] + live_diff.arguments(options, True), stdin=stream, stdout=subprocess.PIPE,  # noqa: S603
-                              stderr=subprocess.DEVNULL, check=False, timeout=120)
-    return [line for line in done.stdout.decode("utf-8").splitlines() if line]
+                              stderr=subprocess.PIPE, check=False, timeout=120)
+    return checked_lines("live", done, (0, 1, 2))
 
 
 def decryption_lines(binary, rng, generator):
     import struct
     import live_decrypt_diff
     operations = live_decrypt_diff.script_for(rng, generator)
+    expected, status = live_decrypt_diff.reference(operations)
     script = b"".join(kind.encode("ascii") + struct.pack(">dI", now, len(data)) + data for kind, now, data in operations)
     done = subprocess.run([binary, "live-decrypt", "--replay", "--capture-id", live_decrypt_diff.CAPTURE_ID], input=script,  # noqa: S603
-                          stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=180)
-    return [line for line in done.stdout.decode("utf-8").splitlines() if line]
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=180)
+    return checked_lines("live-decrypt", done, (status,), summary=False, expected=expected)
 
 
 MALFORMED = [
@@ -196,10 +234,14 @@ def main(argv=None):
         Path(signatures_path).write_text(json.dumps(analyze_diff.SIGNATURES), encoding="utf-8")
         Path(policy_path).write_text(json.dumps(analyze_diff.POLICY), encoding="utf-8")
         for index in range(args.count):
-            if generator is not None and index % 4 == 3:
-                lines = decryption_lines(args.binary, rng, generator)
-            else:
-                lines = worker_lines(args.binary, rng, sessions, folder, index, signatures_path, policy_path)
+            try:
+                if generator is not None and index % 4 == 3:
+                    lines = decryption_lines(args.binary, rng, generator)
+                else:
+                    lines = worker_lines(args.binary, rng, sessions, folder, index, signatures_path, policy_path)
+            except WorkerFailure as failure:
+                failures.append("run {} (seed {}): worker {}".format(index, args.seed, failure))
+                continue
             script = script_for(rng, lines, index % 5 == 1)
             ingested += sum(line.startswith("I ") for line in script)
             expected = reference(script)
