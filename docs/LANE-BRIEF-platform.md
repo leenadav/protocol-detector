@@ -23,12 +23,14 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-21, after PRO-104)
+## 2. Current state (2026-11-22, after PRO-105)
 
 - `main` = `2a33183`. PRO-42, PRO-59 and PRO-31 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #37 (`0d32281`), #38 (`51b5e94`), #39 (`0ef7349`);
   #41 and #54 (PRO-73) too. #56 (the brief through PRO-103) and #66 (gitleaks allowlist for the r5 CNAME false positive, PRO-145) are merged.
   Open lane PRs: drafts #55 (PRO-77) and #57 (PRO-102) into `claude/go-migration`, and the stack on #57: #59 and #60 (PRO-103),
-  #61, #62 and #64 (PRO-104), #65 (PRO-136), plus this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
+  #61, #62 and #64 (PRO-104), #65 (PRO-136); #63 (the brief through PRO-104) is merged. Draft #73 (PRO-105,
+  `claude/cicd-verify-flaky-policy`, head `33fcd00`, base `claude/go-migration` `cdb385b`, independent of the stack) adds the
+  verify skills and the flaky-test policy, plus this brief update. `claude/cicd-next` (`46c3122`) is superseded and stale.
 - **Merged so far:**
 
   | PR | Content |
@@ -71,6 +73,10 @@ their decisions, the policy locks, and the release controller.
   #64's branch; it merges `claude/go-migration` `d7a9290`) adds the nightly `parity-random` job: Engine's
   `make parity-random-long`, 50,000 cases in batches of 25,000 with one seed each. PRO-71 is parked until Engine answers PRO-72. Also waiting
   on Codex's review and on the Engine lane's merge of `claude/go-migration`.
+- **PRO-105 (#73):** `.claude/skills/verify-parity`, `verify-content-pack` and `verify-go` name the exact commands
+  and healthy output an agent checks before reporting done. `AGENTS.md` "Flaky tests and verify skills": never re-run to
+  green; a test that fails twice intermittently is quarantined with an issue link and a deadline; no quarantine of a
+  security, parity, content or budget gate. `claude/cicd-verify-skills` (`4d4e463`, stacked on #65) is superseded by #73.
 
 ## 3. Where things live (reading order)
 
@@ -108,6 +114,8 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | PR #55 merged into `claude/go-migration` (release build per-target modules) | Hermes's review, then Lee |
 | PR #57 merged into `claude/go-migration` (go-lint job); the 194 baseline findings fixed or justified | Hermes's review, then Lee; Engine for the findings |
 | The stack merged in order #57 → #59 → #60 → #61 → #62 → #64 → #65 (each retargets to `claude/go-migration` when its base merges) | Hermes's review, then Lee |
+| PR #73 merged into `claude/go-migration` (verify skills, flaky-test policy); a quarantine-expiry checker in CI is a possible follow-up | Hermes's review, then Lee |
+| Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
 | 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -167,3 +175,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   random cases. Long parity runs go in batches (25,000 per seed). `make` does not create `build/`, so create it first.
 - **Flaky Engine test:** `internal/livectl` TestStopKillsTheProcessGroupOfAWorkerThatIgnoresTheInterrupt failed once in 4
   full `-coverpkg` runs under load, and passed 8 of 8 alone. Reported to Engine (PRO-104); never re-run blindly to mask it.
+- **Planted self-check output:** `make parity-random` prints `random differential FAILED: engines differ on
+  random/tls/1/00000` for its planted 300-case run. That line is expected; the check fails only if the plant is not caught.
+- **Base of a doc-only PR:** a PR that touches no file of the stack goes directly on `claude/go-migration` (Lee's rule).
+  Cutting it from the top of the stack drags the stack's lag behind `claude/go-migration` into its diff (139 files for #73).
