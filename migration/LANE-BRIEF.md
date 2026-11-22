@@ -26,10 +26,9 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 ## 2. Current state (2026-11-21)
 
 - **Branch head:** check `git log -1 origin/claude/go-migration`. On 2026-11-21 (PRO-69) `main` `0ef7349` (41 commits, through PR #39,
-  including #39's numeric content-version order) was merged in with a normal merge commit. On 2026-11-22 `main` `2a33183` (PR #66, #36) came in as `f5353c5`;
-  PR #55
-  (per-target module sets in the release build, `07cda53`) was merged in (`b1d69d5`, Lee's approval), then `main`
-  `2c92b17` (PR #66, #71 gitleaks rules, #63, #68) with a normal merge (`b2e36d4`), so the branch is 0 behind `main`.
+  including #39's numeric content-version order) was merged in with a normal merge commit. On 2026-11-22 `main` `2a33183` (PR #66, #36) came
+  in as `f5353c5`; PR #55 (per-target module sets in the release build, `07cda53`) was merged in (`b1d69d5`, Lee's
+  approval), then `main` `2c92b17` (PR #66, #71 gitleaks rules, #63, #68) with a normal merge (`b2e36d4`), so the branch is 0 behind `main`.
   On `b2e36d4` every check on PR #40 passes (44 pass, 1 skipped: `release publish`, which only runs on tags).
 - **Done, Milestones A and B:**
   - The Go engine, the CLI `protodetect` and the dashboard service `protodetect serve`.
@@ -130,6 +129,8 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **Never** merge, rebase, force-push, open a PR, tag, release or change a schedule. Post GitHub comments only when
   the task asks for them (the current Hermes rule is none).
 - **Changes to `ci.yml`** go to the CI/CD lane, which ports them (see chunk-43, `34ea6b0` → `85e99e9`).
+- **A stand-in process announces readiness only after its signal handling is set.** The livectl worker wrote its
+  child file before `trap '' INT`, so a stop right after it failed with -2 on CI (`f5353c5`; fixed in `c99923e`).
 - **Generated test data can trip gitleaks.** A case name with `key`, `token`, `secret` or `auth` followed by a long hex
   string matches `generic-api-key` (PRO-126, `296227b`; allow-listed by PR #71). Name cases without those words and
   run the pinned gitleaks 8.30.1 (`tools/scanners`) on the tree before a push.
