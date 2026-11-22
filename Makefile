@@ -135,6 +135,7 @@ workflow-policy:
 	$(PYTHON) -B tools/go_deep.py --self-test
 	$(PYTHON) -B tools/go_cover.py --self-test
 	$(PYTHON) -B tools/go_api.py --self-test
+	$(PYTHON) -B tools/contract_check.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 
