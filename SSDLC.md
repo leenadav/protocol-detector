@@ -916,6 +916,9 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      osv-scanner; x/crypto, x/text in tools/scanners), each release at least 7 days old. One stays
      accepted until 2026-12-22: rardecode 2.1.0 in the gitleaks build (GO-2025-4020), unreachable,
      whose fix does not build with gitleaks' archives dependency.
+     Three more, accepted until 2026-12-06, arrived with go-migration's gremlins module
+     (migration/mutation/gremlins, Engine's file): x/sys and x/text, unreachable in the built
+     gremlins. The bump is asked of Engine.
    - **Licences:** osv-scanner is a CI-only tool. It links MIT, Apache-2.0, BSD, ISC, MPL-2.0,
      Unlicense and MIT-0 code, and spdx/tools-golang under Apache-2.0 (dual with GPL-2.0-or-later).
      Nothing GPL or LGPL is linked or vendored into shipped code.
