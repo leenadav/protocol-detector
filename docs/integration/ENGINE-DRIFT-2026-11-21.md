@@ -46,7 +46,7 @@ After that the tree builds, and `go vet` is clean.
 | Failure | Cause | Owner |
 |---|---|---|
 | `go/consumertest`: `module ../ requires go >= 1.27.4 (running go 1.27.0)` | the engine's `go/go.mod` says `go 1.27.4` | **decision**: plan item #3 promises Culvert a minimum of 1.27.0 |
-| `TestModuleIsStandardLibraryOnly` | `require golang.org/x/crypto v0.59.0` (vendored, with `x/sys`) | **decision**: plan item #19 and section 12 state "standard library only" |
+| `TestModuleIsStandardLibraryOnly` | `require golang.org/x/crypto v0.59.0` (vendored, with `x/sys`) | resolved by rule (a), PRO-107 and PRO-151: the test is now `TestDetectorImportsStandardLibraryOnly` and checks the import graph of `go/detector`, which passes on the merged tree |
 | `TestNoPackageExportsAMutableRegistry` | new exported `livedecrypt.ErrorCodes`, `x509x.WeakSignatures`, `signatures.Contexts` | engine, or this lane's allow-list |
 | `TestProfileEvidenceFieldsAreClassified` | new HTTP evidence fields `http_host_variation`, `http_messages`, `http_methods` | this lane: classify them |
 | `TestProfileOutcomes` | HTTP/2 is ported now: `outside_profile` where the test expects `unsupported` | this lane: test expectation |
@@ -149,7 +149,13 @@ None of this was done, and none of it was tuned against a final budget: Culvert'
 
 ## 5. What this asks for
 
-- **A decision (Lee, with the engine lane):** `go 1.27.4` plus `golang.org/x/crypto` in `go/go.mod` against plan
+- **Decided on 2026-11-22** (PRO-107 and PRO-151; Hermes, for Lee):
+  - plan item #19 means rule (a), no non-standard code compiled into what Culvert imports. `golang.org/x/crypto`
+    may stay in `go.mod`, and `TestDetectorImportsStandardLibraryOnly` checks `go/detector`'s import graph on four
+    platforms;
+  - the engine's `go.mod` returns to `go 1.27.0` with `toolchain go1.27.4` (Engine).
+
+  The original question, kept for the record: `go 1.27.4` plus `golang.org/x/crypto` in `go/go.mod` against plan
   items #3 and #19. Culvert's `go.mod` says `go 1.27.0`, so importing the module as it stands would raise Culvert's
   `go` line and add a dependency.
 

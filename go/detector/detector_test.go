@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/rand"
 	"os"
+	"os/exec"
 	"reflect"
 	"strings"
 	"sync"
@@ -563,14 +564,35 @@ func feedAll(f *Flow, d Direction, data []byte) {
 	}
 }
 
-func TestModuleIsStandardLibraryOnly(t *testing.T) {
-	data, err := os.ReadFile("../go.mod")
+// Plan item #19, rule (a) (PRO-107, decided by Hermes on 2026-11-22): no non-standard code is compiled into what
+// Culvert imports. A module requirement alone is allowed (the key-log decryption needs golang.org/x/crypto, which
+// Culvert already requires at the same version), so the check is on the import graph of this package, not on
+// go.mod. Every package go/detector depends on, on each platform Culvert ships, must be in the standard library
+// (its vendored vendor/golang.org/x/... copies included, which `go list` reports as standard) or in this module.
+func TestDetectorImportsStandardLibraryOnly(t *testing.T) {
+	const module = "github.com/leenadav/protocol-detector/go/"
+	goBin, err := exec.LookPath("go")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("the go command is needed to list the import graph: %v", err)
 	}
-	for _, line := range strings.Split(string(data), "\n") {
-		if f := strings.Fields(line); len(f) > 0 && (f[0] == "require" || f[0] == "replace") {
-			t.Fatalf("go/go.mod has a %s directive; third-party modules need an ADR (migration/adr/0002): %q", f[0], line)
+	for _, target := range [][2]string{{"linux", "amd64"}, {"linux", "arm64"}, {"darwin", "arm64"}, {"windows", "amd64"}} {
+		cmd := exec.Command(goBin, "list", "-deps", "-f", "{{if not .Standard}}{{.ImportPath}}{{end}}", ".")
+		cmd.Env = append(os.Environ(), "GOOS="+target[0], "GOARCH="+target[1], "CGO_ENABLED=0")
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("%s/%s: go list -deps failed: %v\n%s", target[0], target[1], err, out)
+		}
+		own := 0
+		for _, pkg := range strings.Fields(string(out)) {
+			if strings.HasPrefix(pkg, module) {
+				own++
+				continue
+			}
+			t.Errorf("%s/%s: go/detector depends on %s, which is neither the standard library nor this module; "+
+				"Culvert would compile it in (plan item #19, rule (a))", target[0], target[1], pkg)
+		}
+		if own == 0 {
+			t.Fatalf("%s/%s: the listing names none of this module's packages, so it checked nothing:\n%s", target[0], target[1], out)
 		}
 	}
 }

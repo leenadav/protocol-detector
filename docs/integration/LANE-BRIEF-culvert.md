@@ -29,7 +29,7 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   The Culvert clone's push URL is disabled.
 - **Data:** synthetic and loopback only. The lab's origins are on RFC 5737 addresses.
 
-## 2. Current state (2026-11-22, after PRO-148)
+## 2. Current state (2026-11-22, after PRO-151)
 
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
@@ -84,10 +84,15 @@ Culvert's allocation gates need `-tags benchgate`.
     to Culvert's graph. Culvert's dependency gate is a licence gate (`pr-deep-gate.yml:426-447`,
     `go-licenses --disallowed_types=forbidden,restricted`), not a "no modules" rule. On the trial merge,
     `go list -deps ./detector` shows no non-standard package; only `internal/decrypt` imports `x/crypto`.
-  - **"Standard library only" is our own rule** (ADR 0002 line 39, `TestModuleIsStandardLibraryOnly`). Under (a) the
-    test should check the import graph of `go/detector`, not `go.mod`. If the engine's requirement ever exceeds
-    Culvert's versions, MVS raises Culvert's pin, which is a reviewed dependency bump on their side.
-  - **The Go floor is not settled by Culvert's sources; it goes to Lee.** `go.mod:9-11` says the `go` line is the
+  - **"Standard library only" is our own rule** (ADR 0002 line 39). Since PRO-151 it is checked as rule (a):
+    `TestDetectorImportsStandardLibraryOnly` (it replaced `TestModuleIsStandardLibraryOnly`, which read the
+    `require` lines of `go.mod`). The test runs `go list -deps` on `go/detector` for linux/amd64, linux/arm64,
+    darwin/arm64 and windows/amd64, and fails on any package outside the standard library and this module. A planted
+    import of `internal/decrypt` failed it on every platform, naming the `golang.org/x/crypto` packages. If the
+    engine's requirement ever exceeds Culvert's versions, MVS raises Culvert's pin, which is a reviewed dependency
+    bump on their side.
+  - **The Go floor:** decided by Hermes on 2026-11-22: the engine's `go.mod` moves to `go 1.27.0` with
+    `toolchain go1.27.4` (Engine, on `claude/go-migration`). Before that decision, the Culvert sources said: `go.mod:9-11` says the `go` line is the
     language minimum and "is not raised to match" the toolchain. `godebug_pins_test.go:67-71` says a patch bump of
     the `go` line does not invalidate the GODEBUG review, and `toolchain_consistency_test.go:100-103` only needs
     `toolchain >= go`. So `go 1.27.4` passes Culvert's tests, but importing the module would force their `go` line

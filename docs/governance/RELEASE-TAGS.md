@@ -48,8 +48,8 @@ release owners' public keys, and is empty until one is added.
    make go-check-minimum
    ```
 
-   `go mod tidy` must leave `go/go.mod` unchanged (the module has no `require` or `replace` lines,
-   `TestModuleIsStandardLibraryOnly` in `go/detector`).
+   `go mod tidy` must leave `go/go.mod` unchanged, and `go/detector` must import only the standard library and
+   this module (`TestDetectorImportsStandardLibraryOnly`, plan item #19, rule (a)).
 2. Create the annotated, signed tag on that commit:
 
    ```bash
