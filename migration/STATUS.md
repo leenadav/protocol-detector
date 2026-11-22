@@ -484,6 +484,12 @@ changes):
 | CoAP profile held to RFC 7252 in both engines (F-ADV-1) | Lee, 2026-11-18 | `12e1ed0` |
 | C11: earlier content releases keep their published components (`protocol_engine/content.py`) | research finding, fixed in both engines | `d1b63ee` |
 | PRO-31: content release versions compared numerically (`protocol_engine/content.py` `compare_versions`, the semantics of Go's `CompareVersions`) | Lee, 2026-11-20, relayed by Hermes | `376a204`, with `6194fb9` |
+| Per-carrier port tables: `Application.uses_port` no longer reads a cache keyed by name across carriers (`protocol_engine/applications.py`) | Lee, 2026-11-15 ("Reference finding, fixed in Python" below) | `9cec1e6` |
+| Offline analyze defaults to the Go backend; the reference runs with `--backend python` (`protocol_adapters/analyze_pcap.py`) | Lee, 2026-11-15 (M8 decisions) | `b0664ef` |
+| Live capture defaults to the Go backend; the reference runs with `--backend python` (`protocol_adapters/live_capture.py`) | Lee, 2026-11-15 (M8 decisions) | `9a7ebb9` |
+| Reused tuples: a flow on a reused tuple is the next generation (`protocol_adapters/coordinator.py`) | Lee's rule of 2026-11-17: adapter-level Python changes may go ahead (Milestone B row) | `caf964f` |
+| One generation counter per capture (`protocol_adapters/coordinator.py`, `protocol_adapters/events.py`) | Lee, 2026-11-18 | `0d78604` |
+| Content releases 2026.11.1 to 2026.11.9: new versions of the reference's data (`protocol_engine/host_apps.py`, the release tables in `content.py`, `content_lock.json`), each added as a new version (AGENTS.md rule 2) to both engines' pack | content-release process; each release is recorded in this ledger, and no separate Lee approval is recorded for them | `9cec1e6`, `3b0ddf9`, `baa07b9`, `6ab434d`, `7dcabb7`, `b6ed149`, `ee1645d`, `253a91d`, `2f6ad4d` |
 
 C11 (2026-11-18, research finding): a rollback recomputed an earlier release's digest from the current
 application catalog, so every added application moved it (2026.11.1 published as `c4020c2437f3de8d`, rolled
