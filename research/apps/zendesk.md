@@ -33,7 +33,7 @@ None (no catalog change).
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -120,7 +120,7 @@ None: the current entry matches the source.
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
@@ -194,7 +194,7 @@ Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it cover
 | `www.linkedin.com` | seen | third party | `linkedin` | not checked |  |
 | `www.redditstatic.com` | seen | shared vendor infra | `reddit-base` | not checked |  |
 | `www.zendesk.com` | seen | app-owned | `zendesk` | not checked |  |
-| `www.zndsk.com` | seen | app-owned (unmapped) | no application | not checked | Zendesk short domain (zndsk.com); ownership to be shown by certificate in live round 2 |
+| `www.zndsk.com` | seen | app-owned (unmapped) | no application | not checked | Zendesk short domain; NOT mapped: round 3 certificate is domain-validated (no organisation, issuer Google Trust Services) |
 | `x.bidswitch.net` | seen | third party (unclassified) | no application | not checked |  |
 | `x.clearbitjs.com` | seen | third party (unclassified) | no application | not checked |  |
 

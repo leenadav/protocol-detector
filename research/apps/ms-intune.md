@@ -38,7 +38,7 @@ Checked with `attribution_for_host` in scratch (`claude/go-migration` `bc65e50` 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -50,7 +50,7 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 | D- | `intune.microsoft.com` | not ms-intune (shared vendor infra) | `ms-base` | PASS |
 | D- | `login.live.com` | not ms-intune (shared vendor infra) | `azure-ad` | PASS |
 | D- | `login.microsoftonline.com` | not ms-intune (shared vendor infra) | `azure-ad` | PASS |
-| D- | `portal.azure.com` | not ms-intune (shared vendor infra (unmapped)) | no application | PASS |
+| D- | `portal.azure.com` | not ms-intune (shared vendor infra (unmapped)) | `azure-portal` | PASS |
 | L- | `xmicrosoft.com` | not ms-intune (label boundary) | no application | PASS |
 | L- | `manage.microsoft.com.example.invalid` | not ms-intune (suffix look-alike) | no application | PASS |
 | L- | `dm.microsoft.com.example.invalid` | not ms-intune (suffix look-alike) | no application | PASS |
@@ -76,7 +76,7 @@ Metadata is this lane's proposal.
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
@@ -97,14 +97,14 @@ Pass 2 (Hermes server, direct connection) replaces pass 1 for every URL it cover
 | `intune.microsoft.com` | seen | shared vendor infra | `ms-base` | not checked |  |
 | `login.live.com` | seen | shared vendor infra | `azure-ad` | not checked |  |
 | `login.microsoftonline.com` | seen | shared vendor infra | `azure-ad` | not checked |  |
-| `portal.azure.com` | seen (some failed) | shared vendor infra (unmapped) | no application | not checked | Azure portal (Microsoft) |
+| `portal.azure.com` | seen (some failed) | shared vendor infra (unmapped) | `azure-portal` | not checked | Azure portal (Microsoft) |
 
 ## 11. Attributes (App-ID model) and re-verify date
 
 - `ms-intune`: business-systems / management, client-server; characteristics `widely-used`; **risk 1**: widely used by enterprises.
 - Functions separated by name: none beyond the single id.
 - Variant: not separated by name.
-- Dependencies (observed, never attributed to this app): `azure-ad`, `ms-base`, `ms-telemetry`.
+- Dependencies (observed, never attributed to this app): `azure-ad`, `azure-portal`, `ms-base`, `ms-telemetry`.
 - Evasive (ECH, DoH, proxy modes): no ECH parameter in any verified name's HTTPS record (2026-11-20); other modes as stated in sections 2 to 4.
 - QUIC path (`h3` in the HTTPS record): none advertised.
 - Re-verify by: **2027-02-18** (`research/tools/recheck_sources.py` tracks the cited pages).

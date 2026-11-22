@@ -41,7 +41,7 @@ Checked with `attribution_for_host` in scratch (`c08773f` plus D to I, R, L and 
 
 <!-- method-v2-vectors:start -->
 
-### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J and K as rebuilt 2026-11-21)
+### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)
 
 O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); L- = look-alike or label-boundary name (must not be this app).
 
@@ -78,34 +78,34 @@ O+ = observed app-owned host (positive); D- = observed dependency (must not be t
 
 ## 9. Live verification (L)
 
-Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
+Source: live-verified by Hermes from an unproxied vantage, 2026-11-20, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool `research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). `L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never evidence.
 
 | Catalog name | Live result (2026-11-20) |
 |---|---|
 | `salesforce.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `salesforce.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
 | `force.com` | **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `salesforce.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
-| `salesforceiq.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `forceusercontent.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `force-user-content.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `my.salesforce.app` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforceliveagent.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-experience.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-hub.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-scrt.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-setup.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-sites.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `sfdcopens.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `site.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `svc.sfdcfc.net` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `trailblazer.me` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `trailhead.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `documentforce.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `lightning.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `salesforce-communities.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `sfdc.sh` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `visualforce.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `sfdcstatic.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
-| `lightningdesignsystem.com` | not yet verified (added after round 2; in `live-hosts-r2.txt` for the next run) |
+| `salesforceiq.com` | round 3 (2026-11-21); resolves; TLS handshake failed (SSLError, round 3): not a removal reason |
+| `forceusercontent.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.forceusercontent.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `force-user-content.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.force-user-content.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `my.salesforce.app` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `salesforceliveagent.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.salesforceliveagent.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `salesforce-experience.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.salesforce-experience.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `salesforce-hub.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.salesforce-hub.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `salesforce-scrt.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.salesforce-scrt.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `salesforce-setup.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.salesforce-setup.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `salesforce-sites.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.salesforce-sites.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `sfdcopens.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.sfdcopens.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `site.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.site.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `svc.sfdcfc.net` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `trailblazer.me` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `trailblazer.me`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `trailhead.com` | round 3 (2026-11-21); **L** resolves; TLSv1.2, ALPN `h2`, cert `trailhead.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
+| `documentforce.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.documentforce.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `lightning.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.lightning.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `salesforce-communities.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.salesforce-communities.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `sfdc.sh` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `visualforce.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `h2`, cert `hsts.visualforce.com`, subject organisation **Salesforce, Inc.** (issuer DigiCert Inc) |
+| `sfdcstatic.com` | apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source) |
+| `lightningdesignsystem.com` | round 3 (2026-11-21); **L** resolves; TLSv1.3, ALPN `http/1.1`, cert `lightningdesignsystem.com`, no subject organisation (domain-validated) (issuer Let's Encrypt) |
 
 ## 10. Observed web-client hosts (dependency mapping)
 
