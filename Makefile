@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long mutation-tool mutation
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -200,6 +200,8 @@ go-check:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) sh -c 'files=$$(find . -name "*.go" -not -path "./vendor/*"); test -z "$$(gofmt -l $$files)" || { gofmt -l $$files; exit 1; }'
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go vet ./...
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test -race ./...
+	$(PYTHON) -B migration/mutation/boundaries.py --check
+	$(PYTHON) -B migration/mutation/mutation.py --self-test
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/buffer -run NONE -fuzz FuzzAppendNeverExceedsLimits -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/contracts -run NONE -fuzz FuzzObservationJSONNeverPanics -fuzztime 10s
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test ./internal/reassembly -run NONE -fuzz FuzzFeedInvariants -fuzztime 10s
@@ -292,6 +294,14 @@ SEED ?= 1
 COUNT ?= 50000
 parity-random-long: go-build
 	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --seed $(SEED) --count $(COUNT) --report build/random-diff-$(SEED).json
+
+# Mutation testing (PRO-126; nightly, never a per-PR gate). gremlins is test tooling, pinned in its own module under
+# migration/mutation/gremlins and installed into build/, never linked into or vendored with go/.
+mutation-tool:
+	cd migration/mutation/gremlins && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=mod GOBIN=$(CURDIR)/build/mutation-bin go install github.com/go-gremlins/gremlins/cmd/gremlins
+
+mutation: mutation-tool
+	GOTOOLCHAIN=$(GO_TOOLCHAIN) $(PYTHON) -B migration/mutation/mutation.py run --gremlins build/mutation-bin/gremlins --out build/mutation
 
 # Sustained throughput and memory with 10,000 and 100,000 concurrent flows (synthetic; reported only, never a gate)
 bench-load:
