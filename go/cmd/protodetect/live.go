@@ -256,7 +256,7 @@ func runLive(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		"reason": "Passive initial-message inspection; no payload storage or TLS decryption", "interface": interfaceValue, "filter": filter,
 		"tcp_hint": hintValue(cfg.TCPHint), "udp_hint": hintValue(cfg.UDPHint), "signatures": cfg.Signatures.Len(),
 		"crc32c_byte_limit": cfg.CRC32CByteLimit, "max_reassembly_buffer_bytes": 4 * cfg.ByteLimit * cfg.MaxConnections,
-		"content": map[string]interface{}{"version": pack.Release.Version, "digest": pack.Release.Digest}}})
+		"content": map[string]interface{}{"version": pack.Release.Version, "digest": pack.Digests.Release}}})
 	status, err := live.Run(stream, process, processErrors, pack, cfg, emit)
 	if err != nil {
 		if process != nil && process.ProcessState == nil {

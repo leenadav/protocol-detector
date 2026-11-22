@@ -465,7 +465,7 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (*Counts,
 	}
 	if opts.JSON {
 		p.row("summary", map[string]interface{}{"summary": counts.Values, "input_quality": q.render(),
-			"content": map[string]interface{}{"version": pack.Release.Version, "digest": pack.Release.Digest}},
+			"content": map[string]interface{}{"version": pack.Release.Version, "digest": pack.Digests.Release}},
 			map[string][]string{"summary.summary": counts.Order})
 	} else {
 		v := counts.Values

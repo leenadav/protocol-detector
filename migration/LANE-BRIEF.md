@@ -48,6 +48,8 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **PRO-126 (mutation testing):** gremlins tooling, the baseline and reference-checked boundary tests for TLS,
   QUIC and HTTP/1 merged with PR #72 (`bb2af2e`); the nightly job is with the CI/CD lane, and PR #80 (`9b499f8`) moved the
   pin's x/sys and x/text past the OSV advisories.
+- **SEC-CONTENT-1 (PRO-154):** the content-pack loader decodes exact keys only; on `claude/fix-sec-content-1` (PR
+  into this branch).
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
 
 ## 3. Where things live (reading order)
@@ -144,6 +146,9 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **Generated test data can trip gitleaks.** A case name with `key`, `token`, `secret` or `auth` followed by a long hex
   string matches `generic-api-key` (PRO-126, `296227b`; allow-listed by PR #71). Name cases without those words and
   run the pinned gitleaks 8.30.1 (`tools/scanners`) on the tree before a push.
+- **`encoding/json` matches field names case-insensitively (SEC-CONTENT-1).** Anything verified by exact keys
+  (digests, the reference) must also be decoded by exact keys: the content pack is decoded from the strict tree with
+  case-variant keys removed (`exactFields`), and every tagged struct field names its key explicitly.
 - **Per-packet work must not scan a whole store (SEC-QUIC-1).** Index by what the hot path looks up (idle heap,
   scope index), and prove the new structure against the old implementation kept as a test oracle, with a mutation check.
 - **Go versions (PRO-107):** `go/go.mod` states `go 1.27.0` (the floor Culvert imports at, gated by
