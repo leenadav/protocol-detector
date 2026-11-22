@@ -56,6 +56,8 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   by key-log decryption.
 - **SEC-INSP-1 (PRO-129, P0):** parser-driven shift nesting capped at 2, merged with PR #87 (`f209bd5`); a Go-only
   parity divergence (Python nests without bound), approved by Lee on 2026-11-22 (PRO-129).
+- **SEC-HTTP-1 (PRO-179, P1):** an absolute-form or CONNECT target's authority is the HTTP hostname (Go only, recorded
+  divergence; `random_diff.py` accepts it as an approved class) on `claude/fix-sec-http-1` (PR into this branch).
 - **In flight:** nothing is being coded. The branch waits on Codex's Sunday review, and then on Lee's merge decision.
 
 ## 3. Where things live (reading order)

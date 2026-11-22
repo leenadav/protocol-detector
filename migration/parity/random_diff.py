@@ -28,6 +28,7 @@ that no longer mismatches on the seed it names fails too, so the list cannot go 
 import argparse
 import json
 import random
+import re
 import subprocess
 import sys
 import tempfile
@@ -276,6 +277,34 @@ def build(seed, count):
     return out
 
 
+# Approved Go-only divergences (recorded in migration/STATUS.md): a mismatch of this class is expected, counted
+# apart and never a failure. SEC-HTTP-1 (Lee, PRO-177 and PRO-179, 2026-11-22): with an absolute-form or CONNECT
+# request target the Go engine takes the target's authority as the hostname (RFC 9112 3.2.2) and flags a
+# disagreeing Host with http_host_mismatch, where the reference keeps the Host header. Only the host attribution
+# may differ: a mismatch in any other path (status, protocol, reason, budgets...) still fails.
+HOST_ATTRIBUTION = re.compile(r"^\$\.(events\[\d+\]\.observation|final|observation)\.(hostname|application|evidence)(\.|\[|$)")
+
+
+def approved_divergence(case, item):
+    """The approved divergence a mismatch belongs to, or None."""
+    if (case or {}).get("label") != "http" or case.get("kind") != "stream":
+        return None
+    try:
+        data = bytes.fromhex("".join(case.get("chunks") or []))
+    except ValueError:
+        return None
+    parts = data.split(b"\r\n", 1)[0].split(b" ")
+    if len(parts) != 3:
+        return None
+    absolute = parts[1].lower().startswith((b"http://", b"https://"))
+    if not (absolute or parts[0].upper() == b"CONNECT"):
+        return None
+    differences = item.get("differences") or []
+    if not differences or any(not HOST_ATTRIBUTION.match(d.get("path", "")) for d in differences):
+        return None
+    return "SEC-HTTP-1: the request target's authority is the hostname"
+
+
 def judge(mismatched, allow, seed, count):
     """Failures from the mismatches ({case id: compare item}) and the allow-list ({case id: reason}): a mismatch
     the list does not name, and a listed case of this run (same seed, index below count) that no longer
@@ -301,10 +330,18 @@ def self_test():
     stale = judge({}, allow, 1, 10)                                                     # listed, now agrees
     assert len(stale) == 1 and "now agree" in stale[0], stale
     assert judge({}, allow, 2, 10) == [] and judge({}, allow, 1, 3) == []             # other seed, beyond count
+    absolute = {"label": "http", "kind": "stream", "chunks": [b"GET http://a.test/ HTTP/1.1\r\nHost: b.test\r\n\r\n".hex()]}
+    origin = dict(absolute, chunks=[b"GET / HTTP/1.1\r\nHost: b.test\r\n\r\n".hex()])
+    host = {"differences": [{"path": "$.final.hostname"}, {"path": "$.events[0].observation.evidence[1][1]"}]}
+    status = {"differences": [{"path": "$.final.hostname"}, {"path": "$.final.status"}]}
+    assert approved_divergence(absolute, host)                       # SEC-HTTP-1: host attribution only
+    assert approved_divergence(absolute, status) is None             # anything else on the same request fails
+    assert approved_divergence(origin, host) is None                 # origin-form is not part of the divergence
+    assert approved_divergence(dict(absolute, label="tls"), host) is None
     first, again = build(5, 40), build(5, 40)
     assert first == again and first != build(6, 40), "the generator must be deterministic per seed"
     assert {case["id"].split("/")[1] for case in first} == {name for name, _, _ in GENERATORS}
-    print("random differential self-test: ok (allow-list judgment, stale entries, determinism, generators)")
+    print("random differential self-test: ok (allow-list judgment, stale entries, approved divergences, determinism, generators)")
     return 0
 
 
@@ -345,6 +382,11 @@ def main(argv=None):
             return 1
         report = compare.compare(doc, json.loads(out.read_text(encoding="utf-8")))
     mismatched = {item["id"]: item for item in report["mismatched"]}
+    by_id = {case["id"]: case for case in doc["cases"]}
+    approved = {}
+    for cid in sorted(mismatched):
+        if approved_divergence(by_id.get(cid), mismatched[cid]):
+            approved[cid] = mismatched.pop(cid)
     failures += judge(mismatched, allow, args.seed, args.count)
     if report["missing"] or report["unsupported"]:
         failures.append("go answered {} cases unsupported, {} missing".format(report["unsupported"], len(report["missing"])))
@@ -357,15 +399,14 @@ def main(argv=None):
     for line in failures[:20]:
         print("random differential FAILED:", line)
     if args.report:  # a nightly job uploads this: every failing case reproduces with its seed and index
-        by_id = {case["id"]: case for case in doc["cases"]}
         Path(args.report).write_text(json.dumps({
             "seed": args.seed, "count": args.count, "compared": report["compared"], "matched": report["matched"],
             "failures": failures,
             "mismatched": [dict(mismatched[cid], case=by_id.get(cid)) for cid in sorted(mismatched) if cid not in allow],
         }, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-    print("random differential: seed {}, {} cases ({}), Go matched the reference on {} of {}, {} allowed, {} failures, {:.0f} s".format(
+    print("random differential: seed {}, {} cases ({}), Go matched the reference on {} of {}, {} approved divergences (SEC-HTTP-1), {} allowed, {} failures, {:.0f} s".format(
         args.seed, len(doc["cases"]), "; ".join("{} {}".format(k, dict(sorted(v.items()))) for k, v in sorted(kinds.items())),
-        report["matched"], report["compared"], sum(1 for cid in mismatched if cid in allow), len(failures), time.monotonic() - started))
+        report["matched"], report["compared"], len(approved), sum(1 for cid in mismatched if cid in allow), len(failures), time.monotonic() - started))
     if args.plant:
         planted = doc["cases"][0]["id"]
         caught = planted in mismatched and len(mismatched) == 1

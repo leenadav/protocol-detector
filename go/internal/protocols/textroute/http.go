@@ -189,6 +189,8 @@ type Parser struct {
 	headers          int
 	host             string
 	hasHost          bool
+	hostLiteral      bool // the Host header named an IP literal
+	hostFromTarget   bool // the hostname is the request target's authority (SEC-HTTP-1)
 	hostCount        int
 	http11Request    bool
 	contentLength    int64
@@ -266,7 +268,11 @@ func (p *Parser) Done() bool { return p.done }
 // Result exposes the identification once Done.
 func (p *Parser) Result() *parsing.Result {
 	if p.mode == "http" || p.mode == "" {
-		return &parsing.Result{Family: "http", ProtocolName: p.protocolName, Host: p.host, HasHost: p.hasHost, HostSource: "http_host",
+		source := "http_host"
+		if p.hostFromTarget {
+			source = "http_target"
+		}
+		return &parsing.Result{Family: "http", ProtocolName: p.protocolName, Host: p.host, HasHost: p.hasHost, HostSource: source,
 			ALPN: []string{}, Extra: p.extra, Reason: p.reason, Scope: p.scope, Shift: p.shift, Continues: p.continues, Contexts: p.contexts}
 	}
 	return &parsing.Result{Family: p.family, ProtocolName: p.protocolName2, ALPN: []string{}, Extra: p.extra, Reason: p.reason,
@@ -776,13 +782,15 @@ func (p *Parser) consumeLine(line []byte) error {
 		}
 		p.done = true
 		p.reason = "HTTP start-line and headers validated; body and later requests not inspected"
+		headerHost, hasHeaderHost := p.host, p.hasHost // the Host header's name, for its signature context
+		p.applyTarget()
 		if err := p.shiftBoundary(); err != nil {
 			return err
 		}
 		if p.contexts != nil {
 			p.contexts["http-req-headers"] = p.headerBlock
-			if p.hasHost {
-				p.contexts["http-req-host-header"] = []byte(p.host)
+			if hasHeaderHost {
+				p.contexts["http-req-host-header"] = []byte(headerHost)
 			}
 			if p.hasContentLength {
 				p.contexts["http-req-content-length"] = p.contentLength
@@ -956,36 +964,105 @@ func validPort(port string) bool {
 }
 
 func (p *Parser) parseHost(value []byte) error {
+	name, named, ok := authorityName(value)
+	if !ok {
+		return parsing.Malformed("Invalid Host authority")
+	}
+	if named {
+		p.host, p.hasHost = name, true
+	}
+	p.hostLiteral = !named
+	return nil
+}
+
+// authorityName validates an authority (host, optional :port) as a Host header must be: ASCII, a bracketed IPv6
+// literal, an IPv4 literal or a DNS name. It returns the normalized DNS name and named=true, or named=false for
+// an IP literal (which is never a hostname); ok is false when the authority is invalid.
+func authorityName(value []byte) (string, bool, bool) {
 	for _, c := range value {
 		if c >= 128 {
-			return parsing.Malformed("Invalid Host authority")
+			return "", false, false
 		}
 	}
 	text := string(value)
 	if strings.HasPrefix(text, "[") {
 		closing := strings.IndexByte(text, ']')
 		if closing < 0 || !names.IsIPv6(text[1:closing]) {
-			return parsing.Malformed("Invalid Host authority")
+			return "", false, false
 		}
 		suffix := text[closing+1:]
 		if suffix != "" && (!strings.HasPrefix(suffix, ":") || len(suffix) > 6 || !validPort(suffix[1:])) {
-			return parsing.Malformed("Invalid Host authority")
+			return "", false, false
 		}
-		return nil
+		return "", false, true
 	}
 	host, port, hasPort := strings.Cut(text, ":")
 	if hasPort && !validPort(port) {
-		return parsing.Malformed("Invalid Host authority")
+		return "", false, false
 	}
 	if names.IsIPv4(host) {
-		return nil
+		return "", false, true
 	}
 	normalized, err := names.Normalize(host)
 	if err != nil {
-		return parsing.Malformed("Invalid Host authority")
+		return "", false, false
 	}
-	p.host, p.hasHost = normalized, true
-	return nil
+	return normalized, true, true
+}
+
+// targetAuthority is the authority a request target carries (RFC 9112 §3.2.2 absolute-form, §3.2.3 CONNECT
+// authority-form), or ok=false for origin-form, asterisk-form or a target whose authority is not valid.
+func (p *Parser) targetAuthority() (name string, named, ok bool) {
+	target := string(p.target)
+	if p.method == "CONNECT" {
+		if !connectTarget.MatchString(target) {
+			return "", false, false
+		}
+		return authorityName([]byte(target))
+	}
+	lower := strings.ToLower(target)
+	for _, scheme := range []string{"http://", "https://"} {
+		if !strings.HasPrefix(lower, scheme) {
+			continue
+		}
+		authority := target[len(scheme):]
+		if end := strings.IndexAny(authority, "/?#"); end >= 0 {
+			authority = authority[:end]
+		}
+		if at := strings.LastIndexByte(authority, '@'); at >= 0 { // userinfo is never part of the host
+			authority = authority[at+1:]
+		}
+		if authority == "" {
+			return "", false, false
+		}
+		return authorityName([]byte(authority))
+	}
+	return "", false, false
+}
+
+// applyTarget is SEC-HTTP-1: with an absolute-form or CONNECT target the request's host is the target authority
+// (a server ignores Host then, RFC 9112 §3.2.2), so it replaces the Host header's for routing and policy. A Host
+// that names another host (or an IP literal against a named target, or the reverse) is flagged with
+// http_host_mismatch; the disagreeing name itself is never emitted. When the two agree, the Host header stays the
+// hostname's source, so only requests whose host actually changes differ from the Python reference.
+func (p *Parser) applyTarget() {
+	name, named, ok := p.targetAuthority()
+	if !ok || p.status != 0 {
+		return
+	}
+	hostSeen := p.hostCount > 0
+	agrees := hostSeen && ((named && p.hasHost && p.host == name) || (!named && !p.hasHost && p.hostLiteral))
+	if hostSeen && !agrees {
+		p.extra = append(p.extra, parsing.Row{Field: "http_host_mismatch", Value: "present", Provenance: "request_line", Strength: "structural"})
+	}
+	if agrees {
+		return
+	}
+	if named {
+		p.host, p.hasHost, p.hostFromTarget = name, true, true
+	} else {
+		p.host, p.hasHost, p.hostFromTarget = "", false, false
+	}
 }
 
 func (p *Parser) shiftBoundary() error {
