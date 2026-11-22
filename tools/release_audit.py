@@ -6,7 +6,10 @@ release.yml, or a workflow edited on a branch, can still publish. A scheduled wo
 runs the default branch's copy, so `release-audit.yml` re-checks every outcome after the fact
 and fails (GitHub then notifies the owner) when one does not hold:
 
+  main is refs/heads/main alone, resolved to its commit       {"kind": "main", "tag": "main", "main", "others"}
+    (no tag named main can shadow it: SEC-CI-1)
   every `v*` tag points at a commit already on main          {"kind": "tag", "tag", "compare", "commit"}
+    (compared commit SHA to main's SHA, never by name)
   every published release names an extant v* tag whose commit {"kind": "release", "tag", "commit", "assets",
     is the release's, and has assets downloaded intact          "download"}
   every downloaded file, hidden ones included, has its own   {"kind": "asset", "tag", "asset", "verified"}
@@ -29,7 +32,7 @@ COMMIT = re.compile(r"^[0-9a-f]{40}$")
 
 def audit(text):
     """(problems, counts) for the facts in `text` (JSON lines)."""
-    problems, counts = [], {"tag": 0, "release": 0, "asset": 0}
+    problems, counts = [], {"main": 0, "tag": 0, "release": 0, "asset": 0}
     tags, releases, assets = {}, [], {}
     for number, line in enumerate(text.splitlines(), 1):
         if not line.strip():
@@ -45,7 +48,16 @@ def audit(text):
             problems.append("line {}: unreadable fact {!r}".format(number, line[:80]))
             continue
         counts[kind] += 1
-        if kind == "tag":
+        if kind == "main":
+            if not COMMIT.match(str(fact.get("main"))):
+                problems.append("main: refs/heads/main could not be resolved to a commit ({!r})".format(fact.get("main")))
+            others = fact.get("others")
+            refs = [ref.strip() for ref in others.splitlines()] if isinstance(others, str) else ["api-error"]
+            if "api-error" in refs:
+                problems.append("main: the refs that could shadow main could not be listed")
+            elif "refs/tags/main" in refs:
+                problems.append("main: a tag named main exists, so the bare name main is ambiguous (SEC-CI-1)")
+        elif kind == "tag":
             tags[tag] = fact
             if fact.get("compare") not in ON_MAIN:
                 problems.append("tag {}: its commit is not on main (compare status {!r})".format(tag, fact.get("compare")))
@@ -58,6 +70,8 @@ def audit(text):
             if fact.get("verified") is not True:
                 problems.append("release {}: asset {!r} has no attestation from publish-release.yml for this tag and "
                                 "commit".format(tag, fact.get("asset")))
+    if counts["main"] != 1:
+        problems.append("expected exactly one main fact, found {}".format(counts["main"]))
     for release in releases:
         tag = release["tag"]
         # milestone 7 round 1: a release must be bound to a current, on-main v* tag and its commit
@@ -97,9 +111,11 @@ def self_test():
     release = fact(kind="release", tag="v1.0.0", commit=a, assets=2, download="ok")
     whl = fact(kind="asset", tag="v1.0.0", asset="a.whl", verified=True)
     sums = fact(kind="asset", tag="v1.0.0", asset="SHA256SUMS", verified=True)
-    good = "\n".join([tag, fact(kind="tag", tag="v1.0.1", compare="identical", commit=b), release, whl, sums])
+    main_fact = fact(kind="main", tag="main", main=b, others="refs/tags/main-old\n")
+    good = "\n".join([main_fact, tag, fact(kind="tag", tag="v1.0.1", compare="identical", commit=b), release, whl, sums])
     assert report(good)[0] == 0, report(good)
-    assert report("")[0] == 0 and "0 v* tag(s), 0 release(s)" in report("")[1][0]
+    assert report(main_fact)[0] == 0 and "0 v* tag(s), 0 release(s)" in report(main_fact)[1][0]
+    assert report("")[0] == 1   # no main fact: the gather step did not run as pinned
     bad = {
         "tag off main": good + "\n" + fact(kind="tag", tag="v9", compare="diverged", commit=b),
         "tag behind": good + "\n" + fact(kind="tag", tag="v9", compare="behind", commit=b),
@@ -123,6 +139,12 @@ def self_test():
         "unknown kind": good + "\n" + fact(kind="other", tag="v9"),
         "missing tag": good + "\n" + fact(kind="tag", compare="ahead"),
         "not json": good + "\napi-error",
+        "no main fact": good.replace(main_fact + "\n", ""),
+        "two main facts": good + "\n" + main_fact,
+        "main unresolved": good.replace('"main": "{}"'.format(b), '"main": "0000000000000000000000000000000000000000x"'),
+        "main api error": good.replace('"main": "{}"'.format(b), '"main": "api-error"'),
+        "tag named main": good.replace('refs/tags/main-old\\n', 'refs/tags/main\\n'),
+        "main refs not listed": good.replace('refs/tags/main-old\\n', 'api-error\\n'),
         "not an object": good + "\n[]",
     }
     for label, text in bad.items():
