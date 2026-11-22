@@ -208,6 +208,45 @@ func TestIncrementalConnectionWaitsForKeysAndReleasesEpochs(t *testing.T) {
 	}
 }
 
+// A terminal connection keeps only what its metadata needs: framers, hello buffers, queued records, the
+// client random and the directions' record keys are released (Codex PRO-13 P2).
+func TestTerminalConnectionsReleaseTheirHeavyState(t *testing.T) {
+	s := tls13Session(0x1301)
+	keys, err := ReadKeys(s.keylog)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tampered := append([]byte{}, s.server...)
+	tampered[len(tampered)-3] ^= 1
+	for _, c := range []struct {
+		name, state    string
+		client, server []byte
+	}{{"complete", StateComplete, s.client, s.server}, {"failed", StateFailed, s.client, tampered}} {
+		conn := NewConnection(keys, "c", "s")
+		conn.Feed("c", c.client)
+		conn.Feed("s", c.server)
+		for conn.HasWork() {
+			conn.Advance(64)
+		}
+		before := conn.Metadata()
+		if conn.Finish() != c.state {
+			t.Fatalf("%s: %s %s", c.name, conn.State, conn.Reason)
+		}
+		if conn.framers != [2]*recordFramer{} || conn.hellos != [2]*helloCollector{} || conn.dirs != [2]direction{} ||
+			conn.queued[0] != nil || conn.queued[1] != nil || conn.random != nil || conn.keys != nil {
+			t.Errorf("%s: heavy state retained after %s", c.name, conn.State)
+		}
+		after := conn.Metadata()
+		if after["authenticated_records"] != before["authenticated_records"] || after["version"] != "TLS 1.3" || after["cipher_suite"] != "0x1301" {
+			t.Errorf("%s: metadata changed: %v -> %v", c.name, before, after)
+		}
+		conn.Feed("c", []byte{0x17, 3, 3, 0, 1, 0}) // terminal: ignored, no panic
+		if conn.HasWork() || conn.Advance(1) != nil || conn.Finish() != c.state {
+			t.Errorf("%s: a terminal connection did more work", c.name)
+		}
+	}
+}
+
 func TestTypedFailures(t *testing.T) {
 	s := tls13Session(0x1303)
 	keys, _ := ReadKeys(s.keylog)

@@ -308,6 +308,12 @@ func (d *decryptor) pump() error {
 					return err
 				}
 				d.closedCount++
+				// Nothing changes a closed connection any more (it left d.connections and d.order): settle
+				// its row now and drop the inspectors, so the up to 4096 connections kept for reports hold
+				// rows, not parser state (the TLS decoder released its own at its terminal state). The row
+				// is the one a later report would have built (Go-only; Codex PRO-13 P2).
+				c.build(d.pack)
+				c.outer, c.inner = [2]*engine.Inspector{}, [2]*engine.Inspector{}
 				d.finished = append(d.finished, c)
 				if len(d.finished) > 4096 {
 					d.finished = d.finished[1:]
