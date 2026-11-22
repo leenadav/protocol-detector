@@ -28,6 +28,35 @@ func ikeRequest(group int, width int) []byte {
 	return cat(header, []byte{byte(size >> 24), byte(size >> 16), byte(size >> 8), byte(size)}, body)
 }
 
+// ikeResponse turns ikeRequest into the responder's IKE_SA_INIT with its single proposal numbered number.
+func ikeResponse(number byte) []byte {
+	m := ikeRequest(14, 256)
+	copy(m[8:16], []byte{0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28})
+	m[19] = 0x20
+	m[28+4+4] = number
+	return m
+}
+
+// RFC 7296 3.3.1: the responder's single proposal carries the number of the initiator's proposal it accepted, so
+// any proposal number from 1 is valid in a response; only an initiator's list must count up from one.
+func TestIKEv2ResponderMayAcceptALaterProposal(t *testing.T) {
+	limits := Limits{MaxBytes: 65536, MaxHeaders: 128, MaxLine: 8192}
+	for _, number := range []byte{1, 2, 7, 255} {
+		m, err := ikev2Datagram(ikeResponse(number), limits)
+		if err != nil || m.Evidence[1].Value != "ike_sa_init_response" || m.Evidence[2].Field != "selected_dh_group" || m.Evidence[2].Value != "14" {
+			t.Errorf("responder proposal %d: %+v %v", number, m, err)
+		}
+	}
+	if _, err := ikev2Datagram(ikeResponse(0), limits); err == nil || !strings.Contains(err.Error(), "proposal number") {
+		t.Errorf("responder proposal 0: %v", err)
+	}
+	request := ikeRequest(14, 256)
+	request[28+4+4] = 2
+	if _, err := ikev2Datagram(request, limits); err == nil || !strings.Contains(err.Error(), "begin at one") {
+		t.Errorf("initiator proposal 2: %v", err)
+	}
+}
+
 func TestIKEv2InitiatorOfferAndRejections(t *testing.T) {
 	limits := Limits{MaxBytes: 65536, MaxHeaders: 128, MaxLine: 8192}
 	m, err := ikev2Datagram(ikeRequest(14, 256), limits)
