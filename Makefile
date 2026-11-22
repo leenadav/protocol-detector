@@ -297,11 +297,18 @@ parity-random-long: go-build
 
 # Mutation testing (PRO-126; nightly, never a per-PR gate). gremlins is test tooling, pinned in its own module under
 # migration/mutation/gremlins and installed into build/, never linked into or vendored with go/.
+# MUTATION_BIN=<path> runs a gremlins built elsewhere (the nightly job builds it in its own step, the only one with
+# module-proxy access) and skips the install; by default the pinned module is installed into build/mutation-bin.
+MUTATION_BIN ?= build/mutation-bin/gremlins
+
 mutation-tool:
 	cd migration/mutation/gremlins && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=mod GOBIN=$(CURDIR)/build/mutation-bin go install github.com/go-gremlins/gremlins/cmd/gremlins
 
-mutation: mutation-tool
-	GOTOOLCHAIN=$(GO_TOOLCHAIN) $(PYTHON) -B migration/mutation/mutation.py run --gremlins build/mutation-bin/gremlins --out build/mutation $(MUTATION_ARGS)
+build/mutation-bin/gremlins: migration/mutation/gremlins/go.mod migration/mutation/gremlins/go.sum
+	$(MAKE) mutation-tool PYTHON=$(PYTHON)
+
+mutation: $(MUTATION_BIN)
+	GOTOOLCHAIN=$(GO_TOOLCHAIN) $(PYTHON) -B migration/mutation/mutation.py run --gremlins $(MUTATION_BIN) --out build/mutation $(MUTATION_ARGS)
 
 # Sustained throughput and memory with 10,000 and 100,000 concurrent flows (synthetic; reported only, never a gate)
 bench-load:
