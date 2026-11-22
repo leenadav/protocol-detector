@@ -32,5 +32,43 @@ class DecryptVerdictTests(unittest.TestCase):
         self.assertTrue(decrypt_diff.shortfall(4, {"refused": 4, "unavailable/gap": 2}))
 
 
+def completed(returncode, lines, stderr=b""):
+    import subprocess
+    return subprocess.CompletedProcess([], returncode, "".join(line + "\n" for line in lines).encode("utf-8"), stderr)
+
+
+class ControlWorkerTests(unittest.TestCase):
+    """Codex PRO-21 P2: a worker that exits early must not hand both control planes the same empty stream."""
+
+    def setUp(self):
+        import control_diff
+        self.control = control_diff
+
+    def summary(self, quality):
+        return '{"type": "summary", "capture_quality": "%s"}' % quality
+
+    def test_a_finished_worker_hands_over_its_lines(self):
+        check = self.control.worker_result
+        self.assertEqual(check("live", completed(0, ['{"type": "x"}', self.summary("unverified")])), ['{"type": "x"}', self.summary("unverified")])
+        self.assertEqual(len(check("live", completed(2, [self.summary("truncated")]))), 1)        # documented: truncated input
+        self.assertEqual(len(check("live", completed(2, [self.summary("loss_reported")]))), 1)
+        self.assertEqual(len(check("live", completed(1, [self.summary("failed")]))), 1)           # documented: capture error
+        self.assertEqual(len(check("live-decrypt", completed(0, ['{"type": "summary"}']))), 1)
+        self.assertEqual(len(check("live-decrypt", completed(1, ['{"type": "error", "code": "key_log"}']))), 1)
+
+    def test_an_early_or_unexplained_exit_is_a_failure_naming_stderr(self):
+        check = self.control.worker_result
+        for command, done in (("live", completed(0, [])), ("live", completed(2, [])), ("live", completed(-9, ['{"type": "x"}'], b"killed")),
+                              ("live", completed(1, [self.summary("unverified")], b"panic: boom")),
+                              ("live", completed(0, [self.summary("failed")])), ("live", completed(0, ['{"type": "x"}'])),
+                              ("live", completed(0, ["not json"])),
+                              ("live-decrypt", completed(2, ['{"type": "summary"}'], b"usage")),
+                              ("live-decrypt", completed(0, []))):
+            with self.assertRaises(self.control.WorkerError) as raised:
+                check(command, done)
+            if done.stderr:
+                self.assertIn(done.stderr.decode(), str(raised.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

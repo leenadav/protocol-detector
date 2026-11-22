@@ -69,6 +69,39 @@ def reference(script):
     return out
 
 
+class WorkerError(RuntimeError):
+    """A worker run that did not finish its stream: its lines are not evidence for either control plane."""
+
+
+LIVE_STATUS = {"failed": 1, "loss_reported": 2, "truncated": 2}     # protocol_adapters/live_capture.py run_capture
+
+
+def worker_result(command, done):
+    """The lines of a finished worker run, or WorkerError (Codex PRO-21: an early exit used to hand both control
+    planes the same empty stream). A finished run ends with its documented last line, and its exit status is the
+    one that line implies: `live` ends with a summary whose capture_quality gives 1 (failed), 2 (loss reported or
+    truncated) or 0; `live-decrypt` ends with an error event and status 1, or with anything else and status 0."""
+    lines = [line for line in done.stdout.decode("utf-8", "replace").splitlines() if line]
+    try:
+        last = json.loads(lines[-1]) if lines else None
+    except ValueError:
+        last = None
+    if not isinstance(last, dict):
+        expected, why = None, "no final JSON line"
+    elif command == "live":
+        if last.get("type") == "summary":
+            expected, why = LIVE_STATUS.get(last.get("capture_quality"), 0), "summary {}".format(last.get("capture_quality"))
+        else:
+            expected, why = None, "last line is {!r}, not a summary".format(last.get("type"))
+    else:
+        expected, why = (1, "error event") if last.get("type") == "error" else (0, "{} line".format(last.get("type")))
+    if expected is None or done.returncode != expected:
+        raise WorkerError("{} exited with status {} ({}{}), {} lines; stderr: {}".format(
+            command, done.returncode, why, "" if expected is None else ", which implies status {}".format(expected), len(lines),
+            done.stderr.decode("utf-8", "replace")[-400:].strip() or "<empty>"))
+    return lines
+
+
 def worker_lines(binary, rng, sessions, folder, index, signatures_path, policy_path):
     capture = folder / "capture-{}".format(index)
     analyze_diff.write_capture(rng, capture, analyze_diff.stress_records(rng) if index % 3 == 2 else analyze_diff.records_for(rng, sessions))
@@ -76,8 +109,8 @@ def worker_lines(binary, rng, sessions, folder, index, signatures_path, policy_p
     options["all_events"] = rng.random() < 0.8
     with open(capture, "rb") as stream:
         done = subprocess.run([binary, "live"] + live_diff.arguments(options, True), stdin=stream, stdout=subprocess.PIPE,  # noqa: S603
-                              stderr=subprocess.DEVNULL, check=False, timeout=120)
-    return [line for line in done.stdout.decode("utf-8").splitlines() if line]
+                              stderr=subprocess.PIPE, check=False, timeout=120)
+    return worker_result("live", done)
 
 
 def decryption_lines(binary, rng, generator):
@@ -86,8 +119,8 @@ def decryption_lines(binary, rng, generator):
     operations = live_decrypt_diff.script_for(rng, generator)
     script = b"".join(kind.encode("ascii") + struct.pack(">dI", now, len(data)) + data for kind, now, data in operations)
     done = subprocess.run([binary, "live-decrypt", "--replay", "--capture-id", live_decrypt_diff.CAPTURE_ID], input=script,  # noqa: S603
-                          stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=180)
-    return [line for line in done.stdout.decode("utf-8").splitlines() if line]
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=180)
+    return worker_result("live-decrypt", done)
 
 
 MALFORMED = [
@@ -196,10 +229,14 @@ def main(argv=None):
         Path(signatures_path).write_text(json.dumps(analyze_diff.SIGNATURES), encoding="utf-8")
         Path(policy_path).write_text(json.dumps(analyze_diff.POLICY), encoding="utf-8")
         for index in range(args.count):
-            if generator is not None and index % 4 == 3:
-                lines = decryption_lines(args.binary, rng, generator)
-            else:
-                lines = worker_lines(args.binary, rng, sessions, folder, index, signatures_path, policy_path)
+            try:
+                if generator is not None and index % 4 == 3:
+                    lines = decryption_lines(args.binary, rng, generator)
+                else:
+                    lines = worker_lines(args.binary, rng, sessions, folder, index, signatures_path, policy_path)
+            except WorkerError as error:
+                failures.append("run {} (seed {}): worker did not finish: {}".format(index, args.seed, error))
+                continue
             script = script_for(rng, lines, index % 5 == 1)
             ingested += sum(line.startswith("I ") for line in script)
             expected = reference(script)
