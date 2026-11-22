@@ -23,7 +23,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   decision.
 - **Data:** IPv4 and synthetic only. No captured traffic or key logs, ever (`tools/check_no_keylogs.py`).
 
-## 2. Current state (2026-11-21)
+## 2. Current state (2026-11-22)
 
 - **Branch head:** check `git log -1 origin/claude/go-migration`. On 2026-11-21 (PRO-69) `main` `0ef7349` (41 commits, through PR #39,
   including #39's numeric content-version order) was merged in with a normal merge commit. On 2026-11-22 `main` `2a33183` (PR #66, #36) came
@@ -35,7 +35,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   - The Go engine, the CLI `protodetect` and the dashboard service `protodetect serve`.
   - The launcher starts Go when the binary is installed and Python otherwise (`24e410e`, Lee's decision of
     2026-11-17).
-- **Parity:** 7,430 of 7,430 cases agree, and all 88 families are parity-verified. Server parity: 424 exchanges, 0
+- **Parity:** 7,430 of 7,430 cases agree. 79 of 88 families are parity-verified since PRO-201 (`098b201`): the verifier no longer credits a replay of the positive message as foreign bytes, so ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh are `experimental` until real foreign cases are added. Server parity: 424 exchanges, 0
   differences. The adversarial suite (4,041 cases) passes.
 - **Content release:** 2026.11.9 (digest `cdaa5993077d101a`), with 544 applications and 442 host entries. Every earlier
   release reproduces the digest it was published with (C11).
@@ -60,6 +60,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   divergence; `random_diff.py` accepts it as an approved class), merged into `main` with PR #92 (`c08fe67`).
 - **PRO-189 (Codex PRO-12, P2):** an unknown stream finalizes when the byte budget is spent before the unknown buffer
   fills (Go only, recorded divergence), on `claude/fix-unknown-budget` (PR into `main`).
+- **PRO-201 (Codex P2s, windows 2-10):** 23 fix commits `7da811e`..`6b614c0` on `claude/funny-cori-6znbkn`; per-finding table in `STATUS.md`. Six fixes that move parity are held as patches in `migration/held-patches/PRO-201/`.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 
 ## 3. Where things live (reading order)
@@ -106,6 +107,8 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | Nightly mutation run (PRO-126) | the CI/CD lane (accepted; stacked after #65): a nightly job that builds gremlins in its own step from a copy of `migration/mutation/gremlins/go.mod` and `go.sum`, then runs `make mutation MUTATION_BIN=<that binary> MUTATION_ARGS="--summary $GITHUB_STEP_SUMMARY"` with `GOPROXY=off`, about 30 minutes, uploading `build/mutation/*` always. The targets, the tool pin and the baseline are on this branch; the workflow is theirs. |
 | Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. The branch already contains `main` as of `2c92b17`, so the merge itself has no conflicts. |
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
+| PRO-201 held patches (`migration/held-patches/PRO-201/`: SMB empty buffer, SMB signing-enabled, SPNEGO mechTypes, live reject counter, stale cached row, failed-decryption inner protocol) and the live duplicate-SYN pre-check | an approved parity delta each (Hermes/Lee). Apply with `git apply`, then record the delta |
+| PRO-201 decisions: buffer transient capacity (ADR 0001), unkeyed session id, signature names that collide with built-ins, 79 of 88 verified families | Hermes/Lee |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
@@ -118,6 +121,8 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 `61fd45a`, `fdb90e2`, `68fb867`, `58a4701`, `9e51389`, `6b280a6`, `024163f`, `12e1ed0`, `d1b63ee`, `baa07b9`,
 `aaa5a7e`, `93cbf2a` (with `36e2c5e`), `76e467a`, `d65d21a`, `07b216e`, `6ab434d`, `7dcabb7`, `b6ed149`, `c08773f`,
 `ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9`, `4d8aa29` and `376a204` (PRO-31), each reviewed as its own diff (`376a204` together with `6194fb9`).
+
+PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentation commit after them.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
@@ -176,3 +181,5 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
   - `tools/go_ci.py build` refuses a local Go other than go.mod's (this container has 1.24.7), so use `make go-build` locally.
 - **`TestStopKillsTheProcessGroupOfAWorkerThatIgnoresTheInterrupt` (`go/internal/livectl`) flaked once** on `f5353c5`
   (push run 44986686845: "Capture process exited unexpectedly (-2)"); the pull_request run of the same SHA passed. Watch for a repeat.
+- **32-bit findings need a 386 test.** `GOARCH=386 go test` runs on amd64 Linux; the int-narrowing panics (PRO-15, PRO-16) only reproduce there.
+- **Parallel agents must not share scratch files.** Subagents overwrote each other's commit-message files in the shared scratchpad (PRO-201); keep scratch under each worktree's `build/`.

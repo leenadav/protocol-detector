@@ -628,6 +628,51 @@ heuristics evidence over the buffered bytes.
 | Parity | divergence recorded, 0 case changes | Go now gives the verdict when the budget runs out, where Python waits for close. This only happens when `max_bytes` is below the unknown buffer's limit. All 7,430 parity cases still match. |
 | Live harness | modelled-reference rule | In `live`, the stream's `unknown` verdict now arrives as an `updated` classification event, which carries risks and the policy verdict. Python reported it later, as `observation_retired`, which carries neither, and the counters follow. `migration/parity/pro189.py` reruns the frozen reference with only the budget condition added (`modelled()`, with a self-test). `live_diff.py` accepts a mismatching replay only when Go then matches it exactly. Seed 1: 297 matched, 3 approved (all with `--byte-limit 64`), 0 mismatched. |
 
+## Codex Tier-1 P2 findings, windows 2-10 (PRO-201, 2026-11-22)
+
+Hermes, PRO-201: the P2/P3 findings of Codex PRO-13 to PRO-21 (frozen range `dbe20f3..50ce5c0`), each checked on
+`main` `e5ac90f` (the Go migration merged with PR #40), fixed with a failing-first test where the fix keeps parity,
+and otherwise held with its patch in `migration/held-patches/PRO-201/` for an approved parity delta. Every finding
+below was still present on `e5ac90f` unless the row says otherwise. Branch `claude/funny-cori-6znbkn`.
+
+| Item | Present | Commit | Test (fails before, passes after) | Python reference / parity |
+|---|---|---|---|---|
+| PRO-13 quicx assembler: over-budget merge returned Exhausted before the contradiction check | yes | `7da811e` | `TestContradictionOutranksExhaustion` | Python checks the budget first; Go-only divergence, 0 case changes |
+| PRO-13 decrypt keys: a rejected append left entries indexed without a version bump (C16) | yes | `ce8b057` | `TestRejectedAppendIndexesNothing` | Python keeps the earlier lines; Go-only, callers already stop on the error; decrypt and live-decrypt differentials 0 mismatched |
+| PRO-13 decrypt connection: terminal connections kept framers, buffers and keys | yes | `60db15f` | `TestTerminalConnectionsReleaseTheirHeavyState`, `TestClosedConnectionsKeepTheirRowNotTheirInspectors` | no output change |
+| PRO-14 content: case-folded struct fields | no, fixed by `bc80f45` (SEC-CONTENT-1, PR #84) | — | `exactFields` covers the host catalog | — |
+| PRO-14 `check_content.py --update` skipped C11 when the prior lock was missing or malformed | yes | `4eb6d3b` | `test_content.RollbackTests.test_a_missing_or_malformed_prior_lock_refuses_the_update` | tool only |
+| PRO-14 `compare.py`: a JSON boolean equalled a number | yes | `144daf5` | `test_a_boolean_never_matches_a_number` | int and float still compare by value; 7,430 of 7,430 still match |
+| PRO-15 x509x four-octet DER length overflow on 32-bit | yes | `4c405d1` | `TestFourOctetLengthNeverOverflowsTheContainerGuard` (GOARCH=386) | message equals Python's `_element`; no 64-bit change |
+| PRO-15 SSH KEXINIT name-list uint32→int on 32-bit | yes | `bff93e5` | `TestKexinitNameListLengthIsBoundedBeforeConversion` (GOARCH=386: panic before) | reference message; no 64-bit change |
+| PRO-16 buffer replacement only delta-accounted | yes, held | — | — | **decision**: the transient peak is limit plus one old capacity; strict reservation changes ADR 0001 and its tests. `buffer.Account` has no production caller |
+| PRO-16 pcapng simple packet length narrowing on 32-bit | yes | `b346b50` | `TestSimplePacketLengthIsCappedBeforeConversion` (GOARCH=386: panic before) | matches Python `min(original, snaplen)`. Left: `Record.OriginalLength` is an int, so on 386 an original length of 2^31 or more is negative (wrong value, no panic) |
+| PRO-16 chunked continuation searched past its budget | yes | `ec32ac0` | `TestChunkedLineSearchStopsAtTheBudget`, `TestChunkedContinuationOutcomeAtEveryBudget` | no output change |
+| PRO-16 P3 pcapng end-of-options | no change | — | — | matches the reference `_options` line for line; lenient but safe |
+| PRO-17 SMB SESSION_SETUP response with an empty security buffer | yes, held | patch `pro17-smb-empty-security-buffer.patch` | `TestSMB2SessionSetupResponseWithEmptySecurityBuffer` | metrics change in 2 variants of `smb-064-smb2-session-short`; needs an approved delta |
+| PRO-17 SMB NEGOTIATE response without SIGNING_ENABLED | yes, held | patch `pro17-smb-signing-enabled.patch` | `TestSMB2NegotiateResponseRequiresSigningEnabled` | `smb-034-smb2-response-required` (4 variants) goes from smb2 to malformed; needs an approved delta |
+| PRO-17 P3 combined SessionFlags | yes | `9f7f304` | `TestSMB2SessionSetupResponseSessionFlagsAreExclusive` | Go-only, 0 case changes |
+| PRO-17 IKEv2 responder selecting proposal 2 or later | yes | `74ee342` | `TestIKEv2ResponderMayAcceptALaterProposal` | Go-only, 0 case changes |
+| PRO-17 SPNEGO NegTokenInit without mechTypes | yes, held | patch `pro17-spnego-mechtypes.patch` | `TestClassifyTokenRejects` (two rows) | `ldap-079-init-no-fields` (3 variants) goes from ldap/3 to malformed; needs an approved delta |
+| PRO-18 session id: unkeyed BLAKE2s | yes, no change | — | — | **decision**: Python is identical (`events.py:46`); a keyed id changes every id in both engines. Recommendation: document it as a linkable pseudonym; add a keyed, versioned field later if unlinkability is wanted |
+| PRO-18 duplicate SYN split the generation | yes, partly | `0c89721` (offline decrypt coordinator) | `TestRetransmittedSYNKeepsTheGeneration` | Go-only divergence; differentials 0 mismatched. The live pre-check (`go/internal/live/monitor.go`) is left: changing it gives parity-live 5 of 300 mismatched, and needs an approved-divergence rule |
+| PRO-18 key log truncated and regrown in place | yes | `6b614c0` | `TestKeyLogRefusesATruncationThatRegrewBetweenPolls` | Python checks the size only; Go-only (a SHA-256 of the consumed prefix, never a copy) |
+| PRO-18 live Feed ignored RejectedConnections | yes, held | patch `pro18-live-reject-counter.patch` | — | Python also only counts; fail-closed gives parity-live-decrypt 5 of 300 mismatched |
+| PRO-18 stale cached row after a key update | yes, held | patch `pro18-stale-cached-row.patch` | `TestAReportCachedWhileAwaitingKeysSeesALaterAuthenticationFailure` | the Python reference has the same bug; the fix gives parity-live-decrypt 1 of 300 mismatched |
+| PRO-18 failed decryption named an inner protocol | yes, held | patch `pro18-failed-inner-protocol.patch` | `TestAFailedDecryptionNamesNoInnerProtocol` | Python does the same; the fix gives parity-decrypt 15 of 300 and parity-live-decrypt 8 of 300 mismatched |
+| PRO-18 livedecrypt child reaped twice (race) | yes | `ac8834f` | `TestRunReapsAChildThatOutlivesTheExitWaitOnce` (`-race` before) | no output change |
+| PRO-19 `(?!)` gives NotPorted where Python 3.11/3.12 reject | yes, kept | `2cac79c` (pin) | `TestEmptyNegativeLookaheadIsNotPorted` | Python 3.13 accepts it as FAILURE, so the reference answer depends on the interpreter; NotPorted falls back to the reference |
+| PRO-19 a signature may take a built-in application name | yes, no change | — | — | **decision**: Python is identical; decide in both engines (reject the name, or keep the built-in's metadata) |
+| PRO-19 description key order keeps the digest | yes, no change | — | — | inherited; the digest must equal Python's `sort_keys` digest |
+| PRO-19 FromJSON without a byte bound | yes | `3503bf2` | `TestFromJSONBoundsTheDocument` | the 4 MiB text of `from_path`; the count check keeps the reference order (`TestCountRefusalKeepsTheReferenceOrder`) |
+| PRO-20 verify_families credited replays and sessions by name | yes | `098b201` | `test_a_replay_of_the_positive_message_is_not_foreign_bytes`, `test_a_session_case_counts_only_when_its_record_identifies_the_family` | **79 of 88 families stay parity-verified**: ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh had only 1- and 7-byte replays as foreign bytes and are now `experimental`. Restoring them needs real foreign cases in `cases.json` (approval) |
+| PRO-20 analyze/decrypt verdicts passed empty runs | yes | `1621f61` | `AnalyzeVerdictTests`, `DecryptVerdictTests` | `--count 0` now exits 1 |
+| PRO-21 control_diff ignored worker exit and stderr | yes | `0d8dc62` | `ControlWorkerTests` | 120 runs, 0 mismatched |
+| PRO-21 server_diff normalized whole telemetry | yes | `d34d184` | `ServerNormalizerTests` | only wall-clock measurements normalized; 424 exchanges, 0 mismatched |
+| PRO-21 server_diff timeouts and probes discarded | yes | `9b29688` | `ServerProbeTests` | 424 exchanges, 0 probes failed |
+| PRO-21 schema_go ignored return codes | yes | `a56728d` | `SchemaInvocationTests` | 200 captures, 0 problems |
+| PRO-21 adversarial judge order, empty record lists | yes | `5920061` | `AdversarialJudgeTests` | 4,041 cases, 1 known finding (F-ADV-1), 0 failures |
+
 ## Randomized differential (PRO-100, 2026-11-22)
 
 Hermes, PRO-100: differential testing with random inputs, the Python reference as the oracle.

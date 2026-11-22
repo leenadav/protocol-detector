@@ -1,0 +1,119 @@
+From 0c961100713c533c9ecf2eea5dcf8b23d246cc86 Mon Sep 17 00:00:00 2001
+From: Lee Nadav <leenadav1312@gmail.com>
+Date: Sun, 22 Nov 2026 22:42:41 +0000
+Subject: [PATCH] smb2: accept a SESSION_SETUP response with an empty security
+ buffer
+
+Codex PRO-17 (PRO-201), P2: MS-SMB2 2.2.6 allows SecurityBufferLength 0
+in a SESSION_SETUP response (a final response with nothing left to send).
+The Go watch rejected it twice over: the frame-size floor of 64 + 9
+refused the 72-byte form (8 fixed bytes, no buffer) before reading it,
+and the "buffer fills the frame" rule refused the 73-byte form that
+carries the single variable byte StructureSize 9 counts.
+
+The floor is now 64 + 8, and a response with an empty buffer may carry
+exactly one trailing zero byte; any other trailing data is still
+malformed, and a request without a token is still rejected.
+TestSMB2SessionSetupResponseWithEmptySecurityBuffer failed before
+("SMB2 frame shorter than a SESSION_SETUP body") and passes now.
+
+The frozen Python reference has the same rejection, so this is a Go-only
+divergence. Parity: the committed case stream/smb-064-smb2-session-short
+(a 72-byte request) still ends with the same verdict, but Go now reads the
+whole 72-byte frame before rejecting it, so its bytes/sevens variants
+differ in metrics only (bytes_inspected 116->184 and 119->184).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UqaXYzSsrxF863s8uhhmNq
+---
+ go/internal/protocols/framed/smb.go      |  8 +++-
+ go/internal/protocols/framed/smb_test.go | 50 ++++++++++++++++++++++++
+ 2 files changed, 56 insertions(+), 2 deletions(-)
+
+diff --git a/go/internal/protocols/framed/smb.go b/go/internal/protocols/framed/smb.go
+index ae0fcfb..4b73555 100644
+--- a/go/internal/protocols/framed/smb.go
++++ b/go/internal/protocols/framed/smb.go
+@@ -354,7 +354,8 @@ func lookup(table map[int]string, key int) string {
+ 
+ // NewSMB2 ports SMB2Parser: SMB2/3 NEGOTIATE in either direction, then one SESSION_SETUP frame.
+ func NewSMB2(maxBytes int) parsing.Parser {
+-	p := &smbParser{maxBytes: maxBytes, magic: []byte("\xfeSMB"), minSize: 64 + 9, needed: 8,
++	// 64 + 8: a SESSION_SETUP response with an empty security buffer has only its 8 fixed bytes (MS-SMB2 2.2.6).
++	p := &smbParser{maxBytes: maxBytes, magic: []byte("\xfeSMB"), minSize: 64 + 8, needed: 8,
+ 		budgetMsg: "SMB2 SESSION_SETUP frame exceeds byte budget", shortMsg: "SMB2 frame shorter than a SESSION_SETUP body",
+ 		setup: smb2SessionSetup}
+ 	p.base = newParser(maxBytes, spec{header: 8,
+@@ -638,7 +639,10 @@ func smb2SessionSetup(data []byte) ([]parsing.Row, string, error) {
+ 		rows = append(rows, row("smb_message", "session-setup-request", "session_setup", "structural"))
+ 		start = 88
+ 	}
+-	if start+length != len(data) {
++	// Go-only divergence (Codex PRO-17, PRO-201): a response may carry an empty security buffer (MS-SMB2 2.2.6),
++	// sent either as the 8 fixed bytes alone or with the one variable byte StructureSize 9 counts, as zero.
++	emptyPadded := response && length == 0 && len(data) == start+1 && data[start] == 0
++	if start+length != len(data) && !emptyPadded {
+ 		return nil, "", parsing.Malformed("SESSION_SETUP security buffer disagrees with the frame")
+ 	}
+ 	if length > 0 {
+diff --git a/go/internal/protocols/framed/smb_test.go b/go/internal/protocols/framed/smb_test.go
+index c58805c..fe7f27b 100644
+--- a/go/internal/protocols/framed/smb_test.go
++++ b/go/internal/protocols/framed/smb_test.go
+@@ -111,3 +111,53 @@ func TestSMB2WatchEndsOnForeignOrBadFrames(t *testing.T) {
+ 		t.Fatalf("budget: %v", err)
+ 	}
+ }
++
++// smb2SessionResponse builds a SESSION_SETUP response carrying token, then pad bytes past the security buffer.
++func smb2SessionResponse(status uint32, sessionFlags uint16, token []byte, pad []byte) []byte {
++	m := make([]byte, 72)
++	copy(m, "\xfeSMB")
++	binary.LittleEndian.PutUint16(m[4:], 64)
++	binary.LittleEndian.PutUint32(m[8:], status)
++	binary.LittleEndian.PutUint16(m[12:], 1)
++	binary.LittleEndian.PutUint32(m[16:], smb2FlagServerToRedir)
++	binary.LittleEndian.PutUint16(m[64:], 9)
++	binary.LittleEndian.PutUint16(m[66:], sessionFlags)
++	if len(token) > 0 {
++		binary.LittleEndian.PutUint16(m[68:], 72)
++	}
++	binary.LittleEndian.PutUint16(m[70:], uint16(len(token)))
++	m = append(append(m, token...), pad...)
++	return append([]byte{0, byte(len(m) >> 16), byte(len(m) >> 8), byte(len(m))}, m...)
++}
++
++// MS-SMB2 2.2.6: a final SESSION_SETUP response may carry an empty security buffer (SecurityBufferLength 0). The
++// body is then the 8 fixed bytes, or those plus the single variable byte StructureSize 9 counts, sent as zero.
++func TestSMB2SessionSetupResponseWithEmptySecurityBuffer(t *testing.T) {
++	for name, pad := range map[string][]byte{"no buffer": nil, "one zero pad byte": {0}} {
++		p := NewSMB2(65536)
++		if err := feedSMB(t, p, smb2NegotiateRequest()); err != nil {
++			t.Fatalf("%s: negotiate: %v", name, err)
++		}
++		if err := feedSMB(t, p, smb2SessionResponse(0, 0, nil, pad)); err != nil {
++			t.Fatalf("%s: empty-buffer response rejected: %v", name, err)
++		}
++		r := p.Result()
++		got := extra(r)
++		if r.Continues || !p.(interface{ Refined() bool }).Refined() || got["smb_message"] != "session-setup-response" ||
++			got["smb_session"] != "authenticated" || got["gss_mechanism"] != "" {
++			t.Fatalf("%s: %+v", name, r)
++		}
++	}
++	for name, pad := range map[string][]byte{"nonzero pad": {1}, "two pad bytes": {0, 0}} {
++		p := NewSMB2(65536)
++		feedSMB(t, p, smb2NegotiateRequest())
++		if err := feedSMB(t, p, smb2SessionResponse(0, 0, nil, pad)); err == nil || !strings.Contains(err.Error(), "disagrees with the frame") {
++			t.Errorf("%s: %v", name, err)
++		}
++	}
++	p := NewSMB2(65536)
++	feedSMB(t, p, smb2NegotiateRequest())
++	if err := feedSMB(t, p, smb2SessionRequest(nil)); err == nil {
++		t.Error("request without a security buffer accepted")
++	}
++}
+-- 
+2.43.0
+
