@@ -48,3 +48,49 @@ func TestCaseVariantKeysAreIgnoredLikeTheReference(t *testing.T) {
 		t.Error("the upper-case Risks table was decoded")
 	}
 }
+
+// PRO-14 (Codex P2): the host catalog is a nested table. Case-variant keys beside it ("Host_Catalog") or beside
+// its entries ("entrieſ") are outside the digest and must be ignored, as the reference ignores them; a variant
+// key inside an entry ("domainſ", "Web_Fronts") is inside the hashed entry, so the pack must be refused. Either
+// way the host lookup never uses an entry the verified release digest does not cover.
+func TestCaseVariantHostCatalogKeysAreIgnoredLikeTheReference(t *testing.T) {
+	load := func(edit func(doc, catalog, first map[string]interface{}, name string)) (*Pack, error) {
+		data, err := os.ReadFile(packPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var doc map[string]interface{}
+		if err := json.Unmarshal(data, &doc); err != nil {
+			t.Fatal(err)
+		}
+		catalog := doc["host_catalog"].(map[string]interface{})
+		first := catalog["entries"].([]interface{})[0].(map[string]interface{})
+		edit(doc, catalog, first, first["name"].(string))
+		out, err := json.Marshal(doc)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return Parse(out)
+	}
+	forgedEntry := func(name, domain string) []interface{} {
+		return []interface{}{map[string]interface{}{"name": name, "domains": []interface{}{domain}, "web_fronts": []interface{}{}}}
+	}
+	p, err := load(func(doc, catalog, _ map[string]interface{}, name string) {
+		catalog["entrieſ"] = forgedEntry(name, "forged-entries.example")                                   // Entries, folded
+		doc["Host_Catalog"] = map[string]interface{}{"entries": forgedEntry(name, "forged-table.example")} // upper-case
+	})
+	if err != nil {
+		t.Fatalf("a pack whose exact keys verify must load (the reference ignores the variant keys): %v", err)
+	}
+	for _, host := range []string{"forged-entries.example", "forged-table.example"} {
+		if app := p.ApplicationForHost(host); app != "" {
+			t.Errorf("host %s resolved to %q: a variant host-catalog key was decoded", host, app)
+		}
+	}
+	if _, err := load(func(_, _, first map[string]interface{}, _ string) {
+		first["domainſ"] = []interface{}{"forged-domain.example"}   // Domains, folded
+		first["Web_Fronts"] = []interface{}{"forged-front.example"} // WebFronts, upper-case
+	}); err == nil {
+		t.Error("variant keys inside a hashed host-catalog entry must fail the digest, not load")
+	}
+}
