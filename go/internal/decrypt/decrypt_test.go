@@ -327,6 +327,54 @@ func TestKeyProviderBoundsAndRelease(t *testing.T) {
 	}
 }
 
+// TestRejectedAppendIndexesNothing is C16: a key-log fragment that fails on any line is not partially applied, so
+// direct lookups and version-gated waiters agree on what the store holds.
+func TestRejectedAppendIndexesNothing(t *testing.T) {
+	random := strings.Repeat("cd", 32)
+	good := "CLIENT_RANDOM " + random + " " + strings.Repeat("01", 48) + "\n"
+	for name, bad := range map[string]string{
+		"malformed line": "CLIENT_RANDOM only-two",
+		"bad hex":        "CLIENT_RANDOM zz " + strings.Repeat("01", 48),
+		"conflict":       "CLIENT_RANDOM " + random + " " + strings.Repeat("02", 48),
+		"short master":   "CLIENT_RANDOM " + strings.Repeat("ef", 32) + " " + strings.Repeat("02", 32),
+	} {
+		p := NewKeyProvider()
+		now := 1.0
+		p.Clock = func() float64 { return now }
+		if n, err := p.Append(good + bad); err == nil || n != 0 {
+			t.Fatalf("%s: append returned %d, %v", name, n, err)
+		}
+		secret, err := p.Lookup("CLIENT_RANDOM", bytes.Repeat([]byte{0xcd}, 32))
+		if err != nil || secret != nil || p.Len() != 0 || p.Has(bytes.Repeat([]byte{0xcd}, 32)) || p.Version() != 0 ||
+			len(p.order) != 0 || len(p.indexedAt) != 0 {
+			t.Fatalf("%s: rejected fragment left %d entries (version %d, lookup %x)", name, p.Len(), p.Version(), secret)
+		}
+		// The same lines resubmitted alone are accepted and move the version once.
+		if n, err := p.Append(good); n != 1 || err != nil || p.Version() != 1 {
+			t.Fatalf("%s: resubmit %d %v v%d", name, n, err, p.Version())
+		}
+	}
+	// The entry budget counts the fragment's own new lines, and a fragment over it indexes none of them.
+	p := NewKeyProvider()
+	var text strings.Builder
+	for i := 0; i <= MaxEntries; i++ {
+		fmt.Fprintf(&text, "CLIENT_RANDOM %064x %s\n", i, strings.Repeat("01", 48))
+	}
+	if _, err := p.Append(text.String()); err == nil || err.Error() != "Too many key-log entries." || p.Len() != 0 || p.Version() != 0 {
+		t.Fatalf("entry budget: %v len %d v%d", err, p.Len(), p.Version())
+	}
+	// A duplicate line inside one fragment is still indexed once, and a conflicting one inside it is rejected.
+	p = NewKeyProvider()
+	if n, err := p.Append(good + good); n != 1 || err != nil || p.Len() != 1 {
+		t.Fatalf("duplicate in fragment: %d %v len %d", n, err, p.Len())
+	}
+	p = NewKeyProvider()
+	if _, err := p.Append(good + "CLIENT_RANDOM " + random + " " + strings.Repeat("02", 48)); err == nil ||
+		err.Error() != "Conflicting secrets for the same connection." || p.Len() != 0 {
+		t.Fatalf("conflict in fragment: %v len %d", err, p.Len())
+	}
+}
+
 func TestKeyExpiry(t *testing.T) {
 	now, age := 0.0, 5.0
 	p := NewKeyProvider()
