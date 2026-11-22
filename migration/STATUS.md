@@ -578,6 +578,15 @@ package-local test hit exactly. `migration/mutation/boundaries.py` generates one
 reference, so each case checks the boundary and the parity at once; `make go-check` runs `boundaries.py --check`.
 Survivors that remain are mostly in DTLS (`tlsx/dtls.go`), the QUIC assembler's idle-heap and expiry comparisons, HTTP header classification and the
 non-HTTP text routes. Some are equivalent mutants (`i >= 0` read as `i > 0` before slicing to an empty prefix).
+Run safeguards, each found by an end-to-end `make mutation`:
+- One `hpack` mutant removes an allocation bound, and its test binary grew to 11 GB until the kernel killed it,
+  taking unrelated processes with it. `mutation.py` caps every process it starts at 4 GiB of address space
+  (`--memory-mb`), so such a mutant fails fast and counts as killed.
+- A cached coverage run gives gremlins a near-zero reference time, and then every mutant times out (one run: 8
+  killed, 0 lived, 340 timed out, efficacy "100%"). The test cache is cleared before each package, and a package
+  where more than 25% of the tested mutants time out fails the run.
+- A package with a baseline efficacy that comes back with nothing covered fails (it used to be skipped).
+With these, a full clean run reproduced the baseline exactly in all nine packages (about 21 minutes on 4 cores).
 The nightly workflow step is a CI/CD-lane change (requested).
 
 ## Adversarial identification (2026-11-18)
