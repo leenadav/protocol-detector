@@ -325,6 +325,13 @@ func Validate(data []byte, opts Options, asm *Assembler, scope string, now *floa
 		evidence = append(evidence, wire("initial_protection", "unverified", "context"))
 		return &Match{Evidence: evidence, Reason: "QUIC Initial opened but frames outside the Initial profile: " + err.(*parsing.Error).Message}, nil
 	}
+	if len(data) < MinClientDatagram {
+		// SEC-QUIC-3 (PRO-47, PRO-123; a Go-only divergence Lee approved on PRO-124): the payload opened with the
+		// client Initial keys, so this is a client Initial, and RFC 9000 section 14.1 has a server discard one in a
+		// datagram under 1200 bytes. Its CRYPTO data is therefore never evidence: it neither enters the assembler
+		// (where a decoy would contradict the real Initial) nor names the flow's server.
+		return nil, parsing.Malformed("QUIC client Initial datagram below the RFC 9000 section 14.1 minimum of 1200 bytes; a server discards it")
+	}
 	evidence = append(evidence, wire("initial_protection", "removed", "structural"))
 	status, hello := Assemble(fragments)
 	if asm != nil && len(fragments) > 0 {
@@ -353,6 +360,13 @@ func Validate(data []byte, opts Options, asm *Assembler, scope string, now *floa
 	if err != nil {
 		evidence = append(evidence, wire("crypto_assembly", "invalid", "structural"))
 		return &Match{Evidence: evidence, Reason: "QUIC Initial protection removed; CRYPTO stream is not a supported ClientHello"}, nil
+	}
+	if asm != nil && !asm.SameServerName(dcid, scope, version, offer.HasHost && offer.Hostname != "", offer.Hostname) {
+		// SEC-QUIC-3: a second complete ClientHello of this flow (on another DCID, which the assembler keeps
+		// apart) names another server, so neither name is the flow's identity.
+		evidence = append(evidence, wire("crypto_assembly", "conflict", "structural"))
+		return &Match{Evidence: evidence, Retracts: true, Reason: "QUIC ClientHello names a different server than an earlier ClientHello of this flow; " +
+			"ClientHello evidence (server name, ALPN, fingerprints) for it is withdrawn"}, nil
 	}
 	evidence = append(evidence, wire("crypto_assembly", "complete", "structural"))
 	if offer.HasHost && offer.Hostname != "" {

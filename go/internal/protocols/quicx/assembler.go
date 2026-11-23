@@ -12,6 +12,8 @@ import (
 const (
 	MaxCrypto    = 16384
 	MaxFragments = 8
+	// MinClientDatagram is RFC 9000 section 14.1: a server discards a client Initial in a smaller UDP datagram.
+	MinClientDatagram = 1200
 )
 
 // Fragment is one CRYPTO frame's (offset, bytes).
@@ -83,6 +85,7 @@ type Assembler struct {
 	entries        map[key]*entry
 	idle           idleHeap
 	scopes         map[string]map[key]*entry
+	names          map[string]string // SEC-QUIC-3: each scope's first complete ClientHello server name; "" is none
 	Counts         map[string]int
 }
 
@@ -92,7 +95,7 @@ func NewAssembler(maxConnections int, idleSeconds float64) *Assembler {
 		panic("quicx: invalid QUIC assembler limits")
 	}
 	return &Assembler{MaxConnections: maxConnections, IdleSeconds: idleSeconds, order: list.New(), entries: map[key]*entry{},
-		scopes: map[string]map[key]*entry{}, Counts: map[string]int{"conflicts": 0, "evictions": 0, "expired": 0, "exhausted": 0}}
+		scopes: map[string]map[key]*entry{}, names: map[string]string{}, Counts: map[string]int{"conflicts": 0, "evictions": 0, "expired": 0, "exhausted": 0}}
 }
 
 // insert stores a new entry: at the back of the LRU order, in the idle heap and in its scope's index.
@@ -117,6 +120,7 @@ func (a *Assembler) remove(e *entry) {
 		delete(scope, e.key)
 		if len(scope) == 0 {
 			delete(a.scopes, e.key.scope)
+			delete(a.names, e.key.scope)
 		}
 	}
 }
@@ -136,6 +140,7 @@ func (a *Assembler) Clear() {
 	a.entries = map[key]*entry{}
 	a.idle = nil
 	a.scopes = map[string]map[key]*entry{}
+	a.names = map[string]string{}
 }
 
 // Reset forgets every connection of one flow scope (the host ended or restarted the flow); it visits only that
@@ -169,6 +174,34 @@ func (a *Assembler) Conflicted(dcid []byte, scope string, version uint32, now *f
 		a.touch(e, *now)
 	}
 	return true
+}
+
+// SameServerName records the server name of a complete ClientHello of this connection and reports whether it
+// agrees with the first complete ClientHello of the same flow scope (SEC-QUIC-3, a Go-only rule; the Python
+// reference keeps the flow's first identification). The name lives as long as the scope holds an entry, so Reset,
+// expiry and eviction of the scope's last connection forget it; the work is one map lookup. A disagreement turns
+// this connection into a sticky conflict marker. The empty scope of a bare datagram inspector, which holds unrelated
+// datagrams, is never compared.
+func (a *Assembler) SameServerName(dcid []byte, scope string, version uint32, hasHost bool, hostname string) bool {
+	e := a.entries[key{scope, version, string(dcid)}]
+	if scope == "" || e == nil {
+		return true
+	}
+	name := ""
+	if hasHost {
+		name = "sni:" + hostname
+	}
+	first, seen := a.names[scope]
+	if !seen {
+		a.names[scope] = name
+		return true
+	}
+	if first == name {
+		return true
+	}
+	e.fragments, e.conflict = nil, true
+	a.Counts["conflicts"]++
+	return false
 }
 
 // Add merges fragments for one connection and returns the status and, when complete, the handshake message.

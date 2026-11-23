@@ -305,3 +305,66 @@ func TestContradictionOutranksExhaustion(t *testing.T) {
 		t.Fatalf("exhaustion without contradiction: got %s len %d", s, c.Len())
 	}
 }
+
+// SEC-QUIC-3: the RFC 9000 section 14.1 minimum is on the client Initial's UDP datagram. 1199 bytes is malformed
+// and feeds nothing to the assembler; 1200 identifies; a 300-byte Initial alone is malformed, while the same
+// Initial coalesced into a 1200-byte datagram (trailing bytes after its Length) identifies.
+func TestClientInitialDatagramMinimum(t *testing.T) {
+	frame := testframes.CryptoFrames(load(t, "rfc9001_client_hello.hex"))[0]
+	a := NewAssembler(8, 60)
+	if _, err := Validate(testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 1199), defaults, a, "c>s", nil); err == nil ||
+		!strings.Contains(err.Error(), "1200 bytes") || a.Len() != 0 {
+		t.Fatalf("1199 bytes: err %v, %d assembler entries", err, a.Len())
+	}
+	if m, err := Validate(testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 1200), defaults, a, "c>s", nil); err != nil || m.Hostname != "example.com" {
+		t.Fatalf("1200 bytes: %+v %v", m, err)
+	}
+	short := testframes.QUICInitial(V1, dcid, nil, []byte{1}, 2, nil, 300)
+	if _, err := Validate(short, defaults, nil, "", nil); err == nil {
+		t.Fatal("a 300-byte client Initial alone was accepted")
+	}
+	coalesced := append(append([]byte{}, short...), make([]byte, 1200-len(short))...)
+	if m, err := Validate(coalesced, defaults, nil, "", nil); err != nil || fieldsOf(m)["initial_protection"] != "removed" {
+		t.Fatalf("a 300-byte Initial coalesced into 1200 bytes: %+v %v", m, err)
+	}
+	// Without protection removal nothing says the packet is a client's, and nothing is asserted: unchanged.
+	if _, err := Validate(short, Options{MaxHeaders: 64, MaxBytes: 65536}, nil, "", nil); err != nil {
+		t.Fatalf("framing-only validation of a short Initial: %v", err)
+	}
+}
+
+// SEC-QUIC-3: within one flow scope a complete ClientHello naming another server than the scope's first one is a
+// sticky conflict on its connection; the same name (a Retry's new DCID) agrees, the bare inspector's empty scope
+// is never compared, and resetting the scope forgets the name.
+func TestServerNameDisagreementWithinAScope(t *testing.T) {
+	hello := load(t, "rfc9001_client_hello.hex")
+	other := append([]byte{}, hello...)
+	copy(other[strings.Index(string(hello), "example.com"):], "example.org")
+	initial := func(id, h []byte) []byte {
+		return testframes.QUICInitial(V1, id, nil, testframes.CryptoFrames(h)[0], 2, nil, 1200)
+	}
+	second, third := []byte{1, 1, 1, 1}, []byte{2, 2, 2, 2}
+	a := NewAssembler(8, 60)
+	for _, step := range []struct {
+		id, hello []byte
+		scope     string
+		retracts  bool
+	}{
+		{dcid, hello, "c>s", false},
+		{second, hello, "c>s", false}, // the same ClientHello on a new DCID
+		{third, other, "c>s", true},   // another server name
+		{third, hello, "c>s", true},   // the conflict marker is sticky
+		{third, other, "x>y", false},  // another flow
+		{dcid, hello, "", false},      // the bare inspector's scope
+		{second, other, "", false},
+	} {
+		m, err := Validate(initial(step.id, step.hello), defaults, a, step.scope, nil)
+		if err != nil || m.Retracts != step.retracts {
+			t.Fatalf("%x in %q: %+v %v", step.id, step.scope, m, err)
+		}
+	}
+	a.Reset("c>s")
+	if m, _ := Validate(initial(third, other), defaults, a, "c>s", nil); m.Retracts || m.Hostname != "example.org" {
+		t.Fatalf("after the reset: %+v", m)
+	}
+}

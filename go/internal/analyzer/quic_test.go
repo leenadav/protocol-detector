@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leenadav/protocol-detector/go/internal/content"
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/session"
 	"github.com/leenadav/protocol-detector/go/internal/testframes"
@@ -55,5 +56,86 @@ func TestRetiredUDPFlowResetsBothQUICScopes(t *testing.T) {
 	}
 	if a.udp.Assembler.Len() != 0 {
 		t.Fatalf("%d assembler entries after the reset", a.udp.Assembler.Len())
+	}
+}
+
+// withServerName returns the RFC 9001 ClientHello with its SNI "example.com" replaced by another 11-byte name.
+func withServerName(t *testing.T, hello []byte, name string) []byte {
+	t.Helper()
+	at := strings.Index(string(hello), "example.com")
+	if at < 0 || len(name) != len("example.com") {
+		t.Fatal("the fixture's server name is not where the test expects it")
+	}
+	out := append([]byte{}, hello...)
+	copy(out[at:], name)
+	return out
+}
+
+// sessionHost runs datagrams from one client to one server through a fresh analyzer and returns the flow record.
+func sessionHost(t *testing.T, datagrams ...[]byte) map[string]interface{} {
+	t.Helper()
+	client := transport.Endpoint{Addr: "192.0.2.10", Port: 51000}
+	server := transport.Endpoint{Addr: "198.51.100.20", Port: 443}
+	pack, err := content.Load(packPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := New(pack, Options{IncludeHostnames: true, Session: session.Options{MaxConnections: 8, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, d := range datagrams {
+		a.Process(float64(i), udp(client, server, d))
+	}
+	if err := a.Finish("end"); err != nil {
+		t.Fatal(err)
+	}
+	if len(a.Records) != 1 {
+		t.Fatalf("records: %v", a.Records)
+	}
+	return a.Records[0]
+}
+
+// SEC-QUIC-3 (PRO-47, PRO-123; a Go-only divergence Lee approved on PRO-124): a client Initial datagram below
+// the RFC 9000 section 14.1 minimum of 1200 bytes is one a server discards. A decoy of 1000 bytes with SNI A on
+// the real connection's DCID used to fix the flow's server name (or, as here, poison the CRYPTO assembly so the
+// real 1200-byte Initial with SNI B invalidated the flow). Now the decoy is not evidence and B is identified.
+func TestUndersizedDecoyInitialDoesNotFixTheServerName(t *testing.T) {
+	hello := quicHello(t)
+	decoy := withServerName(t, hello, "decoy.test0")
+	dcid := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+	record := sessionHost(t,
+		testframes.QUICInitial(1, dcid, nil, testframes.CryptoFrames(decoy)[0], 1, nil, 1000),
+		testframes.QUICInitial(1, dcid, nil, testframes.CryptoFrames(hello)[0], 2, nil, 1200))
+	if record["engine_status"] != "identified" || record["hostname"] != "example.com" {
+		t.Fatalf("decoy then real Initial: status %v host %v", record["engine_status"], record["hostname"])
+	}
+	// The decoy on another DCID, alone first: it must not become the flow's first identification either.
+	record = sessionHost(t,
+		testframes.QUICInitial(1, []byte{9, 9, 9, 9}, nil, testframes.CryptoFrames(decoy)[0], 1, nil, 1000),
+		testframes.QUICInitial(1, dcid, nil, testframes.CryptoFrames(hello)[0], 2, nil, 1200))
+	if record["engine_status"] != "identified" || record["hostname"] != "example.com" {
+		t.Fatalf("decoy on another DCID: status %v host %v", record["engine_status"], record["hostname"])
+	}
+}
+
+// SEC-QUIC-3: two complete ClientHellos on one flow that name different servers (here on two DCIDs, which never
+// meet in the CRYPTO assembler) invalidate the flow instead of keeping the first name; an identical ClientHello on
+// a new DCID (the client's Initial after a Retry) keeps the identification.
+func TestDisagreeingClientHellosOnOneFlowInvalidateIt(t *testing.T) {
+	hello := quicHello(t)
+	other := withServerName(t, hello, "example.org")
+	first, second := []byte{1, 2, 3, 4, 5, 6, 7, 8}, []byte{8, 7, 6, 5, 4, 3, 2, 1}
+	record := sessionHost(t,
+		testframes.QUICInitial(1, first, nil, testframes.CryptoFrames(hello)[0], 1, nil, 1200),
+		testframes.QUICInitial(1, second, nil, testframes.CryptoFrames(other)[0], 1, nil, 1200))
+	if record["engine_status"] != "invalidated" || record["hostname"] != nil {
+		t.Fatalf("A then B on two DCIDs: status %v host %v", record["engine_status"], record["hostname"])
+	}
+	record = sessionHost(t,
+		testframes.QUICInitial(1, first, nil, testframes.CryptoFrames(hello)[0], 1, nil, 1200),
+		testframes.QUICInitial(1, second, nil, testframes.CryptoFrames(hello)[0], 1, nil, 1200))
+	if record["engine_status"] != "identified" || record["hostname"] != "example.com" {
+		t.Fatalf("the same ClientHello on a new DCID: status %v host %v", record["engine_status"], record["hostname"])
 	}
 }
