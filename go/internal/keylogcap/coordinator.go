@@ -90,6 +90,26 @@ func NewTier(budget Budget, idleTimeout float64, generations *Generations, track
 // Holds reports whether a connection with this key is retained.
 func (c *Tier) Holds(key session.Key) bool { _, ok := c.retained[key]; return ok }
 
+// SYNRetransmission reports whether this bare SYN repeats the SYN that opened the retained connection (same
+// client, same ISN, no FIN or data): the same connection, not tuple reuse (Go-only, Codex PRO-18 P2).
+func (c *Tier) SYNRetransmission(packet *transport.TCP) bool {
+	state := c.retained[session.KeyOf(packet.Source, packet.Destination)]
+	if state == nil || packet.Source != state.client || packet.Flags&(transport.SYN|transport.ACK|transport.FIN) != transport.SYN || len(packet.Payload) > 0 {
+		return false
+	}
+	stream, ok := state.streams[packet.Source]
+	return ok && stream.First() == packet.Sequence+1
+}
+
+// Retransmission is the owner's check before a restart: the tracker decides for a tracked connection, the
+// retained tier for one only it still holds.
+func (c *Tier) Retransmission(tracker *session.Tracker, now float64, packet *transport.TCP) bool {
+	if tracker.TracksTCP(session.KeyOf(packet.Source, packet.Destination)) {
+		return tracker.SYNRetransmission(now, packet)
+	}
+	return c.SYNRetransmission(packet)
+}
+
 // Allocated is the bytes all retained streams hold; Limit the aggregate budget; Pending the queued events.
 func (c *Tier) Allocated() int { return c.allocated }
 func (c *Tier) Limit() int     { return c.budget.Aggregate }
@@ -200,7 +220,8 @@ func endpointOf(v interface{}) transport.Endpoint {
 func (c *coordinator) accept(packet *transport.TCP, now float64) error {
 	c.SetNow(now)
 	key := session.KeyOf(packet.Source, packet.Destination)
-	if packet.Flags&transport.SYN != 0 && packet.Flags&transport.ACK == 0 {
+	// A retransmitted SYN is the same connection: only a new SYN on the tuple restarts it.
+	if packet.Flags&transport.SYN != 0 && packet.Flags&transport.ACK == 0 && !c.Retransmission(c.an.Tracker, now, packet) {
 		held := c.Holds(key)
 		if tracked := c.an.Tracker.TracksTCP(key); tracked || held {
 			if tracked {

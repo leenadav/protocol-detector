@@ -10,8 +10,8 @@ import (
 )
 
 func init() {
-	DatagramValidators["ssdp"] = ssdpDatagram
-	DatagramValidators["sip"] = sipDatagram
+	datagramValidators["ssdp"] = ssdpDatagram
+	datagramValidators["sip"] = sipDatagram
 }
 
 // ssdpDatagram ports telemetry.ssdp: one complete HTTP header block (LineParser forced to HTTP) plus the

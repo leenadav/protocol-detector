@@ -27,7 +27,7 @@ func wireMatch(protocol, reason, field, value string) *Datagram {
 func init() {
 	for name, v := range map[string]DatagramValidator{"tftp": tftpDatagram, "ntp": ntpDatagram, "l2tp": l2tpDatagram, "coap": coapDatagram,
 		"rip": ripDatagram, "rtcp": rtcpDatagram, "lifx-lan": lifxDatagram, "tuya-lan": tuyaDatagram, "ethernet-ip": enipDatagram} {
-		DatagramValidators[name] = v
+		datagramValidators[name] = v
 	}
 }
 

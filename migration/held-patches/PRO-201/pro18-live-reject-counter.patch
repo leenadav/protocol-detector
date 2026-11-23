@@ -1,0 +1,60 @@
+diff --git a/go/internal/livedecrypt/decoder.go b/go/internal/livedecrypt/decoder.go
+index ce04a82..08a345c 100644
+--- a/go/internal/livedecrypt/decoder.go
++++ b/go/internal/livedecrypt/decoder.go
+@@ -15,6 +15,7 @@ type Decoder struct {
+ 	Monitor   *live.Monitor
+ 	keys      *decrypt.KeyProvider
+ 	decryptor *keylogcap.Decryptor
++	tier      *keylogcap.Tier
+ 	stream    *capture.Decoder
+ 	Frames    int
+ 	consumed  int
+@@ -30,7 +31,7 @@ func NewDecoder(pack *content.Pack, captureID string, emit func(live.Event)) (*D
+ 	}
+ 	tier := monitor.Retain(keylogcap.Budget{PerDirection: decrypt.MaxStream, Aggregate: 4 * 1024 * 1024, Connections: MaxConnections, Pending: 8192})
+ 	keys := decrypt.NewKeyProvider()
+-	return &Decoder{Monitor: monitor, keys: keys, decryptor: keylogcap.NewDecryptor(pack, tier, keys), stream: capture.NewDecoder()}, nil
++	return &Decoder{Monitor: monitor, keys: keys, decryptor: keylogcap.NewDecryptor(pack, tier, keys), tier: tier, stream: capture.NewDecoder()}, nil
+ }
+ 
+ func budget(message string) error {
+@@ -55,6 +56,11 @@ func (d *Decoder) Feed(chunk []byte, now float64) error {
+ 		if err := d.Monitor.Accept(record, now); err != nil {
+ 			return err
+ 		}
++		// At the cap the tier counts the connection and keeps no row for it: never leave it out silently, stop
++		// with the budget code as decrypt-capture refuses it (Go-only; live.py only counts it, Codex PRO-18 P2).
++		if d.tier.RejectedConnections > 0 {
++			return budget("Live decryption reached 64 TCP connections.")
++		}
+ 	}
+ 	return d.decryptor.Pump()
+ }
+diff --git a/go/internal/livedecrypt/livedecrypt_test.go b/go/internal/livedecrypt/livedecrypt_test.go
+index 1d19125..ea3cd2f 100644
+--- a/go/internal/livedecrypt/livedecrypt_test.go
++++ b/go/internal/livedecrypt/livedecrypt_test.go
+@@ -208,6 +208,22 @@ func TestReplayRefusesClockValuesThatAreNotFiniteTimes(t *testing.T) {
+ 	}
+ }
+ 
++// A connection past the retained tier's cap is never silently left out: the run stops with the budget code,
++// as the offline decrypt-capture refuses it (Codex PRO-18 P2).
++func TestAConnectionPastTheCapIsABudgetFailure(t *testing.T) {
++	var frames [][]byte
++	for i := 0; i <= MaxConnections; i++ {
++		syn := frame(true, 999, 0, 2, "")
++		binary.BigEndian.PutUint16(syn[34:], uint16(20000+i))
++		frames = append(frames, syn)
++	}
++	status, events, text := replay(t, append(op('P', 100, stream(frames...)), op('E', 101, nil)...))
++	last := events[len(events)-1]
++	if status != 1 || last["type"] != "error" || last["code"] != "budget" {
++		t.Fatalf("status %d, events %s\n%s", status, kinds(events), text)
++	}
++}
++
+ func FuzzReplayNeverPanics(f *testing.F) {
+ 	f.Add(op('T', math.NaN(), nil))
+ 	capture := stream(frame(true, 999, 0, 2, ""), frame(false, 8999, 1000, 18, ""), frame(true, 1000, 9000, 24, "\x16\x03\x01\x00\x05hello"))

@@ -2,6 +2,7 @@ package framed
 
 import (
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
+	"sort"
 )
 
 // Datagram is one UDP validator's success. Simple ports a Python (protocol, reason) tuple: the inspector adds the
@@ -19,13 +20,31 @@ type Limits struct{ MaxBytes, MaxHeaders, MaxLine int }
 // DatagramValidator validates one complete UDP payload.
 type DatagramValidator func(data []byte, limits Limits) (*Datagram, error)
 
-// DatagramValidators are the ported entries of protocol_engine/datagram.VALIDATORS (the DNS layout stays in dnsx).
-var DatagramValidators = map[string]DatagramValidator{
+// datagramValidators are the ported entries of protocol_engine/datagram.VALIDATORS (the DNS layout stays in dnsx).
+var datagramValidators = map[string]DatagramValidator{
 	"syslog":    syslogDatagram,
 	"onc-rpc":   rpcDatagram,
 	"openvpn":   openvpnDatagram,
 	"wireguard": wireguardDatagram,
 	"bacnet":    bacnetDatagram,
+}
+
+// DatagramValidatorFor returns the validator of a family. The registry is not exported: it is filled by this
+// package's init functions and never written afterwards, and another package must not be able to change it at
+// run time (integration work item #15).
+func DatagramValidatorFor(family string) (DatagramValidator, bool) {
+	v, ok := datagramValidators[family]
+	return v, ok
+}
+
+// DatagramValidatorNames returns the sorted names of the families with a validator.
+func DatagramValidatorNames() []string {
+	names := make([]string, 0, len(datagramValidators))
+	for name := range datagramValidators {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 func syslogDatagram(data []byte, _ Limits) (*Datagram, error) {

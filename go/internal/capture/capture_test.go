@@ -100,6 +100,20 @@ func TestFramingErrorsCloseTheDecoder(t *testing.T) {
 	}
 }
 
+// Codex PRO-16: the simple packet block's original length was converted to int before it was capped by the
+// snapshot length, so on a 32-bit platform 0xffffffff became -1, rounded to an empty packet that matched a
+// four-byte body and panicked at the slice. The reference caps the unsigned value: captured is the snapshot
+// length, which disagrees with the block.
+func TestSimplePacketLengthIsCappedBeforeConversion(t *testing.T) {
+	headers := pcapng()[:56] // section header and interface description (snapshot length 0: 1 MiB)
+	for _, original := range []uint32{0xffffffff, 0xfffffffd, 0x80000000} {
+		data := append(append([]byte{}, headers...), block(3, binary.LittleEndian.AppendUint32(nil, original))...)
+		if _, err := read(t, data); err == nil || err.Error() != "pcapng simple packet length disagrees with its block" {
+			t.Errorf("original %#x: %v", original, err)
+		}
+	}
+}
+
 func FuzzDecoderNeverPanics(f *testing.F) {
 	f.Add(classic([]byte("first"), []byte("second")), uint16(7))
 	f.Add(pcapng(), uint16(3))

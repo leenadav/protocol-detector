@@ -13,8 +13,8 @@ const (
 	WorkQuantum    = 64
 )
 
-// ErrorCodes are the sanitized failures: the only text a failure may publish.
-var ErrorCodes = map[string]string{
+// errorCodes are the sanitized failures: the only text a failure may publish.
+var errorCodes = map[string]string{
 	"capture_failed": "Capture failed; check tcpdump permission and selected interface.",
 	"capture_loss":   "Capture loss reported; decrypted results invalidated.",
 	"key_log":        "Key log unreadable, rotated, truncated or outside the POC format; decrypted results invalidated.",

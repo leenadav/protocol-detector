@@ -36,8 +36,8 @@ const (
 	maxDepth      = 4
 )
 
-// Contexts maps the reference's context names (a fixed table) to (kind, owning family).
-var Contexts = map[string][2]string{
+// contexts maps the reference's context names (a fixed table) to (kind, owning family).
+var contexts = map[string][2]string{
 	"http-req-method": {"text", "http"}, "http-req-uri-path": {"text", "http"}, "http-req-version": {"text", "http"},
 	"http-req-host-header": {"text", "http"}, "http-req-user-agent-header": {"text", "http"}, "http-req-headers": {"raw", "http"},
 	"http-rsp-status": {"integer", "http"}, "http-rsp-reason": {"text", "http"}, "http-req-content-length": {"integer", "http"},
@@ -129,7 +129,7 @@ func newCondition(data interface{}) (*condition, error) {
 		return nil, fail("Condition requires a context")
 	}
 	name, _ := raw.(string)
-	spec, ok := Contexts[name]
+	spec, ok := contexts[name]
 	if !ok {
 		return nil, fail("Unknown context: %s", pyStr(raw))
 	}
@@ -423,7 +423,7 @@ func newSignature(data interface{}, pack *content.Pack) (*Signature, error) {
 	root.leaves(&leaves)
 	positive := false
 	for _, c := range leaves {
-		s.families[Contexts[c.context][1]] = true
+		s.families[contexts[c.context][1]] = true
 		positive = positive || !c.negate
 	}
 	if !positive {
@@ -479,7 +479,13 @@ type Set struct {
 }
 
 // FromJSON is SignatureSet.from_json over a content pack's vocabularies.
+// The document is bounded by MaxFile before it is decoded, with from_path's error: every caller reads it through
+// ReadFile today, and the bound keeps one that does not from materializing an unbounded document (Go only; the
+// reference's from_json has no limit of its own).
 func FromJSON(text []byte, pack *content.Pack) (*Set, error) {
+	if len(text) > MaxFile {
+		return nil, fail("Signature file exceeds 4 MiB")
+	}
 	decoder := json.NewDecoder(bytes.NewReader(text))
 	decoder.UseNumber()
 	var document interface{}

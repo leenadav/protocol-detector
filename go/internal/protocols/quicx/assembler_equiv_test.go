@@ -97,6 +97,12 @@ func (a *naive) Add(dcid []byte, fragments []Fragment, scope string, version uin
 		return Conflict, nil
 	}
 	merged := merge(e.fragments, fragments)
+	if contradicts(merged) { // the contradiction outranks the budget (PRO-201)
+		e.fragments, e.conflict = nil, true
+		a.Counts["conflicts"]++
+		a.entries[k] = a.order.PushBack(e)
+		return Conflict, nil
+	}
 	total := 0
 	for _, f := range merged {
 		total += len(f.Data)

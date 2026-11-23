@@ -191,6 +191,21 @@ func (t *Tracker) Tracked(a, b transport.Endpoint) *State {
 // TracksTCP reports whether a TCP connection with this key is tracked (key in Analyzer.tracked).
 func (t *Tracker) TracksTCP(key Key) bool { _, ok := t.tracked[key]; return ok }
 
+// SYNRetransmission reports whether Process at now would take this bare SYN as a retransmission of the tracked
+// connection's SYN (same client, same ISN, no FIN or data, not idle-expired): the same connection, so an owner
+// must not restart the tuple's generation for it. A Go-only refinement of the reference coordinator, which
+// restarts on every bare SYN of a tracked tuple (Codex PRO-18 P2).
+func (t *Tracker) SYNRetransmission(now float64, p *transport.TCP) bool {
+	state := t.tracked[KeyOf(p.Source, p.Destination)]
+	if state == nil || p.Flags&(transport.SYN|transport.ACK|transport.FIN) != transport.SYN || len(p.Payload) > 0 {
+		return false
+	}
+	if now < t.now {
+		now = t.now
+	}
+	return state.Client == p.Source && state.HasISN && state.ISN == p.Sequence && now-state.Time < t.opts.IdleTimeout
+}
+
 func (t *Tracker) closed(state *State, reason string, delivered map[transport.Endpoint]int, sinks map[transport.Endpoint]Sink) {
 	t.closedWith(state, reason, delivered, nil, sinks)
 }

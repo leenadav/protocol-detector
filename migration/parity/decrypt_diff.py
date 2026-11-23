@@ -360,6 +360,17 @@ def reference(capture, keylog):
         return 3, json.dumps({"error_type": "CaptureError", "error": str(error), "code": ""})
 
 
+def shortfall(captures, kinds):
+    """Why a run without a divergence still proved nothing (Codex PRO-20): no capture was compared, or no
+    connection was decrypted (only refusals and unavailable rows)."""
+    problems = []
+    if captures < 1:
+        problems.append("no capture was compared (--count {})".format(captures))
+    if kinds.get("decrypted", 0) < 1:
+        problems.append("no connection was decrypted")
+    return problems
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
@@ -392,10 +403,13 @@ def main(argv=None):
                 index, args.seed, done.returncode, status, "differ" if actual != expected else "equal"))
     for line in failures[:10]:
         print("decrypt mismatch:", line)
+    problems = shortfall(args.count, kinds)
+    for line in problems:
+        print("decrypt parity FAILED:", line)
     print("decrypt parity: {} captures, {} mismatched (seed {}); rows by status: {}; inner applications: {}".format(
         args.count, len(failures), args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds)),
         ", ".join(sorted(applications)) or "none"))
-    return 1 if failures else 0
+    return 1 if failures or problems else 0
 
 
 if __name__ == "__main__":

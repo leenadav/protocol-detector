@@ -1,0 +1,7 @@
+protocol-detector
+Copyright 2026 The protocol-detector authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+The licence covers the whole repository: the Python engine and adapters, the Go
+module under go/, the detection content (migration/fixtures/content.json and its
+embedded copy go/internal/content/pack.json), fixtures, schemas and documentation.

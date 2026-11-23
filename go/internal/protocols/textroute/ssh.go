@@ -26,9 +26,12 @@ type kexInit struct {
 	hasLen   bool
 	done     bool
 	lists    [][]byte
+	credit   *parsing.Credit // the flow allowance the buffer and the lists grow from (nil: unlimited)
 }
 
-func newKexInit(maxBytes int) *kexInit { return &kexInit{maxBytes: maxBytes, needed: 4} }
+func newKexInit(maxBytes int, credit *parsing.Credit) *kexInit {
+	return &kexInit{maxBytes: maxBytes, needed: 4, credit: credit}
+}
 
 func (k *kexInit) feed(data []byte) (int, error) {
 	pos := 0
@@ -37,7 +40,10 @@ func (k *kexInit) feed(data []byte) (int, error) {
 		if amount > len(data)-pos {
 			amount = len(data) - pos
 		}
-		k.buffer = append(k.buffer, data[pos:pos+amount]...)
+		var err error
+		if k.buffer, err = k.credit.Append(k.buffer, data[pos:pos+amount]); err != nil {
+			return pos, err
+		}
 		pos += amount
 		if len(k.buffer) < k.needed {
 			break
@@ -53,7 +59,6 @@ func (k *kexInit) feed(data []byte) (int, error) {
 				return pos, parsing.Malformed("SSH packet length outside KEXINIT profile")
 			}
 			k.needed = 4 + k.length
-			k.buffer = append(make([]byte, 0, k.needed), k.buffer...) // one allocation for the whole packet
 			continue
 		}
 		if err := k.validate(k.buffer[4:]); err != nil {
@@ -80,9 +85,14 @@ func (k *kexInit) validate(packet []byte) error {
 		if pos+4 > payloadEnd {
 			return parsing.Malformed("Truncated SSH KEXINIT name-list")
 		}
-		size := int(binary.BigEndian.Uint32(packet[pos:]))
+		// Capped at the profile limit as uint32 before it becomes an int: on a 32-bit platform 0xffffffff would be -1.
+		raw := binary.BigEndian.Uint32(packet[pos:])
 		pos += 4
-		if pos+size > payloadEnd || size > 4096 {
+		if raw > 4096 {
+			return parsing.Malformed("SSH KEXINIT name-list exceeds packet or profile")
+		}
+		size := int(raw)
+		if size > payloadEnd-pos {
 			return parsing.Malformed("SSH KEXINIT name-list exceeds packet or profile")
 		}
 		value := packet[pos : pos+size]
@@ -103,9 +113,14 @@ func (k *kexInit) validate(packet []byte) error {
 				rest = tail
 			}
 		}
-		// The lists point into the packet buffer this parser owns (it is never written again), so no copy is
-		// needed; they keep it alive exactly as long as copies of them would have.
-		lists = append(lists, value[:len(value):len(value)])
+		copied, err := k.credit.Copy(value)
+		if err != nil {
+			return err
+		}
+		if copied == nil { // an empty list is kept as an empty, non-nil value, as before
+			copied = []byte{}
+		}
+		lists = append(lists, copied)
 		pos += size
 	}
 	if pos+5 > payloadEnd || packet[pos] > 1 || packet[pos+1] != 0 || packet[pos+2] != 0 || packet[pos+3] != 0 || packet[pos+4] != 0 {

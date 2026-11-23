@@ -10,8 +10,8 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/pyjson"
 )
 
-// Buckets are the default upper bounds; MaxSeries bounds counters and histograms each.
-var Buckets = []float64{0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 60.0}
+// defaultBuckets are the default upper bounds; MaxSeries bounds counters and histograms each.
+var defaultBuckets = []float64{0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 60.0}
 
 const MaxSeries = 64
 
@@ -24,8 +24,8 @@ type Histogram struct {
 }
 
 func (h *Histogram) observe(value float64) {
-	index := len(Buckets)
-	for i, bound := range Buckets {
+	index := len(defaultBuckets)
+	for i, bound := range defaultBuckets {
 		if value <= bound {
 			index = i
 			break
@@ -52,7 +52,7 @@ func (h *Histogram) quantile(q float64) interface{} {
 		target = 1
 	}
 	seen := 0
-	for i, bound := range Buckets {
+	for i, bound := range defaultBuckets {
 		seen += h.counts[i]
 		if seen >= target {
 			return bound
@@ -63,10 +63,10 @@ func (h *Histogram) quantile(q float64) interface{} {
 
 func (h *Histogram) render() map[string]interface{} {
 	buckets := make([]interface{}, 0, len(h.counts))
-	for i, bound := range Buckets {
+	for i, bound := range defaultBuckets {
 		buckets = append(buckets, []interface{}{bound, h.counts[i]})
 	}
-	buckets = append(buckets, []interface{}{"+inf", h.counts[len(Buckets)]})
+	buckets = append(buckets, []interface{}{"+inf", h.counts[len(defaultBuckets)]})
 	var minimum, maximum interface{}
 	if h.count > 0 {
 		minimum, maximum = h.min, h.max
@@ -75,8 +75,11 @@ func (h *Histogram) render() map[string]interface{} {
 		"p50": h.quantile(0.5), "p95": h.quantile(0.95), "p99": h.quantile(0.99), "buckets": buckets}
 }
 
-// HistogramKeys is the key order of a rendered histogram.
-var HistogramKeys = []string{"count", "sum", "min", "max", "p50", "p95", "p99", "buckets"}
+// histogramKeys is the key order of a rendered histogram.
+var histogramKeys = []string{"count", "sum", "min", "max", "p50", "p95", "p99", "buckets"}
+
+// HistogramKeys returns a copy of the key order of a rendered histogram.
+func HistogramKeys() []string { return append([]string(nil), histogramKeys...) }
 
 // Telemetry is one registry per capture path.
 type Telemetry struct {
@@ -124,7 +127,7 @@ func (t *Telemetry) Observe(name string, value float64) {
 		if len(t.histograms) >= MaxSeries {
 			return
 		}
-		h = &Histogram{counts: make([]int, len(Buckets)+1)}
+		h = &Histogram{counts: make([]int, len(defaultBuckets)+1)}
 		t.histograms[name] = h
 		t.histogramOrder = append(t.histogramOrder, name)
 	}

@@ -392,12 +392,16 @@ type Parser struct {
 	hasHelloSize    bool
 	done            bool
 	result          *parsing.Result
+	credit          *parsing.Credit  // the flow allowance the two accumulators grow from (nil: unlimited)
 	cont            *tlsContinuation // D07: record framing after the hello within Options.Continuation
 	watch           *certificateWatch
 	consumed        int // bytes accepted by earlier Feed calls; the certificate watch inherits the rest of the budget
 	baseExtra       []parsing.Row
 	unrefined       bool // parsers.TLSParser.refined is False until the continuation fed bytes
 }
+
+// SetCredit makes the accumulators grow from c (parsing.Credited).
+func (p *Parser) SetCredit(c *parsing.Credit) { p.credit = c }
 
 // New creates the parser; options the Go backend lacks fail at construction with NotPorted.
 func New(opts Options) (*Parser, error) {
@@ -406,6 +410,9 @@ func New(opts Options) (*Parser, error) {
 
 func (p *Parser) Done() bool              { return p.done }
 func (p *Parser) Result() *parsing.Result { return p.result }
+
+// RetainedBytes is the capacity of the record-header and handshake accumulators (parsing.Retainer).
+func (p *Parser) RetainedBytes() int { return cap(p.recordHeader) + cap(p.handshake) }
 
 // Refined reports whether the published identification is complete (false until a continuation fed bytes).
 func (p *Parser) Refined() bool { return !p.unrefined }
@@ -450,7 +457,10 @@ func (p *Parser) Feed(data []byte) (int, error) {
 			if amount > len(data)-pos {
 				amount = len(data) - pos
 			}
-			p.recordHeader = append(p.recordHeader, data[pos:pos+amount]...)
+			var err error
+			if p.recordHeader, err = p.credit.Append(p.recordHeader, data[pos:pos+amount]); err != nil {
+				return pos, err
+			}
 			pos += amount
 			if len(p.recordHeader) < 5 {
 				break
@@ -477,7 +487,10 @@ func (p *Parser) Feed(data []byte) (int, error) {
 		if len(data)-pos < amount {
 			amount = len(data) - pos
 		}
-		p.handshake = append(p.handshake, data[pos:pos+amount]...)
+		var err error
+		if p.handshake, err = p.credit.Append(p.handshake, data[pos:pos+amount]); err != nil {
+			return pos, err
+		}
 		pos += amount
 		p.recordRemaining -= amount
 		if !p.hasHelloSize && len(p.handshake) == 4 {

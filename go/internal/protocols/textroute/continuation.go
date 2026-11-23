@@ -228,6 +228,20 @@ func validChunkSize(line []byte) (uint64, bool) {
 	return size, true
 }
 
+// lineEnd is the index of the first newline in data[pos:], searched only through the budget bytes that can still
+// be consumed (-1 when none is there). The reference searches the whole input; beyond the budget the result
+// cannot change what is consumed, so the search never reads further.
+func lineEnd(data []byte, pos, budget int) int {
+	window := data[pos:]
+	if budget < len(window) {
+		window = window[:budget]
+	}
+	if i := bytes.IndexByte(window, '\n'); i >= 0 {
+		return pos + i
+	}
+	return -1
+}
+
 // feedChunked ports HttpContinuation._feed_chunked.
 func (c *httpContinuation) feedChunked(data []byte, pos int) int {
 	for pos < len(data) && c.budget > 0 {
@@ -241,10 +255,9 @@ func (c *httpContinuation) feedChunked(data []byte, pos int) int {
 			}
 			continue
 		}
-		newline := bytes.IndexByte(data[pos:], '\n')
+		newline := lineEnd(data, pos, c.budget)
 		end := len(data)
 		if newline >= 0 {
-			newline += pos
 			end = newline + 1
 		}
 		limit := end

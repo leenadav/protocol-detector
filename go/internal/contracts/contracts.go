@@ -90,6 +90,38 @@ func Initial(transport string) Observation {
 		Reason: "Waiting for stream prefix", Scope: "initial_message"}
 }
 
+// Equal reports whether two observations are the same value. It is what the engine asks before publishing an
+// event, on every feed, so it compares field by field without reflection or allocation (integration work item
+// #17). It keeps reflect.DeepEqual's distinctions: a nil slice differs from an empty one, and optional strings
+// compare by presence and content, not by address.
+func (o Observation) Equal(p Observation) bool {
+	if o.Status != p.Status || o.Transport != p.Transport || o.Reason != p.Reason || o.Scope != p.Scope ||
+		!sameOptional(o.Encryption, p.Encryption) || !sameOptional(o.ApplicationProtocol, p.ApplicationProtocol) ||
+		!sameOptional(o.Application, p.Application) || !sameOptional(o.Hostname, p.Hostname) ||
+		len(o.OfferedALPN) != len(p.OfferedALPN) || (o.OfferedALPN == nil) != (p.OfferedALPN == nil) ||
+		len(o.Evidence) != len(p.Evidence) || (o.Evidence == nil) != (p.Evidence == nil) {
+		return false
+	}
+	for i := range o.OfferedALPN {
+		if o.OfferedALPN[i] != p.OfferedALPN[i] {
+			return false
+		}
+	}
+	for i := range o.Evidence {
+		if o.Evidence[i] != p.Evidence[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func sameOptional(a, b *string) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
+}
+
 // Validate rejects values outside the closed vocabularies.
 func (o Observation) Validate() error {
 	if !statuses[o.Status] {

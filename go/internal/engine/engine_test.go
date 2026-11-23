@@ -104,7 +104,7 @@ func TestHintSetFollowsTheParserRegistry(t *testing.T) {
 		}
 	}
 	for _, name := range []string{"kerberos", "ldap", "text", "tls", "dns"} {
-		if !Ported[name] {
+		if !IsPorted(name) {
 			t.Errorf("%q missing from the hint set", name)
 		}
 	}

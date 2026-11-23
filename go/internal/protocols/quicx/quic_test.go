@@ -271,3 +271,37 @@ func TestRFC9001JA4(t *testing.T) {
 		t.Fatalf("%+v", last)
 	}
 }
+
+// A datagram that both contradicts retained CRYPTO bytes and pushes the connection over its fragment or byte budget
+// is a contradiction first (Codex PRO-13 P2, PRO-201): reporting it as exhausted would drop the entry without a
+// retraction, so the host could keep the identity the earlier bytes established.
+func TestContradictionOutranksExhaustion(t *testing.T) {
+	dcid := []byte{1, 2, 3, 4}
+	a := NewAssembler(4, 10)
+	for i := 0; i < MaxFragments; i++ {
+		if s, _ := a.Add(dcid, []Fragment{{uint64(200 + i*2), []byte{byte(i)}}}, "A", V1, nil); s != Partial {
+			t.Fatalf("fragment %d: %s", i, s)
+		}
+	}
+	// Offset 200 held byte 0; this fragment says 9 there and is the ninth fragment.
+	if s, _ := a.Add(dcid, []Fragment{{200, []byte{9}}}, "A", V1, nil); s != Conflict {
+		t.Fatalf("contradiction over the fragment budget: got %s, want %s", s, Conflict)
+	}
+	if !a.Conflicted(dcid, "A", V1, nil) || a.Counts["conflicts"] != 1 || a.Counts["exhausted"] != 0 {
+		t.Fatalf("conflict marker not kept: len %d counts %v", a.Len(), a.Counts)
+	}
+	// The byte budget too: a contradicting fragment that also overflows MaxCrypto is a contradiction.
+	b := NewAssembler(4, 10)
+	b.Add(dcid, []Fragment{{0, []byte{1, 2, 3, 4}}}, "A", V1, nil)
+	if s, _ := b.Add(dcid, []Fragment{{0, make([]byte, MaxCrypto)}}, "A", V1, nil); s != Conflict || !b.Conflicted(dcid, "A", V1, nil) {
+		t.Fatalf("contradiction over the byte budget: got %s, want %s", s, Conflict)
+	}
+	// Without a contradiction the budget still forgets the connection.
+	c := NewAssembler(4, 10)
+	c.Add(dcid, []Fragment{{0, []byte{1, 2, 3, 4}}}, "A", V1, nil)
+	big := make([]byte, MaxCrypto)
+	copy(big, []byte{1, 2, 3, 4})
+	if s, _ := c.Add(dcid, []Fragment{{0, big}}, "A", V1, nil); s != Exhausted || c.Len() != 0 {
+		t.Fatalf("exhaustion without contradiction: got %s len %d", s, c.Len())
+	}
+}

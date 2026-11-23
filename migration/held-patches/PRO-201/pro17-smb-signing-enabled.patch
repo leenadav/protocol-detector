@@ -1,0 +1,100 @@
+From 2fa1c6d8976a02523275fbf0ea50f74f36f4097d Mon Sep 17 00:00:00 2001
+From: Lee Nadav <leenadav1312@gmail.com>
+Date: Sun, 22 Nov 2026 22:44:10 +0000
+Subject: [PATCH] smb2: a NEGOTIATE response must set
+ SMB2_NEGOTIATE_SIGNING_ENABLED
+
+Codex PRO-17 (PRO-201), P2: MS-SMB2 3.3.5.4 says the server's NEGOTIATE
+response "SecurityMode MUST have the SMB2_NEGOTIATE_SIGNING_ENABLED bit
+set", with SIGNING_REQUIRED set in addition when signing is required.
+The Go check accepted SecurityMode 1..3, so a response carrying
+REQUIRED alone (2) was published as smb2 with smb_signing=required,
+against the rule its own error text states ("must enable signing").
+The check now requires bit 0 and nothing above bit 1.
+
+TestSMB2NegotiateResponseRequiresSigningEnabled failed before ("mode 2
+accepted or wrong error: <nil>") and passes now; modes 1 and 3 still
+give enabled/required.
+
+The frozen Python reference accepts mode 2, so this is a Go-only
+divergence. Parity: the committed case stream/smb-034-smb2-response-
+required (all four segmentations) now ends malformed ("SMB2 response
+security mode must enable signing") where Python identifies smb2.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UqaXYzSsrxF863s8uhhmNq
+---
+ go/internal/protocols/framed/smb.go      |  4 ++-
+ go/internal/protocols/framed/smb_test.go | 34 ++++++++++++++++++++++++
+ 2 files changed, 37 insertions(+), 1 deletion(-)
+
+diff --git a/go/internal/protocols/framed/smb.go b/go/internal/protocols/framed/smb.go
+index 4b73555..bfd1492 100644
+--- a/go/internal/protocols/framed/smb.go
++++ b/go/internal/protocols/framed/smb.go
+@@ -510,7 +510,9 @@ func smb2NegotiateResponse(data []byte) (*parsing.Result, error) {
+ 		return nil, parsing.Malformed("SMB2 NEGOTIATE response body shorter than its fixed fields")
+ 	}
+ 	securityMode, dialect, contexts := u16(66), u16(68), u16(70)
+-	if securityMode < 1 || securityMode > 3 {
++	// Go-only divergence (Codex PRO-17, PRO-201): MS-SMB2 3.3.5.4 requires SMB2_NEGOTIATE_SIGNING_ENABLED in the
++	// server's response, so REQUIRED alone (2) is malformed; the Python reference accepts it.
++	if securityMode&1 == 0 || securityMode > 3 {
+ 		return nil, parsing.Malformed("SMB2 response security mode must enable signing")
+ 	}
+ 	name, ok := smbDialects[dialect]
+diff --git a/go/internal/protocols/framed/smb_test.go b/go/internal/protocols/framed/smb_test.go
+index fe7f27b..8f7b0fd 100644
+--- a/go/internal/protocols/framed/smb_test.go
++++ b/go/internal/protocols/framed/smb_test.go
+@@ -2,6 +2,7 @@ package framed
+ 
+ import (
+ 	"encoding/binary"
++	"errors"
+ 	"strings"
+ 	"testing"
+ 
+@@ -112,6 +113,39 @@ func TestSMB2WatchEndsOnForeignOrBadFrames(t *testing.T) {
+ 	}
+ }
+ 
++// smb2NegotiateResponseBody builds an SMB 3.0.2 NEGOTIATE response (no token, no contexts) with securityMode.
++func smb2NegotiateResponseBody(securityMode uint16) []byte {
++	m := make([]byte, 128)
++	copy(m, "\xfeSMB")
++	binary.LittleEndian.PutUint16(m[4:], 64)
++	binary.LittleEndian.PutUint32(m[16:], smb2FlagServerToRedir)
++	binary.LittleEndian.PutUint16(m[64:], 65)
++	binary.LittleEndian.PutUint16(m[66:], securityMode)
++	binary.LittleEndian.PutUint16(m[68:], 0x302)
++	for _, at := range []int{92, 96, 100} {
++		binary.LittleEndian.PutUint32(m[at:], 65536)
++	}
++	return m
++}
++
++// MS-SMB2 3.3.5.4: the server's NEGOTIATE response "SecurityMode MUST have the SMB2_NEGOTIATE_SIGNING_ENABLED bit
++// set"; REQUIRED is set in addition to it. A response with REQUIRED alone (2) is not a conforming response.
++func TestSMB2NegotiateResponseRequiresSigningEnabled(t *testing.T) {
++	for mode, want := range map[uint16]string{1: "enabled", 3: "required"} {
++		r, err := smb2Negotiate(smb2NegotiateResponseBody(mode))
++		if err != nil || extra(r)["smb_signing"] != want {
++			t.Errorf("mode %d: %+v %v", mode, r, err)
++		}
++	}
++	for _, mode := range []uint16{0, 2, 4, 5} {
++		var pe *parsing.Error
++		_, err := smb2Negotiate(smb2NegotiateResponseBody(mode))
++		if !errors.As(err, &pe) || pe.Kind != "malformed" || !strings.Contains(pe.Message, "must enable signing") {
++			t.Errorf("mode %d accepted or wrong error: %v", mode, err)
++		}
++	}
++}
++
+ // smb2SessionResponse builds a SESSION_SETUP response carrying token, then pad bytes past the security buffer.
+ func smb2SessionResponse(status uint32, sessionFlags uint16, token []byte, pad []byte) []byte {
+ 	m := make([]byte, 72)
+-- 
+2.43.0
+

@@ -14,6 +14,9 @@ import (
 	"testing"
 
 	"github.com/leenadav/protocol-detector/go/internal/content"
+	"github.com/leenadav/protocol-detector/go/internal/decrypt"
+	"github.com/leenadav/protocol-detector/go/internal/engine"
+	"github.com/leenadav/protocol-detector/go/internal/transport"
 )
 
 // --- a synthetic TLS 1.3 exchange (TLS_AES_128_GCM_SHA256) from fixed test secrets; nothing is captured ------
@@ -249,6 +252,66 @@ func TestTupleReuseStartsANewGeneration(t *testing.T) {
 	if len(out.Connections) != 2 || out.Connections[0]["generation"] != float64(0) || out.Connections[1]["generation"] != float64(1) ||
 		out.Connections[0]["session_id"] != out.Connections[1]["session_id"] {
 		t.Fatalf("generations: %s", text)
+	}
+}
+
+// A retransmitted SYN (same client, same ISN) is the same connection, not tuple reuse: it must not close the
+// retained stream nor start a new generation (Codex PRO-18 P2).
+func TestRetransmittedSYNKeepsTheGeneration(t *testing.T) {
+	client, server, keylog := exchange()
+	frames := conversation(client, server)
+	for _, at := range []int{1, 2} { // before and after the SYN-ACK
+		duplicated := append(append(append([][]byte{}, frames[:at]...), frames[0]), frames[at:]...)
+		out, text := analyzeFrames(t, keylog, duplicated...)
+		if len(out.Connections) != 1 || out.Decrypted != 1 || out.Connections[0]["generation"] != float64(0) {
+			t.Fatalf("SYN repeated at %d: %s", at, text)
+		}
+	}
+}
+
+// A closed connection the report keeps holds its settled row, not its inspectors (Codex PRO-13 P2): the
+// row is built once at the close and the report still names the inner protocol.
+func TestClosedConnectionsKeepTheirRowNotTheirInspectors(t *testing.T) {
+	pack, err := content.Embedded()
+	if err != nil {
+		t.Fatal(err)
+	}
+	owner, err := newCoordinator(pack, Budget{PerDirection: decrypt.MaxStream, Aggregate: 4 * 1024 * 1024, Connections: MaxConnections, Pending: 8192}, MaxConnections)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys := decrypt.NewKeyProvider()
+	defer keys.Release()
+	client, server, keylog := exchange()
+	if _, err := keys.Append(keylog); err != nil {
+		t.Fatal(err)
+	}
+	d := newDecryptor(pack, owner.Tier, keys)
+	for i, f := range conversation(client, server) {
+		packet, err := transport.Decode(f, 1, transport.Ignore)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := owner.accept(packet.(*transport.TCP), 1700000000+float64(i)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := owner.end("Capture input EOF"); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.pump(); err != nil {
+		t.Fatal(err)
+	}
+	if len(d.finished) != 1 {
+		t.Fatalf("finished: %d", len(d.finished))
+	}
+	c := d.finished[0]
+	if c.outer != [2]*engine.Inspector{} || c.inner != [2]*engine.Inspector{} || c.dirty || c.row == nil {
+		t.Fatalf("a closed connection keeps its inspectors (dirty %v)", c.dirty)
+	}
+	text := d.report(0, 0, "")
+	if !strings.Contains(text, `"status": "decrypted"`) || !strings.Contains(text, `"inner_protocol": "http/1.1"`) {
+		t.Fatalf("report: %s", text)
 	}
 }
 

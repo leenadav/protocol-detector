@@ -166,13 +166,20 @@ type IRC struct {
 	line    []byte
 	done    bool
 	result  *parsing.Result
+	credit  *parsing.Credit // the flow allowance the line accumulator grows from (nil: unlimited)
 }
+
+// SetCredit makes the line accumulator grow from c (parsing.Credited).
+func (p *IRC) SetCredit(c *parsing.Credit) { p.credit = c }
 
 // NewIRC creates the parser.
 func NewIRC(maxLine int) *IRC { return &IRC{maxLine: maxLine} }
 
 func (p *IRC) Done() bool              { return p.done }
 func (p *IRC) Result() *parsing.Result { return p.result }
+
+// RetainedBytes is the capacity of the line accumulator (parsing.Retainer).
+func (p *IRC) RetainedBytes() int { return cap(p.line) }
 
 // Feed ports LineParser.feed for protocol "irc".
 func (p *IRC) Feed(data []byte) (int, error) {
@@ -194,7 +201,10 @@ func (p *IRC) Feed(data []byte) (int, error) {
 			}
 			return pos, parsing.Budget("Line length budget exceeded")
 		}
-		p.line = append(p.line, piece...)
+		var err error
+		if p.line, err = p.credit.Append(p.line, piece); err != nil {
+			return pos, err
+		}
 		pos = end
 		if newline < 0 {
 			break

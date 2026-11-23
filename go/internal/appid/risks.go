@@ -121,7 +121,7 @@ func FlowRisks(v *Verdict, client, server *contracts.Observation, at *float64) [
 					found = append(found, "tls-weak-certificate-key")
 				}
 			case "tls_certificate_signature":
-				if x509x.WeakSignatures[value] {
+				if x509x.IsWeakSignature(value) {
 					found = append(found, "tls-weak-certificate-signature")
 				}
 			case "modbus_pdu":

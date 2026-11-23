@@ -116,3 +116,21 @@ func FuzzPatternNeverPanics(f *testing.F) {
 		}
 	})
 }
+
+// TestEmptyNegativeLookaheadIsNotPorted pins the answer for (?!): the reference's own result depends on the
+// interpreter. CPython 3.9..3.12 parse it as ASSERT_NOT, which _literal_runs rejects ("Backreferences and
+// lookaround are not allowed"); CPython 3.13 parses it as FAILURE, which _literal_runs does not list, so the
+// pattern is accepted and never matches. Either fixed answer would contradict one supported reference
+// interpreter, so the Go backend refuses it as not ported and the reference answers (Codex PRO-19 P2, PRO-201).
+func TestEmptyNegativeLookaheadIsNotPorted(t *testing.T) {
+	for _, pattern := range []string{"abcdefgh(?!)", "(?!)abcdefgh", "abc(?:(?!)|d)efgh"} {
+		_, err := compilePattern(pattern, "text", false)
+		if _, refused := err.(*notPortedError); !refused {
+			t.Errorf("%q: %v, want a not-ported refusal", pattern, err)
+		}
+	}
+	// A non-empty negative lookahead is rejected by every interpreter.
+	if _, err := compilePattern("abcdefgh(?!x)", "text", false); err == nil || err.Error() != "Backreferences and lookaround are not allowed" {
+		t.Errorf("(?!x): %v", err)
+	}
+}

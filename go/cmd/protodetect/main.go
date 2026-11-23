@@ -43,7 +43,7 @@ func run(args []string) int {
 	defer stop()
 	switch args[0] {
 	case "version":
-		fmt.Printf("protodetect %s (go backend; experimental families: %s; no production use)\n", version, strings.Join(engine.Families, ", "))
+		fmt.Printf("protodetect %s (go backend; experimental families: %s; no production use)\n", version, strings.Join(engine.Families(), ", "))
 		return 0
 	case "analyze":
 		return runAnalyze(args[1:], os.Stdout, os.Stderr)

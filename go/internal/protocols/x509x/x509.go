@@ -56,8 +56,8 @@ var (
 	extendedKeyUsage = oid("551d25")
 	serverAuth       = oid("2b06010505070301")
 	anyKeyUsage      = oid("551d2500")
-	// WeakSignatures are x509.WEAK_SIGNATURES.
-	WeakSignatures = map[string]bool{"md5-rsa": true, "sha1-rsa": true, "ecdsa-sha1": true}
+	// weakSignatures are x509.WEAK_SIGNATURES.
+	weakSignatures = map[string]bool{"md5-rsa": true, "sha1-rsa": true, "ecdsa-sha1": true}
 )
 
 const (
@@ -80,31 +80,36 @@ func element(data []byte, pos, limit int) (byte, int, int, error) {
 	}
 	first := data[pos+1]
 	pos += 2
-	var length int
+	// The length is read as uint64 and compared with the bytes left before it becomes an int: on a 32-bit platform
+	// four octets reach 0xffffffff (a negative int) and pos+length can wrap past the container guard.
+	var length uint64
 	switch {
 	case first < 0x80:
-		length = int(first)
+		length = uint64(first)
 	case first == 0x80:
 		return 0, 0, 0, fail("Indefinite DER length is not valid in a certificate")
 	default:
 		count := int(first & 0x7f)
-		if count > 4 || count > limit-pos {
+		if count > 4 || pos+count > limit {
 			return 0, 0, 0, fail("DER length encoding invalid")
 		}
 		for _, b := range data[pos : pos+count] {
-			length = length<<8 | int(b)
+			length = length<<8 | uint64(b)
 		}
 		if length < 0x80 || data[pos] == 0 {
 			return 0, 0, 0, fail("DER length is not minimally encoded")
 		}
 		pos += count
 	}
-	// Compare by subtraction: pos <= limit here, so limit-pos cannot wrap, while pos+length wraps on 32-bit int
-	// for a four-octet length near 0x7fffffff (SEC-X509-1).
-	if length > limit-pos {
+	// No container is 2^31 bytes or more, so a longer element is refused before it becomes an int.
+	if length >= 1<<31 {
 		return 0, 0, 0, fail("DER element exceeds its container")
 	}
-	return tag, pos, pos + length, nil
+	size := int(length)
+	if size > limit-pos {
+		return 0, 0, 0, fail("DER element exceeds its container")
+	}
+	return tag, pos, pos + size, nil
 }
 
 func expect(data []byte, pos, limit int, tag byte, what string) (int, int, error) {
@@ -821,3 +826,6 @@ func WeakKey(label string) bool {
 	}
 	return (family == "rsa" && n < MinRSABits) || (family == "ec" && n < MinECBits)
 }
+
+// IsWeakSignature reports whether a signature algorithm name is in x509.WEAK_SIGNATURES.
+func IsWeakSignature(name string) bool { return weakSignatures[name] }
