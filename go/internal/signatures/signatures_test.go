@@ -1,6 +1,8 @@
 package signatures
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/leenadav/protocol-detector/go/internal/content"
@@ -58,6 +60,43 @@ func TestContainerDescriptionIsPythonsStr(t *testing.T) {
 		}
 		if got := set.byName["a"].Description; got != c.want {
 			t.Errorf("%s: got %q, want %q", c.description, got, c.want)
+		}
+	}
+}
+
+// TestFromJSONBoundsTheDocument: FromJSON refuses a document over MaxFile before decoding it, as ReadFile and
+// SignatureSet.from_path do, so a caller that does not go through ReadFile cannot make it materialize an
+// unbounded document (Codex PRO-19 P2, PRO-201). The reference's from_json has no such check; every reference and
+// Go entry point that reads a signature file applies the same 4 MiB limit with the same text.
+func TestFromJSONBoundsTheDocument(t *testing.T) {
+	pack := loadPack(t)
+	doc := []byte("[" + strings.Repeat(" ", MaxFile-2) + "]")
+	if _, err := FromJSON(doc, pack); err != nil {
+		t.Fatalf("a document of exactly MaxFile bytes: %v", err)
+	}
+	doc = []byte("[" + strings.Repeat(" ", MaxFile-1) + "]")
+	if _, err := FromJSON(doc, pack); err == nil || err.Error() != "Signature file exceeds 4 MiB" {
+		t.Fatalf("a document of MaxFile+1 bytes: %v, want the 4 MiB refusal", err)
+	}
+}
+
+// TestCountRefusalKeepsTheReferenceOrder: SignatureSet builds each item before counting it, so the 4,097th item's
+// own error wins over the count error (reference output, CPython 3.13). The Go set keeps that order for error
+// parity; the extra work is one signature, itself bounded by the condition, depth and pattern limits.
+func TestCountRefusalKeepsTheReferenceOrder(t *testing.T) {
+	pack := loadPack(t)
+	items := make([]string, 0, maxSignatures)
+	for i := 0; i < maxSignatures; i++ {
+		items = append(items, fmt.Sprintf(`{"name": "s%d", "conditions": [{"context": "ssh-req-banner", "pattern": "OpenSSH"}]}`, i))
+	}
+	for _, v := range []struct{ last, want string }{
+		{`{"name": "s4096", "conditions": [{"context": "ssh-req-banner", "pattern": "OpenSSH"}]}`, "Signature count exceeds 4096"},
+		{`"bad"`, "Signature must be an object"},
+		{`{"name": "s0", "conditions": [{"context": "ssh-req-banner", "pattern": "OpenSSH"}]}`, "Signature count exceeds 4096"},
+	} {
+		doc := "[" + strings.Join(items, ", ") + ", " + v.last + "]"
+		if _, err := FromJSON([]byte(doc), pack); err == nil || err.Error() != v.want {
+			t.Errorf("4,097th item %s: %v, reference %q", v.last, err, v.want)
 		}
 	}
 }

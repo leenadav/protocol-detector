@@ -79,7 +79,13 @@ func ikeSA(data []byte, budget *ikeBudget, single bool) (map[int]bool, int, erro
 		if data[pos] != want || data[pos+1] != 0 {
 			return nil, 0, parsing.Malformed("Invalid IKE proposal chaining or reserved byte")
 		}
-		if int(data[pos+4]) != number {
+		// Go-only divergence (Codex PRO-17, PRO-201): RFC 7296 3.3.1 has the responder's single proposal carry the
+		// number of the initiator's proposal it accepted, so a response may select proposal 2 or later; the Python
+		// reference requires 1. Proposal numbers start at one, so 0 stays malformed.
+		if single && data[pos+4] == 0 {
+			return nil, 0, parsing.Malformed("IKE responder proposal number must be nonzero")
+		}
+		if !single && int(data[pos+4]) != number {
 			return nil, 0, parsing.Malformed("IKE proposal numbers must begin at one and increase")
 		}
 		if data[pos+5] != 1 || data[pos+6] != 0 {

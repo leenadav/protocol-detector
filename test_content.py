@@ -161,6 +161,21 @@ class RollbackTests(unittest.TestCase):
             self.assertEqual(check_content.main(["--update"]), 0)
             write.assert_called_once()
 
+    def test_a_missing_or_malformed_prior_lock_refuses_the_update(self):
+        """C11 (Codex PRO-14): without a readable prior lock there is no evidence that the superseded release's
+        recorded components match what it was published with, so `--update` refuses instead of skipping the check."""
+        recorded = dict(content._RELEASED_COMPONENTS["2026.11.1"])
+        good = {"version": "2026.11.1", "digest": "c4020c2437f3de8d", "components": recorded}
+        failures = [mock.patch.object(content, "read_lock", side_effect=OSError("missing")),
+                    mock.patch.object(content, "read_lock", side_effect=ValueError("not JSON"))]
+        for lock in ([], "2026.11.1", {}, dict(good, version=None), dict(good, digest=7),
+                     {"version": "2026.11.1", "digest": "c4020c2437f3de8d"}, dict(good, components=["risks"])):
+            failures.append(mock.patch.object(content, "read_lock", return_value=lock))
+        for failure in failures:
+            with self.subTest(failure=failure), failure, mock.patch.object(content, "write_lock") as write:
+                self.assertEqual(check_content.main(["--update"]), 1)
+                write.assert_not_called()
+
     def test_select_runs_the_earlier_catalog_and_restores(self):
         self.assertIsNone(application_for_host("pages.github.io"))
         self.assertEqual(application_for_host("api.openai.com"), "openai-platform")

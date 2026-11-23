@@ -1,0 +1,79 @@
+From c2e5e75da941f5158d7ae32af0f79c0813dbe92c Mon Sep 17 00:00:00 2001
+From: Lee Nadav <leenadav1312@gmail.com>
+Date: Sun, 22 Nov 2026 22:46:49 +0000
+Subject: [PATCH] gss: a SPNEGO NegTokenInit must carry mechTypes
+
+Codex PRO-17 (PRO-201), P2 (gss.go negTokenInit): RFC 4178 4.2.1
+defines NegTokenInit as SEQUENCE { mechTypes [0] MechTypeList,
+reqFlags [1] OPTIONAL, mechToken [2] OPTIONAL, mechListMIC [3]
+OPTIONAL }: mechTypes is the one mandatory field. The Go classifier
+treated [0] as optional, so an empty NegTokenInit SEQUENCE, or one with
+only a mechToken, was accepted as spnego-other (or as the carried
+mechanism) although it is not a NegTokenInit, and the documented rule
+"a NegTokenInit names the first listed mechType" had nothing to name.
+
+A NegTokenInit without mechTypes is now malformed. The check runs after
+the field-order check, so a misordered token keeps its existing "Unexpected
+NegTokenInit field order" error. TestClassifyTokenRejects gains "no
+mechTypes" and "mechToken without mechTypes"; both failed before
+("got <nil>") and pass now.
+
+The frozen Python reference accepts the missing field, so this is a
+Go-only divergence. Parity: the committed case stream/ldap-079-init-
+no-fields (whole/bytes/sevens; an LDAP SASL GSS-SPNEGO bind whose token is
+an empty NegTokenInit) now ends malformed ("SPNEGO NegTokenInit requires
+mechTypes") where Python identifies ldap/3, the same outcome an empty
+mechType list already has in both engines.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01UqaXYzSsrxF863s8uhhmNq
+---
+ go/internal/protocols/framed/gss.go       | 9 ++++++++-
+ go/internal/protocols/framed/ldap_test.go | 4 ++++
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/go/internal/protocols/framed/gss.go b/go/internal/protocols/framed/gss.go
+index d8f5ed0..7762029 100644
+--- a/go/internal/protocols/framed/gss.go
++++ b/go/internal/protocols/framed/gss.go
+@@ -438,7 +438,8 @@ func negTokenInit(blob []byte, pos, limit int) (gssToken, error) {
+ 		return gssToken{}, err
+ 	}
+ 	cursor, mechanism, ntlm := 0, "spnego-other", ""
+-	if cursor < len(body) && body[cursor] == 0xa0 {
++	hasMechTypes := cursor < len(body) && body[cursor] == 0xa0
++	if hasMechTypes {
+ 		var mechs []byte
+ 		if mechs, cursor, err = berField(body, cursor, len(body), 0xa0); err != nil {
+ 			return gssToken{}, err
+@@ -491,6 +492,12 @@ func negTokenInit(blob []byte, pos, limit int) (gssToken, error) {
+ 	if cursor != len(body) {
+ 		return gssToken{}, parsing.Malformed("Unexpected NegTokenInit field order")
+ 	}
++	// Go-only divergence (Codex PRO-17, PRO-201): RFC 4178 4.2.1 makes mechTypes [0] the one mandatory NegTokenInit
++	// field (reqFlags, mechToken and mechListMIC are OPTIONAL); the Python reference also accepts it absent. Checked
++	// after the field order so a misordered token keeps its order error.
++	if !hasMechTypes {
++		return gssToken{}, parsing.Malformed("SPNEGO NegTokenInit requires mechTypes")
++	}
+ 	return gssToken{Kind: "spnego-init", Mechanism: mechanism, NTLMMessage: ntlm}, nil
+ }
+ 
+diff --git a/go/internal/protocols/framed/ldap_test.go b/go/internal/protocols/framed/ldap_test.go
+index 7cdcb19..bae8664 100644
+--- a/go/internal/protocols/framed/ldap_test.go
++++ b/go/internal/protocols/framed/ldap_test.go
+@@ -102,6 +102,10 @@ func TestClassifyTokenRejects(t *testing.T) {
+ 		{"ntlm short", []byte("NTLMSSP\x00\x01"), "malformed", "shorter than its signature and type"},
+ 		{"nine mechanisms", spnegoInit(nine, nil), "budget", "mechType list exceeds the inspection limit"},
+ 		{"empty mechanism list", spnegoInit(nil, nil), "malformed", "Empty SPNEGO mechType list"},
++		// RFC 4178 4.2.1: mechTypes [0] is the one NegTokenInit field that is not OPTIONAL.
++		{"no mechTypes", ber(0x60, cat(ber(6, oidSPNEGO), ber(0xa0, ber(0x30, nil)))), "malformed", "NegTokenInit requires mechTypes"},
++		{"mechToken without mechTypes", ber(0x60, cat(ber(6, oidSPNEGO), ber(0xa0, ber(0x30, ber(0xa2, ber(4, ntlmssp(1, 40))))))),
++			"malformed", "NegTokenInit requires mechTypes"},
+ 		{"flags too short", apReq([]byte{0, 0x20, 0, 0}, 1), "malformed", "KerberosFlags BIT STRING"},
+ 		{"flags padding bits set", apReq([]byte{4, 0x20, 0, 0, 0, 0x0f}, 1), "malformed", "KerberosFlags BIT STRING"},
+ 		{"nine name components", apReq(flags, 9), "malformed", "exceeds the name component budget"},
+-- 
+2.43.0
+

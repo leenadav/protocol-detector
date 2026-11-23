@@ -197,10 +197,20 @@ func Run(stdin io.Reader, iface, filter string, duration int, applyLimits bool, 
 	}
 	var process *exec.Cmd
 	var keys *KeyLog
+	// exited is the child's single reaper: once a goroutine owns process.Wait, nothing else reads
+	// ProcessState or calls Wait; reaped records that its status was received.
+	var exited chan error
+	reaped := false
 	defer func() {
-		if process != nil && process.ProcessState == nil {
+		switch {
+		case process != nil && exited == nil:
 			_ = process.Process.Kill()
 			_ = process.Wait()
+		case exited != nil && !reaped:
+			_ = process.Process.Kill()
+			if err := <-exited; err != nil {
+				_ = err // the child was killed; its exit status carries no result
+			}
 		}
 		if keys != nil {
 			keys.Close()
@@ -294,11 +304,12 @@ func Run(stdin io.Reader, iface, filter string, duration int, applyLimits bool, 
 				tick = clock() + 1
 			}
 		}
-		exited := make(chan error, 1)
+		exited = make(chan error, 1)
 		go func() { exited <- process.Wait() }()
 		var status error
 		select {
 		case status = <-exited:
+			reaped = true
 		case <-time.After(3 * time.Second):
 			return fmt.Errorf("tcpdump did not exit")
 		}

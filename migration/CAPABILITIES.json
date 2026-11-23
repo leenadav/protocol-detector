@@ -308,7 +308,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "datagram": 18
+            "datagram": 50
           },
           "classes": {
             "datagram": [
@@ -831,7 +831,7 @@
       "go": {
         "notes": "M5 batch 1: client command grammar incl. AUTH TLS; shared commands stay ambiguous; 50 stream, 4 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "parity-verified",
+        "status": "experimental",
         "evidence": {
           "cases": {
             "stream": 50,
@@ -842,13 +842,14 @@
               "positive"
             ],
             "stream": [
-              "foreign",
               "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [],
+          "shortfall": [
+            "stream cases lack foreign"
+          ],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -973,24 +974,25 @@
       "go": {
         "notes": "M4: HTTP/1 start-line/headers through the text route; 55 stream, 10 session cases matched; continuation option ported (no-body statuses end at the headers, Codex R3)",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "parity-verified",
+        "status": "experimental",
         "evidence": {
           "cases": {
             "stream": 56,
-            "session": 61
+            "session": 62
           },
           "classes": {
             "session": [
               "positive"
             ],
             "stream": [
-              "foreign",
               "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [],
+          "shortfall": [
+            "stream cases lack foreign"
+          ],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -1160,7 +1162,7 @@
       "go": {
         "notes": "M5 batch 1: server greeting/capability lines and tagged client commands incl. STARTTLS; 52 stream, 4 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "parity-verified",
+        "status": "experimental",
         "evidence": {
           "cases": {
             "stream": 52,
@@ -1171,13 +1173,14 @@
               "positive"
             ],
             "stream": [
-              "foreign",
               "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [],
+          "shortfall": [
+            "stream cases lack foreign"
+          ],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -1905,7 +1908,7 @@
       "go": {
         "notes": "M5 batch 1: INFO/CONNECT with the bounded JSON profile (depth, fields, digits, duplicates, constants); 60 stream, 4 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "parity-verified",
+        "status": "experimental",
         "evidence": {
           "cases": {
             "stream": 60,
@@ -1916,13 +1919,14 @@
               "positive"
             ],
             "stream": [
-              "foreign",
               "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [],
+          "shortfall": [
+            "stream cases lack foreign"
+          ],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -2288,7 +2292,7 @@
       "go": {
         "notes": "M5 batch 1: +OK/-ERR greeting and client commands incl. STLS; 48 stream, 4 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "parity-verified",
+        "status": "experimental",
         "evidence": {
           "cases": {
             "stream": 48,
@@ -2299,13 +2303,14 @@
               "positive"
             ],
             "stream": [
-              "foreign",
               "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [],
+          "shortfall": [
+            "stream cases lack foreign"
+          ],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -2832,7 +2837,7 @@
       "go": {
         "notes": "M5 batch 1: start-line and CSeq framing, 6xx rejected; 26 stream, 4 session cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "parity-verified",
+        "status": "experimental",
         "evidence": {
           "cases": {
             "stream": 26,
@@ -2843,13 +2848,14 @@
               "positive"
             ],
             "stream": [
-              "foreign",
               "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [],
+          "shortfall": [
+            "stream cases lack foreign"
+          ],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -2969,7 +2975,7 @@
       "go": {
         "notes": "M5 batch 1: start-line and required header framing (compact names, CSeq/Max-Forwards rules); 34 stream, 4 session cases matched; UDP datagram path added in batch 15 (17 datagram cases)",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "parity-verified",
+        "status": "experimental",
         "evidence": {
           "cases": {
             "stream": 34,
@@ -2987,13 +2993,14 @@
               "positive"
             ],
             "stream": [
-              "foreign",
               "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [],
+          "shortfall": [
+            "stream cases lack foreign"
+          ],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -3122,7 +3129,7 @@
       "go": {
         "notes": "M5 batch 1: EHLO/HELO identity and the STARTTLS watch into the TLS phase; 45 stream cases matched",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "parity-verified",
+        "status": "experimental",
         "evidence": {
           "cases": {
             "stream": 46,
@@ -3133,13 +3140,14 @@
               "positive"
             ],
             "stream": [
-              "foreign",
               "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [],
+          "shortfall": [
+            "stream cases lack foreign"
+          ],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -3350,7 +3358,7 @@
       "go": {
         "notes": "M5 batch 1: identification line and KEXINIT posture classes (kex class, weak algorithms, Terrapin); 44 stream, 0 session cases matched; HASSH (fingerprints option) ported",
         "parity": "migration/parity/compare.py --families (exact, records included)",
-        "status": "parity-verified",
+        "status": "experimental",
         "evidence": {
           "cases": {
             "stream": 45,
@@ -3361,13 +3369,14 @@
               "positive"
             ],
             "stream": [
-              "foreign",
               "mutated",
               "positive",
               "truncated"
             ]
           },
-          "shortfall": [],
+          "shortfall": [
+            "stream cases lack foreign"
+          ],
           "rule": "migration/parity/verify_families.py over make parity-go"
         }
       },
@@ -3747,7 +3756,7 @@
         "evidence": {
           "cases": {
             "stream": 138,
-            "session": 690
+            "session": 732
           },
           "classes": {
             "stream": [

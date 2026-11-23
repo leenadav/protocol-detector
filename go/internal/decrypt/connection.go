@@ -456,8 +456,18 @@ func (c *Connection) Terminal() bool { return c.State == StateComplete || c.Stat
 func (c *Connection) fail(err *Error) {
 	if !c.Terminal() {
 		c.State, c.ReasonCode, c.Reason = StateFailed, err.Code, err.Message
-		c.queued = [2][]record{}
+		c.release()
 	}
+}
+
+// release drops what only a live connection needs once it is terminal: the framers' buffered bytes, the hello
+// buffers, queued records, the client random and the directions' record keys. A terminal connection does no
+// more work (Feed, HasWork, Advance and Finish return first), and Metadata reads only the counters and labels
+// kept here. Reports may keep a closed connection for a long time (Go-only; Codex PRO-13 P2).
+func (c *Connection) release() {
+	c.keys, c.random = nil, nil
+	c.framers, c.hellos = [2]*recordFramer{}, [2]*helloCollector{}
+	c.queued, c.dirs = [2][]record{}, [2]direction{}
 }
 
 // Fail ends the connection with a typed reason the owner established (a gap in the reassembled stream).
@@ -713,6 +723,7 @@ func (c *Connection) finish() *Error {
 		}
 	}
 	c.State = StateComplete
+	c.release()
 	return nil
 }
 
