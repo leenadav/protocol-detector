@@ -68,7 +68,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   alike) is held for a parity decision. Details in `STATUS.md`. Branch `claude/busy-ramanujan-7oczj2`.
 - **PRO-260 (TLS post-quantum hybrid key shares, Go only by Lee's decision, 2026-11-23):** 0x11EB, 0x11EC and
   0x11ED are named groups in `tlsx` (`selected_key_exchange` = `hybrid`); branch `claude/engine-PRO-260-tls-pq-keyshare`,
-  one PR into `main`. Recorded as a Frozen-Python exception; 18 parity cases pinned in `deltas.json` (`go`), and
+  PR #105 into `main`. Recorded as a Frozen-Python exception; 18 parity cases pinned in `deltas.json` (`go`), and
   `migration/parity/pro260.py` models the divergence on the reference for the decrypt and live-decrypt differentials.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 
@@ -134,7 +134,7 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 
 PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentation commit after them.
 
-PRO-260 (against `main` `cb3ac80`): `b1379a4` (Go fix, tests, parity cases, pinned deltas, the model) and the documentation commit after it.
+PRO-260 (against `main` `cb3ac80`, PR #105): `b1379a4` (Go fix, tests, parity cases, pinned deltas, the model), `0de4cff` (the presentation decrypt-backend test under the model) and the documentation commits `5d641ae` and after.
 
 PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it.
 
