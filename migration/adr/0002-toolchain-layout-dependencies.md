@@ -66,6 +66,16 @@ Status: accepted for M2 (2026-11-07).
       `tools/build_go_release.py` refuse any other installed compiler, and the SBOM records go1.27.4.
     - `make go-check-minimum` (CI `go-minimum`) vets and tests on exactly 1.27.0, the `go` line.
     - Both dependencies declare `go 1.26.0`, so neither needs more than the floor.
+- Decision (Lee, PRO-101, 2026-11-21): `pgregory.net/rapid` v1.3.0 (MPL-2.0, released 2026-03-30) is a
+  **test-only** requirement, for the property tests next to the native `testing.F` fuzz targets; its shrinking
+  gives minimal counterexamples, which are checked in as native fuzz seeds (`testdata/fuzz/`).
+  - Only `_test.go` files import it (`go/internal/engine/property_test.go`, `go/detector/property_test.go`), so it
+    is in no binary and in no import graph that `TestDetectionPathImportsOnlyTheStandardLibrary`,
+    `TestDetectorImportsStandardLibraryOnly` or `go-licenses check ./...` (non-test packages) reads.
+  - It has no requirements of its own and declares `go 1.23`, so for an importer such as Culvert it can neither
+    raise the `go` line nor any other module's version; it is vendored like the others (`go/vendor`), so every
+    build and test stays offline.
+  - MPL-2.0 is file-level copyleft: we ship none of its files in a release, and we do not modify them.
     - Verified on 2026-11-22: on 1.27.0, `go vet ./...` exits 0 and `go test ./...` passes 37 of 37 packages;
       the release binaries are byte-identical to those built before the change.
 
