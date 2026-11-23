@@ -368,3 +368,69 @@ func TestServerNameDisagreementWithinAScope(t *testing.T) {
 		t.Fatalf("after the reset: %+v", m)
 	}
 }
+
+// Codex PRO-290 P2 (PRO-291): the first server name of a flow scope lives until the host resets the scope, not
+// while the scope happens to hold an assembler entry. Losing the scope's last entry (LRU eviction by the next
+// connection, idle expiry, or an over-budget merge) used to forget the name, so a later ClientHello naming another
+// server was accepted as the first and the flow's earlier identification was never retracted.
+func TestServerNameOutlivesTheScopesLastEntry(t *testing.T) {
+	hello := load(t, "rfc9001_client_hello.hex")
+	other := append([]byte{}, hello...)
+	copy(other[strings.Index(string(hello), "example.com"):], "example.org")
+	initial := func(id, h []byte) []byte {
+		return testframes.QUICInitial(V1, id, nil, testframes.CryptoFrames(h)[0], 2, nil, 1200)
+	}
+	second := []byte{1, 1, 1, 1}
+	at := func(v float64) *float64 { return &v }
+	for _, c := range []struct {
+		name string
+		lose func(a *Assembler) // removes the scope's only entry, as each path does
+		now  *float64
+	}{
+		{"eviction", func(*Assembler) {}, nil}, // one slot: inserting the second DCID evicts the first
+		{"expiry", func(*Assembler) {}, at(100)},
+		{"exhaustion", func(a *Assembler) {
+			frames := make([]Fragment, MaxFragments+1)
+			for i := range frames {
+				frames[i] = Fragment{Offset: uint64(4096 + 2*i), Data: []byte{0}}
+			}
+			if s, _ := a.Add(dcid, frames, "c>s", V1, nil); s != Exhausted {
+				t.Fatalf("exhaustion setup: %s", s)
+			}
+		}, nil},
+	} {
+		a := NewAssembler(1, 60)
+		if m, err := Validate(initial(dcid, hello), defaults, a, "c>s", at(0)); err != nil || m.Retracts || m.Hostname != "example.com" {
+			t.Fatalf("%s: first ClientHello: %+v %v", c.name, m, err)
+		}
+		c.lose(a)
+		m, err := Validate(initial(second, other), defaults, a, "c>s", c.now)
+		if err != nil || !m.Retracts || m.Hostname != "" {
+			t.Fatalf("%s: a different server name after the scope lost its entry: %+v %v", c.name, m, err)
+		}
+	}
+	// Reset and Clear still forget the name: the host ended the flow.
+	a := NewAssembler(1, 60)
+	Validate(initial(dcid, hello), defaults, a, "c>s", nil)
+	a.Clear()
+	if m, _ := Validate(initial(second, other), defaults, a, "c>s", nil); m.Retracts || m.Hostname != "example.org" {
+		t.Fatalf("after Clear: %+v", m)
+	}
+}
+
+// The per-scope names are bounded by MaxNames, least recently used first, and counted when one is dropped.
+func TestServerNamesAreBounded(t *testing.T) {
+	a := NewAssembler(1, 60)
+	a.MaxNames = 2
+	for i, scope := range []string{"a", "b", "c"} {
+		f := []Fragment{{0, []byte{1}}}
+		a.Add([]byte{byte(i)}, f, scope, V1, nil)
+		a.SameServerName([]byte{byte(i)}, scope, V1, true, scope+".test")
+	}
+	if len(a.names) != 2 || a.NameEvictions != 1 {
+		t.Fatalf("%d names, %d evictions", len(a.names), a.NameEvictions)
+	}
+	if _, kept := a.names["a"]; kept {
+		t.Fatal("the least recently used name was kept")
+	}
+}
