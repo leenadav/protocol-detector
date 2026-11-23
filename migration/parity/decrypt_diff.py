@@ -360,14 +360,17 @@ def reference(capture, keylog):
         return 3, json.dumps({"error_type": "CaptureError", "error": str(error), "code": ""})
 
 
-def shortfall(captures, kinds):
-    """Why a run without a divergence still proved nothing (Codex PRO-20): no capture was compared, or no
-    connection was decrypted (only refusals and unavailable rows)."""
+def shortfall(captures, kinds, applications):
+    """Why a run without a divergence still proved nothing (Codex PRO-20): no capture was compared, no
+    connection was decrypted (only refusals and unavailable rows), or no decrypted connection named its inner
+    application, so the inner classification was never compared (PRO-261, from PR #99)."""
     problems = []
     if captures < 1:
         problems.append("no capture was compared (--count {})".format(captures))
     if kinds.get("decrypted", 0) < 1:
         problems.append("no connection was decrypted")
+    elif not applications:
+        problems.append("no decrypted connection named an inner application")
     return problems
 
 
@@ -403,7 +406,7 @@ def main(argv=None):
                 index, args.seed, done.returncode, status, "differ" if actual != expected else "equal"))
     for line in failures[:10]:
         print("decrypt mismatch:", line)
-    problems = shortfall(args.count, kinds)
+    problems = shortfall(args.count, kinds, applications)
     for line in problems:
         print("decrypt parity FAILED:", line)
     print("decrypt parity: {} captures, {} mismatched (seed {}); rows by status: {}; inner applications: {}".format(
