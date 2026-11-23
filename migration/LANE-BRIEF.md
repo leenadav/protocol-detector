@@ -73,6 +73,9 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   data, and a second complete ClientHello of a flow naming another server invalidates it (Go only, recorded
   divergence approved by Lee on PRO-124; `random_diff.py` accepts it as an approved class). `fe87386` on
   `claude/youthful-lamport-hzlekc` (PR into `main`).
+- **PRO-291 (Codex PRO-290 P2 on SEC-QUIC-3):** the flow's first QUIC server name now outlives the scope's CRYPTO
+  entries (eviction, expiry, exhaustion); only `Reset`/`Clear` forget it, bounded by `MaxNames`. On
+  `claude/engine-PRO-291-quic-sni-retraction`, cut from PR #107's head `d10c007` (PR into that branch).
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 
 ## 3. Where things live (reading order)
@@ -125,6 +128,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PRO-201 decisions: buffer transient capacity (ADR 0001), unkeyed session id, signature names that collide with built-ins, 79 of 88 verified families | Hermes/Lee |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
 | SEC-QUIC-3 (`fe87386`, PR into `main`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
+| PRO-291 (`5b48d91`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
@@ -143,6 +147,8 @@ PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid
 
 SEC-QUIC-3 (PRO-123, against `main` `21dd113`): `fe87386` (fix, tests, the random-differential class) and the
 documentation commit after it.
+
+PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests) and the documentation commit after it.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
