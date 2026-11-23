@@ -24,13 +24,23 @@ func Drive(parser parsing.Parser, data []byte, step int) string {
 	if step <= 0 || step > len(data) {
 		step = len(data)
 	}
+	var cuts []int
+	for pos := step; pos < len(data); pos += step {
+		cuts = append(cuts, pos)
+	}
+	return DriveCuts(parser, data, cuts)
+}
+
+// DriveCuts is Drive with arbitrary chunk boundaries: data is fed in the pieces that cuts delimit (ascending
+// offsets strictly inside data; anything else is ignored), so a property test can require that every split of a
+// stream, not only an even one, gives the rendering of the whole stream.
+func DriveCuts(parser parsing.Parser, data []byte, cuts []int) string {
 	consumed, failure, continuation, continuing, stop := 0, "", "", false, false
-	for pos := 0; pos < len(data) && !stop; pos += step {
-		end := pos + step
-		if end > len(data) {
-			end = len(data)
+	for _, piece := range Pieces(data, cuts) {
+		if stop {
+			break
 		}
-		for rest := data[pos:end]; len(rest) > 0 && !stop; {
+		for rest := piece; len(rest) > 0 && !stop; {
 			n, err := parser.Feed(rest)
 			if n < 0 || n > len(rest) {
 				return fmt.Sprintf("BROKEN: consumed %d of %d", n, len(rest))
@@ -66,6 +76,23 @@ func Drive(parser parsing.Parser, data []byte, step int) string {
 		}
 	}
 	return b.String()
+}
+
+// Pieces splits data at cuts: ascending offsets strictly inside data, each once; an offset that is out of
+// range or not above the previous one is skipped. The pieces join back to data, and none is empty.
+func Pieces(data []byte, cuts []int) [][]byte {
+	out, prev := make([][]byte, 0, len(cuts)+1), 0
+	for _, c := range cuts {
+		if c <= prev || c >= len(data) {
+			continue
+		}
+		out = append(out, data[prev:c])
+		prev = c
+	}
+	if prev < len(data) {
+		out = append(out, data[prev:])
+	}
+	return out
 }
 
 // Streams returns the whole byte stream of every unhinted stream case of the shared fixtures whose label is in

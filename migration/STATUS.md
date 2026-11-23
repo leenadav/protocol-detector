@@ -756,6 +756,52 @@ Run safeguards, each found by an end-to-end `make mutation`:
 With these, a full clean run reproduced the baseline exactly in all nine packages (about 21 minutes on 4 cores).
 The nightly workflow step is a CI/CD-lane change (requested).
 
+## Property, fuzz and chaos tests for every parser (PRO-101, 2026-11-23)
+
+Hermes, PRO-101 (Lee's addition of 2026-11-21: `pgregory.net/rapid` v1.3.0, MPL-2.0, test-only; ADR 0002). Four
+properties, each checked by rapid (shrinking) and by a native `testing.F` target running the same check, so a
+counterexample from either is replayed by `go test` from the target's checked-in corpus (`testdata/fuzz/<target>/`):
+
+| test | what it covers | property |
+|---|---|---|
+| `TestEveryParserIsSplitInvariantAndBounded` / `FuzzEveryParserIsSplitInvariant` (`go/internal/engine/property_test.go`) | all 59 registry parsers (`factories`), one rapid subtest each, half the draws from fixtures that parser identifies (53 of 59 have one) | no panic, no over-consume or stall (`parsertest.DriveCuts`), whole = any split, the same twice, a credited parser within a 512-byte Credit (`parsertest.CheckCredit`) |
+| `TestInspectorIsSplitInvariantAndBounded` / `FuzzInspectorIsSplitInvariant` | the inspector: dispatch, the chosen parser, shifts, the unknown buffer | final observation, terminal flag and boundary equal whole and split; `bytes_inspected` within `MaxBytes`, `bytes_received` exact, retained bytes bounded |
+| `TestDatagramIsDeterministicOnEveryHint` / `FuzzDatagramIsDeterministic` | the datagram inspector on every UDP hint and none | no panic, the same observation twice |
+| `TestFlowIsSplitInvariantAndBounded` / `FuzzFlowIsSplitInvariant` (`go/detector/property_test.go`) | the facade: both directions interleaved, a 24-call feed budget | whole = split while the split fits the feed budget, else `budget_exhausted`/`engine`; the same twice; retained within the flow allowance after every call; closed flows leave nothing retained |
+
+Two fields are compared as the reference defines them, not as split invariant: `bytes_inspected` counts the whole
+chunk in which a parser fails (`engine.py`, inspector.go `continueFeed`), and a parser's consumed count after a
+fault is discarded with the parser (`Inspector.failed`). Both are checked against their budgets instead.
+
+Finding **PRO-101 F1** (P3, metrics only, Python and Go alike): the SMB1 and SMB2 parsers watch one more frame after
+NEGOTIATE. When the next frame's 8-byte header is not an SMB frame, `nextFrame` returns `start` (0 bytes of this
+call), but header bytes that arrived in earlier calls were already reported consumed, so `bytes_inspected` depends
+on the split by up to 7 bytes (byte by byte: 93, whole: 86, for an SMB1 NEGOTIATE followed by a misaligned copy).
+The observation and the boundary are unchanged. The reference has the same code (`protocol_engine/windows.py`
+`_next_frame`, `return start`), so a Go fix is a parity delta waiting for Hermes/Lee; the property relaxes only the
+consumed field for `smb1` and `smb2` (`continuationConsumedVaries`), and the two shrunk seeds
+(`rapid-smb1-watch-header-F1`, `rapid-smb2-watch-header-F1`) fail without that entry.
+
+Chaos tests (`go/detector/chaos_test.go`, after Culvert's standard; every one runs under `go test -race`): an
+admission storm (32 goroutines, 16 slots: never over the limit at any sampled instant, every attempt counted once,
+all slots back), memory exhaustion (4 flow allowances, 16 concurrent admissions: 4 admitted, 12 `ErrMemory`), huge
+headers (a 1 MiB header line, 65,536 small headers, a TLS record length over the profile and a 16 MiB ClientHello
+claim, each whole, in 64 KiB and in 1,500-byte pieces: the pinned budget outcome, within the byte budget and the
+allowance), slowloris (128 flows holding every slot, one byte per call: `budget_exhausted` at call 33 of a 32-call
+budget, no change after, nothing retained, admission refused until they close), and a panic storm (one engine call
+in 7 panics across 16 goroutines: no panic escapes, only the faulting flow is quarantined, `Stats.Panics` equals the
+quarantined flows, the breaker refuses from `PanicLimit` on, a flow admitted before keeps working; with
+`PanicLimit` 0 the breaker never opens).
+
+The four new fuzz targets are in `GO_FUZZ_SMOKE` (per-push `go-fuzz-smoke`, 50 s together); the nightly
+`extended Go fuzz (every fuzz target)` job discovers every `Fuzz*` under `go/` (`tools/go_fuzz_long.py`), so
+`nightly-fuzz.yml` needs no edit to run them. Local runs: the engine properties at 20,000 rapid checks three times, the facade property at 20,000 once, and each
+native target for 45 s (828,913 / 943,876 / 74,577 / 901,280 executions), with no failure other than F1.
+
+Commit `fd46be0` (frozen for Codex). Also fixed there: `TestKexinitNameListLengthIsBoundedBeforeConversion` (`textroute/posture_test.go`) did not compile
+on `main` `b9927b7` (`newKexInit` gained its Credit argument in PRO-201), so `go vet ./...` and the textroute tests
+failed there.
+
 ## Adversarial identification (2026-11-18)
 
 Lee, 2026-11-18: a suite that tries to deceive the detector on purpose, asserting that it either stays honest

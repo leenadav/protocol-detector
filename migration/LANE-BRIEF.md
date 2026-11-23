@@ -23,7 +23,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   decision.
 - **Data:** IPv4 and synthetic only. No captured traffic or key logs, ever (`tools/check_no_keylogs.py`).
 
-## 2. Current state (2026-11-22)
+## 2. Current state (2026-11-23)
 
 - **Branch head:** check `git log -1 origin/claude/go-migration`. On 2026-11-21 (PRO-69) `main` `0ef7349` (41 commits, through PR #39,
   including #39's numeric content-version order) was merged in with a normal merge commit. On 2026-11-22 `main` `2a33183` (PR #66, #36) came
@@ -61,6 +61,11 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **PRO-189 (Codex PRO-12, P2):** an unknown stream finalizes when the byte budget is spent before the unknown buffer
   fills (Go only, recorded divergence), on `claude/fix-unknown-budget` (PR into `main`).
 - **PRO-201 (Codex P2s, windows 2-10):** 23 fix commits `7da811e`..`6b614c0` on `claude/funny-cori-6znbkn`; per-finding table in `STATUS.md`. Six fixes that move parity are held as patches in `migration/held-patches/PRO-201/`.
+- **PRO-101 (property, fuzz and chaos tests):** rapid (`pgregory.net/rapid` v1.3.0, test-only, vendored, ADR 0002)
+  and native fuzz targets over all 59 registry parsers, the inspector, the datagram inspector and the facade
+  (no panic, budgets, split invariance, determinism), plus `go/detector/chaos_test.go` (max flows, memory, huge
+  headers, slowloris, panic storm and breaker). Finding F1 (SMB watch, `bytes_inspected` split-dependent, Python
+  alike) is held for a parity decision. Details in `STATUS.md`. Branch `claude/busy-ramanujan-7oczj2`.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 
 ## 3. Where things live (reading order)
@@ -108,6 +113,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. The branch already contains `main` as of `2c92b17`, so the merge itself has no conflicts. |
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
 | PRO-201 held patches (`migration/held-patches/PRO-201/`: SMB empty buffer, SMB signing-enabled, SPNEGO mechTypes, live reject counter, stale cached row, failed-decryption inner protocol) and the live duplicate-SYN pre-check | an approved parity delta each (Hermes/Lee). Apply with `git apply`, then record the delta |
+| PRO-101 F1: the SMB1/SMB2 watch reports header bytes of a non-SMB next frame as consumed only when they arrive in separate calls (`bytes_inspected` ±7, observation unchanged; Python identical) | Hermes/Lee: an approved parity delta to fix it in Go, or accept it. Until then `continuationConsumedVaries` relaxes only that field for `smb1`/`smb2` |
 | PRO-201 decisions: buffer transient capacity (ADR 0001), unkeyed session id, signature names that collide with built-ins, 79 of 88 verified families | Hermes/Lee |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
@@ -123,6 +129,8 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 `ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9`, `4d8aa29` and `376a204` (PRO-31), each reviewed as its own diff (`376a204` together with `6194fb9`).
 
 PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentation commit after them.
+
+PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
@@ -187,3 +195,8 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
   `go-lint` job does, against `tools/golint/baseline.json`, and gosec runs with `-nosec`, so a comment cannot waive
   a finding. Build the pinned tools from `tools/golint/<tool>` (`go install tool`, under `build/`) and run
   `tools/go_lint.py --bin <dir>` with the pinned Go first on `PATH` (PRO-201: 7 new findings on the first push).
+- **rapid's `*rapid.T` is not a `testing.TB`** (Go 1.27 added `ArtifactDir`). Shared checks take a small
+  `failer` interface (`Helper`, `Fatal`, `Fatalf`). A failing property writes `testdata/rapid/**.fail` (git-ignored);
+  check the shrunk counterexample in as a native seed (`testdata/fuzz/<Target>/`) and confirm it fails without the fix.
+- **`bytes_inspected` is chunk-granular by contract** (the whole chunk in which a parser fails is counted, as in
+  `engine.py`), and a parser's consumed count after a fault is discarded. Compare them against budgets, not across splits.
