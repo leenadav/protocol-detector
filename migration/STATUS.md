@@ -608,6 +608,44 @@ record the divergence):
 | Parity | divergence recorded, 0 case changes | No parity case uses an absolute-form target, and every CONNECT case's Host agrees with its target. All 7,430 still match. |
 | Randomized differential | approved-divergence rule | `random_diff.py` accepts a mismatch as SEC-HTTP-1 only when the request has an absolute-form or CONNECT target and every differing path is host attribution (hostname, evidence, application). Any other difference still fails; the self-test covers acceptance and both rejections. Seed 1: 1,972 matched plus 28 approved, 0 failures. Seeds 2 and 3 at 20,000 each: 265 and 225 approved, 0 failures. |
 
+## Security review finding SEC-QUIC-3 (PRO-47 and PRO-123, 2026-11-23)
+
+**The finding (Security Reviewer, PRO-47).** A decoy client Initial fixed or suppressed a QUIC flow's server name.
+Both engines fed the CRYPTO data of every client Initial to the assembler whatever the datagram's size
+(`go/internal/protocols/quicx/quic.go` `Validate`; Python `protocol_engine/quic.py` `quic()`, whose only size test
+is the byte budget). RFC 9000 section 14.1 has a server discard a client Initial in a UDP datagram under 1200
+bytes, so such a datagram never reaches the server, yet it counted as evidence:
+- a 1000-byte Initial with SNI A on the real connection's DCID, then the real 1200-byte Initial with SNI B: the
+  CRYPTO bytes contradict, the flow is invalidated and the real name is lost;
+- the same decoy on another DCID, first: it is the flow's first identification, and the session tracker keeps the
+  first identification (`go/internal/session/tracker.go` `ProcessUDP`; Python `Analyzer._udp`).
+
+A second case needs no undersized datagram: two complete 1200-byte ClientHellos on two DCIDs of one flow that
+name different servers. The assembler keeps DCIDs apart, so nothing compared them; the flow kept the first name
+(Python: the session record says A while `last_classification` says B).
+
+**The fix (Go only; Lee approved it on PRO-124, 2026-11-23, relayed by Hermes on PRO-123).** The Python reference
+is unchanged and keeps both behaviours.
+- `quicx.MinClientDatagram` = 1200. A long-header Initial whose payload opens with the client Initial keys is a
+  client Initial; in a UDP datagram (the whole payload, so a coalesced datagram counts in full) under 1200 bytes it
+  is `malformed` ("QUIC client Initial datagram below the RFC 9000 section 14.1 minimum of 1200 bytes; a server
+  discards it"), and its CRYPTO data never enters the assembler. A `malformed` datagram is not an identification,
+  so the flow's first identification is still open for the real Initial. A server Initial (it does not open with
+  client keys) and framing-only validation (`QUICDecrypt` off, nothing asserted) are unchanged.
+- `Assembler.SameServerName`: the first complete ClientHello of each flow scope records its server name (or its
+  absence). A later complete ClientHello in that scope, on any DCID, that names another server (or adds or drops
+  the SNI) turns its connection into the sticky conflict marker and returns the retraction the existing C5 path
+  already handles, so the flow is invalidated in the tracker and stays so. The same name on a new DCID (a client's
+  Initial after a Retry) agrees. The name lives while the scope holds an entry: `Reset`, expiry and eviction of the
+  scope's last connection forget it. The cost is one map lookup per complete ClientHello. The empty scope of a bare
+  datagram inspector, which holds unrelated datagrams, is never compared.
+
+| item | state | evidence |
+|---|---|---|
+| Regression tests | `TestUndersizedDecoyInitialDoesNotFixTheServerName`, `TestDisagreeingClientHellosOnOneFlowInvalidateIt` (`go/internal/analyzer`), `TestClientInitialDatagramMinimum`, `TestServerNameDisagreementWithinAScope` (`quicx`) | All four fail on `main` `21dd113`: the decoy on the real DCID gives `invalidated` with no name, a 1199-byte Initial is identified and stored, two names on two DCIDs stay `identified` as A. After the fix: the decoy cases give `identified` `example.com`; 1199 bytes is malformed with 0 assembler entries and 1200 identifies; a 300-byte Initial alone is malformed and coalesced into 1200 bytes opens; A then B is `invalidated` with no name; the same ClientHello on a new DCID stays `identified`; the marker is sticky, scoped and forgotten by `Reset`. |
+| Parity | divergence recorded, 0 case changes | No committed case has an opened client Initial under 1200 bytes or two names on one flow. All 7,430 still match; `deltas.json` needs no entry. |
+| Randomized differential | approved-divergence rule | `random_diff.py` generates a quarter of its QUIC Initials padded to 600 bytes. It accepts a mismatch as SEC-QUIC-3 only for a `quic` datagram under 1200 bytes whose Go answer is `malformed` with exactly the SEC-QUIC-3 reason and whose every differing path is in the observation; anything else still fails, and the self-test covers acceptance and four rejections. The summary line now counts each approved class. Seed 1 (2,000): 1,882 matched, 28 SEC-HTTP-1 and 90 SEC-QUIC-3 approved, 0 failures. Seeds 2 and 3 (20,000 each): 265 + 858 and 225 + 926 approved, 0 failures; the SEC-HTTP-1 counts equal the ones recorded before this change. |
+
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 
 **The finding** (Codex review PRO-12, Tier 1 window 1, `dbe20f3..50ce5c0`; `go/internal/engine/inspector.go`,

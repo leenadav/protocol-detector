@@ -69,6 +69,10 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   `STATUS.md`. Merged into `main` with PR #102 (`cb3ac80`, `merged_by: leenadav`, not by the session). Hermes's
   review follow-up (who merged, the branch reason, gitleaks on `fd46be0` and `3a25bd0`, issue #103) is in `STATUS.md`
   ("PRO-101 review follow-up"), on `claude/dazzling-franklin-1179wl`.
+- **SEC-QUIC-3 (PRO-47, PRO-123):** a client Initial datagram under 1200 bytes is malformed and feeds no CRYPTO
+  data, and a second complete ClientHello of a flow naming another server invalidates it (Go only, recorded
+  divergence approved by Lee on PRO-124; `random_diff.py` accepts it as an approved class). `fe87386` on
+  `claude/youthful-lamport-hzlekc` (PR into `main`).
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 
 ## 3. Where things live (reading order)
@@ -120,6 +124,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PRO-101 nightly evidence | the first scheduled `nightly-fuzz.yml` run on `main` after `cb3ac80` (its `extended Go fuzz (every fuzz target)` job picks up the four new targets); record the run id in `STATUS.md` |
 | PRO-201 decisions: buffer transient capacity (ADR 0001), unkeyed session id, signature names that collide with built-ins, 79 of 88 verified families | Hermes/Lee |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
+| SEC-QUIC-3 (`fe87386`, PR into `main`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
@@ -135,6 +140,9 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentation commit after them.
 
 PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it (`3a25bd0`). The review follow-up (against `main` `cb3ac80`) is one commit on `claude/dazzling-franklin-1179wl`: comments, the issue link and documentation only.
+
+SEC-QUIC-3 (PRO-123, against `main` `21dd113`): `fe87386` (fix, tests, the random-differential class) and the
+documentation commit after it.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
@@ -156,6 +164,12 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **The presentation suite needs the Go binary built first**, or `GoServiceTests` skip. `presentation-check` builds it.
 - **Get numbers from commands, not memory.** Earlier briefs had wrong counts (128 vs 132, 1,055 vs 1,035) and named
   test files that didn't exist.
+- **A fresh container may lack the pinned Go.** If `go version` is not go1.27.4, fetch it once with
+  `GOTOOLCHAIN=go1.27.4 GOPROXY=https://proxy.golang.org go version` (run outside the repository) and put
+  `~/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/bin` first on PATH, with GOROOT set to its parent.
+- **A new Go-only divergence that random inputs reach needs a `random_diff.py` approved class**, as narrow as
+  SEC-HTTP-1's and SEC-QUIC-3's (the case's shape, Go's exact verdict, the paths allowed to differ), with self-test
+  rejections; check that the earlier classes' counts are unchanged.
 - **Don't run govulncheck locally.** CI runs it over the vendored tree.
 - **The safety checker refuses `rm -rf` and heavy heredoc quoting.** Use `mv`, the Edit tool or plain `sed`.
 - **Commits:** author `Lee Nadav`, and keep the email private. End every message with the Co-Authored-By and
