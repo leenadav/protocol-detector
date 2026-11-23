@@ -411,7 +411,9 @@ func TestServerNameOutlivesTheScopesLastEntry(t *testing.T) {
 	}
 	// Reset and Clear still forget the name: the host ended the flow.
 	a := NewAssembler(1, 60)
-	Validate(initial(dcid, hello), defaults, a, "c>s", nil)
+	if _, err := Validate(initial(dcid, hello), defaults, a, "c>s", nil); err != nil {
+		t.Fatal(err)
+	}
 	a.Clear()
 	if m, _ := Validate(initial(second, other), defaults, a, "c>s", nil); m.Retracts || m.Hostname != "example.org" {
 		t.Fatalf("after Clear: %+v", m)
