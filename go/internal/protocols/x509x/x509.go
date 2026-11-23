@@ -88,7 +88,7 @@ func element(data []byte, pos, limit int) (byte, int, int, error) {
 		return 0, 0, 0, fail("Indefinite DER length is not valid in a certificate")
 	default:
 		count := int(first & 0x7f)
-		if count > 4 || pos+count > limit {
+		if count > 4 || count > limit-pos {
 			return 0, 0, 0, fail("DER length encoding invalid")
 		}
 		for _, b := range data[pos : pos+count] {
@@ -99,7 +99,9 @@ func element(data []byte, pos, limit int) (byte, int, int, error) {
 		}
 		pos += count
 	}
-	if pos+length > limit {
+	// Compare by subtraction: pos <= limit here, so limit-pos cannot wrap, while pos+length wraps on 32-bit int
+	// for a four-octet length near 0x7fffffff (SEC-X509-1).
+	if length > limit-pos {
 		return 0, 0, 0, fail("DER element exceeds its container")
 	}
 	return tag, pos, pos + length, nil
