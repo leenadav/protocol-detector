@@ -35,7 +35,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   - The Go engine, the CLI `protodetect` and the dashboard service `protodetect serve`.
   - The launcher starts Go when the binary is installed and Python otherwise (`24e410e`, Lee's decision of
     2026-11-17).
-- **Parity:** 7,430 of 7,430 cases agree. 79 of 88 families are parity-verified since PRO-201 (`098b201`): the verifier no longer credits a replay of the positive message as foreign bytes, so ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh are `experimental` until real foreign cases are added. Server parity: 424 exchanges, 0
+- **Parity:** 7,462 of 7,462 cases agree (18 of them through PRO-260's pinned Go-only deltas). 79 of 88 families are parity-verified since PRO-201 (`098b201`): the verifier no longer credits a replay of the positive message as foreign bytes, so ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh are `experimental` until real foreign cases are added. Server parity: 424 exchanges, 0
   differences. The adversarial suite (4,041 cases) passes.
 - **Content release:** 2026.11.9 (digest `cdaa5993077d101a`), with 544 applications and 442 host entries. Every earlier
   release reproduces the digest it was published with (C11).
@@ -66,6 +66,10 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   (no panic, budgets, split invariance, determinism), plus `go/detector/chaos_test.go` (max flows, memory, huge
   headers, slowloris, panic storm and breaker). Finding F1 (SMB watch, `bytes_inspected` split-dependent, Python
   alike) is held for a parity decision. Details in `STATUS.md`. Branch `claude/busy-ramanujan-7oczj2`.
+- **PRO-260 (TLS post-quantum hybrid key shares, Go only by Lee's decision, 2026-11-23):** 0x11EB, 0x11EC and
+  0x11ED are named groups in `tlsx` (`selected_key_exchange` = `hybrid`); branch `claude/engine-PRO-260-tls-pq-keyshare`,
+  one PR into `main`. Recorded as a Frozen-Python exception; 18 parity cases pinned in `deltas.json` (`go`), and
+  `migration/parity/pro260.py` models the divergence on the reference for the decrypt and live-decrypt differentials.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 
 ## 3. Where things live (reading order)
@@ -129,6 +133,8 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 `ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9`, `4d8aa29` and `376a204` (PRO-31), each reviewed as its own diff (`376a204` together with `6194fb9`).
 
 PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentation commit after them.
+
+PRO-260 (against `main` `cb3ac80`): `b1379a4` (Go fix, tests, parity cases, pinned deltas, the model) and the documentation commit after it.
 
 PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it.
 
@@ -198,5 +204,12 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **rapid's `*rapid.T` is not a `testing.TB`** (Go 1.27 added `ArtifactDir`). Shared checks take a small
   `failer` interface (`Helper`, `Fatal`, `Fatalf`). A failing property writes `testdata/rapid/**.fail` (git-ignored);
   check the shrunk counterexample in as a native seed (`testdata/fuzz/<Target>/`) and confirm it fails without the fix.
+- **An approved Go-only divergence that moves parity is pinned, not exempted (PRO-260).** A plain `deltas.json`
+  path exempts any value, and a list that changes size shows up only as `.length`. Record Go's value as `go`
+  (compare.py, the Go replay test and verify_families.py then require exactly it), and model the change on the
+  reference in process for the capture differentials (`migration/parity/pro260.py`), never by editing it.
+- **A fresh container clone is shallow and has only Go 1.24.** `make workflow-policy` fails ("history baseline …
+  not an ancestor") until `git fetch --unshallow origin`. Get the pinned Go with `GOTOOLCHAIN=go1.27.4 go version`
+  once, then put `~/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/bin` first on `PATH` (with `GOROOT`).
 - **`bytes_inspected` is chunk-granular by contract** (the whole chunk in which a parser fails is counted, as in
   `engine.py`), and a parser's consumed count after a fault is discarded. Compare them against budgets, not across splits.
