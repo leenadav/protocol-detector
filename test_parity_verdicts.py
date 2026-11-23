@@ -109,6 +109,19 @@ class ServerNormalizerTests(unittest.TestCase):
         self.assertFalse(self.same(telemetry(), changed))
         self.assertFalse(self.same({"histograms": {"a": {"count": 1}}}, {"histograms": {"a": {"count": 2}}}))
 
+    def test_a_null_in_place_of_a_measurement_is_compared(self):
+        """PRO-261 (from PR #99, Codex PRO-21): only a measured number becomes a marker. A null where the other side
+        has a number (a missing minimum, a bucket without a count) is a structural difference, not a timing."""
+        changed = telemetry()
+        changed["telemetry"]["histograms"]["session_lifetime_seconds"]["min"] = None
+        self.assertFalse(self.same(telemetry(), changed))
+        changed = telemetry()
+        buckets = changed["telemetry"]["histograms"]["session_lifetime_seconds"]["buckets"]
+        buckets[0] = [buckets[0][0], None]
+        self.assertFalse(self.same(telemetry(), changed))
+        changed = telemetry(extra={"histograms": {"stage_seconds.tick": {"count": None, "sum": 0.5}}})
+        self.assertFalse(self.same(telemetry(extra={"histograms": {"stage_seconds.tick": {"count": 5, "sum": 0.5}}}), changed))
+
 
 class FakeService:
     name = "fake"
