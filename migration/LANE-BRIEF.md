@@ -148,7 +148,7 @@ PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid
 SEC-QUIC-3 (PRO-123, against `main` `21dd113`): `fe87386` (fix, tests, the random-differential class) and the
 documentation commit after it.
 
-PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests) and the documentation commit after it.
+PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the documentation commit after it, and the errcheck fix in the test after that.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
