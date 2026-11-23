@@ -65,7 +65,10 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   and native fuzz targets over all 59 registry parsers, the inspector, the datagram inspector and the facade
   (no panic, budgets, split invariance, determinism), plus `go/detector/chaos_test.go` (max flows, memory, huge
   headers, slowloris, panic storm and breaker). Finding F1 (SMB watch, `bytes_inspected` split-dependent, Python
-  alike) is held for a parity decision. Details in `STATUS.md`. Branch `claude/busy-ramanujan-7oczj2`.
+  alike) is held for a parity decision ([#103](https://github.com/leenadav/protocol-detector/issues/103)). Details in
+  `STATUS.md`. Merged into `main` with PR #102 (`cb3ac80`, `merged_by: leenadav`, not by the session). Hermes's
+  review follow-up (who merged, the branch reason, gitleaks on `fd46be0` and `3a25bd0`, issue #103) is in `STATUS.md`
+  ("PRO-101 review follow-up"), on `claude/dazzling-franklin-1179wl`.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 
 ## 3. Where things live (reading order)
@@ -113,7 +116,8 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. The branch already contains `main` as of `2c92b17`, so the merge itself has no conflicts. |
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
 | PRO-201 held patches (`migration/held-patches/PRO-201/`: SMB empty buffer, SMB signing-enabled, SPNEGO mechTypes, live reject counter, stale cached row, failed-decryption inner protocol) and the live duplicate-SYN pre-check | an approved parity delta each (Hermes/Lee). Apply with `git apply`, then record the delta |
-| PRO-101 F1: the SMB1/SMB2 watch reports header bytes of a non-SMB next frame as consumed only when they arrive in separate calls (`bytes_inspected` ±7, observation unchanged; Python identical) | Hermes/Lee: an approved parity delta to fix it in Go, or accept it. Until then `continuationConsumedVaries` relaxes only that field for `smb1`/`smb2` |
+| PRO-101 F1 ([#103](https://github.com/leenadav/protocol-detector/issues/103)): the SMB1/SMB2 watch reports header bytes of a non-SMB next frame as consumed only when they arrive in separate calls (`bytes_inspected` ±7, observation unchanged; Python identical) | Lee: an approved parity delta to fix it in Go, or accept it. Until then `continuationConsumedVaries` relaxes only that field for `smb1`/`smb2` |
+| PRO-101 nightly evidence | the first scheduled `nightly-fuzz.yml` run on `main` after `cb3ac80` (its `extended Go fuzz (every fuzz target)` job picks up the four new targets); record the run id in `STATUS.md` |
 | PRO-201 decisions: buffer transient capacity (ADR 0001), unkeyed session id, signature names that collide with built-ins, 79 of 88 verified families | Hermes/Lee |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
@@ -130,7 +134,7 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 
 PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentation commit after them.
 
-PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it.
+PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it (`3a25bd0`). The review follow-up (against `main` `cb3ac80`) is one commit on `claude/dazzling-franklin-1179wl`: comments, the issue link and documentation only.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
@@ -176,6 +180,11 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
   tunnel, a continuation) must count its depth: one CONNECT per request nested without limit and cost O(n³).
 - **Per-packet work must not scan a whole store (SEC-QUIC-1).** Index by what the hot path looks up (idle heap,
   scope index), and prove the new structure against the old implementation kept as a test oracle, with a mutation check.
+- **The session picks the branch, not you (PRO-101).** A cloud session may push only to the one branch its harness
+  assigns, for example `claude/busy-ramanujan-7oczj2`. If that is not `claude/engine-PRO-n-<slug>`, use it anyway and
+  say why in the PR and in `STATUS.md`. Never push to another branch to get the name right.
+- **"merged_by: leenadav" doesn't say who clicked.** The agents share Lee's GitHub identity. To show that a session
+  did not merge, check its transcript (`list_events`) for a merge call and compare its turn times with `merged_at`.
 - **Go versions (PRO-107):** `go/go.mod` states `go 1.27.0` (the floor Culvert imports at, gated by
   `make go-check-minimum`) and `toolchain go1.27.4` (the compiler every build and release uses). Never raise the
   `go` line for a build need; bump the `toolchain` line instead. "Standard library only" is checked on the import

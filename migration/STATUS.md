@@ -780,7 +780,9 @@ on the split by up to 7 bytes (byte by byte: 93, whole: 86, for an SMB1 NEGOTIAT
 The observation and the boundary are unchanged. The reference has the same code (`protocol_engine/windows.py`
 `_next_frame`, `return start`), so a Go fix is a parity delta waiting for Hermes/Lee; the property relaxes only the
 consumed field for `smb1` and `smb2` (`continuationConsumedVaries`), and the two shrunk seeds
-(`rapid-smb1-watch-header-F1`, `rapid-smb2-watch-header-F1`) fail without that entry.
+(`rapid-smb1-watch-header-F1`, `rapid-smb2-watch-header-F1`) fail without that entry. Tracking issue:
+[#103](https://github.com/leenadav/protocol-detector/issues/103) (opened on Hermes's request, PRO-101 review); the
+decision, to accept it as reference behaviour or fix it in Go with a parity delta, is Lee's.
 
 Chaos tests (`go/detector/chaos_test.go`, after Culvert's standard; every one runs under `go test -race`): an
 admission storm (32 goroutines, 16 slots: never over the limit at any sampled instant, every attempt counted once,
@@ -801,6 +803,35 @@ native target for 45 s (828,913 / 943,876 / 74,577 / 901,280 executions), with n
 Commit `fd46be0` (frozen for Codex). Also fixed there: `TestKexinitNameListLengthIsBoundedBeforeConversion` (`textroute/posture_test.go`) did not compile
 on `main` `b9927b7` (`newKexInit` gained its Credit argument in PRO-201), so `go vet ./...` and the textroute tests
 failed there.
+
+### PRO-101 review follow-up (Hermes CHANGES, 2026-11-23)
+
+- **Who merged PR #102.** GitHub records `merged_by: leenadav` at 13:25:46 UTC (merge `cb3ac80`). The cloud session
+  that opened it (`session_01UqaXYzkPpYhwBgjiMuapJt`) did not merge it. Its transcript shows no merge call: its tool
+  calls were PR reads, Bash, `ReadNotifications` and `delete_trigger`. Its last turn before the merge ended at
+  13:13:19, and it woke at 13:25:58 only to read the merge notification and check that `3a25bd0` was on `main`.
+  The click came from Lee's account, outside that session. No agent merges again without Lee's approval.
+- **Why that branch and that base.** The PR went to `main` because PR #40 had already merged `claude/go-migration` into
+  `main` (2026-11-22), and since 2026-11-23 Hermes's rule keeps that branch as frozen history ("never push to it").
+  The branch was `claude/busy-ramanujan-7oczj2`, not `claude/engine-PRO-101-<slug>`, because the cloud session's
+  harness assigns each session exactly one development branch and refuses pushes to any other branch without
+  explicit permission. An agent cannot choose the name. This follow-up is under the same constraint
+  (`claude/dazzling-franklin-1179wl`). A `claude/engine-PRO-n-<slug>` name needs the bridge to create the session with
+  that branch (its `outcome_branch`).
+- **Secret scan.** Pinned gitleaks 8.30.1 (`tools/scanners/go.mod` and `go.sum`, built read-only on go1.27.4, run as
+  in `ci.yml`: `git --ignore-gitleaks-allow --redact`):
+  `b9927b7..fd46be0`: 1 commit, about 192,455 bytes (the vendored rapid included), 0 findings.
+  `fd46be0..3a25bd0`: 1 commit, about 7,411 bytes, 0 findings. Both together: 2 commits, about 199,866 bytes,
+  0 findings, exit 0. Full history as CI scans it (unshallow clone, `HEAD`
+  = `cb3ac80`): 653 commits, about 51.5 MB, 0 findings, exit 0; `tools/check_gitleaks_allowlist.py --bin` with that
+  binary passes.
+- **The relaxed fields.** F1 is tracked in [#103](https://github.com/leenadav/protocol-detector/issues/103), linked
+  from `continuationConsumedVaries` and the LANE-BRIEF. The other relaxation, `bytes_inspected` not compared across
+  splits in `inspectorOutcome`, is the reference contract (`engine.py` counts the whole chunk in which a parser
+  fails), not a finding. The issue names both, and it stays checked against `MaxBytes`.
+- **Nightly fuzz.** `nightly-fuzz.yml` was not run for PRO-101. Its `extended Go fuzz (every fuzz target)` job finds
+  the new targets through `tools/go_fuzz_long.py`. Its first scheduled run on `main` after `cb3ac80` is the evidence
+  to record here.
 
 ## Adversarial identification (2026-11-18)
 
