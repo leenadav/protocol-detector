@@ -1027,6 +1027,18 @@ def tls_cases():
         ("hrr-no-change", _tls_record(_server_hello(((43, b"\x03\x04"),), cipher=0x1301, random_value=RETRY))),
         ("server-compression", _tls_record(_server_hello(compression=1))),
         ("server-legacy-version", _tls_record(_server_hello(version=b"\x03\x01"))),
+        # PRO-260 (Lee, 2026-11-23): post-quantum hybrid key shares (IANA TLS Supported Groups 0x11EB..0x11ED), Go
+        # only. The frozen reference keeps them outside its profile, so the server cases differ by design; the
+        # differing paths are listed in migration/parity/deltas.json. Appended so earlier case ids stay stable.
+        ("server13-hybrid-x25519mlkem768", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xec\x04\x60" + bytes(1120))), cipher=0x1301))),
+        ("server13-hybrid-p256mlkem768", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xeb\x04\x81\x04" + bytes(1152))), cipher=0x1302))),
+        ("server13-hybrid-p384mlkem1024", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xed\x06\x81\x04" + bytes(1664))), cipher=0x1302))),
+        ("server13-hybrid-short", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xec\x04\x5f" + bytes(1119))), cipher=0x1301))),
+        ("server13-hybrid-bad-point", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xeb\x04\x81\x02" + bytes(1152))), cipher=0x1301))),
+        ("server13-kyber-draft-group", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x63\x99\x04\x60" + bytes(1120))), cipher=0x1301))),
+        ("hrr-hybrid-group", _tls_record(_server_hello(((43, b"\x03\x04"), (51, b"\x11\xec")), cipher=0x1301, random_value=RETRY))),
+        ("client-hybrid-offer", client_hello_with([(0, b"\x00\x12\x00\x00\x0fwww.example.com"), (10, b"\x00\x06\x11\xec\x00\x1d\x00\x17"),
+                                                   (43, b"\x04\x03\x04\x03\x03"), (51, b"\x04\xe8\x11\xec\x04\xc0" + bytes(1216) + b"\x00\x1d\x00\x20" + bytes(32))])),
     ]
     cases = []
     for number, (name, data) in enumerate(hellos):

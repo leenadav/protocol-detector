@@ -115,6 +115,17 @@ def reference(operations):
     return "".join(line + "\n" for line in lines), 1 if error else 0
 
 
+def approved_divergence(operations, status, actual):
+    """PRO-260 (Lee, 2026-11-23): Go names the post-quantum hybrid ServerHello groups the frozen reference reports
+    as unknown. A run that differs from the reference is approved only when its exit status and every normalized
+    event line equal the reference's under that one change (migration/parity/pro260.py)."""
+    import live_diff
+    import pro260
+    with pro260.with_hybrid_groups():
+        expected, model_status = reference(operations)
+    return model_status == status and live_diff.normalized(expected, True) == actual
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
@@ -130,7 +141,7 @@ def main(argv=None):
               "(python3 -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt)")
         return 1
     rng = random.Random(args.seed * 7919 + 1)
-    failures, events, kinds = [], 0, {}
+    failures, events, kinds, approved = [], 0, {}, 0
     for index in range(args.count):
         operations = script_for(rng, generator)
         expected, status = reference(operations)
@@ -150,7 +161,9 @@ def main(argv=None):
                 label = "error/" + event["code"]
             kinds[label] = kinds.get(label, 0) + 1
         a, b = live_diff.normalized(actual, True), live_diff.normalized(expected, True)
-        if done.returncode != status:
+        if (done.returncode != status or a != b) and approved_divergence(operations, done.returncode, a):
+            approved += 1
+        elif done.returncode != status:
             failures.append("script {} (seed {}): exit status {} (expected {})".format(index, args.seed, done.returncode, status))
         elif a != b:
             x, y = a.splitlines(), b.splitlines()
@@ -158,8 +171,8 @@ def main(argv=None):
             failures.append("script {} (seed {}): event {} differs ({} lines, expected {})".format(index, args.seed, at, len(x), len(y)))
     for line in failures[:10]:
         print("live decrypt mismatch:", line)
-    print("live decrypt parity: {} scripts, {} event lines, {} mismatched (seed {}); events: {}".format(
-        args.count, events, len(failures), args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
+    print("live decrypt parity: {} scripts, {} event lines, {} mismatched, {} approved divergences (PRO-260) (seed {}); events: {}".format(
+        args.count, events, len(failures), approved, args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
     return 1 if failures else 0
 
 

@@ -88,6 +88,25 @@ class VerifyFamiliesTests(unittest.TestCase):
         self.assertEqual(statuses["dgram"], "experimental")
         self.assertIn("datagram cases lack mutated", computed["dgram"]["shortfall"])
 
+    def test_a_pinned_go_only_divergence_is_counted_but_earns_no_credit(self):
+        """PRO-260: a case whose deltas all pin Go's value keeps the family verified when the other cases prove
+        every class; the case itself proves nothing, and an unpinned delta still disqualifies."""
+        cases = full_cases()
+        extra = case("stream", "demo", "whole")
+        extra["id"] = "stream/1-demo/whole"
+        cases["cases"].append(extra)
+        pinned = {extra["id"]: [{"path": "$.final", "justification": "x", "go": {}}]}
+        statuses, computed = self.statuses(cases, report(cases), deltas=pinned)
+        self.assertEqual(statuses["demo"], "parity-verified")
+        self.assertEqual(computed["demo"]["approved_divergences"], 1)
+        mixed = {extra["id"]: pinned[extra["id"]] + [{"path": "$.metrics", "justification": "x"}]}
+        self.assertEqual(self.statuses(cases, report(cases), deltas=mixed)[0]["demo"], "experimental")
+        # The only foreign-bytes case pinned: the class is no longer proven.
+        foreign = next(c["id"] for c in cases["cases"] if c["id"].endswith("demo/zeros"))
+        statuses, computed = self.statuses(cases, report(cases), deltas={foreign: pinned[extra["id"]]})
+        self.assertEqual(statuses["demo"], "experimental")
+        self.assertIn("stream cases lack foreign", computed["demo"]["shortfall"])
+
     def test_a_replay_of_the_positive_message_is_not_foreign_bytes(self):
         """Codex PRO-20 P2: a bytewise or 7-byte replay of the positive message, or a case named after foreign
         bytes whose payload is the family's own positive message, is not evidence of foreign input."""

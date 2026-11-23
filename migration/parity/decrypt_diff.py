@@ -360,6 +360,18 @@ def reference(capture, keylog):
         return 3, json.dumps({"error_type": "CaptureError", "error": str(error), "code": ""})
 
 
+def approved_divergence(capture, keylog, status, actual):
+    """PRO-260 (Lee, 2026-11-23; migration/STATUS.md "Frozen-Python exceptions"): Go recognises a ServerHello whose
+    key_share selects a post-quantum hybrid group, which the frozen reference reports as unknown; the OpenSSL-made
+    exchanges negotiate X25519MLKEM768 by default (OpenSSL 3.5 and later). A report that differs from the
+    reference is approved only when it equals, byte for byte, the reference's report under that one change
+    (migration/parity/pro260.py)."""
+    import pro260
+    with pro260.with_hybrid_groups():
+        model_status, model = reference(capture, keylog)
+    return model_status == status and model == actual
+
+
 def shortfall(captures, kinds):
     """Why a run without a divergence still proved nothing (Codex PRO-20): no capture was compared, or no
     connection was decrypted (only refusals and unavailable rows)."""
@@ -383,7 +395,7 @@ def main(argv=None):
         print("decrypt parity FAILED: the reference needs the `cryptography` package "
               "(python3 -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt)")
         return 1
-    failures, kinds, applications = [], {}, set()
+    failures, kinds, applications, approved = [], {}, set(), 0
     for index in range(args.count):
         capture, keylog = generator.capture()
         status, expected = reference(capture, keylog)
@@ -398,7 +410,9 @@ def main(argv=None):
                 applications.add(row["application"])
         if "error" in result:
             kinds["refused"] = kinds.get("refused", 0) + 1
-        if done.returncode != status or actual != expected:
+        if actual != expected and approved_divergence(capture, keylog, done.returncode, actual):
+            approved += 1
+        elif done.returncode != status or actual != expected:
             failures.append("case {} (seed {}): exit status {} (expected {}); reports {}".format(
                 index, args.seed, done.returncode, status, "differ" if actual != expected else "equal"))
     for line in failures[:10]:
@@ -406,8 +420,8 @@ def main(argv=None):
     problems = shortfall(args.count, kinds)
     for line in problems:
         print("decrypt parity FAILED:", line)
-    print("decrypt parity: {} captures, {} mismatched (seed {}); rows by status: {}; inner applications: {}".format(
-        args.count, len(failures), args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds)),
+    print("decrypt parity: {} captures, {} mismatched, {} approved divergences (PRO-260) (seed {}); rows by status: {}; inner applications: {}".format(
+        args.count, len(failures), approved, args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds)),
         ", ".join(sorted(applications)) or "none"))
     return 1 if failures or problems else 0
 

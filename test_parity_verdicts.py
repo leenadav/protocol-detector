@@ -31,6 +31,23 @@ class DecryptVerdictTests(unittest.TestCase):
         self.assertTrue(decrypt_diff.shortfall(0, {}))
         self.assertTrue(decrypt_diff.shortfall(4, {"refused": 4, "unavailable/gap": 2}))
 
+    def test_pro_260_approves_only_the_reference_under_the_hybrid_model(self):
+        """PRO-260: a decrypt report that differs from the reference is approved only when it equals the
+        reference's report under migration/parity/pro260.py; the model is restored afterwards."""
+        from unittest import mock
+        import pro260
+        from protocol_engine import tls_server
+        original = tls_server.parse_server_hello
+
+        def fake_reference(capture, keylog):
+            return 0, "model" if hasattr(tls_server.parse_server_hello, "pro260") else "reference"
+        with mock.patch.object(decrypt_diff, "reference", fake_reference):
+            self.assertTrue(decrypt_diff.approved_divergence(b"", "", 0, "model"))
+            self.assertFalse(decrypt_diff.approved_divergence(b"", "", 0, "other"))
+            self.assertFalse(decrypt_diff.approved_divergence(b"", "", 1, "model"))     # the exit status too
+        self.assertIs(tls_server.parse_server_hello, original)
+        self.assertEqual(pro260.self_test(), 0)
+
 
 def completed(returncode, lines, stderr=b""):
     import subprocess

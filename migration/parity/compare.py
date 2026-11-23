@@ -10,7 +10,11 @@ A results file has the same shape as the cases' `expected` entries keyed by case
 be normalized away: statuses, protocols, applications, hostnames, reason sentences, evidence (field, value,
 source, strength) in order, event kinds and ordering, revisions, metrics, session records (minus the
 content digest) and per-packet messages. Approved semantic deltas (migration/parity/deltas.json) may exempt
-one named path of one named case, each with a justification; nothing else is tolerated.
+one named path of one named case, each with a justification; nothing else is tolerated. A delta that also
+records `go` is an approved Go-only divergence (PRO-260): a results file from the Go backend must have exactly
+that value at that path, and every difference at or under the path is then exempt. Any other Go value fails,
+the reference's own answer included, so the comparison expects the difference instead of merely tolerating it.
+Other backends (the in-process Python reference) are judged against the expectation alone.
 
 A backend may answer a case with {"unsupported": "<reason>"} instead of a result. Such a case is counted
 as unsupported, never as matched, and it is accepted only when migration/parity/gaps.json lists that case id
@@ -31,6 +35,7 @@ becomes an unsupported answer with a plausible reason).
 """
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -106,6 +111,36 @@ def strip_ignored(value, ignored):
     return {k: v for k, v in value.items() if k not in names}
 
 
+def value_at(document, path):
+    """The value at a diff path ($.name, [index]) of a document, or the marker "<absent>"."""
+    node = document
+    for name, index in re.findall(r"\.([A-Za-z0-9_]+)|\[(\d+)\]", path[1:]):
+        if name and isinstance(node, dict) and name in node:
+            node = node[name]
+        elif index and isinstance(node, list) and int(index) < len(node):
+            node = node[int(index)]
+        else:
+            return "<absent>"
+    return node
+
+
+def under(path, prefix):
+    return path == prefix or path.startswith(prefix + ".") or path.startswith(prefix + "[")
+
+
+def exempted(differences, items, actual, backend):
+    """The differences a case's deltas leave: an exact path, or, for the Go backend, a pinned subtree whose value
+    must be `go`; a pinned path with another Go value is reported as a difference of its own."""
+    exact = {item["path"] for item in items if "go" not in item}
+    pinned = [item for item in items if "go" in item] if backend == "go" else []
+    kept = [d for d in differences if d[0] not in exact and not any(under(d[0], item["path"]) for item in pinned)]
+    for item in pinned:
+        got = value_at(actual, item["path"])
+        if got != item["go"]:
+            kept.append((item["path"], item["go"], got))
+    return kept
+
+
 def compare(cases_doc, results_doc, deltas=None, families=(), ignored=(), gaps=None):
     """Exact comparison. `gaps` is the allowlist of unsupported answers ({case id: reason}); None means none is allowed."""
     deltas = deltas or {}
@@ -131,9 +166,9 @@ def compare(cases_doc, results_doc, deltas=None, families=(), ignored=(), gaps=N
         if cid in gaps:
             report["stale_gaps"].append({"id": cid, "listed": gaps[cid], "why": "the backend answers this case"})
         report["compared"] += 1
-        differences = diff(strip_ignored(case["expected"], ignored), strip_ignored(canonicalize_result(result), ignored))
-        allowed = {item["path"] for item in deltas.get(cid, [])}
-        kept = [d for d in differences if d[0] not in allowed]
+        actual = strip_ignored(canonicalize_result(result), ignored)
+        differences = diff(strip_ignored(case["expected"], ignored), actual)
+        kept = exempted(differences, deltas.get(cid, []), actual, results_doc.get("backend"))
         report["exempted"] += len(differences) - len(kept)
         if kept:
             report["mismatched"].append({"id": cid, "kind": case["kind"], "label": case.get("label"),

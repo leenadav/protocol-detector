@@ -124,6 +124,8 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 		t.Fatal(err)
 	}
 	gaps := loadGaps(t)
+	pinned := loadPinned(t)
+	seenPinned := map[string]bool{}
 	seenGaps := map[string]bool{}
 	counts := map[string]int{}
 	var failures []string
@@ -148,6 +150,14 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 		var want, got interface{}
 		json.Unmarshal(c.Expected, &want)
 		json.Unmarshal(raw, &got)
+		if items, ok := pinned[c.ID]; ok {
+			// An approved Go-only divergence (deltas.json `go`): the Go value is the expectation at that path.
+			seenPinned[c.ID] = true
+			if want, err = expectPinned(want, items); err != nil {
+				failures = append(failures, c.ID+": "+err.Error())
+				continue
+			}
+		}
 		if c.Kind == "session" {
 			canonicalizeRecords(got)
 		}
@@ -157,6 +167,11 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 			continue
 		}
 		counts["matched/"+c.Kind]++
+	}
+	for id := range pinned {
+		if !seenPinned[id] {
+			failures = append(failures, id+": pinned deltas.json entry for a case that does not exist")
+		}
 	}
 	for id := range gaps {
 		if !seenGaps[id] {
