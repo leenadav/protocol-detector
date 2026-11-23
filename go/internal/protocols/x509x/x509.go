@@ -91,15 +91,22 @@ func element(data []byte, pos, limit int) (byte, int, int, error) {
 		if count > 4 || pos+count > limit {
 			return 0, 0, 0, fail("DER length encoding invalid")
 		}
+		var long uint64 // four octets do not fit a 32-bit int: accumulate wide, as Python's int.from_bytes does
 		for _, b := range data[pos : pos+count] {
-			length = length<<8 | int(b)
+			long = long<<8 | uint64(b)
 		}
-		if length < 0x80 || data[pos] == 0 {
+		if long < 0x80 || data[pos] == 0 {
 			return 0, 0, 0, fail("DER length is not minimally encoded")
 		}
 		pos += count
+		if long > uint64(limit-pos) {
+			return 0, 0, 0, fail("DER element exceeds its container")
+		}
+		length = int(long)
 	}
-	if pos+length > limit {
+	// length > limit-pos, not pos+length > limit: on a 32-bit int a four-octet length plus pos wraps negative and
+	// would pass the check (SEC-X509-1). pos <= limit holds here, so limit-pos cannot overflow.
+	if length > limit-pos {
 		return 0, 0, 0, fail("DER element exceeds its container")
 	}
 	return tag, pos, pos + length, nil

@@ -25,6 +25,11 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 
 ## 2. Current state (2026-11-21)
 
+- **PRO-68 (2026-11-23), SEC-X509-1 fixed** on `claude/engine-PRO-68-x509-length-wrap` (PR against `main`): the DER long-form
+  length in `x509x.element` is read into a `uint64` and checked as `length > limit-pos`, so a four-octet length
+  (`30 84 7f ff ff ff`) can no longer wrap a 32-bit `int` past the container check and panic `name()`. Regression
+  tests in `x509x/length_test.go`; `make go-check-386` runs `x509x` and `tlsx` with `GOARCH=386` (part of `go-check`).
+
 - **Branch head:** check `git log -1 origin/claude/go-migration`. On 2026-11-21 (PRO-69) `main` `0ef7349` (41 commits, through PR #39,
   including #39's numeric content-version order) was merged in with a normal merge commit. On 2026-11-22 `main` `2a33183` (PR #66, #36) came
   in as `f5353c5`; PR #55 (per-target module sets in the release build, `07cda53`) was merged in (`b1d69d5`, Lee's
@@ -96,6 +101,8 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 
 | Item | Waits on |
 |---|---|
+| PRO-68 SEC-X509-1 fix (PR from `claude/engine-PRO-68-x509-length-wrap`) | Hermes's review, Codex's PR review, then Lee's merge. Wiring `make go-check-386` into a CI job is the CI/CD lane's (asked). |
+| PM-9 32-bit builds (the module does not compile for 386) | Lee, only if a 32-bit target is ever wanted. |
 | PRO-31 (`6194fb9`, `4d8aa29`, `376a204`) | Engine work done; Hermes approved it, and PRO-31 is parked. Codex's code review is PRO-58 (under PRO-11), waiting for Codex's quota to come back. If it finds problems, Hermes reopens PRO-31 or opens a new Engine task; if not, PRO-31 closes. |
 | PR #39 `claude/fix-content-version-order` → `main` (`37b3c84`) | merged by Lee on 2026-11-21 (`0ef7349`). It is in this branch since the PRO-69 merge. |
 | Draft PR #40 `claude/go-migration` → `main` | Codex's review, then Lee's decision. Keep it draft. PRO-69 merged `main` in (9 conflicts, resolved per `MERGE-READINESS.md`). The CI fix it brought (`91113bc`, the Go build before the tests and presentation suites) lets `GoServiceTests` run instead of skip. | The secret scan's `296227b` findings (PRO-126's first push, hex case data) are allow-listed by PR #71, merged into this branch with `b2e36d4`.
@@ -119,9 +126,15 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 `aaa5a7e`, `93cbf2a` (with `36e2c5e`), `76e467a`, `d65d21a`, `07b216e`, `6ab434d`, `7dcabb7`, `b6ed149`, `c08773f`,
 `ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9`, `4d8aa29` and `376a204` (PRO-31), each reviewed as its own diff (`376a204` together with `6194fb9`).
 
+PRO-68 (SEC-X509-1): the fix commit on `claude/engine-PRO-68-x509-length-wrap`, reviewed as its own diff against `main`.
+
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
 ## 7. Pitfalls learned
+
+- **Length checks are written `length > limit-pos`, never `pos+length > limit` (SEC-X509-1).** A length read from
+  four octets does not fit a 32-bit `int`; accumulate it in `uint64` and compare against the space left. Test with
+  `make go-check-386` (`GOARCH=386`); `go test -race` on amd64 cannot see the wrap.
 
 - **A fresh container is a clone of `main`.** Run `git fetch origin claude/go-migration` and check out the branch
   before deciding that any SHA is "missing".

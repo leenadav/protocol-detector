@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -246,8 +246,15 @@ GO_FUZZ_SMOKE := \
 go-check:
 	$(MAKE) go-check-static
 	$(MAKE) go-check-race
+	$(MAKE) go-check-386
 	$(MAKE) go-check-fuzz
 	$(MAKE) go-check-parity
+
+# SEC-X509-1 (PRO-68): DER length arithmetic must hold on a 32-bit int. Only these packages build for GOARCH=386 today
+# (constants elsewhere overflow a 32-bit int; POST-MERGE-BACKLOG PM-9), so the 32-bit run is scoped to them.
+GO_386_PACKAGES ?= ./internal/protocols/x509x/ ./internal/protocols/tlsx/
+go-check-386:
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOARCH=386 CGO_ENABLED=0 GOFLAGS=-mod=vendor go test -count=1 $(GO_386_PACKAGES)
 
 go-check-static:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) sh -c 'files=$$(find . -name "*.go" -not -path "./vendor/*"); test -z "$$(gofmt -l $$files)" || { gofmt -l $$files; exit 1; }'
