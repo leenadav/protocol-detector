@@ -68,7 +68,4 @@ func TestLeafProfileRejectsAWrappingIssuerLength(t *testing.T) {
 	if err == nil || err.Error() != exceeds {
 		t.Fatalf("fields %v err %v, want the container error", fields, err)
 	}
-	if os.Getenv("X509_HOSTILE_HEX") != "" {
-		os.WriteFile(os.Getenv("X509_HOSTILE_HEX"), []byte(hex.EncodeToString(hostile)), 0o600)
-	}
 }
