@@ -129,7 +129,7 @@ func TestKexinitNameListLengthIsBoundedBeforeConversion(t *testing.T) {
 		packet := append([]byte{4, 20}, make([]byte, 16)...) // padding length, KEXINIT, cookie
 		packet = append(packet, byte(size>>24), byte(size>>16), byte(size>>8), byte(size))
 		packet = append(packet, 0, 0, 0, 0) // padding
-		if err := newKexInit(1 << 20).validate(packet); err == nil || err.Error() != want {
+		if err := newKexInit(1<<20, nil).validate(packet); err == nil || err.Error() != want {
 			t.Errorf("size %#x: validate error %v, want %q", size, err, want)
 		}
 	}
