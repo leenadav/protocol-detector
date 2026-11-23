@@ -211,5 +211,8 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **A fresh container clone is shallow and has only Go 1.24.** `make workflow-policy` fails ("history baseline …
   not an ancestor") until `git fetch --unshallow origin`. Get the pinned Go with `GOTOOLCHAIN=go1.27.4 go version`
   once, then put `~/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/bin` first on `PATH` (with `GOROOT`).
+- **A concurrency test must force the overlap it asserts.** `TestChaosAdmissionStorm…` relied on goroutines
+  overlapping and failed 2 of 3 times with `-cpu=1` (CI coverage job, PR #105). Use a barrier; check with
+  `go test -count=30 -cpu=1,2,4`.
 - **`bytes_inspected` is chunk-granular by contract** (the whole chunk in which a parser fails is counted, as in
   `engine.py`), and a parser's consumed count after a fault is discarded. Compare them against budgets, not across splits.

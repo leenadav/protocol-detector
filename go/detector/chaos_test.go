@@ -58,15 +58,19 @@ func requireDrained(t *testing.T, e *Engine) {
 }
 
 // Max flows: 32 goroutines race for 16 slots, holding what they get, while others close. Admission never
-// over-commits, every attempt is counted once, and the slots all come back.
+// over-commits, every attempt is counted once, and the slots all come back. Each goroutine holds its first
+// attempt until all 32 have made one, so the limit is reached on any scheduler (with GOMAXPROCS=1 the storm
+// otherwise ran the goroutines one after another and never filled the 16 slots; PRO-260 CI).
 func TestChaosAdmissionStormNeverExceedsMaxFlows(t *testing.T) {
 	c := allFamilies()
 	c.MaxFlows = 16
 	e := mustEngine(t, c)
 	stop := watchStats(t, e, int64(c.MaxFlows))
-	var wg sync.WaitGroup
+	var wg, first sync.WaitGroup
 	var attempts, admitted, refused atomic.Int64
-	for g := 0; g < 32; g++ {
+	const storms = 32
+	first.Add(storms)
+	for g := 0; g < storms; g++ {
 		wg.Add(1)
 		go func(g int) {
 			defer wg.Done()
@@ -74,6 +78,10 @@ func TestChaosAdmissionStormNeverExceedsMaxFlows(t *testing.T) {
 			for i := 0; i < 200; i++ {
 				attempts.Add(1)
 				f, err := e.NewFlow(fmt.Sprintf("storm-%d-%d", g, i))
+				if i == 0 {
+					first.Done()
+					first.Wait() // every goroutine has made its first attempt, none has closed one yet
+				}
 				switch {
 				case err == nil:
 					admitted.Add(1)
