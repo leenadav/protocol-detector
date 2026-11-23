@@ -81,7 +81,7 @@ func code(err error) string {
 // paths or parser input.
 func (w *worker) fail(err error) {
 	name := code(err)
-	reason := ErrorCodes[name]
+	reason := errorCodes[name]
 	_ = w.decoder.Monitor.InvalidateAll(reason, "all_observations_this_capture")
 	fmt.Fprintf(w.out, "{\"type\": \"decryption\", \"report\": {\"connections\": [], \"frames\": %d, \"decrypted\": 0}}\n", w.decoder.Frames)
 	fmt.Fprintln(w.out, pyjson.Dumps(map[string]interface{}{"type": "error", "reason": reason, "code": name}, "error",
@@ -305,10 +305,10 @@ func Run(stdin io.Reader, iface, filter string, duration int, applyLimits bool, 
 		diagnostics.End()
 		stats, order := diagnostics.Stats()
 		if status != nil {
-			return &KeyLogError{ErrorCodes["capture_failed"], "capture_failed"}
+			return &KeyLogError{errorCodes["capture_failed"], "capture_failed"}
 		}
 		if stats["dropped_by_kernel"]+stats["dropped_by_interface"] > 0 {
-			return &KeyLogError{ErrorCodes["capture_loss"], "capture_loss"}
+			return &KeyLogError{errorCodes["capture_loss"], "capture_loss"}
 		}
 		if err := advance(); err != nil {
 			return err

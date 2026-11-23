@@ -290,7 +290,7 @@ func (d *Datagram) InspectFlow(data []byte, hint, scope string, now *float64) (c
 		return d.unknown(data, base, "No supported datagram structure selected", hint), nil
 	}
 	for _, c := range candidates {
-		if _, ported := framed.DatagramValidators[c]; !datagramValidators[c] && !ported && c != "quic" && c != "dtls" {
+		if _, ported := framed.DatagramValidatorFor(c); !datagramValidators[c] && !ported && c != "quic" && c != "dtls" {
 			return base, &parsing.NotPorted{What: "datagram candidate " + c}
 		}
 	}
@@ -339,7 +339,7 @@ func (d *Datagram) InspectFlow(data []byte, hint, scope string, now *float64) (c
 			} else if np, ok := err.(*parsing.NotPorted); ok {
 				return base, np
 			}
-		} else if validator, ok := framed.DatagramValidators[c]; ok {
+		} else if validator, ok := framed.DatagramValidatorFor(c); ok {
 			var m *framed.Datagram
 			if m, err = validator(data, framed.Limits{MaxBytes: d.cfg.MaxBytes, MaxHeaders: d.cfg.MaxHeaders, MaxLine: d.cfg.MaxLine}); err == nil {
 				found = match{protocol: m.Protocol, encryption: m.Encryption, reason: m.Reason}

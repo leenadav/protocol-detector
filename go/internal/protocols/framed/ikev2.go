@@ -179,7 +179,7 @@ func ikeSA(data []byte, budget *ikeBudget, single bool) (map[int]bool, int, erro
 	return groups, nonceMin, nil
 }
 
-func init() { DatagramValidators["ikev2"] = ikev2Datagram }
+func init() { datagramValidators["ikev2"] = ikev2Datagram }
 
 // ikev2Datagram ports ikev2.ikev2.
 func ikev2Datagram(data []byte, limits Limits) (*Datagram, error) {

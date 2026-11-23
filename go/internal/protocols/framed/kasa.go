@@ -26,7 +26,7 @@ var kasaModules = map[string]bool{"system": true, "emeter": true, "schedule": tr
 	"smartlife.iot.common.schedule": true, "smartlife.iot.common.timesetting": true, "smartlife.iot.common.cloud": true,
 	"smartlife.iot.common.softaponboarding": true, "smartlife.iot.LAS": true, "smartlife.iot.PIR": true}
 
-func init() { DatagramValidators["tplink-smarthome"] = kasaDatagram }
+func init() { datagramValidators["tplink-smarthome"] = kasaDatagram }
 
 func kasaDatagram(data []byte, _ Limits) (*Datagram, error) {
 	if len(data) < 8 {

@@ -54,6 +54,14 @@ type Parser interface {
 	Result() *Result
 }
 
+// Retainer is implemented by a parser that can report the memory it keeps between calls (integration work
+// item #14). RetainedBytes is the capacity, not the length, of every byte buffer the parser owns across
+// calls: line and message accumulators and copies of input it keeps. It does not count the fixed size of
+// the parser's own struct, result strings or evidence rows, which other bounds cover.
+type Retainer interface {
+	RetainedBytes() int
+}
+
 // Result is what a done parser exposes to the inspector.
 type Result struct {
 	Family       string // the family a text route resolved to; "" keeps the dispatch candidate

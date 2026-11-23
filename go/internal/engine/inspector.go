@@ -1,8 +1,6 @@
 package engine
 
 import (
-	"reflect"
-
 	"github.com/leenadav/protocol-detector/go/internal/contracts"
 	"github.com/leenadav/protocol-detector/go/internal/errs"
 	"github.com/leenadav/protocol-detector/go/internal/parsing"
@@ -12,18 +10,33 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/protocols/textroute"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
 	"github.com/leenadav/protocol-detector/go/internal/signatures"
+	"sort"
 )
 
-// Ported is the set of candidates a caller or a shift may name as a hint: every candidate the factory builds
+// ported is the set of candidates a caller or a shift may name as a hint: every candidate the factory builds
 // except the internal routes (review R5, 2026-11-14: a hand-kept copy of this set had drifted from the factory,
 // so New refused the hint "kerberos" although the parser was ported and dispatch selected it).
-var Ported = map[string]bool{}
+var ported = map[string]bool{}
+
+// IsPorted reports whether name may be given as a hint. The set itself is not exported: a registry another
+// package could write to at run time is shared mutable state (integration work item #15).
+func IsPorted(name string) bool { return ported[name] }
+
+// PortedNames returns a sorted copy of the hint set.
+func PortedNames() []string {
+	names := make([]string, 0, len(ported))
+	for name := range ported {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
 
 // internalCandidates are dispatch routes that are not registry names; Python rejects them as hints too.
 var internalCandidates = map[string]bool{"git_text": true, "tpkt": true}
 
-// Families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
-var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
+// families are the families the Go backend can identify (for CAPABILITIES statuses and the harness filter).
+var families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ssh", "smtp", "imap", "pop3", "ftp", "nats", "irc", "sip", "rtsp", "telnet",
 	"postgresql", "rfb", "bittorrent", "memcached", "rsync", "fins", "afp", "zmtp", "bolt", "stomp",
 	"giop", "x11", "spice", "mysql", "mongodb", "tds", "tns", "cql", "kafka",
 	"modbus", "dnp3", "ethernet-ip", "iec-104", "opcua", "s7comm",
@@ -33,6 +46,9 @@ var Families = []string{"http", "tls", "dns", "mdns", "netbios-ns", "llmnr", "ss
 	"netbios-ss", "tacacs-plus", "socks5", "wireguard", "bacnet",
 	"tftp", "ntp", "l2tp", "coap", "rip", "rtcp", "lifx-lan", "tuya-lan",
 	"netflow", "ipfix", "sflow", "stun", "dhcp", "radius", "snmp", "rtp", "ssdp", "tplink-smarthome", "kerberos", "ldap", "smb1", "smb2", "rdp", "iso-tsap", "ikev2", "quic", "http2", "dtls"}
+
+// Families returns a copy of the families the Go backend can identify, in registry order.
+func Families() []string { return append([]string(nil), families...) }
 
 // factories builds the parser of each candidate; it is the single registry of what the Go backend ports.
 var factories map[string]func(cfg contracts.Config) (parsing.Parser, error)
@@ -222,7 +238,7 @@ func init() {
 	}
 	for name := range factories {
 		if !internalCandidates[name] {
-			Ported[name] = true
+			ported[name] = true
 		}
 	}
 }
@@ -275,7 +291,16 @@ type Inspector struct {
 	ldapID       int
 	hasLDAPID    bool
 	Announcement *contracts.Observation
+	// credit is the flow allowance the dispatch prefix and every credited parser's retained buffers grow from
+	// (integration work item #14); nil when the caller sets none, which leaves growth unlimited.
+	credit *parsing.Credit
 }
+
+// SetCredit makes this inspector's retained buffers grow from c: the dispatch prefix, the buffers of every
+// parser it creates that implements parsing.Credited, and those of a shifted phase. A growth c refuses ends
+// the inspection as budget_exhausted with the reason of parsing.Denied; the caller tells it from a parser's
+// own budget with Credit.Denied.
+func (in *Inspector) SetCredit(c *parsing.Credit) { in.credit = c }
 
 // LDAPMessageID reports the message id of the LDAP message this inspector identified (Python
 // inspector.correlation["ldap_message_id"]).
@@ -321,6 +346,7 @@ func (in *Inspector) OpenShift(boundary, expected string) bool {
 	announced := carrier
 	in.Announcement = &announced
 	next.hintSource = "shift:" + boundary
+	next.credit = in.credit
 	next.depth = in.depth + 1
 	in.next = next
 	in.terminal = false
@@ -422,7 +448,7 @@ func New(cfg contracts.Config, hint string) (*Inspector, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-	if hint != "" && !Ported[hint] {
+	if hint != "" && !ported[hint] {
 		return nil, &parsing.NotPorted{What: "hint " + hint}
 	}
 	in := &Inspector{cfg: cfg, hint: hint, hintSource: "caller", source: "wire", Observation: contracts.Initial("tcp"), shiftSource: "wire"}
@@ -445,8 +471,29 @@ func NewDecrypted(cfg contracts.Config) (*Inspector, error) {
 
 func (in *Inspector) Terminal() bool { return in.terminal }
 
+// RetainedBytes reports the byte-buffer capacity this inspector keeps between calls (integration work item
+// #14): the dispatch prefix, what the selected parser reports through parsing.Retainer, and the same for
+// the inspector of a protocol shift. complete is false when a selected parser does not report its
+// buffers, so the figure is then a lower bound. It counts retained byte buffers only: not the observation,
+// its evidence rows or strings, and not transient allocations inside a call.
+func (in *Inspector) RetainedBytes() (n int, complete bool) {
+	n, complete = cap(in.prefix), true
+	if in.parser != nil {
+		if r, ok := in.parser.(parsing.Retainer); ok {
+			n += r.RetainedBytes()
+		} else {
+			complete = false
+		}
+	}
+	if in.next != nil {
+		m, ok := in.next.RetainedBytes()
+		n, complete = n+m, complete && ok
+	}
+	return n, complete
+}
+
 func (in *Inspector) publish(obs contracts.Observation, kind contracts.Kind) []contracts.Event {
-	if reflect.DeepEqual(obs, in.Observation) {
+	if obs.Equal(in.Observation) {
 		return nil
 	}
 	in.Observation = obs
@@ -638,7 +685,11 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 			return in.finish(in.observation(contracts.Unknown, "Prefix outside supported protocol families"), contracts.Updated)
 		}
 		if candidate == Wait {
-			in.prefix = append(in.prefix, chunk...)
+			grown, err := in.credit.Append(in.prefix, chunk)
+			if err != nil {
+				return in.finish(in.observation(contracts.BudgetExhausted, err.(*parsing.Error).Message), contracts.Updated)
+			}
+			in.prefix = grown
 			in.Metrics.BytesInspected += len(chunk)
 			return nil
 		}
@@ -648,6 +699,9 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 		if err != nil {
 			events, _ := in.failed(err)
 			return events
+		}
+		if c, ok := parser.(parsing.Credited); ok {
+			c.SetCredit(in.credit)
 		}
 		in.parser = parser
 		if previous > 0 {
@@ -732,6 +786,7 @@ func (in *Inspector) beginShift(shift *parsing.Shift, rest []byte) []contracts.E
 		_ = next.SetSignatures(in.sigs) // same config: cannot fail
 	}
 	next.hintSource = "shift:" + shift.Boundary
+	next.credit = in.credit
 	next.depth = in.depth + 1
 	in.next = next
 	if len(rest) > 0 {

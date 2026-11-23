@@ -120,8 +120,8 @@ func runLive(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		cfg.UDPHint = v
 	}
 	if v, ok := values["--tcp-hint"]; ok {
-		if !engine.Ported[v] {
-			return usage("argument --tcp-hint: invalid choice: '" + v + "' (choose from " + sortedNames(engine.Ported) + ")")
+		if !engine.IsPorted(v) {
+			return usage("argument --tcp-hint: invalid choice: '" + v + "' (choose from " + strings.Join(engine.PortedNames(), ", ") + ")")
 		}
 		cfg.TCPHint = v
 	}

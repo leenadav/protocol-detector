@@ -26,9 +26,12 @@ type kexInit struct {
 	hasLen   bool
 	done     bool
 	lists    [][]byte
+	credit   *parsing.Credit // the flow allowance the buffer and the lists grow from (nil: unlimited)
 }
 
-func newKexInit(maxBytes int) *kexInit { return &kexInit{maxBytes: maxBytes, needed: 4} }
+func newKexInit(maxBytes int, credit *parsing.Credit) *kexInit {
+	return &kexInit{maxBytes: maxBytes, needed: 4, credit: credit}
+}
 
 func (k *kexInit) feed(data []byte) (int, error) {
 	pos := 0
@@ -37,7 +40,10 @@ func (k *kexInit) feed(data []byte) (int, error) {
 		if amount > len(data)-pos {
 			amount = len(data) - pos
 		}
-		k.buffer = append(k.buffer, data[pos:pos+amount]...)
+		var err error
+		if k.buffer, err = k.credit.Append(k.buffer, data[pos:pos+amount]); err != nil {
+			return pos, err
+		}
 		pos += amount
 		if len(k.buffer) < k.needed {
 			break
@@ -53,7 +59,6 @@ func (k *kexInit) feed(data []byte) (int, error) {
 				return pos, parsing.Malformed("SSH packet length outside KEXINIT profile")
 			}
 			k.needed = 4 + k.length
-			k.buffer = append(make([]byte, 0, k.needed), k.buffer...) // one allocation for the whole packet
 			continue
 		}
 		if err := k.validate(k.buffer[4:]); err != nil {
@@ -103,9 +108,14 @@ func (k *kexInit) validate(packet []byte) error {
 				rest = tail
 			}
 		}
-		// The lists point into the packet buffer this parser owns (it is never written again), so no copy is
-		// needed; they keep it alive exactly as long as copies of them would have.
-		lists = append(lists, value[:len(value):len(value)])
+		copied, err := k.credit.Copy(value)
+		if err != nil {
+			return err
+		}
+		if copied == nil { // an empty list is kept as an empty, non-nil value, as before
+			copied = []byte{}
+		}
+		lists = append(lists, copied)
 		pos += size
 	}
 	if pos+5 > payloadEnd || packet[pos] > 1 || packet[pos+1] != 0 || packet[pos+2] != 0 || packet[pos+3] != 0 || packet[pos+4] != 0 {
