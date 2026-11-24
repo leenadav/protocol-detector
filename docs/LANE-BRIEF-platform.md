@@ -27,8 +27,9 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-24, PRO-202 step 3)
+## 2. Current state (2026-11-24, after PRO-262 and PRO-202 step 3)
 
+- **PRO-262 (32-bit protocol tests):** `make go-check-386` and the `go-engine` step "32-bit protocol tests" (offline, vendored, `CGO_ENABLED=0`, no `-race` on 386). Proven on the old SEC-X509-1 check (`pos+size > limit`): the 386 run fails `x509x`, amd64 passes. The job name is unchanged, so required checks keep matching.
 - **PRO-202 (CI speed), step 3:** branch `claude/platform-PRO-202-ci-speed` adds the docs-only fast path:
   `tools/ci_scope.py` (fail-closed: only `pull_request`, only a two-parent merge HEAD, only `*.md` and
   `research/` outside `research/tools/`) and `--docs-only-fast-path` on `go-engine`, `go-fuzz-smoke`, `go-parity`,
@@ -170,7 +171,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Gitleaks hex HTTP/1 allowlist scoped (PRO-183/PRO-184, the gitleaks SEC-CI-1): branch `claude/cicd-gitleaks-hex-scope`, base main. Own `[[allowlists]]` entry, AND of path `^go/.*_test\.go$` and the hex regex; `check_gitleaks_allowlist.py` proves a hex request with a cookie still flags in .py, .json and non-test .go. `claude/go-migration` keeps its own repo-wide copy until it merges main | Hermes's review, then Lee |
 | Bump `migration/mutation/gremlins/go.mod` (x/sys ≥ 0.44.0, x/text ≥ 0.41.0); then drop its 3 OSV entries before 2026-12-06 | Engine |
 | Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
-| 32-bit Go tests (PRO-71, asked from PRO-46): a `GOARCH=386 go vet` + `go test ./...` step in `go-engine` (no `-race` on 386; offline; ~9 s for `./internal/protocols/...`) | Engine: `claude/go-migration` `5f01fcb` does not compile for 386 (13 constant overflows of `int`: framed 5, reassembly 2, signatures 6) |
+| 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 6 packages test, 2 have no tests, `framed` is excluded; an excluded package that compiles fails the target | Hermes's review, then Lee; Engine to make `framed` (5 constant overflows of `int`) build on 386, then drop it from `GO_386_EXCLUDE` |
 
 ## 6. Frozen SHAs awaiting Codex
 
@@ -195,6 +196,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **CodeQL error gate:** no `assert` around a call with side effects, and no variable read after
   `parser.error`.
 - **Paths in tools:** a tool that runs subprocesses with `cwd=go` must resolve output paths to absolute.
+- **Job names are check names:** renaming a job (its `name:`) can orphan a required status check; add a step and keep the name.
 - **New workflows:** `workflow_dispatch` works only once the workflow is registered. Give a new workflow a
   branch-limited `push` trigger, push, then dispatch. Schedules run only from `main`.
 - **Go:** `GOPROXY=off` means dependencies must be vendored. `-mod=vendor` on a module with no dependencies is
