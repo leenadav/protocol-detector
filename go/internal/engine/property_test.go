@@ -107,8 +107,9 @@ var continuationConsumedVaries = map[string]string{
 	// when it arrives in its own call, but returns 0 for the whole header when it arrives in one call and is not
 	// an SMB frame. The reference does the same (protocol_engine/windows.py _next_frame, `return start`), so
 	// only bytes_inspected moves (by at most 7); changing it is a parity delta (migration/STATUS.md, PRO-101).
-	"smb1": "PRO-101 F1",
-	"smb2": "PRO-101 F1",
+	// Tracked in https://github.com/leenadav/protocol-detector/issues/103; the decision (accept or fix) is Lee's.
+	"smb1": "PRO-101 F1, issue #103",
+	"smb2": "PRO-101 F1, issue #103",
 }
 
 // checkParserSplit is the parser-level property: one registry parser, the whole stream against the given split,
@@ -152,7 +153,7 @@ func checkParserSplit(t failer, family string, data []byte, cuts []int) {
 // sees at the end: the final observation, whether it is terminal and the message boundary. The budget
 // invariants are checked on the way. bytes_inspected is checked against the budget but not compared across
 // splits: like the reference (engine.py), the inspector counts the whole chunk in which a parser fails, so it
-// is chunk-granular by contract.
+// is chunk-granular by contract. That is the reference contract, not finding F1 (issue #103 names both).
 func inspectorOutcome(t failer, cfg contracts.Config, data []byte, cuts []int) string {
 	t.Helper()
 	in, err := New(cfg, "")
