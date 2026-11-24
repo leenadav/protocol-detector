@@ -31,7 +31,7 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   The Culvert clone's push URL is disabled.
 - **Data:** synthetic and loopback only. The lab's origins are on RFC 5737 addresses.
 
-## 2. Current state (2026-11-22, after PRO-233)
+## 2. Current state (2026-11-24, after PRO-269)
 
 - **Landing on main (PRO-233):** `claude/culvert-land-main` = `d10a2b4` + a merge of `main` `f027a4d` + focused
   fixes. Kept: `go/detector`, `go/consumertest`, `docs/integration/`, `docs/governance/`, the lab, the licence
@@ -50,6 +50,12 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
     tests and the lab tests pass, 198 under `-race`.
   - **First lab:** on `52eb9d1`, branch `lab/protocol-detector`, with the restriction demonstration. Kept
     unchanged: 84 of 84 checks on 2026-11-17.
+- **Load test (PRO-269, 2026-11-24):** `docs/integration/LOAD-TEST.md`. vegeta v12.12.0, a test tool only, against
+  A, B and D on `ef94311`, HTTPS (observed) and HTTP (control), at 100/300/600/1,000 req/s, three rounds, one
+  connection per request. Observe minus off: p50 +5 to +113 µs, p95 +84 to +424 µs, p99 within noise;
+  +0.15 to +0.22 CPU-s per 1,000 flows; RSS within the 0.3 to 2.7 MiB noise floor; throughput unchanged. 1,000 req/s
+  saturates the 4-vCPU harness in every configuration. Tools: `lab/culvert/tools/loadtest.py`,
+  `loadtest_summary.py` and `loadorigin/`; data in `lab/culvert/results-loadtest/`.
 - **Culvert team request** (`docs/integration/CULVERT-TEAM-REQUEST.md`): anchors refreshed at `ef94311`. It
   covers the SNI finding, UDP/HTTP3 and the allocation gap. It is not sent; Lee decides.
 - **Allocations per flow, two figures** (`docs/integration/ENGINE-DRIFT-2026-11-21.md`):
@@ -143,6 +149,8 @@ Culvert's allocation gates need `-tags benchgate`.
   `claude/culvert-land-main`; PR leenadav/protocol-detector#97. Then `60b2305` (merge of main `e5ac90f`) and the
   brief commit that records the PRO-235 decision, then the commit that fixes the 12 CodeQL alerts in
   `lab/culvert/tools/` (TLS 1.2 minimum on the lab clients, files closed, one unused assignment).
+- **Queued for Codex (PRO-269):** `e91e1b5` (the load test: lab tools, results and docs only, no detector code)
+  and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
 - **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
@@ -178,3 +186,10 @@ Culvert's allocation gates need `-tags benchgate`.
 - **A conflict-free merge can still change the reference.** Lane edits to `protocol_engine/` and `test_*.py`
   auto-merged with no conflict; only the parity replay (7 mismatches) showed them. Diff the merge against `main`
   for the Python reference and fixtures before anything else.
+- **Load tests: the client shares the host.** In this 4-vCPU container, vegeta (one CPU) saturates at about
+  1,000 new TLS connections a second, and ephemeral ports run out (`bind: address already in use`). Keep the
+  measured rates below that, and pin the proxy, the client and the origin to separate CPUs (`taskset`). Never run
+  `make check` or other heavy work during a run.
+- **A fresh container has no lab.** Clone Culvert read-only (`git remote set-url --push origin DISABLED`), check
+  out `ef94311` and `git am lab/culvert/culvert-lab-ef94311.patch`. The tree matches; the commit SHAs differ
+  (`a4b63f3b` here, `8f828789` originally) because the committer dates differ.

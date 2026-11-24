@@ -1,0 +1,43 @@
+# Live round 7 (PRO-167, run by Research Lab on the Hermes server from 9f845f3 with TLS, DoH dns.google, no proxy, 2026-11-22).
+# 39 of 39 names (live-hosts-r7.txt: 35 batch P names from PRO-158 plus hubspot.com, beyondtrust.com, beyondtrustcloud.com, bomgar.com). Same columns as r4-r6.
+# via_probe=1: the tls, subject_* and issuer_o columns are the probe name's, not the apex. 24 names exist but have no address and no probe (not live-verified).
+host	flags	rcode	cname_tail	tls	alpn	subject_cn	subject_o	issuer_o	san_count	tls_error	probe	addrs	via_probe	https_alpn	ech
+hsadspixel.net	no-address	0										0	0		no
+hs-analytics.net	no-address	0										0	0		no
+hubapi.com		0		TLSv1.3	h2	hubapi.com		Google Trust Services	3		feedback.hubapi.com:	10	1	h2	no
+hscta.net	no-address	0		TLSv1.3	h2	hscta.net		Google Trust Services	2		js.hscta.net:	10	1	h2	no
+hscta.com	no-address	0		TLSv1.3	h2	hscta.com		Google Trust Services	2		js.hscta.com:	10	1	h2	no
+hsctaimages.net		0	f8dafa7f2f4d448799de44dd5145225b.pacloudflare.com	TLSv1.3	h2	hsctaimages.net		Google Trust Services	2		eu1.hsctaimages.net:	1	1		no
+hs-sites.com	h3	0		TLSv1.3	h2	hs-sites.com		Google Trust Services	4			10	0	h2,h3	no
+hs-sites-eu1.com	no-address	0										0	0		no
+hs-sites-na2.com	no-address	0										0	0		no
+hs-sites-na3.com	no-address	0										0	0		no
+hs-sites-ap1.com	no-address	0										0	0		no
+hsappstatic.net		0		TLSv1.3	h2	hsappstatic.net		Google Trust Services	3		static.hsappstatic.net:	10	1	h2	no
+usemessages.com	no-address	0										0	0		no
+hs-banner.com	no-address	0										0	0		no
+hubspotusercontent00.net	no-address	0										0	0		no
+hubspotusercontent10.net	no-address	0										0	0		no
+hubspotusercontent20.net	no-address	0										0	0		no
+hubspotusercontent30.net	no-address	0										0	0		no
+hubspotusercontent40.net	no-address	0										0	0		no
+hubspotusercontent-eu1.net	no-address	0										0	0		no
+hubspotusercontent-na2.net	no-address	0										0	0		no
+hubspotusercontent-na3.net	no-address	0										0	0		no
+hubspotusercontent-ap1.net	no-address	0										0	0		no
+hubspot.net	h3	0		TLSv1.3	h2	hubspot.net		Google Trust Services	27		cdn2.hubspot.net:h3	10	1	h2,h3	no
+hubspotvideo.com	no-address	0		TLSv1.3	h2	hubspotvideo.com		Google Trust Services	2		play.hubspotvideo.com:	4	1	h2	no
+hscollectedforms.net	no-address	0										0	0		no
+hsleadflows.net	no-address	0										0	0		no
+hsforms.net	no-address	0										0	0		no
+hsforms.com	no-address	0										0	0		no
+hs-scripts.com	no-address	0										0	0		no
+hubspotfeedback.com	no-address	0										0	0		no
+hubspotservicehub.com	no-address	0		TLSv1.3	h2	hubspotservicehub.com		Google Trust Services	7		feedback-eu1.hubspotservicehub.com:	8	1	h2	no
+hubspot-no-cache-na2-prod.s3.amazonaws.com	cdn	0	s3-us-west-2-w.amazonaws.com	TLSv1.3	http/1.1	*.s3-us-west-2.amazonaws.com		Amazon	16			8	0		no
+hubspot-no-cache-na3-prod.s3.amazonaws.com	cdn	0	s3-w.ca-central-1.amazonaws.com	TLSv1.3	http/1.1	*.s3.ca-central-1.amazonaws.com		Amazon	16			8	0		no
+hubspot-no-cache-ap1-prod.s3.amazonaws.com	cdn	0	s3-ap-southeast-2-w.amazonaws.com	TLSv1.3	http/1.1	*.s3-ap-southeast-2.amazonaws.com		Amazon	16			8	0		no
+hubspot.com		0		TLSv1.3	h2	hubspot.com		Google Trust Services	2		app.hubspot.com:	4	1	h2	no
+beyondtrust.com		0		TLSv1.3	h2	beyondtrust.com		Google Trust Services	1			2	0		no
+beyondtrustcloud.com	no-address	0										0	0		no
+bomgar.com		0		TLSv1.3	h2	bomgar.com		Let's Encrypt	1			2	0		no

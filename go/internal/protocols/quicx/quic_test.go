@@ -305,3 +305,193 @@ func TestContradictionOutranksExhaustion(t *testing.T) {
 		t.Fatalf("exhaustion without contradiction: got %s len %d", s, c.Len())
 	}
 }
+
+// SEC-QUIC-3: the RFC 9000 section 14.1 minimum is on the client Initial's UDP datagram. 1199 bytes is malformed
+// and feeds nothing to the assembler; 1200 identifies; a 300-byte Initial alone is malformed, while the same
+// Initial coalesced into a 1200-byte datagram (trailing bytes after its Length) identifies.
+func TestClientInitialDatagramMinimum(t *testing.T) {
+	frame := testframes.CryptoFrames(load(t, "rfc9001_client_hello.hex"))[0]
+	a := NewAssembler(8, 60)
+	if _, err := Validate(testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 1199), defaults, a, "c>s", nil); err == nil ||
+		!strings.Contains(err.Error(), "1200 bytes") || a.Len() != 0 {
+		t.Fatalf("1199 bytes: err %v, %d assembler entries", err, a.Len())
+	}
+	if m, err := Validate(testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 1200), defaults, a, "c>s", nil); err != nil || m.Hostname != "example.com" {
+		t.Fatalf("1200 bytes: %+v %v", m, err)
+	}
+	short := testframes.QUICInitial(V1, dcid, nil, []byte{1}, 2, nil, 300)
+	if _, err := Validate(short, defaults, nil, "", nil); err == nil {
+		t.Fatal("a 300-byte client Initial alone was accepted")
+	}
+	coalesced := append(append([]byte{}, short...), make([]byte, 1200-len(short))...)
+	if m, err := Validate(coalesced, defaults, nil, "", nil); err != nil || fieldsOf(m)["initial_protection"] != "removed" {
+		t.Fatalf("a 300-byte Initial coalesced into 1200 bytes: %+v %v", m, err)
+	}
+	// Without protection removal nothing says the packet is a client's, and nothing is asserted: unchanged.
+	if _, err := Validate(short, Options{MaxHeaders: 64, MaxBytes: 65536}, nil, "", nil); err != nil {
+		t.Fatalf("framing-only validation of a short Initial: %v", err)
+	}
+}
+
+// SEC-QUIC-3: within one flow scope a complete ClientHello naming another server than the scope's first one is a
+// sticky conflict on its connection; the same name (a Retry's new DCID) agrees, the bare inspector's empty scope
+// is never compared, and resetting the scope forgets the name.
+func TestServerNameDisagreementWithinAScope(t *testing.T) {
+	hello := load(t, "rfc9001_client_hello.hex")
+	other := append([]byte{}, hello...)
+	copy(other[strings.Index(string(hello), "example.com"):], "example.org")
+	initial := func(id, h []byte) []byte {
+		return testframes.QUICInitial(V1, id, nil, testframes.CryptoFrames(h)[0], 2, nil, 1200)
+	}
+	second, third := []byte{1, 1, 1, 1}, []byte{2, 2, 2, 2}
+	a := NewAssembler(8, 60)
+	for _, step := range []struct {
+		id, hello []byte
+		scope     string
+		retracts  bool
+	}{
+		{dcid, hello, "c>s", false},
+		{second, hello, "c>s", false}, // the same ClientHello on a new DCID
+		{third, other, "c>s", true},   // another server name
+		{third, hello, "c>s", true},   // the conflict marker is sticky
+		{third, other, "x>y", false},  // another flow
+		{dcid, hello, "", false},      // the bare inspector's scope
+		{second, other, "", false},
+	} {
+		m, err := Validate(initial(step.id, step.hello), defaults, a, step.scope, nil)
+		if err != nil || m.Retracts != step.retracts {
+			t.Fatalf("%x in %q: %+v %v", step.id, step.scope, m, err)
+		}
+	}
+	a.Reset("c>s")
+	if m, _ := Validate(initial(third, other), defaults, a, "c>s", nil); m.Retracts || m.Hostname != "example.org" {
+		t.Fatalf("after the reset: %+v", m)
+	}
+}
+
+// Codex PRO-290 P2 (PRO-291): the first server name of a flow scope lives until the host resets the scope, not
+// while the scope happens to hold an assembler entry. Losing the scope's last entry (LRU eviction by the next
+// connection, idle expiry, or an over-budget merge) used to forget the name, so a later ClientHello naming another
+// server was accepted as the first and the flow's earlier identification was never retracted.
+func TestServerNameOutlivesTheScopesLastEntry(t *testing.T) {
+	hello := load(t, "rfc9001_client_hello.hex")
+	other := append([]byte{}, hello...)
+	copy(other[strings.Index(string(hello), "example.com"):], "example.org")
+	initial := func(id, h []byte) []byte {
+		return testframes.QUICInitial(V1, id, nil, testframes.CryptoFrames(h)[0], 2, nil, 1200)
+	}
+	second := []byte{1, 1, 1, 1}
+	at := func(v float64) *float64 { return &v }
+	for _, c := range []struct {
+		name string
+		lose func(a *Assembler) // removes the scope's only entry, as each path does
+		now  *float64
+	}{
+		{"eviction", func(*Assembler) {}, nil}, // one slot: inserting the second DCID evicts the first
+		{"expiry", func(*Assembler) {}, at(100)},
+		{"exhaustion", func(a *Assembler) {
+			frames := make([]Fragment, MaxFragments+1)
+			for i := range frames {
+				frames[i] = Fragment{Offset: uint64(4096 + 2*i), Data: []byte{0}}
+			}
+			if s, _ := a.Add(dcid, frames, "c>s", V1, nil); s != Exhausted {
+				t.Fatalf("exhaustion setup: %s", s)
+			}
+		}, nil},
+	} {
+		a := NewAssembler(1, 60)
+		if m, err := Validate(initial(dcid, hello), defaults, a, "c>s", at(0)); err != nil || m.Retracts || m.Hostname != "example.com" {
+			t.Fatalf("%s: first ClientHello: %+v %v", c.name, m, err)
+		}
+		c.lose(a)
+		m, err := Validate(initial(second, other), defaults, a, "c>s", c.now)
+		if err != nil || !m.Retracts || m.Hostname != "" {
+			t.Fatalf("%s: a different server name after the scope lost its entry: %+v %v", c.name, m, err)
+		}
+	}
+	// Reset and Clear still forget the name: the host ended the flow.
+	a := NewAssembler(1, 60)
+	if _, err := Validate(initial(dcid, hello), defaults, a, "c>s", nil); err != nil {
+		t.Fatal(err)
+	}
+	a.Clear()
+	if m, _ := Validate(initial(second, other), defaults, a, "c>s", nil); m.Retracts || m.Hostname != "example.org" {
+		t.Fatalf("after Clear: %+v", m)
+	}
+}
+
+// The per-scope names are bounded by MaxNames, least recently used first, and counted when one is dropped.
+func TestServerNamesAreBounded(t *testing.T) {
+	a := NewAssembler(1, 60)
+	a.MaxNames = 2
+	for i, scope := range []string{"a", "b", "c"} {
+		f := []Fragment{{0, []byte{1}}}
+		a.Add([]byte{byte(i)}, f, scope, V1, nil)
+		a.SameServerName([]byte{byte(i)}, scope, V1, true, scope+".test")
+	}
+	if len(a.names) != 2 || a.NameEvictions != 1 {
+		t.Fatalf("%d names, %d evictions", len(a.names), a.NameEvictions)
+	}
+	if _, kept := a.names["a"]; kept {
+		t.Fatal("the least recently used name was kept")
+	}
+}
+
+// Codex PRO-312 P2 (PRO-315): an Initial on a connection that already carries a conflict marker must still meet the
+// RFC 9000 section 14.1 client datagram minimum before it refreshes the marker or yields invalidation evidence. An
+// undersized decoy is a datagram a server discards: it is malformed, the marker keeps its old idle time and so
+// expires on schedule, and a full-size Initial of the connection still returns the retraction.
+func TestConflictedConnectionAppliesTheClientDatagramMinimum(t *testing.T) {
+	hello := load(t, "rfc9001_client_hello.hex")
+	frame := testframes.CryptoFrames(hello)[0]
+	at := func(v float64) *float64 { return &v }
+	a := NewAssembler(4, 10)
+	if s, _ := a.Add(dcid, []Fragment{{0, hello}}, "c>s", V1, at(0)); s != Complete {
+		t.Fatal(s)
+	}
+	if s, _ := a.Add(dcid, []Fragment{{50, bytes.Repeat([]byte{0xee}, 10)}}, "c>s", V1, at(0)); s != Conflict {
+		t.Fatal(s)
+	}
+	m, err := Validate(testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 1199), defaults, a, "c>s", at(8))
+	if err == nil || !strings.Contains(err.Error(), "1200 bytes") {
+		t.Fatalf("undersized Initial on a conflicted connection: %+v %v", m, err)
+	}
+	if m, err := Validate(testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 1200), defaults, a, "c>s", at(9)); err != nil || !m.Retracts {
+		t.Fatalf("full-size Initial on a conflicted connection: %+v %v", m, err)
+	}
+	// The undersized datagram at 8 did not refresh the marker; the full-size one at 9 did, so it lives to 19.
+	if !a.Conflicted(dcid, "c>s", V1, at(19)) || a.Conflicted(dcid, "c>s", V1, at(29.5)) {
+		t.Fatal("marker idle time")
+	}
+	b := NewAssembler(4, 10)
+	b.Add(dcid, []Fragment{{0, hello}}, "c>s", V1, at(0))
+	b.Add(dcid, []Fragment{{50, bytes.Repeat([]byte{0xee}, 10)}}, "c>s", V1, at(0))
+	if _, err := Validate(testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 1199), defaults, b, "c>s", at(8)); err == nil {
+		t.Fatal("undersized Initial accepted")
+	}
+	if b.Conflicted(dcid, "c>s", V1, at(10.5)) {
+		t.Fatal("an undersized Initial refreshed the conflict marker")
+	}
+	// A datagram the client keys do not open is not known to be a client Initial: the marker still binds it.
+	damaged := testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 600)
+	damaged[len(damaged)-1] ^= 0xff
+	c := NewAssembler(4, 10)
+	c.Add(dcid, []Fragment{{0, hello}}, "c>s", V1, nil)
+	c.Add(dcid, []Fragment{{50, bytes.Repeat([]byte{0xee}, 10)}}, "c>s", V1, nil)
+	if m, err := Validate(damaged, defaults, c, "c>s", nil); err != nil || !m.Retracts {
+		t.Fatalf("unopened datagram on a conflicted connection: %+v %v", m, err)
+	}
+}
+
+// Codex P3 (memory of PRO-312's round): a short client Initial whose frames fall outside the Initial profile is a
+// datagram a server discards, so it is malformed rather than a structural QUIC match the UDP tracker could keep.
+func TestShortClientInitialWithUnsupportedFrameIsMalformed(t *testing.T) {
+	short := testframes.QUICInitial(V1, dcid, nil, []byte{0x1e}, 2, nil, 300) // HANDSHAKE_DONE: not in an Initial
+	if m, err := Validate(short, defaults, nil, "", nil); err == nil || !strings.Contains(err.Error(), "1200 bytes") {
+		t.Fatalf("short Initial with an unsupported frame: %+v %v", m, err)
+	}
+	full := testframes.QUICInitial(V1, dcid, nil, []byte{0x1e}, 2, nil, 1200)
+	if m, err := Validate(full, defaults, nil, "", nil); err != nil || fieldsOf(m)["initial_protection"] != "unverified" {
+		t.Fatalf("full-size Initial with an unsupported frame: %+v %v", m, err)
+	}
+}

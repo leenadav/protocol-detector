@@ -1,0 +1,132 @@
+# Round 8 for tools/live_verify.py: the catalog names of the nine PRO-169 specs (batch Q,
+# research/patches/batch-q-relayed-rows-30-44.patch) that no earlier round has checked: new names and existing ones never
+# verified. "NAME PROBE" where the vendor page names a host under the name; the rest are checked as is (no-address is
+# normal for a suffix entry). Run with TLS so certificate organisation is recorded.
+kaseya.com stun.kaseya.com
+kaseya.net status.kaseya.net
+desktopcentral.manageengine.com
+endpointcentral-agent0.manageengine.com
+endpointcentral-agent1.manageengine.com
+endpointcentral-agent2.manageengine.com
+endpointcentral-agent3.manageengine.com
+endpointcentral-agent4.manageengine.com
+endpointcentral-agentp1.manageengine.com
+endpointcentral-agentp2.manageengine.com
+endpointcentral-agentp3.manageengine.com
+endpointcentral-agentp5.manageengine.com
+endpointcentral-agent5.manageengine.com
+endpointcentral-agent6.manageengine.com
+endpointcentral-agent7.manageengine.com
+endpointcentral-agent8.manageengine.com
+endpointcentral-agent10.manageengine.com
+endpointcentral-agentp18.manageengine.com
+patchdb.manageengine.com
+patchdatabase.manageengine.com
+desktopcentral.manageengine.eu
+endpointcentral-agent0.manageengine.eu
+endpointcentral-agent1.manageengine.eu
+endpointcentral-agentp1.manageengine.eu
+endpointcentral-agent2.manageengine.eu
+endpointcentral-agentp3.manageengine.eu
+endpointcentral-agentp7.manageengine.eu
+endpointcentral-agentp13.manageengine.eu
+endpointcentral-agentp17.manageengine.eu
+desktopcentral.manageengine.com.au
+desktopcentral.manageengine.in
+endpointcentral-agent0.manageengine.in
+endpointcentral-agent1.manageengine.in
+endpointcentral-agent2.manageengine.in
+endpointcentral-agent3.manageengine.in
+endpointcentral-agentp2.manageengine.in
+endpointcentral-agentp7.manageengine.in
+endpointcentral-agentp12.manageengine.in
+endpointcentral-agentp14.manageengine.in
+endpointcentral-agentp15.manageengine.in
+endpointcentral-agentp16.manageengine.in
+endpointcentral-agentp19.manageengine.in
+desktopcentral.manageengine.jp
+endpointcentral-agent0.manageengine.jp
+desktopcentral.manageengine.cn
+endpointcentral-agent0.manageengine.cn
+endpointcentral-agentp7.manageengine.cn
+patchdb.manageengine.cn
+desktopcentral.manageengine.ca
+endpointcentral-agent0.manageengine.ca
+desktopcentral.manageengine.uk
+endpointcentral-agent0.manageengine.uk
+endpointcentral-agentp9.manageengine.uk
+endpointcentral-agent0.manageengine.sa
+endpointcentral-agent0.manageengine.ae
+endpointcentral-agent0.manageengine.sg
+ringcentral.com login.ringcentral.com
+ringcentral.co.uk login.ringcentral.co.uk
+ringcentral.eu login.ringcentral.eu
+ringcentral.ca analytics.ringcentral.ca
+ringcentral.biz discovery.ringcentral.biz
+glip.com
+ringcentral.pubnubapi.com
+ringcentral-0.pubnubapi.com
+ringcentral-1.pubnubapi.com
+ringcentral-2.pubnubapi.com
+ringcentral-3.pubnubapi.com
+ringcentral-4.pubnubapi.com
+ringcentral-5.pubnubapi.com
+ringcentral-6.pubnubapi.com
+ringcentral-7.pubnubapi.com
+ringcentral-8.pubnubapi.com
+ringcentral-9.pubnubapi.com
+glip-vault-1.s3.amazonaws.com
+glip-vault-1.s3-accelerate.amazonaws.com
+keepersecurity.com
+keepersecurity.us govcloud.keepersecurity.us
+keepersecurity.eu
+keepersecurity.com.au
+keepersecurity.ca
+keepersecurity.jp
+keeper.io docs.keeper.io
+8x8.com
+8x8.vc
+8x8cloud.com
+cloud8.net
+p8t.us
+packet8.net ntp2.packet8.net
+wavecell.com
+jitsi.net
+freshworks.com
+freshdesk.com support.freshdesk.com
+freshservice.com support.freshservice.com
+myfreshworks.com
+freshworksapi.com
+rtschannel.com
+fdcollab.com api.fdcollab.com
+freshdev.io
+intercom.io api.intercom.io
+intercom.com app.intercom.com
+intercomcdn.com js.intercomcdn.com
+intercomcdn.eu uploads.intercomcdn.eu
+intercom-messenger.com
+intercomusercontent.com uploads.intercomusercontent.com
+intercom-sheets.com
+intercom-reporting.com www.intercom-reporting.com
+intercom.help
+intercomassets.com static.intercomassets.com
+intercomassets.eu static.intercomassets.eu
+intercom-attachments-1.com
+intercom-attachments-2.com
+intercom-attachments-3.com
+intercom-attachments-4.com
+intercom-attachments-5.com
+intercom-attachments-6.com
+intercom-attachments-7.com
+intercom-attachments-8.com
+intercom-attachments-9.com
+intercom-attachments.eu
+intercom-attachments.com
+newrelic.com collector.newrelic.com
+nr-data.net otlp.nr-data.net
+bam.nr-data.net
+bam-cell.nr-data.net
+bam.eu01.nr-data.net
+bam.jp.nr-data.net
+js-agent.newrelic.com
+pagerduty.com events.pagerduty.com

@@ -27,6 +27,12 @@ here, where it has a self-test.
                                       fixtures replayed through the Python reference on that
                                       interpreter (issue #2 R6: the oracle must hold across the
                                       supported Python range)
+    go_ci.py go|minimum --docs-only-fast-path ...
+                                      the ci.yml Go jobs: on a pull request whose every changed
+                                      path is Markdown or research data (tools/ci_scope.py), the
+                                      tree and toolchain are still checked but the make target is
+                                      not run; the summary lists the paths. Fails closed: push,
+                                      schedule, dispatch or any doubt runs the target
     go_ci.py --self-test
 
 Decisions, checked in this order:
@@ -63,6 +69,9 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ci_scope  # noqa: E402  (the docs-only fast path, PRO-202 step 3)
 
 GO_MOD = Path("go/go.mod")
 SCANNER_MOD = Path("tools/scanners/go.mod")
@@ -364,7 +373,7 @@ def go_command(part="all", shard=None):
     return command + (["GO_FUZZ_SHARD=" + shard] if shard else [])
 
 
-def run(mode, summary, part="all", shard=None):
+def run(mode, summary, part="all", shard=None, fast_path=False, scope=None):
     title = TITLES.get(mode) or "### Parity oracle on python {}".format(sys.version.split()[0])
     if mode == "go" and part != "all":
         title += ": {}{}".format(PART_TITLES[part], ", shard {} of {}".format(*shard.split("/")) if shard else "")
@@ -379,6 +388,14 @@ def run(mode, summary, part="all", shard=None):
     if action == "fail":
         summarise(summary, [title, ""] + ["- FAILED: " + problem for problem in problems])
         return 1
+    scope_lines = []
+    if fast_path and mode in ("go", "minimum"):
+        docs_only, reason, paths = (scope or ci_scope.decide)(root=Path("."))
+        print("ci_scope: " + reason)
+        if docs_only:
+            summarise(summary, ci_scope.summary_lines(title, reason, paths))
+            return 0
+        scope_lines = ["- scope (tools/ci_scope.py): " + reason]
     reads_report = mode == "go" and part in ("all", "parity")
     if reads_report:
         stale = clear_report()
@@ -392,7 +409,7 @@ def run(mode, summary, part="all", shard=None):
     else:
         command = [sys.executable, "-B", str(COMPARE), "--backend", "python", "--cases", str(FIXTURES)]
     code = subprocess.run(command, check=False, env=go_env(VENDOR.is_file())).returncode  # noqa: S603
-    lines, problems = [title, "", "- `{}`: exit {}{}".format(" ".join(command), code,
+    lines, problems = [title, ""] + scope_lines + ["- `{}`: exit {}{}".format(" ".join(command), code,
                                                               " (GOFLAGS=-mod=vendor)" if VENDOR.is_file() else "")], []
     if reads_report:
         report_lines, problems = parity_lines()
@@ -539,8 +556,9 @@ def self_test():
     action, found = target_decision("build", dict(target_tree, makefile="", toolchain_problems=["wrong go"]))
     assert action == "fail", found                                                                 # no silent skip past a bad Go
     minimum_regression()
-    print("go_ci self-test: ok ({} tree refusals, {} minimum refusals, 15 report refusals, 10 end-to-end runs, 6 parts)".format(
-        len(cases) + 1, len(minimum_cases)))
+    fast = fast_path_regression()
+    print("go_ci self-test: ok ({} tree refusals, {} minimum refusals, 15 report refusals, 10 end-to-end runs, 6 parts, "
+          "{} docs-only fast path runs)".format(len(cases) + 1, len(minimum_cases), fast))
     return 0
 
 
@@ -591,6 +609,47 @@ def stale_regression():
         assert code == wanted, (label, code, output)
 
 
+def fast_path_regression():
+    """End to end (PRO-202 step 3), in a scratch tree whose HEAD is a two-parent merge like a pull request's
+    merge commit: --docs-only-fast-path skips the target only on a pull_request whose merge changes docs
+    alone; a push, a code change or a run without the flag runs it. Returns the number of runs."""
+    makefile = "go-check:\n\t@touch all.ran\ngo-check-race:\n\t@touch race.ran\n"  # all.ran: never expected
+    files = {"go/go.mod": "module x\n\ngo 1.27.4\n", "tools/scanners/go.mod": "module s\n\ngo 1.27.4\n",
+             "go/main.go": "package main\n", "Makefile": makefile, "notes.md": "a\n", "bin/go": stub_go("1.27.4"),
+             str(FIXTURES): json.dumps({"cases": []}), str(COMPARE): "import sys\nsys.exit(99)\n"}
+    cases = [  # (changed file, event, extra arguments, expected marker or None)
+        ("notes.md", "pull_request", ["--part", "race", "--docs-only-fast-path"], None),
+        ("notes.md", "pull_request", ["--docs-only-fast-path"], None),
+        ("notes.md", "push", ["--part", "race", "--docs-only-fast-path"], "race.ran"),
+        ("notes.md", "pull_request", ["--part", "race"], "race.ran"),
+        ("notes.md", "schedule", ["--part", "race", "--docs-only-fast-path"], "race.ran"),
+        ("go/main.go", "pull_request", ["--part", "race", "--docs-only-fast-path"], "race.ran"),
+    ]
+    for changed, event, extra, marker in cases:
+        root = Path(tempfile.mkdtemp(prefix="go_ci_fastpath_"))
+        for path, text in files.items():
+            (root / path).parent.mkdir(parents=True, exist_ok=True)
+            (root / path).write_text(text, encoding="utf-8")
+        (root / "bin/go").chmod(0o755)
+        git = lambda *args, tree=root: subprocess.run(["git", "-c", "user.name=ci", "-c", "user.email=ci@example.invalid"]  # noqa: E731,S603,S607
+                                                      + list(args), cwd=str(tree), check=True, capture_output=True)
+        git("init", "-q", "-b", "base")
+        git("add", "-A")
+        git("commit", "-q", "-m", "base")
+        git("checkout", "-q", "-b", "head")
+        (root / changed).write_text("changed\n", encoding="utf-8")
+        git("commit", "-q", "-am", "change")
+        git("checkout", "-q", "base")
+        git("merge", "-q", "--no-ff", "-m", "merge", "head")
+        env = dict(os.environ, PATH=str(root / "bin") + os.pathsep + os.environ.get("PATH", ""), GITHUB_EVENT_NAME=event)
+        result = subprocess.run([sys.executable, "-B", str(Path(__file__).resolve()), "go"] + extra, cwd=str(root),  # noqa: S603
+                                env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False, timeout=120)
+        ran = sorted(path.name for path in root.glob("*.ran"))
+        shutil.rmtree(str(root), ignore_errors=True)
+        assert result.returncode == 0 and ran == ([marker] if marker else []), (changed, event, extra, ran, result.stdout)
+    return len(cases)
+
+
 def part_regression():
     """End to end: one part runs its own target only; the parity report is required after the parity part and
     never read after another part; the fuzz part passes its shard to make."""
@@ -638,6 +697,8 @@ def main(argv=None):
     parser.add_argument("--shard", help="go mode, --part fuzz: run shard I of N of the fuzz smoke")
     parser.add_argument("--summary", help="append a markdown summary here (GITHUB_STEP_SUMMARY)")
     parser.add_argument("--github-output", help="minimum-version: append `version=X.Y.Z` here (GITHUB_OUTPUT)")
+    parser.add_argument("--docs-only-fast-path", action="store_true",
+                        help="go and minimum modes: skip the make target on a docs-only pull request (tools/ci_scope.py)")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args(argv)
     if args.self_test:
@@ -658,9 +719,11 @@ def main(argv=None):
         parser.error("--part and --shard apply to the go mode only")
     if args.shard is not None and (args.part != "fuzz" or not SHARD.match(args.shard)):
         parser.error("--shard takes I/N and applies to --part fuzz only")
+    if args.docs_only_fast_path and args.mode not in ("go", "minimum"):
+        parser.error("--docs-only-fast-path applies to the go and minimum modes only")
     if args.mode in TARGET_MODES:
         return run_target(args.mode, args.summary)
-    return run(args.mode, args.summary, args.part, args.shard)
+    return run(args.mode, args.summary, args.part, args.shard, args.docs_only_fast_path)
 
 
 if __name__ == "__main__":
