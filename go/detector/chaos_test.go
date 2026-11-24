@@ -66,6 +66,11 @@ func TestChaosAdmissionStormNeverExceedsMaxFlows(t *testing.T) {
 	stop := watchStats(t, e, int64(c.MaxFlows))
 	var wg sync.WaitGroup
 	var attempts, admitted, refused atomic.Int64
+	// Every goroutine holds its first admission until all 32 have made one, so 32 concurrent attempts meet a
+	// 16-flow limit whatever the scheduler does. Without this barrier a slow run (coverage instrumentation on
+	// CI) could serialise the goroutines and never refuse anything.
+	var first sync.WaitGroup
+	first.Add(32)
 	for g := 0; g < 32; g++ {
 		wg.Add(1)
 		go func(g int) {
@@ -83,7 +88,14 @@ func TestChaosAdmissionStormNeverExceedsMaxFlows(t *testing.T) {
 					refused.Add(1)
 				default:
 					t.Errorf("admission error %v", err)
+					if i == 0 {
+						first.Done()
+					}
 					return
+				}
+				if i == 0 {
+					first.Done()
+					first.Wait()
 				}
 				if len(held) > 2 || (err != nil && len(held) > 0) {
 					held[0].Close()
