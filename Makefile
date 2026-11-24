@@ -120,6 +120,7 @@ workflow-policy:
 	$(PYTHON) -B tools/release_audit.py --self-test
 	$(PYTHON) -B tools/check_go_drift.py --self-test
 	$(PYTHON) -B tools/codeql_gate.py --self-test
+	$(PYTHON) -B tools/ci_scope.py --self-test
 	$(PYTHON) -B tools/go_ci.py --self-test
 	$(PYTHON) -B tools/go_fuzz_long.py --self-test
 	$(PYTHON) -B tools/go_fuzz_smoke.py --self-test
