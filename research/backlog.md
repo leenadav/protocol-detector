@@ -44,6 +44,26 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch P, after O: refilled queue, PRO-158, 2026-11-22)
+
+Top 10 candidates by V (ties broken by reachability): BeyondTrust, Kaseya VSA, ManageEngine Endpoint Central, RingCentral,
+Mimecast, Proofpoint, HubSpot, Keeper, LastPass, 8x8. Only two of the ten vendor pages are readable from this session; the
+other eight are BLOCKED with exact URLs for Research Lab (`blocked-urls.md`). Patch: `patches/batch-p-name-based.patch`
+(placeholder release `2026.13.1`, digest `8d149a328ed6e0c8`, 466 host entries). Tested: 16 targeted vector names (all as
+expected), rollback exact, parity 7490/7490 (Python and Go), 88/88 families. 39 names queued for live round 7 (`live-hosts-r7.txt`).
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | P1 | HubSpot tags and hosted-page services to new vendor-level id `hubspot-base` (35 names; decision 4) | `apps/hubspot.md` | 4 | 4 | 16 | READY on the vendor page; live round 7 neutral (24 names exist with no address and no documented probe host: the page gives wildcards only, so no probe can be added without guessing) |
+| 2 | P2 | BeyondTrust Remote Support Cloud: verified, all names under `beyondtrustcloud.com` | `apps/beyondtrust.md` | 5 | 4 | 20 | DONE (no catalog change; confirmed by live round 7) |
+| 3 | - | Kaseya VSA, ManageEngine Endpoint Central, RingCentral, Mimecast, Proofpoint, Keeper, LastPass, 8x8 | none yet | 4 to 5 | 1 | 4 to 5 | Research Lab read rows 30 to 33, 36, 38, 40, 42 to 44 (PRO-168); the content has not reached this lane, so no spec yet (PRO-169). Rows 34 (Mimecast), 35 (Proofpoint), 37 (LastPass), 39 (Dialpad), 41 (Dashlane) stay BLOCKED |
+
+Live round 7 (PRO-167, 2026-11-22, `live-results-2026-11-22-r7.tsv`, 39 names; verdicts by Hermes, restated in section 9): `hubspot-base`
+neutral (24 of its names exist with no address and no probe; `hubapi.com`, `hscta.net`, `hscta.com`, `hsctaimages.net`, `hsappstatic.net`,
+`hubspot.net`, `hubspotvideo.com` and `hubspotservicehub.com` answer through the page's own hosts with Google Trust domain-validated
+certificates); `hsappstatic.net` and `hubapi.com` stay N2; BeyondTrust confirmed DONE. Research Lab is reading rows 30 to 44 (PRO-168).
+No catalog change.
+
 ### NAME: READY (batch O, after N: Datto RMM, N-able, FortiClient, read by Research Lab, PRO-95/PRO-106, 2026-11-22)
 
 Patch: `patches/batch-o-name-based.patch` (placeholder release `2026.13.0`, which sorts after `2026.12.9` as a string; digest
@@ -55,6 +75,13 @@ Patch: `patches/batch-o-name-based.patch` (placeholder release `2026.13.0`, whic
 | 1 | O1 | Datto RMM (new id `datto-rmm`: `centrastage.net`, `rmm.datto.com`) | `apps/fortinet-datto-nable.md` | 5 | 4 | 20 | READY (Syrah platform rows only; other platforms share the suffixes) |
 | 2 | O2 | N-able N-central, N-sight, Take Control (new id `n-able`, 10 names) | `apps/fortinet-datto-nable.md` | 5 | 4 | 20 | READY (five domains at N2 until live round 6 shows ownership) |
 | 3 | O3 | Fortinet FortiClient and EMS Cloud (new id `forticlient`, 11 exact names) | `apps/fortinet-datto-nable.md` | 4 | 4 | 16 | READY (`fortinet.net`, `forticloud.com` stay unmapped: shared with other Fortinet products) |
+
+Live round 6 (PRO-146, 2026-11-22, `live-results-2026-11-22-r6.tsv`, 24 names; verdicts by Hermes, restated in section 9):
+Datto RMM supports, moderately (`centrastage.net`, `rmm.datto.com` live, Amazon domain-validated certificates). The five N2 N-able
+domains stay N2 (domain-validated, no organisation; three behind Cloudflare, `logicnow.us` behind an AWS load balancer,
+`beanywhere.com` with no address; promotion needs a vendor page or a WHOIS-class source). FortiClient: `forticlient.forticloud.com` supports (Fortinet, Inc.); the nine `fortinet.net` names are neutral
+(certificate verification fails, alive in Fortinet's zone; not removal). `docusign.pdfeditor.com` CNAMEs to Nitro
+(`saas-origin.gonitro.com`) with a domain-validated certificate: not mapped. No catalog change.
 
 The rest of PRO-95 adds no names:
 
@@ -77,7 +104,7 @@ older names these specs cite are queued for live round 5 (`live-hosts-r5.txt`).
 |---|---|---|---|---|---|---|---|
 | 1 | N1 | Sophos Central: `sophosxl.com`, `sophosxl.net`, `sophosupd.com`, `sophosupd.net`, `hitmanpro.com` | `apps/sophos-central.md` | 4 | 4 | 16 | READY (`hitmanpro.com` at N2) |
 | 2 | N2 | `dc.services.visualstudio.com` (Application Insights telemetry) from `visual-studio` to `ms-telemetry` | `apps/sophos-central.md`, `apps/power-bi.md` | 3 | 4 | 12 | READY (N2; was a mis-attribution) |
-| 3 | N3 | DocuSign: exact `docucdn-a.akamaihd.net` | `apps/docusign.md` | 4 | 4 | 16 | READY (full list of 8 read, PRO-138/PRO-139; open: `*.docusign.pdfeditor.com` waits on live round 6) |
+| 3 | N3 | DocuSign: exact `docucdn-a.akamaihd.net` | `apps/docusign.md` | 4 | 4 | 16 | READY (full list of 8 read, PRO-138/PRO-139; `*.docusign.pdfeditor.com` not mapped: Nitro-operated, live round 6) |
 | 4 | N4 | Twilio: verified, all names under `twilio.com` | `apps/twilio.md` | 3 | 4 | 12 | DONE (no catalog change) |
 | 5 | N5 | Snowflake: verified, per-account names only | `apps/snowflake.md` | 4 | 3 | 12 | DONE (no catalog change) |
 
@@ -213,7 +240,7 @@ the providers' own pages by Research Lab, 2026-11-20; verdicts and attribution l
 |---|---|
 | Culvert field data (unknown-session share per server name, top unmapped names) | **placeholder**: not available yet |
 | D09 unknowns per application | available for the ISCX labels only (section 8 of the D09 report) |
-| Public popularity rank (CrUX bucket, Majestic rank) | licences **PASS** (2026-11-20). Majestic run 1 (PRO-98, 2026-11-21; `ranking/majestic-2026-11-21-run1.tsv`) used `main`'s 54-entry catalog, so only 22 of 69 specs were looked up (best ranks: GitHub 10, WhatsApp 23, Google Workspace 24, Telegram 33, Office 64, Zoom 79, Dropbox 93); 46 blanks are **not computed**, not "outside the top 1M". **Pending**: run 2 with the committed `app-domains.json` (79 specs), and CrUX (needs BigQuery on the server) |
+| Public popularity rank (CrUX bucket, Majestic rank) | licences **PASS** (2026-11-20). **Majestic run 2** (PRO-132, 2026-11-21, `ranking/majestic-2026-11-21-run2.tsv`, input the committed `app-domains.json` of 79 specs) replaces run 1's upper bounds: 66 of 79 specs ranked. Best ranks: GitHub (`github-copilot.md`) 10, WhatsApp 23, Google Workspace 24, OneDrive and Google Drive 24 (Google Drive's `docs.google.com`: the spec covers both products), Telegram 33, Adobe 38, Microsoft 365 64, Zoom 79, Dropbox 93, embedded trackers 97 (`t.co`), GitLab 154, Canva 168, ChatGPT 179, Zendesk 203, Docker 269. 12 specs are not in the list for any of their domains (mostly exact subdomains); `fortinet-datto-nable.md` was not computed (domains 0: run 2's input predates batch O; the current export has its 23 domains, for run 3). CrUX still needs BigQuery |
 
 ### NAME: READY (batch I, after H)
 
@@ -372,4 +399,30 @@ Items 21 to 29 were researched in batch C (above). Remaining, by provisional V:
 | 31 | Tailscale DERP relay names | BLOCKED (DERP map host not allowed; low value, likely already under `tailscale.com`) |
 | 32 | Retries: WhatsApp | BLOCKED (Salesforce, Signal, Splashtop done in batch G; Zscaler done) |
 
-No unresearched candidates remain in this queue.
+Refilled 2026-11-22 (PRO-158). 20 enterprise candidates with no spec in `apps/` (each checked against `apps/` and the catalog;
+most have a bare catalog id already). V is operator value per `README.md` (this lane's judgement: SWG visibility, enterprise
+prevalence, risk). "Reachable" is whether this session can read the vendor page (the egress allowlist is at its cap); exact URLs
+of unreadable pages are in `blocked-urls.md` rows 30 to 44, found by web search (URLs only, no content taken from search).
+
+| Order | Candidate | Catalog id today | V | Official page | Status |
+|---|---|---|---|---|---|
+| 33 | BeyondTrust Remote Support | `beyondtrust` | 5 | reachable | DONE in batch P (`apps/beyondtrust.md`) |
+| 34 | Kaseya VSA | `kaseya` | 5 | not reachable (rows 30, 31) | BLOCKED |
+| 35 | ManageEngine Endpoint Central (Cloud) | none | 5 | not reachable (row 32) | BLOCKED |
+| 36 | RingCentral (RingEX) | `ringcentral` | 5 | not reachable (row 33) | BLOCKED |
+| 37 | Mimecast | none | 5 | not reachable (row 34) | BLOCKED |
+| 38 | Proofpoint Essentials | none | 5 | not reachable (row 35) | BLOCKED |
+| 39 | HubSpot | `hubspot` | 4 | reachable | READY in batch P (`apps/hubspot.md`) |
+| 40 | Keeper | `keeper` | 4 | not reachable (row 36) | BLOCKED |
+| 41 | LastPass | `lastpass` | 4 | not reachable (row 37) | BLOCKED |
+| 42 | 8x8 Work | `8x8` | 4 | not reachable (row 38) | BLOCKED |
+| 43 | Dialpad | `dialpad` | 4 | not reachable (row 39) | BLOCKED |
+| 44 | Freshworks (Freshservice, Freshdesk) | `freshworks` | 4 | not reachable (row 40) | BLOCKED |
+| 45 | KnowBe4 | none | 4 | no single allowlist article found (phish domains are per account) | PARTIAL, URL not located |
+| 46 | Splunk Cloud | `splunk-cloud` | 4 | no current official page found by search (community posts only) | PARTIAL, URL not located |
+| 47 | Dashlane | `dashlane` | 3 | not reachable (row 41) | BLOCKED |
+| 48 | Intercom | `intercom` | 3 | not reachable (row 42) | BLOCKED |
+| 49 | New Relic | `new-relic` | 3 | not reachable (row 43) | BLOCKED |
+| 50 | PagerDuty | `pagerduty` | 3 | not reachable (row 44) | BLOCKED |
+| 51 | Sentry | `sentry` | 3 | not searched in this batch | queued |
+| 52 | Linear | none | 2 | not searched in this batch | queued |
