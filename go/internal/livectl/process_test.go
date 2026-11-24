@@ -13,15 +13,20 @@ import (
 )
 
 // A stand-in worker: writes two events, starts a child in its process group, waits to be interrupted. The INT
-// trap is set before the child file is written: tests stop the run as soon as that file appears, and an interrupt
-// that arrived before the trap killed the shell (-2) instead of being ignored (seen on CI at f5353c5).
-const holdWorker = `read line
+// trap is the script's first command, so no interrupt can reach the shell before it: an interrupt that arrived
+// before the trap killed the shell (-2, a "failed" run) instead of stopping it (seen on CI at f5353c5 and 6fdaa33;
+// PRO-140 reproduced it 5/5 with a 0.3 s delay before the trap). The ready file is the script's last write,
+// after the child file is complete (written aside and renamed): tests that stop the run wait for it (awaitReady)
+// instead of inferring readiness from the events, which the shell prints before it reaches the trap.
+const holdWorker = `if [ -n "$IGNORE_INT" ]; then trap '' INT; else trap 'exit 0' INT; fi
+read line
 printf '%s\n' "$line" > "$DIR/stdin"
 echo '{"type": "classification", "client": ["10.0.0.1", 5], "server": ["10.0.0.2", 80], "status": "identified"}'
 echo '{"type": "progress", "packets": 1}'
-if [ -n "$IGNORE_INT" ]; then trap '' INT; else trap 'exit 0' INT; fi
 sleep 300 >/dev/null 2>&1 &
-echo $! > "$DIR/child"
+echo $! > "$DIR/child.tmp"
+mv "$DIR/child.tmp" "$DIR/child"
+: > "$DIR/ready"
 while :; do sleep 0.05; done
 `
 
@@ -58,6 +63,13 @@ func until(t *testing.T, what string, done func() bool) {
 	t.Fatal("timed out waiting for " + what)
 }
 
+// awaitReady blocks until the worker has its INT trap, its child and its child file in place: only then is a
+// stop's outcome (stopped, or killed after the grace) determined by the code under test, not by the shell's timing.
+func awaitReady(t *testing.T, dir string) {
+	t.Helper()
+	until(t, "the worker to be ready", func() bool { _, err := os.Stat(filepath.Join(dir, "ready")); return err == nil })
+}
+
 func phase(m *Manager) string {
 	v, _ := m.StateView().Get("state")
 	s, _ := v.(string)
@@ -81,6 +93,7 @@ func TestStopReleasesTheProcessGroupAndLeavesTheKeyLog(t *testing.T) {
 	if _, err := m.Start("lo", ojson.FromInt(30), "synthetic", nil); err == nil || err.Error() != "A live capture is already running." {
 		t.Fatalf("second start: %v", err)
 	}
+	awaitReady(t, dir)
 	until(t, "the worker's events", func() bool { return strings.Contains(ojson.MustDumps(m.StateView()), `"events_total": 1`) })
 	if line, _ := os.ReadFile(filepath.Join(dir, "stdin")); strings.TrimSpace(string(line)) != `{"keylog_path": "`+keylog+`"}` {
 		t.Fatalf("the key-log path did not arrive on standard input: %q", line)
@@ -119,7 +132,7 @@ func TestStopKillsTheProcessGroupOfAWorkerThatIgnoresTheInterrupt(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	until(t, "the worker's child", func() bool { _, err := os.Stat(filepath.Join(dir, "child")); return err == nil })
+	awaitReady(t, dir)
 	childText, _ := os.ReadFile(filepath.Join(dir, "child"))
 	child, _ := strconv.Atoi(strings.TrimSpace(string(childText)))
 	m.Stop(nil, runID(t, snap))
@@ -138,6 +151,7 @@ func TestLeaseExpiryStopsAnUnwatchedRun(t *testing.T) {
 	if _, err := m.Start("lo", ojson.FromInt(30), "synthetic", nil); err != nil {
 		t.Fatal(err)
 	}
+	awaitReady(t, dir)
 	m.mu.Lock()
 	m.lease = time.Now().Add(-time.Minute)
 	m.mu.Unlock()

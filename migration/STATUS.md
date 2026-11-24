@@ -892,6 +892,27 @@ failed there.
   the new targets through `tools/go_fuzz_long.py`. Its first scheduled run on `main` after `cb3ac80` is the evidence
   to record here.
 
+### PRO-141: livectl stop tests made deterministic (2026-11-24)
+
+- **Failure.** `TestStopReleasesTheProcessGroupAndLeavesTheKeyLog` (`go/internal/livectl/process_test.go`) timed out
+  "waiting for the stopped state" at 10.01 s on PR #65 head `6fdaa33` (pull_request run 44960532796; the push run
+  44960527096 of the same SHA passed), and on PR head `8480775` (run 45230141542). Earlier, `f5353c5` failed
+  `TestStopKills…` the same way (run 44986686845).
+- **Root cause (PRO-140, Research Lab; confirmed here).** The test raced its stand-in worker, not `Manager.Stop`. The
+  shell printed both events and only then set `trap 'exit 0' INT`; the test called `Stop` as soon as the events were
+  ingested. A SIGINT in that window killed the shell (status -2), `read` recorded "Capture process exited
+  unexpectedly (-2).", the phase became `failed`, and the poll for `stopped` ran out. PRO-140: 0 of 420 natural
+  failures, 5 of 5 with a 0.3 s delay before the trap. Here, on `main` `21dd113` with that delay: 3 of 3 failed.
+- **Fix (`aff4d13`, test only).** The trap is the worker's first command; the worker writes its child file aside and
+  renames it, then writes a ready file as its last step; the three stop tests (`TestStopReleases…`,
+  `TestStopKills…`, `TestLeaseExpiry…`) call `awaitReady` before they stop. No assertion changed and no product code
+  changed; Python untouched.
+- **Proof (go1.27.4, `-race`).** With a forced 0.3 s delay after the events in the fixed worker: 15 of 15 passed
+  (`-count=5` of the three tests). `-count=200 -run '^TestStopReleasesTheProcessGroupAndLeavesTheKeyLog$'`: ok, 200 of
+  200 (14.4 s); again with 8 busy loops on 4 CPUs: ok (17.7 s), and `TestStopKills…` plus `TestLeaseExpiry…`
+  `-count=20` under the same load: ok (152.7 s). Gates are in the PR body.
+- **Branch.** `claude/vigilant-meitner-t7kw7h`, assigned by the session's harness (see the PRO-101 follow-up above).
+
 ## Adversarial identification (2026-11-18)
 
 Lee, 2026-11-18: a suite that tries to deceive the detector on purpose, asserting that it either stays honest
