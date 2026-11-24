@@ -192,25 +192,28 @@ func TestProfileOutcomes(t *testing.T) {
 	}
 }
 
-// TestPostQuantumServerHelloGap pins a known gap of main's engine. Integration work item #4 (the X25519MLKEM768
-// hybrid group, the default of current clients and of Go's crypto/tls) and #5 (unknown TLS registry values) were
-// fixed on claude/culvert-integration-prep in both the Python reference and Go; they did not land with the
-// branch, because main's Python reference is frozen and the change needs Lee's decision (LANE-BRIEF-culvert.md).
-// Until they land, the client direction is identified and the server direction of a default Go TLS server is
-// unknown. When the fix lands, this test is replaced by the positive one it replaced (commit a51f459).
-func TestPostQuantumServerHelloGap(t *testing.T) {
+// TestPostQuantumServerHello is the facade-level regression for integration work item #4, ported Go-only by
+// PRO-260 (Lee, 2026-11-23; the frozen Python reference keeps the gap, an approved parity exception in
+// migration/STATUS.md): a ServerHello selecting the X25519MLKEM768 hybrid group, the default of current clients
+// and of Go's crypto/tls, is identified in both directions. Before the fix it was reported unknown ("Server key
+// share group outside supported profile"), which the Culvert lab reproduced on a live tunnel.
+func TestPostQuantumServerHello(t *testing.T) {
 	ch, sh := tlsFlights(t, "pq.example.test", []string{"h2"}, nil) // nil: the standard library's default groups
 	s := observe(t, mustEngine(t, allFamilies()), ch, sh)
 	expect(t, "pq", s.Direction(ClientToServer), want{OutcomeIdentified, ReasonEngine, "tls", "pq.example.test"})
 	srv := s.Direction(ServerToClient)
-	expect(t, "pq", srv, want{OutcomeUnknown, ReasonEngine, "", ""})
-	if srv.Detail != "Server key share group outside supported profile" {
-		t.Fatalf("post-quantum ServerHello: detail %q", srv.Detail)
+	expect(t, "pq", srv, want{OutcomeIdentified, ReasonEngine, "tls", ""})
+	got := map[string]string{}
+	for _, ev := range srv.Evidence {
+		got[ev.Field] = ev.Value
+	}
+	if got["selected_group"] != "4588" || got["selected_key_exchange"] != "hybrid" || got["selected_tls_version"] != "1.3" {
+		t.Fatalf("post-quantum ServerHello evidence: %v", got)
 	}
 }
 
 // The largest Content-Length that fits in int64 identifies in both directions. (Work item #6, a larger value is
-// malformed, did not land with the branch either; see TestPostQuantumServerHelloGap.)
+// malformed, did not land with the branch; it needs a decision of its own.)
 func TestContentLengthAtInt64MaxIdentifies(t *testing.T) {
 	e := mustEngine(t, allFamilies())
 	value := "9223372036854775807"

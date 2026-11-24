@@ -35,7 +35,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   - The Go engine, the CLI `protodetect` and the dashboard service `protodetect serve`.
   - The launcher starts Go when the binary is installed and Python otherwise (`24e410e`, Lee's decision of
     2026-11-17).
-- **Parity:** 7,430 of 7,430 cases agree. 79 of 88 families are parity-verified since PRO-201 (`098b201`): the verifier no longer credits a replay of the positive message as foreign bytes, so ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh are `experimental` until real foreign cases are added. Server parity: 424 exchanges, 0
+- **Parity:** 7,462 of 7,462 cases agree (18 of them through PRO-260's pinned Go-only deltas). 79 of 88 families are parity-verified since PRO-201 (`098b201`): the verifier no longer credits a replay of the positive message as foreign bytes, so ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh are `experimental` until real foreign cases are added. Server parity: 424 exchanges, 0
   differences. The adversarial suite (4,041 cases) passes.
 - **Content release:** 2026.11.9 (digest `cdaa5993077d101a`), with 544 applications and 442 host entries. Every earlier
   release reproduces the digest it was published with (C11).
@@ -70,6 +70,11 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   `STATUS.md`. Merged into `main` with PR #102 (`cb3ac80`, `merged_by: leenadav`, not by the session). Hermes's
   review follow-up (who merged, the branch reason, gitleaks on `fd46be0` and `3a25bd0`, issue #103) is in `STATUS.md`
   ("PRO-101 review follow-up"), on `claude/dazzling-franklin-1179wl`.
+  alike) is held for a parity decision. Details in `STATUS.md`. Branch `claude/busy-ramanujan-7oczj2`.
+- **PRO-260 (TLS post-quantum hybrid key shares, Go only by Lee's decision, 2026-11-23):** 0x11EB, 0x11EC and
+  0x11ED are named groups in `tlsx` (`selected_key_exchange` = `hybrid`); branch `claude/engine-PRO-260-tls-pq-keyshare`,
+  PR #105 into `main`. Recorded as a Frozen-Python exception; 18 parity cases pinned in `deltas.json` (`go`), and
+  `migration/parity/pro260.py` models the divergence on the reference for the decrypt and live-decrypt differentials.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 
 ## 3. Where things live (reading order)
@@ -138,6 +143,9 @@ PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentatio
 PRO-261 (against `cb3ac80`): `7045c42`, `9121403`, `9af4388` plus the documentation commit after them.
 
 PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it (`3a25bd0`). The review follow-up (against `main` `cb3ac80`) is one commit on `claude/dazzling-franklin-1179wl`: comments, the issue link and documentation only.
+PRO-260 (against `main` `cb3ac80`, PR #105): `b1379a4` (Go fix, tests, parity cases, pinned deltas, the model), `0de4cff` (the presentation decrypt-backend test under the model) and the documentation commits `5d641ae` and after.
+
+PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
@@ -214,5 +222,15 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **rapid's `*rapid.T` is not a `testing.TB`** (Go 1.27 added `ArtifactDir`). Shared checks take a small
   `failer` interface (`Helper`, `Fatal`, `Fatalf`). A failing property writes `testdata/rapid/**.fail` (git-ignored);
   check the shrunk counterexample in as a native seed (`testdata/fuzz/<Target>/`) and confirm it fails without the fix.
+- **An approved Go-only divergence that moves parity is pinned, not exempted (PRO-260).** A plain `deltas.json`
+  path exempts any value, and a list that changes size shows up only as `.length`. Record Go's value as `go`
+  (compare.py, the Go replay test and verify_families.py then require exactly it), and model the change on the
+  reference in process for the capture differentials (`migration/parity/pro260.py`), never by editing it.
+- **A fresh container clone is shallow and has only Go 1.24.** `make workflow-policy` fails ("history baseline …
+  not an ancestor") until `git fetch --unshallow origin`. Get the pinned Go with `GOTOOLCHAIN=go1.27.4 go version`
+  once, then put `~/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/bin` first on `PATH` (with `GOROOT`).
+- **A concurrency test must force the overlap it asserts.** `TestChaosAdmissionStorm…` relied on goroutines
+  overlapping and failed 2 of 3 times with `-cpu=1` (CI coverage job, PR #105). Use a barrier; check with
+  `go test -count=30 -cpu=1,2,4`.
 - **`bytes_inspected` is chunk-granular by contract** (the whole chunk in which a parser fails is counted, as in
   `engine.py`), and a parser's consumed count after a fault is discarded. Compare them against budgets, not across splits.

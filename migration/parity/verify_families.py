@@ -7,7 +7,9 @@ records included):
 
   1. the report passed and claims the family, and every committed case labelled with the family matched
      exactly: as many matched cases of each kind as there are cases, and no listed gap or approved delta for
-     any of them;
+     any of them. A case whose deltas all pin Go's value (`go`, an approved Go-only divergence such as PRO-260)
+     still had to match that value exactly; it is counted as an approved divergence, not a shortfall, but it
+     earns no class or session credit below, so the family's other cases must prove every class on their own;
   2. for every transport the family serves (CAPABILITIES.json), the matched cases of that transport's kind
      (tcp: stream, udp: datagram) cover four classes: a positive message, a truncated prefix, a mutated
      message and foreign bytes. A foreign-bytes case counts only when its payload differs from every
@@ -78,7 +80,7 @@ def variant_of(case):
 
 def evidence(cases, report, gaps, deltas, capabilities):
     """{family: {"status", "cases", "classes", "shortfall"}} from the committed cases and the parity report."""
-    per = defaultdict(lambda: {"cases": defaultdict(int), "classes": defaultdict(set), "touched": [], "sessions": 0})
+    per = defaultdict(lambda: {"cases": defaultdict(int), "classes": defaultdict(set), "touched": [], "sessions": 0, "divergences": 0})
     positives, protocols = defaultdict(set), defaultdict(set)
     for case in cases["cases"]:
         if case["kind"] != "session" and variant_of(case) in CLASSES["positive"]:
@@ -88,10 +90,14 @@ def evidence(cases, report, gaps, deltas, capabilities):
             name = identity(expected.get("final") or expected.get("observation"))
             if name:
                 protocols[family].add(name)
+    pinned = {cid for cid, items in deltas.items() if items and all("go" in item for item in items)}
     for case in cases["cases"]:
         family = family_of(case.get("label"))
         entry = per[family]
         entry["cases"][case["kind"]] += 1
+        if case["id"] in pinned and case["id"] not in gaps:
+            entry["divergences"] += 1
+            continue
         variant = variant_of(case)
         for name, variants in CLASSES.items():
             if variant in variants and not (name == "foreign" and payload(case) in positives[family]):
@@ -127,6 +133,8 @@ def evidence(cases, report, gaps, deltas, capabilities):
         out[family] = {"status": "experimental" if shortfall else "parity-verified", "cases": counts,
                        "classes": {kind: sorted(names) for kind, names in sorted((entry["classes"] if entry else {}).items())},
                        "shortfall": shortfall}
+        if entry and entry["divergences"]:
+            out[family]["approved_divergences"] = entry["divergences"]
     return out
 
 
@@ -150,6 +158,8 @@ def main(argv=None):
             go["status"] = entry["status"]
             go["evidence"] = {"cases": entry["cases"], "classes": entry["classes"], "shortfall": entry["shortfall"],
                               "rule": "migration/parity/verify_families.py over make parity-go"}
+            if entry.get("approved_divergences"):
+                go["evidence"]["approved_divergences"] = entry["approved_divergences"]
         target.write_text(json.dumps(capabilities, indent=2) + "\n", encoding="utf-8")
         print("families: {} parity-verified, {} not ({})".format(len(verified), len(computed) - len(verified),
               ", ".join(sorted(set(computed) - set(verified))) or "none"))

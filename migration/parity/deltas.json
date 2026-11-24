@@ -1,1 +1,1574 @@
-{}
+{
+ "stream/tls-32-server13-hybrid-x25519mlkem768/bytes": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4588",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4588",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-32-server13-hybrid-x25519mlkem768/sevens": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4588",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4588",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-32-server13-hybrid-x25519mlkem768/whole": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4588",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4588",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-33-server13-hybrid-p256mlkem768/bytes": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4587",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4587",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-33-server13-hybrid-p256mlkem768/sevens": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4587",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4587",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-33-server13-hybrid-p256mlkem768/whole": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4587",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4587",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-34-server13-hybrid-p384mlkem1024/bytes": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4589",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4589",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-34-server13-hybrid-p384mlkem1024/sevens": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4589",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4589",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-34-server13-hybrid-p384mlkem1024/whole": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4589",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "server_hello",
+      "wire:server_hello",
+      "structural"
+     ],
+     [
+      "selected_group",
+      "4589",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_key_exchange",
+      "hybrid",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher_mode",
+      "aead",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:server_hello",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1302",
+      "wire:server_hello",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+    "scope": "server_hello",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-35-server13-hybrid-short/bytes": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-35-server13-hybrid-short/sevens": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-35-server13-hybrid-short/whole": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-36-server13-hybrid-bad-point/bytes": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-36-server13-hybrid-bad-point/sevens": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-36-server13-hybrid-bad-point/whole": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "Server key share encoding length or point format invalid",
+    "scope": "initial_message",
+    "status": "malformed",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-38-hrr-hybrid-group/bytes": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "hello_retry_request",
+      "wire:hello_retry_request",
+      "structural"
+     ],
+     [
+      "requested_group",
+      "4588",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:hello_retry_request",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "HelloRetryRequest structure validated; requested changes unverified",
+    "scope": "hello_retry_request",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "hello_retry_request",
+      "wire:hello_retry_request",
+      "structural"
+     ],
+     [
+      "requested_group",
+      "4588",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:hello_retry_request",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "HelloRetryRequest structure validated; requested changes unverified",
+    "scope": "hello_retry_request",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-38-hrr-hybrid-group/sevens": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "hello_retry_request",
+      "wire:hello_retry_request",
+      "structural"
+     ],
+     [
+      "requested_group",
+      "4588",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:hello_retry_request",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "HelloRetryRequest structure validated; requested changes unverified",
+    "scope": "hello_retry_request",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "hello_retry_request",
+      "wire:hello_retry_request",
+      "structural"
+     ],
+     [
+      "requested_group",
+      "4588",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:hello_retry_request",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "HelloRetryRequest structure validated; requested changes unverified",
+    "scope": "hello_retry_request",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ],
+ "stream/tls-38-hrr-hybrid-group/whole": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "hello_retry_request",
+      "wire:hello_retry_request",
+      "structural"
+     ],
+     [
+      "requested_group",
+      "4588",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:hello_retry_request",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "HelloRetryRequest structure validated; requested changes unverified",
+    "scope": "hello_retry_request",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.events[0].observation"
+  },
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": "tls",
+    "evidence": [
+     [
+      "encryption",
+      "tls",
+      "wire",
+      "structural"
+     ],
+     [
+      "tls_handshake",
+      "hello_retry_request",
+      "wire:hello_retry_request",
+      "structural"
+     ],
+     [
+      "requested_group",
+      "4588",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_tls_version",
+      "1.3",
+      "wire:hello_retry_request",
+      "asserted"
+     ],
+     [
+      "selected_cipher",
+      "0x1301",
+      "wire:hello_retry_request",
+      "asserted"
+     ]
+    ],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "HelloRetryRequest structure validated; requested changes unverified",
+    "scope": "hello_retry_request",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "PRO-260, Go-only by Lee's decision, 2026-11-23: Go recognises the post-quantum hybrid TLS key-exchange groups (IANA TLS Supported Groups 0x11EB SecP256r1MLKEM768, 0x11EC X25519MLKEM768, 0x11ED SecP384r1MLKEM1024) with their exact ServerHello share lengths; the frozen Python reference keeps them outside its profile (unknown). Recorded in migration/STATUS.md 'Frozen-Python exceptions'. Go's value here is pinned.",
+   "path": "$.final"
+  }
+ ]
+}

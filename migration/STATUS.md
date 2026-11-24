@@ -489,6 +489,7 @@ changes):
 | Live capture defaults to the Go backend; the reference runs with `--backend python` (`protocol_adapters/live_capture.py`) | Lee, 2026-11-15 (M8 decisions) | `9a7ebb9` |
 | Reused tuples: a flow on a reused tuple is the next generation (`protocol_adapters/coordinator.py`) | Lee's rule of 2026-11-17: adapter-level Python changes may go ahead (Milestone B row) | `caf964f` |
 | One generation counter per capture (`protocol_adapters/coordinator.py`, `protocol_adapters/events.py`) | Lee, 2026-11-18 | `0d78604` |
+| PRO-260: TLS post-quantum hybrid key shares (0x11EB, 0x11EC, 0x11ED) are recognised in Go only; the Python reference is unchanged and the 18 differing parity cases are pinned in `migration/parity/deltas.json` (section "PRO-260" below) | Go-only by Lee's decision, 2026-11-23 (relayed by Hermes) | `b1379a4` |
 | Content releases 2026.11.1 to 2026.11.9: new versions of the reference's data (`protocol_engine/host_apps.py`, the release tables in `content.py`, `content_lock.json`), each added as a new version (AGENTS.md rule 2) to both engines' pack | content-release process; each release is recorded in this ledger, and no separate Lee approval is recorded for them | `9cec1e6`, `3b0ddf9`, `baa07b9`, `6ab434d`, `7dcabb7`, `b6ed149`, `ee1645d`, `253a91d`, `2f6ad4d` |
 
 C11 (2026-11-18, research finding): a rollback recomputed an earlier release's digest from the current
@@ -607,6 +608,34 @@ record the divergence):
 | Regression tests | `TestRequestTargetAuthorityIsTheHostname` (9 cases), `TestAbsoluteFormTargetIsTheObservedHostname` | Before the fix 5 of the 9 cases failed. In the absolute-form and CONNECT cases with a disagreeing Host, the Host header won; with no Host there was no hostname; and an IPv4 target took a named Host. After it all pass, and no disagreeing name appears in any evidence. |
 | Parity | divergence recorded, 0 case changes | No parity case uses an absolute-form target, and every CONNECT case's Host agrees with its target. All 7,430 still match. |
 | Randomized differential | approved-divergence rule | `random_diff.py` accepts a mismatch as SEC-HTTP-1 only when the request has an absolute-form or CONNECT target and every differing path is host attribution (hostname, evidence, application). Any other difference still fails; the self-test covers acceptance and both rejections. Seed 1: 1,972 matched plus 28 approved, 0 failures. Seeds 2 and 3 at 20,000 each: 265 and 225 approved, 0 failures. |
+
+## PRO-260: TLS post-quantum hybrid key shares, Go only (Lee, 2026-11-23)
+
+**The gap.** PR #97 (the Culvert landing) left out the preparation branch's integration work item #4: a TLS 1.3
+ServerHello whose `key_share` selects a post-quantum hybrid group was `unknown` ("Server key share group outside
+supported profile"), and so was a HelloRetryRequest asking for one. X25519MLKEM768 is the default of current
+browsers and of Go's `crypto/tls`, so a modern HTTPS server's reply was not identified. The ClientHello side was
+already identified: an offer's groups and key shares are collected, never judged.
+
+**The fix** (`go/internal/protocols/tlsx/tls.go`, Go only by Lee's decision; the Python reference is frozen and
+keeps the gap). The hybrid groups of the IANA TLS Supported Groups registry (draft-ietf-tls-ecdhe-mlkem) join the
+named groups with their exact ServerHello share length: 0x11EB SecP256r1MLKEM768 (65 + 1088 bytes), 0x11EC
+X25519MLKEM768 (1088 + 32) and 0x11ED SecP384r1MLKEM1024 (97 + 1568). The NIST-curve hybrids must start with an
+uncompressed point (byte 4); X25519MLKEM768 starts with the ML-KEM ciphertext and has no fixed first byte.
+`selected_key_exchange` is `hybrid`, which is not in the no-forward-secrecy set, so no risk follows. A share of
+another length is malformed. Other groups (0x6399, the withdrawn X25519Kyber768Draft00, among them) are unchanged.
+Unknown-registry handling (work item #5) is not part of this change.
+
+| item | state | evidence |
+|---|---|---|
+| Regression tests | `go/internal/protocols/tlsx/hybrid_test.go` (ServerHello, HelloRetryRequest, ClientHello; whole, 1-byte and 7-byte feeds), `go/detector` `TestPostQuantumServerHello` (a real `crypto/tls` handshake with the default groups) | Before the fix `TestPostQuantumServerHello*` failed with "Server key share group outside supported profile"; after it all pass. `TestPostQuantumServerHelloGap`, which pinned the gap, is replaced by the positive test, as it said it would be. |
+| Parity cases | 8 TLS hellos appended to `cases.py` (32 cases, 7,430 → 7,462) | The case generator is an approved exception (above); earlier case ids are unchanged. 14 cases match as they are: the kyber-draft group, the client offer and every truncated (`/half`) variant. |
+| Parity deltas | 18 cases pinned in `migration/parity/deltas.json` | The three hybrids, the short share, the bad point and the HelloRetryRequest, each whole, bytes and sevens. Each case pins `$.events[0].observation` and `$.final` to Go's value (`go`). `compare.py` now requires that value from a Go results file, so a Go result that falls back to the reference's answer, or any other value, fails; the Python reference is still judged against its own expectation (`test_pinned_go_only_deltas_expect_exactly_the_recorded_value`). `make parity-go`: compared 7,462, matched 7,462, exempted 144. |
+| The model | `migration/parity/pro260.py` (`--self-test`) | The approved divergence as code: in process, and only while its context is open, the reference's `parse_server_hello` sees a hybrid key_share as an X25519 stand-in of the same validity, and the group and `hybrid` are mapped back. Every other check runs in the reference's order with its messages. No reference file changes. Under the model the reference reproduces all 18 pinned values exactly and changes no other of the 916 TLS and DTLS cases (`test_pinned_go_values_are_the_reference_under_the_pro260_model`). |
+| Capture differentials | `decrypt_diff.py` and `live_decrypt_diff.py` accept a difference only when Go equals the reference under the model | The OpenSSL-made exchanges negotiate X25519MLKEM768 by default (OpenSSL 3.5.9 here), so Go's reports gain the server's selections. Seed 1: decrypt 300 captures, 0 mismatched, 26 approved; live decrypt 300 scripts, 0 mismatched, 41 approved. Any other difference still fails (`test_pro_260_approves_only_the_reference_under_the_hybrid_model`). |
+| CI finding on PR #105 (not PRO-260's) | `TestChaosAdmissionStormNeverExceedsMaxFlows` (PRO-101) fixed in the test | It failed in the CI coverage job: "no admission was refused". The storm only reached its 16-slot limit when goroutines overlapped; with one CPU they ran one after another. Reproduced on `main` `cb3ac80`: 20 of 30 runs fail at `-cpu=1`. Each goroutine now holds its first attempt until all 32 have made one, so at least 16 are refused on any scheduler: 0 of 30 failures at `-cpu=1`, 2 and 4, clean under `-race`. The assertion is unchanged. |
+| Go replay test | `go/internal/replay` `TestPortedFamiliesMatchThePythonReference` honours the same pins | A pinned case's expectation at each pinned path is replaced by the recorded Go value before the exact diff (`deltas_test.go`, `TestExpectPinned`); changing one pinned value makes the test fail. |
+| Family status | `tls` stays `parity-verified`, with `approved_divergences: 18` in `CAPABILITIES.json` | `verify_families.py`: a case whose deltas all pin Go's value is counted as an approved divergence, not a shortfall, and earns no class or session credit, so the family's other cases prove every class; an unpinned delta or a gap still disqualifies (`test_a_pinned_go_only_divergence_is_counted_but_earns_no_credit`). 79 of 88 families verified, unchanged. |
 
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 

@@ -189,9 +189,16 @@ class DecryptionBackendTests(unittest.TestCase):
         if not built.is_file():
             return      # no binary in this checkout; the comparison is `make parity-decrypt` in the Go engine gate
         capture, keylog, _, _ = fixture()
+        # PRO-260 (Lee, 2026-11-23): Go names the post-quantum hybrid ServerHello groups (the fixture's OpenSSL
+        # exchange negotiates X25519MLKEM768), which the frozen reference reports as unknown. Go is compared with
+        # the reference under exactly that change (migration/parity/pro260.py), in process.
+        sys.path.insert(0, str(server.ENGINE / "migration" / "parity"))
+        import pro260
         with mock.patch.dict(os.environ, {"PROTODETECT_GO_BINARY": str(built)}):
             for keys in (keylog, ""):
-                go, reference = analyze_capture(capture, keys, backend="go"), analyze_capture(capture, keys, backend="python")
+                go = analyze_capture(capture, keys, backend="go")
+                with pro260.with_hybrid_groups():
+                    reference = analyze_capture(capture, keys, backend="python")
                 self.assertEqual(json.dumps(go), json.dumps(reference))
             self.assertEqual(go["connections"][0]["status"], "unavailable")
             self.assertEqual(analyze_capture(capture, keylog, backend="go")["decrypted"], 1)

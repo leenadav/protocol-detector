@@ -3755,7 +3755,7 @@
         "status": "parity-verified",
         "evidence": {
           "cases": {
-            "stream": 138,
+            "stream": 170,
             "session": 732
           },
           "classes": {
@@ -3767,7 +3767,8 @@
             ]
           },
           "shortfall": [],
-          "rule": "migration/parity/verify_families.py over make parity-go"
+          "rule": "migration/parity/verify_families.py over make parity-go",
+          "approved_divergences": 18
         }
       },
       "midstream": false,

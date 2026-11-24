@@ -35,7 +35,7 @@ func ext(kind int, value ...byte) []byte {
 }
 
 // Server-hello decisions at the parser. The work item #4 and #5 rows (post-quantum hybrids, unnamed and GREASE
-// values) are not on main: they leave with those fixes, which need a Go-only change (see LANE-BRIEF-culvert.md).
+// values) are not on main; #4 (the hybrids) is ported Go-only by PRO-260 in hybrid_test.go, #5 is still open.
 func TestServerHelloSelections(t *testing.T) {
 	tls13 := ext(43, 3, 4)
 	share := func(group, size int, first byte) []byte {
