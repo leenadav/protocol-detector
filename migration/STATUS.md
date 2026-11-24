@@ -711,6 +711,36 @@ below was still present on `e5ac90f` unless the row says otherwise. Branch `clau
 | PRO-21 schema_go ignored return codes | yes | `a56728d` | `SchemaInvocationTests` | 200 captures, 0 problems |
 | PRO-21 adversarial judge order, empty record lists | yes | `5920061` | `AdversarialJudgeTests` | 4,041 cases, 1 known finding (F-ADV-1), 0 failures |
 
+## PR #99 reconciled with main (PRO-261, 2026-11-23)
+
+Hermes, PRO-261: PR #99 (`claude/keen-goodall-f8yhou`, head `54305c7`) fixed the same PRO-201 findings as PR #98
+(merged, `b9927b7`) in 23 commits that are not patch-identical to `main`. Each #99 commit was checked against
+`main` `cb3ac80` by running its regression test there (Go tests copied in; Python test files from #99 run against
+`main`'s tools, API differences read by hand). Only the gaps below were ported, on `claude/engine-PRO-261-reconcile-99`.
+
+| #99 commit | Finding | On `main` | Evidence |
+|---|---|---|---|
+| `f4797ef` | PRO-15 x509x four-octet length | covered, `4c405d1` | #99's `TestElementFourOctetLengthBeyondContainerIsMalformed` passes on main, amd64 and GOARCH=386 |
+| `d12b794` | PRO-15 KEXINIT name-list uint32 | covered, `bff93e5` | #99's test (adapted to `newKexInit(n, nil)`) passes, amd64 and 386 |
+| `a2ae04e` | PRO-13 terminal TLS connection state | covered, `60db15f` | #99's decrypt test passes on main |
+| `a87d313` | PRO-13 key-log append atomic | covered, `ce8b057` | #99's `TestRejectedAppendIndexesNothing` (renamed) passes beside main's |
+| `d211649` | PRO-18 capture child reaped once | covered, `ac8834f` | #99's `TestRunTimeoutReapsTheCaptureChildThroughOneWaiter` passes under `-race` |
+| `cb8c634` | PRO-14 host-catalog case-variant keys | covered, `bc80f45` | main has the same test name and body |
+| `bfd616b` | PRO-14 `check_content --update` fail-closed | covered, `4eb6d3b` | #99's subtests pass on main without `--bootstrap` (a #99-only option, not part of the finding) |
+| `43b18bc` | PRO-14 boolean vs number in `compare.py` | covered, `144daf5` | #99's `test_migration_parity.py`: 15 of 15 pass on main |
+| `8249ba6` | PRO-19 FromJSON byte bound | covered, `3503bf2` | #99's `TestFromJSONRefusesMoreThanMaxFileBytes` passes on main |
+| `7aadbef` | PRO-16 buffer growth charges both arrays | **held decision on main** (ADR 0001, row above) | #99's two tests fail on main by design; not ported. `buffer.Bounded` still has no production caller (`go/detector` uses only `buffer.Account` reservations) |
+| `185c7dd` | PRO-16 pcapng 32-bit lengths | **partly missing**: the slice panic is fixed (`b346b50`), `OriginalLength` still wrapped negative on 386 | ported: `capture.length` saturates; #99's test fails on main under GOARCH=386 (`OriginalLength:-1`) and passes after |
+| `afd82ec` | PRO-16 chunked continuation budget | covered, `ec32ac0` | #99's guard test passes on main |
+| `62a1957` | PRO-20 family evidence | covered, `098b201` | #99's stricter extras (a positive must identify the family; a foreign case must not) change no family's status on today's cases. #99's new foreign cases in `cases.json` that restore 9 families are not ported: that needs approval (row above) |
+| `d519ac0` | PRO-20 analyze/decrypt empty runs | **partly missing**: a run of refused presentations, or of decryptions naming no inner application, passed | ported: `shortfall` checks both; real runs 300/300, 201 completed presentations, 147 decrypted, 9 inner applications |
+| `edcc29b` | PRO-21 control worker completion | covered, `0d8dc62` | main checks the exit status the last line implies; #99 also failed on any stderr, not ported (Go `live` forwards capture stderr) |
+| `2ac6b5b` | PRO-21 server telemetry normalization | **partly missing**: a null in a measurement slot was normalized away | ported: only numbers become markers |
+| `a29d6ca` | PRO-21 server waits and probes | covered, `9b29688` | main's admission check is stricter (states per slot) |
+| `20515ea` | PRO-21 schema_go completion | covered, `a56728d` | same rules, plus a timeout on main |
+| `ef2beff` | PRO-21 adversarial judge | covered, `5920061` | same bases and empty-record rule |
+| `c38fa5e`, `111a04f`, `5f9c9d1`, `54305c7` | docs, lint, backlog | superseded | #99's PM-9 to PM-14 restate decisions this file's PRO-201 table already tracks (PM-9, PM-11 a/b and the FromJSON half of PM-12 are fixed on main) |
+
 ## Randomized differential (PRO-100, 2026-11-22)
 
 Hermes, PRO-100: differential testing with random inputs, the Python reference as the oracle.
