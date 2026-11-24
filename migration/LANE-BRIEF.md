@@ -86,6 +86,10 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   `5b48d91` (PRO-291). P2 2: an undersized client Initial on a conflicted connection no longer refreshes the marker
   or retracts; the 1200-byte rule runs right after opening, before frames (also the related P3). `653b1ca` on
   `claude/engine-PRO-315-quic-conflict-size`, cut from PR #107's head `d950eb8` (PR into that branch).
+- **PRO-325 (Codex PRO-324 on PR #113):** no findings (P0–P3); PR #113 is a Dependabot `actions/setup-go` bump in
+  four CI/CD workflow files, so there is no engine code to change. Hermes's automatic check twice flagged
+  `b7ad1dad31e06c5925ef5d2fc7ad053ef454303e` as an unpushed commit: it is the upstream `actions/setup-go` v7.0.0 commit
+  (21 pins in `.github/workflows/` on `main` `7575820`), not a commit of this repository. Only this brief changed.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 - **PRO-141 (livectl stop flake):** the stand-in worker sets its INT trap first and writes a ready file last; the
   three stop tests wait for it (`aff4d13`, branch `claude/vigilant-meitner-t7kw7h`). 200 of 200 under `-race`, also
@@ -181,6 +185,9 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 
 - **A fresh container is a clone of `main`.** Run `git fetch origin claude/go-migration` and check out the branch
   before deciding that any SHA is "missing".
+- **Name upstream SHAs as upstream.** A report that quotes an action's commit SHA (for example
+  `actions/setup-go@b7ad1da…`, PRO-325) reads as an unpushed commit to Hermes's automatic check. Label it
+  "upstream <owner>/<repo> commit" and give only this repository's commits as full SHAs to verify.
 - **Always vendor.** Every Go command needs `GOFLAGS=-mod=vendor`; the Makefile sets it. Scratch output goes under
   `build/`, never inside `go/`, or `go vet` and gofmt pick it up.
 - **Recording a new content release (C11).**
