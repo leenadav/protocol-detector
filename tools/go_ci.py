@@ -9,7 +9,7 @@ here, where it has a self-test.
     go_ci.py go [--part PART] [--shard I/N] [--summary FILE]
                                       `make go-check` (gofmt, vet, go test -race, fuzz smoke,
                                       then `make parity-go` and the other parity gates) on the
-                                      build compiler; --part static|race|fuzz|parity runs one
+                                      build compiler; --part static|race|386|fuzz|parity runs one
                                       part (`make go-check-PART`), as the go-engine, go-fuzz-smoke
                                       and go-parity jobs do, and --shard I/N (fuzz only) runs
                                       shard I of N of the fuzz smoke (GO_FUZZ_SHARD)
@@ -86,7 +86,7 @@ TOOLCHAIN_LINE = re.compile(r"^toolchain\b.*$", re.M)
 TOOLCHAIN = re.compile(r"^toolchain\s+go(\d+\.\d+(?:\.\d+)?)\s*$")
 EXACT = re.compile(r"^\d+\.\d+\.\d+$")
 TARGET = re.compile(r"^go-check\s*:", re.M)
-PARTS = ("all", "static", "race", "fuzz", "parity")
+PARTS = ("all", "static", "race", "386", "fuzz", "parity")
 SHARD = re.compile(r"^[1-9][0-9]?/[1-9][0-9]?$")
 MINIMUM_TARGET = re.compile(r"^go-check-minimum\s*:", re.M)
 
@@ -362,7 +362,8 @@ def parity_lines():
 
 
 TITLES = {"go": "### Go engine (M10)", "minimum": "### Go engine on its declared minimum Go"}
-PART_TITLES = {"static": "gofmt, vet, mutation boundaries", "race": "go test -race", "fuzz": "fuzz smoke",
+PART_TITLES = {"static": "gofmt, vet, mutation boundaries", "race": "go test -race",
+               "386": "protocol tests on 32-bit (GOARCH=386)", "fuzz": "fuzz smoke",
                "parity": "parity with the Python reference"}
 
 
@@ -523,11 +524,13 @@ def self_test():
         assert any(expected in problem for problem in found), (label, found)
     stale_regression()
     part_regression()
-    parts = dict(full, makefile="go-check:\n\tgo test\ngo-check-static:\ngo-check-race:\ngo-check-fuzz:\ngo-check-parity:\n")
+    parts = dict(full, makefile="go-check:\n\tgo test\ngo-check-static:\ngo-check-race:\ngo-check-386:\n"
+                 "go-check-fuzz:\ngo-check-parity:\n")
     for part in PARTS:
         assert decide("go", parts, part) == ("run", []), part
         assert go_command(part)[1] == part_target(part), part
     assert part_target("all") == "go-check" and part_target("fuzz") == "go-check-fuzz"
+    assert part_target("386") == "go-check-386" and decide("go", full, "386")[0] == "fail"   # no target: fail, never skip
     assert go_command("fuzz", "2/3")[-1] == "GO_FUZZ_SHARD=2/3" and not any("SHARD" in a for a in go_command("race"))
     action, found = decide("go", full, "race")                        # a part whose target is gone fails, never skips
     assert action == "fail" and "no `go-check-race` target" in found[0], found
@@ -554,7 +557,7 @@ def self_test():
     assert action == "fail", found                                                                 # no silent skip past a bad Go
     minimum_regression()
     fast = fast_path_regression()
-    print("go_ci self-test: ok ({} tree refusals, {} minimum refusals, 15 report refusals, 10 end-to-end runs, 5 parts, "
+    print("go_ci self-test: ok ({} tree refusals, {} minimum refusals, 15 report refusals, 10 end-to-end runs, 6 parts, "
           "{} docs-only fast path runs)".format(len(cases) + 1, len(minimum_cases), fast))
     return 0
 
