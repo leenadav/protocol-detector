@@ -126,6 +126,12 @@ DURATION_MEASUREMENTS = ("sum", "min", "max", "p50", "p95", "p99")
 TIMED_COUNTS = ("stage_seconds.tick",)
 
 
+def measured(value):
+    """Only a measured number becomes a marker: a null or any other value in its place is compared as it is
+    (PRO-261, from PR #99: a Go histogram with a null minimum must not equal one with a number)."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
 class Normalizer:
     """Per-service replacement of ids by order of appearance, and of times by a marker."""
 
@@ -161,8 +167,9 @@ class Normalizer:
         out = OrderedDict()
         for key, item in value.items():
             if key == "buckets" and isinstance(item, list):
-                out[key] = [[pair[0], "<time>"] if isinstance(pair, list) and pair else pair for pair in item]
-            elif key in DURATION_MEASUREMENTS or (key == "count" and name in TIMED_COUNTS):
+                out[key] = [[pair[0], "<time>"] + pair[2:] if isinstance(pair, list) and len(pair) > 1 and measured(pair[1])
+                            else self.walk(pair) for pair in item]
+            elif (key in DURATION_MEASUREMENTS or (key == "count" and name in TIMED_COUNTS)) and measured(item):
                 out[key] = "<time>"
             else:
                 out[key] = self.walk(item)
