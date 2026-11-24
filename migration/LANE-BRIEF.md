@@ -169,7 +169,7 @@ PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid
 PRO-141 (against `main` `21dd113`): `aff4d13` (the livectl stop tests' synchronisation) and the documentation
 commit after it.
 
-SEC-SIG-2 and SEC-SIG-1 (PRO-332, against `main` `5005cdc`): the code commit and the documentation commit after it on `claude/engine-PRO-51-sig-compile-cost` (SHAs in the PR).
+SEC-SIG-2 and SEC-SIG-1 (PRO-332, against `main` `5005cdc`): `2885afa` (fix and tests) and the documentation commits after it (`b51698c` and this line).
 
 SEC-QUIC-3 (PRO-123, against `main` `21dd113`): `fe87386` (fix, tests, the random-differential class) and the
 documentation commit after it.
