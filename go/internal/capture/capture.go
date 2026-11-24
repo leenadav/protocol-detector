@@ -7,6 +7,7 @@ package capture
 import (
 	"encoding/binary"
 	"io"
+	"math"
 	"math/big"
 	"os"
 	"strconv"
@@ -151,7 +152,7 @@ func (d *Decoder) parse() ([]Record, *Error) {
 		}
 		// seconds + fraction / resolution, as the reference computes it (one division, one addition).
 		records = append(records, Record{float64(seconds) + float64(fraction)/float64(d.resolution),
-			append([]byte{}, d.buffer[pos+16:end]...), int(original), d.linktype})
+			append([]byte{}, d.buffer[pos+16:end]...), length(original), d.linktype})
 		pos = end
 	}
 	if pos > 0 {
@@ -337,7 +338,7 @@ func (d *Decoder) enhanced(body []byte) (Record, *Error) {
 	if _, err := d.options(body[20+padded:]); err != nil {
 		return Record{}, err
 	}
-	return Record{timestamp(uint64(high)<<32|uint64(low), in.resolution), append([]byte{}, body[20:20+int(captured)]...), int(original), in.linktype}, nil
+	return Record{timestamp(uint64(high)<<32|uint64(low), in.resolution), append([]byte{}, body[20:20+int(captured)]...), length(original), in.linktype}, nil
 }
 
 func (d *Decoder) simple(body []byte) (Record, *Error) {
@@ -351,7 +352,6 @@ func (d *Decoder) simple(body []byte) (Record, *Error) {
 	// Capped by the snapshot length (at most 1 MiB) as uint32, before it becomes an int: on a 32-bit platform
 	// a length of 2^31 or more would be negative.
 	raw := d.order.Uint32(body)
-	original := int(raw)
 	captured := in.snaplen
 	if raw <= maxSnaplen {
 		if n := int(raw); n < in.snaplen {
@@ -361,7 +361,17 @@ func (d *Decoder) simple(body []byte) (Record, *Error) {
 	if 4+((captured+3)&^3) != len(body) {
 		return Record{}, fail("pcapng simple packet length disagrees with its block")
 	}
-	return Record{0, append([]byte{}, body[4:4+captured]...), original, in.linktype}, nil
+	return Record{0, append([]byte{}, body[4:4+captured]...), length(raw), in.linktype}, nil
+}
+
+// length converts a 32-bit original packet length to int without going negative on a 32-bit build (Codex
+// PRO-16): a value above the platform's int saturates, which keeps Truncated true because no record holds that
+// many bytes. On a 64-bit build every uint32 fits and nothing changes.
+func length(v uint32) int {
+	if int64(v) > int64(math.MaxInt) {
+		return math.MaxInt
+	}
+	return int(v)
 }
 
 // End closes the decoder; leftover bytes or a missing header are an error.

@@ -60,6 +60,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   divergence; `random_diff.py` accepts it as an approved class), merged into `main` with PR #92 (`c08fe67`).
 - **PRO-189 (Codex PRO-12, P2):** an unknown stream finalizes when the byte budget is spent before the unknown buffer
   fills (Go only, recorded divergence), on `claude/fix-unknown-budget` (PR into `main`).
+- **PRO-261 (#99 vs #98):** every #99 finding checked on `main` `cb3ac80` (table in `STATUS.md`); three partial gaps ported on `claude/engine-PRO-261-reconcile-99` (pcapng 32-bit original length, analyze/decrypt empty-run checks, server null measurements). #99 is superseded; the buffer growth item stays a decision.
 - **PRO-201 (Codex P2s, windows 2-10):** 23 fix commits `7da811e`..`6b614c0` on `claude/funny-cori-6znbkn`; per-finding table in `STATUS.md`. Six fixes that move parity are held as patches in `migration/held-patches/PRO-201/`.
 - **PRO-101 (property, fuzz and chaos tests):** rapid (`pgregory.net/rapid` v1.3.0, test-only, vendored, ADR 0002)
   and native fuzz targets over all 59 registry parsers, the inspector, the datagram inspector and the facade
@@ -137,6 +138,7 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 `ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9`, `4d8aa29` and `376a204` (PRO-31), each reviewed as its own diff (`376a204` together with `6194fb9`).
 
 PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentation commit after them.
+PRO-261 (against `cb3ac80`): `7045c42`, `9121403`, `9af4388` plus the documentation commit after them.
 
 PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it (`3a25bd0`). The review follow-up (against `main` `cb3ac80`) is one commit on `claude/dazzling-franklin-1179wl`: comments, the issue link and documentation only.
 
@@ -209,6 +211,7 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
   A readiness signal for a test is the stand-in's last write, never an output it produces on the way. To check such
   a fix, insert `sleep 0.3` at the old gap and run `-race -count=5`: it must still pass.
 - **32-bit findings need a 386 test.** `GOARCH=386 go test` runs on amd64 Linux; the int-narrowing panics (PRO-15, PRO-16) only reproduce there.
+- **One finding set, one branch.** PRO-201 was fixed twice (#98 merged, #99 duplicated it and conflicted). Before fixing a PRO's findings, check for an open PR naming the same PRO; reconcile by running the other branch's tests on `main`, never by merging it (PRO-261).
 - **Parallel agents must not share scratch files.** Subagents overwrote each other's commit-message files in the shared scratchpad (PRO-201); keep scratch under each worktree's `build/`.
 - **Run the Go linters before a push.** `make go-check` does not run golangci-lint, staticcheck or gosec; the CI
   `go-lint` job does, against `tools/golint/baseline.json`, and gosec runs with `-nosec`, so a comment cannot waive

@@ -284,9 +284,10 @@ def positive_rows(output):
     return sum(1 for row in output.splitlines() if "=MATCH (" in row or '"status": "identified"' in row)
 
 
-def shortfall(captures, python_positive, go_positive):
-    """Why a run without a divergence still proved nothing (Codex PRO-20): no capture was compared, or neither
-    backend's output carried a single identified row."""
+def shortfall(captures, python_positive, go_positive, completed=1):
+    """Why a run without a divergence still proved nothing (Codex PRO-20): no capture was compared, neither
+    backend's output carried a single identified row, or every presentation result was a refusal (`completed`
+    counts the reference's completed analyses; PRO-261, from PR #99)."""
     problems = []
     if captures < 1:
         problems.append("no capture was compared (--count {})".format(captures))
@@ -294,6 +295,8 @@ def shortfall(captures, python_positive, go_positive):
         problems.append("the reference output carried no identified row")
     if go_positive < 1:
         problems.append("the Go output carried no identified row")
+    if captures >= 1 and completed < 1:
+        problems.append("no presentation result was a completed analysis")
     return problems
 
 
@@ -314,19 +317,20 @@ def present_reference(server, data, limits):
 
 
 def present_problem(server, binary, rng, data):
-    """Compare the Go `present` command with the reference on one capture (text of the result but the timing)."""
+    """Compare the Go `present` command with the reference on one capture (text of the result but the timing):
+    (problem or None, whether the reference completed the analysis rather than refusing it)."""
     limits = (20000, 500, 4000) if rng.random() < 0.7 else (rng.choice([0, 3, 20000]), rng.choice([0, 1, 2, 500]), rng.choice([0, 2, 9, 4000]))
     expected = present_reference(server, data, limits)
     done = subprocess.run([binary, "present", "--max-frames", str(limits[0]), "--max-sessions", str(limits[1]), "--max-events", str(limits[2])],  # noqa: S603
                           input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=120)
     if done.returncode != (3 if "error" in expected else 0):
-        return "present exit status {} for {!r}: {}".format(done.returncode, expected.get("error"), done.stderr.decode("utf-8", "replace")[:200])
+        return "present exit status {} for {!r}: {}".format(done.returncode, expected.get("error"), done.stderr.decode("utf-8", "replace")[:200]), False
     actual = json.loads(done.stdout)
     if "meta" in actual:
         actual["meta"]["processing_ms"] = 0
     if json.dumps(actual) != json.dumps(expected):
-        return "present result differs (limits {})".format(limits)
-    return None
+        return "present result differs (limits {})".format(limits), False
+    return None, "error" not in expected
 
 
 def main(argv=None):
@@ -344,7 +348,7 @@ def main(argv=None):
         signatures_path, policy_path = str(folder / "signatures.json"), str(folder / "policy.json")
         Path(signatures_path).write_text(json.dumps(SIGNATURES), encoding="utf-8")
         Path(policy_path).write_text(json.dumps(POLICY), encoding="utf-8")
-        failures, rows, presented, python_positive, go_positive = [], 0, 0, 0, 0
+        failures, rows, presented, completed, python_positive, go_positive = [], 0, 0, 0, 0, 0
         sys.path.insert(0, str(ROOT / "presentation"))
         import server  # noqa: E402 - the presentation service's reference analysis
         for index in range(args.count):
@@ -360,17 +364,18 @@ def main(argv=None):
             problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")))
             if problem:
                 failures.append("{} {}: {}".format(capture.name, " ".join(options), problem))
-            problem = present_problem(server, args.binary, rng, capture.read_bytes())
+            problem, finished = present_problem(server, args.binary, rng, capture.read_bytes())
             presented += 1
+            completed += finished
             if problem:
                 failures.append("{}: {}".format(capture.name, problem))
         for line in failures[:10]:
             print("analyze mismatch:", line)
-        problems = shortfall(args.count, python_positive, go_positive)
+        problems = shortfall(args.count, python_positive, go_positive, completed)
         for line in problems:
             print("analyze parity FAILED:", line)
-        print("analyze parity: {} captures, {} rows ({} identified), {} presentation results, {} mismatched (seed {})".format(
-            args.count, rows, python_positive, presented, len(failures), args.seed))
+        print("analyze parity: {} captures, {} rows ({} identified), {} presentation results ({} completed), {} mismatched (seed {})".format(
+            args.count, rows, python_positive, presented, completed, len(failures), args.seed))
         return 1 if failures or problems else 0
 
 

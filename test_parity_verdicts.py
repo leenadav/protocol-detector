@@ -24,12 +24,25 @@ class AnalyzeVerdictTests(unittest.TestCase):
         self.assertTrue(analyze_diff.shortfall(5, 0, 0))
         self.assertTrue(analyze_diff.shortfall(5, 10, 0))
 
+    def test_only_refused_presentations_are_a_failure(self):
+        """PRO-261 (from PR #99, Codex PRO-20): a run whose every presentation result is a refusal compared no
+        completed analysis, so agreement on it proves nothing about `present`."""
+        self.assertEqual(analyze_diff.shortfall(300, 120, 120, completed=1), [])
+        self.assertEqual(analyze_diff.shortfall(300, 120, 120, completed=0),
+                         ["no presentation result was a completed analysis"])
+
 
 class DecryptVerdictTests(unittest.TestCase):
     def test_no_capture_or_no_decrypted_row_is_a_failure(self):
-        self.assertEqual(decrypt_diff.shortfall(300, {"decrypted": 3, "refused": 1}), [])
-        self.assertTrue(decrypt_diff.shortfall(0, {}))
-        self.assertTrue(decrypt_diff.shortfall(4, {"refused": 4, "unavailable/gap": 2}))
+        self.assertEqual(decrypt_diff.shortfall(300, {"decrypted": 3, "refused": 1}, {"http/1.1"}), [])
+        self.assertTrue(decrypt_diff.shortfall(0, {}, set()))
+        self.assertTrue(decrypt_diff.shortfall(4, {"refused": 4, "unavailable/gap": 2}, set()))
+
+    def test_decrypted_rows_without_an_inner_application_are_a_failure(self):
+        """PRO-261 (from PR #99, Codex PRO-20): decrypting connections that never name their inner application
+        leaves the inner classification, the part the differential exists to compare, unexercised."""
+        self.assertEqual(decrypt_diff.shortfall(300, {"decrypted": 3}, set()),
+                         ["no decrypted connection named an inner application"])
 
 
 def completed(returncode, lines, stderr=b""):
@@ -108,6 +121,19 @@ class ServerNormalizerTests(unittest.TestCase):
         changed["telemetry"]["histograms"]["session_lifetime_seconds"]["buckets"].pop(0)
         self.assertFalse(self.same(telemetry(), changed))
         self.assertFalse(self.same({"histograms": {"a": {"count": 1}}}, {"histograms": {"a": {"count": 2}}}))
+
+    def test_a_null_in_place_of_a_measurement_is_compared(self):
+        """PRO-261 (from PR #99, Codex PRO-21): only a measured number becomes a marker. A null where the other side
+        has a number (a missing minimum, a bucket without a count) is a structural difference, not a timing."""
+        changed = telemetry()
+        changed["telemetry"]["histograms"]["session_lifetime_seconds"]["min"] = None
+        self.assertFalse(self.same(telemetry(), changed))
+        changed = telemetry()
+        buckets = changed["telemetry"]["histograms"]["session_lifetime_seconds"]["buckets"]
+        buckets[0] = [buckets[0][0], None]
+        self.assertFalse(self.same(telemetry(), changed))
+        changed = telemetry(extra={"histograms": {"stage_seconds.tick": {"count": None, "sum": 0.5}}})
+        self.assertFalse(self.same(telemetry(extra={"histograms": {"stage_seconds.tick": {"count": 5, "sum": 0.5}}}), changed))
 
 
 class FakeService:
