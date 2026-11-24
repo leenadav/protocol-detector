@@ -962,7 +962,9 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      family, application and version numbers fail on drift as before.
    - **Main:** `ledgers.yml` (nightly 02:47 UTC and `workflow_dispatch`) runs `--check --strict` on a full clone,
      fails when main is behind, and uploads the exact refresh patch (`ledgers-refresh.patch`) and the rebuilt
-     files. The release gate runs `check_docs_counts.py --strict`.
+     files. The release gate runs `check_docs_counts.py --strict`, and its build job checks out the full history
+     and runs `build_ledgers.py --self-test` plus `--check --strict` for a tag (a dry run on a pull request or
+     a branch push runs the lag-tolerant `--check`, since its own note reaches the sections only after merge).
    - **Read-only:** the workflow holds `contents: read` and opens nothing. Opening the refresh pull request from the
      workflow needs `contents: write` and `pull-requests: write`, which rule 5 forbids outside the release
      controller, the repository setting that lets Actions create pull requests, and a token whose pull requests
