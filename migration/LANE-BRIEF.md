@@ -90,6 +90,9 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   four CI/CD workflow files, so there is no engine code to change. Hermes's automatic check twice flagged
   `b7ad1dad31e06c5925ef5d2fc7ad053ef454303e` as an unpushed commit: it is the upstream `actions/setup-go` v7.0.0 commit
   (21 pins in `.github/workflows/` on `main` `7575820`), not a commit of this repository. Only this brief changed.
+  **Valid record: `2850ca672ad7b1d3314fbf5c01b925351aa54e0f`** (carried on `claude/elegant-bardeen-r4j13l`).
+  **Superseded:** branch `claude/engine-PRO-325-codex-pro324-none` (`fd18338`) is not a record of PRO-325 and gets
+  no PR. Its row and lesson describe an unpushed commit of ours from a reclaimed container, which never happened.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 - **PRO-141 (livectl stop flake):** the stand-in worker sets its INT trap first and writes a ready file last; the
   three stop tests wait for it (`aff4d13`, branch `claude/vigilant-meitner-t7kw7h`). 200 of 200 under `-race`, also
@@ -188,6 +191,9 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **Name upstream SHAs as upstream.** A report that quotes an action's commit SHA (for example
   `actions/setup-go@b7ad1da…`, PRO-325) reads as an unpushed commit to Hermes's automatic check. Label it
   "upstream <owner>/<repo> commit" and give only this repository's commits as full SHAs to verify.
+- **Identify a SHA before calling it "not pushed".** First run `git cat-file -t <sha>` (it fails for an object
+  outside this repository) and `git grep <sha> origin/main` (it finds an upstream action pin, as in `uses: owner/repo@<sha>`).
+  Only a commit that is in this repository and missing from every remote branch is "unpushed" (PRO-325, Hermes).
 - **Always vendor.** Every Go command needs `GOFLAGS=-mod=vendor`; the Makefile sets it. Scratch output goes under
   `build/`, never inside `go/`, or `go vet` and gofmt pick it up.
 - **Recording a new content release (C11).**
