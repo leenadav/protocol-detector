@@ -44,6 +44,30 @@ score is V × R. `BLOCKED` caps R at 1.
 - TLS ServerHello widening adopted; post-merge, Go only (`protocol/tls-serverhello-legacy.md`).
 - Telegram CRC: the Engine lane confirms it against tdlib.
 
+### NAME: READY (batch Q, after P: blocked-urls rows 30 to 44 read by Research Lab, PRO-168, specs PRO-169, 2026-11-24)
+
+Source: Research Lab's read of 2026-11-22 from the Hermes server (PRO-168), relayed verbatim in
+`research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` at `f721a8c` (PRO-182). Ten rows read, five still
+blocked. Patch: `patches/batch-q-relayed-rows-30-44.patch` (placeholder release `2026.13.2`, digest `fcd1792507af3311`, 468
+host entries). Tested: 67 targeted vector names (all as expected), rollback exact, parity 7496/7496 (Python and Go), 88/88
+families. 128 names queued for live round 8 (`live-hosts-r8.txt`).
+
+| Rank | Id | Item | Spec | V | R | Score | Status |
+|---|---|---|---|---|---|---|---|
+| 1 | Q1 | ManageEngine Endpoint Central Cloud: new id `manageengine-endpoint-central`, 54 exact `manageengine.*` names (Zoho-hosted names stay shared) | `apps/manageengine-endpoint-central.md` | 5 | 4 | 20 | READY; live round 8 pending |
+| 2 | Q2 | RingCentral: 17 names (`.co.uk`, `.eu`, `.ca`, `.biz`, `glip.com`, exact PubNub and S3 hosts) | `apps/ringcentral.md` | 5 | 4 | 20 | READY; live round 8 pending |
+| 3 | Q3 | Kaseya VSA: verified; IP ranges only, `stun.kaseya.com` under `kaseya.com` | `apps/kaseya.md` | 5 | 4 | 20 | DONE (no catalog change) |
+| 4 | Q4 | Keeper: five regional domains and `keeper.io` | `apps/keeper.md` | 4 | 4 | 16 | READY; live round 8 pending |
+| 5 | Q5 | 8x8: six 8x8 domains (`callstats.io` and deprecated domains left out) | `apps/8x8.md` | 4 | 4 | 16 | READY; live round 8 pending |
+| 6 | Q6 | Freshworks: five platform domains (Freshchat, Freshmarketer left out) | `apps/freshworks.md` | 4 | 4 | 16 | READY; live round 8 pending |
+| 7 | Q7 | Intercom: 19 domains from its CSP list | `apps/intercom.md` | 3 | 4 | 12 | READY; live round 8 pending |
+| 8 | Q8 | New Relic: browser-agent hosts to new vendor-level id `new-relic-base` (decision 4; RingCentral and Freshdesk list them as their dependencies) | `apps/new-relic.md` | 3 | 4 | 12 | READY; live round 8 pending |
+| 9 | Q9 | PagerDuty: verified, all names under `pagerduty.com` | `apps/pagerduty.md` | 3 | 4 | 12 | DONE (no catalog change) |
+
+Still BLOCKED (unchanged, `blocked-urls.md`): 34 Mimecast (403 challenge), 35 Proofpoint Essentials (sign-in wall), 37 LastPass
+(incomplete TLS chain: a read with verification off needs Lee's approval, or Hermes relays it from a browser), 39 Dialpad (403),
+41 Dashlane (403).
+
 ### NAME: READY (batch P, after O: refilled queue, PRO-158, 2026-11-22)
 
 Top 10 candidates by V (ties broken by reachability): BeyondTrust, Kaseya VSA, ManageEngine Endpoint Central, RingCentral,
@@ -56,7 +80,7 @@ expected), rollback exact, parity 7490/7490 (Python and Go), 88/88 families. 39 
 |---|---|---|---|---|---|---|---|
 | 1 | P1 | HubSpot tags and hosted-page services to new vendor-level id `hubspot-base` (35 names; decision 4) | `apps/hubspot.md` | 4 | 4 | 16 | READY on the vendor page; live round 7 neutral (24 names exist with no address and no documented probe host: the page gives wildcards only, so no probe can be added without guessing) |
 | 2 | P2 | BeyondTrust Remote Support Cloud: verified, all names under `beyondtrustcloud.com` | `apps/beyondtrust.md` | 5 | 4 | 20 | DONE (no catalog change; confirmed by live round 7) |
-| 3 | - | Kaseya VSA, ManageEngine Endpoint Central, RingCentral, Mimecast, Proofpoint, Keeper, LastPass, 8x8 | none yet | 4 to 5 | 1 | 4 to 5 | Research Lab read rows 30 to 33, 36, 38, 40, 42 to 44 (PRO-168); the content has not reached this lane, so no spec yet (PRO-169). Rows 34 (Mimecast), 35 (Proofpoint), 37 (LastPass), 39 (Dialpad), 41 (Dashlane) stay BLOCKED |
+| 3 | - | Kaseya VSA, ManageEngine Endpoint Central, RingCentral, Keeper, 8x8 (and Freshworks, Intercom, New Relic, PagerDuty) | see batch Q | 3 to 5 | 4 | 12 to 20 | moved to batch Q (PRO-169). Mimecast, Proofpoint, LastPass (and Dialpad, Dashlane) stay BLOCKED (rows 34, 35, 37, 39, 41) |
 
 Live round 7 (PRO-167, 2026-11-22, `live-results-2026-11-22-r7.tsv`, 39 names; verdicts by Hermes, restated in section 9): `hubspot-base`
 neutral (24 of its names exist with no address and no probe; `hubapi.com`, `hscta.net`, `hscta.com`, `hsctaimages.net`, `hsappstatic.net`,
@@ -407,22 +431,22 @@ of unreadable pages are in `blocked-urls.md` rows 30 to 44, found by web search 
 | Order | Candidate | Catalog id today | V | Official page | Status |
 |---|---|---|---|---|---|
 | 33 | BeyondTrust Remote Support | `beyondtrust` | 5 | reachable | DONE in batch P (`apps/beyondtrust.md`) |
-| 34 | Kaseya VSA | `kaseya` | 5 | not reachable (rows 30, 31) | BLOCKED |
-| 35 | ManageEngine Endpoint Central (Cloud) | none | 5 | not reachable (row 32) | BLOCKED |
-| 36 | RingCentral (RingEX) | `ringcentral` | 5 | not reachable (row 33) | BLOCKED |
-| 37 | Mimecast | none | 5 | not reachable (row 34) | BLOCKED |
-| 38 | Proofpoint Essentials | none | 5 | not reachable (row 35) | BLOCKED |
+| 34 | Kaseya VSA | `kaseya` | 5 | read by Research Lab, PRO-168 (rows 30, 31) | DONE in batch Q (`apps/kaseya.md`, no change) |
+| 35 | ManageEngine Endpoint Central (Cloud) | none | 5 | read by Research Lab, PRO-168 (row 32) | READY in batch Q (`apps/manageengine-endpoint-central.md`) |
+| 36 | RingCentral (RingEX) | `ringcentral` | 5 | read by Research Lab, PRO-168 (row 33) | READY in batch Q (`apps/ringcentral.md`) |
+| 37 | Mimecast | none | 5 | not reachable here or by Research Lab, PRO-168 (row 34) | BLOCKED |
+| 38 | Proofpoint Essentials | none | 5 | not reachable here or by Research Lab, PRO-168 (row 35) | BLOCKED |
 | 39 | HubSpot | `hubspot` | 4 | reachable | READY in batch P (`apps/hubspot.md`) |
-| 40 | Keeper | `keeper` | 4 | not reachable (row 36) | BLOCKED |
-| 41 | LastPass | `lastpass` | 4 | not reachable (row 37) | BLOCKED |
-| 42 | 8x8 Work | `8x8` | 4 | not reachable (row 38) | BLOCKED |
-| 43 | Dialpad | `dialpad` | 4 | not reachable (row 39) | BLOCKED |
-| 44 | Freshworks (Freshservice, Freshdesk) | `freshworks` | 4 | not reachable (row 40) | BLOCKED |
+| 40 | Keeper | `keeper` | 4 | read by Research Lab, PRO-168 (row 36) | READY in batch Q (`apps/keeper.md`) |
+| 41 | LastPass | `lastpass` | 4 | not reachable here or by Research Lab, PRO-168 (row 37) | BLOCKED |
+| 42 | 8x8 Work | `8x8` | 4 | read by Research Lab, PRO-168 (row 38) | READY in batch Q (`apps/8x8.md`) |
+| 43 | Dialpad | `dialpad` | 4 | not reachable here or by Research Lab, PRO-168 (row 39) | BLOCKED |
+| 44 | Freshworks (Freshservice, Freshdesk) | `freshworks` | 4 | read by Research Lab, PRO-168 (row 40) | READY in batch Q (`apps/freshworks.md`) |
 | 45 | KnowBe4 | none | 4 | no single allowlist article found (phish domains are per account) | PARTIAL, URL not located |
 | 46 | Splunk Cloud | `splunk-cloud` | 4 | no current official page found by search (community posts only) | PARTIAL, URL not located |
-| 47 | Dashlane | `dashlane` | 3 | not reachable (row 41) | BLOCKED |
-| 48 | Intercom | `intercom` | 3 | not reachable (row 42) | BLOCKED |
-| 49 | New Relic | `new-relic` | 3 | not reachable (row 43) | BLOCKED |
-| 50 | PagerDuty | `pagerduty` | 3 | not reachable (row 44) | BLOCKED |
+| 47 | Dashlane | `dashlane` | 3 | not reachable here or by Research Lab, PRO-168 (row 41) | BLOCKED |
+| 48 | Intercom | `intercom` | 3 | read by Research Lab, PRO-168 (row 42) | READY in batch Q (`apps/intercom.md`) |
+| 49 | New Relic | `new-relic` | 3 | read by Research Lab, PRO-168 (row 43) | READY in batch Q (`apps/new-relic.md`) |
+| 50 | PagerDuty | `pagerduty` | 3 | read by Research Lab, PRO-168 (row 44) | DONE in batch Q (`apps/pagerduty.md`, no change) |
 | 51 | Sentry | `sentry` | 3 | not searched in this batch | queued |
 | 52 | Linear | none | 2 | not searched in this batch | queued |
