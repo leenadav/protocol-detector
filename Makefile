@@ -234,6 +234,7 @@ GO_FUZZ_SMOKE := \
 	./internal/analyze:FuzzPresentNeverPanics:10 \
 	./internal/policy:FuzzPolicyNeverPanics:10 \
 	./internal/signatures:FuzzDocumentNeverPanics:10 \
+	./internal/signatures:FuzzEstimateBoundsProgram:10 \
 	./internal/protocols/tlsx:FuzzDTLSStaysBounded:10 \
 	./internal/protocols/hpack:FuzzDecoderStaysBounded:10 \
 	./internal/engine:FuzzHTTP2StaysBounded:10 \

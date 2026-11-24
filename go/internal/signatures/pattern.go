@@ -994,12 +994,24 @@ func emitSet(b *strings.Builder, set byteSet) {
 		for c+1 < 256 && set[c+1] {
 			c++
 		}
-		fmt.Fprintf(b, `\x{%x}`, start)
+		writeHexRune(b, start)
 		if c > start {
-			fmt.Fprintf(b, `-\x{%x}`, c)
+			b.WriteByte('-')
+			writeHexRune(b, c)
 		}
 	}
 	b.WriteString("]")
+}
+
+// writeHexRune writes \x{c} in lower-case hex, the text fmt's %x gave, without fmt (it was the load hot path).
+func writeHexRune(b *strings.Builder, c int) {
+	const digits = "0123456789abcdef"
+	b.WriteString(`\x{`)
+	if c >= 16 {
+		b.WriteByte(digits[c>>4])
+	}
+	b.WriteByte(digits[c&15])
+	b.WriteByte('}')
 }
 
 func literalSet(v int, not, ignorecase bool) byteSet {
@@ -1022,6 +1034,13 @@ func compileTree(b *strings.Builder, tree []node, ignorecase, final bool) error 
 		case opLiteral, opNotLiteral:
 			if n.value > 255 {
 				return &patternError{"Patterns must be Latin-1 encodable"}
+			}
+			if n.op == opLiteral && (!ignorecase || lowerByte(n.value) == n.value && (n.value < 'a' || n.value > 'z')) {
+				// The set is the byte alone (no case partner): the text emitSet writes for it.
+				b.WriteByte('[')
+				writeHexRune(b, n.value)
+				b.WriteByte(']')
+				continue
 			}
 			emitSet(b, literalSet(n.value, n.op == opNotLiteral, ignorecase))
 		case opAny:
@@ -1097,12 +1116,20 @@ func latin1(data []byte) string {
 type compiledPattern struct {
 	re     *regexp.Regexp
 	anchor []byte
+	insts  int // estimateInsts of the pattern: the per-byte cost weight of a search (SEC-SIG-1)
 }
 
 func (p *compiledPattern) search(value []byte) bool { return p.re.MatchString(latin1(value)) }
 
 // compilePattern ports signatures.compile_pattern; err is *patternError (Python rejects) or *notPortedError.
 func compilePattern(pattern string, kind string, ignorecase bool) (*compiledPattern, error) {
+	return compileBudgeted(pattern, kind, ignorecase, nil)
+}
+
+// compileBudgeted is compilePattern charging the pattern's instruction estimate to budget (nil: the per-pattern
+// cap only). Every reference rule is checked first, so a pattern Python rejects keeps its error; the estimate
+// runs on the tree before the expression is built or regexp.Compile runs (SEC-SIG-2).
+func compileBudgeted(pattern string, kind string, ignorecase bool, budget *instBudget) (*compiledPattern, error) {
 	if n := len([]rune(pattern)); n < 1 || n > maxPattern {
 		return nil, &patternError{fmt.Sprintf("Pattern must contain 1..%d characters", maxPattern)}
 	}
@@ -1133,6 +1160,10 @@ func compilePattern(pattern string, kind string, ignorecase bool) (*compiledPatt
 	if msg := latin1Error([]rune(pattern)); msg != "" {
 		return nil, &patternError{"Pattern must be Latin-1 encodable: " + msg}
 	}
+	insts := estimateInsts(tree, maxPatternInsts)
+	if err := budget.charge(insts); err != nil {
+		return nil, err
+	}
 	var b strings.Builder
 	if err := compileTree(&b, tree, ignorecase, true); err != nil {
 		return nil, err
@@ -1141,7 +1172,7 @@ func compilePattern(pattern string, kind string, ignorecase bool) (*compiledPatt
 	if err != nil {
 		return nil, &notPortedError{"expression rejected by RE2: " + err.Error()}
 	}
-	out := &compiledPattern{re: re}
+	out := &compiledPattern{re: re, insts: insts}
 	for _, v := range anchor {
 		out.anchor = append(out.anchor, byte(v))
 	}
