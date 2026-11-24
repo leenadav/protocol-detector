@@ -1,8 +1,11 @@
 # Culvert integration lane brief: read this first
 
-The onboarding note for a fresh chat taking any task in the Culvert integration-preparation lane. **Update this
-brief at the end of every task**, in the same push as the task: §2 (state), §5 (open items), §6 (frozen and
-queued SHAs), and a §7 line for every new pitfall.
+The onboarding note for a fresh chat taking any task in the Culvert integration-preparation lane.
+**Rule (PRO-347, 2026-11-24): every task adds its own `migration/notes/PRO-<n>.md`** (front matter: task, lane,
+date, title, PRs, SHAs; then one paragraph; `migration/notes/README.md`) in the same push as the task; it is the
+task's record and its frozen SHAs. **Never edit a section between `BEGIN GENERATED` and `END GENERATED`
+markers** ("Recent work" below, the README/REVIEW-SCOPE test counts): `tools/build_ledgers.py` writes them after
+merge. Edit the hand-written sections only when the lane's standing state changes, not to log a task.
 
 ## 1. Purpose and scope
 
@@ -69,6 +72,17 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
 - **Engine drift** (PRO-91): a trial merge with `claude/go-migration` `0081f6f` has 23 conflicting files, and 5 Go
   packages fail. `go/consumertest` does not build, because the engine's `go.mod` now says `go 1.27.4` and requires
   `golang.org/x/crypto`. The lab still passes 74 of 74 against the merged tree. See the report.
+
+### Recent work (generated)
+
+Written by `tools/build_ledgers.py` from `migration/notes/PRO-<n>.md`, newest first. Never edit it: a task adds
+its own notes file, and the section is refreshed after merge.
+
+<!-- BEGIN GENERATED: recent-work lane=culvert limit=15 -->
+<!-- tools/build_ledgers.py writes this section from migration/notes/PRO-<n>.md. Do not edit it: add a notes file instead (migration/notes/README.md). -->
+
+_No notes for this lane yet._
+<!-- END GENERATED: recent-work -->
 
 ## 3. Where things live
 

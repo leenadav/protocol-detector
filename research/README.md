@@ -156,8 +156,10 @@ regenerated; hand-written text stays outside the markers.
 
 ## Files
 
-- `LANE-BRIEF.md`: the lane's onboarding brief, read first by every new chat. **Rule: update it at the end of every task**
-  (state, open items, pitfalls), then run the gates it lists, push, and report the SHA.
+- `LANE-BRIEF.md`: the lane's onboarding brief, read first by every new chat. Each task adds its own
+  `migration/notes/PRO-<n>.md` (PRO-347) instead of logging itself in the brief; never edit the brief's generated
+  "Recent work" section. Update the hand-written state, open items and pitfalls when they change, then run the gates
+  it lists, push, and report the SHA.
 
 - `README.md`: this method.
 - `backlog.md`: the ranked backlog, scoring and status of every candidate.

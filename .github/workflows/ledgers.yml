@@ -1,0 +1,67 @@
+# Nightly ledger check (PRO-347, SSDLC item 43): the shared ledger sections are generated from
+# migration/notes/PRO-<n>.md by tools/build_ledgers.py. Pull requests never regenerate them (that is what made
+# them conflict), so main lags after each merge. This job runs the strict check on a full clone of main, fails
+# when it is behind with the command to run, and uploads the exact refresh patch and the rebuilt files.
+# Read-only: the token is `contents: read`, checkout keeps no credential, and nothing is pushed or opened.
+# Opening the docs-only refresh pull request from here is Lee's decision on a policy exception (SSDLC item 43).
+# GitHub runs `schedule` from the default branch's copy of this file; on a branch, use workflow_dispatch.
+name: ledgers
+
+on:
+  schedule:
+    - cron: "47 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ledgers-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  refresh:
+    name: generated ledger sections are current (strict; refresh patch as an artifact)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0   # the pull request that merged each note comes from the merge history
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: The tool's offline self-test
+        run: python -B tools/build_ledgers.py --self-test
+      - name: Rebuild the generated sections and keep the patch
+        run: |
+          mkdir -p ledgers-refresh
+          python -B tools/build_ledgers.py --diff > ledgers-refresh/ledgers-refresh.patch
+          python -B tools/build_ledgers.py --write --summary "$GITHUB_STEP_SUMMARY"
+          cp README.md REVIEW-SCOPE.md ledgers-refresh/
+          cp migration/STATUS.md ledgers-refresh/STATUS.md
+          cp migration/LANE-BRIEF.md ledgers-refresh/LANE-BRIEF.md
+          cp docs/LANE-BRIEF-platform.md ledgers-refresh/LANE-BRIEF-platform.md
+          cp docs/integration/LANE-BRIEF-culvert.md ledgers-refresh/LANE-BRIEF-culvert.md
+          cp research/LANE-BRIEF.md ledgers-refresh/LANE-BRIEF-research.md
+          git diff --stat | tee -a "$GITHUB_STEP_SUMMARY"
+          git checkout -- .
+      - name: Upload the refresh patch and the rebuilt files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ledgers-refresh-${{ github.sha }}
+          path: ledgers-refresh/
+          retention-days: 14
+      - name: Strict check (fails while main is behind; apply the patch above as a docs-only pull request)
+        run: |
+          python -B tools/check_docs_counts.py --strict | tee -a "$GITHUB_STEP_SUMMARY"
+          python -B tools/build_ledgers.py --check --strict --summary "$GITHUB_STEP_SUMMARY"

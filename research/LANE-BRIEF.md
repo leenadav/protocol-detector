@@ -1,6 +1,12 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-24 (PRO-169: specs and batch Q from Research Lab's read of blocked-URL rows 30 to 44). **Rule: update this brief at the end of every task**, then run the gates, push, and report the SHA.
+Updated 2026-11-24 (PRO-169: specs and batch Q from Research Lab's read of blocked-URL rows 30 to 44).
+
+**Rule (PRO-347, 2026-11-24): every task adds its own `migration/notes/PRO-<n>.md`** (front matter: task, lane,
+date, title, PRs, SHAs; then one paragraph; `migration/notes/README.md`) in the same push as the task; it is the
+task's record and its frozen SHAs. **Never edit a section between `BEGIN GENERATED` and `END GENERATED`
+markers** ("Recent work" below, the README/REVIEW-SCOPE test counts): `tools/build_ledgers.py` writes them after
+merge. Edit the hand-written sections only when the lane's standing state changes, not to log a task. Then run the gates, push, and report the SHA.
 
 ## 1. Purpose and scope
 
@@ -42,6 +48,17 @@ and content-pack patches for the Engine lane.
   PRO-169's branch `claude/app-research-PRO-169-rows30-44-specs` merged `claude/app-research` (`8dcdadf`) first, because
   batch P, rounds 6 and 7 and ranking run 2 were not on `main`; its PR therefore carries that earlier lane work too.
   `d09-iscx-vpn2016.md` stays off `main`.
+
+### Recent work (generated)
+
+Written by `tools/build_ledgers.py` from `migration/notes/PRO-<n>.md`, newest first. Never edit it: a task adds
+its own notes file, and the section is refreshed after merge.
+
+<!-- BEGIN GENERATED: recent-work lane=app-research+research-lab limit=15 -->
+<!-- tools/build_ledgers.py writes this section from migration/notes/PRO-<n>.md. Do not edit it: add a notes file instead (migration/notes/README.md). -->
+
+_No notes for this lane yet._
+<!-- END GENERATED: recent-work -->
 
 ## 3. Where things live (reading order)
 

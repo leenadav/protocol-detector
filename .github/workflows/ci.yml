@@ -1237,6 +1237,31 @@ jobs:
       - name: Documented security requirements must have an executable check
         run: python -B tools/check_security_requirements.py | tee -a "$GITHUB_STEP_SUMMARY"
 
+  ledgers:
+    # PRO-347: the shared ledger sections (lane briefs, STATUS.md recent work, README/REVIEW-SCOPE test counts) are
+    # generated from migration/notes/PRO-<n>.md by tools/build_ledgers.py. A pull request adds its own notes file and
+    # never edits a generated section, so the check lets its own note lag and fails on a hand edit, a malformed note
+    # or a broken marker, printing the command that rebuilds them. The strict check runs in the nightly ledgers
+    # workflow and the release gate. Needs no history and no test run.
+    name: ledgers (generated sections not hand-edited, notes well-formed)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: The generated ledger sections and the notes files
+        run: |
+          python -B tools/build_ledgers.py --self-test
+          python -B tools/build_ledgers.py --check --summary "$GITHUB_STEP_SUMMARY"
+
   gate:
     # Branch protection needs one required check: this job fails when any job in `needs` failed, was
     # cancelled or was skipped. `needs` must list every other ci job; tools/check_workflow_policy.py
@@ -1245,7 +1270,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: always()
-    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, osv-scan, go-engine, go-fuzz-smoke, go-parity, go-minimum, go-vendor, go-lint, go-determinism, go-licenses, go-coverage, go-api, contract-compat, content-pack, security-requirements]
+    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, osv-scan, go-engine, go-fuzz-smoke, go-parity, go-minimum, go-vendor, go-lint, go-determinism, go-licenses, go-coverage, go-api, contract-compat, content-pack, security-requirements, ledgers]
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4

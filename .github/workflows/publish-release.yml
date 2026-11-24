@@ -146,7 +146,7 @@ jobs:
           ruff check .
           python -B tools/check_action_pins.py .github/workflows
           python -B tools/check_security_requirements.py
-          python -B tools/check_docs_counts.py
+          python -B tools/check_docs_counts.py --strict
           python -B tools/coverage_matrix.py --check PROTOCOLS.md
           python -B protodetect.py policy lint policy-example.json --strict
           python -B tools/build_manifest.py --check presentation/SOURCE.json
