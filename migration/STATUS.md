@@ -636,15 +636,37 @@ is unchanged and keeps both behaviours.
   absence). A later complete ClientHello in that scope, on any DCID, that names another server (or adds or drops
   the SNI) turns its connection into the sticky conflict marker and returns the retraction the existing C5 path
   already handles, so the flow is invalidated in the tracker and stays so. The same name on a new DCID (a client's
-  Initial after a Retry) agrees. The name lives while the scope holds an entry: `Reset`, expiry and eviction of the
-  scope's last connection forget it. The cost is one map lookup per complete ClientHello. The empty scope of a bare
-  datagram inspector, which holds unrelated datagrams, is never compared.
+  Initial after a Retry) agrees. The name lives as long as the flow: only `Reset(scope)` and `Clear` forget it
+  (PRO-291 below; at first it was forgotten with the scope's last entry). The cost is one map lookup per complete
+  ClientHello. The empty scope of a bare datagram inspector, which holds unrelated datagrams, is never compared.
 
 | item | state | evidence |
 |---|---|---|
 | Regression tests | `TestUndersizedDecoyInitialDoesNotFixTheServerName`, `TestDisagreeingClientHellosOnOneFlowInvalidateIt` (`go/internal/analyzer`), `TestClientInitialDatagramMinimum`, `TestServerNameDisagreementWithinAScope` (`quicx`) | All four fail on `main` `21dd113`: the decoy on the real DCID gives `invalidated` with no name, a 1199-byte Initial is identified and stored, two names on two DCIDs stay `identified` as A. After the fix: the decoy cases give `identified` `example.com`; 1199 bytes is malformed with 0 assembler entries and 1200 identifies; a 300-byte Initial alone is malformed and coalesced into 1200 bytes opens; A then B is `invalidated` with no name; the same ClientHello on a new DCID stays `identified`; the marker is sticky, scoped and forgotten by `Reset`. |
 | Parity | divergence recorded, 0 case changes | No committed case has an opened client Initial under 1200 bytes or two names on one flow. All 7,430 still match; `deltas.json` needs no entry. |
 | Randomized differential | approved-divergence rule | `random_diff.py` generates a quarter of its QUIC Initials padded to 600 bytes. It accepts a mismatch as SEC-QUIC-3 only for a `quic` datagram under 1200 bytes whose Go answer is `malformed` with exactly the SEC-QUIC-3 reason and whose every differing path is in the observation; anything else still fails, and the self-test covers acceptance and four rejections. The summary line now counts each approved class. Seed 1 (2,000): 1,882 matched, 28 SEC-HTTP-1 and 90 SEC-QUIC-3 approved, 0 failures. Seeds 2 and 3 (20,000 each): 265 + 858 and 225 + 926 approved, 0 failures; the SEC-HTTP-1 counts equal the ones recorded before this change. |
+
+### Codex finding PRO-290 P2: the first server name died with the scope's last entry (PRO-291, 2026-11-23)
+
+**The finding** (Codex review PRO-290, `go/internal/protocols/quicx/assembler.go:123` on `d10c007`). `remove`
+deleted a scope's first server name when the scope's last CRYPTO entry went, while the UDP tracker keeps the
+flow's identification. With one assembler slot (an analyzer with `MaxConnections` 1) a second DCID on the same
+flow evicts the first entry before `SameServerName` runs; idle expiry and an over-budget merge (`exhausted`) do the
+same. A ClientHello naming another server was then taken as the first, and the earlier identification was never
+retracted. Not on `main` (`21dd113`): the code came with SEC-QUIC-3, PR #107.
+
+**The fix** (Go only, within the SEC-QUIC-3 divergence Lee approved on PRO-124). The names are a separate store
+whose entries only `Reset(scope)`, `Clear` and `ForgetServerName` remove. It is an LRU bounded by `MaxNames`
+(default 2 x `MaxConnections`); a dropped name is counted in `NameEvictions`, kept out of `Counts`, which mirrors
+the reference's counters. The analyzer sets `MaxNames` to 2 x `MaxUDPFlows` + 2 (two direction scopes per flow,
+both reset at every flow end, and the datagram being inspected) and calls `ForgetServerName` for a datagram whose
+flow the full flow table turned away (`udp_flow_limit`), so orphan names cannot push out a live flow's name. CRYPTO
+entries, their LRU and their counters are unchanged.
+
+| item | state | evidence |
+|---|---|---|
+| Regression tests | `TestDisagreeingClientHelloAfterAssemblerEvictionInvalidatesTheFlow`, `TestRejectedUDPFlowKeepsNoServerName` (`go/internal/analyzer`), `TestServerNameOutlivesTheScopesLastEntry` (eviction, expiry, exhaustion, `Clear`), `TestServerNamesAreBounded` (`quicx`) | Before the fix the analyzer test gave `identified` `example.com` for A then B; after it, `invalidated` with no name. Each loss path now retracts B. Ten turned-away flows leave 0 name evictions. |
+| Parity | 0 case changes | Only the Go-only SEC-QUIC-3 rule changes; the committed cases and the random differential classes are unaffected (numbers in the lane brief and the PR). |
 
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 

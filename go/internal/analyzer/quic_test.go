@@ -139,3 +139,51 @@ func TestDisagreeingClientHellosOnOneFlowInvalidateIt(t *testing.T) {
 		t.Fatalf("the same ClientHello on a new DCID: status %v host %v", record["engine_status"], record["hostname"])
 	}
 }
+
+// Codex PRO-290 P2 (PRO-291): with a one-slot QUIC assembler (MaxConnections 1), the second DCID evicts the
+// first connection's entry. The flow's first server name must survive that, so a second ClientHello naming
+// another server still invalidates the flow rather than leaving it identified as the first.
+func TestDisagreeingClientHelloAfterAssemblerEvictionInvalidatesTheFlow(t *testing.T) {
+	hello := quicHello(t)
+	other := withServerName(t, hello, "example.org")
+	client := transport.Endpoint{Addr: "192.0.2.10", Port: 51000}
+	server := transport.Endpoint{Addr: "198.51.100.20", Port: 443}
+	pack, err := content.Load(packPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := New(pack, Options{IncludeHostnames: true, Session: session.Options{MaxConnections: 1, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.Process(0, udp(client, server, testframes.QUICInitial(1, []byte{1, 2, 3, 4}, nil, testframes.CryptoFrames(hello)[0], 1, nil, 1200)))
+	a.Process(1, udp(client, server, testframes.QUICInitial(1, []byte{4, 3, 2, 1}, nil, testframes.CryptoFrames(other)[0], 1, nil, 1200)))
+	if err := a.Finish("end"); err != nil {
+		t.Fatal(err)
+	}
+	if len(a.Records) != 1 || a.Records[0]["engine_status"] != "invalidated" || a.Records[0]["hostname"] != nil {
+		t.Fatalf("records: %v", a.Records)
+	}
+}
+
+// PRO-291: a datagram whose flow the full flow table turns away leaves no server name behind (no flow end would
+// ever reset its scope), so such orphans cannot crowd out a live flow's name.
+func TestRejectedUDPFlowKeepsNoServerName(t *testing.T) {
+	hello := quicHello(t)
+	pack, err := content.Load(packPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := New(pack, Options{IncludeHostnames: true, Session: session.Options{MaxConnections: 1, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: 1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := transport.Endpoint{Addr: "198.51.100.20", Port: 443}
+	a.Process(0, udp(transport.Endpoint{Addr: "192.0.2.10", Port: 51000}, server, testframes.QUICInitial(1, []byte{1, 2, 3, 4}, nil, testframes.CryptoFrames(hello)[0], 1, nil, 1200)))
+	for port := uint16(51001); port < 51011; port++ {
+		a.Process(1, udp(transport.Endpoint{Addr: "192.0.2.10", Port: port}, server, testframes.QUICInitial(1, []byte{4, 3, 2, 1}, nil, testframes.CryptoFrames(hello)[0], 1, nil, 1200)))
+	}
+	if a.Tracker.Counts["udp_flow_limit"] != 10 || a.udp.Assembler.NameEvictions != 0 {
+		t.Fatalf("flow limit %d, name evictions %d", a.Tracker.Counts["udp_flow_limit"], a.udp.Assembler.NameEvictions)
+	}
+}
