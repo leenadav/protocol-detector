@@ -53,7 +53,7 @@ def time_wait():
         try:
             with open(path) as f:
                 n += sum(1 for line in f.readlines()[1:] if line.split()[3] == "06")
-        except OSError:
+        except OSError:  # no IPv6 table (or no /proc/net) in this container: count only what exists
             pass
     return n
 
@@ -226,28 +226,29 @@ def main():
         json.dump(dict(settings, rates=a.rates, schemes=a.schemes, builds=a.builds, duration_s=a.duration,
                        warmup_s=a.warmup, rounds=a.rounds, proxy_cpus=PROXY_CPUS, vegeta_cpus=VEGETA_CPUS,
                        origin_cpus=ORIGIN_CPUS, nproc=os.cpu_count()), f, indent=1)
-    origin = subprocess.Popen(["taskset", "-c", ORIGIN_CPUS, os.path.join(a.lab, "bin", "loadorigin-split"),  # noqa: S603, S607  (fixed argv, lab binaries; loopback lab only)
-                               "-cert", os.path.join(run_dir, "origin.pem")],
-                              stdout=open(os.path.join(run_dir, "loadorigin.log"), "w"), stderr=subprocess.STDOUT)
-    ORIGIN["pid"] = origin.pid
-    time.sleep(1)
-    cells = []
-    builds = a.builds.split(",")
-    try:
-        for rnd in range(a.rounds):
-            order = builds[rnd % len(builds):] + builds[:rnd % len(builds)]  # rotate, so no build always goes first
-            for scheme in a.schemes.split(","):
-                for rate in [int(r) for r in a.rates.split(",")]:
-                    for build in order:
-                        c = cell(a.lab, run_dir, scheme, rate, build, a.duration, a.warmup, rnd)
-                        cells.append(c)
-                        print(f"round {rnd} {scheme:5} {rate:5}/s {build}: p50 {c['p50_ms']:.2f} p95 {c['p95_ms']:.2f}"
-                              f" p99 {c['p99_ms']:.2f} ms, ok {c['success']:.4f}, cpu {c['cpu_ms_per_1k']:.0f} ms/1k,"
-                              f" rss peak {c['rss_peak_mib']:.0f} MiB, pd {c['pd_records']}", flush=True)
-                        with open(os.path.join(a.out, "cells.json"), "w") as f:
-                            json.dump(cells, f, indent=1)
-    finally:
-        origin.terminate()
+    with open(os.path.join(run_dir, "loadorigin.log"), "w") as origin_log:
+        origin = subprocess.Popen(["taskset", "-c", ORIGIN_CPUS, os.path.join(a.lab, "bin", "loadorigin-split"),  # noqa: S603, S607  (fixed argv, lab binaries; loopback lab only)
+                                   "-cert", os.path.join(run_dir, "origin.pem")],
+                                  stdout=origin_log, stderr=subprocess.STDOUT)
+        ORIGIN["pid"] = origin.pid
+        time.sleep(1)
+        cells = []
+        builds = a.builds.split(",")
+        try:
+            for rnd in range(a.rounds):
+                order = builds[rnd % len(builds):] + builds[:rnd % len(builds)]  # rotate, so no build always goes first
+                for scheme in a.schemes.split(","):
+                    for rate in [int(r) for r in a.rates.split(",")]:
+                        for build in order:
+                            c = cell(a.lab, run_dir, scheme, rate, build, a.duration, a.warmup, rnd)
+                            cells.append(c)
+                            print(f"round {rnd} {scheme:5} {rate:5}/s {build}: p50 {c['p50_ms']:.2f} p95 {c['p95_ms']:.2f}"
+                                  f" p99 {c['p99_ms']:.2f} ms, ok {c['success']:.4f}, cpu {c['cpu_ms_per_1k']:.0f} ms/1k,"
+                                  f" rss peak {c['rss_peak_mib']:.0f} MiB, pd {c['pd_records']}", flush=True)
+                            with open(os.path.join(a.out, "cells.json"), "w") as f:
+                                json.dump(cells, f, indent=1)
+        finally:
+            origin.terminate()
     with open(os.path.join(a.out, "summary.json"), "w") as f:
         json.dump(summarise(cells), f, indent=1)
 

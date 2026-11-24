@@ -86,24 +86,25 @@ def main():
     a = ap.parse_args()
     run_dir = os.path.join(a.lab, "run")
     os.makedirs(a.out, exist_ok=True)
-    origin = subprocess.Popen(["taskset", "-c", loadtest.ORIGIN_CPUS, os.path.join(a.lab, "bin", "loadorigin-split"),  # noqa: S603, S607  (fixed argv, lab binary; loopback lab only)
-                               "-cert", os.path.join(run_dir, "origin.pem")],
-                              stdout=open(os.path.join(run_dir, "loadorigin.log"), "w"), stderr=subprocess.STDOUT)
-    time.sleep(1)
-    rows = []
-    try:
-        builds = a.builds.split(",")
-        for rnd in range(a.rounds):
-            for build in builds[rnd % len(builds):] + builds[:rnd % len(builds)]:
-                r = dict(hold(a.lab, run_dir, build, a.tunnels, a.window_ms), round=rnd, window_ms=a.window_ms)
-                rows.append(r)
-                print(f"round {rnd} {build}: idle {r['rss_idle_mib']:.1f} open {r['rss_open_mib']:.1f}"
-                      f" after {r['rss_after_window_mib']:.1f} MiB; per tunnel open {r['per_tunnel_open_kib']:.1f}"
-                      f" after {r['per_tunnel_after_kib']:.1f} KiB; pd {r['pd_records']}", flush=True)
-                with open(os.path.join(a.out, "hold.json"), "w") as f:
-                    json.dump(rows, f, indent=1)
-    finally:
-        origin.terminate()
+    with open(os.path.join(run_dir, "loadorigin.log"), "w") as origin_log:
+        origin = subprocess.Popen(["taskset", "-c", loadtest.ORIGIN_CPUS, os.path.join(a.lab, "bin", "loadorigin-split"),  # noqa: S603, S607  (fixed argv, lab binary; loopback lab only)
+                                   "-cert", os.path.join(run_dir, "origin.pem")],
+                                  stdout=origin_log, stderr=subprocess.STDOUT)
+        time.sleep(1)
+        rows = []
+        try:
+            builds = a.builds.split(",")
+            for rnd in range(a.rounds):
+                for build in builds[rnd % len(builds):] + builds[:rnd % len(builds)]:
+                    r = dict(hold(a.lab, run_dir, build, a.tunnels, a.window_ms), round=rnd, window_ms=a.window_ms)
+                    rows.append(r)
+                    print(f"round {rnd} {build}: idle {r['rss_idle_mib']:.1f} open {r['rss_open_mib']:.1f}"
+                          f" after {r['rss_after_window_mib']:.1f} MiB; per tunnel open {r['per_tunnel_open_kib']:.1f}"
+                          f" after {r['per_tunnel_after_kib']:.1f} KiB; pd {r['pd_records']}", flush=True)
+                    with open(os.path.join(a.out, "hold.json"), "w") as f:
+                        json.dump(rows, f, indent=1)
+        finally:
+            origin.terminate()
 
 
 if __name__ == "__main__":
