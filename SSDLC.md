@@ -172,6 +172,14 @@ engine (the whole change as one report). The secret scan reads the full
 history of the checkout itself, so it needs no pull-request permission. Both are
 configured in ci.yml; a red pull-request run with a green push run on the same commit is a
 workflow defect, never an engine finding.
+Docs-only fast path (PRO-202 step 3): the heavy Go jobs (`go-engine`, `go-fuzz-smoke`, `go-parity`,
+`go-minimum`, `go-determinism`) pass `--docs-only-fast-path` to `tools/go_ci.py` / `tools/go_deep.py`. On a
+pull request whose merge commit changes only Markdown (`*.md`) or research data (`research/` outside
+`research/tools/`), `tools/ci_scope.py` lets them check the tree and toolchain, skip the make target and list
+every changed path in the summary; the job and `ci gate (all jobs)` still report success, with no job-level
+`if:` (rule 13). It fails closed: a push to `main`, the schedule, a dispatch, a checkout without both merge
+parents, a failing `git diff` or any other path runs every check. The Python tests, documentation, security,
+supply-chain and every other job run in full on every change.
 Pull-request runs also start on `labeled` and `unlabeled` (the go-api job's `api-break` label, item 39).
 
 Codex review comments (automatic review on every opened pull request, P0/P1 only, rules

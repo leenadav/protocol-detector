@@ -23,8 +23,16 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
-## 2. Current state (2026-11-22, after PRO-128)
+## 2. Current state (2026-11-24, PRO-202 step 3)
 
+- **PRO-202 (CI speed), step 3:** branch `claude/platform-PRO-202-ci-speed` adds the docs-only fast path:
+  `tools/ci_scope.py` (fail-closed: only `pull_request`, only a two-parent merge HEAD, only `*.md` and
+  `research/` outside `research/tools/`) and `--docs-only-fast-path` on `go-engine`, `go-fuzz-smoke`, `go-parity`,
+  `go-minimum` and `go-determinism` (checkout `fetch-depth: 2`). No job-level `if:`; the gate is unchanged. Measured
+  before: code PR run 45422975498 (#107) 5.7 min wall, critical path go-parity and go-determinism 4.4 min each;
+  steps 1 (one run per change, cancel-in-progress) and 2 (#96, the split) are on `main`. Docs-only floor after this
+  step is the Python and presentation jobs (~2.2-2.8 min), which keep running in full. Next: step 4, Go build cache
+  saved on `main` only (cache-poisoning rules first), and the presentation chain (`package` -> `presentation-ui`).
 - **PRO-202 (CI speed), step 2:** recovery PR #93 merged (`d3a4dab`), so #59–#64, #75, #76, #89 and #91 are on `main`.
   Step 2 (`claude/cicd-go-engine-split`) splits the ~10.5-minute `go-engine` job into `go-engine` (`make
   go-check-static` + `make go-check-race`), `go-fuzz-smoke` (a `["1/3", "2/3", "3/3"]` matrix over `make
