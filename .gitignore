@@ -27,3 +27,6 @@ migration/parity/go-report.json
 node_modules/
 # Go build output
 go/bin/
+# rapid writes a .fail file per failing property under testdata/rapid; the shrunk counterexample is checked in as a
+# native fuzz seed (testdata/fuzz/) instead (PRO-101)
+go/**/testdata/rapid/

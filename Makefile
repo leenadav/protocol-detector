@@ -241,7 +241,11 @@ GO_FUZZ_SMOKE := \
 	./internal/protocols/quicx:FuzzValidateStaysBounded:10 \
 	./internal/protocols/textroute:FuzzKexinitPostureMatchesTheOracle:10 \
 	./internal/ojson:FuzzDecodeIsAFixedPoint:10 \
-	./internal/livectl:FuzzIngestNeverPanics:10
+	./internal/livectl:FuzzIngestNeverPanics:10 \
+	./internal/engine:FuzzEveryParserIsSplitInvariant:20 \
+	./internal/engine:FuzzInspectorIsSplitInvariant:10 \
+	./internal/engine:FuzzDatagramIsDeterministic:10 \
+	./detector:FuzzFlowIsSplitInvariant:10
 
 go-check:
 	$(MAKE) go-check-static
