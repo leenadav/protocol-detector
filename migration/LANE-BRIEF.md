@@ -123,6 +123,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
+| SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -194,6 +195,9 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **The release cross-compiles for `windows/amd64`** (`tools/build_go_release.py`, CI/CD lane), as well as linux and
   darwin on `amd64` and `arm64`. Unix-only code (process groups, `RLIMIT_CPU`, the key-log reader) lives in `*_unix.go`
   files with a `!unix` counterpart. Check with `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./cmd/protodetect`.
+- **Bounds checks compare by subtraction (SEC-X509-1).** `pos+length > limit` wraps on 32-bit `int` (386, arm) for a
+  four-octet length near `0x7fffffff`; write `length > limit-pos` once `pos <= limit` is known, and run the parser's
+  tests with `GOARCH=386 go test ./internal/protocols/<pkg>/` too, since amd64 never shows the wrap.
 - **After merging `main` in:**
   - regenerate `presentation/SOURCE.json` and let `tools/check_docs_counts.py` set the README/REVIEW-SCOPE test count;
   - check `migration/parity/cases.py --write <tmp> --head <recorded head>` reproduces `cases.json` byte for byte;
