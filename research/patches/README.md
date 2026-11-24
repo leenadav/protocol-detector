@@ -408,3 +408,46 @@ next string-ordered placeholder is used (not a real month; the Engine lane renum
 | Vectors | 16 targeted names (all as expected); 1,159 method-v2 vectors across 79 specs, all pass |
 | Parity | 7488/7488 Python and Go; 88/88 families |
 | Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 465) |
+
+## Batch P: `batch-p-name-based.patch` (after O)
+
+HubSpot's "SSL and domain security in HubSpot" (knowledge.hubspot.com, last updated 2026-11-19), read in this session on
+2026-11-22 (PRO-158). Placeholder release **`2026.13.1`**, with `_PRIOR_HOST_STATE["2026.13.0"]` and
+`_RELEASED_COMPONENTS["2026.13.0"]`. Apply after O.
+
+- `hubspot-base` (new vendor-level id, after `hubspot`, decision 4): 32 HubSpot tag, form, chat, CTA, cookie-banner, file and
+  video domains plus three exact `hubspot-no-cache-*-prod.s3.amazonaws.com` hosts. `hubspot` is unchanged.
+- BeyondTrust Remote Support Cloud was verified with no change (all names under `beyondtrustcloud.com`).
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.13.1, digest `8d149a328ed6e0c8`, 568 applications, 466 host entries (2026-11-22) |
+| Pack file | sha256 `db856c1c24c9a7cba7fe062f9521db06a1f8a7c787c698efd067a1ec8e4b582d` |
+| Rollback | release 2026.13.0 host catalog equals the batch O pack exactly |
+| Vectors | 16 targeted names (all as expected); 1,171 method-v2 vectors across 81 specs, all pass |
+| Parity | 7490/7490 Python and Go; 88/88 families |
+| Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 466) |
+
+## Batch Q: `batch-q-relayed-rows-30-44.patch` (after P)
+
+Vendor network pages for `blocked-urls.md` rows 30 to 44, read by Research Lab from the Hermes server on 2026-11-22
+(PRO-168) and relayed verbatim in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` at `f721a8c`
+(PRO-182); specs PRO-169. Placeholder release **`2026.13.2`**, with `_PRIOR_HOST_STATE["2026.13.1"]` and
+`_RELEASED_COMPONENTS["2026.13.1"]`. Apply after P.
+
+- `manageengine-endpoint-central` (new, before `forticlient`): 54 exact names under the `manageengine.*` regional domains
+  (`desktopcentral`, `endpointcentral-agent[p]N`, `patchdb`, `patchdatabase`); risk 3, `transfers-files`. Zoho-hosted names
+  stay with `zoho` or no application.
+- `new-relic-base` (new vendor-level id, before `new-relic`, decision 4): `bam.nr-data.net`, `bam-cell.nr-data.net`,
+  `bam.eu01.nr-data.net`, `bam.jp.nr-data.net`, `js-agent.newrelic.com`. `new-relic` is unchanged.
+- `ringcentral` extended (17 names), `keeper` (6), `8x8` (6), `freshworks` (5), `intercom` (19).
+- Kaseya VSA and PagerDuty verified with no change.
+
+| Check | Result |
+|---|---|
+| `make content content-pack` | ok: release 2026.13.2, digest `fcd1792507af3311`, 570 applications, 468 host entries (2026-11-24) |
+| Pack file | sha256 `3d68a1931383233a8fa71cfab6c7ecfe419136c91047cf8bf3efedae34f3606c` |
+| Rollback | release 2026.13.1 host catalog equals the batch P pack exactly |
+| Vectors | 67 targeted names (all as expected); 1,216 method-v2 vectors across 90 specs, all pass |
+| Parity | 7496/7496 Python and Go; 88/88 families |
+| Unit tests | 856 tests; 1 expected failure: pinned host count (438 → 468) |

@@ -63,7 +63,7 @@ OBS = _load_obs(str(obs_path).split(","))
 # Shared vendor infrastructure: ids that stand for a vendor's common services, sign-in or CDN.
 SHARED_IDS = {"google-base", "google-accounts", "ms-base", "azure-ad", "ms-office365", "google-play", "apple-base", "ms-telemetry",
               "meta-base", "x-base", "linkedin-base", "reddit-base", "quora-base", "tiktok-base", "spotify-base",
-              "datadog-base"}
+              "datadog-base", "hubspot-base"}
 # Unmapped observed hosts, classified by hand (2026-11-19). "owned:<id>" = vendor-owned name of that app's vendor.
 UNMAPPED = {
     "dockerstatic.com": ("owned:docker-hub", "Docker static assets; NOT mapped: round 3 certificate is domain-validated (no organisation, issuer Amazon), so ownership is not shown (decision 3)"),
@@ -130,7 +130,7 @@ for _line in (ROOT / "live-hosts-r2.txt").read_text().splitlines():
 
 # Names queued for later live rounds (first field of each line), in round order.
 PENDING = [(f, {l.split()[0] for l in (ROOT / f).read_text().splitlines() if l.strip() and not l.startswith("#")})
-           for f in ("live-hosts-r3.txt", "live-hosts-r4.txt", "live-hosts-r5.txt", "live-hosts-r6.txt")]
+           for f in ("live-hosts-r3.txt", "live-hosts-r4.txt", "live-hosts-r5.txt", "live-hosts-r6.txt", "live-hosts-r7.txt")]
 
 
 def resolves(r):
@@ -146,12 +146,49 @@ def _later(fname):
                                                   delimiter="\t")}
 
 
-LATER = [("round 5", _later("live-results-2026-11-21-r5.tsv")), ("round 4", _later("live-results-2026-11-21-r4.tsv")),
+ROUND_DATE = {"round 3": "2026-11-21", "round 4": "2026-11-21", "round 5": "2026-11-21", "round 6": "2026-11-22",
+              "round 7": "2026-11-22"}
+LATER = [("round 7", _later("live-results-2026-11-22-r7.tsv")), ("round 6", _later("live-results-2026-11-22-r6.tsv")), ("round 5", _later("live-results-2026-11-21-r5.tsv")), ("round 4", _later("live-results-2026-11-21-r4.tsv")),
          ("round 3", _later("live-results-2026-11-21-r3.tsv"))]
 
 
+# Verdicts on round 6 (Hermes, PRO-146, 2026-11-22), restated after the live result of each name.
+_R6_N2 = "verdict (PRO-146): stays **N2**: domain-validated certificate, no organisation; promotion needs a vendor page or a WHOIS-class source, not a handshake"
+_R6_FN = "verdict (PRO-146): **neutral**: alive in Fortinet's zone; certificate verification failed, which is not removal"
+R6_VERDICT = dict(
+    [(n, _R6_N2) for n in ("systemmonitor.eu.com", "logicnow.us", "remote.management", "beanywhere.com", "cloudbackup.management")]
+    + [(n, "verdict (PRO-146): **supports**, moderately (live; Amazon domain-validated certificate)") for n in ("centrastage.net", "rmm.datto.com")]
+    + [("forticlient.forticloud.com", "verdict (PRO-146): **supports** (certificate organisation Fortinet, Inc.)")]
+    + [(n + ".fortinet.net", _R6_FN) for n in ("fctguard", "fctusguard", "fcteuguard", "forticlient", "myforticlient", "usforticlient",
+                                               "fctupdate", "fctusupdate", "fcteuupdate")])
+
+
+# Verdicts on round 7 (Hermes, PRO-167, 2026-11-22).
+R7_VERDICT = {"hsappstatic.net": "verdict (PRO-167): stays **N2** (also the HubSpot app's own static assets)",
+              "hubapi.com": "verdict (PRO-167): stays **N2** (also integrations' API traffic)"}
+R7_UNPROBED = ("verdict (PRO-167): **neutral**: the name exists but has no address and the source names no host to probe, so it "
+               "is not live-verified; the mapping rests on the vendor page")
+R7_BEYONDTRUST = "verdict (PRO-167): BeyondTrust confirmed (**DONE**)"
+
+
 def live_status(name):
-    """(L result text, flags list): the latest round that has the name (5, 4, 3, then 2), otherwise round 1."""
+    text, flags = _live_status(name)
+    r7 = dict(LATER)["round 7"].get(name)
+    r6 = dict(LATER)["round 6"]
+    if r7 is not None:
+        if name in R7_VERDICT:
+            text += "; " + R7_VERDICT[name]
+        elif "no-address" in r7["flags"].split(",") and not r7.get("probe"):
+            text += "; " + R7_UNPROBED
+        if name in ("beyondtrust.com", "beyondtrustcloud.com", "bomgar.com"):
+            text += "; " + R7_BEYONDTRUST
+    elif name in R6_VERDICT and name in r6:
+        text += "; " + R6_VERDICT[name]
+    return text, flags
+
+
+def _live_status(name):
+    """(L result text, flags list): the latest round that has the name (7 to 2), otherwise round 1."""
     rnd, r = next(((label, t[name]) for label, t in LATER if name in t), ("round 2", LIVE2.get(name)))
     if r is None:
         return live_status_r1(name)
@@ -170,7 +207,7 @@ def live_status(name):
         return "apex has no address (normal for a suffix entry); no documented subdomain to probe (wildcard-only source)", flags
     parts = []
     if rnd != "round 2":
-        parts.append("%s (2026-11-21)" % rnd)
+        parts.append("%s (%s)" % (rnd, ROUND_DATE[rnd]))
     if "tls-fail" in flags:
         parts.append(("resolves; TLS handshake failed (%s) in both rounds where checked: not a removal reason" % r["tls_error"]) if rnd == "round 2"
                      else "resolves; TLS handshake failed (%s, %s): not a removal reason" % (r["tls_error"] or "error not relayed", rnd))
@@ -311,7 +348,7 @@ def build(spec, meta):
         vec.append(("L-", h, "not " + "/".join(ids) + " (%s)" % why, fmt(a), "PASS" if ok else "FAIL"))
         if not ok:
             fails.append(h)
-    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N and O as rebuilt 2026-11-22)", ""]
+    sec6 = [START6, "", "### Method v2 vectors (checked 2026-11-20 against `c08773f` plus batches D to I, R, L, J, K, M, N, O, P and Q as rebuilt 2026-11-24)", ""]
     if vec:
         sec6 += ["O+ = observed app-owned host (positive); D- = observed dependency (must not be this app); "
                  "L- = look-alike or label-boundary name (must not be this app).", "",
@@ -323,8 +360,8 @@ def build(spec, meta):
     web = meta["web"]
     live_rows = [(d,) + live_status(d) for d in domains]
     s = [START, "", "## 9. Live verification (L)", "",
-         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 5 "
-         "of 2026-11-21 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`; tool "
+         "Source: %s, rounds 1 and 2 (`research/live-results-2026-11-20.tsv`, `research/live-results-2026-11-20-r2.tsv`), and rounds 3 to 7 "
+         "of 2026-11-21 and 2026-11-22 where they have the name (`research/live-results-2026-11-21-r3.tsv`, `-r4.tsv`, `-r5.tsv`, `research/live-results-2026-11-22-r6.tsv`, `-r7.tsv`; tool "
          "`research/tools/live_verify.py`, DoH DNS and direct TLS; round 2 adds certificate organisation and probes). "
          "`L` never raises a name above its primary-source level; a CDN-fronted name is usable as a name but its IPs are never "
          "evidence." % LIVE_CITE, ""]

@@ -285,8 +285,35 @@ def build(seed, count):
 HOST_ATTRIBUTION = re.compile(r"^\$\.(events\[\d+\]\.observation|final|observation)\.(hostname|application|evidence)(\.|\[|$)")
 
 
+# SEC-QUIC-3 (Lee, PRO-124, relayed on PRO-123, 2026-11-23): Go answers a client Initial (it opens with the client
+# Initial keys) in a UDP datagram under the RFC 9000 14.1 minimum of 1200 bytes as malformed, with this reason,
+# where the reference identifies it. Only a quic datagram under 1200 bytes qualifies, Go's answer must be exactly
+# that malformed verdict, and every differing path must be in the observation.
+QUIC_UNDERSIZED = "QUIC client Initial datagram below the RFC 9000 section 14.1 minimum of 1200 bytes; a server discards it"
+OBSERVATION = re.compile(r"^\$\.observation(\.|\[|$)")
+
+
+def quic_undersized(case, item):
+    """SEC-QUIC-3, or None."""
+    if case.get("label") != "quic" or case.get("kind") != "datagram":
+        return None
+    try:
+        data = bytes.fromhex(case.get("payload") or "")
+    except ValueError:
+        return None
+    differences = item.get("differences") or []
+    actual = {d.get("path"): d.get("actual") for d in differences}
+    if len(data) >= 1200 or actual.get("$.observation.status") != "malformed" or actual.get("$.observation.reason") != QUIC_UNDERSIZED:
+        return None
+    if any(not OBSERVATION.match(d.get("path", "")) for d in differences):
+        return None
+    return "SEC-QUIC-3: an undersized client Initial is malformed"
+
+
 def approved_divergence(case, item):
     """The approved divergence a mismatch belongs to, or None."""
+    if (case or {}).get("label") == "quic":
+        return quic_undersized(case, item)
     if (case or {}).get("label") != "http" or case.get("kind") != "stream":
         return None
     try:
@@ -338,6 +365,17 @@ def self_test():
     assert approved_divergence(absolute, status) is None             # anything else on the same request fails
     assert approved_divergence(origin, host) is None                 # origin-form is not part of the divergence
     assert approved_divergence(dict(absolute, label="tls"), host) is None
+    small = {"label": "quic", "kind": "datagram", "payload": "c3" * 600}
+    undersized = {"differences": [{"path": "$.observation.status", "expected": "identified", "actual": "malformed"},
+                                  {"path": "$.observation.reason", "actual": QUIC_UNDERSIZED},
+                                  {"path": "$.observation.hostname", "expected": "a.test", "actual": None}]}
+    assert approved_divergence(small, undersized)                    # SEC-QUIC-3
+    assert approved_divergence(dict(small, payload="c3" * 1200), undersized) is None    # 1200 bytes is not undersized
+    other = {"differences": undersized["differences"][:1] + [{"path": "$.observation.reason", "actual": "something else"}]}
+    assert approved_divergence(small, other) is None                 # only the SEC-QUIC-3 verdict
+    outside = {"differences": undersized["differences"] + [{"path": "$.metrics.parser_calls", "actual": 2}]}
+    assert approved_divergence(small, outside) is None               # nothing outside the observation
+    assert approved_divergence(dict(small, label="dtls"), undersized) is None
     first, again = build(5, 40), build(5, 40)
     assert first == again and first != build(6, 40), "the generator must be deterministic per seed"
     assert {case["id"].split("/")[1] for case in first} == {name for name, _, _ in GENERATORS}
@@ -385,8 +423,10 @@ def main(argv=None):
     by_id = {case["id"]: case for case in doc["cases"]}
     approved = {}
     for cid in sorted(mismatched):
-        if approved_divergence(by_id.get(cid), mismatched[cid]):
-            approved[cid] = mismatched.pop(cid)
+        reason = approved_divergence(by_id.get(cid), mismatched[cid])
+        if reason:
+            approved[cid] = reason.split(":")[0]
+            mismatched.pop(cid)
     failures += judge(mismatched, allow, args.seed, args.count)
     if report["missing"] or report["unsupported"]:
         failures.append("go answered {} cases unsupported, {} missing".format(report["unsupported"], len(report["missing"])))
@@ -404,9 +444,10 @@ def main(argv=None):
             "failures": failures,
             "mismatched": [dict(mismatched[cid], case=by_id.get(cid)) for cid in sorted(mismatched) if cid not in allow],
         }, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-    print("random differential: seed {}, {} cases ({}), Go matched the reference on {} of {}, {} approved divergences (SEC-HTTP-1), {} allowed, {} failures, {:.0f} s".format(
+    print("random differential: seed {}, {} cases ({}), Go matched the reference on {} of {}, {} approved divergences ({}), {} allowed, {} failures, {:.0f} s".format(
         args.seed, len(doc["cases"]), "; ".join("{} {}".format(k, dict(sorted(v.items()))) for k, v in sorted(kinds.items())),
-        report["matched"], report["compared"], len(approved), sum(1 for cid in mismatched if cid in allow), len(failures), time.monotonic() - started))
+        report["matched"], report["compared"], len(approved),
+        ", ".join("{} {}".format(k, sum(1 for v in approved.values() if v == k)) for k in ("SEC-HTTP-1", "SEC-QUIC-3")), sum(1 for cid in mismatched if cid in allow), len(failures), time.monotonic() - started))
     if args.plant:
         planted = doc["cases"][0]["id"]
         caught = planted in mismatched and len(mismatched) == 1

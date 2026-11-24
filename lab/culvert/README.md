@@ -60,6 +60,16 @@ Results, in `results-ef94311/`:
   different. No scenario asserts a host that differs from the CONNECT destination, so no record carries the new
   signal; the unit tests cover it.
 
+## Load test with vegeta (PRO-269, 2026-11-24)
+
+`tools/loadtest.py` sends sustained HTTPS (CONNECT, observed) and HTTP (forward proxy, the control) load with
+vegeta v12.12.0 to the synthetic Go origin `tools/loadorigin` on 203.0.113.10. It covers unmodified Culvert `ef94311`
+(A), the lab build with the detector off (B) and in observe mode (D), at 100, 300, 600 and 1,000 req/s, three rounds.
+`tools/loadtest_summary.py` makes the tables. Raw data is in `results-loadtest/`, and the report is
+`docs/integration/LOAD-TEST.md`. On the observed path, observe mode adds +5 to +113 µs at p50 and +84 to +424 µs
+at p95, and 0.15 to 0.22 CPU-s per 1,000 flows; throughput is unchanged up to 600 req/s. At 1,000 req/s the
+harness saturates in every configuration. vegeta is a test tool only, never shipped.
+
 ## What was built on the Culvert lab branch
 
 Base: Culvert `52eb9d1e4482adc9773afc4db77109acad617625`, local branch `lab/protocol-detector` (4 commits, push disabled). The patch is `culvert-lab-52eb9d1.patch`; it leaves out `frontend/dist`, which `npm run build` regenerates.

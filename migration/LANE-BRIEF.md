@@ -75,6 +75,17 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   0x11ED are named groups in `tlsx` (`selected_key_exchange` = `hybrid`); branch `claude/engine-PRO-260-tls-pq-keyshare`,
   PR #105 into `main`. Recorded as a Frozen-Python exception; 18 parity cases pinned in `deltas.json` (`go`), and
   `migration/parity/pro260.py` models the divergence on the reference for the decrypt and live-decrypt differentials.
+- **SEC-QUIC-3 (PRO-47, PRO-123):** a client Initial datagram under 1200 bytes is malformed and feeds no CRYPTO
+  data, and a second complete ClientHello of a flow naming another server invalidates it (Go only, recorded
+  divergence approved by Lee on PRO-124; `random_diff.py` accepts it as an approved class). `fe87386` on
+  `claude/youthful-lamport-hzlekc` (PR into `main`).
+- **PRO-291 (Codex PRO-290 P2 on SEC-QUIC-3):** the flow's first QUIC server name now outlives the scope's CRYPTO
+  entries (eviction, expiry, exhaustion); only `Reset`/`Clear` forget it, bounded by `MaxNames`. On
+  `claude/engine-PRO-291-quic-sni-retraction`, cut from PR #107's head `d10c007` (PR into that branch).
+- **PRO-315 (Codex PRO-312 P2s on SEC-QUIC-3):** P2 1 (first SNI dies with the last entry) was already fixed by
+  `5b48d91` (PRO-291). P2 2: an undersized client Initial on a conflicted connection no longer refreshes the marker
+  or retracts; the 1200-byte rule runs right after opening, before frames (also the related P3). `653b1ca` on
+  `claude/engine-PRO-315-quic-conflict-size`, cut from PR #107's head `d950eb8` (PR into that branch).
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 - **PRO-141 (livectl stop flake):** the stand-in worker sets its INT trap first and writes a ready file last; the
   three stop tests wait for it (`aff4d13`, branch `claude/vigilant-meitner-t7kw7h`). 200 of 200 under `-race`, also
@@ -130,6 +141,9 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PRO-101 nightly evidence | the first scheduled `nightly-fuzz.yml` run on `main` after `cb3ac80` (its `extended Go fuzz (every fuzz target)` job picks up the four new targets); record the run id in `STATUS.md` |
 | PRO-201 decisions: buffer transient capacity (ADR 0001), unkeyed session id, signature names that collide with built-ins, 79 of 88 verified families | Hermes/Lee |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
+| SEC-QUIC-3 (`fe87386`, PR into `main`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
+| PRO-291 (`5b48d91`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
+| PRO-315 (`653b1ca`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
@@ -154,6 +168,13 @@ PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid
 PRO-141 (against `main` `21dd113`): `aff4d13` (the livectl stop tests' synchronisation) and the documentation
 commit after it.
 
+SEC-QUIC-3 (PRO-123, against `main` `21dd113`): `fe87386` (fix, tests, the random-differential class) and the
+documentation commit after it.
+
+PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the documentation commit after it, and the errcheck fix in the test after that.
+
+PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the documentation commit after it.
+
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
 ## 7. Pitfalls learned
@@ -174,6 +195,12 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **The presentation suite needs the Go binary built first**, or `GoServiceTests` skip. `presentation-check` builds it.
 - **Get numbers from commands, not memory.** Earlier briefs had wrong counts (128 vs 132, 1,055 vs 1,035) and named
   test files that didn't exist.
+- **A fresh container may lack the pinned Go.** If `go version` is not go1.27.4, fetch it once with
+  `GOTOOLCHAIN=go1.27.4 GOPROXY=https://proxy.golang.org go version` (run outside the repository) and put
+  `~/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/bin` first on PATH, with GOROOT set to its parent.
+- **A new Go-only divergence that random inputs reach needs a `random_diff.py` approved class**, as narrow as
+  SEC-HTTP-1's and SEC-QUIC-3's (the case's shape, Go's exact verdict, the paths allowed to differ), with self-test
+  rejections; check that the earlier classes' counts are unchanged.
 - **Don't run govulncheck locally.** CI runs it over the vendored tree.
 - **The safety checker refuses `rm -rf` and heavy heredoc quoting.** Use `mv`, the Edit tool or plain `sed`.
 - **Commits:** author `Lee Nadav`, and keep the email private. End every message with the Co-Authored-By and

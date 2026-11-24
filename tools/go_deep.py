@@ -14,7 +14,9 @@
 Both run on the pinned Go with the committed vendor tree and no module download (tools/go_ci.py; the jobs set
 GOPROXY=off). A commit without go/go.mod has nothing to check and says so.
 
-    go_deep.py determinism [--summary FILE]
+    go_deep.py determinism [--summary FILE] [--docs-only-fast-path]
+                 (the ci job: on a docs-only pull request, tools/ci_scope.py, the toolchain is checked and
+                 go test is not run; push, schedule, dispatch or any doubt runs it)
     go_deep.py licenses --bin DIR [--summary FILE]
     go_deep.py --self-test
 Standard library only; Python 3.9 syntax.
@@ -67,7 +69,7 @@ def determinism_lines(output, code):
     return lines
 
 
-def run_determinism(summary):
+def run_determinism(summary, fast_path=False, scope=None):
     title = "### Go determinism (go test -race -shuffle=on -count=2)"
     tree, problems = go_ci.toolchain_problems()
     if tree is None:
@@ -76,6 +78,12 @@ def run_determinism(summary):
     if problems:
         go_ci.summarise(summary, [title, ""] + ["- FAILED: " + problem for problem in problems])
         return 1
+    if fast_path:
+        docs_only, reason, paths = (scope or go_ci.ci_scope.decide)(root=Path("."))
+        print("ci_scope: " + reason)
+        if docs_only:
+            go_ci.summarise(summary, go_ci.ci_scope.summary_lines(title, reason, paths))
+            return 0
     result = subprocess.run(DETERMINISM, cwd=str(GO_ROOT), env=go_ci.go_env(tree.get("vendored")),  # noqa: S603,S607
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
     output = result.stdout.decode("utf-8", "replace")
@@ -134,7 +142,21 @@ def self_test():
     lines = determinism_lines(bad, 1)
     assert "- FAILED: `-test.shuffle 1732211234`" in lines and any("TestOrder" in line for line in lines), lines
     assert determinism_lines("", 2)[-1] == "- FAILED: go test exited 2"
-    print("go_deep self-test: ok (determinism command and summary, go-licenses commands, report parsing, module path)")
+    # the docs-only fast path skips go test only on the scope's word (PRO-202 step 3); go test is never reached here
+    saved_tree, saved_run = go_ci.toolchain_problems, subprocess.run
+    try:
+        go_ci.toolchain_problems = lambda: ({"vendored": True}, [])
+        subprocess.run = lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("go test ran"))
+        assert run_determinism(None, True, lambda root: (True, "docs-only", ["a.md"])) == 0
+        try:
+            run_determinism(None, True, lambda root: (False, "code", ["go/a.go"]))
+            raise RuntimeError("a code change skipped go test")
+        except AssertionError:
+            pass                                                         # reached go test: the full run
+    finally:
+        go_ci.toolchain_problems, subprocess.run = saved_tree, saved_run
+    print("go_deep self-test: ok (determinism command and summary, go-licenses commands, report parsing, module path, "
+          "docs-only fast path)")
     return 0
 
 
@@ -143,12 +165,16 @@ def main(argv=None):
     parser.add_argument("mode", nargs="?", choices=("determinism", "licenses"))
     parser.add_argument("--bin", help="directory holding the pinned go-licenses (licenses mode)")
     parser.add_argument("--summary", help="append a markdown summary here (GITHUB_STEP_SUMMARY)")
+    parser.add_argument("--docs-only-fast-path", action="store_true",
+                        help="determinism: skip go test on a docs-only pull request (tools/ci_scope.py)")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args(argv)
     if args.self_test:
         return self_test()
+    if args.docs_only_fast_path and args.mode != "determinism":
+        parser.error("--docs-only-fast-path applies to determinism only")
     if args.mode == "determinism":
-        return run_determinism(args.summary)
+        return run_determinism(args.summary, args.docs_only_fast_path)
     if args.mode == "licenses" and args.bin:
         return run_licenses(args.bin, args.summary)
     parser.error("give determinism, or licenses with --bin")

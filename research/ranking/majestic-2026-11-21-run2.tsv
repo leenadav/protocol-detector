@@ -1,0 +1,89 @@
+# Majestic Million popularity run 2 (Paperclip PRO-132, run by Hermes on its server, 2026-11-21 22:04Z). Majestic only;
+# CrUX skipped (needs BigQuery). Input: the committed research/app-domains.json (79 specs, sha256
+# ef8ea13dbc97ead81add5fbb40f849120c9f48a7670d9128927a883d0c9975a0) from claude/app-research 9a05e06; no re-export.
+# Command: python3 -B research/tools/rank_domains.py research/app-domains.json OUT.tsv --majestic majestic_million.csv (rc 0).
+# Majestic CSV: 1,000,001 lines, sha256 1d15530cced4c902a8b4a661bfe1bd74b1e6e0131e711df5dc928137d2467548, deleted after the run.
+# Attribution: Majestic Million by Majestic (majestic.com), CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/);
+# joined to catalog domains, best (lowest) GlobalRank per application. 66 of 79 specs ranked, 13 blank.
+# Open checks (PRO-132): onedrive-drive-personal-business.md got docs.google.com's rank 24 (a Google domain in its list?);
+# fortinet-datto-nable.md has domains=0.
+spec	majestic_rank	majestic_rank_host	domains
+1password.md	2766	1password.com	10
+adobe-cloud.md	38	adobe.com	17
+amazon-q-developer.md			8
+amazon-workspaces.md	655954	amazonworkspaces.com	2
+anthropic-claude.md	383	anthropic.com	6
+anydesk.md	1978	anydesk.com	2
+apple-device-management.md			16
+apple-icloud.md	1302	icloud.com	8
+asana.md	1119	asana.com	10
+atera.md	49379	atera.com	4
+atlassian.md	501	atlassian.com	7
+azure-portal.md			7
+bitwarden.md	3448	bitwarden.com	5
+box.md	561	box.com	3
+canva.md	168	canva.com	5
+chrome-remote-desktop.md			2
+cisco-umbrella.md	5261	opendns.com	2
+citrix-cloud.md	1416	citrix.com	12
+cloudflare-warp.md	396369	cloudflareclient.com	4
+connectwise-screenconnect.md	15515	screenconnect.com	2
+cursor.md	1543	cursor.com	5
+datadog.md	3514	datadoghq.com	12
+deepseek.md	904	deepseek.com	1
+docker-hub.md	269	docker.com	3
+docusign.md	4239	docusign.com	3
+dropbox.md	93	dropbox.com	14
+duo-security.md	43016	duosecurity.com	1
+embedded-trackers.md	97	t.co	12
+figma.md	800	figma.com	2
+fortinet-datto-nable.md			0
+github-copilot.md	10	github.com	14
+gitlab.md	154	gitlab.com	2
+google-gemini-api.md			1
+google-gemini.md			4
+google-workspace.md	24	docs.google.com	13
+goto.md	3057	goto.com	9
+grammarly.md	1139	grammarly.com	3
+jamf-pro.md	10173	jamf.com	3
+jetbrains-ai.md	764	jetbrains.com	2
+logmein-resolve.md			4
+loom.md	1994	loom.com	2
+microsoft-365.md	64	office.com	19
+microsoft-copilot.md	3188	copilot.com	3
+miro.md	1498	miro.com	6
+mistral.md	1953	mistral.ai	2
+ms-defender-endpoint.md			2
+ms-intune.md			2
+ms-power-platform.md	5970	dynamics.com	8
+ms-update.md	19954	windowsupdate.com	5
+ms-virtual-desktop.md			7
+netskope.md	20125	netskope.com	3
+ngrok.md	8750	ngrok.com	3
+notion.md	589	notion.site	5
+okta.md	2086	okta.com	6
+onedrive-drive-personal-business.md	24	docs.google.com	15
+openai-chatgpt.md	179	chatgpt.com	6
+parsec.md	54639	parsec.app	3
+perplexity.md	720	perplexity.ai	2
+postman.md	2183	postman.com	4
+power-bi.md	1394	powerbi.com	7
+prisma-access.md			2
+rustdesk.md	13559	rustdesk.com	1
+salesforce.md	343	salesforce.com	24
+signal.md	2379	signal.org	7
+slack.md	459	slack.com	4
+snowflake.md			1
+sophos-central.md	1056	sophos.com	6
+splashtop.md	9588	splashtop.com	5
+tailscale.md	2971	tailscale.com	2
+teamviewer.md	537	teamviewer.com	1
+telegram.md	33	t.me	4
+twilio.md	1587	twilio.com	1
+webex.md	822	webex.com	6
+wetransfer.md	1168	wetransfer.com	9
+whatsapp.md	23	whatsapp.com	2
+xai-grok.md	2227	x.ai	3
+zendesk.md	203	zendesk.com	2
+zoom.md	79	zoom.us	3
+zscaler.md	6872	zscaler.com	19

@@ -23,6 +23,16 @@ their decisions, the policy locks, and the release controller.
 - **Never does:** merge, tag, release, deploy, change settings or permissions, force-push, comment on GitHub
   unless the lane rules call for it, or delete probe branches without Lee's word.
 
+## 2. Current state (2026-11-24, PRO-202 step 3)
+
+- **PRO-202 (CI speed), step 3:** branch `claude/platform-PRO-202-ci-speed` adds the docs-only fast path:
+  `tools/ci_scope.py` (fail-closed: only `pull_request`, only a two-parent merge HEAD, only `*.md` and
+  `research/` outside `research/tools/`) and `--docs-only-fast-path` on `go-engine`, `go-fuzz-smoke`, `go-parity`,
+  `go-minimum` and `go-determinism` (checkout `fetch-depth: 2`). No job-level `if:`; the gate is unchanged. Measured
+  before: code PR run 45422975498 (#107) 5.7 min wall, critical path go-parity and go-determinism 4.4 min each;
+  steps 1 (one run per change, cancel-in-progress) and 2 (#96, the split) are on `main`. Docs-only floor after this
+  step is the Python and presentation jobs (~2.2-2.8 min), which keep running in full. Next: step 4, Go build cache
+  saved on `main` only (cache-poisoning rules first), and the presentation chain (`package` -> `presentation-ui`).
 ## 2. Current state (2026-11-24, after PRO-262)
 
 - **PRO-262 (32-bit protocol tests):** `make go-check-386` and the `go-engine` step "32-bit protocol tests" (offline, vendored, `CGO_ENABLED=0`, no `-race` on 386). Proven on the old SEC-X509-1 check (`pos+size > limit`): the 386 run fails `x509x`, amd64 passes. The job name is unchanged, so required checks keep matching.
