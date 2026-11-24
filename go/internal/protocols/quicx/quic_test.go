@@ -436,3 +436,62 @@ func TestServerNamesAreBounded(t *testing.T) {
 		t.Fatal("the least recently used name was kept")
 	}
 }
+
+// Codex PRO-312 P2 (PRO-315): an Initial on a connection that already carries a conflict marker must still meet the
+// RFC 9000 section 14.1 client datagram minimum before it refreshes the marker or yields invalidation evidence. An
+// undersized decoy is a datagram a server discards: it is malformed, the marker keeps its old idle time and so
+// expires on schedule, and a full-size Initial of the connection still returns the retraction.
+func TestConflictedConnectionAppliesTheClientDatagramMinimum(t *testing.T) {
+	hello := load(t, "rfc9001_client_hello.hex")
+	frame := testframes.CryptoFrames(hello)[0]
+	at := func(v float64) *float64 { return &v }
+	a := NewAssembler(4, 10)
+	if s, _ := a.Add(dcid, []Fragment{{0, hello}}, "c>s", V1, at(0)); s != Complete {
+		t.Fatal(s)
+	}
+	if s, _ := a.Add(dcid, []Fragment{{50, bytes.Repeat([]byte{0xee}, 10)}}, "c>s", V1, at(0)); s != Conflict {
+		t.Fatal(s)
+	}
+	m, err := Validate(testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 1199), defaults, a, "c>s", at(8))
+	if err == nil || !strings.Contains(err.Error(), "1200 bytes") {
+		t.Fatalf("undersized Initial on a conflicted connection: %+v %v", m, err)
+	}
+	if m, err := Validate(testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 1200), defaults, a, "c>s", at(9)); err != nil || !m.Retracts {
+		t.Fatalf("full-size Initial on a conflicted connection: %+v %v", m, err)
+	}
+	// The undersized datagram at 8 did not refresh the marker; the full-size one at 9 did, so it lives to 19.
+	if !a.Conflicted(dcid, "c>s", V1, at(19)) || a.Conflicted(dcid, "c>s", V1, at(29.5)) {
+		t.Fatal("marker idle time")
+	}
+	b := NewAssembler(4, 10)
+	b.Add(dcid, []Fragment{{0, hello}}, "c>s", V1, at(0))
+	b.Add(dcid, []Fragment{{50, bytes.Repeat([]byte{0xee}, 10)}}, "c>s", V1, at(0))
+	if _, err := Validate(testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 1199), defaults, b, "c>s", at(8)); err == nil {
+		t.Fatal("undersized Initial accepted")
+	}
+	if b.Conflicted(dcid, "c>s", V1, at(10.5)) {
+		t.Fatal("an undersized Initial refreshed the conflict marker")
+	}
+	// A datagram the client keys do not open is not known to be a client Initial: the marker still binds it.
+	damaged := testframes.QUICInitial(V1, dcid, nil, frame, 2, nil, 600)
+	damaged[len(damaged)-1] ^= 0xff
+	c := NewAssembler(4, 10)
+	c.Add(dcid, []Fragment{{0, hello}}, "c>s", V1, nil)
+	c.Add(dcid, []Fragment{{50, bytes.Repeat([]byte{0xee}, 10)}}, "c>s", V1, nil)
+	if m, err := Validate(damaged, defaults, c, "c>s", nil); err != nil || !m.Retracts {
+		t.Fatalf("unopened datagram on a conflicted connection: %+v %v", m, err)
+	}
+}
+
+// Codex P3 (memory of PRO-312's round): a short client Initial whose frames fall outside the Initial profile is a
+// datagram a server discards, so it is malformed rather than a structural QUIC match the UDP tracker could keep.
+func TestShortClientInitialWithUnsupportedFrameIsMalformed(t *testing.T) {
+	short := testframes.QUICInitial(V1, dcid, nil, []byte{0x1e}, 2, nil, 300) // HANDSHAKE_DONE: not in an Initial
+	if m, err := Validate(short, defaults, nil, "", nil); err == nil || !strings.Contains(err.Error(), "1200 bytes") {
+		t.Fatalf("short Initial with an unsupported frame: %+v %v", m, err)
+	}
+	full := testframes.QUICInitial(V1, dcid, nil, []byte{0x1e}, 2, nil, 1200)
+	if m, err := Validate(full, defaults, nil, "", nil); err != nil || fieldsOf(m)["initial_protection"] != "unverified" {
+		t.Fatalf("full-size Initial with an unsupported frame: %+v %v", m, err)
+	}
+}

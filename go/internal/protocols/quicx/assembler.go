@@ -186,17 +186,32 @@ func (a *Assembler) expire(now float64) {
 // Conflicted reports whether this connection carries a conflict marker; the marker binds every later datagram of
 // the connection, CRYPTO or not, until reset or expiry. It refreshes the entry's idle time but not its LRU place.
 func (a *Assembler) Conflicted(dcid []byte, scope string, version uint32, now *float64) bool {
+	e := a.marker(dcid, scope, version, now)
+	if e == nil {
+		return false
+	}
+	a.refresh(e, now)
+	return true
+}
+
+// marker expires idle entries and returns this connection's conflict marker, or nil, without refreshing it: the
+// caller first decides whether the datagram may count (PRO-315), then calls refresh.
+func (a *Assembler) marker(dcid []byte, scope string, version uint32, now *float64) *entry {
 	if now != nil {
 		a.expire(*now)
 	}
 	e := a.entries[key{scope, version, string(dcid)}]
 	if e == nil || !e.conflict {
-		return false
+		return nil
 	}
+	return e
+}
+
+// refresh records a datagram that the conflict marker binds as the marker's last-seen time.
+func (a *Assembler) refresh(e *entry, now *float64) {
 	if now != nil {
 		a.touch(e, *now)
 	}
-	return true
 }
 
 // SameServerName records the server name of a complete ClientHello of this connection and reports whether it

@@ -298,11 +298,22 @@ func Validate(data []byte, opts Options, asm *Assembler, scope string, now *floa
 	if tokenLength > 0 {
 		evidence = append(evidence, wire("initial_token", "present", "structural"))
 	}
-	if asm != nil && asm.Conflicted(dcid, scope, version, now) {
-		// A contradiction already invalidated this connection: every further Initial of it keeps the invalidation.
+	// A contradiction already invalidated this connection: every further Initial of it keeps the invalidation. The
+	// marker is looked up here but refreshed only once the datagram may count (Codex PRO-312 P2, PRO-315): a client
+	// Initial under the RFC 9000 section 14.1 minimum is discarded by a server, so it neither refreshes the marker
+	// nor yields invalidation evidence.
+	var conflicted *entry
+	if asm != nil {
+		conflicted = asm.marker(dcid, scope, version, now)
+	}
+	stillConflicted := func() (*Match, error) {
+		asm.refresh(conflicted, now)
 		evidence = append(evidence, wire("crypto_assembly", "conflict", "structural"))
 		return &Match{Evidence: evidence, Retracts: true,
 			Reason: "QUIC connection invalidated by an earlier CRYPTO contradiction; later datagrams of it stay withdrawn"}, nil
+	}
+	if conflicted != nil && (!opts.Decrypt || len(data) > opts.MaxBytes) {
+		return stillConflicted() // not opened, so not known to be a client Initial: the marker binds it as before
 	}
 	if !opts.Decrypt {
 		evidence = append(evidence, wire("initial_protection", "skipped", "context"))
@@ -312,6 +323,17 @@ func Validate(data []byte, opts Options, asm *Assembler, scope string, now *floa
 		return nil, parsing.Budget("QUIC Initial exceeds byte budget")
 	}
 	plaintext, opened := unprotect(data, pnOffset, int(length), version, dcid)
+	if opened && len(data) < MinClientDatagram {
+		// SEC-QUIC-3 (PRO-47, PRO-123; a Go-only divergence Lee approved on PRO-124): the payload opened with the
+		// client Initial keys, so this is a client Initial, and RFC 9000 section 14.1 has a server discard one in a
+		// datagram under 1200 bytes. It is checked before frame decoding and before a conflict marker counts the
+		// datagram (PRO-315), so nothing in it is evidence: it neither enters the assembler (where a decoy would
+		// contradict the real Initial), nor names the flow's server, nor refreshes or reports an invalidation.
+		return nil, parsing.Malformed("QUIC client Initial datagram below the RFC 9000 section 14.1 minimum of 1200 bytes; a server discards it")
+	}
+	if conflicted != nil {
+		return stillConflicted()
+	}
 	if !opened {
 		evidence = append(evidence, wire("initial_protection", "unverified", "context"))
 		return &Match{Evidence: evidence,
@@ -324,13 +346,6 @@ func Validate(data []byte, opts Options, asm *Assembler, scope string, now *floa
 		}
 		evidence = append(evidence, wire("initial_protection", "unverified", "context"))
 		return &Match{Evidence: evidence, Reason: "QUIC Initial opened but frames outside the Initial profile: " + err.(*parsing.Error).Message}, nil
-	}
-	if len(data) < MinClientDatagram {
-		// SEC-QUIC-3 (PRO-47, PRO-123; a Go-only divergence Lee approved on PRO-124): the payload opened with the
-		// client Initial keys, so this is a client Initial, and RFC 9000 section 14.1 has a server discard one in a
-		// datagram under 1200 bytes. Its CRYPTO data is therefore never evidence: it neither enters the assembler
-		// (where a decoy would contradict the real Initial) nor names the flow's server.
-		return nil, parsing.Malformed("QUIC client Initial datagram below the RFC 9000 section 14.1 minimum of 1200 bytes; a server discards it")
 	}
 	evidence = append(evidence, wire("initial_protection", "removed", "structural"))
 	status, hello := Assemble(fragments)
