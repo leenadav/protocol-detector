@@ -39,8 +39,9 @@ func main() {
 		w.Header().Set("Content-Type", "text/plain")
 		_, _ = w.Write(body)
 	})
-	plain := &http.Server{Addr: *addr + ":80", Handler: handler, ReadHeaderTimeout: 5 * time.Second}
-	secure := &http.Server{Addr: *addr + ":443", Handler: handler, ReadHeaderTimeout: 5 * time.Second,
+	// The header timeout also bounds the TLS handshake, so it is longer than loadhold.py's silent tunnels live.
+	plain := &http.Server{Addr: *addr + ":80", Handler: handler, ReadHeaderTimeout: 60 * time.Second}
+	secure := &http.Server{Addr: *addr + ":443", Handler: handler, ReadHeaderTimeout: 60 * time.Second,
 		TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{cert}}}
 	go func() { log.Fatal(plain.ListenAndServe()) }()
 	log.Printf("loadorigin up on %s:80 and :443", *addr)

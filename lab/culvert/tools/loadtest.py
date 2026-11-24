@@ -4,6 +4,7 @@ Drives vegeta (MIT, a test tool only, never shipped) through three Culvert build
 
   A  unmodified Culvert at the lab base
   B  lab build, detector off   (CULVERT_LAB_PROTODETECT unset: the relay path is the unmodified one)
+  C  lab build, fake engine    (CULVERT_LAB_PROTODETECT=fake: the same hook, timer and record, no parsing)
   D  lab build, observe mode   (CULVERT_LAB_PROTODETECT=real, visibility only, nothing is blocked)
 
 Each request opens its own client connection (vegeta -keepalive=false), so for HTTPS every request is one CONNECT
@@ -24,7 +25,9 @@ CLK = os.sysconf("SC_CLK_TCK")
 PAGE = os.sysconf("SC_PAGE_SIZE")
 PROXY_CPUS, VEGETA_CPUS, ORIGIN_CPUS = "0,1", "2", "3"
 BUILDS = {"A": ("culvert-A", {}), "B": ("culvert-lab", {}),
+          "C": ("culvert-lab", {"CULVERT_LAB_PROTODETECT": "fake", "CULVERT_LAB_PD_WINDOW_MS": "3000"}),
           "D": ("culvert-lab", {"CULVERT_LAB_PROTODETECT": "real", "CULVERT_LAB_PD_WINDOW_MS": "3000"})}
+ORIGIN = {}  # "pid" of the running load origin, for its CPU time
 PORT, UI_PORT = 18090, 19190
 GC_LINE = re.compile(r"^gc \d+ @")
 CLEAN_ENV = {k: v for k, v in os.environ.items()
@@ -40,6 +43,34 @@ def cpu_ticks(pid):
 def rss_kib(pid):
     with open(f"/proc/{pid}/statm") as f:
         return int(f.read().split()[1]) * PAGE // 1024
+
+
+def time_wait():
+    """Sockets in TIME_WAIT. One connection per request at 1,000/s exhausts the default ephemeral range
+    (32768-60999, a 60 s TIME_WAIT) on the single client-to-proxy endpoint, so every cell starts drained."""
+    n = 0
+    for path in ("/proc/net/tcp", "/proc/net/tcp6"):
+        try:
+            with open(path) as f:
+                n += sum(1 for line in f.readlines()[1:] if line.split()[3] == "06")
+        except OSError:
+            pass
+    return n
+
+
+def drain_time_wait(limit=5000, timeout=90):
+    end = time.time() + timeout
+    while time_wait() > limit and time.time() < end:
+        time.sleep(1)
+    return time_wait()
+
+
+def socket_settings():
+    out = {}
+    for name in ("ip_local_port_range", "tcp_tw_reuse", "tcp_fin_timeout"):
+        with open(f"/proc/sys/net/ipv4/{name}") as f:
+            out[name] = " ".join(f.read().split())
+    return out
 
 
 def healthy(port, timeout=30):
@@ -63,7 +94,7 @@ def start_proxy(lab, build, run_dir):
     log = open(os.path.join(run_dir, f"culvert-load-{build}.log"), "w")
     p = subprocess.Popen(["taskset", "-c", PROXY_CPUS, os.path.join(lab, "bin", binary),  # noqa: S603, S607  (fixed argv, lab binaries; loopback lab only)
                           "-port", str(PORT), "-ui-port", str(UI_PORT)],
-                         env=env, stdout=log, stderr=subprocess.STDOUT)
+                         env=env, stdout=log, stderr=subprocess.STDOUT, cwd=run_dir)  # Culvert writes state files to its cwd
     if not healthy(PORT):
         p.kill()
         sys.exit(f"build {build} did not become healthy; see {log.name}")
@@ -111,6 +142,7 @@ def report(lab, out_bin):
 
 
 def cell(lab, run_dir, scheme, rate, build, seconds, warmup, rnd):
+    tw_start = drain_time_wait()
     p, log = start_proxy(lab, build, run_dir)
     try:
         w = attack(lab, run_dir, scheme, rate, warmup, os.devnull)
@@ -118,14 +150,18 @@ def cell(lab, run_dir, scheme, rate, build, seconds, warmup, rnd):
         time.sleep(3.5)  # let the warm-up's observation windows end, so its records are not counted below
         idle_rss = rss_kib(p.pid)
         gc0, pd0, ref0 = log_counts(log.name)
-        t0, c0 = time.time(), cpu_ticks(p.pid)
+        t0, c0, o0 = time.time(), cpu_ticks(p.pid), cpu_ticks(ORIGIN["pid"])
         out_bin = os.path.join(run_dir, f"attack-{scheme}-{rate}-{build}-{rnd}.bin")
         a = attack(lab, run_dir, scheme, rate, seconds, out_bin)
         samples = []
-        while a.poll() is None:
+        while True:
+            pid, _, usage = os.wait4(a.pid, os.WNOHANG)
+            if pid:
+                a.returncode = 0
+                break
             samples.append(rss_kib(p.pid))
             time.sleep(0.1)
-        c1, t1 = cpu_ticks(p.pid), time.time()
+        c1, t1, o1 = cpu_ticks(p.pid), time.time(), cpu_ticks(ORIGIN["pid"])
         time.sleep(3.5)  # the last tunnels' windows end and their records are logged
         gc1, pd1, ref1 = log_counts(log.name)
     finally:
@@ -143,22 +179,25 @@ def cell(lab, run_dir, scheme, rate, build, seconds, warmup, rnd):
         "mean_ms": lat["mean"] / 1e6, "max_ms": lat["max"] / 1e6,
         "proxy_cpu_s": cpu_s, "wall_s": t1 - t0, "cpu_ms_per_1k": cpu_s * 1000 / n * 1000,
         "proxy_cpu_pct": 100 * cpu_s / (t1 - t0),
+        "vegeta_cpu_pct": 100 * (usage.ru_utime + usage.ru_stime) / (t1 - t0),
+        "origin_cpu_pct": 100 * (o1 - o0) / CLK / (t1 - t0),
         "rss_idle_mib": idle_rss / 1024, "rss_peak_mib": max(samples) / 1024,
         "rss_mean_mib": statistics.mean(samples) / 1024, "gc_cycles": gc1 - gc0,
         "gc_per_1k": (gc1 - gc0) / n * 1000, "pd_records": pd1 - pd0, "pd_refused": ref1 - ref0,
+        "time_wait_at_start": tw_start,
     }
 
 
 def summarise(cells):
     keys = ["p50_ms", "p95_ms", "p99_ms", "mean_ms", "throughput", "success", "cpu_ms_per_1k", "proxy_cpu_pct",
-            "rss_idle_mib", "rss_peak_mib", "rss_mean_mib", "gc_per_1k", "pd_records", "pd_refused", "requests"]
+            "rss_idle_mib", "rss_peak_mib", "rss_mean_mib", "gc_per_1k", "vegeta_cpu_pct", "origin_cpu_pct", "pd_records", "pd_refused", "requests"]
     groups = {}
     for c in cells:
         groups.setdefault((c["scheme"], c["rate"], c["build"]), []).append(c)
     out = []
     for (scheme, rate, build), cs in sorted(groups.items()):
         row = {"scheme": scheme, "rate": rate, "build": build, "rounds": len(cs)}
-        for k in keys:
+        for k in (k for k in keys if k in cs[0]):  # cells of an older harness lack the newer keys
             vals = [c[k] for c in cs]
             row[k] = statistics.median(vals)
             row[k + "_min"], row[k + "_max"] = min(vals), max(vals)
@@ -179,9 +218,18 @@ def main():
     a = ap.parse_args()
     run_dir = os.path.join(a.lab, "run")
     os.makedirs(a.out, exist_ok=True)
+    settings = socket_settings()
+    lo, hi = (int(x) for x in settings["ip_local_port_range"].split())
+    if hi - lo < 60000 or settings["tcp_tw_reuse"] != "1":
+        sys.exit(f"socket settings {settings}: set ip_local_port_range to 1024 65535 and tcp_tw_reuse to 1 first")
+    with open(os.path.join(a.out, "settings.json"), "w") as f:
+        json.dump(dict(settings, rates=a.rates, schemes=a.schemes, builds=a.builds, duration_s=a.duration,
+                       warmup_s=a.warmup, rounds=a.rounds, proxy_cpus=PROXY_CPUS, vegeta_cpus=VEGETA_CPUS,
+                       origin_cpus=ORIGIN_CPUS, nproc=os.cpu_count()), f, indent=1)
     origin = subprocess.Popen(["taskset", "-c", ORIGIN_CPUS, os.path.join(a.lab, "bin", "loadorigin"),  # noqa: S603, S607  (fixed argv, lab binaries; loopback lab only)
                                "-cert", os.path.join(run_dir, "origin.pem")],
                               stdout=open(os.path.join(run_dir, "loadorigin.log"), "w"), stderr=subprocess.STDOUT)
+    ORIGIN["pid"] = origin.pid
     time.sleep(1)
     cells = []
     builds = a.builds.split(",")

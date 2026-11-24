@@ -31,7 +31,7 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   The Culvert clone's push URL is disabled.
 - **Data:** synthetic and loopback only. The lab's origins are on RFC 5737 addresses.
 
-## 2. Current state (2026-11-22, after PRO-233)
+## 2. Current state (2026-11-24, after PRO-269)
 
 - **Landing on main (PRO-233):** `claude/culvert-land-main` = `d10a2b4` + a merge of `main` `f027a4d` + focused
   fixes. Kept: `go/detector`, `go/consumertest`, `docs/integration/`, `docs/governance/`, the lab, the licence
@@ -42,6 +42,16 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   Python reference and the parity fixtures. `TestPostQuantumServerHelloGap` pins the consequence: a default Go
   TLS server's reply is `unknown` again.
 
+- **Load test (PRO-269, 2026-11-24):** `docs/integration/LOAD-TEST.md`. vegeta v12.12.0 runs through builds A,
+  B, C and D of the `ef94311` lab at 200, 500 and 1,000/s, one tunnel per request. Observe mode adds:
+  - HTTPS latency below the rig's resolution at 200 and 500/s (p50 ≤ +0.11 ms, p99 within noise);
+  - +105 to +277 ms of proxy CPU per 1,000 flows (15 to 26%), about half the lab observation path (fake engine
+    C) and half the engine;
+  - +2.5 to +3 GC cycles per 1,000 flows;
+  - +3.9 KiB per tunnel retained after the window (1,000 held tunnels).
+
+  1,000/s is the rig's knee on 4 vCPUs (disturbed rounds on every build). Tools are in `lab/culvert/tools/`
+  (`loadtest.py`, `loadhold.py`, `loadtest_report.py`, `loadorigin/`), data in `lab/culvert/results-load*/`.
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
 - **Lab:**
@@ -134,6 +144,11 @@ Culvert's allocation gates need `-tags benchgate`.
   Platform & CI on PRO-148; this lane's own jobs are green.
 - The Culvert team's answers (request items 1 to 6), and Lee's decision to send the request.
 - Repository settings and the first `go/v0.x.y` tag (Lee).
+- **From the load test (PRO-269), not started:**
+  - the lab observation path's CPU share (about +60 to +70 ms per 1,000 flows on the fake engine: timer, record,
+    log line) is the cheaper half to reduce;
+  - measuring at 1,000/s and above needs vegeta and the origin on other hosts;
+  - the observing state with full 16 KiB prefixes, and the blocked-write case, are not measured yet.
 
 ## 6. Frozen and queued SHAs
 
@@ -143,7 +158,8 @@ Culvert's allocation gates need `-tags benchgate`.
   `claude/culvert-land-main`; PR leenadav/protocol-detector#97. Then `60b2305` (merge of main `e5ac90f`) and the
   brief commit that records the PRO-235 decision, then the commit that fixes the 12 CodeQL alerts in
   `lab/culvert/tools/` (TLS 1.2 minimum on the lab clients, files closed, one unused assignment).
-- **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
+- **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-269 load-test
+  commits (lab tooling, results and docs only, no Go code under `go/`) are added there too. The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
 ## 7. Pitfalls
@@ -178,3 +194,11 @@ Culvert's allocation gates need `-tags benchgate`.
 - **A conflict-free merge can still change the reference.** Lane edits to `protocol_engine/` and `test_*.py`
   auto-merged with no conflict; only the parity replay (7 mismatches) showed them. Diff the merge against `main`
   for the Python reference and fixtures before anything else.
+- **One connection per request exhausts ephemeral ports.** At 1,000 new connections per second into one proxy
+  endpoint, the default range (32768–60999) fills with TIME_WAIT within a 30 s cell, and every build fails with
+  `bind: address already in use`. Set `ip_local_port_range` to `1024 65535` and `tcp_tw_reuse` to 1; `loadtest.py`
+  refuses to run otherwise and drains TIME_WAIT before each cell.
+- **Culvert writes `categories.json` and `cluster.json` into its working directory.** Start it from the lab's
+  `run/` directory, never from inside this checkout (the files appeared as untracked files in `lab/culvert/tools/`).
+- **Go's `ReadHeaderTimeout` also bounds the TLS handshake.** A silent CONNECT tunnel to a Go HTTPS origin is
+  closed by the origin after that timeout, so a hold test needs it longer than the window.

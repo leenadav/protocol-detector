@@ -1,0 +1,17 @@
+round 0 https   200/s A: p50 2.05 p95 2.75 p99 5.11 ms, ok 1.0000, cpu 1053 ms/1k, rss peak 52 MiB, pd 0
+round 0 https   200/s B: p50 2.03 p95 2.70 p99 4.88 ms, ok 1.0000, cpu 1058 ms/1k, rss peak 56 MiB, pd 0
+round 0 https   200/s D: p50 1.99 p95 2.60 p99 4.31 ms, ok 1.0000, cpu 1222 ms/1k, rss peak 57 MiB, pd 6000
+round 0 https   500/s A: p50 2.20 p95 4.30 p99 8.97 ms, ok 1.0000, cpu 1252 ms/1k, rss peak 53 MiB, pd 0
+round 0 https   500/s B: p50 2.24 p95 4.14 p99 7.48 ms, ok 1.0000, cpu 1280 ms/1k, rss peak 56 MiB, pd 0
+round 0 https   500/s D: p50 2.46 p95 4.44 p99 7.81 ms, ok 1.0000, cpu 1538 ms/1k, rss peak 57 MiB, pd 14999
+round 0 https  1000/s A: p50 8.57 p95 10000.24 p99 10008.22 ms, ok 0.6224, cpu 981 ms/1k, rss peak 162 MiB, pd 0
+round 0 https  1000/s B: p50 965.60 p95 10001.63 p99 10057.47 ms, ok 0.5719, cpu 1186 ms/1k, rss peak 271 MiB, pd 0
+round 0 https  1000/s D: p50 7908.42 p95 10001.00 p99 10018.95 ms, ok 0.2476, cpu 1127 ms/1k, rss peak 394 MiB, pd 16236
+round 0 http    200/s A: p50 0.99 p95 1.47 p99 2.91 ms, ok 1.0000, cpu 873 ms/1k, rss peak 51 MiB, pd 0
+round 0 http    200/s B: p50 0.97 p95 1.41 p99 2.99 ms, ok 1.0000, cpu 855 ms/1k, rss peak 54 MiB, pd 0
+round 0 http    200/s D: p50 1.03 p95 1.79 p99 4.46 ms, ok 1.0000, cpu 908 ms/1k, rss peak 54 MiB, pd 0
+round 0 http    500/s A: p50 0.94 p95 1.70 p99 5.14 ms, ok 1.0000, cpu 858 ms/1k, rss peak 52 MiB, pd 0
+round 0 http    500/s B: p50 0.94 p95 1.54 p99 2.97 ms, ok 1.0000, cpu 849 ms/1k, rss peak 55 MiB, pd 0
+round 0 http    500/s D: p50 0.95 p95 1.69 p99 3.62 ms, ok 1.0000, cpu 863 ms/1k, rss peak 55 MiB, pd 0
+round 0 http   1000/s A: p50 0.91 p95 1.62 p99 3.23 ms, ok 1.0000, cpu 687 ms/1k, rss peak 52 MiB, pd 0
+round 0 http   1000/s B: p50 0.91 p95 1.83 p99 4.88 ms, ok 1.0000, cpu 684 ms/1k, rss peak 56 MiB, pd 0
