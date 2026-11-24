@@ -1,0 +1,706 @@
+{
+ "started": "2026-11-24T16:21:44Z",
+ "duration_s": 20,
+ "rates": [
+  600
+ ],
+ "rounds": 3,
+ "cpus": {
+  "proxy": "0,1",
+  "vegeta": "2",
+  "origin": "3"
+ },
+ "steps": [
+  {
+   "requests": 12000,
+   "rate": 600.05,
+   "throughput": 600.01,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 189.8,
+    "mean": 1179.4,
+    "50th": 1064.1,
+    "90th": 1538.9,
+    "95th": 1837.5,
+    "99th": 3431.3,
+    "max": 16783.5
+   },
+   "round": 1,
+   "config": "direct",
+   "scheme": "https",
+   "target_rate": 600
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 600.05,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 137.5,
+    "mean": 343.5,
+    "50th": 312.0,
+    "90th": 459.4,
+    "95th": 505.0,
+    "99th": 946.1,
+    "max": 12214.7
+   },
+   "round": 1,
+   "config": "direct",
+   "scheme": "http",
+   "target_rate": 600
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 600.01,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 185.4,
+    "mean": 1794.3,
+    "50th": 1670.3,
+    "90th": 2291.5,
+    "95th": 2754.5,
+    "99th": 5061.5,
+    "max": 26087.3
+   },
+   "proxy_cpu_s": 9.42,
+   "proxy_cpu_s_per_1000_flows": 0.785,
+   "proxy_rss": {
+    "peak_kib": 53188,
+    "mean_kib": 52052
+   },
+   "round": 1,
+   "config": "A",
+   "scheme": "https",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 42648
+  },
+  {
+   "requests": 12000,
+   "rate": 600.07,
+   "throughput": 600.04,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 394.0,
+    "mean": 906.7,
+    "50th": 834.8,
+    "90th": 1145.0,
+    "95th": 1330.5,
+    "99th": 2456.3,
+    "max": 17612.8
+   },
+   "proxy_cpu_s": 9.12,
+   "proxy_cpu_s_per_1000_flows": 0.76,
+   "proxy_rss": {
+    "peak_kib": 55432,
+    "mean_kib": 53392
+   },
+   "round": 1,
+   "config": "A",
+   "scheme": "http",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 42648
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 600.0,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 176.9,
+    "mean": 2583.7,
+    "50th": 2053.7,
+    "90th": 3916.2,
+    "95th": 5376.0,
+    "99th": 11645.0,
+    "max": 28745.1
+   },
+   "proxy_cpu_s": 14.12,
+   "proxy_cpu_s_per_1000_flows": 1.1767,
+   "proxy_rss": {
+    "peak_kib": 56324,
+    "mean_kib": 54947
+   },
+   "round": 1,
+   "config": "B",
+   "scheme": "https",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 44832
+  },
+  {
+   "requests": 12000,
+   "rate": 600.07,
+   "throughput": 600.05,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 400.8,
+    "mean": 930.2,
+    "50th": 851.0,
+    "90th": 1158.8,
+    "95th": 1359.8,
+    "99th": 2533.3,
+    "max": 22297.2
+   },
+   "proxy_cpu_s": 9.13,
+   "proxy_cpu_s_per_1000_flows": 0.7608,
+   "proxy_rss": {
+    "peak_kib": 59388,
+    "mean_kib": 56552
+   },
+   "round": 1,
+   "config": "B",
+   "scheme": "http",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 44832
+  },
+  {
+   "requests": 12000,
+   "rate": 600.05,
+   "throughput": 599.9,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 211.3,
+    "mean": 2690.7,
+    "50th": 2058.7,
+    "90th": 3914.1,
+    "95th": 5460.3,
+    "99th": 11865.1,
+    "max": 77596.3
+   },
+   "proxy_cpu_s": 15.25,
+   "proxy_cpu_s_per_1000_flows": 1.2708,
+   "proxy_rss": {
+    "peak_kib": 57848,
+    "mean_kib": 56634
+   },
+   "pd_records": 12001,
+   "pd_refused": 0,
+   "round": 1,
+   "config": "D",
+   "scheme": "https",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 47388
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 600.03,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 414.7,
+    "mean": 926.0,
+    "50th": 869.3,
+    "90th": 1157.0,
+    "95th": 1332.0,
+    "99th": 2219.1,
+    "max": 14603.8
+   },
+   "proxy_cpu_s": 9.18,
+   "proxy_cpu_s_per_1000_flows": 0.765,
+   "proxy_rss": {
+    "peak_kib": 60096,
+    "mean_kib": 57522
+   },
+   "pd_records": 0,
+   "pd_refused": 0,
+   "round": 1,
+   "config": "D",
+   "scheme": "http",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 47388
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 600.04,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 185.9,
+    "mean": 1413.8,
+    "50th": 1337.2,
+    "90th": 1830.0,
+    "95th": 2192.5,
+    "99th": 3511.1,
+    "max": 23295.2
+   },
+   "round": 2,
+   "config": "direct",
+   "scheme": "https",
+   "target_rate": 600
+  },
+  {
+   "requests": 12000,
+   "rate": 600.04,
+   "throughput": 600.03,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 131.9,
+    "mean": 353.5,
+    "50th": 326.9,
+    "90th": 470.7,
+    "95th": 514.3,
+    "99th": 907.8,
+    "max": 8794.8
+   },
+   "round": 2,
+   "config": "direct",
+   "scheme": "http",
+   "target_rate": 600
+  },
+  {
+   "requests": 12000,
+   "rate": 600.07,
+   "throughput": 600.02,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 183.5,
+    "mean": 2129.7,
+    "50th": 1834.1,
+    "90th": 2512.2,
+    "95th": 3249.4,
+    "99th": 5985.6,
+    "max": 91836.5
+   },
+   "proxy_cpu_s": 9.57,
+   "proxy_cpu_s_per_1000_flows": 0.7975,
+   "proxy_rss": {
+    "peak_kib": 56412,
+    "mean_kib": 55122
+   },
+   "round": 2,
+   "config": "B",
+   "scheme": "https",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 45024
+  },
+  {
+   "requests": 12000,
+   "rate": 600.04,
+   "throughput": 600.01,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 414.5,
+    "mean": 900.7,
+    "50th": 830.5,
+    "90th": 1108.7,
+    "95th": 1272.6,
+    "99th": 2514.5,
+    "max": 21126.0
+   },
+   "proxy_cpu_s": 8.86,
+   "proxy_cpu_s_per_1000_flows": 0.7383,
+   "proxy_rss": {
+    "peak_kib": 59404,
+    "mean_kib": 56751
+   },
+   "round": 2,
+   "config": "B",
+   "scheme": "http",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 45024
+  },
+  {
+   "requests": 12000,
+   "rate": 600.04,
+   "throughput": 600.01,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 164.1,
+    "mean": 2444.2,
+    "50th": 1927.9,
+    "90th": 3720.9,
+    "95th": 4899.1,
+    "99th": 10386.6,
+    "max": 50463.9
+   },
+   "proxy_cpu_s": 15.06,
+   "proxy_cpu_s_per_1000_flows": 1.255,
+   "proxy_rss": {
+    "peak_kib": 57376,
+    "mean_kib": 56461
+   },
+   "pd_records": 12000,
+   "pd_refused": 0,
+   "round": 2,
+   "config": "D",
+   "scheme": "https",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 46832
+  },
+  {
+   "requests": 12000,
+   "rate": 600.07,
+   "throughput": 600.06,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 393.8,
+    "mean": 858.6,
+    "50th": 794.6,
+    "90th": 1086.1,
+    "95th": 1268.7,
+    "99th": 2288.4,
+    "max": 12309.4
+   },
+   "proxy_cpu_s": 8.71,
+   "proxy_cpu_s_per_1000_flows": 0.7258,
+   "proxy_rss": {
+    "peak_kib": 59160,
+    "mean_kib": 57421
+   },
+   "pd_records": 0,
+   "pd_refused": 0,
+   "round": 2,
+   "config": "D",
+   "scheme": "http",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 46832
+  },
+  {
+   "requests": 12000,
+   "rate": 600.05,
+   "throughput": 599.95,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 163.7,
+    "mean": 2698.4,
+    "50th": 1865.4,
+    "90th": 3268.6,
+    "95th": 4065.5,
+    "99th": 12379.3,
+    "max": 150840.8
+   },
+   "proxy_cpu_s": 12.13,
+   "proxy_cpu_s_per_1000_flows": 1.0108,
+   "proxy_rss": {
+    "peak_kib": 54152,
+    "mean_kib": 52087
+   },
+   "round": 2,
+   "config": "A",
+   "scheme": "https",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 42588
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 600.03,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 399.6,
+    "mean": 909.3,
+    "50th": 827.8,
+    "90th": 1111.9,
+    "95th": 1319.9,
+    "99th": 2592.5,
+    "max": 20535.9
+   },
+   "proxy_cpu_s": 8.95,
+   "proxy_cpu_s_per_1000_flows": 0.7458,
+   "proxy_rss": {
+    "peak_kib": 55372,
+    "mean_kib": 53583
+   },
+   "round": 2,
+   "config": "A",
+   "scheme": "http",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 42588
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 600.02,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 185.2,
+    "mean": 1350.1,
+    "50th": 1272.7,
+    "90th": 1801.4,
+    "95th": 2111.3,
+    "99th": 3193.6,
+    "max": 13759.4
+   },
+   "round": 3,
+   "config": "direct",
+   "scheme": "https",
+   "target_rate": 600
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 600.04,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 125.9,
+    "mean": 369.2,
+    "50th": 337.4,
+    "90th": 488.6,
+    "95th": 532.6,
+    "99th": 948.6,
+    "max": 11177.8
+   },
+   "round": 3,
+   "config": "direct",
+   "scheme": "http",
+   "target_rate": 600
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 599.99,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 186.4,
+    "mean": 2068.4,
+    "50th": 1885.3,
+    "90th": 2626.0,
+    "95th": 3436.3,
+    "99th": 6067.9,
+    "max": 33456.3
+   },
+   "proxy_cpu_s": 12.05,
+   "proxy_cpu_s_per_1000_flows": 1.0042,
+   "proxy_rss": {
+    "peak_kib": 56904,
+    "mean_kib": 56141
+   },
+   "pd_records": 12000,
+   "pd_refused": 0,
+   "round": 3,
+   "config": "D",
+   "scheme": "https",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 48128
+  },
+  {
+   "requests": 12000,
+   "rate": 600.04,
+   "throughput": 600.01,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 432.7,
+    "mean": 922.4,
+    "50th": 859.8,
+    "90th": 1134.8,
+    "95th": 1285.7,
+    "99th": 2173.8,
+    "max": 16618.4
+   },
+   "proxy_cpu_s": 9.42,
+   "proxy_cpu_s_per_1000_flows": 0.785,
+   "proxy_rss": {
+    "peak_kib": 58784,
+    "mean_kib": 56903
+   },
+   "pd_records": 0,
+   "pd_refused": 0,
+   "round": 3,
+   "config": "D",
+   "scheme": "http",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 48128
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 600.02,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 212.8,
+    "mean": 2728.5,
+    "50th": 2207.4,
+    "90th": 4388.3,
+    "95th": 5676.9,
+    "99th": 9113.0,
+    "max": 19880.2
+   },
+   "proxy_cpu_s": 14.98,
+   "proxy_cpu_s_per_1000_flows": 1.2483,
+   "proxy_rss": {
+    "peak_kib": 53704,
+    "mean_kib": 52544
+   },
+   "round": 3,
+   "config": "A",
+   "scheme": "https",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 43276
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 600.03,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 450.5,
+    "mean": 989.0,
+    "50th": 918.0,
+    "90th": 1210.9,
+    "95th": 1416.9,
+    "99th": 2454.4,
+    "max": 21476.1
+   },
+   "proxy_cpu_s": 9.91,
+   "proxy_cpu_s_per_1000_flows": 0.8258,
+   "proxy_rss": {
+    "peak_kib": 55836,
+    "mean_kib": 53999
+   },
+   "round": 3,
+   "config": "A",
+   "scheme": "http",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 43276
+  },
+  {
+   "requests": 12000,
+   "rate": 600.06,
+   "throughput": 599.96,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 206.3,
+    "mean": 2592.7,
+    "50th": 2070.5,
+    "90th": 3934.0,
+    "95th": 5243.5,
+    "99th": 9477.0,
+    "max": 56172.2
+   },
+   "proxy_cpu_s": 13.23,
+   "proxy_cpu_s_per_1000_flows": 1.1025,
+   "proxy_rss": {
+    "peak_kib": 56840,
+    "mean_kib": 55410
+   },
+   "round": 3,
+   "config": "B",
+   "scheme": "https",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 45400
+  },
+  {
+   "requests": 12000,
+   "rate": 600.05,
+   "throughput": 600.03,
+   "success": 1,
+   "status_codes": {
+    "200": 12000
+   },
+   "errors": [],
+   "latency_us": {
+    "min": 431.9,
+    "mean": 956.5,
+    "50th": 894.2,
+    "90th": 1184.2,
+    "95th": 1376.9,
+    "99th": 2375.6,
+    "max": 9927.5
+   },
+   "proxy_cpu_s": 9.63,
+   "proxy_cpu_s_per_1000_flows": 0.8025,
+   "proxy_rss": {
+    "peak_kib": 59416,
+    "mean_kib": 57287
+   },
+   "round": 3,
+   "config": "B",
+   "scheme": "http",
+   "target_rate": 600,
+   "proxy_rss_idle_kib": 45400
+  }
+ ],
+ "finished": "2026-11-24T16:31:45Z"
+}
