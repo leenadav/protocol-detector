@@ -637,6 +637,91 @@ Unknown-registry handling (work item #5) is not part of this change.
 | Go replay test | `go/internal/replay` `TestPortedFamiliesMatchThePythonReference` honours the same pins | A pinned case's expectation at each pinned path is replaced by the recorded Go value before the exact diff (`deltas_test.go`, `TestExpectPinned`); changing one pinned value makes the test fail. |
 | Family status | `tls` stays `parity-verified`, with `approved_divergences: 18` in `CAPABILITIES.json` | `verify_families.py`: a case whose deltas all pin Go's value is counted as an approved divergence, not a shortfall, and earns no class or session credit, so the family's other cases prove every class; an unpinned delta or a gap still disqualifies (`test_a_pinned_go_only_divergence_is_counted_but_earns_no_credit`). 79 of 88 families verified, unchanged. |
 
+## Security review finding SEC-QUIC-3 (PRO-47 and PRO-123, 2026-11-23)
+
+**The finding (Security Reviewer, PRO-47).** A decoy client Initial fixed or suppressed a QUIC flow's server name.
+Both engines fed the CRYPTO data of every client Initial to the assembler whatever the datagram's size
+(`go/internal/protocols/quicx/quic.go` `Validate`; Python `protocol_engine/quic.py` `quic()`, whose only size test
+is the byte budget). RFC 9000 section 14.1 has a server discard a client Initial in a UDP datagram under 1200
+bytes, so such a datagram never reaches the server, yet it counted as evidence:
+- a 1000-byte Initial with SNI A on the real connection's DCID, then the real 1200-byte Initial with SNI B: the
+  CRYPTO bytes contradict, the flow is invalidated and the real name is lost;
+- the same decoy on another DCID, first: it is the flow's first identification, and the session tracker keeps the
+  first identification (`go/internal/session/tracker.go` `ProcessUDP`; Python `Analyzer._udp`).
+
+A second case needs no undersized datagram: two complete 1200-byte ClientHellos on two DCIDs of one flow that
+name different servers. The assembler keeps DCIDs apart, so nothing compared them; the flow kept the first name
+(Python: the session record says A while `last_classification` says B).
+
+**The fix (Go only; Lee approved it on PRO-124, 2026-11-23, relayed by Hermes on PRO-123).** The Python reference
+is unchanged and keeps both behaviours.
+- `quicx.MinClientDatagram` = 1200. A long-header Initial whose payload opens with the client Initial keys is a
+  client Initial; in a UDP datagram (the whole payload, so a coalesced datagram counts in full) under 1200 bytes it
+  is `malformed` ("QUIC client Initial datagram below the RFC 9000 section 14.1 minimum of 1200 bytes; a server
+  discards it"), and its CRYPTO data never enters the assembler. A `malformed` datagram is not an identification,
+  so the flow's first identification is still open for the real Initial. A server Initial (it does not open with
+  client keys) and framing-only validation (`QUICDecrypt` off, nothing asserted) are unchanged.
+- `Assembler.SameServerName`: the first complete ClientHello of each flow scope records its server name (or its
+  absence). A later complete ClientHello in that scope, on any DCID, that names another server (or adds or drops
+  the SNI) turns its connection into the sticky conflict marker and returns the retraction the existing C5 path
+  already handles, so the flow is invalidated in the tracker and stays so. The same name on a new DCID (a client's
+  Initial after a Retry) agrees. The name lives as long as the flow: only `Reset(scope)` and `Clear` forget it
+  (PRO-291 below; at first it was forgotten with the scope's last entry). The cost is one map lookup per complete
+  ClientHello. The empty scope of a bare datagram inspector, which holds unrelated datagrams, is never compared.
+
+| item | state | evidence |
+|---|---|---|
+| Regression tests | `TestUndersizedDecoyInitialDoesNotFixTheServerName`, `TestDisagreeingClientHellosOnOneFlowInvalidateIt` (`go/internal/analyzer`), `TestClientInitialDatagramMinimum`, `TestServerNameDisagreementWithinAScope` (`quicx`) | All four fail on `main` `21dd113`: the decoy on the real DCID gives `invalidated` with no name, a 1199-byte Initial is identified and stored, two names on two DCIDs stay `identified` as A. After the fix: the decoy cases give `identified` `example.com`; 1199 bytes is malformed with 0 assembler entries and 1200 identifies; a 300-byte Initial alone is malformed and coalesced into 1200 bytes opens; A then B is `invalidated` with no name; the same ClientHello on a new DCID stays `identified`; the marker is sticky, scoped and forgotten by `Reset`. |
+| Parity | divergence recorded, 0 case changes | No committed case has an opened client Initial under 1200 bytes or two names on one flow. All 7,430 still match; `deltas.json` needs no entry. |
+| Randomized differential | approved-divergence rule | `random_diff.py` generates a quarter of its QUIC Initials padded to 600 bytes. It accepts a mismatch as SEC-QUIC-3 only for a `quic` datagram under 1200 bytes whose Go answer is `malformed` with exactly the SEC-QUIC-3 reason and whose every differing path is in the observation; anything else still fails, and the self-test covers acceptance and four rejections. The summary line now counts each approved class. Seed 1 (2,000): 1,882 matched, 28 SEC-HTTP-1 and 90 SEC-QUIC-3 approved, 0 failures. Seeds 2 and 3 (20,000 each): 265 + 858 and 225 + 926 approved, 0 failures; the SEC-HTTP-1 counts equal the ones recorded before this change. |
+
+### Codex finding PRO-290 P2: the first server name died with the scope's last entry (PRO-291, 2026-11-23)
+
+**The finding** (Codex review PRO-290, `go/internal/protocols/quicx/assembler.go:123` on `d10c007`). `remove`
+deleted a scope's first server name when the scope's last CRYPTO entry went, while the UDP tracker keeps the
+flow's identification. With one assembler slot (an analyzer with `MaxConnections` 1) a second DCID on the same
+flow evicts the first entry before `SameServerName` runs; idle expiry and an over-budget merge (`exhausted`) do the
+same. A ClientHello naming another server was then taken as the first, and the earlier identification was never
+retracted. Not on `main` (`21dd113`): the code came with SEC-QUIC-3, PR #107.
+
+**The fix** (Go only, within the SEC-QUIC-3 divergence Lee approved on PRO-124). The names are a separate store
+whose entries only `Reset(scope)`, `Clear` and `ForgetServerName` remove. It is an LRU bounded by `MaxNames`
+(default 2 x `MaxConnections`); a dropped name is counted in `NameEvictions`, kept out of `Counts`, which mirrors
+the reference's counters. The analyzer sets `MaxNames` to 2 x `MaxUDPFlows` + 2 (two direction scopes per flow,
+both reset at every flow end, and the datagram being inspected) and calls `ForgetServerName` for a datagram whose
+flow the full flow table turned away (`udp_flow_limit`), so orphan names cannot push out a live flow's name. CRYPTO
+entries, their LRU and their counters are unchanged.
+
+| item | state | evidence |
+|---|---|---|
+| Regression tests | `TestDisagreeingClientHelloAfterAssemblerEvictionInvalidatesTheFlow`, `TestRejectedUDPFlowKeepsNoServerName` (`go/internal/analyzer`), `TestServerNameOutlivesTheScopesLastEntry` (eviction, expiry, exhaustion, `Clear`), `TestServerNamesAreBounded` (`quicx`) | Before the fix the analyzer test gave `identified` `example.com` for A then B; after it, `invalidated` with no name. Each loss path now retracts B. Ten turned-away flows leave 0 name evictions. |
+| Parity | 0 case changes | Only the Go-only SEC-QUIC-3 rule changes; the committed cases and the random differential classes are unaffected (numbers in the lane brief and the PR). |
+
+### Codex findings PRO-312: two P2s on SEC-QUIC-3 (PRO-315, 2026-11-24)
+
+**P2 1, `go/internal/protocols/quicx/assembler.go:123`** (the first SNI is removed with the scope's last
+assembler entry while the UDP tracker keeps the flow's identification). Already fixed by `5b48d91` (PRO-291, PR
+#108 into PR #107's branch, section above): only `Reset(scope)`, `Clear` and `ForgetServerName` forget a scope's
+first name, and `TestDisagreeingClientHelloAfterAssemblerEvictionInvalidatesTheFlow` and
+`TestServerNameOutlivesTheScopesLastEntry` cover eviction, expiry and exhaustion. No change.
+
+**P2 2, `go/internal/protocols/quicx/quic.go:301`** (the sticky-conflict path returned a retraction before the
+1200-byte check at line 328). Confirmed on `d950eb8`: a 1199-byte client Initial on a conflicted DCID returned
+`Retracts` with `crypto_assembly=conflict` and refreshed the marker's idle time, so undersized decoys a server
+discards could keep the marker alive and produce invalidation evidence. **The fix** (`653b1ca`, Go only, within the
+SEC-QUIC-3 divergence Lee approved on PRO-124): `Validate` looks the marker up without refreshing it
+(`Assembler.marker`), opens the packet, and returns the SEC-QUIC-3 malformed error for an opened client Initial
+under 1200 bytes before the marker counts the datagram (`Assembler.refresh`). Datagrams that are not opened
+(protection removal off, over the byte budget, or the client keys do not open them) are not known to be client
+Initials and are still bound by the marker as before. The size check now runs right after a successful open,
+before frame decoding, which also closes the related Codex P3 (`quic.go:320`: a short client Initial with a frame
+outside the Initial profile was a structural QUIC match; now it is malformed).
+
+| item | state | evidence |
+|---|---|---|
+| Regression tests | `TestConflictedConnectionAppliesTheClientDatagramMinimum`, `TestShortClientInitialWithUnsupportedFrameIsMalformed` (`quicx`) | Both fail on `d950eb8`: the 1199-byte Initial on a conflicted DCID gives `Retracts` (conflict), the 300-byte Initial with HANDSHAKE_DONE gives `initial_protection=unverified`. After the fix: both are malformed with the 1200-byte reason; the marker keeps its old idle time (expired at 10.5 after an undersized datagram at 8), a 1200-byte Initial still retracts and refreshes it, and a damaged 600-byte datagram the keys do not open still retracts. |
+| Parity | 0 case changes | Only the Go-only SEC-QUIC-3 rule changes; numbers in the lane brief and the PR. |
+
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 
 **The finding** (Codex review PRO-12, Tier 1 window 1, `dbe20f3..50ce5c0`; `go/internal/engine/inspector.go`,
