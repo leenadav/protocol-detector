@@ -668,6 +668,31 @@ entries, their LRU and their counters are unchanged.
 | Regression tests | `TestDisagreeingClientHelloAfterAssemblerEvictionInvalidatesTheFlow`, `TestRejectedUDPFlowKeepsNoServerName` (`go/internal/analyzer`), `TestServerNameOutlivesTheScopesLastEntry` (eviction, expiry, exhaustion, `Clear`), `TestServerNamesAreBounded` (`quicx`) | Before the fix the analyzer test gave `identified` `example.com` for A then B; after it, `invalidated` with no name. Each loss path now retracts B. Ten turned-away flows leave 0 name evictions. |
 | Parity | 0 case changes | Only the Go-only SEC-QUIC-3 rule changes; the committed cases and the random differential classes are unaffected (numbers in the lane brief and the PR). |
 
+### Codex findings PRO-312: two P2s on SEC-QUIC-3 (PRO-315, 2026-11-24)
+
+**P2 1, `go/internal/protocols/quicx/assembler.go:123`** (the first SNI is removed with the scope's last
+assembler entry while the UDP tracker keeps the flow's identification). Already fixed by `5b48d91` (PRO-291, PR
+#108 into PR #107's branch, section above): only `Reset(scope)`, `Clear` and `ForgetServerName` forget a scope's
+first name, and `TestDisagreeingClientHelloAfterAssemblerEvictionInvalidatesTheFlow` and
+`TestServerNameOutlivesTheScopesLastEntry` cover eviction, expiry and exhaustion. No change.
+
+**P2 2, `go/internal/protocols/quicx/quic.go:301`** (the sticky-conflict path returned a retraction before the
+1200-byte check at line 328). Confirmed on `d950eb8`: a 1199-byte client Initial on a conflicted DCID returned
+`Retracts` with `crypto_assembly=conflict` and refreshed the marker's idle time, so undersized decoys a server
+discards could keep the marker alive and produce invalidation evidence. **The fix** (`653b1ca`, Go only, within the
+SEC-QUIC-3 divergence Lee approved on PRO-124): `Validate` looks the marker up without refreshing it
+(`Assembler.marker`), opens the packet, and returns the SEC-QUIC-3 malformed error for an opened client Initial
+under 1200 bytes before the marker counts the datagram (`Assembler.refresh`). Datagrams that are not opened
+(protection removal off, over the byte budget, or the client keys do not open them) are not known to be client
+Initials and are still bound by the marker as before. The size check now runs right after a successful open,
+before frame decoding, which also closes the related Codex P3 (`quic.go:320`: a short client Initial with a frame
+outside the Initial profile was a structural QUIC match; now it is malformed).
+
+| item | state | evidence |
+|---|---|---|
+| Regression tests | `TestConflictedConnectionAppliesTheClientDatagramMinimum`, `TestShortClientInitialWithUnsupportedFrameIsMalformed` (`quicx`) | Both fail on `d950eb8`: the 1199-byte Initial on a conflicted DCID gives `Retracts` (conflict), the 300-byte Initial with HANDSHAKE_DONE gives `initial_protection=unverified`. After the fix: both are malformed with the 1200-byte reason; the marker keeps its old idle time (expired at 10.5 after an undersized datagram at 8), a 1200-byte Initial still retracts and refreshes it, and a damaged 600-byte datagram the keys do not open still retracts. |
+| Parity | 0 case changes | Only the Go-only SEC-QUIC-3 rule changes; numbers in the lane brief and the PR. |
+
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 
 **The finding** (Codex review PRO-12, Tier 1 window 1, `dbe20f3..50ce5c0`; `go/internal/engine/inspector.go`,
