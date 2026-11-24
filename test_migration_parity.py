@@ -98,6 +98,57 @@ class ParityHarnessTests(unittest.TestCase):
             for item in items:
                 self.assertTrue(item.get("path") and item.get("justification"), item)
 
+    def test_pinned_go_only_deltas_expect_exactly_the_recorded_value(self):
+        """PRO-260: a delta with `go` exempts its subtree only while the backend gives exactly that value."""
+        deltas = json.loads((CASES.parent.parent / "parity" / "deltas.json").read_text(encoding="utf-8"))
+        pinned = {cid: items for cid, items in deltas.items() if any("go" in item for item in items)}
+        self.assertEqual(len(pinned), 18)                       # 3 hybrids, short, bad point, HRR; x whole/bytes/sevens
+        cases = [c for c in self.doc["cases"] if c["id"] in pinned]
+        go = {"backend": "go", "results": {}}
+        for case in cases:
+            result = json.loads(json.dumps(self.results["results"][case["id"]]))
+            for item in pinned[case["id"]]:
+                self.assertNotEqual(compare.value_at(result, item["path"]), item["go"], case["id"])  # the reference differs
+                if item["path"] == "$.final":
+                    result["final"] = item["go"]
+                else:
+                    result["events"][0]["observation"] = item["go"]
+            go["results"][case["id"]] = result
+        doc = dict(self.doc, cases=cases)
+        report = compare.compare(doc, go, deltas)
+        self.assertEqual((report["matched"], report["mismatched"]), (18, []))
+        self.assertGreater(report["exempted"], 0)
+        # Any other Go value at a pinned path fails too.
+        # A Go result that went back to the reference's answer fails: the difference is expected, not tolerated.
+        reverted = {"backend": "go", "results": {c["id"]: self.results["results"][c["id"]] for c in cases}}
+        self.assertEqual(len(compare.compare(doc, reverted, deltas)["mismatched"]), 18)
+        # The reference itself is judged against the expectation alone.
+        self.assertEqual(compare.compare(doc, dict(reverted, backend="python"), deltas)["matched"], 18)
+        changed = json.loads(json.dumps(go))
+        first = cases[0]["id"]
+        changed["results"][first]["final"]["reason"] += "x"
+        report = compare.compare(doc, changed, deltas)
+        self.assertEqual([m["id"] for m in report["mismatched"]], [first])
+        self.assertEqual(compare.value_at({"a": [{"b": 1}]}, "$.a[0].b"), 1)
+        self.assertEqual(compare.value_at({"a": []}, "$.a[0]"), "<absent>")
+
+    def test_pinned_go_values_are_the_reference_under_the_pro260_model(self):
+        """PRO-260: the pinned values are not hand-written: the reference under migration/parity/pro260.py gives
+        exactly them, and changes no other TLS or DTLS case."""
+        import sys
+        sys.path.insert(0, str(CASES.parent.parent / "parity"))
+        import pro260
+        deltas = json.loads((CASES.parent.parent / "parity" / "deltas.json").read_text(encoding="utf-8"))
+        pinned = {cid: items for cid, items in deltas.items() if any("go" in item for item in items)}
+        tls = [c for c in self.doc["cases"] if (c.get("label") or "").split("/")[0] in ("tls", "dtls")]
+        with pro260.with_hybrid_groups():
+            model = {c["id"]: parity_cases.run_case(c) for c in tls}
+        changed = sorted(c["id"] for c in tls if compare.diff(c["expected"], model[c["id"]]))
+        self.assertEqual(changed, sorted(pinned))
+        for cid, items in pinned.items():
+            for item in items:
+                self.assertEqual(compare.value_at(model[cid], item["path"]), item["go"], (cid, item["path"]))
+
     def test_go_config_ranges_equal_the_python_limits(self):
         """Review R4 (2026-11-14): both runtimes enforce one range table; each bound is probed on the Python Config."""
         import re

@@ -23,7 +23,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   decision.
 - **Data:** IPv4 and synthetic only. No captured traffic or key logs, ever (`tools/check_no_keylogs.py`).
 
-## 2. Current state (2026-11-23)
+## 2. Current state (2026-11-24)
 
 - **Branch head:** check `git log -1 origin/claude/go-migration`. On 2026-11-21 (PRO-69) `main` `0ef7349` (41 commits, through PR #39,
   including #39's numeric content-version order) was merged in with a normal merge commit. On 2026-11-22 `main` `2a33183` (PR #66, #36) came
@@ -35,7 +35,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   - The Go engine, the CLI `protodetect` and the dashboard service `protodetect serve`.
   - The launcher starts Go when the binary is installed and Python otherwise (`24e410e`, Lee's decision of
     2026-11-17).
-- **Parity:** 7,430 of 7,430 cases agree. 79 of 88 families are parity-verified since PRO-201 (`098b201`): the verifier no longer credits a replay of the positive message as foreign bytes, so ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh are `experimental` until real foreign cases are added. Server parity: 424 exchanges, 0
+- **Parity:** 7,462 of 7,462 cases agree (18 of them through PRO-260's pinned Go-only deltas). 79 of 88 families are parity-verified since PRO-201 (`098b201`): the verifier no longer credits a replay of the positive message as foreign bytes, so ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh are `experimental` until real foreign cases are added. Server parity: 424 exchanges, 0
   differences. The adversarial suite (4,041 cases) passes.
 - **Content release:** 2026.11.9 (digest `cdaa5993077d101a`), with 544 applications and 442 host entries. Every earlier
   release reproduces the digest it was published with (C11).
@@ -70,6 +70,11 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   `STATUS.md`. Merged into `main` with PR #102 (`cb3ac80`, `merged_by: leenadav`, not by the session). Hermes's
   review follow-up (who merged, the branch reason, gitleaks on `fd46be0` and `3a25bd0`, issue #103) is in `STATUS.md`
   ("PRO-101 review follow-up"), on `claude/dazzling-franklin-1179wl`.
+  alike) is held for a parity decision. Details in `STATUS.md`. Branch `claude/busy-ramanujan-7oczj2`.
+- **PRO-260 (TLS post-quantum hybrid key shares, Go only by Lee's decision, 2026-11-23):** 0x11EB, 0x11EC and
+  0x11ED are named groups in `tlsx` (`selected_key_exchange` = `hybrid`); branch `claude/engine-PRO-260-tls-pq-keyshare`,
+  PR #105 into `main`. Recorded as a Frozen-Python exception; 18 parity cases pinned in `deltas.json` (`go`), and
+  `migration/parity/pro260.py` models the divergence on the reference for the decrypt and live-decrypt differentials.
 - **SEC-QUIC-3 (PRO-47, PRO-123):** a client Initial datagram under 1200 bytes is malformed and feeds no CRYPTO
   data, and a second complete ClientHello of a flow naming another server invalidates it (Go only, recorded
   divergence approved by Lee on PRO-124; `random_diff.py` accepts it as an approved class). `fe87386` on
@@ -82,6 +87,9 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   or retracts; the 1200-byte rule runs right after opening, before frames (also the related P3). `653b1ca` on
   `claude/engine-PRO-315-quic-conflict-size`, cut from PR #107's head `d950eb8` (PR into that branch).
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
+- **PRO-141 (livectl stop flake):** the stand-in worker sets its INT trap first and writes a ready file last; the
+  three stop tests wait for it (`aff4d13`, branch `claude/vigilant-meitner-t7kw7h`). 200 of 200 under `-race`, also
+  with 8 spinning loops on 4 CPUs. Root cause from PRO-140: the test, not `Manager.Stop`.
 
 ## 3. Where things live (reading order)
 
@@ -128,6 +136,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | Merging `claude/go-migration` into `main` | the Codex result, then Lee's decision. Don't ask again before then. The branch already contains `main` as of `2c92b17`, so the merge itself has no conflicts. |
 | Merge conflicts (7 files, see `MERGE-READINESS.md`) | the merge itself. The `ci.yml` hunks resolve to `main`'s, which already has the govulncheck port (`85e99e9`, PR #32, merged). |
 | PRO-201 held patches (`migration/held-patches/PRO-201/`: SMB empty buffer, SMB signing-enabled, SPNEGO mechTypes, live reject counter, stale cached row, failed-decryption inner protocol) and the live duplicate-SYN pre-check | an approved parity delta each (Hermes/Lee). Apply with `git apply`, then record the delta |
+| PRO-141 livectl stop flake (`aff4d13` and its documentation commit) | Hermes's review, then Lee's merge of the PR into `main`. |
 | PRO-101 F1 ([#103](https://github.com/leenadav/protocol-detector/issues/103)): the SMB1/SMB2 watch reports header bytes of a non-SMB next frame as consumed only when they arrive in separate calls (`bytes_inspected` ±7, observation unchanged; Python identical) | Lee: an approved parity delta to fix it in Go, or accept it. Until then `continuationConsumedVaries` relaxes only that field for `smb1`/`smb2` |
 | PRO-101 nightly evidence | the first scheduled `nightly-fuzz.yml` run on `main` after `cb3ac80` (its `extended Go fuzz (every fuzz target)` job picks up the four new targets); record the run id in `STATUS.md` |
 | PRO-201 decisions: buffer transient capacity (ADR 0001), unkeyed session id, signature names that collide with built-ins, 79 of 88 verified families | Hermes/Lee |
@@ -137,6 +146,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PRO-315 (`653b1ca`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
+| SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -151,6 +161,12 @@ PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentatio
 PRO-261 (against `cb3ac80`): `7045c42`, `9121403`, `9af4388` plus the documentation commit after them.
 
 PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it (`3a25bd0`). The review follow-up (against `main` `cb3ac80`) is one commit on `claude/dazzling-franklin-1179wl`: comments, the issue link and documentation only.
+PRO-260 (against `main` `cb3ac80`, PR #105): `b1379a4` (Go fix, tests, parity cases, pinned deltas, the model), `0de4cff` (the presentation decrypt-backend test under the model) and the documentation commits `5d641ae` and after.
+
+PRO-101 (against `main` `b9927b7`): `fd46be0` (the tests, the corpora, the rapid vendoring and the textroute test fix) and the documentation commit after it.
+
+PRO-141 (against `main` `21dd113`): `aff4d13` (the livectl stop tests' synchronisation) and the documentation
+commit after it.
 
 SEC-QUIC-3 (PRO-123, against `main` `21dd113`): `fe87386` (fix, tests, the random-differential class) and the
 documentation commit after it.
@@ -221,12 +237,18 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **The release cross-compiles for `windows/amd64`** (`tools/build_go_release.py`, CI/CD lane), as well as linux and
   darwin on `amd64` and `arm64`. Unix-only code (process groups, `RLIMIT_CPU`, the key-log reader) lives in `*_unix.go`
   files with a `!unix` counterpart. Check with `GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build ./cmd/protodetect`.
+- **Bounds checks compare by subtraction (SEC-X509-1).** `pos+length > limit` wraps on 32-bit `int` (386, arm) for a
+  four-octet length near `0x7fffffff`; write `length > limit-pos` once `pos <= limit` is known, and run the parser's
+  tests with `GOARCH=386 go test ./internal/protocols/<pkg>/` too, since amd64 never shows the wrap.
 - **After merging `main` in:**
   - regenerate `presentation/SOURCE.json` and let `tools/check_docs_counts.py` set the README/REVIEW-SCOPE test count;
   - check `migration/parity/cases.py --write <tmp> --head <recorded head>` reproduces `cases.json` byte for byte;
   - `tools/go_ci.py build` refuses a local Go other than go.mod's (this container has 1.24.7), so use `make go-build` locally.
-- **`TestStopKillsTheProcessGroupOfAWorkerThatIgnoresTheInterrupt` (`go/internal/livectl`) flaked once** on `f5353c5`
-  (push run 44986686845: "Capture process exited unexpectedly (-2)"); the pull_request run of the same SHA passed. Watch for a repeat.
+- **A stand-in that prints before it traps races its own test (PRO-141).** `c99923e` moved the trap only ahead of the
+  child file; `TestStopReleases…` still stopped on the first events, before the trap, and failed with -2 (6fdaa33,
+  run 44960532796). Now the trap is the first line and the tests wait for a ready file written last (`aff4d13`).
+  A readiness signal for a test is the stand-in's last write, never an output it produces on the way. To check such
+  a fix, insert `sleep 0.3` at the old gap and run `-race -count=5`: it must still pass.
 - **32-bit findings need a 386 test.** `GOARCH=386 go test` runs on amd64 Linux; the int-narrowing panics (PRO-15, PRO-16) only reproduce there.
 - **One finding set, one branch.** PRO-201 was fixed twice (#98 merged, #99 duplicated it and conflicted). Before fixing a PRO's findings, check for an open PR naming the same PRO; reconcile by running the other branch's tests on `main`, never by merging it (PRO-261).
 - **Parallel agents must not share scratch files.** Subagents overwrote each other's commit-message files in the shared scratchpad (PRO-201); keep scratch under each worktree's `build/`.
@@ -237,5 +259,15 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **rapid's `*rapid.T` is not a `testing.TB`** (Go 1.27 added `ArtifactDir`). Shared checks take a small
   `failer` interface (`Helper`, `Fatal`, `Fatalf`). A failing property writes `testdata/rapid/**.fail` (git-ignored);
   check the shrunk counterexample in as a native seed (`testdata/fuzz/<Target>/`) and confirm it fails without the fix.
+- **An approved Go-only divergence that moves parity is pinned, not exempted (PRO-260).** A plain `deltas.json`
+  path exempts any value, and a list that changes size shows up only as `.length`. Record Go's value as `go`
+  (compare.py, the Go replay test and verify_families.py then require exactly it), and model the change on the
+  reference in process for the capture differentials (`migration/parity/pro260.py`), never by editing it.
+- **A fresh container clone is shallow and has only Go 1.24.** `make workflow-policy` fails ("history baseline …
+  not an ancestor") until `git fetch --unshallow origin`. Get the pinned Go with `GOTOOLCHAIN=go1.27.4 go version`
+  once, then put `~/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/bin` first on `PATH` (with `GOROOT`).
+- **A concurrency test must force the overlap it asserts.** `TestChaosAdmissionStorm…` relied on goroutines
+  overlapping and failed 2 of 3 times with `-cpu=1` (CI coverage job, PR #105). Use a barrier; check with
+  `go test -count=30 -cpu=1,2,4`.
 - **`bytes_inspected` is chunk-granular by contract** (the whole chunk in which a parser fails is counted, as in
   `engine.py`), and a parser's consumed count after a fault is discarded. Compare them against budgets, not across splits.
