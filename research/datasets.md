@@ -162,7 +162,8 @@ OUT.tsv --majestic majestic_million.csv --crux crux.csv` on the server and relay
 `research/app-domains.json`** (exported from the full proposed stack, LANE-BRIEF section 4); do not re-export from `main` or
 any checkout without the patches. Run 1 (PRO-98, 2026-11-21, Majestic only) did, so 46 of its 69 specs were not looked up
 (`research/ranking/majestic-2026-11-21-run1.tsv`); `--export-domains` now refuses such a checkout (exit 2), and the output's
-`domains` column shows how many domains each spec was looked up with. The
+`domains` column shows how many domains each spec was looked up with. Run 2 (PRO-132, 2026-11-21) used the committed file: 66 of 79 specs ranked
+(`research/ranking/majestic-2026-11-21-run2.tsv`). The
 backlog then shows each app's best rank, with the attribution "Majestic Million (CC BY 3.0), majestic.com" and
 "Chrome UX Report, Google" under the recorded licence. No list content is committed beyond the per-app ranks.
 

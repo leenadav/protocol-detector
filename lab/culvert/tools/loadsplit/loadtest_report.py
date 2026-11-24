@@ -1,4 +1,4 @@
-"""Render the load test's summary.json as the Markdown tables of docs/integration/LOAD-TEST.md (PRO-269).
+"""Render the load test's summary.json as the Markdown tables of docs/integration/LOAD-TEST-SPLIT.md (PRO-269).
 
   python3 loadtest_report.py <results dir>
 

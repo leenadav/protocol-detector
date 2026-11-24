@@ -1,0 +1,114 @@
+diff --git a/protocol_engine/content.py b/protocol_engine/content.py
+index f16a46c..47b7713 100644
+--- a/protocol_engine/content.py
++++ b/protocol_engine/content.py
+@@ -120,6 +120,10 @@ HISTORY = (
+             "application-research lane proposal, batch P (PRO-158): HubSpot SSL and domain security page; "
+             "engine-lane review pending",
+             "New vendor-level id hubspot-base for HubSpot tags and hosted-page services"),
++    Release("2026.13.2", "2026-11-24", "2026-11-24",
++            "application-research lane proposal, batch Q (PRO-169): vendor network pages for rows 30 to 44 read by "
++            "Research Lab (PRO-168); engine-lane review pending",
++            "New ids manageengine-endpoint-central, new-relic-base; ringcentral, keeper, 8x8, freshworks, intercom extended"),
+ )
+ CURRENT = HISTORY[-1].version
+ LOCK_PATH = Path(__file__).with_name("content_lock.json")
+@@ -180,6 +184,15 @@ _ADDED_2026_11_2 = (
+     "xandr",
+ )
+ _PRIOR_HOST_STATE = MappingProxyType({
++    "2026.13.1": MappingProxyType({
++        "manageengine-endpoint-central": None,
++        "new-relic-base": None,
++        "ringcentral": {"domains": ("ringcentral.com",)},
++        "keeper": {"domains": ("keepersecurity.com",)},
++        "8x8": {"domains": ("8x8.com", "8x8.vc")},
++        "freshworks": {"domains": ("freshworks.com", "freshdesk.com", "freshservice.com")},
++        "intercom": {"domains": ("intercom.io", "intercom.com", "intercomcdn.com")},
++    }),
+     "2026.13.0": MappingProxyType({
+         "hubspot-base": None,
+     }),
+@@ -504,6 +517,11 @@ _RELEASED_COMPONENTS = MappingProxyType({
+         "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
+         "host_catalog": "2537f72558b89b91d734b8e05792053a543962e57827f46a78c6d627fd33abff",
+         "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
++    "2026.13.1": MappingProxyType({
++        "application_catalog": "359df65b78c023f12265f0e6ff3d122e38900859de91892f8a063282cd121231",
++        "families": "3d0a1c192ef2b70e2a1a4cb920ad282f450e38b4fec61a172f0d4474417f1649",
++        "host_catalog": "4579e3faa4b41a89dc2cdf0a50b14686aa4792e82422a8238cee00e131454ebc",
++        "risks": "59352a1c2a2366f804bf6f3427d255d36c0e668c5b3d579c3b3d29db23cf0c85"}),
+ })
+ 
+ 
+diff --git a/protocol_engine/host_apps.py b/protocol_engine/host_apps.py
+index 9798a05..96220ac 100644
+--- a/protocol_engine/host_apps.py
++++ b/protocol_engine/host_apps.py
+@@ -227,7 +227,8 @@ _HOST_APPS = (
+     ("goto-meeting", "collaboration", "voip-video", "client-server", 2, "GoTo Meeting",
+      ("excessive-bandwidth",),
+      ("gotomeeting.com", "goto.com", "gotomeet.at", "gotomeet.me", "joingotomeeting.com", "openvoice.com")),
+-    ("ringcentral", "collaboration", "voip-video", "client-server", 2, "RingCentral calls and meetings", (), ("ringcentral.com",)),
++    ("ringcentral", "collaboration", "voip-video", "client-server", 2, "RingCentral calls and meetings", (),
++     ("ringcentral.com", "ringcentral.co.uk", "ringcentral.eu", "ringcentral.ca", "ringcentral.biz", "glip.com", "ringcentral.pubnubapi.com", "ringcentral-0.pubnubapi.com", "ringcentral-1.pubnubapi.com", "ringcentral-2.pubnubapi.com", "ringcentral-3.pubnubapi.com", "ringcentral-4.pubnubapi.com", "ringcentral-5.pubnubapi.com", "ringcentral-6.pubnubapi.com", "ringcentral-7.pubnubapi.com", "ringcentral-8.pubnubapi.com", "ringcentral-9.pubnubapi.com", "glip-vault-1.s3.amazonaws.com", "glip-vault-1.s3-accelerate.amazonaws.com")),
+     # Email.
+     ("yahoo-mail", "collaboration", "email", "browser-based", 2, "Yahoo Mail web mail", ("widely-used", "transfers-files"), ("mail.yahoo.com",)),
+     ("proton-mail", "collaboration", "email", "browser-based", 2, "Proton Mail and Proton account services",
+@@ -480,7 +481,8 @@ _HOST_APPS = (
+     ("google-chat", "collaboration", "instant-messaging", "client-server", 3, "Google Chat",
+      ("transfers-files",), ("chat.google.com",)),
+     ("intercom", "collaboration", "instant-messaging", "client-server", 3, "Intercom customer messaging",
+-     ("transfers-files",), ("intercom.io", "intercom.com", "intercomcdn.com")),
++     ("transfers-files",),
++     ("intercom.io", "intercom.com", "intercomcdn.com", "intercomcdn.eu", "intercom-messenger.com", "intercomusercontent.com", "intercom-sheets.com", "intercom-reporting.com", "intercom.help", "intercomassets.com", "intercomassets.eu", "intercom-attachments-1.com", "intercom-attachments-2.com", "intercom-attachments-3.com", "intercom-attachments-4.com", "intercom-attachments-5.com", "intercom-attachments-6.com", "intercom-attachments-7.com", "intercom-attachments-8.com", "intercom-attachments-9.com", "intercom-attachments.eu", "intercom-attachments.com")),
+     ("google-voice", "collaboration", "voip-video", "client-server", 2, "Google Voice calls",
+      (), ("voice.google.com",)),
+     ("whereby", "collaboration", "voip-video", "client-server", 2, "Whereby video meetings",
+@@ -488,7 +490,7 @@ _HOST_APPS = (
+     ("jitsi-meet", "collaboration", "voip-video", "client-server", 2, "Jitsi Meet (meet.jit.si)",
+      (), ("jit.si",)),
+     ("8x8", "collaboration", "voip-video", "client-server", 2, "8x8 calls and meetings",
+-     (), ("8x8.com", "8x8.vc")),
++     (), ("8x8.com", "8x8.vc", "8x8cloud.com", "cloud8.net", "p8t.us", "packet8.net", "wavecell.com", "jitsi.net")),
+     ("dialpad", "collaboration", "voip-video", "client-server", 2, "Dialpad calls and meetings",
+      (), ("dialpad.com",)),
+     ("twilio", "collaboration", "voip-video", "client-server", 2, "Twilio communications API",
+@@ -542,7 +544,7 @@ _HOST_APPS = (
+     ("xero", "business-systems", "general-business", "browser-based", 2, "Xero accounting",
+      (), ("xero.com",)),
+     ("freshworks", "business-systems", "general-business", "browser-based", 2, "Freshworks (Freshdesk, Freshservice)",
+-     (), ("freshworks.com", "freshdesk.com", "freshservice.com")),
++     (), ("freshworks.com", "freshdesk.com", "freshservice.com", "myfreshworks.com", "freshworksapi.com", "rtschannel.com", "fdcollab.com", "freshdev.io")),
+     ("gusto", "business-systems", "general-business", "browser-based", 2, "Gusto payroll",
+      (), ("gusto.com",)),
+     ("adp", "business-systems", "general-business", "browser-based", 2, "ADP payroll and HR",
+@@ -613,6 +615,9 @@ _HOST_APPS = (
+     ("datadog-base", "general-internet", "internet-utility", "browser-based", 2, "Datadog tags and shared services embedded in other websites (not Datadog use)",
+      (),
+      ("browser-intake-datadoghq.com", "browser-intake-us3-datadoghq.com", "browser-intake-us5-datadoghq.com", "browser-intake-ap1-datadoghq.com", "browser-intake-ap2-datadoghq.com", "browser-intake-uk1-datadoghq.com", "browser-intake-datadoghq.eu", "browser-intake-ddog-gov.com", "browser-intake-us2-ddog-gov.com")),
++    ("new-relic-base", "general-internet", "internet-utility", "browser-based", 2, "New Relic browser agent embedded in other websites (not New Relic use)",
++     (),
++     ("bam.nr-data.net", "bam-cell.nr-data.net", "bam.eu01.nr-data.net", "bam.jp.nr-data.net", "js-agent.newrelic.com")),
+     ("new-relic", "business-systems", "management", "client-server", 2, "New Relic observability",
+      (), ("newrelic.com", "nr-data.net")),
+     ("sentry", "business-systems", "management", "client-server", 2, "Sentry error monitoring",
+@@ -642,6 +647,9 @@ _HOST_APPS = (
+     ("sophos", "business-systems", "management", "client-server", 2, "Sophos security services",
+      (),
+      ("sophos.com", "sophosxl.com", "sophosxl.net", "sophosupd.com", "sophosupd.net", "hitmanpro.com")),
++    ("manageengine-endpoint-central", "business-systems", "management", "client-server", 3, "ManageEngine Endpoint Central Cloud agent and server",
++     ("transfers-files",),
++     ("desktopcentral.manageengine.com", "endpointcentral-agent0.manageengine.com", "endpointcentral-agent1.manageengine.com", "endpointcentral-agent2.manageengine.com", "endpointcentral-agent3.manageengine.com", "endpointcentral-agent4.manageengine.com", "endpointcentral-agentp1.manageengine.com", "endpointcentral-agentp2.manageengine.com", "endpointcentral-agentp3.manageengine.com", "endpointcentral-agentp5.manageengine.com", "endpointcentral-agent5.manageengine.com", "endpointcentral-agent6.manageengine.com", "endpointcentral-agent7.manageengine.com", "endpointcentral-agent8.manageengine.com", "endpointcentral-agent10.manageengine.com", "endpointcentral-agentp18.manageengine.com", "patchdb.manageengine.com", "patchdatabase.manageengine.com", "desktopcentral.manageengine.eu", "endpointcentral-agent0.manageengine.eu", "endpointcentral-agent1.manageengine.eu", "endpointcentral-agentp1.manageengine.eu", "endpointcentral-agent2.manageengine.eu", "endpointcentral-agentp3.manageengine.eu", "endpointcentral-agentp7.manageengine.eu", "endpointcentral-agentp13.manageengine.eu", "endpointcentral-agentp17.manageengine.eu", "desktopcentral.manageengine.com.au", "desktopcentral.manageengine.in", "endpointcentral-agent0.manageengine.in", "endpointcentral-agent1.manageengine.in", "endpointcentral-agent2.manageengine.in", "endpointcentral-agent3.manageengine.in", "endpointcentral-agentp2.manageengine.in", "endpointcentral-agentp7.manageengine.in", "endpointcentral-agentp12.manageengine.in", "endpointcentral-agentp14.manageengine.in", "endpointcentral-agentp15.manageengine.in", "endpointcentral-agentp16.manageengine.in", "endpointcentral-agentp19.manageengine.in", "desktopcentral.manageengine.jp", "endpointcentral-agent0.manageengine.jp", "desktopcentral.manageengine.cn", "endpointcentral-agent0.manageengine.cn", "endpointcentral-agentp7.manageengine.cn", "patchdb.manageengine.cn", "desktopcentral.manageengine.ca", "endpointcentral-agent0.manageengine.ca", "desktopcentral.manageengine.uk", "endpointcentral-agent0.manageengine.uk", "endpointcentral-agentp9.manageengine.uk", "endpointcentral-agent0.manageengine.sa", "endpointcentral-agent0.manageengine.ae", "endpointcentral-agent0.manageengine.sg")),
+     ("forticlient", "business-systems", "management", "client-server", 2, "Fortinet FortiClient endpoint agent and FortiClient Cloud (EMS)",
+      (),
+      ("forticlient.forticloud.com", "forticlient-emsproxy.forticloud.com", "fctguard.fortinet.net", "fctusguard.fortinet.net", "fcteuguard.fortinet.net", "forticlient.fortinet.net", "myforticlient.fortinet.net", "usforticlient.fortinet.net", "fctupdate.fortinet.net", "fctusupdate.fortinet.net", "fcteuupdate.fortinet.net")),
+@@ -722,7 +730,7 @@ _HOST_APPS = (
+     ("dashlane", "business-systems", "auth-service", "client-server", 1, "Dashlane password manager",
+      (), ("dashlane.com",)),
+     ("keeper", "business-systems", "auth-service", "client-server", 1, "Keeper password manager",
+-     (), ("keepersecurity.com",)),
++     (), ("keepersecurity.com", "keepersecurity.us", "keepersecurity.eu", "keepersecurity.com.au", "keepersecurity.ca", "keepersecurity.jp", "keeper.io")),
+     ("authy", "business-systems", "auth-service", "client-server", 1, "Twilio Authy two-factor authentication",
+      (), ("authy.com",)),
+     ("lets-encrypt", "business-systems", "auth-service", "client-server", 1, "Let's Encrypt certificate services",

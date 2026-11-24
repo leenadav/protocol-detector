@@ -1,6 +1,6 @@
 # Pages this lane cannot read: for Hermes to open and relay
 
-Updated 2026-11-20 (rows 12 to 18 resolved). This lane does not bypass bot challenges, sign-ins or other access
+Updated 2026-11-24 (rows 30 to 33, 36, 38, 40 and 42 to 44 resolved, PRO-169; 34, 35, 37, 39 and 41 stay BLOCKED). This lane does not bypass bot challenges, sign-ins or other access
 controls. For each page, please open the exact URL in a normal browser and relay the parts named below as text
 (domain names, ports and the page's own date). The relayed text is cited as "read by Hermes, relayed".
 
@@ -17,10 +17,15 @@ controls. For each page, please open the exact URL in a normal browser and relay
 | 23 | Cisco Secure Client (AnyConnect) | **URL not located**: the vendor's documentation host is not reachable from this session (allowlist full, 2026-11-21) | host not allowed | the official network, firewall or allowlist page: server names, ports, date (batch M, PRO-92) ; Research Lab (PRO-108): still blocked (sign-in, bot challenge or JavaScript-only) |
 | 28 | Egnyte | **URL not located**: the vendor's documentation host is not reachable from this session (allowlist full, 2026-11-21) | host not allowed | the official network, firewall or allowlist page: server names, ports, date (batch M, PRO-92) ; Research Lab (PRO-108): still blocked (sign-in, bot challenge or JavaScript-only) |
 | 29 | Palo Alto GlobalProtect | **URL not located**: `docs.paloaltonetworks.com` answers but renders client-side | JavaScript-only page | any Palo Alto-operated names the GlobalProtect app reaches (portals and gateways are customer-hosted) ; Research Lab (PRO-108): still blocked (sign-in, bot challenge or JavaScript-only) |
+| 34 | Mimecast | `https://mimecastsupport.zendesk.com/hc/en-us/articles/34000362728979` and `https://mimecastsupport.zendesk.com/hc/en-us/articles/34000479767443` | Research Lab, PRO-168, 2026-11-22: still blocked: 403 bot challenge (not bypassed) | BLOCKED |
+| 35 | Proofpoint Essentials | `https://help.proofpoint.com/Proofpoint_Essentials/Administrator_Topics/000_gettingstarted/020_connectiondetails` | Research Lab, PRO-168, 2026-11-22: still blocked: sign-in wall | BLOCKED |
+| 37 | LastPass | `https://support.lastpass.com/help/whitelisting-and-firewall-configuration-for-logmein-products` | Research Lab, PRO-168, 2026-11-22: still blocked: the server sends an incomplete TLS certificate chain (no read with verification off without Lee's approval; a browser relay is the alternative) | BLOCKED |
+| 39 | Dialpad | `https://help.dialpad.com/docs/network-setup-recommendations` | Research Lab, PRO-168, 2026-11-22: still blocked: 403 | BLOCKED |
+| 41 | Dashlane | `https://support.dashlane.com/hc/articles/27983351888786` | Research Lab, PRO-168, 2026-11-22: still blocked: 403 | BLOCKED |
 
-Rows 12 to 18 were read by Research Lab from the Hermes server on 2026-11-20 (PRO-29) and are resolved below.
+Rows 12 to 18 were read by Research Lab from the Hermes server on 2026-11-20 (PRO-29) and are resolved below. Rows 30 to 44 were read by Research Lab on 2026-11-22 (PRO-168): ten are resolved below (PRO-169); rows 34, 35, 37, 39 and 41 stay BLOCKED above.
 
-## Resolved (relays of 2026-11-19 and 2026-11-20)
+## Resolved (relays of 2026-11-19, 2026-11-20 and 2026-11-22)
 
 | # | Vendor | Result |
 |---|---|---|
@@ -40,10 +45,20 @@ Rows 12 to 18 were read by Research Lab from the Hermes server on 2026-11-20 (PR
 | 16 | Atera (agent section) | batch J (`apps/atera.md`) |
 | 17 | Salesforce "Allow the Required Domains" | batch J (`apps/salesforce.md`): 22 domains added |
 | 18 | Grammarly "WebSockets Support Q&A" | batch J (`apps/grammarly.md`): `grammarly.net` added; `coda.io` left out (separate product) |
-| 24 | DocuSign (PRO-108, relayed PRO-121; full re-read PRO-138, relayed PRO-139) | batch N (`apps/docusign.md`): `docucdn-a.akamaihd.net` added; READY: the list has 8 entries, email and Connect are IP ranges only; `*.docusign.pdfeditor.com` waits on live round 6 |
+| 24 | DocuSign (PRO-108, relayed PRO-121; full re-read PRO-138, relayed PRO-139) | batch N (`apps/docusign.md`): `docucdn-a.akamaihd.net` added; READY: the list has 8 entries, email and Connect are IP ranges only; `*.docusign.pdfeditor.com` not mapped (Nitro-operated, live round 6) |
 | 25 | Snowflake | batch N (`apps/snowflake.md`): no fixed list (per-account names from `SYSTEM$ALLOWLIST()`); no change |
 | 26 | Twilio | batch N (`apps/twilio.md`): all names under `twilio.com`; no change (the essential-domains support article returned 403) |
 | 27 | Sophos Central | batch N (`apps/sophos-central.md`): five Sophos domains added; Endpoint/EDR/XDR/MDR section only |
+| 30 | Kaseya VSA (SaaS) | read by Research Lab, 2026-11-22 (PRO-168; relayed in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` `f721a8c`): IP ranges and ports only, no host names; no change (`apps/kaseya.md`, DONE) |
+| 31 | Kaseya VSA (agent) | read by Research Lab, 2026-11-22 (PRO-168; relayed in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` `f721a8c`): `stun.kaseya.com` (3478), agent port 5721; no change, all names under `kaseya.com` (`apps/kaseya.md`, DONE) |
+| 32 | ManageEngine Endpoint Central (Cloud) | read by Research Lab, 2026-11-22 (PRO-168; relayed in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` `f721a8c`) (moved to `.../help/cloud/server/domains-required-for-agent-communication.html`): batch Q (`apps/manageengine-endpoint-central.md`): new id `manageengine-endpoint-central`, 54 exact names; Zoho-hosted names not attributed |
+| 33 | RingCentral (RingEX) | read by Research Lab, 2026-11-22 (PRO-168; relayed in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` `f721a8c`): batch Q (`apps/ringcentral.md`): 17 names added (regional domains, `glip.com`, exact PubNub and S3 hosts) |
+| 36 | Keeper | read by Research Lab, 2026-11-22 (PRO-168; relayed in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` `f721a8c`): batch Q (`apps/keeper.md`): five regional domains and `keeper.io` added |
+| 38 | 8x8 Work | read by Research Lab, 2026-11-22 (PRO-168; relayed in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` `f721a8c`) (moved to `help.8x8.com/docs/x-series-technical-requirements.md`): batch Q (`apps/8x8.md`): six 8x8 domains added; `callstats.io` and deprecated domains left out |
+| 40 | Freshworks (Freshdesk, Freshservice) | read by Research Lab, 2026-11-22 (PRO-168; relayed in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` `f721a8c`): batch Q (`apps/freshworks.md`): five platform domains added; Freshchat and Freshmarketer left out |
+| 42 | Intercom | read by Research Lab, 2026-11-22 (PRO-168; relayed in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` `f721a8c`) (moved to article `3894-using-intercom-with-content-security-policy`): batch Q (`apps/intercom.md`): 19 domains added |
+| 43 | New Relic | read by Research Lab, 2026-11-22 (PRO-168; relayed in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` `f721a8c`) (page dated 2025-03-04): batch Q (`apps/new-relic.md`): browser-agent hosts to new vendor-level id `new-relic-base`; `new-relic` unchanged |
+| 44 | PagerDuty | read by Research Lab, 2026-11-22 (PRO-168; relayed in `research/relay/pro-168-rows-30-44.md` on `hermes/research-data-pro168` `f721a8c`) (moved to `docs.pagerduty.com/account-admin/safelist-ips`): no change, all names under `pagerduty.com` (`apps/pagerduty.md`, DONE) |
 
 Not listed (decided low priority, 2026-11-18): Box (sign-in required) and Slack (workspace-specific list).
 No official network page found (not listed): Smartsheet, Airtable, npm, PyPI, NinjaOne (proxy article not located), Windsurf (proxy settings only, no domain list).

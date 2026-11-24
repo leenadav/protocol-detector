@@ -1,238 +1,237 @@
-# Culvert load test: what observe mode adds per connection (PRO-269, 2026-11-24)
+# Culvert lab load test: what the detector adds to each connection (PRO-269, 2026-11-24)
 
-Lee approved this test on 2026-11-23. It answers one question: how much does the protocol detector add to each
-connection through Culvert when it runs in observe mode (visibility only, decision 3), compared with the
-detector off? Everything ran in the synthetic Culvert lab: loopback addresses, RFC 5737 origins and synthetic
-requests. Nothing was sent to KidCarmi/Culvert or to any outside host, and vegeta (MIT) is a test tool only; it
-is never shipped.
+> A second, independent run of the same question (PR #120: 200, 500 and 1,000/s, a CPU split with a fake-engine
+> build, GC counts and a 1,000-tunnel hold test) is `docs/integration/LOAD-TEST-SPLIT.md`, with its tools in
+> `lab/culvert/tools/loadsplit/`.
 
-## 1. Results in one paragraph
+Lee approved this test on 2026-11-23. It ran in the synthetic Culvert lab only: loopback addresses, a synthetic
+origin on 203.0.113.10 (RFC 5737), and no traffic to or from anything outside the container. Nothing was sent to,
+pushed to or proposed for KidCarmi/Culvert. vegeta (MIT) is a test tool here; it is not a dependency of the
+detector or of Culvert and is never shipped.
 
-On this 4-CPU container, observe mode added **no measurable latency to the median HTTPS connection at 200 and 500
-new tunnels per second**: p50 +0.07 to +0.11 ms, p95 +0.26 to +0.59 ms, and p99 inside the round-to-round noise
-(−0.53 to +0.03 ms). These are medians of 3 rounds, and every one sits inside the spread between rounds. Every
-request succeeded on every build, at the offered rate. The detector's real cost shows up as **proxy CPU**: +105
-to +277 ms per 1,000 HTTPS flows, which is 0.1 to 0.3 ms per tunnel and about 15 to 26% more proxy CPU per new
-HTTPS tunnel. It also adds +2.5 to +3 GC cycles per 1,000 flows. The added CPU splits roughly in half:
-- the lab's observation path (hook, window timer, record) on a fake engine;
-- the real engine's parsing and evidence.
+## Result in short
 
-Memory barely moves at these rates, because a TLS tunnel leaves observation within milliseconds. The peak RSS
-difference is +0.1 to +1.4 MiB. With 1,000 tunnels held open at once, observing costs nothing measurable over the
-detector off. After the window ends, the kept record costs **+3.9 KiB per tunnel, about +3.8 MiB per 1,000** (the
-plan's budget is ≤ 4 KiB). Plain HTTP is Culvert's forward path, which the lab does not observe, and it shows no
-detector cost, as designed. At 1,000/s the test rig itself, not the detector, reaches its limit (section 5).
+On the path the detector observes (HTTPS through a CONNECT tunnel that Culvert relays without inspection), with
+one new connection per request, at 100, 300 and 600 requests per second:
 
-## 2. What was measured
+| | 100 req/s | 300 req/s | 600 req/s |
+|---|---:|---:|---:|
+| Added latency p50 (µs) | +113 | +73 | +5 |
+| Added latency p95 (µs) | +424 | +185 | +84 |
+| Added latency p99 (µs) | +19 | +9 | +220 |
+| Latency with the detector off, p50 / p99 (µs) | 1,865 / 4,589 | 1,744 / 3,680 | 2,054 / 9,477 |
+| Throughput, off → observe (req/s) | 100.0 → 100.0 | 300.0 → 300.0 | 600.0 → 600.0 |
+| Proxy CPU per 1,000 flows, off → observe (CPU-s) | 1.015 → 1.225 (+0.210) | 0.930 → 1.153 (+0.223) | 1.103 → 1.255 (+0.152) |
+| Proxy peak RSS, off → observe (MiB) | 51.8 → 54.3 (+2.5) | 55.2 → 55.6 (+0.4) | 55.1 → 56.0 (+0.9) |
+| Flows observed and logged | 2,000 of 2,000 | 6,000 of 6,000 | 12,000 of 12,000 |
 
-| Build | What it is | Proxy |
+"Added" is observe mode minus detector off, on the same lab binary, taken per round and then the median of three
+rounds. The ranges over the rounds are in the full tables below.
+
+- **Latency.** The median request gets about 0.0 to 0.1 ms slower, against a base of about 1.7 to 2.1 ms for a new
+  HTTPS connection through the proxy. The p95 gets up to 0.42 ms slower. At p99 the difference is smaller than
+  the run-to-run noise: the per-round range includes negative values at every rate.
+- **CPU.** The detector costs 0.15 to 0.22 CPU-seconds per 1,000 flows, about 150 to 220 µs per flow. That is
+  14 to 24 % more proxy CPU on this path. It covers the engine, the record and the JSON log line that observe
+  mode writes for each tunnel.
+- **Memory.** Peak resident memory is 0.4 to 2.5 MiB higher and does not grow with the number of flows: a
+  12,000-flow step ends 0.9 MiB above the off build. Each flow lives about 2 ms here, so only a few are observed
+  at the same time. The lab's own limit bounds the worst case: 4,096 concurrently observed tunnels with at most a
+  32 KiB reservation each, so at most 32 MiB per 1,000 concurrent observed flows.
+- **Throughput** is unchanged: every configuration reached the target rate with 100 % success at 100, 300 and
+  600 req/s.
+- **The control behaves as expected.** Plain HTTP through the forward proxy is not observed: 0 records. Its
+  observe-minus-off difference is within noise (p50 −34 to +41 µs), and its CPU difference is +0.002 to
+  +0.025 CPU-s per 1,000 flows.
+- **The lab hook costs nothing measurable with the detector off.** Lab build B against unmodified Culvert A: p50
+  −59 to +4 µs, CPU −0.06 to +0.09 CPU-s per 1,000 flows.
+- **At 1,000 req/s this harness saturates,** with or without the detector (see "Saturation at 1,000 req/s"). The
+  figures at that rate measure queueing in the harness, not the detector's cost.
+
+## Method
+
+**Configurations.** Each one is started fresh for every round, with an empty data directory, no admin account and
+no rules:
+
+| Name | Binary | Detector |
 |---|---|---|
-| A | Unmodified Culvert `ef9431189490f7f85bb32d6fe7e7b6b8be5b0844` (`GOWORK=off`) | `bin/culvert-A` |
-| B | Lab build, detector off (`CULVERT_LAB_PROTODETECT` unset: the relay path is the unmodified one) | `bin/culvert-lab` |
-| C | Lab build, fake engine (`=fake`: the same hook, window timer and record, no parsing); cost split only | `bin/culvert-lab` |
-| D | Lab build, **observe mode** (`=real`, window 3 s, families http, tls, ssh, smtp) | `bin/culvert-lab` |
+| direct | none: vegeta to the origin, no proxy | none (the floor) |
+| A | unmodified Culvert `ef94311` | none |
+| B | lab build (Culvert `ef94311` + `lab/culvert/culvert-lab-ef94311.patch`) | off (`CULVERT_LAB_PROTODETECT` unset) |
+| D | the same lab build | observe mode (`CULVERT_LAB_PROTODETECT=real`; families http, tls, ssh, smtp; window 10 s) |
 
-"Added" always means **D − B**: the same binary with only the detector switched on. **B − A** is the lab hook
-with the detector off, and it stays inside the noise (HTTPS p50 −0.04 to +0.01 ms at 200 and 500/s).
+Visibility only, as decided on 2026-11-17: the lab build has no blocking and no L7. Every Culvert protection stays
+at its default.
 
-- **HTTPS:** `GET https://origin.lab.test/load` through the proxy. vegeta runs with `-keepalive=false`, so every
-  request opens a new client connection. That makes every request one CONNECT bypass tunnel, which is one
-  detector flow on D. D logged one `PROTODETECT` record per request (6,000 of 6,000, 15,000 of 15,000, and
-  30,000 at 1,000/s, with a few warm-up stragglers logged late), with **0 refused admissions**.
-- **HTTP:** `GET http://origin.lab.test/load`, Culvert's forward path. Phase 1 observes CONNECT bypass tunnels
-  only, so this is the control: D logged 0 records, as expected.
-- **Rates:** 200, 500 and 1,000 requests per second, which are also new connections per second, at a constant
-  rate. Each cell lasts 30 s after a 3 s warm-up.
-- **Rounds:** 3. Builds run one at a time, and the build order rotates each round (A, B, D, then B, D, A, then D,
-  A, B), so drift does not favour one build (plan 8.3: interleaved). The proxy is restarted with a fresh data
-  directory for every cell.
-- **Latency:** vegeta's per-request latency, measured from connect to the end of the response body, through
-  CONNECT and a full TLS handshake for HTTPS. These are p50, p95 and p99 of 6,000 to 30,000 requests per cell.
-  The figures shown are the median of the 3 rounds, with the range [min–max].
-- **CPU:** utime + stime of the proxy process from `/proc/<pid>/stat` over the attack, divided per 1,000
-  requests (= flows).
-- **Memory:**
-  - the proxy's RSS sampled every 100 ms, as idle before the attack and peak during it;
-  - GC cycles counted from `GODEBUG=gctrace=1` (the same setting on every build);
-  - a separate hold test (`loadhold.py`): 1,000 silent CONNECT tunnels held open with a 10 s window. RSS (median
-    of 10 samples) is taken before, while observing and after the window has ended.
-- **Pinning:** proxy on CPUs 0–1, vegeta on CPU 2, origin on CPU 3 (`taskset`).
+**Traffic.**
+- `vegeta attack -insecure -keepalive=false -rate=R -duration=20s -timeout=10s`, with one target, `GET /load`.
+- `-keepalive=false` gives every request its own TCP connection, so one request is one flow and one detector
+  observation.
+- HTTPS: `https://origin.lab.test/load` with `HTTPS_PROXY`. Go's client opens a CONNECT tunnel, and Culvert relays
+  it without inspection: the path the detector observes. The origin's certificate is a throw-away self-signed one
+  made at start-up, hence `-insecure`.
+- HTTP: `http://origin.lab.test/load` with `HTTP_PROXY`, through Culvert's forward proxy. The detector does not
+  observe this path. It is the control.
+- Rates: 100, 300 and 600 req/s, plus 1,000 req/s to find saturation. Each step lasted 20 s (2,000 to 20,000
+  flows), with 3 s between steps.
+- A 2 s warm-up at 50 req/s after each start was not recorded.
+- Three rounds. Each round runs direct first, then rotates the order of A, B and D, so no configuration always
+  comes first. The 600 req/s round set ran in a second invocation, right after the first.
 
-No pass or fail threshold was set for this run. The task asks for a report, not a gate, so no threshold was
-loosened either (plan 8.3).
+**Origin.** `lab/culvert/tools/loadorigin` is a Go standard-library server on 203.0.113.10:80 and :443, a
+loopback alias. It answers every request with a 22-byte `text/plain` body.
 
-## 3. Results
+**CPU placement.** The host has 4 vCPUs. The proxy is pinned to CPUs 0 and 1, vegeta to CPU 2 and the origin to
+CPU 3 (`taskset`).
 
-### 3.1 HTTPS latency per request (ms): median of 3 rounds [min–max]
+**Measurements,** by `lab/culvert/tools/loadtest.py` for every step:
+- latency and throughput from vegeta's JSON report;
+- proxy CPU as the change in utime + stime (`/proc/<pid>/stat`, 10 ms resolution) over the step, divided by the
+  requests;
+- proxy resident memory sampled every 100 ms (`VmRSS`), as the peak and the mean;
+- the PROTODETECT records the step logged, and any refused admissions.
 
-| Rate | Build | p50 | p95 | p99 | Throughput (req/s) | Success (worst round) |
-|---:|---|---:|---:|---:|---:|---:|
-| 200/s | A | 2.12 [2.01–2.56] | 2.99 [2.52–3.66] | 5.11 [3.45–5.24] | 200.0 | 100.00% |
-| 200/s | B | 2.08 [1.96–2.24] | 3.04 [2.55–3.24] | 5.14 [3.80–5.39] | 200.0 | 100.00% |
-| 200/s | D | 2.18 [1.89–2.53] | 3.30 [2.47–3.57] | 5.17 [4.85–5.21] | 200.0 | 100.00% |
-| 500/s | A | 2.14 [1.93–2.50] | 3.67 [3.17–5.17] | 7.65 [5.79–10.35] | 500.0 | 100.00% |
-| 500/s | B | 2.14 [1.93–2.29] | 3.65 [3.00–4.33] | 7.64 [4.71–8.88] | 500.0 | 100.00% |
-| 500/s | D | 2.21 [1.87–2.52] | 4.24 [3.00–4.59] | 7.12 [5.19–10.82] | 500.0 | 100.00% |
-| 1000/s | A | 2.76 [2.25–648.43] | 11.91 [9.36–3152.68] | 25.15 [20.01–4730.31] | 999.9 | 100.00% |
-| 1000/s | B | 4.75 [2.34–1684.18] | 119.42 [10.05–6798.42] | 221.89 [21.20–9399.78] | 999.8 | 92.93% |
-| 1000/s | D | 3.57 [2.35–11.18] | 18.09 [9.23–279.00] | 66.99 [18.44–418.17] | 999.9 | 100.00% |
+`lab/culvert/tools/loadtest_summary.py` computes the tables. Latency is end-to-end, as vegeta's client sees it:
+the TCP connect to the proxy, CONNECT, TLS handshake, request and response. "Added latency" is therefore what
+observation adds to a whole new connection.
 
-**Added latency, D − B (ms):**
+**Versions:**
 
-| Rate | Δp50 | Δp95 | Δp99 | Reading |
-|---:|---:|---:|---:|---|
-| 200/s | +0.11 | +0.26 | +0.03 | Inside the round-to-round spread of B and D |
-| 500/s | +0.07 | +0.59 | −0.53 | Inside the spread; the second run (3.3) gives −0.05, −0.18, −0.10 |
-| 1000/s | (−1.18) | (−101.33) | (−154.90) | Not a detector figure: the rig is at its limit and some rounds are disturbed on every build (section 5) |
-
-The second run (3.3) repeated 500/s and 1,000/s with B, C and D. At 500/s it gave D − B of −0.05 ms (p50),
-−0.18 ms (p95) and −0.10 ms (p99). The detector's effect on per-connection latency is below what this rig can
-resolve, roughly ±0.5 ms at p95 and p99 and ±0.1 ms at p50.
-
-### 3.2 HTTPS proxy CPU and memory
-
-| Rate | Build | CPU per 1,000 flows (ms) | Proxy CPU (% of one core) | RSS idle (MiB) | RSS peak (MiB) | GC cycles per 1,000 flows |
-|---:|---|---:|---:|---:|---:|---:|
-| 200/s | A | 1073 [1050–1297] | 21 | 45.9 | 51.6 [51.5–52.1] | 2.17 |
-| 200/s | B | 1072 [1020–1140] | 21 | 49.7 | 55.7 [55.6–56.3] | 2.00 |
-| 200/s | D | 1348 [1173–1505] | 27 | 51.7 | 56.3 [56.1–56.7] | 4.83 |
-| 500/s | A | 908 [866–1047] | 45 | 48.3 | 52.2 [52.0–52.5] | 1.93 |
-| 500/s | B | 926 [864–997] | 46 | 51.6 | 55.8 [55.8–56.2] | 1.73 |
-| 500/s | D | 1137 [1052–1261] | 57 | 54.8 | 57.2 [56.2–57.3] | 4.73 |
-| 1000/s | A | 663 [632–774] | 66 | 51.7 | 58.6 [56.2–157.9] | 1.70 |
-| 1000/s | B | 709 [648–778] | 71 | 57.0 | 68.2 [60.0–242.9] | 1.47 |
-| 1000/s | D | 815 [773–836] | 81 | 57.3 | 68.7 [62.5–80.8] | 3.97 |
-
-**Observe-mode cost per 1,000 HTTPS flows (D − B):**
-
-| Rate | Proxy CPU | Share of the proxy's CPU per tunnel | RSS peak | GC cycles |
-|---:|---:|---:|---:|---:|
-| 200/s | +277 ms | +26% | +0.6 MiB | +2.83 |
-| 500/s | +211 ms (second run +171) | +23% (+18%) | +1.4 MiB (+0.4) | +3.00 (+2.93) |
-| 1000/s | +105 ms (second run +126) | +15% (+19%) | +0.5 MiB (+0.1) | +2.50 (+2.70) |
-
-CPU per flow falls with the rate on every build: the process wakes less per request as work batches up. That is
-why the 200/s cell is the most expensive per flow.
-
-### 3.3 Where the CPU goes: fake engine against real engine (HTTPS, second run)
-
-| Rate | B, detector off | C, fake engine | D, real engine | Observation path (C − B) | Engine (D − C) |
-|---:|---:|---:|---:|---:|---:|
-| 500/s | 926 ms | 997 ms | 1097 ms | +71 ms | +100 ms |
-| 1000/s | 671 ms | 730 ms | 797 ms | +59 ms | +67 ms |
-
-These are proxy CPU per 1,000 flows, median of 3 rounds. GC cycles per 1,000 flows were B 1.73, C 2.87 and D 4.67
-at 500/s.
-
-The in-process `BenchmarkFlow/tls` of `go/detector` gives 17 µs and 14.3 KB per flow on the same machine (about
-17 ms of CPU and 14 MB allocated per 1,000 flows). The live engine share of 67 to 100 ms is 4 to 6 times that,
-which is consistent with the extra GC work. The live path also does more than the benchmark:
-- it builds the evidence and the record (hostnames through the keyed pseudonymizer);
-- it writes a JSON log line per tunnel;
-- it pays the allocation through GC on a busy process.
-
-Reducing the observation path's share is lab-adapter work (`protodetect_lab.go`), not detector work.
-
-### 3.4 Memory with 1,000 tunnels held open (`loadhold.py`, 3 rounds)
-
-| Build | RSS idle | 1,000 tunnels open, observing | After the window, tunnels still open | Per tunnel, observing | Per tunnel, after |
-|---|---:|---:|---:|---:|---:|
-| A | 40.9 MiB | 69.4 MiB | 69.4 MiB | 29.2 KiB | 29.2 KiB |
-| B | 44.2 MiB | 72.7 MiB | 72.7 MiB | 29.1 KiB | 29.1 KiB |
-| D | 43.7 MiB | 72.5 MiB | 75.9 MiB | 29.1 KiB | 33.0 KiB |
-
-These are medians of 3 rounds, and every range is within ±0.5 MiB. All 1,000 tunnels were admitted (0 refused,
-under the cap of 4,096), and each one produced a record.
-
-- **About 29 KiB per tunnel is Culvert's own cost** (two sockets, the upstream dial, goroutines), the same on A,
-  B and D.
-- **While observing, a silent tunnel costs nothing measurable on top.** The flow's 32 KiB reservation is a budget
-  charge, "not heap or RSS" (`go/detector/detector.go:175`), and a flow that has seen no bytes holds little.
-- **After the window, D keeps +3.9 KiB per tunnel** over B (about +3.8 MiB per 1,000). This is the window-end path
-  (Expire, Finish) and the record that SEC-CULV-1 keeps until the tunnel closes, with the 4 KiB tap buffer of a
-  read still blocked. It is within the plan's budget of "≤ 4 KiB retained per relay after observation" (section
-  9). RSS includes memory the Go runtime has freed but not returned, so this is an upper bound for that state.
-- **Not measured:** 1,000 flows held at once while each has sent its full 16 KiB of observed bytes (the worst
-  case of the observing state), and the blocked-write case. The plan lists both (8.3).
-
-### 3.5 HTTP control (forward path, not observed)
-
-| Rate | p50 A / B / D (ms) | p99 A / B / D (ms) | CPU per 1,000 flows A / B / D (ms) | D records |
-|---:|---|---|---|---:|
-| 200/s | 1.01 / 1.01 / 1.02 | 2.93 / 3.09 / 2.86 | 885 / 910 / 905 | 0 |
-| 500/s | 0.93 / 0.92 / 0.95 | 2.70 / 4.64 / 3.70 | 829 / 829 / 857 | 0 |
-| 1000/s | 1.13 / 1.13 / 1.23 | 4.07 / 4.65 / 5.39 | 768 / 776 / 854 | 0 |
-
-All are 100% success at the offered rate. No detector code runs on this path. The 1,000/s D cell has the highest
-CPU (+78 ms per 1,000 over B) and p99 (+0.74 ms), with overlapping ranges (B 719–861, D 653–885 ms). That is the
-size of this rig's noise at that rate, and it is also why the HTTPS differences in 3.1 are read as noise.
-
-The complete tables, including RSS and GC for HTTP, are produced by
-`python3 lab/culvert/tools/loadtest_report.py lab/culvert/results-load`.
-
-## 4. Method and versions
-
-| Item | Value |
+| Component | Version |
 |---|---|
-| Culvert | `ef9431189490f7f85bb32d6fe7e7b6b8be5b0844` (build A); lab branch `lab/protocol-detector-ef94311` = that commit + `lab/culvert/culvert-lab-ef94311.patch` (4 patches, applied with `git am`, local head `cbc75793f`), push disabled |
-| Detector | this repository's `go/` at `main` `593f6a467199d15fcdb9d441d4cadff8aa78d417`, through `go.work` (`lab/culvert/go.work.example`) |
-| Go | go1.27.4 linux/amd64 (the toolchain both modules pin), for Culvert, the lab build, vegeta and the origin |
-| vegeta | `github.com/tsenart/vegeta/v12` v12.12.0 (MIT), `go install`ed into the lab's `bin/`; test tool only |
-| Origin | `lab/culvert/tools/loadorigin` (standard library Go): HTTP on 203.0.113.10:80, HTTPS on :443 with a per-run self-signed certificate for `origin.lab.test`, a 33-byte body. The lab's Python origins would be the bottleneck at these rates. Its header timeout, which also bounds the TLS handshake, was raised from 5 s to 60 s for the hold test after the rate runs; no rate-run request came near either |
-| Host | one container, 4 vCPUs (Intel Xeon @ 2.10 GHz), 16 GiB, Linux 6.18.44; Python 3.13 runs the harness (the code is 3.9-compatible) |
-| Socket settings | `net.ipv4.ip_local_port_range = 1024 65535`, `tcp_tw_reuse = 1` (defaults were 32768–60999 and 2); every cell waits until fewer than 5,000 sockets are in TIME_WAIT |
-| Detector settings | lab defaults: families http, tls, ssh, smtp; 16 KiB and 16 feeds per direction; 4,096 observed tunnels; window 3 s for the rate runs and 10 s for the hold test |
-| Raw data | `lab/culvert/results-load/` (main run: `cells.json`, `summary.json`, `settings.json`, `run.log`), `results-load-split/` (B, C, D), `results-load-hold/hold.json` |
+| vegeta | `github.com/tsenart/vegeta/v12` v12.12.0 (`h1:FKMMNomd3auAElO/TtbXzRFXAKGee6N/GKCGweFVm2U=`), built with Go 1.24.7 |
+| Culvert | `ef9431189490f7f85bb32d6fe7e7b6b8be5b0844` (A); with the 4-commit lab patch applied with `git am`: tree `b9037501`, local head `a4b63f3b` (B, D) |
+| Lab patch | `lab/culvert/culvert-lab-ef94311.patch`, sha256 `e1a90fa3…`, the patch the lab README records for its head `8f828789` |
+| Detector | this repository's `go/` module at `main` `593f6a4`, through `go.work` (`lab/culvert/go.work.example`) |
+| Go (Culvert builds) | go1.27.4 linux/amd64, `toolchain go1.27.4` of Culvert's `go.mod` |
+| Go (loadorigin) | go1.24.7 linux/amd64 |
+| Host | Linux 6.18.44, 4 vCPU Intel Xeon at 2.10 GHz, 16 GiB, cloud container |
 
-Reproduce (as root in the lab container, with the builds of `lab/culvert/README.md` in `/home/user/culvert-lab/bin`):
+**Raw data:**
+- `lab/culvert/results-loadtest/results.json`: 100, 300 and 1,000 req/s, 72 steps, 15:50 to 16:20 UTC;
+- `lab/culvert/results-loadtest/results-600.json`: 600 req/s, 24 steps, 16:21 to 16:31 UTC;
+- `lab/culvert/results-loadtest/summary.md`: the generated tables for both files.
 
-```bash
-echo "1024 65535" > /proc/sys/net/ipv4/ip_local_port_range; echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse
-python3 lab/culvert/tools/addaddr.py 203.0.113.10 203.0.113.20
-grep -q origin.lab.test /etc/hosts || echo "203.0.113.10 origin.lab.test" >> /etc/hosts
-GOBIN=/home/user/culvert-lab/bin go install github.com/tsenart/vegeta/v12@v12.12.0
-GOWORK=off go build -o /home/user/culvert-lab/bin/loadorigin lab/culvert/tools/loadorigin/main.go
-cd lab/culvert/tools
-python3 loadtest.py --out ../results-load --rates 200,500,1000 --duration 30 --rounds 3
-python3 loadtest.py --out ../results-load-split --schemes https --rates 500,1000 --builds B,C,D --rounds 3
-python3 loadhold.py --out ../results-load-hold --rounds 3
-python3 loadtest_report.py ../results-load
-```
+## Full results
 
-The main run takes about 80 minutes, the split run 27 and the hold test 3.
+Latency in µs, the median over 3 rounds. CPU-s are per 1,000 flows. "PD records" counts the observation records
+Culvert logged, against the requests sent.
 
-## 5. Limits of this measurement
+### HTTPS, CONNECT tunnel (observed by the detector in D)
 
-- **One shared 4-CPU container, not two hosts.** vegeta, the origin and the proxy compete for the same memory
-  and kernel, even though each has its own CPUs. Absolute latencies are loopback figures, not Culvert's
-  production latency. Only the differences between builds mean something.
-- **1,000/s is this rig's knee, not the proxy's.** At 1,000 new TLS connections per second:
-  - vegeta used about 80% of its core and the origin about 65% of its core, doing a full handshake per request;
-  - the proxy used 67 to 85% of its two cores.
+| Rate | Config | p50 | p95 | p99 | max | Throughput | Success | CPU-s / 1,000 flows | Peak RSS MiB | PD records |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 100 | direct | 1318 | 1875 | 3421 | 13782 | 100.0 | 100.00% | n/a | n/a | n/a |
+| 100 | A | 1887 | 2517 | 4533 | 13785 | 100.0 | 100.00% | 1.010 | 49.1 | n/a |
+| 100 | B | 1865 | 2510 | 4589 | 19954 | 100.0 | 100.00% | 1.015 | 51.8 | n/a |
+| 100 | D | 1875 | 2693 | 4836 | 10266 | 100.0 | 100.00% | 1.225 | 54.3 | 2000 of 2000 |
+| 300 | direct | 1362 | 1833 | 3003 | 26019 | 300.0 | 100.00% | n/a | n/a | n/a |
+| 300 | A | 1832 | 2549 | 5279 | 48778 | 300.0 | 100.00% | 0.962 | 51.6 | n/a |
+| 300 | B | 1744 | 2274 | 3680 | 16907 | 300.0 | 100.00% | 0.930 | 55.2 | n/a |
+| 300 | D | 1817 | 2449 | 3567 | 17130 | 300.0 | 100.00% | 1.153 | 55.6 | 6000 of 6000 |
+| 600 | direct | 1273 | 2111 | 3431 | 16784 | 600.0 | 100.00% | n/a | n/a | n/a |
+| 600 | A | 1865 | 4066 | 9113 | 26087 | 600.0 | 100.00% | 1.011 | 52.4 | n/a |
+| 600 | B | 2054 | 5244 | 9477 | 56172 | 600.0 | 100.00% | 1.103 | 55.1 | n/a |
+| 600 | D | 1928 | 4899 | 10387 | 50464 | 600.0 | 100.00% | 1.255 | 56.0 | 12000 of 12000 |
+| 1000 | direct | 1451 | 4916 | 9745 | 41559 | 1000.0 | 100.00% | n/a | n/a | n/a |
+| 1000 | A | 9483 | 173845 | 317753 | 806049 | 999.0 | 100.00% | 1.232 | 65.2 | n/a |
+| 1000 | B | 5571 | 37411 | 73628 | 187029 | 999.9 | 94.89% | 1.196 | 60.9 | n/a |
+| 1000 | D | 8440 | 95017 | 233544 | 532156 | 999.1 | 100.00% | 1.310 | 72.5 | 20227 of 20000 |
 
-  In some rounds the latency of every build jumped by seconds, with `Bad Gateway` and client timeouts. This
-  happened in round 1 of the main run (A and B; D's p99 rose to 418 ms) and in round 2 of the second run (B at
-  76.7% success, D at 95.2%). The detector-off build B was the worst-hit in both runs, so this is not a detector
-  effect. The cause was not isolated; the accept backlog (`somaxconn` 4,096, `tcp_max_syn_backlog` 1,024) and
-  vegeta's worker growth are candidates. To measure at 1,000/s and above, run the load generator and the origin
-  on other hosts.
-- **The first attempt was discarded** (`results-load/aborted-run-port-exhaustion.log`). At 1,000/s every build
-  failed on `bind: address already in use`: one connection per request into one proxy endpoint exhausted the
-  default ephemeral port range (28,214 sockets in TIME_WAIT). The harness now checks the socket settings and
-  drains TIME_WAIT before each cell. Every number in this report comes from the rerun.
-- **Only first-message observation of short HTTPS tunnels.** Each tunnel carries one request. A long-lived tunnel
-  pays the detector cost once, so per-request cost on keep-alive traffic is lower than here. Inspected tunnels,
-  SOCKS5, WebSocket and plain HTTP are not observed in Phase 1.
-- **RSS, not heap.** Memory is the process RSS. The Go heap, retained bytes and goroutines were not read from
-  inside the process (Culvert exposes no runtime metrics), so allocation per flow is taken from GC cycles here
-  and from `BenchmarkFlow` (14.3 KB per TLS flow).
-- **No tracing during the runs** (plan 8.2). The CPU split comes from the fake engine, not from a profile.
+Added latency in µs: the median of the per-round differences, with the range in brackets.
 
-## 6. Answer for the plan's budget table (section 9)
+| Rate | Pair | p50 | p95 | p99 |
+|---:|---|---:|---:|---:|
+| 100 | D − B: observe vs off, same binary | +113 [−20..+201] | +424 [+69..+471] | +19 [−414..+1447] |
+| 100 | B − A: lab build (off) vs unmodified | −59 [−145..+40] | −245 [−247..+208] | −331 [−506..+1137] |
+| 300 | D − B | +73 [+54..+172] | +185 [+175..+244] | +9 [−165..+959] |
+| 300 | B − A | −54 [−116..−1] | −195 [−378..−119] | −1575 [−2451..−669] |
+| 600 | D − B | +5 [−185..+94] | +84 [−1807..+1650] | +220 [−3409..+4401] |
+| 600 | B − A | −31 [−137..+383] | −433 [−816..+2622] | +364 [−6394..+6584] |
+| 1000 | D − B (saturated, not meaningful) | +2575 [−386228..+5791] | +71009 [−2714784..+141817] | +159916 [−4349175..+249303] |
+| 1000 | B − A (saturated, not meaningful) | −2187 [−8421..+388893] | −29076 [−206603..+2608110] | −29235 [−452828..+4128791] |
 
-| Budget | Hypothesis | Measured here (observe mode, HTTPS) | Decision |
-|---|---|---|---|
-| Added latency per connection | (not in the table) | p50 ≤ +0.11 ms, p95 ≤ +0.6 ms, p99 within noise at 200 and 500/s | No action |
-| Proxy CPU per flow | (not in the table) | +0.1 to +0.3 ms per tunnel, about half observation path and half engine | Input for Culvert's budget; the adapter's share is the cheaper half to reduce |
-| Retained after observation | ≤ 4 KiB per relay | +3.9 KiB per tunnel (about +3.8 MiB per 1,000), RSS upper bound | Within, with little margin |
-| Concurrent observed flows | admission cap from capacity | 1,000 silent tunnels admitted, 0 refused (cap 4,096) | No change |
+Every observed flow was identified in both directions. In the 600 req/s run's last D log (12,100 records,
+warm-up included), all 24,200 direction results are `identified` / `engine` (TLS). No step logged a refused
+admission.
+
+### HTTP, forward proxy (the control: not observed)
+
+| Rate | Config | p50 | p95 | p99 | max | Throughput | Success | CPU-s / 1,000 flows | Peak RSS MiB | PD records |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 100 | direct | 391 | 602 | 1186 | 5343 | 100.0 | 100.00% | n/a | n/a | n/a |
+| 100 | A | 1017 | 1598 | 3682 | 24439 | 100.0 | 100.00% | 0.905 | 61.3 | n/a |
+| 100 | B | 956 | 1333 | 2794 | 8183 | 100.0 | 100.00% | 0.845 | 61.0 | n/a |
+| 100 | D | 982 | 1386 | 2872 | 9972 | 100.0 | 100.00% | 0.870 | 63.7 | 0 of 2000 |
+| 300 | direct | 367 | 552 | 986 | 5608 | 300.0 | 100.00% | n/a | n/a | n/a |
+| 300 | A | 913 | 1416 | 2998 | 8606 | 300.0 | 100.00% | 0.812 | 56.8 | n/a |
+| 300 | B | 902 | 1692 | 2775 | 15203 | 300.0 | 100.00% | 0.805 | 58.8 | n/a |
+| 300 | D | 952 | 1533 | 2733 | 11467 | 300.0 | 100.00% | 0.822 | 60.4 | 0 of 6000 |
+| 600 | direct | 327 | 514 | 946 | 11178 | 600.0 | 100.00% | n/a | n/a | n/a |
+| 600 | A | 835 | 1330 | 2456 | 20536 | 600.0 | 100.00% | 0.760 | 54.1 | n/a |
+| 600 | B | 851 | 1360 | 2514 | 21126 | 600.0 | 100.00% | 0.761 | 58.0 | n/a |
+| 600 | D | 860 | 1286 | 2219 | 14604 | 600.0 | 100.00% | 0.765 | 57.8 | 0 of 12000 |
+| 1000 | direct | 315 | 576 | 1099 | 6771 | 1000.0 | 100.00% | n/a | n/a | n/a |
+| 1000 | A | 794 | 1478 | 2860 | 20980 | 1000.0 | 100.00% | 0.629 | 55.1 | n/a |
+| 1000 | B | 848 | 1562 | 3863 | 23177 | 1000.0 | 100.00% | 0.653 | 57.9 | n/a |
+| 1000 | D | 827 | 1465 | 3002 | 12393 | 1000.0 | 100.00% | 0.655 | 58.2 | 0 of 20000 |
+
+| Rate | D − B p50 | p95 | p99 | CPU-s / 1,000 flows D − B | Peak RSS D − B (MiB) |
+|---:|---:|---:|---:|---:|---:|
+| 100 | +41 [+26..+49] | +29 [−218..+115] | +12 [−634..+265] | +0.025 | +2.7 |
+| 300 | +15 [+5..+93] | −159 [−489..+276] | −42 [−639..+61] | +0.017 | +1.6 |
+| 600 | −34 [−36..+18] | −28 [−91..−4] | −226 [−314..−202] | +0.004 | −0.2 |
+| 1000 | +15 [−75..+109] | +32 [−401..+165] | −796 [−1368..+364] | +0.002 | +0.3 |
+
+The RSS differences of 0.3 to 2.7 MiB on this unobserved path are the noise floor of the memory figure. The HTTPS
+memory differences (+0.4 to +2.5 MiB) are inside that floor.
+
+## Saturation at 1,000 req/s
+
+HTTPS at 1,000 new connections per second saturates this harness in every configuration, including unmodified
+Culvert:
+- A's p99 is 318 ms, against 5 ms at 300 req/s.
+- vegeta runs on one CPU and performs 1,000 TLS handshakes a second. The proxy spends about 1.2 to 1.3 CPU-s per
+  second on its two CPUs.
+- In round 1, B lost 5.1 % of its requests to the client's own `bind: address already in use` (ephemeral ports:
+  each request opens two connections, and closed ones linger in TIME_WAIT) and to `Bad Gateway`.
+- In D, Culvert logged 20,227 tunnel records for 20,000 requests (median of rounds). So under saturation the
+  client opened more tunnels than it completed requests. The likely cause is Go's HTTP client dialling again when
+  a connection fails before the request is written; this run did not confirm it.
+
+The per-round D − B differences at this rate run from −4.3 s to +0.25 s. They describe queueing, not the
+detector. Measuring the capacity limit, and the detector's share of it, needs a client that does not share the
+host's CPUs: a multi-host test, out of this lab's scope.
+
+## Limits of this measurement
+
+- Synthetic, loopback-only, one container with a 4-vCPU budget. These are local CPU and latency figures, not
+  production end-to-end latency (AGENTS.md, "Benchmarks report local CPU work").
+- One protocol in the observed path: TLS 1.3 ClientHello and ServerHello from Go's client and server. HTTP, SSH
+  and SMTP inside a tunnel were not load-tested, because vegeta speaks HTTP(S) only, and the forward proxy is not
+  observed.
+- One small response per connection. Larger transfers leave observation after the window or the handoff, and
+  Culvert's normal copy path carries the rest (lab README), so per-flow detector cost does not grow with the
+  transfer size. This was not measured here.
+- The proxy's CPU figure has 10 ms resolution per step: at least ±0.005 CPU-s per 1,000 flows at 100 req/s.
+- Memory is the RSS of the whole Go process, which the garbage collector shapes. It is not a heap profile.
+- Observe mode writes one JSON log line per tunnel to Culvert's log, here a file. That cost is included in D.
+
+## How to reproduce
+
+From an environment where the lab is set up (`docs/integration/LANE-BRIEF-culvert.md` §4):
+
+1. Build A from an unmodified worktree at `ef94311`: `GOWORK=off go build -o /home/user/culvert-lab/bin/culvert-A .`
+2. Build the lab binary on the lab branch: `GOWORK=/home/user/culvert-lab/go.work go build -o /home/user/culvert-lab/bin/culvert-lab .`
+3. Build the origin from this repository:
+   `(cd lab/culvert/tools/loadorigin && GO111MODULE=off go build -o /home/user/culvert-lab/bin/loadorigin .)`
+4. Install vegeta: `go install github.com/tsenart/vegeta/v12@v12.12.0`
+5. Add the loopback alias and the host name:
+   `python3 lab/culvert/tools/addaddr.py 203.0.113.10`, then
+   `echo "203.0.113.10 origin.lab.test" >> /etc/hosts`
+6. From `lab/culvert`, run the two invocations and the summary:
+   - `python3 -B tools/loadtest.py --out results-loadtest/results.json`
+   - `python3 -B tools/loadtest.py --rates 600 --out results-loadtest/results-600.json`
+   - `python3 -B tools/loadtest_summary.py results-loadtest/results.json results-loadtest/results-600.json > results-loadtest/summary.md`
+
+Both tools have a `--self-test`.

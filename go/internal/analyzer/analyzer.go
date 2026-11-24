@@ -256,6 +256,9 @@ func New(pack *content.Pack, opts Options) (*Analyzer, error) {
 		maxQUIC = 1
 	}
 	udp.Assembler = quicx.NewAssembler(maxQUIC, tr.IdleTimeout())
+	// PRO-291: a flow's first QUIC server name lives until the flow ends (both scopes are reset then), so the
+	// name store is sized above the flow table: two direction scopes per flow and the datagram being inspected.
+	udp.Assembler.MaxNames = 2*tr.MaxUDPFlows() + 2
 	a.udp = udp
 	return a, nil
 }
@@ -288,7 +291,14 @@ func (a *Analyzer) Process(timestamp float64, decoded interface{}) string {
 		a.LastEvents = []contracts.Event{{Kind: contracts.DatagramObs, Revision: a.udpRev, Observation: obs}}
 		classified := obs
 		a.LastClassification = &classified
-		return a.Tracker.ProcessUDP(timestamp, p, &obs)
+		limited := a.Tracker.Counts["udp_flow_limit"]
+		message := a.Tracker.ProcessUDP(timestamp, p, &obs)
+		if a.Tracker.Counts["udp_flow_limit"] != limited {
+			// PRO-291: the flow table was full, so no flow will ever reset this datagram's scope; its server
+			// name is not kept (its CRYPTO entries stay, bounded by the assembler's LRU, as in the reference).
+			a.udp.Assembler.ForgetServerName(quicScope(p.Source, p.Destination))
+		}
+		return message
 	case *transport.TCP:
 		message := a.Tracker.Process(timestamp, p)
 		sort.Slice(a.touched, func(i, j int) bool { return a.touched[i].seq < a.touched[j].seq })

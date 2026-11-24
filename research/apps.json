@@ -624,5 +624,73 @@
    "snowflake"
   ],
   "web": []
+ },
+ "hubspot.md": {
+  "ids": [
+   "hubspot",
+   "hubspot-base"
+  ],
+  "web": []
+ },
+ "beyondtrust.md": {
+  "ids": [
+   "beyondtrust"
+  ],
+  "web": []
+ },
+ "kaseya.md": {
+  "ids": [
+   "kaseya"
+  ],
+  "web": []
+ },
+ "manageengine-endpoint-central.md": {
+  "ids": [
+   "manageengine-endpoint-central"
+  ],
+  "web": []
+ },
+ "ringcentral.md": {
+  "ids": [
+   "ringcentral"
+  ],
+  "web": []
+ },
+ "keeper.md": {
+  "ids": [
+   "keeper"
+  ],
+  "web": []
+ },
+ "8x8.md": {
+  "ids": [
+   "8x8"
+  ],
+  "web": []
+ },
+ "freshworks.md": {
+  "ids": [
+   "freshworks"
+  ],
+  "web": []
+ },
+ "intercom.md": {
+  "ids": [
+   "intercom"
+  ],
+  "web": []
+ },
+ "new-relic.md": {
+  "ids": [
+   "new-relic",
+   "new-relic-base"
+  ],
+  "web": []
+ },
+ "pagerduty.md": {
+  "ids": [
+   "pagerduty"
+  ],
+  "web": []
  }
 }

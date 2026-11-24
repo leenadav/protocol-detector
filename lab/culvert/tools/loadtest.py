@@ -1,256 +1,261 @@
-"""Culvert load test: what the protocol detector adds per connection (PRO-269, docs/integration/LOAD-TEST.md).
+"""Culvert lab load test (PRO-269): what the protocol detector adds to each connection.
 
-Drives vegeta (MIT, a test tool only, never shipped) through three Culvert builds, one at a time:
+Loopback and synthetic traffic only. vegeta (MIT, a test tool that is never shipped) sends sustained load through
+local Culvert builds to the synthetic origin `loadorigin` on 203.0.113.10 (RFC 5737, a loopback alias):
 
-  A  unmodified Culvert at the lab base
-  B  lab build, detector off   (CULVERT_LAB_PROTODETECT unset: the relay path is the unmodified one)
-  C  lab build, fake engine    (CULVERT_LAB_PROTODETECT=fake: the same hook, timer and record, no parsing)
-  D  lab build, observe mode   (CULVERT_LAB_PROTODETECT=real, visibility only, nothing is blocked)
+  direct  vegeta straight to the origin, no proxy (the floor)
+  A       unmodified Culvert at the lab base (ef94311)
+  B       the lab build with the detector off (CULVERT_LAB_PROTODETECT unset)
+  D       the lab build with the real detector in observe mode (CULVERT_LAB_PROTODETECT=real)
 
-Each request opens its own client connection (vegeta -keepalive=false), so for HTTPS every request is one CONNECT
-bypass tunnel, which is one detector flow on D. HTTP requests go through Culvert's forward path, which the lab does
-not observe; they are the control. Loopback and synthetic traffic only: the origin is tools/loadorigin on
-203.0.113.10 (RFC 5737), and the proxy, the origin and vegeta are pinned to separate CPUs.
+HTTPS goes through a CONNECT tunnel that Culvert relays without inspection, which is the path the detector
+observes. HTTP goes through Culvert's forward proxy, which the detector does not observe: it is the control.
+Every request opens a new connection (vegeta -keepalive=false), so one request is one flow.
 
-For every cell (scheme x rate x build x round) the proxy is started fresh, warmed up, then attacked; its CPU time
-comes from /proc/<pid>/stat, its RSS is sampled every 100 ms, and its GC cycles are counted from GODEBUG=gctrace=1.
-The raw per-cell results go to <out>/cells.json; per-group medians (with min and max) are written to <out>/summary.json.
+For every step the script records vegeta's JSON report, the proxy's CPU time (utime + stime from /proc), its
+resident memory sampled every 100 ms, and the number of PROTODETECT records the step logged.
 
-Usage (as root, from anywhere; paths follow the other lab scripts):
-  python3 loadtest.py --lab /home/user/culvert-lab --out <dir> [--rates 200,500,1000] [--duration 30] [--rounds 3]
+Usage (see docs/integration/LOAD-TEST.md):
+  python3 tools/loadtest.py --bin /home/user/culvert-lab/bin --out results-loadtest/results.json
+  python3 tools/loadtest.py --self-test
 """
-import argparse, json, os, re, shutil, signal, statistics, subprocess, sys, time, urllib.request
+import argparse
+import json
+import os
+import shutil
+import signal
+import subprocess  # noqa: S404  (argv-only calls of the lab binaries, no shell)
+import sys
+import threading
+import time
+import urllib.request
+from pathlib import Path
 
-CLK = os.sysconf("SC_CLK_TCK")
-PAGE = os.sysconf("SC_PAGE_SIZE")
+ORIGIN_HOST = "origin.lab.test"
+ORIGIN_ADDR = "203.0.113.10"
+CONFIGS = {
+    "A": ("culvert-A", {}),
+    "B": ("culvert-lab", {}),
+    "D": ("culvert-lab", {"CULVERT_LAB_PROTODETECT": "real"}),
+}
 PROXY_CPUS, VEGETA_CPUS, ORIGIN_CPUS = "0,1", "2", "3"
-BUILDS = {"A": ("culvert-A", {}), "B": ("culvert-lab", {}),
-          "C": ("culvert-lab", {"CULVERT_LAB_PROTODETECT": "fake", "CULVERT_LAB_PD_WINDOW_MS": "3000"}),
-          "D": ("culvert-lab", {"CULVERT_LAB_PROTODETECT": "real", "CULVERT_LAB_PD_WINDOW_MS": "3000"})}
-ORIGIN = {}  # "pid" of the running load origin, for its CPU time
-PORT, UI_PORT = 18090, 19190
-GC_LINE = re.compile(r"^gc \d+ @")
-CLEAN_ENV = {k: v for k, v in os.environ.items()
-             if k.lower() not in ("https_proxy", "http_proxy", "all_proxy", "no_proxy")}
+PROXY_ENV_DROP = ("HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy", "ALL_PROXY", "all_proxy",
+                  "NO_PROXY", "no_proxy")
+CLK_TCK = os.sysconf("SC_CLK_TCK")
+TASKSET = shutil.which("taskset") or "/usr/bin/taskset"
 
 
-def cpu_ticks(pid):
-    with open(f"/proc/{pid}/stat") as f:
-        fields = f.read().rsplit(")", 1)[1].split()
-    return int(fields[11]) + int(fields[12])  # utime + stime (fields 14 and 15 of the full line)
+def clean_env(extra=None):
+    env = {k: v for k, v in os.environ.items() if k not in PROXY_ENV_DROP}
+    env.update(extra or {})
+    return env
+
+
+def cpu_seconds(pid):
+    """utime + stime of a process, in seconds (fields 14 and 15 of /proc/<pid>/stat)."""
+    text = Path("/proc/%d/stat" % pid).read_text()
+    fields = text[text.rindex(")") + 2:].split()
+    return (int(fields[11]) + int(fields[12])) / CLK_TCK
 
 
 def rss_kib(pid):
-    with open(f"/proc/{pid}/statm") as f:
-        return int(f.read().split()[1]) * PAGE // 1024
+    for line in Path("/proc/%d/status" % pid).read_text().splitlines():
+        if line.startswith("VmRSS:"):
+            return int(line.split()[1])
+    raise ValueError("no VmRSS for pid %d" % pid)
 
 
-def time_wait():
-    """Sockets in TIME_WAIT. One connection per request at 1,000/s exhausts the default ephemeral range
-    (32768-60999, a 60 s TIME_WAIT) on the single client-to-proxy endpoint, so every cell starts drained."""
-    n = 0
-    for path in ("/proc/net/tcp", "/proc/net/tcp6"):
-        try:
-            with open(path) as f:
-                n += sum(1 for line in f.readlines()[1:] if line.split()[3] == "06")
-        except OSError:
-            pass
-    return n
+class RssSampler(threading.Thread):
+    """Samples a process's VmRSS every `period` seconds until stopped; keeps the peak and the mean."""
+
+    def __init__(self, pid, period=0.1):
+        super().__init__(daemon=True)
+        self.pid, self.period = pid, period
+        self.samples = []
+        self.done = threading.Event()
+
+    def run(self):
+        while not self.done.is_set():
+            try:
+                self.samples.append(rss_kib(self.pid))
+            except (OSError, ValueError):
+                return
+            self.done.wait(self.period)
+
+    def stop(self):
+        self.done.set()
+        self.join()
+        if not self.samples:
+            return {"peak_kib": None, "mean_kib": None}
+        return {"peak_kib": max(self.samples), "mean_kib": round(sum(self.samples) / len(self.samples))}
 
 
-def drain_time_wait(limit=5000, timeout=90):
-    end = time.time() + timeout
-    while time_wait() > limit and time.time() < end:
-        time.sleep(1)
-    return time_wait()
-
-
-def socket_settings():
-    out = {}
-    for name in ("ip_local_port_range", "tcp_tw_reuse", "tcp_fin_timeout"):
-        with open(f"/proc/sys/net/ipv4/{name}") as f:
-            out[name] = " ".join(f.read().split())
-    return out
-
-
-def healthy(port, timeout=30):
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    end = time.time() + timeout
-    while time.time() < end:
-        try:
-            if opener.open(f"http://127.0.0.1:{port}/health", timeout=2).status == 200:
-                return True
-        except OSError:
-            time.sleep(0.3)
-    return False
-
-
-def start_proxy(lab, build, run_dir):
-    binary, extra = BUILDS[build]
-    data = os.path.join(run_dir, f"data-load-{build}")
-    shutil.rmtree(data, ignore_errors=True)
-    os.makedirs(data)
-    env = dict(CLEAN_ENV, CULVERT_DATA_DIR=data, GODEBUG="gctrace=1", **extra)
-    log = open(os.path.join(run_dir, f"culvert-load-{build}.log"), "w")
-    p = subprocess.Popen(["taskset", "-c", PROXY_CPUS, os.path.join(lab, "bin", binary),  # noqa: S603, S607  (fixed argv, lab binaries; loopback lab only)
-                          "-port", str(PORT), "-ui-port", str(UI_PORT)],
-                         env=env, stdout=log, stderr=subprocess.STDOUT, cwd=run_dir)  # Culvert writes state files to its cwd
-    if not healthy(PORT):
-        p.kill()
-        sys.exit(f"build {build} did not become healthy; see {log.name}")
-    return p, log
-
-
-def stop_proxy(p, log):
-    p.send_signal(signal.SIGTERM)
-    try:
-        p.wait(timeout=20)
-    except subprocess.TimeoutExpired:
-        p.kill()
-        p.wait()
-    log.close()
-
-
-def log_counts(path):
-    """(GC cycles, PROTODETECT records, refused admissions) written so far to a proxy's log."""
-    gc = pd = refused = 0
-    with open(path, errors="replace") as f:
+def count_records(log_path):
+    """PROTODETECT records and refused admissions logged so far."""
+    records = refused = 0
+    with open(log_path, "rb") as f:
         for line in f:
-            if GC_LINE.match(line):
-                gc += 1
-            elif "PROTODETECT {" in line:
-                pd += 1
-                refused += '"admission":"refused"' in line
-    return gc, pd, refused
+            if b"PROTODETECT {" in line:
+                records += 1
+                if b'"admission":"refused"' in line:
+                    refused += 1
+    return records, refused
 
 
-def attack(lab, run_dir, scheme, rate, seconds, out_bin):
-    targets = os.path.join(run_dir, f"targets-{scheme}.txt")
-    with open(targets, "w") as f:
-        f.write(f"GET {scheme}://origin.lab.test/load\n")
-    env = dict(CLEAN_ENV, HTTPS_PROXY=f"http://127.0.0.1:{PORT}", HTTP_PROXY=f"http://127.0.0.1:{PORT}")
-    cmd = ["taskset", "-c", VEGETA_CPUS, os.path.join(lab, "bin", "vegeta"), "attack", "-targets", targets,
-           "-rate", str(rate), "-duration", f"{seconds}s", "-keepalive=false", "-timeout", "10s",
-           "-root-certs", os.path.join(run_dir, "origin.pem"), "-output", out_bin]
-    return subprocess.Popen(cmd, env=env)  # noqa: S603, S607  (fixed argv, lab binaries; loopback lab only)
+def wait_health(port, timeout=30):
+    deadline = time.time() + timeout
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    while time.time() < deadline:
+        try:
+            with opener.open("http://127.0.0.1:%d/health" % port, timeout=2):
+                return
+        except OSError:
+            time.sleep(0.5)
+    raise RuntimeError("proxy on port %d did not become healthy" % port)
 
 
-def report(lab, out_bin):
-    r = subprocess.run([os.path.join(lab, "bin", "vegeta"), "report", "-type=json", out_bin],  # noqa: S603, S607  (fixed argv, lab binaries; loopback lab only)
-                       check=True, capture_output=True, text=True)
-    return json.loads(r.stdout)
+def start_proxy(bindir, rundir, name, port):
+    binary, extra = CONFIGS[name]
+    data = rundir / ("data-load-" + name)
+    shutil.rmtree(data, ignore_errors=True)
+    data.mkdir(parents=True)
+    log = open(rundir / ("culvert-load-%s.log" % name), "wb")
+    env = clean_env(dict(extra, CULVERT_DATA_DIR=str(data)))
+    proc = subprocess.Popen([TASKSET, "-c", PROXY_CPUS, str(bindir / binary), "-port", str(port),  # noqa: S603  (argv only, lab binaries)
+                             "-ui-port", str(port + 1000)], env=env, stdout=log, stderr=subprocess.STDOUT)
+    log.close()
+    wait_health(port)
+    return proc, rundir / ("culvert-load-%s.log" % name)
 
 
-def cell(lab, run_dir, scheme, rate, build, seconds, warmup, rnd):
-    tw_start = drain_time_wait()
-    p, log = start_proxy(lab, build, run_dir)
-    try:
-        w = attack(lab, run_dir, scheme, rate, warmup, os.devnull)
-        w.wait()
-        time.sleep(3.5)  # let the warm-up's observation windows end, so its records are not counted below
-        idle_rss = rss_kib(p.pid)
-        gc0, pd0, ref0 = log_counts(log.name)
-        t0, c0, o0 = time.time(), cpu_ticks(p.pid), cpu_ticks(ORIGIN["pid"])
-        out_bin = os.path.join(run_dir, f"attack-{scheme}-{rate}-{build}-{rnd}.bin")
-        a = attack(lab, run_dir, scheme, rate, seconds, out_bin)
-        samples = []
-        while True:
-            pid, _, usage = os.wait4(a.pid, os.WNOHANG)
-            if pid:
-                a.returncode = 0
-                break
-            samples.append(rss_kib(p.pid))
-            time.sleep(0.1)
-        c1, t1, o1 = cpu_ticks(p.pid), time.time(), cpu_ticks(ORIGIN["pid"])
-        time.sleep(3.5)  # the last tunnels' windows end and their records are logged
-        gc1, pd1, ref1 = log_counts(log.name)
-    finally:
-        stop_proxy(p, log)
-    rep = report(lab, out_bin)
-    os.remove(out_bin)
-    n = rep["requests"]
-    cpu_s = (c1 - c0) / CLK
-    lat = rep["latencies"]
+def vegeta(vegeta_bin, scheme, rate, duration, proxy_port, out_bin):
+    target = "GET %s://%s/load\n" % (scheme, ORIGIN_HOST)
+    extra = {}
+    if proxy_port:
+        extra = {"HTTPS_PROXY": "http://127.0.0.1:%d" % proxy_port, "HTTP_PROXY": "http://127.0.0.1:%d" % proxy_port}
+    attack = [TASKSET, "-c", VEGETA_CPUS, vegeta_bin, "attack", "-insecure", "-keepalive=false",
+              "-rate=%d" % rate, "-duration=%ds" % duration, "-timeout=10s", "-output=%s" % out_bin]
+    subprocess.run(attack, input=target.encode(), env=clean_env(extra), check=True)  # noqa: S603  (argv only, lab binaries)
+    report = subprocess.run([vegeta_bin, "report", "-type=json", str(out_bin)], check=True, capture_output=True)  # noqa: S603  (argv only, lab binaries)
+    os.unlink(out_bin)
+    return json.loads(report.stdout)
+
+
+def summarize(report):
+    lat = report["latencies"]
     return {
-        "scheme": scheme, "rate": rate, "build": build, "round": rnd, "requests": n,
-        "success": rep["success"], "throughput": rep["throughput"], "status_codes": rep["status_codes"],
-        "errors": rep.get("errors") or [],
-        "p50_ms": lat["50th"] / 1e6, "p95_ms": lat["95th"] / 1e6, "p99_ms": lat["99th"] / 1e6,
-        "mean_ms": lat["mean"] / 1e6, "max_ms": lat["max"] / 1e6,
-        "proxy_cpu_s": cpu_s, "wall_s": t1 - t0, "cpu_ms_per_1k": cpu_s * 1000 / n * 1000,
-        "proxy_cpu_pct": 100 * cpu_s / (t1 - t0),
-        "vegeta_cpu_pct": 100 * (usage.ru_utime + usage.ru_stime) / (t1 - t0),
-        "origin_cpu_pct": 100 * (o1 - o0) / CLK / (t1 - t0),
-        "rss_idle_mib": idle_rss / 1024, "rss_peak_mib": max(samples) / 1024,
-        "rss_mean_mib": statistics.mean(samples) / 1024, "gc_cycles": gc1 - gc0,
-        "gc_per_1k": (gc1 - gc0) / n * 1000, "pd_records": pd1 - pd0, "pd_refused": ref1 - ref0,
-        "time_wait_at_start": tw_start,
+        "requests": report["requests"],
+        "rate": round(report["rate"], 2),
+        "throughput": round(report["throughput"], 2),
+        "success": report["success"],
+        "status_codes": report["status_codes"],
+        "errors": report["errors"][:5],
+        "latency_us": {k: round(lat[k] / 1000, 1) for k in ("min", "mean", "50th", "90th", "95th", "99th", "max")},
     }
 
 
-def summarise(cells):
-    keys = ["p50_ms", "p95_ms", "p99_ms", "mean_ms", "throughput", "success", "cpu_ms_per_1k", "proxy_cpu_pct",
-            "rss_idle_mib", "rss_peak_mib", "rss_mean_mib", "gc_per_1k", "vegeta_cpu_pct", "origin_cpu_pct", "pd_records", "pd_refused", "requests"]
-    groups = {}
-    for c in cells:
-        groups.setdefault((c["scheme"], c["rate"], c["build"]), []).append(c)
-    out = []
-    for (scheme, rate, build), cs in sorted(groups.items()):
-        row = {"scheme": scheme, "rate": rate, "build": build, "rounds": len(cs)}
-        for k in (k for k in keys if k in cs[0]):  # cells of an older harness lack the newer keys
-            vals = [c[k] for c in cs]
-            row[k] = statistics.median(vals)
-            row[k + "_min"], row[k + "_max"] = min(vals), max(vals)
-        out.append(row)
-    return out
+def run_step(args, scheme, rate, proxy_port, proc=None, log_path=None):
+    before_cpu = cpu_seconds(proc.pid) if proc else None
+    before_rec = count_records(log_path) if log_path else None
+    sampler = RssSampler(proc.pid) if proc else None
+    if sampler:
+        sampler.start()
+    report = vegeta(args.vegeta, scheme, rate, args.duration, proxy_port, args.scratch / "attack.bin")
+    time.sleep(1.0)  # let the last tunnels close and log their records
+    step = summarize(report)
+    if proc:
+        step["proxy_cpu_s"] = round(cpu_seconds(proc.pid) - before_cpu, 3)
+        step["proxy_cpu_s_per_1000_flows"] = round(step["proxy_cpu_s"] * 1000 / max(1, report["requests"]), 4)
+        step["proxy_rss"] = sampler.stop()
+    if log_path:
+        after = count_records(log_path)
+        step["pd_records"] = after[0] - before_rec[0]
+        step["pd_refused"] = after[1] - before_rec[1]
+    return step
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--lab", default="/home/user/culvert-lab")
-    ap.add_argument("--out", required=True)
-    ap.add_argument("--rates", default="200,500,1000")
-    ap.add_argument("--schemes", default="https,http")
-    ap.add_argument("--builds", default="A,B,D")
-    ap.add_argument("--duration", type=int, default=30)
-    ap.add_argument("--warmup", type=int, default=3)
-    ap.add_argument("--rounds", type=int, default=3)
-    a = ap.parse_args()
-    run_dir = os.path.join(a.lab, "run")
-    os.makedirs(a.out, exist_ok=True)
-    settings = socket_settings()
-    lo, hi = (int(x) for x in settings["ip_local_port_range"].split())
-    if hi - lo < 60000 or settings["tcp_tw_reuse"] != "1":
-        sys.exit(f"socket settings {settings}: set ip_local_port_range to 1024 65535 and tcp_tw_reuse to 1 first")
-    with open(os.path.join(a.out, "settings.json"), "w") as f:
-        json.dump(dict(settings, rates=a.rates, schemes=a.schemes, builds=a.builds, duration_s=a.duration,
-                       warmup_s=a.warmup, rounds=a.rounds, proxy_cpus=PROXY_CPUS, vegeta_cpus=VEGETA_CPUS,
-                       origin_cpus=ORIGIN_CPUS, nproc=os.cpu_count()), f, indent=1)
-    origin = subprocess.Popen(["taskset", "-c", ORIGIN_CPUS, os.path.join(a.lab, "bin", "loadorigin"),  # noqa: S603, S607  (fixed argv, lab binaries; loopback lab only)
-                               "-cert", os.path.join(run_dir, "origin.pem")],
-                              stdout=open(os.path.join(run_dir, "loadorigin.log"), "w"), stderr=subprocess.STDOUT)
-    ORIGIN["pid"] = origin.pid
+def run(args):
+    rundir, bindir = args.rundir, args.bin
+    rundir.mkdir(parents=True, exist_ok=True)
+    args.scratch.mkdir(parents=True, exist_ok=True)
+    origin = subprocess.Popen([TASKSET, "-c", ORIGIN_CPUS, str(bindir / "loadorigin"), "-addr", ORIGIN_ADDR],  # noqa: S603  (argv only, lab binaries)
+                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
-    cells = []
-    builds = a.builds.split(",")
+    results = {"started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "duration_s": args.duration,
+               "rates": args.rates, "rounds": args.rounds, "cpus": {"proxy": PROXY_CPUS, "vegeta": VEGETA_CPUS,
+               "origin": ORIGIN_CPUS}, "steps": []}
     try:
-        for rnd in range(a.rounds):
-            order = builds[rnd % len(builds):] + builds[:rnd % len(builds)]  # rotate, so no build always goes first
-            for scheme in a.schemes.split(","):
-                for rate in [int(r) for r in a.rates.split(",")]:
-                    for build in order:
-                        c = cell(a.lab, run_dir, scheme, rate, build, a.duration, a.warmup, rnd)
-                        cells.append(c)
-                        print(f"round {rnd} {scheme:5} {rate:5}/s {build}: p50 {c['p50_ms']:.2f} p95 {c['p95_ms']:.2f}"
-                              f" p99 {c['p99_ms']:.2f} ms, ok {c['success']:.4f}, cpu {c['cpu_ms_per_1k']:.0f} ms/1k,"
-                              f" rss peak {c['rss_peak_mib']:.0f} MiB, pd {c['pd_records']}", flush=True)
-                        with open(os.path.join(a.out, "cells.json"), "w") as f:
-                            json.dump(cells, f, indent=1)
+        for rnd in range(args.rounds):
+            order = ["direct"] + [list(CONFIGS)[(i + rnd) % len(CONFIGS)] for i in range(len(CONFIGS))]
+            for name in order:
+                proc = log_path = None
+                port = 0
+                if name != "direct":
+                    port = 18180 + list(CONFIGS).index(name)
+                    proc, log_path = start_proxy(bindir, rundir, name, port)
+                    # warm-up, not recorded
+                    vegeta(args.vegeta, "https", 50, 2, port, args.scratch / "attack.bin")
+                    idle = rss_kib(proc.pid)
+                try:
+                    for scheme in ("https", "http"):
+                        for rate in args.rates:
+                            step = run_step(args, scheme, rate, port, proc, log_path if name == "D" else None)
+                            step.update({"round": rnd + 1, "config": name, "scheme": scheme, "target_rate": rate})
+                            if proc:
+                                step["proxy_rss_idle_kib"] = idle
+                            results["steps"].append(step)
+                            print(json.dumps({k: step.get(k) for k in ("round", "config", "scheme", "target_rate",
+                                  "throughput", "success", "latency_us", "proxy_cpu_s", "pd_records")}), flush=True)
+                            time.sleep(args.pause)
+                finally:
+                    if proc:
+                        proc.send_signal(signal.SIGTERM)
+                        proc.wait(timeout=30)
     finally:
         origin.terminate()
-    with open(os.path.join(a.out, "summary.json"), "w") as f:
-        json.dump(summarise(cells), f, indent=1)
+        origin.wait(timeout=10)
+    results["finished"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(results, indent=1) + "\n")
+
+
+def self_test():
+    me = os.getpid()
+    assert cpu_seconds(me) >= 0
+    assert rss_kib(me) > 0
+    s = RssSampler(me, 0.01)
+    s.start()
+    time.sleep(0.05)
+    got = s.stop()
+    assert got["peak_kib"] >= got["mean_kib"] > 0, got
+    fake = {"requests": 4, "rate": 2.0, "throughput": 1.999, "success": 1, "status_codes": {"200": 4}, "errors": [],
+            "latencies": {"min": 1000, "mean": 2000, "50th": 1500, "90th": 3000, "95th": 3500, "99th": 3900,
+                          "max": 4000}}
+    got = summarize(fake)
+    assert got["latency_us"]["50th"] == 1.5 and got["throughput"] == 2.0, got
+    print("loadtest self-test: ok")
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("--self-test", action="store_true")
+    p.add_argument("--bin", type=Path, default=Path("/home/user/culvert-lab/bin"),
+                   help="directory holding culvert-A, culvert-lab and loadorigin")
+    p.add_argument("--vegeta", default=os.path.expanduser("~/go/bin/vegeta"))
+    p.add_argument("--rundir", type=Path, default=Path("/home/user/culvert-lab/run"))
+    p.add_argument("--scratch", type=Path, default=Path("/home/user/culvert-lab/run/scratch"))
+    p.add_argument("--out", type=Path, default=Path("results-loadtest/results.json"))
+    p.add_argument("--rates", type=lambda s: [int(x) for x in s.split(",")], default=[100, 300, 1000])
+    p.add_argument("--duration", type=int, default=20, help="seconds per step")
+    p.add_argument("--rounds", type=int, default=3)
+    p.add_argument("--pause", type=float, default=3.0, help="seconds between steps")
+    args = p.parse_args(argv)
+    if args.self_test:
+        self_test()
+        return 0
+    run(args)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

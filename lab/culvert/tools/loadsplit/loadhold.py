@@ -86,7 +86,7 @@ def main():
     a = ap.parse_args()
     run_dir = os.path.join(a.lab, "run")
     os.makedirs(a.out, exist_ok=True)
-    origin = subprocess.Popen(["taskset", "-c", loadtest.ORIGIN_CPUS, os.path.join(a.lab, "bin", "loadorigin"),  # noqa: S603, S607  (fixed argv, lab binary; loopback lab only)
+    origin = subprocess.Popen(["taskset", "-c", loadtest.ORIGIN_CPUS, os.path.join(a.lab, "bin", "loadorigin-split"),  # noqa: S603, S607  (fixed argv, lab binary; loopback lab only)
                                "-cert", os.path.join(run_dir, "origin.pem")],
                               stdout=open(os.path.join(run_dir, "loadorigin.log"), "w"), stderr=subprocess.STDOUT)
     time.sleep(1)

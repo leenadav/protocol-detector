@@ -11,6 +11,16 @@
   "app-updates.agilebits.com",
   "cache.agilebits.com"
  ],
+ "8x8.md": [
+  "8x8.com",
+  "8x8.vc",
+  "8x8cloud.com",
+  "cloud8.net",
+  "jitsi.net",
+  "p8t.us",
+  "packet8.net",
+  "wavecell.com"
+ ],
  "adobe-cloud.md": [
   "adobe-identity.com",
   "adobe-services.com",
@@ -119,6 +129,11 @@
   "portal.azure.com",
   "portal.azure.net",
   "signup.azure.com"
+ ],
+ "beyondtrust.md": [
+  "beyondtrust.com",
+  "beyondtrustcloud.com",
+  "bomgar.com"
  ],
  "bitwarden.md": [
   "bitwarden.com",
@@ -267,6 +282,16 @@
   "systemmonitor.eu.com",
   "usforticlient.fortinet.net"
  ],
+ "freshworks.md": [
+  "fdcollab.com",
+  "freshdesk.com",
+  "freshdev.io",
+  "freshservice.com",
+  "freshworks.com",
+  "freshworksapi.com",
+  "myfreshworks.com",
+  "rtschannel.com"
+ ],
  "github-copilot.md": [
   "copilot-proxy.githubusercontent.com",
   "copilot-telemetry.githubusercontent.com",
@@ -327,6 +352,68 @@
   "grammarly.io",
   "grammarly.net"
  ],
+ "hubspot.md": [
+  "hs-analytics.net",
+  "hs-banner.com",
+  "hs-scripts.com",
+  "hs-sites-ap1.com",
+  "hs-sites-eu1.com",
+  "hs-sites-na2.com",
+  "hs-sites-na3.com",
+  "hs-sites.com",
+  "hsadspixel.net",
+  "hsappstatic.net",
+  "hscollectedforms.net",
+  "hscta.com",
+  "hscta.net",
+  "hsctaimages.net",
+  "hsforms.com",
+  "hsforms.net",
+  "hsleadflows.net",
+  "hubapi.com",
+  "hubspot-no-cache-ap1-prod.s3.amazonaws.com",
+  "hubspot-no-cache-na2-prod.s3.amazonaws.com",
+  "hubspot-no-cache-na3-prod.s3.amazonaws.com",
+  "hubspot.com",
+  "hubspot.net",
+  "hubspotfeedback.com",
+  "hubspotservicehub.com",
+  "hubspotusercontent-ap1.net",
+  "hubspotusercontent-eu1.net",
+  "hubspotusercontent-na2.net",
+  "hubspotusercontent-na3.net",
+  "hubspotusercontent00.net",
+  "hubspotusercontent10.net",
+  "hubspotusercontent20.net",
+  "hubspotusercontent30.net",
+  "hubspotusercontent40.net",
+  "hubspotvideo.com",
+  "usemessages.com"
+ ],
+ "intercom.md": [
+  "intercom-attachments-1.com",
+  "intercom-attachments-2.com",
+  "intercom-attachments-3.com",
+  "intercom-attachments-4.com",
+  "intercom-attachments-5.com",
+  "intercom-attachments-6.com",
+  "intercom-attachments-7.com",
+  "intercom-attachments-8.com",
+  "intercom-attachments-9.com",
+  "intercom-attachments.com",
+  "intercom-attachments.eu",
+  "intercom-messenger.com",
+  "intercom-reporting.com",
+  "intercom-sheets.com",
+  "intercom.com",
+  "intercom.help",
+  "intercom.io",
+  "intercomassets.com",
+  "intercomassets.eu",
+  "intercomcdn.com",
+  "intercomcdn.eu",
+  "intercomusercontent.com"
+ ],
  "jamf-pro.md": [
   "jamf.com",
   "jamfcloud.com",
@@ -335,6 +422,19 @@
  "jetbrains-ai.md": [
   "api.jetbrains.ai",
   "jetbrains.com"
+ ],
+ "kaseya.md": [
+  "kaseya.com",
+  "kaseya.net"
+ ],
+ "keeper.md": [
+  "keeper.io",
+  "keepersecurity.ca",
+  "keepersecurity.com",
+  "keepersecurity.com.au",
+  "keepersecurity.eu",
+  "keepersecurity.jp",
+  "keepersecurity.us"
  ],
  "logmein-resolve.md": [
   "gotoresolve.com",
@@ -345,6 +445,62 @@
  "loom.md": [
   "loom-media-production.s3-accelerate.amazonaws.com",
   "loom.com"
+ ],
+ "manageengine-endpoint-central.md": [
+  "desktopcentral.manageengine.ca",
+  "desktopcentral.manageengine.cn",
+  "desktopcentral.manageengine.com",
+  "desktopcentral.manageengine.com.au",
+  "desktopcentral.manageengine.eu",
+  "desktopcentral.manageengine.in",
+  "desktopcentral.manageengine.jp",
+  "desktopcentral.manageengine.uk",
+  "endpointcentral-agent0.manageengine.ae",
+  "endpointcentral-agent0.manageengine.ca",
+  "endpointcentral-agent0.manageengine.cn",
+  "endpointcentral-agent0.manageengine.com",
+  "endpointcentral-agent0.manageengine.eu",
+  "endpointcentral-agent0.manageengine.in",
+  "endpointcentral-agent0.manageengine.jp",
+  "endpointcentral-agent0.manageengine.sa",
+  "endpointcentral-agent0.manageengine.sg",
+  "endpointcentral-agent0.manageengine.uk",
+  "endpointcentral-agent1.manageengine.com",
+  "endpointcentral-agent1.manageengine.eu",
+  "endpointcentral-agent1.manageengine.in",
+  "endpointcentral-agent10.manageengine.com",
+  "endpointcentral-agent2.manageengine.com",
+  "endpointcentral-agent2.manageengine.eu",
+  "endpointcentral-agent2.manageengine.in",
+  "endpointcentral-agent3.manageengine.com",
+  "endpointcentral-agent3.manageengine.in",
+  "endpointcentral-agent4.manageengine.com",
+  "endpointcentral-agent5.manageengine.com",
+  "endpointcentral-agent6.manageengine.com",
+  "endpointcentral-agent7.manageengine.com",
+  "endpointcentral-agent8.manageengine.com",
+  "endpointcentral-agentp1.manageengine.com",
+  "endpointcentral-agentp1.manageengine.eu",
+  "endpointcentral-agentp12.manageengine.in",
+  "endpointcentral-agentp13.manageengine.eu",
+  "endpointcentral-agentp14.manageengine.in",
+  "endpointcentral-agentp15.manageengine.in",
+  "endpointcentral-agentp16.manageengine.in",
+  "endpointcentral-agentp17.manageengine.eu",
+  "endpointcentral-agentp18.manageengine.com",
+  "endpointcentral-agentp19.manageengine.in",
+  "endpointcentral-agentp2.manageengine.com",
+  "endpointcentral-agentp2.manageengine.in",
+  "endpointcentral-agentp3.manageengine.com",
+  "endpointcentral-agentp3.manageengine.eu",
+  "endpointcentral-agentp5.manageengine.com",
+  "endpointcentral-agentp7.manageengine.cn",
+  "endpointcentral-agentp7.manageengine.eu",
+  "endpointcentral-agentp7.manageengine.in",
+  "endpointcentral-agentp9.manageengine.uk",
+  "patchdatabase.manageengine.com",
+  "patchdb.manageengine.cn",
+  "patchdb.manageengine.com"
  ],
  "microsoft-365.md": [
   "cloud.microsoft",
@@ -423,6 +579,15 @@
   "goskope.com",
   "netskope.com"
  ],
+ "new-relic.md": [
+  "bam-cell.nr-data.net",
+  "bam.eu01.nr-data.net",
+  "bam.jp.nr-data.net",
+  "bam.nr-data.net",
+  "js-agent.newrelic.com",
+  "newrelic.com",
+  "nr-data.net"
+ ],
  "ngrok.md": [
   "ngrok-agent.com",
   "ngrok.com",
@@ -468,6 +633,9 @@
   "oaiusercontent.com",
   "platform.openai.com"
  ],
+ "pagerduty.md": [
+  "pagerduty.com"
+ ],
  "parsec.md": [
   "parsec.app",
   "parsecgaming.com",
@@ -495,6 +663,27 @@
  "prisma-access.md": [
   "epm.gpcloudservice.com",
   "filter.paloaltonetworks.com"
+ ],
+ "ringcentral.md": [
+  "glip-vault-1.s3-accelerate.amazonaws.com",
+  "glip-vault-1.s3.amazonaws.com",
+  "glip.com",
+  "ringcentral-0.pubnubapi.com",
+  "ringcentral-1.pubnubapi.com",
+  "ringcentral-2.pubnubapi.com",
+  "ringcentral-3.pubnubapi.com",
+  "ringcentral-4.pubnubapi.com",
+  "ringcentral-5.pubnubapi.com",
+  "ringcentral-6.pubnubapi.com",
+  "ringcentral-7.pubnubapi.com",
+  "ringcentral-8.pubnubapi.com",
+  "ringcentral-9.pubnubapi.com",
+  "ringcentral.biz",
+  "ringcentral.ca",
+  "ringcentral.co.uk",
+  "ringcentral.com",
+  "ringcentral.eu",
+  "ringcentral.pubnubapi.com"
  ],
  "rustdesk.md": [
   "rustdesk.com"

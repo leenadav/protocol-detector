@@ -97,7 +97,7 @@ push to `main`:
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
 | ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds, and in source mode over go/ on its vendor tree (`GOFLAGS=-mod=vendor`, `GOPROXY=off`) |
 | ci | `Known vulnerabilities in every lockfile (osv-scanner; accepted only with a reason and an expiry)` | `tools/osv_scan.py`: osv-scanner 2.7.1 from `tools/golint/osv-scanner/go.mod` and go.sum, built outside the checkout, over every tracked lockfile (requirements, npm, go.mod); a finding fails unless `tools/osv_ignore.json` accepts it for that lockfile and package with a reason and an expiry at most 90 days ahead; an expired or stale entry, or a lockfile it did not read, fails (item 41) |
-| ci | `Go engine (gofmt, vet, race tests)` | `tools/go_ci.py go --part static` then `--part race`: on the pinned Go 1.27.4, which must be the compiler go/go.mod builds with (its `toolchain` line, else its `go` line), `make go-check-static` (gofmt, `go vet`, the mutation boundary checks) and `make go-check-race` (`go test -race`); nothing to check on a commit without the migration tree, failure on one with part of it; `GOPROXY=off`, so no Go is downloaded mid-job. `make go-check` is this job, the fuzz smoke shards and go-parity together (PRO-202) |
+| ci | `Go engine (gofmt, vet, race tests)` | `tools/go_ci.py go --part static`, `--part race`, then `--part 386`: on the pinned Go 1.27.4, which must be the compiler go/go.mod builds with (its `toolchain` line, else its `go` line), `make go-check-static` (gofmt, `go vet`, the mutation boundary checks) `make go-check-race` (`go test -race`) and `make go-check-386` (every `./internal/protocols/...` package but the `GO_386_EXCLUDE` ones, `go test` with `GOARCH=386`, so a 32-bit int wrap such as SEC-X509-1 fails CI; PRO-262); nothing to check on a commit without the migration tree, failure on one with part of it; `GOPROXY=off`, so no Go is downloaded mid-job. `make go-check` is this job, the fuzz smoke shards and go-parity together (PRO-202) |
 | ci | `Go fuzz smoke (shard 1/3)`, `Go fuzz smoke (shard 2/3)`, `Go fuzz smoke (shard 3/3)` | `tools/go_ci.py go --part fuzz --shard I/N`: `make go-check-fuzz`, the Makefile's GO_FUZZ_SMOKE targets of shard I as `tools/go_fuzz_smoke.py` assigns them (fixed, disjoint, together every target); a listed target that no test defines fails; `tools/go_fuzz_smoke.py --check-matrix` fails a matrix that leaves out a shard |
 | ci | `Go parity with the Python reference (replay, analyze, decrypt, live, schema, random, bench)` | `tools/go_ci.py go --part parity`: `make go-check-parity` (`make parity-go` and the analyze, decrypt, live, schema, control, server, adversarial, random-differential and bench gates) and a floor under the parity report |
 | ci | `Go engine on its declared minimum Go (vet, race tests)` | `tools/go_ci.py minimum`: on exactly go/go.mod's `go` line (the declared minimum), installed by setup-go, `make go-check-minimum` (`go vet`, `go test -race`); a minimum equal to the compiler is go-engine's run and passes as such (item 28) |
@@ -172,6 +172,14 @@ engine (the whole change as one report). The secret scan reads the full
 history of the checkout itself, so it needs no pull-request permission. Both are
 configured in ci.yml; a red pull-request run with a green push run on the same commit is a
 workflow defect, never an engine finding.
+Docs-only fast path (PRO-202 step 3): the heavy Go jobs (`go-engine`, `go-fuzz-smoke`, `go-parity`,
+`go-minimum`, `go-determinism`) pass `--docs-only-fast-path` to `tools/go_ci.py` / `tools/go_deep.py`. On a
+pull request whose merge commit changes only Markdown (`*.md`) or research data (`research/` outside
+`research/tools/`), `tools/ci_scope.py` lets them check the tree and toolchain, skip the make target and list
+every changed path in the summary; the job and `ci gate (all jobs)` still report success, with no job-level
+`if:` (rule 13). It fails closed: a push to `main`, the schedule, a dispatch, a checkout without both merge
+parents, a failing `git diff` or any other path runs every check. The Python tests, documentation, security,
+supply-chain and every other job run in full on every change.
 Pull-request runs also start on `labeled` and `unlabeled` (the go-api job's `api-break` label, item 39).
 
 Codex review comments (automatic review on every opened pull request, P0/P1 only, rules
