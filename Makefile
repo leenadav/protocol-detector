@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -250,6 +250,7 @@ GO_FUZZ_SMOKE := \
 go-check:
 	$(MAKE) go-check-static
 	$(MAKE) go-check-race
+	$(MAKE) go-check-386
 	$(MAKE) go-check-fuzz
 	$(MAKE) go-check-parity
 
@@ -261,6 +262,24 @@ go-check-static:
 
 go-check-race:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test -race ./...
+
+# go-check-386 (PRO-262, ci: go-engine): the protocol parsers' tests on a 32-bit int (GOARCH=386), where a length
+# sum such as pos+length can wrap negative and pass a bounds check (SEC-X509-1); `go test -race` on amd64 cannot see
+# that. Every package under ./internal/protocols/ runs, new ones included, except GO_386_EXCLUDE: packages that do not
+# compile for 386 yet (framed: untyped constants above 2^31 assigned to int). An excluded package that starts to
+# compile fails the target, so its exclusion is removed as soon as it can be tested. Offline and vendored.
+GO_386_EXCLUDE := framed
+go-check-386:
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOARCH=386 CGO_ENABLED=0 GOFLAGS=-mod=vendor sh -c '\
+	  set -e; all=$$(go list ./internal/protocols/...); run=""; \
+	  for pkg in $$all; do skip=""; for name in $(GO_386_EXCLUDE); do \
+	    case "$$pkg" in */internal/protocols/$$name) skip=1;; esac; done; \
+	    if [ -n "$$skip" ]; then \
+	      if go build "$$pkg" 2>/dev/null; then echo "$$pkg now builds for GOARCH=386: remove it from GO_386_EXCLUDE"; exit 1; fi; \
+	      echo "go-check-386: excluded (does not build for 386 yet): $$pkg"; \
+	    else run="$$run $$pkg"; fi; done; \
+	  test -n "$$run" || { echo "go-check-386: no package to test"; exit 1; }; \
+	  go test -count=1 $$run'
 
 go-check-fuzz:
 	$(PYTHON) -B tools/go_fuzz_smoke.py --toolchain $(GO_TOOLCHAIN) --shard $(GO_FUZZ_SHARD) $(GO_FUZZ_SMOKE)
