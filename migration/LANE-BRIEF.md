@@ -133,6 +133,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
+| PRO-325 (Codex findings from PRO-324) | nothing: Codex reviewed PR #113 (frozen head `27329cc`, a Dependabot bump of the `actions/setup-go` SHA in four workflows, CI/CD-lane files only) against `main` `593f6a4` and reported no findings (P0–P3). No engine change; this row is the record. |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -242,5 +243,7 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **A concurrency test must force the overlap it asserts.** `TestChaosAdmissionStorm…` relied on goroutines
   overlapping and failed 2 of 3 times with `-cpu=1` (CI coverage job, PR #105). Use a barrier; check with
   `go test -count=30 -cpu=1,2,4`.
+- **A commit that is not pushed does not exist for the task.** PRO-325's first report named `b7ad1da`, which was only in a
+  reclaimed container. Push first, then check `git branch -r --contains <sha>` before quoting the SHA.
 - **`bytes_inspected` is chunk-granular by contract** (the whole chunk in which a parser fails is counted, as in
   `engine.py`), and a parser's consumed count after a fault is discarded. Compare them against budgets, not across splits.
