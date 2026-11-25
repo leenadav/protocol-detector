@@ -70,6 +70,17 @@ vegeta v12.12.0 to the synthetic Go origin `tools/loadorigin` on 203.0.113.10. I
 at p95, and 0.15 to 0.22 CPU-s per 1,000 flows; throughput is unchanged up to 600 req/s. At 1,000 req/s the
 harness saturates in every configuration. vegeta is a test tool only, never shipped.
 
+### Second run: CPU split and held tunnels (PR #120)
+
+`docs/integration/LOAD-TEST-SPLIT.md` reports what observe mode adds per connection on the `ef94311` lab. It covers
+HTTPS (one CONNECT tunnel per request) and HTTP at 200, 500 and 1,000 requests per second, comparing builds A, B
+and D, with C for the CPU split, and a hold test of 1,000 open tunnels. The tools are in `tools/loadsplit/`:
+`loadtest.py`, `loadhold.py`, `loadtest_report.py` and the standard-library Go origin `loadorigin/` (binary
+`loadorigin-split`). Raw data is in `results-load/`, `results-load-split/` and `results-load-hold/`.
+
+Headline: no measurable added latency at 200 and 500/s. The cost is +105 to +277 ms of proxy CPU per 1,000
+HTTPS flows, and +3.9 KiB per tunnel retained after the window. vegeta (MIT) is a test tool and is never shipped.
+
 ## What was built on the Culvert lab branch
 
 Base: Culvert `52eb9d1e4482adc9773afc4db77109acad617625`, local branch `lab/protocol-detector` (4 commits, push disabled). The patch is `culvert-lab-52eb9d1.patch`; it leaves out `frontend/dist`, which `npm run build` regenerates.

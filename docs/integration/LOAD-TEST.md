@@ -1,5 +1,9 @@
 # Culvert lab load test: what the detector adds to each connection (PRO-269, 2026-11-24)
 
+> A second, independent run of the same question (PR #120: 200, 500 and 1,000/s, a CPU split with a fake-engine
+> build, GC counts and a 1,000-tunnel hold test) is `docs/integration/LOAD-TEST-SPLIT.md`, with its tools in
+> `lab/culvert/tools/loadsplit/`.
+
 Lee approved this test on 2026-11-23. It ran in the synthetic Culvert lab only: loopback addresses, a synthetic
 origin on 203.0.113.10 (RFC 5737), and no traffic to or from anything outside the container. Nothing was sent to,
 pushed to or proposed for KidCarmi/Culvert. vegeta (MIT) is a test tool here; it is not a dependency of the

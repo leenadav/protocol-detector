@@ -1,0 +1,15 @@
+{
+ "ip_local_port_range": "1024 65535",
+ "tcp_tw_reuse": "1",
+ "tcp_fin_timeout": "60",
+ "rates": "200,500,1000",
+ "schemes": "https,http",
+ "builds": "A,B,D",
+ "duration_s": 30,
+ "warmup_s": 3,
+ "rounds": 3,
+ "proxy_cpus": "0,1",
+ "vegeta_cpus": "2",
+ "origin_cpus": "3",
+ "nproc": 4
+}

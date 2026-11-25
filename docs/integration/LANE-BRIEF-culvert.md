@@ -45,6 +45,17 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   Python reference and the parity fixtures. `TestPostQuantumServerHelloGap` pins the consequence: a default Go
   TLS server's reply is `unknown` again.
 
+- **Load test, second run (PRO-269, PR #120):** `docs/integration/LOAD-TEST-SPLIT.md`. vegeta v12.12.0 runs through builds A,
+  B, C and D of the `ef94311` lab at 200, 500 and 1,000/s, one tunnel per request. Observe mode adds:
+  - HTTPS latency below the rig's resolution at 200 and 500/s (p50 ≤ +0.11 ms, p99 within noise);
+  - +105 to +277 ms of proxy CPU per 1,000 flows (15 to 26%), about half the lab observation path (fake engine
+    C) and half the engine;
+  - +2.5 to +3 GC cycles per 1,000 flows;
+  - +3.9 KiB per tunnel retained after the window (1,000 held tunnels).
+
+  1,000/s is the rig's knee on 4 vCPUs (disturbed rounds on every build). Tools are in `lab/culvert/tools/loadsplit/`
+  (`loadtest.py`, `loadhold.py`, `loadtest_report.py`, `loadorigin/`), data in `lab/culvert/results-load`,
+  `results-load-split/` and `results-load-hold/`.
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
 - **Lab:**
@@ -154,6 +165,11 @@ Culvert's allocation gates need `-tags benchgate`.
   Platform & CI on PRO-148; this lane's own jobs are green.
 - The Culvert team's answers (request items 1 to 6), and Lee's decision to send the request.
 - Repository settings and the first `go/v0.x.y` tag (Lee).
+- **From the load test (PRO-269), not started:**
+  - the lab observation path's CPU share (about +60 to +70 ms per 1,000 flows on the fake engine: timer, record,
+    log line) is the cheaper half to reduce;
+  - measuring at 1,000/s and above needs vegeta and the origin on other hosts;
+  - the observing state with full 16 KiB prefixes, and the blocked-write case, are not measured yet.
 
 ## 6. Frozen and queued SHAs
 
@@ -165,6 +181,8 @@ Culvert's allocation gates need `-tags benchgate`.
   `lab/culvert/tools/` (TLS 1.2 minimum on the lab clients, files closed, one unused assignment).
 - **Queued for Codex (PRO-269):** `e91e1b5` (the load test: lab tools, results and docs only, no detector code)
   and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
+  The second run, `69434b8` and `1f3e94f` on `claude/vigilant-sagan-i3rlse` (PR leenadav/protocol-detector#120),
+  and the merge of `main` that moves its tools to `lab/culvert/tools/loadsplit/` (lab tooling and docs only).
 - **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
@@ -207,3 +225,15 @@ Culvert's allocation gates need `-tags benchgate`.
 - **A fresh container has no lab.** Clone Culvert read-only (`git remote set-url --push origin DISABLED`), check
   out `ef94311` and `git am lab/culvert/culvert-lab-ef94311.patch`. The tree matches; the commit SHAs differ
   (`a4b63f3b` here, `8f828789` originally) because the committer dates differ.
+- **One connection per request exhausts ephemeral ports.** At 1,000 new connections per second into one proxy
+  endpoint, the default range (32768–60999) fills with TIME_WAIT within a 30 s cell, and every build fails with
+  `bind: address already in use`. Set `ip_local_port_range` to `1024 65535` and `tcp_tw_reuse` to 1; `loadsplit/loadtest.py`
+  refuses to run otherwise and drains TIME_WAIT before each cell.
+- **Culvert writes `categories.json` and `cluster.json` into its working directory.** Start it from the lab's
+  `run/` directory, never from inside this checkout (the files appeared as untracked files in `lab/culvert/tools/`).
+- **Two sessions ran the same task (PRO-269) on the same file names.** PR #118 merged first; PR #120 then
+  conflicted add/add on `loadtest.py`, `loadorigin/main.go` and `LOAD-TEST.md`. The merge kept main's paths and
+  moved the second run to `lab/culvert/tools/loadsplit/` and `LOAD-TEST-SPLIT.md`. Check `origin/main` for the
+  task's files before starting a lab tool.
+- **Go's `ReadHeaderTimeout` also bounds the TLS handshake.** A silent CONNECT tunnel to a Go HTTPS origin is
+  closed by the origin after that timeout, so a hold test needs it longer than the window.
