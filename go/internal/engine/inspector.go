@@ -10,6 +10,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/protocols/textroute"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
 	"github.com/leenadav/protocol-detector/go/internal/signatures"
+	"math"
 	"sort"
 )
 
@@ -258,6 +259,8 @@ type Inspector struct {
 	outer *contracts.Observation
 	// Signatures are the custom signatures evaluated over the parsers' contexts (nil: none).
 	sigs *signatures.Set
+	// sigWork bounds the unknown-payload signature work of this direction (SEC-SIG-1, MaxSignatureWork).
+	sigWork signatures.Work
 	// The bounded unknown-payload buffer (Python _unknown): after dispatch fails, heuristics profile up to
 	// unknownLimit bytes before the stream is declared unknown.
 	unknown      []byte
@@ -924,7 +927,23 @@ func (in *Inspector) SetSignatures(set *signatures.Set) error {
 		limit = in.cfg.HeuristicBytes
 	}
 	in.unknownLimit = limit
+	in.sigWork = signatures.Work{Limit: signatureWorkLimit(set, limit)}
 	return nil
+}
+
+// signatureWorkLimit is the unknown-payload work allowance of one direction: MaxSignatureWork, or two complete
+// evaluations of the set over a full buffer when the set is larger (the cost the reference pays for a flow that
+// arrives in one or two segments is never refused). The bound is therefore linear in the configured buffer and
+// set and independent of how the peer splits its bytes.
+func signatureWorkLimit(set *signatures.Set, buffer int) int64 {
+	full := int64(buffer) * set.WorkPerByte("unknown-tcp")
+	if full > (math.MaxInt64-MaxSignatureWork)/SignatureWorkEvaluations {
+		return math.MaxInt64
+	}
+	if limit := SignatureWorkEvaluations * full; limit > MaxSignatureWork {
+		return limit
+	}
+	return MaxSignatureWork
 }
 
 // signature ports Inspector._signature: the first matching signature for a completed parser family, counting the
@@ -934,6 +953,16 @@ func (in *Inspector) signature(family string, contexts parsing.Contexts) *signat
 		return nil
 	}
 	match, evaluated := in.sigs.MatchCounted(family, contexts)
+	in.Metrics.SignatureCandidates += evaluated
+	return match
+}
+
+// budgetedSignature is signature charging in.sigWork (the unknown-payload evaluations only).
+func (in *Inspector) budgetedSignature(family string, contexts parsing.Contexts) *signatures.Signature {
+	if in.sigs == nil || contexts == nil || !in.sigs.Wants(family) {
+		return nil
+	}
+	match, evaluated := in.sigs.MatchBudgeted(family, contexts, &in.sigWork)
 	in.Metrics.SignatureCandidates += evaluated
 	return match
 }
@@ -953,9 +982,29 @@ func (in *Inspector) unknownObservation(reason string, final bool) []contracts.E
 	return in.unknownFrom(reason, final, in.unknown)
 }
 
+// The unknown-payload signature work of one direction is bounded (PRO-51 SEC-SIG-1). The reference evaluates the
+// set over the whole buffer after every update, so 1-byte updates cost updates x buffer x program size:
+// quadratic in signature_bytes and linear in the set's instructions (PRO-170: 43 s for one flow and one signature
+// at the defaults, about 38 hours at the limits). The budget is in signatures.Work units (bytes scanned, plus bytes
+// times the instruction estimate of each pattern searched), charged before the work runs. The allowance is
+// MaxSignatureWork (about 0.25 s of RE2 simulation at the slowest measured rate, and over 30 times the work of a
+// 1-byte-segment flow to a full default buffer with the test sets), or SignatureWorkEvaluations full-buffer
+// evaluations of the set when that is larger (signatureWorkLimit). An exhausted budget ends the direction as
+// budget_exhausted, never as a match: a recorded Go-only divergence, as the reference has no such bound
+// (migration/STATUS.md).
+const (
+	MaxSignatureWork         = 1 << 26
+	SignatureWorkEvaluations = 2
+)
+
 func (in *Inspector) unknownFrom(reason string, final bool, data []byte) []contracts.Event {
-	if match := in.signature("unknown-tcp", parsing.Contexts{"unknown-req-tcp-payload": append([]byte{}, data...),
-		"unknown-req-tcp-payload-length": int64(len(data))}); match != nil {
+	match := in.budgetedSignature("unknown-tcp", parsing.Contexts{"unknown-req-tcp-payload": append([]byte{}, data...),
+		"unknown-req-tcp-payload-length": int64(len(data))})
+	if in.sigWork.Exhausted {
+		in.unknown, in.hasUnknown = nil, false
+		return in.finish(in.observation(contracts.BudgetExhausted, "Signature work budget exhausted"), contracts.Updated)
+	}
+	if match != nil {
 		in.unknown, in.hasUnknown = nil, false
 		o := in.observation(contracts.Identified, "Custom signature matched an unknown payload prefix; no protocol profile validated")
 		o.Application, o.Scope = str(match.Name), "signature_match"

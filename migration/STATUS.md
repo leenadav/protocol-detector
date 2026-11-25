@@ -1086,3 +1086,57 @@ build tag `loadbench`); not part of `go-check`.
 - `go/go.mod` requires `golang.org/x/crypto` (since `4111a70`) while main's Go jobs run with `GOPROXY=off`
   (`c58fe65`): vendored on Hermes's decision (`76e467a`); at merge time main's `go-check-minimum` needs
   `GOFLAGS=-mod=vendor` too, and CI a step for `make go-vendor-check` (MERGE-READINESS.md).
+
+### SEC-SIG-2 and SEC-SIG-1: the compile and run cost of signature patterns (PRO-332, 2026-11-24)
+
+**The findings** (security review PRO-51; measurements PRO-170). SEC-SIG-2: one 502-character pattern compiled to
+450,569 RE2 instructions (about 156 MB, 245 ms), and nothing bounded a set, so a hostile document (4,096
+signatures, 64 conditions each) could exhaust the engine at load time. SEC-SIG-1: an unidentified TCP direction
+re-evaluates the unknown-payload signatures over its whole buffer after every update, so 1-byte updates cost
+updates x buffer x program size, quadratic in `signature_bytes`.
+
+**SEC-SIG-2 fix** (Go only, `go/internal/signatures/cost.go`). `estimateInsts` bounds the instruction count of the
+program `regexp.Compile` builds, on the parsed tree, before the Go expression is written and before
+`regexp.Compile` runs (no `syntax.Simplify` or `syntax.Compile`). It follows `regexp/syntax`: one instruction per
+atom, an `InstAlt` per alternative, `x{n,m}` as m copies with m-n `InstAlt`s, `x{n,}` as n+1 copies and two more;
+the arithmetic saturates and the walk stops just past the limit. Caps (Hermes, PRO-160): 10,000 per pattern and
+100,000 per set, charged cumulatively in document order before each compile. Every reference rule is checked
+first, so a pattern Python rejects keeps its error; a pattern or set over a cap is refused as not ported (the
+reference answers), never a positive result. Before the caps were fixed, the estimate ran over every pattern in
+the repository (the reference vectors, the repeat tests, the Python and Go test documents, `analyze_diff.py`,
+`signatures-example.json`): 0 blocked; the largest is 8,202 (`begin.{0,3000}finish`-class repeats at 4096). The
+content pack and the 7,462 parity cases carry no signature patterns.
+
+**SEC-SIG-1 fix** (Go only, `go/internal/engine/inspector.go`, `signatures.Work`). Each direction has a work
+budget in units of haystack bytes (every byte-valued condition) plus bytes x the instruction estimate (every
+pattern search), charged before the work runs. The allowance is `max(MaxSignatureWork = 2^26,
+2 x buffer x the set's units per byte)`: never less than two complete evaluations of the set over a full buffer,
+so a flow that arrives in one or two segments is evaluated exactly as by the reference, and the bound does not
+depend on how the peer splits its bytes. An exhausted budget ends the direction as `budget_exhausted` ("Signature
+work budget exhausted") and no later byte is evaluated; it is never a match. The reference has no such bound:
+this is a Go-only divergence for flows past the allowance, pending approval (Hermes/Lee, PRO-332).
+
+| item | state | evidence |
+|---|---|---|
+| Upper bound | `TestEstimateBoundsTheCompiledProgram`, `FuzzEstimateBoundsProgram` (in `GO_FUZZ_SMOKE`) | the estimate is >= `len(prog.Inst)` of the real compile for every corpus pattern, with and without IGNORECASE; 257,877 fuzz executions, no counterexample |
+| Caps | `TestPatternInstructionCap`, `TestSetInstructionCap`, `TestHostileDocumentLoadIsBounded` | the PRO-170 shape is refused; 12 patterns of 8,202 load, the 13th is refused; reference rule errors win over the cap |
+| Flow cost | `TestUnknownPayloadSignatureWorkIsBounded`, `TestExhaustedSignatureWorkNeverMatches`, `TestSignatureWorkBelowTheBudgetKeepsTheReferenceVerdict`, `TestWorkStopsBeforeTheSearchAndNeverMatches` | PRO-170 1-byte `.{0,4096}` flow: `budget_exhausted` after 80 updates within its allowance; early matches, full single segments and the test set's 1-byte flow (2.0 M units) keep the reference verdict |
+| Parity | divergence pending approval, 0 case changes | no committed case carries a signature set (gate numbers in the lane brief and the PR) |
+
+Load times (4 vCPU Xeon 2.3 GHz; `BenchmarkHostileDocumentLoad` in `go/internal/signatures`, 10 iterations each):
+
+| hostile document | before | after |
+|---|---|---|
+| PRO-170 shape, 512 x 40 patterns of ~438,000 instructions (4 MiB) | unbounded: ~245 ms and ~156 MB per pattern, x 20,480 | 28 ms, refused at the first pattern (JSON decoding of 4 MiB dominates) |
+| 12 patterns of 8,202 (the set cap) | not measured (same compile work) | 20 ms, loads (600 patterns of 164: 26 ms) |
+| 13+ patterns of 8,202 | grows with the count | 21 ms, refused at the 13th |
+| 11,110 patterns of 9 instructions (the cheapest raw pattern) | ~124 ms (with the caps, before the faster expression writer) | 98 ms, loads: per-pattern fixed cost, not instructions (above the 50 ms target; see the lane brief) |
+
+Flow cost of one direction (1-byte updates unless noted; `MaxUpdates` 1,000,000):
+
+| flow | before | after |
+|---|---|---|
+| 1 PRO-170 signature, `signature_bytes` 2000 | 43.4 s (1,990 updates, measured) | 13 ms, `budget_exhausted` at 6.6e7 units |
+| 12 PRO-170 signatures (the set cap), 2000 | ~2 min (projected: 2.0e11 units at the measured 0.65 ns per unit) | 54 ms, `budget_exhausted` at 3.9e8 units |
+| 12 signatures, one 2000-byte segment | ~0.6 s | ~0.6 s, `unknown` (unchanged: within two full evaluations) |
+| 12 signatures, `signature_bytes` 65536 (configured maximum) | ~38 h (projected, 2.1e14 units) | 11-34 s, `budget_exhausted` at 1.3e10 units (two full evaluations; see the lane brief) |

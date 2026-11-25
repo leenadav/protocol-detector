@@ -119,7 +119,7 @@ func lowerASCII(b []byte) []byte {
 	return out
 }
 
-func newCondition(data interface{}) (*condition, error) {
+func newCondition(data interface{}, budget *instBudget) (*condition, error) {
 	m, ok := data.(map[string]interface{})
 	if !ok {
 		return nil, fail("Condition requires a context")
@@ -151,7 +151,7 @@ func newCondition(data interface{}) (*condition, error) {
 		if !isString {
 			return nil, fail("Pattern must contain 1..%d characters", maxPattern)
 		}
-		compiled, err := compilePattern(pattern, c.kind, c.ignorecase)
+		compiled, err := compileBudgeted(pattern, c.kind, c.ignorecase, budget)
 		if err != nil {
 			if pe, ok := err.(*patternError); ok {
 				return nil, &Error{pe.msg}
@@ -188,10 +188,13 @@ func newCondition(data interface{}) (*condition, error) {
 	return c, nil
 }
 
-func (c *condition) evaluate(values Values) bool {
+func (c *condition) evaluate(values Values, work *Work) bool {
 	value, ok := values[c.context]
 	if !ok || value == nil {
 		return false // absent context: never a match, negate does not apply
+	}
+	if b, isBytes := value.([]byte); isBytes && !work.charge(int64(len(b))) {
+		return false // the anchor scan or the comparison would pass the budget: not run
 	}
 	var result bool
 	switch {
@@ -201,7 +204,13 @@ func (c *condition) evaluate(values Values) bool {
 		if c.ignorecase {
 			probe = lowerASCII(haystack)
 		}
-		result = bytes.Contains(probe, c.pattern.anchor) && c.pattern.search(haystack)
+		if !bytes.Contains(probe, c.pattern.anchor) {
+			result = false
+		} else if !work.charge(int64(len(haystack)) * int64(c.pattern.insts)) {
+			return false // the search would pass the budget: not run
+		} else {
+			result = c.pattern.search(haystack)
+		}
 	case c.kind == "set":
 		result = value.(map[int64]bool)[c.number]
 	case c.kind == "integer":
@@ -236,7 +245,7 @@ type group struct {
 	members []member
 }
 
-func newGroup(data interface{}, counter *int, depth int) (*group, error) {
+func newGroup(data interface{}, counter *int, depth int, budget *instBudget) (*group, error) {
 	if depth > maxDepth {
 		return nil, fail("Condition nesting exceeds %d levels", maxDepth)
 	}
@@ -261,13 +270,13 @@ func newGroup(data interface{}, counter *int, depth int) (*group, error) {
 			return nil, fail("Signature exceeds %d conditions", maxConditions)
 		}
 		if im, isMap := item.(map[string]interface{}); isMap && (im["and"] != nil || im["or"] != nil || hasKey(im, "and") || hasKey(im, "or")) {
-			sub, err := newGroup(item, counter, depth+1)
+			sub, err := newGroup(item, counter, depth+1, budget)
 			if err != nil {
 				return nil, err
 			}
 			g.members = append(g.members, member{group: sub})
 		} else {
-			c, err := newCondition(item)
+			c, err := newCondition(item, budget)
 			if err != nil {
 				return nil, err
 			}
@@ -279,13 +288,16 @@ func newGroup(data interface{}, counter *int, depth int) (*group, error) {
 
 func hasKey(m map[string]interface{}, k string) bool { _, ok := m[k]; return ok }
 
-func (g *group) evaluate(values Values) bool {
+func (g *group) evaluate(values Values, work *Work) bool {
 	for _, m := range g.members {
 		var r bool
 		if m.group != nil {
-			r = m.group.evaluate(values)
+			r = m.group.evaluate(values, work)
 		} else {
-			r = m.condition.evaluate(values)
+			r = m.condition.evaluate(values, work)
+		}
+		if work.exhausted() {
+			return false
 		}
 		if g.and && !r {
 			return false
@@ -317,7 +329,7 @@ type Signature struct {
 	families                                                     map[string]bool
 }
 
-func newSignature(data interface{}, pack *content.Pack) (*Signature, error) {
+func newSignature(data interface{}, pack *content.Pack, budget *instBudget) (*Signature, error) {
 	m, ok := data.(map[string]interface{})
 	if !ok {
 		return nil, fail("Signature must be an object")
@@ -414,7 +426,7 @@ func newSignature(data interface{}, pack *content.Pack) (*Signature, error) {
 		conditions = map[string]interface{}{"and": list}
 	}
 	counter := 0
-	root, err := newGroup(conditions, &counter, 1)
+	root, err := newGroup(conditions, &counter, 1, budget)
 	if err != nil {
 		return nil, err
 	}
@@ -467,6 +479,7 @@ type familyIndex struct {
 	exact      map[string]map[string][]indexed
 	exactOrder []string // contexts in first-seen order (dict order)
 	scan       []indexed
+	perByte    int64 // Work units per haystack byte of one evaluation of every signature of the family (upper bound)
 }
 
 // Set is signatures.SignatureSet.
@@ -513,6 +526,7 @@ func FromJSON(text []byte, pack *content.Pack) (*Set, error) {
 	byFamily := map[string][]indexed{}
 	var familyOrder []string
 	var ordered []ojson.Value // the items in Python's key order, decoded only when a description is a container
+	budget := &instBudget{}   // maxSetInsts over every pattern of the document (SEC-SIG-2)
 	for i, item := range list {
 		built := item
 		if m, isMap := item.(map[string]interface{}); isMap {
@@ -534,7 +548,7 @@ func FromJSON(text []byte, pack *content.Pack) (*Set, error) {
 				}
 			}
 		}
-		s, err := newSignature(built, pack)
+		s, err := newSignature(built, pack, budget)
 		if err != nil {
 			return nil, err
 		}
@@ -563,6 +577,7 @@ func FromJSON(text []byte, pack *content.Pack) (*Set, error) {
 		items := byFamily[family]
 		fi := &familyIndex{exact: map[string]map[string][]indexed{}}
 		for _, it := range items {
+			fi.perByte += it.signature.workPerByte(family)
 			set.byFamily[family] = append(set.byFamily[family], it.signature)
 			if ctx, value, ok := it.signature.exactKey(); ok {
 				if fi.exact[ctx] == nil {
@@ -659,21 +674,79 @@ func (s *Set) candidates(family string, values Values) []*Signature {
 	return out
 }
 
+// WorkPerByte bounds the Work units one evaluation of family costs per byte of a byte-valued context: the sum,
+// over every byte-valued condition of the family's signatures, of 1 plus the pattern's instruction estimate.
+func (s *Set) WorkPerByte(family string) int64 {
+	if s == nil || s.index[family] == nil {
+		return 0
+	}
+	return s.index[family].perByte
+}
+
+func (s *Signature) workPerByte(family string) int64 {
+	var leaves []*condition
+	s.root.leaves(&leaves)
+	var units int64
+	for _, c := range leaves {
+		if contexts[c.context][1] != family || (c.kind != "text" && c.kind != "raw") {
+			continue
+		}
+		units++
+		if c.pattern != nil {
+			units += int64(c.pattern.insts)
+		}
+	}
+	return units
+}
+
 // MatchCounted is SignatureSet.match_counted: the first matching signature (definition order) and how many
 // candidates were evaluated.
 func (s *Set) MatchCounted(family string, values Values) (*Signature, int) {
+	return s.MatchBudgeted(family, values, nil)
+}
+
+// MatchBudgeted is MatchCounted charging its work to work (nil: unbounded). When the next condition would take
+// work past its limit, the evaluation stops before running it, work reports Exhausted and there is no match: an
+// exhausted budget is never a positive result (SEC-SIG-1).
+func (s *Set) MatchBudgeted(family string, values Values, work *Work) (*Signature, int) {
 	if s == nil {
 		return nil, 0
 	}
 	evaluated := 0
 	for _, sig := range s.candidates(family, values) {
+		if work.exhausted() {
+			break
+		}
 		evaluated++
-		if sig.root.evaluate(values) {
+		if sig.root.evaluate(values, work) && !work.exhausted() {
 			return sig, evaluated
 		}
 	}
 	return nil, evaluated
 }
+
+// Work is a cumulative evaluation budget (PRO-51 SEC-SIG-1), in units of haystack bytes times program size. Each
+// byte-valued condition costs the length of its value (the anchor scan or the comparison), and a pattern search
+// adds the length times the pattern's instruction estimate (estimateInsts, an upper bound of its program), which
+// bounds the RE2 simulation's steps. The charge is made before the work runs.
+type Work struct {
+	Limit, Used int64
+	Exhausted   bool
+}
+
+func (w *Work) charge(units int64) bool {
+	if w == nil {
+		return true
+	}
+	if w.Exhausted || units > w.Limit-w.Used {
+		w.Exhausted = true
+		return false
+	}
+	w.Used += units
+	return true
+}
+
+func (w *Work) exhausted() bool { return w != nil && w.Exhausted }
 
 func isContainer(v interface{}) bool {
 	switch v.(type) {
