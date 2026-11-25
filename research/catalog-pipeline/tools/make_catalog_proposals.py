@@ -2,7 +2,8 @@
 """PRO-259: Wikidata candidates 1-3000 (top1000 + b2) -> name-based catalog proposals.
 Uses the stored passive checks (no new network). Writes research/catalog-proposals/wikidata-1-3000.json + skipped file + stats."""
 from collections import Counter
-import json, os, re, subprocess, sys
+import json, os, re, shutil, subprocess, sys
+GIT = shutil.which("git") or "/usr/bin/git"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wikidata_candidates as W
 R = W.OUT; DATE = "2026-11-22"
@@ -16,11 +17,12 @@ def existing():
     repo = "/home/hermes/projects/protocol-detector"
     doms, names = set(open(W.CATALOG).read().split()), set()
     for f in ("protocol_engine/host_apps.py", "protocol_engine/applications.py"):
-        try: s = subprocess.check_output(["git", "-C", repo, "show", "origin/claude/app-research:" + f], text=True, stderr=subprocess.DEVNULL)
-        except Exception: continue
+        try: s = subprocess.check_output([GIT, "-C", repo, "show", "origin/claude/app-research:" + f], text=True, stderr=subprocess.DEVNULL)  # noqa: S603 -- resolved git, argv only, no shell
+        except Exception as e:
+            print("skipped", f, "(not on origin/claude/app-research):", e, file=sys.stderr); continue
         doms |= set(re.findall(r'"([a-z0-9-]+(?:\.[a-z0-9-]+)+)"', s)); names |= set(re.findall(r'^\s*\("([a-z0-9-]+)",\s*"', s, re.M))
     try:
-        pk = json.loads(subprocess.check_output(["git", "-C", repo, "show", "origin/main:go/internal/content/pack.json"], text=True, stderr=subprocess.DEVNULL))
+        pk = json.loads(subprocess.check_output([GIT, "-C", repo, "show", "origin/main:go/internal/content/pack.json"], text=True, stderr=subprocess.DEVNULL))  # noqa: S603 -- resolved git, argv only
         names |= {a["name"] for a in pk["applications"]}
         doms |= set(re.findall(r'"([a-z0-9-]+(?:\.[a-z0-9-]+)+)"', json.dumps(pk["host_catalog"])))
     except Exception as e: print("pack.json not read:", e, file=sys.stderr)
