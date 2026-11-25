@@ -26,7 +26,7 @@ func get(t *testing.T, port int, path string) (int, string, []byte) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
 	host := "127.0.0.1:" + strconv.Itoa(port)
 	if _, err := io.WriteString(conn, "GET "+path+" HTTP/1.1\r\nHost: "+host+"\r\nConnection: close\r\n\r\n"); err != nil {
@@ -36,7 +36,7 @@ func get(t *testing.T, port int, path string) (int, string, []byte) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)
@@ -220,6 +220,9 @@ func TestShowcaseFixtureStopsWhenCancelled(t *testing.T) {
 	case err := <-done:
 		if err == nil {
 			t.Fatal("a cancelled showcase exchange reported success")
+		}
+		if got := showcaseError(err); got != "Synthetic TLS handshake did not finish." {
+			t.Fatalf("showcaseError = %q, want the reference's text", got)
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("a cancelled showcase exchange did not stop")

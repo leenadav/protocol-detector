@@ -11,6 +11,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+	"math"
 	"math/big"
 	"net"
 	"strings"
@@ -166,11 +167,11 @@ func showcaseFixture(ctx context.Context, certificate tls.Certificate, c showcas
 	if clientErr != nil {
 		toServer.close()
 		toClient.close()
-		<-serverDone
-		return nil, "", errors.New("Synthetic TLS handshake did not finish.")
+		serverErr := <-serverDone // the server side fails too once its pipes are closed
+		return nil, "", errors.Join(errHandshake, clientErr, serverErr)
 	}
 	if err := <-serverDone; err != nil {
-		return nil, "", errors.New("Synthetic TLS handshake did not finish.")
+		return nil, "", errors.Join(errHandshake, err)
 	}
 
 	const clientAddr, serverAddr = "192.0.2.10", "198.51.100.20"
@@ -184,14 +185,22 @@ func showcaseFixture(ctx context.Context, certificate tls.Certificate, c showcas
 		// Reversed segments prove record reconstruction is independent of packet boundaries.
 		var pieces [][]byte
 		for offset := 0; offset < len(data); offset += 700 {
-			pieces = append(pieces, testframes.TCP(srcAddr, srcPort, dstAddr, dstPort, seq+uint32(offset), 0, 24, data[offset:min(offset+700, len(data))]))
+			pieces = append(pieces, testframes.TCP(srcAddr, srcPort, dstAddr, dstPort, seq+u32(offset), 0, 24, data[offset:min(offset+700, len(data))]))
 		}
 		for i := len(pieces) - 1; i >= 0; i-- {
 			frames = append(frames, pieces[i])
 		}
-		frames = append(frames, testframes.TCP(srcAddr, srcPort, dstAddr, dstPort, seq+uint32(len(data)), 0, 17, nil))
+		frames = append(frames, testframes.TCP(srcAddr, srcPort, dstAddr, dstPort, seq+u32(len(data)), 0, 17, nil))
 	}
 	return pcapBytes(frames), keylog.String(), nil
+}
+
+// u32 is n as a pcap or TCP field; the showcase's few small frames never come near the bound.
+func u32(n int) uint32 {
+	if n < 0 || n > math.MaxUint32 {
+		return math.MaxUint32
+	}
+	return uint32(n)
 }
 
 // pcapBytes is make_sample_pcap.pcap_bytes: a little-endian microsecond pcap, one frame per second.
@@ -203,7 +212,7 @@ func pcapBytes(frames [][]byte) []byte {
 		out = binary.LittleEndian.AppendUint32(out, v)
 	}
 	for index, frame := range frames {
-		for _, v := range []uint32{1700000000 + uint32(index), 0, uint32(len(frame)), uint32(len(frame))} {
+		for _, v := range []uint32{1700000000 + u32(index), 0, u32(len(frame)), u32(len(frame))} {
 			out = binary.LittleEndian.AppendUint32(out, v)
 		}
 		out = append(out, frame...)
@@ -275,7 +284,14 @@ type memAddr struct{}
 func (memAddr) Network() string { return "memory" }
 func (memAddr) String() string  { return "memory" }
 
-// showcaseError is the worker's message for a failed showcase (str(error)[:240] in the reference).
+// errHandshake is fixture()'s RuntimeError: an exchange that did not complete.
+var errHandshake = errors.New("synthetic TLS handshake did not finish")
+
+// showcaseError is the worker's message for a failed showcase (str(error)[:240] in the reference, whose text
+// for an unfinished exchange is "Synthetic TLS handshake did not finish.").
 func showcaseError(err error) string {
+	if errors.Is(err, errHandshake) {
+		return "Synthetic TLS handshake did not finish."
+	}
 	return runeTruncate(strings.TrimSpace(err.Error()), 240)
 }

@@ -198,6 +198,10 @@ def observed(response, normalizer, shape_only=False):
         if shape_only:
             document = shape(document)
         return "\n".join(lines) + "\n" + json.dumps(normalizer.walk(document))
+    if shape_only:
+        # A body compared by shape has no length to compare either: the reference's demo capture grows with the
+        # local OpenSSL's ClientHello, and the Go service answers its embedded snapshot (PRO-402).
+        lines = [line for line in lines if not line.lower().startswith("content-length:")]
     return "\n".join(lines) + "\n" + (body.decode("latin-1") if not shape_only else "<{} bytes>".format(bool(body)))
 
 
