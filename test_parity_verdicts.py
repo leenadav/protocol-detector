@@ -1,5 +1,6 @@
 """Codex PRO-20/PRO-21 P2 (PRO-201): the capture-level differentials fail when they proved nothing, not only
 when the two backends diverge."""
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -199,6 +200,77 @@ class ServerProbeTests(unittest.TestCase):
         self.assertEqual(self.server.pool_problem(b"HTTP/1.1 503 Service Unavailable\r\n\r\n{}"), None)
         self.assertTrue(self.server.pool_problem(b"HTTP/1.1 200 OK\r\n\r\n{}"))
         self.assertTrue(self.server.pool_problem(b""))
+
+
+HEAD = "HTTP/1.0 200 OK\nContent-Type: application/json; charset=utf-8\n"
+SOURCE = {"repository": "leenadav/protocol-detector", "version": "0.66.0", "commit": "a" * 40, "branch": "claude/x",
+          "build_digest": "b" * 64}
+
+
+def health(**fields):
+    body = dict({"build_digest": "b" * 64, "version": "0.66.0", "commit": "a" * 40, "components": {"engine": {"files": 72}}}, **fields)
+    return HEAD + json.dumps(body)
+
+
+def catalog(**fields):
+    source = dict({"version": "0.66.0", "branch": "claude/x", "commit": "a" * 40, "repository": "leenadav/protocol-detector",
+                   "build_digest": "b" * 64}, **fields)
+    return HEAD + json.dumps({"source": source, "protocols": [1, 2]})
+
+
+class ServerBuildIdentityTests(unittest.TestCase):
+    """PRO-431: a golden replay compares /api/health and /api/catalog without the build identity (commit, branch,
+    build_digest), which changes on every SOURCE.json refresh; a separate check holds Go's identity to the tree's
+    presentation/SOURCE.json. Everything else in both answers, version and repository among it, is still compared."""
+
+    def setUp(self):
+        import server_diff
+        self.server = server_diff
+
+    def masked(self, label, answer):
+        return self.server.mask_build_identity(label, answer)
+
+    def test_only_the_build_identity_is_masked(self):
+        old = health(commit="5f01fcb8" + "0" * 32, build_digest="84a11515" + "0" * 56)
+        self.assertNotEqual(old, health())
+        self.assertEqual(self.masked("GET '/api/health'", old), self.masked("GET '/api/health'", health()))
+        old = catalog(commit="5f01fcb8" + "0" * 32, branch="claude/go-migration", build_digest="84a11515" + "0" * 56)
+        self.assertEqual(self.masked("GET '/api/catalog'", old), self.masked("GET '/api/catalog'", catalog()))
+        for changed in (health(version="0.67.0"), health(components={"engine": {"files": 73}}), health(extra=1)):
+            self.assertNotEqual(self.masked("GET '/api/health'", changed), self.masked("GET '/api/health'", health()))
+        for changed in (catalog(version="0.67.0"), catalog(repository="someone/else"), catalog(extra=1)):
+            self.assertNotEqual(self.masked("GET '/api/catalog'", changed), self.masked("GET '/api/catalog'", catalog()))
+        self.assertNotEqual(self.masked("GET '/api/catalog'", catalog().replace("[1, 2]", "[1]")),
+                            self.masked("GET '/api/catalog'", catalog()))
+        self.assertNotEqual(self.masked("GET '/api/health'", health().replace("200 OK", "500 Internal Server Error")),
+                            self.masked("GET '/api/health'", health()))
+
+    def test_a_missing_or_null_identity_field_is_not_masked_away(self):
+        missing = HEAD + json.dumps({"build_digest": "b" * 64, "version": "0.66.0", "components": {"engine": {"files": 72}}})
+        self.assertNotEqual(self.masked("GET '/api/health'", missing), self.masked("GET '/api/health'", health()))
+        self.assertNotEqual(self.masked("GET '/api/health'", health(commit=None)), self.masked("GET '/api/health'", health()))
+        self.assertNotEqual(self.masked("GET '/api/catalog'", catalog(branch=7)), self.masked("GET '/api/catalog'", catalog()))
+
+    def test_other_exchanges_and_other_paths_are_untouched(self):
+        self.assertEqual(self.masked("GET '/api/server'", health()), health())
+        nested = HEAD + json.dumps({"commit": "a" * 40, "source": {"commit": "c" * 40}})
+        self.assertEqual(self.masked("GET '/api/health'", nested).count("c" * 40), 1)     # only the top level of health
+        self.assertIn('"commit": "a"', self.masked("GET '/api/catalog'", nested).replace("a" * 40, "a"))  # only source in catalog
+        self.assertEqual(self.masked("GET '/api/health'", HEAD + "not json"), HEAD + "not json")
+
+    def test_go_identity_must_equal_the_trees_source_json(self):
+        problems = self.server.build_identity_problems
+        self.assertEqual(problems("GET '/api/health'", health(), SOURCE), [])
+        self.assertEqual(problems("GET '/api/catalog'", catalog(), SOURCE), [])
+        self.assertEqual(problems("GET '/api/server'", "anything", SOURCE), [])
+        self.assertTrue(problems("GET '/api/health'", health(commit="5f01fcb8" + "0" * 32), SOURCE))
+        self.assertTrue(problems("GET '/api/health'", health(build_digest="0" * 64), SOURCE))
+        self.assertTrue(problems("GET '/api/catalog'", catalog(branch="claude/go-migration"), SOURCE))
+        self.assertTrue(problems("GET '/api/catalog'", catalog(commit=None), SOURCE))
+        self.assertTrue(problems("GET '/api/health'", HEAD + json.dumps({"version": "0.66.0"}), SOURCE))   # no identity at all
+        self.assertTrue(problems("GET '/api/health'", HEAD + "not json", SOURCE))
+        self.assertTrue(problems("GET '/api/catalog'", catalog(), dict(SOURCE, branch=None)))           # SOURCE.json without one
+        self.assertTrue(problems("GET '/api/catalog'", HEAD + json.dumps({"source": None}), SOURCE))
 
 
 class SchemaInvocationTests(unittest.TestCase):
