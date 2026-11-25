@@ -52,7 +52,7 @@ class AlgorithmTests(unittest.TestCase):
         info.version, info.supported_versions = 0x0303, (0x0a0a, 0x0304, 0x0303)
         info.ciphers = (0x1a1a, 0x1301, 0x1302, 0xc02b, 0x00ff)
         info.extensions = (0x2a2a, 0, 23, 65281, 10, 11, 35, 16, 5, 13, 51, 45, 43)
-        info.alpn = ("h2", "http/1.1")
+        info.alpn_raw = (b"h2", b"http/1.1")
         info.signature_algorithms = (0x0403, 0x0a0a, 0x0804)
         ciphers_sorted = sorted(c for c in info.ciphers if c not in GREASE)
         extensions = [e for e in info.extensions if e not in GREASE and e not in (0, 16)]
@@ -60,13 +60,13 @@ class AlgorithmTests(unittest.TestCase):
         expected_c = hashlib.sha256((",".join("%04x" % e for e in sorted(extensions)) + "_0403,0804").encode()).hexdigest()[:12]
         self.assertEqual(ja4(info), "t13d0412h2_{}_{}".format(expected_b, expected_c))
         self.assertTrue(ja4_raw(info).startswith("t13d0412h2_00ff,1301,1302,c02b_0005,000a"))
-        info.supported_versions, info.alpn, info.extensions = (), (), tuple(e for e in info.extensions if e != 0)
+        info.supported_versions, info.alpn_raw, info.extensions = (), (), tuple(e for e in info.extensions if e != 0)
         self.assertEqual(ja4(info)[:10], "t12i041100")
-        info.alpn = ("hex:ab",)
+        info.alpn_raw = (b"\xab",)
         self.assertEqual(ja4(info)[8:10], "ab")
-        info.alpn = ("hex:30abcd31",)
+        info.alpn_raw = (b"\x30\xab\xcd\x31",)
         self.assertEqual(ja4(info)[8:10], "01")
-        info.alpn = ("x",)
+        info.alpn_raw = (b"x",)
         self.assertEqual(ja4(info)[8:10], "xx")
         info.ciphers = (0x0a0a,)
         self.assertEqual(ja4(info).split("_")[1], "000000000000")
@@ -76,7 +76,7 @@ class AlgorithmTests(unittest.TestCase):
     def test_ja4s_specification_example_and_ja3s(self):
         # FoxIO JA4S example: TLS 1.3, cipher 0x1301, extensions 0x002b and 0x0033, no ALPN.
         self.assertEqual(ja4s(0x0304, 0x1301, (0x2b, 0x33), ()), "t130200_1301_a56c5b993250")
-        self.assertEqual(ja4s(0x0303, 0xc02f, (16,), ("h2",))[:9], "t1201h2_c")
+        self.assertEqual(ja4s(0x0303, 0xc02f, (16,), (b"h2",))[:9], "t1201h2_c")
         self.assertEqual(ja3s(771, 0x1301, (43, 51)), hashlib.md5(b"771,4865,43-51", usedforsecurity=False).hexdigest())
 
     def test_ja3_and_hassh_and_h2_match_definitions(self):
@@ -116,6 +116,30 @@ class EngineTests(unittest.TestCase):
         retry = Inspector(FP); retry.feed(TLS_RETRY)
         self.assertEqual(self.derived(retry.observation), {})  # a retry is not a completed server selection
         self.assertEqual(Inspector().feed(TLS_SERVER13)[0].observation.evidence[-1].strength, "asserted")
+
+    def test_alpn_code_reads_raw_bytes_not_the_display_string(self):
+        # SEC-FP-1 (PRO-392/PRO-394): a printable offer that starts with "hex:" is text, not hex. The JA4 ALPN
+        # code comes from the wire bytes: b"hex:zz" -> "hz", b"hex:4" -> "h4", b"hex:7a7a" -> "ha"; the
+        # display string (offered_alpn / selected_alpn) is unchanged.
+        for offer, code in ((b"hex:zz", "hz"), (b"hex:4", "h4"), (b"hex:7a7a", "ha"), (b"\x7a\x7a", "zz"), (b"\x00\xff", "0f")):
+            entry = bytes([len(offer)]) + offer
+            inspector = Inspector(FP)
+            inspector.feed(hello((0x1301,), ((16, len(entry).to_bytes(2, "big") + entry),)))
+            observation = inspector.observation
+            display = offer.decode("ascii") if all(32 <= c < 127 for c in offer) else "hex:" + offer.hex()
+            self.assertEqual((observation.encryption, observation.offered_alpn), ("tls", (display,)), offer)
+            self.assertEqual(self.derived(observation)["ja4"][8:10], code, offer)
+            server = b"\x03\x03" + bytes(range(32)) + b"\x00\xc0\x2f\x00"
+            extension = (16).to_bytes(2, "big") + (len(entry) + 2).to_bytes(2, "big") + len(entry).to_bytes(2, "big") + entry
+            server += len(extension).to_bytes(2, "big") + extension
+            message = b"\x02" + len(server).to_bytes(3, "big") + server
+            selected = Inspector(FP)
+            selected.feed(b"\x16\x03\x03" + len(message).to_bytes(2, "big") + message)
+            self.assertEqual(self.derived(selected.observation)["ja4s"][5:7], code, offer)
+        info = ClientHelloInfo()
+        info.alpn, info.alpn_raw = ("hex:7a7a",), (b"hex:7a7a",)
+        self.assertEqual(ja4(info)[8:10], "ha")
+        self.assertEqual(ja4s(0x0303, 0xc02f, (16,), (b"hex:zz",))[5:7], "hz")
 
     def test_dtls_ja4_uses_protocol_d_and_dtls_version(self):
         result = DatagramInspector(FP).inspect(DTLS)
