@@ -13,6 +13,7 @@ stress conversations); options are seeded (events, fingerprints, heuristics, cer
 observation modes, checksum policies, continuation, hints, limits, custom signatures, a policy, JSON or text).
 Events are compared as text, in order; the durations of work stages (wall time, stage_seconds.*) are compared
 by count only. Synthetic bytes only; nothing is captured.
+Since PRO-401 the gate replays a golden file instead (--golden; --record writes one): migration/parity/golden.py.
 """
 import argparse
 import contextlib
@@ -30,11 +31,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import analyze_diff  # noqa: E402
-import pro189  # noqa: E402
-from protocol_adapters import coordinator, live_capture  # noqa: E402
-from protocol_adapters.capture_stream import PcapStreamDecoder  # noqa: E402
-from protocol_engine import SignatureSet  # noqa: E402
-from protocol_engine.policy import Policy  # noqa: E402
+import golden  # noqa: E402 - the reference (protocol_engine, protocol_adapters, pro189) is imported only where it runs
 
 CAPTURE_ID = "0123456789abcdef"
 
@@ -91,6 +88,10 @@ def arguments(options, as_json):
 
 def reference(path, options, as_json):
     """(output text, exit status) of the reference's main() for --stdin, on the replay clock."""
+    from protocol_adapters import coordinator, live_capture
+    from protocol_adapters.capture_stream import PcapStreamDecoder
+    from protocol_engine import SignatureSet
+    from protocol_engine.policy import Policy
     clock = ReplayClock()
 
     class Decoder(PcapStreamDecoder):
@@ -142,15 +143,41 @@ def normalized(text, as_json):
     return "\n".join(lines) + ("\n" if lines else "")
 
 
+def mismatch(actual, status, expected, as_json, returncode, stderr):
+    """None when Go's (exit status, events) equal the expected ones, else what differs."""
+    if returncode != status:
+        return "exit status {} (expected {}): {}".format(returncode, status, stderr.decode("utf-8", "replace")[:200])
+    if normalized(actual, as_json) != normalized(expected, as_json):
+        a, b = normalized(actual, as_json).splitlines(), normalized(expected, as_json).splitlines()
+        at = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
+        return "event {} differs ({} lines, expected {})".format(at, len(a), len(b))
+    return None
+
+
+def count_kinds(expected, as_json, kinds):
+    if as_json:
+        for line in expected.splitlines():
+            event = json.loads(line)
+            label = event["type"] + ("/" + event.get("boundary", event.get("event", "")) if event["type"] == "classification" else "")
+            kinds[label] = kinds.get(label, 0) + 1
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
     parser.add_argument("--count", type=int, default=300)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--record", help="also write the inputs and the reference's answers to this golden file (migration/parity/golden.py)")
+    parser.add_argument("--golden", help="compare Go with this golden file's answers; the reference is not run")
     args = parser.parse_args(argv)
+    if args.golden:
+        return replay_golden(args)
+    import pro189
     rng = random.Random(args.seed)
     sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
     pro189.self_test()
+    recorder = golden.recorder(args.record, "live", {"seed": args.seed, "count": args.count, "signatures": analyze_diff.SIGNATURES,
+                                                     "policy": analyze_diff.POLICY})
     failures, events, kinds, approved = [], 0, {}, 0
     with tempfile.TemporaryDirectory() as folder:
         folder = Path(folder)
@@ -167,33 +194,60 @@ def main(argv=None):
                                       stderr=subprocess.PIPE, check=False, timeout=120)
             actual = done.stdout.decode("utf-8")
             events += expected.count("\n")
-            if as_json:
-                for line in expected.splitlines():
-                    event = json.loads(line)
-                    label = event["type"] + ("/" + event.get("boundary", event.get("event", "")) if event["type"] == "classification" else "")
-                    kinds[label] = kinds.get(label, 0) + 1
-            problem = None
-            if (done.returncode, normalized(actual, as_json)) != (status, normalized(expected, as_json)):
+            count_kinds(expected, as_json, kinds)
+            problem = mismatch(actual, status, expected, as_json, done.returncode, done.stderr)
+            judged, judged_status = expected, status
+            if problem:
                 # PRO-189: accept the mismatch only when Go matches the reference with that fix modelled exactly.
                 with pro189.modelled():
                     modelled, modelled_status = reference(capture, options, as_json)
-                if (done.returncode, normalized(actual, as_json)) == (modelled_status, normalized(modelled, as_json)):
+                if mismatch(actual, modelled_status, modelled, as_json, done.returncode, done.stderr) is None:
                     approved += 1
-                    continue
-            if done.returncode != status:
-                problem = "exit status {} (expected {}): {}".format(done.returncode, status, done.stderr.decode("utf-8", "replace")[:200])
-            elif normalized(actual, as_json) != normalized(expected, as_json):
-                a, b = normalized(actual, as_json).splitlines(), normalized(expected, as_json).splitlines()
-                at = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
-                problem = "event {} differs ({} lines, expected {})".format(at, len(a), len(b))
+                    problem, judged, judged_status = None, modelled, modelled_status
             if problem:
                 failures.append("{} {}: {}".format(capture.name, " ".join(arguments(options, as_json)[4:]), problem))
+            if recorder:
+                recorder.add({"capture": capture.name, "data": golden.b64(capture.read_bytes()), "argv": golden.relative(arguments(options, as_json), folder),
+                              "json": as_json, "expected": golden.relative(judged, folder), "status": judged_status,
+                              "approved": judged is not expected})
         for line in failures[:10]:
             print("live mismatch:", line)
     print("live parity: {} replays, {} event lines, {} mismatched, {} approved divergences ({}) (seed {}); JSON events: {}".format(
         args.count, events, len(failures), approved, pro189.LABEL, args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
+    if recorder:
+        recorder.finish(failures)
     return 1 if failures else 0
 
+
+def replay_golden(args):
+    """The gate without the reference: the recorded captures and arguments, Go's events against the recorded ones
+    (an approved PRO-189 divergence is recorded as the modelled answer Go had to give)."""
+    document = golden.read(args.golden, "live")
+    failures, events, kinds, approved = [], 0, {}, 0
+    with tempfile.TemporaryDirectory() as folder:
+        folder = Path(folder)
+        (folder / "signatures.json").write_text(json.dumps(document["signatures"]), encoding="utf-8")
+        (folder / "policy.json").write_text(json.dumps(document["policy"]), encoding="utf-8")
+        for entry in document["entries"]:
+            data, argv, as_json = golden.unb64(entry["data"]), golden.absolute(entry["argv"], folder), entry["json"]
+            expected = golden.absolute(entry["expected"], folder)
+            capture = folder / entry["capture"]
+            capture.write_bytes(data)
+            with open(capture, "rb") as stream:     # a file, as in the recording run: the reads then split the same way
+                done = subprocess.run([args.binary, "live"] + argv, stdin=stream, stdout=subprocess.PIPE,  # noqa: S603
+                                      stderr=subprocess.PIPE, check=False, timeout=120)
+            events += expected.count("\n")
+            count_kinds(expected, as_json, kinds)
+            approved += bool(entry.get("approved"))
+            problem = mismatch(done.stdout.decode("utf-8"), entry["status"], expected, as_json, done.returncode, done.stderr)
+            if problem:
+                failures.append("{} {}: {}".format(entry["capture"], " ".join(entry["argv"][4:]), problem))
+    for line in failures[:10]:
+        print("live mismatch:", line)
+    print("live parity (golden {}): {} replays, {} event lines, {} mismatched, {} recorded approved divergences (PRO-189) (recorded with seed {}); JSON events: {}".format(
+        Path(args.golden).name, len(document["entries"]), events, len(failures), approved, document.get("seed"),
+        ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
+    return 1 if failures else 0
 
 if __name__ == "__main__":
     sys.exit(main())

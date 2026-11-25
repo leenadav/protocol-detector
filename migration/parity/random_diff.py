@@ -20,8 +20,11 @@ canonicalization the committed parity cases use (no wall clock or generated id a
 
 A mismatch fails unless its case id is in migration/parity/random_allow.json with a reason; an allow-list entry
 that no longer mismatches on the seed it names fails too, so the list cannot go stale. The CI run is fixed
-(seed 1, 2,000 cases, `make parity-random`, part of `make go-check`); a longer run takes any seed
-(`make parity-random-long SEED=... COUNT=...`), and a failing seed reproduces exactly.
+(seed 1, 2,000 cases, `make parity-random`, part of `make go-check`): since PRO-401 it replays that run frozen with
+the reference's answers (--golden migration/fixtures/golden/random.json.gz; migration/parity/golden.py) and runs no
+reference. While the reference exists a longer run takes any seed (`make parity-random-long SEED=... COUNT=...`),
+and a failing seed reproduces exactly; fresh random inputs are otherwise the Go-only property tests' job
+(go/internal/engine/openings_property_test.go, `make property-long`).
 
     python3 -B migration/parity/random_diff.py --binary go/bin/protodetect [--seed 1] [--count 2000] [--report FILE]
 """
@@ -38,18 +41,28 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import cases as C  # noqa: E402
 import compare  # noqa: E402
-from protocol_adapters import protocol_fixtures as F  # noqa: E402
-from protocol_engine.aes import encrypt_block, expand_key, gcm_seal  # noqa: E402
-from protocol_engine.quic import V1, V2, _initial_keys  # noqa: E402
+import golden  # noqa: E402
+
+# The reference's runners, fixtures and QUIC protection: loaded by build() (load_reference) when cases are
+# generated, never on a golden replay (--golden), which imports nothing of protocol_engine or protocol_adapters.
+C = F = encrypt_block = expand_key = gcm_seal = V1 = V2 = _initial_keys = HINTS = None
+
+
+def load_reference():
+    global C, F, encrypt_block, expand_key, gcm_seal, V1, V2, _initial_keys, HINTS
+    import cases as C  # noqa: F811
+    from protocol_adapters import protocol_fixtures as F  # noqa: F811
+    from protocol_engine.aes import encrypt_block, expand_key, gcm_seal  # noqa: F811
+    from protocol_engine.quic import V1, V2, _initial_keys  # noqa: F811
+    HINTS = sorted(C.PARSERS)  # a stream hint names a registered parser (cases.run_stream drops any other)
+    
 
 ALLOW = ROOT / "migration/parity/random_allow.json"
 GREASE = [0x0a0a + 0x1010 * i for i in range(16)]
 END = "Capture ended before initial message completed"
 WORDS = ["www", "api", "cdn", "mail", "login", "example", "test", "a", "b1", "x-y", "xn--bcher-kva", "edge", "eu", "s3"]
 TLDS = ["com", "net", "org", "io", "co.uk", "example", "invalid", "local", "xn--p1ai"]
-HINTS = sorted(C.PARSERS)  # a stream hint names a registered parser (cases.run_stream drops any other)
 UDP_HINTS = ["quic", "dns", "dtls", "stun", "sip", "ntp"]  # datagram hints must name a UDP validator
 
 
@@ -267,6 +280,7 @@ def datagram_case(rng, cid, data):
 
 
 def build(seed, count):
+    load_reference()
     rng = random.Random(seed)
     out = []
     for index in range(count):
@@ -347,8 +361,9 @@ def judge(mismatched, allow, seed, count):
     return failures
 
 
-def self_test():
-    """The allow-list rules and the generator's determinism, without the Go binary."""
+def self_test(generators=True):
+    """The allow-list rules and (unless only the rules are asked for: a golden replay has no generator) the
+    generator's determinism, without the Go binary."""
     item = {"differences": ["final.status"]}
     allow = {"random/tls/1/00003": "understood"}
     assert judge({}, {}, 1, 10) == []
@@ -376,6 +391,9 @@ def self_test():
     outside = {"differences": undersized["differences"] + [{"path": "$.metrics.parser_calls", "actual": 2}]}
     assert approved_divergence(small, outside) is None               # nothing outside the observation
     assert approved_divergence(dict(small, label="dtls"), undersized) is None
+    if not generators:
+        print("random differential self-test: ok (allow-list judgment, stale entries, approved divergences; generators not checked)")
+        return 0
     first, again = build(5, 40), build(5, 40)
     assert first == again and first != build(6, 40), "the generator must be deterministic per seed"
     assert {case["id"].split("/")[1] for case in first} == {name for name, _, _ in GENERATORS}
@@ -390,20 +408,32 @@ def main(argv=None):
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--count", type=int, default=2000)
     parser.add_argument("--report", help="write the failures and each mismatched case (input and both answers) as JSON here")
+    parser.add_argument("--rules-only", action="store_true", help="with --self-test: the allow-list rules only, no generator")
+    parser.add_argument("--record", help="also write the cases and the reference's answers to this golden file (migration/parity/golden.py)")
+    parser.add_argument("--golden", help="compare Go with this golden file's cases and answers; the reference is not run")
     parser.add_argument("--plant", action="store_true",
                         help="self-check: alter the reference's answer to the first case; the run must then fail on it")
     args = parser.parse_args(argv)
     if args.self_test:
-        return self_test()
+        return self_test(generators=not args.rules_only)
     if not args.binary:
         parser.error("--binary is required")
     allow = json.loads(ALLOW.read_text(encoding="utf-8"))["allowed"]
     started = time.monotonic()
-    doc = json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))
-    doc["cases"] = []
-    for case in build(args.seed, args.count):
-        case["expected"] = C.run_case(case)
-        doc["cases"].append(case)
+    if args.golden:
+        document = golden.read(args.golden, "random")
+        doc = dict(document["doc"], cases=document["entries"])
+        args.seed, args.count = document["seed"], document["count"]
+    else:
+        doc = json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))
+        doc["cases"] = []
+        for case in build(args.seed, args.count):
+            case["expected"] = C.run_case(case)
+            doc["cases"].append(case)
+    if args.record:
+        recorder = golden.recorder(args.record, "random", {"doc": {key: value for key, value in doc.items() if key != "cases"},
+                                                           "seed": args.seed, "count": args.count})
+        recorder.entries = json.loads(json.dumps(doc["cases"]))      # before --plant could alter one
     if args.plant:
         first = doc["cases"][0]["expected"]
         observed = first.get("final") or first["observation"]
@@ -444,8 +474,10 @@ def main(argv=None):
             "failures": failures,
             "mismatched": [dict(mismatched[cid], case=by_id.get(cid)) for cid in sorted(mismatched) if cid not in allow],
         }, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-    print("random differential: seed {}, {} cases ({}), Go matched the reference on {} of {}, {} approved divergences ({}), {} allowed, {} failures, {:.0f} s".format(
-        args.seed, len(doc["cases"]), "; ".join("{} {}".format(k, dict(sorted(v.items()))) for k, v in sorted(kinds.items())),
+    if args.record and not args.plant:
+        recorder.finish(failures)
+    print("random differential{}: seed {}, {} cases ({}), Go matched the reference on {} of {}, {} approved divergences ({}), {} allowed, {} failures, {:.0f} s".format(
+        " (golden {})".format(Path(args.golden).name) if args.golden else "", args.seed, len(doc["cases"]), "; ".join("{} {}".format(k, dict(sorted(v.items()))) for k, v in sorted(kinds.items())),
         report["matched"], report["compared"], len(approved),
         ", ".join("{} {}".format(k, sum(1 for v in approved.values() if v == k)) for k in ("SEC-HTTP-1", "SEC-QUIC-3")), sum(1 for cid in mismatched if cid in allow), len(failures), time.monotonic() - started))
     if args.plant:

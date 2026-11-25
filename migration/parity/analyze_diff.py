@@ -13,6 +13,7 @@ compared byte for byte in both forms (JSON rows and text), and the exit status a
 capture then goes through the presentation service's analysis (presentation/server.py analyze_bytes_reference
 against the Go `present` command, with seeded frame, session and event limits): results and refusals must be
 equal but for the measured processing time. Synthetic bytes only.
+Since PRO-401 the gate replays a golden file instead (--golden; --record writes one): migration/parity/golden.py.
 """
 import argparse
 import contextlib
@@ -28,10 +29,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import analyze_pcap  # noqa: E402
-from protocol_adapters.packets import CaptureError  # noqa: E402
-from protocol_engine import SignatureSet  # noqa: E402
-from protocol_engine.policy import Policy, PolicyError  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import golden  # noqa: E402 - the reference (protocol_engine, protocol_adapters) is imported only where it runs
 
 SIGNATURES = [
     {"name": "example-host", "category": "business-systems", "subcategory": "general-business", "risk": 2,
@@ -237,6 +237,10 @@ def options_for(rng, signatures_path, policy_path):
 
 def reference(path, options):
     """The Python analyze() in process, with the exit status and error text its command line would give."""
+    import analyze_pcap
+    from protocol_adapters.packets import CaptureError
+    from protocol_engine import SignatureSet
+    from protocol_engine.policy import Policy, PolicyError
     def value(name, default=None):
         return options[options.index(name) + 1] if name in options else default
     arguments = dict(json_output="--json" in options, events_only="--events-only" in options,
@@ -302,6 +306,7 @@ def shortfall(captures, python_positive, go_positive, completed=1):
 
 def present_reference(server, data, limits):
     """presentation/server.py analyze_bytes on the reference engine: the result, or the exception class and text."""
+    from protocol_adapters.packets import CaptureError
     saved = server.MAX_FRAMES, server.MAX_SESSIONS, server.MAX_EVENTS
     server.MAX_FRAMES, server.MAX_SESSIONS, server.MAX_EVENTS = limits
     try:
@@ -316,11 +321,13 @@ def present_reference(server, data, limits):
     return result
 
 
-def present_problem(server, binary, rng, data):
-    """Compare the Go `present` command with the reference on one capture (text of the result but the timing):
-    (problem or None, whether the reference completed the analysis rather than refusing it)."""
-    limits = (20000, 500, 4000) if rng.random() < 0.7 else (rng.choice([0, 3, 20000]), rng.choice([0, 1, 2, 500]), rng.choice([0, 2, 9, 4000]))
-    expected = present_reference(server, data, limits)
+def present_limits(rng):
+    return (20000, 500, 4000) if rng.random() < 0.7 else (rng.choice([0, 3, 20000]), rng.choice([0, 1, 2, 500]), rng.choice([0, 2, 9, 4000]))
+
+
+def present_problem(binary, limits, expected, data):
+    """Compare the Go `present` command with the reference's result on one capture (text of the result but the
+    timing): (problem or None, whether the reference completed the analysis rather than refusing it)."""
     done = subprocess.run([binary, "present", "--max-frames", str(limits[0]), "--max-sessions", str(limits[1]), "--max-events", str(limits[2])],  # noqa: S603
                           input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=120)
     if done.returncode != (3 if "error" in expected else 0):
@@ -339,9 +346,14 @@ def main(argv=None):
     parser.add_argument("--count", type=int, default=300)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--keep", help="write the captures here instead of a temporary directory")
+    parser.add_argument("--record", help="also write the inputs and the reference's answers to this golden file (migration/parity/golden.py)")
+    parser.add_argument("--golden", help="compare Go with this golden file's answers; the reference is not run")
     args = parser.parse_args(argv)
+    if args.golden:
+        return replay_golden(args)
     rng = random.Random(args.seed)
     sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
+    recorder = golden.recorder(args.record, "analyze", {"seed": args.seed, "count": args.count, "signatures": SIGNATURES, "policy": POLICY})
     with contextlib.ExitStack() as stack:
         folder = Path(args.keep) if args.keep else Path(stack.enter_context(tempfile.TemporaryDirectory()))
         folder.mkdir(parents=True, exist_ok=True)
@@ -364,11 +376,17 @@ def main(argv=None):
             problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")))
             if problem:
                 failures.append("{} {}: {}".format(capture.name, " ".join(options), problem))
-            problem, finished = present_problem(server, args.binary, rng, capture.read_bytes())
+            data = capture.read_bytes()
+            limits = present_limits(rng)
+            presented_expected = present_reference(server, data, limits)
+            problem, finished = present_problem(args.binary, limits, presented_expected, data)
             presented += 1
             completed += finished
             if problem:
                 failures.append("{}: {}".format(capture.name, problem))
+            if recorder:
+                recorder.add({"capture": capture.name, "data": golden.b64(data), "options": golden.relative(options, folder),
+                              "expected": golden.relative(list(expected), folder), "limits": list(limits), "present": presented_expected})
         for line in failures[:10]:
             print("analyze mismatch:", line)
         problems = shortfall(args.count, python_positive, go_positive, completed)
@@ -376,8 +394,46 @@ def main(argv=None):
             print("analyze parity FAILED:", line)
         print("analyze parity: {} captures, {} rows ({} identified), {} presentation results ({} completed), {} mismatched (seed {})".format(
             args.count, rows, python_positive, presented, completed, len(failures), args.seed))
+        if recorder:
+            recorder.finish(failures or problems)
         return 1 if failures or problems else 0
 
+
+def replay_golden(args):
+    """The gate without the reference: the recorded captures and options, Go's answers against the recorded ones."""
+    document = golden.read(args.golden, "analyze")
+    failures, rows, presented, completed, python_positive, go_positive = [], 0, 0, 0, 0, 0
+    with tempfile.TemporaryDirectory() as folder:
+        folder = Path(folder)
+        (folder / "signatures.json").write_text(json.dumps(document["signatures"]), encoding="utf-8")
+        (folder / "policy.json").write_text(json.dumps(document["policy"]), encoding="utf-8")
+        for entry in document["entries"]:
+            capture, data = folder / entry["capture"], golden.unb64(entry["data"])
+            capture.write_bytes(data)
+            options = golden.absolute(entry["options"], folder)
+            expected = tuple(golden.absolute(entry["expected"], folder))
+            done = subprocess.run([args.binary, "analyze", str(capture)] + options, stdout=subprocess.PIPE, stderr=subprocess.PIPE,  # noqa: S603
+                                  check=False, timeout=120)
+            rows += expected[0].count("\n")
+            python_positive += positive_rows(expected[0])
+            go_positive += positive_rows(done.stdout.decode("utf-8", "replace"))
+            problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")))
+            if problem:
+                failures.append("{} {}: {}".format(capture.name, " ".join(entry["options"]), problem))
+            problem, finished = present_problem(args.binary, tuple(entry["limits"]), entry["present"], data)
+            presented += 1
+            completed += finished
+            if problem:
+                failures.append("{}: {}".format(capture.name, problem))
+    for line in failures[:10]:
+        print("analyze mismatch:", line)
+    count = len(document["entries"])
+    problems = shortfall(count, python_positive, go_positive, completed)
+    for line in problems:
+        print("analyze parity FAILED:", line)
+    print("analyze parity (golden {}): {} captures, {} rows ({} identified), {} presentation results ({} completed), {} mismatched (recorded with seed {})".format(
+        Path(args.golden).name, count, rows, python_positive, presented, completed, len(failures), document.get("seed")))
+    return 1 if failures or problems else 0
 
 if __name__ == "__main__":
     sys.exit(main())

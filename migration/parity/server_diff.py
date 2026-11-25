@@ -21,7 +21,8 @@ compared after replacing what differs by construction: tokens, run, job and inst
 appearance), monotonic times, the lease countdown, wall-clock durations of a run or an analysis, the
 measurements of telemetry duration histograms (their keys, sample counts and every counter are compared;
 Normalizer.histogram), and the "python" field of the health report (the Go service runs no interpreter). The demo capture and showcase are
-random in the reference itself: their answers are compared by shape. Python 3.13 texts are the reference.
+random in the reference itself, and the Go service makes its showcase with crypto/tls where the reference used
+OpenSSL (PRO-401): their answers are compared by shape. Python 3.13 texts are the reference.
 """
 import argparse
 import base64
@@ -43,6 +44,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import analyze_diff  # noqa: E402
 import control_diff  # noqa: E402
+import golden  # noqa: E402
 
 FAKE_TCPDUMP = """#!/bin/sh
 # Stand-in for tcpdump in the server differential: plays a generated capture; never opens an interface.
@@ -207,17 +209,33 @@ def shape(value):
 
 
 class Run:
-    def __init__(self, services):
+    """The script's exchanges. With a reference service, each answer is compared with the reference's (and, when
+    `recording` is a list, the reference's normalized answer is appended to it); on a golden replay (`replay` is
+    the recorded list) the one service is Go and each answer is compared with the next recorded one, whose label
+    must be the same exchange."""
+
+    def __init__(self, services, recording=None, replay=None):
         self.services = services
         self.normalizers = {s.name: Normalizer() for s in services}
         self.failures, self.compared = [], 0
+        self.recording, self.replay = recording, replay
 
     def same(self, label, action, shape_only=False):
         """Run action(service) on each service and compare what each answered."""
         answers = []
         for service in self.services:
             answers.append(observed(action(service), self.normalizers[service.name], shape_only))
+        if self.replay is not None:
+            entry = self.replay.pop(0) if self.replay else None
+            if entry is None or entry["label"] != label or entry["shape"] != shape_only:
+                self.failures.append("{}: the golden file has {} here: the script changed since it was recorded; record it again".format(
+                    label, "nothing" if entry is None else repr(entry["label"])))
+                self.replay = []
+                return answers[0]
+            answers.insert(0, entry["answer"])
         self.compared += 1
+        if self.recording is not None:
+            self.recording.append({"label": label, "shape": shape_only, "answer": answers[0]})
         if answers[0] != answers[1]:
             at = next((i for i, (x, y) in enumerate(zip(*answers)) if x != y), min(map(len, answers)))
             self.failures.append("{} (at {}):\n  reference: {!r}\n  go:        {!r}".format(
@@ -405,25 +423,30 @@ def live_runs(run, fake):
     run.same("finished state", lambda s: s.request("GET", "/api/live/state"))
 
 
-def analyses(run, rng, sessions, folder, count):
-    import decrypt_diff
-    generator = decrypt_diff.Generator(rng.randint(1, 10 ** 6))
-
+def analyses(run, rng, sessions, folder, count, inputs=None, recorded=None):
+    """Analysis and decryption exchanges on generated captures, or on a golden file's `inputs` (then nothing is
+    generated); `recorded`, when a list, receives each generated input."""
     def post(path, body, headers=(), token=True):
         return lambda s: s.request("POST", path, headers=list(headers), body=body, token=token)
 
-    for index in range(count):
-        path = folder / "analysis-{}".format(index)
-        analyze_diff.write_capture(rng, path, analyze_diff.stress_records(rng) if index % 3 == 2 else analyze_diff.records_for(rng, sessions))
-        data = path.read_bytes()
-        if index % 4 == 1:
-            data = data[: rng.randint(1, len(data))]             # truncated captures are refused in the reference's words
+    def generated():
+        import decrypt_diff
+        generator = decrypt_diff.Generator(rng.randint(1, 10 ** 6))
+        for index in range(count):
+            path = folder / "analysis-{}".format(index)
+            analyze_diff.write_capture(rng, path, analyze_diff.stress_records(rng) if index % 3 == 2 else analyze_diff.records_for(rng, sessions))
+            data = path.read_bytes()
+            if index % 4 == 1:
+                data = data[: rng.randint(1, len(data))]             # truncated captures are refused in the reference's words
+            capture, keylog = generator.capture()
+            yield data, json.dumps({"capture": base64.b64encode(capture).decode(), "keylog": keylog}).encode()
+
+    items = ((golden.unb64(item["analyze"]), golden.unb64(item["decrypt"])) for item in inputs) if inputs is not None else generated()
+    for index, (data, body) in enumerate(items):
+        if recorded is not None:
+            recorded.append({"analyze": golden.b64(data), "decrypt": golden.b64(body)})
         run.same("analyze {}".format(index), post("/api/analyze", data, token=False))
-        capture, keylog = generator.capture()
-        body = json.dumps({"capture": base64.b64encode(capture).decode(), "keylog": keylog}).encode()
         run.same("decrypt {}".format(index), post("/api/decrypt", body))
-        for service in run.services:
-            pass
         run.same("decrypt job {}".format(index), lambda s, b=body: poll_job(s, json.loads(split(
             s.request("POST", "/api/jobs?kind=decrypt", body=b, token=True))[1])["id"]))
         run.same("analyze job {}".format(index), lambda s, d=data: poll_job(s, json.loads(split(
@@ -440,7 +463,9 @@ def analyses(run, rng, sessions, folder, count):
                                 (["Content-Length: -1"], b"x", "/api/analyze"), (["Content-Length: 5"], b"x", "/api/analyze"),
                                 ([], b"\x00" * 24, "/api/analyze"), ([], b"x", "/api/decrypt/demo?x"),
                                 (["Content-Length: 13000000"], b"x", "/api/decrypt"), (["Transfer-Encoding: x"], b"x", "/api/decrypt")):
-        run.same("{} {} {!r}".format(path, headers, body[:20]), post(path, body, headers))
+        # The showcase behind /api/decrypt/demo is made fresh by each service (PRO-401: Go's crypto/tls, the reference's
+        # OpenSSL), so the negotiated TLS 1.3 suite and record count differ by construction: compared by shape.
+        run.same("{} {} {!r}".format(path, headers, body[:20]), post(path, body, headers), shape_only=path.startswith("/api/decrypt/demo"))
     for headers, path, body in ((["X-Live-Token: no"], "/api/jobs", b"x"), ([], "/api/jobs?kind=nope", b"x"), ([], "/api/jobs", b"x"),
                                 ([], "/api/jobs?kind=analyze", b""), (["X-Job-Kind: decrypt"], "/api/jobs?kind=analyze&x=1", b"x"),
                                 ([], "/api/jobs/x", b""), ([], "/api/jobs/cancel", b""), ([], "/api/jobsx", b""),
@@ -496,16 +521,24 @@ def main(argv=None):
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
     parser.add_argument("--count", type=int, default=12, help="generated captures for analysis and decryption")
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--record", help="also write the reference's normalized answers and the generated inputs to this golden file")
+    parser.add_argument("--golden", help="run only `protodetect serve` and compare its answers with this golden file's; the reference is not started")
     args = parser.parse_args(argv)
-    try:
-        import cryptography  # noqa: F401
-    except ImportError:
-        print("server parity FAILED: the decryption cases need the `cryptography` package "
-              "(python3 -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt)")
-        return 1
+    document = golden.read(args.golden, "server") if args.golden else None
+    if document:
+        args.seed, args.count = document["seed"], document["count"]
+    else:
+        try:
+            import cryptography  # noqa: F401
+        except ImportError:
+            print("server parity FAILED: the decryption cases need the `cryptography` package "
+                  "(python3 -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt)")
+            return 1
     binary = str(Path(args.binary).resolve())
     rng = random.Random(args.seed)
-    sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
+    sessions = [] if document else [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"]
+                                    if case["kind"] == "session"]
+    recording, inputs = ([], []) if args.record else (None, None)
     with tempfile.TemporaryDirectory() as folder:
         folder = Path(folder)
         fake = folder / "fake"
@@ -513,23 +546,30 @@ def main(argv=None):
         tcpdump = fake / "tcpdump"
         tcpdump.write_text(FAKE_TCPDUMP)
         tcpdump.chmod(tcpdump.stat().st_mode | stat.S_IXUSR)
-        analyze_diff.write_capture(rng, fake / "capture.pcap", analyze_diff.records_for(rng, sessions))
+        if document:
+            (fake / "capture.pcap").write_bytes(golden.unb64(document["live_capture"]))
+            version, state, gauss = document["rng_state"]
+            rng.setstate((version, tuple(state), gauss))      # where the recording's generator stood after that capture
+        else:
+            analyze_diff.write_capture(rng, fake / "capture.pcap", analyze_diff.records_for(rng, sessions))
+        rng_state = rng.getstate()
         (fake / "mode").write_text("finish")
         env = dict(os.environ, PATH=str(fake) + os.pathsep + os.environ.get("PATH", ""), PROTODETECT_GO_BINARY=binary,
                    PROTODETECT_FAKE_DIR=str(fake))
         env.pop("PROTODETECT_BACKEND", None)
-        services = [Service("reference", [sys.executable, "-B", str(ROOT / "presentation/server.py"), "--port", "0"], env),
-                    Service("go", [binary, "serve", "--port", "0", "--root", str(ROOT / "presentation"), "--python", sys.executable], env)]
+        go = Service("go", [binary, "serve", "--port", "0", "--root", str(ROOT / "presentation"), "--python", sys.executable], env)
+        services = [go] if document else [Service("reference", [sys.executable, "-B", str(ROOT / "presentation/server.py"), "--port", "0"], env), go]
         probe_failures = []
         try:
             for service in services:
                 service.token = json.loads(split(service.request("GET", "/api/live/interfaces"))[1])["token"]
                 service.json("GET", "/api/live/interfaces")
-            run = Run(services)
+            run = Run(services, recording=recording, replay=list(document["entries"]) if document else None)
             for service in services:
                 run.normalizers[service.name].walk({"token": service.token})
             for stage in (lambda: static_and_reads(run, rng), lambda: framing(run), lambda: live_control_refusals(run, rng),
-                          lambda: live_runs(run, fake), lambda: analyses(run, rng, sessions, folder, args.count),
+                          lambda: live_runs(run, fake),
+                          lambda: analyses(run, rng, sessions, folder, args.count, document["inputs"] if document else None, inputs),
                           lambda: admission(run), lambda: handler_pool(run)):
                 try:
                     stage()
@@ -538,14 +578,23 @@ def main(argv=None):
         finally:
             for service in services:
                 service.stop()
+        live_capture = (fake / "capture.pcap").read_bytes()
+    if document and run.replay:
+        run.failures.append("{} recorded answers were never asked for (first {!r}): the script changed; record it again".format(
+            len(run.replay), run.replay[0]["label"]))
     for failure in probe_failures:
         print("server parity FAILED:", failure)
     for failure in run.failures[:int(os.environ.get("SERVER_DIFF_SHOW", "8"))]:
         print("server mismatch:", failure)
-    print("server parity: {} exchanges compared, {} mismatched, {} probes failed (seed {})".format(
-        run.compared, len(run.failures), len(probe_failures), args.seed))
+    print("server parity{}: {} exchanges compared, {} mismatched, {} probes failed (seed {})".format(
+        " (golden {})".format(Path(args.golden).name) if document else "", run.compared, len(run.failures), len(probe_failures), args.seed))
+    if args.record:
+        recorder = golden.recorder(args.record, "server", {"seed": args.seed, "count": args.count, "inputs": inputs,
+                                                           "live_capture": golden.b64(live_capture),
+                                                           "rng_state": [rng_state[0], list(rng_state[1]), rng_state[2]]})
+        recorder.entries = recording
+        recorder.finish(run.failures or probe_failures)
     return 1 if run.failures or probe_failures else 0
-
 
 if __name__ == "__main__":
     sys.exit(main())

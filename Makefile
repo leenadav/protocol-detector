@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation golden-record golden-check property-long
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -265,7 +265,9 @@ go-check:
 go-check-static:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) sh -c 'files=$$(find . -name "*.go" -not -path "./vendor/*"); test -z "$$(gofmt -l $$files)" || { gofmt -l $$files; exit 1; }'
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go vet ./...
+	$(PYTHON) -B migration/mutation/boundaries.py --self-test
 	$(PYTHON) -B migration/mutation/boundaries.py --check
+	$(PYTHON) -B migration/parity/golden.py --self-test
 	$(PYTHON) -B migration/mutation/mutation.py --self-test
 
 go-check-race:
@@ -309,54 +311,92 @@ go-check-parity:
 go-build:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor CGO_ENABLED=0 go build -trimpath -o bin/protodetect ./cmd/protodetect
 
-# Migration M8: the Go `analyze` command against the Python reference on generated captures (rows, exit status, error text)
+# PRO-401 (Lee, 2026-11-25: the Python reference is removed): every differential below replays a golden file, the
+# generated inputs and the reference's answers frozen by one recording run (migration/parity/golden.py), so none of
+# them runs or imports the reference (protocol_engine, protocol_adapters, presentation's Python) or needs the
+# cryptography package. `make golden-record` re-records them all with the reference, as long as it exists.
+GOLDEN := migration/fixtures/golden
+
+# Migration M8: the Go `analyze` command against the reference's frozen answers on generated captures (rows, exit status,
+# error text, and the presentation result of the same capture)
 parity-analyze: go-build
-	python3 -B migration/parity/analyze_diff.py --binary go/bin/protodetect --count 300 --seed 1
+	python3 -B migration/parity/analyze_diff.py --binary go/bin/protodetect --golden $(GOLDEN)/analyze.json.gz
 
-# Migration M8: the Go `decrypt-capture` command against the Python reference on generated TLS captures and key logs
-# (in memory only; the reference needs the cryptography extra: presentation/requirements-decryption.lock.txt)
+# Migration M8: the Go `decrypt-capture` command against the reference's frozen reports on generated TLS captures and
+# key logs (synthetic, seeded throwaway keys; nothing is captured)
 parity-decrypt: go-build
-	$(PYTHON) -B migration/parity/decrypt_diff.py --binary go/bin/protodetect --count 300 --seed 1
+	$(PYTHON) -B migration/parity/decrypt_diff.py --binary go/bin/protodetect --golden $(GOLDEN)/decrypt.json.gz
 
-# Migration M8: the Go `live` command against the Python reference on replayed capture streams (the clock taken from
-# the stream, so every event is a function of its bytes; nothing is captured)
+# Migration M8: the Go `live` command against the reference's frozen events on replayed capture streams (the clock
+# taken from the stream, so every event is a function of its bytes; nothing is captured)
 parity-live: go-build
-	$(PYTHON) -B migration/parity/live_diff.py --binary go/bin/protodetect --count 300 --seed 1
+	$(PYTHON) -B migration/parity/live_diff.py --binary go/bin/protodetect --golden $(GOLDEN)/live.json.gz
 
-# Migration M8: the Go live decryption worker against the Python reference on replayed scripts (capture chunks, key-log
-# text and ticks with their clock values; in memory only; the reference needs the cryptography extra)
+# Migration M8: the Go live decryption worker against the reference's frozen events on replayed scripts (capture
+# chunks, key-log text and ticks with their clock values; in memory only)
 parity-live-decrypt: go-build
-	$(PYTHON) -B migration/parity/live_decrypt_diff.py --binary go/bin/protodetect --count 300 --seed 1
+	$(PYTHON) -B migration/parity/live_decrypt_diff.py --binary go/bin/protodetect --golden $(GOLDEN)/live-decrypt.json.gz
 
 # Migration C14: the Go live control plane's run state (event log, reducer, retained views, run-scoped reset) against
-# the reference's LiveManager on worker lines from generated inputs (the reference needs the cryptography extra)
+# the reference LiveManager's frozen answers on recorded operation scripts
 parity-control: go-build
-	$(PYTHON) -B migration/parity/control_diff.py --binary go/bin/protodetect --count 120 --seed 1
+	$(PYTHON) -B migration/parity/control_diff.py --binary go/bin/protodetect --golden $(GOLDEN)/control.json.gz
 
-# Migration C14/C15: `protodetect serve` against presentation/server.py, request for request (a stand-in tcpdump plays a
-# generated capture: nothing is captured; the reference's decryption cases need the cryptography extra)
+# Migration C14/C15: `protodetect serve` against presentation/server.py's frozen answers, request for request (a
+# stand-in tcpdump plays the recorded capture: nothing is captured; only the Go service is started)
 parity-server: go-build
-	$(PYTHON) -B migration/parity/server_diff.py --binary go/bin/protodetect --count 12 --seed 1
+	$(PYTHON) -B migration/parity/server_diff.py --binary go/bin/protodetect --golden $(GOLDEN)/server.json.gz
 
-# Adversarial identification: inputs built to deceive the detector, judged for honesty and compared between the engines
+# Adversarial identification: inputs built to deceive the detector, judged for honesty, and Go compared with the
+# reference's frozen answers
 adversarial: go-build
-	$(PYTHON) -B migration/parity/adversarial.py --binary go/bin/protodetect
+	$(PYTHON) -B migration/parity/adversarial.py --binary go/bin/protodetect --golden $(GOLDEN)/adversarial.json.gz
 
 # Randomized differential (PRO-100): seeded valid-shaped TLS, HTTP, SSH and QUIC openings with random fragmentation,
-# truncation, hints and budgets; the Python reference is the oracle and the Go engine must agree on every case
-# outside migration/parity/random_allow.json. CI runs the fixed seed; the long run takes any SEED and COUNT, and a
-# failing seed reproduces exactly.
-RANDOM_SEED ?= 1
-RANDOM_COUNT ?= 2000
+# truncation, hints and budgets. Since PRO-401 its seed-1 run of 2,000 cases is frozen with the reference's answers
+# and replayed here (a planted wrong answer must be caught); Go must agree on every case outside
+# migration/parity/random_allow.json and the approved divergences. Fresh random inputs are the Go-only property tests'
+# job (go/internal/engine/openings_property_test.go), which need no oracle; `make property-long` runs them long.
 parity-random: go-build
-	$(PYTHON) -B migration/parity/random_diff.py --self-test
-	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --count 300 --plant
-	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --seed $(RANDOM_SEED) --count $(RANDOM_COUNT)
+	$(PYTHON) -B migration/parity/random_diff.py --self-test --rules-only
+	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --golden $(GOLDEN)/random.json.gz --plant
+	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --golden $(GOLDEN)/random.json.gz
 
+# The long randomized run, Go only (PRO-401; it replaced the Python-oracle parity-random-long): the opening property
+# tests with CHECKS draws each and a PROPERTY_SEED (0: rapid picks one and prints it; a failure prints the seed and
+# a failfile that reproduce it). Nightly; never a per-PR gate.
+PROPERTY_SEED ?= 0
+CHECKS ?= 50000
+property-long:
+	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test -count=1 -run 'Opening|Openings|Hints|TightBudgets' -v ./internal/engine/ -rapid.checks=$(CHECKS) -rapid.seed=$(PROPERTY_SEED)
+
+# The randomized differential with the reference as the oracle, any SEED and COUNT, while the reference exists
+# (manual; the nightly job runs property-long).
 SEED ?= 1
 COUNT ?= 50000
 parity-random-long: go-build
 	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --seed $(SEED) --count $(COUNT) --report build/random-diff-$(SEED).json
+
+# Re-record every golden file with the Python reference as the oracle (PRO-401). Each recording run is the original
+# differential (the reference and Go must agree, approved divergences modelled) and writes nothing when anything
+# differs; the boundary tests and their lock are regenerated too. Needs the reference and the cryptography extra;
+# review the diff of migration/fixtures/golden/ like any fixture change. golden-check replays them all.
+golden-record: go-build
+	$(PYTHON) -B migration/parity/analyze_diff.py --binary go/bin/protodetect --count 300 --seed 1 --record $(GOLDEN)/analyze.json.gz
+	$(PYTHON) -B migration/parity/decrypt_diff.py --binary go/bin/protodetect --count 300 --seed 1 --record $(GOLDEN)/decrypt.json.gz
+	$(PYTHON) -B migration/parity/live_diff.py --binary go/bin/protodetect --count 300 --seed 1 --record $(GOLDEN)/live.json.gz
+	$(PYTHON) -B migration/parity/live_decrypt_diff.py --binary go/bin/protodetect --count 300 --seed 1 --record $(GOLDEN)/live-decrypt.json.gz
+	$(PYTHON) -B migration/parity/control_diff.py --binary go/bin/protodetect --count 120 --seed 1 --record $(GOLDEN)/control.json.gz
+	$(PYTHON) -B migration/parity/server_diff.py --binary go/bin/protodetect --count 12 --seed 1 --record $(GOLDEN)/server.json.gz
+	$(PYTHON) -B migration/parity/schema_go.py --binary go/bin/protodetect --count 200 --seed 1 --record $(GOLDEN)/schema.json.gz
+	$(PYTHON) -B migration/parity/adversarial.py --binary go/bin/protodetect --record $(GOLDEN)/adversarial.json.gz
+	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --seed 1 --count 2000 --record $(GOLDEN)/random.json.gz
+	$(PYTHON) -B migration/mutation/boundaries.py
+	$(MAKE) golden-check PYTHON=$(PYTHON)
+
+golden-check: parity-analyze parity-decrypt parity-live parity-live-decrypt parity-control parity-server schema-go adversarial parity-random
+	$(PYTHON) -B migration/parity/golden.py --self-test
+	$(PYTHON) -B migration/mutation/boundaries.py --check
 
 # tshark oracle (PRO-127; nightly, never in go-check): real OpenSSL, curl and quic-go traffic on 127.0.0.1, read by
 # gopacket and fed to the engine, compared with tshark. Its own test-only module (go/oracle); needs tshark 4.2.2,
@@ -388,9 +428,10 @@ bench-load:
 bench-gate:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test -tags benchgate -run 'TestBenchGate_' -count=1 -p 1 -v ./internal/bench/
 
-# Migration C13: every line the Go binary writes validates against the published schemas (schemas/*.json)
+# Migration C13: every line the Go binary writes validates against the published schemas (schemas/*.json), on the
+# recorded generated captures
 schema-go: go-build
-	$(PYTHON) -B migration/parity/schema_go.py --binary go/bin/protodetect --count 200 --seed 1
+	$(PYTHON) -B migration/parity/schema_go.py --binary go/bin/protodetect --golden $(GOLDEN)/schema.json.gz
 
 # Migration M4: the Go backend's results against the Python reference (families it claims; records are M6)
 GO_FAMILIES := http,tls,dns,mdns,netbios-ns,llmnr,ssh,smtp,imap,pop3,ftp,nats,irc,sip,rtsp,telnet,postgresql,rfb,bittorrent,memcached,rsync,fins,afp,zmtp,bolt,stomp,giop,x11,spice,mysql,mongodb,tds,tns,cql,kafka,modbus,dnp3,ethernet-ip,iec-104,opcua,s7comm,mqtt,resp,amqp,onc-rpc,diameter,bgp,openvpn,pptp,fastcgi,dcerpc,websocket,xmpp,syslog,git,netbios-ss,tacacs-plus,socks5,wireguard,bacnet,tftp,ntp,l2tp,coap,rip,rtcp,lifx-lan,tuya-lan,netflow,ipfix,sflow,stun,dhcp,radius,snmp,rtp,ssdp,tplink-smarthome,kerberos,ldap,smb1,smb2,rdp,iso-tsap,ikev2,quic,http2,dtls

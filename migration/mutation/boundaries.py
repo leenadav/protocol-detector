@@ -11,23 +11,42 @@ parse_hello, tls_server.py parse_server_hello, quic.py quic_probe, varint, frame
 TextParser), so each Go test
 checks the boundary and the parity at once. Regenerate after a deliberate profile change:
 
-    python3 -B migration/mutation/boundaries.py           # writes the three boundary_test.go files
-    python3 -B migration/mutation/boundaries.py --check   # fails when either is not what this script writes
+    python3 -B migration/mutation/boundaries.py                     # writes the three boundary_test.go files and the lock
+    python3 -B migration/mutation/boundaries.py --check-reference   # fails when a file is not what the reference gives
+    python3 -B migration/mutation/boundaries.py --check             # fails when a file is not the one the lock pins
+
+The generated files are golden files (PRO-401, Lee 2026-11-25: the Python reference is removed): their expected
+outcomes are the reference's, frozen when they were written. migration/mutation/boundaries.lock.json pins each one by
+SHA-256, and `--check` (make go-check-static) compares the files with the lock and imports nothing of the reference,
+so a hand edit of a frozen expectation still fails. `--check-reference` re-renders them from the reference, as long
+as it exists.
 
 Standard library only (plus gofmt); Python 3.9 syntax.
 """
 import argparse
+import hashlib
+import json
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from protocol_engine import Config  # noqa: E402
-from protocol_engine.parsers import BudgetError, ClientHelloInfo, ParseError, UnsupportedPrefix, parse_hello  # noqa: E402
-from protocol_engine.quic import MAX_CRYPTO, frames, quic, quic_probe, varint  # noqa: E402
-from protocol_engine.extended import AmbiguousPrefix, TextParser  # noqa: E402
-from protocol_engine.tls_server import parse_server_hello  # noqa: E402
+LOCK = ROOT / "migration/mutation/boundaries.lock.json"
+
+# The reference's parsers: loaded by load_reference() when the files are rendered, never by --check.
+Config = BudgetError = ClientHelloInfo = ParseError = UnsupportedPrefix = parse_hello = None
+MAX_CRYPTO = frames = quic = quic_probe = varint = AmbiguousPrefix = TextParser = parse_server_hello = None
+
+
+def load_reference():
+    global Config, BudgetError, ClientHelloInfo, ParseError, UnsupportedPrefix, parse_hello
+    global MAX_CRYPTO, frames, quic, quic_probe, varint, AmbiguousPrefix, TextParser, parse_server_hello
+    from protocol_engine import Config  # noqa: F811
+    from protocol_engine.parsers import BudgetError, ClientHelloInfo, ParseError, UnsupportedPrefix, parse_hello  # noqa: F811
+    from protocol_engine.quic import MAX_CRYPTO, frames, quic, quic_probe, varint  # noqa: F811
+    from protocol_engine.extended import AmbiguousPrefix, TextParser  # noqa: F811
+    from protocol_engine.tls_server import parse_server_hello  # noqa: F811
 
 V1 = b"\x00\x00\x00\x01"
 
@@ -498,23 +517,69 @@ func TestBoundariesMatchTheReference(t *testing.T) {
     return subprocess.run(["gofmt"], input="\n".join(lines), capture_output=True, text=True, check=True).stdout  # noqa: S603,S607
 
 
+def digest(text):
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def check_lock():
+    """The files against the lock: (problems, files checked). Imports nothing of the reference."""
+    try:
+        lock = json.loads(LOCK.read_text(encoding="utf-8"))["files"]
+    except (OSError, ValueError, KeyError) as error:
+        return ["{}: {}".format(LOCK.relative_to(ROOT), error)], 0
+    problems = []
+    expected = {relative for _, relative, _, _ in PACKAGES}
+    if set(lock) != expected:
+        problems.append("the lock names {} but the generated files are {}".format(sorted(lock), sorted(expected)))
+    for relative in sorted(expected & set(lock)):
+        path = ROOT / relative
+        if not path.is_file():
+            problems.append("{} is missing".format(relative))
+        elif digest(path.read_text(encoding="utf-8")) != lock[relative]["sha256"]:
+            problems.append("{} is not the generated file the lock pins (hand-edited?): regenerate it".format(relative))
+    return problems, len(expected & set(lock))
+
+
+def self_test():
+    assert digest("a") == hashlib.sha256(b"a").hexdigest()
+    problems, checked = check_lock()
+    assert checked == len(PACKAGES), "every generated file is pinned"
+    print("boundaries self-test: ok ({} pinned files)".format(checked))
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--check", action="store_true", help="compare the files with the lock (no reference needed)")
+    parser.add_argument("--check-reference", action="store_true", help="re-render the files from the reference and compare")
     args = parser.parse_args(argv)
-    stale = []
+    if args.check:
+        problems, checked = check_lock()
+        for problem in problems:
+            print("boundaries: " + problem)
+        print("boundaries: " + ("ok ({} generated files match {})".format(checked, LOCK.relative_to(ROOT)) if not problems else "STALE"))
+        return 1 if problems else 0
+    load_reference()
+    stale, lock = [], {}
     for package, relative, cases, dispatch in PACKAGES:
         path, text = ROOT / relative, render(package, cases, dispatch)
-        if args.check:
+        lock[relative] = {"sha256": digest(text), "cases": len(cases())}
+        if args.check_reference:
             if not path.is_file() or path.read_text(encoding="utf-8") != text:
                 stale.append(relative)
         else:
             path.write_text(text, encoding="utf-8")
             print("boundaries: wrote {} cases to {}".format(len(cases()), relative))
-    if args.check:
-        print("boundaries: " + ("ok" if not stale else "STALE, regenerate: " + ", ".join(stale)))
-    return 1 if stale else 0
-
+    if args.check_reference:
+        problems, _ = check_lock()
+        print("boundaries: " + ("ok" if not stale and not problems else "STALE, regenerate: " + ", ".join(stale + problems)))
+        return 1 if stale or problems else 0
+    LOCK.write_text(json.dumps({"comment": "SHA-256 of each file migration/mutation/boundaries.py generates (PRO-401)",
+                                "files": lock}, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    print("boundaries: wrote {}".format(LOCK.relative_to(ROOT)))
+    return 0
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--self-test"]:
+        sys.exit(self_test())
     sys.exit(main())

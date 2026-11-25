@@ -10,7 +10,8 @@ own validator (tools/schema_check.py), with the schema the reference's tests use
 closed vocabulary (protocol_engine.policy.ENGINE_STATUSES), which the published schema does not enumerate. Every
 invocation must also complete with its documented exit status (invocation_problem), so a crash or a timeout is a
 problem rather than a shorter set of lines to validate. Options are seeded as in analyze_diff.py and live_diff.py. Nothing
-is captured; nothing in the Python tree is changed or imported for behaviour, only to validate.
+is captured; nothing in the Python tree is changed or imported for behaviour, only to validate. With --golden
+(migration/parity/golden.py) the inputs and the vocabulary come from the golden file and the reference is not imported.
 """
 import argparse
 import json
@@ -28,8 +29,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import analyze_diff  # noqa: E402
 import control_diff  # noqa: E402 - the live worker's completion contract
 import live_diff  # noqa: E402
+import golden  # noqa: E402
 import schema_check  # noqa: E402
-from protocol_engine.policy import ENGINE_STATUSES  # noqa: E402 - the reference's closed engine-status vocabulary
 
 # Values the Python reference itself emits although its list omits them (reported to Lee, not changed here):
 # appid.midstream_outcome and unobserved_start_outcome return engine_status "midstream".
@@ -66,17 +67,39 @@ def invoke(command, argv, timeout=120, **kwargs):
         return None, "{} timed out after {} s".format(command, timeout)
 
 
+def generated(args, folder, signatures, policy):
+    """(capture name, bytes, analyze options, live arguments) from the seeded generators (the reference's fixtures)."""
+    rng = random.Random(args.seed)
+    sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
+    for index in range(args.count):
+        capture = folder / "capture-{}".format(index)
+        analyze_diff.write_capture(rng, capture, analyze_diff.stress_records(rng) if index % 3 == 2 else analyze_diff.records_for(rng, sessions))
+        options = [option for option in analyze_diff.options_for(rng, signatures, policy)]
+        if "--json" not in options:
+            options.append("--json")
+        live_options, _ = live_diff.options_for(rng, signatures, policy)
+        yield capture.name, capture.read_bytes(), options, live_diff.arguments(live_options, True)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--binary", required=True)
     parser.add_argument("--count", type=int, default=200)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--record", help="also write the generated inputs (and the reference's engine-status vocabulary) to this golden file")
+    parser.add_argument("--golden", help="validate Go's output on this golden file's inputs; nothing of the reference is imported")
     args = parser.parse_args(argv)
-    rng = random.Random(args.seed)
-    sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
+    document = golden.read(args.golden, "schema") if args.golden else None
+    if document:
+        statuses, signatures_doc, policy_doc = set(document["engine_statuses"]), document["signatures"], document["policy"]
+    else:
+        from protocol_engine.policy import ENGINE_STATUSES  # the reference's closed engine-status vocabulary
+        statuses, signatures_doc, policy_doc = set(ENGINE_STATUSES), analyze_diff.SIGNATURES, analyze_diff.POLICY
+    recorder = golden.recorder(args.record, "schema", {"seed": args.seed, "count": args.count, "engine_statuses": sorted(statuses),
+                                                       "signatures": signatures_doc, "policy": policy_doc})
     schemas = {name: schema_check.load(name) for name in ("offline-row", "session", "live-event")}
     counts = {name: 0 for name in schemas}
-    problems, gaps = [], {}
+    problems, gaps, captures = [], {}, 0
 
     def check(name, line, where):
         instance = json.loads(line)
@@ -88,14 +111,20 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as folder:
         folder = Path(folder)
         signatures, policy = str(folder / "signatures.json"), str(folder / "policy.json")
-        Path(signatures).write_text(json.dumps(analyze_diff.SIGNATURES), encoding="utf-8")
-        Path(policy).write_text(json.dumps(analyze_diff.POLICY), encoding="utf-8")
-        for index in range(args.count):
-            capture = folder / "capture-{}".format(index)
-            analyze_diff.write_capture(rng, capture, analyze_diff.stress_records(rng) if index % 3 == 2 else analyze_diff.records_for(rng, sessions))
-            options = [option for option in analyze_diff.options_for(rng, signatures, policy)]
-            if "--json" not in options:
-                options.append("--json")
+        Path(signatures).write_text(json.dumps(signatures_doc), encoding="utf-8")
+        Path(policy).write_text(json.dumps(policy_doc), encoding="utf-8")
+        if document:
+            items = ((entry["capture"], golden.unb64(entry["data"]), golden.absolute(entry["options"], folder), golden.absolute(entry["live"], folder))
+                     for entry in document["entries"])
+        else:
+            items = generated(args, folder, signatures, policy)
+        for name, data, options, live_arguments in items:
+            captures += 1
+            capture = folder / name
+            capture.write_bytes(data)
+            if recorder:
+                recorder.add({"capture": name, "data": golden.b64(data), "options": golden.relative(options, folder),
+                              "live": golden.relative(live_arguments, folder)})
             done, problem = invoke("analyze", [args.binary, "analyze", str(capture)] + options)
             problem = problem or invocation_problem("analyze", done)
             if problem:
@@ -109,11 +138,10 @@ def main(argv=None):
                     status = row.get("engine_status")
                     if status in REFERENCE_GAPS:
                         gaps[status] = gaps.get(status, 0) + 1
-                    elif status not in ENGINE_STATUSES:
+                    elif status not in statuses:
                         problems.append("analyze {}: engine_status {!r} outside the closed vocabulary".format(capture.name, status))
-            live_options, _ = live_diff.options_for(rng, signatures, policy)
             with open(capture, "rb") as stream:
-                done, problem = invoke("live", [args.binary, "live"] + live_diff.arguments(live_options, True), stdin=stream)
+                done, problem = invoke("live", [args.binary, "live"] + live_arguments, stdin=stream)
             problem = problem or invocation_problem("live", done)
             if problem:
                 problems.append("live {}: {}".format(capture.name, problem))
@@ -127,11 +155,15 @@ def main(argv=None):
                 check("live-event", line, "live {}".format(capture.name))
     for line in problems[:10]:
         print("schema problem:", line)
-    print("go schema check: {} captures; validated {} offline rows, {} session records, {} live events; {} problems (seed {}); "
-          "reference vocabulary gaps seen: {}".format(args.count, counts["offline-row"], counts["session"], counts["live-event"], len(problems),
-                                                      args.seed, ", ".join("{} {}".format(k, v) for k, v in sorted(gaps.items())) or "none"))
-    return 1 if problems or not all(counts.values()) else 0
-
+    print("go schema check{}: {} captures; validated {} offline rows, {} session records, {} live events; {} problems (seed {}); "
+          "reference vocabulary gaps seen: {}".format(" (golden {})".format(Path(args.golden).name) if document else "", captures,
+                                                      counts["offline-row"], counts["session"], counts["live-event"], len(problems),
+                                                      document.get("seed") if document else args.seed,
+                                                      ", ".join("{} {}".format(k, v) for k, v in sorted(gaps.items())) or "none"))
+    failed = problems or not all(counts.values())
+    if recorder:
+        recorder.finish(failed)
+    return 1 if failed else 0
 
 if __name__ == "__main__":
     sys.exit(main())

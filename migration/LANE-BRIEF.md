@@ -126,7 +126,7 @@ Run everything from the repository root. Times are for the cloud container (4 vC
 |---|---|---|
 | `make go-check` | gofmt, vet, `go test -race`, 28 fuzz targets, parity-go with verify_families, every differential, bench-gate | about 8 min (488 s) |
 | `make check` | the Python suite (866 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
-| `make parity-random` (in `go-check`) | the randomized differential: `--self-test`, `--plant`, then seed 1 at 2,000 cases, with the Python reference as oracle (`migration/parity/random_diff.py`, allow-list `random_allow.json`). `make parity-random-long SEED= COUNT=` for longer runs | about 3 s |
+| `make parity-random` (in `go-check`) | the randomized differential's frozen seed-1 run (2,000 cases, `migration/fixtures/golden/random.json.gz`): `--self-test --rules-only`, `--plant` on the golden file, then the replay. Every differential of `go-check-parity` replays its golden file since PRO-401 and runs no Python reference; `make golden-record` re-records them while the reference exists. Fresh random inputs: `make property-long` (Go only, nightly) | about 3 s |
 | `make pcap-oracle` (nightly, not in `go-check`) | the tshark oracle (`go/oracle`, its own test-only module): real OpenSSL, curl and quic-go traffic on 127.0.0.1, read by gopacket, fed to the engine and compared with tshark 4.2.2 on SNI, ALPN, TLS version, HTTP Host and QUIC version. It needs the pinned tshark, OpenSSL and curl (`go/oracle/README.md`). Allow-list: `go/oracle/allow.json` | about 3 s |
 | `make mutation` (nightly, not in `go-check`) | gremlins v0.6.0 on the nine parser packages against `migration/mutation/baseline.json` (fails on a drop of more than 5 points). `go-check` runs only `boundaries.py --check` and `mutation.py --self-test`. Regenerate the boundary tests with `python3 -B migration/mutation/boundaries.py` | about 20 min |
 | `make go-vendor-check` | re-vendors into `build/go-vendor-check` and diffs it against `go/vendor` | seconds (module cache warm) |
@@ -159,7 +159,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | SEC-QUIC-3 (`fe87386`, PR into `main`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
 | PRO-291 (`5b48d91`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
 | PRO-315 (`653b1ca`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
-| Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
+| Python removal (Lee, 2026-11-25), PR A of 3 (PRO-401): Go and CI gates on frozen answers, `serve` without Python | Hermes's review, then Lee's merge. PR B (the engine and its own jobs) and PR C wait for it. The demo capture, showcase and catalog are Go's own since PRO-401. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
@@ -195,6 +195,10 @@ PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the d
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
 ## 7. Pitfalls learned
+
+- **The differential gates replay golden files (PRO-401).** A change that moves Go's answer fails `make go-check`
+  until the golden file is re-recorded (`make golden-record`, with the reference) or, after the reference is gone,
+  until the new answer is reviewed in. Never re-record to make a red gate green without reading the diff.
 
 - **A fresh container is a clone of `main`.** Run `git fetch origin claude/go-migration` and check out the branch
   before deciding that any SHA is "missing".
