@@ -264,7 +264,9 @@ func TestFinishAndUDPFlows(t *testing.T) {
 	h.handshake(0, client, server, 1000, 9000)
 	u := testframes.UDP(client.Addr, 53001, server.Addr, 53, []byte("dns"))
 	p, _ := transport.Decode(u, 1, transport.Ignore)
-	if m := strings.SplitN(h.tracker.ProcessUDP(0.1, p.(*transport.UDP), nil), " | ", 2)[0]; m != "UDP 192.0.2.10:53001 -> 198.51.100.20:53" {
+	// The first flow is decided (identified), so the full table refuses the second flow; an undecided first flow
+	// would be evicted for it instead (SEC-SESS-1, halfopen_test.go).
+	if m := strings.SplitN(h.tracker.ProcessUDP(0.1, p.(*transport.UDP), identified("dns")), " | ", 2)[0]; m != "UDP 192.0.2.10:53001 -> 198.51.100.20:53" {
 		t.Fatal(m)
 	}
 	u2 := testframes.UDP(client.Addr, 53002, server.Addr, 53, []byte("dns"))

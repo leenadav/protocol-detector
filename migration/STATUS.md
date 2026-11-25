@@ -734,6 +734,46 @@ outside the Initial profile was a structural QUIC match; now it is malformed).
 | Regression tests | `TestConflictedConnectionAppliesTheClientDatagramMinimum`, `TestShortClientInitialWithUnsupportedFrameIsMalformed` (`quicx`) | Both fail on `d950eb8`: the 1199-byte Initial on a conflicted DCID gives `Retracts` (conflict), the 300-byte Initial with HANDSHAKE_DONE gives `initial_protection=unverified`. After the fix: both are malformed with the 1200-byte reason; the marker keeps its old idle time (expired at 10.5 after an undersized datagram at 8), a 1200-byte Initial still retracts and refreshes it, and a damaged 600-byte datagram the keys do not open still retracts. |
 | Parity | 0 case changes | Only the Go-only SEC-QUIC-3 rule changes; numbers in the lane brief and the PR. |
 
+## Security review finding SEC-SESS-1, the Go part (PRO-51, PRO-162 and PRO-398, 2026-11-25)
+
+**The finding.** On `main` `8945986` a TCP connection that only sent a SYN, and a UDP flow with no decision yet,
+held a tracking-table slot for the whole idle timeout (60 s), and a retransmitted SYN with the same ISN refreshed
+that time (`State.Time` and the stream's `LastSeen`). A SYN or UDP flood therefore filled `MaxConnections` /
+`MaxUDPFlows`, and a real connection got `LIMIT: too many tracked connections` or `udp_flow_limit`.
+
+**The Go fix** (`go/internal/session/tracker.go`, branch `claude/engine-PRO-398-halfopen-budget`):
+
+- `Options.MaxHalfOpen` (TCP, a part of `MaxConnections`), `MaxHalfOpenUDP` (a part of `MaxUDPFlows`) and
+  `HalfOpenTimeout`. Zero selects the defaults: three quarters of the table (at least 1) and 5 s, never more than
+  the idle timeout. Out-of-range values are refused ("Invalid half-open limit").
+- Half-open is a TCP state without a completed SYN/SYN-ACK (asymmetric: without the client's first data) and a UDP
+  flow neither identified nor invalidated. Midstream connections are established from their first segment.
+- A new SYN (or new UDP flow) when the half-open budget or the table is full evicts the oldest half-open state
+  (FIFO queue, O(1)), with the new close reason `Half-open budget full; oldest unestablished state evicted` and the
+  counters `half_open_evicted` / `udp_half_open_evicted`. An established connection or a decided flow is never
+  evicted: a full table of them still refuses with `LIMIT` / `udp_flow_limit`, and that refusal allocates nothing
+  (`TestSYNIntoATableOfEstablishedConnectionsIsRefusedWithoutAllocating`, 0 allocations; the pre-existing one, an
+  escaping `destination`, is removed).
+- A half-open TCP connection expires `HalfOpenTimeout` after its SYN (packets it receives while half-open do not
+  extend it), an undecided UDP flow after `HalfOpenTimeout` of silence. The session record keeps the reference's idle
+  reasons; the counters `half_open_timeout` / `udp_half_open_timeout` tell them apart.
+- A retransmitted SYN still answers `SYN retransmission` but no longer moves `Time` or `LastSeen`.
+
+Tests: `go/internal/session/halfopen_test.go` (defaults and validation, SYN flood to the limit with oldest-first
+eviction, the retransmission loop, the timeout from the SYN, UDP flood, a real connection through a flood in
+handshake, asymmetric and midstream modes). Each fails when its mechanism is reverted.
+
+**Parity (open, waits on Lee's PRO-397 decision).** The committed replay cases do not reach these limits
+(`make parity-go`: 7,462 of 7,462). The seeded random suites do, and differ from the frozen Python reference only
+where Go now evicts or expires a half-open state (seed 1; all 0 on `main` `8945986`):
+`parity-analyze` 20 mismatches in 8 captures (`capture-1-50`, `-57`, `-61`, `-85`, `-101`, `-127`, `-131`, `-155`),
+`parity-live` 6 (`capture-53`, `-77`, `-92`, `-206`, `-266`, `-270`), `parity-live-decrypt` 15 event lines in 10
+scripts (4, 19, 47, 88, 129, 137, 154, 169, 172, 179).
+`parity-decrypt`, `parity-control` and `schema-go` are unchanged (0 mismatched, 0 problems). Option A ports the same
+rules to `protocol_adapters/analyze_pcap.py` (`_udp`, the SYN branch of `_tcp`, `expire`) as a new Frozen-Python
+exception; option B pins these cases as approved Go-only divergences, as PRO-260 did. Until then the branch is not
+mergeable: those three gates are red by design, and nothing is weakened to hide it.
+
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 
 **The finding** (Codex review PRO-12, Tier 1 window 1, `dbe20f3..50ce5c0`; `go/internal/engine/inspector.go`,
