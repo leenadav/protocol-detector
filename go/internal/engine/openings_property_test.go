@@ -170,9 +170,7 @@ func genQUIC(t *rapid.T) opening {
 	hello := clientHelloBody(t, host, alpn, true)
 	var cuts []int
 	if len(hello) > 2 {
-		for _, cut := range rapid.SliceOfNDistinct(rapid.IntRange(1, len(hello)-1), 0, 3, rapid.ID[int]).Draw(t, "crypto cuts") {
-			cuts = append(cuts, cut)
-		}
+		cuts = rapid.SliceOfNDistinct(rapid.IntRange(1, len(hello)-1), 0, 3, rapid.ID[int]).Draw(t, "crypto cuts")
 		sort.Ints(cuts)
 	}
 	framesList := testframes.CryptoFrames(hello, cuts...)

@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"math/big"
 	"net"
 	"os"
@@ -236,9 +237,8 @@ func exchange(c showcaseCase, certificate tls.Certificate, leaf *x509.Certificat
 		}()
 	}()
 	fail := func(err error) ([]byte, []byte, string, error) {
-		_ = client.Close() // unblocks the server's goroutine, which then ends
-		<-served
-		return nil, nil, "", err
+		_ = client.Close() // unblocks the server's goroutine, which then ends with its own error (or none)
+		return nil, nil, "", errors.Join(err, <-served)
 	}
 	if err := tlsClient.Handshake(); err != nil {
 		return fail(err)
@@ -257,6 +257,15 @@ func exchange(c showcaseCase, certificate tls.Certificate, leaf *x509.Certificat
 		return nil, nil, "", errors.New("synthetic TLS exchange returned other bytes")
 	}
 	return client.bytes(), server.bytes(), keys.String(), nil
+}
+
+// u32 is a length, offset or time of the showcase's own small captures as a PCAP field; nothing it frames comes near
+// 2^32, and a value outside the range would be a bug here, framed as 0 rather than wrapped.
+func u32(n int) uint32 {
+	if n < 0 || n > math.MaxUint32 {
+		return 0
+	}
+	return uint32(n)
 }
 
 // showcaseCapture frames one exchange as the reference's fixture() did: SYN and SYN-ACK, each direction cut into
@@ -278,12 +287,12 @@ func showcaseCapture(clientPort uint16, clientBytes, serverBytes []byte) []byte 
 		var offsets []uint32
 		for offset := 0; offset < len(side.data); offset += 700 {
 			end := min(offset+700, len(side.data))
-			pieces, offsets = append(pieces, side.data[offset:end]), append(offsets, uint32(offset))
+			pieces, offsets = append(pieces, side.data[offset:end]), append(offsets, u32(offset))
 		}
 		for i := len(pieces) - 1; i >= 0; i-- {
 			frames = append(frames, testframes.TCP(side.fromAddr, side.fromPort, side.toAddr, side.toPort, side.seq+offsets[i], 0, 0x18, pieces[i]))
 		}
-		frames = append(frames, testframes.TCP(side.fromAddr, side.fromPort, side.toAddr, side.toPort, side.seq+uint32(len(side.data)), 0, 0x11, nil))
+		frames = append(frames, testframes.TCP(side.fromAddr, side.fromPort, side.toAddr, side.toPort, side.seq+u32(len(side.data)), 0, 0x11, nil))
 	}
 	var out bytes.Buffer
 	header := make([]byte, 24)
@@ -292,14 +301,14 @@ func showcaseCapture(clientPort uint16, clientBytes, serverBytes []byte) []byte 
 	binary.LittleEndian.PutUint16(header[6:], 4)
 	binary.LittleEndian.PutUint32(header[16:], 65535)
 	binary.LittleEndian.PutUint32(header[20:], 1)
-	out.Write(header)
+	_, _ = out.Write(header) // a bytes.Buffer write never fails
 	for index, frame := range frames {
 		record := make([]byte, 16)
-		binary.LittleEndian.PutUint32(record[0:], uint32(1700000000+index))
-		binary.LittleEndian.PutUint32(record[8:], uint32(len(frame)))
-		binary.LittleEndian.PutUint32(record[12:], uint32(len(frame)))
-		out.Write(record)
-		out.Write(frame)
+		binary.LittleEndian.PutUint32(record[0:], u32(1700000000+index))
+		binary.LittleEndian.PutUint32(record[8:], u32(len(frame)))
+		binary.LittleEndian.PutUint32(record[12:], u32(len(frame)))
+		_, _ = out.Write(record)
+		_, _ = out.Write(frame)
 	}
 	return out.Bytes()
 }
@@ -320,7 +329,7 @@ func Showcase() (*ojson.Object, error) {
 	for index, c := range showcaseCases {
 		clientBytes, serverBytes, keylog, err := exchange(c, certificate, leaf)
 		if err != nil {
-			return nil, fmt.Errorf("Synthetic TLS handshake did not finish: %v", err)
+			return nil, fmt.Errorf("synthetic TLS handshake did not finish: %w", err)
 		}
 		text, err := keylogcap.Analyze(showcaseCapture(uint16(51000+index), clientBytes, serverBytes), keylog, pack)
 		if err != nil {
