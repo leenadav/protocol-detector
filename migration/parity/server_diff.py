@@ -20,7 +20,9 @@ Answers are compared as the status line, the headers (Server and Date aside) and
 compared after replacing what differs by construction: tokens, run, job and instance ids (by order of
 appearance), monotonic times, the lease countdown, wall-clock durations of a run or an analysis, the
 measurements of telemetry duration histograms (their keys, sample counts and every counter are compared;
-Normalizer.histogram), and the "python" field of the health report (the Go service runs no interpreter). The demo capture and showcase are
+Normalizer.histogram), and the "python" field of the health report (the Go service runs no interpreter). On a golden
+replay, the build identity of /api/health and /api/catalog (commit, branch, build_digest) is masked on both sides, and
+Go's is held to the tree's presentation/SOURCE.json by a separate check (PRO-431, BUILD_IDENTITY). The demo capture and showcase are
 random in the reference itself, and the Go service makes its showcase with crypto/tls where the reference used
 OpenSSL (PRO-401): their answers are compared by shape. Python 3.13 texts are the reference.
 """
@@ -223,17 +225,80 @@ def shape(value):
     return type(value).__name__
 
 
+# The build identity of presentation/SOURCE.json (PRO-431): /api/health carries it at the top level and /api/catalog
+# under "source". It changes on every SOURCE.json refresh (PR #123 refreshed it after the server golden was recorded),
+# so a golden replay compares both answers with these fields masked on each side, and build_identity_problems holds
+# Go's values to the SOURCE.json of the tree under test instead. Every other field (version, repository, components,
+# the catalog itself) and the status line and headers are compared in full. These answers carry no ETag, and
+# Content-Length is never compared for a JSON body (observed), so nothing else derives from the identity.
+BUILD_IDENTITY = ("commit", "branch", "build_digest")
+BUILD_IDENTITY_AT = {"GET '/api/health'": ((), ("commit", "build_digest")),
+                     "GET '/api/catalog'": (("source",), ("commit", "branch", "build_digest"))}
+BUILD_IDENTITY_MARK = "<build identity>"
+
+
+def answer_document(answer):
+    """An observed answer's head lines and its JSON body (the last line, json.dumps output), or None for the body."""
+    head, _, body = answer.rpartition("\n")
+    try:
+        return head, json.loads(body, object_pairs_hook=OrderedDict)
+    except ValueError:
+        return head, None
+
+
+def identity_holder(document, path):
+    for key in path:
+        document = document.get(key) if isinstance(document, dict) else None
+    return document if isinstance(document, dict) else None
+
+
+def mask_build_identity(label, answer):
+    """The observed answer with its build identity masked: only a string value of one of BUILD_IDENTITY at the
+    label's location becomes the marker, so a missing, null or mistyped field still differs from a recorded one."""
+    if label not in BUILD_IDENTITY_AT:
+        return answer
+    head, document = answer_document(answer)
+    holder = identity_holder(document, BUILD_IDENTITY_AT[label][0])
+    if holder is None:
+        return answer
+    for key in BUILD_IDENTITY:
+        if isinstance(holder.get(key), str):
+            holder[key] = BUILD_IDENTITY_MARK
+    return head + "\n" + json.dumps(document)
+
+
+def build_identity_problems(label, answer, source):
+    """Go's build identity in an observed /api/health or /api/catalog answer against `source` (the tree's
+    presentation/SOURCE.json): each field the answer must carry is present and equal to a non-empty string there."""
+    if label not in BUILD_IDENTITY_AT:
+        return []
+    path, keys = BUILD_IDENTITY_AT[label]
+    holder = identity_holder(answer_document(answer)[1], path)
+    if holder is None:
+        return ["{}: no build identity object in the answer".format(label)]
+    problems = []
+    for key in keys:
+        want = source.get(key) if isinstance(source, dict) else None
+        if not isinstance(want, str) or not want:
+            problems.append("{}: SOURCE.json has no {} (got {!r})".format(label, key, want))
+        elif holder.get(key, None) != want:
+            problems.append("{}: {} is {!r}, SOURCE.json has {!r}".format(label, key, holder.get(key), want))
+    return problems
+
+
 class Run:
     """The script's exchanges. With a reference service, each answer is compared with the reference's (and, when
     `recording` is a list, the reference's normalized answer is appended to it); on a golden replay (`replay` is
     the recorded list) the one service is Go and each answer is compared with the next recorded one, whose label
     must be the same exchange."""
 
-    def __init__(self, services, recording=None, replay=None):
+    def __init__(self, services, recording=None, replay=None, source=None):
         self.services = services
         self.normalizers = {s.name: Normalizer() for s in services}
         self.failures, self.compared = [], 0
         self.recording, self.replay = recording, replay
+        self.source = source                     # the tree's presentation/SOURCE.json, for build_identity_problems
+        self.identity_checked, self.identity_failures = 0, []
 
     def same(self, label, action, shape_only=False):
         """Run action(service) on each service and compare what each answered."""
@@ -251,6 +316,11 @@ class Run:
         self.compared += 1
         if self.recording is not None:
             self.recording.append({"label": label, "shape": shape_only, "answer": answers[0]})
+        if label in BUILD_IDENTITY_AT and self.source is not None:
+            self.identity_checked += 1
+            self.identity_failures.extend(build_identity_problems(label, answers[-1], self.source))   # the Go answer
+        if self.replay is not None:
+            answers = [mask_build_identity(label, answer) for answer in answers]
         if answers[0] != answers[1]:
             at = next((i for i, (x, y) in enumerate(zip(*answers)) if x != y), min(map(len, answers)))
             self.failures.append("{} (at {}):\n  reference: {!r}\n  go:        {!r}".format(
@@ -583,7 +653,8 @@ def main(argv=None):
             for service in services:
                 service.token = json.loads(split(service.request("GET", "/api/live/interfaces"))[1])["token"]
                 service.json("GET", "/api/live/interfaces")
-            run = Run(services, recording=recording, replay=list(document["entries"]) if document else None)
+            source = json.loads((ROOT / "presentation/SOURCE.json").read_text(encoding="utf-8"))
+            run = Run(services, recording=recording, replay=list(document["entries"]) if document else None, source=source)
             for service in services:
                 run.normalizers[service.name].walk({"token": service.token})
             for stage in (lambda: static_and_reads(run, rng), lambda: framing(run), lambda: live_control_refusals(run, rng),
@@ -605,6 +676,13 @@ def main(argv=None):
         print("server parity FAILED:", failure)
     for failure in run.failures[:int(os.environ.get("SERVER_DIFF_SHOW", "8"))]:
         print("server mismatch:", failure)
+    for failure in run.identity_failures:
+        print("server build identity FAILED:", failure)
+    if run.identity_checked != len(BUILD_IDENTITY_AT):
+        run.identity_failures.append("{} build identity answers checked, expected {}".format(run.identity_checked, len(BUILD_IDENTITY_AT)))
+        print("server build identity FAILED:", run.identity_failures[-1])
+    print("server build identity: {} answers checked against presentation/SOURCE.json, {} problems".format(
+        run.identity_checked, len(run.identity_failures)))
     print("server parity{}: {} exchanges compared, {} mismatched, {} probes failed (seed {})".format(
         " (golden {})".format(Path(args.golden).name) if document else "", run.compared, len(run.failures), len(probe_failures), args.seed))
     if args.record:
@@ -612,8 +690,8 @@ def main(argv=None):
                                                            "live_capture": golden.b64(live_capture),
                                                            "rng_state": [rng_state[0], list(rng_state[1]), rng_state[2]]})
         recorder.entries = recording
-        recorder.finish(run.failures or probe_failures)
-    return 1 if run.failures or probe_failures else 0
+        recorder.finish(run.failures or probe_failures or run.identity_failures)
+    return 1 if run.failures or probe_failures or run.identity_failures else 0
 
 if __name__ == "__main__":
     sys.exit(main())
