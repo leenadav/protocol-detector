@@ -4,7 +4,8 @@ Usage: python3 tools/make_verified_b1.py [--n 200] [--date 2026-11-22]
 Reads research/candidates/top1000-<date>.jsonl (Wikidata CC0). Re-verifies with cheap passive checks:
 DNS, one verified TLS handshake (cert must cover the domain), one HTTPS GET (<=4 redirects, final host).
 Writes research/catalog-batches/verified-b1-<date>.jsonl, rejected-b1-<date>.jsonl, stats-b1-<date>.json, sample20-b1-<date>.md"""
-import argparse, json, os, re, socket, ssl, subprocess, sys, concurrent.futures as cf
+import argparse, json, os, re, shutil, socket, ssl, subprocess, sys, concurrent.futures as cf
+GIT = shutil.which("git") or "/usr/bin/git"
 import http.client, urllib.parse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wikidata_candidates as W
@@ -17,8 +18,9 @@ def existing_catalog():
     repo = "/home/hermes/projects/protocol-detector"
     doms, names = set(open(W.CATALOG).read().split()), set()
     for f in ("protocol_engine/host_apps.py", "protocol_engine/applications.py"):
-        try: src = subprocess.check_output(["git", "-C", repo, "show", "origin/claude/app-research:" + f], text=True)
-        except Exception: continue
+        try: src = subprocess.check_output([GIT, "-C", repo, "show", "origin/claude/app-research:" + f], text=True)  # noqa: S603 -- resolved git, argv only, no shell
+        except Exception as e:
+            print("skipped", f, "(not on origin/claude/app-research):", e, file=sys.stderr); continue
         doms |= set(re.findall(r'"([a-z0-9-]+(?:\.[a-z0-9-]+)+)"', src))
         names |= set(re.findall(r'^\s*\("([a-z0-9-]+)",\s*"', src, re.M))
     return doms, names
