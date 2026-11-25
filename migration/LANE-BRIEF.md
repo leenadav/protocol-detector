@@ -41,7 +41,10 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **Parity:** 7,462 of 7,462 cases agree (18 of them through PRO-260's pinned Go-only deltas). 79 of 88 families are parity-verified since PRO-201 (`098b201`): the verifier no longer credits a replay of the positive message as foreign bytes, so ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh are `experimental` until real foreign cases are added. Server parity: 424 exchanges, 0
   differences. The adversarial suite (4,041 cases) passes.
 - **Content release:** 2026.11.9 (digest `cdaa5993077d101a`), with 544 applications and 442 host entries. Every earlier
-  release reproduces the digest it was published with (C11).
+  release reproduces the digest it was published with (C11). **Since PRO-411 the content source is Go's**
+  (`go/internal/content/pack.json`, `history.json`, ledger `lock.json`), edited only with `tools/content_pack.py add
+  BATCH.json` (docs/CONTENT-BATCHES.md); the Python export tools are gone. Open before a real batch merges: the
+  frozen answers (cases.json, golden files) and the serve catalog pin release 2026.11.9 and need Go pinned to it.
 - **Vendored dependencies:** `x/crypto` and `x/sys/cpu` live under `go/vendor`, and every Go command runs with
   `-mod=vendor`.
 - **Codex review packet:** complete in `migration/review-packet/` (frozen head `50ce5c0`, 43 chunks).
