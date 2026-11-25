@@ -119,6 +119,7 @@ type helloFields struct {
 	hostname      string
 	hasHost       bool
 	alpn          []string
+	alpnRaw       [][]byte // the offered wire bytes, for the fingerprint only (SEC-FP-1)
 	legacyVersion int
 	supported     []int
 	ech           string
@@ -307,6 +308,7 @@ func parseHello(body []byte, collect bool) (*helloFields, error) {
 			}
 			offers := &reader{data: list}
 			var protocols []string
+			var raw [][]byte
 			for offers.pos < len(offers.data) {
 				p, err := offers.vector(1)
 				if err != nil {
@@ -316,12 +318,13 @@ func parseHello(body []byte, collect bool) (*helloFields, error) {
 					return nil, parsing.Malformed("Invalid ALPN offer or offer-count limit")
 				}
 				protocols = append(protocols, alpnText(p))
+				raw = append(raw, append([]byte(nil), p...))
 			}
-			out.alpn = protocols
+			out.alpn, out.alpnRaw = protocols, raw
 		}
 	}
 	if collect {
-		out.info.ALPN = out.alpn
+		out.info.ALPN, out.info.ALPNRaw = out.alpn, out.alpnRaw
 	}
 	return out, nil
 }
@@ -700,6 +703,7 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 		return parsing.Row{Field: field, Value: value, Provenance: source, Strength: strength}
 	}
 	rows := []parsing.Row{rowsOf("tls_handshake", source, "structural")}
+	var selectedRaw [][]byte // TLS 1.2 selected ALPN wire bytes; a TLS 1.3 ServerHello carries none
 	version := "1.2"
 	if tls13 {
 		if !bytes.Equal(index[43], []byte{3, 4}) {
@@ -851,6 +855,7 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 					return nil, "", "", parsing.Malformed("Empty server ALPN selection")
 				}
 				rows = append(rows, rowsOf("selected_alpn", alpnText(name), "asserted"))
+				selectedRaw = [][]byte{append([]byte(nil), name...)} // the fingerprint reads wire bytes (SEC-FP-1)
 			default:
 				return nil, "", "", parsing.Unsupported("TLS 1.2 ServerHello extension outside supported profile")
 			}
@@ -863,12 +868,6 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 	}
 	rows = append(rows, rowsOf("selected_tls_version", version, "asserted"), rowsOf("selected_cipher", fmt.Sprintf("0x%04x", cipher), "asserted"))
 	if opts.Fingerprints && !retry {
-		var selected []string
-		for _, r := range rows {
-			if r.Field == "selected_alpn" {
-				selected = append(selected, r.Value)
-			}
-		}
 		negotiated := 0x0303
 		if tls13 {
 			negotiated = 0x0304
@@ -877,7 +876,7 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 		for i, e := range extensions {
 			kinds[i] = e.kind
 		}
-		rows = append(rows, rowsOf("ja4s", fingerprint.JA4S(negotiated, cipher, kinds, selected, "t"), "derived"),
+		rows = append(rows, rowsOf("ja4s", fingerprint.JA4S(negotiated, cipher, kinds, selectedRaw, "t"), "derived"),
 			rowsOf("ja3s", fingerprint.JA3S(negotiated, cipher, kinds), "derived"))
 	}
 	reason := "ServerHello structure validated; server selections unauthenticated, handshake completion unverified"

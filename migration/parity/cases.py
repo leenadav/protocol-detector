@@ -966,6 +966,23 @@ def stream_cases(seed=11, limit=None):
     cases.append({"id": "stream/options/fingerprints", "kind": "stream", "label": "tls",
                   "chunks": [client_hello_with([(0, b"\x00\x0f\x00\x00\x0cperf.example")]).hex()], "hint": None,
                   "config": {"fingerprints": True}, "end": "fin"})
+    cases.extend(alpn_fingerprint_cases())
+    return cases
+
+
+def alpn_fingerprint_cases():
+    """SEC-FP-1 (PRO-392/PRO-394, Lee 2026-11-25): printable ALPN values that start with "hex:" are text. The JA4
+    (ClientHello) and JA4S (TLS 1.2 ServerHello) ALPN code is computed from the wire bytes, so hex:zz gives hz,
+    hex:4 gives h4 and hex:7a7a gives ha, while offered_alpn / selected_alpn keep the display string. Appended
+    after the existing cases so earlier ids stay stable."""
+    cases = []
+    for name, offer in (("hex-zz", b"hex:zz"), ("hex-4", b"hex:4"), ("hex-7a7a", b"hex:7a7a")):
+        entry = bytes([len(offer)]) + offer
+        for side, data in (("client", client_hello_with([(16, len(entry).to_bytes(2, "big") + entry)])),
+                           ("server", _tls_record(_server_hello(((16, len(entry).to_bytes(2, "big") + entry),))))):
+            for variant, chunks in (("whole", [data.hex()]), ("bytes", [data[i:i + 1].hex() for i in range(len(data))])):
+                cases.append({"id": "stream/options/fingerprints-alpn-%s-%s/%s" % (name, side, variant), "kind": "stream",
+                              "label": "tls", "chunks": chunks, "hint": None, "config": {"fingerprints": True}, "end": "fin"})
     return cases
 
 
