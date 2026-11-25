@@ -1,6 +1,6 @@
 # Batch 7 (software that was kept), PRO-406
 
-`batch-7-software.json`: 156 entries in the `pack.json` record format, with evidence. `batch-7-software-filter.jsonl`: all 805 software_project rows of the main proposal list with their outcome and reason. Input for the PRO-411 tool; the shipped pack is untouched. Built by `tools/make_software_batch.py`.
+`batch-7-software.json`: 156 entries in the `pack.json` record format, with evidence. `batch-7-software-filter.json`: all 805 software_project rows of the main proposal list with their outcome and reason. Input for the PRO-411 tool; the shipped pack is untouched. Built by `tools/make_software_batch.py`.
 
 ## Filter outcome (rule 2: keep services, SaaS and clients that talk to their own servers)
 | outcome | n |

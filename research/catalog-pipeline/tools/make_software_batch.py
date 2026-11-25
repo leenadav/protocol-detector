@@ -5,7 +5,7 @@
 VERDICTS maps app_id to {verdict, reason} (SERVICE / NOT_SERVICE / UNSURE, from a Message Batch run of
 claude-haiku-5-5 over name and domain); only SERVICE rows are kept. CHECKS is the DNS check file
 (`unresolved` app_ids). Writes the batch (pack.json record format, as make_pack_batch.py) and the filter
-record: one line per software_project row with its outcome and reason. Standard library only.
+record: a {"rows": [...]} document with one entry per software_project row with its outcome and reason. Standard library only.
 """
 import json
 import sys
@@ -40,7 +40,7 @@ def main():
     doc = {"kind": "software_project", "count": len(keep), "applications": apps, "host_entries": hosts,
            "evidence": evidence}
     Path(sys.argv[3]).write_text(json.dumps(doc, indent=1, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
-    Path(sys.argv[4]).write_text("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in record), encoding="utf-8")
+    Path(sys.argv[4]).write_text(json.dumps({"rows": record}, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(len(keep), len(record))
 
 
