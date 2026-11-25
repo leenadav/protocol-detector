@@ -4,8 +4,20 @@ Plan: "Python → Go migration: implementation and acceptance plan" (Lee, 2026-1
 implemented · independently verified · blocked · deferred. Every entry names SHAs and commands. This file
 never claims production readiness; release thresholds are pending (plan §5 M9/M10).
 
-Lane rule (Hermes, PRO-6, 2026-11-20): a fresh chat reads `migration/LANE-BRIEF.md` first, and every task ends by
-updating that brief (state, open items, frozen SHAs, new pitfalls) in the same push.
+Lane rule (Hermes, PRO-6, 2026-11-20): a fresh chat reads `migration/LANE-BRIEF.md` first. Since PRO-347
+(2026-11-24) a task records itself in its own `migration/notes/PRO-<n>.md` instead of adding rows to this file or to
+a lane brief; the hand-written sections below change only for a milestone, a finding or a standing decision.
+
+## Recent work, all lanes (generated)
+
+Written by `tools/build_ledgers.py` from `migration/notes/PRO-<n>.md`, newest first. Never edit it: a task adds its
+own notes file, and the section is refreshed after merge.
+
+<!-- BEGIN GENERATED: recent-work lane=all limit=40 -->
+<!-- tools/build_ledgers.py writes this section from migration/notes/PRO-<n>.md. Do not edit it: add a notes file instead (migration/notes/README.md). -->
+
+_No notes for this lane yet._
+<!-- END GENERATED: recent-work -->
 
 ## M0 — stabilize and freeze the comparison baseline
 

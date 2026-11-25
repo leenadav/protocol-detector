@@ -1,7 +1,11 @@
 # Lane brief: Platform & CI (the CI/CD lane)
 
-Read this first in any new chat for this lane, then your Paperclip instructions. **Update this file at the end of
-every task** (state, open items, frozen SHAs, pitfalls) and commit it with the task's last commit.
+Read this first in any new chat for this lane, then your Paperclip instructions. **Rule (PRO-347, 2026-11-24):
+every task adds its own `migration/notes/PRO-<n>.md`** (front matter: task, lane, date, title, PRs, SHAs; then one
+paragraph; `migration/notes/README.md`) with the task's last commit; it is the task's record and its frozen SHAs.
+**Never edit a section between `BEGIN GENERATED` and `END GENERATED` markers** ("Recent work" below, the
+README/REVIEW-SCOPE test counts): `tools/build_ledgers.py` writes them after merge. Edit the hand-written sections
+(state, open items, frozen SHAs, pitfalls) only when the lane's standing state changes, not to log a task.
 
 ## 1. Purpose and scope
 
@@ -106,6 +110,17 @@ their decisions, the policy locks, and the release controller.
   build (accepted until 2026-12-22). Three more came with go-migration's gremlins module (x/sys, x/text; unreachable),
   accepted until 2026-12-06 while Engine bumps its own module.
 
+### Recent work (generated)
+
+Written by `tools/build_ledgers.py` from `migration/notes/PRO-<n>.md`, newest first. Never edit it: a task adds
+its own notes file, and the section is refreshed after merge.
+
+<!-- BEGIN GENERATED: recent-work lane=platform limit=15 -->
+<!-- tools/build_ledgers.py writes this section from migration/notes/PRO-<n>.md. Do not edit it: add a notes file instead (migration/notes/README.md). -->
+
+_No notes for this lane yet._
+<!-- END GENERATED: recent-work -->
+
 ## 3. Where things live (reading order)
 
 1. `CLAUDE.md` (imports `AGENTS.md`) and `AGENTS.md` on `main`: lanes, ownership, mailbox rules. It may be stale on old branches, so read it from `main`.
@@ -136,6 +151,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Item | Waits on |
 |---|---|
 | Codex review of `docs/review-packet/` (7 chunks: Tier 1 1,350 lines, Tier 2 893) | QA Reviewer (Codex), currently paused |
+| PRO-347: the nightly `ledgers` workflow is read-only (strict check, refresh patch as an artifact). Opening the docs-only refresh pull request from it needs `contents: write` + `pull-requests: write` (rule 5 forbids both outside the release controller), the repository setting that lets Actions create pull requests, and a token whose pull requests trigger ci (`GITHUB_TOKEN` ones start no workflow). Until then Deputy applies the patch | Lee's decision (SSDLC item 43) |
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |

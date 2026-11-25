@@ -1,4 +1,4 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation
+.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -56,7 +56,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts manifest presentation-check inventory keylogs content sequences capabilities content-pack parity
+check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts ledgers manifest presentation-check inventory keylogs content sequences capabilities content-pack parity
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -82,6 +82,11 @@ presentation-check:
 
 docs-counts:
 	$(PYTHON) -B tools/check_docs_counts.py
+
+# PRO-347: the generated ledger sections are not hand-edited and every migration/notes/PRO-<n>.md parses.
+# `python3 -B tools/build_ledgers.py --write` rebuilds them (after merge, on main).
+ledgers:
+	$(PYTHON) -B tools/build_ledgers.py --check
 
 # Same checks the CI workflow runs, in one command, plus the extended fuzz pass.
 ci-local: check fuzz sequences-extended go-vendor-check
@@ -131,6 +136,7 @@ workflow-policy:
 	$(PYTHON) -B tools/build_go_release.py --self-test
 	$(PYTHON) -B tools/release_provenance.py --self-test
 	$(PYTHON) -B tools/check_required_checks.py --self-test
+	$(PYTHON) -B tools/build_ledgers.py --self-test
 	$(PYTHON) -B tools/check_required_checks.py
 	$(PYTHON) -B tools/check_gitleaks_allowlist.py --self-test
 	$(PYTHON) -B tools/check_ci_consistency.py --self-test

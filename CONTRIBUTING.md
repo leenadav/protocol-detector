@@ -26,8 +26,9 @@ ARCHITECTURE.md; SSDLC.md describes the gates that enforce them.
 3. Documentation updated in the same change: PROTOCOLS.md (profile, limits,
    evidence vocabulary), APPID.md and RISKS.md when the catalog or risks move,
    ARCHITECTURE.md when a mechanism changes, OUTPUT.md and `schemas/` when an
-   output field changes, README.md and REVIEW-SCOPE.md counts (the
-   documentation-number gate fails on drift).
+   output field changes, and the family, application and version numbers
+   in README.md and REVIEW-SCOPE.md (the documentation-number gate fails on
+   drift). The test counts there are generated: leave them alone.
 4. SECURITY-REQUIREMENTS.md row for every new guarantee, pointing at the tests
    that prove it; THREAT-MODEL.md when a trust boundary moves.
 5. `tools/coverage_matrix.py --write PROTOCOLS.md` after fixtures or evidence
@@ -39,10 +40,31 @@ ARCHITECTURE.md; SSDLC.md describes the gates that enforce them.
    fixed second seed by the mutation smoke job) lists only the families you
    meant to change.
 
+## Task notes, not shared ledgers
+
+Shared ledgers made parallel pull requests conflict, so they are generated
+(PRO-347, 2026-11-24):
+
+- Every task adds its own `migration/notes/PRO-<n>.md` (front matter: task,
+  lane, date, title, PRs, SHAs; then one paragraph). The format is in
+  `migration/notes/README.md`. Two branches that each add a notes file merge
+  without a conflict.
+- Never edit a section between `BEGIN GENERATED` and `END GENERATED`
+  markers: the "Recent work" sections of every lane brief and of
+  `migration/STATUS.md`, and the README/REVIEW-SCOPE test counts. Do not add task rows to the hand-written
+  parts of those files either.
+- A pull request does not regenerate them. `make ledgers` (in `make check`)
+  and the `ledgers` ci job fail on a hand edit or a malformed note and print
+  the fix; your own note shows as "behind", which passes. After merge, main is
+  refreshed with `python3 -B tools/build_ledgers.py --write` (a full clone);
+  the nightly `ledgers` workflow fails while main is behind and uploads the
+  exact patch.
+
 ## Local commands
 
 ```bash
 make check          # the full gate, same as CI
+python3 -B tools/build_ledgers.py --diff   # preview the generated ledger sections (a full clone)
 make ci-local       # make check plus extended fuzzing and the offline replay/schema validation
 make fuzz           # extended seeded fuzzing
 make package        # sdist and wheel plus the wheel-content gate (dev tools installed)

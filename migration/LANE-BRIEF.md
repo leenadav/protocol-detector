@@ -1,8 +1,11 @@
 # Engine lane brief: read this first
 
-The onboarding note for a fresh chat taking any task in the engine lane. It has to stay short. **Rule: update this
-brief at the end of every task**, in the same push as the task. At a minimum, update §2 (state), §5 (open items) and
-§6 (frozen SHAs). Add a §7 line for every new pitfall.
+The onboarding note for a fresh chat taking any task in the engine lane. It has to stay short. **Rule (PRO-347,
+2026-11-24): every task adds its own `migration/notes/PRO-<n>.md`** (front matter: task, lane, date, title, PRs,
+SHAs; then one paragraph; `migration/notes/README.md`) in the same push as the task. That note is the task's record
+and its frozen SHAs. **Never edit a section between `BEGIN GENERATED` and `END GENERATED` markers** ("Recent work"
+below, the README/REVIEW-SCOPE test counts): `tools/build_ledgers.py` writes them after merge. Edit the hand-written
+§2, §5, §6 and §7 only when the lane's standing state changes (a new open item, a new pitfall), not to log a task.
 
 ## 1. Purpose and scope
 
@@ -90,6 +93,17 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **PRO-141 (livectl stop flake):** the stand-in worker sets its INT trap first and writes a ready file last; the
   three stop tests wait for it (`aff4d13`, branch `claude/vigilant-meitner-t7kw7h`). 200 of 200 under `-race`, also
   with 8 spinning loops on 4 CPUs. Root cause from PRO-140: the test, not `Manager.Stop`.
+
+### Recent work (generated)
+
+Written by `tools/build_ledgers.py` from `migration/notes/PRO-<n>.md`, newest first. Never edit it: a task adds
+its own notes file, and the section is refreshed after merge.
+
+<!-- BEGIN GENERATED: recent-work lane=engine limit=15 -->
+<!-- tools/build_ledgers.py writes this section from migration/notes/PRO-<n>.md. Do not edit it: add a notes file instead (migration/notes/README.md). -->
+
+_No notes for this lane yet._
+<!-- END GENERATED: recent-work -->
 
 ## 3. Where things live (reading order)
 

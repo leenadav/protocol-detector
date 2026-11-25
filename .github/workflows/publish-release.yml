@@ -130,6 +130,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0   # build_ledgers.py reads the pull request that merged each note from the merge history
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.13"
@@ -146,7 +147,7 @@ jobs:
           ruff check .
           python -B tools/check_action_pins.py .github/workflows
           python -B tools/check_security_requirements.py
-          python -B tools/check_docs_counts.py
+          python -B tools/check_docs_counts.py --strict
           python -B tools/coverage_matrix.py --check PROTOCOLS.md
           python -B protodetect.py policy lint policy-example.json --strict
           python -B tools/build_manifest.py --check presentation/SOURCE.json
@@ -154,6 +155,20 @@ jobs:
           python -B tools/check_no_keylogs.py
           python -B tools/check_content.py
           python -B tools/sequence_check.py --iterations 1
+      - name: The generated ledgers must be current for a tag release
+        # tools/build_ledgers.py: a release must not ship stale "Recent work" sections or test counts, so a tag
+        # runs --check --strict (it needs the full history checked out above). A dry run (a pull request or a branch
+        # push) runs the lag-tolerant --check, because a pull request's own note only reaches the generated sections
+        # in the refresh after it merges; it still fails on a hand edit, a malformed note or a broken marker.
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          python -B tools/build_ledgers.py --self-test
+          if [ "${REF_TYPE}" = "tag" ]; then
+            python -B tools/build_ledgers.py --check --strict --summary "$GITHUB_STEP_SUMMARY"
+          else
+            python -B tools/build_ledgers.py --check --summary "$GITHUB_STEP_SUMMARY"
+          fi
       - name: The reported version must equal pyproject.toml, and the tag when there is one
         env:
           REF_TYPE: ${{ github.ref_type }}

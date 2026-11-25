@@ -110,8 +110,9 @@ push to `main`:
 | ci | `External contract compatibility (JSON schemas, protodetect CLI; breaks need the api-break label)` | `tools/contract_check.py`: schemas/*.schema.json ($ref resolved) and the protodetect CLI from its own help output, base vs this commit; a breaking change fails without the `api-break` label, additions are reported (item 40) |
 | ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack`, the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...`; nothing to check without the Go content pack (item 30) |
 | ci | `security requirements gate` | every SR row names an existing test |
+| ci | `ledgers (generated sections not hand-edited, notes well-formed)` | `tools/build_ledgers.py --self-test` and `--check`: every `migration/notes/PRO-<n>.md` parses, and every generated section (lane-brief and STATUS recent work, README/REVIEW-SCOPE test counts) is exactly what its notes render to, possibly lagging behind this pull request's own note; a hand edit fails with the command that rebuilds them (item 43) |
 
-Not required checks, by design: `nightly-fuzz` (the Python mutation fuzz and every Go fuzz target
+Not required checks, by design: `ledgers.yml` (the nightly strict ledger check and refresh patch, item 43), `nightly-fuzz` (the Python mutation fuzz and every Go fuzz target
 for minutes, item 29) and `merge-readiness` (a daily report-only trial merge of claude/go-migration
 into main, item 31) are scheduled and never run on a pull request. Nor is `scorecard` (weekly OpenSSF
 Scorecard, item 42), which runs only on the schedule or by hand.
@@ -950,6 +951,25 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      LICENSE file), Code-Review (merges without an approving review), Branch-Protection (not readable
      with GITHUB_TOKEN), CII-Best-Practices (no badge), Signed-Releases (no release yet) and
      Packaging. Each low check after the first run becomes its own task.
+43. Generated shared ledgers (PRO-347, Lee, 2026-11-24). Lanes conflicted on the same shared ledgers (lane briefs,
+   `migration/STATUS.md` rows, README/REVIEW-SCOPE test counts). Each task now adds `migration/notes/PRO-<n>.md`
+   (`migration/notes/README.md`), and `tools/build_ledgers.py` writes the sections between `BEGIN GENERATED` and
+   `END GENERATED` markers from the notes, git log (the pull request that merged each note) and
+   `tools/check_docs_counts.py`. Same inputs, same bytes.
+   - **Pull requests:** the `ledgers` ci job (in the gate's needs) runs `--check`: a pull request's own note may
+     lag; a hand edit, a malformed note, a broken marker or an entry with no note fails with the command to run.
+     `tools/check_docs_counts.py` reports a lagging test count as behind and fails on it only with `--strict`; the
+     family, application and version numbers fail on drift as before.
+   - **Main:** `ledgers.yml` (nightly 02:47 UTC and `workflow_dispatch`) runs `--check --strict` on a full clone,
+     fails when main is behind, and uploads the exact refresh patch (`ledgers-refresh.patch`) and the rebuilt
+     files. The release gate runs `check_docs_counts.py --strict`, and its build job checks out the full history
+     and runs `build_ledgers.py --self-test` plus `--check --strict` for a tag (a dry run on a pull request or
+     a branch push runs the lag-tolerant `--check`, since its own note reaches the sections only after merge).
+   - **Read-only:** the workflow holds `contents: read` and opens nothing. Opening the refresh pull request from the
+     workflow needs `contents: write` and `pull-requests: write`, which rule 5 forbids outside the release
+     controller, the repository setting that lets Actions create pull requests, and a token whose pull requests
+     trigger ci (one opened with `GITHUB_TOKEN` starts no workflow, so the required `ci gate` never reports).
+     That is Lee's decision; until then the patch is applied as a docs-only pull request by hand (Deputy).
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
