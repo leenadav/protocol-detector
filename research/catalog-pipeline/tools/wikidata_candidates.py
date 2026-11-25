@@ -27,6 +27,8 @@ ROOTS = {
 # Endpoint: QLever mirror (no throttling, one query per class). Set WIKIDATA_SPARQL to
 # https://query.wikidata.org/sparql to use WDQS (then also set WIKIDATA_BANDS=1 and expect 429s).
 ENDPOINT = os.environ.get("WIKIDATA_SPARQL", "https://qlever.dev/api/wikidata")
+if not ENDPOINT.startswith("https://"):
+    raise SystemExit("WIKIDATA_SPARQL must be an https:// URL")
 MIN_SL = int(os.environ.get("WIKIDATA_MIN_SITELINKS", "3"))
 BANDS = ([(100, None), (50, 100), (30, 50), (20, 30), (12, 20), (8, 12), (5, 8), (3, 5)]
          if os.environ.get("WIKIDATA_BANDS") else [(MIN_SL, None)])
@@ -72,8 +74,8 @@ def sparql(q, tries=5):
     delay = 10
     for i in range(tries):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/sparql-results+json"})
-            with urllib.request.urlopen(req, timeout=600) as r:
+            req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/sparql-results+json"})  # noqa: S310 -- ENDPOINT checked https:// at import
+            with urllib.request.urlopen(req, timeout=600) as r:  # noqa: S310 -- ENDPOINT checked https:// at import
                 return json.load(r)
         except urllib.error.HTTPError as e:
             ra = e.headers.get("Retry-After")
@@ -114,7 +116,7 @@ def load_psl():
     if not os.path.exists(f):
         os.makedirs(CACHE, exist_ok=True)
         req = urllib.request.Request("https://publicsuffix.org/list/public_suffix_list.dat", headers={"User-Agent": UA})
-        open(f, "wb").write(urllib.request.urlopen(req, timeout=30).read())
+        open(f, "wb").write(urllib.request.urlopen(req, timeout=30).read())  # noqa: S310 -- fixed https:// URL
     icann, private, section = set(), set(), None
     for line in open(f, encoding="utf-8"):
         line = line.strip()
@@ -125,7 +127,7 @@ def load_psl():
     return icann, private
 
 def suffix_of(host, rules):
-    labels = host.split("."); best = None
+    labels = host.split(".")
     for i in range(len(labels)):
         cand = ".".join(labels[i:])
         if cand in rules or ("*." + ".".join(labels[i+1:])) in rules:
@@ -168,13 +170,13 @@ def normalise(rows):
     seen = {}
     for it in items.values():
         if re.fullmatch(r"Q\d+", it["name"]): drop["label_is_qid"] += 1; continue
-        doms, shared, bad = {}, False, False
+        doms, shared = {}, False
         for u in it["urls"]:
             try: host = urllib.parse.urlsplit(u if "//" in u else "http://" + u).hostname
             except ValueError: host = None
-            if not host: bad = True; continue
+            if not host: continue
             reg, st = registrable(host, icann, private)
-            if st == "invalid": bad = True; continue
+            if st == "invalid": continue
             if st == "shared" or reg in SHARED_HOSTING or host.lower().endswith(tuple("." + s for s in SHARED_HOSTING)):
                 shared = True; continue
             doms.setdefault(reg, host.lower())
@@ -212,7 +214,7 @@ def check_one(rec):
         except OSError: continue
         try:
             with socket.create_connection((n, 443), timeout=8) as s:
-                with CTX.wrap_socket(s, server_hostname=n) as t:   # verifies chain + hostname
+                with CTX.wrap_socket(s, server_hostname=n):   # verifies chain + hostname
                     res["tls"] = True; res["tls_name_ok"] = True; tlshost = n; break
         except ssl.SSLCertVerificationError as e:
             res["tls"] = True; res["error"] = "cert:" + str(e.verify_message)[:60]; tlshost = tlshost or n
