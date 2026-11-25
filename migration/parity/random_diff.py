@@ -443,7 +443,7 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as folder:
         path, out = Path(folder) / "cases.json", Path(folder) / "results.json"
         path.write_text(json.dumps(doc), encoding="utf-8")
-        (Path(folder) / "content.json").write_bytes((ROOT / "migration/fixtures/content.json").read_bytes())
+        (Path(folder) / "content.json").write_bytes((ROOT / "migration/fixtures/content-2026.11.9/pack.json").read_bytes())  # the frozen release (PRO-428)
         done = subprocess.run([args.binary, "replay", "--cases", str(path), "--out", str(out)],  # noqa: S603
                               capture_output=True, text=True, check=False)
         if done.returncode != 0:

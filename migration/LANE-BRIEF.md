@@ -43,8 +43,11 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **Content release:** 2026.11.9 (digest `cdaa5993077d101a`), with 544 applications and 442 host entries. Every earlier
   release reproduces the digest it was published with (C11). **Since PRO-411 the content source is Go's**
   (`go/internal/content/pack.json`, `history.json`, ledger `lock.json`), edited only with `tools/content_pack.py add
-  BATCH.json` (docs/CONTENT-BATCHES.md); the Python export tools are gone. Open before a real batch merges: the
-  frozen answers (cases.json, golden files) and the serve catalog pin release 2026.11.9 and need Go pinned to it.
+  BATCH.json` (docs/CONTENT-BATCHES.md); the Python export tools are gone. **Since PRO-428** the frozen answers
+  (cases.json, golden files) run on release 2026.11.9 kept in `migration/fixtures/content-2026.11.9/` (`make
+  go-build-golden`: the tree's code with that pack and history overlaid), the serve catalog is read from the pack,
+  and the current release is tested through the engine (every server name; every case unchanged unless it names
+  an added application). A batch merges without re-recording anything.
 - **Vendored dependencies:** `x/crypto` and `x/sys/cpu` live under `go/vendor`, and every Go command runs with
   `-mod=vendor`.
 - **Codex review packet:** complete in `migration/review-packet/` (frozen head `50ce5c0`, 43 chunks).
@@ -201,6 +204,9 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 
 ## 7. Pitfalls learned
 
+- **Frozen answers run on the frozen content (PRO-428).** `parity-go` and every golden replay use
+  `go/bin/protodetect-golden` (`make go-build-golden`), never `go/bin/protodetect`. A new frozen-answer gate must do
+  the same, or it breaks on the first content batch. Never change `migration/fixtures/content-2026.11.9/`.
 - **The differential gates replay golden files (PRO-401).** A change that moves Go's answer fails `make go-check`
   until the golden file is re-recorded (`make golden-record`, with the reference) or, after the reference is gone,
   until the new answer is reviewed in. Never re-record to make a red gate green without reading the diff.

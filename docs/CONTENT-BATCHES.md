@@ -88,18 +88,39 @@ fails, nothing is written.
 
 In CI, `tools/content_gate.py` (the `content pack` job) runs the same checks and `go test ./internal/content/...`.
 
-## Before the first real batch merges (open, PRO-411)
+## The frozen answers and a new release (PRO-428)
 
 The frozen answers of the Go gates were recorded at content release 2026.11.9, and every record carries
 `content.version`:
 
-- `migration/fixtures/cases.json`, the `parity-go` replay (1,059 records);
+- `migration/fixtures/cases.json`, the `parity-go` replay and `TestPortedFamiliesMatchThePythonReference`;
 - `migration/fixtures/golden/*.json.gz`, the differentials of `make go-check-parity`. Some of these answers are
   stored only as a SHA-256.
 
-The `protodetect serve` catalog (PR #127) is also a frozen list of the 544 applications.
+A batch never re-records them. Release 2026.11.9 is kept byte for byte in `migration/fixtures/content-2026.11.9/`
+(`pack.json` and the `history.json` it shipped with); `tools/content_pack.py check` proves it is the ledger's release
+(its pack digest, release block and host-entry count are `lock.json`'s entry, and every earlier release in its
+history is the ledger's). The frozen-answer gates run on it, not on the current pack:
 
-So a committed batch passes every content check, but it fails `parity-go`, the golden replays and the serve
-catalog test until those gates run Go pinned to the release the answers were frozen at (`--content-version
-2026.11.9`, which rollback already supports), and until the serve catalog is read from the pack. That follow-up
-is separate work in the engine lane. Until it lands, prepare and dry-run batches, but do not merge one.
+- `make go-build-golden` builds `go/bin/protodetect-golden` from the tree's code with those two files in place of the
+  embedded `pack.json` and `history.json` (a Go build overlay); `parity-go` and every golden replay use that binary,
+  and the replay harnesses put the frozen pack beside the cases they write;
+- the Go test of `cases.json` loads the frozen pack explicitly.
+
+What a new release changes is tested on the current pack:
+
+- `TestEveryServerNameRecordIsIdentifiedThroughTheEngine` (`go/internal/analyze`): every domain of every server-name
+  entry, and a name under it, carried as the SNI of a TLS ClientHello in a synthetic capture, is identified as the
+  entry's application through the whole engine; every web front is attributed to its provider and names no service.
+  A full application record (ports and aliases, no server name) has no name the engine can be handed: the engine names
+  it only through an engine family's label or a configured signature, which a batch does not add;
+- `TestCurrentContentKeepsEveryCaseThatNamesNoNewRecord` (`go/internal/replay`): every case of `cases.json`, replayed
+  on the current release, keeps its recorded answer apart from the release stamp, unless the answer names an
+  application the batch added;
+- the `protodetect serve` catalog (`/api/catalog`) is read from the embedded pack: every application in the
+  reference's order (the built-in applications in the order kept in `go/internal/serve/catalog.json`, then the
+  server-name entries in entry order, then any other application in name order) and the pack's outcomes. Only the
+  protocol descriptors are frozen there, and a test keeps them equal to the engine's families.
+
+`make content-pack` (`tools/content_pack.py --self-test --e2e`) adds the example batch in a copy of the tree without
+the Python engine and runs the whole `go test ./...` there, these tests included.

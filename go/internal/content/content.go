@@ -119,8 +119,12 @@ type Pack struct {
 	Technologies    map[string]bool
 	Characteristics map[string]bool
 	AppDomains      map[string][]string
-	webFronts       map[string]string
-	suffixes        map[string]string
+	// OutcomeOrder and HostEntryOrder keep the pack's list order of vocabulary.outcomes and of the server-name
+	// entries' names, which the maps above lose (the serve catalog lists them in that order; PRO-428).
+	OutcomeOrder   []string
+	HostEntryOrder []string
+	webFronts      map[string]string
+	suffixes       map[string]string
 	// Digests are the pack digest and the verified release digest (migration/CONTENT-DIGEST.md).
 	Digests Digests
 }
@@ -174,7 +178,8 @@ func parse(data []byte, earlier bool) (*Pack, error) {
 	}
 	p := &Pack{Release: raw.Release, Applications: map[string]*Application{}, Aliases: map[string]string{},
 		ProtocolNames: raw.ProtocolNames, Outcomes: set(raw.Vocabulary.Outcomes), Risks: raw.Risks,
-		AppDomains: map[string][]string{}, webFronts: map[string]string{}, suffixes: map[string]string{}}
+		OutcomeOrder: append([]string{}, raw.Vocabulary.Outcomes...),
+		AppDomains:   map[string][]string{}, webFronts: map[string]string{}, suffixes: map[string]string{}}
 	for _, app := range raw.Applications {
 		if app == nil || app.Name == "" {
 			return nil, invalid("application entry without a name")
@@ -236,6 +241,7 @@ func parse(data []byte, earlier bool) (*Pack, error) {
 			return nil, invalid("host-catalog entry without an application: " + e.Name)
 		}
 		p.AppDomains[e.Name] = append([]string{}, e.Domains...)
+		p.HostEntryOrder = append(p.HostEntryOrder, e.Name)
 		for _, front := range e.WebFronts {
 			if _, dup := p.webFronts[front]; dup {
 				return nil, invalid("Duplicate host-catalog web front " + front)
@@ -496,6 +502,15 @@ func (p *Pack) AttributionForHost(hostname string) (string, string, bool) {
 		}
 		position += dot + 1
 	}
+}
+
+// WebFronts is a copy of the exact web-front names and the provider each belongs to.
+func (p *Pack) WebFronts() map[string]string {
+	out := make(map[string]string, len(p.webFronts))
+	for name, provider := range p.webFronts {
+		out[name] = provider
+	}
+	return out
 }
 
 // ApplicationForHost is the service a normalized server name affiliates with ("" for a web front or none).

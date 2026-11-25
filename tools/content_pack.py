@@ -29,9 +29,11 @@ Nothing here imports the Python engine (protocol_engine/), and nothing is detect
         already in the pack is refused. docs/CONTENT-BATCHES.md describes the batch format and the procedure.
 
     content_pack.py --self-test [--e2e]
-        Unit checks on in-memory packs. --e2e also copies the content files and the Go module to a temporary tree
-        WITHOUT protocol_engine/ and protocol_adapters/, adds docs/examples/content-batch-example.json there,
-        and runs `check`, tools/check_content.py and `go test ./internal/content/...` in it (needs the pinned Go).
+        Unit checks on in-memory packs. --e2e also copies the content files, migration/ (without the golden files)
+        and the Go module to a temporary tree WITHOUT protocol_engine/ and protocol_adapters/, adds
+        docs/examples/content-batch-example.json there, and runs `check`, tools/check_content.py and the whole
+        `go test ./...` in it (needs the pinned Go): the frozen answers on the frozen release, every case and every
+        server name on the new one, and the serve catalog read from the pack (PRO-428).
 
 Standard library only; Python 3.9 syntax.
 """
@@ -54,6 +56,13 @@ FIXTURE = Path("migration/fixtures/content.json")
 HISTORY = Path("go/internal/content/history.json")
 LOCK = Path("go/internal/content/lock.json")
 EXAMPLE = Path("docs/examples/content-batch-example.json")
+# PRO-428: the release the frozen answers of the Go gates (cases.json, migration/fixtures/golden/) were recorded at,
+# kept byte for byte as it was published. The golden replays build Go with these two files in place of the embedded
+# ones (make go-build-golden), so a new release never moves their oracle. `check` proves the copy is that release.
+FROZEN_VERSION = "2026.11.9"
+FROZEN = Path("migration/fixtures/content-" + FROZEN_VERSION)
+FROZEN_PACK = FROZEN / "pack.json"
+FROZEN_HISTORY = FROZEN / "history.json"
 
 MAX_PACK_BYTES = 16 << 20       # go/internal/content.MaxPackBytes
 MAX_BATCH_BYTES = 4 << 20       # a batch file larger than this is refused before it is parsed
@@ -132,7 +141,7 @@ def dumps(document):
 def read_tree(root):
     root = Path(root)
     texts = {}
-    for path in (PACK, FIXTURE, HISTORY, LOCK):
+    for path in (PACK, FIXTURE, HISTORY, LOCK, FROZEN_PACK, FROZEN_HISTORY):
         try:
             texts[path] = (root / path).read_bytes()
         except OSError as error:
@@ -148,6 +157,11 @@ def read_tree(root):
         tree[key] = strict_load(text, str(path))
         tree[key + "_text"] = text
     tree["fixture_bytes"] = texts[FIXTURE]
+    for key, path in (("frozen_pack", FROZEN_PACK), ("frozen_history", FROZEN_HISTORY)):
+        try:
+            tree[key] = strict_load(texts[path].decode("utf-8"), str(path))
+        except UnicodeDecodeError:
+            raise ContentError("{} is not UTF-8".format(path))
     return tree
 
 
@@ -513,6 +527,44 @@ def tree_problems(tree):
                             "tools/content_pack.py".format(path))
     if tree["fixture_bytes"] != tree["pack_text"].encode("utf-8"):
         problems.append("{} is not a byte-for-byte copy of {}".format(FIXTURE, PACK))
+    if not problems and "frozen_pack" in tree:   # apply_batch's new tree leaves the frozen copy as `check` read it
+        problems += frozen_problems(tree["frozen_pack"], tree["frozen_history"], tree["lock"])
+    return problems
+
+
+def frozen_problems(pack, history, lock):
+    """The frozen copy (FROZEN) must be the published release FROZEN_VERSION exactly: a valid pack whose release block,
+    host-entry count and whole-document pack digest are the ledger's entry, and the history that release shipped
+    with, each of whose releases is the ledger's. Changing only the version string, or any field, fails here."""
+    label = str(FROZEN_PACK)
+    problems = ["{}: {}".format(label, problem) for problem in pack_problems(pack)]
+    if problems:
+        return problems
+    entries = {entry["version"]: entry for entry in lock["releases"]}
+    entry = entries.get(FROZEN_VERSION)
+    if entry is None:
+        return ["lock: has no release {}, the frozen copy's".format(FROZEN_VERSION)]
+    if pack["release"]["version"] != FROZEN_VERSION:
+        problems.append("{}: is release {}, not {}".format(label, pack["release"]["version"], FROZEN_VERSION))
+    if entry["pack_digest"] is None or pack_digest(pack) != entry["pack_digest"]:
+        problems.append("{}: pack digest {} is not the ledger's {} for {}".format(
+            label, pack_digest(pack), entry["pack_digest"], FROZEN_VERSION))
+    for field in RELEASE_FIELDS:
+        if pack["release"][field] != entry[field]:
+            problems.append("{}: release {} differs from the ledger's".format(label, field))
+    if len(pack["host_catalog"]["entries"]) != entry["host_entries"]:
+        problems.append("{}: {} host entries, the ledger says {}".format(label, len(pack["host_catalog"]["entries"]),
+                                                                      entry["host_entries"]))
+    problems += ["{}: {}".format(FROZEN_HISTORY, problem) for problem in history_problems(history, pack)]
+    if problems:
+        return problems
+    earlier = sorted((v for v in entries if version_key(v) < version_key(FROZEN_VERSION)), key=version_key)
+    if sorted(history["releases"], key=version_key) != earlier:
+        problems.append("{}: carries releases {}, the ledger before {} has {}".format(
+            FROZEN_HISTORY, sorted(history["releases"], key=version_key), FROZEN_VERSION, earlier))
+    for version, published in history["releases"].items():
+        if version in entries and any(published["release"][f] != entries[version][f] for f in RELEASE_FIELDS):
+            problems.append("{}: release {} differs from the ledger's".format(FROZEN_HISTORY, version))
     return problems
 
 
@@ -721,10 +773,12 @@ def _fixture():
     return pack, history, lock
 
 
-def _tree(pack, history, lock):
+def _tree(pack, history, lock, frozen=None):
     text = dumps(pack)
+    frozen_pack, frozen_history = frozen or _fixture()[:2]   # the fixture's first release is FROZEN_VERSION
     return {"pack": pack, "history": history, "lock": lock, "pack_text": text, "history_text": dumps(history),
-            "lock_text": dumps(lock), "fixture_bytes": text.encode("utf-8")}
+            "lock_text": dumps(lock), "fixture_bytes": text.encode("utf-8"), "frozen_pack": frozen_pack,
+            "frozen_history": frozen_history}
 
 
 def _batch(*entries, applications=()):
@@ -852,6 +906,29 @@ def self_test():
     for label, (edit, expected) in cases.items():
         found = tampered(edit)
         assert expected in found, (label, found)
+    # The frozen copy of FROZEN_VERSION (PRO-428): only that release, byte for byte in content, passes.
+    def frozen_tampered(edit):
+        fp, fh = copy.deepcopy(pack), copy.deepcopy(history)
+        edit(fp, fh)
+        return " | ".join(tree_problems(_tree(new_pack, new_history, new_lock, (fp, fh))))
+    assert frozen_tampered(lambda fp, fh: None) == ""
+    frozen_cases = {
+        "the next release relabelled": (lambda fp, fh: fp.update(copy.deepcopy(new_pack), release=dict(
+            new_pack["release"], version=FROZEN_VERSION)), "differs from the ledger's"),
+        "a field edited, digests recomputed": (lambda fp, fh: (
+            next(a for a in fp["applications"] if a["name"] == "ssl").update(description="TLS!"),
+            fp["release"]["components"].update(application_catalog=application_component(fp["applications"])),
+            fp["release"].update(digest=release_digest(fp["release"]["components"]))), "differs from the ledger's"),
+        "a field edited outside the digests": (lambda fp, fh: fp["protocol_names"].update(tls2="ssl"), "pack digest"),
+        "history of another release": (lambda fp, fh: fh.update(current="2026.11.8"), "is not the pack's"),
+        "history with an unpublished release": (lambda fp, fh: fh["releases"].update({"2026.11.8": {
+            "release": dict(pack["release"], version="2026.11.8"), "host_catalog": pack["host_catalog"]}}),
+            "the ledger before"),
+    }
+    for label, (edit, expected) in frozen_cases.items():
+        found = frozen_tampered(edit)
+        assert expected in found, (label, found)
+    cases.update(frozen_cases)
     layout = _tree(new_pack, new_history, new_lock)
     layout["pack_text"] = json.dumps(new_pack)
     layout["fixture_bytes"] = layout["pack_text"].encode("utf-8")
@@ -886,7 +963,14 @@ def e2e(go_required=True):
     """The example batch added in a copy of the tree without the Python engine; every content check run there."""
     with tempfile.TemporaryDirectory(prefix="content-batch-e2e-") as folder:
         work = Path(folder)
-        for path in (PACK, FIXTURE, HISTORY, LOCK, EXAMPLE):
+        # PRO-428: what the Go tests read beside the module (cases.json, gaps.json, deltas.json, dispatch.json, the
+        # frozen release, the example signatures, LICENSE and NOTICE), so `go test ./...` runs whole on the batch; not
+        # the golden files, which only the Python replays read, and never the Python engine.
+        shutil.copytree(str(ROOT / "migration"), str(work / "migration"),
+                        ignore=shutil.ignore_patterns("__pycache__", "golden", "go-results.json", "go-report.json"))
+        for name in ("signatures-example.json", "LICENSE", "NOTICE"):
+            shutil.copyfile(str(ROOT / name), str(work / name))
+        for path in (PACK, FIXTURE, HISTORY, LOCK, EXAMPLE, FROZEN_PACK, FROZEN_HISTORY):
             (work / path).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(str(ROOT / path), str(work / path))
         shutil.copytree(str(ROOT / "tools"), str(work / "tools"), ignore=shutil.ignore_patterns("__pycache__"))
@@ -930,11 +1014,23 @@ def e2e(go_required=True):
             os.rename(str(work / "go_full"), str(work / "go"))
             go_env = dict(env, GOFLAGS="-mod=vendor", GOPROXY="off", GOWORK="off")
             go_env.setdefault("GOTOOLCHAIN", "local")
-            command = [go, "test", "-count=1", "./internal/content/..."]
+            # PRO-428: the whole Go suite, not only the content package: the frozen-answer replay (on the frozen
+            # release), the replay of every case on the new release, the server-name identity test through the engine
+            # and the serve catalog read from the pack must all pass with the batch added.
+            command = [go, "test", "-count=1", "./..."]
             result = subprocess.run(command, cwd=str(work / "go"), env=go_env, check=False, capture_output=True, text=True)  # noqa: S603
-            lines.append("go test ./internal/content/...: exit {}".format(result.returncode))
+            packages = [line for line in result.stdout.splitlines() if line.startswith(("ok ", "ok\t", "FAIL", "?"))]
+            lines.append("go test ./...: exit {}, {} packages ok, {} failed".format(
+                result.returncode, sum(1 for line in packages if line.startswith("ok")),
+                sum(1 for line in packages if line.startswith("FAIL"))))
             if result.returncode != 0:
-                raise ContentError("e2e Go content tests failed on the batch:\n" + result.stdout + result.stderr)
+                raise ContentError("e2e Go tests failed on the batch:\n" + result.stdout[-20000:] + result.stderr[-5000:])
+            command = [go, "test", "-count=1", "-v", "-run", "TestCurrentContentKeepsEveryCaseThatNamesNoNewRecord|"
+                       "TestEveryServerNameRecordIsIdentifiedThroughTheEngine", "./internal/replay/", "./internal/analyze/"]
+            result = subprocess.run(command, cwd=str(work / "go"), env=go_env, check=False, capture_output=True, text=True)  # noqa: S603
+            if result.returncode != 0:
+                raise ContentError("e2e current-content tests failed on the batch:\n" + result.stdout[-20000:] + result.stderr)
+            lines += [line.strip() for line in result.stdout.splitlines() if "release " + new_pack["release"]["version"] in line]
         print("content batch e2e: ok, {} -> {} (+{} applications) without protocol_engine/ or protocol_adapters/".format(
             before["release"]["version"], new_pack["release"]["version"], added))
         for line in lines:

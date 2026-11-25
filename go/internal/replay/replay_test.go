@@ -76,6 +76,9 @@ func diff(path string, want, got interface{}) string {
 	return ""
 }
 
+// frozenPack is the content release cases.json was recorded at (tools/content_pack.py check proves it is the ledger's).
+const frozenPack = "../../../migration/fixtures/content-2026.11.9/pack.json"
+
 // canonicalizeRecords applies the harness rule to a Go result: content.digest is not compared (cases.py record_dict).
 func canonicalizeRecords(got interface{}) {
 	m, ok := got.(map[string]interface{})
@@ -119,6 +122,10 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// PRO-428: the expectations were recorded at content release 2026.11.9 (every record carries content.version), so
+	// the cases run on that release, kept byte for byte beside them, never on whatever release is current.
+	SetPackPath(frozenPack)
+	defer SetPackPath("")
 	results, err := Run(context.Background(), doc)
 	if err != nil {
 		t.Fatal(err)

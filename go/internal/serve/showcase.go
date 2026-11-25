@@ -9,6 +9,7 @@ import (
 	"crypto/x509/pkix"
 	_ "embed"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -17,6 +18,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -29,9 +31,10 @@ import (
 // The three answers the service used to take from the Python reference (PRO-401, Lee 2026-11-25: the reference is
 // removed). Each is now the service's own:
 //
-//   - the catalog (/api/catalog): the protocol descriptors, the applications and the evidence-limited outcomes,
-//     frozen from the reference's catalog_data() into catalog.json, with the build source read from SOURCE.json and
-//     the service's limits, as the reference assembled them;
+//   - the catalog (/api/catalog): the protocol descriptors frozen from the reference's catalog_data() into
+//     catalog.json, the applications and the evidence-limited outcomes of the embedded content pack (PRO-428: read
+//     from the pack, so a new content release is listed without editing anything here), the build source read from
+//     SOURCE.json and the service's limits, as the reference assembled them;
 //   - the demo capture (/api/sample and the "demo" job): one capture the reference's demo_bytes() generated, frozen
 //     into demo.pcap (synthetic fixtures on documentation addresses; the reference drew a fresh TLS random per call,
 //     which is the only thing that varied);
@@ -77,10 +80,88 @@ func catalog(root string) (*ojson.Object, error) {
 		subset.Set(key, value)
 	}
 	part := func(key string) ojson.Value { value, _ := pieces.Get(key); return value }
+	pack, err := content.Embedded()
+	if err != nil {
+		return nil, err
+	}
+	applications, outcomes, err := packCatalog(pack, part("application_order"))
+	if err != nil {
+		return nil, err
+	}
 	limits := ojson.NewObject("upload_mb", ojson.FromInt(8), "frames", ojson.FromInt(MaxFrames), "sessions", ojson.FromInt(MaxSessions),
 		"worker_seconds", ojson.FromInt(WorkerSeconds))
-	return ojson.NewObject("source", subset, "protocols", part("protocols"), "applications", part("applications"),
-		"outcomes", part("outcomes"), "limits", limits), nil
+	return ojson.NewObject("source", subset, "protocols", part("protocols"), "applications", applications,
+		"outcomes", outcomes, "limits", limits), nil
+}
+
+// catalogOrder is the order the catalog lists a pack's applications in, as the reference's APPLICATIONS dict held
+// them: the built-in applications in the reference's definition order (catalog.json's application_order: an order
+// only, every field comes from the pack), then the server-name applications in the pack's entry order (a batch
+// appends there), then any other application in name order (a batch's full application records). Each application
+// of the pack is listed exactly once; an ordered name the pack no longer has is left out.
+func catalogOrder(pack *content.Pack, builtin []string) []string {
+	seen := map[string]bool{}
+	var order []string
+	add := func(name string) {
+		if _, ok := pack.Applications[name]; ok && !seen[name] {
+			seen[name] = true
+			order = append(order, name)
+		}
+	}
+	for _, name := range builtin {
+		add(name)
+	}
+	for _, name := range pack.HostEntryOrder {
+		add(name)
+	}
+	rest := make([]string, 0, len(pack.Applications))
+	for name := range pack.Applications {
+		if !seen[name] {
+			rest = append(rest, name)
+		}
+	}
+	sort.Strings(rest)
+	for _, name := range rest {
+		add(name)
+	}
+	return order
+}
+
+// packCatalog is catalog_data()'s applications ([asdict(a) for a in APPLICATIONS.values()], the 13 fields in the
+// dataclass order, which is content.Application's) and outcomes (OUTCOMES, in the pack's order).
+func packCatalog(pack *content.Pack, order ojson.Value) (ojson.Value, ojson.Value, error) {
+	items, ok := order.([]ojson.Value)
+	if !ok {
+		return nil, nil, errors.New("catalog.json has no application_order list")
+	}
+	builtin := make([]string, 0, len(items))
+	for _, item := range items {
+		name, ok := item.(string)
+		if !ok {
+			return nil, nil, errors.New("catalog.json application_order holds a non-string")
+		}
+		builtin = append(builtin, name)
+	}
+	names := catalogOrder(pack, builtin)
+	list := make([]*content.Application, 0, len(names))
+	for _, name := range names {
+		list = append(list, pack.Applications[name])
+	}
+	data, err := json.Marshal(struct {
+		Applications []*content.Application `json:"applications"`
+		Outcomes     []string               `json:"outcomes"`
+	}{list, pack.OutcomeOrder})
+	if err != nil {
+		return nil, nil, err
+	}
+	value, err := ojson.Decode(data)
+	if err != nil {
+		return nil, nil, err
+	}
+	both := value.(*ojson.Object)
+	applications, _ := both.Get("applications")
+	outcomes, _ := both.Get("outcomes")
+	return applications, outcomes, nil
 }
 
 // showcaseCase is one exchange of the showcase: the TLS version, the one cipher suite of a TLS 1.2 exchange, and

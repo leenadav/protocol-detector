@@ -261,7 +261,7 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as folder:
         path, out = Path(folder) / "cases.json", Path(folder) / "results.json"
         path.write_text(json.dumps(doc), encoding="utf-8")
-        (Path(folder) / "content.json").write_bytes((ROOT / "migration/fixtures/content.json").read_bytes())   # replay reads the pack beside the cases
+        (Path(folder) / "content.json").write_bytes((ROOT / "migration/fixtures/content-2026.11.9/pack.json").read_bytes())   # replay reads the pack beside the cases: the release the answers were frozen at (PRO-428)
         done = subprocess.run([args.binary, "replay", "--cases", str(path), "--out", str(out)], capture_output=True, text=True, check=False)  # noqa: S603
         if done.returncode != 0:
             failures.append("go replay failed: " + done.stderr.strip()[:300])
