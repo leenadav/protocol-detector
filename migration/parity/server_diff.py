@@ -134,6 +134,11 @@ def measured(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+# A non-loopback interface of the host running the comparison (PRO-401): the synthetic-scope refusal it probes needs an
+# interface that exists, and which ones exist depends on the machine, not on the service under test.
+HOST_NIC = "<a non-loopback interface of this host>"
+
+
 def host_interfaces():
     """The interface list the reference's LiveManager.interfaces() gives on this host (stdlib only): the names of
     socket.if_nameindex() that fit its pattern. It depends on the machine, so an answer is compared with it here,
@@ -380,14 +385,18 @@ def live_control_refusals(run, rng):
     options = [{}, {"interface": None}, {"interface": "nope0"}, {"interface": 5}, {"interface": "lo", "duration": True},
                {"interface": "lo", "duration": 4}, {"interface": "lo", "duration": 601}, {"interface": "lo", "duration": 30.0},
                {"interface": "lo", "duration": "30"}, {"interface": "lo", "duration": 10 ** 30}, {"interface": "lo", "scope": "x"},
-               {"interface": "lo", "scope": None}, {"interface": "eth0", "scope": "synthetic"},
+               {"interface": "lo", "scope": None}, {"interface": HOST_NIC, "scope": "synthetic"},
                {"interface": "lo", "scope": "synthetic", "keylog_path": "relative"},
                {"interface": "lo", "scope": "synthetic", "keylog_path": 5},
                {"interface": "lo", "scope": "synthetic", "keylog_path": "/" + "k" * 1024},
                {"interface": "lo", "scope": "synthetic", "keylog_path": "/absolute/keys.log", "duration": 121}, [], "x", 5]
+    nic = next((name for name in host_interfaces() if not name.startswith("lo")), "eth0")
     for option in options:
+        label = "start " + json.dumps(option)[:80]           # HOST_NIC stays a placeholder in the label
+        if isinstance(option, dict) and option.get("interface") == HOST_NIC:
+            option = dict(option, interface=nic)
         body = json.dumps(option).encode()
-        run.same("start " + body.decode()[:80], post("/api/live/start", body))
+        run.same(label, post("/api/live/start", body))
     for body in (b'{"run_id": null}', b'{"run_id": "x"}', b'{"run_id": 5}', b"{}", b""):
         for path in ("/api/live/stop", "/api/live/heartbeat", "/api/live/reset"):
             run.same("idle {} {!r}".format(path, body), post(path, body))
