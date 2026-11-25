@@ -1141,3 +1141,37 @@ Flow cost of one direction (1-byte updates unless noted; `MaxUpdates` 1,000,000)
 | 12 PRO-170 signatures (the set cap), 2000 | ~2 min (projected: 2.0e11 units at the measured 0.65 ns per unit) | 54 ms, `budget_exhausted` at 3.9e8 units |
 | 12 signatures, one 2000-byte segment | ~0.6 s | ~0.6 s, `unknown` (unchanged: within two full evaluations) |
 | 12 signatures, `signature_bytes` 65536 (configured maximum) | ~38 h (projected, 2.1e14 units) | 11-34 s, `budget_exhausted` at 1.3e10 units (two full evaluations; see the lane brief) |
+
+**PRO-370 follow-up (Codex PRO-369, two P2 findings on `2885afa`, plus one found while fixing them).** All three are Go only, with no parity case change.
+
+1. *Length-only conditions and candidate preparation were free* (`go/internal/signatures/signatures.go`). An
+   integer or set condition was never charged, and neither was building the candidate list. A document of 4,096
+   signatures with 12 `unknown-req-tcp-payload-length` conditions each therefore did about 1 ms of uncharged work per update,
+   for up to 65,536 updates. Now every condition costs `signatures.FixedWork` (8 units: a length-only condition
+   measured about 21 ns, against about 3 ns per RE2 unit), plus its bytes when byte-valued. Preparation costs `FixedWork` per signature of
+   the family, plus the bytes the exact index hashes. All of it is charged before the work runs. `Set.WorkPerEvaluation` is this fixed part, and the allowance
+   counts it: two full evaluations are `2 x (buffer x WorkPerByte + WorkPerEvaluation)`.
+   Tests: `TestLengthOnlyConditionsAndCandidatesAreCharged`, `TestLengthOnlySignatureWorkIsBounded`.
+2. *The adaptive allowance had no ceiling* (`go/internal/engine/inspector.go`). It is now
+   `min(MaxSignatureWorkCeiling = 2^28, max(2^26, two full evaluations))`. The consequence is a wider Go-only divergence, pending the same
+   approval as SEC-SIG-1: a flow whose two full evaluations exceed 2^28 can end `budget_exhausted` even when it arrives in one
+   or two segments. At the default `signature_bytes` 2000, one full segment of the largest set the caps allow
+   (about 2.0e8 units) still gets the reference verdict. At 65536 it is refused before the search runs. Test:
+   `TestSignatureWorkAllowanceHasACeiling`. `TestUnknownPayloadSignatureWorkIsBounded` now expects the ceiling,
+   not two full evaluations, at 2000 with 12 signatures.
+3. *The contexts' copy was free* (found while fixing 1). Each evaluation copies the whole unknown buffer into its
+   contexts, so with a cheap set 1-byte updates copied up to 65,536 x 64 KiB uncharged. The inspector now charges
+   one unit per byte copied before it copies (`Work.Charge`), and the allowance counts it (`WorkPerByte + 1`).
+   The copy is also skipped when no signature reads `unknown-tcp`. Test: `TestUnknownPayloadCopyIsCharged`. The
+   test set's 1-byte flow to a full default buffer now uses 4.0 M units (2.0 M before), still under 1/16 of the
+   2^26 floor.
+
+| flow (1-byte updates unless noted) | `2885afa` | PRO-370 |
+|---|---|---|
+| 4,096 signatures x 12 length conditions, `signature_bytes` 65536 | 0 units charged: never exhausted, about 1 ms per update for up to 65,536 updates | 158 updates, 165 ms, `budget_exhausted` |
+| 1 PRO-170 signature, 65536 | about 2.8 s projected (1.1e9-unit allowance) | 246 updates, 165 ms, `budget_exhausted` at the ceiling |
+| 12 PRO-170 signatures, 65536 | 11-34 s, `budget_exhausted` at 1.3e10 units | 65 updates, 33 ms, `budget_exhausted` at the ceiling |
+| 12 PRO-170 signatures, 2000 | 54 ms at 3.9e8 units | 33 ms at the ceiling (2.7e8) |
+| 12 signatures, one 65547-byte segment at 65536 | about 17 s projected (one evaluation, 6.5e9 units) | 54 us, `budget_exhausted` before the search |
+
+At the slowest measured rate (about 2.6 ns per unit), the ceiling is about 0.7 s of CPU per direction.
