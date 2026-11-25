@@ -46,6 +46,7 @@ def parse_server_hello(body, config, record_versions, record_remaining):
     tls13 = 43 in extensions
     source = 'hello_retry_request' if retry else 'server_hello'
     evidence = [('tls_handshake', source, source, 'structural')]
+    selected_raw = ()  # TLS 1.2 selected ALPN wire bytes; a TLS 1.3 ServerHello carries none (it is in EncryptedExtensions)
     if tls13:
         if extensions[43] != b'\x03\x04':
             raise UnsupportedPrefix('ServerHello selected version outside TLS 1.3 profile')
@@ -124,6 +125,7 @@ def parse_server_hello(body, config, record_versions, record_remaining):
                     raise ParseError('Empty server ALPN selection')
                 text = name.decode('ascii') if all(32 <= c < 127 for c in name) else 'hex:' + name.hex()
                 evidence.append(('selected_alpn', text, source, 'asserted'))
+                selected_raw = (bytes(name),)  # the fingerprint reads wire bytes, not the display text (SEC-FP-1)
             else:
                 raise UnsupportedPrefix('TLS 1.2 ServerHello extension outside supported profile')
         evidence.extend((('selected_key_exchange', _tls12_key_exchange(cipher), source, 'asserted'),
@@ -133,9 +135,8 @@ def parse_server_hello(body, config, record_versions, record_remaining):
                      ('selected_cipher', '0x%04x' % cipher, source, 'asserted')))
     if config.fingerprints and not retry:
         from .fingerprints import ja3s, ja4s
-        selected = tuple(value for field, value, _, _ in evidence if field == 'selected_alpn')
         negotiated = 0x0304 if tls13 else 0x0303
-        evidence.extend((('ja4s', ja4s(negotiated, cipher, tuple(extensions), selected), source, 'derived'),
+        evidence.extend((('ja4s', ja4s(negotiated, cipher, tuple(extensions), selected_raw), source, 'derived'),
                          ('ja3s', ja3s(negotiated, cipher, tuple(extensions)), source, 'derived')))
     reason = ('HelloRetryRequest structure validated; requested changes unverified' if retry else
               'ServerHello structure validated; server selections unauthenticated, handshake completion unverified')

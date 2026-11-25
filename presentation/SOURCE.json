@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "5f01fcb8ce73f389656b920809b67e24ceb5b7a8",
-  "branch": "claude/go-migration",
-  "build_digest": "84a115150917535e17025d345923fc557cfd7e8658e1e160ff4c743c0a5c5ef9",
+  "commit": "89459862434348ffc1d7f95d40230e4059cb865c",
+  "branch": "claude/engine-PRO-394-alpn-raw-bytes",
+  "build_digest": "f9de0d05537ebdd68ac848c712ae9b06a7282e89a32d2f0c99a040f0105eb88d",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -160,7 +160,7 @@
     {
       "path": "protocol_engine/fingerprints.py",
       "component": "engine",
-      "sha256": "91423371336417a00694566bbafc89662e02425722ccada9746ecb8ba640413c"
+      "sha256": "8a7869569dd869393ccfcfa4997649c7d850a0d1e0bc4bad517856bd5a91523b"
     },
     {
       "path": "protocol_engine/fins.py",
@@ -250,7 +250,7 @@
     {
       "path": "protocol_engine/parsers.py",
       "component": "engine",
-      "sha256": "5880fb3e9622c9df77791f8bff529b38d659c08716b0e25beeff266a1ef3f7b6"
+      "sha256": "e5b2fcf7822bf1e039ab68033c4be08fb54c5aeb15076eca144353dde0e30905"
     },
     {
       "path": "protocol_engine/policy.py",
@@ -350,7 +350,7 @@
     {
       "path": "protocol_engine/tls_server.py",
       "component": "engine",
-      "sha256": "f229ade32457830f5e4895e8fec9d4f1987f41a3d1a6de6780f1fea1e2d67c77"
+      "sha256": "882873d108438c5234963d30b71dbd55b8a10b80e464b60749d900c2ddbefc00"
     },
     {
       "path": "protocol_engine/unknown.py",

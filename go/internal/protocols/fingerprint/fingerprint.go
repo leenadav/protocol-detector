@@ -18,8 +18,9 @@ import (
 type ClientHello struct {
 	Version             int
 	Ciphers             []int
-	Extensions          []int // wire order
-	ALPN                []string
+	Extensions          []int    // wire order
+	ALPN                []string // display strings (printable ASCII, else "hex:..."), for output only
+	ALPNRaw             [][]byte // the offered wire bytes; alpnCode reads only these (SEC-FP-1)
 	Groups              []int
 	SignatureAlgorithms []int
 	PointFormats        []int
@@ -41,24 +42,14 @@ func alnum(b byte) bool {
 	return (b >= '0' && b <= '9') || (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z')
 }
 
-// alpnCode is the JA4 two-character code of the first offered or selected ALPN value.
-func alpnCode(alpn []string) string {
+// alpnCode is the JA4 two-character code of the wire bytes of the first offered or selected ALPN value. Only raw
+// bytes are read: the display string ("hex:..." for non-printable values) is ambiguous, because a printable offer
+// may itself start with "hex:" (SEC-FP-1).
+func alpnCode(alpn [][]byte) string {
 	if len(alpn) == 0 {
 		return "00"
 	}
-	value := alpn[0]
-	var raw []byte
-	if strings.HasPrefix(value, "hex:") {
-		raw, _ = hex.DecodeString(value[4:])
-	} else {
-		for _, r := range value { // latin-1 with replacement: offers are printable ASCII or hex: already
-			if r > 0xff {
-				raw = append(raw, '?')
-			} else {
-				raw = append(raw, byte(r))
-			}
-		}
-	}
+	raw := alpn[0]
 	if len(raw) == 0 {
 		return "00"
 	}
@@ -121,7 +112,7 @@ func JA4(info *ClientHello, protocol string) string {
 		}
 	}
 	partA := fmt.Sprintf("%s%s%s%02d%02d%s", protocol, versionCode(info.Version, info.SupportedVersions), sni, min99(len(ciphers)),
-		min99(len(extensions)), alpnCode(info.ALPN))
+		min99(len(extensions)), alpnCode(info.ALPNRaw))
 	partB := "000000000000"
 	if len(ciphers) > 0 {
 		sorted := append([]int{}, ciphers...)
@@ -173,8 +164,9 @@ func JA3S(version, cipher int, extensions []int) string {
 	return md5Hex(fmt.Sprintf("%d,%d,%s", version, cipher, dashed(extensions, false)))
 }
 
-// JA4S is the server fingerprint: protocol, version, extension count, ALPN code, cipher, extension hash.
-func JA4S(version, cipher int, extensions []int, alpn []string, protocol string) string {
+// JA4S is the server fingerprint: protocol, version, extension count, ALPN code, cipher, extension hash. alpn holds
+// the selected ALPN value's wire bytes, never its display string.
+func JA4S(version, cipher int, extensions []int, alpn [][]byte, protocol string) string {
 	code, ok := versions[version]
 	if !ok {
 		code = "00"
