@@ -34,9 +34,18 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 LOCK = ROOT / "migration/mutation/boundaries.lock.json"
 
-# The reference's parsers: loaded by load_reference() when the files are rendered, never by --check.
-Config = BudgetError = ClientHelloInfo = ParseError = UnsupportedPrefix = parse_hello = None
-MAX_CRYPTO = frames = quic = quic_probe = varint = AmbiguousPrefix = TextParser = parse_server_hello = None
+# The reference's parsers: loaded by load_reference() when the files are rendered, never by --check. Until then the
+# error classes are a placeholder exception that nothing raises, so every handler stays a valid exception handler.
+
+
+class NotLoaded(Exception):
+    """Stands in for the reference's error classes before load_reference()."""
+
+
+BudgetError = ParseError = UnsupportedPrefix = NotLoaded
+Config = ClientHelloInfo = parse_hello = None
+AmbiguousPrefix = NotLoaded
+MAX_CRYPTO = frames = quic = quic_probe = varint = TextParser = parse_server_hello = None
 
 
 def load_reference():

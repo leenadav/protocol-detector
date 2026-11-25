@@ -430,6 +430,7 @@ def main(argv=None):
         for case in build(args.seed, args.count):
             case["expected"] = C.run_case(case)
             doc["cases"].append(case)
+    recorder = None
     if args.record:
         recorder = golden.recorder(args.record, "random", {"doc": {key: value for key, value in doc.items() if key != "cases"},
                                                            "seed": args.seed, "count": args.count})
@@ -474,7 +475,7 @@ def main(argv=None):
             "failures": failures,
             "mismatched": [dict(mismatched[cid], case=by_id.get(cid)) for cid in sorted(mismatched) if cid not in allow],
         }, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-    if args.record and not args.plant:
+    if recorder is not None and not args.plant:
         recorder.finish(failures)
     print("random differential{}: seed {}, {} cases ({}), Go matched the reference on {} of {}, {} approved divergences ({}), {} allowed, {} failures, {:.0f} s".format(
         " (golden {})".format(Path(args.golden).name) if args.golden else "", args.seed, len(doc["cases"]), "; ".join("{} {}".format(k, dict(sorted(v.items()))) for k, v in sorted(kinds.items())),
