@@ -134,8 +134,16 @@ def measured(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+def host_interfaces():
+    """The interface list the reference's LiveManager.interfaces() gives on this host (stdlib only): the names of
+    socket.if_nameindex() that fit its pattern. It depends on the machine, so an answer is compared with it here,
+    on the machine that runs the comparison, and not with the one a golden file was recorded on (PRO-401)."""
+    return [name for _, name in socket.if_nameindex() if re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", name)]
+
+
 class Normalizer:
-    """Per-service replacement of ids by order of appearance, and of times by a marker."""
+    """Per-service replacement of ids by order of appearance, and of times by a marker. An interface list equal to
+    this host's (host_interfaces) becomes a marker; any other list is compared as it is."""
 
     def __init__(self):
         self.ids = {}
@@ -153,6 +161,8 @@ class Normalizer:
             return "<lease>"
         if key == "python":
             return "<interpreter>"
+        if key == "interfaces" and isinstance(value, list) and value == host_interfaces():
+            return "<this host's interfaces>"
         if key == "histograms" and isinstance(value, dict):
             return OrderedDict((name, self.histogram(name, h)) for name, h in value.items())
         return self.walk(value)
