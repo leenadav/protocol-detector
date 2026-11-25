@@ -43,8 +43,10 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **Content release:** 2026.11.9 (digest `cdaa5993077d101a`), with 544 applications and 442 host entries. Every earlier
   release reproduces the digest it was published with (C11). **Since PRO-411 the content source is Go's**
   (`go/internal/content/pack.json`, `history.json`, ledger `lock.json`), edited only with `tools/content_pack.py add
-  BATCH.json` (docs/CONTENT-BATCHES.md); the Python export tools are gone. Open before a real batch merges: the
-  frozen answers (cases.json, golden files) and the serve catalog pin release 2026.11.9 and need Go pinned to it.
+  BATCH.json` (docs/CONTENT-BATCHES.md); the Python export tools are gone. Since PRO-428 the frozen answers
+  (cases.json, golden files) replay the frozen release 2026.11.9 (`go/internal/content/frozen/`; golden gates run
+  `go/bin/protodetect-golden`, `-tags frozencontent`), the current pack is checked against the same answers and
+  through the engine, and the serve catalog's applications come from the pack, so a batch needs no other edit.
 - **Vendored dependencies:** `x/crypto` and `x/sys/cpu` live under `go/vendor`, and every Go command runs with
   `-mod=vendor`.
 - **Codex review packet:** complete in `migration/review-packet/` (frozen head `50ce5c0`, 43 chunks).

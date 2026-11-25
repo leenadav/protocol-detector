@@ -92,6 +92,7 @@ func run(args []string) int {
 		cases := fs.String("cases", "migration/fixtures/cases.json", "the differential cases file")
 		out := fs.String("out", "", "where to write the results (required)")
 		sigPath := fs.String("signatures", "", "JSON file of custom application signatures applied to every case (as analyze --signatures)")
+		packFile := fs.String("content", "", "the content pack the session cases run with (default: content.json beside the cases file)")
 		if err := fs.Parse(args[1:]); err != nil || *out == "" {
 			fmt.Fprintln(os.Stderr, "replay: --out is required")
 			return 2
@@ -104,6 +105,7 @@ func run(args []string) int {
 			}
 			replay.SetSignatures(text)
 		}
+		replay.SetPackPath(*packFile)
 		doc, err := parity.Load(ctx, *cases)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "replay:", err)

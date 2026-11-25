@@ -30,6 +30,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+# The content pack of release 2026.11.9, the one the frozen answers were recorded at (PRO-428).
+FROZEN_PACK = "go/internal/content/frozen/pack-2026.11.9.json"
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import compare  # noqa: E402
@@ -261,7 +263,7 @@ def main(argv=None):
     with tempfile.TemporaryDirectory() as folder:
         path, out = Path(folder) / "cases.json", Path(folder) / "results.json"
         path.write_text(json.dumps(doc), encoding="utf-8")
-        (Path(folder) / "content.json").write_bytes((ROOT / "migration/fixtures/content.json").read_bytes())   # replay reads the pack beside the cases
+        (Path(folder) / "content.json").write_bytes((ROOT / FROZEN_PACK).read_bytes())   # replay reads the pack beside the cases
         done = subprocess.run([args.binary, "replay", "--cases", str(path), "--out", str(out)], capture_output=True, text=True, check=False)  # noqa: S603
         if done.returncode != 0:
             failures.append("go replay failed: " + done.stderr.strip()[:300])
