@@ -170,7 +170,7 @@ PRO-141 (against `main` `21dd113`): `aff4d13` (the livectl stop tests' synchroni
 commit after it.
 
 SEC-SIG-2 and SEC-SIG-1 (PRO-332, against `main` `5005cdc`): `2885afa` (fix and tests) and the documentation commits after it (`b51698c` and this line).
-PRO-370 (Codex PRO-369 findings on `2885afa`, against `0e1cd20`): the fix-and-tests commit on `claude/focused-franklin-irsjdg` (its SHA is in the task report and in the STATUS_NOTE).
+PRO-370 (Codex PRO-369 findings on `2885afa`, against `0e1cd20`, branch `claude/focused-franklin-irsjdg`): `08c93c5` (fix and tests) and the documentation commit after it (this line).
 
 SEC-QUIC-3 (PRO-123, against `main` `21dd113`): `fe87386` (fix, tests, the random-differential class) and the
 documentation commit after it.
