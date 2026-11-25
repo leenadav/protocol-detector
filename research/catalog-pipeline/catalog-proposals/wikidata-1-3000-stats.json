@@ -1,0 +1,29 @@
+{
+ "candidates": 3000,
+ "entries": 2767,
+ "main_entries": 1579,
+ "gaming_hold": 785,
+ "name_mismatch_hold": 403,
+ "entries_by_kind": {
+  "software_project": 996,
+  "service": 986,
+  "gaming_publisher_domain": 785
+ },
+ "skipped": 233,
+ "skipped_by_reason": {
+  "failed_passive_checks": 106,
+  "institutional_domain_not_an_app": 52,
+  "organization_or_project_not_a_service": 72,
+  "shared_hosting_forge_tenant_domain": 1,
+  "information_project_not_a_service": 1,
+  "publisher_site_linked_item_is_a_work_title": 1
+ },
+ "entries_by_category": {
+  "business-systems": 1251,
+  "general-internet": 529,
+  "media": 877,
+  "collaboration": 104,
+  "networking": 6
+ },
+ "gaming_publisher_domain": 785
+}

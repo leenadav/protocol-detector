@@ -1,0 +1,21 @@
+{
+ "candidates": 3000,
+ "after_catalog_and_class_filter": 1946,
+ "rechecked": 800,
+ "rechecked_not_needed": 268,
+ "verified": 200,
+ "rejected": 1386,
+ "rejected_by_reason": {
+  "reference_institution_or_content_site": 408,
+  "already_in_catalog": 5,
+  "publisher_domain_multi_title": 602,
+  "institutional_domain_not_an_app": 39,
+  "no_title_identity_unconfirmed": 147,
+  "homepage_does_not_name_item": 138,
+  "final_host_offsite": 29,
+  "http_status": 4,
+  "dns_fail": 9,
+  "tls_cert_does_not_cover_name": 4,
+  "identity_probe_failed": 1
+ }
+}
