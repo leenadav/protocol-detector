@@ -470698,6 +470698,2099 @@
    "label": "tls"
   },
   {
+   "chunks": [
+    "16030300400100003c0303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100000d001000090007066865783a7a7a"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "offered_alpn",
+         "hex:zz",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "ja4",
+         "t12i0301hz_40b44b994229_000000000000",
+         "wire:client_hello",
+         "derived"
+        ],
+        [
+         "ja3",
+         "484056f9d023dbd96d43802edfe02157",
+         "wire:client_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [
+        "hex:zz"
+       ],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "offered_alpn",
+       "hex:zz",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "ja4",
+       "t12i0301hz_40b44b994229_000000000000",
+       "wire:client_hello",
+       "derived"
+      ],
+      [
+       "ja3",
+       "484056f9d023dbd96d43802edfe02157",
+       "wire:client_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [
+      "hex:zz"
+     ],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 69,
+     "bytes_received": 69,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-zz-client/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "40",
+    "01",
+    "00",
+    "00",
+    "3c",
+    "03",
+    "03",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "06",
+    "13",
+    "01",
+    "13",
+    "02",
+    "c0",
+    "2f",
+    "01",
+    "00",
+    "00",
+    "0d",
+    "00",
+    "10",
+    "00",
+    "09",
+    "00",
+    "07",
+    "06",
+    "68",
+    "65",
+    "78",
+    "3a",
+    "7a",
+    "7a"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "offered_alpn",
+         "hex:zz",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "ja4",
+         "t12i0301hz_40b44b994229_000000000000",
+         "wire:client_hello",
+         "derived"
+        ],
+        [
+         "ja3",
+         "484056f9d023dbd96d43802edfe02157",
+         "wire:client_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [
+        "hex:zz"
+       ],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "offered_alpn",
+       "hex:zz",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "ja4",
+       "t12i0301hz_40b44b994229_000000000000",
+       "wire:client_hello",
+       "derived"
+      ],
+      [
+       "ja3",
+       "484056f9d023dbd96d43802edfe02157",
+       "wire:client_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [
+      "hex:zz"
+     ],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 69,
+     "bytes_received": 69,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 69,
+     "signature_candidates": 0,
+     "updates": 69
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-zz-client/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030039020000350303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00c02f00000d001000090007066865783a7a7a"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_alpn",
+         "hex:zz",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "ja4s",
+         "t1201hz_c02f_0b08e3dcc50f",
+         "wire:server_hello",
+         "derived"
+        ],
+        [
+         "ja3s",
+         "896415616b22361262d7a961b6325cfd",
+         "wire:server_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_alpn",
+       "hex:zz",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "ja4s",
+       "t1201hz_c02f_0b08e3dcc50f",
+       "wire:server_hello",
+       "derived"
+      ],
+      [
+       "ja3s",
+       "896415616b22361262d7a961b6325cfd",
+       "wire:server_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 62,
+     "bytes_received": 62,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-zz-server/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "39",
+    "02",
+    "00",
+    "00",
+    "35",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "c0",
+    "2f",
+    "00",
+    "00",
+    "0d",
+    "00",
+    "10",
+    "00",
+    "09",
+    "00",
+    "07",
+    "06",
+    "68",
+    "65",
+    "78",
+    "3a",
+    "7a",
+    "7a"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_alpn",
+         "hex:zz",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "ja4s",
+         "t1201hz_c02f_0b08e3dcc50f",
+         "wire:server_hello",
+         "derived"
+        ],
+        [
+         "ja3s",
+         "896415616b22361262d7a961b6325cfd",
+         "wire:server_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_alpn",
+       "hex:zz",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "ja4s",
+       "t1201hz_c02f_0b08e3dcc50f",
+       "wire:server_hello",
+       "derived"
+      ],
+      [
+       "ja3s",
+       "896415616b22361262d7a961b6325cfd",
+       "wire:server_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 62,
+     "bytes_received": 62,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 62,
+     "signature_candidates": 0,
+     "updates": 62
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-zz-server/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003f0100003b0303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100000c001000080006056865783a34"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "offered_alpn",
+         "hex:4",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "ja4",
+         "t12i0301h4_40b44b994229_000000000000",
+         "wire:client_hello",
+         "derived"
+        ],
+        [
+         "ja3",
+         "484056f9d023dbd96d43802edfe02157",
+         "wire:client_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [
+        "hex:4"
+       ],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "offered_alpn",
+       "hex:4",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "ja4",
+       "t12i0301h4_40b44b994229_000000000000",
+       "wire:client_hello",
+       "derived"
+      ],
+      [
+       "ja3",
+       "484056f9d023dbd96d43802edfe02157",
+       "wire:client_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [
+      "hex:4"
+     ],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 68,
+     "bytes_received": 68,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-4-client/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "3f",
+    "01",
+    "00",
+    "00",
+    "3b",
+    "03",
+    "03",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "06",
+    "13",
+    "01",
+    "13",
+    "02",
+    "c0",
+    "2f",
+    "01",
+    "00",
+    "00",
+    "0c",
+    "00",
+    "10",
+    "00",
+    "08",
+    "00",
+    "06",
+    "05",
+    "68",
+    "65",
+    "78",
+    "3a",
+    "34"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "offered_alpn",
+         "hex:4",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "ja4",
+         "t12i0301h4_40b44b994229_000000000000",
+         "wire:client_hello",
+         "derived"
+        ],
+        [
+         "ja3",
+         "484056f9d023dbd96d43802edfe02157",
+         "wire:client_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [
+        "hex:4"
+       ],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "offered_alpn",
+       "hex:4",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "ja4",
+       "t12i0301h4_40b44b994229_000000000000",
+       "wire:client_hello",
+       "derived"
+      ],
+      [
+       "ja3",
+       "484056f9d023dbd96d43802edfe02157",
+       "wire:client_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [
+      "hex:4"
+     ],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 68,
+     "bytes_received": 68,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 68,
+     "signature_candidates": 0,
+     "updates": 68
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-4-client/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "1603030038020000340303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00c02f00000c001000080006056865783a34"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_alpn",
+         "hex:4",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "ja4s",
+         "t1201h4_c02f_0b08e3dcc50f",
+         "wire:server_hello",
+         "derived"
+        ],
+        [
+         "ja3s",
+         "896415616b22361262d7a961b6325cfd",
+         "wire:server_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_alpn",
+       "hex:4",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "ja4s",
+       "t1201h4_c02f_0b08e3dcc50f",
+       "wire:server_hello",
+       "derived"
+      ],
+      [
+       "ja3s",
+       "896415616b22361262d7a961b6325cfd",
+       "wire:server_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 61,
+     "bytes_received": 61,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-4-server/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "38",
+    "02",
+    "00",
+    "00",
+    "34",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "c0",
+    "2f",
+    "00",
+    "00",
+    "0c",
+    "00",
+    "10",
+    "00",
+    "08",
+    "00",
+    "06",
+    "05",
+    "68",
+    "65",
+    "78",
+    "3a",
+    "34"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_alpn",
+         "hex:4",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "ja4s",
+         "t1201h4_c02f_0b08e3dcc50f",
+         "wire:server_hello",
+         "derived"
+        ],
+        [
+         "ja3s",
+         "896415616b22361262d7a961b6325cfd",
+         "wire:server_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_alpn",
+       "hex:4",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "ja4s",
+       "t1201h4_c02f_0b08e3dcc50f",
+       "wire:server_hello",
+       "derived"
+      ],
+      [
+       "ja3s",
+       "896415616b22361262d7a961b6325cfd",
+       "wire:server_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 61,
+     "bytes_received": 61,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 61,
+     "signature_candidates": 0,
+     "updates": 61
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-4-server/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16030300420100003e0303000000000000000000000000000000000000000000000000000000000000000000000613011302c02f0100000f0010000b0009086865783a37613761"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "offered_alpn",
+         "hex:7a7a",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "ja4",
+         "t12i0301ha_40b44b994229_000000000000",
+         "wire:client_hello",
+         "derived"
+        ],
+        [
+         "ja3",
+         "484056f9d023dbd96d43802edfe02157",
+         "wire:client_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [
+        "hex:7a7a"
+       ],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "offered_alpn",
+       "hex:7a7a",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "ja4",
+       "t12i0301ha_40b44b994229_000000000000",
+       "wire:client_hello",
+       "derived"
+      ],
+      [
+       "ja3",
+       "484056f9d023dbd96d43802edfe02157",
+       "wire:client_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [
+      "hex:7a7a"
+     ],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 71,
+     "bytes_received": 71,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-7a7a-client/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "42",
+    "01",
+    "00",
+    "00",
+    "3e",
+    "03",
+    "03",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "00",
+    "06",
+    "13",
+    "01",
+    "13",
+    "02",
+    "c0",
+    "2f",
+    "01",
+    "00",
+    "00",
+    "0f",
+    "00",
+    "10",
+    "00",
+    "0b",
+    "00",
+    "09",
+    "08",
+    "68",
+    "65",
+    "78",
+    "3a",
+    "37",
+    "61",
+    "37",
+    "61"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "offered_alpn",
+         "hex:7a7a",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "tls_offered_max_version",
+         "1.2",
+         "wire:client_hello",
+         "offered"
+        ],
+        [
+         "ja4",
+         "t12i0301ha_40b44b994229_000000000000",
+         "wire:client_hello",
+         "derived"
+        ],
+        [
+         "ja3",
+         "484056f9d023dbd96d43802edfe02157",
+         "wire:client_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [
+        "hex:7a7a"
+       ],
+       "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+       "scope": "initial_message",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "offered_alpn",
+       "hex:7a7a",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "tls_offered_max_version",
+       "1.2",
+       "wire:client_hello",
+       "offered"
+      ],
+      [
+       "ja4",
+       "t12i0301ha_40b44b994229_000000000000",
+       "wire:client_hello",
+       "derived"
+      ],
+      [
+       "ja3",
+       "484056f9d023dbd96d43802edfe02157",
+       "wire:client_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [
+      "hex:7a7a"
+     ],
+     "reason": "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content",
+     "scope": "initial_message",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 71,
+     "bytes_received": 71,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 71,
+     "signature_candidates": 0,
+     "updates": 71
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-7a7a-client/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "160303003b020000370303000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f00c02f00000f0010000b0009086865783a37613761"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_alpn",
+         "hex:7a7a",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "ja4s",
+         "t1201ha_c02f_0b08e3dcc50f",
+         "wire:server_hello",
+         "derived"
+        ],
+        [
+         "ja3s",
+         "896415616b22361262d7a961b6325cfd",
+         "wire:server_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_alpn",
+       "hex:7a7a",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "ja4s",
+       "t1201ha_c02f_0b08e3dcc50f",
+       "wire:server_hello",
+       "derived"
+      ],
+      [
+       "ja3s",
+       "896415616b22361262d7a961b6325cfd",
+       "wire:server_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 64,
+     "bytes_received": 64,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 1,
+     "signature_candidates": 0,
+     "updates": 1
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-7a7a-server/whole",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
+   "chunks": [
+    "16",
+    "03",
+    "03",
+    "00",
+    "3b",
+    "02",
+    "00",
+    "00",
+    "37",
+    "03",
+    "03",
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0a",
+    "0b",
+    "0c",
+    "0d",
+    "0e",
+    "0f",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1a",
+    "1b",
+    "1c",
+    "1d",
+    "1e",
+    "1f",
+    "00",
+    "c0",
+    "2f",
+    "00",
+    "00",
+    "0f",
+    "00",
+    "10",
+    "00",
+    "0b",
+    "00",
+    "09",
+    "08",
+    "68",
+    "65",
+    "78",
+    "3a",
+    "37",
+    "61",
+    "37",
+    "61"
+   ],
+   "config": {
+    "fingerprints": true
+   },
+   "end": "fin",
+   "expected": {
+    "events": [
+     {
+      "kind": "updated",
+      "observation": {
+       "application": null,
+       "application_protocol": null,
+       "encryption": "tls",
+       "evidence": [
+        [
+         "encryption",
+         "tls",
+         "wire",
+         "structural"
+        ],
+        [
+         "tls_handshake",
+         "server_hello",
+         "wire:server_hello",
+         "structural"
+        ],
+        [
+         "selected_alpn",
+         "hex:7a7a",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_key_exchange",
+         "ecdhe",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher_mode",
+         "aead",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_tls_version",
+         "1.2",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "selected_cipher",
+         "0xc02f",
+         "wire:server_hello",
+         "asserted"
+        ],
+        [
+         "ja4s",
+         "t1201ha_c02f_0b08e3dcc50f",
+         "wire:server_hello",
+         "derived"
+        ],
+        [
+         "ja3s",
+         "896415616b22361262d7a961b6325cfd",
+         "wire:server_hello",
+         "derived"
+        ]
+       ],
+       "hostname": null,
+       "offered_alpn": [],
+       "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+       "scope": "server_hello",
+       "status": "identified",
+       "transport": "tcp"
+      },
+      "revision": 1
+     }
+    ],
+    "final": {
+     "application": null,
+     "application_protocol": null,
+     "encryption": "tls",
+     "evidence": [
+      [
+       "encryption",
+       "tls",
+       "wire",
+       "structural"
+      ],
+      [
+       "tls_handshake",
+       "server_hello",
+       "wire:server_hello",
+       "structural"
+      ],
+      [
+       "selected_alpn",
+       "hex:7a7a",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_key_exchange",
+       "ecdhe",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher_mode",
+       "aead",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_tls_version",
+       "1.2",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "selected_cipher",
+       "0xc02f",
+       "wire:server_hello",
+       "asserted"
+      ],
+      [
+       "ja4s",
+       "t1201ha_c02f_0b08e3dcc50f",
+       "wire:server_hello",
+       "derived"
+      ],
+      [
+       "ja3s",
+       "896415616b22361262d7a961b6325cfd",
+       "wire:server_hello",
+       "derived"
+      ]
+     ],
+     "hostname": null,
+     "offered_alpn": [],
+     "reason": "ServerHello structure validated; server selections unauthenticated, handshake completion unverified",
+     "scope": "server_hello",
+     "status": "identified",
+     "transport": "tcp"
+    },
+    "metrics": {
+     "bytes_inspected": 64,
+     "bytes_received": 64,
+     "candidates_selected": 1,
+     "events_emitted": 1,
+     "parser_calls": 64,
+     "signature_candidates": 0,
+     "updates": 64
+    }
+   },
+   "hint": null,
+   "id": "stream/options/fingerprints-alpn-hex-7a7a-server/bytes",
+   "kind": "stream",
+   "label": "tls"
+  },
+  {
    "config": {},
    "expected": {
     "metrics": {
