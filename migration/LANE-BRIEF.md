@@ -192,7 +192,7 @@ PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the docu
 
 PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the documentation commit after it.
 
-PRO-401 (against `main` `8945986`, PR #127): `466e197` (golden replays, property tests, serve without Python, CI), `f2cb27c` (lint fixes), `a21010a` (scanner lock) and the documentation commit after them.
+PRO-401 (against `main` `8945986`, PR #127): `466e197` (golden replays, property tests, serve without Python, CI), `f2cb27c` (lint fixes), `a21010a` (scanner lock), `d34aa0f` (two CodeQL errors), `49f8e7d` and `cb1cbad` (the server golden made host-independent: interface list and the synthetic-scope probe) and the documentation commits after them.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
