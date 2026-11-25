@@ -21,7 +21,8 @@ compared after replacing what differs by construction: tokens, run, job and inst
 appearance), monotonic times, the lease countdown, wall-clock durations of a run or an analysis, the
 measurements of telemetry duration histograms (their keys, sample counts and every counter are compared;
 Normalizer.histogram), and the "python" field of the health report (the Go service runs no interpreter). The demo capture and showcase are
-random in the reference itself: their answers are compared by shape. Python 3.13 texts are the reference.
+random in the reference itself, and the Go service makes them with its own embedded capture and TLS stack
+(PRO-402): their answers are compared by shape. Python 3.13 texts are the reference.
 """
 import argparse
 import base64
@@ -440,7 +441,8 @@ def analyses(run, rng, sessions, folder, count):
                                 (["Content-Length: -1"], b"x", "/api/analyze"), (["Content-Length: 5"], b"x", "/api/analyze"),
                                 ([], b"\x00" * 24, "/api/analyze"), ([], b"x", "/api/decrypt/demo?x"),
                                 (["Content-Length: 13000000"], b"x", "/api/decrypt"), (["Transfer-Encoding: x"], b"x", "/api/decrypt")):
-        run.same("{} {} {!r}".format(path, headers, body[:20]), post(path, body, headers))
+        # The decryption showcase is made by each service's own TLS stack (PRO-402): compared by shape, as below.
+        run.same("{} {} {!r}".format(path, headers, body[:20]), post(path, body, headers), shape_only=path.startswith("/api/decrypt/demo"))
     for headers, path, body in ((["X-Live-Token: no"], "/api/jobs", b"x"), ([], "/api/jobs?kind=nope", b"x"), ([], "/api/jobs", b"x"),
                                 ([], "/api/jobs?kind=analyze", b""), (["X-Job-Kind: decrypt"], "/api/jobs?kind=analyze&x=1", b"x"),
                                 ([], "/api/jobs/x", b""), ([], "/api/jobs/cancel", b""), ([], "/api/jobsx", b""),
@@ -453,7 +455,7 @@ def analyses(run, rng, sessions, folder, count):
 
 def admission(run):
     submitted = {}
-    for service in run.services:                         # demo jobs run the reference worker: slow enough to queue
+    for service in run.services:                         # seven submissions in a row: two run, four queue, one refused
         answers = []
         for _ in range(7):
             answers.append(service.request("POST", "/api/jobs?kind=demo", body=b"", token=True))
@@ -519,7 +521,7 @@ def main(argv=None):
                    PROTODETECT_FAKE_DIR=str(fake))
         env.pop("PROTODETECT_BACKEND", None)
         services = [Service("reference", [sys.executable, "-B", str(ROOT / "presentation/server.py"), "--port", "0"], env),
-                    Service("go", [binary, "serve", "--port", "0", "--root", str(ROOT / "presentation"), "--python", sys.executable], env)]
+                    Service("go", [binary, "serve", "--port", "0", "--root", str(ROOT / "presentation")], env)]
         probe_failures = []
         try:
             for service in services:

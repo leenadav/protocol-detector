@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "5f01fcb8ce73f389656b920809b67e24ceb5b7a8",
-  "branch": "claude/go-migration",
-  "build_digest": "84a115150917535e17025d345923fc557cfd7e8658e1e160ff4c743c0a5c5ef9",
+  "commit": "89459862434348ffc1d7f95d40230e4059cb865c",
+  "branch": "claude/platform-PRO-402-demo-go-serve",
+  "build_digest": "a319b6e7d2fe303677573fa12b42f17cf5fc04fd59eb98f5fd2c41ea21f3e991",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -515,7 +515,7 @@
     {
       "path": "protodetect.py",
       "component": "adapters",
-      "sha256": "1351ae09b4ecec130aff0538b61ca7177c7bdaaaa79d16b87b0ee1d195b9928e"
+      "sha256": "50040078d983ffe3e2fbb836052fd582e4e513982c9d88954796220d97e80b74"
     },
     {
       "path": "detectors.py",
@@ -535,7 +535,7 @@
     {
       "path": "presentation/launch.py",
       "component": "presentation",
-      "sha256": "fd54ab3cc0246285d10e0db8f603d47aa985d9a4192b37f370572c48480a8551"
+      "sha256": "775703f2f2c8f0dc5f42d1f03c5bc92043ba8cd335b5f3ccc2027ccde7cac8fa"
     },
     {
       "path": "presentation/live_decrypt_smoke_check.py",

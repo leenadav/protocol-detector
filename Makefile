@@ -1,9 +1,10 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation
+.PHONY: serve test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
 
-test:
+# PRO-402: `protodetect.py analyze|live|serve` runs the Go binary, and the suite calls it; build it first.
+test: go-build
 	$(PYTHON) -B -m unittest discover -v
 
 # The presentation application (frontend, server, live bridge, TLS POC) needs the optional decryption extra:
@@ -308,6 +309,10 @@ go-check-parity:
 # Migration M8: the Go command-line binary (static, no cgo); go/bin is not tracked
 go-build:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor CGO_ENABLED=0 go build -trimpath -o bin/protodetect ./cmd/protodetect
+
+# PRO-402: the demo page on the Go engine (protodetect serve on 127.0.0.1, opened in the browser). No Python engine runs.
+serve: go-build
+	$(PYTHON) -B presentation/launch.py
 
 # Migration M8: the Go `analyze` command against the Python reference on generated captures (rows, exit status, error text)
 parity-analyze: go-build

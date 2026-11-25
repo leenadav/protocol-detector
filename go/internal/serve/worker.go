@@ -1,6 +1,7 @@
 package serve
 
 import (
+	"context"
 	"io"
 	"strings"
 	"time"
@@ -42,6 +43,19 @@ func AnalyzeWorker(stdin io.Reader, stdout io.Writer) int {
 	}
 	if len(data) > MaxUpload {
 		return fail("Capture exceeds 8 MB.")
+	}
+	return analyzeCapture(data, started, stdout)
+}
+
+// DemoWorker is `server.py --worker --demo`: the analysis of the embedded demo capture on standard output.
+func DemoWorker(stdout io.Writer) int {
+	limitCPU(22)
+	return analyzeCapture(DemoCapture(), time.Now(), stdout)
+}
+
+func analyzeCapture(data []byte, started time.Time, stdout io.Writer) int {
+	fail := func(message string) int {
+		return emit(stdout, ojson.NewObject("error", "Capture could not be analyzed: "+runeTruncate(message, 240)))
 	}
 	pack, err := content.Embedded()
 	if err != nil {
@@ -124,6 +138,17 @@ func DecryptWorker(stdin io.Reader, stdout io.Writer) int {
 	}
 	if o, ok := report.(*ojson.Object); ok {
 		o.Set("synthetic", false)
+	}
+	return emit(stdout, report)
+}
+
+// DecryptDemoWorker is `server.py --decrypt-worker --demo`: the decryption showcase (Showcase) on standard
+// output, or {"error": ...}.
+func DecryptDemoWorker(stdout io.Writer) int {
+	limitCPU(22)
+	report, err := Showcase(context.Background())
+	if err != nil {
+		return emit(stdout, ojson.NewObject("error", showcaseError(err)))
 	}
 	return emit(stdout, report)
 }
