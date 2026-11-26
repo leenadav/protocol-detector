@@ -76,6 +76,29 @@ class ParityHarnessTests(unittest.TestCase):
                 self.assertTrue(compare.diff(expected, actual))
         self.assertEqual(compare.diff({"n": [1, True, "x"]}, {"n": [1, True, "x"]}), [])
 
+    def test_leaf_comparison_is_strict_on_json_type(self):
+        """SEC-PAR-2: True, 1 and 1.0 are equal in Python, but a JSON boolean is never a number. 1 and 1.0 are the
+        same JSON number (Go's encoder writes float64 40 as 40), so they still match."""
+        for expected, actual in ((True, 1), (1, True), (True, 1.0), (1.0, True), (False, 0), (0.0, False),
+                                 (None, False), (0, None), ("1", 1), ([], {}), ({"n": {"m": 2}}, {"n": {"m": True}})):
+            with self.subTest(expected=expected, actual=actual):
+                self.assertEqual(len(compare.diff(expected, actual)), 1)
+        for expected, actual in ((1, 1.0), (40.0, 40), (0, 0.0), ({"n": [0.0]}, {"n": [0]})):
+            with self.subTest(expected=expected, actual=actual):
+                self.assertEqual(compare.diff(expected, actual), [])
+        for same in (1, 1.5, True, False, None, "x", [1, 2.0, False], {"a": [0, 0.0]}):
+            with self.subTest(same=same):
+                self.assertEqual(compare.diff(same, json.loads(json.dumps(same))), [])
+
+    def test_bool_to_int_plant_changes_one_boolean_leaf(self):
+        planted, touched = compare.plant(self.results["results"], "bool-to-int", self.doc)
+        found = compare.diff(self.results["results"][touched], planted[touched])
+        self.assertEqual(len(found), 1)
+        path, expected, actual = found[0]
+        self.assertIs(type(expected), bool)
+        self.assertIs(type(actual), int)
+        self.assertEqual(expected, actual)  # equal under Python ==, so only the type check catches it
+
     def test_committed_gap_list_names_existing_cases(self):
         gaps = compare.load_gaps(CASES.parent.parent / "parity" / "gaps.json")
         ids = {c["id"] for c in self.doc["cases"]}

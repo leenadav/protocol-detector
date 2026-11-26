@@ -27,11 +27,12 @@ file). With --families, every named family must also have at least one matched c
 Result ids that are not cases fail (`extra`). --ignore removes named top-level paths and is reported, so a
 partial comparison is never silent.
 
-`--plant` mutates the backend's results in one of six ways a regression could take and must be reported:
+`--plant` mutates the backend's results in one of seven ways a regression could take and must be reported:
 wrong-positive (an unknown becomes identified), missing-retraction (an invalidation becomes identified),
 wrong-port (a session's server port changes), dropped-event (one intermediate event disappears),
 boundary-shift (bytes_inspected / a shift boundary moves), supported-to-unsupported (an answered case
-becomes an unsupported answer with a plausible reason).
+becomes an unsupported answer with a plausible reason), bool-to-int (a JSON boolean becomes the integer Python
+treats as equal to it, True -> 1).
 """
 import argparse
 import json
@@ -43,7 +44,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT))
 
-PLANTS = ("wrong-positive", "missing-retraction", "wrong-port", "dropped-event", "boundary-shift", "supported-to-unsupported")
+PLANTS = ("wrong-positive", "missing-retraction", "wrong-port", "dropped-event", "boundary-shift", "supported-to-unsupported",
+          "bool-to-int")
 GAPS_SCHEMA = 1
 
 
@@ -66,6 +68,23 @@ def family_of(label):
     return (label or "").split("/", 1)[0]
 
 
+def json_type(value):
+    """The JSON type of a decoded value: bool is checked before int because bool subclasses int in Python."""
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, (int, float)):
+        return "number"
+    if isinstance(value, str):
+        return "string"
+    if isinstance(value, list):
+        return "array"
+    if isinstance(value, dict):
+        return "object"
+    return type(value).__name__
+
+
 def diff(expected, actual, path="$", out=None, limit=200):
     """Exact structural differences as (path, expected, actual) triples, bounded."""
     out = [] if out is None else out
@@ -84,8 +103,9 @@ def diff(expected, actual, path="$", out=None, limit=200):
             out.append((path + ".length", len(expected), len(actual)))
         for index, (e, a) in enumerate(zip(expected, actual)):
             diff(e, a, "%s[%d]" % (path, index), out, limit)
-    elif expected != actual or isinstance(expected, bool) != isinstance(actual, bool):
-        # Python has True == 1 and False == 0.0; JSON booleans and numbers are different values.
+    elif json_type(expected) != json_type(actual) or expected != actual:
+        # Leaves are strict on JSON type (SEC-PAR-2): Python has True == 1 == 1.0 and False == 0 == 0.0, but a
+        # boolean is never a number. 40 and 40.0 are one JSON number (Go writes float64 40 as 40), so they match.
         out.append((path, expected, actual))
     return out
 
@@ -223,6 +243,20 @@ def plant(results, kind, cases_doc):
     elif kind == "supported-to-unsupported":
         cid, result = first(lambda c, r: True)
         results[cid] = {"unsupported": "not ported in the Go backend: family " + family_of(cases[cid].get("label"))}
+    elif kind == "bool-to-int":
+        def first_bool(node):
+            """(container, key) of the first boolean leaf in document order, or None."""
+            items = sorted(node.items()) if isinstance(node, dict) else enumerate(node) if isinstance(node, list) else ()
+            for key, value in items:
+                if isinstance(value, bool):
+                    return node, key
+                found = first_bool(value)
+                if found:
+                    return found
+            return None
+        cid, result = first(lambda c, r: first_bool(r) is not None)
+        container, key = first_bool(result)
+        container[key] = int(container[key])
     else:
         raise ValueError("unknown plant " + kind)
     return results, cid
