@@ -229,6 +229,35 @@ class LiveDecryptionHandOverTests(unittest.TestCase):
             self.assertIn("not installed", live.hand_over_to_go(["--interface", "lo0"], replace=lambda *a: calls.append(a)))
         self.assertEqual(calls, [])
 
+    def test_an_explicit_go_backend_without_a_binary_refuses_instead_of_running_the_reference(self):
+        """PRO-192: PROTODETECT_BACKEND=go never falls back to the Python worker."""
+        import contextlib
+        import io
+        from poc_decryption import live
+        calls, out = [], io.StringIO()
+        environment = {"PROTODETECT_BACKEND": "go", "PROTODETECT_GO_BINARY": __file__ + "-absent"}
+        with mock.patch.dict(os.environ, environment), contextlib.redirect_stdout(out):
+            with self.assertRaises(SystemExit) as refused:
+                live.hand_over_to_go(["--interface", "lo0"], replace=lambda *a: calls.append(a))
+        self.assertEqual(str(refused.exception), live.GO_NOT_INSTALLED)
+        self.assertIn("not installed", str(refused.exception))
+        self.assertEqual([json.loads(line) for line in out.getvalue().splitlines()],
+                         [{"type": "error", "reason": live.GO_NOT_INSTALLED, "code": "backend"}])
+        self.assertEqual(calls, [])
+
+    def test_the_worker_process_exits_with_an_error_on_an_explicit_go_backend_without_a_binary(self):
+        """The script itself: no Python capture starts (the error comes before any capture tool is looked up)."""
+        import subprocess
+        script = Path(__file__).resolve().parents[1] / "poc_decryption" / "live.py"
+        environment = dict(os.environ, PROTODETECT_BACKEND="go", PROTODETECT_GO_BINARY=__file__ + "-absent")
+        done = subprocess.run([sys.executable, "-B", str(script), "--interface", "lo0"], input=b"", env=environment,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60, check=False)
+        self.assertEqual(done.returncode, 1)
+        self.assertIn(b"The Go backend binary is not installed", done.stderr)
+        events = [json.loads(line) for line in done.stdout.decode().splitlines()]
+        self.assertEqual([event["type"] for event in events], ["error"])
+        self.assertEqual(events[0]["code"], "backend")
+
 
 if __name__ == "__main__":
     unittest.main()

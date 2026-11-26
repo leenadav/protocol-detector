@@ -259,18 +259,26 @@ def main(apply_limits=False):
     return 1 if error else 0
 
 
+GO_NOT_INSTALLED = 'The Go backend binary is not installed (make go-build, or set PROTODETECT_GO_BINARY).'
+
+
 def hand_over_to_go(arguments, replace=None):
     """Migration M8: let the Go engine's binary run this worker when it is installed.
 
     The process is replaced by the binary (os.execv), so standard input (the key-log path line), the pipes and
     a later SIGINT belong to it directly. The reference runs on PROTODETECT_BACKEND=python and without a
-    binary; the reason is returned then.
+    binary; the reason is returned then. PROTODETECT_BACKEND=go never falls back: without the binary the worker
+    reports an error event and exits (SystemExit), as launch.py and server.py refuse.
     """
     from protocol_adapters.analyze_pcap import go_binary
-    if os.environ.get('PROTODETECT_BACKEND') == 'python':
+    requested = os.environ.get('PROTODETECT_BACKEND')
+    if requested == 'python':
         return 'the reference was requested'
     binary = go_binary()
     if binary is None:
+        if requested == 'go':
+            emit({'type': 'error', 'reason': GO_NOT_INSTALLED, 'code': 'backend'})
+            raise SystemExit(GO_NOT_INSTALLED)
         return 'the Go backend binary is not installed'
     sys.stdout.flush()
     (replace or os.execv)(binary, [binary, 'live-decrypt'] + list(arguments))
