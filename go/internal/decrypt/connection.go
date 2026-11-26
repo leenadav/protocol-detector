@@ -33,11 +33,14 @@ type PlaintextDelta struct {
 
 type record struct{ header, body []byte }
 
-// recordFramer splits one direction's bytes into TLS records once; it retains only an incomplete tail.
+// recordFramer splits one direction's bytes into TLS records once; it retains only an incomplete tail. A framed
+// record is copied out, so compact moves the tail into a buffer of its own: the consumed prefix of a large
+// reassembled delta must not stay reachable through the tail slice next to the queued copy (SEC-DEC-1, PRO-119).
 type recordFramer struct {
-	pending []byte
-	total   int
-	count   int
+	pending  []byte
+	total    int
+	count    int
+	consumed bool // a record was framed since the last compact
 }
 
 func (f *recordFramer) feed(data []byte) *Error {
@@ -69,11 +72,26 @@ func (f *recordFramer) next() (record, bool, *Error) {
 	}
 	body := append([]byte{}, f.pending[5:5+size]...)
 	f.pending = f.pending[5+size:]
+	f.consumed = true
 	f.count++
 	if f.count > MaxRecordsPerConnection {
 		return record{}, false, fail("TLS record count exceeds profile.", BudgetExhausted)
 	}
 	return record{header, body}, true, nil
+}
+
+// compact drops the consumed prefix: the incomplete tail (under one record, at most 16645 bytes) is copied into
+// a new buffer, or released when there is none. It copies only after a record was framed.
+func (f *recordFramer) compact() {
+	if !f.consumed {
+		return
+	}
+	f.consumed = false
+	if len(f.pending) == 0 {
+		f.pending = nil
+		return
+	}
+	f.pending = append([]byte(nil), f.pending...)
 }
 
 func (f *recordFramer) finish() *Error {
@@ -245,7 +263,9 @@ func (d *tls13Direction) record(r record) ([]byte, *Error) {
 				if d.phase != phaseApplication || size != 1 || message[4] > 1 || len(d.pending) > 0 || d.updates >= 32 {
 					return nil, fail("Invalid TLS KeyUpdate boundary or update budget exceeded.", UnsupportedProfile)
 				}
-				d.secrets[d.phase] = expand(d.secrets[d.phase], "traffic upd", digestSize(d.digest), d.digest)
+				old := d.secrets[d.phase]
+				d.secrets[d.phase] = expand(old, "traffic upd", digestSize(d.digest), d.digest)
+				clear(old) // a derived copy: the KeyProvider's own bytes are never stored here
 				d.install(d.phase)
 				d.sequence = 0
 				d.updates++
@@ -510,6 +530,7 @@ func (c *Connection) frame() *Error {
 				return err
 			}
 			if !ok {
+				framer.compact()
 				break
 			}
 			c.processed++
@@ -555,6 +576,7 @@ func (c *Connection) negotiate() *Error {
 		// TLS 1.2 directions consume the plaintext handshake from the start, hellos included.
 		for side := range c.queued {
 			c.queued[side] = append(append([]record{}, c.hellos[side].records...), c.queued[side]...)
+			c.hellos[side].records = nil // now queued: no second reference (SEC-DEC-1)
 		}
 		return nil
 	}
@@ -575,6 +597,8 @@ func (c *Connection) negotiate() *Error {
 		return fail("TLS 1.3 was not selected.", UnsupportedProfile)
 	}
 	c.Version, c.Suite = "TLS 1.3", suiteID
+	// TLS 1.3 directions start after the hellos, so their records are never read again (SEC-DEC-1).
+	c.hellos[0].records, c.hellos[1].records = nil, nil
 	return nil
 }
 
@@ -663,7 +687,13 @@ func (c *Connection) advance(budget int) ([]PlaintextDelta, *Error) {
 				continue
 			}
 			r := c.queued[side][0]
+			// Clear the slot before advancing past it, and drop an emptied queue, so the backing array does
+			// not keep processed bodies reachable while later records wait (SEC-DEC-1, PRO-119).
+			c.queued[side][0] = record{}
 			c.queued[side] = c.queued[side][1:]
+			if len(c.queued[side]) == 0 {
+				c.queued[side] = nil
+			}
 			budget--
 			c.processed++
 			dir := c.dirs[side]

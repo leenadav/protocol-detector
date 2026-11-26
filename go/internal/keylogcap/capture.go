@@ -47,13 +47,19 @@ func rowOrders(r *row) pyjson.Orders {
 	}
 }
 
+// newKeyProvider is the store Analyze indexes the key log into; a test wraps it to observe the Release.
+var newKeyProvider = decrypt.NewKeyProvider
+
 // Analyze is poc_decryption.capture.analyze_capture: the decryption report of one capture and its key log,
 // as the JSON text json.dumps writes for it (without the worker's "synthetic" flag).
 func Analyze(data []byte, keylog string, pack *content.Pack) (string, error) {
 	if len(data) > MaxCapture {
 		return "", &Refusal{"DecryptionError", "Capture exceeds 8 MiB.", decrypt.BudgetExhausted}
 	}
-	keys := decrypt.NewKeyProvider()
+	keys := newKeyProvider()
+	// SEC-KEY-1 (PRO-119): the provider's indexed secrets are overwritten on every return, success or refusal.
+	// The report is built first and holds labels and counts only, never a secret.
+	defer keys.Release()
 	if _, err := keys.Append(keylog); err != nil {
 		return "", refusal(err)
 	}
