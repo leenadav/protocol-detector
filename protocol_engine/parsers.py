@@ -430,7 +430,7 @@ class Reader:
 
 class ClientHelloInfo:
     """Structural ClientHello fields kept for signatures and fingerprints; no key material."""
-    __slots__ = ("version", "ciphers", "extensions", "hostname", "alpn", "groups", "signature_algorithms",
+    __slots__ = ("version", "ciphers", "extensions", "hostname", "alpn", "alpn_raw", "groups", "signature_algorithms",
                  "point_formats", "supported_versions", "body")
 
     def __init__(self):
@@ -438,7 +438,8 @@ class ClientHelloInfo:
         self.ciphers = ()
         self.extensions = ()
         self.hostname = None
-        self.alpn = ()
+        self.alpn = ()        # display strings (printable ASCII, else "hex:..."), for output only
+        self.alpn_raw = ()    # the offered wire bytes; fingerprints read only these (SEC-FP-1)
         self.groups = ()
         self.signature_algorithms = ()
         self.point_formats = ()
@@ -558,7 +559,7 @@ def parse_hello(body, info=None, offered=None):
     if info is not None:
         info.version = int.from_bytes(version, "big")
         info.ciphers = _u16_list(ciphers)
-    hostname, alpn = None, ()
+    hostname, alpn, alpn_raw = None, (), ()
     if pos == size:
         return hostname, alpn
     if pos + 2 > size:
@@ -637,17 +638,18 @@ def parse_hello(body, info=None, offered=None):
             envelope.end()
             if not offers.data:
                 raise ParseError("Empty ALPN list")
-            protocols = []
+            protocols, raw = [], []
             while offers.pos < len(offers.data):
                 protocol = offers.vector(1)
                 if not protocol or len(protocols) >= 64:
                     raise ParseError("Invalid ALPN offer or offer-count limit")
                 protocols.append(protocol.decode("ascii") if all(32 <= c < 127 for c in protocol)
                                  else "hex:" + protocol.hex())
-            alpn = tuple(protocols)
+                raw.append(bytes(protocol))
+            alpn, alpn_raw = tuple(protocols), tuple(raw)
     if info is not None:
         info.extensions = tuple(order)
-        info.hostname, info.alpn = hostname, alpn
+        info.hostname, info.alpn, info.alpn_raw = hostname, alpn, alpn_raw
     return hostname, alpn
 
 

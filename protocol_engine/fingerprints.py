@@ -22,12 +22,14 @@ def _sha12(text):
     return hashlib.sha256(text.encode("ascii")).hexdigest()[:12]
 
 
-def _alpn_code(alpn):
-    """JA4 two-character ALPN code from the first offered/selected value."""
-    if not alpn:
+def _alpn_code(alpn_raw):
+    """JA4 two-character ALPN code from the wire bytes of the first offered/selected value.
+
+    Only raw bytes are read: the display string ("hex:..." for non-printable values) is ambiguous, because a
+    printable offer may itself start with "hex:" (SEC-FP-1)."""
+    if not alpn_raw:
         return "00"
-    value = alpn[0]
-    raw = bytes.fromhex(value[4:]) if value.startswith("hex:") else value.encode("latin-1", "replace")
+    raw = alpn_raw[0]
     if not raw:
         return "00"
     first, last = raw[0], raw[-1]
@@ -50,7 +52,7 @@ def ja4(info, protocol="t"):
     extensions = [value for value in info.extensions if value not in GREASE]
     sni = "d" if 0 in info.extensions else "i"
     part_a = "{}{}{}{:02d}{:02d}{}".format(protocol, _version_code(info.version, info.supported_versions), sni,
-                                           min(len(ciphers), 99), min(len(extensions), 99), _alpn_code(info.alpn))
+                                           min(len(ciphers), 99), min(len(extensions), 99), _alpn_code(info.alpn_raw))
     part_b = _sha12(",".join("%04x" % value for value in sorted(ciphers))) if ciphers else "000000000000"
     filtered = sorted(value for value in extensions if value not in (0, 16))
     algorithms = [value for value in info.signature_algorithms if value not in GREASE]
@@ -69,7 +71,7 @@ def ja4_raw(info, protocol="t"):
     sni = "d" if 0 in info.extensions else "i"
     part_a = "{}{}{}{:02d}{:02d}{}".format(protocol, _version_code(info.version, info.supported_versions), sni,
                                            min(len(ciphers), 99), min(len([v for v in info.extensions if v not in GREASE]), 99),
-                                           _alpn_code(info.alpn))
+                                           _alpn_code(info.alpn_raw))
     text_c = ",".join("%04x" % value for value in extensions)
     if algorithms:
         text_c += "_" + ",".join("%04x" % value for value in algorithms)
@@ -92,10 +94,12 @@ def ja3s(version, cipher, extensions):
     return hashlib.md5(text.encode("ascii"), usedforsecurity=False).hexdigest()  # noqa: S324
 
 
-def ja4s(version, cipher, extensions, alpn, protocol="t"):
-    """JA4S server fingerprint: protocol, version, extension count, ALPN code, cipher, extension hash."""
+def ja4s(version, cipher, extensions, alpn_raw, protocol="t"):
+    """JA4S server fingerprint: protocol, version, extension count, ALPN code, cipher, extension hash.
+
+    alpn_raw holds the selected ALPN value's wire bytes, never its display string."""
     count = min(len(extensions), 99)
-    part_a = "{}{}{:02d}{}".format(protocol, _VERSIONS.get(version, "00"), count, _alpn_code(alpn))
+    part_a = "{}{}{:02d}{}".format(protocol, _VERSIONS.get(version, "00"), count, _alpn_code(alpn_raw))
     part_b = "%04x" % cipher
     part_c = _sha12(",".join("%04x" % value for value in extensions)) if extensions else "000000000000"
     return "_".join((part_a, part_b, part_c))
