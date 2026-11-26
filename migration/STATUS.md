@@ -751,7 +751,12 @@ Go only, against `main` `23bbc0c`; fix `c01942f`. The Python reference is unchan
 | A3 (PRO-48) 2: the Dispatch prefix invariant was implicit | pinned | a comment at the Wait branch of `Inspector.Feed` | `TestSelectNeverWaitsOnAFullLookahead`: every waiting prefix of `migration/fixtures/dispatch.json` completed to 24 bytes (zero-filled and 64 random tails) and 256 random tails for each first byte |
 
 Every new test fails on `23bbc0c` (the decrypt and keylog ones were run against the old code) and passes on
-`c01942f`; the two A3 tests pin behaviour that already held. Gate numbers are in the lane brief and the PR.
+`c01942f`; the two A3 tests pin behaviour that already held.
+
+Gates on `8d3fa5f` (code `c01942f`): `make check` exit 0 (Python 896 and 86 tests OK, parity 7,474 of 7,474);
+`make go-check` exit 0 (80 Go packages `ok`, analyze/decrypt/live/live-decrypt/control/server parity 0 mismatched,
+adversarial 4,041 of 4,041). Extra decrypt differentials: seeds 2, 3 and 4 at 2,000 captures each 0 mismatched
+(161, 137 and 152 PRO-260 approved); live decrypt seed 2 at 1,000 scripts 0 mismatched.
 
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 
