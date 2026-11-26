@@ -8,7 +8,7 @@ next to this file, with the reproducing test when there is one.
 
 | Task | Document | Base | State |
 |---|---|---|---|
-| PRO-477 limits and counters | `LIMITS-AUDIT-PRO-477.md` | `claude/go-migration` `f2e9916` | 10 gaps (SEC-LIM-1..10), skip-marked reproducers; fix tasks asked of Engine |
+| PRO-477 limits and counters | `LIMITS-AUDIT-PRO-477.md` | `main` `6c6d4dd` | 10 gaps (SEC-LIM-1..10), skip-marked reproducers; fix tasks asked of Engine |
 
 ## Fix verification
 

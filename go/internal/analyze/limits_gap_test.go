@@ -54,7 +54,7 @@ func dnsQuery(id uint16) []byte {
 func udpFlows(n int) [][]byte {
 	frames := make([][]byte, 0, n)
 	for i := 0; i < n; i++ {
-		frames = append(frames, testframes.UDP("192.0.2.10", uint16(20000+i), "198.51.100.53", 53, dnsQuery(uint16(i))))
+		frames = append(frames, testframes.UDP("192.0.2.10", uint16(20000+i), "198.51.100.53", 53, dnsQuery(uint16(i+1))))
 	}
 	return frames
 }
@@ -114,20 +114,29 @@ func reported(counts *Counts, words ...string) int {
 // counts them (Tracker.Counts["udp_flow_limit"]) but Run never copies Tracker.Counts into the summary.
 func TestLimitGapAnalyzeUDPFlowLimitInSummary(t *testing.T) {
 	rows, counts := runAnalyze(t, udpFlows(800))
-	if got := sessionRows(rows); got != 32 {
-		t.Fatalf("reproducer drifted: %d UDP session records, want 32 (the flow table limit)", got)
+	// 32 flows fill the table; an undecided flow may be evicted as half-open (SEC-SESS-1), which gives it a record
+	// with its reason, so a few more than 32 records are expected. Every flow must be a record or counted.
+	records := sessionRows(rows)
+	if records < 32 || records > 40 {
+		t.Fatalf("reproducer drifted: %d UDP session records, want about 32 (the flow table limit)", records)
 	}
-	fixed := reported(counts, "udp_flow_limit", "flow_limit") == 800-32
-	limitGap(t, "SEC-LIM-1", fixed, "summary "+summaryText(counts)+" has no counter for 768 unrecorded flows")
+	fixed := reported(counts, "udp_flow_limit", "flow_limit")+records == 800
+	limitGap(t, "SEC-LIM-1", fixed, "summary "+summaryText(counts)+" has no counter for "+jsonCount(800-records)+" unrecorded flows")
 }
 
-// SEC-LIM-2: the TCP side of the same table. Each SYN beyond 32 tracked connections gets the frame message
-// "LIMIT: too many tracked connections" and nothing else: no session record, no summary counter (live counts it
-// as connection_limit; analyze does not). With --events-only the frame rows are gone too.
+// SEC-LIM-2: the TCP side of the same table. Once 32 established connections fill it (half-open eviction, SEC-SESS-1,
+// never evicts an established connection), each further handshake gets the frame message "LIMIT: too many tracked
+// connections" and nothing else: no session record, no summary counter (live counts it as connection_limit;
+// analyze does not). With --events-only the frame rows are gone too. Half-open evictions are counted in
+// Tracker.Counts["half_open_evicted"] and miss the summary the same way (SEC-LIM-1).
 func TestLimitGapAnalyzeTCPConnectionLimitInSummary(t *testing.T) {
-	frames := make([][]byte, 0, 800)
+	frames := make([][]byte, 0, 3*800)
 	for i := 0; i < 800; i++ {
-		frames = append(frames, testframes.TCP("192.0.2.10", uint16(20000+i), "198.51.100.80", 80, 1000, 0, 0x02, nil))
+		port := uint16(20000 + i)
+		frames = append(frames,
+			testframes.TCP("192.0.2.10", port, "198.51.100.80", 80, 1000, 0, 0x02, nil),
+			testframes.TCP("198.51.100.80", 80, "192.0.2.10", port, 5000, 1001, 0x12, nil),
+			testframes.TCP("192.0.2.10", port, "198.51.100.80", 80, 1001, 5001, 0x10, nil))
 	}
 	rows, counts := runAnalyze(t, frames)
 	limited := 0
@@ -178,16 +187,16 @@ func TestLimitGapPresentFlowLimitInMeta(t *testing.T) {
 	if err := json.Unmarshal([]byte(text), &doc); err != nil {
 		t.Fatal(err)
 	}
-	if len(doc.Sessions) != 256 {
-		t.Fatalf("reproducer drifted: %d sessions, want 256", len(doc.Sessions))
+	if len(doc.Sessions) < 256 || len(doc.Sessions) > 270 {
+		t.Fatalf("reproducer drifted: %d sessions, want about 256", len(doc.Sessions))
 	}
 	fixed := false
 	for key, value := range doc.Meta {
-		if n, ok := value.(float64); ok && strings.Contains(key, "limit") && int(n) == 800-256 {
+		if n, ok := value.(float64); ok && strings.Contains(key, "limit") && int(n)+len(doc.Sessions) == 800 {
 			fixed = true
 		}
 	}
-	limitGap(t, "SEC-LIM-4", fixed, "meta keys have no counter for 544 dropped flows")
+	limitGap(t, "SEC-LIM-4", fixed, "meta has no counter for "+jsonCount(800-len(doc.Sessions))+" dropped flows")
 }
 
 // SEC-LIM-5: Present attaches at most 60 events to a session record and drops the rest without a marker: a flow of
@@ -276,3 +285,5 @@ func summaryText(counts *Counts) string {
 	text, _ := json.Marshal(counts.Values)
 	return string(text)
 }
+
+func jsonCount(n int) string { text, _ := json.Marshal(n); return string(text) }
