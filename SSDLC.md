@@ -967,7 +967,8 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      runs `check_docs_counts.py` and `build_ledgers.py --check` without `--strict`, since main lags by design and
      a pull request's own note reaches the sections only after merge (PRO-480: the strict count check failed
      every pull request that touched the release files, such as #151). `check_workflow_policy.py`
-     (`check_release_docs_counts`) requires that exact tag/dry-run split, so a release never skips the strict check.
+     (`check_release_docs_counts`) requires that exact tag/dry-run split, so a release never skips the strict check. Since PRO-402 the launcher's `analyze` needs the Go binary, so the
+     build job runs `tools/go_ci.py build` before the gate, as ci.yml does.
    - **Read-only:** the workflow holds `contents: read` and opens nothing. Opening the refresh pull request from the
      workflow needs `contents: write` and `pull-requests: write`, which rule 5 forbids outside the release
      controller, the repository setting that lets Actions create pull requests, and a token whose pull requests

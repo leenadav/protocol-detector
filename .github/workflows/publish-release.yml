@@ -139,6 +139,20 @@ jobs:
         with:
           go-version: "1.27.4"
           cache: false
+      - name: Build the Go binary the launcher tests run (make go-build, offline and vendored; nothing to build without the target)
+        # PRO-402: `protodetect analyze`, `live` and `serve` run only the Go binary, so the unit tests below need it
+        # (as in ci.yml); without it test_policy and test_schema exit 2 (PRO-480). go/bin/ is ignored by git and is
+        # not part of the wheel; the release binaries come from tools/build_go_release.py below.
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: python -B tools/go_ci.py build --summary "$GITHUB_STEP_SUMMARY"
       - name: The full gate must pass on the commit being released
         # tools/check_docs_counts.py: a tag fails on a documented test count that lags the tree (--strict), so a
         # release never ships a stale count. A dry run (a pull request or a branch push) runs it without --strict,
