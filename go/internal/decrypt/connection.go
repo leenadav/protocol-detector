@@ -120,6 +120,7 @@ func (h *helloCollector) add(r record) *Error {
 func be24(b []byte) int { return int(b[0])<<16 | int(b[1])<<8 | int(b[2]) }
 
 type direction interface {
+	wipe()
 	record(r record) ([]byte, *Error)
 	epoch() string
 	finish() *Error
@@ -180,8 +181,23 @@ func newAEAD(key []byte, chacha bool) cipher.AEAD {
 
 func (d *tls13Direction) install(phase string) {
 	secret := d.secrets[phase]
-	d.ciphers[phase] = newAEAD(expand(secret, "key", d.keySize, d.digest), d.chacha)
+	key := expand(secret, "key", d.keySize, d.digest)
+	d.ciphers[phase] = newAEAD(key, d.chacha)
+	clear(key) // the AEAD keeps its own expanded schedule
+	clear(d.ivs[phase])
 	d.ivs[phase] = expand(secret, "iv", 12, d.digest)
+}
+
+// wipe zeroes the traffic secrets and IVs. Every slice here is a copy or a derivation: the secret bytes the
+// KeyProvider indexes are shared by every connection of that client random and are never written.
+func (d *tls13Direction) wipe() {
+	for _, b := range d.secrets {
+		clear(b)
+	}
+	for _, b := range d.ivs {
+		clear(b)
+	}
+	d.secrets, d.ivs, d.ciphers = nil, nil, nil
 }
 
 func (d *tls13Direction) epoch() string {
@@ -245,7 +261,9 @@ func (d *tls13Direction) record(r record) ([]byte, *Error) {
 				if d.phase != phaseApplication || size != 1 || message[4] > 1 || len(d.pending) > 0 || d.updates >= 32 {
 					return nil, fail("Invalid TLS KeyUpdate boundary or update budget exceeded.", UnsupportedProfile)
 				}
-				d.secrets[d.phase] = expand(d.secrets[d.phase], "traffic upd", digestSize(d.digest), d.digest)
+				old := d.secrets[d.phase]
+				d.secrets[d.phase] = expand(old, "traffic upd", digestSize(d.digest), d.digest)
+				clear(old) // a derived copy: the KeyProvider's own bytes are never stored here
 				d.install(d.phase)
 				d.sequence = 0
 				d.updates++
@@ -285,10 +303,18 @@ func (d *tls13Direction) finish() *Error {
 type tls12Direction struct {
 	aead             cipher.AEAD
 	iv               []byte
+	block            []byte // the derived key block both directions slice (keys and IVs); never the master secret
 	active, finished bool
 	seq              uint64
 	count, plain     int
 	pending          []byte
+}
+
+// wipe zeroes the derived key block (shared by both directions; zeroing it twice is harmless).
+func (d *tls12Direction) wipe() {
+	clear(d.block)
+	clear(d.iv)
+	d.block, d.iv, d.aead = nil, nil, nil
 }
 
 func (d *tls12Direction) epoch() string {
@@ -463,12 +489,25 @@ func (c *Connection) fail(err *Error) {
 // release drops what only a live connection needs once it is terminal: the framers' buffered bytes, the hello
 // buffers, queued records, the client random and the directions' record keys. A terminal connection does no
 // more work (Feed, HasWork, Advance and Finish return first), and Metadata reads only the counters and labels
-// kept here. Reports may keep a closed connection for a long time (Go-only; Codex PRO-13 P2).
+// kept here. Reports may keep a closed connection for a long time (Go-only; Codex PRO-13 P2). Derived
+// secrets, IVs, the TLS 1.2 key block and the client random are zeroed before their references are dropped
+// (SEC-KEY-1); the KeyProvider's indexed secrets are shared and are left to its own Release.
 func (c *Connection) release() {
+	for _, dir := range c.dirs {
+		if dir != nil {
+			dir.wipe()
+		}
+	}
+	clear(c.random)
 	c.keys, c.random = nil, nil
 	c.framers, c.hellos = [2]*recordFramer{}, [2]*helloCollector{}
 	c.queued, c.dirs = [2][]record{}, [2]direction{}
 }
+
+// Discard releases a connection its owner abandons without a decoder verdict (a capture-level failure),
+// zeroing the same material as release. State, reason and counters are unchanged; the connection must not be
+// used afterwards.
+func (c *Connection) Discard() { c.release() }
 
 // Fail ends the connection with a typed reason the owner established (a gap in the reassembled stream).
 func (c *Connection) Fail(message, code string) { c.fail(fail(message, code)) }
@@ -597,8 +636,8 @@ func (c *Connection) startDirections() (bool, *Error) {
 		sh := c.hellos[1].body
 		seed := append(append([]byte("key expansion"), sh[2:34]...), c.random...)
 		block := prf(master, seed, 2*s.keySize+8, s.digest)
-		c.dirs[0] = &tls12Direction{aead: newAEAD(block[:s.keySize], false), iv: block[2*s.keySize : 2*s.keySize+4]}
-		c.dirs[1] = &tls12Direction{aead: newAEAD(block[s.keySize:2*s.keySize], false), iv: block[2*s.keySize+4:]}
+		c.dirs[0] = &tls12Direction{aead: newAEAD(block[:s.keySize], false), iv: block[2*s.keySize : 2*s.keySize+4], block: block}
+		c.dirs[1] = &tls12Direction{aead: newAEAD(block[s.keySize:2*s.keySize], false), iv: block[2*s.keySize+4:], block: block}
 		return true, nil
 	}
 	clientDir, err := newTLS13Direction("CLIENT", c.Suite, c.random, c.keys)
