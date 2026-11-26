@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import analyze_diff  # noqa: E402
 import pro189  # noqa: E402
+import sec_sess1  # noqa: E402
 from protocol_adapters import coordinator, live_capture  # noqa: E402
 from protocol_adapters.capture_stream import PcapStreamDecoder  # noqa: E402
 from protocol_engine import SignatureSet  # noqa: E402
@@ -147,7 +148,10 @@ def main(argv=None):
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
     parser.add_argument("--count", type=int, default=300)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--record-sec-sess1", metavar="PATH", help="write every divergence to PATH for review; the run then fails")
     args = parser.parse_args(argv)
+    sec_sess1.self_test()
+    pins = sec_sess1.Pins("live", args.seed, record=args.record_sec_sess1)
     rng = random.Random(args.seed)
     sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
     pro189.self_test()
@@ -173,12 +177,17 @@ def main(argv=None):
                     label = event["type"] + ("/" + event.get("boundary", event.get("event", "")) if event["type"] == "classification" else "")
                     kinds[label] = kinds.get(label, 0) + 1
             problem = None
+            pins.cover(capture.name)
             if (done.returncode, normalized(actual, as_json)) != (status, normalized(expected, as_json)):
                 # PRO-189: accept the mismatch only when Go matches the reference with that fix modelled exactly.
                 with pro189.modelled():
                     modelled, modelled_status = reference(capture, options, as_json)
                 if (done.returncode, normalized(actual, as_json)) == (modelled_status, normalized(modelled, as_json)):
                     approved += 1
+                    continue
+                # SEC-SESS-1 (PRO-398): or only when this exact replay is pinned with both exact results.
+                if pins.approve(capture.name, normalized(actual, as_json), done.returncode, normalized(expected, as_json), status,
+                                " ".join(arguments(options, as_json)[4:]).replace(str(folder), "<tmp>")):
                     continue
             if done.returncode != status:
                 problem = "exit status {} (expected {}): {}".format(done.returncode, status, done.stderr.decode("utf-8", "replace")[:200])
@@ -190,9 +199,13 @@ def main(argv=None):
                 failures.append("{} {}: {}".format(capture.name, " ".join(arguments(options, as_json)[4:]), problem))
         for line in failures[:10]:
             print("live mismatch:", line)
-    print("live parity: {} replays, {} event lines, {} mismatched, {} approved divergences ({}) (seed {}); JSON events: {}".format(
-        args.count, events, len(failures), approved, pro189.LABEL, args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
-    return 1 if failures else 0
+    problems = pins.finish()
+    for line in problems:
+        print("live parity FAILED:", line)
+    print("live parity: {} replays, {} event lines, {} mismatched, {} approved divergences ({}), {} approved divergences ({}) (seed {}); "
+          "JSON events: {}".format(args.count, events, len(failures), approved, pro189.LABEL, len(pins.approved), sec_sess1.LABEL, args.seed,
+                                   ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
+    return 1 if failures or problems else 0
 
 
 if __name__ == "__main__":

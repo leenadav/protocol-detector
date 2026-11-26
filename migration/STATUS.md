@@ -735,6 +735,67 @@ outside the Initial profile was a structural QUIC match; now it is malformed).
 | Regression tests | `TestConflictedConnectionAppliesTheClientDatagramMinimum`, `TestShortClientInitialWithUnsupportedFrameIsMalformed` (`quicx`) | Both fail on `d950eb8`: the 1199-byte Initial on a conflicted DCID gives `Retracts` (conflict), the 300-byte Initial with HANDSHAKE_DONE gives `initial_protection=unverified`. After the fix: both are malformed with the 1200-byte reason; the marker keeps its old idle time (expired at 10.5 after an undersized datagram at 8), a 1200-byte Initial still retracts and refreshes it, and a damaged 600-byte datagram the keys do not open still retracts. |
 | Parity | 0 case changes | Only the Go-only SEC-QUIC-3 rule changes; numbers in the lane brief and the PR. |
 
+## Security review finding SEC-SESS-1, the Go part (PRO-51, PRO-162 and PRO-398, 2026-11-25)
+
+**The finding.** On `main` `8945986` a TCP connection that only sent a SYN, and a UDP flow with no decision yet,
+held a tracking-table slot for the whole idle timeout (60 s), and a retransmitted SYN with the same ISN refreshed
+that time (`State.Time` and the stream's `LastSeen`). A SYN or UDP flood therefore filled `MaxConnections` /
+`MaxUDPFlows`, and a real connection got `LIMIT: too many tracked connections` or `udp_flow_limit`.
+
+**The Go fix** (`go/internal/session/tracker.go`, branch `claude/engine-PRO-398-halfopen-budget`):
+
+- `Options.MaxHalfOpen` (TCP, a part of `MaxConnections`), `MaxHalfOpenUDP` (a part of `MaxUDPFlows`) and
+  `HalfOpenTimeout`. Zero selects the defaults: three quarters of the table (at least 1) and 5 s, never more than
+  the idle timeout. Out-of-range values are refused ("Invalid half-open limit").
+- Half-open is a TCP state without a completed SYN/SYN-ACK (asymmetric: without the client's first data) and a UDP
+  flow neither identified nor invalidated. Midstream connections are established from their first segment.
+- A new SYN (or new UDP flow) when the half-open budget or the table is full evicts the oldest half-open state
+  (FIFO queue, O(1)), with the new close reason `Half-open budget full; oldest unestablished state evicted` and the
+  counters `half_open_evicted` / `udp_half_open_evicted`. An established connection or a decided flow is never
+  evicted: a full table of them still refuses with `LIMIT` / `udp_flow_limit`, and that refusal allocates nothing
+  (`TestSYNIntoATableOfEstablishedConnectionsIsRefusedWithoutAllocating`, 0 allocations; the pre-existing one, an
+  escaping `destination`, is removed).
+- A half-open TCP connection expires `HalfOpenTimeout` after its SYN (packets it receives while half-open do not
+  extend it), an undecided UDP flow after `HalfOpenTimeout` of silence. The session record keeps the reference's idle
+  reasons; the counters `half_open_timeout` / `udp_half_open_timeout` tell them apart.
+- A retransmitted SYN still answers `SYN retransmission` but no longer moves `Time` or `LastSeen`.
+
+Tests: `go/internal/session/halfopen_test.go` (defaults and validation, SYN flood to the limit with oldest-first
+eviction, the retransmission loop, the timeout from the SYN, UDP flood, a real connection through a flood in
+handshake, asymmetric and midstream modes). Each fails when its mechanism is reverted.
+
+**Parity: pinned Go-only divergences (Lee's option B, 2026-11-25; PRO-432).** Lee decided on 2026-11-25 that the
+Python engine is being retired and gets no more fixes, so option A (the same rules in `analyze_pcap.py`) is gone and
+the PRO-397 question closed without an answer. The committed replay cases do not reach these limits (`make
+parity-go`: every case matches). The seeded random suites do: with Go built from `main` `23bbc0c` all three give 0
+mismatches, and with this branch they differ from the frozen reference exactly where Go now evicts or expires a
+half-open state (seed 1, count 300). The full lists (the 2026-11-25 text above showed only the first 10 lines each
+harness prints):
+
+| suite | pinned cases | approved divergences | unapproved |
+|---|---|---|---|
+| `parity-analyze` | 20 in 13 captures: `capture-1-61`, `-101`, `-131`, `-155`, `-182`, `-209`, `-230`, `-236`, `-284` (the `analyze` command) and `capture-1-50`, `-57`, `-85`, `-101`, `-127`, `-131`, `-155`, `-182`, `-209`, `-212`, `-230` (the presentation result) | 20 (SEC-SESS-1) | 0 |
+| `parity-live` | 6: `capture-53`, `-77`, `-92`, `-206`, `-266`, `-270` | 6 (SEC-SESS-1), 3 (PRO-189, unchanged) | 0 |
+| `parity-live-decrypt` | OpenSSL 3.0 (ubuntu-24.04 CI): 18, scripts 4, 25, 27, 31, 44, 62, 64, 74, 97, 122, 175, 187, 230, 260, 280, 293, 295, 296 (4,461 event lines). OpenSSL 3.5 (for example the cloud development container): 15, scripts 4, 19, 47, 88, 129, 137, 154, 169, 172, 179, 182, 245, 248, 296, 297 (4,120 event lines) | 18 or 15 (SEC-SESS-1); PRO-260 unchanged per line: 0 under 3.0, 40 under 3.5 (41 on `main`: script 169 carries both deltas and is pinned as a whole) | 0 |
+
+Each case is pinned in `migration/parity/sec_sess1.json` in the PRO-260 form: the exact case id, the reason
+(`SEC-SESS-1, PRO-398: ...`), what Go returns against the frozen answer (the first differing line of each, the
+counts of eviction records and `LIMIT` refusals on each side) and the SHA-256 of each side's whole compared result
+(output and exit status). `migration/parity/sec_sess1.py` approves a mismatch only when its case is pinned and both
+digests are exactly the pinned ones; a pinned case that no longer differs fails the run as stale, and
+`--record-sec-sess1 PATH` writes observed divergences for review and always fails. The live-decrypt scripts hold real
+OpenSSL exchanges made by the `ssl` module Python links, and their lengths drive every later random draw, so the
+scripts differ between OpenSSL lines (3.5 also offers the hybrid groups: `parity-decrypt` approves 26 PRO-260
+divergences under 3.5 and 0 under 3.0). A live-decrypt case id therefore names the OpenSSL line
+(`seed1/openssl-3.0/script-25`); both lines are pinned, each checked against Go from `main` (0 mismatches), and any
+other line has no pins and fails on any divergence. The 2026-11-25 count of 15 was the 3.5 environment's; CI runs
+3.0, where it is 18 (CI run 45734623801 on `cae9eb8`: 17 unapproved, 1 approved, before this split). Scripts with a
+real exchange (3.0: 31, 44, 175, 230, 295, 296; 3.5: 19, 154, 169, 179, 296) also get fresh keys every run, so a byte
+count can move by one: they are `volatile`, marked by the harness and not by the pin, and their digests mask
+numbers and hex runs of 8 or more characters only. All other counts are unchanged from `main` (analyze 14,540 rows, 4,755 identified, 201 completed
+presentation results; live 4,616 event lines; live decrypt 4,461 / 4,120 event lines under OpenSSL 3.0 / 3.5). `parity-decrypt`, `parity-control`
+and `schema-go` are unchanged (0 mismatched, 0 problems). Regression tests: `test_parity_verdicts.SecSess1PinTests`
+and `sec_sess1.py --self-test`.
 ## Security review A2 and A3 P3 hardening (PRO-47, PRO-48 and PRO-119, 2026-11-26)
 
 Go only, against `main` `23bbc0c`; fix `c01942f`. The Python reference is unchanged and no report value moves.
