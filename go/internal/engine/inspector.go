@@ -10,7 +10,6 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/protocols/textroute"
 	"github.com/leenadav/protocol-detector/go/internal/protocols/tlsx"
 	"github.com/leenadav/protocol-detector/go/internal/signatures"
-	"math"
 	"sort"
 )
 
@@ -933,14 +932,20 @@ func (in *Inspector) SetSignatures(set *signatures.Set) error {
 
 // signatureWorkLimit is the unknown-payload work allowance of one direction: MaxSignatureWork, or two complete
 // evaluations of the set over a full buffer when the set is larger (the cost the reference pays for a flow that
-// arrives in one or two segments is never refused). The bound is therefore linear in the configured buffer and
-// set and independent of how the peer splits its bytes.
+// arrives in one or two segments is not refused), but never more than MaxSignatureWorkCeiling (PRO-370). The
+// bound is independent of how the peer splits its bytes and absolute: under a second of CPU per direction at the
+// slowest measured rate, whatever signature_bytes and the set are.
 func signatureWorkLimit(set *signatures.Set, buffer int) int64 {
-	full := int64(buffer) * set.WorkPerByte("unknown-tcp")
-	if full > (math.MaxInt64-MaxSignatureWork)/SignatureWorkEvaluations {
-		return math.MaxInt64
+	perByte := set.WorkPerByte("unknown-tcp") + 1 // + the copy of the buffer into the contexts (unknownSignature)
+	perEval := set.WorkPerEvaluation("unknown-tcp")
+	if perByte > 0 && int64(buffer) > MaxSignatureWorkCeiling/perByte {
+		return MaxSignatureWorkCeiling // one full evaluation alone passes the ceiling
 	}
-	if limit := SignatureWorkEvaluations * full; limit > MaxSignatureWork {
+	full := int64(buffer)*perByte + perEval
+	switch limit := SignatureWorkEvaluations * full; {
+	case full > MaxSignatureWorkCeiling || limit > MaxSignatureWorkCeiling:
+		return MaxSignatureWorkCeiling
+	case limit > MaxSignatureWork:
 		return limit
 	}
 	return MaxSignatureWork
@@ -957,12 +962,16 @@ func (in *Inspector) signature(family string, contexts parsing.Contexts) *signat
 	return match
 }
 
-// budgetedSignature is signature charging in.sigWork (the unknown-payload evaluations only).
-func (in *Inspector) budgetedSignature(family string, contexts parsing.Contexts) *signatures.Signature {
-	if in.sigs == nil || contexts == nil || !in.sigs.Wants(family) {
+// unknownSignature is signature over the unknown-payload contexts of data, charging in.sigWork. The contexts hold
+// a copy of data, so the copy is charged first, one unit per byte (PRO-370): a cheap set would otherwise leave a
+// quadratic copy uncharged on 1-byte updates.
+func (in *Inspector) unknownSignature(data []byte) *signatures.Signature {
+	if in.sigs == nil || !in.sigs.Wants("unknown-tcp") || !in.sigWork.Charge(int64(len(data))) {
 		return nil
 	}
-	match, evaluated := in.sigs.MatchBudgeted(family, contexts, &in.sigWork)
+	contexts := parsing.Contexts{"unknown-req-tcp-payload": append([]byte{}, data...),
+		"unknown-req-tcp-payload-length": int64(len(data))}
+	match, evaluated := in.sigs.MatchBudgeted("unknown-tcp", contexts, &in.sigWork)
 	in.Metrics.SignatureCandidates += evaluated
 	return match
 }
@@ -989,17 +998,19 @@ func (in *Inspector) unknownObservation(reason string, final bool) []contracts.E
 // times the instruction estimate of each pattern searched), charged before the work runs. The allowance is
 // MaxSignatureWork (about 0.25 s of RE2 simulation at the slowest measured rate, and over 30 times the work of a
 // 1-byte-segment flow to a full default buffer with the test sets), or SignatureWorkEvaluations full-buffer
-// evaluations of the set when that is larger (signatureWorkLimit). An exhausted budget ends the direction as
-// budget_exhausted, never as a match: a recorded Go-only divergence, as the reference has no such bound
+// evaluations of the set when that is larger, capped at MaxSignatureWorkCeiling (signatureWorkLimit; PRO-370:
+// without the cap a full set at signature_bytes 65536 still allowed tens of seconds per direction). A flow whose
+// two full evaluations pass the ceiling can end budget_exhausted even when it arrives in one segment. An
+// exhausted budget ends the direction as budget_exhausted, never as a match: a recorded Go-only divergence, as the reference has no such bound
 // (migration/STATUS.md).
 const (
 	MaxSignatureWork         = 1 << 26
 	SignatureWorkEvaluations = 2
+	MaxSignatureWorkCeiling  = 1 << 28
 )
 
 func (in *Inspector) unknownFrom(reason string, final bool, data []byte) []contracts.Event {
-	match := in.budgetedSignature("unknown-tcp", parsing.Contexts{"unknown-req-tcp-payload": append([]byte{}, data...),
-		"unknown-req-tcp-payload-length": int64(len(data))})
+	match := in.unknownSignature(data)
 	if in.sigWork.Exhausted {
 		in.unknown, in.hasUnknown = nil, false
 		return in.finish(in.observation(contracts.BudgetExhausted, "Signature work budget exhausted"), contracts.Updated)

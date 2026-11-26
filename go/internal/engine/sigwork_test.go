@@ -67,8 +67,9 @@ func TestUnknownPayloadSignatureWorkIsBounded(t *testing.T) {
 	in, updates, elapsed := oneByteFlow(t, set, 2000, 5000, 'x')
 	o := in.Observation
 	t.Logf("%d updates, %d of %d work units, %v", updates, in.sigWork.Used, in.sigWork.Limit, elapsed)
-	if want := int64(SignatureWorkEvaluations) * 2000 * set.WorkPerByte("unknown-tcp"); in.sigWork.Limit != want || want <= MaxSignatureWork {
-		t.Fatalf("limit %d, want two full evaluations (%d)", in.sigWork.Limit, want)
+	full := 2000*(set.WorkPerByte("unknown-tcp")+1) + set.WorkPerEvaluation("unknown-tcp") // +1: the copy
+	if want := int64(SignatureWorkEvaluations) * full; want <= MaxSignatureWork || want <= MaxSignatureWorkCeiling || in.sigWork.Limit != MaxSignatureWorkCeiling {
+		t.Fatalf("limit %d, want the ceiling (two full evaluations: %d)", in.sigWork.Limit, want)
 	}
 	if o.Status != contracts.BudgetExhausted || o.Reason != "Signature work budget exhausted" || o.Application != nil {
 		t.Fatalf("observation %+v after %d updates", o, updates)
@@ -145,5 +146,94 @@ func TestSignatureWorkOfTheTestSetIsSmall(t *testing.T) {
 	in := signedStream(t, testSet(t), append(make([]byte, 300), "PROBE-v1"...), "fin")
 	if in.sigWork.Exhausted || in.sigWork.Used == 0 || in.sigWork.Used > MaxSignatureWork/1000 {
 		t.Fatalf("work %+v", in.sigWork)
+	}
+}
+
+// PRO-370 (Codex PRO-369, P2): a document of length-only conditions has no byte-valued condition, so before the
+// fix it cost no work at all and every 1-byte update ran all of them (4,096 signatures x 12 conditions, up to
+// 65,536 updates). Each condition and each candidate slot is charged now: the direction ends budget_exhausted.
+func TestLengthOnlySignatureWorkIsBounded(t *testing.T) {
+	pack, err := content.Load("../../../migration/fixtures/content.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var b strings.Builder
+	b.WriteString("[")
+	for i := 0; i < 4096; i++ {
+		if i > 0 {
+			b.WriteString(",")
+		}
+		fmt.Fprintf(&b, `{"name":"n%d","conditions":{"or":[`, i)
+		for j := 0; j < 12; j++ {
+			if j > 0 {
+				b.WriteString(",")
+			}
+			b.WriteString(`{"context":"unknown-req-tcp-payload-length","operator":"equal-to","value":1}`)
+		}
+		b.WriteString("]}}")
+	}
+	b.WriteString("]")
+	set, err := signatures.FromJSON([]byte(b.String()), pack)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in, updates, elapsed := oneByteFlow(t, set, 65536, 1000, 'x')
+	t.Logf("%d updates, %d of %d work units, %v", updates, in.sigWork.Used, in.sigWork.Limit, elapsed)
+	if o := in.Observation; o.Status != contracts.BudgetExhausted || o.Application != nil || !in.terminal {
+		t.Fatalf("after %d updates: %+v, work %+v", updates, o, in.sigWork)
+	}
+	if per := set.WorkPerEvaluation("unknown-tcp"); per != signatures.FixedWork*4096*(1+12) || in.sigWork.Limit != MaxSignatureWork {
+		t.Fatalf("per evaluation %d, limit %d", per, in.sigWork.Limit)
+	}
+}
+
+// PRO-370 (Codex PRO-369, P2): the allowance scaled with the configured buffer and set without a ceiling, so one
+// direction could still take tens of seconds (signature_bytes 65536, a full set). It is capped at
+// MaxSignatureWorkCeiling; past the ceiling even a single full segment ends budget_exhausted (a recorded Go-only
+// divergence), never a match.
+func TestSignatureWorkAllowanceHasACeiling(t *testing.T) {
+	set := pro170Set(t, 12, "Z")
+	if got := signatureWorkLimit(set, 65536); got != MaxSignatureWorkCeiling {
+		t.Fatalf("limit at signature_bytes 65536: %d, want the ceiling %d", got, int64(MaxSignatureWorkCeiling))
+	}
+	if MaxSignatureWorkCeiling < MaxSignatureWork {
+		t.Fatal("ceiling below the floor")
+	}
+	cfg := retaining()
+	cfg.SignatureBytes = 65536
+	in, err := New(cfg, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := in.SetSignatures(set); err != nil {
+		t.Fatal(err)
+	}
+	start := time.Now()
+	in.Feed(append([]byte("\x00\x00\x00\x00abcdefg"), strings.Repeat("x", 65536)...))
+	t.Logf("one 65536-byte segment: %d of %d units, %v", in.sigWork.Used, in.sigWork.Limit, time.Since(start))
+	if o := in.Observation; o.Status != contracts.BudgetExhausted || o.Application != nil || in.sigWork.Used > MaxSignatureWorkCeiling {
+		t.Fatalf("%+v, work %+v", o, in.sigWork)
+	}
+}
+
+// PRO-370: each evaluation copies the whole unknown buffer into its contexts, so a cheap set (one length-only
+// condition) left a quadratic copy uncharged: up to 65,536 updates of up to 64 KiB each. The copy is charged
+// before it is made, so the work used covers at least every buffered byte copied.
+func TestUnknownPayloadCopyIsCharged(t *testing.T) {
+	pack, err := content.Load("../../../migration/fixtures/content.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	set, err := signatures.FromJSON([]byte(`[{"name": "n", "conditions": [
+		{"context": "unknown-req-tcp-payload-length", "operator": "equal-to", "value": 1}]}]`), pack)
+	if err != nil {
+		t.Fatal(err)
+	}
+	in, updates, _ := oneByteFlow(t, set, 65536, 300, 'x')
+	if copied := int64(updates) * int64(updates-1) / 2; in.sigWork.Used < copied {
+		t.Fatalf("%d updates: %d units used, below the %d bytes copied", updates, in.sigWork.Used, copied)
+	}
+	if full := int64(65536)*(set.WorkPerByte("unknown-tcp")+1) + set.WorkPerEvaluation("unknown-tcp"); signatureWorkLimit(set, 65536) < 2*full {
+		t.Fatalf("allowance %d below two full evaluations with their copy (%d)", signatureWorkLimit(set, 65536), 2*full)
 	}
 }
