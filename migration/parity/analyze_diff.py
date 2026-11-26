@@ -9,11 +9,14 @@ garbage). Every third capture instead holds conversations built for bounded-pref
 Each capture is analyzed with a seeded option set (JSON or text rows, events only, sessions,
 hostnames, fingerprints, heuristics, certificates, observation modes, checksum policies, continuation, hints,
 custom signatures, a policy) by the Python reference in process and by the Go binary. Standard output is
-compared byte for byte in both forms (JSON rows and text), and the exit status and error text too. The same
+compared byte for byte in both forms (JSON rows and text), and the exit status and error text too. The reference
+runs with the Go-only PRO-448 additions modelled (migration/parity/pro448.py: the flow-limit counters in the
+summary and the datagram outcomes of UDP session records); nothing else about it changes. The same
 capture then goes through the presentation service's analysis (presentation/server.py analyze_bytes_reference
 against the Go `present` command, with seeded frame, session and event limits): results and refusals must be
 equal but for the measured processing time. Synthetic bytes only.
 Since PRO-401 the gate replays a golden file instead (--golden; --record writes one): migration/parity/golden.py.
+The golden file is recorded with the PRO-448 model, so its answers carry the two counters and the outcomes too.
 """
 import argparse
 import contextlib
@@ -237,8 +240,9 @@ def options_for(rng, signatures_path, policy_path):
 
 
 def reference(path, options):
-    """The Python analyze() in process, with the exit status and error text its command line would give."""
-    import analyze_pcap
+    """The Python analyze() in process, with the exit status and error text its command line would give (the
+    PRO-448 additions modelled)."""
+    import pro448
     from protocol_adapters.packets import CaptureError
     from protocol_engine import SignatureSet
     from protocol_engine.policy import Policy, PolicyError
@@ -260,7 +264,7 @@ def reference(path, options):
         if "--policy" in options:
             arguments["policy"] = Policy.from_path(value("--policy"))
         with contextlib.redirect_stdout(output):
-            analyze_pcap.analyze(str(path), **arguments)
+            pro448.analyze(str(path), **arguments)
     except (OSError, CaptureError, ValueError, PolicyError) as failure:
         status, error = 1, "Capture error: {}\n".format(failure)
     finally:
@@ -357,6 +361,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.golden:
         return replay_golden(args)
+    import pro448  # noqa: E402 - imports the reference, so only a run against it loads it
+    pro448.self_test()
     sec_sess1.self_test()
     pins = sec_sess1.Pins("analyze", args.seed, record=args.record_sec_sess1)
     rng = random.Random(args.seed)

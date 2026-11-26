@@ -40,6 +40,10 @@ type entry struct {
 	key       key
 	fragments []Fragment
 	conflict  bool
+	// exhausted marks a connection whose merge went over MaxFragments or MaxCrypto (SEC-QUIC-1 budget, PRO-122):
+	// it keeps the bytes it held before the overflow, within the budget, so a later contradiction of them still
+	// becomes the conflict marker, and it never assembles again.
+	exhausted bool
 	last      float64
 	element   *list.Element // its place in the LRU order
 	slot      int           // its index in the idle heap
@@ -72,7 +76,8 @@ func (h *idleHeap) Pop() any {
 // analyzer passes "source>destination", so direction is part of it; a bare datagram inspector passes ""). Entries
 // from a different scope, version or DCID never meet. Every overlap is compared byte for byte; a contradiction
 // turns the entry into a sticky conflict marker that answers "conflict" for every later datagram of that
-// connection until the host resets the scope or the entry expires. Lifetime: LRU eviction at MaxConnections, idle
+// connection until the host resets the scope or the entry expires; an over-budget merge turns it into a sticky
+// exhausted marker (PRO-122) that a later contradiction still turns into the conflict marker. Lifetime: LRU eviction at MaxConnections, idle
 // expiry when the host supplies time, Reset(scope) when the host ends a flow.
 //
 // SEC-QUIC-1 (PRO-47): the entries are indexed three ways so that no datagram or flow end scans the whole store,
@@ -288,14 +293,24 @@ func (a *Assembler) Add(dcid []byte, fragments []Fragment, scope string, version
 		a.Counts["conflicts"]++
 		return Conflict, nil
 	}
+	// SEC-QUIC-1 budget (PRO-47, PRO-122; a Go-only divergence Lee approved on PRO-124): the reference forgets an
+	// over-budget connection, so a later ClientHello contradicting the one it completed started afresh and was
+	// accepted with no conflict. The entry instead stays as a sticky exhausted marker with the bytes it held before
+	// the overflow (never the overflowing datagram's): it answers exhausted, merges and assembles nothing more, and
+	// only a contradiction of those bytes (checked above) turns it into the conflict marker. It ends like every
+	// entry: Reset, Clear, idle expiry or LRU eviction.
+	if e.exhausted {
+		a.Counts["exhausted"]++
+		return Exhausted, nil
+	}
 	total := 0
 	for _, f := range merged {
 		total += len(f.Data)
 	}
 	if len(merged) > MaxFragments || total > MaxCrypto {
 		a.Counts["exhausted"]++
-		a.remove(e)
-		return Exhausted, nil // over budget: this connection is forgotten
+		e.exhausted = true
+		return Exhausted, nil
 	}
 	status, data := Assemble(merged)
 	if status == Conflict {
