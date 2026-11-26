@@ -368,7 +368,7 @@ func (d *Datagram) InspectFlow(data []byte, hint, scope string, now *float64) (c
 			}
 		}
 		if err != nil {
-			e := err.(*parsing.Error)
+			e := parseFailure(err)
 			switch e.Kind {
 			case "budget":
 				errors = append(errors, failure{"budget_exhausted", e.Message})
@@ -449,4 +449,15 @@ func (d *Datagram) unknownEvidence(data []byte) []contracts.Evidence {
 		return []contracts.Evidence{}
 	}
 	return rows
+}
+
+// parseFailure is a validator's error as the typed *parsing.Error every datagram validator returns today. A checked
+// assertion (A3, PRO-119): an error of another type from a future validator becomes a malformed failure of that
+// candidate, never a panic of the classifier, and never a positive result.
+// The fixed reason never repeats the foreign error's text, which could carry payload bytes.
+func parseFailure(err error) *parsing.Error {
+	if e, ok := err.(*parsing.Error); ok && e != nil {
+		return e
+	}
+	return &parsing.Error{Kind: "malformed", Message: "Datagram validator failed without a typed reason"}
 }
