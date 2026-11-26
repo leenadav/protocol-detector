@@ -184,10 +184,14 @@ content:
 capabilities:
 	python3 -B tools/capabilities.py --check migration/CAPABILITIES.json
 
-# Migration M6: the exported content pack both runtimes load must match the Python content (tools/export_content.py)
+# PRO-411: the content pack is edited directly (go/internal/content/pack.json, history.json, lock.json) with
+# tools/content_pack.py; nothing is exported from the Python tables. The check, the tool's self-test, and the
+# example batch added in a copy of the tree without protocol_engine/ and protocol_adapters/ (Go content tests
+# included, so this needs the pinned Go). Add a batch: python3 -B tools/content_pack.py add BATCH.json
+# (docs/CONTENT-BATCHES.md).
 content-pack:
-	python3 -B tools/export_content.py --check migration/fixtures/content.json
-	python3 -B migration/content_history.py --check go/internal/content/history.json
+	python3 -B tools/content_pack.py check
+	python3 -B tools/content_pack.py --self-test --e2e
 
 # Migration M1: the Python reference must match the committed differential cases exactly (migration/CONTRACTS.md)
 parity:

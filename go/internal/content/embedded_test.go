@@ -12,7 +12,7 @@ func TestEmbeddedPackIsTheSharedPack(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !bytes.Equal(shared, embedded) {
-		t.Fatal("go/internal/content/pack.json differs from migration/fixtures/content.json; copy the exported pack (make content-pack)")
+		t.Fatal("go/internal/content/pack.json differs from migration/fixtures/content.json; edit both with tools/content_pack.py")
 	}
 	if _, err := Embedded(); err != nil {
 		t.Fatal(err)
