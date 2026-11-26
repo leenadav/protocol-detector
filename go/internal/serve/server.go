@@ -43,8 +43,7 @@ const csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inl
 
 // Server is LocalServer.
 type Server struct {
-	Root     string // the presentation directory (SOURCE.json, web/, server.py)
-	Python   string // unused since PRO-401 (no reference generator is run); kept for the --python flag
+	Root     string // the presentation directory (SOURCE.json, web/)
 	Self     string // this binary, for the workers
 	Live     *livectl.Manager
 	Jobs     *jobs.Runner
@@ -64,8 +63,8 @@ type Server struct {
 }
 
 // New builds the server state (LocalServer.__init__); Listen binds it.
-func New(root, python, self string) (*Server, error) {
-	s := &Server{Root: root, Python: python, Self: self, slots: make(chan struct{}, MaxHandlers)}
+func New(root, self string) (*Server, error) {
+	s := &Server{Root: root, Self: self, slots: make(chan struct{}, MaxHandlers)}
 	s.Live = livectl.NewManager(func(iface, filter string, duration int64, decrypt bool) []string {
 		if decrypt {
 			return []string{self, "live-decrypt", "--interface", iface, "--filter", filter, "--duration", strconv.FormatInt(duration, 10)}

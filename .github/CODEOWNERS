@@ -1,5 +1,9 @@
 # Changes to parsing, capture handling and security policy require owner review.
+# PRO-402: the Go engine is the product (the parsers, the demo server and its embedded demo assets).
 *                       @leenadav
+/go/                    @leenadav
+/go/internal/serve/     @leenadav
+/presentation/          @leenadav
 /protocol_engine/       @leenadav
 /.github/               @leenadav
 SECURITY.md             @leenadav
