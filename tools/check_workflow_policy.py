@@ -1295,7 +1295,7 @@ MUTATION_STEPS = [
     {"env": GO_BUILD_ENV,
      "run": ['mkdir -p "$RUNNER_TEMP/mutation/gremlins" "$RUNNER_TEMP/mutation/engine-modules"',
              'cp migration/mutation/gremlins/go.mod migration/mutation/gremlins/go.sum migration/mutation/gremlins/tools.go '
-             '"$RUNNER_TEMP/mutation/gremlins/"',
+             + '"$RUNNER_TEMP/mutation/gremlins/"',
              'cp go/go.mod go/go.sum "$RUNNER_TEMP/mutation/engine-modules/"',
              'cd "$RUNNER_TEMP/mutation/gremlins"',
              'GOBIN="$RUNNER_TEMP/bin" go install github.com/go-gremlins/gremlins/cmd/gremlins',
