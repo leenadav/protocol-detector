@@ -621,6 +621,44 @@ def tag_trigger(text):
     return False
 
 
+# PRO-480: the build job checks the documented counts strictly on a tag only. A dry run (a pull request or a branch
+# push) runs the lag-tolerant check, because main's generated test counts lag by design after each merge (PRO-347,
+# SSDLC item 43); a real release must still fail on a lagging count. The decision reads REF_TYPE from
+# github.ref_type, and exactly these lines must appear, in order, in the step that runs the tool.
+DOCS_COUNTS_ENV = {"REF_TYPE": "${{ github.ref_type }}"}
+DOCS_COUNTS_RUN = [
+    'if [ "${REF_TYPE}" = "tag" ]; then',
+    "python -B tools/check_docs_counts.py --strict",
+    "else",
+    "python -B tools/check_docs_counts.py",
+    "fi",
+]
+
+
+def check_release_docs_counts(text, job="build"):
+    """The build job's docs-count check is --strict for a tag and lag-tolerant only for a dry run (PRO-480)."""
+    where = "publish-release.yml: {} job:".format(job)
+    try:
+        steps = [step_fields(step) for step in steps_of(job_lines(text, job))]
+    except ValueError as error:
+        return ["{} {}".format(where, error)]
+    runs = [step for step in steps if any("check_docs_counts.py" in line for line in step.get("run") or [])]
+    if len(runs) != 1:
+        return ["{} exactly one step must run tools/check_docs_counts.py (found {})".format(where, len(runs))]
+    step, problems = runs[0], []
+    for name, value in DOCS_COUNTS_ENV.items():
+        if (step.get("env") or {}).get(name) != value:
+            problems.append("{} the docs-count step must set {}: {}".format(where, name, value))
+    lines = step.get("run") or []
+    calls = [line for line in lines if "check_docs_counts.py" in line]
+    start = next((i for i, line in enumerate(lines) if line == DOCS_COUNTS_RUN[0]), None)
+    if (start is None or lines[start:start + len(DOCS_COUNTS_RUN)] != DOCS_COUNTS_RUN
+            or len(calls) != 2):
+        problems.append("{} the docs-count check must run --strict for a tag and without it otherwise, exactly as "
+                        "DOCS_COUNTS_RUN (a release must never skip the strict test-count check)".format(where))
+    return problems
+
+
 VERIFY_ENV = {"GH_TOKEN": "${{ github.token }}", "GH_REPO": "${{ github.repository }}"}
 VERIFY_RUN = [
     "for file in dist/*; do",
@@ -1741,6 +1779,7 @@ def main(root, history_base=HISTORY_BASE):
             problems += check_release_provenance(texts[RELEASE_WORKFLOW])
             problems += check_release_gate(texts[RELEASE_WORKFLOW])
             problems += check_attestation_verify(texts[RELEASE_WORKFLOW])
+            problems += check_release_docs_counts(texts[RELEASE_WORKFLOW])
     except (OSError, ValueError) as error:
         problems.append("cannot read the workflows: {}".format(error))
     for problem in problems:
@@ -1993,6 +2032,25 @@ def self_test():
     except ValueError:
         pass
     assert check_release_provenance(good.replace("  publish:\n", "  release:\n")) == ["publish-release.yml has no `publish` job"]
+    # PRO-480: the docs-count check is strict for a tag, lag-tolerant only for a dry run, and cannot be dropped.
+    counts = ("jobs:\n  build:\n    steps:\n      - name: gate\n        env:\n          REF_TYPE: ${{ github.ref_type }}\n"
+              "        run: |\n          ruff check .\n" + "".join("          " + line + "\n" for line in DOCS_COUNTS_RUN) +
+              "          python -B tools/check_content.py\n")
+    assert check_release_docs_counts(counts) == [], check_release_docs_counts(counts)
+    shape = ["publish-release.yml: build job: the docs-count check must run --strict for a tag and without it otherwise, "
+             "exactly as DOCS_COUNTS_RUN (a release must never skip the strict test-count check)"]
+    for label, broken in {
+        "never strict": counts.replace("check_docs_counts.py --strict", "check_docs_counts.py"),
+        "strict on a branch": counts.replace('= "tag" ]', '= "branch" ]'),
+        "inverted test": counts.replace('= "tag" ]', '!= "tag" ]'),
+        "extra lenient call": counts.replace("ruff check .\n", "ruff check .\n          python -B tools/check_docs_counts.py\n"),
+    }.items():
+        assert check_release_docs_counts(broken) == shape, (label, check_release_docs_counts(broken))
+    assert check_release_docs_counts(counts.replace("${{ github.ref_type }}", "tag")) == [
+        "publish-release.yml: build job: the docs-count step must set REF_TYPE: ${{ github.ref_type }}"]
+    assert check_release_docs_counts(counts.replace("check_docs_counts.py", "check_other.py")) == [
+        "publish-release.yml: build job: exactly one step must run tools/check_docs_counts.py (found 0)"]
+    assert check_release_docs_counts(counts.replace("  build:", "  other:")) == ["publish-release.yml: build job: no `build` job"]
     shell_ok = "name: x\non:\n  push:\ndefaults:\n  run:\n    shell: bash   # pipefail\njobs:\n  a:\n    steps:\n      - run: x | tee y\n"
     assert check_shell("w.yml", shell_ok) == []
     required = ["w.yml: top-level `defaults: run: shell: bash` is required (pipefail)"]
