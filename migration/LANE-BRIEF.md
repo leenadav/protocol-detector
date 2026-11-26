@@ -162,7 +162,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
-| A2 second run (PRO-119): SEC-QUIC-2, a QUIC conflict marker refreshes its idle time but not its LRU place, so 1024 newer connections evict it; SEC-DEC-1, records after a close_notify or fatal alert are still decrypted | an approved parity delta each (Hermes/Lee, as for PRO-122/PRO-123). The Python reference behaves the same way (`quic.py` `conflicted`, `poc_decryption/engine.py` and `tls12.py`), so a Go-only fix would move parity. `migration/notes/PRO-119.md` |
+| A2 second run (PRO-119): SEC-QUIC-2, a QUIC conflict marker refreshes its idle time but not its LRU place, so 1024 newer connections evict it; SEC-DEC-1, records after a close_notify or fatal alert are still decrypted | an approved parity delta each (Hermes/Lee, as for PRO-122/PRO-123). The Python reference behaves the same way (`quic.py` `conflicted`, `poc_decryption/engine.py` and `tls12.py`), so a Go-only fix would move parity. `migration/notes/PRO-119.md`. A prepared alert patch, against `c01942f` and not applying here, is `migration/held-patches/PRO-119/` on the dropped PR #147's branch `claude/confident-curie-qpv2sl` |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -188,6 +188,8 @@ SEC-SIG-2 and SEC-SIG-1 (PRO-332, against `main` `5005cdc`): `2885afa` (fix and 
 
 SEC-QUIC-3 (PRO-123, against `main` `21dd113`): `fe87386` (fix, tests, the random-differential class) and the
 documentation commit after it.
+
+PRO-119 (PR #150, against `main` `23bbc0c`): `afbe5e1`, `91960e0` (fixes and tests) and `852af38` (PRO-459: #147's uncovered cases ported), with the documentation commits after them.
 
 PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the documentation commit after it, and the errcheck fix in the test after that.
 
