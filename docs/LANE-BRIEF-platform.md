@@ -45,8 +45,12 @@ their decisions, the policy locks, and the release controller.
   go-check-parity`). `make go-check` still runs the four parts in order. `tools/go_fuzz_smoke.py --check-matrix`
   (workflow-lint, `make workflow-policy`) fails a matrix that drops a shard; a listed target that no test defines
   fails. Steps 3 (tool-decided docs-only fast path) and 4 (GOMODCACHE cache saved on `main` only) follow as their own PRs.
-- **PRO-194 finding 2** (`build_go_release.py` sets and checks `main.version`): local `5324543`, unpushed, waits on
-  Engine's PRO-195.
+- **PRO-194** (`build_go_release.py`), on branch `claude/determined-mayer-cyjpa0` from `main` `23bbc0c`. Finding 1 is
+  the cherry-pick `305f8ef` of `695bb09`: the release fails when `go/go.mod` exists and `go/cmd/protodetect` does
+  not. Finding 2 adds `-X main.version=<version>` and requires the linux/amd64 binary's `protodetect version` to
+  report exactly that version (`docs/RELEASING.md`). The local `5324543` was lost with its container and was
+  rewritten here. **Merge order:** Engine's PR #143 (PRO-195, `var version`) first, then merge `main` into this
+  branch. Until then the publish-release dry run fails, correctly, because `main` still has `const version`.
 
 - `main` = `2a33183`. PRO-42, PRO-59 and PRO-31 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #37 (`0d32281`), #38 (`51b5e94`), #39 (`0ef7349`);
   #41 and #54 (PRO-73) too. #56 (the brief through PRO-103) and #66 (gitleaks allowlist for the r5 CNAME false positive, PRO-145) are merged.
@@ -180,6 +184,8 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **Also:** `b97adc8` (Dependabot pins, chunk 06) and `85e99e9` (govulncheck, chunk 07).
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
 - **Merged, not yet Codex-reviewed:** #33 `851eddb`, #34 `a179db6`, #35 `d3faff8`..`12a56ae`, #37 `7d04266`, #38 `7c33b1a`, #39 `37b3c84`.
+- **PRO-194:** `305f8ef` (finding 1, cherry-pick of `695bb09`) and the finding 2 commit on
+  `claude/determined-mayer-cyjpa0`.
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
