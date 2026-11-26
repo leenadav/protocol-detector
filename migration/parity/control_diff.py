@@ -10,6 +10,7 @@ driven through both implementations with the same script of operations: fresh ru
 current run, a stale run, none or a non-string. Every answer must be the same JSON text. JSON documents are
 also echoed through both decoders and encoders. Nothing is captured; no process is started on the
 reference side.
+Since PRO-401 the gate replays a golden file instead (--golden; --record writes one): migration/parity/golden.py.
 """
 import argparse
 import json
@@ -25,12 +26,13 @@ sys.path.insert(0, str(ROOT / "presentation"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import analyze_diff  # noqa: E402
 import live_diff  # noqa: E402
-from live_manager import LiveManager  # noqa: E402
-from protocol_adapters import events as reference_events  # noqa: E402
+import golden  # noqa: E402 - the reference (live_manager, protocol_adapters) is imported only where it runs
 
 
 def reference(script):
     """The reference's answers to a script, one JSON line per read."""
+    from live_manager import LiveManager
+    from protocol_adapters import events as reference_events
     manager, out = LiveManager(), []
     for line in script:
         op, _, arg = line.partition(" ")
@@ -168,6 +170,7 @@ JSON_DOCS = ['{"a": 1, "b": [1.5, -0, 1e2, 2E-3, 1.0, 12345678901234567890123], 
 
 
 def script_for(rng, lines, retention_probe):
+    from protocol_adapters import events as reference_events
     events = [json.dumps(json.loads(line)) for line in lines]
     sids = sorted({reference_events.session_identity(e.get("transport", "tcp"), e.get("client") or e.get("source"),
                                                        e.get("server") or e.get("destination"))
@@ -207,12 +210,31 @@ def script_for(rng, lines, retention_probe):
     return script
 
 
+def run_go(binary, script):
+    done = subprocess.run([binary, "control-replay"], input="\n".join(script).encode("utf-8") + b"\n",  # noqa: S603
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=300)
+    return done.returncode, done.stdout.decode("utf-8").splitlines()
+
+
+def mismatch(index, returncode, actual, expected):
+    """None when Go answered every read as expected (each expected line is text or a golden digest of it)."""
+    if returncode == 0 and len(actual) == len(expected) and all(golden.matches(x, y) for x, y in zip(actual, expected)):
+        return None
+    at = next((i for i, (x, y) in enumerate(zip(actual, expected)) if not golden.matches(x, y)), min(len(actual), len(expected)))
+    detail = "" if at >= min(len(actual), len(expected)) else " go {} | ref {}".format(actual[at][:300], golden.shown(expected[at])[:300])
+    return "run {}: read {} differs ({} reads, expected {}){}".format(index, at, len(actual), len(expected), detail)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
     parser.add_argument("--count", type=int, default=120)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--record", help="also write the scripts and the reference's answers to this golden file (migration/parity/golden.py)")
+    parser.add_argument("--golden", help="compare Go with this golden file's answers; the reference is not run")
     args = parser.parse_args(argv)
+    if args.golden:
+        return replay_golden(args)
     rng = random.Random(args.seed)
     sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
     try:
@@ -222,6 +244,7 @@ def main(argv=None):
         print("control parity FAILED: the decryption runs need the `cryptography` package "
               "(python3 -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt)")
         return 1
+    recorder = golden.recorder(args.record, "control", {"seed": args.seed, "count": args.count})
     failures, reads, ingested = [], 0, 0
     with tempfile.TemporaryDirectory() as folder:
         folder = Path(folder)
@@ -240,20 +263,43 @@ def main(argv=None):
             script = script_for(rng, lines, index % 5 == 1)
             ingested += sum(line.startswith("I ") for line in script)
             expected = reference(script)
-            done = subprocess.run([args.binary, "control-replay"], input="\n".join(script).encode("utf-8") + b"\n",  # noqa: S603
-                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=300)
-            actual = done.stdout.decode("utf-8").splitlines()
+            returncode, actual = run_go(args.binary, script)
             reads += len(expected)
-            if done.returncode != 0 or actual != expected:
-                at = next((i for i, (x, y) in enumerate(zip(actual, expected)) if x != y), min(len(actual), len(expected)))
-                detail = "" if at >= min(len(actual), len(expected)) else " go {} | ref {}".format(actual[at][:300], expected[at][:300])
-                failures.append("run {} (seed {}): read {} differs ({} reads, expected {}){}".format(index, args.seed, at, len(actual), len(expected), detail))
+            problem = mismatch(index, returncode, actual, expected)
+            if problem:
+                failures.append(problem + " (seed {})".format(args.seed))
+            if recorder:
+                recorder.add({"script": golden.relative(script, folder),
+                              "expected": [golden.text_or_digest(line) for line in golden.relative(expected, folder)]})
     for line in failures[:5]:
         print("control mismatch:", line)
     print("control parity: {} runs, {} lines ingested, {} reads, {} mismatched (seed {})".format(
         args.count, ingested, reads, len(failures), args.seed))
+    if recorder:
+        recorder.finish(failures)
     return 1 if failures else 0
 
+
+def replay_golden(args):
+    """The gate without the reference: the recorded operation scripts (worker lines included), Go's answers
+    against the recorded ones."""
+    document = golden.read(args.golden, "control")
+    failures, reads, ingested = [], 0, 0
+    with tempfile.TemporaryDirectory() as folder:
+        for index, entry in enumerate(document["entries"]):
+            script, expected = golden.absolute(entry["script"], folder), entry["expected"]
+            ingested += sum(line.startswith("I ") for line in script)
+            returncode, actual = run_go(args.binary, script)
+            actual = golden.relative(actual, folder)          # the recorded answers name the run's folder as {dir}
+            reads += len(expected)
+            problem = mismatch(index, returncode, actual, expected)
+            if problem:
+                failures.append(problem)
+    for line in failures[:5]:
+        print("control mismatch:", line)
+    print("control parity (golden {}): {} runs, {} lines ingested, {} reads, {} mismatched (recorded with seed {})".format(
+        Path(args.golden).name, len(document["entries"]), ingested, reads, len(failures), document.get("seed")))
+    return 1 if failures else 0
 
 if __name__ == "__main__":
     sys.exit(main())

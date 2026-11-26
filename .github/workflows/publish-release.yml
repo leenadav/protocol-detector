@@ -69,7 +69,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: audit
       - name: Check out the commit being released
@@ -124,7 +124,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: audit
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -135,11 +135,31 @@ jobs:
         with:
           python-version: "3.13"
       - name: Set up the pinned Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version: "1.27.4"
           cache: false
+      - name: Build the Go binary the launcher tests run (make go-build, offline and vendored; nothing to build without the target)
+        # PRO-402: `protodetect analyze`, `live` and `serve` run only the Go binary, so the unit tests below need it
+        # (as in ci.yml); without it test_policy and test_schema exit 2 (PRO-480). go/bin/ is ignored by git and is
+        # not part of the wheel; the release binaries come from tools/build_go_release.py below.
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: python -B tools/go_ci.py build --summary "$GITHUB_STEP_SUMMARY"
       - name: The full gate must pass on the commit being released
+        # tools/check_docs_counts.py: a tag fails on a documented test count that lags the tree (--strict), so a
+        # release never ships a stale count. A dry run (a pull request or a branch push) runs it without --strict,
+        # because main's generated counts lag by design after each merge (PRO-347) and a pull request does not
+        # regenerate them; it still fails on family, application and version drift (PRO-480).
+        env:
+          REF_TYPE: ${{ github.ref_type }}
         run: |
           python -m pip install --require-hashes -r requirements-dev.txt
           python -B -m compileall -q protocol_engine tools ./*.py
@@ -147,7 +167,11 @@ jobs:
           ruff check .
           python -B tools/check_action_pins.py .github/workflows
           python -B tools/check_security_requirements.py
-          python -B tools/check_docs_counts.py --strict
+          if [ "${REF_TYPE}" = "tag" ]; then
+            python -B tools/check_docs_counts.py --strict
+          else
+            python -B tools/check_docs_counts.py
+          fi
           python -B tools/coverage_matrix.py --check PROTOCOLS.md
           python -B protodetect.py policy lint policy-example.json --strict
           python -B tools/build_manifest.py --check presentation/SOURCE.json
@@ -276,7 +300,7 @@ jobs:
       attestations: write   # attest-build-provenance stores the attestation on the repository
     steps:
       - name: Harden runner egress
-        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: audit
       - name: Fetch the build job's files

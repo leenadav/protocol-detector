@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "23bbc0c2f16aa3db3c98d4beefe4ed73c1da8d4f",
+  "commit": "336b2651a2dc379b6f4249fb56dca8e999a6b5eb",
   "branch": "claude/engine-PRO-192-backend-no-fallback",
-  "build_digest": "da8d2d9b8e2d9bf32c784a87ea0c1fd5840e0a545fc6d0559e0e53b20872bf81",
+  "build_digest": "8f2d80cf125148dab6d069d5368ab6b37dc8fa9d01e58d3da88da2267d08548b",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -515,7 +515,7 @@
     {
       "path": "protodetect.py",
       "component": "adapters",
-      "sha256": "1351ae09b4ecec130aff0538b61ca7177c7bdaaaa79d16b87b0ee1d195b9928e"
+      "sha256": "50040078d983ffe3e2fbb836052fd582e4e513982c9d88954796220d97e80b74"
     },
     {
       "path": "detectors.py",
@@ -535,7 +535,7 @@
     {
       "path": "presentation/launch.py",
       "component": "presentation",
-      "sha256": "2f7277d3b123db12335d1c1279d6ce3c66a36d687c720b8d31e50c372182eb42"
+      "sha256": "91ab3ec2ec15b517403fcdb922785b2f1cf1e2b1eb22c280f69db4f3bc525033"
     },
     {
       "path": "presentation/live_decrypt_smoke_check.py",
@@ -640,12 +640,12 @@
     {
       "path": "schemas/offline-row.schema.json",
       "component": "schemas",
-      "sha256": "c46a5f74eea875f411d150c051f1b8f0d7f53f8212f3074b9c3133e357a76361"
+      "sha256": "49654e4b6adbf569c5c78409067d5804bfa80666a68593b65991d34236a94a7a"
     },
     {
       "path": "schemas/session.schema.json",
       "component": "schemas",
-      "sha256": "54c1cf06f9ce28e202197b1e95f09ad794e3f6fdc6faeeb38d4531b07c82707c"
+      "sha256": "e30694967c7d117c784f0989ed658fc0dfca431c85ab8a9f872182fa13cd6792"
     }
   ]
 }

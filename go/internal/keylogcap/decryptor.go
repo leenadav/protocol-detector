@@ -241,6 +241,9 @@ func (c *connection) build(pack *content.Pack) *row {
 	return r
 }
 
+// maxFinished bounds the closed connections kept for reports.
+const maxFinished = 4096
+
 // decryptor is the one consumer of the coordinator's retained tier.
 type decryptor struct {
 	pack        *content.Pack
@@ -314,10 +317,18 @@ func (d *decryptor) pump() error {
 				// is the one a later report would have built (Go-only; Codex PRO-13 P2).
 				c.build(d.pack)
 				c.outer, c.inner = [2]*engine.Inspector{}, [2]*engine.Inspector{}
-				d.finished = append(d.finished, c)
-				if len(d.finished) > 4096 {
+				// The settled row is all a closed connection needs. A capture-level failure never reached a
+				// decoder verdict, so its decoder still holds the client random and derived secrets: zero
+				// them and drop the decoder (SEC-KEY-1). Discard changes no state, so the row is unchanged.
+				c.tls.Discard()
+				c.tls = nil
+				if len(d.finished) == maxFinished {
+					// Drop the oldest by moving the window: nil its slot first so the shared backing array
+					// does not keep it reachable; append reallocates and copies only the live window.
+					d.finished[0] = nil
 					d.finished = d.finished[1:]
 				}
+				d.finished = append(d.finished, c)
 			}
 		}
 	}
@@ -430,7 +441,7 @@ func (d *decryptor) rows() []*row {
 		all = append(all, d.connections[key])
 	}
 	for _, c := range all {
-		if c.dirty {
+		if c.dirty && c.tls != nil { // a closed connection (tls released) keeps the row settled at close
 			c.build(d.pack)
 		}
 		if c.looksTLS || c.failed {

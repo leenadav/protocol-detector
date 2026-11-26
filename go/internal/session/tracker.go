@@ -1,6 +1,7 @@
 package session
 
 import (
+	"container/list"
 	"fmt"
 	"sort"
 	"strings"
@@ -29,7 +30,23 @@ const (
 	ReasonFIN           = "Observed contiguous TCP FIN before initial message completed"
 	ReasonRestart       = "Connection restarted with an observed SYN after a midstream observation"
 	ReasonTruncated     = "Capture record truncated; stream bytes missing"
+	// SEC-SESS-1 (PRO-398, Go only): a connection whose handshake did not complete, or a UDP flow with no decision
+	// yet, is evicted when its separate budget is full; one that reaches the short half-open timeout ends with the
+	// idle reasons above.
+	ReasonHalfOpenEvicted = "Half-open budget full; oldest unestablished state evicted"
 )
+
+// Half-open defaults (SEC-SESS-1): when Options leave them zero, at most three quarters of a table may be half-open,
+// and a half-open state lives DefaultHalfOpenTimeout seconds (never longer than the idle timeout).
+const DefaultHalfOpenTimeout = 5.0
+
+func defaultHalfOpen(limit int) int {
+	n := limit - limit/4
+	if n < 1 {
+		n = 1
+	}
+	return n
+}
 
 // State is the tracker's view of one TCP connection or UDP flow (Python Analyzer.tracked / udp_flows).
 type State struct {
@@ -57,9 +74,42 @@ type State struct {
 	// UDP flows: the flow's observation and the first identified (or latest) observation per direction.
 	Observation  *contracts.Observation
 	Observations map[transport.Endpoint]*contracts.Observation
+	// Outcomes are the flow's distinct identified datagram labels in first-seen order, with their datagram
+	// counts, at most MaxDatagramOutcomes; OutcomesBeyond counts the identified datagrams whose label did not
+	// fit (PRO-448). The first identification still names the flow; these show what it hid.
+	Outcomes       []Outcome
+	OutcomesBeyond int
 	// order is the table insertion order: the reference walks its tables in insertion order when several
 	// states expire or finish together, so records come out in that order.
 	order uint64
+	// halfOpen is the state's element in its table's half-open queue (oldest first), nil once the TCP handshake
+	// completed (Ready) or the UDP flow was decided (identified or invalidated), and for midstream connections.
+	halfOpen *list.Element
+}
+
+// Outcome is one distinct identified result of a UDP flow's datagrams and how many datagrams carried it.
+type Outcome struct {
+	Label     Label
+	Datagrams int
+}
+
+// MaxDatagramOutcomes bounds the distinct outcomes a UDP flow keeps (PRO-448): a flow cannot grow its record
+// by alternating labels; the identified datagrams beyond it are only counted.
+const MaxDatagramOutcomes = 8
+
+// noteOutcome counts one identified datagram of a UDP flow under its label.
+func noteOutcome(state *State, label Label) {
+	for i := range state.Outcomes {
+		if state.Outcomes[i].Label == label {
+			state.Outcomes[i].Datagrams++
+			return
+		}
+	}
+	if len(state.Outcomes) >= MaxDatagramOutcomes {
+		state.OutcomesBeyond++
+		return
+	}
+	state.Outcomes = append(state.Outcomes, Outcome{Label: label, Datagrams: 1})
 }
 
 // inOrder returns the keys of a state table in insertion order.
@@ -114,6 +164,12 @@ type Options struct {
 	MaxUDPFlows    int // -1: same as MaxConnections
 	Observation    string
 	Compact        bool
+	// SEC-SESS-1: MaxHalfOpen bounds the TCP connections whose handshake is not complete (a part of MaxConnections),
+	// MaxHalfOpenUDP the UDP flows with no decision yet (a part of MaxUDPFlows), and HalfOpenTimeout how long either
+	// may stay unestablished: TCP from its SYN, UDP since its last datagram. Zero selects the defaults.
+	MaxHalfOpen     int
+	MaxHalfOpenUDP  int
+	HalfOpenTimeout float64
 }
 
 // Tracker ports Analyzer.process for TCP and the flow table for UDP; verdicts are not its concern.
@@ -144,6 +200,8 @@ type Tracker struct {
 	Evidence   func(sink Sink) string
 	// LastServer is the server endpoint of the packet in progress when tracking knows it (Analyzer.last_server).
 	LastServer *transport.Endpoint
+	// Half-open queues (SEC-SESS-1), oldest first; each element's value is the state's Key.
+	halfOpenTCP, halfOpenUDP *list.List
 }
 
 // NewTracker validates the options like the Python constructor.
@@ -160,6 +218,22 @@ func NewTracker(opts Options, factory func() Sink, onClosed func(Closed)) (*Trac
 	if opts.MaxUDPFlows > 65536 {
 		return nil, errs.New(errs.Invalid, errs.ScopeCapture, "Invalid UDP flow table limit")
 	}
+	if opts.MaxHalfOpen < 0 || opts.MaxHalfOpen > opts.MaxConnections || opts.MaxHalfOpenUDP < 0 ||
+		opts.MaxHalfOpenUDP > opts.MaxUDPFlows || opts.HalfOpenTimeout < 0 || opts.HalfOpenTimeout != opts.HalfOpenTimeout {
+		return nil, errs.New(errs.Invalid, errs.ScopeCapture, "Invalid half-open limit")
+	}
+	if opts.MaxHalfOpen == 0 {
+		opts.MaxHalfOpen = defaultHalfOpen(opts.MaxConnections)
+	}
+	if opts.MaxHalfOpenUDP == 0 {
+		opts.MaxHalfOpenUDP = defaultHalfOpen(opts.MaxUDPFlows)
+	}
+	if opts.HalfOpenTimeout == 0 {
+		opts.HalfOpenTimeout = DefaultHalfOpenTimeout
+	}
+	if opts.HalfOpenTimeout > opts.IdleTimeout {
+		opts.HalfOpenTimeout = opts.IdleTimeout
+	}
 	interval := 0.0
 	if opts.Compact {
 		interval = 1
@@ -169,7 +243,7 @@ func NewTracker(opts Options, factory func() Sink, onClosed func(Closed)) (*Trac
 		return nil, err
 	}
 	return &Tracker{opts: opts, manager: manager, tracked: map[Key]*State{}, udpFlows: map[Key]*State{}, nextExp: -1e308,
-		Counts: map[string]int{}, onClosed: onClosed, factory: factory}, nil
+		Counts: map[string]int{}, onClosed: onClosed, factory: factory, halfOpenTCP: list.New(), halfOpenUDP: list.New()}, nil
 }
 
 // Manager exposes the connection table (tests and the M4 replay read stream counters through it).
@@ -192,8 +266,8 @@ func (t *Tracker) Tracked(a, b transport.Endpoint) *State {
 func (t *Tracker) TracksTCP(key Key) bool { _, ok := t.tracked[key]; return ok }
 
 // SYNRetransmission reports whether Process at now would take this bare SYN as a retransmission of the tracked
-// connection's SYN (same client, same ISN, no FIN or data, not idle-expired): the same connection, so an owner
-// must not restart the tuple's generation for it. A Go-only refinement of the reference coordinator, which
+// connection's SYN (same client, same ISN, no FIN or data, not expired: idle, or half-open past HalfOpenTimeout):
+// the same connection, so an owner must not restart the tuple's generation for it. A Go-only refinement of the reference coordinator, which
 // restarts on every bare SYN of a tracked tuple (Codex PRO-18 P2).
 func (t *Tracker) SYNRetransmission(now float64, p *transport.TCP) bool {
 	state := t.tracked[KeyOf(p.Source, p.Destination)]
@@ -203,7 +277,61 @@ func (t *Tracker) SYNRetransmission(now float64, p *transport.TCP) bool {
 	if now < t.now {
 		now = t.now
 	}
-	return state.Client == p.Source && state.HasISN && state.ISN == p.Sequence && now-state.Time < t.opts.IdleTimeout
+	return state.Client == p.Source && state.HasISN && state.ISN == p.Sequence && !t.expired(state, now)
+}
+
+// HalfOpen reports the resolved half-open limits and timeout, and how many TCP and UDP states are half-open now.
+func (t *Tracker) HalfOpen() (maxTCP, maxUDP int, timeout float64, tcp, udp int) {
+	return t.opts.MaxHalfOpen, t.opts.MaxHalfOpenUDP, t.opts.HalfOpenTimeout, t.halfOpenTCP.Len(), t.halfOpenUDP.Len()
+}
+
+// expired reports whether a state reached its timeout at now: a half-open TCP connection HalfOpenTimeout after
+// its SYN (nothing it receives while half-open extends that), a half-open UDP flow HalfOpenTimeout after its last
+// datagram, and any other state IdleTimeout after its last packet.
+func (t *Tracker) expired(state *State, now float64) bool {
+	if state.halfOpen != nil {
+		if state.Transport == "tcp" {
+			return now-state.Start >= t.opts.HalfOpenTimeout
+		}
+		return now-state.Time >= t.opts.HalfOpenTimeout
+	}
+	return now-state.Time >= t.opts.IdleTimeout
+}
+
+// queue returns the half-open queue of a state's table.
+func (t *Tracker) queue(state *State) *list.List {
+	if state.Transport == "tcp" {
+		return t.halfOpenTCP
+	}
+	return t.halfOpenUDP
+}
+
+// settle takes a state out of its half-open queue: its handshake completed, it was decided, or it left the table.
+func (t *Tracker) settle(state *State) {
+	if state != nil && state.halfOpen != nil {
+		t.queue(state).Remove(state.halfOpen)
+		state.halfOpen = nil
+	}
+}
+
+// evictHalfOpen retires the oldest half-open state of a table when the half-open budget is full or the table
+// itself is full; established connections and decided flows are never evicted for a new state. It runs before
+// the new state is allocated.
+func (t *Tracker) evictHalfOpen(queue *list.List, size, limit, halfLimit int, udp bool) {
+	if queue.Len() == 0 || (queue.Len() < halfLimit && size < limit) {
+		return
+	}
+	key := queue.Front().Value.(Key)
+	if udp {
+		flow := t.udpFlows[key]
+		t.settle(flow)
+		delete(t.udpFlows, key)
+		t.Counts["udp_half_open_evicted"]++
+		t.closed(flow, ReasonHalfOpenEvicted, nil, nil)
+		return
+	}
+	t.Counts["half_open_evicted"]++
+	t.Drop(key, ReasonHalfOpenEvicted)
 }
 
 func (t *Tracker) closed(state *State, reason string, delivered map[transport.Endpoint]int, sinks map[transport.Endpoint]Sink) {
@@ -229,6 +357,7 @@ func (t *Tracker) TrackedTCP() []*State {
 func (t *Tracker) Drop(key Key, reason string) {
 	connection := t.manager.Connections[key]
 	state := t.tracked[key]
+	t.settle(state)
 	delete(t.tracked, key)
 	// Lets Retired consumers read the per-direction byte counts of the state being retired (Analyzer.retiring).
 	t.Retiring = state
@@ -278,6 +407,8 @@ func (t *Tracker) reject(key Key, source transport.Endpoint, reason string) stri
 // requires a newly observed start; it is not a clean end, so no session record is produced (analyze.capture_gap).
 func (t *Tracker) Reset() {
 	t.tracked, t.udpFlows = map[Key]*State{}, map[Key]*State{}
+	t.halfOpenTCP.Init()
+	t.halfOpenUDP.Init()
 	for key := range t.manager.Connections {
 		t.manager.release(key)
 	}
@@ -293,6 +424,7 @@ func (t *Tracker) Finish(reason string) error {
 	}
 	for _, key := range inOrder(t.udpFlows) {
 		flow := t.udpFlows[key]
+		t.settle(flow)
 		delete(t.udpFlows, key)
 		t.closed(flow, reason, nil, nil)
 	}
@@ -303,7 +435,7 @@ func (t *Tracker) Finish(reason string) error {
 func (t *Tracker) idle(table map[Key]*State) []Key {
 	var keys []Key
 	for key, state := range table {
-		if t.now-state.Time >= t.opts.IdleTimeout {
+		if t.expired(state, t.now) {
 			keys = append(keys, key)
 		}
 	}
@@ -328,12 +460,19 @@ func (t *Tracker) Expire(timestamp float64) {
 	// This runs for every packet, so the tables are only put in order when something expired: the states that
 	// expire, and the table order in which they are retired, are the reference's.
 	for _, key := range t.idle(t.tracked) {
-		if state := t.tracked[key]; state != nil && t.now-state.Time >= t.opts.IdleTimeout {
+		if state := t.tracked[key]; state != nil && t.expired(state, t.now) {
+			if state.halfOpen != nil {
+				t.Counts["half_open_timeout"]++ // the session record keeps the reference's idle reason
+			}
 			t.Drop(key, ReasonIdle)
 		}
 	}
 	for _, key := range t.idle(t.udpFlows) {
-		if flow := t.udpFlows[key]; flow != nil && t.now-flow.Time >= t.opts.IdleTimeout {
+		if flow := t.udpFlows[key]; flow != nil && t.expired(flow, t.now) {
+			if flow.halfOpen != nil {
+				t.Counts["udp_half_open_timeout"]++
+			}
+			t.settle(flow)
 			delete(t.udpFlows, key)
 			t.closed(flow, ReasonIdleUDP, nil, nil)
 		}
@@ -376,14 +515,16 @@ func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP, obs *contracts
 	key := KeyOf(p.Source, p.Destination)
 	flow := t.udpFlows[key]
 	if flow == nil {
+		t.evictHalfOpen(t.halfOpenUDP, len(t.udpFlows), t.opts.MaxUDPFlows, t.opts.MaxHalfOpenUDP, true)
 		if len(t.udpFlows) >= t.opts.MaxUDPFlows {
-			t.Counts["udp_flow_limit"]++
+			t.Counts["udp_flow_limit"]++ // the datagram is inspected, but the flow gets no record (PRO-448)
 		} else {
 			flow = &State{Transport: "udp", Client: p.Source, Server: p.Destination, Start: t.now, Time: t.now, Ready: true,
 				Bytes: map[transport.Endpoint]int{}, Mode: "", Observation: obs, Observations: map[transport.Endpoint]*contracts.Observation{}}
 			t.created++
 			flow.order = t.created
 			t.udpFlows[key] = flow
+			flow.halfOpen = t.halfOpenUDP.PushBack(key)
 		}
 	}
 	if flow != nil {
@@ -426,6 +567,10 @@ func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP, obs *contracts
 					label.Application, label.HasApp = *latest.Application, true
 				}
 				t.Decided(flow, label)
+				noteOutcome(flow, label)
+			}
+			if flow.Observation.Status == contracts.Identified || flow.Observation.Status == contracts.Invalidated || flow.HasFirst {
+				t.settle(flow) // decided: no longer half-open
 			}
 		}
 	}
@@ -478,14 +623,14 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 			return "UNSUPPORTED: SYN with FIN or data (Fast Open)"
 		}
 		if state != nil && state.Client == source && state.HasISN && state.ISN == p.Sequence {
-			state.Time = t.now
-			if c := t.manager.Connections[key]; c != nil {
-				c.LastSeen = t.now
-			}
+			// SEC-SESS-1: a retransmitted SYN is the same connection but extends neither its idle time nor its
+			// half-open lifetime, so a repeated SYN cannot keep a table slot alive.
 			return "SYN retransmission"
 		}
 		t.Drop(key, ReasonTrackingEnded)
+		t.evictHalfOpen(t.halfOpenTCP, len(t.tracked), t.opts.MaxConnections, t.opts.MaxHalfOpen, false)
 		if len(t.tracked) >= t.opts.MaxConnections {
+			t.Counts["tcp_connection_limit"]++ // PRO-448: reported in the analyze summary
 			return "LIMIT: too many tracked connections"
 		}
 		state = newState(source, destination, t.now)
@@ -493,7 +638,9 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 		t.created++
 		state.order = t.created
 		t.tracked[key] = state
-		t.LastServer = &destination
+		state.halfOpen = t.halfOpenTCP.PushBack(key)
+		server := destination // copied here, so a refused SYN does not move destination to the heap
+		t.LastServer = &server
 		return "SYN: waiting for SYN-ACK"
 	}
 	if state == nil {
@@ -501,6 +648,7 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 			return "SKIP: connection beginning not observed"
 		}
 		if len(t.tracked) >= t.opts.MaxConnections {
+			t.Counts["tcp_connection_limit"]++ // PRO-448: reported in the analyze summary
 			return "LIMIT: too many tracked connections"
 		}
 		if err := t.manager.Open(source, destination, p.Sequence, p.Ack, t.now); err != nil {
@@ -512,7 +660,8 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 		t.created++
 		state.order = t.created
 		t.tracked[key] = state
-		t.LastServer = &destination
+		server := destination // copied here, so a refused SYN does not move destination to the heap
+		t.LastServer = &server
 		t.Counts["midstream_connections"]++
 	}
 	state.Time = t.now
@@ -538,6 +687,7 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 			return "INVALIDATED: " + detail(err)
 		}
 		state.Ready, state.ServerISN = true, p.Sequence
+		t.settle(state)
 		return "Tracking both directions (SYN/SYN-ACK observed)"
 	}
 	if !state.Ready {
@@ -549,6 +699,7 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 			return "INVALIDATED: " + detail(err)
 		}
 		state.Ready, state.Mode, state.ServerISN = true, ModeAsymmetric, p.Ack-1
+		t.settle(state)
 		t.Counts["asymmetric_connections"]++
 	}
 	if flags&transport.URG != 0 || flags&transport.ACK == 0 {

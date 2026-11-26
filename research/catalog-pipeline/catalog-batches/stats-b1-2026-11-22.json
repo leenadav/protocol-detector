@@ -1,0 +1,16 @@
+{
+ "candidates": 1000,
+ "after_catalog_and_class_filter": 982,
+ "rechecked": 320,
+ "rechecked_not_needed": 93,
+ "verified": 200,
+ "rejected": 45,
+ "rejected_by_reason": {
+  "institutional_domain_not_an_app": 18,
+  "http_status": 6,
+  "final_host_offsite": 13,
+  "dns_fail": 6,
+  "tls_cert_does_not_cover_name": 1,
+  "duplicate_slug": 1
+ }
+}

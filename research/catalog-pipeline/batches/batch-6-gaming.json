@@ -1,0 +1,6961 @@
+{
+ "applications": [
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Road96 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "road96",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Cataclysmdda (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "cataclysmdda",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Playcobalt (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "playcobalt",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Splatterhousegame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "splatterhousegame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Partyanimals (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "partyanimals",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Purevideogame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "purevideogame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Unfrozen (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "unfrozen",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Lockon (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "lockon",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Theballthegame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "theballthegame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Bioniccommando (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "bioniccommando",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Gorky17 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "gorky17",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Original War (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "original-war",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Kingdomrush (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "kingdomrush",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Darwinia (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "darwinia",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Btd6 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "btd6",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Iahgames (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "iahgames",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Kromestudios (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "kromestudios",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Kalypsomedia (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "kalypsomedia",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Monogame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "monogame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Level5 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "level5",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Cyberhunter (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "cyberhunter",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Enlight (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "enlight",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Egosoft (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "egosoft",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Wargroove (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "wargroove",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Koudelka Thegame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "koudelka-thegame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Renaissancekingdoms (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "renaissancekingdoms",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Batmanarkhamvr (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "batmanarkhamvr",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Otherocean (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "otherocean",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Styx Thegame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "styx-thegame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Callofcthulhu Game (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "callofcthulhu-game",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Graveyardkeeper (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "graveyardkeeper",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Rise Of The Argonauts (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "rise-of-the-argonauts",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Fromsoftware (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "fromsoftware",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Absolvergame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "absolvergame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Teslagrad (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "teslagrad",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Digitaltribegames (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "digitaltribegames",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Dementium (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "dementium",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "King (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "king",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Landfall (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "landfall",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Suddenstrike (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "suddenstrike",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Larian (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "larian",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Axiomverge (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "axiomverge",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Neverendingnightmares (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "neverendingnightmares",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Plaync (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "plaync",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Guildwars (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "guildwars",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Carddass (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "carddass",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Downwellgame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "downwellgame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Tribesascend (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "tribesascend",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Madfingergames (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "madfingergames",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Conflictdeniedops (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "conflictdeniedops",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Tonyhawkgame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "tonyhawkgame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Mutantyearzero (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "mutantyearzero",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "5Dchesswithmultiversetimetravel (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "5dchesswithmultiversetimetravel",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Desmume (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "desmume",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Splitgate (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "splitgate",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Roguelegacy (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "roguelegacy",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Wikigacha (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "wikigacha",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Vector (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "vector",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Kuchinawa (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "kuchinawa",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Gamexp (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "gamexp",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Altosadventure (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "altosadventure",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Titanichg (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "titanichg",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Lisatherpg (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "lisatherpg",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Jobsimulatorgame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "jobsimulatorgame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Endless Space (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "endless-space",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Picroma (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "picroma",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Boswars (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "boswars",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Gamejolt (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "gamejolt",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Noitagame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "noitagame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Sadsquarestudio (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "sadsquarestudio",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Anonymouscode (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "anonymouscode",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Justdancenow (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "justdancenow",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Marvelsnap (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "marvelsnap",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Rose Engine (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "rose-engine",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Ponos (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ponos",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Thelegendofheroes (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "thelegendofheroes",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Zettai Zetsumei (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "zettai-zetsumei",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Curve Digital (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "curve-digital",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Compileheart (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "compileheart",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Nexton Net (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "nexton-net",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Hoshikaka (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "hoshikaka",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Housemarque (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "housemarque",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Gainax (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "gainax",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Headupgames (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "headupgames",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Portablemoose (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "portablemoose",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Pikointeractive (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "pikointeractive",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Sao Game (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "sao-game",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Night Cry (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "night-cry",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Toukana (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "toukana",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Disgaea (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "disgaea",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Animalwell (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "animalwell",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Mordhau (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "mordhau",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Topspin4 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "topspin4",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Blueprincegame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "blueprincegame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Impossible (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "impossible",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Hauntedchocolatier (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "hauntedchocolatier",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Twoworlds2 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "twoworlds2",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "2 Worlds (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "2-worlds",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Earth2160 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "earth2160",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Chivalry2 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "chivalry2",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Vikingswarofclans (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "vikingswarofclans",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Playrix (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "playrix",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Thelordsofmidnight (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "thelordsofmidnight",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Giantsparrow (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "giantsparrow",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Fussball Manager (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "fussball-manager",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Supermassivegames (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "supermassivegames",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Inklestudios (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "inklestudios",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Imperiaonline (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "imperiaonline",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Zombiearmy (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "zombiearmy",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "505Games (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "505games",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Battlegoat (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "battlegoat",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Watchmenvideogame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "watchmenvideogame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Littleorbit (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "littleorbit",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Ninja Blade (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ninja-blade",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Tenchu (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "tenchu",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Adultswim (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "adultswim",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Train Fever (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "train-fever",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Darklingroom (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "darklingroom",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Vampyrestory Game (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "vampyrestory-game",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Wargame Ee (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "wargame-ee",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Sniperghostwarriorcontracts2 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "sniperghostwarriorcontracts2",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Dancecentral (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "dancecentral",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Demigodthegame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "demigodthegame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Virtua Fighter 4 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "virtua-fighter-4",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Playdaylight (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "playdaylight",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Cc2 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "cc2",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Badnorth (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "badnorth",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Longhathouse (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "longhathouse",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Waifubartending (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "waifubartending",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Hacknet Os (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "hacknet-os",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Doodlegod (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "doodlegod",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Zachtronics (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "zachtronics",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Galaxytrail (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "galaxytrail",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Armello (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "armello",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Primalcarnage (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "primalcarnage",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Shinen (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "shinen",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Wayforward (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "wayforward",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Blairwitchgame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "blairwitchgame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Pso2 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "pso2",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Deadtoast (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "deadtoast",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Blitwise (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "blitwise",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Megaten4F (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "megaten4f",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Championsofregnum (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "championsofregnum",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Carsvideogame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "carsvideogame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Polybridge2 (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "polybridge2",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Tonyhawkthegame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "tonyhawkthegame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Netmarble (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "netmarble",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Neveralonegame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "neveralonegame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Farmerama (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "farmerama",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Crayonphysics (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "crayonphysics",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Asduskfalls (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "asduskfalls",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Panda3D (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "panda3d",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Degicagames (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "degicagames",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Megacatstudios (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "megacatstudios",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Amusement Center (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "amusement-center",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Suikagame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "suikagame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Spiralknights (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "spiralknights",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Puzzlepirates (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "puzzlepirates",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Vega Strike (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "vega-strike",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Madrugaworks (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "madrugaworks",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Cemu (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "cemu",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Svencoop (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "svencoop",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Fceux (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "fceux",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Gamegrumps (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "gamegrumps",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Opencity (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "opencity",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Rambothevideogame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "rambothevideogame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Develz (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "develz",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Pillowcastlegames (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "pillowcastlegames",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "media",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Terminatorvideogame (game publisher site)",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "terminatorvideogame",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "gaming",
+   "technology": "browser-based"
+  }
+ ],
+ "count": 169,
+ "dropped": {
+  "domain_does_not_resolve": [
+   "visualarts",
+   "ique",
+   "playonline",
+   "1up",
+   "finalfantasyxvi",
+   "metalslug10th",
+   "irem",
+   "big",
+   "dqx",
+   "bn-ent",
+   "toaplangames",
+   "spike-chunsoft",
+   "thesecretworld",
+   "marvelfuturefight",
+   "loveandkill",
+   "dimps"
+  ],
+  "invalid_name": []
+ },
+ "evidence": [
+  {
+   "category_normalized": false,
+   "domains": [
+    "road96.com"
+   ],
+   "name": "road96",
+   "source_note": "Wikidata CC0 P856 official website: www.road96.com",
+   "source_url": "https://www.wikidata.org/wiki/Q106513305",
+   "wikidata": "Q106513305"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "cataclysmdda.org"
+   ],
+   "name": "cataclysmdda",
+   "source_note": "Wikidata CC0 P856 official website: cataclysmdda.org",
+   "source_url": "https://www.wikidata.org/wiki/Q17515002",
+   "wikidata": "Q17515002"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "playcobalt.com"
+   ],
+   "name": "playcobalt",
+   "source_note": "Wikidata CC0 P856 official website: playcobalt.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3459453",
+   "wikidata": "Q3459453"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "splatterhousegame.com"
+   ],
+   "name": "splatterhousegame",
+   "source_note": "Wikidata CC0 P856 official website: www.splatterhousegame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q692377",
+   "wikidata": "Q692377"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "partyanimals.cn"
+   ],
+   "name": "partyanimals",
+   "source_note": "Wikidata CC0 P856 official website: www.partyanimals.cn",
+   "source_url": "https://www.wikidata.org/wiki/Q100432790",
+   "wikidata": "Q100432790"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "purevideogame.com"
+   ],
+   "name": "purevideogame",
+   "source_note": "Wikidata CC0 P856 official website: www.purevideogame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2118860",
+   "wikidata": "Q2118860"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "unfrozen.studio"
+   ],
+   "name": "unfrozen",
+   "source_note": "Wikidata CC0 P856 official website: unfrozen.studio",
+   "source_url": "https://www.wikidata.org/wiki/Q129583132",
+   "wikidata": "Q129583132"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "lockon.ru"
+   ],
+   "name": "lockon",
+   "source_note": "Wikidata CC0 P856 official website: lockon.ru",
+   "source_url": "https://www.wikidata.org/wiki/Q1477686",
+   "wikidata": "Q1477686"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "theballthegame.com"
+   ],
+   "name": "theballthegame",
+   "source_note": "Wikidata CC0 P856 official website: www.theballthegame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q129114",
+   "wikidata": "Q129114"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "bioniccommando.com"
+   ],
+   "name": "bioniccommando",
+   "source_note": "Wikidata CC0 P856 official website: www.bioniccommando.com",
+   "source_url": "https://www.wikidata.org/wiki/Q385270",
+   "wikidata": "Q385270"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "gorky17.com"
+   ],
+   "name": "gorky17",
+   "source_note": "Wikidata CC0 P856 official website: www.gorky17.com",
+   "source_url": "https://www.wikidata.org/wiki/Q898171",
+   "wikidata": "Q898171"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "original-war.com"
+   ],
+   "name": "original-war",
+   "source_note": "Wikidata CC0 P856 official website: www.original-war.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3178375",
+   "wikidata": "Q3178375"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "kingdomrush.com"
+   ],
+   "name": "kingdomrush",
+   "source_note": "Wikidata CC0 P856 official website: www.kingdomrush.com",
+   "source_url": "https://www.wikidata.org/wiki/Q6412516",
+   "wikidata": "Q6412516"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "darwinia.co.uk"
+   ],
+   "name": "darwinia",
+   "source_note": "Wikidata CC0 P856 official website: www.darwinia.co.uk",
+   "source_url": "https://www.wikidata.org/wiki/Q210552",
+   "wikidata": "Q210552"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "btd6.com"
+   ],
+   "name": "btd6",
+   "source_note": "Wikidata CC0 P856 official website: btd6.com",
+   "source_url": "https://www.wikidata.org/wiki/Q65555252",
+   "wikidata": "Q65555252"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "iahgames.com"
+   ],
+   "name": "iahgames",
+   "source_note": "Wikidata CC0 P856 official website: fifaonline2.iahgames.com",
+   "source_url": "https://www.wikidata.org/wiki/Q486963",
+   "wikidata": "Q486963"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "kromestudios.com"
+   ],
+   "name": "kromestudios",
+   "source_note": "Wikidata CC0 P856 official website: www.kromestudios.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2645302",
+   "wikidata": "Q2645302"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "kalypsomedia.com"
+   ],
+   "name": "kalypsomedia",
+   "source_note": "Wikidata CC0 P856 official website: www.kalypsomedia.com",
+   "source_url": "https://www.wikidata.org/wiki/Q28127391",
+   "wikidata": "Q28127391"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "monogame.net"
+   ],
+   "name": "monogame",
+   "source_note": "Wikidata CC0 P856 official website: monogame.net",
+   "source_url": "https://www.wikidata.org/wiki/Q13218967",
+   "wikidata": "Q13218967"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "level5.co.jp"
+   ],
+   "name": "level5",
+   "source_note": "Wikidata CC0 P856 official website: www.level5.co.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q2441816",
+   "wikidata": "Q2441816"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "cyberhunter.game"
+   ],
+   "name": "cyberhunter",
+   "source_note": "Wikidata CC0 P856 official website: www.cyberhunter.game",
+   "source_url": "https://www.wikidata.org/wiki/Q63474349",
+   "wikidata": "Q63474349"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "enlight.com"
+   ],
+   "name": "enlight",
+   "source_note": "Wikidata CC0 P856 official website: www.enlight.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2658360",
+   "wikidata": "Q2658360"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "egosoft.com"
+   ],
+   "name": "egosoft",
+   "source_note": "Wikidata CC0 P856 official website: www.egosoft.com",
+   "source_url": "https://www.wikidata.org/wiki/Q666156",
+   "wikidata": "Q666156"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "wargroove.com"
+   ],
+   "name": "wargroove",
+   "source_note": "Wikidata CC0 P856 official website: wargroove.com",
+   "source_url": "https://www.wikidata.org/wiki/Q30321596",
+   "wikidata": "Q30321596"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "koudelka-thegame.com"
+   ],
+   "name": "koudelka-thegame",
+   "source_note": "Wikidata CC0 P856 official website: www.koudelka-thegame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2609711",
+   "wikidata": "Q2609711"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "renaissancekingdoms.com"
+   ],
+   "name": "renaissancekingdoms",
+   "source_note": "Wikidata CC0 P856 official website: www.renaissancekingdoms.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1830454",
+   "wikidata": "Q1830454"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "batmanarkhamvr.com"
+   ],
+   "name": "batmanarkhamvr",
+   "source_note": "Wikidata CC0 P856 official website: www.batmanarkhamvr.com",
+   "source_url": "https://www.wikidata.org/wiki/Q27067490",
+   "wikidata": "Q27067490"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "otherocean.com"
+   ],
+   "name": "otherocean",
+   "source_note": "Wikidata CC0 P856 official website: www.otherocean.com",
+   "source_url": "https://www.wikidata.org/wiki/Q4044539",
+   "wikidata": "Q4044539"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "styx-thegame.com"
+   ],
+   "name": "styx-thegame",
+   "source_note": "Wikidata CC0 P856 official website: www.styx-thegame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q15796023",
+   "wikidata": "Q15796023"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "callofcthulhu-game.com"
+   ],
+   "name": "callofcthulhu-game",
+   "source_note": "Wikidata CC0 P856 official website: www.callofcthulhu-game.com",
+   "source_url": "https://www.wikidata.org/wiki/Q28753372",
+   "wikidata": "Q28753372"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "graveyardkeeper.com"
+   ],
+   "name": "graveyardkeeper",
+   "source_note": "Wikidata CC0 P856 official website: www.graveyardkeeper.com",
+   "source_url": "https://www.wikidata.org/wiki/Q56278431",
+   "wikidata": "Q56278431"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "rise-of-the-argonauts.com"
+   ],
+   "name": "rise-of-the-argonauts",
+   "source_note": "Wikidata CC0 P856 official website: www.rise-of-the-argonauts.com",
+   "source_url": "https://www.wikidata.org/wiki/Q392320",
+   "wikidata": "Q392320"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "fromsoftware.jp"
+   ],
+   "name": "fromsoftware",
+   "source_note": "Wikidata CC0 P856 official website: fromsoftware.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q229436",
+   "wikidata": "Q229436"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "absolvergame.com"
+   ],
+   "name": "absolvergame",
+   "source_note": "Wikidata CC0 P856 official website: absolvergame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q24664848",
+   "wikidata": "Q24664848"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "teslagrad.com"
+   ],
+   "name": "teslagrad",
+   "source_note": "Wikidata CC0 P856 official website: teslagrad.com",
+   "source_url": "https://www.wikidata.org/wiki/Q15963969",
+   "wikidata": "Q15963969"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "digitaltribegames.com"
+   ],
+   "name": "digitaltribegames",
+   "source_note": "Wikidata CC0 P856 official website: digitaltribegames.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1185322",
+   "wikidata": "Q1185322"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "dementium.com"
+   ],
+   "name": "dementium",
+   "source_note": "Wikidata CC0 P856 official website: www.dementium.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1185325",
+   "wikidata": "Q1185325"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "king.com"
+   ],
+   "name": "king",
+   "source_note": "Wikidata CC0 P856 official website: www.king.com",
+   "source_url": "https://www.wikidata.org/wiki/Q97070007",
+   "wikidata": "Q97070007"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "landfall.se"
+   ],
+   "name": "landfall",
+   "source_note": "Wikidata CC0 P856 official website: landfall.se",
+   "source_url": "https://www.wikidata.org/wiki/Q55381983",
+   "wikidata": "Q55381983"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "suddenstrike.com"
+   ],
+   "name": "suddenstrike",
+   "source_note": "Wikidata CC0 P856 official website: www.suddenstrike.com",
+   "source_url": "https://www.wikidata.org/wiki/Q13439813",
+   "wikidata": "Q13439813"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "larian.com"
+   ],
+   "name": "larian",
+   "source_note": "Wikidata CC0 P856 official website: www.larian.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1230674",
+   "wikidata": "Q1230674"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "axiomverge.com"
+   ],
+   "name": "axiomverge",
+   "source_note": "Wikidata CC0 P856 official website: www.axiomverge.com",
+   "source_url": "https://www.wikidata.org/wiki/Q4830546",
+   "wikidata": "Q4830546"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "neverendingnightmares.com"
+   ],
+   "name": "neverendingnightmares",
+   "source_note": "Wikidata CC0 P856 official website: www.neverendingnightmares.com",
+   "source_url": "https://www.wikidata.org/wiki/Q17102094",
+   "wikidata": "Q17102094"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "plaync.com"
+   ],
+   "name": "plaync",
+   "source_note": "Wikidata CC0 P856 official website: tl.plaync.com",
+   "source_url": "https://www.wikidata.org/wiki/Q600784",
+   "wikidata": "Q600784"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "guildwars.com"
+   ],
+   "name": "guildwars",
+   "source_note": "Wikidata CC0 P856 official website: www.guildwars.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2478762",
+   "wikidata": "Q2478762"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "carddass.com"
+   ],
+   "name": "carddass",
+   "source_note": "Wikidata CC0 P856 official website: www.carddass.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3038704",
+   "wikidata": "Q3038704"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "downwellgame.com"
+   ],
+   "name": "downwellgame",
+   "source_note": "Wikidata CC0 P856 official website: downwellgame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q21198154",
+   "wikidata": "Q21198154"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "tribesascend.com"
+   ],
+   "name": "tribesascend",
+   "source_note": "Wikidata CC0 P856 official website: tribesascend.com",
+   "source_url": "https://www.wikidata.org/wiki/Q515279",
+   "wikidata": "Q515279"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "madfingergames.com"
+   ],
+   "name": "madfingergames",
+   "source_note": "Wikidata CC0 P856 official website: madfingergames.com",
+   "source_url": "https://www.wikidata.org/wiki/Q15624061",
+   "wikidata": "Q15624061"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "conflictdeniedops.com"
+   ],
+   "name": "conflictdeniedops",
+   "source_note": "Wikidata CC0 P856 official website: www.conflictdeniedops.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1408367",
+   "wikidata": "Q1408367"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "tonyhawkgame.com"
+   ],
+   "name": "tonyhawkgame",
+   "source_note": "Wikidata CC0 P856 official website: www.tonyhawkgame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q19861425",
+   "wikidata": "Q19861425"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "mutantyearzero.com"
+   ],
+   "name": "mutantyearzero",
+   "source_note": "Wikidata CC0 P856 official website: www.mutantyearzero.com",
+   "source_url": "https://www.wikidata.org/wiki/Q60558456",
+   "wikidata": "Q60558456"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "5dchesswithmultiversetimetravel.com"
+   ],
+   "name": "5dchesswithmultiversetimetravel",
+   "source_note": "Wikidata CC0 P856 official website: www.5dchesswithmultiversetimetravel.com",
+   "source_url": "https://www.wikidata.org/wiki/Q98109434",
+   "wikidata": "Q98109434"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "desmume.org"
+   ],
+   "name": "desmume",
+   "source_note": "Wikidata CC0 P856 official website: desmume.org",
+   "source_url": "https://www.wikidata.org/wiki/Q1187746",
+   "wikidata": "Q1187746"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "splitgate.com"
+   ],
+   "name": "splitgate",
+   "source_note": "Wikidata CC0 P856 official website: www.splitgate.com",
+   "source_url": "https://www.wikidata.org/wiki/Q74122620",
+   "wikidata": "Q74122620"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "roguelegacy.com"
+   ],
+   "name": "roguelegacy",
+   "source_note": "Wikidata CC0 P856 official website: roguelegacy.com",
+   "source_url": "https://www.wikidata.org/wiki/Q13752449",
+   "wikidata": "Q13752449"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "wikigacha.com"
+   ],
+   "name": "wikigacha",
+   "source_note": "Wikidata CC0 P856 official website: wikigacha.com",
+   "source_url": "https://www.wikidata.org/wiki/Q138574242",
+   "wikidata": "Q138574242"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "vector.game"
+   ],
+   "name": "vector",
+   "source_note": "Wikidata CC0 P856 official website: vector.game",
+   "source_url": "https://www.wikidata.org/wiki/Q15905375",
+   "wikidata": "Q15905375"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "kuchinawa.com"
+   ],
+   "name": "kuchinawa",
+   "source_note": "Wikidata CC0 P856 official website: kouri.kuchinawa.com",
+   "source_url": "https://www.wikidata.org/wiki/Q16564568",
+   "wikidata": "Q16564568"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "gamexp.com"
+   ],
+   "name": "gamexp",
+   "source_note": "Wikidata CC0 P856 official website: rz.gamexp.com",
+   "source_url": "https://www.wikidata.org/wiki/Q19419",
+   "wikidata": "Q19419"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "altosadventure.com"
+   ],
+   "name": "altosadventure",
+   "source_note": "Wikidata CC0 P856 official website: altosadventure.com",
+   "source_url": "https://www.wikidata.org/wiki/Q19824579",
+   "wikidata": "Q19824579"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "titanichg.com"
+   ],
+   "name": "titanichg",
+   "source_note": "Wikidata CC0 P856 official website: www.titanichg.com",
+   "source_url": "https://www.wikidata.org/wiki/Q20743350",
+   "wikidata": "Q20743350"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "lisatherpg.com"
+   ],
+   "name": "lisatherpg",
+   "source_note": "Wikidata CC0 P856 official website: www.lisatherpg.com",
+   "source_url": "https://www.wikidata.org/wiki/Q22019728",
+   "wikidata": "Q22019728"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "jobsimulatorgame.com"
+   ],
+   "name": "jobsimulatorgame",
+   "source_note": "Wikidata CC0 P856 official website: jobsimulatorgame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q23762874",
+   "wikidata": "Q23762874"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "endless-space.com"
+   ],
+   "name": "endless-space",
+   "source_note": "Wikidata CC0 P856 official website: www.endless-space.com",
+   "source_url": "https://www.wikidata.org/wiki/Q30095053",
+   "wikidata": "Q30095053"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "picroma.com"
+   ],
+   "name": "picroma",
+   "source_note": "Wikidata CC0 P856 official website: picroma.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7486177",
+   "wikidata": "Q7486177"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "boswars.org"
+   ],
+   "name": "boswars",
+   "source_note": "Wikidata CC0 P856 official website: www.boswars.org",
+   "source_url": "https://www.wikidata.org/wiki/Q845890",
+   "wikidata": "Q845890"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "gamejolt.com"
+   ],
+   "name": "gamejolt",
+   "source_note": "Wikidata CC0 P856 official website: gamejolt.com",
+   "source_url": "https://www.wikidata.org/wiki/Q28444637",
+   "wikidata": "Q28444637"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "noitagame.com"
+   ],
+   "name": "noitagame",
+   "source_note": "Wikidata CC0 P856 official website: noitagame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q68680176",
+   "wikidata": "Q68680176"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "sadsquarestudio.com"
+   ],
+   "name": "sadsquarestudio",
+   "source_note": "Wikidata CC0 P856 official website: sadsquarestudio.com",
+   "source_url": "https://www.wikidata.org/wiki/Q22909661",
+   "wikidata": "Q22909661"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "anonymouscode.jp"
+   ],
+   "name": "anonymouscode",
+   "source_note": "Wikidata CC0 P856 official website: anonymouscode.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q22906387",
+   "wikidata": "Q22906387"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "justdancenow.com"
+   ],
+   "name": "justdancenow",
+   "source_note": "Wikidata CC0 P856 official website: justdancenow.com",
+   "source_url": "https://www.wikidata.org/wiki/Q17155554",
+   "wikidata": "Q17155554"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "marvelsnap.com"
+   ],
+   "name": "marvelsnap",
+   "source_note": "Wikidata CC0 P856 official website: www.marvelsnap.com",
+   "source_url": "https://www.wikidata.org/wiki/Q112075374",
+   "wikidata": "Q112075374"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "rose-engine.org"
+   ],
+   "name": "rose-engine",
+   "source_note": "Wikidata CC0 P856 official website: rose-engine.org",
+   "source_url": "https://www.wikidata.org/wiki/Q109828410",
+   "wikidata": "Q109828410"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "ponos.co.jp"
+   ],
+   "name": "ponos",
+   "source_note": "Wikidata CC0 P856 official website: www.ponos.co.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q20055396",
+   "wikidata": "Q20055396"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "thelegendofheroes.com"
+   ],
+   "name": "thelegendofheroes",
+   "source_note": "Wikidata CC0 P856 official website: www.thelegendofheroes.com",
+   "source_url": "https://www.wikidata.org/wiki/Q860620",
+   "wikidata": "Q860620"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "zettai-zetsumei.jp"
+   ],
+   "name": "zettai-zetsumei",
+   "source_note": "Wikidata CC0 P856 official website: www.zettai-zetsumei.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q840733",
+   "wikidata": "Q840733"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "curve-digital.com"
+   ],
+   "name": "curve-digital",
+   "source_note": "Wikidata CC0 P856 official website: curve-digital.com",
+   "source_url": "https://www.wikidata.org/wiki/Q93777745",
+   "wikidata": "Q93777745"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "compileheart.com"
+   ],
+   "name": "compileheart",
+   "source_note": "Wikidata CC0 P856 official website: www.compileheart.com",
+   "source_url": "https://www.wikidata.org/wiki/Q18210955",
+   "wikidata": "Q18210955"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "nexton-net.jp"
+   ],
+   "name": "nexton-net",
+   "source_note": "Wikidata CC0 P856 official website: baseson.nexton-net.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q1184973",
+   "wikidata": "Q1184973"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "hoshikaka.jp"
+   ],
+   "name": "hoshikaka",
+   "source_note": "Wikidata CC0 P856 official website: hoshikaka.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q484483",
+   "wikidata": "Q484483"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "housemarque.com"
+   ],
+   "name": "housemarque",
+   "source_note": "Wikidata CC0 P856 official website: housemarque.com",
+   "source_url": "https://www.wikidata.org/wiki/Q132258586",
+   "wikidata": "Q132258586"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "gainax.co.jp"
+   ],
+   "name": "gainax",
+   "source_note": "Wikidata CC0 P856 official website: www.gainax.co.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q2986432",
+   "wikidata": "Q2986432"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "headupgames.com"
+   ],
+   "name": "headupgames",
+   "source_note": "Wikidata CC0 P856 official website: www.headupgames.com",
+   "source_url": "https://www.wikidata.org/wiki/Q45319483",
+   "wikidata": "Q45319483"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "portablemoose.com"
+   ],
+   "name": "portablemoose",
+   "source_note": "Wikidata CC0 P856 official website: portablemoose.com",
+   "source_url": "https://www.wikidata.org/wiki/Q63871873",
+   "wikidata": "Q63871873"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "pikointeractive.com"
+   ],
+   "name": "pikointeractive",
+   "source_note": "Wikidata CC0 P856 official website: pikointeractive.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3099937",
+   "wikidata": "Q3099937"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "sao-game.jp"
+   ],
+   "name": "sao-game",
+   "source_note": "Wikidata CC0 P856 official website: hr.sao-game.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q24031919",
+   "wikidata": "Q24031919"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "night-cry.com"
+   ],
+   "name": "night-cry",
+   "source_note": "Wikidata CC0 P856 official website: www.night-cry.com",
+   "source_url": "https://www.wikidata.org/wiki/Q27536674",
+   "wikidata": "Q27536674"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "toukana.com"
+   ],
+   "name": "toukana",
+   "source_note": "Wikidata CC0 P856 official website: toukana.com",
+   "source_url": "https://www.wikidata.org/wiki/Q106235199",
+   "wikidata": "Q106235199"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "disgaea.jp"
+   ],
+   "name": "disgaea",
+   "source_note": "Wikidata CC0 P856 official website: disgaea.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q18015218",
+   "wikidata": "Q18015218"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "animalwell.net"
+   ],
+   "name": "animalwell",
+   "source_note": "Wikidata CC0 P856 official website: www.animalwell.net",
+   "source_url": "https://www.wikidata.org/wiki/Q116149653",
+   "wikidata": "Q116149653"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "mordhau.com"
+   ],
+   "name": "mordhau",
+   "source_note": "Wikidata CC0 P856 official website: mordhau.com",
+   "source_url": "https://www.wikidata.org/wiki/Q30598166",
+   "wikidata": "Q30598166"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "topspin4.com"
+   ],
+   "name": "topspin4",
+   "source_note": "Wikidata CC0 P856 official website: topspin4.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1276932",
+   "wikidata": "Q1276932"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "blueprincegame.com"
+   ],
+   "name": "blueprincegame",
+   "source_note": "Wikidata CC0 P856 official website: www.blueprincegame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q125131501",
+   "wikidata": "Q125131501"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "impossible.game"
+   ],
+   "name": "impossible",
+   "source_note": "Wikidata CC0 P856 official website: impossible.game",
+   "source_url": "https://www.wikidata.org/wiki/Q22019749",
+   "wikidata": "Q22019749"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "hauntedchocolatier.net"
+   ],
+   "name": "hauntedchocolatier",
+   "source_note": "Wikidata CC0 P856 official website: www.hauntedchocolatier.net",
+   "source_url": "https://www.wikidata.org/wiki/Q109520747",
+   "wikidata": "Q109520747"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "twoworlds2.com"
+   ],
+   "name": "twoworlds2",
+   "source_note": "Wikidata CC0 P856 official website: twoworlds2.com",
+   "source_url": "https://www.wikidata.org/wiki/Q932788",
+   "wikidata": "Q932788"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "2-worlds.com"
+   ],
+   "name": "2-worlds",
+   "source_note": "Wikidata CC0 P856 official website: www.2-worlds.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2005086",
+   "wikidata": "Q2005086"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "earth2160.com"
+   ],
+   "name": "earth2160",
+   "source_note": "Wikidata CC0 P856 official website: www.earth2160.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2361677",
+   "wikidata": "Q2361677"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "chivalry2.com"
+   ],
+   "name": "chivalry2",
+   "source_note": "Wikidata CC0 P856 official website: chivalry2.com",
+   "source_url": "https://www.wikidata.org/wiki/Q64590208",
+   "wikidata": "Q64590208"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "vikingswarofclans.com"
+   ],
+   "name": "vikingswarofclans",
+   "source_note": "Wikidata CC0 P856 official website: www.vikingswarofclans.com",
+   "source_url": "https://www.wikidata.org/wiki/Q28127282",
+   "wikidata": "Q28127282"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "playrix.com"
+   ],
+   "name": "playrix",
+   "source_note": "Wikidata CC0 P856 official website: www.playrix.com",
+   "source_url": "https://www.wikidata.org/wiki/Q43401642",
+   "wikidata": "Q43401642"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "thelordsofmidnight.com"
+   ],
+   "name": "thelordsofmidnight",
+   "source_note": "Wikidata CC0 P856 official website: www.thelordsofmidnight.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1128569",
+   "wikidata": "Q1128569"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "giantsparrow.com"
+   ],
+   "name": "giantsparrow",
+   "source_note": "Wikidata CC0 P856 official website: giantsparrow.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3989784",
+   "wikidata": "Q3989784"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "fussball-manager.at"
+   ],
+   "name": "fussball-manager",
+   "source_note": "Wikidata CC0 P856 official website: www.fussball-manager.at",
+   "source_url": "https://www.wikidata.org/wiki/Q782084",
+   "wikidata": "Q782084"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "supermassivegames.com"
+   ],
+   "name": "supermassivegames",
+   "source_note": "Wikidata CC0 P856 official website: www.supermassivegames.com",
+   "source_url": "https://www.wikidata.org/wiki/Q30277535",
+   "wikidata": "Q30277535"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "inklestudios.com"
+   ],
+   "name": "inklestudios",
+   "source_note": "Wikidata CC0 P856 official website: www.inklestudios.com",
+   "source_url": "https://www.wikidata.org/wiki/Q17985365",
+   "wikidata": "Q17985365"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "imperiaonline.org"
+   ],
+   "name": "imperiaonline",
+   "source_note": "Wikidata CC0 P856 official website: www.imperiaonline.org",
+   "source_url": "https://www.wikidata.org/wiki/Q17375746",
+   "wikidata": "Q17375746"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "zombiearmy.com"
+   ],
+   "name": "zombiearmy",
+   "source_note": "Wikidata CC0 P856 official website: zombiearmy.com",
+   "source_url": "https://www.wikidata.org/wiki/Q64590169",
+   "wikidata": "Q64590169"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "505games.com"
+   ],
+   "name": "505games",
+   "source_note": "Wikidata CC0 P856 official website: 505games.com",
+   "source_url": "https://www.wikidata.org/wiki/Q38623191",
+   "wikidata": "Q38623191"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "battlegoat.com"
+   ],
+   "name": "battlegoat",
+   "source_note": "Wikidata CC0 P856 official website: www.battlegoat.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2428703",
+   "wikidata": "Q2428703"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "watchmenvideogame.com"
+   ],
+   "name": "watchmenvideogame",
+   "source_note": "Wikidata CC0 P856 official website: www.watchmenvideogame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2712191",
+   "wikidata": "Q2712191"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "littleorbit.com"
+   ],
+   "name": "littleorbit",
+   "source_note": "Wikidata CC0 P856 official website: www.littleorbit.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2068604",
+   "wikidata": "Q2068604"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "ninja-blade.com"
+   ],
+   "name": "ninja-blade",
+   "source_note": "Wikidata CC0 P856 official website: www.ninja-blade.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2609125",
+   "wikidata": "Q2609125"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "tenchu.net"
+   ],
+   "name": "tenchu",
+   "source_note": "Wikidata CC0 P856 official website: www.tenchu.net",
+   "source_url": "https://www.wikidata.org/wiki/Q898020",
+   "wikidata": "Q898020"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "adultswim.com"
+   ],
+   "name": "adultswim",
+   "source_note": "Wikidata CC0 P856 official website: www.adultswim.com",
+   "source_url": "https://www.wikidata.org/wiki/Q22674199",
+   "wikidata": "Q22674199"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "train-fever.com"
+   ],
+   "name": "train-fever",
+   "source_note": "Wikidata CC0 P856 official website: www.train-fever.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7832860",
+   "wikidata": "Q7832860"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "darklingroom.co.uk"
+   ],
+   "name": "darklingroom",
+   "source_note": "Wikidata CC0 P856 official website: www.darklingroom.co.uk",
+   "source_url": "https://www.wikidata.org/wiki/Q2657211",
+   "wikidata": "Q2657211"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "vampyrestory-game.com"
+   ],
+   "name": "vampyrestory-game",
+   "source_note": "Wikidata CC0 P856 official website: www.vampyrestory-game.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2610950",
+   "wikidata": "Q2610950"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "wargame-ee.com"
+   ],
+   "name": "wargame-ee",
+   "source_note": "Wikidata CC0 P856 official website: wargame-ee.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2085997",
+   "wikidata": "Q2085997"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "sniperghostwarriorcontracts2.com"
+   ],
+   "name": "sniperghostwarriorcontracts2",
+   "source_note": "Wikidata CC0 P856 official website: www.sniperghostwarriorcontracts2.com",
+   "source_url": "https://www.wikidata.org/wiki/Q96603716",
+   "wikidata": "Q96603716"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "dancecentral.com"
+   ],
+   "name": "dancecentral",
+   "source_note": "Wikidata CC0 P856 official website: www.dancecentral.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2700090",
+   "wikidata": "Q2700090"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "demigodthegame.com"
+   ],
+   "name": "demigodthegame",
+   "source_note": "Wikidata CC0 P856 official website: www.demigodthegame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1185620",
+   "wikidata": "Q1185620"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "virtua-fighter-4.com"
+   ],
+   "name": "virtua-fighter-4",
+   "source_note": "Wikidata CC0 P856 official website: www.virtua-fighter-4.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2258213",
+   "wikidata": "Q2258213"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "playdaylight.com"
+   ],
+   "name": "playdaylight",
+   "source_note": "Wikidata CC0 P856 official website: www.playdaylight.com",
+   "source_url": "https://www.wikidata.org/wiki/Q13426504",
+   "wikidata": "Q13426504"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "cc2.co.jp"
+   ],
+   "name": "cc2",
+   "source_note": "Wikidata CC0 P856 official website: www.cc2.co.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q1629190",
+   "wikidata": "Q1629190"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "badnorth.com"
+   ],
+   "name": "badnorth",
+   "source_note": "Wikidata CC0 P856 official website: www.badnorth.com",
+   "source_url": "https://www.wikidata.org/wiki/Q56643350",
+   "wikidata": "Q56643350"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "longhathouse.com"
+   ],
+   "name": "longhathouse",
+   "source_note": "Wikidata CC0 P856 official website: www.longhathouse.com",
+   "source_url": "https://www.wikidata.org/wiki/Q50296706",
+   "wikidata": "Q50296706"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "waifubartending.com"
+   ],
+   "name": "waifubartending",
+   "source_note": "Wikidata CC0 P856 official website: waifubartending.com",
+   "source_url": "https://www.wikidata.org/wiki/Q24574609",
+   "wikidata": "Q24574609"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "hacknet-os.com"
+   ],
+   "name": "hacknet-os",
+   "source_note": "Wikidata CC0 P856 official website: www.hacknet-os.com",
+   "source_url": "https://www.wikidata.org/wiki/Q23783496",
+   "wikidata": "Q23783496"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "doodlegod.com"
+   ],
+   "name": "doodlegod",
+   "source_note": "Wikidata CC0 P856 official website: doodlegod.com",
+   "source_url": "https://www.wikidata.org/wiki/Q5296988",
+   "wikidata": "Q5296988"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "zachtronics.com"
+   ],
+   "name": "zachtronics",
+   "source_note": "Wikidata CC0 P856 official website: www.zachtronics.com",
+   "source_url": "https://www.wikidata.org/wiki/Q18202464",
+   "wikidata": "Q18202464"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "galaxytrail.com"
+   ],
+   "name": "galaxytrail",
+   "source_note": "Wikidata CC0 P856 official website: freedomplanet.galaxytrail.com",
+   "source_url": "https://www.wikidata.org/wiki/Q17182671",
+   "wikidata": "Q17182671"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "armello.com"
+   ],
+   "name": "armello",
+   "source_note": "Wikidata CC0 P856 official website: armello.com",
+   "source_url": "https://www.wikidata.org/wiki/Q16927602",
+   "wikidata": "Q16927602"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "primalcarnage.com"
+   ],
+   "name": "primalcarnage",
+   "source_note": "Wikidata CC0 P856 official website: www.primalcarnage.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2084268",
+   "wikidata": "Q2084268"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "shinen.com"
+   ],
+   "name": "shinen",
+   "source_note": "Wikidata CC0 P856 official website: fast.shinen.com",
+   "source_url": "https://www.wikidata.org/wiki/Q28426089",
+   "wikidata": "Q28426089"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "wayforward.com"
+   ],
+   "name": "wayforward",
+   "source_note": "Wikidata CC0 P856 official website: www.wayforward.com",
+   "source_url": "https://www.wikidata.org/wiki/Q15712424",
+   "wikidata": "Q15712424"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "blairwitchgame.com"
+   ],
+   "name": "blairwitchgame",
+   "source_note": "Wikidata CC0 P856 official website: www.blairwitchgame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q67122365",
+   "wikidata": "Q67122365"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "pso2.com"
+   ],
+   "name": "pso2",
+   "source_note": "Wikidata CC0 P856 official website: pso2.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2709892",
+   "wikidata": "Q2709892"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "deadtoast.com"
+   ],
+   "name": "deadtoast",
+   "source_note": "Wikidata CC0 P856 official website: www.deadtoast.com",
+   "source_url": "https://www.wikidata.org/wiki/Q55078485",
+   "wikidata": "Q55078485"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "blitwise.com"
+   ],
+   "name": "blitwise",
+   "source_note": "Wikidata CC0 P856 official website: www.blitwise.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2565289",
+   "wikidata": "Q2565289"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "megaten4f.jp"
+   ],
+   "name": "megaten4f",
+   "source_note": "Wikidata CC0 P856 official website: megaten4f.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q21076316",
+   "wikidata": "Q21076316"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "championsofregnum.com"
+   ],
+   "name": "championsofregnum",
+   "source_note": "Wikidata CC0 P856 official website: www.championsofregnum.com",
+   "source_url": "https://www.wikidata.org/wiki/Q182884",
+   "wikidata": "Q182884"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "carsvideogame.com"
+   ],
+   "name": "carsvideogame",
+   "source_note": "Wikidata CC0 P856 official website: www.carsvideogame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2940422",
+   "wikidata": "Q2940422"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "polybridge2.com"
+   ],
+   "name": "polybridge2",
+   "source_note": "Wikidata CC0 P856 official website: www.polybridge2.com",
+   "source_url": "https://www.wikidata.org/wiki/Q96742827",
+   "wikidata": "Q96742827"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "tonyhawkthegame.com"
+   ],
+   "name": "tonyhawkthegame",
+   "source_note": "Wikidata CC0 P856 official website: www.tonyhawkthegame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q94587084",
+   "wikidata": "Q94587084"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "netmarble.com"
+   ],
+   "name": "netmarble",
+   "source_note": "Wikidata CC0 P856 official website: btsw.netmarble.com",
+   "source_url": "https://www.wikidata.org/wiki/Q65040621",
+   "wikidata": "Q65040621"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "neveralonegame.com"
+   ],
+   "name": "neveralonegame",
+   "source_note": "Wikidata CC0 P856 official website: neveralonegame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q17512815",
+   "wikidata": "Q17512815"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "farmerama.com"
+   ],
+   "name": "farmerama",
+   "source_note": "Wikidata CC0 P856 official website: www.farmerama.com",
+   "source_url": "https://www.wikidata.org/wiki/Q911460",
+   "wikidata": "Q911460"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "crayonphysics.com"
+   ],
+   "name": "crayonphysics",
+   "source_note": "Wikidata CC0 P856 official website: www.crayonphysics.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1139201",
+   "wikidata": "Q1139201"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "asduskfalls.com"
+   ],
+   "name": "asduskfalls",
+   "source_note": "Wikidata CC0 P856 official website: www.asduskfalls.com",
+   "source_url": "https://www.wikidata.org/wiki/Q112618572",
+   "wikidata": "Q112618572"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "panda3d.org"
+   ],
+   "name": "panda3d",
+   "source_note": "Wikidata CC0 P856 official website: www.panda3d.org",
+   "source_url": "https://www.wikidata.org/wiki/Q2049263",
+   "wikidata": "Q2049263"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "degicagames.com"
+   ],
+   "name": "degicagames",
+   "source_note": "Wikidata CC0 P856 official website: saizensen.degicagames.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3277958",
+   "wikidata": "Q3277958"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "megacatstudios.com"
+   ],
+   "name": "megacatstudios",
+   "source_note": "Wikidata CC0 P856 official website: megacatstudios.com",
+   "source_url": "https://www.wikidata.org/wiki/Q124357509",
+   "wikidata": "Q124357509"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "amusement-center.com"
+   ],
+   "name": "amusement-center",
+   "source_note": "Wikidata CC0 P856 official website: www.amusement-center.com",
+   "source_url": "https://www.wikidata.org/wiki/Q11091967",
+   "wikidata": "Q11091967"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "suikagame.jp"
+   ],
+   "name": "suikagame",
+   "source_note": "Wikidata CC0 P856 official website: suikagame.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q122969859",
+   "wikidata": "Q122969859"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "spiralknights.com"
+   ],
+   "name": "spiralknights",
+   "source_note": "Wikidata CC0 P856 official website: www.spiralknights.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1627200",
+   "wikidata": "Q1627200"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "puzzlepirates.com"
+   ],
+   "name": "puzzlepirates",
+   "source_note": "Wikidata CC0 P856 official website: www.puzzlepirates.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1968331",
+   "wikidata": "Q1968331"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "vega-strike.org"
+   ],
+   "name": "vega-strike",
+   "source_note": "Wikidata CC0 P856 official website: www.vega-strike.org",
+   "source_url": "https://www.wikidata.org/wiki/Q2140881",
+   "wikidata": "Q2140881"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "madrugaworks.com"
+   ],
+   "name": "madrugaworks",
+   "source_note": "Wikidata CC0 P856 official website: planetbase.madrugaworks.com",
+   "source_url": "https://www.wikidata.org/wiki/Q23303463",
+   "wikidata": "Q23303463"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "cemu.info"
+   ],
+   "name": "cemu",
+   "source_note": "Wikidata CC0 P856 official website: cemu.info",
+   "source_url": "https://www.wikidata.org/wiki/Q24565490",
+   "wikidata": "Q24565490"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "svencoop.com"
+   ],
+   "name": "svencoop",
+   "source_note": "Wikidata CC0 P856 official website: www.svencoop.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2668802",
+   "wikidata": "Q2668802"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "fceux.com"
+   ],
+   "name": "fceux",
+   "source_note": "Wikidata CC0 P856 official website: fceux.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3063052",
+   "wikidata": "Q3063052"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "gamegrumps.com"
+   ],
+   "name": "gamegrumps",
+   "source_note": "Wikidata CC0 P856 official website: www.gamegrumps.com",
+   "source_url": "https://www.wikidata.org/wiki/Q30646288",
+   "wikidata": "Q30646288"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "opencity.info"
+   ],
+   "name": "opencity",
+   "source_note": "Wikidata CC0 P856 official website: www.opencity.info",
+   "source_url": "https://www.wikidata.org/wiki/Q3141653",
+   "wikidata": "Q3141653"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "rambothevideogame.com"
+   ],
+   "name": "rambothevideogame",
+   "source_note": "Wikidata CC0 P856 official website: www.rambothevideogame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3325478",
+   "wikidata": "Q3325478"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "develz.org"
+   ],
+   "name": "develz",
+   "source_note": "Wikidata CC0 P856 official website: crawl.develz.org",
+   "source_url": "https://www.wikidata.org/wiki/Q5315124",
+   "wikidata": "Q5315124"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "pillowcastlegames.com"
+   ],
+   "name": "pillowcastlegames",
+   "source_note": "Wikidata CC0 P856 official website: www.pillowcastlegames.com",
+   "source_url": "https://www.wikidata.org/wiki/Q66914100",
+   "wikidata": "Q66914100"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "terminatorvideogame.com"
+   ],
+   "name": "terminatorvideogame",
+   "source_note": "Wikidata CC0 P856 official website: www.terminatorvideogame.com",
+   "source_url": "https://www.wikidata.org/wiki/Q68888832",
+   "wikidata": "Q68888832"
+  }
+ ],
+ "host_entries": [
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Road96 (game publisher site)",
+   "domains": [
+    "road96.com"
+   ],
+   "name": "road96",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Cataclysmdda (game publisher site)",
+   "domains": [
+    "cataclysmdda.org"
+   ],
+   "name": "cataclysmdda",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Playcobalt (game publisher site)",
+   "domains": [
+    "playcobalt.com"
+   ],
+   "name": "playcobalt",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Splatterhousegame (game publisher site)",
+   "domains": [
+    "splatterhousegame.com"
+   ],
+   "name": "splatterhousegame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Partyanimals (game publisher site)",
+   "domains": [
+    "partyanimals.cn"
+   ],
+   "name": "partyanimals",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Purevideogame (game publisher site)",
+   "domains": [
+    "purevideogame.com"
+   ],
+   "name": "purevideogame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Unfrozen (game publisher site)",
+   "domains": [
+    "unfrozen.studio"
+   ],
+   "name": "unfrozen",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Lockon (game publisher site)",
+   "domains": [
+    "lockon.ru"
+   ],
+   "name": "lockon",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Theballthegame (game publisher site)",
+   "domains": [
+    "theballthegame.com"
+   ],
+   "name": "theballthegame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Bioniccommando (game publisher site)",
+   "domains": [
+    "bioniccommando.com"
+   ],
+   "name": "bioniccommando",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Gorky17 (game publisher site)",
+   "domains": [
+    "gorky17.com"
+   ],
+   "name": "gorky17",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Original War (game publisher site)",
+   "domains": [
+    "original-war.com"
+   ],
+   "name": "original-war",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Kingdomrush (game publisher site)",
+   "domains": [
+    "kingdomrush.com"
+   ],
+   "name": "kingdomrush",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Darwinia (game publisher site)",
+   "domains": [
+    "darwinia.co.uk"
+   ],
+   "name": "darwinia",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Btd6 (game publisher site)",
+   "domains": [
+    "btd6.com"
+   ],
+   "name": "btd6",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Iahgames (game publisher site)",
+   "domains": [
+    "iahgames.com"
+   ],
+   "name": "iahgames",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Kromestudios (game publisher site)",
+   "domains": [
+    "kromestudios.com"
+   ],
+   "name": "kromestudios",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Kalypsomedia (game publisher site)",
+   "domains": [
+    "kalypsomedia.com"
+   ],
+   "name": "kalypsomedia",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Monogame (game publisher site)",
+   "domains": [
+    "monogame.net"
+   ],
+   "name": "monogame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Level5 (game publisher site)",
+   "domains": [
+    "level5.co.jp"
+   ],
+   "name": "level5",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Cyberhunter (game publisher site)",
+   "domains": [
+    "cyberhunter.game"
+   ],
+   "name": "cyberhunter",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Enlight (game publisher site)",
+   "domains": [
+    "enlight.com"
+   ],
+   "name": "enlight",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Egosoft (game publisher site)",
+   "domains": [
+    "egosoft.com"
+   ],
+   "name": "egosoft",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Wargroove (game publisher site)",
+   "domains": [
+    "wargroove.com"
+   ],
+   "name": "wargroove",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Koudelka Thegame (game publisher site)",
+   "domains": [
+    "koudelka-thegame.com"
+   ],
+   "name": "koudelka-thegame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Renaissancekingdoms (game publisher site)",
+   "domains": [
+    "renaissancekingdoms.com"
+   ],
+   "name": "renaissancekingdoms",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Batmanarkhamvr (game publisher site)",
+   "domains": [
+    "batmanarkhamvr.com"
+   ],
+   "name": "batmanarkhamvr",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Otherocean (game publisher site)",
+   "domains": [
+    "otherocean.com"
+   ],
+   "name": "otherocean",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Styx Thegame (game publisher site)",
+   "domains": [
+    "styx-thegame.com"
+   ],
+   "name": "styx-thegame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Callofcthulhu Game (game publisher site)",
+   "domains": [
+    "callofcthulhu-game.com"
+   ],
+   "name": "callofcthulhu-game",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Graveyardkeeper (game publisher site)",
+   "domains": [
+    "graveyardkeeper.com"
+   ],
+   "name": "graveyardkeeper",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Rise Of The Argonauts (game publisher site)",
+   "domains": [
+    "rise-of-the-argonauts.com"
+   ],
+   "name": "rise-of-the-argonauts",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Fromsoftware (game publisher site)",
+   "domains": [
+    "fromsoftware.jp"
+   ],
+   "name": "fromsoftware",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Absolvergame (game publisher site)",
+   "domains": [
+    "absolvergame.com"
+   ],
+   "name": "absolvergame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Teslagrad (game publisher site)",
+   "domains": [
+    "teslagrad.com"
+   ],
+   "name": "teslagrad",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Digitaltribegames (game publisher site)",
+   "domains": [
+    "digitaltribegames.com"
+   ],
+   "name": "digitaltribegames",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Dementium (game publisher site)",
+   "domains": [
+    "dementium.com"
+   ],
+   "name": "dementium",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "King (game publisher site)",
+   "domains": [
+    "king.com"
+   ],
+   "name": "king",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Landfall (game publisher site)",
+   "domains": [
+    "landfall.se"
+   ],
+   "name": "landfall",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Suddenstrike (game publisher site)",
+   "domains": [
+    "suddenstrike.com"
+   ],
+   "name": "suddenstrike",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Larian (game publisher site)",
+   "domains": [
+    "larian.com"
+   ],
+   "name": "larian",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Axiomverge (game publisher site)",
+   "domains": [
+    "axiomverge.com"
+   ],
+   "name": "axiomverge",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Neverendingnightmares (game publisher site)",
+   "domains": [
+    "neverendingnightmares.com"
+   ],
+   "name": "neverendingnightmares",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Plaync (game publisher site)",
+   "domains": [
+    "plaync.com"
+   ],
+   "name": "plaync",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Guildwars (game publisher site)",
+   "domains": [
+    "guildwars.com"
+   ],
+   "name": "guildwars",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Carddass (game publisher site)",
+   "domains": [
+    "carddass.com"
+   ],
+   "name": "carddass",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Downwellgame (game publisher site)",
+   "domains": [
+    "downwellgame.com"
+   ],
+   "name": "downwellgame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Tribesascend (game publisher site)",
+   "domains": [
+    "tribesascend.com"
+   ],
+   "name": "tribesascend",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Madfingergames (game publisher site)",
+   "domains": [
+    "madfingergames.com"
+   ],
+   "name": "madfingergames",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Conflictdeniedops (game publisher site)",
+   "domains": [
+    "conflictdeniedops.com"
+   ],
+   "name": "conflictdeniedops",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Tonyhawkgame (game publisher site)",
+   "domains": [
+    "tonyhawkgame.com"
+   ],
+   "name": "tonyhawkgame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Mutantyearzero (game publisher site)",
+   "domains": [
+    "mutantyearzero.com"
+   ],
+   "name": "mutantyearzero",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "5Dchesswithmultiversetimetravel (game publisher site)",
+   "domains": [
+    "5dchesswithmultiversetimetravel.com"
+   ],
+   "name": "5dchesswithmultiversetimetravel",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Desmume (game publisher site)",
+   "domains": [
+    "desmume.org"
+   ],
+   "name": "desmume",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Splitgate (game publisher site)",
+   "domains": [
+    "splitgate.com"
+   ],
+   "name": "splitgate",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Roguelegacy (game publisher site)",
+   "domains": [
+    "roguelegacy.com"
+   ],
+   "name": "roguelegacy",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Wikigacha (game publisher site)",
+   "domains": [
+    "wikigacha.com"
+   ],
+   "name": "wikigacha",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Vector (game publisher site)",
+   "domains": [
+    "vector.game"
+   ],
+   "name": "vector",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Kuchinawa (game publisher site)",
+   "domains": [
+    "kuchinawa.com"
+   ],
+   "name": "kuchinawa",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Gamexp (game publisher site)",
+   "domains": [
+    "gamexp.com"
+   ],
+   "name": "gamexp",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Altosadventure (game publisher site)",
+   "domains": [
+    "altosadventure.com"
+   ],
+   "name": "altosadventure",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Titanichg (game publisher site)",
+   "domains": [
+    "titanichg.com"
+   ],
+   "name": "titanichg",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Lisatherpg (game publisher site)",
+   "domains": [
+    "lisatherpg.com"
+   ],
+   "name": "lisatherpg",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Jobsimulatorgame (game publisher site)",
+   "domains": [
+    "jobsimulatorgame.com"
+   ],
+   "name": "jobsimulatorgame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Endless Space (game publisher site)",
+   "domains": [
+    "endless-space.com"
+   ],
+   "name": "endless-space",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Picroma (game publisher site)",
+   "domains": [
+    "picroma.com"
+   ],
+   "name": "picroma",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Boswars (game publisher site)",
+   "domains": [
+    "boswars.org"
+   ],
+   "name": "boswars",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Gamejolt (game publisher site)",
+   "domains": [
+    "gamejolt.com"
+   ],
+   "name": "gamejolt",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Noitagame (game publisher site)",
+   "domains": [
+    "noitagame.com"
+   ],
+   "name": "noitagame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Sadsquarestudio (game publisher site)",
+   "domains": [
+    "sadsquarestudio.com"
+   ],
+   "name": "sadsquarestudio",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Anonymouscode (game publisher site)",
+   "domains": [
+    "anonymouscode.jp"
+   ],
+   "name": "anonymouscode",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Justdancenow (game publisher site)",
+   "domains": [
+    "justdancenow.com"
+   ],
+   "name": "justdancenow",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Marvelsnap (game publisher site)",
+   "domains": [
+    "marvelsnap.com"
+   ],
+   "name": "marvelsnap",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Rose Engine (game publisher site)",
+   "domains": [
+    "rose-engine.org"
+   ],
+   "name": "rose-engine",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Ponos (game publisher site)",
+   "domains": [
+    "ponos.co.jp"
+   ],
+   "name": "ponos",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Thelegendofheroes (game publisher site)",
+   "domains": [
+    "thelegendofheroes.com"
+   ],
+   "name": "thelegendofheroes",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Zettai Zetsumei (game publisher site)",
+   "domains": [
+    "zettai-zetsumei.jp"
+   ],
+   "name": "zettai-zetsumei",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Curve Digital (game publisher site)",
+   "domains": [
+    "curve-digital.com"
+   ],
+   "name": "curve-digital",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Compileheart (game publisher site)",
+   "domains": [
+    "compileheart.com"
+   ],
+   "name": "compileheart",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Nexton Net (game publisher site)",
+   "domains": [
+    "nexton-net.jp"
+   ],
+   "name": "nexton-net",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Hoshikaka (game publisher site)",
+   "domains": [
+    "hoshikaka.jp"
+   ],
+   "name": "hoshikaka",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Housemarque (game publisher site)",
+   "domains": [
+    "housemarque.com"
+   ],
+   "name": "housemarque",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Gainax (game publisher site)",
+   "domains": [
+    "gainax.co.jp"
+   ],
+   "name": "gainax",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Headupgames (game publisher site)",
+   "domains": [
+    "headupgames.com"
+   ],
+   "name": "headupgames",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Portablemoose (game publisher site)",
+   "domains": [
+    "portablemoose.com"
+   ],
+   "name": "portablemoose",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Pikointeractive (game publisher site)",
+   "domains": [
+    "pikointeractive.com"
+   ],
+   "name": "pikointeractive",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Sao Game (game publisher site)",
+   "domains": [
+    "sao-game.jp"
+   ],
+   "name": "sao-game",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Night Cry (game publisher site)",
+   "domains": [
+    "night-cry.com"
+   ],
+   "name": "night-cry",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Toukana (game publisher site)",
+   "domains": [
+    "toukana.com"
+   ],
+   "name": "toukana",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Disgaea (game publisher site)",
+   "domains": [
+    "disgaea.jp"
+   ],
+   "name": "disgaea",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Animalwell (game publisher site)",
+   "domains": [
+    "animalwell.net"
+   ],
+   "name": "animalwell",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Mordhau (game publisher site)",
+   "domains": [
+    "mordhau.com"
+   ],
+   "name": "mordhau",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Topspin4 (game publisher site)",
+   "domains": [
+    "topspin4.com"
+   ],
+   "name": "topspin4",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Blueprincegame (game publisher site)",
+   "domains": [
+    "blueprincegame.com"
+   ],
+   "name": "blueprincegame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Impossible (game publisher site)",
+   "domains": [
+    "impossible.game"
+   ],
+   "name": "impossible",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Hauntedchocolatier (game publisher site)",
+   "domains": [
+    "hauntedchocolatier.net"
+   ],
+   "name": "hauntedchocolatier",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Twoworlds2 (game publisher site)",
+   "domains": [
+    "twoworlds2.com"
+   ],
+   "name": "twoworlds2",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "2 Worlds (game publisher site)",
+   "domains": [
+    "2-worlds.com"
+   ],
+   "name": "2-worlds",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Earth2160 (game publisher site)",
+   "domains": [
+    "earth2160.com"
+   ],
+   "name": "earth2160",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Chivalry2 (game publisher site)",
+   "domains": [
+    "chivalry2.com"
+   ],
+   "name": "chivalry2",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Vikingswarofclans (game publisher site)",
+   "domains": [
+    "vikingswarofclans.com"
+   ],
+   "name": "vikingswarofclans",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Playrix (game publisher site)",
+   "domains": [
+    "playrix.com"
+   ],
+   "name": "playrix",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Thelordsofmidnight (game publisher site)",
+   "domains": [
+    "thelordsofmidnight.com"
+   ],
+   "name": "thelordsofmidnight",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Giantsparrow (game publisher site)",
+   "domains": [
+    "giantsparrow.com"
+   ],
+   "name": "giantsparrow",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Fussball Manager (game publisher site)",
+   "domains": [
+    "fussball-manager.at"
+   ],
+   "name": "fussball-manager",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Supermassivegames (game publisher site)",
+   "domains": [
+    "supermassivegames.com"
+   ],
+   "name": "supermassivegames",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Inklestudios (game publisher site)",
+   "domains": [
+    "inklestudios.com"
+   ],
+   "name": "inklestudios",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Imperiaonline (game publisher site)",
+   "domains": [
+    "imperiaonline.org"
+   ],
+   "name": "imperiaonline",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Zombiearmy (game publisher site)",
+   "domains": [
+    "zombiearmy.com"
+   ],
+   "name": "zombiearmy",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "505Games (game publisher site)",
+   "domains": [
+    "505games.com"
+   ],
+   "name": "505games",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Battlegoat (game publisher site)",
+   "domains": [
+    "battlegoat.com"
+   ],
+   "name": "battlegoat",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Watchmenvideogame (game publisher site)",
+   "domains": [
+    "watchmenvideogame.com"
+   ],
+   "name": "watchmenvideogame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Littleorbit (game publisher site)",
+   "domains": [
+    "littleorbit.com"
+   ],
+   "name": "littleorbit",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Ninja Blade (game publisher site)",
+   "domains": [
+    "ninja-blade.com"
+   ],
+   "name": "ninja-blade",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Tenchu (game publisher site)",
+   "domains": [
+    "tenchu.net"
+   ],
+   "name": "tenchu",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Adultswim (game publisher site)",
+   "domains": [
+    "adultswim.com"
+   ],
+   "name": "adultswim",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Train Fever (game publisher site)",
+   "domains": [
+    "train-fever.com"
+   ],
+   "name": "train-fever",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Darklingroom (game publisher site)",
+   "domains": [
+    "darklingroom.co.uk"
+   ],
+   "name": "darklingroom",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Vampyrestory Game (game publisher site)",
+   "domains": [
+    "vampyrestory-game.com"
+   ],
+   "name": "vampyrestory-game",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Wargame Ee (game publisher site)",
+   "domains": [
+    "wargame-ee.com"
+   ],
+   "name": "wargame-ee",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Sniperghostwarriorcontracts2 (game publisher site)",
+   "domains": [
+    "sniperghostwarriorcontracts2.com"
+   ],
+   "name": "sniperghostwarriorcontracts2",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Dancecentral (game publisher site)",
+   "domains": [
+    "dancecentral.com"
+   ],
+   "name": "dancecentral",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Demigodthegame (game publisher site)",
+   "domains": [
+    "demigodthegame.com"
+   ],
+   "name": "demigodthegame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Virtua Fighter 4 (game publisher site)",
+   "domains": [
+    "virtua-fighter-4.com"
+   ],
+   "name": "virtua-fighter-4",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Playdaylight (game publisher site)",
+   "domains": [
+    "playdaylight.com"
+   ],
+   "name": "playdaylight",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Cc2 (game publisher site)",
+   "domains": [
+    "cc2.co.jp"
+   ],
+   "name": "cc2",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Badnorth (game publisher site)",
+   "domains": [
+    "badnorth.com"
+   ],
+   "name": "badnorth",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Longhathouse (game publisher site)",
+   "domains": [
+    "longhathouse.com"
+   ],
+   "name": "longhathouse",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Waifubartending (game publisher site)",
+   "domains": [
+    "waifubartending.com"
+   ],
+   "name": "waifubartending",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Hacknet Os (game publisher site)",
+   "domains": [
+    "hacknet-os.com"
+   ],
+   "name": "hacknet-os",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Doodlegod (game publisher site)",
+   "domains": [
+    "doodlegod.com"
+   ],
+   "name": "doodlegod",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Zachtronics (game publisher site)",
+   "domains": [
+    "zachtronics.com"
+   ],
+   "name": "zachtronics",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Galaxytrail (game publisher site)",
+   "domains": [
+    "galaxytrail.com"
+   ],
+   "name": "galaxytrail",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Armello (game publisher site)",
+   "domains": [
+    "armello.com"
+   ],
+   "name": "armello",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Primalcarnage (game publisher site)",
+   "domains": [
+    "primalcarnage.com"
+   ],
+   "name": "primalcarnage",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Shinen (game publisher site)",
+   "domains": [
+    "shinen.com"
+   ],
+   "name": "shinen",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Wayforward (game publisher site)",
+   "domains": [
+    "wayforward.com"
+   ],
+   "name": "wayforward",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Blairwitchgame (game publisher site)",
+   "domains": [
+    "blairwitchgame.com"
+   ],
+   "name": "blairwitchgame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Pso2 (game publisher site)",
+   "domains": [
+    "pso2.com"
+   ],
+   "name": "pso2",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Deadtoast (game publisher site)",
+   "domains": [
+    "deadtoast.com"
+   ],
+   "name": "deadtoast",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Blitwise (game publisher site)",
+   "domains": [
+    "blitwise.com"
+   ],
+   "name": "blitwise",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Megaten4F (game publisher site)",
+   "domains": [
+    "megaten4f.jp"
+   ],
+   "name": "megaten4f",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Championsofregnum (game publisher site)",
+   "domains": [
+    "championsofregnum.com"
+   ],
+   "name": "championsofregnum",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Carsvideogame (game publisher site)",
+   "domains": [
+    "carsvideogame.com"
+   ],
+   "name": "carsvideogame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Polybridge2 (game publisher site)",
+   "domains": [
+    "polybridge2.com"
+   ],
+   "name": "polybridge2",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Tonyhawkthegame (game publisher site)",
+   "domains": [
+    "tonyhawkthegame.com"
+   ],
+   "name": "tonyhawkthegame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Netmarble (game publisher site)",
+   "domains": [
+    "netmarble.com"
+   ],
+   "name": "netmarble",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Neveralonegame (game publisher site)",
+   "domains": [
+    "neveralonegame.com"
+   ],
+   "name": "neveralonegame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Farmerama (game publisher site)",
+   "domains": [
+    "farmerama.com"
+   ],
+   "name": "farmerama",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Crayonphysics (game publisher site)",
+   "domains": [
+    "crayonphysics.com"
+   ],
+   "name": "crayonphysics",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Asduskfalls (game publisher site)",
+   "domains": [
+    "asduskfalls.com"
+   ],
+   "name": "asduskfalls",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Panda3D (game publisher site)",
+   "domains": [
+    "panda3d.org"
+   ],
+   "name": "panda3d",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Degicagames (game publisher site)",
+   "domains": [
+    "degicagames.com"
+   ],
+   "name": "degicagames",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Megacatstudios (game publisher site)",
+   "domains": [
+    "megacatstudios.com"
+   ],
+   "name": "megacatstudios",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Amusement Center (game publisher site)",
+   "domains": [
+    "amusement-center.com"
+   ],
+   "name": "amusement-center",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Suikagame (game publisher site)",
+   "domains": [
+    "suikagame.jp"
+   ],
+   "name": "suikagame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Spiralknights (game publisher site)",
+   "domains": [
+    "spiralknights.com"
+   ],
+   "name": "spiralknights",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Puzzlepirates (game publisher site)",
+   "domains": [
+    "puzzlepirates.com"
+   ],
+   "name": "puzzlepirates",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Vega Strike (game publisher site)",
+   "domains": [
+    "vega-strike.org"
+   ],
+   "name": "vega-strike",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Madrugaworks (game publisher site)",
+   "domains": [
+    "madrugaworks.com"
+   ],
+   "name": "madrugaworks",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Cemu (game publisher site)",
+   "domains": [
+    "cemu.info"
+   ],
+   "name": "cemu",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Svencoop (game publisher site)",
+   "domains": [
+    "svencoop.com"
+   ],
+   "name": "svencoop",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Fceux (game publisher site)",
+   "domains": [
+    "fceux.com"
+   ],
+   "name": "fceux",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Gamegrumps (game publisher site)",
+   "domains": [
+    "gamegrumps.com"
+   ],
+   "name": "gamegrumps",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Opencity (game publisher site)",
+   "domains": [
+    "opencity.info"
+   ],
+   "name": "opencity",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Rambothevideogame (game publisher site)",
+   "domains": [
+    "rambothevideogame.com"
+   ],
+   "name": "rambothevideogame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Develz (game publisher site)",
+   "domains": [
+    "develz.org"
+   ],
+   "name": "develz",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Pillowcastlegames (game publisher site)",
+   "domains": [
+    "pillowcastlegames.com"
+   ],
+   "name": "pillowcastlegames",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "media",
+   "characteristics": [],
+   "description": "Terminatorvideogame (game publisher site)",
+   "domains": [
+    "terminatorvideogame.com"
+   ],
+   "name": "terminatorvideogame",
+   "risk": 2,
+   "subcategory": "gaming",
+   "technology": "browser-based",
+   "web_fronts": []
+  }
+ ],
+ "kind": "gaming_publisher_domain",
+ "start": 600
+}

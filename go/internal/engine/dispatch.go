@@ -153,6 +153,10 @@ func startsWithAny(p []byte, starts [][]byte) (matched, waiting bool) {
 }
 
 // Select returns a family, Unknown, or Wait; prefix holds 1..Lookahead bytes (dispatch.select).
+//
+// Invariant (A3, PRO-119): Select never returns Wait for a prefix of Lookahead bytes. The Inspector probes at most
+// Lookahead bytes and keeps a chunk in in.prefix only on Wait, so in.prefix stays shorter than Lookahead; a Wait on
+// a full probe would let in.prefix grow with every chunk up to the credit. TestSelectNeverWaitsOnAFullProbe pins it.
 func Select(prefix []byte) string {
 	first := prefix[0]
 	n := len(prefix)

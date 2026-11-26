@@ -441,7 +441,7 @@ func TestAdmission(t *testing.T) {
 	}
 	b.Close()
 	st := e.Stats()
-	if st.Admitted != 3 || st.Refused != 2 || st.Active != 1 {
+	if st.Admitted != 3 || st.Refused != 2 || st.Active != 1 || st.RefusedFlowLimit != 2 || st.RefusedMemory != 0 {
 		t.Errorf("stats %+v", st)
 	}
 	long, _ := e.NewFlow(strings.Repeat("x", 1000))
