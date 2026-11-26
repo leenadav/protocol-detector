@@ -22,12 +22,12 @@ first and fail (never skip) if it drifts.
 
 | ID | Test | Today (skip message) |
 |---|---|---|
-| SEC-LIM-1 | `analyze.TestLimitGapAnalyzeUDPFlowLimitInSummary` | 800 flows, 32 sessions, summary `{"frames":800,"sessions":32,"udp":800}` |
-| SEC-LIM-2 | `analyze.TestLimitGapAnalyzeTCPConnectionLimitInSummary` | 768 `LIMIT` frame messages, no summary counter |
+| SEC-LIM-1 | `analyze.TestLimitGapAnalyzeUDPFlowLimitInSummary` | 800 flows, 32 sessions, summary `{"frames":800,"sessions":32,"udp":800}` (fixed by PRO-448; now a plain assertion) |
+| SEC-LIM-2 | `analyze.TestLimitGapAnalyzeTCPConnectionLimitInSummary` | 768 `LIMIT` frame messages, no summary counter (fixed by PRO-448; now a plain assertion) |
 | SEC-LIM-3 | `analyze.TestLimitGapAnalyzeTCPWithoutStartInSummary` | 800 TCP data segments, 0 sessions, no counter |
 | SEC-LIM-4 | `analyze.TestLimitGapPresentFlowLimitInMeta` | 800 flows, 256 sessions, no meta counter |
 | SEC-LIM-5 | `analyze.TestLimitGapPresentSessionEventCap` | record carries 60 of 100 events, no marker |
-| SEC-LIM-6 | `analyze.TestLimitGapAnalyzeUDPMixedOutcomeHidden` | frames identify dns and stun; record names dns only |
+| SEC-LIM-6 | `analyze.TestLimitGapAnalyzeUDPMixedOutcomeHidden` | frames identify dns and stun; record names dns only (fixed by PRO-448; now a plain assertion) |
 | SEC-LIM-7 | `live.TestLimitGapLiveUDPFlowLimitInSummary` | counts `identified:800, sessions:32`, no flow-limit entry |
 | SEC-LIM-8 | `analyzer.TestLimitGapQUICAssemblerEvictionIsReported` | evicted CRYPTO state: SNI lost, reason "ClientHello incomplete" |
 | SEC-LIM-9 | `analyzer.TestLimitGapUDPRecordHidesLaterCompleteObservation` | last datagram asserts SNI; record hostname `null` |

@@ -43,13 +43,6 @@ func sameInstant(frames ...[]byte) []byte {
 	return out
 }
 
-// dnsQuery is a standard query for example.com A.
-func dnsQuery(id uint16) []byte {
-	q := []byte{byte(id >> 8), byte(id), 1, 0, 0, 1, 0, 0, 0, 0, 0, 0}
-	q = append(q, 7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'c', 'o', 'm', 0, 0, 1, 0, 1)
-	return q
-}
-
 // udpFlows is one DNS query from each of n client ports: n distinct UDP flows.
 func udpFlows(n int) [][]byte {
 	frames := make([][]byte, 0, n)
@@ -120,8 +113,9 @@ func TestLimitGapAnalyzeUDPFlowLimitInSummary(t *testing.T) {
 	if records < 32 || records > 40 {
 		t.Fatalf("reproducer drifted: %d UDP session records, want about 32 (the flow table limit)", records)
 	}
-	fixed := reported(counts, "udp_flow_limit", "flow_limit")+records == 800
-	limitGap(t, "SEC-LIM-1", fixed, "summary "+summaryText(counts)+" has no counter for "+jsonCount(800-records)+" unrecorded flows")
+	if reported(counts, "udp_flow_limit", "flow_limit")+records != 800 {
+		t.Fatalf("SEC-LIM-1 (%s): summary %s has no counter for %s unrecorded flows", auditDoc, summaryText(counts), jsonCount(800-records))
+	}
 }
 
 // SEC-LIM-2: the TCP side of the same table. Once 32 established connections fill it (half-open eviction, SEC-SESS-1,
@@ -148,8 +142,9 @@ func TestLimitGapAnalyzeTCPConnectionLimitInSummary(t *testing.T) {
 	if limited != 800-32 || sessionRows(rows) != 32 {
 		t.Fatalf("reproducer drifted: %d LIMIT frames, %d sessions", limited, sessionRows(rows))
 	}
-	fixed := reported(counts, "connection_limit", "limit") == 800-32
-	limitGap(t, "SEC-LIM-2", fixed, "summary "+summaryText(counts)+" has no counter for 768 refused connections")
+	if reported(counts, "connection_limit", "limit") != 800-32 {
+		t.Fatalf("SEC-LIM-2 (%s): summary %s has no counter for 768 refused connections", auditDoc, summaryText(counts))
+	}
 }
 
 // SEC-LIM-3: TCP whose start was not observed (handshake mode) is skipped per frame ("SKIP: connection beginning
@@ -263,13 +258,11 @@ func TestLimitGapAnalyzeUDPMixedOutcomeHidden(t *testing.T) {
 		t.Fatalf("reproducer drifted: it needs two identified families on one flow; got %v", protocols)
 	}
 	text, _ := json.Marshal(record)
-	fixed := true
 	for p := range protocols {
 		if !strings.Contains(string(text), `"`+p+`"`) {
-			fixed = false
+			t.Fatalf("SEC-LIM-6 (%s): frames identified %s; the session record does not name %s", auditDoc, keys(protocols), p)
 		}
 	}
-	limitGap(t, "SEC-LIM-6", fixed, "frames identified "+keys(protocols)+"; the session record names only the first")
 }
 
 func keys(m map[string]bool) string {
