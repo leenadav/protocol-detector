@@ -109,9 +109,7 @@ func (p *KeyProvider) Released() bool { return p.released }
 // that already started hold their own copies, so a running connection is unaffected, as in the reference).
 func (p *KeyProvider) Release() {
 	for _, secret := range p.keys {
-		for i := range secret {
-			secret[i] = 0
-		}
+		zero(secret)
 	}
 	p.keys, p.order, p.randoms, p.indexedAt = map[keyID][]byte{}, nil, map[string]bool{}, map[keyID]float64{}
 	p.released = true
@@ -134,6 +132,7 @@ func (p *KeyProvider) Expire(now *float64) int {
 	stale := 0
 	for _, id := range p.order {
 		if at, ok := p.indexedAt[id]; ok && *now-at > *p.MaxAge {
+			zero(p.keys[id]) // SEC-KEY-1 (PRO-119): overwritten before it is forgotten, as Release does
 			delete(p.keys, id)
 			delete(p.indexedAt, id)
 			stale++

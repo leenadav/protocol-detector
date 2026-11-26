@@ -15,6 +15,23 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/signatures"
 )
 
+// datagramFailure maps a candidate validator's error to its failure status and reason. Every validator returns a
+// *parsing.Error today; the assertion is checked (PRO-48 A3, PRO-119) so that a future validator returning another
+// error type is a malformed candidate, never a panic of the classifier and never a positive result.
+func datagramFailure(err error) (status, reason string) {
+	e, ok := err.(*parsing.Error)
+	if !ok {
+		return "malformed", err.Error()
+	}
+	switch e.Kind {
+	case "budget":
+		return "budget_exhausted", e.Message
+	case "unsupported", "ambiguous":
+		return "unknown", e.Message
+	}
+	return "malformed", e.Message
+}
+
 // Datagram ports DatagramInspector for the DNS-layout validators; any other candidate the Python
 // preselection would run makes the outcome NotPorted (the Go backend cannot tell whether that
 // validator would have matched).
@@ -368,15 +385,8 @@ func (d *Datagram) InspectFlow(data []byte, hint, scope string, now *float64) (c
 			}
 		}
 		if err != nil {
-			e := err.(*parsing.Error)
-			switch e.Kind {
-			case "budget":
-				errors = append(errors, failure{"budget_exhausted", e.Message})
-			case "unsupported", "ambiguous":
-				errors = append(errors, failure{"unknown", e.Message})
-			default:
-				errors = append(errors, failure{"malformed", e.Message})
-			}
+			status, reason := datagramFailure(err)
+			errors = append(errors, failure{status, reason})
 			continue
 		}
 		matches = append(matches, found)

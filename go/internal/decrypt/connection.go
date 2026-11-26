@@ -34,6 +34,10 @@ type PlaintextDelta struct {
 type record struct{ header, body []byte }
 
 // recordFramer splits one direction's bytes into TLS records once; it retains only an incomplete tail.
+//
+// SEC-DEC-1 (PRO-47 A2, PRO-119): each framed record owns a copy of its bytes, so the framer must not keep the
+// consumed prefix of its buffer alive behind the tail; compact moves the tail into a buffer of its own once a
+// framing pass ends. One direction then holds each byte once (framer tail or queued record), not twice.
 type recordFramer struct {
 	pending []byte
 	total   int
@@ -74,6 +78,16 @@ func (f *recordFramer) next() (record, bool, *Error) {
 		return record{}, false, fail("TLS record count exceeds profile.", BudgetExhausted)
 	}
 	return record{header, body}, true, nil
+}
+
+// compact drops the consumed prefix: the incomplete tail (at most one record, 16645 bytes) moves to a buffer of
+// its own, and an empty framer holds no buffer.
+func (f *recordFramer) compact() {
+	if len(f.pending) == 0 {
+		f.pending = nil
+	} else if len(f.pending) < cap(f.pending) {
+		f.pending = append([]byte(nil), f.pending...)
+	}
 }
 
 func (f *recordFramer) finish() *Error {
@@ -123,6 +137,17 @@ type direction interface {
 	record(r record) ([]byte, *Error)
 	epoch() string
 	finish() *Error
+	// wipe overwrites the record keys this direction holds (SEC-KEY-1).
+	wipe()
+}
+
+// zero overwrites secret bytes before their buffer is dropped. Go cannot promise that no copy survives (the AEAD
+// key schedules inside crypto/aes and chacha20poly1305 are not reachable, and the runtime may have moved a
+// buffer), so this narrows the window; it is not a zeroization guarantee.
+func zero(b []byte) {
+	for i := range b {
+		b[i] = 0
+	}
 }
 
 // tls13Direction decodes one sender's protected records with its handshake and application traffic secrets.
@@ -180,8 +205,25 @@ func newAEAD(key []byte, chacha bool) cipher.AEAD {
 
 func (d *tls13Direction) install(phase string) {
 	secret := d.secrets[phase]
-	d.ciphers[phase] = newAEAD(expand(secret, "key", d.keySize, d.digest), d.chacha)
+	key := expand(secret, "key", d.keySize, d.digest)
+	d.ciphers[phase] = newAEAD(key, d.chacha) // the AEAD keeps its own key schedule
+	zero(key)
+	zero(d.ivs[phase]) // a KeyUpdate replaces the previous IV
 	d.ivs[phase] = expand(secret, "iv", 12, d.digest)
+}
+
+// forget overwrites and drops one phase's secret and IV.
+func (d *tls13Direction) forget(phase string) {
+	zero(d.secrets[phase])
+	zero(d.ivs[phase])
+	delete(d.secrets, phase)
+	delete(d.ivs, phase)
+	delete(d.ciphers, phase)
+}
+
+func (d *tls13Direction) wipe() {
+	d.forget(phaseHandshake)
+	d.forget(phaseApplication)
 }
 
 func (d *tls13Direction) epoch() string {
@@ -245,7 +287,9 @@ func (d *tls13Direction) record(r record) ([]byte, *Error) {
 				if d.phase != phaseApplication || size != 1 || message[4] > 1 || len(d.pending) > 0 || d.updates >= 32 {
 					return nil, fail("Invalid TLS KeyUpdate boundary or update budget exceeded.", UnsupportedProfile)
 				}
-				d.secrets[d.phase] = expand(d.secrets[d.phase], "traffic upd", digestSize(d.digest), d.digest)
+				previous := d.secrets[d.phase]
+				d.secrets[d.phase] = expand(previous, "traffic upd", digestSize(d.digest), d.digest)
+				zero(previous) // SEC-KEY-1: the replaced traffic secret is not kept
 				d.install(d.phase)
 				d.sequence = 0
 				d.updates++
@@ -255,6 +299,7 @@ func (d *tls13Direction) record(r record) ([]byte, *Error) {
 					return nil, fail("Unexpected Finished message.", UnsupportedProfile)
 				}
 				d.phase, d.sequence = phaseApplication, 0
+				d.forget(phaseHandshake) // SEC-KEY-1: the handshake epoch is over
 			}
 		}
 		return nil, nil
@@ -289,6 +334,11 @@ type tls12Direction struct {
 	seq              uint64
 	count, plain     int
 	pending          []byte
+}
+
+func (d *tls12Direction) wipe() {
+	zero(d.iv)
+	d.aead, d.iv = nil, nil
 }
 
 func (d *tls12Direction) epoch() string {
@@ -421,7 +471,7 @@ type Connection struct {
 	ReasonCode, Reason   string // "" while not failed
 	Version              string // "", "TLS 1.2" or "TLS 1.3"
 	Suite                int    // -1 until negotiated
-	random               []byte
+	random, serverRandom []byte
 	RecordsAuthenticated int
 	Plaintext            [2]int
 	keysVersion          int
@@ -465,7 +515,12 @@ func (c *Connection) fail(err *Error) {
 // more work (Feed, HasWork, Advance and Finish return first), and Metadata reads only the counters and labels
 // kept here. Reports may keep a closed connection for a long time (Go-only; Codex PRO-13 P2).
 func (c *Connection) release() {
-	c.keys, c.random = nil, nil
+	for _, dir := range c.dirs {
+		if dir != nil {
+			dir.wipe() // SEC-KEY-1: record keys are overwritten, not only dropped
+		}
+	}
+	c.keys, c.random, c.serverRandom = nil, nil, nil
 	c.framers, c.hellos = [2]*recordFramer{}, [2]*helloCollector{}
 	c.queued, c.dirs = [2][]record{}, [2]direction{}
 }
@@ -521,6 +576,7 @@ func (c *Connection) frame() *Error {
 				c.queued[side] = append(c.queued[side], r)
 			}
 		}
+		framer.compact()
 	}
 	return nil
 }
@@ -534,6 +590,7 @@ func (c *Connection) negotiate() *Error {
 		return fail("Unsupported TLS hello.", UnsupportedProfile)
 	}
 	c.random = append([]byte{}, ch[2:34]...)
+	c.serverRandom = append([]byte{}, sh[2:34]...)
 	sid := int(sh[34])
 	offset := 35 + sid
 	if sid > 32 || offset+5 > len(sh) {
@@ -556,6 +613,7 @@ func (c *Connection) negotiate() *Error {
 		for side := range c.queued {
 			c.queued[side] = append(append([]record{}, c.hellos[side].records...), c.queued[side]...)
 		}
+		c.dropHellos()
 		return nil
 	}
 	if _, ok := suites13[suiteID]; !ok {
@@ -575,7 +633,16 @@ func (c *Connection) negotiate() *Error {
 		return fail("TLS 1.3 was not selected.", UnsupportedProfile)
 	}
 	c.Version, c.Suite = "TLS 1.3", suiteID
+	c.dropHellos()
 	return nil
+}
+
+// dropHellos releases the hello buffers once the hellos are negotiated (SEC-DEC-1): the randoms are kept, TLS 1.2
+// moved its hello records into the queues, and only the done flags are read afterwards.
+func (c *Connection) dropHellos() {
+	for _, h := range c.hellos {
+		h.data, h.records, h.body = nil, nil, nil
+	}
 }
 
 // startDirections derives both directions' keys; false while the secrets are not there yet.
@@ -594,11 +661,12 @@ func (c *Connection) startDirections() (bool, *Error) {
 			return false, fail("TLS 1.2 requires a matching CLIENT_RANDOM master secret.", UnsupportedProfile)
 		}
 		s := suites12[c.Suite]
-		sh := c.hellos[1].body
-		seed := append(append([]byte("key expansion"), sh[2:34]...), c.random...)
+		seed := append(append([]byte("key expansion"), c.serverRandom...), c.random...)
 		block := prf(master, seed, 2*s.keySize+8, s.digest)
-		c.dirs[0] = &tls12Direction{aead: newAEAD(block[:s.keySize], false), iv: block[2*s.keySize : 2*s.keySize+4]}
-		c.dirs[1] = &tls12Direction{aead: newAEAD(block[s.keySize:2*s.keySize], false), iv: block[2*s.keySize+4:]}
+		ivs := 2 * s.keySize
+		c.dirs[0] = &tls12Direction{aead: newAEAD(block[:s.keySize], false), iv: append([]byte(nil), block[ivs:ivs+4]...)}
+		c.dirs[1] = &tls12Direction{aead: newAEAD(block[s.keySize:ivs], false), iv: append([]byte(nil), block[ivs+4:]...)}
+		zero(block) // SEC-KEY-1: the key block is not kept; each AEAD holds its own key schedule
 		return true, nil
 	}
 	clientDir, err := newTLS13Direction("CLIENT", c.Suite, c.random, c.keys)
@@ -663,7 +731,11 @@ func (c *Connection) advance(budget int) ([]PlaintextDelta, *Error) {
 				continue
 			}
 			r := c.queued[side][0]
+			c.queued[side][0] = record{} // SEC-DEC-1: the queue's array must not keep a processed record alive
 			c.queued[side] = c.queued[side][1:]
+			if len(c.queued[side]) == 0 {
+				c.queued[side] = nil
+			}
 			budget--
 			c.processed++
 			dir := c.dirs[side]

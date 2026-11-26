@@ -688,6 +688,9 @@ func (in *Inspector) Feed(data []byte) []contracts.Event {
 			return in.finish(in.observation(contracts.Unknown, "Prefix outside supported protocol families"), contracts.Updated)
 		}
 		if candidate == Wait {
+			// Invariant (PRO-48 A3, pinned by TestSelectNeverWaitsOnAFullLookahead): Select never waits on a
+			// Lookahead-byte probe, so Wait means the probe, and therefore prefix plus chunk, is shorter than
+			// Lookahead; keeping the whole chunk leaves len(in.prefix) < Lookahead.
 			grown, err := in.credit.Append(in.prefix, chunk)
 			if err != nil {
 				return in.finish(in.observation(contracts.BudgetExhausted, err.(*parsing.Error).Message), contracts.Updated)

@@ -37,6 +37,9 @@ func refusal(err error) error {
 	return err
 }
 
+// newKeyProvider is decrypt.NewKeyProvider; a test replaces it to observe the provider Analyze used.
+var newKeyProvider = decrypt.NewKeyProvider
+
 func rowOrders(r *row) pyjson.Orders {
 	base := analyze.Orders(nil)
 	return func(path string) []string {
@@ -53,7 +56,10 @@ func Analyze(data []byte, keylog string, pack *content.Pack) (string, error) {
 	if len(data) > MaxCapture {
 		return "", &Refusal{"DecryptionError", "Capture exceeds 8 MiB.", decrypt.BudgetExhausted}
 	}
-	keys := decrypt.NewKeyProvider()
+	keys := newKeyProvider()
+	// SEC-KEY-1 (PRO-47 A2, PRO-119): the provider's indexed secrets are overwritten when the analysis ends,
+	// whatever the outcome; the report reads only counters and labels.
+	defer keys.Release()
 	if _, err := keys.Append(keylog); err != nil {
 		return "", refusal(err)
 	}

@@ -332,3 +332,35 @@ func FuzzAnalyzeNeverPanics(f *testing.F) {
 		}
 	})
 }
+
+// SEC-KEY-1 (PRO-47 A2, PRO-119): Analyze releases its key provider on every return, so the indexed secrets are
+// overwritten and not left for the garbage collector, after a report and after a refusal alike.
+func TestAnalyzeReleasesItsKeyProvider(t *testing.T) {
+	pack, err := content.Embedded()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var used []*decrypt.KeyProvider
+	newKeyProvider = func() *decrypt.KeyProvider {
+		p := decrypt.NewKeyProvider()
+		used = append(used, p)
+		return p
+	}
+	defer func() { newKeyProvider = decrypt.NewKeyProvider }()
+	client, server, keylog := exchange()
+	capture := pcap(conversation(client, server)...)
+	if _, err := Analyze(capture, keylog, pack); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Analyze([]byte("not a capture"), keylog, pack); err == nil {
+		t.Fatal("a broken capture was analyzed")
+	}
+	if len(used) != 2 {
+		t.Fatalf("%d providers", len(used))
+	}
+	for i, p := range used {
+		if !p.Released() || p.Len() != 0 {
+			t.Errorf("run %d: provider %s not released", i, p)
+		}
+	}
+}
