@@ -140,6 +140,11 @@ jobs:
           go-version: "1.27.4"
           cache: false
       - name: The full gate must pass on the commit being released
+        # The README/REVIEW-SCOPE test counts are generated after merge (tools/build_ledgers.py), so they lag a
+        # pull request or a branch push by design. A tag fails on a lagging count (--strict); a dry run uses the
+        # lag-tolerant check, which still fails on every other drifted number. Same split as the ledgers step.
+        env:
+          REF_TYPE: ${{ github.ref_type }}
         run: |
           python -m pip install --require-hashes -r requirements-dev.txt
           python -B -m compileall -q protocol_engine tools ./*.py
@@ -147,7 +152,11 @@ jobs:
           ruff check .
           python -B tools/check_action_pins.py .github/workflows
           python -B tools/check_security_requirements.py
-          python -B tools/check_docs_counts.py --strict
+          if [ "${REF_TYPE}" = "tag" ]; then
+            python -B tools/check_docs_counts.py --strict
+          else
+            python -B tools/check_docs_counts.py
+          fi
           python -B tools/coverage_matrix.py --check PROTOCOLS.md
           python -B protodetect.py policy lint policy-example.json --strict
           python -B tools/build_manifest.py --check presentation/SOURCE.json
