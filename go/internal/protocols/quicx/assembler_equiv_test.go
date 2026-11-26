@@ -8,8 +8,9 @@ import (
 	"testing"
 )
 
-// naive is the assembler before SEC-QUIC-1, kept verbatim as the oracle: it scans every entry on each expiry and
-// reset. The indexed Assembler must answer every operation sequence the same way.
+// naive is the assembler before SEC-QUIC-1, kept verbatim as the oracle except for the sticky exhausted marker
+// (PRO-122), which it takes over so that it still states the intended semantics: it scans every entry on each
+// expiry and reset. The indexed Assembler must answer every operation sequence the same way.
 type naive struct {
 	MaxConnections int
 	IdleSeconds    float64
@@ -103,12 +104,19 @@ func (a *naive) Add(dcid []byte, fragments []Fragment, scope string, version uin
 		a.entries[k] = a.order.PushBack(e)
 		return Conflict, nil
 	}
+	if e.exhausted { // PRO-122: the sticky exhausted marker merges and assembles nothing more
+		a.Counts["exhausted"]++
+		a.entries[k] = a.order.PushBack(e)
+		return Exhausted, nil
+	}
 	total := 0
 	for _, f := range merged {
 		total += len(f.Data)
 	}
 	if len(merged) > MaxFragments || total > MaxCrypto {
 		a.Counts["exhausted"]++
+		e.exhausted = true
+		a.entries[k] = a.order.PushBack(e)
 		return Exhausted, nil
 	}
 	status, data := Assemble(merged)
