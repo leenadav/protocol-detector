@@ -92,7 +92,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **SEC-QUIC-1 budget (PRO-47, PRO-122):** an over-budget CRYPTO merge no longer forgets the QUIC connection; it
   stays a sticky exhausted marker with its pre-overflow bytes, so a later contradicting ClientHello conflicts and
   retracts instead of assembling as a first message (Go only, recorded divergence approved by Lee on PRO-124).
-  Branch `claude/engine-PRO-122-quic-exhausted-sticky`, PR into `main`; details in `STATUS.md`.
+  Branch `claude/engine-PRO-122-quic-exhausted-sticky`, PR #145 into `main`; details in `STATUS.md`.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 - **PRO-141 (livectl stop flake):** the stand-in worker sets its INT trap first and writes a ready file last; the
   three stop tests wait for it (`aff4d13`, branch `claude/vigilant-meitner-t7kw7h`). 200 of 200 under `-race`, also
@@ -196,6 +196,9 @@ documentation commit after it.
 PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the documentation commit after it, and the errcheck fix in the test after that.
 
 PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the documentation commit after it.
+
+SEC-QUIC-1 budget (PRO-122, against `main` `23bbc0c`, PR #145): `79cf9dd58e33e36c6c8c04244797781fe87fe5ef` (fix and tests) and the
+documentation commit after it.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
