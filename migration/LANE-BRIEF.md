@@ -130,7 +130,7 @@ Run everything from the repository root. Times are for the cloud container (4 vC
 |---|---|---|
 | `make go-check` | gofmt, vet, `go test -race`, 28 fuzz targets, parity-go with verify_families, every differential, bench-gate | about 8 min (488 s) |
 | `make check` | the Python suite (866 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
-| `make parity-random` (in `go-check`) | the randomized differential: `--self-test`, `--plant`, then seed 1 at 2,000 cases, with the Python reference as oracle (`migration/parity/random_diff.py`, allow-list `random_allow.json`). `make parity-random-long SEED= COUNT=` for longer runs | about 3 s |
+| `make parity-random` (in `go-check`) | the randomized differential's frozen seed-1 run (2,000 cases, `migration/fixtures/golden/random.json.gz`): `--self-test --rules-only`, `--plant` on the golden file, then the replay. Every differential of `go-check-parity` replays its golden file since PRO-401 and runs no Python reference; `make golden-record` re-records them while the reference exists. Fresh random inputs: `make property-long` (Go only, nightly) | about 3 s |
 | `make pcap-oracle` (nightly, not in `go-check`) | the tshark oracle (`go/oracle`, its own test-only module): real OpenSSL, curl and quic-go traffic on 127.0.0.1, read by gopacket, fed to the engine and compared with tshark 4.2.2 on SNI, ALPN, TLS version, HTTP Host and QUIC version. It needs the pinned tshark, OpenSSL and curl (`go/oracle/README.md`). Allow-list: `go/oracle/allow.json` | about 3 s |
 | `make mutation` (nightly, not in `go-check`) | gremlins v0.6.0 on the nine parser packages against `migration/mutation/baseline.json` (fails on a drop of more than 5 points). `go-check` runs only `boundaries.py --check` and `mutation.py --self-test`. Regenerate the boundary tests with `python3 -B migration/mutation/boundaries.py` | about 20 min |
 | `make go-vendor-check` | re-vendors into `build/go-vendor-check` and diffs it against `go/vendor` | seconds (module cache warm) |
@@ -164,6 +164,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PRO-291 (`5b48d91`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
 | SEC-SESS-1 Go part (PRO-398 / PRO-432, PR #124, branch `claude/engine-PRO-398-halfopen-budget`): half-open budget, eviction, no SYN-retransmission refresh | Hermes's review, QA Reviewer (Codex), then Lee's merge. Lee's option B (2026-11-25): the 41 random-suite divergences are pinned case by case in `migration/parity/sec_sess1.json` (analyze 20, live 6, live-decrypt 18 under OpenSSL 3.0 / CI and 15 under 3.5; STATUS.md "SEC-SESS-1"). Live-decrypt case ids name the OpenSSL line: a new runner OpenSSL needs its own reviewed pins. A new case that differs is a new reviewed pin, never a wider rule. |
 | PRO-315 (`653b1ca`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
+| Python removal (Lee, 2026-11-25), PR A of 3 (PRO-401, PR #127): Go and CI gates on frozen answers, `serve` without Python | Hermes's review, then Lee's merge. PRO-431: main merged in and the server golden made build-independent (`8541b3a`); the fix then flows into #135 and #138 by merge. PR #125 (PRO-402) ports the same serve answers: whichever lands second reconciles `go/internal/serve`. PR B (the engine and its own jobs) and PR C wait for it. The demo capture, showcase and catalog are Go's own since PRO-401. |
 | SEC-QUIC-1 budget (PRO-122, branch `claude/engine-PRO-122-quic-exhausted-sticky`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
@@ -198,12 +199,17 @@ PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the docu
 
 PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the documentation commit after it.
 
+PRO-401 (against `main` `8945986`, PR #127): `466e197` (golden replays, property tests, serve without Python, CI), `f2cb27c` (lint fixes), `a21010a` (scanner lock), `d34aa0f` (two CodeQL errors), `49f8e7d` and `cb1cbad` (the server golden made host-independent: interface list and the synthetic-scope probe) and the documentation commits after them. PRO-431 (main `23bbc0c` merged in as `dc0e42b`): `8541b3a` (the server golden compared without the build identity, Go's held to `SOURCE.json`) and the documentation commit after it.
 SEC-QUIC-1 budget (PRO-122, against `main` `23bbc0c`, PR #145): `79cf9dd58e33e36c6c8c04244797781fe87fe5ef` (fix and tests) and the
 documentation commit after it.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
 ## 7. Pitfalls learned
+
+- **The differential gates replay golden files (PRO-401).** A change that moves Go's answer fails `make go-check`
+  until the golden file is re-recorded (`make golden-record`, with the reference) or, after the reference is gone,
+  until the new answer is reviewed in. Never re-record to make a red gate green without reading the diff.
 
 - **A fresh container is a clone of `main`.** Run `git fetch origin claude/go-migration` and check out the branch
   before deciding that any SHA is "missing".

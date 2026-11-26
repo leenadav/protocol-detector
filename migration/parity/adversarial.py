@@ -20,6 +20,7 @@ answer to every case: the Python reference is computed here (migration/parity/ca
 backend answers through `protodetect replay`, compared exactly by compare.py.
 
     python3 -B migration/parity/adversarial.py --binary go/bin/protodetect
+Since PRO-401 the gate replays a golden file instead (--golden; --record writes one): migration/parity/golden.py.
 """
 import argparse
 import json
@@ -31,10 +32,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import cases as C  # noqa: E402
 import compare  # noqa: E402
-from protocol_adapters import protocol_fixtures as F  # noqa: E402
-from protocol_adapters.make_sample_pcap import frame, udp_frame  # noqa: E402
+import golden  # noqa: E402
+
+# The reference's case runners and fixture builders: loaded by build() (load_reference) when cases are generated,
+# never on a golden replay, which imports nothing of protocol_engine or protocol_adapters.
+C = F = frame = udp_frame = None
+
+
+def load_reference():
+    global C, F, frame, udp_frame
+    import cases as C  # noqa: F811
+    from protocol_adapters import protocol_fixtures as F  # noqa: F811
+    from protocol_adapters.make_sample_pcap import frame, udp_frame  # noqa: F811
 
 LIMITED = {"unknown", "malformed", "incomplete", "invalidated", "budget_exhausted", "detecting"}
 CLIENT = ("192.0.2.10", 51000)
@@ -98,6 +108,7 @@ def tcp(server, payload, reply=b"", cuts=(), order=None):
 
 
 def build():
+    load_reference()
     out = []
     # -- mimic: another protocol's opening over the wrong body ------------------------------------------------
     out.append(stream("mimic/http-request-line-over-binary", [b"GET / HTTP/1.1\r\n" + NOISE + b"\r\n\r\n"], {"http"}))
@@ -159,8 +170,9 @@ def build():
     return out
 
 
-def judge(kind, allowed, result):
-    """None when the answer is honest, else what was misidentified."""
+def judge(kind, allowed, result, outcomes=None):
+    """None when the answer is honest, else what was misidentified. `outcomes` is the reference's list of
+    evidence-limited outcome names (protocol_engine.applications.OUTCOMES; a golden file carries it)."""
     if kind in ("stream", "datagram"):
         final = result["final"] if kind == "stream" else result["observation"]
         status = final["status"]
@@ -168,7 +180,8 @@ def judge(kind, allowed, result):
             return None
         named = family(final)
         return None if named in allowed else "identified as {} ({})".format(named, status)
-    from protocol_engine.applications import OUTCOMES
+    if outcomes is None:
+        from protocol_engine.applications import OUTCOMES as outcomes
     records = result.get("records") or []
     if not records:
         return "no session record"                     # a session case that produced nothing proves nothing
@@ -178,7 +191,7 @@ def judge(kind, allowed, result):
         basis = ((record.get("layers") or {}).get("application") or {}).get("basis")
         if record.get("engine_status") == "identified" and app in ("unknown-tcp", "unknown-udp"):
             problems.append("identified yet unknown")
-        if app in OUTCOMES:
+        if app in outcomes:
             # An evidence-limited outcome (unknown-tcp, incomplete, not-applicable, ...) claims no identity evidence.
             if basis not in OUTCOME_BASES:
                 problems.append("outcome {} with application basis {}".format(app, basis))
@@ -195,20 +208,29 @@ def judge(kind, allowed, result):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
+    parser.add_argument("--record", help="also write the cases, the reference's answers and the rules to this golden file")
+    parser.add_argument("--golden", help="judge and compare on this golden file's cases and answers; the reference is not run")
     args = parser.parse_args(argv)
-    built = build()
-    doc = json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))
-    doc["cases"] = []
-    rules = {}
-    for case, rule in built:
-        case["expected"] = C.run_case(case)
-        doc["cases"].append(case)
-        rules[case["id"]] = rule
+    if args.golden:
+        document = golden.read(args.golden, "adversarial")
+        doc = dict(document["doc"], cases=document["entries"])
+        rules = {cid: (kind, frozenset(allowed)) for cid, (kind, allowed) in document["rules"].items()}
+        outcomes = document["outcomes"]
+    else:
+        from protocol_engine.applications import OUTCOMES as outcomes
+        built = build()
+        doc = json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))
+        doc["cases"] = []
+        rules = {}
+        for case, rule in built:
+            case["expected"] = C.run_case(case)
+            doc["cases"].append(case)
+            rules[case["id"]] = rule
     failures, honest, caught = [], 0, []
     noise_hits = {}
     for case in doc["cases"]:
         kind, allowed = rules[case["id"]]
-        verdict = judge(kind, allowed, case["expected"])
+        verdict = judge(kind, allowed, case["expected"], outcomes)
         if case["id"].startswith("adversarial/noise/"):
             if verdict is None:
                 honest += 1
@@ -254,10 +276,16 @@ def main(argv=None):
         print("adversarial finding:", line)
     for line in failures:
         print("adversarial FAILED:", line)
-    print("adversarial: {} cases, {} honest, {} known findings, {} failures; Go matched the reference on {} of {}".format(
+    print("adversarial{}: {} cases, {} honest, {} known findings, {} failures; Go matched the reference on {} of {}".format(
+        " (golden {})".format(Path(args.golden).name) if args.golden else "",
         len(doc["cases"]), honest, len(caught), len(failures), locals().get("matched", 0), len(doc["cases"])))
+    if args.record:
+        recorder = golden.recorder(args.record, "adversarial", {
+            "doc": {key: value for key, value in doc.items() if key != "cases"},
+            "rules": {cid: [kind, sorted(allowed)] for cid, (kind, allowed) in rules.items()}, "outcomes": sorted(outcomes)})
+        recorder.entries = doc["cases"]          # one entry per case: the case and the reference's expected answer
+        recorder.finish(failures)
     return 1 if failures else 0
-
 
 if __name__ == "__main__":
     sys.exit(main())
