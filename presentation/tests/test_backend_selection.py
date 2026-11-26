@@ -229,6 +229,41 @@ class LiveDecryptionHandOverTests(unittest.TestCase):
             self.assertIn("not installed", live.hand_over_to_go(["--interface", "lo0"], replace=lambda *a: calls.append(a)))
         self.assertEqual(calls, [])
 
+    def test_a_go_request_without_the_binary_exits_instead_of_running_the_reference(self):
+        # PRO-191: PROTODETECT_BACKEND=go never falls back to Python silently (as analyze_capture and the server).
+        from poc_decryption import live
+        calls = []
+        with mock.patch.dict(os.environ, {"PROTODETECT_BACKEND": "go", "PROTODETECT_GO_BINARY": __file__ + "-absent"}):
+            with self.assertRaises(SystemExit) as raised:
+                live.hand_over_to_go(["--interface", "lo0"], replace=lambda *a: calls.append(a))
+        self.assertIn("not installed", str(raised.exception.code))
+        self.assertNotIn(__file__, str(raised.exception.code))         # no path in the diagnostic
+        self.assertEqual(calls, [])
+        with mock.patch.dict(os.environ, {"PROTODETECT_BACKEND": "go"}):
+            live.hand_over_to_go(["--interface", "lo0"], replace=lambda *a: calls.append(a))
+        self.assertEqual(calls, [(sys.executable, [sys.executable, "live-decrypt", "--interface", "lo0"])])
+
+    def test_an_unknown_backend_value_is_refused(self):
+        from poc_decryption import live
+        calls = []
+        for value in ("Go", "PYTHON", "rust", " go"):
+            with mock.patch.dict(os.environ, {"PROTODETECT_BACKEND": value}):
+                with self.assertRaises(SystemExit) as raised:
+                    live.hand_over_to_go(["--interface", "lo0"], replace=lambda *a: calls.append(a))
+            self.assertIn("Unknown backend", str(raised.exception.code))
+        self.assertEqual(calls, [])
+
+    def test_the_worker_exits_non_zero_when_go_is_requested_without_the_binary(self):
+        # End to end: the script itself, as live_manager starts it; status 1 is reported as a failure there.
+        import subprocess
+        script = Path(__file__).resolve().parents[1] / "poc_decryption" / "live.py"
+        environment = dict(os.environ, PROTODETECT_BACKEND="go", PROTODETECT_GO_BINARY=__file__ + "-absent")
+        done = subprocess.run([sys.executable, "-B", str(script), "--interface", "lo0", "--filter", "tcp",
+                               "--duration", "1"], input=b"", capture_output=True, env=environment, timeout=60)
+        self.assertEqual(done.returncode, 1)
+        self.assertEqual(done.stdout, b"")                               # the reference never started
+        self.assertIn(b"not installed", done.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

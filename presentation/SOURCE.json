@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "89459862434348ffc1d7f95d40230e4059cb865c",
-  "branch": "claude/engine-PRO-394-alpn-raw-bytes",
-  "build_digest": "f9de0d05537ebdd68ac848c712ae9b06a7282e89a32d2f0c99a040f0105eb88d",
+  "commit": "23bbc0c2f16aa3db3c98d4beefe4ed73c1da8d4f",
+  "branch": "claude/engine-PRO-191-live-go-no-fallback",
+  "build_digest": "b77dd6dbc51d51b0ce92161bfb4f81648163b7a3af2f9878553a02300efb29e5",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -585,7 +585,7 @@
     {
       "path": "presentation/poc_decryption/live.py",
       "component": "presentation",
-      "sha256": "9e0ca2a6fd3122329867818d4693e34c44982c47d261d9dfb96e9b05a76352a5"
+      "sha256": "795b7a5c1c9ee7d5c0b6db98b3be178ef612478f520777b06002b6c36e64dc5b"
     },
     {
       "path": "presentation/poc_decryption/tls12.py",

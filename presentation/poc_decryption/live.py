@@ -263,14 +263,21 @@ def hand_over_to_go(arguments, replace=None):
     """Migration M8: let the Go engine's binary run this worker when it is installed.
 
     The process is replaced by the binary (os.execv), so standard input (the key-log path line), the pipes and
-    a later SIGINT belong to it directly. The reference runs on PROTODETECT_BACKEND=python and without a
-    binary; the reason is returned then.
+    a later SIGINT belong to it directly. The reference runs on PROTODETECT_BACKEND=python, and without a
+    binary when no backend was named; the reason is returned then. PROTODETECT_BACKEND=go without the binary,
+    or a value other than go or python, ends the worker with status 1 and a fixed message on standard error
+    (PRO-191: a Go request never falls back to the reference silently, as in analyze_capture and the server).
     """
-    from protocol_adapters.analyze_pcap import go_binary
-    if os.environ.get('PROTODETECT_BACKEND') == 'python':
+    from protocol_adapters.analyze_pcap import BACKENDS, go_binary
+    requested = os.environ.get('PROTODETECT_BACKEND') or None
+    if requested is not None and requested not in BACKENDS:
+        raise SystemExit('Unknown backend in PROTODETECT_BACKEND; use go or python.')
+    if requested == 'python':
         return 'the reference was requested'
     binary = go_binary()
     if binary is None:
+        if requested == 'go':
+            raise SystemExit('The Go backend binary is not installed (make go-build, or set PROTODETECT_GO_BINARY).')
         return 'the Go backend binary is not installed'
     sys.stdout.flush()
     (replace or os.execv)(binary, [binary, 'live-decrypt'] + list(arguments))
