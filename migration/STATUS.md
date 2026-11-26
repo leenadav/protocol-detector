@@ -797,6 +797,19 @@ presentation results; live 4,616 event lines; live decrypt 4,461 / 4,120 event l
 and `schema-go` are unchanged (0 mismatched, 0 problems). Regression tests: `test_parity_verdicts.SecSess1PinTests`
 and `sec_sess1.py --self-test`.
 
+**In golden mode (PRO-458, 2026-11-26: `main` with #124 merged into PR #127).** The golden replay stays reference-free
+and its comparison is not loosened. The pins act at recording time: a `--record` run approves a mismatch only through
+`sec_sess1.Pins` exactly as above, and then stores Go's pinned answer (flagged `"sec_sess1"` in the entry, as an
+approved PRO-189/PRO-260 divergence stores its modelled answer), so a replay requires Go to give exactly that answer;
+`sec_sess1.json` stays the record of every such delta. `analyze.json.gz`, `live.json.gz` and `live-decrypt.json.gz`
+were re-recorded with Go from the merge (go1.27.4) and the reference; the other six golden files are unchanged and
+pass as recorded. Analyze and live: same inputs, only the 20 and 6 pinned answers differ after normalisation. Live
+decrypt was re-recorded under OpenSSL 3.5, the line of the previous file, so it keeps the PRO-260 coverage (40
+approved, 15 pinned; under 3.0 it would be 0 and 18); its 104 scripts with a real OpenSSL exchange have fresh bytes,
+the other 196 have the same input and, but for the 15 pinned, the same normalized answers. Replays: analyze 0
+mismatched, 20 recorded SEC-SESS-1; live 0 mismatched, 3 PRO-189, 6 SEC-SESS-1; live decrypt 0 mismatched, 40
+PRO-260, 15 SEC-SESS-1.
+
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 
 **The finding** (Codex review PRO-12, Tier 1 window 1, `dbe20f3..50ce5c0`; `go/internal/engine/inspector.go`,
@@ -913,6 +926,23 @@ reason, a correct or wrong hint, or a tight byte budget. The Go engine answers t
 | Allow-list | empty | `migration/parity/random_allow.json`: case id to reason. An entry that no longer mismatches on its seed fails the run. |
 | Self-checks | pass, in CI | `--plant` alters one reference answer to another valid status, and the run must report exactly that case. `--self-test` checks `judge()`: an allowed mismatch passes, an unlisted one fails, and a listed case that now agrees fails. Removing the stale-entry rule makes it fail. |
 | Found and fixed | 0 engine mismatches | The first trial had 8 cases Go declined ("not ported: hint http/ftp/redis"). It was a harness error: `cases.run_stream` drops a hint outside `registry.PARSERS`, so stream hints are now drawn from `PARSERS` only. |
+
+## Parity gates on frozen answers, no Python run (PRO-401, Lee 2026-11-25; Python removal 1 of 3)
+
+Lee decided on 2026-11-25 to remove the Python reference engine quickly, in three pull requests; this is the first
+(PR A): every Go gate stops running Python. Product Python is untouched (no Frozen-Python exception is needed); the
+changes are in `migration/`, `go/`, the Makefile and the CI tooling.
+
+| item | state | evidence |
+|---|---|---|
+| Committed cases | frozen, unchanged | `migration/fixtures/cases.json` holds 7,462 cases (the task said 7,474; the file has 7,462), every one with its `expected` answer. Regenerated once from the current Python (`cases.py --write --head c08773f+2026.11.9`): byte-identical, so the file is the reference's current output. `make parity` (the reference against the file): 7,462 of 7,462. `migration/parity/deltas.json` is kept as history and still applies. |
+| Differential gates | golden replay | `migration/parity/golden.py`. Each differential (`analyze`, `decrypt`, `live`, `live-decrypt`, `control`, `server`, `schema`, `adversarial`, `random`) gained `--record FILE` (the original run, which also writes the inputs and the answer Go was judged against; nothing is written after a mismatch, and an approved PRO-189/PRO-260 divergence is stored as the modelled answer) and `--golden FILE` (no generator, no reference import; the same comparison). Files: `migration/fixtures/golden/*.json.gz` (15.1 MB in all, fixed-mtime gzip; the control plane's long snapshot lines are pinned by SHA-256). Recorded seeds and counts are the gates' own: 300, 300, 300, 300, 120, 12, 200, 4,041 cases, 2,000. `make golden-record` re-records them all while the reference exists; `make golden-check` replays them. |
+| Replays | 0 mismatches | with the reference present and with `protocol_engine/` and `protocol_adapters/` removed and `cryptography` blocked: analyze 300 captures (14,540 rows), decrypt 300 (26 recorded PRO-260 divergences), live 300 (4,617 event lines, 3 PRO-189), live-decrypt 300 (4,120 lines, 41 PRO-260), control 120 runs (15,651 reads), server 424 exchanges, schema 200 captures, adversarial 4,041 cases (1 known finding F-ADV-1), random 2,000 (118 approved divergences; the planted wrong answer is caught). |
+| Boundary tests | lock | `migration/mutation/boundaries.py --check` compares the three generated `boundary_test.go` files with `migration/mutation/boundaries.lock.json` (SHA-256 each) and imports nothing of the reference; `--check-reference` re-renders them (identical today). |
+| Randomized differential | replaced | Go-only property tests `go/internal/engine/openings_property_test.go` (rapid): generated TLS ClientHellos, HTTP/1 heads, SSH identification lines and protected QUIC v1/v2 Initials whose identity is known by construction are identified as built (hostname, ALPN), split invariant and deterministic, never another identity when truncated, under a wrong hint or under a tight budget. 5,000 draws per property pass. `make property-long` (nightly, replacing the Python-oracle `parity-random-long` job) runs them with 50,000. |
+| `protodetect serve` | no interpreter | The three answers it took from Python workers are its own (`go/internal/serve/showcase.go`): the catalog frozen from `catalog_data()` into `catalog.json` (a test keeps it equal to the content pack's applications and outcomes and the engine's families), the demo capture frozen from `demo_bytes()` into `demo.pcap`, and the decryption showcase made with `crypto/tls` in memory (TLS 1.3, TLS 1.2 AES-128 and AES-256 GCM; all three decrypted, inner applications webdav, web-browsing, resp). `--python` is accepted and unused. `/api/decrypt/demo?x` is now compared by shape like the other showcase answers: Go's `crypto/tls` and OpenSSL negotiate different TLS 1.3 suites and record counts by construction. The server golden holds nothing of the recording host: an interface list equal to the replaying host's (`socket.if_nameindex()`, the reference's own expression) is a marker, any other list is compared, and the synthetic-scope probe names a non-loopback interface of the host that runs it (found on the first CI runs, `49f8e7d`, `cb1cbad`). It holds nothing of the build either (PRO-431, Hermes's decision for PRO-426/PRO-430: no re-recording): PR #123 refreshed `presentation/SOURCE.json` after the recording, and on a golden replay `commit`, `branch` and `build_digest` of `/api/health` and of `/api/catalog`'s `source` are masked on both sides (a missing, null or non-string field is not masked). A separate check (`build_identity_problems`, in replay and in reference mode) holds Go's values in both answers to the tree's `SOURCE.json`; `version`, `repository` and the rest are compared in full. On `8541b3a` (main `23bbc0c` merged): 424 exchanges, 0 mismatched; build identity 2 answers checked, 0 problems. |
+| CI | no reference in Go or CI jobs | `go-parity` no longer installs the decryption extra. `tools/content_gate.py` runs the Python content targets only while the reference's content and lock exist (half of them fails); otherwise the pack identity, the identifier scan and the Go digest recomputation run. The nightly job runs `make property-long`. Job names are unchanged (branch protection matches them). |
+| Left for PR B | the engine's own jobs | Jobs that test or package the Python engine itself still need it and go with it: `tests (python …)` (unit suite, docs counts, inventory, manifest, the `oracle` mode of `tools/go_ci.py`), `presentation with Node…`, `behaviour diff…`, `per-commit mutation smoke…`, `package build…`, bandit's engine paths in `static analysis…`, and the release build's "full gate" and wheel steps (`publish-release.yml`). `make check` keeps its Python targets until then. |
 
 ## tshark oracle on real implementations (PRO-127, 2026-11-22)
 
