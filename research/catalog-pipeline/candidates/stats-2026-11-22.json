@@ -1,0 +1,21 @@
+{
+ "wikidata_rows": 114336,
+ "unique_items": 20935,
+ "dropped": {
+  "no_valid_domain": 1,
+  "shared_hosting": 963,
+  "already_in_catalog": 2021,
+  "label_is_qid": 0,
+  "duplicate_domain": 4610
+ },
+ "candidates_after_normalise": 13340,
+ "checked": 13340,
+ "dns_ok": 12755,
+ "tls_name_ok": 11291,
+ "http_ok": 9669,
+ "redirect_offsite": 1177,
+ "parked": 73,
+ "high_confidence": 8941,
+ "top_written": 1000,
+ "high_confidence_appish": 7072
+}

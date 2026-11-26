@@ -1,0 +1,4834 @@
+{
+ "rows": [
+  {
+   "name": "wordpress",
+   "domain": "wordpress.org",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Self-hosted CMS software; wordpress.org hosts plugins/updates but core runs on user servers"
+  },
+  {
+   "name": "gimp",
+   "domain": "gimp.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop image editing software with no vendor servers"
+  },
+  {
+   "name": "libreoffice",
+   "domain": "libreoffice.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop office suite, no vendor-hosted service"
+  },
+  {
+   "name": "gnu",
+   "domain": "gnu.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "GNU is a collection of free software packages and project, not a hosted service"
+  },
+  {
+   "name": "joomla",
+   "domain": "joomla.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted CMS software; no vendor-operated server"
+  },
+  {
+   "name": "freebsd",
+   "domain": "freebsd.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; no vendor-hosted network service"
+  },
+  {
+   "name": "ethereum",
+   "domain": "ethereum.org",
+   "outcome": "kept",
+   "reason": "Public blockchain network with nodes and clients talking to ethereum.org infrastructure"
+  },
+  {
+   "name": "litecoin",
+   "domain": "litecoin.org",
+   "outcome": "kept",
+   "reason": "Cryptocurrency network with nodes and wallets connecting to peers"
+  },
+  {
+   "name": "kernel",
+   "domain": "kernel.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system kernel; offline software, no vendor-hosted service"
+  },
+  {
+   "name": "symbian",
+   "domain": "symbian.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Historical mobile operating system; no current vendor-hosted service"
+  },
+  {
+   "name": "vim",
+   "domain": "vim.org",
+   "outcome": "dropped:domain_does_not_resolve",
+   "reason": "no DNS answer on 2026-11-25"
+  },
+  {
+   "name": "openbsd",
+   "domain": "openbsd.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; no vendor-hosted service"
+  },
+  {
+   "name": "joinmastodon",
+   "domain": "joinmastodon.org",
+   "outcome": "kept",
+   "reason": "Federated social network; instances and apps talk to vendor servers"
+  },
+  {
+   "name": "drupal",
+   "domain": "drupal.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source CMS framework; self-hosted, no vendor-run server"
+  },
+  {
+   "name": "kubuntu",
+   "domain": "kubuntu.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS software, not a hosted service"
+  },
+  {
+   "name": "kotlinlang",
+   "domain": "kotlinlang.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language and compiler, not a network service"
+  },
+  {
+   "name": "gentoo",
+   "domain": "gentoo.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; installed locally, not a vendor-hosted service"
+  },
+  {
+   "name": "chromeos",
+   "domain": "chromeos.google",
+   "outcome": "kept",
+   "reason": "Operating system that checks for updates and talks to Google servers"
+  },
+  {
+   "name": "postgresql-org",
+   "domain": "postgresql.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Database server software, self-hosted; no vendor-operated service"
+  },
+  {
+   "name": "swift",
+   "domain": "swift.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language and compiler; no vendor-hosted service"
+  },
+  {
+   "name": "nodejs",
+   "domain": "nodejs.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript runtime; no vendor-hosted service"
+  },
+  {
+   "name": "x",
+   "domain": "x.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Display server protocol and software; runs locally, no vendor servers"
+  },
+  {
+   "name": "rubyonrails",
+   "domain": "rubyonrails.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Web framework library; no vendor-operated server"
+  },
+  {
+   "name": "octave",
+   "domain": "octave.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline numerical computing language and desktop software, no vendor servers"
+  },
+  {
+   "name": "brave",
+   "domain": "brave.com",
+   "outcome": "kept",
+   "reason": "Browser that connects to Brave vendor servers for sync, updates, and rewards"
+  },
+  {
+   "name": "coreldraw",
+   "domain": "coreldraw.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop graphics software; no vendor-hosted service"
+  },
+  {
+   "name": "qgis",
+   "domain": "qgis.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop GIS software; no vendor-hosted service"
+  },
+  {
+   "name": "kali",
+   "domain": "kali.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS, not vendor-hosted network service"
+  },
+  {
+   "name": "xubuntu",
+   "domain": "xubuntu.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline desktop OS, not a hosted service"
+  },
+  {
+   "name": "getbootstrap",
+   "domain": "getbootstrap.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "CSS/JavaScript frontend framework library"
+  },
+  {
+   "name": "haiku-os",
+   "domain": "haiku-os.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Haiku is an open-source operating system; offline OS software"
+  },
+  {
+   "name": "typescriptlang",
+   "domain": "typescriptlang.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language and compiler; no vendor-hosted service"
+  },
+  {
+   "name": "djangoproject",
+   "domain": "djangoproject.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python web framework; library, not a network service"
+  },
+  {
+   "name": "redhat",
+   "domain": "redhat.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; offline software, not a vendor-hosted service"
+  },
+  {
+   "name": "win-rar",
+   "domain": "win-rar.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop archiver; no vendor-hosted service"
+  },
+  {
+   "name": "nginx",
+   "domain": "nginx.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Web server software installed locally; no vendor-hosted service"
+  },
+  {
+   "name": "kubernetes",
+   "domain": "kubernetes.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source container orchestration software; no vendor-hosted service"
+  },
+  {
+   "name": "elementary",
+   "domain": "elementary.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS, not a vendor-hosted service"
+  },
+  {
+   "name": "phpmyadmin",
+   "domain": "phpmyadmin.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted PHP web app; no vendor servers"
+  },
+  {
+   "name": "filezilla-project",
+   "domain": "filezilla-project.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop FTP client; no own vendor servers"
+  },
+  {
+   "name": "freedos",
+   "domain": "freedos.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source DOS-compatible operating system; offline, no vendor servers"
+  },
+  {
+   "name": "ocaml",
+   "domain": "ocaml.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language and compiler; no vendor-hosted service"
+  },
+  {
+   "name": "cardano",
+   "domain": "cardano.org",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Blockchain platform with public nodes; traffic is peer-to-peer, not vendor-hosted"
+  },
+  {
+   "name": "mongodb-com",
+   "domain": "mongodb.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Database software; self-hosted, not a vendor-hosted network service"
+  },
+  {
+   "name": "gedit-text-editor",
+   "domain": "gedit-text-editor.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop text editor application with no vendor servers"
+  },
+  {
+   "name": "puppylinux",
+   "domain": "puppylinux.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; installed locally, no vendor server traffic"
+  },
+  {
+   "name": "cygwin",
+   "domain": "cygwin.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Cygwin is a POSIX compatibility layer library and tools, offline software"
+  },
+  {
+   "name": "nmap",
+   "domain": "nmap.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline network scanning CLI tool with no vendor servers"
+  },
+  {
+   "name": "wireshark",
+   "domain": "wireshark.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop packet analyzer; no vendor server traffic"
+  },
+  {
+   "name": "gnupg",
+   "domain": "gnupg.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline cryptography software; no vendor-hosted service"
+  },
+  {
+   "name": "flutter",
+   "domain": "flutter.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "UI framework/SDK for building apps"
+  },
+  {
+   "name": "webkit",
+   "domain": "webkit.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Browser engine library; no vendor-hosted service"
+  },
+  {
+   "name": "damnsmalllinux",
+   "domain": "damnsmalllinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline operating-system distribution, not a network service"
+  },
+  {
+   "name": "samba",
+   "domain": "samba.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source SMB/CIFS file server software, runs locally"
+  },
+  {
+   "name": "jakarta",
+   "domain": "jakarta.ee",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Java enterprise specification and framework, not a hosted service"
+  },
+  {
+   "name": "seamonkey-project",
+   "domain": "seamonkey-project.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop browser suite; no vendor-hosted service"
+  },
+  {
+   "name": "mariadb",
+   "domain": "mariadb.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Database server software; runs locally or self-hosted, not a vendor-hosted service"
+  },
+  {
+   "name": "napster",
+   "domain": "napster.com",
+   "outcome": "kept",
+   "reason": "Music streaming service with its own hosted servers"
+  },
+  {
+   "name": "ripple",
+   "domain": "ripple.com",
+   "outcome": "kept",
+   "reason": "Ripple is a payments network and company with hosted services and servers"
+  },
+  {
+   "name": "gambaswiki",
+   "domain": "gambaswiki.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Gambas is a BASIC-like programming language and IDE; offline development tool"
+  },
+  {
+   "name": "mplayerhq",
+   "domain": "mplayerhq.hu",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop media player; no vendor servers"
+  },
+  {
+   "name": "slitaz",
+   "domain": "slitaz.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Lightweight Linux distribution; offline OS, not a network service"
+  },
+  {
+   "name": "laravel",
+   "domain": "laravel.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "PHP web framework; a library, not a hosted service"
+  },
+  {
+   "name": "maplesoft",
+   "domain": "maplesoft.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Maple is offline desktop math software and programming environment"
+  },
+  {
+   "name": "zorin",
+   "domain": "zorin.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; installed OS, not a vendor-hosted service"
+  },
+  {
+   "name": "rpm",
+   "domain": "rpm.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Package manager tool for Linux distributions; no vendor-hosted service"
+  },
+  {
+   "name": "amigaos",
+   "domain": "amigaos.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system; offline software, no vendor-hosted service"
+  },
+  {
+   "name": "scilab",
+   "domain": "scilab.org",
+   "outcome": "dropped:domain_does_not_resolve",
+   "reason": "no DNS answer on 2026-11-25"
+  },
+  {
+   "name": "dragonflybsd",
+   "domain": "dragonflybsd.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; offline software, no vendor servers"
+  },
+  {
+   "name": "trisquel",
+   "domain": "trisquel.info",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; installed locally, not a vendor-hosted service"
+  },
+  {
+   "name": "sublimetext",
+   "domain": "sublimetext.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Desktop editor; contacts vendor for licensing and updates"
+  },
+  {
+   "name": "llvm",
+   "domain": "llvm.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Compiler infrastructure toolchain; offline software, no vendor servers"
+  },
+  {
+   "name": "samsungtizenos",
+   "domain": "samsungtizenos.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Mobile/embedded operating system distribution, not a hosted network service"
+  },
+  {
+   "name": "winzip",
+   "domain": "winzip.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop archiving software; no vendor servers"
+  },
+  {
+   "name": "odysee",
+   "domain": "odysee.com",
+   "outcome": "kept",
+   "reason": "Hosted video-sharing platform run by its own servers at odysee.com"
+  },
+  {
+   "name": "kdenlive",
+   "domain": "kdenlive.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop video editing software with no vendor server"
+  },
+  {
+   "name": "openvpn-net",
+   "domain": "openvpn.net",
+   "outcome": "kept",
+   "reason": "Commercial VPN client and server; Access Server connects to vendor-hosted services"
+  },
+  {
+   "name": "ubuntustudio",
+   "domain": "ubuntustudio.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline OS distribution flavor; no vendor-hosted service"
+  },
+  {
+   "name": "processing",
+   "domain": "processing.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline creative coding IDE and programming language"
+  },
+  {
+   "name": "sudo",
+   "domain": "sudo.ws",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Unix privilege-escalation CLI tool; runs locally, no vendor servers"
+  },
+  {
+   "name": "metasploit",
+   "domain": "metasploit.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline penetration testing framework; no vendor-hosted service"
+  },
+  {
+   "name": "youtubekids",
+   "domain": "youtubekids.com",
+   "outcome": "kept",
+   "reason": "Hosted video streaming app talking to Google servers"
+  },
+  {
+   "name": "fuchsia",
+   "domain": "fuchsia.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Google's open-source operating system; documentation site, not a hosted service"
+  },
+  {
+   "name": "v8",
+   "domain": "v8.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript engine library embedded in Chrome and Node.js"
+  },
+  {
+   "name": "pygame",
+   "domain": "pygame.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python library for game development; no vendor servers"
+  },
+  {
+   "name": "webosose",
+   "domain": "webosose.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source operating system platform; no vendor-hosted service"
+  },
+  {
+   "name": "elixir-lang",
+   "domain": "elixir-lang.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language; no vendor-hosted service"
+  },
+  {
+   "name": "dpkg",
+   "domain": "dpkg.org",
+   "outcome": "dropped:domain_does_not_resolve",
+   "reason": "no DNS answer on 2026-11-25"
+  },
+  {
+   "name": "fluxbox",
+   "domain": "fluxbox.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Fluxbox is an offline X11 window manager desktop software"
+  },
+  {
+   "name": "slax",
+   "domain": "slax.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Slax is a Linux distribution, an offline OS image"
+  },
+  {
+   "name": "diem",
+   "domain": "diem.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Diem is a payments/stablecoin project; the domain may be a different company now"
+  },
+  {
+   "name": "omegat",
+   "domain": "omegat.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop computer-assisted translation application"
+  },
+  {
+   "name": "autoitscript",
+   "domain": "autoitscript.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Scripting language and automation tool; offline desktop use"
+  },
+  {
+   "name": "numpy",
+   "domain": "numpy.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python numerical library; no vendor-hosted service"
+  },
+  {
+   "name": "openwrt",
+   "domain": "openwrt.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux-based router firmware distribution; runs on devices, not a hosted service"
+  },
+  {
+   "name": "qnx",
+   "domain": "qnx.software",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Commercial RTOS; embedded OS, not a network-facing hosted service"
+  },
+  {
+   "name": "tails",
+   "domain": "tails.net",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Tails is an OS that checks connectivity and updates against tails.net servers"
+  },
+  {
+   "name": "templeos",
+   "domain": "templeos.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline hobby operating system; no vendor server traffic"
+  },
+  {
+   "name": "ubuntu-touch",
+   "domain": "ubuntu-touch.io",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Mobile OS distribution; devices update from vendor servers"
+  },
+  {
+   "name": "ubuntu-mate",
+   "domain": "ubuntu-mate.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Desktop OS distribution; offline software, no vendor service"
+  },
+  {
+   "name": "flatpak",
+   "domain": "flatpak.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux app packaging/sandboxing framework; runs locally, no vendor server"
+  },
+  {
+   "name": "kate-editor",
+   "domain": "kate-editor.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline KDE text editor desktop application, no vendor servers"
+  },
+  {
+   "name": "backtrack-linux",
+   "domain": "backtrack-linux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Penetration-testing Linux distribution; offline OS, no vendor servers"
+  },
+  {
+   "name": "vuze",
+   "domain": "vuze.com",
+   "outcome": "kept",
+   "reason": "Vuze is a BitTorrent client; its traffic reaches vendor servers"
+  },
+  {
+   "name": "i2p",
+   "domain": "i2p.net",
+   "outcome": "kept",
+   "reason": "Anonymous overlay network; router software connects to peers and project infrastructure"
+  },
+  {
+   "name": "pasportaservo",
+   "domain": "pasportaservo.org",
+   "outcome": "kept",
+   "reason": "Hosted community directory website with its own servers"
+  },
+  {
+   "name": "lilypond",
+   "domain": "lilypond.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline music notation typesetting program, no vendor servers"
+  },
+  {
+   "name": "nano-editor",
+   "domain": "nano-editor.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline terminal text editor; no vendor servers"
+  },
+  {
+   "name": "wikiba",
+   "domain": "wikiba.se",
+   "outcome": "kept",
+   "reason": "Wikibase hosts Wikidata-style knowledge bases; wikiba.se serves its own servers"
+  },
+  {
+   "name": "mageia",
+   "domain": "mageia.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS packages, not a hosted service"
+  },
+  {
+   "name": "freebasic",
+   "domain": "freebasic.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source BASIC compiler; offline development tool, no vendor servers"
+  },
+  {
+   "name": "freepascal",
+   "domain": "freepascal.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language compiler; offline tool with no vendor server"
+  },
+  {
+   "name": "ankiweb",
+   "domain": "ankiweb.net",
+   "outcome": "kept",
+   "reason": "Syncs flashcard decks with AnkiWeb server"
+  },
+  {
+   "name": "trillian",
+   "domain": "trillian.im",
+   "outcome": "kept",
+   "reason": "Multi-protocol chat client that connects to its own hosted servers"
+  },
+  {
+   "name": "gcompris",
+   "domain": "gcompris.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline educational desktop software for children"
+  },
+  {
+   "name": "alphafold",
+   "domain": "alphafold.com",
+   "outcome": "kept",
+   "reason": "alphafold.com hosts AlphaFold Server and database; network-accessed"
+  },
+  {
+   "name": "clamav",
+   "domain": "clamav.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline antivirus engine; updates fetched but not a hosted service"
+  },
+  {
+   "name": "vegascreativesoftware",
+   "domain": "vegascreativesoftware.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop video editing software, no vendor server"
+  },
+  {
+   "name": "qbittorrent",
+   "domain": "qbittorrent.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop BitTorrent client; peers, not vendor servers"
+  },
+  {
+   "name": "cakephp",
+   "domain": "cakephp.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "PHP web framework; a library, not a hosted service"
+  },
+  {
+   "name": "vulkan",
+   "domain": "vulkan.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Graphics API standard by Khronos; no vendor-hosted service"
+  },
+  {
+   "name": "xenproject",
+   "domain": "xenproject.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source hypervisor software; runs locally, no vendor servers"
+  },
+  {
+   "name": "java",
+   "domain": "java.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language and platform; no vendor-hosted service"
+  },
+  {
+   "name": "firebirdsql",
+   "domain": "firebirdsql.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source relational database server, self-hosted, not a vendor-hosted service"
+  },
+  {
+   "name": "postfix",
+   "domain": "postfix.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source mail transfer agent software, runs on user servers"
+  },
+  {
+   "name": "symfony",
+   "domain": "symfony.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "PHP web framework; a library, not a hosted service"
+  },
+  {
+   "name": "ubuntukylin",
+   "domain": "ubuntukylin.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating-system distribution; offline desktop OS, not a hosted service"
+  },
+  {
+   "name": "busybox",
+   "domain": "busybox.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline multi-call Unix utility binary; no vendor servers"
+  },
+  {
+   "name": "jython",
+   "domain": "jython.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python implementation for the JVM; a language runtime, not a network service"
+  },
+  {
+   "name": "kolibrios",
+   "domain": "kolibrios.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline hobby operating system, no vendor servers"
+  },
+  {
+   "name": "midnight-commander",
+   "domain": "midnight-commander.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline terminal file manager; no vendor servers"
+  },
+  {
+   "name": "wordfast",
+   "domain": "wordfast.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Wordfast is a translation memory tool; desktop plugin with optional cloud services"
+  },
+  {
+   "name": "linspirelinux",
+   "domain": "linspirelinux.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline operating system, not a network service"
+  },
+  {
+   "name": "menuetos",
+   "domain": "menuetos.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline operating system distribution, no vendor server traffic"
+  },
+  {
+   "name": "xvid",
+   "domain": "xvid.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Video codec library; offline, no vendor server traffic"
+  },
+  {
+   "name": "dillo-browser",
+   "domain": "dillo-browser.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Lightweight offline desktop web browser; no vendor servers"
+  },
+  {
+   "name": "codeblocks",
+   "domain": "codeblocks.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop IDE; no vendor-hosted server traffic"
+  },
+  {
+   "name": "jitsi",
+   "domain": "jitsi.org",
+   "outcome": "kept",
+   "reason": "Jitsi Meet is a hosted video conferencing service with vendor servers"
+  },
+  {
+   "name": "qemu",
+   "domain": "qemu.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source machine emulator and virtualizer; offline software, no vendor servers"
+  },
+  {
+   "name": "kaiostech",
+   "domain": "kaiostech.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Mobile operating system for feature phones; offline device software"
+  },
+  {
+   "name": "linuxliteos",
+   "domain": "linuxliteos.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; installed OS, not a network service"
+  },
+  {
+   "name": "odoo",
+   "domain": "odoo.com",
+   "outcome": "kept",
+   "reason": "Odoo offers hosted SaaS ERP at odoo.com"
+  },
+  {
+   "name": "scientificlinux",
+   "domain": "scientificlinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS packages, not a network service"
+  },
+  {
+   "name": "autohotkey",
+   "domain": "autohotkey.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline scripting tool for Windows, no vendor server traffic"
+  },
+  {
+   "name": "otrs",
+   "domain": "otrs.com",
+   "outcome": "kept",
+   "reason": "OTRS ticketing; hosted SaaS offering at otrs.com"
+  },
+  {
+   "name": "iota",
+   "domain": "iota.org",
+   "outcome": "kept",
+   "reason": "IOTA is a distributed ledger network with hosted nodes and services"
+  },
+  {
+   "name": "gnewsense",
+   "domain": "gnewsense.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "GNU/Linux operating system distribution; offline OS packages, no vendor service"
+  },
+  {
+   "name": "adblockplus",
+   "domain": "adblockplus.org",
+   "outcome": "kept",
+   "reason": "Browser extension that fetches filter list updates from vendor servers"
+  },
+  {
+   "name": "aircrack-ng",
+   "domain": "aircrack-ng.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline command-line Wi-Fi security tool suite; no vendor servers"
+  },
+  {
+   "name": "real",
+   "domain": "real.com",
+   "outcome": "kept",
+   "reason": "Media player client connecting to RealNetworks servers for streaming and updates"
+  },
+  {
+   "name": "getlaminas",
+   "domain": "getlaminas.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "PHP framework/library collection, no vendor-hosted service"
+  },
+  {
+   "name": "jenkins",
+   "domain": "jenkins.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted CI/CD server software; no vendor-run service"
+  },
+  {
+   "name": "kmplayer",
+   "domain": "kmplayer.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop media player software"
+  },
+  {
+   "name": "popcorntime",
+   "domain": "popcorntime.app",
+   "outcome": "kept",
+   "reason": "Streaming client that fetches torrent metadata from its own servers"
+  },
+  {
+   "name": "wordperfect",
+   "domain": "wordperfect.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop word processor; no vendor server traffic"
+  },
+  {
+   "name": "junit",
+   "domain": "junit.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Java unit testing framework; library, no vendor servers"
+  },
+  {
+   "name": "waterfox",
+   "domain": "waterfox.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop web browser application"
+  },
+  {
+   "name": "sass-lang",
+   "domain": "sass-lang.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "CSS preprocessor language; no vendor server traffic"
+  },
+  {
+   "name": "parrotsec",
+   "domain": "parrotsec.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS installed locally, not a vendor-hosted service"
+  },
+  {
+   "name": "pfsense",
+   "domain": "pfsense.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Firewall/router OS installed locally; no vendor-hosted service"
+  },
+  {
+   "name": "openmp",
+   "domain": "openmp.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "OpenMP is a parallel programming API standard, not a network service"
+  },
+  {
+   "name": "typo3",
+   "domain": "typo3.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source PHP CMS framework, self-hosted; no vendor servers"
+  },
+  {
+   "name": "limewire",
+   "domain": "limewire.com",
+   "outcome": "kept",
+   "reason": "Client app that contacts vendor servers for its services"
+  },
+  {
+   "name": "transmissionbt",
+   "domain": "transmissionbt.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "BitTorrent client; offline desktop software, peers not vendor servers"
+  },
+  {
+   "name": "android-x86",
+   "domain": "android-x86.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source OS port for x86 devices; no vendor-hosted service"
+  },
+  {
+   "name": "nextcloud",
+   "domain": "nextcloud.com",
+   "outcome": "kept",
+   "reason": "Self-hosted file sync platform with hosted offerings and client apps contacting vendor servers"
+  },
+  {
+   "name": "trados",
+   "domain": "trados.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop CAT translation software, licensed locally"
+  },
+  {
+   "name": "proxmox",
+   "domain": "proxmox.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted virtualization platform; runs locally, not vendor-hosted"
+  },
+  {
+   "name": "hyphanet",
+   "domain": "hyphanet.org",
+   "outcome": "kept",
+   "reason": "Peer-to-peer anonymous network; nodes talk to Hyphanet network, not vendor servers"
+  },
+  {
+   "name": "openclaw",
+   "domain": "openclaw.ai",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Unfamiliar project; unclear if it runs hosted or vendor-server components"
+  },
+  {
+   "name": "calligra",
+   "domain": "calligra.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop office suite; no vendor-hosted service"
+  },
+  {
+   "name": "snort",
+   "domain": "snort.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source network intrusion detection software run locally, no vendor server"
+  },
+  {
+   "name": "pardus",
+   "domain": "pardus.org.tr",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS packages, not a hosted service"
+  },
+  {
+   "name": "deluge-torrent",
+   "domain": "deluge-torrent.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Desktop BitTorrent client; traffic goes to peers, not vendor servers"
+  },
+  {
+   "name": "keras",
+   "domain": "keras.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Deep learning framework library; no own vendor servers"
+  },
+  {
+   "name": "owncloud",
+   "domain": "owncloud.com",
+   "outcome": "kept",
+   "reason": "ownCloud offers hosted cloud storage and sync services with vendor servers"
+  },
+  {
+   "name": "angular",
+   "domain": "angular.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript web framework; a library, not a hosted service"
+  },
+  {
+   "name": "ghostbsd",
+   "domain": "ghostbsd.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; ISO downloads, not a network service"
+  },
+  {
+   "name": "voidlinux",
+   "domain": "voidlinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating-system distribution; offline software, not a hosted network service"
+  },
+  {
+   "name": "miktex",
+   "domain": "miktex.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline LaTeX distribution for Windows; no vendor-hosted service"
+  },
+  {
+   "name": "bitcomet",
+   "domain": "bitcomet.com",
+   "outcome": "kept",
+   "reason": "BitComet is a client app that contacts vendor servers for tracker and updates"
+  },
+  {
+   "name": "bodhilinux",
+   "domain": "bodhilinux.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS installed locally, not a vendor-hosted service"
+  },
+  {
+   "name": "plone",
+   "domain": "plone.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python-based open-source CMS framework; installed locally, no vendor server"
+  },
+  {
+   "name": "diasporafoundation",
+   "domain": "diasporafoundation.org",
+   "outcome": "kept",
+   "reason": "Federated social network; users connect to hosted pods run by diaspora* operators"
+  },
+  {
+   "name": "hacklang",
+   "domain": "hacklang.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language (Hack) with compiler and runtime, no vendor server"
+  },
+  {
+   "name": "zope",
+   "domain": "zope.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Zope is a Python application server and framework library"
+  },
+  {
+   "name": "mamedev",
+   "domain": "mamedev.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline arcade emulator desktop software, no vendor servers"
+  },
+  {
+   "name": "windowmaker",
+   "domain": "windowmaker.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Window manager for X11; offline desktop software"
+  },
+  {
+   "name": "neooffice",
+   "domain": "neooffice.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop office suite for macOS"
+  },
+  {
+   "name": "scipy",
+   "domain": "scipy.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python scientific computing library; no vendor-hosted service"
+  },
+  {
+   "name": "aimp",
+   "domain": "aimp.ru",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows audio player desktop software"
+  },
+  {
+   "name": "antixlinux",
+   "domain": "antixlinux.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Lightweight Linux distribution; offline OS installed locally"
+  },
+  {
+   "name": "ice-wm",
+   "domain": "ice-wm.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline window manager for X11 desktops"
+  },
+  {
+   "name": "tron",
+   "domain": "tron.network",
+   "outcome": "kept",
+   "reason": "Tron blockchain network; public nodes and hosted APIs"
+  },
+  {
+   "name": "scrapy",
+   "domain": "scrapy.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python web scraping framework, library installed locally"
+  },
+  {
+   "name": "nixos",
+   "domain": "nixos.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; packages and tooling, no vendor-operated service"
+  },
+  {
+   "name": "mingw-w64",
+   "domain": "mingw-w64.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Compiler toolchain for Windows; offline development software"
+  },
+  {
+   "name": "386bsd",
+   "domain": "386bsd.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; offline software, no vendor servers"
+  },
+  {
+   "name": "obsidian-md",
+   "domain": "obsidian.md",
+   "outcome": "kept",
+   "reason": "Note-taking app with Obsidian Sync and publish servers"
+  },
+  {
+   "name": "truenas",
+   "domain": "truenas.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted NAS operating system software, runs locally"
+  },
+  {
+   "name": "bittorrent-com",
+   "domain": "bittorrent.com",
+   "outcome": "kept",
+   "reason": "Client app connecting to vendor trackers and bootstrap servers"
+  },
+  {
+   "name": "gnuhealth",
+   "domain": "gnuhealth.org",
+   "outcome": "kept",
+   "reason": "Hosted health information system with vendor-run server deployments"
+  },
+  {
+   "name": "ableton",
+   "domain": "ableton.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop music production software; licensing aside, not a network service"
+  },
+  {
+   "name": "riscosopen",
+   "domain": "riscosopen.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline operating system; no vendor-hosted network service"
+  },
+  {
+   "name": "wildfly",
+   "domain": "wildfly.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Java application server; self-hosted software, not a vendor-hosted service"
+  },
+  {
+   "name": "openal",
+   "domain": "openal.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "OpenAL is a cross-platform audio API library"
+  },
+  {
+   "name": "capcut",
+   "domain": "capcut.com",
+   "outcome": "kept",
+   "reason": "Video editor app with cloud sync and online backend"
+  },
+  {
+   "name": "cpanel",
+   "domain": "cpanel.net",
+   "outcome": "kept",
+   "reason": "Web hosting control panel with vendor license and update servers"
+  },
+  {
+   "name": "xoops",
+   "domain": "xoops.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted PHP content management system software"
+  },
+  {
+   "name": "onlyoffice",
+   "domain": "onlyoffice.com",
+   "outcome": "kept",
+   "reason": "Hosted office suite with cloud/SaaS offering and vendor servers"
+  },
+  {
+   "name": "appimage",
+   "domain": "appimage.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "AppImage is a packaging format for Linux desktop applications"
+  },
+  {
+   "name": "handbrake",
+   "domain": "handbrake.fr",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop video transcoding application with no vendor servers"
+  },
+  {
+   "name": "yacy",
+   "domain": "yacy.net",
+   "outcome": "kept",
+   "reason": "Peer-to-peer search engine; users run nodes that talk to the network"
+  },
+  {
+   "name": "rockylinux",
+   "domain": "rockylinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating-system distribution; offline software, not a vendor-hosted service"
+  },
+  {
+   "name": "cmake",
+   "domain": "cmake.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Build system tool; no vendor-hosted server traffic"
+  },
+  {
+   "name": "haxe",
+   "domain": "haxe.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Haxe is a programming language and compiler toolchain"
+  },
+  {
+   "name": "coreboot",
+   "domain": "coreboot.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source firmware project; no vendor-hosted service"
+  },
+  {
+   "name": "banshee-project",
+   "domain": "banshee-project.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop music player application"
+  },
+  {
+   "name": "jackaudio",
+   "domain": "jackaudio.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline audio server software; no vendor-hosted traffic"
+  },
+  {
+   "name": "fraps",
+   "domain": "fraps.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows FPS benchmarking and screen capture desktop software"
+  },
+  {
+   "name": "blackberry",
+   "domain": "blackberry.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Discontinued mobile operating system; no ongoing vendor-hosted service"
+  },
+  {
+   "name": "notebook",
+   "domain": "notebook.google",
+   "outcome": "kept",
+   "reason": "Google's hosted AI notebook product, web-based cloud service"
+  },
+  {
+   "name": "nagios",
+   "domain": "nagios.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted monitoring software, not a vendor-hosted service"
+  },
+  {
+   "name": "oscommerce",
+   "domain": "oscommerce.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted open-source e-commerce software, not a hosted service"
+  },
+  {
+   "name": "join-lemmy",
+   "domain": "join-lemmy.org",
+   "outcome": "kept",
+   "reason": "Federated social platform; instances run hosted servers"
+  },
+  {
+   "name": "buddiesofbudgie",
+   "domain": "buddiesofbudgie.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Budgie is a desktop environment for Linux distributions, offline software"
+  },
+  {
+   "name": "gnustep",
+   "domain": "gnustep.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source framework implementing Cocoa APIs; no vendor-hosted service"
+  },
+  {
+   "name": "openrefine",
+   "domain": "openrefine.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop data-cleaning tool; runs locally in browser"
+  },
+  {
+   "name": "adaware",
+   "domain": "adaware.com",
+   "outcome": "kept",
+   "reason": "Antivirus client with vendor cloud update and telemetry servers"
+  },
+  {
+   "name": "prestashop-project",
+   "domain": "prestashop-project.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source e-commerce software installed on self-hosted servers"
+  },
+  {
+   "name": "ardour",
+   "domain": "ardour.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop digital audio workstation software"
+  },
+  {
+   "name": "stata",
+   "domain": "stata.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Statistical software installed locally; no vendor-hosted service"
+  },
+  {
+   "name": "jedit",
+   "domain": "jedit.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Java text editor desktop application"
+  },
+  {
+   "name": "wireguard-com",
+   "domain": "wireguard.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "VPN protocol and kernel module; no vendor-hosted service"
+  },
+  {
+   "name": "gg",
+   "domain": "gg.pl",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Ambiguous name; gg.pl domain unclear without knowing the specific project"
+  },
+  {
+   "name": "clonezilla",
+   "domain": "clonezilla.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline disk imaging/cloning software; no vendor-hosted service"
+  },
+  {
+   "name": "pypy",
+   "domain": "pypy.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python implementation; a language runtime, not a network service"
+  },
+  {
+   "name": "rebol",
+   "domain": "rebol.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language; no vendor-hosted service"
+  },
+  {
+   "name": "postgis",
+   "domain": "postgis.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "PostgreSQL extension library; no vendor-hosted service"
+  },
+  {
+   "name": "i3wm",
+   "domain": "i3wm.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "i3 is an offline tiling window manager for Linux desktops"
+  },
+  {
+   "name": "wxpython",
+   "domain": "wxpython.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python GUI toolkit library; no vendor servers"
+  },
+  {
+   "name": "tcpdump",
+   "domain": "tcpdump.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline packet-capture CLI tool with no vendor servers"
+  },
+  {
+   "name": "getadblock",
+   "domain": "getadblock.com",
+   "outcome": "kept",
+   "reason": "Browser extension that contacts vendor servers for filter lists"
+  },
+  {
+   "name": "daemon-tools",
+   "domain": "daemon-tools.cc",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop virtual-drive software; no vendor service"
+  },
+  {
+   "name": "cython",
+   "domain": "cython.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language and compiler for Python extensions"
+  },
+  {
+   "name": "dovecot",
+   "domain": "dovecot.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source IMAP/POP3 server software installed locally"
+  },
+  {
+   "name": "languagetool",
+   "domain": "languagetool.org",
+   "outcome": "kept",
+   "reason": "Hosted grammar-checking SaaS with own public API servers"
+  },
+  {
+   "name": "organicmaps",
+   "domain": "organicmaps.app",
+   "outcome": "kept",
+   "reason": "Mobile maps app; downloads map data from vendor servers"
+  },
+  {
+   "name": "devuan",
+   "domain": "devuan.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Debian-derived operating system distribution, not a hosted service"
+  },
+  {
+   "name": "almalinux",
+   "domain": "almalinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating-system distribution; offline software, not a hosted service"
+  },
+  {
+   "name": "opencart",
+   "domain": "opencart.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted open-source e-commerce software, not a vendor-hosted service"
+  },
+  {
+   "name": "semantic-mediawiki",
+   "domain": "semantic-mediawiki.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "MediaWiki extension installed on user-hosted wikis; no vendor servers"
+  },
+  {
+   "name": "noscript",
+   "domain": "noscript.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Browser extension; runs locally, no vendor server traffic"
+  },
+  {
+   "name": "monodevelop",
+   "domain": "monodevelop.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline IDE desktop software with no vendor servers"
+  },
+  {
+   "name": "zabbix",
+   "domain": "zabbix.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted open-source monitoring software; runs on user's own servers"
+  },
+  {
+   "name": "memcached-org",
+   "domain": "memcached.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source in-memory caching daemon; runs locally, no vendor servers"
+  },
+  {
+   "name": "tortoisesvn",
+   "domain": "tortoisesvn.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Windows client for Subversion; no vendor-hosted server"
+  },
+  {
+   "name": "internetdownloadmanager",
+   "domain": "internetdownloadmanager.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows desktop download manager software"
+  },
+  {
+   "name": "dd-wrt",
+   "domain": "dd-wrt.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Router firmware distribution; runs on device, no vendor service traffic"
+  },
+  {
+   "name": "ubuntubudgie",
+   "domain": "ubuntubudgie.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution, not a network service"
+  },
+  {
+   "name": "blackarch",
+   "domain": "blackarch.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution with security tools; offline OS, not a hosted service"
+  },
+  {
+   "name": "tcsh",
+   "domain": "tcsh.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Unix shell program; offline command-line tool with no vendor servers"
+  },
+  {
+   "name": "matomo",
+   "domain": "matomo.org",
+   "outcome": "kept",
+   "reason": "Web analytics platform with hosted cloud offering and vendor servers"
+  },
+  {
+   "name": "adium",
+   "domain": "adium.im",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline macOS instant messaging client; no vendor-hosted service"
+  },
+  {
+   "name": "qcad",
+   "domain": "qcad.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop CAD software with no vendor-hosted servers"
+  },
+  {
+   "name": "psi-im",
+   "domain": "psi-im.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Desktop XMPP chat client; no vendor-hosted service"
+  },
+  {
+   "name": "lean-lang",
+   "domain": "lean-lang.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language and theorem prover; no vendor-hosted service"
+  },
+  {
+   "name": "osmand",
+   "domain": "osmand.net",
+   "outcome": "kept",
+   "reason": "Mobile navigation app syncing and tiles from osmand.net servers"
+  },
+  {
+   "name": "openfoam",
+   "domain": "openfoam.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline CFD simulation software; no vendor-hosted traffic"
+  },
+  {
+   "name": "e",
+   "domain": "e.foundation",
+   "outcome": "kept",
+   "reason": "Mobile OS with cloud services and app store contacting e.foundation servers"
+  },
+  {
+   "name": "suse",
+   "domain": "suse.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; installed locally, no vendor-hosted service"
+  },
+  {
+   "name": "raku",
+   "domain": "raku.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Raku is a programming language; raku.org is documentation and downloads"
+  },
+  {
+   "name": "apparmor",
+   "domain": "apparmor.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux kernel security module; no vendor-hosted service"
+  },
+  {
+   "name": "roundcube",
+   "domain": "roundcube.net",
+   "outcome": "kept",
+   "reason": "Webmail client; deployed by users, traffic to user's own mail server"
+  },
+  {
+   "name": "gomlab",
+   "domain": "gomlab.com",
+   "outcome": "kept",
+   "reason": "Media player that contacts vendor servers for updates and ads"
+  },
+  {
+   "name": "woocommerce",
+   "domain": "woocommerce.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "WordPress e-commerce plugin; runs on user's own server"
+  },
+  {
+   "name": "jami",
+   "domain": "jami.net",
+   "outcome": "kept",
+   "reason": "Jami is a messaging client using distributed network, not vendor servers"
+  },
+  {
+   "name": "pipewire",
+   "domain": "pipewire.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux audio/video server framework; runs locally, no vendor servers"
+  },
+  {
+   "name": "xfree86",
+   "domain": "xfree86.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "X Window System display server; offline software, no vendor servers"
+  },
+  {
+   "name": "cleverbot",
+   "domain": "cleverbot.com",
+   "outcome": "kept",
+   "reason": "Hosted online chatbot website; traffic goes to cleverbot.com"
+  },
+  {
+   "name": "redmine",
+   "domain": "redmine.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted open-source web project management software; no vendor servers"
+  },
+  {
+   "name": "peppermintos",
+   "domain": "peppermintos.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS, no vendor-hosted service"
+  },
+  {
+   "name": "fltk",
+   "domain": "fltk.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "FLTK is a C++ GUI toolkit library"
+  },
+  {
+   "name": "pspad",
+   "domain": "pspad.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows text/hex editor; no vendor server traffic"
+  },
+  {
+   "name": "frostwire",
+   "domain": "frostwire.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop BitTorrent client; traffic goes to peers, not vendor servers"
+  },
+  {
+   "name": "micropython",
+   "domain": "micropython.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language implementation for microcontrollers; no vendor-hosted service"
+  },
+  {
+   "name": "yafaray",
+   "domain": "yafaray.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline open-source raytracing renderer; no vendor server traffic"
+  },
+  {
+   "name": "aegisub",
+   "domain": "aegisub.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop subtitle editor; no vendor server traffic"
+  },
+  {
+   "name": "replicant",
+   "domain": "replicant.us",
+   "outcome": "kept",
+   "reason": "Replicant is a hosted AI voice agent SaaS platform"
+  },
+  {
+   "name": "elivecd",
+   "domain": "elivecd.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Elive is a Debian-based Linux distribution; offline OS installed locally"
+  },
+  {
+   "name": "comsol",
+   "domain": "comsol.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop simulation software; licensed, not a hosted service"
+  },
+  {
+   "name": "asahilinux",
+   "domain": "asahilinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution for Apple Silicon; installed OS, no vendor server"
+  },
+  {
+   "name": "anaconda",
+   "domain": "anaconda.com",
+   "outcome": "kept",
+   "reason": "Hosted package repository and cloud platform; clients contact anaconda.com servers"
+  },
+  {
+   "name": "grafana",
+   "domain": "grafana.com",
+   "outcome": "kept",
+   "reason": "Grafana Cloud is hosted; the Grafana app talks to grafana.com servers"
+  },
+  {
+   "name": "weverse",
+   "domain": "weverse.io",
+   "outcome": "kept",
+   "reason": "Fan community platform app and website run by HYBE with servers"
+  },
+  {
+   "name": "potplayer",
+   "domain": "potplayer.tv",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows media player; no vendor-hosted service"
+  },
+  {
+   "name": "reasonstudios",
+   "domain": "reasonstudios.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Reason is offline desktop music production software"
+  },
+  {
+   "name": "pinnaclesys",
+   "domain": "pinnaclesys.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop video editing software"
+  },
+  {
+   "name": "ipython",
+   "domain": "ipython.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Interactive Python shell library; runs locally, no vendor servers"
+  },
+  {
+   "name": "cfos",
+   "domain": "cfos.de",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline network traffic optimization driver/software, no vendor-hosted service"
+  },
+  {
+   "name": "valgrind",
+   "domain": "valgrind.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline debugging tool; runs locally, no vendor servers"
+  },
+  {
+   "name": "zimbra",
+   "domain": "zimbra.com",
+   "outcome": "kept",
+   "reason": "Zimbra is email/collaboration software sold as hosted and self-hosted server products"
+  },
+  {
+   "name": "networkmanager",
+   "domain": "networkmanager.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Linux network configuration daemon; no vendor servers"
+  },
+  {
+   "name": "reaper",
+   "domain": "reaper.fm",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop digital audio workstation software"
+  },
+  {
+   "name": "openldap",
+   "domain": "openldap.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source directory server software; runs locally, not vendor-hosted"
+  },
+  {
+   "name": "whonix",
+   "domain": "whonix.org",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Whonix is a Debian-based Tor OS distribution; it has update servers, but is not a hosted service"
+  },
+  {
+   "name": "crux",
+   "domain": "crux.nu",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; packages are offline OS software, not vendor-server traffic"
+  },
+  {
+   "name": "cachyos",
+   "domain": "cachyos.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; installable OS, not a network service"
+  },
+  {
+   "name": "ckeditor",
+   "domain": "ckeditor.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript rich-text editor library/framework, not a hosted service"
+  },
+  {
+   "name": "latex-project",
+   "domain": "latex-project.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Typesetting system; offline software, no vendor servers"
+  },
+  {
+   "name": "getmonero",
+   "domain": "getmonero.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Decentralized cryptocurrency protocol with node software; no vendor-hosted service"
+  },
+  {
+   "name": "r-project",
+   "domain": "r-project.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "R is a programming language and environment; offline software"
+  },
+  {
+   "name": "opengl",
+   "domain": "opengl.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "OpenGL is a graphics API standard, not a networked service"
+  },
+  {
+   "name": "jquery",
+   "domain": "jquery.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript library; no vendor-operated network service"
+  },
+  {
+   "name": "react",
+   "domain": "react.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript UI library; no vendor-hosted service"
+  },
+  {
+   "name": "vuejs",
+   "domain": "vuejs.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript framework for building user interfaces"
+  },
+  {
+   "name": "spring",
+   "domain": "spring.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Java framework; library with no vendor-hosted service"
+  },
+  {
+   "name": "tensorflow",
+   "domain": "tensorflow.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Machine learning framework/library, not a hosted or networked service"
+  },
+  {
+   "name": "pytorch",
+   "domain": "pytorch.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Machine learning framework library, no vendor-hosted service"
+  },
+  {
+   "name": "curl",
+   "domain": "curl.se",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Command-line tool and library; no own vendor servers"
+  },
+  {
+   "name": "koha-community",
+   "domain": "koha-community.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source library management system installed and self-hosted by libraries"
+  },
+  {
+   "name": "lyx",
+   "domain": "lyx.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop document processor; no vendor servers"
+  },
+  {
+   "name": "smarty",
+   "domain": "smarty.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "PHP template engine library, no vendor servers"
+  },
+  {
+   "name": "worldcommunitygrid",
+   "domain": "worldcommunitygrid.org",
+   "outcome": "kept",
+   "reason": "Volunteer computing platform with its own hosted servers and client"
+  },
+  {
+   "name": "didiglobal",
+   "domain": "didiglobal.com",
+   "outcome": "kept",
+   "reason": "Ride-hailing platform with apps and backend servers"
+  },
+  {
+   "name": "hibernate",
+   "domain": "hibernate.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Java ORM framework/library, no vendor servers"
+  },
+  {
+   "name": "expressjs",
+   "domain": "expressjs.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Node.js web framework; a library with no vendor servers"
+  },
+  {
+   "name": "z",
+   "domain": "z.cash",
+   "outcome": "kept",
+   "reason": "Cryptocurrency network with wallets and vendor-operated services; traffic reaches z.cash"
+  },
+  {
+   "name": "alpinelinux",
+   "domain": "alpinelinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; OS packages, not a hosted service"
+  },
+  {
+   "name": "matplotlib",
+   "domain": "matplotlib.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python plotting library; no vendor servers"
+  },
+  {
+   "name": "coffeescript",
+   "domain": "coffeescript.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Programming language compiler transpiling to JavaScript; no vendor servers"
+  },
+  {
+   "name": "musixmatch",
+   "domain": "musixmatch.com",
+   "outcome": "kept",
+   "reason": "Lyrics streaming app and API with its own servers"
+  },
+  {
+   "name": "wxwidgets",
+   "domain": "wxwidgets.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "C++ GUI framework library; offline, no vendor servers"
+  },
+  {
+   "name": "nextjs",
+   "domain": "nextjs.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript framework for building web applications"
+  },
+  {
+   "name": "lesscss",
+   "domain": "lesscss.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "LESS is a CSS preprocessor language/compiler library"
+  },
+  {
+   "name": "selenium",
+   "domain": "selenium.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Browser automation framework/library; runs locally, no vendor server"
+  },
+  {
+   "name": "boost",
+   "domain": "boost.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "C++ libraries collection; no vendor servers"
+  },
+  {
+   "name": "svelte",
+   "domain": "svelte.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript UI framework; compiler/library, no vendor servers"
+  },
+  {
+   "name": "cairographics",
+   "domain": "cairographics.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Cairo is a 2D graphics library, not a network service"
+  },
+  {
+   "name": "zlib",
+   "domain": "zlib.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "zlib is a compression library, not a network service"
+  },
+  {
+   "name": "electronjs",
+   "domain": "electronjs.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Framework for building desktop apps with web technologies"
+  },
+  {
+   "name": "mesa3d",
+   "domain": "mesa3d.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source graphics library implementing OpenGL; no hosted service"
+  },
+  {
+   "name": "d3js",
+   "domain": "d3js.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript visualization library; no vendor servers"
+  },
+  {
+   "name": "tox",
+   "domain": "tox.chat",
+   "outcome": "kept",
+   "reason": "Tox is a P2P messenger client; bootstrap nodes are project-run servers"
+  },
+  {
+   "name": "scikit-learn",
+   "domain": "scikit-learn.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python machine learning library, no vendor servers"
+  },
+  {
+   "name": "twrp",
+   "domain": "twrp.me",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Android recovery software installed on devices, not a hosted service"
+  },
+  {
+   "name": "xgboost",
+   "domain": "xgboost.ai",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source machine learning library; no vendor-hosted service"
+  },
+  {
+   "name": "ethereumclassic",
+   "domain": "ethereumclassic.org",
+   "outcome": "kept",
+   "reason": "Blockchain network with public nodes and hosted endpoints at vendor domain"
+  },
+  {
+   "name": "bandicam",
+   "domain": "bandicam.cn",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows screen recording desktop software"
+  },
+  {
+   "name": "gajim",
+   "domain": "gajim.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Desktop XMPP client; connects to user-chosen servers, not vendor"
+  },
+  {
+   "name": "pixelfed",
+   "domain": "pixelfed.org",
+   "outcome": "kept",
+   "reason": "Federated photo-sharing social network; instances communicate with its servers"
+  },
+  {
+   "name": "hsqldb",
+   "domain": "hsqldb.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Embedded Java relational database library, no vendor servers"
+  },
+  {
+   "name": "archbang",
+   "domain": "archbang.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; installable OS, no vendor server traffic"
+  },
+  {
+   "name": "etherpad",
+   "domain": "etherpad.org",
+   "outcome": "kept",
+   "reason": "Collaborative editor; hosted instances and etherpad.org communicate with vendor servers"
+  },
+  {
+   "name": "rocq-prover",
+   "domain": "rocq-prover.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Proof assistant software; offline tool, no vendor server traffic"
+  },
+  {
+   "name": "maps",
+   "domain": "maps.me",
+   "outcome": "kept",
+   "reason": "Mobile maps app syncing data and updates from its own servers"
+  },
+  {
+   "name": "openlayers",
+   "domain": "openlayers.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript library for web map rendering; no vendor servers"
+  },
+  {
+   "name": "u-boot-project",
+   "domain": "u-boot-project.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Bootloader firmware for embedded systems; offline software, no vendor servers"
+  },
+  {
+   "name": "spyder-ide",
+   "domain": "spyder-ide.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Spyder is an offline Python IDE desktop application"
+  },
+  {
+   "name": "ruffle",
+   "domain": "ruffle.rs",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Flash Player emulator; runs locally in browser, no vendor servers"
+  },
+  {
+   "name": "redox-os",
+   "domain": "redox-os.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Rust-based operating system; offline OS distribution, no vendor servers"
+  },
+  {
+   "name": "polkadot",
+   "domain": "polkadot.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Blockchain protocol and framework; not a hosted service itself"
+  },
+  {
+   "name": "speex",
+   "domain": "speex.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Speex is an open-source speech codec library, not a networked service."
+  },
+  {
+   "name": "haskell",
+   "domain": "haskell.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Compiler for Haskell language; offline developer tool"
+  },
+  {
+   "name": "puppet",
+   "domain": "puppet.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Puppet is config management software; commercial Puppet Enterprise has cloud/SaaS offerings but core open-source tool is self-hosted"
+  },
+  {
+   "name": "samsungknox",
+   "domain": "samsungknox.com",
+   "outcome": "kept",
+   "reason": "Hosted Knox cloud console and services; devices contact Samsung Knox servers"
+  },
+  {
+   "name": "clipsrules",
+   "domain": "clipsrules.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "CLIPS is a rule-based programming language and expert system tool"
+  },
+  {
+   "name": "shoutcast",
+   "domain": "shoutcast.com",
+   "outcome": "kept",
+   "reason": "Streaming audio hosting platform and server; traffic names shoutcast.com"
+  },
+  {
+   "name": "desmos",
+   "domain": "desmos.com",
+   "outcome": "kept",
+   "reason": "Web-based graphing calculator hosted at desmos.com"
+  },
+  {
+   "name": "avahi",
+   "domain": "avahi.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux mDNS/DNS-SD daemon library; no vendor servers"
+  },
+  {
+   "name": "monkeysaudio",
+   "domain": "monkeysaudio.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Lossless audio codec and offline compression software"
+  },
+  {
+   "name": "vectorlinux",
+   "domain": "vectorlinux.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS, no vendor-hosted service"
+  },
+  {
+   "name": "claws-mail",
+   "domain": "claws-mail.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop email client; no vendor-hosted servers"
+  },
+  {
+   "name": "rockbox",
+   "domain": "rockbox.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source firmware for media players; offline device software"
+  },
+  {
+   "name": "jolicloud",
+   "domain": "jolicloud.com",
+   "outcome": "kept",
+   "reason": "Jolicloud web-based OS/cloud app platform with vendor servers"
+  },
+  {
+   "name": "manus",
+   "domain": "manus.im",
+   "outcome": "kept",
+   "reason": "Hosted AI agent platform accessed via manus.im servers"
+  },
+  {
+   "name": "krusader",
+   "domain": "krusader.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline KDE file manager desktop application; no vendor servers"
+  },
+  {
+   "name": "mantisbt",
+   "domain": "mantisbt.org",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Self-hosted web app; mantisbt.org is project site, not a service"
+  },
+  {
+   "name": "geoserver",
+   "domain": "geoserver.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source Java server software for geospatial data; self-hosted, not vendor-operated"
+  },
+  {
+   "name": "limesurvey",
+   "domain": "limesurvey.org",
+   "outcome": "kept",
+   "reason": "Open-source survey platform; offered as hosted SaaS by vendor"
+  },
+  {
+   "name": "truecaller",
+   "domain": "truecaller.com",
+   "outcome": "kept",
+   "reason": "Mobile caller ID app querying Truecaller's cloud servers"
+  },
+  {
+   "name": "neo4j-com",
+   "domain": "neo4j.com",
+   "outcome": "kept",
+   "reason": "Offers Aura hosted cloud database service and SaaS"
+  },
+  {
+   "name": "snowflake-com",
+   "domain": "snowflake.com",
+   "outcome": "kept",
+   "reason": "Cloud data platform SaaS hosted by Snowflake Inc."
+  },
+  {
+   "name": "playonlinux",
+   "domain": "playonlinux.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop wrapper for running Windows software on Linux"
+  },
+  {
+   "name": "enigmail",
+   "domain": "enigmail.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "OpenPGP extension for Thunderbird; runs locally, no vendor server"
+  },
+  {
+   "name": "pi-hole",
+   "domain": "pi-hole.net",
+   "outcome": "kept",
+   "reason": "Network-wide DNS sinkhole; its update and telemetry traffic hits pi-hole.net servers"
+  },
+  {
+   "name": "system-rescue",
+   "domain": "system-rescue.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Bootable Linux rescue distribution; offline OS image, no vendor servers"
+  },
+  {
+   "name": "termux",
+   "domain": "termux.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Android terminal emulator app; offline environment, no own server"
+  },
+  {
+   "name": "twiki",
+   "domain": "twiki.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted wiki engine; no vendor-operated server"
+  },
+  {
+   "name": "grails",
+   "domain": "grails.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Grails is a Groovy-based web application framework; a library, not a hosted service."
+  },
+  {
+   "name": "flatassembler",
+   "domain": "flatassembler.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Assembler compiler for x86; offline developer tool, not a hosted service"
+  },
+  {
+   "name": "turbogears",
+   "domain": "turbogears.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python web framework; a library, not a hosted service"
+  },
+  {
+   "name": "rabbitmq",
+   "domain": "rabbitmq.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Message broker server software, self-hosted; not a vendor-hosted service"
+  },
+  {
+   "name": "friendi",
+   "domain": "friendi.ca",
+   "outcome": "kept",
+   "reason": "Federated social network server; users connect to hosted instances"
+  },
+  {
+   "name": "gitea",
+   "domain": "gitea.com",
+   "outcome": "kept",
+   "reason": "Self-hosted Git server; gitea.com hosts a public instance"
+  },
+  {
+   "name": "getpocket",
+   "domain": "getpocket.com",
+   "outcome": "kept",
+   "reason": "Read-later SaaS with apps syncing to getpocket.com servers"
+  },
+  {
+   "name": "pureos",
+   "domain": "pureos.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux operating system distribution; no vendor-hosted service"
+  },
+  {
+   "name": "memtest86",
+   "domain": "memtest86.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline bootable memory diagnostic utility; no vendor server traffic"
+  },
+  {
+   "name": "filecoin",
+   "domain": "filecoin.io",
+   "outcome": "kept",
+   "reason": "Decentralized storage network with hosted nodes and retrieval services"
+  },
+  {
+   "name": "omeka",
+   "domain": "omeka.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source PHP web publishing platform; self-hosted, no vendor servers"
+  },
+  {
+   "name": "kylinos",
+   "domain": "kylinos.cn",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; offline desktop software, not a hosted service"
+  },
+  {
+   "name": "gromacs",
+   "domain": "gromacs.org",
+   "outcome": "dropped:domain_does_not_resolve",
+   "reason": "no DNS answer on 2026-11-25"
+  },
+  {
+   "name": "jetty",
+   "domain": "jetty.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Java web server and servlet container library"
+  },
+  {
+   "name": "grpc-io",
+   "domain": "grpc.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "gRPC is an RPC framework/library, not a hosted service"
+  },
+  {
+   "name": "flashget",
+   "domain": "flashget.com",
+   "outcome": "kept",
+   "reason": "Download manager client that contacts vendor servers"
+  },
+  {
+   "name": "wikimedia",
+   "domain": "wikimedia.com",
+   "outcome": "kept",
+   "reason": "Commercial hosted API service for Wikimedia content"
+  },
+  {
+   "name": "osgi",
+   "domain": "osgi.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "OSGi is a Java module system specification and framework"
+  },
+  {
+   "name": "netsurf-browser",
+   "domain": "netsurf-browser.org",
+   "outcome": "dropped:domain_does_not_resolve",
+   "reason": "no DNS answer on 2026-11-25"
+  },
+  {
+   "name": "rosegardenmusic",
+   "domain": "rosegardenmusic.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop MIDI sequencer and notation software"
+  },
+  {
+   "name": "kismetwireless",
+   "domain": "kismetwireless.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline wireless sniffing tool; no vendor server traffic"
+  },
+  {
+   "name": "zhihu",
+   "domain": "zhihu.com",
+   "outcome": "kept",
+   "reason": "Zhihu is a hosted Q&A social platform website and app."
+  },
+  {
+   "name": "weechat",
+   "domain": "weechat.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Terminal IRC client run locally, no vendor servers"
+  },
+  {
+   "name": "winmx",
+   "domain": "winmx.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Historical peer-to-peer file-sharing client; no active vendor servers"
+  },
+  {
+   "name": "conky",
+   "domain": "conky.cc",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Lightweight desktop system monitor; offline software with no vendor servers"
+  },
+  {
+   "name": "namecoin",
+   "domain": "namecoin.org",
+   "outcome": "kept",
+   "reason": "Blockchain network with clients connecting to public nodes and namecoin.org"
+  },
+  {
+   "name": "csound",
+   "domain": "csound.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Csound is an offline audio synthesis language and software, not a network service"
+  },
+  {
+   "name": "luatex",
+   "domain": "luatex.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "TeX engine distributed as offline software; no vendor servers"
+  },
+  {
+   "name": "cheatengine",
+   "domain": "cheatengine.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop memory-editing tool; no vendor server traffic"
+  },
+  {
+   "name": "uclibc",
+   "domain": "uclibc.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "C standard library for embedded systems; no vendor servers"
+  },
+  {
+   "name": "home-assistant",
+   "domain": "home-assistant.io",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Self-hosted home automation platform; optional cloud and vendor services exist"
+  },
+  {
+   "name": "pentoo",
+   "domain": "pentoo.ch",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Gentoo-based penetration testing Linux distribution; offline OS distro"
+  },
+  {
+   "name": "ladspa",
+   "domain": "ladspa.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "LADSPA is an audio plugin API standard, not a network service"
+  },
+  {
+   "name": "pitivi",
+   "domain": "pitivi.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop video editor; no vendor servers"
+  },
+  {
+   "name": "sencha",
+   "domain": "sencha.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript UI framework library; no vendor-hosted service"
+  },
+  {
+   "name": "lczero",
+   "domain": "lczero.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline chess engine; training network traffic is not vendor-hosted service"
+  },
+  {
+   "name": "rawtherapee",
+   "domain": "rawtherapee.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop photo editor; no vendor server traffic"
+  },
+  {
+   "name": "codelite",
+   "domain": "codelite.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop IDE for C/C++ development"
+  },
+  {
+   "name": "aresgalaxy",
+   "domain": "aresgalaxy.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Discontinued P2P file-sharing client; no active vendor servers"
+  },
+  {
+   "name": "xfire",
+   "domain": "xfire.com",
+   "outcome": "kept",
+   "reason": "Gaming client connecting to vendor servers for social and matchmaking"
+  },
+  {
+   "name": "xmonad",
+   "domain": "xmonad.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Tiling window manager for X11; offline desktop software"
+  },
+  {
+   "name": "gobolinux",
+   "domain": "gobolinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline operating system, not a hosted service"
+  },
+  {
+   "name": "babylon-software",
+   "domain": "babylon-software.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Babylon is a dictionary/translation software, mostly offline desktop tooling"
+  },
+  {
+   "name": "expasy",
+   "domain": "expasy.org",
+   "outcome": "kept",
+   "reason": "Hosted web portal of bioinformatics tools and databases"
+  },
+  {
+   "name": "linguee",
+   "domain": "linguee.com",
+   "outcome": "kept",
+   "reason": "Hosted online dictionary and translation website, accessed via linguee.com"
+  },
+  {
+   "name": "ckan",
+   "domain": "ckan.org",
+   "outcome": "kept",
+   "reason": "Open-source data portal platform; public instances run as hosted services"
+  },
+  {
+   "name": "sympy",
+   "domain": "sympy.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python library for symbolic mathematics; no vendor servers"
+  },
+  {
+   "name": "openvas",
+   "domain": "openvas.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline vulnerability scanner software; runs locally, no vendor-hosted service"
+  },
+  {
+   "name": "draftsight",
+   "domain": "draftsight.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop CAD software; licensed, not a vendor-hosted service"
+  },
+  {
+   "name": "mpv",
+   "domain": "mpv.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop media player; no vendor servers"
+  },
+  {
+   "name": "qt",
+   "domain": "qt.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop IDE for C++ development"
+  },
+  {
+   "name": "dolibarr",
+   "domain": "dolibarr.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted open-source ERP/CRM web application, not a vendor-hosted service"
+  },
+  {
+   "name": "orangedatamining",
+   "domain": "orangedatamining.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Orange is an offline open-source data mining desktop application and Python library"
+  },
+  {
+   "name": "kexi-project",
+   "domain": "kexi-project.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Kexi is offline KDE desktop database software"
+  },
+  {
+   "name": "htc",
+   "domain": "htc.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Android skin/UI layer shipped on HTC devices; no standalone vendor server"
+  },
+  {
+   "name": "comodo",
+   "domain": "comodo.com",
+   "outcome": "kept",
+   "reason": "Security suite with cloud lookups and updates to vendor servers"
+  },
+  {
+   "name": "codecguide",
+   "domain": "codecguide.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows codec pack; no vendor-hosted service"
+  },
+  {
+   "name": "altlinux",
+   "domain": "altlinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; installable OS, not a hosted service"
+  },
+  {
+   "name": "liferay",
+   "domain": "liferay.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Java enterprise portal framework; self-hosted software, not a vendor-run service"
+  },
+  {
+   "name": "texmacs",
+   "domain": "texmacs.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop typesetting editor; no vendor servers"
+  },
+  {
+   "name": "tailwindcss",
+   "domain": "tailwindcss.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "CSS framework; library with no vendor server"
+  },
+  {
+   "name": "climateprediction",
+   "domain": "climateprediction.net",
+   "outcome": "kept",
+   "reason": "Volunteer distributed computing project; client talks to its own servers"
+  },
+  {
+   "name": "langchain",
+   "domain": "langchain.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python/JS framework for building LLM applications"
+  },
+  {
+   "name": "musicpd",
+   "domain": "musicpd.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Local music server daemon; no vendor-hosted service"
+  },
+  {
+   "name": "beryl-project",
+   "domain": "beryl-project.org",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Beryl is a mineral and Wikidata Q1355451 is likely unrelated; no known software project identified"
+  },
+  {
+   "name": "emberjs",
+   "domain": "emberjs.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript web framework, a library for building apps"
+  },
+  {
+   "name": "finkproject",
+   "domain": "finkproject.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Local package manager for macOS, no vendor servers"
+  },
+  {
+   "name": "spip",
+   "domain": "spip.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "SPIP is a PHP CMS installed on user servers, not hosted"
+  },
+  {
+   "name": "openmandriva",
+   "domain": "openmandriva.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; packages and ISOs, no own hosted service"
+  },
+  {
+   "name": "cainiao",
+   "domain": "cainiao.com",
+   "outcome": "kept",
+   "reason": "Alibaba's logistics platform; hosted tracking and delivery service website"
+  },
+  {
+   "name": "h5p",
+   "domain": "h5p.org",
+   "outcome": "kept",
+   "reason": "H5P.org hosts an online content hub and sharing service for interactive content"
+  },
+  {
+   "name": "paranoidandroid",
+   "domain": "paranoidandroid.co",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Custom Android ROM, offline firmware installed on devices"
+  },
+  {
+   "name": "sabily",
+   "domain": "sabily.org",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Sabily is a Sabayon-based Linux distribution; unclear if it runs vendor servers"
+  },
+  {
+   "name": "kaosx",
+   "domain": "kaosx.us",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; installed OS packages, no vendor-hosted service"
+  },
+  {
+   "name": "box2d",
+   "domain": "box2d.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source 2D physics engine library, no vendor servers"
+  },
+  {
+   "name": "web2py",
+   "domain": "web2py.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python web framework; library, no vendor server"
+  },
+  {
+   "name": "puffinbrowser",
+   "domain": "puffinbrowser.com",
+   "outcome": "kept",
+   "reason": "Browser that routes traffic through vendor proxy servers"
+  },
+  {
+   "name": "newpipe",
+   "domain": "newpipe.net",
+   "outcome": "kept",
+   "reason": "Android client that fetches YouTube content directly, not vendor-hosted"
+  },
+  {
+   "name": "wavpack",
+   "domain": "wavpack.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Audio compression format and offline codec library/tools"
+  },
+  {
+   "name": "globaleaks",
+   "domain": "globaleaks.org",
+   "outcome": "kept",
+   "reason": "Whistleblowing platform; hosted instances and SaaS service exist"
+  },
+  {
+   "name": "artixlinux",
+   "domain": "artixlinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; ISO downloads, no vendor-hosted service"
+  },
+  {
+   "name": "bitkeeper",
+   "domain": "bitkeeper.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Historical proprietary distributed version control software; primarily offline tool"
+  },
+  {
+   "name": "sfml-dev",
+   "domain": "sfml-dev.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "SFML is a multimedia C++ library, not a network service"
+  },
+  {
+   "name": "calyxos",
+   "domain": "calyxos.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Mobile OS distribution; offline firmware, not a hosted service"
+  },
+  {
+   "name": "justgetflux",
+   "domain": "justgetflux.com",
+   "outcome": "kept",
+   "reason": "Desktop client that fetches location/schedule data from vendor servers"
+  },
+  {
+   "name": "gdal",
+   "domain": "gdal.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "GDAL is a geospatial data library and command-line tools, no vendor servers"
+  },
+  {
+   "name": "mapserver",
+   "domain": "mapserver.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source server software for map rendering, self-hosted"
+  },
+  {
+   "name": "podman",
+   "domain": "podman.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Container engine CLI/tool; runs locally, no vendor servers"
+  },
+  {
+   "name": "jekyllrb",
+   "domain": "jekyllrb.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Static site generator; offline tool with no vendor servers"
+  },
+  {
+   "name": "stellar",
+   "domain": "stellar.org",
+   "outcome": "kept",
+   "reason": "Stellar is a blockchain network with hosted public servers and APIs"
+  },
+  {
+   "name": "icecast",
+   "domain": "icecast.org",
+   "outcome": "kept",
+   "reason": "Icecast is streaming server software; deployments talk to user-run servers, not vendor-hosted"
+  },
+  {
+   "name": "libressl",
+   "domain": "libressl.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "TLS/crypto library, no vendor servers"
+  },
+  {
+   "name": "vite",
+   "domain": "vite.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Frontend build tool and dev server; no vendor-hosted service"
+  },
+  {
+   "name": "k9mail",
+   "domain": "k9mail.app",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source Android email client; connects to user's own mail servers"
+  },
+  {
+   "name": "gohugo",
+   "domain": "gohugo.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Static site generator; offline CLI tool with no vendor server"
+  },
+  {
+   "name": "exim",
+   "domain": "exim.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Exim is a mail transfer agent software package, installed locally"
+  },
+  {
+   "name": "playframework",
+   "domain": "playframework.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Web application framework for Java and Scala; a library, not a hosted service"
+  },
+  {
+   "name": "openmediavault",
+   "domain": "openmediavault.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted NAS OS; runs locally, no vendor servers"
+  },
+  {
+   "name": "haproxy",
+   "domain": "haproxy.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source load balancer software run locally, no vendor servers"
+  },
+  {
+   "name": "weblate",
+   "domain": "weblate.org",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Weblate is self-hostable web software; hosted weblate.org service exists too"
+  },
+  {
+   "name": "chain",
+   "domain": "chain.link",
+   "outcome": "kept",
+   "reason": "Chainlink operates hosted oracle network services and websites on chain.link"
+  },
+  {
+   "name": "cowsay",
+   "domain": "cowsay.diamonds",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline command-line ASCII art tool with no vendor servers"
+  },
+  {
+   "name": "mythtv",
+   "domain": "mythtv.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted open-source DVR/media center software, no vendor servers"
+  },
+  {
+   "name": "opencms",
+   "domain": "opencms.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source Java CMS software installed and run by users, not a vendor-hosted service"
+  },
+  {
+   "name": "ettercap-project",
+   "domain": "ettercap-project.org",
+   "outcome": "dropped:domain_does_not_resolve",
+   "reason": "no DNS answer on 2026-11-25"
+  },
+  {
+   "name": "fbreader",
+   "domain": "fbreader.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop/mobile e-book reader application"
+  },
+  {
+   "name": "trinitydesktop",
+   "domain": "trinitydesktop.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop environment software, no vendor servers"
+  },
+  {
+   "name": "yiiframework",
+   "domain": "yiiframework.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "PHP framework; a library, not a hosted service"
+  },
+  {
+   "name": "discourse",
+   "domain": "discourse.org",
+   "outcome": "kept",
+   "reason": "Discourse hosted forum platform; official hosting service and SaaS"
+  },
+  {
+   "name": "piwigo",
+   "domain": "piwigo.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted PHP photo gallery software, not a vendor-hosted service"
+  },
+  {
+   "name": "tightvnc",
+   "domain": "tightvnc.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline remote-desktop software; peer-to-peer, no vendor servers"
+  },
+  {
+   "name": "moovitapp",
+   "domain": "moovitapp.com",
+   "outcome": "kept",
+   "reason": "Transit app backed by hosted servers and APIs"
+  },
+  {
+   "name": "sphinx-doc",
+   "domain": "sphinx-doc.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Documentation generator tool; runs locally, no vendor servers"
+  },
+  {
+   "name": "partedmagic",
+   "domain": "partedmagic.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Bootable disk utility distribution; offline software, no vendor-hosted service"
+  },
+  {
+   "name": "videosoftdev",
+   "domain": "videosoftdev.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop video editing software, no vendor servers"
+  },
+  {
+   "name": "phpunit",
+   "domain": "phpunit.de",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "PHPUnit is a PHP testing framework library, not a hosted service"
+  },
+  {
+   "name": "systemc",
+   "domain": "systemc.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "SystemC is a C++ library for hardware modeling"
+  },
+  {
+   "name": "briarproject",
+   "domain": "briarproject.org",
+   "outcome": "kept",
+   "reason": "Briar is a messaging app; peer-to-peer, not vendor servers"
+  },
+  {
+   "name": "linuxvirtualserver",
+   "domain": "linuxvirtualserver.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Kernel load-balancing software; no vendor-hosted servers"
+  },
+  {
+   "name": "fontawesome",
+   "domain": "fontawesome.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Icon font library; assets are served but it's a library, not a service"
+  },
+  {
+   "name": "midnightbsd",
+   "domain": "midnightbsd.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; offline OS, not a network service"
+  },
+  {
+   "name": "paltalk",
+   "domain": "paltalk.com",
+   "outcome": "kept",
+   "reason": "Paltalk is a video chat client connecting to its own servers"
+  },
+  {
+   "name": "ushareit",
+   "domain": "ushareit.com",
+   "outcome": "kept",
+   "reason": "Mobile file-sharing app that connects to vendor servers"
+  },
+  {
+   "name": "xemacs",
+   "domain": "xemacs.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline text editor; no vendor-hosted service"
+  },
+  {
+   "name": "dotgnu",
+   "domain": "dotgnu.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Free software project implementing .NET-compatible runtime; no hosted service"
+  },
+  {
+   "name": "q4os",
+   "domain": "q4os.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; offline desktop software, no vendor servers"
+  },
+  {
+   "name": "gtkmm",
+   "domain": "gtkmm.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "C++ bindings library for GTK GUI toolkit"
+  },
+  {
+   "name": "jqueryui",
+   "domain": "jqueryui.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript UI library; no vendor server traffic"
+  },
+  {
+   "name": "adguard",
+   "domain": "adguard.com",
+   "outcome": "kept",
+   "reason": "AdGuard apps and DNS services contact vendor servers for filtering and updates"
+  },
+  {
+   "name": "imo-im",
+   "domain": "imo.im",
+   "outcome": "kept",
+   "reason": "Imo is a consumer video/voice messaging app with vendor servers"
+  },
+  {
+   "name": "tixati",
+   "domain": "tixati.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline BitTorrent client; peers, not vendor servers"
+  },
+  {
+   "name": "biopython",
+   "domain": "biopython.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python library for biological computation; no vendor servers"
+  },
+  {
+   "name": "bigbluebutton",
+   "domain": "bigbluebutton.org",
+   "outcome": "kept",
+   "reason": "Open-source web conferencing platform; hosted instances and SaaS talk to project domain"
+  },
+  {
+   "name": "onnx",
+   "domain": "onnx.ai",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open ML model format and standard, not a hosted service"
+  },
+  {
+   "name": "mattermost",
+   "domain": "mattermost.com",
+   "outcome": "kept",
+   "reason": "Mattermost offers hosted cloud SaaS plus self-hosted server clients"
+  },
+  {
+   "name": "bacula",
+   "domain": "bacula.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source backup software; runs on user's own servers, no vendor service"
+  },
+  {
+   "name": "synfig",
+   "domain": "synfig.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop 2D animation software; no vendor server traffic"
+  },
+  {
+   "name": "kivy",
+   "domain": "kivy.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python framework for building multitouch GUI applications"
+  },
+  {
+   "name": "privoxy",
+   "domain": "privoxy.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source local HTTP proxy software, no vendor servers"
+  },
+  {
+   "name": "bittornado",
+   "domain": "bittornado.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline BitTorrent client; peer traffic, not vendor-hosted servers"
+  },
+  {
+   "name": "getsession",
+   "domain": "getsession.org",
+   "outcome": "kept",
+   "reason": "Session is a messaging app relying on its own network servers"
+  },
+  {
+   "name": "kanotix",
+   "domain": "kanotix.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Debian-based Linux distribution; downloadable OS, not a hosted service"
+  },
+  {
+   "name": "rosa",
+   "domain": "rosa.ru",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS, not a hosted service"
+  },
+  {
+   "name": "phonegap",
+   "domain": "phonegap.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Cross-platform mobile app framework; no vendor-hosted service"
+  },
+  {
+   "name": "bun",
+   "domain": "bun.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript runtime and toolkit; no vendor-hosted service"
+  },
+  {
+   "name": "swig",
+   "domain": "swig.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "SWIG is a software development tool generating language bindings"
+  },
+  {
+   "name": "threejs",
+   "domain": "threejs.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript 3D graphics library; no vendor servers"
+  },
+  {
+   "name": "tryton",
+   "domain": "tryton.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source ERP framework; self-hosted, no vendor servers"
+  },
+  {
+   "name": "libvirt",
+   "domain": "libvirt.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source virtualization management toolkit and library, runs locally"
+  },
+  {
+   "name": "silverstripe",
+   "domain": "silverstripe.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted PHP CMS framework; runs on user servers"
+  },
+  {
+   "name": "calamares",
+   "domain": "calamares.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Distro installer framework; offline desktop software, no vendor server"
+  },
+  {
+   "name": "freeplane",
+   "domain": "freeplane.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop mind-mapping application with no vendor server"
+  },
+  {
+   "name": "ele",
+   "domain": "ele.me",
+   "outcome": "kept",
+   "reason": "Chinese food delivery platform with app and backend servers"
+  },
+  {
+   "name": "privacybadger",
+   "domain": "privacybadger.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Browser extension; blocks trackers locally, no vendor server traffic"
+  },
+  {
+   "name": "antigravity",
+   "domain": "antigravity.google",
+   "outcome": "kept",
+   "reason": "Google's AI-powered IDE; cloud-connected, talks to vendor servers"
+  },
+  {
+   "name": "lustre",
+   "domain": "lustre.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Lustre is a parallel distributed filesystem software, not a hosted service"
+  },
+  {
+   "name": "worldwidetelescope",
+   "domain": "worldwidetelescope.org",
+   "outcome": "kept",
+   "reason": "Web-based and desktop client that streams sky imagery from vendor servers"
+  },
+  {
+   "name": "brlcad",
+   "domain": "brlcad.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline open-source CAD modeling software; no vendor-hosted service"
+  },
+  {
+   "name": "imagej",
+   "domain": "imagej.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline open-source desktop image analysis software, no vendor servers"
+  },
+  {
+   "name": "contextgarden",
+   "domain": "contextgarden.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "TeX-based typesetting system; offline software, not a network service"
+  },
+  {
+   "name": "html-tidy",
+   "domain": "html-tidy.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline command-line HTML cleanup tool, no vendor servers"
+  },
+  {
+   "name": "spacy",
+   "domain": "spacy.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python NLP library; no vendor-hosted service"
+  },
+  {
+   "name": "powerarchiver",
+   "domain": "powerarchiver.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop file archiver software, no vendor servers"
+  },
+  {
+   "name": "libpng",
+   "domain": "libpng.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "libpng is a C image library, not a network service"
+  },
+  {
+   "name": "freespire",
+   "domain": "freespire.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; installable OS, no vendor-hosted service"
+  },
+  {
+   "name": "openntpd",
+   "domain": "openntpd.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "OpenNTPD is an NTP daemon; runs locally, queries external time servers"
+  },
+  {
+   "name": "underscorejs",
+   "domain": "underscorejs.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript utility library, no vendor server"
+  },
+  {
+   "name": "chia",
+   "domain": "chia.net",
+   "outcome": "kept",
+   "reason": "Chia blockchain network with hosted nodes, wallet, and services"
+  },
+  {
+   "name": "generic-mapping-tools",
+   "domain": "generic-mapping-tools.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline scientific plotting toolset; no vendor server"
+  },
+  {
+   "name": "denemo",
+   "domain": "denemo.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop music notation editor with no vendor servers"
+  },
+  {
+   "name": "orgmode",
+   "domain": "orgmode.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Emacs-based offline text organizer; no vendor-hosted service"
+  },
+  {
+   "name": "gnunet",
+   "domain": "gnunet.org",
+   "outcome": "kept",
+   "reason": "Peer-to-peer network framework and applications that communicate with network peers"
+  },
+  {
+   "name": "nodered",
+   "domain": "nodered.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted flow-based programming tool; runs locally, no vendor servers"
+  },
+  {
+   "name": "gephi",
+   "domain": "gephi.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop graph visualization software with no vendor servers"
+  },
+  {
+   "name": "backbox",
+   "domain": "backbox.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "BackBox is an Ubuntu-based penetration testing distribution, an offline OS image"
+  },
+  {
+   "name": "exactaudiocopy",
+   "domain": "exactaudiocopy.de",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows CD ripping application with no vendor servers"
+  },
+  {
+   "name": "echolink",
+   "domain": "echolink.org",
+   "outcome": "kept",
+   "reason": "EchoLink is a ham radio VoIP client using vendor-operated directory and connection servers"
+  },
+  {
+   "name": "ollama",
+   "domain": "ollama.com",
+   "outcome": "kept",
+   "reason": "Ollama.com hosts model library and cloud services contacted by client"
+  },
+  {
+   "name": "bazzite",
+   "domain": "bazzite.gg",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; OS image, not a hosted service"
+  },
+  {
+   "name": "meteor",
+   "domain": "meteor.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript full-stack framework; a library, not a hosted service"
+  },
+  {
+   "name": "mediamonkey",
+   "domain": "mediamonkey.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop media library software, no vendor server traffic"
+  },
+  {
+   "name": "yoctoproject",
+   "domain": "yoctoproject.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source embedded Linux build framework and toolchain, not a hosted service"
+  },
+  {
+   "name": "airhelp",
+   "domain": "airhelp.co.uk",
+   "outcome": "kept",
+   "reason": "Consumer flight-compensation claims platform; hosted web service"
+  },
+  {
+   "name": "kentico",
+   "domain": "kentico.com",
+   "outcome": "kept",
+   "reason": "Kentico Xperience is a SaaS/cloud-hosted CMS with vendor servers"
+  },
+  {
+   "name": "kinodv",
+   "domain": "kinodv.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Kino is offline open-source video editing desktop software"
+  },
+  {
+   "name": "tortoisegit",
+   "domain": "tortoisegit.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows Git client shell extension; no vendor servers"
+  },
+  {
+   "name": "alpineapp",
+   "domain": "alpineapp.email",
+   "outcome": "kept",
+   "reason": "Alpine email client connects to vendor mail servers"
+  },
+  {
+   "name": "scratchjr",
+   "domain": "scratchjr.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline-capable educational app for children; no own server dependency"
+  },
+  {
+   "name": "memoq",
+   "domain": "memoq.com",
+   "outcome": "kept",
+   "reason": "Translation platform with cloud server and online project hosting"
+  },
+  {
+   "name": "opnsense",
+   "domain": "opnsense.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source firewall/router OS installed locally; no vendor-hosted service"
+  },
+  {
+   "name": "jquerymobile",
+   "domain": "jquerymobile.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript UI framework; no vendor-operated network service"
+  },
+  {
+   "name": "plesk",
+   "domain": "plesk.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Server control panel software installed locally, not a vendor-hosted service"
+  },
+  {
+   "name": "pencil2d",
+   "domain": "pencil2d.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop 2D animation application with no vendor servers"
+  },
+  {
+   "name": "stunnel",
+   "domain": "stunnel.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline TLS wrapper tool; no vendor-hosted servers"
+  },
+  {
+   "name": "icab",
+   "domain": "icab.de",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop web browser for macOS"
+  },
+  {
+   "name": "dyne",
+   "domain": "dyne.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Dynebolic is a live CD Linux distribution, offline software"
+  },
+  {
+   "name": "openvswitch",
+   "domain": "openvswitch.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open vSwitch is open-source virtual switch software, not a hosted service"
+  },
+  {
+   "name": "virtuemart",
+   "domain": "virtuemart.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Joomla e-commerce extension; self-hosted PHP software, no vendor servers"
+  },
+  {
+   "name": "sinatrarb",
+   "domain": "sinatrarb.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Ruby web framework; a library, not a hosted service"
+  },
+  {
+   "name": "simsimi",
+   "domain": "simsimi.com",
+   "outcome": "kept",
+   "reason": "Chatbot app and web service with vendor-hosted servers"
+  },
+  {
+   "name": "winshell",
+   "domain": "winshell.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "WinShell is a Windows shell extension library/tool, offline software"
+  },
+  {
+   "name": "mootools",
+   "domain": "mootools.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript framework library, no vendor servers"
+  },
+  {
+   "name": "taler",
+   "domain": "taler.net",
+   "outcome": "kept",
+   "reason": "Payment system with hosted merchant and exchange servers"
+  },
+  {
+   "name": "jabref",
+   "domain": "jabref.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop bibliography manager; no vendor-hosted service"
+  },
+  {
+   "name": "ideditor",
+   "domain": "ideditor.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "iD is an open-source web map editor library embedded in other sites"
+  },
+  {
+   "name": "shadowsocks",
+   "domain": "shadowsocks.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source proxy tool; users run their own servers"
+  },
+  {
+   "name": "finnix",
+   "domain": "finnix.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution ISO; offline bootable OS, no vendor servers"
+  },
+  {
+   "name": "nokia",
+   "domain": "nokia.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop software for syncing phones"
+  },
+  {
+   "name": "googlebook",
+   "domain": "googlebook.google",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Unclear product; could be a device OS with cloud services"
+  },
+  {
+   "name": "zephyrproject",
+   "domain": "zephyrproject.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Zephyr is an RTOS for embedded devices, not a hosted service"
+  },
+  {
+   "name": "zend",
+   "domain": "zend.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop IDE for PHP development"
+  },
+  {
+   "name": "lammps",
+   "domain": "lammps.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Scientific molecular dynamics simulator; offline desktop/HPC software"
+  },
+  {
+   "name": "tornadoweb",
+   "domain": "tornadoweb.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python web framework library, no hosted service"
+  },
+  {
+   "name": "gftp",
+   "domain": "gftp.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop FTP client software with no vendor servers"
+  },
+  {
+   "name": "qb64",
+   "domain": "qb64.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source BASIC compiler/IDE; offline development tool"
+  },
+  {
+   "name": "funtoo",
+   "domain": "funtoo.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; packages are offline OS software, not a hosted service"
+  },
+  {
+   "name": "scapy",
+   "domain": "scapy.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python library for packet manipulation; no vendor servers"
+  },
+  {
+   "name": "swagger",
+   "domain": "swagger.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "API specification tooling and framework; no vendor-hosted service"
+  },
+  {
+   "name": "cryptool",
+   "domain": "cryptool.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop educational cryptography software for learning"
+  },
+  {
+   "name": "jetaudio",
+   "domain": "jetaudio.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop audio player software"
+  },
+  {
+   "name": "softmaker",
+   "domain": "softmaker.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop office suite; no vendor-hosted service"
+  },
+  {
+   "name": "activestate",
+   "domain": "activestate.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop IDE; no vendor-hosted service traffic"
+  },
+  {
+   "name": "mobilinux",
+   "domain": "mobilinux.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Unclear what Mobilinux is; name suggests Linux mobile OS, not a hosted service"
+  },
+  {
+   "name": "adempiere",
+   "domain": "adempiere.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source ERP framework, self-hosted; no vendor-hosted service"
+  },
+  {
+   "name": "massivesoftware",
+   "domain": "massivesoftware.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Name ambiguous; Q568723 unclear, domain unrelated to known project"
+  },
+  {
+   "name": "zygotebody",
+   "domain": "zygotebody.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "ZygoteBody is an offline educational 3D anatomy desktop/mobile app"
+  },
+  {
+   "name": "h2database",
+   "domain": "h2database.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "H2 is an embeddable Java SQL database library"
+  },
+  {
+   "name": "lz4",
+   "domain": "lz4.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "LZ4 is a compression algorithm library and CLI tool"
+  },
+  {
+   "name": "transifex",
+   "domain": "transifex.com",
+   "outcome": "kept",
+   "reason": "Hosted localization SaaS platform with cloud servers"
+  },
+  {
+   "name": "cyberduck",
+   "domain": "cyberduck.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop FTP/SFTP/cloud storage client application"
+  },
+  {
+   "name": "uzbl",
+   "domain": "uzbl.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Lightweight keyboard-driven web browser; offline client, no vendor servers"
+  },
+  {
+   "name": "gegl",
+   "domain": "gegl.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "GEGL is an image processing library, not a networked service"
+  },
+  {
+   "name": "sourcemage",
+   "domain": "sourcemage.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Source-based Linux distribution; packages are not a hosted service"
+  },
+  {
+   "name": "ipfire",
+   "domain": "ipfire.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source firewall/router distribution installed locally; no vendor-hosted service"
+  },
+  {
+   "name": "mediacoderhq",
+   "domain": "mediacoderhq.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop media transcoding software, no vendor server"
+  },
+  {
+   "name": "originlab",
+   "domain": "originlab.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop data analysis and graphing software"
+  },
+  {
+   "name": "textpattern",
+   "domain": "textpattern.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted open-source CMS; no vendor-run service"
+  },
+  {
+   "name": "team-mediaportal",
+   "domain": "team-mediaportal.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source media center software installed locally; no vendor-hosted service"
+  },
+  {
+   "name": "python-projects",
+   "domain": "python-projects.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Python IDE desktop software, no vendor server"
+  },
+  {
+   "name": "leafletjs",
+   "domain": "leafletjs.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript library for interactive maps"
+  },
+  {
+   "name": "openbravo",
+   "domain": "openbravo.com",
+   "outcome": "kept",
+   "reason": "Openbravo offers cloud-hosted ERP/POS SaaS with vendor servers"
+  },
+  {
+   "name": "idris-lang",
+   "domain": "idris-lang.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Idris is a functional programming language and compiler"
+  },
+  {
+   "name": "lirc",
+   "domain": "lirc.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux Infrared Remote Control: offline daemon and tools, no vendor servers"
+  },
+  {
+   "name": "gocosmos",
+   "domain": "gocosmos.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Cosmos is a blockchain framework/SDK for building applications"
+  },
+  {
+   "name": "squirrelmail",
+   "domain": "squirrelmail.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted PHP webmail software; no vendor-run server"
+  },
+  {
+   "name": "gridcoin",
+   "domain": "gridcoin.us",
+   "outcome": "kept",
+   "reason": "Cryptocurrency network with client connecting to project servers and websites"
+  },
+  {
+   "name": "texniccenter",
+   "domain": "texniccenter.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows LaTeX editor; no vendor servers"
+  },
+  {
+   "name": "nimbuzz",
+   "domain": "nimbuzz.com",
+   "outcome": "kept",
+   "reason": "Former cross-platform instant messaging app with vendor-hosted servers"
+  },
+  {
+   "name": "mamp",
+   "domain": "mamp.info",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline local web-server stack desktop application"
+  },
+  {
+   "name": "camfrog",
+   "domain": "camfrog.com",
+   "outcome": "kept",
+   "reason": "Video chat client connecting to Camfrog's own servers"
+  },
+  {
+   "name": "imvu",
+   "domain": "imvu.com",
+   "outcome": "kept",
+   "reason": "Online social platform with avatar chat, hosted by its vendor."
+  },
+  {
+   "name": "cherokee-project",
+   "domain": "cherokee-project.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Cherokee is a web server software project, not a hosted service"
+  },
+  {
+   "name": "orbitdownloader",
+   "domain": "orbitdownloader.com",
+   "outcome": "kept",
+   "reason": "Desktop download manager; app contacts vendor servers for updates and licensing"
+  },
+  {
+   "name": "asteroidos",
+   "domain": "asteroidos.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source smartwatch operating system; runs on device"
+  },
+  {
+   "name": "arts-project",
+   "domain": "arts-project.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "aRts is an offline audio synthesis server/library for Linux desktops"
+  },
+  {
+   "name": "e107",
+   "domain": "e107.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted PHP content management system; no vendor-operated server"
+  },
+  {
+   "name": "dbeaver",
+   "domain": "dbeaver.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop database client; no own vendor servers"
+  },
+  {
+   "name": "clearos",
+   "domain": "clearos.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Linux-based server OS; may phone home for licensing/updates"
+  },
+  {
+   "name": "python-pillow",
+   "domain": "python-pillow.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python imaging library; a software library, not a networked service"
+  },
+  {
+   "name": "awstats",
+   "domain": "awstats.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Perl log analyzer tool; no vendor servers"
+  },
+  {
+   "name": "troff",
+   "domain": "troff.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Text formatting language and typesetting program; offline tool, no vendor servers"
+  },
+  {
+   "name": "grml",
+   "domain": "grml.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Debian-based Linux live distribution; offline OS image, no vendor servers"
+  },
+  {
+   "name": "pdfsam",
+   "domain": "pdfsam.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop PDF tool with no vendor server"
+  },
+  {
+   "name": "wolfssl",
+   "domain": "wolfssl.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "TLS/SSL embedded cryptographic library, not a hosted service"
+  },
+  {
+   "name": "scons",
+   "domain": "scons.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "SCons is a Python-based build tool with no vendor servers"
+  },
+  {
+   "name": "arduino",
+   "domain": "arduino.cc",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop IDE; traffic minimal, not a hosted service"
+  },
+  {
+   "name": "tezos",
+   "domain": "tezos.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Tezos is a blockchain protocol with public nodes and a wallet; ambiguous as a network service"
+  },
+  {
+   "name": "instantbird",
+   "domain": "instantbird.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop IM client; no vendor-hosted service"
+  },
+  {
+   "name": "pleroma",
+   "domain": "pleroma.social",
+   "outcome": "kept",
+   "reason": "Federated social network server software; pleroma.social hosts a public instance"
+  },
+  {
+   "name": "gap-system",
+   "domain": "gap-system.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "GAP is a computer algebra system and programming language; offline software"
+  },
+  {
+   "name": "meldmerge",
+   "domain": "meldmerge.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop visual diff and merge tool"
+  },
+  {
+   "name": "remmina",
+   "domain": "remmina.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop remote-desktop client; no vendor-hosted service"
+  },
+  {
+   "name": "cmsmadesimple",
+   "domain": "cmsmadesimple.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted PHP CMS software; no vendor-run servers"
+  },
+  {
+   "name": "jellyfin",
+   "domain": "jellyfin.org",
+   "outcome": "kept",
+   "reason": "Self-hosted media server app; clients and metadata lookups contact project servers"
+  },
+  {
+   "name": "twisted",
+   "domain": "twisted.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python networking framework library, not a hosted service"
+  },
+  {
+   "name": "smoothwall",
+   "domain": "smoothwall.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source firewall OS distribution, runs locally on own hardware"
+  },
+  {
+   "name": "babel",
+   "domain": "babel.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript compiler; a library/tool with no vendor server"
+  },
+  {
+   "name": "ninja-build",
+   "domain": "ninja-build.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Ninja is an offline build system tool with no vendor servers"
+  },
+  {
+   "name": "amikumu",
+   "domain": "amikumu.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Amikumu is an unfamiliar name; cannot confirm if it is a hosted service"
+  },
+  {
+   "name": "gluster",
+   "domain": "gluster.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Distributed filesystem software run on own infrastructure"
+  },
+  {
+   "name": "scylladb",
+   "domain": "scylladb.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "ScyllaDB is a distributed NoSQL database software product"
+  },
+  {
+   "name": "floorp",
+   "domain": "floorp.app",
+   "outcome": "kept",
+   "reason": "Firefox-based browser that contacts vendor update and sync servers"
+  },
+  {
+   "name": "lutris",
+   "domain": "lutris.net",
+   "outcome": "kept",
+   "reason": "Game manager client that connects to lutris.net servers for accounts, installers"
+  },
+  {
+   "name": "trino",
+   "domain": "trino.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source distributed SQL query engine; software run by users, not a vendor server"
+  },
+  {
+   "name": "ladybird",
+   "domain": "ladybird.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source web browser engine; offline desktop software, not a hosted service"
+  },
+  {
+   "name": "here",
+   "domain": "here.com",
+   "outcome": "kept",
+   "reason": "Navigation app with online maps and routing servers"
+  },
+  {
+   "name": "ejabberd",
+   "domain": "ejabberd.im",
+   "outcome": "kept",
+   "reason": "XMPP server software; clients connect to deployed servers"
+  },
+  {
+   "name": "kmymoney",
+   "domain": "kmymoney.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop personal finance application; no vendor servers"
+  },
+  {
+   "name": "harmonyos",
+   "domain": "harmonyos.com",
+   "outcome": "dropped:domain_does_not_resolve",
+   "reason": "no DNS answer on 2026-11-25"
+  },
+  {
+   "name": "atutor",
+   "domain": "atutor.ca",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted open-source learning management system software"
+  },
+  {
+   "name": "mindmanager",
+   "domain": "mindmanager.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Mindmapping desktop app with optional cloud sync; ambiguous"
+  },
+  {
+   "name": "fossil-scm",
+   "domain": "fossil-scm.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-contained distributed version control system; offline tool with optional server"
+  },
+  {
+   "name": "ultraedit",
+   "domain": "ultraedit.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop text editor; no vendor-hosted service"
+  },
+  {
+   "name": "messengerkids",
+   "domain": "messengerkids.com",
+   "outcome": "kept",
+   "reason": "Meta's hosted messaging app; traffic goes to its servers"
+  },
+  {
+   "name": "geant4",
+   "domain": "geant4.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Geant4 is a C++ toolkit library for particle simulation"
+  },
+  {
+   "name": "solidproject",
+   "domain": "solidproject.org",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Solid is a web decentralization specification and protocol with pod servers; ambiguous"
+  },
+  {
+   "name": "eslint",
+   "domain": "eslint.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript linting tool; runs locally, no vendor servers"
+  },
+  {
+   "name": "mp3tag",
+   "domain": "mp3tag.de",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop tag editor for audio files"
+  },
+  {
+   "name": "greenstone",
+   "domain": "greenstone.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Greenstone is open-source digital library software installed locally"
+  },
+  {
+   "name": "openmoko",
+   "domain": "openmoko.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Mobile Linux distribution for phones; no vendor-hosted service"
+  },
+  {
+   "name": "mediagoblin",
+   "domain": "mediagoblin.org",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Federated media hosting software; self-hosted by others, not a vendor service"
+  },
+  {
+   "name": "claroline",
+   "domain": "claroline.com",
+   "outcome": "kept",
+   "reason": "Claroline is a web-based learning platform with hosted SaaS offering"
+  },
+  {
+   "name": "dvdshrink",
+   "domain": "dvdshrink.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop DVD-ripping software, no vendor servers"
+  },
+  {
+   "name": "glfw",
+   "domain": "glfw.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "C library for OpenGL windows and input"
+  },
+  {
+   "name": "intellicad",
+   "domain": "intellicad.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline CAD desktop software; no vendor-hosted service"
+  },
+  {
+   "name": "vaadin",
+   "domain": "vaadin.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Java web framework library for building UIs"
+  },
+  {
+   "name": "linex",
+   "domain": "linex.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS packages, not a network service"
+  },
+  {
+   "name": "civicrm",
+   "domain": "civicrm.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source CRM software installed and self-hosted by organizations"
+  },
+  {
+   "name": "frescobaldi",
+   "domain": "frescobaldi.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop LilyPond music notation editor"
+  },
+  {
+   "name": "phalcon",
+   "domain": "phalcon.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "PHP web framework distributed as extension; no hosted service"
+  },
+  {
+   "name": "auroracoin",
+   "domain": "auroracoin.is",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Cryptocurrency with peer-to-peer network; no vendor-hosted service"
+  },
+  {
+   "name": "chocolatey",
+   "domain": "chocolatey.org",
+   "outcome": "kept",
+   "reason": "Package manager client contacting chocolatey.org community package repository servers"
+  },
+  {
+   "name": "darlinghq",
+   "domain": "darlinghq.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source compatibility layer for running macOS apps on Linux"
+  },
+  {
+   "name": "getsharex",
+   "domain": "getsharex.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows desktop screen capture software"
+  },
+  {
+   "name": "opennn",
+   "domain": "opennn.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "C++ neural network library; offline library, no vendor servers"
+  },
+  {
+   "name": "openinventor",
+   "domain": "openinventor.com",
+   "outcome": "dropped:domain_does_not_resolve",
+   "reason": "no DNS answer on 2026-11-25"
+  },
+  {
+   "name": "plantuml",
+   "domain": "plantuml.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source diagramming tool; runs locally, no vendor server"
+  },
+  {
+   "name": "lxle",
+   "domain": "lxle.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS installed locally, not a network service"
+  },
+  {
+   "name": "zim-wiki",
+   "domain": "zim-wiki.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop wiki application, no vendor servers"
+  },
+  {
+   "name": "polarisoffice",
+   "domain": "polarisoffice.com",
+   "outcome": "kept",
+   "reason": "Office suite with cloud sync and vendor servers"
+  },
+  {
+   "name": "thonny",
+   "domain": "thonny.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Python IDE for beginners; no vendor servers"
+  },
+  {
+   "name": "gnoppix",
+   "domain": "gnoppix.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; packages are offline OS software"
+  },
+  {
+   "name": "cutepdf",
+   "domain": "cutepdf.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline PDF printer driver; no vendor server traffic"
+  },
+  {
+   "name": "mangoplus",
+   "domain": "mangoplus.vn",
+   "outcome": "kept",
+   "reason": "Streaming video platform with vendor-hosted servers and content"
+  },
+  {
+   "name": "kororaproject",
+   "domain": "kororaproject.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; downloadable OS, no vendor-hosted service"
+  },
+  {
+   "name": "bioconductor",
+   "domain": "bioconductor.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "R package repository for bioinformatics libraries; not a hosted service"
+  },
+  {
+   "name": "swaywm",
+   "domain": "swaywm.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Wayland compositor; offline desktop software with no vendor servers"
+  },
+  {
+   "name": "strace",
+   "domain": "strace.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "strace is an offline Linux system call tracing CLI tool"
+  },
+  {
+   "name": "glpi-project",
+   "domain": "glpi-project.org",
+   "outcome": "kept",
+   "reason": "Web-based IT asset management app; hosted instances and vendor servers"
+  },
+  {
+   "name": "helenos",
+   "domain": "helenos.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Microkernel operating system; offline software with no vendor servers"
+  },
+  {
+   "name": "epicbrowser",
+   "domain": "epicbrowser.com",
+   "outcome": "kept",
+   "reason": "Epic Privacy Browser, which connects to its own vendor servers"
+  },
+  {
+   "name": "pharo",
+   "domain": "pharo.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Smalltalk-based programming language and IDE, offline development environment"
+  },
+  {
+   "name": "cytoscape",
+   "domain": "cytoscape.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop bioinformatics network visualization software"
+  },
+  {
+   "name": "sakailms",
+   "domain": "sakailms.org",
+   "outcome": "kept",
+   "reason": "Sakai is a learning management system; hosted instances talk to its domain"
+  },
+  {
+   "name": "mobirise",
+   "domain": "mobirise.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop website builder software"
+  },
+  {
+   "name": "cameleon",
+   "domain": "cameleon.live",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Unfamiliar project; domain suggests a live-streaming or web service, but unverified"
+  },
+  {
+   "name": "exiftool",
+   "domain": "exiftool.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Perl command-line tool for reading metadata"
+  },
+  {
+   "name": "galaxyproject",
+   "domain": "galaxyproject.org",
+   "outcome": "kept",
+   "reason": "Galaxy is a web-based platform with public hosted instances"
+  },
+  {
+   "name": "projectlibre",
+   "domain": "projectlibre.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop project management software, no vendor servers"
+  },
+  {
+   "name": "visopsys",
+   "domain": "visopsys.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Hobby operating system; offline OS, no vendor servers"
+  },
+  {
+   "name": "travis-ci",
+   "domain": "travis-ci.com",
+   "outcome": "kept",
+   "reason": "Hosted CI/CD SaaS platform with its own servers"
+  },
+  {
+   "name": "livestation",
+   "domain": "livestation.com",
+   "outcome": "kept",
+   "reason": "Live TV streaming service with vendor-hosted servers"
+  },
+  {
+   "name": "hily",
+   "domain": "hily.com",
+   "outcome": "kept",
+   "reason": "Hily is a dating app with hosted backend servers"
+  },
+  {
+   "name": "avogadro",
+   "domain": "avogadro.cc",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline open-source molecular editor desktop software"
+  },
+  {
+   "name": "bluespice",
+   "domain": "bluespice.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted MediaWiki extension suite; runs on customer servers"
+  },
+  {
+   "name": "ubuntuunity",
+   "domain": "ubuntuunity.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS, packages not vendor-server service"
+  },
+  {
+   "name": "salixos",
+   "domain": "salixos.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; installable OS, no vendor-hosted service"
+  },
+  {
+   "name": "itextpdf",
+   "domain": "itextpdf.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "PDF library for Java and .NET; no vendor server"
+  },
+  {
+   "name": "ambermd",
+   "domain": "ambermd.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "AMBER is molecular dynamics simulation software suite; offline scientific software"
+  },
+  {
+   "name": "bitchat",
+   "domain": "bitchat.free",
+   "outcome": "kept",
+   "reason": "Mobile messaging app; traffic routes via vendor-run infrastructure, domain-named"
+  },
+  {
+   "name": "caddyserver",
+   "domain": "caddyserver.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source web server software; runs locally, no vendor servers"
+  },
+  {
+   "name": "paraview",
+   "domain": "paraview.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop scientific visualization application with no vendor-hosted service"
+  },
+  {
+   "name": "mupdf",
+   "domain": "mupdf.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline PDF/document rendering library and viewer; no vendor server"
+  },
+  {
+   "name": "bcachefs",
+   "domain": "bcachefs.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux kernel filesystem; offline software, no vendor servers"
+  },
+  {
+   "name": "nitter",
+   "domain": "nitter.net",
+   "outcome": "kept",
+   "reason": "Alternative Twitter front-end run as public hosted instances"
+  },
+  {
+   "name": "icinga",
+   "domain": "icinga.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted open-source monitoring software; no vendor-run service"
+  },
+  {
+   "name": "jmp",
+   "domain": "jmp.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JMP is statistical desktop software; offline, no vendor servers"
+  },
+  {
+   "name": "rocksclusters",
+   "domain": "rocksclusters.org",
+   "outcome": "dropped:domain_does_not_resolve",
+   "reason": "no DNS answer on 2026-11-25"
+  },
+  {
+   "name": "openbts",
+   "domain": "openbts.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source GSM base station software run locally, not a vendor-hosted service"
+  },
+  {
+   "name": "nativescript",
+   "domain": "nativescript.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source framework for building native mobile apps"
+  },
+  {
+   "name": "graalvm",
+   "domain": "graalvm.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "GraalVM is a JDK/runtime platform, not a hosted service"
+  },
+  {
+   "name": "perforce",
+   "domain": "perforce.com",
+   "outcome": "kept",
+   "reason": "Perforce P4 is a version control server; clients connect to vendor-hosted or self-hosted servers"
+  },
+  {
+   "name": "2gis",
+   "domain": "2gis.ru",
+   "outcome": "kept",
+   "reason": "Map and navigation app with online services from 2GIS servers"
+  },
+  {
+   "name": "amigaux",
+   "domain": "amigaux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Historical Unix-like OS for Amiga; offline operating system, no vendor servers"
+  },
+  {
+   "name": "go-oo",
+   "domain": "go-oo.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Go-oo is an offline OpenOffice.org fork distributed as desktop software"
+  },
+  {
+   "name": "emscripten",
+   "domain": "emscripten.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Compiler toolchain for WebAssembly; no vendor server"
+  },
+  {
+   "name": "salome-platform",
+   "domain": "salome-platform.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline scientific simulation desktop platform, no vendor server"
+  },
+  {
+   "name": "keycloak",
+   "domain": "keycloak.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source identity server software self-hosted by users, not a vendor-hosted service"
+  },
+  {
+   "name": "virt-manager",
+   "domain": "virt-manager.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop GUI for managing local virtualization; no vendor servers"
+  },
+  {
+   "name": "couchbase",
+   "domain": "couchbase.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted database server software, not a vendor-hosted service"
+  },
+  {
+   "name": "testng",
+   "domain": "testng.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Java testing framework; library with no vendor server"
+  },
+  {
+   "name": "veyon",
+   "domain": "veyon.io",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source classroom management software installed locally, not a vendor-hosted service"
+  },
+  {
+   "name": "rtai",
+   "domain": "rtai.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "RTAI is a real-time Linux kernel extension, not a networked service"
+  },
+  {
+   "name": "tribler",
+   "domain": "tribler.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Desktop BitTorrent client; peers traffic, not vendor-hosted server"
+  },
+  {
+   "name": "eprints",
+   "domain": "eprints.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source repository software installed and run by institutions"
+  },
+  {
+   "name": "skia",
+   "domain": "skia.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source 2D graphics library; no vendor servers"
+  },
+  {
+   "name": "cmsimple",
+   "domain": "cmsimple.dk",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Self-hosted PHP flat-file CMS; no vendor-hosted servers"
+  },
+  {
+   "name": "i-doser",
+   "domain": "i-doser.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Audio binaural-beat software for personal use; offline playback"
+  },
+  {
+   "name": "ushahidi",
+   "domain": "ushahidi.com",
+   "outcome": "kept",
+   "reason": "Hosted crisis-mapping platform; ushahidi.com runs SaaS instances"
+  },
+  {
+   "name": "maxqda",
+   "domain": "maxqda.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop qualitative data analysis software"
+  },
+  {
+   "name": "llama",
+   "domain": "llama.app",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source C++ inference library/tool running locally, no vendor servers"
+  },
+  {
+   "name": "arklinux",
+   "domain": "arklinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS software, not a hosted service"
+  },
+  {
+   "name": "meshcore",
+   "domain": "meshcore.io",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Open-source LoRa mesh firmware; unclear if it has vendor-operated servers"
+  },
+  {
+   "name": "compiz-fusion",
+   "domain": "compiz-fusion.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop window manager compositor; no vendor servers"
+  },
+  {
+   "name": "ghostery",
+   "domain": "ghostery.com",
+   "outcome": "kept",
+   "reason": "Browser extension and apps that contact Ghostery servers for sync and blocklists"
+  },
+  {
+   "name": "cocos2d-x",
+   "domain": "cocos2d-x.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source game engine/framework, not a hosted service"
+  },
+  {
+   "name": "rainmeter",
+   "domain": "rainmeter.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop customization software with no vendor server traffic"
+  },
+  {
+   "name": "skyfire",
+   "domain": "skyfire.com",
+   "outcome": "dropped:classification_unsure",
+   "reason": "Skyfire is an AI payments/agent network; ambiguous, domain may be unrelated to Q1586208"
+  },
+  {
+   "name": "libgdx",
+   "domain": "libgdx.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Java game development framework, a library with no vendor servers"
+  },
+  {
+   "name": "jeskola",
+   "domain": "jeskola.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline modular music tracker software, no vendor server"
+  },
+  {
+   "name": "phpdoc",
+   "domain": "phpdoc.de",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Documentation generator tool for PHP code; no vendor server"
+  },
+  {
+   "name": "ionicframework",
+   "domain": "ionicframework.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source UI framework for building mobile and web apps"
+  },
+  {
+   "name": "zentyal",
+   "domain": "zentyal.com",
+   "outcome": "kept",
+   "reason": "Zentyal is a server OS/SaaS-capable platform with cloud and update servers"
+  },
+  {
+   "name": "neuraldesigner",
+   "domain": "neuraldesigner.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop software for neural network modeling"
+  },
+  {
+   "name": "lumina-desktop",
+   "domain": "lumina-desktop.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Lumina is an offline desktop environment; no vendor server"
+  },
+  {
+   "name": "tcoffee",
+   "domain": "tcoffee.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline bioinformatics multiple sequence alignment tool, no vendor servers"
+  },
+  {
+   "name": "webalizer",
+   "domain": "webalizer.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline web log analysis tool; no vendor server"
+  },
+  {
+   "name": "dnscrypt",
+   "domain": "dnscrypt.info",
+   "outcome": "kept",
+   "reason": "DNSCrypt client connects to resolvers, a network service"
+  },
+  {
+   "name": "gulpjs",
+   "domain": "gulpjs.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "JavaScript build tool; runs locally, no vendor servers"
+  },
+  {
+   "name": "r-studio",
+   "domain": "r-studio.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline data-recovery desktop software, no vendor-hosted service"
+  },
+  {
+   "name": "crimsoneditor",
+   "domain": "crimsoneditor.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline Windows text editor; no vendor servers"
+  },
+  {
+   "name": "getright",
+   "domain": "getright.com",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop download manager software"
+  },
+  {
+   "name": "cherrypy",
+   "domain": "cherrypy.dev",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Python web framework, a library, not a hosted service"
+  },
+  {
+   "name": "toms",
+   "domain": "toms.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Single-floppy Linux distribution; offline OS image, no vendor servers"
+  },
+  {
+   "name": "dragora",
+   "domain": "dragora.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; installed locally, no vendor server traffic"
+  },
+  {
+   "name": "vinelinux",
+   "domain": "vinelinux.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Linux distribution; offline OS packages, not a network service"
+  },
+  {
+   "name": "keepassx",
+   "domain": "keepassx.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop password manager; no vendor servers"
+  },
+  {
+   "name": "cubrid",
+   "domain": "cubrid.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source relational database software, installed locally, not a hosted service"
+  },
+  {
+   "name": "hyperbola",
+   "domain": "hyperbola.info",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Operating system distribution; installed locally, not a hosted service"
+  },
+  {
+   "name": "openbabel",
+   "domain": "openbabel.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Chemistry file-conversion toolkit and library; offline software"
+  },
+  {
+   "name": "porteus",
+   "domain": "porteus.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Portable Linux distribution; offline OS image, no vendor-hosted service"
+  },
+  {
+   "name": "launchy",
+   "domain": "launchy.net",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Offline desktop application launcher utility"
+  },
+  {
+   "name": "torchbrowser",
+   "domain": "torchbrowser.com",
+   "outcome": "kept",
+   "reason": "Web browser that connects to its vendor's servers online"
+  },
+  {
+   "name": "sports-tracker",
+   "domain": "sports-tracker.com",
+   "outcome": "kept",
+   "reason": "Consumer fitness tracking app syncing activity data to vendor servers"
+  },
+  {
+   "name": "bitlbee",
+   "domain": "bitlbee.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "IRC-to-chat-network gateway run locally; no vendor-hosted service"
+  },
+  {
+   "name": "openbios",
+   "domain": "openbios.org",
+   "outcome": "dropped:not_a_network_service",
+   "reason": "Open-source firmware implementation; offline software, no vendor servers"
+  }
+ ]
+}
