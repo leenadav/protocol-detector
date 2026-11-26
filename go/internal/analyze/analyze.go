@@ -72,35 +72,39 @@ var eventKeys = []string{"revision", "kind", "observation"}
 // keyOrders is the key order of every object the reference writes with a fixed layout (dict literals and
 // dataclasses.asdict); objects it fills in evidence order are ordered per row (analyzer.Row.Order).
 var keyOrders = map[string][]string{
-	"frame":                          {"frame", "source", "destination", "message", "classification", "events", "app"},
-	"skip":                           {"frame", "status", "reason", "kind"},
-	"capture_gap":                    {"type", "scope", "active_connections", "reason", "frame"},
-	"stream_end":                     {"type", "source", "destination", "classification", "events"},
-	"summary":                        {"summary", "input_quality", "content"},
-	"summary.input_quality":          {"adapter", "checksums", "rejected", "flows_marked", "unsupported", "checksums_note"},
+	"frame":       {"frame", "source", "destination", "message", "classification", "events", "app"},
+	"skip":        {"frame", "status", "reason", "kind"},
+	"capture_gap": {"type", "scope", "active_connections", "reason", "frame"},
+	"stream_end":  {"type", "source", "destination", "classification", "events"},
+	"summary":     {"summary", "input_quality", "content"},
+	"summary.input_quality": {"adapter", "checksums", "rejected", "flows_marked", "unsupported", "checksums_note", "udp_flow_limit",
+		"tcp_connection_limit"},
 	"summary.input_quality.rejected": rejectKinds,
 	"summary.content":                {"version", "digest"},
 	"session": {"type", "transport", "client", "server", "start", "end", "packets", "client_bytes", "server_bytes", "end_reason",
 		"app", "category", "subcategory", "technology", "risk", "characteristics", "base_app", "implicitly_uses", "port_usage", "engine_status",
 		"client_protocol", "server_protocol", "encryption", "reasons", "shifted_from", "risks", "attribution", "content", "unknown", "observation",
-		"continuation", "input_quality", "layers", "signature_set", "decision", "policy", "fingerprints", "certificate", "hostname"},
-	"session.attribution":        {"provider", "kind", "family", "activity", "asserted_by"},
-	"session.content":            {"version", "digest"},
-	"session.unknown":            {"session", "client", "server"},
-	"session.unknown.session":    {"code", "stage", "family", "detail"},
-	"session.unknown.client":     {"code", "stage", "family", "detail"},
-	"session.unknown.server":     {"code", "stage", "family", "detail"},
-	"session.observation":        {"mode", "handshake_observed", "directions_seen", "roles"},
-	"session.continuation":       {"client", "server"},
-	"session.layers":             {"version", "transport", "outer", "encryption", "inner", "application", "decryption", "capture_quality", "chain", "claims", "note"},
-	"session.layers.outer":       {"protocol", "app", "status"},
-	"session.layers.encryption":  {"protocol", "offered_alpn", "server_name_asserted", "version"},
-	"session.layers.inner":       {"protocol", "app", "status", "source", "authenticated"},
-	"session.layers.application": {"name", "category", "status", "basis", "provider", "affiliation", "activity"},
-	"session.layers.decryption":  {"state", "reason_code", "authenticated_records"},
-	"session.layers.claims[]":    {"field", "source", "strength"},
-	"session.decision":           {"first_seconds", "stable_seconds"},
-	"session.policy":             {"action", "rule", "reasons", "predicates"},
+		"continuation", "input_quality", "layers", "signature_set", "decision", "policy", "fingerprints", "certificate", "hostname",
+		"mixed_outcomes", "datagram_outcomes"},
+	"session.attribution":                  {"provider", "kind", "family", "activity", "asserted_by"},
+	"session.content":                      {"version", "digest"},
+	"session.unknown":                      {"session", "client", "server"},
+	"session.unknown.session":              {"code", "stage", "family", "detail"},
+	"session.unknown.client":               {"code", "stage", "family", "detail"},
+	"session.unknown.server":               {"code", "stage", "family", "detail"},
+	"session.observation":                  {"mode", "handshake_observed", "directions_seen", "roles"},
+	"session.datagram_outcomes":            {"distinct", "beyond_limit"},
+	"session.datagram_outcomes.distinct[]": {"protocol", "application", "datagrams"},
+	"session.continuation":                 {"client", "server"},
+	"session.layers":                       {"version", "transport", "outer", "encryption", "inner", "application", "decryption", "capture_quality", "chain", "claims", "note"},
+	"session.layers.outer":                 {"protocol", "app", "status"},
+	"session.layers.encryption":            {"protocol", "offered_alpn", "server_name_asserted", "version"},
+	"session.layers.inner":                 {"protocol", "app", "status", "source", "authenticated"},
+	"session.layers.application":           {"name", "category", "status", "basis", "provider", "affiliation", "activity"},
+	"session.layers.decryption":            {"state", "reason_code", "authenticated_records"},
+	"session.layers.claims[]":              {"field", "source", "strength"},
+	"session.decision":                     {"first_seconds", "stable_seconds"},
+	"session.policy":                       {"action", "rule", "reasons", "predicates"},
 	"session.policy.predicates": {"identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions",
 		"observation"},
 }
@@ -314,7 +318,7 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (*Counts,
 	limit := opts.CRC32CByteLimit
 	an, err := analyzer.New(pack, analyzer.Options{Continuation: opts.Continuation, Fingerprints: opts.Fingerprints, Certificates: opts.Certificates,
 		Heuristics: opts.Heuristics, Signatures: opts.Signatures, TCPHint: opts.TCPHint, UDPHint: opts.UDPHint, CRC32CByteLimit: &limit,
-		IncludeHostnames: opts.IncludeHostnames, Policy: opts.Policy, Rows: true,
+		IncludeHostnames: opts.IncludeHostnames, Policy: opts.Policy, Rows: true, DatagramOutcomes: true,
 		Session: session.Options{MaxConnections: 32, ByteLimit: 65536, IdleTimeout: 60, MaxUDPFlows: -1, Observation: opts.Observation}})
 	if err != nil {
 		return nil, err
@@ -463,13 +467,28 @@ func Run(path string, pack *content.Pack, opts Options, out io.Writer) (*Counts,
 	} else {
 		counts.set("sessions", 0)
 	}
+	// PRO-448: datagrams and connection openings a full table turned away were inspected but got no session
+	// record; the counters are always present in JSON (0 when nothing was turned away), and the text summary
+	// names one only when it is not 0.
+	udpLimit, tcpLimit := an.Tracker.Counts["udp_flow_limit"], an.Tracker.Counts["tcp_connection_limit"]
+	counts.set("udp_flow_limit", udpLimit)
+	counts.set("tcp_connection_limit", tcpLimit)
 	if opts.JSON {
-		p.row("summary", map[string]interface{}{"summary": counts.Values, "input_quality": q.render(),
+		inputQuality := q.render()
+		inputQuality["udp_flow_limit"], inputQuality["tcp_connection_limit"] = udpLimit, tcpLimit
+		p.row("summary", map[string]interface{}{"summary": counts.Values, "input_quality": inputQuality,
 			"content": map[string]interface{}{"version": pack.Release.Version, "digest": pack.Digests.Release}},
 			map[string][]string{"summary.summary": counts.Order})
 	} else {
 		v := counts.Values
-		p.line(fmt.Sprintf("\nFrames: %d; TCP: %d; UDP: %d; skipped: %d; sessions: %d", v["frames"], v["tcp"], v["udp"], v["skipped"], v["sessions"]))
+		line := fmt.Sprintf("\nFrames: %d; TCP: %d; UDP: %d; skipped: %d; sessions: %d", v["frames"], v["tcp"], v["udp"], v["skipped"], v["sessions"])
+		if udpLimit > 0 {
+			line += fmt.Sprintf("; udp_flow_limit: %d", udpLimit)
+		}
+		if tcpLimit > 0 {
+			line += fmt.Sprintf("; tcp_connection_limit: %d", tcpLimit)
+		}
+		p.line(line)
 	}
 	if p.err != nil {
 		return counts, p.err

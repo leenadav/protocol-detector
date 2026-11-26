@@ -712,6 +712,53 @@
             }
           },
           "description": "D12: why this session is not an identification, per direction (and per session for lifecycle outcomes); absent on identifications. Codes are a reporting vocabulary (docs/UNKNOWN-REASONS.md) and never influence the verdict."
+        },
+        "mixed_outcomes": {
+          "type": "boolean",
+          "description": "PRO-448, UDP sessions of offline analyze: true when the flow's identified datagrams carried more than one (protocol, application) label; the first identification still names the session."
+        },
+        "datagram_outcomes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "distinct",
+            "beyond_limit"
+          ],
+          "description": "PRO-448: the flow's distinct identified datagram results in first-seen order, at most 8; beyond_limit counts identified datagrams whose label did not fit.",
+          "properties": {
+            "distinct": {
+              "type": "array",
+              "maxItems": 8,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "protocol",
+                  "application",
+                  "datagrams"
+                ],
+                "properties": {
+                  "protocol": {
+                    "type": "string"
+                  },
+                  "application": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "datagrams": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            },
+            "beyond_limit": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
         }
       },
       "required": [
@@ -1184,6 +1231,16 @@
         },
         "checksums_note": {
           "type": "string"
+        },
+        "udp_flow_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "PRO-448, offline summary: UDP datagrams inspected while the flow table was full; their flows got no session record."
+        },
+        "tcp_connection_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "PRO-448, offline summary: TCP connection openings turned away by a full connection table (the LIMIT rows)."
         }
       }
     },

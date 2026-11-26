@@ -124,7 +124,8 @@ its own notes file, and the section is refreshed after merge.
 <!-- BEGIN GENERATED: recent-work lane=platform limit=15 -->
 <!-- tools/build_ledgers.py writes this section from migration/notes/PRO-<n>.md. Do not edit it: add a notes file instead (migration/notes/README.md). -->
 
-_No notes for this lane yet._
+- 2026-11-25 · **PRO-402** · platform · Python removal 2/3 (PR B) - the demo page runs on the Go server with no interpreter: PR B of the Python removal, merged with main after PR A (PRO-401, #127). PR A had already made protodetect serve interpreter-free (embedded demo capture and catalog, Go TLS showcase), so the merge keeps main's implementation and drops this branch's duplicate. This PR now removes the last Python backend selection: serve has no --python option (TestServeHasNoPythonOption), presentation/launch.py and protodetect.py analyze|live|serve run the Go binary only, with no backend option and no fallback (test_launchers.py, test_launch_backend.py), main.py starts the page, and make serve does the same. test_ui.GoServiceBrowserTests runs the whole Playwright dashboard suite against the Go service from a directory holding only web/ and SOURCE.json. CODEOWNERS names /go/ and /presentation/, and the verify job allow-lists the new browser test (it runs with no skip allowed in presentation-ui). presentation/server.py stays for make golden-record until PR C deletes the Python engine. PRs: #125. SHAs: `cddaa1dd55125ba01d7fe0206e89c0e67ea069c0`, `476a7987ee162f4ea8fa3ce5432417eb117dbde6`, `356249b80c24eb1d5d780473a1f45e3d70cbb0aa`, `143be5843948a5ca78187ec2a69ac332d52256cd`. (merged in #125)
+- 2026-11-24 · **PRO-347** · platform · Shared ledgers generated from per-task notes: Each task now adds migration/notes/PRO-<n>.md instead of editing the shared ledgers. tools/build_ledgers.py (stdlib, deterministic) writes the marked "Recent work" sections of both lane briefs and STATUS.md from the notes plus git log (the pull request that merged each note), and the README/REVIEW-SCOPE test counts from tools/check_docs_counts.py. The ci `ledgers` job fails on a hand edit or a malformed note and lets a pull request's own note lag; check_docs_counts.py fails on a lagging test count only with --strict (release gate, nightly job). The release build checks out the full history and runs build_ledgers.py --self-test and, for a tag, --check --strict (dry runs: --check). The nightly ledgers workflow runs the strict check and uploads the refresh patch read-only; opening the refresh pull request itself needs Lee's policy decision (write token). Two branches that each add a note merged with no conflict (self-test and a real trial merge). (merged in #119)
 <!-- END GENERATED: recent-work -->
 
 ## 3. Where things live (reading order)
@@ -158,6 +159,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 |---|---|
 | Codex review of `docs/review-packet/` (7 chunks: Tier 1 1,350 lines, Tier 2 893) | QA Reviewer (Codex), currently paused |
 | PRO-347: the nightly `ledgers` workflow is read-only (strict check, refresh patch as an artifact). Opening the docs-only refresh pull request from it needs `contents: write` + `pull-requests: write` (rule 5 forbids both outside the release controller), the repository setting that lets Actions create pull requests, and a token whose pull requests trigger ci (`GITHUB_TOKEN` ones start no workflow). Until then Deputy applies the patch | Lee's decision (SSDLC item 43) |
+| PRO-480: branch `claude/platform-PRO-480-release-dryrun-counts` refreshes the generated ledgers (895 → 909) and runs `check_docs_counts.py --strict` in `publish-release.yml` for a tag only (policy `check_release_docs_counts`); the release build job also builds the Go binary before its gate (PRO-402 made `analyze` Go-only). After it merges: merge `main` into #149 (`claude/determined-mayer-cyjpa0`, PRO-194) and refresh Dependabot #151 (PRO-478) | Hermes's review, then Lee; PRO-194 and PRO-478 owners for the refresh |
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
@@ -186,10 +188,17 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **Also:** `b97adc8` (Dependabot pins, chunk 06) and `85e99e9` (govulncheck, chunk 07).
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
 - **Merged, not yet Codex-reviewed:** #33 `851eddb`, #34 `a179db6`, #35 `d3faff8`..`12a56ae`, #37 `7d04266`, #38 `7c33b1a`, #39 `37b3c84`.
+- **PRO-480 (#154):** `8e13f57a1303fca696db674da6414b833c4ad544` (strict docs counts on a tag only, ledgers refresh) and `031f23635834f4a42fa226b4adf8589c5ed2c7d8` (Go binary before the release gate).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
 
+- **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
+  `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An
+  unconditional `check_docs_counts.py --strict` turned every PR's release build red (Dependabot #151, #149).
+- **Release gate needs the Go binary (PRO-478):** since PRO-402 `protodetect.py analyze` runs only the Go binary
+  and exits 2 without it. Any job that runs `unittest discover` must first run `tools/go_ci.py build` (offline,
+  vendored), as the ci test jobs do; `publish-release.yml` did not, and two launcher tests failed `2 != 0`.
 - **Stale checkout:** a restarted container may check out an old branch (`claude/appid-engine`). Run
   `git fetch` and work on `claude/cicd-next` at `origin/main` first.
 - **Masked failures:** `cmd | tail` hides the exit status. Use `set -o pipefail` and check `make check`'s status
@@ -202,6 +211,8 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **CodeQL error gate:** no `assert` around a call with side effects, and no variable read after
   `parser.error`.
 - **Paths in tools:** a tool that runs subprocesses with `cwd=go` must resolve output paths to absolute.
+- **Strict only on a tag:** a check that fails while `main`'s generated sections lag (`--strict` of `check_docs_counts.py`
+  or `build_ledgers.py`) must not run on a pull request or a branch push; gate it on `REF_TYPE = tag` (PRO-480).
 - **Job names are check names:** renaming a job (its `name:`) can orphan a required status check; add a step and keep the name.
 - **New workflows:** `workflow_dispatch` works only once the workflow is registered. Give a new workflow a
   branch-limited `push` trigger, push, then dispatch. Schedules run only from `main`.
