@@ -27,6 +27,7 @@ def _wb(path, data):
 ROOT = W.ROOT; UA = W.UA
 CTX = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # verifies chain + hostname
 CTX.minimum_version = ssl.TLSVersion.TLSv1_2
+CTX.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1  # explicit too, for static analysis
 CTX.load_default_certs()
 PSL = W.load_psl()
 

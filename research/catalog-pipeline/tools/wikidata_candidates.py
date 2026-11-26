@@ -217,6 +217,7 @@ def normalise(rows):
 # ---------------- checks ----------------
 CTX = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # verifies chain + hostname
 CTX.minimum_version = ssl.TLSVersion.TLSv1_2
+CTX.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1  # explicit too, for static analysis
 CTX.load_default_certs()
 def check_one(rec):
     res = {"dns": False, "tls": False, "tls_name_ok": False, "http_status": None, "final_host": None,
