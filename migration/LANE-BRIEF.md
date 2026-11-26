@@ -164,7 +164,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | SEC-QUIC-3 (`fe87386`, PR into `main`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
 | PRO-291 (`5b48d91`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
 | PRO-315 (`653b1ca`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
-| Python removal (Lee, 2026-11-25), PR A of 3 (PRO-401, PR #127): Go and CI gates on frozen answers, `serve` without Python | Hermes's review, then Lee's merge. PR #125 (PRO-402) ports the same serve answers: whichever lands second reconciles `go/internal/serve`. PR B (the engine and its own jobs) and PR C wait for it. The demo capture, showcase and catalog are Go's own since PRO-401. |
+| Python removal (Lee, 2026-11-25), PR A of 3 (PRO-401, PR #127): Go and CI gates on frozen answers, `serve` without Python | Hermes's review, then Lee's merge. PRO-431: main merged in and the server golden made build-independent (`8541b3a`); the fix then flows into #135 and #138 by merge. PR #125 (PRO-402) ports the same serve answers: whichever lands second reconciles `go/internal/serve`. PR B (the engine and its own jobs) and PR C wait for it. The demo capture, showcase and catalog are Go's own since PRO-401. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
@@ -197,7 +197,7 @@ PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the docu
 
 PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the documentation commit after it.
 
-PRO-401 (against `main` `8945986`, PR #127): `466e197` (golden replays, property tests, serve without Python, CI), `f2cb27c` (lint fixes), `a21010a` (scanner lock), `d34aa0f` (two CodeQL errors), `49f8e7d` and `cb1cbad` (the server golden made host-independent: interface list and the synthetic-scope probe) and the documentation commits after them.
+PRO-401 (against `main` `8945986`, PR #127): `466e197` (golden replays, property tests, serve without Python, CI), `f2cb27c` (lint fixes), `a21010a` (scanner lock), `d34aa0f` (two CodeQL errors), `49f8e7d` and `cb1cbad` (the server golden made host-independent: interface list and the synthetic-scope probe) and the documentation commits after them. PRO-431 (main `23bbc0c` merged in as `dc0e42b`): `8541b3a` (the server golden compared without the build identity, Go's held to `SOURCE.json`) and the documentation commit after it.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
