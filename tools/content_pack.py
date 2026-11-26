@@ -29,9 +29,9 @@ Nothing here imports the Python engine (protocol_engine/), and nothing is detect
         already in the pack is refused. docs/CONTENT-BATCHES.md describes the batch format and the procedure.
 
     content_pack.py --self-test [--e2e]
-        Unit checks on in-memory packs. --e2e also copies the content files and the Go module to a temporary tree
-        WITHOUT protocol_engine/ and protocol_adapters/, adds docs/examples/content-batch-example.json there,
-        and runs `check`, tools/check_content.py and `go test ./internal/content/...` in it (needs the pinned Go).
+        Unit checks on in-memory packs. --e2e also copies the content files, migration/ and the Go module to a
+        temporary tree WITHOUT protocol_engine/ and protocol_adapters/, adds docs/examples/content-batch-example.json
+        there, and runs `check`, tools/check_content.py and every Go test (`go test ./...`) in it (needs the pinned Go).
 
 Standard library only; Python 3.9 syntax.
 """
@@ -886,6 +886,11 @@ def e2e(go_required=True):
     """The example batch added in a copy of the tree without the Python engine; every content check run there."""
     with tempfile.TemporaryDirectory(prefix="content-batch-e2e-") as folder:
         work = Path(folder)
+        # migration/ (cases.json, the golden files, the parity lists), the signature example and the licence files are
+        # what the Go tests read outside go/, so `go test ./...` runs here as in the repository (PRO-428).
+        shutil.copytree(str(ROOT / "migration"), str(work / "migration"), ignore=shutil.ignore_patterns("__pycache__"))
+        for name in ("signatures-example.json", "LICENSE", "NOTICE"):
+            shutil.copyfile(str(ROOT / name), str(work / name))
         for path in (PACK, FIXTURE, HISTORY, LOCK, EXAMPLE):
             (work / path).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(str(ROOT / path), str(work / path))
@@ -930,11 +935,15 @@ def e2e(go_required=True):
             os.rename(str(work / "go_full"), str(work / "go"))
             go_env = dict(env, GOFLAGS="-mod=vendor", GOPROXY="off", GOWORK="off")
             go_env.setdefault("GOTOOLCHAIN", "local")
-            command = [go, "test", "-count=1", "./internal/content/..."]
+            # Every Go test, not only the content package's: the frozen-answer replays run the frozen release
+            # (go/internal/content/frozen/), the current-content tests and the serve catalog run the batch (PRO-428).
+            command = [go, "test", "-count=1", "./..."]
             result = subprocess.run(command, cwd=str(work / "go"), env=go_env, check=False, capture_output=True, text=True)  # noqa: S603
-            lines.append("go test ./internal/content/...: exit {}".format(result.returncode))
+            packages = [line for line in result.stdout.splitlines() if line.startswith(("ok ", "ok\t"))]
+            lines.append("go test ./...: exit {}, {} packages ok".format(result.returncode, len(packages)))
             if result.returncode != 0:
-                raise ContentError("e2e Go content tests failed on the batch:\n" + result.stdout + result.stderr)
+                failed = [line for line in (result.stdout + result.stderr).splitlines() if line.startswith(("FAIL", "---", "    "))]
+                raise ContentError("e2e Go tests failed on the batch:\n" + "\n".join(failed[:80]))
         print("content batch e2e: ok, {} -> {} (+{} applications) without protocol_engine/ or protocol_adapters/".format(
             before["release"]["version"], new_pack["release"]["version"], added))
         for line in lines:

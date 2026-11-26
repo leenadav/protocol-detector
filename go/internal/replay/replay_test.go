@@ -113,16 +113,37 @@ func loadGaps(t *testing.T) map[string]string {
 
 // The Go backend's results must equal the Python expectations on every case of a ported family that
 // uses only ported options; cases it cannot answer are reported as unsupported, never as a different
-// result. Session cases are compared without their records (M6).
+// result. Session cases are compared without their records (M6). The expectations were recorded at content
+// release content.FrozenVersion, so the session cases run with that release's frozen pack (PRO-428), not with
+// the current one (TestCurrentContentKeepsTheFrozenAnswers covers the current pack).
 func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 	doc, err := parity.Load(context.Background(), "../../../migration/fixtures/cases.json")
 	if err != nil {
 		t.Fatal(err)
 	}
+	SetPackPath(frozenPack)
+	defer SetPackPath("")
 	results, err := Run(context.Background(), doc)
 	if err != nil {
 		t.Fatal(err)
 	}
+	failures, counts := compareCases(t, doc, results, nil)
+	logCounts(t, counts)
+	if len(failures) > 0 {
+		t.Fatalf("%d failures, first %d:\n%s", len(failures), min(25, len(failures)), strings.Join(failures[:min(25, len(failures))], "\n"))
+	}
+	if counts["matched/stream"] < 100 || counts["matched/datagram"] < 20 || counts["matched/session"] < 10 {
+		t.Fatalf("too few matched cases: %v", counts)
+	}
+}
+
+// compareCases checks a replay's results against the recorded expectations of every case (gaps.json and the pinned
+// deltas.json divergences applied) and returns the failures and the counts by outcome. With current set, the cases
+// were replayed with the current content pack instead of the frozen one they were recorded with: each expected
+// session record's content.version is read as the current release, and a differing case whose result names a
+// record the current release added is counted as exempt instead of failing.
+func compareCases(t *testing.T, doc *parity.Document, results *parity.Results, current *currentContent) ([]string, map[string]int) {
+	t.Helper()
 	gaps := loadGaps(t)
 	pinned := loadPinned(t)
 	seenPinned := map[string]bool{}
@@ -153,6 +174,7 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 		if items, ok := pinned[c.ID]; ok {
 			// An approved Go-only divergence (deltas.json `go`): the Go value is the expectation at that path.
 			seenPinned[c.ID] = true
+			var err error
 			if want, err = expectPinned(want, items); err != nil {
 				failures = append(failures, c.ID+": "+err.Error())
 				continue
@@ -160,8 +182,15 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 		}
 		if c.Kind == "session" {
 			canonicalizeRecords(got)
+			if current != nil {
+				current.retag(want)
+			}
 		}
 		if d := diff("$", want, got); d != "" {
+			if current != nil && current.touches(got) {
+				counts["exempt/"+c.Kind]++
+				continue
+			}
 			failures = append(failures, c.ID+": "+d)
 			counts["mismatch/"+c.Kind]++
 			continue
@@ -181,6 +210,11 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 	if len(results.Results) != len(doc.Cases) {
 		failures = append(failures, fmt.Sprintf("%d results for %d cases", len(results.Results), len(doc.Cases)))
 	}
+	return failures, counts
+}
+
+func logCounts(t *testing.T, counts map[string]int) {
+	t.Helper()
 	keys := make([]string, 0, len(counts))
 	for k := range counts {
 		keys = append(keys, k)
@@ -188,15 +222,5 @@ func TestPortedFamiliesMatchThePythonReference(t *testing.T) {
 	sort.Strings(keys)
 	for _, k := range keys {
 		t.Logf("%-26s %d", k, counts[k])
-	}
-	if len(failures) > 0 {
-		limit := 25
-		if len(failures) < limit {
-			limit = len(failures)
-		}
-		t.Fatalf("%d failures, first %d:\n%s", len(failures), limit, strings.Join(failures[:limit], "\n"))
-	}
-	if counts["matched/stream"] < 100 || counts["matched/datagram"] < 20 || counts["matched/session"] < 10 {
-		t.Fatalf("too few matched cases: %v", counts)
 	}
 }

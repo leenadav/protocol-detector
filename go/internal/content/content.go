@@ -7,7 +7,6 @@
 package content
 
 import (
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -507,17 +506,8 @@ func (p *Pack) ApplicationForHost(hostname string) string {
 	return ""
 }
 
-// pack.json is a byte-for-byte copy of migration/fixtures/content.json (TestEmbeddedPackIsTheSharedPack), so
-// the binary carries the detection content of the release it was built from and needs no file at run time.
-//
-//go:embed pack.json
-var embedded []byte
-
-// Embedded parses the content pack built into the binary.
+// Embedded parses the content pack built into the binary (embed.go, or embed_frozen.go in a frozencontent build).
 func Embedded() (*Pack, error) { return Parse(embedded) }
-
-//go:embed history.json
-var embeddedHistory []byte
 
 // Releases lists the content releases this binary can run, oldest first: the earlier ones in history.json
 // (written by tools/content_pack.py add) and the current one of pack.json.

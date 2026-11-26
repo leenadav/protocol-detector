@@ -84,22 +84,32 @@ fails, nothing is written.
 - the check;
 - the tool's self-test;
 - the example batch (`docs/examples/content-batch-example.json`) added in a copy of the tree without
-  `protocol_engine/` and `protocol_adapters/`, including the Go content tests. This step needs the pinned Go.
+  `protocol_engine/` and `protocol_adapters/`, including every Go test (`go test ./...`). This step needs the pinned Go.
 
 In CI, `tools/content_gate.py` (the `content pack` job) runs the same checks and `go test ./internal/content/...`.
 
-## Before the first real batch merges (open, PRO-411)
+## The frozen answers and the serve catalog (PRO-428)
 
 The frozen answers of the Go gates were recorded at content release 2026.11.9, and every record carries
-`content.version`:
+`content.version`: `migration/fixtures/cases.json` (the `parity-go` replay) and `migration/fixtures/golden/*.json.gz`
+(the differentials of `make go-check-parity`, some stored only as a SHA-256). A batch does not re-record them:
 
-- `migration/fixtures/cases.json`, the `parity-go` replay (1,059 records);
-- `migration/fixtures/golden/*.json.gz`, the differentials of `make go-check-parity`. Some of these answers are
-  stored only as a SHA-256.
+- **The frozen release.** `go/internal/content/frozen/pack-2026.11.9.json` and `history-2026.11.9.json` are that
+  release's pack and history, byte for byte. `TestFrozenReleaseIsTheLockedRelease` checks them against the lock's
+  2026.11.9 entry (pack digest, release digest, components, host entries) and the current history. Never edit them.
+- **The gates replay it.** `parity-go` and the replay test run `cases.json` with the frozen pack (`replay
+  --content`); every golden gate runs `go/bin/protodetect-golden`, built with `-tags frozencontent` (`make
+  go-build-golden`), which embeds the frozen pack and history in place of the current ones. The detection code is the
+  same; only the content differs. The product binary, `go/bin/protodetect`, embeds the current pack.
+- **The current pack is tested too.** `TestCurrentContentKeepsTheFrozenAnswers` replays `cases.json` with the current
+  pack: every result must equal the frozen one (with `content.version` read as the current release), except a case
+  whose result names an application or server name the batch added. `TestEveryServerNameRecordIsIdentifiedByTheEngine`
+  sends each server-name entry's domains (and a name under each) as an HTTP Host and a TLS server name through the
+  analyzer and requires the entry's application, and each web front its provider attribution. A release that changes
+  an application recorded in the frozen answers fails the first test: that needs a reviewed re-recording.
+- **The serve catalog.** `/api/catalog` takes its applications from the pack the binary embeds. `catalog.json` keeps
+  only the protocol descriptors, the outcomes and the reference's application order (new applications follow, by
+  name), so a batch needs no catalog edit. At 2026.11.9 the list is byte for byte the reference's (a SHA-256 pin).
 
-The `protodetect serve` catalog (PR #127) is also a frozen list of the 544 applications.
-
-So a committed batch passes every content check, but it fails `parity-go`, the golden replays and the serve
-catalog test until those gates run Go pinned to the release the answers were frozen at (`--content-version
-2026.11.9`, which rollback already supports), and until the serve catalog is read from the pack. That follow-up
-is separate work in the engine lane. Until it lands, prepare and dry-run batches, but do not merge one.
+`make content-pack` adds the example batch in a copy of the tree without `protocol_engine/` and `protocol_adapters/`
+and runs every Go test there (`go test ./...`), so these gates are proven on a batch before one is committed.

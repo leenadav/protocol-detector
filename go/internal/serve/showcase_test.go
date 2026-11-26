@@ -1,7 +1,9 @@
 package serve
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -15,14 +17,20 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/ojson"
 )
 
-// The frozen catalog (PRO-401) must not drift from what the engine loads: every application of the embedded content
-// pack, field for field, and every family the inspector registers. A new release or family fails here until
-// catalog.json carries it.
+// The catalog's applications are the content pack's (PRO-428): /api/catalog lists every application of the pack
+// the binary embeds, each once and field for field, with no catalog edit when a release adds some. catalog.json
+// keeps only what the pack does not hold: the protocol descriptors (every family the inspector registers), the
+// outcomes (the pack's), and the reference's application order, every name of which must be a pack application of
+// the frozen release, each once, with nothing missing.
 func TestCatalogMatchesTheContentPackAndTheEngine(t *testing.T) {
 	var frozen struct {
-		Protocols    []struct{ Family string } `json:"protocols"`
-		Applications []*content.Application    `json:"applications"`
-		Outcomes     []string                  `json:"outcomes"`
+		Protocols        []struct{ Family string } `json:"protocols"`
+		ApplicationOrder []string                  `json:"application_order"`
+		Outcomes         []string                  `json:"outcomes"`
+	}
+	var top map[string]json.RawMessage
+	if err := json.Unmarshal(catalogJSON, &top); err != nil || len(top) != 3 {
+		t.Fatalf("catalog.json holds %d keys (%v), want protocols, application_order and outcomes", len(top), err)
 	}
 	if err := json.Unmarshal(catalogJSON, &frozen); err != nil {
 		t.Fatal(err)
@@ -31,18 +39,53 @@ func TestCatalogMatchesTheContentPackAndTheEngine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(frozen.Applications) != len(pack.Applications) {
-		t.Fatalf("catalog has %d applications, the content pack %d", len(frozen.Applications), len(pack.Applications))
+	frozenPack, err := content.Load("../content/" + content.FrozenPackFile)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, app := range frozen.Applications {
-		loaded, ok := pack.Applications[app.Name]
-		if !ok {
-			t.Fatalf("catalog application %q is not in the content pack", app.Name)
+	seen := map[string]bool{}
+	for _, name := range frozen.ApplicationOrder {
+		if seen[name] {
+			t.Errorf("application_order lists %q twice", name)
 		}
+		seen[name] = true
+		if _, ok := frozenPack.Applications[name]; !ok {
+			t.Errorf("application_order name %q is not an application of release %s", name, content.FrozenVersion)
+		}
+	}
+	if len(seen) != len(frozenPack.Applications) {
+		t.Errorf("application_order has %d names, release %s %d applications", len(seen), content.FrozenVersion, len(frozenPack.Applications))
+	}
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "SOURCE.json"), []byte(`{}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	value, err := catalog(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listed, _ := value.Get("applications")
+	var served []*content.Application
+	if err := json.Unmarshal([]byte(ojson.MustDumps(listed)), &served); err != nil {
+		t.Fatal(err)
+	}
+	if len(served) != len(pack.Applications) {
+		t.Fatalf("catalog serves %d applications, the content pack has %d", len(served), len(pack.Applications))
+	}
+	names := map[string]bool{}
+	for k, app := range served {
+		loaded, ok := pack.Applications[app.Name]
+		if !ok || names[app.Name] {
+			t.Fatalf("catalog application %d %q is not in the content pack, or is listed twice", k, app.Name)
+		}
+		names[app.Name] = true
 		want, _ := json.Marshal(loaded)
 		got, _ := json.Marshal(app)
 		if string(want) != string(got) {
 			t.Errorf("application %s differs:\n catalog %s\n pack    %s", app.Name, got, want)
+		}
+		if k < len(frozen.ApplicationOrder) && seen[app.Name] && app.Name != frozen.ApplicationOrder[k] {
+			t.Errorf("catalog application %d is %s, the reference order has %s", k, app.Name, frozen.ApplicationOrder[k])
 		}
 	}
 	for _, outcome := range frozen.Outcomes {
@@ -62,6 +105,61 @@ func TestCatalogMatchesTheContentPackAndTheEngine(t *testing.T) {
 	sort.Strings(registered)
 	if !reflect.DeepEqual(families, registered) {
 		t.Errorf("catalog families %v\n engine families %v", families, registered)
+	}
+}
+
+// frozenApplicationsSHA256 is the SHA-256 of the applications of /api/catalog as the reference served them at
+// content release content.FrozenVersion (the list catalog.json held until PRO-428, 544 entries, 193,321 bytes).
+const frozenApplicationsSHA256 = "0cfa8586db06445e865b69938bc33d947b76c538b7c180d626695ad6e9ce6635"
+
+// Built from the frozen release's pack, the applications are byte for byte the list the reference served
+// (the golden server answers record it), so reading them from the pack changed nothing at that release.
+func TestCatalogApplicationsOfTheFrozenReleaseAreTheReferences(t *testing.T) {
+	var frozen struct {
+		ApplicationOrder []string `json:"application_order"`
+	}
+	if err := json.Unmarshal(catalogJSON, &frozen); err != nil {
+		t.Fatal(err)
+	}
+	pack, err := content.Load("../content/" + content.FrozenPackFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	applications, err := catalogApplications(pack, frozen.ApplicationOrder)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := ojson.MustDumps(applications)
+	if sum := fmt.Sprintf("%x", sha256.Sum256([]byte(text))); sum != frozenApplicationsSHA256 || len(text) != 193321 {
+		t.Fatalf("catalog applications of release %s: sha256 %s, %d bytes; the reference served %s, 193321 bytes",
+			content.FrozenVersion, sum, len(text), frozenApplicationsSHA256)
+	}
+}
+
+// A release's new applications follow the reference's, by name, and an ordered name the pack lacks is skipped.
+func TestCatalogApplicationsAppendNewOnesByName(t *testing.T) {
+	pack, err := content.Embedded()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var some []string
+	for name := range pack.Applications {
+		some = append(some, name)
+	}
+	sort.Strings(some)
+	order := []string{some[2], "no-such-application", some[0]}
+	applications, err := catalogApplications(pack, order)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, value := range applications {
+		name, _ := value.(*ojson.Object).Get("name")
+		got = append(got, name.(string))
+	}
+	want := append([]string{some[2], some[0]}, append([]string{some[1]}, some[3:]...)...)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("order %v...", got[:4])
 	}
 }
 

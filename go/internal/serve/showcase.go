@@ -9,6 +9,7 @@ import (
 	"crypto/x509/pkix"
 	_ "embed"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -17,6 +18,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -29,9 +31,10 @@ import (
 // The three answers the service used to take from the Python reference (PRO-401, Lee 2026-11-25: the reference is
 // removed). Each is now the service's own:
 //
-//   - the catalog (/api/catalog): the protocol descriptors, the applications and the evidence-limited outcomes,
-//     frozen from the reference's catalog_data() into catalog.json, with the build source read from SOURCE.json and
-//     the service's limits, as the reference assembled them;
+//   - the catalog (/api/catalog): the protocol descriptors and the evidence-limited outcomes, frozen from the
+//     reference's catalog_data() into catalog.json; the applications, read from the content pack the binary embeds
+//     (PRO-428), so a content release needs no catalog edit; the build source read from SOURCE.json and the
+//     service's limits, as the reference assembled them;
 //   - the demo capture (/api/sample and the "demo" job): one capture the reference's demo_bytes() generated, frozen
 //     into demo.pcap (synthetic fixtures on documentation addresses; the reference drew a fresh TLS random per call,
 //     which is the only thing that varied);
@@ -59,6 +62,14 @@ func catalog(root string) (*ojson.Object, error) {
 	if !ok {
 		return nil, errors.New("catalog.json is not an object")
 	}
+	pack, err := content.Embedded()
+	if err != nil {
+		return nil, err
+	}
+	applications, err := catalogApplications(pack, applicationOrder(pieces))
+	if err != nil {
+		return nil, err
+	}
 	data, err := os.ReadFile(filepath.Join(root, "SOURCE.json"))
 	if err != nil {
 		return nil, err
@@ -79,8 +90,56 @@ func catalog(root string) (*ojson.Object, error) {
 	part := func(key string) ojson.Value { value, _ := pieces.Get(key); return value }
 	limits := ojson.NewObject("upload_mb", ojson.FromInt(8), "frames", ojson.FromInt(MaxFrames), "sessions", ojson.FromInt(MaxSessions),
 		"worker_seconds", ojson.FromInt(WorkerSeconds))
-	return ojson.NewObject("source", subset, "protocols", part("protocols"), "applications", part("applications"),
+	return ojson.NewObject("source", subset, "protocols", part("protocols"), "applications", applications,
 		"outcomes", part("outcomes"), "limits", limits), nil
+}
+
+// applicationOrder is catalog.json's application_order: the order the reference listed its applications in
+// (APPLICATIONS, insertion order), which the pack, sorted by name, does not keep.
+func applicationOrder(pieces *ojson.Object) []string {
+	value, _ := pieces.Get("application_order")
+	list, _ := value.([]ojson.Value)
+	out := make([]string, 0, len(list))
+	for _, item := range list {
+		if name, ok := item.(string); ok {
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
+// catalogApplications lists every application of the pack, each once, as asdict(Application) in the reference
+// (the pack's field order): first those order names, in that order, then the rest by name, which is where a
+// later content release's applications go. A name in order that the pack does not have is skipped.
+func catalogApplications(pack *content.Pack, order []string) ([]ojson.Value, error) {
+	names := make([]string, 0, len(pack.Applications))
+	listed := map[string]bool{}
+	for _, name := range order {
+		if _, ok := pack.Applications[name]; ok && !listed[name] {
+			names = append(names, name)
+			listed[name] = true
+		}
+	}
+	rest := make([]string, 0, len(pack.Applications)-len(names))
+	for name := range pack.Applications {
+		if !listed[name] {
+			rest = append(rest, name)
+		}
+	}
+	sort.Strings(rest)
+	out := make([]ojson.Value, 0, len(pack.Applications))
+	for _, name := range append(names, rest...) {
+		data, err := json.Marshal(pack.Applications[name])
+		if err != nil {
+			return nil, err
+		}
+		value, err := ojson.Decode(data)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, value)
+	}
+	return out, nil
 }
 
 // showcaseCase is one exchange of the showcase: the TLS version, the one cipher suite of a TLS 1.2 exchange, and
