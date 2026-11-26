@@ -190,6 +190,9 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 
 ## 7. Pitfalls learned
 
+- **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
+  `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An
+  unconditional `check_docs_counts.py --strict` turned every PR's release build red (Dependabot #151, #149).
 - **Stale checkout:** a restarted container may check out an old branch (`claude/appid-engine`). Run
   `git fetch` and work on `claude/cicd-next` at `origin/main` first.
 - **Masked failures:** `cmd | tail` hides the exit status. Use `set -o pipefail` and check `make check`'s status
