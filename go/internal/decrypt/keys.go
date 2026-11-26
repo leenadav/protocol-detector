@@ -118,6 +118,7 @@ func (p *KeyProvider) Release() {
 }
 
 // Expire forgets secrets older than MaxAge (a no-op without MaxAge or a time) and returns how many it dropped.
+// A forgotten secret is overwritten first; a direction that already started holds its own copy.
 // now nil reads Clock.
 func (p *KeyProvider) Expire(now *float64) int {
 	if p.MaxAge == nil {
@@ -134,6 +135,7 @@ func (p *KeyProvider) Expire(now *float64) int {
 	stale := 0
 	for _, id := range p.order {
 		if at, ok := p.indexedAt[id]; ok && *now-at > *p.MaxAge {
+			clear(p.keys[id]) // overwrite before forgetting, as Release does (SEC-KEY-1, PRO-119)
 			delete(p.keys, id)
 			delete(p.indexedAt, id)
 			stale++
