@@ -27,10 +27,14 @@ func TestVersionIsSettableAtBuildTime(t *testing.T) {
 	os.Stdout = w
 	code := run([]string{"version"})
 	os.Stdout = stdout
-	w.Close()
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
 	out, err := io.ReadAll(r)
-	r.Close()
 	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Close(); err != nil {
 		t.Fatal(err)
 	}
 	if code != 0 || !strings.HasPrefix(string(out), "protodetect 9.9.9-pro195 (go backend;") {
