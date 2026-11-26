@@ -20,12 +20,12 @@ const (
 	vectorSHA256    = "2919fccc2c9c5488f568daf7ada444f3b38fbd0c1de80a970d2d6a48f162e172"
 	vectorPack      = "bfe5d9552aa34d72ac55d185ed3f79afccbe8991c0a73ab6528feba5ce170377"
 	vectorChain     = "77cd6b4c4e0c482824748218f10725708199c628e96dc1c99a9b28804251cc7b"
-
-	// Release 2026.11.2 (migration/fixtures/content.json).
-	releaseVersion    = "2026.11.9"
-	releaseDigest     = "cdaa5993077d101a"
-	releasePackDigest = "b05065ebb142d917053ff0999e9c1cde5a762208d36368a59fb9f369e8dc2754"
 )
+
+// The committed pack's release (migration/fixtures/content.json), as lock.json's last entry records it: the
+// version, the release digest and the pack digest tools/content_pack.py computed when it added the release.
+// The releases published before PRO-411 are also pinned as literals (history_test.go, published).
+var releaseVersion, releaseDigest, releasePackDigest = currentPins()
 
 func TestCanonicalEncodingVectors(t *testing.T) {
 	canonical, err := Canonical([]byte(vectorDocument))

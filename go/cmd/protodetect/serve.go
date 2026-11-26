@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strconv"
@@ -14,15 +13,13 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/serve"
 )
 
-const serveUsage = "usage: protodetect serve [--port N] [--root PRESENTATION_DIR] [--python INTERPRETER]"
+const serveUsage = "usage: protodetect serve [--port N] [--root PRESENTATION_DIR]"
 
 // runServe is presentation/server.py's service: the dashboard and its API on 127.0.0.1 (contracts C14, C15).
-// --root is the presentation directory (default: the checkout's, beside go/bin); --python is the
-// interpreter that runs the reference's demo generators and catalog export (default python3 on PATH;
-// --python "" serves without them).
+// --root is the presentation directory (default: the checkout's, beside go/bin). The demo capture, the decryption
+// showcase and the catalog are the service's own (PRO-401), and no interpreter is run or selected (PRO-402).
 func runServe(ctx context.Context, args []string, stdout, stderr io.Writer) int {
-	port, root, python := 8765, "", "python3"
-	pythonSet := false
+	port, root := 8765, ""
 	for i := 0; i < len(args); i++ {
 		if i+1 >= len(args) {
 			fmt.Fprintln(stderr, serveUsage)
@@ -39,8 +36,6 @@ func runServe(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 			port = n
 		case "--root":
 			root = value
-		case "--python":
-			python, pythonSet = value, true
 		default:
 			fmt.Fprintln(stderr, serveUsage)
 			return 2
@@ -59,17 +54,7 @@ func runServe(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		fmt.Fprintln(stderr, "protodetect serve: no presentation directory at "+root+" (use --root)")
 		return 2
 	}
-	if python != "" {
-		if resolved, err := exec.LookPath(python); err == nil {
-			python = resolved
-		} else if pythonSet {
-			fmt.Fprintln(stderr, "protodetect serve: interpreter not found: "+python)
-			return 2
-		} else {
-			python = ""
-		}
-	}
-	server, err := serve.New(root, python, self)
+	server, err := serve.New(root, self)
 	if err != nil {
 		fmt.Fprintln(stderr, "protodetect serve:", err)
 		return 1
@@ -100,6 +85,9 @@ func runServeWorker(args []string, stdin io.Reader, stdout, stderr io.Writer) in
 	if len(args) == 1 && args[0] == "decrypt" {
 		return serve.DecryptWorker(stdin, stdout)
 	}
-	fmt.Fprintln(stderr, "usage: protodetect serve-worker analyze|decrypt < REQUEST")
+	if len(args) == 1 && args[0] == "decrypt-demo" {
+		return serve.DecryptDemoWorker(stdout)
+	}
+	fmt.Fprintln(stderr, "usage: protodetect serve-worker analyze|decrypt|decrypt-demo < REQUEST")
 	return 2
 }

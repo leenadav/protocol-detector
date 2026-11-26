@@ -112,3 +112,11 @@ Not testable yet, recorded instead:
 Not items: the VPN captures are inner traffic, so the dataset does not measure OpenVPN detection (§4.5);
 "inconsistent" pairs such as ssh → http are other traffic in the same capture, not wrong identifications
 (§4.3); the application-level `ssl` results test 2016 names against a 2026 catalog (§4.2, §5).
+
+## Observed in PRO-401 (2026-11-25)
+
+| ID | Priority | Finding | Proposed direction | Evidence |
+|---|---|---|---|---|
+| LIVE-READ-1 | P3 (observation) | `protodetect live --stdin --replay-clock` writes different `progress` counters for the same bytes when standard input is a pipe instead of a file: 10 of the 300 recorded live replays differ, only in `progress` lines (for example `packets=195` against `packets=199` at the same replay time); classifications, sessions and the summary are equal. A progress tick reports the records decoded so far, which depends on where the reads split the stream. The live golden replay feeds a file, as its recording did | Decide whether progress counters should be read-granular (document it) or tick on record timestamps only (a Go change with a recorded divergence) | `migration/fixtures/golden/live.json.gz`, entries `capture-20` and `capture-62`: replay each with `stdin` as a file and as a pipe |
+| GOLDEN-1 | P2 (process, PR B) | After the reference is removed, a deliberate Go behaviour change has no oracle to re-record the golden files with | PR B adds a reviewed way to accept Go's new answer into a golden file (the diff of the answers in the pull request), as `deltas.json` does for the committed cases | `migration/parity/golden.py` |
+
