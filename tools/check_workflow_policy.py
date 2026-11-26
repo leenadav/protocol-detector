@@ -1284,6 +1284,37 @@ def check_scanner_order(workflows, path=".github/workflows/ci.yml"):
     return problems
 
 
+# Rule 15 also covers the nightly mutation job (PRO-176): gremlins, and the module cache its `go mod download` reads,
+# come from its one networked step, built from RUNNER_TEMP copies of the pin module and of go/go.mod and go.sum
+# before any repository code runs; every later step is offline (GOPROXY=off).
+MUTATION_WORKFLOW = ".github/workflows/nightly-fuzz.yml"
+MUTATION_STEPS = [
+    HARDEN_STEP,
+    {"uses": "actions/checkout", "with": {"persist-credentials": "false"}},
+    SETUP_GO,
+    {"env": GO_BUILD_ENV,
+     "run": ['mkdir -p "$RUNNER_TEMP/mutation/gremlins" "$RUNNER_TEMP/mutation/engine-modules"',
+             'cp migration/mutation/gremlins/go.mod migration/mutation/gremlins/go.sum migration/mutation/gremlins/tools.go '
+             '"$RUNNER_TEMP/mutation/gremlins/"',
+             'cp go/go.mod go/go.sum "$RUNNER_TEMP/mutation/engine-modules/"',
+             'cd "$RUNNER_TEMP/mutation/gremlins"',
+             'GOBIN="$RUNNER_TEMP/bin" go install github.com/go-gremlins/gremlins/cmd/gremlins',
+             'cd "$RUNNER_TEMP/mutation/engine-modules"',
+             "go mod download"]},
+]
+
+
+def check_mutation_build(workflows, path=MUTATION_WORKFLOW, job="mutation"):
+    """Rule 15 (PRO-176): the nightly mutation job starts with exactly MUTATION_STEPS, contents: read, 30 minutes."""
+    if path not in workflows:
+        return ["{} is missing".format(path)]
+    problems = check_pinned_job(path, workflows[path], job, SCANNER_JOB_KEYS | {"permissions"}, {"contents": "read"},
+                                "ubuntu-24.04", MUTATION_STEPS, prefix=True)
+    if not problems and strip_quotes(str(mapping_at(job_lines(workflows[path], job), 4, "timeout-minutes"))) != "30":
+        problems.append("{}: the {} job's timeout-minutes must be 30".format(path.rsplit("/", 1)[-1], job))
+    return problems
+
+
 # Rule 16: the configuration the scanners read is part of the check. Ruff's sections of
 # pyproject.toml, bandit.yaml and .gitleaks.toml are locked in SCANNER_LOCK, so loosening any
 # of them means advancing a reviewed baseline; and, whatever the lock says, gitleaks keeps its
@@ -1764,6 +1795,7 @@ def main(root, history_base=HISTORY_BASE):
         problems += check_codeql(texts)
         problems += check_ci_masking(texts)
         problems += check_scanner_order(texts)
+        problems += check_mutation_build(texts)
         scanner_lock = root / SCANNER_LOCK
         problems += check_scanner_config(root, scanner_lock.read_text(encoding="utf-8") if scanner_lock.exists() else "missing")
         if (root / ".git").exists():
@@ -2550,6 +2582,23 @@ def self_test():
         with contextlib.redirect_stdout(captured):
             assert main(directory) == 1, captured.getvalue()
         assert "release-audit.yml: audit step 4 (Shadow gh) is not the pinned form" in captured.getvalue(), captured.getvalue()
+    # PRO-176: the nightly mutation job builds gremlins and fills the module cache before any repository code
+    assert check_mutation_build(real) == [], check_mutation_build(real)
+    nightly = real[MUTATION_WORKFLOW]
+    mutation_build = "      - name: Build gremlins v0.6.0 from its pin module and fill the module cache (the only networked step)\n"
+    assert nightly.count(mutation_build) == 1
+    for label, text in {
+        "built in the checkout": in_job(nightly, "mutation", '          cd "$RUNNER_TEMP/mutation/gremlins"\n',
+                                        "          cd migration/mutation/gremlins\n"),
+        "writable modules": in_job(nightly, "mutation", '          GOFLAGS: "-mod=readonly"\n', '          GOFLAGS: "-mod=mod"\n'),
+        "repository code first": in_job(nightly, "mutation", mutation_build,
+                                        "      - run: make mutation-tool\n" + mutation_build),
+        "write permission": in_job(nightly, "mutation", "      contents: read\n", "      contents: write\n"),
+        "longer timeout": in_job(nightly, "mutation", "    timeout-minutes: 30\n", "    timeout-minutes: 300\n"),
+        "no job": nightly.replace("\n  mutation:\n", "\n  mutation-renamed:\n", 1),
+    }.items():
+        assert text != nightly, label
+        assert check_mutation_build({MUTATION_WORKFLOW: text}), label
     # item 16: the independent scanners run before any repository code in their jobs
     assert check_scanner_order(real) == [], check_scanner_order(real)
     zizmor_step = "      - name: Audit every workflow for security weaknesses (zizmor, pedantic persona, offline audits)\n"
