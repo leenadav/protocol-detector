@@ -192,6 +192,8 @@ PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the docu
 
 PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the documentation commit after it.
 
+SEC-KEY-1 residual (PRO-437, against `main` `23bbc0c`, branch `claude/engine-PRO-51-sec-key-1`): `68202be` (fix and tests) and the documentation commit after it (`migration/notes/PRO-437.md`).
+
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
 ## 7. Pitfalls learned
