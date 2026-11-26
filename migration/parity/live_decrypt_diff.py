@@ -153,12 +153,16 @@ def main(argv=None):
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--record", help="also write the scripts and the reference's answers to this golden file (migration/parity/golden.py)")
     parser.add_argument("--golden", help="compare Go with this golden file's answers; the reference is not run")
+    parser.add_argument("--record-sec-sess1", metavar="PATH", help="write every divergence to PATH for review; the run then fails")
     args = parser.parse_args(argv)
     import golden
     import live_diff
     if args.golden:
         return replay_golden(args)
     import decrypt_diff
+    import sec_sess1
+    sec_sess1.self_test()
+    pins = sec_sess1.Pins("live-decrypt", args.seed, record=args.record_sec_sess1)
     try:
         generator = decrypt_diff.Generator(args.seed)
     except ImportError:
@@ -168,19 +172,34 @@ def main(argv=None):
     recorder = golden.recorder(args.record, "live-decrypt", {"seed": args.seed, "count": args.count})
     rng = random.Random(args.seed * 7919 + 1)
     failures, events, kinds, approved = [], 0, {}, 0
+    openssl, used = generator.openssl, []
+    # The scripts depend on the OpenSSL that Python links (the real exchanges' lengths drive later random draws; 3.5
+    # also offers hybrid groups), so a SEC-SESS-1 pin names the OpenSSL line as part of its case id.
+    environment = sec_sess1.openssl_line()
+
+    def counted():                                  # a real OpenSSL exchange differs between runs (sec_sess1 `volatile`)
+        used.append(True)
+        return openssl()
+    generator.openssl = counted
     for index in range(args.count):
+        del used[:]
         operations = script_for(rng, generator)
+        volatile = bool(used)
         expected, status = reference(operations)
         script = b"".join(kind.encode("ascii") + struct.pack(">dI", now, len(data)) + data for kind, now, data in operations)
         returncode, actual = run_go(args.binary, script)
         events += expected.count("\n")
         count_events(expected, kinds)
         a, b = live_diff.normalized(actual, True), live_diff.normalized(expected, True)
-        judged = (expected, status)
+        judged, reason = (expected, status), None
+        case = "{}/script-{}".format(environment, index)
+        pins.cover(case)
         model = approved_model(operations, returncode, a) if (returncode != status or a != b) else None
         if model:
             approved += 1
-            judged = model
+            judged, reason = model, "PRO-260"
+        elif (returncode != status or a != b) and pins.approve(case, a, returncode, b, status, volatile=volatile):
+            judged, reason = (actual, returncode), sec_sess1.LABEL   # SEC-SESS-1 (PRO-398): this exact script, both results pinned
         elif returncode != status:
             failures.append("script {} (seed {}): exit status {} (expected {})".format(index, args.seed, returncode, status))
         elif a != b:
@@ -188,14 +207,19 @@ def main(argv=None):
             at = next((i for i, (p, q) in enumerate(zip(x, y)) if p != q), min(len(x), len(y)))
             failures.append("script {} (seed {}): event {} differs ({} lines, expected {})".format(index, args.seed, at, len(x), len(y)))
         if recorder:
-            recorder.add({"script": golden.b64(script), "expected": judged[0], "status": judged[1], "approved": bool(model)})
+            recorder.add({"script": golden.b64(script), "expected": judged[0], "status": judged[1], "approved": reason == "PRO-260",
+                          "sec_sess1": reason == sec_sess1.LABEL})
     for line in failures[:10]:
         print("live decrypt mismatch:", line)
-    print("live decrypt parity: {} scripts, {} event lines, {} mismatched, {} approved divergences (PRO-260) (seed {}); events: {}".format(
-        args.count, events, len(failures), approved, args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
+    problems = pins.finish()
+    for line in problems:
+        print("live decrypt parity FAILED:", line)
+    print("live decrypt parity: {} scripts, {} event lines, {} mismatched, {} approved divergences (PRO-260), {} approved divergences ({}) "
+          "(seed {}); events: {}".format(args.count, events, len(failures), approved, len(pins.approved), sec_sess1.LABEL, args.seed,
+                                         ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
     if recorder:
-        recorder.finish(failures)
-    return 1 if failures else 0
+        recorder.finish(failures or problems)
+    return 1 if failures or problems else 0
 
 
 def replay_golden(args):
@@ -203,13 +227,14 @@ def replay_golden(args):
     import golden
     import live_diff
     document = golden.read(args.golden, "live-decrypt")
-    failures, events, kinds, approved = [], 0, {}, 0
+    failures, events, kinds, approved, pinned = [], 0, {}, 0, 0
     for index, entry in enumerate(document["entries"]):
         returncode, actual = run_go(args.binary, golden.unb64(entry["script"]))
         expected = entry["expected"]
         events += expected.count("\n")
         count_events(expected, kinds)
         approved += bool(entry.get("approved"))
+        pinned += bool(entry.get("sec_sess1"))
         a, b = live_diff.normalized(actual, True), live_diff.normalized(expected, True)
         if returncode != entry["status"]:
             failures.append("script {}: exit status {} (expected {})".format(index, returncode, entry["status"]))
@@ -219,9 +244,10 @@ def replay_golden(args):
             failures.append("script {}: event {} differs ({} lines, expected {})".format(index, at, len(x), len(y)))
     for line in failures[:10]:
         print("live decrypt mismatch:", line)
-    print("live decrypt parity (golden {}): {} scripts, {} event lines, {} mismatched, {} recorded approved divergences (PRO-260) (recorded with seed {}); events: {}".format(
-        Path(args.golden).name, len(document["entries"]), events, len(failures), approved, document.get("seed"),
-        ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
+    print("live decrypt parity (golden {}): {} scripts, {} event lines, {} mismatched, {} recorded approved divergences (PRO-260), "
+          "{} recorded approved divergences (SEC-SESS-1) (recorded with seed {}); events: {}".format(
+              Path(args.golden).name, len(document["entries"]), events, len(failures), approved, pinned, document.get("seed"),
+              ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
     return 1 if failures else 0
 
 if __name__ == "__main__":

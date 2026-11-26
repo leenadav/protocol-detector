@@ -32,6 +32,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import golden  # noqa: E402 - the reference (protocol_engine, protocol_adapters) is imported only where it runs
+import sec_sess1  # noqa: E402 - standard library only
 
 SIGNATURES = [
     {"name": "example-host", "category": "business-systems", "subcategory": "general-business", "risk": 2,
@@ -327,17 +328,21 @@ def present_limits(rng):
 
 def present_problem(binary, limits, expected, data):
     """Compare the Go `present` command with the reference's result on one capture (text of the result but the
-    timing): (problem or None, whether the reference completed the analysis rather than refusing it)."""
+    timing): (problem or None, whether the reference completed the analysis rather than refusing it, and for a
+    differing result the two sides for sec_sess1.Pins.approve plus Go's parsed result, else None)."""
     done = subprocess.run([binary, "present", "--max-frames", str(limits[0]), "--max-sessions", str(limits[1]), "--max-events", str(limits[2])],  # noqa: S603
                           input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=120)
     if done.returncode != (3 if "error" in expected else 0):
-        return "present exit status {} for {!r}: {}".format(done.returncode, expected.get("error"), done.stderr.decode("utf-8", "replace")[:200]), False
+        return "present exit status {} for {!r}: {}".format(done.returncode, expected.get("error"), done.stderr.decode("utf-8", "replace")[:200]), False, None, None
     actual = json.loads(done.stdout)
     if "meta" in actual:
         actual["meta"]["processing_ms"] = 0
     if json.dumps(actual) != json.dumps(expected):
-        return "present result differs (limits {})".format(limits), False
-    return None, "error" not in expected
+        # The sides as indented JSON, for the SEC-SESS-1 pins: (Go, Go status, reference, reference status, limits).
+        sides = (json.dumps(actual, indent=1), done.returncode, json.dumps(expected, indent=1), 3 if "error" in expected else 0,
+                 "limits {}".format(list(limits)))
+        return "present result differs (limits {})".format(limits), "error" not in expected, sides, actual
+    return None, "error" not in expected, None, None
 
 
 def main(argv=None):
@@ -348,9 +353,12 @@ def main(argv=None):
     parser.add_argument("--keep", help="write the captures here instead of a temporary directory")
     parser.add_argument("--record", help="also write the inputs and the reference's answers to this golden file (migration/parity/golden.py)")
     parser.add_argument("--golden", help="compare Go with this golden file's answers; the reference is not run")
+    parser.add_argument("--record-sec-sess1", metavar="PATH", help="write every divergence to PATH for review; the run then fails")
     args = parser.parse_args(argv)
     if args.golden:
         return replay_golden(args)
+    sec_sess1.self_test()
+    pins = sec_sess1.Pins("analyze", args.seed, record=args.record_sec_sess1)
     rng = random.Random(args.seed)
     sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
     recorder = golden.recorder(args.record, "analyze", {"seed": args.seed, "count": args.count, "signatures": SIGNATURES, "policy": POLICY})
@@ -373,27 +381,43 @@ def main(argv=None):
             rows += expected[0].count("\n")
             python_positive += positive_rows(expected[0])
             go_positive += positive_rows(done.stdout.decode("utf-8", "replace"))
-            problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")))
+            go_result = (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8"))
+            problem = compare(expected, go_result)
+            pins.cover(capture.name + "/analyze")
+            # SEC-SESS-1 (PRO-398): a mismatch passes only when this exact case is pinned with both exact results.
+            # A golden file then records Go's pinned answer: exactly what Go was required to give.
+            judged, judged_pinned = expected, False
             if problem:
-                failures.append("{} {}: {}".format(capture.name, " ".join(options), problem))
+                if pins.approve(capture.name + "/analyze", go_result[0], list(go_result[1:]), expected[0], list(expected[1:]),
+                                " ".join(options).replace(str(folder), "<tmp>")):
+                    judged, judged_pinned = go_result, True
+                else:
+                    failures.append("{} {}: {}".format(capture.name, " ".join(options), problem))
             data = capture.read_bytes()
             limits = present_limits(rng)
             presented_expected = present_reference(server, data, limits)
-            problem, finished = present_problem(args.binary, limits, presented_expected, data)
+            problem, finished, sides, presented_go = present_problem(args.binary, limits, presented_expected, data)
             presented += 1
             completed += finished
+            pins.cover(capture.name + "/present")
+            presented_judged, presented_pinned = presented_expected, False
             if problem:
-                failures.append("{}: {}".format(capture.name, problem))
+                if sides and pins.approve(capture.name + "/present", *sides):
+                    presented_judged, presented_pinned = presented_go, True
+                else:
+                    failures.append("{}: {}".format(capture.name, problem))
             if recorder:
                 recorder.add({"capture": capture.name, "data": golden.b64(data), "options": golden.relative(options, folder),
-                              "expected": golden.relative(list(expected), folder), "limits": list(limits), "present": presented_expected})
+                              "expected": golden.relative(list(judged), folder), "limits": list(limits), "present": presented_judged,
+                              "sec_sess1": [judged_pinned, presented_pinned]})
         for line in failures[:10]:
             print("analyze mismatch:", line)
-        problems = shortfall(args.count, python_positive, go_positive, completed)
+        problems = shortfall(args.count, python_positive, go_positive, completed) + pins.finish()
         for line in problems:
             print("analyze parity FAILED:", line)
-        print("analyze parity: {} captures, {} rows ({} identified), {} presentation results ({} completed), {} mismatched (seed {})".format(
-            args.count, rows, python_positive, presented, completed, len(failures), args.seed))
+        print("analyze parity: {} captures, {} rows ({} identified), {} presentation results ({} completed), {} mismatched, "
+              "{} approved divergences ({}) (seed {})".format(args.count, rows, python_positive, presented, completed, len(failures),
+                                                             len(pins.approved), sec_sess1.LABEL, args.seed))
         if recorder:
             recorder.finish(failures or problems)
         return 1 if failures or problems else 0
@@ -402,7 +426,7 @@ def main(argv=None):
 def replay_golden(args):
     """The gate without the reference: the recorded captures and options, Go's answers against the recorded ones."""
     document = golden.read(args.golden, "analyze")
-    failures, rows, presented, completed, python_positive, go_positive = [], 0, 0, 0, 0, 0
+    failures, rows, presented, completed, python_positive, go_positive, pinned = [], 0, 0, 0, 0, 0, 0
     with tempfile.TemporaryDirectory() as folder:
         folder = Path(folder)
         (folder / "signatures.json").write_text(json.dumps(document["signatures"]), encoding="utf-8")
@@ -420,9 +444,10 @@ def replay_golden(args):
             problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")))
             if problem:
                 failures.append("{} {}: {}".format(capture.name, " ".join(entry["options"]), problem))
-            problem, finished = present_problem(args.binary, tuple(entry["limits"]), entry["present"], data)
+            problem, finished = present_problem(args.binary, tuple(entry["limits"]), entry["present"], data)[:2]
             presented += 1
             completed += finished
+            pinned += sum(bool(flag) for flag in entry.get("sec_sess1", ()))
             if problem:
                 failures.append("{}: {}".format(capture.name, problem))
     for line in failures[:10]:
@@ -431,8 +456,10 @@ def replay_golden(args):
     problems = shortfall(count, python_positive, go_positive, completed)
     for line in problems:
         print("analyze parity FAILED:", line)
-    print("analyze parity (golden {}): {} captures, {} rows ({} identified), {} presentation results ({} completed), {} mismatched (recorded with seed {})".format(
-        Path(args.golden).name, count, rows, python_positive, presented, completed, len(failures), document.get("seed")))
+    print("analyze parity (golden {}): {} captures, {} rows ({} identified), {} presentation results ({} completed), {} mismatched, "
+          "{} recorded approved divergences ({}) (recorded with seed {})".format(
+              Path(args.golden).name, count, rows, python_positive, presented, completed, len(failures), pinned, sec_sess1.LABEL,
+              document.get("seed")))
     return 1 if failures or problems else 0
 
 if __name__ == "__main__":
