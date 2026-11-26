@@ -89,6 +89,10 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   `5b48d91` (PRO-291). P2 2: an undersized client Initial on a conflicted connection no longer refreshes the marker
   or retracts; the 1200-byte rule runs right after opening, before frames (also the related P3). `653b1ca` on
   `claude/engine-PRO-315-quic-conflict-size`, cut from PR #107's head `d950eb8` (PR into that branch).
+- **SEC-QUIC-1 budget (PRO-47, PRO-122):** an over-budget CRYPTO merge no longer forgets the QUIC connection; it
+  stays a sticky exhausted marker with its pre-overflow bytes, so a later contradicting ClientHello conflicts and
+  retracts instead of assembling as a first message (Go only, recorded divergence approved by Lee on PRO-124).
+  Branch `claude/engine-PRO-122-quic-exhausted-sticky`, PR into `main`; details in `STATUS.md`.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 - **PRO-141 (livectl stop flake):** the stand-in worker sets its INT trap first and writes a ready file last; the
   three stop tests wait for it (`aff4d13`, branch `claude/vigilant-meitner-t7kw7h`). 200 of 200 under `-race`, also
@@ -159,6 +163,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | SEC-QUIC-3 (`fe87386`, PR into `main`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
 | PRO-291 (`5b48d91`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
 | PRO-315 (`653b1ca`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
+| SEC-QUIC-1 budget (PRO-122, branch `claude/engine-PRO-122-quic-exhausted-sticky`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
