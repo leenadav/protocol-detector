@@ -1,0 +1,7030 @@
+{
+ "applications": [
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Mediapart",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "mediapart",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "/Film",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "slashfilm",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Hyves",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "hyves",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Sport Express",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "sport-express",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Prisma",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "prisma",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Globes",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "globes",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Kompas",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "kompas",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Tom's Hardware",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "tomshardware",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "TwitPic",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "twitpic",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "BioLib",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "biolib",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Omniglot",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "omniglot",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "quantified self",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "quantifiedself",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Lulu Press, Inc.",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "lulu",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "GlobalSecurity.org",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "globalsecurity",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Meetup.com",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "meetup",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Islam Questions & Answers",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "islamqa",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "MusicOMH",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "musicomh",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Joom",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "joom",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "italki.com",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "italki",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Exclaim!",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "exclaim",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "The Conversation",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "theconversation",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "The Quietus",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "thequietus",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "AbeBooks",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "abebooks",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Altium Designer",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "altium",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Meson",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "mesonbuild",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Dribbble",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "dribbble",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Kotobank",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "kotobank",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "RTEMS",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "rtems",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Age of Empires II HD: The Forgotten",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "forgottenempires",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Loomio",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "loomio",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Clip Studio Paint",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "clipstudio",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Labcenter Electronics",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "labcenter",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "software-development",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Doctrine",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "doctrine-project",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "software-development",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Gpg4win",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "gpg4win",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Wikishia",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "wikishia",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "TeXstudio",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "texstudio",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Twinkl",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "twinkl",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Mailfence",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "mailfence",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "email",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Rodovid",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "rodovid",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Vatican News",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "vaticannews",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "RealClearPolitics",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "realclearpolitics",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Internetowa encyklopedia PWN",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "pwn",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "gazeta.ru",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "gazeta",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Statista",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "statista",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Something Awful",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "somethingawful",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Consumer Reports",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "consumerreports",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "space.com",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "space",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Motor Trend",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "motortrend",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "San Diego Union-Tribune",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "sandiegouniontribune",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "HotBot",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "hotbot",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "canoe.ca",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "canoe",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "We Heart It",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "weheartit",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "openDemocracy",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "opendemocracy",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "PinkNews",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "thepinknews",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Rebel News",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "rebelnews",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "archINFORM",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "archinform",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Der Spiegel",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "spiegel",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Tempo",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "tempo",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Forbidden Stories",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "forbiddenstories",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Mixcloud",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "mixcloud",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Universe Today",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "universetoday",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Knights of the Zodiac: Saint Seiya",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "saintseiya-kotz",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Kagi",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "kagi",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Toutiao",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "toutiao",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Avalanche",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "avalanche",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "software-development",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Petal Maps",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "petalmaps",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Noggin",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "noggin",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Joox",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "joox",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "JSLint",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "jslint",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "GanttProject",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ganttproject",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Renoise",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "renoise",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Darcs",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "darcs",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "TinEye",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "tineye",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Nightingale",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "getnightingale",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Arch Hurd",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "archhurd",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "MakeHuman",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "makehumancommunity",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Overleaf",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "overleaf",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "ADOdb",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "adodb",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "software-development",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "VnExpress",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "vnexpress",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Catholic-Hierarchy.org",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "catholic-hierarchy",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "EUobserver",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "euobserver",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Google Person Finder",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "google",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Viu",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "viu",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "OpenAlex",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "openalex",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "yr.no",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "yr",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "T-Online",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "t-online",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Persée",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "persee",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "HighBeam Research",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "highbeam",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Jihad Watch",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "jihadwatch",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Zero Hedge",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "zerohedge",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "The Bookmaker Ratings",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "bookmaker-ratings",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "answers.com",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "answers",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Bleacher Report",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "bleacherreport",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Cut-the-Knot",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "cut-the-knot",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Veoh",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "veoh",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Terra",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "terra",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "CozyCot",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "cozycot",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "El Universal",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "eluniversal",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Operabase",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "operabase",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Less Wrong",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "lesswrong",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "MICHAEL",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "michael-culture",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "filmportal.de",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "filmportal",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Magnatune",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "magnatune",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Where's George?",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "wheresgeorge",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "NK News",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "nknews",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Numbeo",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "numbeo",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "brilliant.org",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "brilliant",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Publons",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "publons",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Raqqa Is Being Slaughtered Silently",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "raqqa-sl",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Maximum Rocknroll",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "maximumrocknroll",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Autores.uy",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "autores",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "The WELL",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "well",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Estonica",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "estonica",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Canal Sur Televisión",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "canalsur",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Münchner Merkur",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "merkur",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Hawar News Agency",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "hawarnews",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Observation.org",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "observation",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Cloob",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "cloob",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Digital Trends",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "digitaltrends",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "freelancer.com",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "freelancer",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "The Line of Best Fit",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "thelineofbestfit",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "PressReader Inc.",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "pressreader",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Taiwan News",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "taiwannews",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "New York University Press",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "nyupress",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Novy Chas",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "novychas",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Songkick",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "songkick",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "The Daily Caller",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "dailycaller",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "WatchMojo",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "watchmojo",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Zillow",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "zillow",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "OneFootball",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "onefootball",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Blues Foundation",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "blues",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "China Internet Information Center",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "china",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "PostSecret",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "postsecret",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Skam France",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "france",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Xara Photo & Graphic Designer",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "xara",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "RIOT",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "riot-os",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "GNU Pascal",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "gnu-pascal",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "software-development",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Wuala",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "wuala",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "GigaChat",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "giga",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "instant-messaging",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Monzo",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "monzo",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Akismet",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "akismet",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Samplitude",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "samplitude",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Douyin",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "douyin",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Vtiger CRM",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "vtiger",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Bloglines",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "bloglines",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "VidCon",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "vidcon",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "voip-video",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "ABBA Voyage",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "abbavoyage",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "KKBOX",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "kkbox",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Bitpanda",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "bitpanda",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "SlimBrowser",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "slimbrowser",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Mahara",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "mahara",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "The Stuttgart Database of Scientific Illustrators 1450–1950",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "uni-stuttgart",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Fruit",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "fruitchess",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "collaboration",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "UpScrolled",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "upscrolled",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "social-networking",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "SmartFTP",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "smartftp",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "MetaGer",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "metager",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "YAFFS",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "yaffs",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Ancestris",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "ancestris",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "EGroupWare",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "egroupware",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Proteopedia",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "proteopedia",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "ArtRage",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "artrage",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "AIDA64",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "aida64",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Chamilo",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "chamilo",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Appropedia",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "appropedia",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "GoldWave",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "goldwave",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Indigo Renderer",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "indigorenderer",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "general-business",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Morpheus",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "morpheus",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "storage-backup",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Werner Icking Music Archive",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "icking-music-archive",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "business-systems",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "SciELO",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "scielo",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "database",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Girl Genius",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "girlgeniusonline",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  },
+  {
+   "aliases": [],
+   "category": "general-internet",
+   "characteristics": [],
+   "container": null,
+   "depends_on": [],
+   "description": "Woman's Day",
+   "implicitly_uses": [
+    "ssl",
+    "web-browsing"
+   ],
+   "name": "womansday",
+   "risk": 2,
+   "secure_ports": [],
+   "standard_ports": [],
+   "subcategory": "internet-utility",
+   "technology": "browser-based"
+  }
+ ],
+ "count": 171,
+ "dropped": {
+  "domain_does_not_resolve": [
+   "mutopiaproject",
+   "aozora",
+   "hanyudacidian"
+  ],
+  "invalid_name": []
+ },
+ "evidence": [
+  {
+   "category_normalized": false,
+   "domains": [
+    "mediapart.fr"
+   ],
+   "name": "mediapart",
+   "source_note": "Wikidata CC0 P856 official website: www.mediapart.fr",
+   "source_url": "https://www.wikidata.org/wiki/Q619342",
+   "wikidata": "Q619342"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "slashfilm.com"
+   ],
+   "name": "slashfilm",
+   "source_note": "Wikidata CC0 P856 official website: www.slashfilm.com",
+   "source_url": "https://www.wikidata.org/wiki/Q573998",
+   "wikidata": "Q573998"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "hyves.nl"
+   ],
+   "name": "hyves",
+   "source_note": "Wikidata CC0 P856 official website: www.hyves.nl",
+   "source_url": "https://www.wikidata.org/wiki/Q1056882",
+   "wikidata": "Q1056882"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "sport-express.ru"
+   ],
+   "name": "sport-express",
+   "source_note": "Wikidata CC0 P856 official website: www.sport-express.ru",
+   "source_url": "https://www.wikidata.org/wiki/Q974931",
+   "wikidata": "Q974931"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "prisma.fi"
+   ],
+   "name": "prisma",
+   "source_note": "Wikidata CC0 P856 official website: www.prisma.fi",
+   "source_url": "https://www.wikidata.org/wiki/Q12047031",
+   "wikidata": "Q12047031"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "globes.co.il"
+   ],
+   "name": "globes",
+   "source_note": "Wikidata CC0 P856 official website: www.globes.co.il",
+   "source_url": "https://www.wikidata.org/wiki/Q2350278",
+   "wikidata": "Q2350278"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "kompas.com"
+   ],
+   "name": "kompas",
+   "source_note": "Wikidata CC0 P856 official website: print.kompas.com",
+   "source_url": "https://www.wikidata.org/wiki/Q4405665",
+   "wikidata": "Q4405665"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "tomshardware.com"
+   ],
+   "name": "tomshardware",
+   "source_note": "Wikidata CC0 P856 official website: www.tomshardware.com",
+   "source_url": "https://www.wikidata.org/wiki/Q575769",
+   "wikidata": "Q575769"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "twitpic.com"
+   ],
+   "name": "twitpic",
+   "source_note": "Wikidata CC0 P856 official website: twitpic.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2528603",
+   "wikidata": "Q2528603"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "biolib.cz"
+   ],
+   "name": "biolib",
+   "source_note": "Wikidata CC0 P856 official website: www.biolib.cz",
+   "source_url": "https://www.wikidata.org/wiki/Q12345690",
+   "wikidata": "Q12345690"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "omniglot.com"
+   ],
+   "name": "omniglot",
+   "source_note": "Wikidata CC0 P856 official website: www.omniglot.com",
+   "source_url": "https://www.wikidata.org/wiki/Q12901286",
+   "wikidata": "Q12901286"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "quantifiedself.com"
+   ],
+   "name": "quantifiedself",
+   "source_note": "Wikidata CC0 P856 official website: www.quantifiedself.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1337542",
+   "wikidata": "Q1337542"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "lulu.com"
+   ],
+   "name": "lulu",
+   "source_note": "Wikidata CC0 P856 official website: www.lulu.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1465172",
+   "wikidata": "Q1465172"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "globalsecurity.org"
+   ],
+   "name": "globalsecurity",
+   "source_note": "Wikidata CC0 P856 official website: www.globalsecurity.org",
+   "source_url": "https://www.wikidata.org/wiki/Q1531550",
+   "wikidata": "Q1531550"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "meetup.com"
+   ],
+   "name": "meetup",
+   "source_note": "Wikidata CC0 P856 official website: www.meetup.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1625371",
+   "wikidata": "Q1625371"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "islamqa.info"
+   ],
+   "name": "islamqa",
+   "source_note": "Wikidata CC0 P856 official website: islamqa.info",
+   "source_url": "https://www.wikidata.org/wiki/Q17006152",
+   "wikidata": "Q17006152"
+  },
+  {
+   "category_normalized": true,
+   "domains": [
+    "musicomh.com"
+   ],
+   "name": "musicomh",
+   "source_note": "Wikidata CC0 P856 official website: www.musicomh.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1938544",
+   "wikidata": "Q1938544"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "joom.com"
+   ],
+   "name": "joom",
+   "source_note": "Wikidata CC0 P856 official website: www.joom.com",
+   "source_url": "https://www.wikidata.org/wiki/Q60851537",
+   "wikidata": "Q60851537"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "italki.com"
+   ],
+   "name": "italki",
+   "source_note": "Wikidata CC0 P856 official website: www.italki.com",
+   "source_url": "https://www.wikidata.org/wiki/Q6093545",
+   "wikidata": "Q6093545"
+  },
+  {
+   "category_normalized": true,
+   "domains": [
+    "exclaim.ca"
+   ],
+   "name": "exclaim",
+   "source_note": "Wikidata CC0 P856 official website: exclaim.ca",
+   "source_url": "https://www.wikidata.org/wiki/Q664232",
+   "wikidata": "Q664232"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "theconversation.com"
+   ],
+   "name": "theconversation",
+   "source_note": "Wikidata CC0 P856 official website: theconversation.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7727516",
+   "wikidata": "Q7727516"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "thequietus.com"
+   ],
+   "name": "thequietus",
+   "source_note": "Wikidata CC0 P856 official website: thequietus.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7759110",
+   "wikidata": "Q7759110"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "abebooks.com"
+   ],
+   "name": "abebooks",
+   "source_note": "Wikidata CC0 P856 official website: www.abebooks.com",
+   "source_url": "https://www.wikidata.org/wiki/Q318128",
+   "wikidata": "Q318128"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "altium.com"
+   ],
+   "name": "altium",
+   "source_note": "Wikidata CC0 P856 official website: altium.com",
+   "source_url": "https://www.wikidata.org/wiki/Q441778",
+   "wikidata": "Q441778"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "mesonbuild.com"
+   ],
+   "name": "mesonbuild",
+   "source_note": "Wikidata CC0 P856 official website: mesonbuild.com",
+   "source_url": "https://www.wikidata.org/wiki/Q23810842",
+   "wikidata": "Q23810842"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "dribbble.com"
+   ],
+   "name": "dribbble",
+   "source_note": "Wikidata CC0 P856 official website: www.dribbble.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7605173",
+   "wikidata": "Q7605173"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "kotobank.jp"
+   ],
+   "name": "kotobank",
+   "source_note": "Wikidata CC0 P856 official website: kotobank.jp",
+   "source_url": "https://www.wikidata.org/wiki/Q11302260",
+   "wikidata": "Q11302260"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "rtems.org"
+   ],
+   "name": "rtems",
+   "source_note": "Wikidata CC0 P856 official website: www.rtems.org",
+   "source_url": "https://www.wikidata.org/wiki/Q1600588",
+   "wikidata": "Q1600588"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "forgottenempires.net"
+   ],
+   "name": "forgottenempires",
+   "source_note": "Wikidata CC0 P856 official website: www.forgottenempires.net",
+   "source_url": "https://www.wikidata.org/wiki/Q12813511",
+   "wikidata": "Q12813511"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "loomio.com"
+   ],
+   "name": "loomio",
+   "source_note": "Wikidata CC0 P856 official website: www.loomio.com",
+   "source_url": "https://www.wikidata.org/wiki/Q15975673",
+   "wikidata": "Q15975673"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "clipstudio.net"
+   ],
+   "name": "clipstudio",
+   "source_note": "Wikidata CC0 P856 official website: www.clipstudio.net",
+   "source_url": "https://www.wikidata.org/wiki/Q15120677",
+   "wikidata": "Q15120677"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "labcenter.com"
+   ],
+   "name": "labcenter",
+   "source_note": "Wikidata CC0 P856 official website: www.labcenter.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1149822",
+   "wikidata": "Q1149822"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "doctrine-project.org"
+   ],
+   "name": "doctrine-project",
+   "source_note": "Wikidata CC0 P856 official website: www.doctrine-project.org",
+   "source_url": "https://www.wikidata.org/wiki/Q1233953",
+   "wikidata": "Q1233953"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "gpg4win.org"
+   ],
+   "name": "gpg4win",
+   "source_note": "Wikidata CC0 P856 official website: www.gpg4win.org",
+   "source_url": "https://www.wikidata.org/wiki/Q1502224",
+   "wikidata": "Q1502224"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "wikishia.net"
+   ],
+   "name": "wikishia",
+   "source_note": "Wikidata CC0 P856 official website: wikishia.net",
+   "source_url": "https://www.wikidata.org/wiki/Q18558287",
+   "wikidata": "Q18558287"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "texstudio.org"
+   ],
+   "name": "texstudio",
+   "source_note": "Wikidata CC0 P856 official website: texstudio.org",
+   "source_url": "https://www.wikidata.org/wiki/Q2398140",
+   "wikidata": "Q2398140"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "twinkl.co.uk"
+   ],
+   "name": "twinkl",
+   "source_note": "Wikidata CC0 P856 official website: www.twinkl.co.uk",
+   "source_url": "https://www.wikidata.org/wiki/Q25936435",
+   "wikidata": "Q25936435"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "mailfence.com"
+   ],
+   "name": "mailfence",
+   "source_note": "Wikidata CC0 P856 official website: mailfence.com",
+   "source_url": "https://www.wikidata.org/wiki/Q28127375",
+   "wikidata": "Q28127375"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "rodovid.org"
+   ],
+   "name": "rodovid",
+   "source_note": "Wikidata CC0 P856 official website: www.rodovid.org",
+   "source_url": "https://www.wikidata.org/wiki/Q649227",
+   "wikidata": "Q649227"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "vaticannews.va"
+   ],
+   "name": "vaticannews",
+   "source_note": "Wikidata CC0 P856 official website: www.vaticannews.va",
+   "source_url": "https://www.wikidata.org/wiki/Q1034213",
+   "wikidata": "Q1034213"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "realclearpolitics.com"
+   ],
+   "name": "realclearpolitics",
+   "source_note": "Wikidata CC0 P856 official website: realclearpolitics.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7300807",
+   "wikidata": "Q7300807"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "pwn.pl"
+   ],
+   "name": "pwn",
+   "source_note": "Wikidata CC0 P856 official website: encyklopedia.pwn.pl",
+   "source_url": "https://www.wikidata.org/wiki/Q4041526",
+   "wikidata": "Q4041526"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "gazeta.ru"
+   ],
+   "name": "gazeta",
+   "source_note": "Wikidata CC0 P856 official website: www.gazeta.ru",
+   "source_url": "https://www.wikidata.org/wiki/Q595181",
+   "wikidata": "Q595181"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "statista.com"
+   ],
+   "name": "statista",
+   "source_note": "Wikidata CC0 P856 official website: www.statista.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2333891",
+   "wikidata": "Q2333891"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "somethingawful.com"
+   ],
+   "name": "somethingawful",
+   "source_note": "Wikidata CC0 P856 official website: www.somethingawful.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1048635",
+   "wikidata": "Q1048635"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "consumerreports.org"
+   ],
+   "name": "consumerreports",
+   "source_note": "Wikidata CC0 P856 official website: www.consumerreports.org",
+   "source_url": "https://www.wikidata.org/wiki/Q1957782",
+   "wikidata": "Q1957782"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "space.com"
+   ],
+   "name": "space",
+   "source_note": "Wikidata CC0 P856 official website: space.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3112835",
+   "wikidata": "Q3112835"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "motortrend.com"
+   ],
+   "name": "motortrend",
+   "source_note": "Wikidata CC0 P856 official website: www.motortrend.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3109600",
+   "wikidata": "Q3109600"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "sandiegouniontribune.com"
+   ],
+   "name": "sandiegouniontribune",
+   "source_note": "Wikidata CC0 P856 official website: www.sandiegouniontribune.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3547109",
+   "wikidata": "Q3547109"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "hotbot.com"
+   ],
+   "name": "hotbot",
+   "source_note": "Wikidata CC0 P856 official website: www.hotbot.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1630663",
+   "wikidata": "Q1630663"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "canoe.com"
+   ],
+   "name": "canoe",
+   "source_note": "Wikidata CC0 P856 official website: canoe.com",
+   "source_url": "https://www.wikidata.org/wiki/Q902502",
+   "wikidata": "Q902502"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "weheartit.com"
+   ],
+   "name": "weheartit",
+   "source_note": "Wikidata CC0 P856 official website: www.weheartit.com",
+   "source_url": "https://www.wikidata.org/wiki/Q10393281",
+   "wikidata": "Q10393281"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "opendemocracy.net"
+   ],
+   "name": "opendemocracy",
+   "source_note": "Wikidata CC0 P856 official website: www.opendemocracy.net",
+   "source_url": "https://www.wikidata.org/wiki/Q1051984",
+   "wikidata": "Q1051984"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "thepinknews.com"
+   ],
+   "name": "thepinknews",
+   "source_note": "Wikidata CC0 P856 official website: www.thepinknews.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1964077",
+   "wikidata": "Q1964077"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "rebelnews.com"
+   ],
+   "name": "rebelnews",
+   "source_note": "Wikidata CC0 P856 official website: www.rebelnews.com",
+   "source_url": "https://www.wikidata.org/wiki/Q19866755",
+   "wikidata": "Q19866755"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "archinform.net"
+   ],
+   "name": "archinform",
+   "source_note": "Wikidata CC0 P856 official website: www.archinform.net",
+   "source_url": "https://www.wikidata.org/wiki/Q265049",
+   "wikidata": "Q265049"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "spiegel.de"
+   ],
+   "name": "spiegel",
+   "source_note": "Wikidata CC0 P856 official website: www.spiegel.de",
+   "source_url": "https://www.wikidata.org/wiki/Q278151",
+   "wikidata": "Q278151"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "tempo.co"
+   ],
+   "name": "tempo",
+   "source_note": "Wikidata CC0 P856 official website: magz.tempo.co",
+   "source_url": "https://www.wikidata.org/wiki/Q3517741",
+   "wikidata": "Q3517741"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "forbiddenstories.org"
+   ],
+   "name": "forbiddenstories",
+   "source_note": "Wikidata CC0 P856 official website: forbiddenstories.org",
+   "source_url": "https://www.wikidata.org/wiki/Q51951232",
+   "wikidata": "Q51951232"
+  },
+  {
+   "category_normalized": true,
+   "domains": [
+    "mixcloud.com"
+   ],
+   "name": "mixcloud",
+   "source_note": "Wikidata CC0 P856 official website: www.mixcloud.com",
+   "source_url": "https://www.wikidata.org/wiki/Q6883832",
+   "wikidata": "Q6883832"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "universetoday.com"
+   ],
+   "name": "universetoday",
+   "source_note": "Wikidata CC0 P856 official website: www.universetoday.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7894217",
+   "wikidata": "Q7894217"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "saintseiya-kotz.com"
+   ],
+   "name": "saintseiya-kotz",
+   "source_note": "Wikidata CC0 P856 official website: www.saintseiya-kotz.com",
+   "source_url": "https://www.wikidata.org/wiki/Q65052700",
+   "wikidata": "Q65052700"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "kagi.com"
+   ],
+   "name": "kagi",
+   "source_note": "Wikidata CC0 P856 official website: kagi.com",
+   "source_url": "https://www.wikidata.org/wiki/Q123819301",
+   "wikidata": "Q123819301"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "toutiao.com"
+   ],
+   "name": "toutiao",
+   "source_note": "Wikidata CC0 P856 official website: www.toutiao.com",
+   "source_url": "https://www.wikidata.org/wiki/Q24835387",
+   "wikidata": "Q24835387"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "avalanche.com"
+   ],
+   "name": "avalanche",
+   "source_note": "Wikidata CC0 P856 official website: www.avalanche.com",
+   "source_url": "https://www.wikidata.org/wiki/Q110233099",
+   "wikidata": "Q110233099"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "petalmaps.com"
+   ],
+   "name": "petalmaps",
+   "source_note": "Wikidata CC0 P856 official website: www.petalmaps.com",
+   "source_url": "https://www.wikidata.org/wiki/Q109607411",
+   "wikidata": "Q109607411"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "noggin.com"
+   ],
+   "name": "noggin",
+   "source_note": "Wikidata CC0 P856 official website: noggin.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7047483",
+   "wikidata": "Q7047483"
+  },
+  {
+   "category_normalized": true,
+   "domains": [
+    "joox.com"
+   ],
+   "name": "joox",
+   "source_note": "Wikidata CC0 P856 official website: www.joox.com",
+   "source_url": "https://www.wikidata.org/wiki/Q28187024",
+   "wikidata": "Q28187024"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "jslint.com"
+   ],
+   "name": "jslint",
+   "source_note": "Wikidata CC0 P856 official website: www.jslint.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1338047",
+   "wikidata": "Q1338047"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "ganttproject.biz"
+   ],
+   "name": "ganttproject",
+   "source_note": "Wikidata CC0 P856 official website: www.ganttproject.biz",
+   "source_url": "https://www.wikidata.org/wiki/Q1493695",
+   "wikidata": "Q1493695"
+  },
+  {
+   "category_normalized": true,
+   "domains": [
+    "renoise.com"
+   ],
+   "name": "renoise",
+   "source_note": "Wikidata CC0 P856 official website: www.renoise.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1972611",
+   "wikidata": "Q1972611"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "darcs.net"
+   ],
+   "name": "darcs",
+   "source_note": "Wikidata CC0 P856 official website: darcs.net",
+   "source_url": "https://www.wikidata.org/wiki/Q204377",
+   "wikidata": "Q204377"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "tineye.com"
+   ],
+   "name": "tineye",
+   "source_note": "Wikidata CC0 P856 official website: tineye.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2382535",
+   "wikidata": "Q2382535"
+  },
+  {
+   "category_normalized": true,
+   "domains": [
+    "getnightingale.com"
+   ],
+   "name": "getnightingale",
+   "source_note": "Wikidata CC0 P856 official website: getnightingale.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2519197",
+   "wikidata": "Q2519197"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "archhurd.org"
+   ],
+   "name": "archhurd",
+   "source_note": "Wikidata CC0 P856 official website: www.archhurd.org",
+   "source_url": "https://www.wikidata.org/wiki/Q2587354",
+   "wikidata": "Q2587354"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "makehumancommunity.org"
+   ],
+   "name": "makehumancommunity",
+   "source_note": "Wikidata CC0 P856 official website: www.makehumancommunity.org",
+   "source_url": "https://www.wikidata.org/wiki/Q2626434",
+   "wikidata": "Q2626434"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "overleaf.com"
+   ],
+   "name": "overleaf",
+   "source_note": "Wikidata CC0 P856 official website: www.overleaf.com",
+   "source_url": "https://www.wikidata.org/wiki/Q27991271",
+   "wikidata": "Q27991271"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "adodb.org"
+   ],
+   "name": "adodb",
+   "source_note": "Wikidata CC0 P856 official website: adodb.org",
+   "source_url": "https://www.wikidata.org/wiki/Q290526",
+   "wikidata": "Q290526"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "vnexpress.net"
+   ],
+   "name": "vnexpress",
+   "source_note": "Wikidata CC0 P856 official website: www.vnexpress.net",
+   "source_url": "https://www.wikidata.org/wiki/Q10832925",
+   "wikidata": "Q10832925"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "catholic-hierarchy.org"
+   ],
+   "name": "catholic-hierarchy",
+   "source_note": "Wikidata CC0 P856 official website: www.catholic-hierarchy.org",
+   "source_url": "https://www.wikidata.org/wiki/Q3892772",
+   "wikidata": "Q3892772"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "euobserver.com"
+   ],
+   "name": "euobserver",
+   "source_note": "Wikidata CC0 P856 official website: euobserver.com",
+   "source_url": "https://www.wikidata.org/wiki/Q507198",
+   "wikidata": "Q507198"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "google.org"
+   ],
+   "name": "google",
+   "source_note": "Wikidata CC0 P856 official website: google.org",
+   "source_url": "https://www.wikidata.org/wiki/Q5583866",
+   "wikidata": "Q5583866"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "viu.com"
+   ],
+   "name": "viu",
+   "source_note": "Wikidata CC0 P856 official website: www.viu.com",
+   "source_url": "https://www.wikidata.org/wiki/Q23697711",
+   "wikidata": "Q23697711"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "openalex.org"
+   ],
+   "name": "openalex",
+   "source_note": "Wikidata CC0 P856 official website: openalex.org",
+   "source_url": "https://www.wikidata.org/wiki/Q107507571",
+   "wikidata": "Q107507571"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "yr.no"
+   ],
+   "name": "yr",
+   "source_note": "Wikidata CC0 P856 official website: yr.no",
+   "source_url": "https://www.wikidata.org/wiki/Q292969",
+   "wikidata": "Q292969"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "t-online.de"
+   ],
+   "name": "t-online",
+   "source_note": "Wikidata CC0 P856 official website: www.t-online.de",
+   "source_url": "https://www.wikidata.org/wiki/Q590940",
+   "wikidata": "Q590940"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "persee.fr"
+   ],
+   "name": "persee",
+   "source_note": "Wikidata CC0 P856 official website: www.persee.fr",
+   "source_url": "https://www.wikidata.org/wiki/Q252430",
+   "wikidata": "Q252430"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "highbeam.com"
+   ],
+   "name": "highbeam",
+   "source_note": "Wikidata CC0 P856 official website: www.highbeam.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3244666",
+   "wikidata": "Q3244666"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "jihadwatch.org"
+   ],
+   "name": "jihadwatch",
+   "source_note": "Wikidata CC0 P856 official website: jihadwatch.org",
+   "source_url": "https://www.wikidata.org/wiki/Q3317441",
+   "wikidata": "Q3317441"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "zerohedge.com"
+   ],
+   "name": "zerohedge",
+   "source_note": "Wikidata CC0 P856 official website: zerohedge.com",
+   "source_url": "https://www.wikidata.org/wiki/Q3575278",
+   "wikidata": "Q3575278"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "bookmaker-ratings.ru"
+   ],
+   "name": "bookmaker-ratings",
+   "source_note": "Wikidata CC0 P856 official website: bookmaker-ratings.ru",
+   "source_url": "https://www.wikidata.org/wiki/Q28739789",
+   "wikidata": "Q28739789"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "answers.com"
+   ],
+   "name": "answers",
+   "source_note": "Wikidata CC0 P856 official website: www.answers.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2915210",
+   "wikidata": "Q2915210"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "bleacherreport.com"
+   ],
+   "name": "bleacherreport",
+   "source_note": "Wikidata CC0 P856 official website: www.bleacherreport.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2906353",
+   "wikidata": "Q2906353"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "cut-the-knot.org"
+   ],
+   "name": "cut-the-knot",
+   "source_note": "Wikidata CC0 P856 official website: cut-the-knot.org",
+   "source_url": "https://www.wikidata.org/wiki/Q1050579",
+   "wikidata": "Q1050579"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "veoh.com"
+   ],
+   "name": "veoh",
+   "source_note": "Wikidata CC0 P856 official website: veoh.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1087787",
+   "wikidata": "Q1087787"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "terra.cl"
+   ],
+   "name": "terra",
+   "source_note": "Wikidata CC0 P856 official website: www.terra.cl",
+   "source_url": "https://www.wikidata.org/wiki/Q1135120",
+   "wikidata": "Q1135120"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "cozycot.com"
+   ],
+   "name": "cozycot",
+   "source_note": "Wikidata CC0 P856 official website: www.cozycot.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1138322",
+   "wikidata": "Q1138322"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "eluniversal.com"
+   ],
+   "name": "eluniversal",
+   "source_note": "Wikidata CC0 P856 official website: www.eluniversal.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1324688",
+   "wikidata": "Q1324688"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "operabase.com"
+   ],
+   "name": "operabase",
+   "source_note": "Wikidata CC0 P856 official website: www.operabase.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1325475",
+   "wikidata": "Q1325475"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "lesswrong.com"
+   ],
+   "name": "lesswrong",
+   "source_note": "Wikidata CC0 P856 official website: www.lesswrong.com",
+   "source_url": "https://www.wikidata.org/wiki/Q13980547",
+   "wikidata": "Q13980547"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "michael-culture.org"
+   ],
+   "name": "michael-culture",
+   "source_note": "Wikidata CC0 P856 official website: www.michael-culture.org",
+   "source_url": "https://www.wikidata.org/wiki/Q1479601",
+   "wikidata": "Q1479601"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "filmportal.de"
+   ],
+   "name": "filmportal",
+   "source_note": "Wikidata CC0 P856 official website: www.filmportal.de",
+   "source_url": "https://www.wikidata.org/wiki/Q15706812",
+   "wikidata": "Q15706812"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "magnatune.com"
+   ],
+   "name": "magnatune",
+   "source_note": "Wikidata CC0 P856 official website: magnatune.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1571382",
+   "wikidata": "Q1571382"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "wheresgeorge.com"
+   ],
+   "name": "wheresgeorge",
+   "source_note": "Wikidata CC0 P856 official website: www.wheresgeorge.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1581973",
+   "wikidata": "Q1581973"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "nknews.org"
+   ],
+   "name": "nknews",
+   "source_note": "Wikidata CC0 P856 official website: www.nknews.org",
+   "source_url": "https://www.wikidata.org/wiki/Q17071886",
+   "wikidata": "Q17071886"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "numbeo.com"
+   ],
+   "name": "numbeo",
+   "source_note": "Wikidata CC0 P856 official website: www.numbeo.com",
+   "source_url": "https://www.wikidata.org/wiki/Q18207212",
+   "wikidata": "Q18207212"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "brilliant.org"
+   ],
+   "name": "brilliant",
+   "source_note": "Wikidata CC0 P856 official website: brilliant.org",
+   "source_url": "https://www.wikidata.org/wiki/Q18210437",
+   "wikidata": "Q18210437"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "publons.com"
+   ],
+   "name": "publons",
+   "source_note": "Wikidata CC0 P856 official website: publons.com",
+   "source_url": "https://www.wikidata.org/wiki/Q18389628",
+   "wikidata": "Q18389628"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "raqqa-sl.com"
+   ],
+   "name": "raqqa-sl",
+   "source_note": "Wikidata CC0 P856 official website: www.raqqa-sl.com",
+   "source_url": "https://www.wikidata.org/wiki/Q18711639",
+   "wikidata": "Q18711639"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "maximumrocknroll.com"
+   ],
+   "name": "maximumrocknroll",
+   "source_note": "Wikidata CC0 P856 official website: www.maximumrocknroll.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1914259",
+   "wikidata": "Q1914259"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "autores.uy"
+   ],
+   "name": "autores",
+   "source_note": "Wikidata CC0 P856 official website: autores.uy",
+   "source_url": "https://www.wikidata.org/wiki/Q22975461",
+   "wikidata": "Q22975461"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "well.com"
+   ],
+   "name": "well",
+   "source_note": "Wikidata CC0 P856 official website: www.well.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2655416",
+   "wikidata": "Q2655416"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "estonica.org"
+   ],
+   "name": "estonica",
+   "source_note": "Wikidata CC0 P856 official website: www.estonica.org",
+   "source_url": "https://www.wikidata.org/wiki/Q2665369",
+   "wikidata": "Q2665369"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "canalsur.es"
+   ],
+   "name": "canalsur",
+   "source_note": "Wikidata CC0 P856 official website: www.canalsur.es",
+   "source_url": "https://www.wikidata.org/wiki/Q2743194",
+   "wikidata": "Q2743194"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "merkur.de"
+   ],
+   "name": "merkur",
+   "source_note": "Wikidata CC0 P856 official website: www.merkur.de",
+   "source_url": "https://www.wikidata.org/wiki/Q279832",
+   "wikidata": "Q279832"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "hawarnews.com"
+   ],
+   "name": "hawarnews",
+   "source_note": "Wikidata CC0 P856 official website: hawarnews.com",
+   "source_url": "https://www.wikidata.org/wiki/Q28127435",
+   "wikidata": "Q28127435"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "observation.org"
+   ],
+   "name": "observation",
+   "source_note": "Wikidata CC0 P856 official website: observation.org",
+   "source_url": "https://www.wikidata.org/wiki/Q2920162",
+   "wikidata": "Q2920162"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "cloob.com"
+   ],
+   "name": "cloob",
+   "source_note": "Wikidata CC0 P856 official website: www.cloob.com",
+   "source_url": "https://www.wikidata.org/wiki/Q4706566",
+   "wikidata": "Q4706566"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "digitaltrends.com"
+   ],
+   "name": "digitaltrends",
+   "source_note": "Wikidata CC0 P856 official website: www.digitaltrends.com",
+   "source_url": "https://www.wikidata.org/wiki/Q5276019",
+   "wikidata": "Q5276019"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "freelancer.com"
+   ],
+   "name": "freelancer",
+   "source_note": "Wikidata CC0 P856 official website: www.freelancer.com",
+   "source_url": "https://www.wikidata.org/wiki/Q5500950",
+   "wikidata": "Q5500950"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "thelineofbestfit.com"
+   ],
+   "name": "thelineofbestfit",
+   "source_note": "Wikidata CC0 P856 official website: www.thelineofbestfit.com",
+   "source_url": "https://www.wikidata.org/wiki/Q55635350",
+   "wikidata": "Q55635350"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "pressreader.com"
+   ],
+   "name": "pressreader",
+   "source_note": "Wikidata CC0 P856 official website: www.pressreader.com",
+   "source_url": "https://www.wikidata.org/wiki/Q6041620",
+   "wikidata": "Q6041620"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "taiwannews.com.tw"
+   ],
+   "name": "taiwannews",
+   "source_note": "Wikidata CC0 P856 official website: www.taiwannews.com.tw",
+   "source_url": "https://www.wikidata.org/wiki/Q697286",
+   "wikidata": "Q697286"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "nyupress.org"
+   ],
+   "name": "nyupress",
+   "source_note": "Wikidata CC0 P856 official website: nyupress.org",
+   "source_url": "https://www.wikidata.org/wiki/Q7014807",
+   "wikidata": "Q7014807"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "novychas.online"
+   ],
+   "name": "novychas",
+   "source_note": "Wikidata CC0 P856 official website: novychas.online",
+   "source_url": "https://www.wikidata.org/wiki/Q7065133",
+   "wikidata": "Q7065133"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "songkick.com"
+   ],
+   "name": "songkick",
+   "source_note": "Wikidata CC0 P856 official website: www.songkick.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7561274",
+   "wikidata": "Q7561274"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "dailycaller.com"
+   ],
+   "name": "dailycaller",
+   "source_note": "Wikidata CC0 P856 official website: dailycaller.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7728625",
+   "wikidata": "Q7728625"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "watchmojo.com"
+   ],
+   "name": "watchmojo",
+   "source_note": "Wikidata CC0 P856 official website: www.watchmojo.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7973038",
+   "wikidata": "Q7973038"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "zillow.com"
+   ],
+   "name": "zillow",
+   "source_note": "Wikidata CC0 P856 official website: www.zillow.com",
+   "source_url": "https://www.wikidata.org/wiki/Q8071921",
+   "wikidata": "Q8071921"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "onefootball.com"
+   ],
+   "name": "onefootball",
+   "source_note": "Wikidata CC0 P856 official website: onefootball.com",
+   "source_url": "https://www.wikidata.org/wiki/Q85790765",
+   "wikidata": "Q85790765"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "blues.org"
+   ],
+   "name": "blues",
+   "source_note": "Wikidata CC0 P856 official website: www.blues.org",
+   "source_url": "https://www.wikidata.org/wiki/Q886032",
+   "wikidata": "Q886032"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "china.com.cn"
+   ],
+   "name": "china",
+   "source_note": "Wikidata CC0 P856 official website: www.china.com.cn",
+   "source_url": "https://www.wikidata.org/wiki/Q907111",
+   "wikidata": "Q907111"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "postsecret.com"
+   ],
+   "name": "postsecret",
+   "source_note": "Wikidata CC0 P856 official website: postsecret.com",
+   "source_url": "https://www.wikidata.org/wiki/Q926804",
+   "wikidata": "Q926804"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "france.tv"
+   ],
+   "name": "france",
+   "source_note": "Wikidata CC0 P856 official website: www.france.tv",
+   "source_url": "https://www.wikidata.org/wiki/Q47815257",
+   "wikidata": "Q47815257"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "xara.com"
+   ],
+   "name": "xara",
+   "source_note": "Wikidata CC0 P856 official website: www.xara.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1752634",
+   "wikidata": "Q1752634"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "riot-os.org"
+   ],
+   "name": "riot-os",
+   "source_note": "Wikidata CC0 P856 official website: www.riot-os.org",
+   "source_url": "https://www.wikidata.org/wiki/Q16292393",
+   "wikidata": "Q16292393"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "gnu-pascal.de"
+   ],
+   "name": "gnu-pascal",
+   "source_note": "Wikidata CC0 P856 official website: www.gnu-pascal.de",
+   "source_url": "https://www.wikidata.org/wiki/Q1196623",
+   "wikidata": "Q1196623"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "wuala.com"
+   ],
+   "name": "wuala",
+   "source_note": "Wikidata CC0 P856 official website: www.wuala.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1274094",
+   "wikidata": "Q1274094"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "giga.chat"
+   ],
+   "name": "giga",
+   "source_note": "Wikidata CC0 P856 official website: giga.chat",
+   "source_url": "https://www.wikidata.org/wiki/Q124650700",
+   "wikidata": "Q124650700"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "monzo.com"
+   ],
+   "name": "monzo",
+   "source_note": "Wikidata CC0 P856 official website: monzo.com",
+   "source_url": "https://www.wikidata.org/wiki/Q25206290",
+   "wikidata": "Q25206290"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "akismet.com"
+   ],
+   "name": "akismet",
+   "source_note": "Wikidata CC0 P856 official website: akismet.com",
+   "source_url": "https://www.wikidata.org/wiki/Q419217",
+   "wikidata": "Q419217"
+  },
+  {
+   "category_normalized": true,
+   "domains": [
+    "samplitude.com"
+   ],
+   "name": "samplitude",
+   "source_note": "Wikidata CC0 P856 official website: www.samplitude.com",
+   "source_url": "https://www.wikidata.org/wiki/Q571047",
+   "wikidata": "Q571047"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "douyin.com"
+   ],
+   "name": "douyin",
+   "source_note": "Wikidata CC0 P856 official website: www.douyin.com",
+   "source_url": "https://www.wikidata.org/wiki/Q65924658",
+   "wikidata": "Q65924658"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "vtiger.com"
+   ],
+   "name": "vtiger",
+   "source_note": "Wikidata CC0 P856 official website: www.vtiger.com",
+   "source_url": "https://www.wikidata.org/wiki/Q310477",
+   "wikidata": "Q310477"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "bloglines.com"
+   ],
+   "name": "bloglines",
+   "source_note": "Wikidata CC0 P856 official website: www.bloglines.com",
+   "source_url": "https://www.wikidata.org/wiki/Q884866",
+   "wikidata": "Q884866"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "vidcon.com"
+   ],
+   "name": "vidcon",
+   "source_note": "Wikidata CC0 P856 official website: www.vidcon.com",
+   "source_url": "https://www.wikidata.org/wiki/Q7927608",
+   "wikidata": "Q7927608"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "abbavoyage.com"
+   ],
+   "name": "abbavoyage",
+   "source_note": "Wikidata CC0 P856 official website: abbavoyage.com",
+   "source_url": "https://www.wikidata.org/wiki/Q108296072",
+   "wikidata": "Q108296072"
+  },
+  {
+   "category_normalized": true,
+   "domains": [
+    "kkbox.com"
+   ],
+   "name": "kkbox",
+   "source_note": "Wikidata CC0 P856 official website: www.kkbox.com",
+   "source_url": "https://www.wikidata.org/wiki/Q10851252",
+   "wikidata": "Q10851252"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "bitpanda.com"
+   ],
+   "name": "bitpanda",
+   "source_note": "Wikidata CC0 P856 official website: www.bitpanda.com",
+   "source_url": "https://www.wikidata.org/wiki/Q109391386",
+   "wikidata": "Q109391386"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "slimbrowser.net"
+   ],
+   "name": "slimbrowser",
+   "source_note": "Wikidata CC0 P856 official website: www.slimbrowser.net",
+   "source_url": "https://www.wikidata.org/wiki/Q1156978",
+   "wikidata": "Q1156978"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "mahara.org"
+   ],
+   "name": "mahara",
+   "source_note": "Wikidata CC0 P856 official website: mahara.org",
+   "source_url": "https://www.wikidata.org/wiki/Q126409",
+   "wikidata": "Q126409"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "uni-stuttgart.de"
+   ],
+   "name": "uni-stuttgart",
+   "source_note": "Wikidata CC0 P856 official website: www.uni-stuttgart.de",
+   "source_url": "https://www.wikidata.org/wiki/Q21417186",
+   "wikidata": "Q21417186"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "fruitchess.com"
+   ],
+   "name": "fruitchess",
+   "source_note": "Wikidata CC0 P856 official website: www.fruitchess.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1284732",
+   "wikidata": "Q1284732"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "upscrolled.com"
+   ],
+   "name": "upscrolled",
+   "source_note": "Wikidata CC0 P856 official website: upscrolled.com",
+   "source_url": "https://www.wikidata.org/wiki/Q135273478",
+   "wikidata": "Q135273478"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "smartftp.com"
+   ],
+   "name": "smartftp",
+   "source_note": "Wikidata CC0 P856 official website: www.smartftp.com",
+   "source_url": "https://www.wikidata.org/wiki/Q1889078",
+   "wikidata": "Q1889078"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "metager.org"
+   ],
+   "name": "metager",
+   "source_note": "Wikidata CC0 P856 official website: metager.org",
+   "source_url": "https://www.wikidata.org/wiki/Q1924645",
+   "wikidata": "Q1924645"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "yaffs.net"
+   ],
+   "name": "yaffs",
+   "source_note": "Wikidata CC0 P856 official website: yaffs.net",
+   "source_url": "https://www.wikidata.org/wiki/Q2492291",
+   "wikidata": "Q2492291"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "ancestris.org"
+   ],
+   "name": "ancestris",
+   "source_note": "Wikidata CC0 P856 official website: www.ancestris.org",
+   "source_url": "https://www.wikidata.org/wiki/Q2845737",
+   "wikidata": "Q2845737"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "egroupware.org"
+   ],
+   "name": "egroupware",
+   "source_note": "Wikidata CC0 P856 official website: www.egroupware.org",
+   "source_url": "https://www.wikidata.org/wiki/Q286015",
+   "wikidata": "Q286015"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "proteopedia.org"
+   ],
+   "name": "proteopedia",
+   "source_note": "Wikidata CC0 P856 official website: proteopedia.org",
+   "source_url": "https://www.wikidata.org/wiki/Q3407965",
+   "wikidata": "Q3407965"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "artrage.com"
+   ],
+   "name": "artrage",
+   "source_note": "Wikidata CC0 P856 official website: www.artrage.com",
+   "source_url": "https://www.wikidata.org/wiki/Q373584",
+   "wikidata": "Q373584"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "aida64.com"
+   ],
+   "name": "aida64",
+   "source_note": "Wikidata CC0 P856 official website: www.aida64.com",
+   "source_url": "https://www.wikidata.org/wiki/Q389898",
+   "wikidata": "Q389898"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "chamilo.org"
+   ],
+   "name": "chamilo",
+   "source_note": "Wikidata CC0 P856 official website: chamilo.org",
+   "source_url": "https://www.wikidata.org/wiki/Q423221",
+   "wikidata": "Q423221"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "appropedia.org"
+   ],
+   "name": "appropedia",
+   "source_note": "Wikidata CC0 P856 official website: www.appropedia.org",
+   "source_url": "https://www.wikidata.org/wiki/Q48781",
+   "wikidata": "Q48781"
+  },
+  {
+   "category_normalized": true,
+   "domains": [
+    "goldwave.com"
+   ],
+   "name": "goldwave",
+   "source_note": "Wikidata CC0 P856 official website: www.goldwave.com",
+   "source_url": "https://www.wikidata.org/wiki/Q576474",
+   "wikidata": "Q576474"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "indigorenderer.com"
+   ],
+   "name": "indigorenderer",
+   "source_note": "Wikidata CC0 P856 official website: indigorenderer.com",
+   "source_url": "https://www.wikidata.org/wiki/Q611758",
+   "wikidata": "Q611758"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "morpheus.com"
+   ],
+   "name": "morpheus",
+   "source_note": "Wikidata CC0 P856 official website: www.morpheus.com",
+   "source_url": "https://www.wikidata.org/wiki/Q635599",
+   "wikidata": "Q635599"
+  },
+  {
+   "category_normalized": true,
+   "domains": [
+    "icking-music-archive.org"
+   ],
+   "name": "icking-music-archive",
+   "source_note": "Wikidata CC0 P856 official website: icking-music-archive.org",
+   "source_url": "https://www.wikidata.org/wiki/Q1811670",
+   "wikidata": "Q1811670"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "scielo.org"
+   ],
+   "name": "scielo",
+   "source_note": "Wikidata CC0 P856 official website: scielo.org",
+   "source_url": "https://www.wikidata.org/wiki/Q7433389",
+   "wikidata": "Q7433389"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "girlgeniusonline.com"
+   ],
+   "name": "girlgeniusonline",
+   "source_note": "Wikidata CC0 P856 official website: www.girlgeniusonline.com",
+   "source_url": "https://www.wikidata.org/wiki/Q2639409",
+   "wikidata": "Q2639409"
+  },
+  {
+   "category_normalized": false,
+   "domains": [
+    "womansday.com"
+   ],
+   "name": "womansday",
+   "source_note": "Wikidata CC0 P856 official website: www.womansday.com",
+   "source_url": "https://www.wikidata.org/wiki/Q4020711",
+   "wikidata": "Q4020711"
+  }
+ ],
+ "host_entries": [
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Mediapart",
+   "domains": [
+    "mediapart.fr"
+   ],
+   "name": "mediapart",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "/Film",
+   "domains": [
+    "slashfilm.com"
+   ],
+   "name": "slashfilm",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "collaboration",
+   "characteristics": [],
+   "description": "Hyves",
+   "domains": [
+    "hyves.nl"
+   ],
+   "name": "hyves",
+   "risk": 2,
+   "subcategory": "social-networking",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Sport Express",
+   "domains": [
+    "sport-express.ru"
+   ],
+   "name": "sport-express",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Prisma",
+   "domains": [
+    "prisma.fi"
+   ],
+   "name": "prisma",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Globes",
+   "domains": [
+    "globes.co.il"
+   ],
+   "name": "globes",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Kompas",
+   "domains": [
+    "kompas.com"
+   ],
+   "name": "kompas",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Tom's Hardware",
+   "domains": [
+    "tomshardware.com"
+   ],
+   "name": "tomshardware",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "TwitPic",
+   "domains": [
+    "twitpic.com"
+   ],
+   "name": "twitpic",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "BioLib",
+   "domains": [
+    "biolib.cz"
+   ],
+   "name": "biolib",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Omniglot",
+   "domains": [
+    "omniglot.com"
+   ],
+   "name": "omniglot",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "quantified self",
+   "domains": [
+    "quantifiedself.com"
+   ],
+   "name": "quantifiedself",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Lulu Press, Inc.",
+   "domains": [
+    "lulu.com"
+   ],
+   "name": "lulu",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "GlobalSecurity.org",
+   "domains": [
+    "globalsecurity.org"
+   ],
+   "name": "globalsecurity",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "collaboration",
+   "characteristics": [],
+   "description": "Meetup.com",
+   "domains": [
+    "meetup.com"
+   ],
+   "name": "meetup",
+   "risk": 2,
+   "subcategory": "social-networking",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Islam Questions & Answers",
+   "domains": [
+    "islamqa.info"
+   ],
+   "name": "islamqa",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "MusicOMH",
+   "domains": [
+    "musicomh.com"
+   ],
+   "name": "musicomh",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Joom",
+   "domains": [
+    "joom.com"
+   ],
+   "name": "joom",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "italki.com",
+   "domains": [
+    "italki.com"
+   ],
+   "name": "italki",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Exclaim!",
+   "domains": [
+    "exclaim.ca"
+   ],
+   "name": "exclaim",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "The Conversation",
+   "domains": [
+    "theconversation.com"
+   ],
+   "name": "theconversation",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "The Quietus",
+   "domains": [
+    "thequietus.com"
+   ],
+   "name": "thequietus",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "AbeBooks",
+   "domains": [
+    "abebooks.com"
+   ],
+   "name": "abebooks",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Altium Designer",
+   "domains": [
+    "altium.com"
+   ],
+   "name": "altium",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Meson",
+   "domains": [
+    "mesonbuild.com"
+   ],
+   "name": "mesonbuild",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "collaboration",
+   "characteristics": [],
+   "description": "Dribbble",
+   "domains": [
+    "dribbble.com"
+   ],
+   "name": "dribbble",
+   "risk": 2,
+   "subcategory": "social-networking",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Kotobank",
+   "domains": [
+    "kotobank.jp"
+   ],
+   "name": "kotobank",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "RTEMS",
+   "domains": [
+    "rtems.org"
+   ],
+   "name": "rtems",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Age of Empires II HD: The Forgotten",
+   "domains": [
+    "forgottenempires.net"
+   ],
+   "name": "forgottenempires",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Loomio",
+   "domains": [
+    "loomio.com"
+   ],
+   "name": "loomio",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Clip Studio Paint",
+   "domains": [
+    "clipstudio.net"
+   ],
+   "name": "clipstudio",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Labcenter Electronics",
+   "domains": [
+    "labcenter.com"
+   ],
+   "name": "labcenter",
+   "risk": 2,
+   "subcategory": "software-development",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Doctrine",
+   "domains": [
+    "doctrine-project.org"
+   ],
+   "name": "doctrine-project",
+   "risk": 2,
+   "subcategory": "software-development",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Gpg4win",
+   "domains": [
+    "gpg4win.org"
+   ],
+   "name": "gpg4win",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Wikishia",
+   "domains": [
+    "wikishia.net"
+   ],
+   "name": "wikishia",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "TeXstudio",
+   "domains": [
+    "texstudio.org"
+   ],
+   "name": "texstudio",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Twinkl",
+   "domains": [
+    "twinkl.co.uk"
+   ],
+   "name": "twinkl",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "collaboration",
+   "characteristics": [],
+   "description": "Mailfence",
+   "domains": [
+    "mailfence.com"
+   ],
+   "name": "mailfence",
+   "risk": 2,
+   "subcategory": "email",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Rodovid",
+   "domains": [
+    "rodovid.org"
+   ],
+   "name": "rodovid",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Vatican News",
+   "domains": [
+    "vaticannews.va"
+   ],
+   "name": "vaticannews",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "RealClearPolitics",
+   "domains": [
+    "realclearpolitics.com"
+   ],
+   "name": "realclearpolitics",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Internetowa encyklopedia PWN",
+   "domains": [
+    "pwn.pl"
+   ],
+   "name": "pwn",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "gazeta.ru",
+   "domains": [
+    "gazeta.ru"
+   ],
+   "name": "gazeta",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Statista",
+   "domains": [
+    "statista.com"
+   ],
+   "name": "statista",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Something Awful",
+   "domains": [
+    "somethingawful.com"
+   ],
+   "name": "somethingawful",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Consumer Reports",
+   "domains": [
+    "consumerreports.org"
+   ],
+   "name": "consumerreports",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "space.com",
+   "domains": [
+    "space.com"
+   ],
+   "name": "space",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Motor Trend",
+   "domains": [
+    "motortrend.com"
+   ],
+   "name": "motortrend",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "San Diego Union-Tribune",
+   "domains": [
+    "sandiegouniontribune.com"
+   ],
+   "name": "sandiegouniontribune",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "HotBot",
+   "domains": [
+    "hotbot.com"
+   ],
+   "name": "hotbot",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "canoe.ca",
+   "domains": [
+    "canoe.com"
+   ],
+   "name": "canoe",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "We Heart It",
+   "domains": [
+    "weheartit.com"
+   ],
+   "name": "weheartit",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "openDemocracy",
+   "domains": [
+    "opendemocracy.net"
+   ],
+   "name": "opendemocracy",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "PinkNews",
+   "domains": [
+    "thepinknews.com"
+   ],
+   "name": "thepinknews",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Rebel News",
+   "domains": [
+    "rebelnews.com"
+   ],
+   "name": "rebelnews",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "archINFORM",
+   "domains": [
+    "archinform.net"
+   ],
+   "name": "archinform",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Der Spiegel",
+   "domains": [
+    "spiegel.de"
+   ],
+   "name": "spiegel",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Tempo",
+   "domains": [
+    "tempo.co"
+   ],
+   "name": "tempo",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Forbidden Stories",
+   "domains": [
+    "forbiddenstories.org"
+   ],
+   "name": "forbiddenstories",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Mixcloud",
+   "domains": [
+    "mixcloud.com"
+   ],
+   "name": "mixcloud",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Universe Today",
+   "domains": [
+    "universetoday.com"
+   ],
+   "name": "universetoday",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Knights of the Zodiac: Saint Seiya",
+   "domains": [
+    "saintseiya-kotz.com"
+   ],
+   "name": "saintseiya-kotz",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Kagi",
+   "domains": [
+    "kagi.com"
+   ],
+   "name": "kagi",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Toutiao",
+   "domains": [
+    "toutiao.com"
+   ],
+   "name": "toutiao",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Avalanche",
+   "domains": [
+    "avalanche.com"
+   ],
+   "name": "avalanche",
+   "risk": 2,
+   "subcategory": "software-development",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Petal Maps",
+   "domains": [
+    "petalmaps.com"
+   ],
+   "name": "petalmaps",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Noggin",
+   "domains": [
+    "noggin.com"
+   ],
+   "name": "noggin",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Joox",
+   "domains": [
+    "joox.com"
+   ],
+   "name": "joox",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "JSLint",
+   "domains": [
+    "jslint.com"
+   ],
+   "name": "jslint",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "GanttProject",
+   "domains": [
+    "ganttproject.biz"
+   ],
+   "name": "ganttproject",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Renoise",
+   "domains": [
+    "renoise.com"
+   ],
+   "name": "renoise",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Darcs",
+   "domains": [
+    "darcs.net"
+   ],
+   "name": "darcs",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "TinEye",
+   "domains": [
+    "tineye.com"
+   ],
+   "name": "tineye",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Nightingale",
+   "domains": [
+    "getnightingale.com"
+   ],
+   "name": "getnightingale",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Arch Hurd",
+   "domains": [
+    "archhurd.org"
+   ],
+   "name": "archhurd",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "MakeHuman",
+   "domains": [
+    "makehumancommunity.org"
+   ],
+   "name": "makehumancommunity",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Overleaf",
+   "domains": [
+    "overleaf.com"
+   ],
+   "name": "overleaf",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "ADOdb",
+   "domains": [
+    "adodb.org"
+   ],
+   "name": "adodb",
+   "risk": 2,
+   "subcategory": "software-development",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "VnExpress",
+   "domains": [
+    "vnexpress.net"
+   ],
+   "name": "vnexpress",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Catholic-Hierarchy.org",
+   "domains": [
+    "catholic-hierarchy.org"
+   ],
+   "name": "catholic-hierarchy",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "EUobserver",
+   "domains": [
+    "euobserver.com"
+   ],
+   "name": "euobserver",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Google Person Finder",
+   "domains": [
+    "google.org"
+   ],
+   "name": "google",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Viu",
+   "domains": [
+    "viu.com"
+   ],
+   "name": "viu",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "OpenAlex",
+   "domains": [
+    "openalex.org"
+   ],
+   "name": "openalex",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "yr.no",
+   "domains": [
+    "yr.no"
+   ],
+   "name": "yr",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "T-Online",
+   "domains": [
+    "t-online.de"
+   ],
+   "name": "t-online",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Persée",
+   "domains": [
+    "persee.fr"
+   ],
+   "name": "persee",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "HighBeam Research",
+   "domains": [
+    "highbeam.com"
+   ],
+   "name": "highbeam",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Jihad Watch",
+   "domains": [
+    "jihadwatch.org"
+   ],
+   "name": "jihadwatch",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Zero Hedge",
+   "domains": [
+    "zerohedge.com"
+   ],
+   "name": "zerohedge",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "The Bookmaker Ratings",
+   "domains": [
+    "bookmaker-ratings.ru"
+   ],
+   "name": "bookmaker-ratings",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "answers.com",
+   "domains": [
+    "answers.com"
+   ],
+   "name": "answers",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Bleacher Report",
+   "domains": [
+    "bleacherreport.com"
+   ],
+   "name": "bleacherreport",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Cut-the-Knot",
+   "domains": [
+    "cut-the-knot.org"
+   ],
+   "name": "cut-the-knot",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Veoh",
+   "domains": [
+    "veoh.com"
+   ],
+   "name": "veoh",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Terra",
+   "domains": [
+    "terra.cl"
+   ],
+   "name": "terra",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "CozyCot",
+   "domains": [
+    "cozycot.com"
+   ],
+   "name": "cozycot",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "El Universal",
+   "domains": [
+    "eluniversal.com"
+   ],
+   "name": "eluniversal",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Operabase",
+   "domains": [
+    "operabase.com"
+   ],
+   "name": "operabase",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Less Wrong",
+   "domains": [
+    "lesswrong.com"
+   ],
+   "name": "lesswrong",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "MICHAEL",
+   "domains": [
+    "michael-culture.org"
+   ],
+   "name": "michael-culture",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "filmportal.de",
+   "domains": [
+    "filmportal.de"
+   ],
+   "name": "filmportal",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Magnatune",
+   "domains": [
+    "magnatune.com"
+   ],
+   "name": "magnatune",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Where's George?",
+   "domains": [
+    "wheresgeorge.com"
+   ],
+   "name": "wheresgeorge",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "NK News",
+   "domains": [
+    "nknews.org"
+   ],
+   "name": "nknews",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Numbeo",
+   "domains": [
+    "numbeo.com"
+   ],
+   "name": "numbeo",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "brilliant.org",
+   "domains": [
+    "brilliant.org"
+   ],
+   "name": "brilliant",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Publons",
+   "domains": [
+    "publons.com"
+   ],
+   "name": "publons",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Raqqa Is Being Slaughtered Silently",
+   "domains": [
+    "raqqa-sl.com"
+   ],
+   "name": "raqqa-sl",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Maximum Rocknroll",
+   "domains": [
+    "maximumrocknroll.com"
+   ],
+   "name": "maximumrocknroll",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Autores.uy",
+   "domains": [
+    "autores.uy"
+   ],
+   "name": "autores",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "The WELL",
+   "domains": [
+    "well.com"
+   ],
+   "name": "well",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Estonica",
+   "domains": [
+    "estonica.org"
+   ],
+   "name": "estonica",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Canal Sur Televisión",
+   "domains": [
+    "canalsur.es"
+   ],
+   "name": "canalsur",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Münchner Merkur",
+   "domains": [
+    "merkur.de"
+   ],
+   "name": "merkur",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Hawar News Agency",
+   "domains": [
+    "hawarnews.com"
+   ],
+   "name": "hawarnews",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Observation.org",
+   "domains": [
+    "observation.org"
+   ],
+   "name": "observation",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "collaboration",
+   "characteristics": [],
+   "description": "Cloob",
+   "domains": [
+    "cloob.com"
+   ],
+   "name": "cloob",
+   "risk": 2,
+   "subcategory": "social-networking",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Digital Trends",
+   "domains": [
+    "digitaltrends.com"
+   ],
+   "name": "digitaltrends",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "freelancer.com",
+   "domains": [
+    "freelancer.com"
+   ],
+   "name": "freelancer",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "The Line of Best Fit",
+   "domains": [
+    "thelineofbestfit.com"
+   ],
+   "name": "thelineofbestfit",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "PressReader Inc.",
+   "domains": [
+    "pressreader.com"
+   ],
+   "name": "pressreader",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Taiwan News",
+   "domains": [
+    "taiwannews.com.tw"
+   ],
+   "name": "taiwannews",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "New York University Press",
+   "domains": [
+    "nyupress.org"
+   ],
+   "name": "nyupress",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Novy Chas",
+   "domains": [
+    "novychas.online"
+   ],
+   "name": "novychas",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Songkick",
+   "domains": [
+    "songkick.com"
+   ],
+   "name": "songkick",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "The Daily Caller",
+   "domains": [
+    "dailycaller.com"
+   ],
+   "name": "dailycaller",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "WatchMojo",
+   "domains": [
+    "watchmojo.com"
+   ],
+   "name": "watchmojo",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Zillow",
+   "domains": [
+    "zillow.com"
+   ],
+   "name": "zillow",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "OneFootball",
+   "domains": [
+    "onefootball.com"
+   ],
+   "name": "onefootball",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Blues Foundation",
+   "domains": [
+    "blues.org"
+   ],
+   "name": "blues",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "China Internet Information Center",
+   "domains": [
+    "china.com.cn"
+   ],
+   "name": "china",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "PostSecret",
+   "domains": [
+    "postsecret.com"
+   ],
+   "name": "postsecret",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Skam France",
+   "domains": [
+    "france.tv"
+   ],
+   "name": "france",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Xara Photo & Graphic Designer",
+   "domains": [
+    "xara.com"
+   ],
+   "name": "xara",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "RIOT",
+   "domains": [
+    "riot-os.org"
+   ],
+   "name": "riot-os",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "GNU Pascal",
+   "domains": [
+    "gnu-pascal.de"
+   ],
+   "name": "gnu-pascal",
+   "risk": 2,
+   "subcategory": "software-development",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Wuala",
+   "domains": [
+    "wuala.com"
+   ],
+   "name": "wuala",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "collaboration",
+   "characteristics": [],
+   "description": "GigaChat",
+   "domains": [
+    "giga.chat"
+   ],
+   "name": "giga",
+   "risk": 2,
+   "subcategory": "instant-messaging",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Monzo",
+   "domains": [
+    "monzo.com"
+   ],
+   "name": "monzo",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Akismet",
+   "domains": [
+    "akismet.com"
+   ],
+   "name": "akismet",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Samplitude",
+   "domains": [
+    "samplitude.com"
+   ],
+   "name": "samplitude",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "collaboration",
+   "characteristics": [],
+   "description": "Douyin",
+   "domains": [
+    "douyin.com"
+   ],
+   "name": "douyin",
+   "risk": 2,
+   "subcategory": "social-networking",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Vtiger CRM",
+   "domains": [
+    "vtiger.com"
+   ],
+   "name": "vtiger",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Bloglines",
+   "domains": [
+    "bloglines.com"
+   ],
+   "name": "bloglines",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "collaboration",
+   "characteristics": [],
+   "description": "VidCon",
+   "domains": [
+    "vidcon.com"
+   ],
+   "name": "vidcon",
+   "risk": 2,
+   "subcategory": "voip-video",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "ABBA Voyage",
+   "domains": [
+    "abbavoyage.com"
+   ],
+   "name": "abbavoyage",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "KKBOX",
+   "domains": [
+    "kkbox.com"
+   ],
+   "name": "kkbox",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Bitpanda",
+   "domains": [
+    "bitpanda.com"
+   ],
+   "name": "bitpanda",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "SlimBrowser",
+   "domains": [
+    "slimbrowser.net"
+   ],
+   "name": "slimbrowser",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Mahara",
+   "domains": [
+    "mahara.org"
+   ],
+   "name": "mahara",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "The Stuttgart Database of Scientific Illustrators 1450–1950",
+   "domains": [
+    "uni-stuttgart.de"
+   ],
+   "name": "uni-stuttgart",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Fruit",
+   "domains": [
+    "fruitchess.com"
+   ],
+   "name": "fruitchess",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "collaboration",
+   "characteristics": [],
+   "description": "UpScrolled",
+   "domains": [
+    "upscrolled.com"
+   ],
+   "name": "upscrolled",
+   "risk": 2,
+   "subcategory": "social-networking",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "SmartFTP",
+   "domains": [
+    "smartftp.com"
+   ],
+   "name": "smartftp",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "MetaGer",
+   "domains": [
+    "metager.org"
+   ],
+   "name": "metager",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "YAFFS",
+   "domains": [
+    "yaffs.net"
+   ],
+   "name": "yaffs",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Ancestris",
+   "domains": [
+    "ancestris.org"
+   ],
+   "name": "ancestris",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "EGroupWare",
+   "domains": [
+    "egroupware.org"
+   ],
+   "name": "egroupware",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Proteopedia",
+   "domains": [
+    "proteopedia.org"
+   ],
+   "name": "proteopedia",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "ArtRage",
+   "domains": [
+    "artrage.com"
+   ],
+   "name": "artrage",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "AIDA64",
+   "domains": [
+    "aida64.com"
+   ],
+   "name": "aida64",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Chamilo",
+   "domains": [
+    "chamilo.org"
+   ],
+   "name": "chamilo",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Appropedia",
+   "domains": [
+    "appropedia.org"
+   ],
+   "name": "appropedia",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "GoldWave",
+   "domains": [
+    "goldwave.com"
+   ],
+   "name": "goldwave",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Indigo Renderer",
+   "domains": [
+    "indigorenderer.com"
+   ],
+   "name": "indigorenderer",
+   "risk": 2,
+   "subcategory": "general-business",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "Morpheus",
+   "domains": [
+    "morpheus.com"
+   ],
+   "name": "morpheus",
+   "risk": 2,
+   "subcategory": "storage-backup",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Werner Icking Music Archive",
+   "domains": [
+    "icking-music-archive.org"
+   ],
+   "name": "icking-music-archive",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "business-systems",
+   "characteristics": [],
+   "description": "SciELO",
+   "domains": [
+    "scielo.org"
+   ],
+   "name": "scielo",
+   "risk": 2,
+   "subcategory": "database",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Girl Genius",
+   "domains": [
+    "girlgeniusonline.com"
+   ],
+   "name": "girlgeniusonline",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  },
+  {
+   "category": "general-internet",
+   "characteristics": [],
+   "description": "Woman's Day",
+   "domains": [
+    "womansday.com"
+   ],
+   "name": "womansday",
+   "risk": 2,
+   "subcategory": "internet-utility",
+   "technology": "browser-based",
+   "web_fronts": []
+  }
+ ],
+ "kind": "service",
+ "start": 600
+}

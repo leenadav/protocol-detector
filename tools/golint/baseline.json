@@ -92,7 +92,6 @@
 {"count": 1, "file": "internal/jobs/jobs.go", "message": "Subprocess launched with a potential tainted input or cmd arguments", "rule": "G204", "tool": "gosec"},
 {"count": 1, "file": "internal/livectl/process.go", "message": "Subprocess launched with a potential tainted input or cmd arguments", "rule": "G204", "tool": "gosec"},
 {"count": 1, "file": "internal/livedecrypt/run.go", "message": "Subprocess launched with a potential tainted input or cmd arguments", "rule": "G204", "tool": "gosec"},
-{"count": 1, "file": "internal/serve/server.go", "message": "Subprocess launched with a potential tainted input or cmd arguments", "rule": "G204", "tool": "gosec"},
 {"count": 1, "file": "cmd/protodetect/main.go", "message": "Expect WriteFile permissions to be 0600 or less", "rule": "G306", "tool": "gosec"},
 {"count": 1, "file": "internal/protocols/fingerprint/fingerprint.go", "message": "Use of weak cryptographic primitive", "rule": "G401", "tool": "gosec"},
 {"count": 1, "file": "internal/protocols/fingerprint/fingerprint.go", "message": "Blocklisted import crypto/md5: weak cryptographic primitive", "rule": "G501", "tool": "gosec"},

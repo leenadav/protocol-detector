@@ -1,5 +1,11 @@
 # Detection content governance (D08)
 
+> **Since PRO-411 (2026-11-25)** the content is edited on the Go side: `go/internal/content/pack.json`,
+> `history.json` and the release ledger `lock.json`, written only by `tools/content_pack.py add BATCH.json`
+> (procedure: [CONTENT-BATCHES.md](CONTENT-BATCHES.md)). The Python `HISTORY`, `content_lock.json` and
+> `check_content.py --update` described below are the frozen reference's, unchanged at 2026.11.9 until the Python
+> removal; new releases are not added there. The release, pinning and rollback rules below still hold.
+
 Detection *content* is the administrative data a verdict is looked up in once a structural
 identification exists. It is distinct from the parsers, which are engine code and follow the package
 version in `pyproject.toml`.

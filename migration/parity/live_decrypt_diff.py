@@ -11,6 +11,7 @@ steps of live.py's main() around them; the Go binary reads the same script (`liv
 as text, in order: every classification, session record, capture gap, progress summary, provisional and final
 decryption report, the sanitized failure and the exit status; work-stage durations by count only. Nothing is
 captured and no secret is written to disk or printed. Needs the `cryptography` package for the reference.
+Since PRO-401 the gate replays a golden file instead (--golden; --record writes one): migration/parity/golden.py.
 """
 import argparse
 import json
@@ -115,7 +116,7 @@ def reference(operations):
     return "".join(line + "\n" for line in lines), 1 if error else 0
 
 
-def approved_divergence(operations, status, actual):
+def approved_model(operations, status, actual):
     """PRO-260 (Lee, 2026-11-23): Go names the post-quantum hybrid ServerHello groups the frozen reference reports
     as unknown. A run that differs from the reference is approved only when its exit status and every normalized
     event line equal the reference's under that one change (migration/parity/pro260.py)."""
@@ -123,7 +124,26 @@ def approved_divergence(operations, status, actual):
     import pro260
     with pro260.with_hybrid_groups():
         expected, model_status = reference(operations)
-    return model_status == status and live_diff.normalized(expected, True) == actual
+    return (expected, model_status) if model_status == status and live_diff.normalized(expected, True) == actual else None
+
+
+def count_events(expected, kinds):
+    for line in expected.splitlines():
+        event = json.loads(line)
+        label = event["type"]
+        if label == "decryption":
+            for row in event["report"]["connections"]:
+                name = "row/" + row["status"]
+                kinds[name] = kinds.get(name, 0) + 1
+        elif label == "error":
+            label = "error/" + event["code"]
+        kinds[label] = kinds.get(label, 0) + 1
+
+
+def run_go(binary, script):
+    done = subprocess.run([binary, "live-decrypt", "--replay", "--capture-id", CAPTURE_ID], input=script, stdout=subprocess.PIPE,  # noqa: S603
+                          stderr=subprocess.PIPE, check=False, timeout=180)
+    return done.returncode, done.stdout.decode("utf-8")
 
 
 def main(argv=None):
@@ -131,50 +151,104 @@ def main(argv=None):
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
     parser.add_argument("--count", type=int, default=300)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--record", help="also write the scripts and the reference's answers to this golden file (migration/parity/golden.py)")
+    parser.add_argument("--golden", help="compare Go with this golden file's answers; the reference is not run")
+    parser.add_argument("--record-sec-sess1", metavar="PATH", help="write every divergence to PATH for review; the run then fails")
     args = parser.parse_args(argv)
-    import decrypt_diff
+    import golden
     import live_diff
+    if args.golden:
+        return replay_golden(args)
+    import decrypt_diff
+    import sec_sess1
+    sec_sess1.self_test()
+    pins = sec_sess1.Pins("live-decrypt", args.seed, record=args.record_sec_sess1)
     try:
         generator = decrypt_diff.Generator(args.seed)
     except ImportError:
         print("live decrypt parity FAILED: the reference needs the `cryptography` package "
               "(python3 -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt)")
         return 1
+    recorder = golden.recorder(args.record, "live-decrypt", {"seed": args.seed, "count": args.count})
     rng = random.Random(args.seed * 7919 + 1)
     failures, events, kinds, approved = [], 0, {}, 0
+    openssl, used = generator.openssl, []
+    # The scripts depend on the OpenSSL that Python links (the real exchanges' lengths drive later random draws; 3.5
+    # also offers hybrid groups), so a SEC-SESS-1 pin names the OpenSSL line as part of its case id.
+    environment = sec_sess1.openssl_line()
+
+    def counted():                                  # a real OpenSSL exchange differs between runs (sec_sess1 `volatile`)
+        used.append(True)
+        return openssl()
+    generator.openssl = counted
     for index in range(args.count):
+        del used[:]
         operations = script_for(rng, generator)
+        volatile = bool(used)
         expected, status = reference(operations)
         script = b"".join(kind.encode("ascii") + struct.pack(">dI", now, len(data)) + data for kind, now, data in operations)
-        done = subprocess.run([args.binary, "live-decrypt", "--replay", "--capture-id", CAPTURE_ID], input=script, stdout=subprocess.PIPE,  # noqa: S603
-                              stderr=subprocess.PIPE, check=False, timeout=180)
-        actual = done.stdout.decode("utf-8")
+        returncode, actual = run_go(args.binary, script)
         events += expected.count("\n")
-        for line in expected.splitlines():
-            event = json.loads(line)
-            label = event["type"]
-            if label == "decryption":
-                for row in event["report"]["connections"]:
-                    name = "row/" + row["status"]
-                    kinds[name] = kinds.get(name, 0) + 1
-            elif label == "error":
-                label = "error/" + event["code"]
-            kinds[label] = kinds.get(label, 0) + 1
+        count_events(expected, kinds)
         a, b = live_diff.normalized(actual, True), live_diff.normalized(expected, True)
-        if (done.returncode != status or a != b) and approved_divergence(operations, done.returncode, a):
+        judged, reason = (expected, status), None
+        case = "{}/script-{}".format(environment, index)
+        pins.cover(case)
+        model = approved_model(operations, returncode, a) if (returncode != status or a != b) else None
+        if model:
             approved += 1
-        elif done.returncode != status:
-            failures.append("script {} (seed {}): exit status {} (expected {})".format(index, args.seed, done.returncode, status))
+            judged, reason = model, "PRO-260"
+        elif (returncode != status or a != b) and pins.approve(case, a, returncode, b, status, volatile=volatile):
+            judged, reason = (actual, returncode), sec_sess1.LABEL   # SEC-SESS-1 (PRO-398): this exact script, both results pinned
+        elif returncode != status:
+            failures.append("script {} (seed {}): exit status {} (expected {})".format(index, args.seed, returncode, status))
         elif a != b:
             x, y = a.splitlines(), b.splitlines()
             at = next((i for i, (p, q) in enumerate(zip(x, y)) if p != q), min(len(x), len(y)))
             failures.append("script {} (seed {}): event {} differs ({} lines, expected {})".format(index, args.seed, at, len(x), len(y)))
+        if recorder:
+            recorder.add({"script": golden.b64(script), "expected": judged[0], "status": judged[1], "approved": reason == "PRO-260",
+                          "sec_sess1": reason == sec_sess1.LABEL})
     for line in failures[:10]:
         print("live decrypt mismatch:", line)
-    print("live decrypt parity: {} scripts, {} event lines, {} mismatched, {} approved divergences (PRO-260) (seed {}); events: {}".format(
-        args.count, events, len(failures), approved, args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
-    return 1 if failures else 0
+    problems = pins.finish()
+    for line in problems:
+        print("live decrypt parity FAILED:", line)
+    print("live decrypt parity: {} scripts, {} event lines, {} mismatched, {} approved divergences (PRO-260), {} approved divergences ({}) "
+          "(seed {}); events: {}".format(args.count, events, len(failures), approved, len(pins.approved), sec_sess1.LABEL, args.seed,
+                                         ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
+    if recorder:
+        recorder.finish(failures or problems)
+    return 1 if failures or problems else 0
 
+
+def replay_golden(args):
+    """The gate without the reference: the recorded scripts, Go's normalized events against the recorded ones."""
+    import golden
+    import live_diff
+    document = golden.read(args.golden, "live-decrypt")
+    failures, events, kinds, approved, pinned = [], 0, {}, 0, 0
+    for index, entry in enumerate(document["entries"]):
+        returncode, actual = run_go(args.binary, golden.unb64(entry["script"]))
+        expected = entry["expected"]
+        events += expected.count("\n")
+        count_events(expected, kinds)
+        approved += bool(entry.get("approved"))
+        pinned += bool(entry.get("sec_sess1"))
+        a, b = live_diff.normalized(actual, True), live_diff.normalized(expected, True)
+        if returncode != entry["status"]:
+            failures.append("script {}: exit status {} (expected {})".format(index, returncode, entry["status"]))
+        elif a != b:
+            x, y = a.splitlines(), b.splitlines()
+            at = next((i for i, (p, q) in enumerate(zip(x, y)) if p != q), min(len(x), len(y)))
+            failures.append("script {}: event {} differs ({} lines, expected {})".format(index, at, len(x), len(y)))
+    for line in failures[:10]:
+        print("live decrypt mismatch:", line)
+    print("live decrypt parity (golden {}): {} scripts, {} event lines, {} mismatched, {} recorded approved divergences (PRO-260), "
+          "{} recorded approved divergences (SEC-SESS-1) (recorded with seed {}); events: {}".format(
+              Path(args.golden).name, len(document["entries"]), events, len(failures), approved, pinned, document.get("seed"),
+              ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
+    return 1 if failures else 0
 
 if __name__ == "__main__":
     sys.exit(main())

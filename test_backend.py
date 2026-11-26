@@ -150,12 +150,12 @@ sys.exit(0 if arguments[:2] == ["live", "--check"] else 9)
     def run_main(self, arguments, environment=None, stdin=b""):
         import subprocess
         variables = dict(os.environ, **(environment or {}))
-        done = subprocess.run([sys.executable, "-B", str(ROOT / "protodetect.py"), "live"] + arguments, input=stdin, env=variables,
+        # The adapter's own entry point: `protodetect.py live` hands every request to the Go binary (PRO-402).
+        done = subprocess.run([sys.executable, "-B", str(ROOT / "live_capture.py")] + arguments, input=stdin, env=variables,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60, check=False)
         return done.stdout.decode("utf-8"), done.returncode
 
     def test_options_right_after_the_live_command_reach_the_adapter(self):
-        # `protodetect live --stdin ...` was rejected by the command parser (an option cannot start a REMAINDER).
         output, status = self.run_main(["--stdin", "--duration", "0", "--stats-interval", "0", "--backend", "python"],
                                        stdin=Path(SAMPLE).read_bytes())
         self.assertEqual(status, 0)

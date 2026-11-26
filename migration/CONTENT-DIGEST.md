@@ -5,8 +5,10 @@ Status: defined 2026-11-16 on `claude/go-migration`; implemented and tested in G
 the release digest defined here, and this document states that value over the pack alone so that any
 runtime can recompute it. Closes the open point of contract C11 and of Culvert work item #16.
 
-A pack is the JSON document `tools/export_content.py` writes (`migration/fixtures/content.json`, embedded in
-the Go module as `go/internal/content/pack.json`). Two digests are defined over it. They answer different
+A pack is the JSON document `go/internal/content/pack.json` (embedded in the Go module; `migration/fixtures/content.json`
+is a byte-for-byte copy). Since PRO-411 it is edited directly with `tools/content_pack.py`, which computes both
+digests below in Python's standard library and records them in `go/internal/content/lock.json`
+(docs/CONTENT-BATCHES.md); it was exported from the Python tables by `tools/export_content.py` before. Two digests are defined over it. They answer different
 questions and neither replaces the other.
 
 | digest | answers | size | where it appears |
