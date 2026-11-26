@@ -193,6 +193,9 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
   `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An
   unconditional `check_docs_counts.py --strict` turned every PR's release build red (Dependabot #151, #149).
+- **Release gate needs the Go binary (PRO-478):** since PRO-402 `protodetect.py analyze` runs only the Go binary
+  and exits 2 without it. Any job that runs `unittest discover` must first run `tools/go_ci.py build` (offline,
+  vendored), as the ci test jobs do; `publish-release.yml` did not, and two launcher tests failed `2 != 0`.
 - **Stale checkout:** a restarted container may check out an old branch (`claude/appid-engine`). Run
   `git fetch` and work on `claude/cicd-next` at `origin/main` first.
 - **Masked failures:** `cmd | tail` hides the exit status. Use `set -o pipefail` and check `make check`'s status
