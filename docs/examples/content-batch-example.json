@@ -1,0 +1,49 @@
+{
+ "schema": 1,
+ "release": {
+  "note": "example batch: two server-name services and one port-based service (docs/CONTENT-BATCHES.md)",
+  "review": "example only; never committed as a release (tools/content_pack.py --self-test --e2e)"
+ },
+ "host_catalog": {
+  "entries": [
+   {
+    "name": "example-video",
+    "category": "media",
+    "subcategory": "photo-video",
+    "technology": "browser-based",
+    "risk": 2,
+    "description": "Example video streaming service",
+    "characteristics": ["excessive-bandwidth", "widely-used"],
+    "domains": ["video.example", "cdn.video.example"],
+    "web_fronts": ["www.example-video.example"]
+   },
+   {
+    "name": "example-notes",
+    "category": "business-systems",
+    "subcategory": "office-programs",
+    "technology": "browser-based",
+    "risk": 2,
+    "description": "Example note-taking service",
+    "characteristics": [],
+    "domains": ["notes.example"]
+   }
+  ]
+ },
+ "applications": [
+  {
+   "name": "example-sync",
+   "category": "business-systems",
+   "subcategory": "storage-backup",
+   "technology": "client-server",
+   "risk": 3,
+   "description": "Example file synchronisation protocol",
+   "characteristics": ["transfers-files"],
+   "standard_ports": ["tcp/7400-7401"],
+   "secure_ports": [],
+   "implicitly_uses": ["ssl"],
+   "depends_on": [],
+   "container": null,
+   "aliases": ["examplesync"]
+  }
+ ]
+}

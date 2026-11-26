@@ -1,9 +1,10 @@
-.PHONY: test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation golden-record golden-check property-long
+.PHONY: serve test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation golden-record golden-check property-long
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
 
-test:
+# PRO-402: `protodetect.py analyze|live|serve` runs the Go binary, and the suite calls it; build it first.
+test: go-build
 	$(PYTHON) -B -m unittest discover -v
 
 # The presentation application (frontend, server, live bridge, TLS POC) needs the optional decryption extra:
@@ -183,10 +184,14 @@ content:
 capabilities:
 	python3 -B tools/capabilities.py --check migration/CAPABILITIES.json
 
-# Migration M6: the exported content pack both runtimes load must match the Python content (tools/export_content.py)
+# PRO-411: the content pack is edited directly (go/internal/content/pack.json, history.json, lock.json) with
+# tools/content_pack.py; nothing is exported from the Python tables. The check, the tool's self-test, and the
+# example batch added in a copy of the tree without protocol_engine/ and protocol_adapters/ (Go content tests
+# included, so this needs the pinned Go). Add a batch: python3 -B tools/content_pack.py add BATCH.json
+# (docs/CONTENT-BATCHES.md).
 content-pack:
-	python3 -B tools/export_content.py --check migration/fixtures/content.json
-	python3 -B migration/content_history.py --check go/internal/content/history.json
+	python3 -B tools/content_pack.py check
+	python3 -B tools/content_pack.py --self-test --e2e
 
 # Migration M1: the Python reference must match the committed differential cases exactly (migration/CONTRACTS.md)
 parity:
@@ -310,6 +315,10 @@ go-check-parity:
 # Migration M8: the Go command-line binary (static, no cgo); go/bin is not tracked
 go-build:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor CGO_ENABLED=0 go build -trimpath -o bin/protodetect ./cmd/protodetect
+
+# PRO-402: the demo page on the Go engine (protodetect serve on 127.0.0.1, opened in the browser). No Python engine runs.
+serve: go-build
+	$(PYTHON) -B presentation/launch.py
 
 # PRO-401 (Lee, 2026-11-25: the Python reference is removed): every differential below replays a golden file, the
 # generated inputs and the reference's answers frozen by one recording run (migration/parity/golden.py), so none of

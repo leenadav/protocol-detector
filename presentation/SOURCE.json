@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "89459862434348ffc1d7f95d40230e4059cb865c",
-  "branch": "claude/engine-PRO-394-alpn-raw-bytes",
-  "build_digest": "f9de0d05537ebdd68ac848c712ae9b06a7282e89a32d2f0c99a040f0105eb88d",
+  "commit": "259ae8cc51e400b34ca9dce9c3e7e4169595303b",
+  "branch": "claude/platform-PRO-402-demo-go-serve",
+  "build_digest": "d78effaab84429de992965c068abb2f6ed7d1965d7e7e8d55d41141908d17e70",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -515,7 +515,7 @@
     {
       "path": "protodetect.py",
       "component": "adapters",
-      "sha256": "1351ae09b4ecec130aff0538b61ca7177c7bdaaaa79d16b87b0ee1d195b9928e"
+      "sha256": "50040078d983ffe3e2fbb836052fd582e4e513982c9d88954796220d97e80b74"
     },
     {
       "path": "detectors.py",
@@ -535,7 +535,7 @@
     {
       "path": "presentation/launch.py",
       "component": "presentation",
-      "sha256": "fd54ab3cc0246285d10e0db8f603d47aa985d9a4192b37f370572c48480a8551"
+      "sha256": "775703f2f2c8f0dc5f42d1f03c5bc92043ba8cd335b5f3ccc2027ccde7cac8fa"
     },
     {
       "path": "presentation/live_decrypt_smoke_check.py",

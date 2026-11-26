@@ -646,7 +646,7 @@ def main(argv=None):
         env = dict(os.environ, PATH=str(fake) + os.pathsep + os.environ.get("PATH", ""), PROTODETECT_GO_BINARY=binary,
                    PROTODETECT_FAKE_DIR=str(fake))
         env.pop("PROTODETECT_BACKEND", None)
-        go = Service("go", [binary, "serve", "--port", "0", "--root", str(ROOT / "presentation"), "--python", sys.executable], env)
+        go = Service("go", [binary, "serve", "--port", "0", "--root", str(ROOT / "presentation")], env)
         services = [go] if document else [Service("reference", [sys.executable, "-B", str(ROOT / "presentation/server.py"), "--port", "0"], env), go]
         probe_failures = []
         try:

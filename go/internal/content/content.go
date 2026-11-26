@@ -1,5 +1,5 @@
-// Package content loads the versioned detection content pack (migration/fixtures/content.json, exported
-// from the Python catalogs by tools/export_content.py) and validates it exactly like
+// Package content loads the versioned detection content pack (pack.json, edited directly with
+// tools/content_pack.py since PRO-411; migration/fixtures/content.json is a byte-for-byte copy) and validates it like
 // protocol_engine/applications._validate and host_apps.build_tables: duplicates, unknown categories,
 // technologies, characteristics, port specifications and unresolved references refuse the pack.
 // Content is administrative metadata looked up by name once a structural identification exists; nothing
@@ -520,7 +520,7 @@ func Embedded() (*Pack, error) { return Parse(embedded) }
 var embeddedHistory []byte
 
 // Releases lists the content releases this binary can run, oldest first: the earlier ones in history.json
-// (migration/content_history.py) and the current one of pack.json.
+// (written by tools/content_pack.py add) and the current one of pack.json.
 func Releases() []string { return releasesOf(embeddedHistory) }
 
 func releasesOf(history []byte) []string {

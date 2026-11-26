@@ -320,11 +320,12 @@ func TestWorkStopsBeforeTheSearchAndNeverMatches(t *testing.T) {
 	if perByte != 1+2+7+100*2+1 {
 		t.Fatalf("per byte %d", perByte)
 	}
-	if m, _ := set.MatchBudgeted("unknown-tcp", values, &Work{Limit: 12 * perByte}); m == nil {
+	exact := 12*perByte + set.WorkPerEvaluation("unknown-tcp") // + the candidate slot and the condition
+	if m, _ := set.MatchBudgeted("unknown-tcp", values, &Work{Limit: exact}); m == nil {
 		t.Fatal("exact allowance: no match")
 	}
-	w := &Work{Limit: 12*perByte - 1}
-	if m, _ := set.MatchBudgeted("unknown-tcp", values, w); m != nil || !w.Exhausted || w.Used != 12 {
+	w := &Work{Limit: exact - 1}
+	if m, _ := set.MatchBudgeted("unknown-tcp", values, w); m != nil || !w.Exhausted || w.Used != FixedWork+FixedWork+12 {
 		t.Fatalf("one unit short: match %v, work %+v (only the anchor scan may be charged)", m, w)
 	}
 	if m, n := set.MatchBudgeted("unknown-tcp", values, w); m != nil || n != 0 {
@@ -332,5 +333,42 @@ func TestWorkStopsBeforeTheSearchAndNeverMatches(t *testing.T) {
 	}
 	if m, _ := set.MatchCounted("unknown-tcp", values); m == nil {
 		t.Fatal("unbudgeted match lost")
+	}
+}
+
+// PRO-370 (Codex PRO-369, P2): length-only (integer) conditions and candidate preparation cost CPU on every
+// update, so they are charged too. Each candidate slot and each condition costs FixedWork (a condition plus its bytes
+// for a byte-valued one), before it runs; a document of integer-only conditions no longer evaluates for free.
+func TestLengthOnlyConditionsAndCandidatesAreCharged(t *testing.T) {
+	pack, err := content.Embedded()
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc := `[{"name": "len", "conditions": {"or": [
+		{"context": "unknown-req-tcp-payload-length", "operator": "equal-to", "value": 1},
+		{"context": "unknown-req-tcp-payload-length", "operator": "less-than", "value": 2},
+		{"context": "unknown-req-tcp-payload-length", "operator": "greater-than", "value": 99}]}}]`
+	set, err := FromJSON([]byte(doc), pack)
+	if err != nil {
+		t.Fatal(err)
+	}
+	values := Values{"unknown-req-tcp-payload": []byte("abcdefg-tail"), "unknown-req-tcp-payload-length": int64(12)}
+	if got := set.WorkPerByte("unknown-tcp"); got != 0 {
+		t.Fatalf("per byte %d: no byte-valued condition", got)
+	}
+	if got := set.WorkPerEvaluation("unknown-tcp"); got != FixedWork*(1+3) {
+		t.Fatalf("per evaluation %d, want one candidate and three conditions", got)
+	}
+	w := &Work{Limit: 1 << 20}
+	if m, n := set.MatchBudgeted("unknown-tcp", values, w); m != nil || n != 1 || w.Used != FixedWork*4 {
+		t.Fatalf("match %v, %d candidates, work %+v: want 4 x FixedWork charged", m, n, w)
+	}
+	w = &Work{Limit: FixedWork * 3} // the candidate and two conditions: the third is not run
+	if m, _ := set.MatchBudgeted("unknown-tcp", values, w); m != nil || !w.Exhausted || w.Used != FixedWork*3 {
+		t.Fatalf("one unit short: match %v, work %+v", m, w)
+	}
+	w = &Work{Limit: 0} // not even the candidate list is prepared
+	if m, n := set.MatchBudgeted("unknown-tcp", values, w); m != nil || n != 0 || !w.Exhausted || w.Used != 0 {
+		t.Fatalf("empty allowance: match %v, %d candidates, work %+v", m, n, w)
 	}
 }

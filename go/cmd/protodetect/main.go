@@ -28,7 +28,10 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/signatures"
 )
 
-const version = "0.0.0-m4"
+// version is a variable, not a constant, so a release build can stamp it with
+// `-ldflags "-X main.version=<release>"` (PRO-195); the linker ignores -X on a
+// constant. The default is the in-tree development version.
+var version = "0.0.0-m4"
 
 func main() {
 	os.Exit(run(os.Args[1:]))

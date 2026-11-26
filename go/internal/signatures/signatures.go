@@ -193,8 +193,12 @@ func (c *condition) evaluate(values Values, work *Work) bool {
 	if !ok || value == nil {
 		return false // absent context: never a match, negate does not apply
 	}
-	if b, isBytes := value.([]byte); isBytes && !work.charge(int64(len(b))) {
-		return false // the anchor scan or the comparison would pass the budget: not run
+	cost := int64(FixedWork) // every condition, a length-only (integer) or set one included (PRO-370)
+	if b, isBytes := value.([]byte); isBytes {
+		cost += int64(len(b)) // the anchor scan or the comparison
+	}
+	if !work.charge(cost) {
+		return false // the condition would pass the budget: not run
 	}
 	var result bool
 	switch {
@@ -480,6 +484,7 @@ type familyIndex struct {
 	exactOrder []string // contexts in first-seen order (dict order)
 	scan       []indexed
 	perByte    int64 // Work units per haystack byte of one evaluation of every signature of the family (upper bound)
+	perEval    int64 // fixed Work units of one evaluation: FixedWork per signature (its slot) and per condition
 }
 
 // Set is signatures.SignatureSet.
@@ -578,6 +583,7 @@ func FromJSON(text []byte, pack *content.Pack) (*Set, error) {
 		fi := &familyIndex{exact: map[string]map[string][]indexed{}}
 		for _, it := range items {
 			fi.perByte += it.signature.workPerByte(family)
+			fi.perEval += FixedWork * (1 + it.signature.conditionCount())
 			set.byFamily[family] = append(set.byFamily[family], it.signature)
 			if ctx, value, ok := it.signature.exactKey(); ok {
 				if fi.exact[ctx] == nil {
@@ -589,6 +595,7 @@ func FromJSON(text []byte, pack *content.Pack) (*Set, error) {
 				fi.scan = append(fi.scan, it)
 			}
 		}
+		fi.perByte += int64(len(fi.exactOrder)) // the index lookup hashes each exact context's value once
 		set.index[family] = fi
 	}
 	set.Digest = hex.EncodeToString(hasher.Sum(nil))[:16]
@@ -675,12 +682,29 @@ func (s *Set) candidates(family string, values Values) []*Signature {
 }
 
 // WorkPerByte bounds the Work units one evaluation of family costs per byte of a byte-valued context: the sum,
-// over every byte-valued condition of the family's signatures, of 1 plus the pattern's instruction estimate.
+// over every byte-valued condition of the family's signatures, of 1 plus the pattern's instruction estimate, plus
+// one per exact-index context (the lookup hashes its value).
 func (s *Set) WorkPerByte(family string) int64 {
 	if s == nil || s.index[family] == nil {
 		return 0
 	}
 	return s.index[family].perByte
+}
+
+// WorkPerEvaluation is the fixed part of one evaluation of family, independent of the values' lengths: FixedWork
+// per signature (its slot in the candidate list) and FixedWork per condition of each (PRO-370). One evaluation over
+// values whose byte-valued contexts are at most L bytes costs at most L x WorkPerByte + WorkPerEvaluation.
+func (s *Set) WorkPerEvaluation(family string) int64 {
+	if s == nil || s.index[family] == nil {
+		return 0
+	}
+	return s.index[family].perEval
+}
+
+func (s *Signature) conditionCount() int64 {
+	var leaves []*condition
+	s.root.leaves(&leaves)
+	return int64(len(leaves))
 }
 
 func (s *Signature) workPerByte(family string) int64 {
@@ -712,6 +736,9 @@ func (s *Set) MatchBudgeted(family string, values Values, work *Work) (*Signatur
 	if s == nil {
 		return nil, 0
 	}
+	if work != nil && !work.charge(s.preparation(family, values)) {
+		return nil, 0 // preparing the candidate list would pass the budget: nothing is evaluated
+	}
 	evaluated := 0
 	for _, sig := range s.candidates(family, values) {
 		if work.exhausted() {
@@ -725,10 +752,33 @@ func (s *Set) MatchBudgeted(family string, values Values, work *Work) (*Signatur
 	return nil, evaluated
 }
 
+// preparation is the Work of candidates: hashing each exact-index context present, and FixedWork per signature of
+// the family (the bound of the list it builds), charged before the list is built (PRO-370).
+func (s *Set) preparation(family string, values Values) int64 {
+	fi := s.index[family]
+	if fi == nil {
+		return 0
+	}
+	units := FixedWork * int64(len(s.byFamily[family]))
+	for _, ctx := range fi.exactOrder {
+		if b, isBytes := values[ctx].([]byte); isBytes {
+			units += int64(len(b))
+		}
+	}
+	return units
+}
+
+// FixedWork is the Work of one condition before its bytes, and of one candidate slot (PRO-370). A length-only
+// condition measured about 21 ns (the context lookup, the type switch and the group step) against about 3 ns per
+// unit of RE2 simulation, so a unit each would undercount it several times.
+const FixedWork = 8
+
 // Work is a cumulative evaluation budget (PRO-51 SEC-SIG-1), in units of haystack bytes times program size. Each
-// byte-valued condition costs the length of its value (the anchor scan or the comparison), and a pattern search
-// adds the length times the pattern's instruction estimate (estimateInsts, an upper bound of its program), which
-// bounds the RE2 simulation's steps. The charge is made before the work runs.
+// condition costs FixedWork, plus the length of its value when it is byte-valued (the anchor scan or the
+// comparison), and a pattern search adds the length times the pattern's instruction estimate (estimateInsts, an
+// upper bound of its program), which bounds the RE2 simulation's steps. Preparing the candidate list costs
+// FixedWork per signature of the family plus the bytes the exact index hashes (PRO-370: length-only conditions
+// and the preparation were free before). The charge is made before the work runs.
 type Work struct {
 	Limit, Used int64
 	Exhausted   bool
@@ -745,6 +795,10 @@ func (w *Work) charge(units int64) bool {
 	w.Used += units
 	return true
 }
+
+// Charge takes units of work done outside the set for an evaluation (the caller's copy of its contexts), before
+// that work runs. It reports false, and marks w exhausted, when the units would pass the limit.
+func (w *Work) Charge(units int64) bool { return w.charge(units) }
 
 func (w *Work) exhausted() bool { return w != nil && w.Exhausted }
 

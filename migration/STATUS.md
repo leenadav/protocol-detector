@@ -132,7 +132,7 @@ Taken before M5 so that session records become comparable for every family as it
 
 | item | state | evidence |
 |---|---|---|
-| One versioned content source | implemented | `tools/export_content.py` writes `migration/fixtures/content.json` from the Python catalogs: 156 applications (host-named services included), the engine-label map, the server-name catalog tables of the current release (entries, service domains, exact web fronts), 41 flow risks, the closed vocabularies, and the content release with its digest and component digests. `make check` → `content-pack` fails when the Python content and the pack differ. |
+| One versioned content source | implemented; Go-canonical since PRO-411 | Since PRO-411 (2026-11-25) `go/internal/content/pack.json`, `history.json` and the release ledger `lock.json` are the source, edited with `tools/content_pack.py add BATCH.json` (docs/CONTENT-BATCHES.md); `tools/export_content.py` and `migration/content_history.py` are removed. Before that: `tools/export_content.py` wrote `migration/fixtures/content.json` from the Python catalogs: 156 applications (host-named services included), the engine-label map, the server-name catalog tables of the current release (entries, service domains, exact web fronts), 41 flow risks, the closed vocabularies, and the content release with its digest and component digests. `make check` → `content-pack` fails when the Python content and the pack differ. |
 | Fail-closed loading | implemented | `go/internal/content` validates like `applications._validate` and `host_apps.build_tables` (duplicate names/domains/web fronts, unknown category/technology/characteristic, port specifications, unresolved references, outcomes without entries, schema, release); `TestPackFailsClosed` covers eight corruptions plus garbage. |
 | Verdicts | implemented | `go/internal/appid`: `session_verdict` rules in order (identified direction wins, server disagreement recorded, host catalog refines ssl/quic/web-browsing from a client-asserted name with the explicit reason, ECH outer never mapped, provider web fronts affiliate only; bidirectional ambiguity intersection; unknown before invalidated before insufficient-data before incomplete), web-application refinement (CONNECT, WebDAV, RPC-over-HTTP, gRPC, DNS-over-HTTPS, IPP/OCSP/SOAP), NetBIOS and TURN refinements, port usage incl. carrier ports after a shift, D03 attribution, midstream outcomes. Custom signatures and RuleIndex mappings are absent by construction (the Go engine never sets `application`). |
 | Flow risks | implemented | `appid/risks.go` ports every `flow_risks` branch that needs no x509 helper; certificate-validity and key classification are unreachable until the certificates option is ported (M7). |
@@ -1236,14 +1236,18 @@ pattern search), charged before the work runs. The allowance is `max(MaxSignatur
 so a flow that arrives in one or two segments is evaluated exactly as by the reference, and the bound does not
 depend on how the peer splits its bytes. An exhausted budget ends the direction as `budget_exhausted` ("Signature
 work budget exhausted") and no later byte is evaluated; it is never a match. The reference has no such bound:
-this is a Go-only divergence for flows past the allowance, pending approval (Hermes/Lee, PRO-332).
+this is a Go-only divergence for flows past the allowance, pending approval (Hermes/Lee, PRO-332). Since PRO-370
+the allowance is capped at `MaxSignatureWorkCeiling` = 2^28 units (below), so the divergence also covers a flow whose
+two full evaluations exceed 2^28, even when it arrives in one or two segments. Hermes approved the 2^28 value on
+PRO-375 (2026-11-25); PRO-446 ported the ceiling to `main` (it had merged only into
+`claude/engine-PRO-51-sig-compile-cost` through PR #122).
 
 | item | state | evidence |
 |---|---|---|
 | Upper bound | `TestEstimateBoundsTheCompiledProgram`, `FuzzEstimateBoundsProgram` (in `GO_FUZZ_SMOKE`) | the estimate is >= `len(prog.Inst)` of the real compile for every corpus pattern, with and without IGNORECASE; 257,877 fuzz executions, no counterexample |
 | Caps | `TestPatternInstructionCap`, `TestSetInstructionCap`, `TestHostileDocumentLoadIsBounded` | the PRO-170 shape is refused; 12 patterns of 8,202 load, the 13th is refused; reference rule errors win over the cap |
 | Flow cost | `TestUnknownPayloadSignatureWorkIsBounded`, `TestExhaustedSignatureWorkNeverMatches`, `TestSignatureWorkBelowTheBudgetKeepsTheReferenceVerdict`, `TestWorkStopsBeforeTheSearchAndNeverMatches` | PRO-170 1-byte `.{0,4096}` flow: `budget_exhausted` after 80 updates within its allowance; early matches, full single segments and the test set's 1-byte flow (2.0 M units) keep the reference verdict |
-| Parity | divergence pending approval, 0 case changes | no committed case carries a signature set (gate numbers in the lane brief and the PR) |
+| Parity | divergence pending approval, including the PRO-370 ceiling (2^28 per direction, value approved by Hermes on PRO-375), 0 case changes | no committed case carries a signature set (gate numbers in the lane brief and the PR) |
 
 Load times (4 vCPU Xeon 2.3 GHz; `BenchmarkHostileDocumentLoad` in `go/internal/signatures`, 10 iterations each):
 
@@ -1262,3 +1266,37 @@ Flow cost of one direction (1-byte updates unless noted; `MaxUpdates` 1,000,000)
 | 12 PRO-170 signatures (the set cap), 2000 | ~2 min (projected: 2.0e11 units at the measured 0.65 ns per unit) | 54 ms, `budget_exhausted` at 3.9e8 units |
 | 12 signatures, one 2000-byte segment | ~0.6 s | ~0.6 s, `unknown` (unchanged: within two full evaluations) |
 | 12 signatures, `signature_bytes` 65536 (configured maximum) | ~38 h (projected, 2.1e14 units) | 11-34 s, `budget_exhausted` at 1.3e10 units (two full evaluations; see the lane brief) |
+
+**PRO-370 follow-up (Codex PRO-369, two P2 findings on `2885afa`, plus one found while fixing them).** All three are Go only, with no parity case change.
+
+1. *Length-only conditions and candidate preparation were free* (`go/internal/signatures/signatures.go`). An
+   integer or set condition was never charged, and neither was building the candidate list. A document of 4,096
+   signatures with 12 `unknown-req-tcp-payload-length` conditions each therefore did about 1 ms of uncharged work per update,
+   for up to 65,536 updates. Now every condition costs `signatures.FixedWork` (8 units: a length-only condition
+   measured about 21 ns, against about 3 ns per RE2 unit), plus its bytes when byte-valued. Preparation costs `FixedWork` per signature of
+   the family, plus the bytes the exact index hashes. All of it is charged before the work runs. `Set.WorkPerEvaluation` is this fixed part, and the allowance
+   counts it: two full evaluations are `2 x (buffer x WorkPerByte + WorkPerEvaluation)`.
+   Tests: `TestLengthOnlyConditionsAndCandidatesAreCharged`, `TestLengthOnlySignatureWorkIsBounded`.
+2. *The adaptive allowance had no ceiling* (`go/internal/engine/inspector.go`). It is now
+   `min(MaxSignatureWorkCeiling = 2^28, max(2^26, two full evaluations))`. The consequence is a wider Go-only divergence, pending the same
+   approval as SEC-SIG-1: a flow whose two full evaluations exceed 2^28 can end `budget_exhausted` even when it arrives in one
+   or two segments. At the default `signature_bytes` 2000, one full segment of the largest set the caps allow
+   (about 2.0e8 units) still gets the reference verdict. At 65536 it is refused before the search runs. Test:
+   `TestSignatureWorkAllowanceHasACeiling`. `TestUnknownPayloadSignatureWorkIsBounded` now expects the ceiling,
+   not two full evaluations, at 2000 with 12 signatures.
+3. *The contexts' copy was free* (found while fixing 1). Each evaluation copies the whole unknown buffer into its
+   contexts, so with a cheap set 1-byte updates copied up to 65,536 x 64 KiB uncharged. The inspector now charges
+   one unit per byte copied before it copies (`Work.Charge`), and the allowance counts it (`WorkPerByte + 1`).
+   The copy is also skipped when no signature reads `unknown-tcp`. Test: `TestUnknownPayloadCopyIsCharged`. The
+   test set's 1-byte flow to a full default buffer now uses 4.0 M units (2.0 M before), still under 1/16 of the
+   2^26 floor.
+
+| flow (1-byte updates unless noted) | `2885afa` | PRO-370 |
+|---|---|---|
+| 4,096 signatures x 12 length conditions, `signature_bytes` 65536 | 0 units charged: never exhausted, about 1 ms per update for up to 65,536 updates | 158 updates, 165 ms, `budget_exhausted` |
+| 1 PRO-170 signature, 65536 | about 2.8 s projected (1.1e9-unit allowance) | 246 updates, 165 ms, `budget_exhausted` at the ceiling |
+| 12 PRO-170 signatures, 65536 | 11-34 s, `budget_exhausted` at 1.3e10 units | 65 updates, 33 ms, `budget_exhausted` at the ceiling |
+| 12 PRO-170 signatures, 2000 | 54 ms at 3.9e8 units | 33 ms at the ceiling (2.7e8) |
+| 12 signatures, one 65547-byte segment at 65536 | about 17 s projected (one evaluation, 6.5e9 units) | 54 us, `budget_exhausted` before the search |
+
+At the slowest measured rate (about 2.6 ns per unit), the ceiling is about 0.7 s of CPU per direction.

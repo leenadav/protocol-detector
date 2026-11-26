@@ -1,0 +1,6858 @@
+{
+ "version": 1,
+ "generated": "2026-11-22",
+ "note": "HOLD: name does not match the domain (product/org name on a vendor or parent domain); needs a service/publisher name before use",
+ "entries": [
+  {
+   "app_id": "imo",
+   "name": "International Maritime Organization",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "imo.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q201054",
+   "source_note": "Wikidata CC0 P856 official website: www.imo.org",
+   "wikidata": "Q201054",
+   "candidate_rank": 21,
+   "sitelinks": 66,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "knopper",
+   "name": "Knoppix",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "knopper.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q102410",
+   "source_note": "Wikidata CC0 P856 official website: www.knopper.net",
+   "wikidata": "Q102410",
+   "candidate_rank": 43,
+   "sitelinks": 56,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "insee",
+   "name": "National Institute of Statistics and Economic Studies",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "insee.fr"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q156616",
+   "source_note": "Wikidata CC0 P856 official website: www.insee.fr",
+   "wikidata": "Q156616",
+   "candidate_rank": 48,
+   "sitelinks": 55,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "tug",
+   "name": "TeX",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "tug.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q5301",
+   "source_note": "Wikidata CC0 P856 official website: www.tug.org",
+   "wikidata": "Q5301",
+   "candidate_rank": 51,
+   "sitelinks": 54,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "abes",
+   "name": "SUDOC",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "abes.fr"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2597810",
+   "source_note": "Wikidata CC0 P856 official website: www.sudoc.abes.fr",
+   "wikidata": "Q2597810",
+   "candidate_rank": 53,
+   "sitelinks": 54,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "uci",
+   "name": "Union Cycliste Internationale",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "uci.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q48663",
+   "source_note": "Wikidata CC0 P856 official website: www.uci.org",
+   "wikidata": "Q48663",
+   "candidate_rank": 58,
+   "sitelinks": 53,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "broadcom",
+   "name": "Pretty Good Privacy",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "broadcom.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1227452",
+   "source_note": "Wikidata CC0 P856 official website: www.broadcom.com",
+   "wikidata": "Q1227452",
+   "candidate_rank": 77,
+   "sitelinks": 47,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "hls-dhs-dss",
+   "name": "Historical Dictionary of Switzerland",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "hls-dhs-dss.ch"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q642074",
+   "source_note": "Wikidata CC0 P856 official website: hls-dhs-dss.ch",
+   "wikidata": "Q642074",
+   "candidate_rank": 82,
+   "sitelinks": 47,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "wolfram",
+   "name": "Mathematica",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "wolfram.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q81294",
+   "source_note": "Wikidata CC0 P856 official website: www.wolfram.com",
+   "wikidata": "Q81294",
+   "candidate_rank": 84,
+   "sitelinks": 46,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "medscape",
+   "name": "eMedicine",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "medscape.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q305913",
+   "source_note": "Wikidata CC0 P856 official website: emedicine.medscape.com",
+   "wikidata": "Q305913",
+   "candidate_rank": 88,
+   "sitelinks": 46,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "digitalresearch",
+   "name": "CP/M",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "digitalresearch.biz"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q219528",
+   "source_note": "Wikidata CC0 P856 official website: www.digitalresearch.biz",
+   "wikidata": "Q219528",
+   "candidate_rank": 90,
+   "sitelinks": 45,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ipni",
+   "name": "International Plant Names Index",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ipni.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q922063",
+   "source_note": "Wikidata CC0 P856 official website: www.ipni.org",
+   "wikidata": "Q922063",
+   "candidate_rank": 105,
+   "sitelinks": 44,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "image-line",
+   "name": "FL Studio",
+   "category": "media",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "image-line.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q740562",
+   "source_note": "Wikidata CC0 P856 official website: www.image-line.com",
+   "wikidata": "Q740562",
+   "candidate_rank": 108,
+   "sitelinks": 43,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "eclipse",
+   "name": "Jakarta Server Pages",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "eclipse.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q183169",
+   "source_note": "Wikidata CC0 P856 official website: projects.eclipse.org",
+   "wikidata": "Q183169",
+   "candidate_rank": 110,
+   "sitelinks": 43,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "invisible-island",
+   "name": "Lynx",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "invisible-island.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q207872",
+   "source_note": "Wikidata CC0 P856 official website: lynx.invisible-island.net",
+   "wikidata": "Q207872",
+   "candidate_rank": 118,
+   "sitelinks": 42,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "xiph",
+   "name": "Free Lossless Audio Codec",
+   "category": "media",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "xiph.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q219848",
+   "source_note": "Wikidata CC0 P856 official website: xiph.org",
+   "wikidata": "Q219848",
+   "candidate_rank": 135,
+   "sitelinks": 41,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "elsevier",
+   "name": "Scopus",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "elsevier.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q371467",
+   "source_note": "Wikidata CC0 P856 official website: www.elsevier.com",
+   "wikidata": "Q371467",
+   "candidate_rank": 138,
+   "sitelinks": 41,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ibm",
+   "name": "SPSS",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ibm.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q181596",
+   "source_note": "Wikidata CC0 P856 official website: www.ibm.com",
+   "wikidata": "Q181596",
+   "candidate_rank": 144,
+   "sitelinks": 40,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "embarcadero",
+   "name": "Delphi",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "embarcadero.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q487378",
+   "source_note": "Wikidata CC0 P856 official website: www.embarcadero.com",
+   "wikidata": "Q487378",
+   "candidate_rank": 149,
+   "sitelinks": 40,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "linuxmint",
+   "name": "Cinnamon",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "linuxmint.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1092551",
+   "source_note": "Wikidata CC0 P856 official website: projects.linuxmint.com",
+   "wikidata": "Q1092551",
+   "candidate_rank": 150,
+   "sitelinks": 40,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nvidia",
+   "name": "CUDA",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "nvidia.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q477690",
+   "source_note": "Wikidata CC0 P856 official website: developer.nvidia.com",
+   "wikidata": "Q477690",
+   "candidate_rank": 166,
+   "sitelinks": 38,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "iis",
+   "name": "Internet Information Services",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "iis.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q11341",
+   "source_note": "Wikidata CC0 P856 official website: www.iis.net",
+   "wikidata": "Q11341",
+   "candidate_rank": 181,
+   "sitelinks": 37,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nongnu",
+   "name": "CVS",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "nongnu.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q467252",
+   "source_note": "Wikidata CC0 P856 official website: www.nongnu.org",
+   "wikidata": "Q467252",
+   "candidate_rank": 185,
+   "sitelinks": 37,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "glitchprod",
+   "name": "The Amazing Digital Circus",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "glitchprod.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q121665318",
+   "source_note": "Wikidata CC0 P856 official website: www.glitchprod.com",
+   "wikidata": "Q121665318",
+   "candidate_rank": 189,
+   "sitelinks": 37,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "vmssoftware",
+   "name": "OpenVMS",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "vmssoftware.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q479882",
+   "source_note": "Wikidata CC0 P856 official website: www.vmssoftware.com",
+   "wikidata": "Q479882",
+   "candidate_rank": 198,
+   "sitelinks": 36,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "foldingathome",
+   "name": "Folding@home",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "foldingathome.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q386283",
+   "source_note": "Wikidata CC0 P856 official website: foldingathome.org",
+   "wikidata": "Q386283",
+   "candidate_rank": 210,
+   "sitelinks": 35,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "multicians",
+   "name": "Multics",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "multicians.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q739186",
+   "source_note": "Wikidata CC0 P856 official website: www.multicians.org",
+   "wikidata": "Q739186",
+   "candidate_rank": 211,
+   "sitelinks": 35,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "isc",
+   "name": "BIND",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "isc.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q41540",
+   "source_note": "Wikidata CC0 P856 official website: www.isc.org",
+   "wikidata": "Q41540",
+   "candidate_rank": 227,
+   "sitelinks": 34,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "access-company",
+   "name": "Palm OS",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "access-company.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q274582",
+   "source_note": "Wikidata CC0 P856 official website: www.access-company.com",
+   "wikidata": "Q274582",
+   "candidate_rank": 232,
+   "sitelinks": 34,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "antarestech",
+   "name": "Auto-Tune",
+   "category": "media",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "antarestech.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q784762",
+   "source_note": "Wikidata CC0 P856 official website: www.antarestech.com",
+   "wikidata": "Q784762",
+   "candidate_rank": 233,
+   "sitelinks": 34,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "palletsprojects",
+   "name": "Flask",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "palletsprojects.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q289281",
+   "source_note": "Wikidata CC0 P856 official website: flask.palletsprojects.com",
+   "wikidata": "Q289281",
+   "candidate_rank": 263,
+   "sitelinks": 32,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "khronos",
+   "name": "WebGL",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "khronos.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q375913",
+   "source_note": "Wikidata CC0 P856 official website: www.khronos.org",
+   "wikidata": "Q375913",
+   "candidate_rank": 283,
+   "sitelinks": 31,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ni",
+   "name": "LabVIEW",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ni.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q746261",
+   "source_note": "Wikidata CC0 P856 official website: www.ni.com",
+   "wikidata": "Q746261",
+   "candidate_rank": 290,
+   "sitelinks": 31,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ucweb",
+   "name": "UC Browser",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ucweb.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2474765",
+   "source_note": "Wikidata CC0 P856 official website: ucweb.com",
+   "wikidata": "Q2474765",
+   "candidate_rank": 292,
+   "sitelinks": 31,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "gwtproject",
+   "name": "Google Web Toolkit",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "gwtproject.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q79578",
+   "source_note": "Wikidata CC0 P856 official website: www.gwtproject.org",
+   "wikidata": "Q79578",
+   "candidate_rank": 301,
+   "sitelinks": 31,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "webcitation",
+   "name": "WebCite",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "webcitation.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1511162",
+   "source_note": "Wikidata CC0 P856 official website: webcitation.org",
+   "wikidata": "Q1511162",
+   "candidate_rank": 312,
+   "sitelinks": 31,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "python",
+   "name": "IDLE",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "python.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q427130",
+   "source_note": "Wikidata CC0 P856 official website: python.org",
+   "wikidata": "Q427130",
+   "candidate_rank": 321,
+   "sitelinks": 30,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ctan",
+   "name": "BibTeX",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ctan.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q8029",
+   "source_note": "Wikidata CC0 P856 official website: www.ctan.org",
+   "wikidata": "Q8029",
+   "candidate_rank": 325,
+   "sitelinks": 30,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "virgil",
+   "name": "WikiScanner",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "virgil.gr"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q268699",
+   "source_note": "Wikidata CC0 P856 official website: wikiscanner.virgil.gr",
+   "wikidata": "Q268699",
+   "candidate_rank": 335,
+   "sitelinks": 30,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "steinberg",
+   "name": "Cubase",
+   "category": "media",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "steinberg.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q862505",
+   "source_note": "Wikidata CC0 P856 official website: www.steinberg.net",
+   "wikidata": "Q862505",
+   "candidate_rank": 346,
+   "sitelinks": 29,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "xfce",
+   "name": "Thunar",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "xfce.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q757834",
+   "source_note": "Wikidata CC0 P856 official website: docs.xfce.org",
+   "wikidata": "Q757834",
+   "candidate_rank": 347,
+   "sitelinks": 29,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "sun",
+   "name": "Java applet",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "sun.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q865817",
+   "source_note": "Wikidata CC0 P856 official website: java.sun.com",
+   "wikidata": "Q865817",
+   "candidate_rank": 351,
+   "sitelinks": 29,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "dpa",
+   "name": "German Press Agency",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "dpa.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q312653",
+   "source_note": "Wikidata CC0 P856 official website: dpa.com",
+   "wikidata": "Q312653",
+   "candidate_rank": 363,
+   "sitelinks": 29,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ansa",
+   "name": "Agenzia Nazionale Stampa Associata",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ansa.it"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q392934",
+   "source_note": "Wikidata CC0 P856 official website: www.ansa.it",
+   "wikidata": "Q392934",
+   "candidate_rank": 364,
+   "sitelinks": 29,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "alsa-project",
+   "name": "Advanced Linux Sound Architecture",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "alsa-project.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q379635",
+   "source_note": "Wikidata CC0 P856 official website: www.alsa-project.org",
+   "wikidata": "Q379635",
+   "candidate_rank": 368,
+   "sitelinks": 28,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "maxon",
+   "name": "Cinema 4D",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "maxon.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1092448",
+   "source_note": "Wikidata CC0 P856 official website: www.maxon.net",
+   "wikidata": "Q1092448",
+   "candidate_rank": 384,
+   "sitelinks": 28,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ghisler",
+   "name": "Total Commander",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ghisler.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q80201",
+   "source_note": "Wikidata CC0 P856 official website: www.ghisler.com",
+   "wikidata": "Q80201",
+   "candidate_rank": 385,
+   "sitelinks": 28,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "getsol",
+   "name": "Solus",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "getsol.us"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q22013701",
+   "source_note": "Wikidata CC0 P856 official website: getsol.us",
+   "wikidata": "Q22013701",
+   "candidate_rank": 396,
+   "sitelinks": 28,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "astian",
+   "name": "Midori",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "astian.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q285512",
+   "source_note": "Wikidata CC0 P856 official website: astian.org",
+   "wikidata": "Q285512",
+   "candidate_rank": 398,
+   "sitelinks": 28,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "saurik",
+   "name": "Cydia",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "saurik.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q502129",
+   "source_note": "Wikidata CC0 P856 official website: cydia.saurik.com",
+   "wikidata": "Q502129",
+   "candidate_rank": 400,
+   "sitelinks": 28,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "schneier",
+   "name": "Blowfish",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "schneier.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q815853",
+   "source_note": "Wikidata CC0 P856 official website: www.schneier.com",
+   "wikidata": "Q815853",
+   "candidate_rank": 405,
+   "sitelinks": 28,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "esri",
+   "name": "ArcGIS",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "esri.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q513297",
+   "source_note": "Wikidata CC0 P856 official website: www.esri.com",
+   "wikidata": "Q513297",
+   "candidate_rank": 410,
+   "sitelinks": 27,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "pydata",
+   "name": "Pandas",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "pydata.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q15967387",
+   "source_note": "Wikidata CC0 P856 official website: pandas.pydata.org",
+   "wikidata": "Q15967387",
+   "candidate_rank": 418,
+   "sitelinks": 27,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "newtek",
+   "name": "LightWave 3D",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "newtek.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q857341",
+   "source_note": "Wikidata CC0 P856 official website: www.newtek.com",
+   "wikidata": "Q857341",
+   "candidate_rank": 431,
+   "sitelinks": 27,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "vpn",
+   "name": "Hamachi",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "vpn.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q644330",
+   "source_note": "Wikidata CC0 P856 official website: www.vpn.net",
+   "wikidata": "Q644330",
+   "candidate_rank": 436,
+   "sitelinks": 27,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "netfilter",
+   "name": "iptables",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "netfilter.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q284612",
+   "source_note": "Wikidata CC0 P856 official website: www.netfilter.org",
+   "wikidata": "Q284612",
+   "candidate_rank": 437,
+   "sitelinks": 27,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "osgeo",
+   "name": "GRASS",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "osgeo.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1337282",
+   "source_note": "Wikidata CC0 P856 official website: grass.osgeo.org",
+   "wikidata": "Q1337282",
+   "candidate_rank": 451,
+   "sitelinks": 26,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "windriver",
+   "name": "VxWorks",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "windriver.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q757165",
+   "source_note": "Wikidata CC0 P856 official website: www.windriver.com",
+   "wikidata": "Q757165",
+   "candidate_rank": 457,
+   "sitelinks": 26,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "php",
+   "name": "PEAR",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "php.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q568694",
+   "source_note": "Wikidata CC0 P856 official website: pear.php.net",
+   "wikidata": "Q568694",
+   "candidate_rank": 459,
+   "sitelinks": 26,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "fsfla",
+   "name": "Linux-libre",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "fsfla.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q665683",
+   "source_note": "Wikidata CC0 P856 official website: linux-libre.fsfla.org",
+   "wikidata": "Q665683",
+   "candidate_rank": 465,
+   "sitelinks": 26,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "kakaocorp",
+   "name": "KakaoTalk",
+   "category": "collaboration",
+   "subcategory": "instant-messaging",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "kakaocorp.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q127293",
+   "source_note": "Wikidata CC0 P856 official website: www.kakaocorp.com",
+   "wikidata": "Q127293",
+   "candidate_rank": 472,
+   "sitelinks": 26,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "5ch",
+   "name": "2channel",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "5ch.io"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q222909",
+   "source_note": "Wikidata CC0 P856 official website: 5ch.io",
+   "wikidata": "Q222909",
+   "candidate_rank": 489,
+   "sitelinks": 26,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "opensuse",
+   "name": "YaST",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "opensuse.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q432424",
+   "source_note": "Wikidata CC0 P856 official website: yast.opensuse.org",
+   "wikidata": "Q432424",
+   "candidate_rank": 503,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "joonet",
+   "name": "Linux loader",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "joonet.de"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q861940",
+   "source_note": "Wikidata CC0 P856 official website: www.joonet.de",
+   "wikidata": "Q861940",
+   "candidate_rank": 508,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ptc",
+   "name": "Mathcad",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ptc.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1133580",
+   "source_note": "Wikidata CC0 P856 official website: www.ptc.com",
+   "wikidata": "Q1133580",
+   "candidate_rank": 510,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "metaquotes",
+   "name": "MetaTrader 4",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "metaquotes.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1851963",
+   "source_note": "Wikidata CC0 P856 official website: www.metaquotes.net",
+   "wikidata": "Q1851963",
+   "candidate_rank": 518,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "europa",
+   "name": "European Commission Data Portal",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "europa.eu"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q5412398",
+   "source_note": "Wikidata CC0 P856 official website: data.europa.eu",
+   "wikidata": "Q5412398",
+   "candidate_rank": 527,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "greenwoodsoftware",
+   "name": "less",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "greenwoodsoftware.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q345096",
+   "source_note": "Wikidata CC0 P856 official website: www.greenwoodsoftware.com",
+   "wikidata": "Q345096",
+   "candidate_rank": 532,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "twibright",
+   "name": "Links",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "twibright.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q608910",
+   "source_note": "Wikidata CC0 P856 official website: links.twibright.com",
+   "wikidata": "Q608910",
+   "candidate_rank": 534,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "exoplanet",
+   "name": "Extrasolar Planets Encyclopaedia",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "exoplanet.eu"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1385430",
+   "source_note": "Wikidata CC0 P856 official website: exoplanet.eu",
+   "wikidata": "Q1385430",
+   "candidate_rank": 542,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "corel",
+   "name": "PaintShop Pro",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "corel.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q24614",
+   "source_note": "Wikidata CC0 P856 official website: www.corel.com",
+   "wikidata": "Q24614",
+   "candidate_rank": 554,
+   "sitelinks": 24,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "netacad",
+   "name": "Packet Tracer",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "netacad.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2373116",
+   "source_note": "Wikidata CC0 P856 official website: www.netacad.com",
+   "wikidata": "Q2373116",
+   "candidate_rank": 556,
+   "sitelinks": 24,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "vitanuova",
+   "name": "Inferno",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "vitanuova.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q908615",
+   "source_note": "Wikidata CC0 P856 official website: www.vitanuova.com",
+   "wikidata": "Q908615",
+   "candidate_rank": 559,
+   "sitelinks": 24,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "openoffice-nl",
+   "name": "Bluefish",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "openoffice.nl"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q651027",
+   "source_note": "Wikidata CC0 P856 official website: bluefish.openoffice.nl",
+   "wikidata": "Q651027",
+   "candidate_rank": 585,
+   "sitelinks": 24,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bakerlab",
+   "name": "Rosetta@home",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "bakerlab.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q898343",
+   "source_note": "Wikidata CC0 P856 official website: boinc.bakerlab.org",
+   "wikidata": "Q898343",
+   "candidate_rank": 587,
+   "sitelinks": 24,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "web-ace",
+   "name": "The Summer Hikaru Died",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "web-ace.jp"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q114494831",
+   "source_note": "Wikidata CC0 P856 official website: web-ace.jp",
+   "wikidata": "Q114494831",
+   "candidate_rank": 589,
+   "sitelinks": 24,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "8kun",
+   "name": "8chan/kun",
+   "category": "media",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "8kun.top"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q18712091",
+   "source_note": "Wikidata CC0 P856 official website: 8kun.top",
+   "wikidata": "Q18712091",
+   "candidate_rank": 590,
+   "sitelinks": 24,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "oneplus",
+   "name": "OxygenOS",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "oneplus.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q21041344",
+   "source_note": "Wikidata CC0 P856 official website: www.oneplus.com",
+   "wikidata": "Q21041344",
+   "candidate_rank": 608,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "blackmagicdesign",
+   "name": "DaVinci Resolve",
+   "category": "media",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "blackmagicdesign.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q17628502",
+   "source_note": "Wikidata CC0 P856 official website: blackmagicdesign.com",
+   "wikidata": "Q17628502",
+   "candidate_rank": 612,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nasm",
+   "name": "Netwide Assembler",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "nasm.us"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1571077",
+   "source_note": "Wikidata CC0 P856 official website: www.nasm.us",
+   "wikidata": "Q1571077",
+   "candidate_rank": 615,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "scintilla",
+   "name": "SciTE",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "scintilla.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q186301",
+   "source_note": "Wikidata CC0 P856 official website: www.scintilla.org",
+   "wikidata": "Q186301",
+   "candidate_rank": 628,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "pypa",
+   "name": "pip",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "pypa.io"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q6541095",
+   "source_note": "Wikidata CC0 P856 official website: pip.pypa.io",
+   "wikidata": "Q6541095",
+   "candidate_rank": 632,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "archlinux",
+   "name": "Pacman",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "archlinux.page"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q69952",
+   "source_note": "Wikidata CC0 P856 official website: pacman.archlinux.page",
+   "wikidata": "Q69952",
+   "candidate_rank": 637,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "apod",
+   "name": "Astronomy Picture of the Day",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "apod.tw"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q752071",
+   "source_note": "Wikidata CC0 P856 official website: apod.tw",
+   "wikidata": "Q752071",
+   "candidate_rank": 638,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "harrypotter",
+   "name": "Wizarding World Digital",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "harrypotter.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q586299",
+   "source_note": "Wikidata CC0 P856 official website: www.harrypotter.com",
+   "wikidata": "Q586299",
+   "candidate_rank": 639,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "posit",
+   "name": "RStudio",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "posit.co"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q4798119",
+   "source_note": "Wikidata CC0 P856 official website: posit.co",
+   "wikidata": "Q4798119",
+   "candidate_rank": 647,
+   "sitelinks": 22,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "claris",
+   "name": "FileMaker",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "claris.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q832312",
+   "source_note": "Wikidata CC0 P856 official website: www.claris.com",
+   "wikidata": "Q832312",
+   "candidate_rank": 651,
+   "sitelinks": 22,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "siemens",
+   "name": "Solid Edge",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "siemens.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q644575",
+   "source_note": "Wikidata CC0 P856 official website: www.plm.automation.siemens.com",
+   "wikidata": "Q644575",
+   "candidate_rank": 660,
+   "sitelinks": 22,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "greasespot",
+   "name": "Greasemonkey",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "greasespot.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q901312",
+   "source_note": "Wikidata CC0 P856 official website: www.greasespot.net",
+   "wikidata": "Q901312",
+   "candidate_rank": 694,
+   "sitelinks": 22,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "iobdb",
+   "name": "Internet Off-Broadway Database",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "iobdb.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1188969",
+   "source_note": "Wikidata CC0 P856 official website: www.iobdb.com",
+   "wikidata": "Q1188969",
+   "candidate_rank": 698,
+   "sitelinks": 22,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "aliceoseman",
+   "name": "Heartstopper",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "aliceoseman.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q81891535",
+   "source_note": "Wikidata CC0 P856 official website: aliceoseman.com",
+   "wikidata": "Q81891535",
+   "candidate_rank": 703,
+   "sitelinks": 22,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "mysql-com",
+   "name": "InnoDB",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "mysql.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q838388",
+   "source_note": "Wikidata CC0 P856 official website: dev.mysql.com",
+   "wikidata": "Q838388",
+   "candidate_rank": 717,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "sourceware",
+   "name": "bzip2",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "sourceware.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q283563",
+   "source_note": "Wikidata CC0 P856 official website: sourceware.org",
+   "wikidata": "Q283563",
+   "candidate_rank": 726,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "openwall",
+   "name": "John the Ripper",
+   "category": "business-systems",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "openwall.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1702258",
+   "source_note": "Wikidata CC0 P856 official website: www.openwall.com",
+   "wikidata": "Q1702258",
+   "candidate_rank": 730,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cyberlink",
+   "name": "PowerDVD",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "cyberlink.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q967570",
+   "source_note": "Wikidata CC0 P856 official website: www.cyberlink.com",
+   "wikidata": "Q967570",
+   "candidate_rank": 732,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "pdfforge",
+   "name": "PDFCreator",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "pdfforge.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1143775",
+   "source_note": "Wikidata CC0 P856 official website: www.pdfforge.org",
+   "wikidata": "Q1143775",
+   "candidate_rank": 741,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "freeshell",
+   "name": "Leafpad",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "freeshell.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1194102",
+   "source_note": "Wikidata CC0 P856 official website: tarot.freeshell.org",
+   "wikidata": "Q1194102",
+   "candidate_rank": 743,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "riverbankcomputing",
+   "name": "PyQt",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "riverbankcomputing.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2382780",
+   "source_note": "Wikidata CC0 P856 official website: riverbankcomputing.com",
+   "wikidata": "Q2382780",
+   "candidate_rank": 744,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "darwinsys",
+   "name": "file",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "darwinsys.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q181820",
+   "source_note": "Wikidata CC0 P856 official website: darwinsys.com",
+   "wikidata": "Q181820",
+   "candidate_rank": 749,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cpdl",
+   "name": "Choral Public Domain Library",
+   "category": "media",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "cpdl.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q519635",
+   "source_note": "Wikidata CC0 P856 official website: www.cpdl.org",
+   "wikidata": "Q519635",
+   "candidate_rank": 752,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "irmng",
+   "name": "Interim Register of Marine and Nonmarine Genera",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "irmng.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q51885189",
+   "source_note": "Wikidata CC0 P856 official website: www.irmng.org",
+   "wikidata": "Q51885189",
+   "candidate_rank": 760,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "unian",
+   "name": "Ukrainian Independent Information Agency",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "unian.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2095222",
+   "source_note": "Wikidata CC0 P856 official website: www.unian.net",
+   "wikidata": "Q2095222",
+   "candidate_rank": 763,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ros",
+   "name": "Robot Operating System",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ros.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2160077",
+   "source_note": "Wikidata CC0 P856 official website: ros.org",
+   "wikidata": "Q2160077",
+   "candidate_rank": 788,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "deepmind",
+   "name": "Veo",
+   "category": "media",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "deepmind.google"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q133141215",
+   "source_note": "Wikidata CC0 P856 official website: deepmind.google",
+   "wikidata": "Q133141215",
+   "candidate_rank": 790,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "tenable",
+   "name": "Nessus",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "tenable.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1070329",
+   "source_note": "Wikidata CC0 P856 official website: www.tenable.com",
+   "wikidata": "Q1070329",
+   "candidate_rank": 811,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "techsmith",
+   "name": "Camtasia",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "techsmith.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1031755",
+   "source_note": "Wikidata CC0 P856 official website: www.techsmith.com",
+   "wikidata": "Q1031755",
+   "candidate_rank": 814,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "vu",
+   "name": "Amoeba",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "vu.nl"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q473800",
+   "source_note": "Wikidata CC0 P856 official website: www.cs.vu.nl",
+   "wikidata": "Q473800",
+   "candidate_rank": 815,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "tcl-lang",
+   "name": "Tk",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "tcl-lang.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q616360",
+   "source_note": "Wikidata CC0 P856 official website: www.tcl-lang.org",
+   "wikidata": "Q616360",
+   "candidate_rank": 816,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "jide",
+   "name": "Remix OS",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "jide.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q22049114",
+   "source_note": "Wikidata CC0 P856 official website: www.jide.com",
+   "wikidata": "Q22049114",
+   "candidate_rank": 822,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ltsp",
+   "name": "Linux Terminal Server Project",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ltsp.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q530653",
+   "source_note": "Wikidata CC0 P856 official website: www.ltsp.org",
+   "wikidata": "Q530653",
+   "candidate_rank": 831,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "rhino3d",
+   "name": "Rhinoceros 3D",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "rhino3d.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q565573",
+   "source_note": "Wikidata CC0 P856 official website: www.rhino3d.com",
+   "wikidata": "Q565573",
+   "candidate_rank": 832,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "isna",
+   "name": "Iranian Students' News Agency",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "isna.ir"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1672387",
+   "source_note": "Wikidata CC0 P856 official website: en.isna.ir",
+   "wikidata": "Q1672387",
+   "candidate_rank": 840,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ics",
+   "name": "Motif",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ics.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1136830",
+   "source_note": "Wikidata CC0 P856 official website: motif.ics.com",
+   "wikidata": "Q1136830",
+   "candidate_rank": 848,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cultdeadcow",
+   "name": "Back Orifice",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "cultdeadcow.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q798333",
+   "source_note": "Wikidata CC0 P856 official website: www.cultdeadcow.com",
+   "wikidata": "Q798333",
+   "candidate_rank": 854,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "linuxcontainers",
+   "name": "LXC",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "linuxcontainers.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2597211",
+   "source_note": "Wikidata CC0 P856 official website: linuxcontainers.org",
+   "wikidata": "Q2597211",
+   "candidate_rank": 861,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "jamstec",
+   "name": "Earth Simulator",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "jamstec.go.jp"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1277662",
+   "source_note": "Wikidata CC0 P856 official website: www.jamstec.go.jp",
+   "wikidata": "Q1277662",
+   "candidate_rank": 871,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "sco",
+   "name": "UnixWare",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "sco.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1148628",
+   "source_note": "Wikidata CC0 P856 official website: www.sco.com",
+   "wikidata": "Q1148628",
+   "candidate_rank": 875,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "codeweavers",
+   "name": "CrossOver",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "codeweavers.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1071138",
+   "source_note": "Wikidata CC0 P856 official website: www.codeweavers.com",
+   "wikidata": "Q1071138",
+   "candidate_rank": 886,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "sidefx",
+   "name": "Houdini",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "sidefx.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2595529",
+   "source_note": "Wikidata CC0 P856 official website: www.sidefx.com",
+   "wikidata": "Q2595529",
+   "candidate_rank": 888,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bentley",
+   "name": "MicroStation",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "bentley.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1348042",
+   "source_note": "Wikidata CC0 P856 official website: www.bentley.com",
+   "wikidata": "Q1348042",
+   "candidate_rank": 894,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "omnigroup",
+   "name": "OmniWeb",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "omnigroup.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1061519",
+   "source_note": "Wikidata CC0 P856 official website: omnigroup.com",
+   "wikidata": "Q1061519",
+   "candidate_rank": 896,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "icculus",
+   "name": "GtkRadiant",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "icculus.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1537857",
+   "source_note": "Wikidata CC0 P856 official website: icculus.org",
+   "wikidata": "Q1537857",
+   "candidate_rank": 909,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "shonenjumpplus",
+   "name": "Summer Time Rendering",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "shonenjumpplus.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q75130982",
+   "source_note": "Wikidata CC0 P856 official website: shonenjumpplus.com",
+   "wikidata": "Q75130982",
+   "candidate_rank": 919,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "tving",
+   "name": "Death's Game",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "tving.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q121145295",
+   "source_note": "Wikidata CC0 P856 official website: www.tving.com",
+   "wikidata": "Q121145295",
+   "candidate_rank": 920,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "hhvm",
+   "name": "HipHop Virtual Machine",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "hhvm.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q18150679",
+   "source_note": "Wikidata CC0 P856 official website: hhvm.com",
+   "wikidata": "Q18150679",
+   "candidate_rank": 942,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nltk",
+   "name": "Natural Language Toolkit",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "nltk.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1635410",
+   "source_note": "Wikidata CC0 P856 official website: www.nltk.org",
+   "wikidata": "Q1635410",
+   "candidate_rank": 964,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "crypton",
+   "name": "Megurine Luka",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "crypton.co.jp"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1037133",
+   "source_note": "Wikidata CC0 P856 official website: www.crypton.co.jp",
+   "wikidata": "Q1037133",
+   "candidate_rank": 978,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "uva",
+   "name": "Praat",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "uva.nl"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q378530",
+   "source_note": "Wikidata CC0 P856 official website: www.fon.hum.uva.nl",
+   "wikidata": "Q378530",
+   "candidate_rank": 985,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "agpt",
+   "name": "AutoGPT",
+   "category": "business-systems",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "agpt.co"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q117791942",
+   "source_note": "Wikidata CC0 P856 official website: agpt.co",
+   "wikidata": "Q117791942",
+   "candidate_rank": 997,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "mediawiki",
+   "name": "Module:TNT",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "mediawiki.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q28132212",
+   "source_note": "Wikidata CC0 P856 official website: www.mediawiki.org",
+   "wikidata": "Q28132212",
+   "candidate_rank": 1001,
+   "sitelinks": 327,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "about",
+   "name": "Google",
+   "category": "business-systems",
+   "subcategory": "auth-service",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "about.google"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q95",
+   "source_note": "Wikidata CC0 P856 official website: about.google",
+   "wikidata": "Q95",
+   "candidate_rank": 1002,
+   "sitelinks": 212,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "umi",
+   "name": "The Washington Post",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "umi.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q166032",
+   "source_note": "Wikidata CC0 P856 official website: proquest.umi.com",
+   "wikidata": "Q166032",
+   "candidate_rank": 1012,
+   "sitelinks": 97,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "oed",
+   "name": "Oxford English Dictionary",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "oed.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q44996",
+   "source_note": "Wikidata CC0 P856 official website: oed.com",
+   "wikidata": "Q44996",
+   "candidate_rank": 1020,
+   "sitelinks": 88,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "voaafrique",
+   "name": "Voice of America",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "voaafrique.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q228389",
+   "source_note": "Wikidata CC0 P856 official website: www.voaafrique.com",
+   "wikidata": "Q228389",
+   "candidate_rank": 1022,
+   "sitelinks": 83,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "citystaug",
+   "name": "St. Augustine",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "citystaug.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q487988",
+   "source_note": "Wikidata CC0 P856 official website: www.citystaug.com",
+   "wikidata": "Q487988",
+   "candidate_rank": 1024,
+   "sitelinks": 78,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "wikimediafoundation",
+   "name": "Wikipedia Zero",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "wikimediafoundation.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q13418780",
+   "source_note": "Wikidata CC0 P856 official website: wikimediafoundation.org",
+   "wikidata": "Q13418780",
+   "candidate_rank": 1056,
+   "sitelinks": 54,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "mondomedia",
+   "name": "Happy Tree Friends",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "mondomedia.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q207627",
+   "source_note": "Wikidata CC0 P856 official website: mondomedia.com",
+   "wikidata": "Q207627",
+   "candidate_rank": 1060,
+   "sitelinks": 52,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "w3",
+   "name": "Semantic Web",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "w3.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q54837",
+   "source_note": "Wikidata CC0 P856 official website: www.w3.org",
+   "wikidata": "Q54837",
+   "candidate_rank": 1073,
+   "sitelinks": 47,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bio2rdf",
+   "name": "Online Mendelian Inheritance in Man",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "bio2rdf.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q241953",
+   "source_note": "Wikidata CC0 P856 official website: omim.bio2rdf.org",
+   "wikidata": "Q241953",
+   "candidate_rank": 1076,
+   "sitelinks": 47,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "univ-grenoble-alpes",
+   "name": "Xcas",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "univ-grenoble-alpes.fr"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3570844",
+   "source_note": "Wikidata CC0 P856 official website: xcas.univ-grenoble-alpes.fr",
+   "wikidata": "Q3570844",
+   "candidate_rank": 1084,
+   "sitelinks": 44,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "oeis",
+   "name": "On-Line Encyclopedia of Integer Sequences",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "oeis.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q728415",
+   "source_note": "Wikidata CC0 P856 official website: oeis.org",
+   "wikidata": "Q728415",
+   "candidate_rank": 1094,
+   "sitelinks": 42,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "shm",
+   "name": "State Historical Museum",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "shm.ru"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1140429",
+   "source_note": "Wikidata CC0 P856 official website: shm.ru",
+   "wikidata": "Q1140429",
+   "candidate_rank": 1101,
+   "sitelinks": 40,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "fotw",
+   "name": "Flags of the World",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "fotw.info"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q844523",
+   "source_note": "Wikidata CC0 P856 official website: www.fotw.info",
+   "wikidata": "Q844523",
+   "candidate_rank": 1121,
+   "sitelinks": 37,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "scmp",
+   "name": "South China Morning Post",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "scmp.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1198574",
+   "source_note": "Wikidata CC0 P856 official website: www.scmp.com",
+   "wikidata": "Q1198574",
+   "candidate_rank": 1135,
+   "sitelinks": 34,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "smh",
+   "name": "The Sydney Morning Herald",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "smh.com.au"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q390216",
+   "source_note": "Wikidata CC0 P856 official website: www.smh.com.au",
+   "wikidata": "Q390216",
+   "candidate_rank": 1136,
+   "sitelinks": 34,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bcdb",
+   "name": "The Big Cartoon DataBase",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "bcdb.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1208798",
+   "source_note": "Wikidata CC0 P856 official website: www.bcdb.com",
+   "wikidata": "Q1208798",
+   "candidate_rank": 1153,
+   "sitelinks": 32,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "rsssf",
+   "name": "Rec.Sport.Soccer Statistics Foundation",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "rsssf.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q770608",
+   "source_note": "Wikidata CC0 P856 official website: rsssf.org",
+   "wikidata": "Q770608",
+   "candidate_rank": 1155,
+   "sitelinks": 32,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nymag",
+   "name": "New York",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "nymag.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1507987",
+   "source_note": "Wikidata CC0 P856 official website: nymag.com",
+   "wikidata": "Q1507987",
+   "candidate_rank": 1160,
+   "sitelinks": 31,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "lrt",
+   "name": "Lithuanian National Radio and Television",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "lrt.lt"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1550538",
+   "source_note": "Wikidata CC0 P856 official website: www.lrt.lt",
+   "wikidata": "Q1550538",
+   "candidate_rank": 1161,
+   "sitelinks": 31,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "163",
+   "name": "NetEase",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "163.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q196259",
+   "source_note": "Wikidata CC0 P856 official website: www.163.com",
+   "wikidata": "Q196259",
+   "candidate_rank": 1165,
+   "sitelinks": 30,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "openjfx",
+   "name": "JavaFX",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "openjfx.io"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2270514",
+   "source_note": "Wikidata CC0 P856 official website: openjfx.io",
+   "wikidata": "Q2270514",
+   "candidate_rank": 1180,
+   "sitelinks": 29,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "br",
+   "name": "Bayerischer Rundfunk",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "br.de"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q278637",
+   "source_note": "Wikidata CC0 P856 official website: www.br.de",
+   "wikidata": "Q278637",
+   "candidate_rank": 1186,
+   "sitelinks": 29,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "fsfe",
+   "name": "Free Software Foundation Europe",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "fsfe.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q899299",
+   "source_note": "Wikidata CC0 P856 official website: fsfe.org",
+   "wikidata": "Q899299",
+   "candidate_rank": 1200,
+   "sitelinks": 28,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "paleobiodb",
+   "name": "Paleobiology Database",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "paleobiodb.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q17073815",
+   "source_note": "Wikidata CC0 P856 official website: paleobiodb.org",
+   "wikidata": "Q17073815",
+   "candidate_rank": 1210,
+   "sitelinks": 27,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "hr",
+   "name": "Hessischer Rundfunk",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "hr.de"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q23565",
+   "source_note": "Wikidata CC0 P856 official website: www.hr.de",
+   "wikidata": "Q23565",
+   "candidate_rank": 1212,
+   "sitelinks": 27,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "us",
+   "name": "Enciclopedia Universal en Español",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "us.es"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1340088",
+   "source_note": "Wikidata CC0 P856 official website: enciclopedia.us.es",
+   "wikidata": "Q1340088",
+   "candidate_rank": 1216,
+   "sitelinks": 26,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "libsdl",
+   "name": "Simple DirectMedia Layer",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "libsdl.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q727439",
+   "source_note": "Wikidata CC0 P856 official website: www.libsdl.org",
+   "wikidata": "Q727439",
+   "candidate_rank": 1219,
+   "sitelinks": 26,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "iffr",
+   "name": "International Film Festival Rotterdam",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "iffr.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1666554",
+   "source_note": "Wikidata CC0 P856 official website: iffr.com",
+   "wikidata": "Q1666554",
+   "candidate_rank": 1230,
+   "sitelinks": 26,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "mpi-forum",
+   "name": "Message Passing Interface",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "mpi-forum.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q127879",
+   "source_note": "Wikidata CC0 P856 official website: www.mpi-forum.org",
+   "wikidata": "Q127879",
+   "candidate_rank": 1240,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "rg",
+   "name": "Rossiyskaya Gazeta",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "rg.ru"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1853433",
+   "source_note": "Wikidata CC0 P856 official website: www.rg.ru",
+   "wikidata": "Q1853433",
+   "candidate_rank": 1242,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "hbr",
+   "name": "Harvard Business Review",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "hbr.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q277351",
+   "source_note": "Wikidata CC0 P856 official website: hbr.org",
+   "wikidata": "Q277351",
+   "candidate_rank": 1244,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "kmdb",
+   "name": "Korean Movie Database",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "kmdb.or.kr"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q486744",
+   "source_note": "Wikidata CC0 P856 official website: www.kmdb.or.kr",
+   "wikidata": "Q486744",
+   "candidate_rank": 1245,
+   "sitelinks": 25,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "dbatley",
+   "name": "Deletionpedia",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "dbatley.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q203237",
+   "source_note": "Wikidata CC0 P856 official website: deletionpedia.dbatley.com",
+   "wikidata": "Q203237",
+   "candidate_rank": 1271,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "snl",
+   "name": "Great Norwegian Encyclopedia",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "snl.no"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q746368",
+   "source_note": "Wikidata CC0 P856 official website: snl.no",
+   "wikidata": "Q746368",
+   "candidate_rank": 1275,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "occrp",
+   "name": "Organized Crime and Corruption Reporting Project",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "occrp.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q7102061",
+   "source_note": "Wikidata CC0 P856 official website: www.occrp.org",
+   "wikidata": "Q7102061",
+   "candidate_rank": 1283,
+   "sitelinks": 23,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "syosetu",
+   "name": "Shōsetsuka ni Narō",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "syosetu.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3281156",
+   "source_note": "Wikidata CC0 P856 official website: syosetu.com",
+   "wikidata": "Q3281156",
+   "candidate_rank": 1288,
+   "sitelinks": 22,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "netlib",
+   "name": "LINPACK",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "netlib.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q609010",
+   "source_note": "Wikidata CC0 P856 official website: www.netlib.org",
+   "wikidata": "Q609010",
+   "candidate_rank": 1302,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "moypolk",
+   "name": "Immortal Regiment",
+   "category": "collaboration",
+   "subcategory": "social-networking",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "moypolk.ru"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q19850419",
+   "source_note": "Wikidata CC0 P856 official website: moypolk.ru",
+   "wikidata": "Q19850419",
+   "candidate_rank": 1312,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ptinews",
+   "name": "Press Trust of India",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ptinews.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q268897",
+   "source_note": "Wikidata CC0 P856 official website: www.ptinews.com",
+   "wikidata": "Q268897",
+   "candidate_rank": 1314,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "rbth",
+   "name": "Russia Beyond",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "rbth.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q4048611",
+   "source_note": "Wikidata CC0 P856 official website: www.rbth.com",
+   "wikidata": "Q4048611",
+   "candidate_rank": 1315,
+   "sitelinks": 21,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "videolan",
+   "name": "x264",
+   "category": "media",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "videolan.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q284875",
+   "source_note": "Wikidata CC0 P856 official website: www.videolan.org",
+   "wikidata": "Q284875",
+   "candidate_rank": 1323,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nbn",
+   "name": "National Biodiversity Network",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "nbn.org.uk"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q6970988",
+   "source_note": "Wikidata CC0 P856 official website: www.nbn.org.uk",
+   "wikidata": "Q6970988",
+   "candidate_rank": 1339,
+   "sitelinks": 20,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "uol",
+   "name": "Folha de S. Paulo",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "uol.com.br"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1435379",
+   "source_note": "Wikidata CC0 P856 official website: folha.uol.com.br",
+   "wikidata": "Q1435379",
+   "candidate_rank": 1347,
+   "sitelinks": 19,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "liballeg",
+   "name": "Allegro",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "liballeg.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1503415",
+   "source_note": "Wikidata CC0 P856 official website: liballeg.org",
+   "wikidata": "Q1503415",
+   "candidate_rank": 1372,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ton",
+   "name": "The Open Network",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ton.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q53252126",
+   "source_note": "Wikidata CC0 P856 official website: ton.org",
+   "wikidata": "Q53252126",
+   "candidate_rank": 1386,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "jrsoftware",
+   "name": "Inno Setup",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "jrsoftware.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q744702",
+   "source_note": "Wikidata CC0 P856 official website: jrsoftware.org",
+   "wikidata": "Q744702",
+   "candidate_rank": 1394,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nmbe",
+   "name": "World Spider Catalog",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "nmbe.ch"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3570011",
+   "source_note": "Wikidata CC0 P856 official website: wsc.nmbe.ch",
+   "wikidata": "Q3570011",
+   "candidate_rank": 1399,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "aap",
+   "name": "American Academy of Pediatrics",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "aap.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q463305",
+   "source_note": "Wikidata CC0 P856 official website: www.aap.org",
+   "wikidata": "Q463305",
+   "candidate_rank": 1401,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bayarea",
+   "name": "The Mercury News",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "bayarea.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q575741",
+   "source_note": "Wikidata CC0 P856 official website: www.bayarea.com",
+   "wikidata": "Q575741",
+   "candidate_rank": 1402,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "oann",
+   "name": "One America News Network",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "oann.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q17107494",
+   "source_note": "Wikidata CC0 P856 official website: www.oann.com",
+   "wikidata": "Q17107494",
+   "candidate_rank": 1405,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "explosm",
+   "name": "Cyanide and Happiness",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "explosm.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2081043",
+   "source_note": "Wikidata CC0 P856 official website: explosm.net",
+   "wikidata": "Q2081043",
+   "candidate_rank": 1411,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ycombinator",
+   "name": "Hacker News",
+   "category": "collaboration",
+   "subcategory": "social-networking",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ycombinator.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q686797",
+   "source_note": "Wikidata CC0 P856 official website: news.ycombinator.com",
+   "wikidata": "Q686797",
+   "candidate_rank": 1420,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "orgullboig",
+   "name": "Mad Pride",
+   "category": "collaboration",
+   "subcategory": "social-networking",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "orgullboig.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q9293042",
+   "source_note": "Wikidata CC0 P856 official website: orgullboig.org",
+   "wikidata": "Q9293042",
+   "candidate_rank": 1421,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "foldoc",
+   "name": "Free On-line Dictionary of Computing",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "foldoc.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q960379",
+   "source_note": "Wikidata CC0 P856 official website: foldoc.org",
+   "wikidata": "Q960379",
+   "candidate_rank": 1422,
+   "sitelinks": 18,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "oetiker",
+   "name": "RRDtool",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "oetiker.ch"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1049812",
+   "source_note": "Wikidata CC0 P856 official website: oss.oetiker.ch",
+   "wikidata": "Q1049812",
+   "candidate_rank": 1425,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "pixar",
+   "name": "RenderMan",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "pixar.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q855971",
+   "source_note": "Wikidata CC0 P856 official website: renderman.pixar.com",
+   "wikidata": "Q855971",
+   "candidate_rank": 1444,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "wals",
+   "name": "World Atlas of Language Structures",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "wals.info"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1133223",
+   "source_note": "Wikidata CC0 P856 official website: wals.info",
+   "wikidata": "Q1133223",
+   "candidate_rank": 1454,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cartoonnetwork",
+   "name": "Mighty Magiswords",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "cartoonnetwork.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q19954598",
+   "source_note": "Wikidata CC0 P856 official website: www.cartoonnetwork.com",
+   "wikidata": "Q19954598",
+   "candidate_rank": 1469,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "yp",
+   "name": "qmail",
+   "category": "collaboration",
+   "subcategory": "instant-messaging",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "yp.to"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q284108",
+   "source_note": "Wikidata CC0 P856 official website: cr.yp.to",
+   "wikidata": "Q284108",
+   "candidate_rank": 1474,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "biletbayi",
+   "name": "Skyscanner",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "biletbayi.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1319169",
+   "source_note": "Wikidata CC0 P856 official website: www.biletbayi.com",
+   "wikidata": "Q1319169",
+   "candidate_rank": 1479,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "tuxera",
+   "name": "NTFS-3G",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "tuxera.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1479432",
+   "source_note": "Wikidata CC0 P856 official website: www.tuxera.com",
+   "wikidata": "Q1479432",
+   "candidate_rank": 1485,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "slsknet",
+   "name": "Soulseek",
+   "category": "business-systems",
+   "subcategory": "storage-backup",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "slsknet.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q928074",
+   "source_note": "Wikidata CC0 P856 official website: www.slsknet.org",
+   "wikidata": "Q928074",
+   "candidate_rank": 1524,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ceskatelevize",
+   "name": "ČT24",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ceskatelevize.cz"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3593801",
+   "source_note": "Wikidata CC0 P856 official website: ct24.ceskatelevize.cz",
+   "wikidata": "Q3593801",
+   "candidate_rank": 1537,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "myhappymoments",
+   "name": "Simon's Cat",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "myhappymoments.co.uk"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1434624",
+   "source_note": "Wikidata CC0 P856 official website: www.myhappymoments.co.uk",
+   "wikidata": "Q1434624",
+   "candidate_rank": 1552,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "beckyandjoes",
+   "name": "Don't Hug Me I'm Scared",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "beckyandjoes.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q17011054",
+   "source_note": "Wikidata CC0 P856 official website: beckyandjoes.com",
+   "wikidata": "Q17011054",
+   "candidate_rank": 1553,
+   "sitelinks": 17,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "guardianproject",
+   "name": "Orbot",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "guardianproject.info"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q16927751",
+   "source_note": "Wikidata CC0 P856 official website: guardianproject.info",
+   "wikidata": "Q16927751",
+   "candidate_rank": 1561,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "list",
+   "name": "GNU Mailman project",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "list.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q937466",
+   "source_note": "Wikidata CC0 P856 official website: www.list.org",
+   "wikidata": "Q937466",
+   "candidate_rank": 1579,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "appeon",
+   "name": "PowerBuilder",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "appeon.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q580882",
+   "source_note": "Wikidata CC0 P856 official website: www.appeon.com",
+   "wikidata": "Q580882",
+   "candidate_rank": 1582,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cern",
+   "name": "LHC@home",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "cern.ch"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q688523",
+   "source_note": "Wikidata CC0 P856 official website: lhcathome.cern.ch",
+   "wikidata": "Q688523",
+   "candidate_rank": 1594,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "abc",
+   "name": "Triple J",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "abc.net.au"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1522899",
+   "source_note": "Wikidata CC0 P856 official website: www.abc.net.au",
+   "wikidata": "Q1522899",
+   "candidate_rank": 1603,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "tukaani",
+   "name": "XZ Utils backdoor",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "tukaani.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q125219823",
+   "source_note": "Wikidata CC0 P856 official website: tukaani.org",
+   "wikidata": "Q125219823",
+   "candidate_rank": 1623,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "emmabuntus",
+   "name": "Emmabuntüs",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "emmabuntus.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q13408126",
+   "source_note": "Wikidata CC0 P856 official website: emmabuntus.org",
+   "wikidata": "Q13408126",
+   "candidate_rank": 1624,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "coreos",
+   "name": "Container Linux",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "coreos.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q15984850",
+   "source_note": "Wikidata CC0 P856 official website: coreos.com",
+   "wikidata": "Q15984850",
+   "candidate_rank": 1633,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cgsecurity",
+   "name": "TestDisk",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "cgsecurity.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q928564",
+   "source_note": "Wikidata CC0 P856 official website: www.cgsecurity.org",
+   "wikidata": "Q928564",
+   "candidate_rank": 1638,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nsnam",
+   "name": "ns-3",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "nsnam.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q577400",
+   "source_note": "Wikidata CC0 P856 official website: www.nsnam.org",
+   "wikidata": "Q577400",
+   "candidate_rank": 1659,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "glennmcc",
+   "name": "Arachne",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "glennmcc.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q624553",
+   "source_note": "Wikidata CC0 P856 official website: www.glennmcc.org",
+   "wikidata": "Q624553",
+   "candidate_rank": 1662,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "islamansiklopedisi",
+   "name": "TDV Islamic Encyclopedia",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "islamansiklopedisi.org.tr"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q21527102",
+   "source_note": "Wikidata CC0 P856 official website: islamansiklopedisi.org.tr",
+   "wikidata": "Q21527102",
+   "candidate_rank": 1677,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "publico",
+   "name": "Público",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "publico.pt"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1757086",
+   "source_note": "Wikidata CC0 P856 official website: www.publico.pt",
+   "wikidata": "Q1757086",
+   "candidate_rank": 1679,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "aap-com-au",
+   "name": "Australian Associated Press",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "aap.com.au"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q83728",
+   "source_note": "Wikidata CC0 P856 official website: aap.com.au",
+   "wikidata": "Q83728",
+   "candidate_rank": 1680,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cpbl",
+   "name": "Chinese Professional Baseball League",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "cpbl.com.tw"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q717976",
+   "source_note": "Wikidata CC0 P856 official website: www.cpbl.com.tw",
+   "wikidata": "Q717976",
+   "candidate_rank": 1702,
+   "sitelinks": 16,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "libc",
+   "name": "musl",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "libc.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q6942849",
+   "source_note": "Wikidata CC0 P856 official website: musl.libc.org",
+   "wikidata": "Q6942849",
+   "candidate_rank": 1720,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "mono-project",
+   "name": "Moonlight",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "mono-project.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q931821",
+   "source_note": "Wikidata CC0 P856 official website: www.mono-project.com",
+   "wikidata": "Q931821",
+   "candidate_rank": 1726,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "hex-rays",
+   "name": "Interactive Disassembler",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "hex-rays.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q657224",
+   "source_note": "Wikidata CC0 P856 official website: hex-rays.com",
+   "wikidata": "Q657224",
+   "candidate_rank": 1729,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "amd",
+   "name": "FreeSync",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "amd.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q19878318",
+   "source_note": "Wikidata CC0 P856 official website: www.amd.com",
+   "wikidata": "Q19878318",
+   "candidate_rank": 1730,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "serialport",
+   "name": "Archie",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "serialport.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q633739",
+   "source_note": "Wikidata CC0 P856 official website: archie.serialport.org",
+   "wikidata": "Q633739",
+   "candidate_rank": 1731,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "amanda",
+   "name": "Advanced Maryland Automatic Network Disk Archiver",
+   "category": "business-systems",
+   "subcategory": "storage-backup",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "amanda.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q379620",
+   "source_note": "Wikidata CC0 P856 official website: www.amanda.org",
+   "wikidata": "Q379620",
+   "candidate_rank": 1742,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "fsf",
+   "name": "Free Software Directory",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "fsf.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2470288",
+   "source_note": "Wikidata CC0 P856 official website: directory.fsf.org",
+   "wikidata": "Q2470288",
+   "candidate_rank": 1759,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "foundry",
+   "name": "Nuke",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "foundry.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q473071",
+   "source_note": "Wikidata CC0 P856 official website: www.foundry.com",
+   "wikidata": "Q473071",
+   "candidate_rank": 1769,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "fenrir-inc",
+   "name": "Sleipnir",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "fenrir-inc.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1196833",
+   "source_note": "Wikidata CC0 P856 official website: www.fenrir-inc.com",
+   "wikidata": "Q1196833",
+   "candidate_rank": 1777,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "alicebot",
+   "name": "Artificial Linguistic Internet Computer Entity",
+   "category": "collaboration",
+   "subcategory": "instant-messaging",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "alicebot.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q278333",
+   "source_note": "Wikidata CC0 P856 official website: www.alicebot.org",
+   "wikidata": "Q278333",
+   "candidate_rank": 1779,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "protobuf",
+   "name": "Protocol Buffers",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "protobuf.dev"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1645574",
+   "source_note": "Wikidata CC0 P856 official website: protobuf.dev",
+   "wikidata": "Q1645574",
+   "candidate_rank": 1780,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "steelskies",
+   "name": "Cover Flow",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "steelskies.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1138099",
+   "source_note": "Wikidata CC0 P856 official website: www.steelskies.com",
+   "wikidata": "Q1138099",
+   "candidate_rank": 1788,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "xm1math",
+   "name": "Texmaker",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "xm1math.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1616139",
+   "source_note": "Wikidata CC0 P856 official website: www.xm1math.net",
+   "wikidata": "Q1616139",
+   "candidate_rank": 1798,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ap-i",
+   "name": "Cartes du Ciel",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ap-i.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1851766",
+   "source_note": "Wikidata CC0 P856 official website: ap-i.net",
+   "wikidata": "Q1851766",
+   "candidate_rank": 1801,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ul",
+   "name": "3DMark",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ul.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q229414",
+   "source_note": "Wikidata CC0 P856 official website: benchmarks.ul.com",
+   "wikidata": "Q229414",
+   "candidate_rank": 1806,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "pj64-emu",
+   "name": "Project64",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "pj64-emu.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2318870",
+   "source_note": "Wikidata CC0 P856 official website: www.pj64-emu.com",
+   "wikidata": "Q2318870",
+   "candidate_rank": 1807,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "qip",
+   "name": "Quiet Internet Pager",
+   "category": "collaboration",
+   "subcategory": "instant-messaging",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "qip.ru"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q34000",
+   "source_note": "Wikidata CC0 P856 official website: qip.ru",
+   "wikidata": "Q34000",
+   "candidate_rank": 1814,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "joewing",
+   "name": "JWM",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "joewing.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q679212",
+   "source_note": "Wikidata CC0 P856 official website: joewing.net",
+   "wikidata": "Q679212",
+   "candidate_rank": 1819,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "estadao",
+   "name": "O Estado de S. Paulo",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "estadao.com.br"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1628345",
+   "source_note": "Wikidata CC0 P856 official website: www.estadao.com.br",
+   "wikidata": "Q1628345",
+   "candidate_rank": 1837,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "biodiversity",
+   "name": "Australian Faunal Directory",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "biodiversity.org.au"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2784883",
+   "source_note": "Wikidata CC0 P856 official website: biodiversity.org.au",
+   "wikidata": "Q2784883",
+   "candidate_rank": 1844,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "hkmdb",
+   "name": "Hong Kong Movie DataBase",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "hkmdb.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q5369036",
+   "source_note": "Wikidata CC0 P856 official website: www.hkmdb.com",
+   "wikidata": "Q5369036",
+   "candidate_rank": 1847,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ltn",
+   "name": "Liberty Times",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ltn.com.tw"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q697462",
+   "source_note": "Wikidata CC0 P856 official website: www.ltn.com.tw",
+   "wikidata": "Q697462",
+   "candidate_rank": 1850,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "7kanal",
+   "name": "Arutz Sheva",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "7kanal.co.il"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q716861",
+   "source_note": "Wikidata CC0 P856 official website: www.7kanal.co.il",
+   "wikidata": "Q716861",
+   "candidate_rank": 1851,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "pgdp",
+   "name": "Distributed Proofreaders",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "pgdp.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q906319",
+   "source_note": "Wikidata CC0 P856 official website: www.pgdp.net",
+   "wikidata": "Q906319",
+   "candidate_rank": 1857,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "fat-pie",
+   "name": "Salad Fingers",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "fat-pie.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1194037",
+   "source_note": "Wikidata CC0 P856 official website: www.fat-pie.com",
+   "wikidata": "Q1194037",
+   "candidate_rank": 1858,
+   "sitelinks": 15,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "gmplib",
+   "name": "GNU Multiple Precision Arithmetic Library",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "gmplib.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1205818",
+   "source_note": "Wikidata CC0 P856 official website: gmplib.org",
+   "wikidata": "Q1205818",
+   "candidate_rank": 1861,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "chartwellyorke",
+   "name": "Derive",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "chartwellyorke.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1200212",
+   "source_note": "Wikidata CC0 P856 official website: www.chartwellyorke.com",
+   "wikidata": "Q1200212",
+   "candidate_rank": 1895,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "revenera",
+   "name": "InstallShield",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "revenera.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1193296",
+   "source_note": "Wikidata CC0 P856 official website: www.revenera.com",
+   "wikidata": "Q1193296",
+   "candidate_rank": 1915,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "lezhin",
+   "name": "Killing Stalking",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "lezhin.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q39069885",
+   "source_note": "Wikidata CC0 P856 official website: www.lezhin.com",
+   "wikidata": "Q39069885",
+   "candidate_rank": 1917,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "eff",
+   "name": "HTTPS Everywhere",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "eff.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1566093",
+   "source_note": "Wikidata CC0 P856 official website: www.eff.org",
+   "wikidata": "Q1566093",
+   "candidate_rank": 1927,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "sfu",
+   "name": "Open Journal Systems",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "sfu.ca"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1710177",
+   "source_note": "Wikidata CC0 P856 official website: pkp.sfu.ca",
+   "wikidata": "Q1710177",
+   "candidate_rank": 1929,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bellard",
+   "name": "Tiny C Compiler",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "bellard.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1730569",
+   "source_note": "Wikidata CC0 P856 official website: bellard.org",
+   "wikidata": "Q1730569",
+   "candidate_rank": 1936,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "uu",
+   "name": "Scandinavian Runic-text Database",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "uu.se"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q492230",
+   "source_note": "Wikidata CC0 P856 official website: nordiska.uu.se",
+   "wikidata": "Q492230",
+   "candidate_rank": 2003,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ipm",
+   "name": "Imperial Porcelain Factory",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ipm.ru"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1303887",
+   "source_note": "Wikidata CC0 P856 official website: www.ipm.ru",
+   "wikidata": "Q1303887",
+   "candidate_rank": 2010,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "pfaf",
+   "name": "Plants for a Future",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "pfaf.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q246234",
+   "source_note": "Wikidata CC0 P856 official website: pfaf.org",
+   "wikidata": "Q246234",
+   "candidate_rank": 2014,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "russiabasket",
+   "name": "Russian Basketball Federation",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "russiabasket.ru"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2733817",
+   "source_note": "Wikidata CC0 P856 official website: russiabasket.ru",
+   "wikidata": "Q2733817",
+   "candidate_rank": 2015,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "aborsionline",
+   "name": "Women on Web",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "aborsionline.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3055469",
+   "source_note": "Wikidata CC0 P856 official website: aborsionline.org",
+   "wikidata": "Q3055469",
+   "candidate_rank": 2017,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "tldp",
+   "name": "Linux Documentation Project",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "tldp.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q6137555",
+   "source_note": "Wikidata CC0 P856 official website: www.tldp.org",
+   "wikidata": "Q6137555",
+   "candidate_rank": 2021,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "hochuzhit",
+   "name": "I Want to Live",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "hochuzhit.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q114799777",
+   "source_note": "Wikidata CC0 P856 official website: hochuzhit.com",
+   "wikidata": "Q114799777",
+   "candidate_rank": 2030,
+   "sitelinks": 14,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "eleuther",
+   "name": "GPT-J",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "eleuther.ai"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q116937684",
+   "source_note": "Wikidata CC0 P856 official website: 6b.eleuther.ai",
+   "wikidata": "Q116937684",
+   "candidate_rank": 2036,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "thekelleys",
+   "name": "dnsmasq",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "thekelleys.org.uk"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2613088",
+   "source_note": "Wikidata CC0 P856 official website: thekelleys.org.uk",
+   "wikidata": "Q2613088",
+   "candidate_rank": 2049,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "sil",
+   "name": "Graphite",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "sil.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1027984",
+   "source_note": "Wikidata CC0 P856 official website: graphite.sil.org",
+   "wikidata": "Q1027984",
+   "candidate_rank": 2056,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "libregamewiki",
+   "name": "OpenSceneGraph",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "libregamewiki.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q617329",
+   "source_note": "Wikidata CC0 P856 official website: libregamewiki.org",
+   "wikidata": "Q617329",
+   "candidate_rank": 2058,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "soft8soft",
+   "name": "Verge3D",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "soft8soft.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q48815741",
+   "source_note": "Wikidata CC0 P856 official website: www.soft8soft.com",
+   "wikidata": "Q48815741",
+   "candidate_rank": 2065,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ruby-lang",
+   "name": "YARV",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ruby-lang.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2620062",
+   "source_note": "Wikidata CC0 P856 official website: www.ruby-lang.org",
+   "wikidata": "Q2620062",
+   "candidate_rank": 2071,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cat-v",
+   "name": "acme",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "cat-v.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q341970",
+   "source_note": "Wikidata CC0 P856 official website: acme.cat-v.org",
+   "wikidata": "Q341970",
+   "candidate_rank": 2082,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "radgametools",
+   "name": "Bink Video",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "radgametools.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q863883",
+   "source_note": "Wikidata CC0 P856 official website: www.radgametools.com",
+   "wikidata": "Q863883",
+   "candidate_rank": 2103,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "daz3d",
+   "name": "Bryce",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "daz3d.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q995200",
+   "source_note": "Wikidata CC0 P856 official website: www.daz3d.com",
+   "wikidata": "Q995200",
+   "candidate_rank": 2113,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ssw",
+   "name": "Megpoid",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ssw.co.jp"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q557254",
+   "source_note": "Wikidata CC0 P856 official website: www.ssw.co.jp",
+   "wikidata": "Q557254",
+   "candidate_rank": 2116,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "plantation-productions",
+   "name": "High Level Assembly",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "plantation-productions.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2630324",
+   "source_note": "Wikidata CC0 P856 official website: www.plantation-productions.com",
+   "wikidata": "Q2630324",
+   "candidate_rank": 2134,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "osdn",
+   "name": "Kazehakase",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "osdn.jp"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1326035",
+   "source_note": "Wikidata CC0 P856 official website: osdn.jp",
+   "wikidata": "Q1326035",
+   "candidate_rank": 2142,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "lwks",
+   "name": "Lightworks",
+   "category": "media",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "lwks.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1029201",
+   "source_note": "Wikidata CC0 P856 official website: www.lwks.com",
+   "wikidata": "Q1029201",
+   "candidate_rank": 2144,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "es",
+   "name": "iperf",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "es.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1067122",
+   "source_note": "Wikidata CC0 P856 official website: software.es.net",
+   "wikidata": "Q1067122",
+   "candidate_rank": 2146,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "systemax",
+   "name": "SAI",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "systemax.jp"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1139967",
+   "source_note": "Wikidata CC0 P856 official website: www.systemax.jp",
+   "wikidata": "Q1139967",
+   "candidate_rank": 2147,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "apana",
+   "name": "Debian Almquist shell",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "apana.org.au"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1144911",
+   "source_note": "Wikidata CC0 P856 official website: gondor.apana.org.au",
+   "wikidata": "Q1144911",
+   "candidate_rank": 2148,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "jma",
+   "name": "Earthquake Early Warning",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "jma.go.jp"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1281628",
+   "source_note": "Wikidata CC0 P856 official website: www.data.jma.go.jp",
+   "wikidata": "Q1281628",
+   "candidate_rank": 2154,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "eggheads",
+   "name": "Eggdrop",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "eggheads.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1297422",
+   "source_note": "Wikidata CC0 P856 official website: www.eggheads.org",
+   "wikidata": "Q1297422",
+   "candidate_rank": 2155,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "c2",
+   "name": "Portland Pattern Repository",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "c2.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1637453",
+   "source_note": "Wikidata CC0 P856 official website: c2.com",
+   "wikidata": "Q1637453",
+   "candidate_rank": 2161,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "jogamp",
+   "name": "JOGL",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "jogamp.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1676666",
+   "source_note": "Wikidata CC0 P856 official website: jogamp.org",
+   "wikidata": "Q1676666",
+   "candidate_rank": 2162,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ffmpeg",
+   "name": "libavcodec",
+   "category": "media",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ffmpeg.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q217647",
+   "source_note": "Wikidata CC0 P856 official website: ffmpeg.org",
+   "wikidata": "Q217647",
+   "candidate_rank": 2179,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "srcbox",
+   "name": "GKrellM",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "srcbox.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q251331",
+   "source_note": "Wikidata CC0 P856 official website: gkrellm.srcbox.net",
+   "wikidata": "Q251331",
+   "candidate_rank": 2182,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "in-ulm",
+   "name": "Almquist shell",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "in-ulm.de"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2641209",
+   "source_note": "Wikidata CC0 P856 official website: www.in-ulm.de",
+   "wikidata": "Q2641209",
+   "candidate_rank": 2184,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "joeyh",
+   "name": "alien",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "joeyh.name"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q284436",
+   "source_note": "Wikidata CC0 P856 official website: joeyh.name",
+   "wikidata": "Q284436",
+   "candidate_rank": 2186,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "crummy",
+   "name": "Beautiful Soup",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "crummy.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2893296",
+   "source_note": "Wikidata CC0 P856 official website: www.crummy.com",
+   "wikidata": "Q2893296",
+   "candidate_rank": 2189,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "muenchen",
+   "name": "LiMux",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "muenchen.de"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q442744",
+   "source_note": "Wikidata CC0 P856 official website: www.muenchen.de",
+   "wikidata": "Q442744",
+   "candidate_rank": 2192,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nu2",
+   "name": "BartPE",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "nu2.nu"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q773342",
+   "source_note": "Wikidata CC0 P856 official website: www.nu2.nu",
+   "wikidata": "Q773342",
+   "candidate_rank": 2201,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "playok",
+   "name": "Kurnik",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "playok.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q972637",
+   "source_note": "Wikidata CC0 P856 official website: www.playok.com",
+   "wikidata": "Q972637",
+   "candidate_rank": 2205,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "lenciclopedia",
+   "name": "L'Enciclopèdia in Valencian",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "lenciclopedia.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q97269489",
+   "source_note": "Wikidata CC0 P856 official website: www.lenciclopedia.org",
+   "wikidata": "Q97269489",
+   "candidate_rank": 2206,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "dbnl",
+   "name": "Digital Library for Dutch Literature",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "dbnl.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2451336",
+   "source_note": "Wikidata CC0 P856 official website: www.dbnl.org",
+   "wikidata": "Q2451336",
+   "candidate_rank": 2211,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "journaldunet",
+   "name": "JDN Viadeo",
+   "category": "collaboration",
+   "subcategory": "social-networking",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "journaldunet.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q181592",
+   "source_note": "Wikidata CC0 P856 official website: viadeo.journaldunet.com",
+   "wikidata": "Q181592",
+   "candidate_rank": 2216,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "usmagazine",
+   "name": "Us Weekly",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "usmagazine.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q549578",
+   "source_note": "Wikidata CC0 P856 official website: www.usmagazine.com",
+   "wikidata": "Q549578",
+   "candidate_rank": 2219,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "lby3",
+   "name": "Women in Refrigerators",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "lby3.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q8031485",
+   "source_note": "Wikidata CC0 P856 official website: lby3.com",
+   "wikidata": "Q8031485",
+   "candidate_rank": 2220,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "excelsior",
+   "name": "Excélsior",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "excelsior.com.mx"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3347987",
+   "source_note": "Wikidata CC0 P856 official website: www.excelsior.com.mx",
+   "wikidata": "Q3347987",
+   "candidate_rank": 2222,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "2chan",
+   "name": "Futaba Channel",
+   "category": "media",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "2chan.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1191246",
+   "source_note": "Wikidata CC0 P856 official website: www.2chan.net",
+   "wikidata": "Q1191246",
+   "candidate_rank": 2227,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "wga",
+   "name": "Web Gallery of Art",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "wga.hu"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1464063",
+   "source_note": "Wikidata CC0 P856 official website: www.wga.hu",
+   "wikidata": "Q1464063",
+   "candidate_rank": 2231,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "iiif",
+   "name": "International Image Interoperability Framework",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "iiif.io"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q22682088",
+   "source_note": "Wikidata CC0 P856 official website: iiif.io",
+   "wikidata": "Q22682088",
+   "candidate_rank": 2238,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bertilow",
+   "name": "Plena Manlibro de Esperanta Gramatiko (website)",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "bertilow.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3906638",
+   "source_note": "Wikidata CC0 P856 official website: bertilow.com",
+   "wikidata": "Q3906638",
+   "candidate_rank": 2239,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "mobot",
+   "name": "Angiosperm Phylogeny Website",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "mobot.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q600295",
+   "source_note": "Wikidata CC0 P856 official website: www.mobot.org",
+   "wikidata": "Q600295",
+   "candidate_rank": 2241,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nebula",
+   "name": "Jet Lag: The Game",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "nebula.tv"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q115366854",
+   "source_note": "Wikidata CC0 P856 official website: go.nebula.tv",
+   "wikidata": "Q115366854",
+   "candidate_rank": 2248,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "mf0",
+   "name": "Mr. Freeman",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "mf0.me"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1635748",
+   "source_note": "Wikidata CC0 P856 official website: mf0.me",
+   "wikidata": "Q1635748",
+   "candidate_rank": 2249,
+   "sitelinks": 13,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "sraoss",
+   "name": "Sylpheed",
+   "category": "collaboration",
+   "subcategory": "email",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "sraoss.jp"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2141006",
+   "source_note": "Wikidata CC0 P856 official website: sylpheed.sraoss.jp",
+   "wikidata": "Q2141006",
+   "candidate_rank": 2261,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ethz",
+   "name": "Oberon",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ethz.ch"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1999119",
+   "source_note": "Wikidata CC0 P856 official website: www.oberon.ethz.ch",
+   "wikidata": "Q1999119",
+   "candidate_rank": 2264,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bfl",
+   "name": "Flux",
+   "category": "media",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "bfl.ai"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q128801793",
+   "source_note": "Wikidata CC0 P856 official website: bfl.ai",
+   "wikidata": "Q128801793",
+   "candidate_rank": 2271,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "uvic",
+   "name": "Hot Potatoes",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "uvic.ca"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1630722",
+   "source_note": "Wikidata CC0 P856 official website: hotpot.uvic.ca",
+   "wikidata": "Q1630722",
+   "candidate_rank": 2279,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cebix",
+   "name": "SheepShaver",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "cebix.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1746001",
+   "source_note": "Wikidata CC0 P856 official website: sheepshaver.cebix.net",
+   "wikidata": "Q1746001",
+   "candidate_rank": 2282,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "tidyverse",
+   "name": "ggplot2",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "tidyverse.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q326489",
+   "source_note": "Wikidata CC0 P856 official website: ggplot2.tidyverse.org",
+   "wikidata": "Q326489",
+   "candidate_rank": 2283,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ijg",
+   "name": "libjpeg",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ijg.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q131741",
+   "source_note": "Wikidata CC0 P856 official website: www.ijg.org",
+   "wikidata": "Q131741",
+   "candidate_rank": 2286,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "edgewall",
+   "name": "Trac",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "edgewall.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q765385",
+   "source_note": "Wikidata CC0 P856 official website: trac.edgewall.org",
+   "wikidata": "Q765385",
+   "candidate_rank": 2301,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "xquartz",
+   "name": "X11.app",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "xquartz.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q617214",
+   "source_note": "Wikidata CC0 P856 official website: www.xquartz.org",
+   "wikidata": "Q617214",
+   "candidate_rank": 2308,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ritlabs",
+   "name": "The Bat!",
+   "category": "collaboration",
+   "subcategory": "email",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ritlabs.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1634279",
+   "source_note": "Wikidata CC0 P856 official website: www.ritlabs.com",
+   "wikidata": "Q1634279",
+   "candidate_rank": 2314,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "softwarelibre",
+   "name": "Canaima",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "softwarelibre.gob.ve"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1032439",
+   "source_note": "Wikidata CC0 P856 official website: canaima.softwarelibre.gob.ve",
+   "wikidata": "Q1032439",
+   "candidate_rank": 2316,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "delorie",
+   "name": "DJGPP",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "delorie.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q780172",
+   "source_note": "Wikidata CC0 P856 official website: www.delorie.com",
+   "wikidata": "Q780172",
+   "candidate_rank": 2322,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "pkware",
+   "name": "PKZIP",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "pkware.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1602149",
+   "source_note": "Wikidata CC0 P856 official website: www.pkware.com",
+   "wikidata": "Q1602149",
+   "candidate_rank": 2327,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bytedance",
+   "name": "Seedance 2.0",
+   "category": "media",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "bytedance.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q138274786",
+   "source_note": "Wikidata CC0 P856 official website: seed.bytedance.com",
+   "wikidata": "Q138274786",
+   "candidate_rank": 2328,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "dongtaiwang",
+   "name": "Freegate",
+   "category": "networking",
+   "subcategory": "proxy",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "dongtaiwang.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3238076",
+   "source_note": "Wikidata CC0 P856 official website: www.dongtaiwang.com",
+   "wikidata": "Q3238076",
+   "candidate_rank": 2329,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "planetside",
+   "name": "Terragen",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "planetside.co.uk"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q590332",
+   "source_note": "Wikidata CC0 P856 official website: planetside.co.uk",
+   "wikidata": "Q590332",
+   "candidate_rank": 2330,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "chalmers",
+   "name": "Agda",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "chalmers.se"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q20479",
+   "source_note": "Wikidata CC0 P856 official website: wiki.portal.chalmers.se",
+   "wikidata": "Q20479",
+   "candidate_rank": 2341,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "tiangolo",
+   "name": "FastAPI",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "tiangolo.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q101119404",
+   "source_note": "Wikidata CC0 P856 official website: fastapi.tiangolo.com",
+   "wikidata": "Q101119404",
+   "candidate_rank": 2348,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "perl",
+   "name": "Catalyst",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "perl.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1050338",
+   "source_note": "Wikidata CC0 P856 official website: catalyst.perl.org",
+   "wikidata": "Q1050338",
+   "candidate_rank": 2349,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "jelurida",
+   "name": "Nxt",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "jelurida.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q15916990",
+   "source_note": "Wikidata CC0 P856 official website: www.jelurida.com",
+   "wikidata": "Q15916990",
+   "candidate_rank": 2370,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "filesystems",
+   "name": "UnionFS",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "filesystems.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1886171",
+   "source_note": "Wikidata CC0 P856 official website: unionfs.filesystems.org",
+   "wikidata": "Q1886171",
+   "candidate_rank": 2379,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "einval",
+   "name": "Jigdo",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "einval.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1950744",
+   "source_note": "Wikidata CC0 P856 official website: www.einval.com",
+   "wikidata": "Q1950744",
+   "candidate_rank": 2381,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "staticfreesoft",
+   "name": "Electric",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "staticfreesoft.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1970665",
+   "source_note": "Wikidata CC0 P856 official website: www.staticfreesoft.com",
+   "wikidata": "Q1970665",
+   "candidate_rank": 2382,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ode",
+   "name": "Open Dynamics Engine",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ode.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2025673",
+   "source_note": "Wikidata CC0 P856 official website: www.ode.org",
+   "wikidata": "Q2025673",
+   "candidate_rank": 2384,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "linuxtv",
+   "name": "Video4Linux",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "linuxtv.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2297950",
+   "source_note": "Wikidata CC0 P856 official website: www.linuxtv.org",
+   "wikidata": "Q2297950",
+   "candidate_rank": 2386,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "portswigger",
+   "name": "Burp Suite",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "portswigger.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2324584",
+   "source_note": "Wikidata CC0 P856 official website: portswigger.net",
+   "wikidata": "Q2324584",
+   "candidate_rank": 2387,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "smarden",
+   "name": "runit",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "smarden.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q4048599",
+   "source_note": "Wikidata CC0 P856 official website: smarden.org",
+   "wikidata": "Q4048599",
+   "candidate_rank": 2409,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "amiga",
+   "name": "UAE",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "amiga.technology"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q471007",
+   "source_note": "Wikidata CC0 P856 official website: amiga.technology",
+   "wikidata": "Q471007",
+   "candidate_rank": 2410,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "hitachivantara",
+   "name": "Pentaho",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "hitachivantara.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q644841",
+   "source_note": "Wikidata CC0 P856 official website: www.hitachivantara.com",
+   "wikidata": "Q644841",
+   "candidate_rank": 2419,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "elsewhere",
+   "name": "Postmodernism Generator",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "elsewhere.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q7234394",
+   "source_note": "Wikidata CC0 P856 official website: www.elsewhere.org",
+   "wikidata": "Q7234394",
+   "candidate_rank": 2423,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "chinauos",
+   "name": "Unity Operating System",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "chinauos.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q80933428",
+   "source_note": "Wikidata CC0 P856 official website: www.chinauos.com",
+   "wikidata": "Q80933428",
+   "candidate_rank": 2424,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "aripaev",
+   "name": "Äripäev",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "aripaev.ee"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q256427",
+   "source_note": "Wikidata CC0 P856 official website: www.aripaev.ee",
+   "wikidata": "Q256427",
+   "candidate_rank": 2431,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "wavve",
+   "name": "S Line",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "wavve.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q135295160",
+   "source_note": "Wikidata CC0 P856 official website: www.wavve.com",
+   "wikidata": "Q135295160",
+   "candidate_rank": 2439,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cad-comic",
+   "name": "Ctrl+Alt+Del",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "cad-comic.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1142780",
+   "source_note": "Wikidata CC0 P856 official website: cad-comic.com",
+   "wikidata": "Q1142780",
+   "candidate_rank": 2452,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "gracenote",
+   "name": "CDDB",
+   "category": "media",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "gracenote.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q4465222",
+   "source_note": "Wikidata CC0 P856 official website: www.gracenote.com",
+   "wikidata": "Q4465222",
+   "candidate_rank": 2457,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "kbl",
+   "name": "Korean Basketball League",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "kbl.or.kr"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q485400",
+   "source_note": "Wikidata CC0 P856 official website: www.kbl.or.kr",
+   "wikidata": "Q485400",
+   "candidate_rank": 2462,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "apa",
+   "name": "Austria Press Agency",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "apa.at"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q680662",
+   "source_note": "Wikidata CC0 P856 official website: www.apa.at",
+   "wikidata": "Q680662",
+   "candidate_rank": 2465,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "coupangplay",
+   "name": "Newtopia",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "coupangplay.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q123819546",
+   "source_note": "Wikidata CC0 P856 official website: www.coupangplay.com",
+   "wikidata": "Q123819546",
+   "candidate_rank": 2469,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "shueisha",
+   "name": "Manga Plus",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "shueisha.co.jp"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q64032797",
+   "source_note": "Wikidata CC0 P856 official website: mangaplus.shueisha.co.jp",
+   "wikidata": "Q64032797",
+   "candidate_rank": 2472,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "pbs",
+   "name": "Frontline",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "pbs.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2894569",
+   "source_note": "Wikidata CC0 P856 official website: www.pbs.org",
+   "wikidata": "Q2894569",
+   "candidate_rank": 2474,
+   "sitelinks": 12,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "unistra",
+   "name": "Aladin Sky Atlas",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "unistra.fr"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2829475",
+   "source_note": "Wikidata CC0 P856 official website: aladin.cds.unistra.fr",
+   "wikidata": "Q2829475",
+   "candidate_rank": 2479,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "influxdata",
+   "name": "InfluxDB",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "influxdata.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q28127110",
+   "source_note": "Wikidata CC0 P856 official website: influxdata.com",
+   "wikidata": "Q28127110",
+   "candidate_rank": 2486,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "lwjgl",
+   "name": "Lightweight Java Game Library",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "lwjgl.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q940526",
+   "source_note": "Wikidata CC0 P856 official website: www.lwjgl.org",
+   "wikidata": "Q940526",
+   "candidate_rank": 2494,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "netiq",
+   "name": "Novell eDirectory",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "netiq.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1093748",
+   "source_note": "Wikidata CC0 P856 official website: www.netiq.com",
+   "wikidata": "Q1093748",
+   "candidate_rank": 2521,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "nlnetlabs",
+   "name": "NSD",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "nlnetlabs.nl"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1163957",
+   "source_note": "Wikidata CC0 P856 official website: www.nlnetlabs.nl",
+   "wikidata": "Q1163957",
+   "candidate_rank": 2534,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "dvdvideosoft",
+   "name": "Free Studio",
+   "category": "media",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "dvdvideosoft.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1453441",
+   "source_note": "Wikidata CC0 P856 official website: dvdvideosoft.com",
+   "wikidata": "Q1453441",
+   "candidate_rank": 2560,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "lsoft",
+   "name": "LISTSERV",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "lsoft.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1864976",
+   "source_note": "Wikidata CC0 P856 official website: www.lsoft.com",
+   "wikidata": "Q1864976",
+   "candidate_rank": 2563,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "softwareag",
+   "name": "ADABAS",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "softwareag.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q346434",
+   "source_note": "Wikidata CC0 P856 official website: www.softwareag.com",
+   "wikidata": "Q346434",
+   "candidate_rank": 2564,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "hughes",
+   "name": "mSQL",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "hughes.com.au"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q603867",
+   "source_note": "Wikidata CC0 P856 official website: hughes.com.au",
+   "wikidata": "Q603867",
+   "candidate_rank": 2565,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "designexpress",
+   "name": "Vectorworks",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "designexpress.eu"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q526129",
+   "source_note": "Wikidata CC0 P856 official website: designexpress.eu",
+   "wikidata": "Q526129",
+   "candidate_rank": 2576,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "fao",
+   "name": "Ecocrop",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "fao.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q47129765",
+   "source_note": "Wikidata CC0 P856 official website: ecocrop.fao.org",
+   "wikidata": "Q47129765",
+   "candidate_rank": 2577,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "webrtc",
+   "name": "Internet Low Bitrate Codec",
+   "category": "media",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "webrtc.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q311860",
+   "source_note": "Wikidata CC0 P856 official website: www.webrtc.org",
+   "wikidata": "Q311860",
+   "candidate_rank": 2578,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cog-uk",
+   "name": "PANGOLIN",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "cog-uk.io"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q105185169",
+   "source_note": "Wikidata CC0 P856 official website: pangolin.cog-uk.io",
+   "wikidata": "Q105185169",
+   "candidate_rank": 2582,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "micronations",
+   "name": "MicroWiki",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "micronations.wiki"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q108493148",
+   "source_note": "Wikidata CC0 P856 official website: micronations.wiki",
+   "wikidata": "Q108493148",
+   "candidate_rank": 2583,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "softvelocity",
+   "name": "Clarion",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "softvelocity.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1095608",
+   "source_note": "Wikidata CC0 P856 official website: www.softvelocity.com",
+   "wikidata": "Q1095608",
+   "candidate_rank": 2584,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "common-lisp",
+   "name": "SLIME",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "common-lisp.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2206569",
+   "source_note": "Wikidata CC0 P856 official website: common-lisp.net",
+   "wikidata": "Q2206569",
+   "candidate_rank": 2586,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "oasis-open",
+   "name": "Darwin Information Typing Architecture",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "oasis-open.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1166919",
+   "source_note": "Wikidata CC0 P856 official website: www.oasis-open.org",
+   "wikidata": "Q1166919",
+   "candidate_rank": 2590,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "inference",
+   "name": "Dasher",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "inference.org.uk"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1171880",
+   "source_note": "Wikidata CC0 P856 official website: www.inference.org.uk",
+   "wikidata": "Q1171880",
+   "candidate_rank": 2591,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ifnotnil",
+   "name": "Xojo",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "ifnotnil.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q14378091",
+   "source_note": "Wikidata CC0 P856 official website: ifnotnil.com",
+   "wikidata": "Q14378091",
+   "candidate_rank": 2603,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "hiarcs",
+   "name": "Junior",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "hiarcs.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1713543",
+   "source_note": "Wikidata CC0 P856 official website: www.hiarcs.com",
+   "wikidata": "Q1713543",
+   "candidate_rank": 2606,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "uwb",
+   "name": "Mizar",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "uwb.edu.pl"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1609529",
+   "source_note": "Wikidata CC0 P856 official website: mizar.uwb.edu.pl",
+   "wikidata": "Q1609529",
+   "candidate_rank": 2610,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "translatehouse",
+   "name": "Pootle",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "translatehouse.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1816344",
+   "source_note": "Wikidata CC0 P856 official website: pootle.translatehouse.org",
+   "wikidata": "Q1816344",
+   "candidate_rank": 2617,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "zodb",
+   "name": "Zope Object Database",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "zodb.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q220399",
+   "source_note": "Wikidata CC0 P856 official website: zodb.org",
+   "wikidata": "Q220399",
+   "candidate_rank": 2628,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "j2inter",
+   "name": "MX Player",
+   "category": "media",
+   "subcategory": "audio-streaming",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "j2inter.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q25389797",
+   "source_note": "Wikidata CC0 P856 official website: mx.j2inter.com",
+   "wikidata": "Q25389797",
+   "candidate_rank": 2636,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "daper",
+   "name": "Music on Console",
+   "category": "media",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "daper.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q307313",
+   "source_note": "Wikidata CC0 P856 official website: moc.daper.net",
+   "wikidata": "Q307313",
+   "candidate_rank": 2647,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "viksoe",
+   "name": "GMail Drive",
+   "category": "collaboration",
+   "subcategory": "email",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "viksoe.dk"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q634500",
+   "source_note": "Wikidata CC0 P856 official website: www.viksoe.dk",
+   "wikidata": "Q634500",
+   "candidate_rank": 2660,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "csfd",
+   "name": "Česko-Slovenská filmová databáze",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "csfd.cz"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3561957",
+   "source_note": "Wikidata CC0 P856 official website: www.csfd.cz",
+   "wikidata": "Q3561957",
+   "candidate_rank": 2672,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "udn",
+   "name": "United Daily News",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "udn.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q697153",
+   "source_note": "Wikidata CC0 P856 official website: udn.com",
+   "wikidata": "Q697153",
+   "candidate_rank": 2676,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "lecho",
+   "name": "L'Écho",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "lecho.be"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3205137",
+   "source_note": "Wikidata CC0 P856 official website: www.lecho.be",
+   "wikidata": "Q3205137",
+   "candidate_rank": 2678,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "chase",
+   "name": "Zagat",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "chase.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q140258",
+   "source_note": "Wikidata CC0 P856 official website: www.chase.com",
+   "wikidata": "Q140258",
+   "candidate_rank": 2680,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "abril",
+   "name": "Veja",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "abril.com.br"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1886657",
+   "source_note": "Wikidata CC0 P856 official website: veja.abril.com.br",
+   "wikidata": "Q1886657",
+   "candidate_rank": 2682,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "astronautix",
+   "name": "Encyclopedia Astronautica",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "astronautix.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2704199",
+   "source_note": "Wikidata CC0 P856 official website: www.astronautix.com",
+   "wikidata": "Q2704199",
+   "candidate_rank": 2686,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "turkiyegazetesi",
+   "name": "Türkiye",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "turkiyegazetesi.com.tr"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q327799",
+   "source_note": "Wikidata CC0 P856 official website: www.turkiyegazetesi.com.tr",
+   "wikidata": "Q327799",
+   "candidate_rank": 2687,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "calacademy",
+   "name": "Catalog of Fishes",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "calacademy.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q9185167",
+   "source_note": "Wikidata CC0 P856 official website: researcharchive.calacademy.org",
+   "wikidata": "Q9185167",
+   "candidate_rank": 2693,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "giantitp",
+   "name": "The Order of the Stick",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "giantitp.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q162465",
+   "source_note": "Wikidata CC0 P856 official website: www.giantitp.com",
+   "wikidata": "Q162465",
+   "candidate_rank": 2706,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "artscouncil",
+   "name": "Aosdána",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "artscouncil.ie"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q201947",
+   "source_note": "Wikidata CC0 P856 official website: artscouncil.ie",
+   "wikidata": "Q201947",
+   "candidate_rank": 2713,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "rcdb",
+   "name": "Roller Coaster DataBase",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "rcdb.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q267804",
+   "source_note": "Wikidata CC0 P856 official website: rcdb.com",
+   "wikidata": "Q267804",
+   "candidate_rank": 2717,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "rte",
+   "name": "RTÉ Raidió na Gaeltachta",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "rte.ie"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q253599",
+   "source_note": "Wikidata CC0 P856 official website: www.rte.ie",
+   "wikidata": "Q253599",
+   "candidate_rank": 2739,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "ji-anime",
+   "name": "Junji Ito Maniac: Japanese Tales of the Macabre",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "ji-anime.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q114873435",
+   "source_note": "Wikidata CC0 P856 official website: ji-anime.com",
+   "wikidata": "Q114873435",
+   "candidate_rank": 2740,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "shirous",
+   "name": "Last Samurai Standing",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "shirous.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q135855008",
+   "source_note": "Wikidata CC0 P856 official website: www.shirous.com",
+   "wikidata": "Q135855008",
+   "candidate_rank": 2741,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "sambakza",
+   "name": "There She Is!!",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "sambakza.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q445279",
+   "source_note": "Wikidata CC0 P856 official website: www.sambakza.net",
+   "wikidata": "Q445279",
+   "candidate_rank": 2742,
+   "sitelinks": 11,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "juniper",
+   "name": "Junos",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "juniper.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q4041744",
+   "source_note": "Wikidata CC0 P856 official website: www.juniper.net",
+   "wikidata": "Q4041744",
+   "candidate_rank": 2755,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cyberlore",
+   "name": "Heroes of Might and Magic II: The Price of Loyalty",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "cyberlore.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3109545",
+   "source_note": "Wikidata CC0 P856 official website: www.cyberlore.com",
+   "wikidata": "Q3109545",
+   "candidate_rank": 2757,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "systemed",
+   "name": "Potlatch",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "systemed.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q165598",
+   "source_note": "Wikidata CC0 P856 official website: www.systemed.net",
+   "wikidata": "Q165598",
+   "candidate_rank": 2776,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "schedmd",
+   "name": "Slurm",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "schedmd.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3459703",
+   "source_note": "Wikidata CC0 P856 official website: slurm.schedmd.com",
+   "wikidata": "Q3459703",
+   "candidate_rank": 2782,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "microware",
+   "name": "OS-9",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "microware.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2008085",
+   "source_note": "Wikidata CC0 P856 official website: www.microware.com",
+   "wikidata": "Q2008085",
+   "candidate_rank": 2784,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "eco3",
+   "name": "Apogee",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "eco3.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q141512434",
+   "source_note": "Wikidata CC0 P856 official website: eco3.com",
+   "wikidata": "Q141512434",
+   "candidate_rank": 2787,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "techaro",
+   "name": "Anubis",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "techaro.lol"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q134301689",
+   "source_note": "Wikidata CC0 P856 official website: anubis.techaro.lol",
+   "wikidata": "Q134301689",
+   "candidate_rank": 2791,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "microfocus",
+   "name": "Novell GroupWise",
+   "category": "collaboration",
+   "subcategory": "instant-messaging",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "microfocus.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q128926",
+   "source_note": "Wikidata CC0 P856 official website: www.microfocus.com",
+   "wikidata": "Q128926",
+   "candidate_rank": 2814,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "quest",
+   "name": "Toad",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "quest.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1755829",
+   "source_note": "Wikidata CC0 P856 official website: www.quest.com",
+   "wikidata": "Q1755829",
+   "candidate_rank": 2838,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "mobisystems",
+   "name": "MobiOffice",
+   "category": "business-systems",
+   "subcategory": "office-programs",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "mobisystems.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q25345902",
+   "source_note": "Wikidata CC0 P856 official website: mobisystems.com",
+   "wikidata": "Q25345902",
+   "candidate_rank": 2874,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "sgi",
+   "name": "GLX",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "sgi.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q604536",
+   "source_note": "Wikidata CC0 P856 official website: www.sgi.com",
+   "wikidata": "Q604536",
+   "candidate_rank": 2877,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bible",
+   "name": "YouVersion",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "bible.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q16927908",
+   "source_note": "Wikidata CC0 P856 official website: www.bible.com",
+   "wikidata": "Q16927908",
+   "candidate_rank": 2881,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "amigazen",
+   "name": "Voyager",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "amigazen.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q631921",
+   "source_note": "Wikidata CC0 P856 official website: amigazen.com",
+   "wikidata": "Q631921",
+   "candidate_rank": 2891,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "chrome",
+   "name": "Google Native Client",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "chrome.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1011995",
+   "source_note": "Wikidata CC0 P856 official website: developer.chrome.com",
+   "wikidata": "Q1011995",
+   "candidate_rank": 2894,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "makerdao",
+   "name": "Dai",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "makerdao.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q102230654",
+   "source_note": "Wikidata CC0 P856 official website: makerdao.com",
+   "wikidata": "Q102230654",
+   "candidate_rank": 2897,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "cooperteam",
+   "name": "GNOME Do",
+   "category": "business-systems",
+   "subcategory": "general-business",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "cooperteam.net"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1069823",
+   "source_note": "Wikidata CC0 P856 official website: do.cooperteam.net",
+   "wikidata": "Q1069823",
+   "candidate_rank": 2899,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "dechifro",
+   "name": "dcraw",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "dechifro.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1152194",
+   "source_note": "Wikidata CC0 P856 official website: dechifro.org",
+   "wikidata": "Q1152194",
+   "candidate_rank": 2904,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "bluewaysw",
+   "name": "GEOS",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "bluewaysw.de"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1210707",
+   "source_note": "Wikidata CC0 P856 official website: blog.bluewaysw.de",
+   "wikidata": "Q1210707",
+   "candidate_rank": 2907,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "grassvalley",
+   "name": "Edius",
+   "category": "media",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "grassvalley.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1285402",
+   "source_note": "Wikidata CC0 P856 official website: www.grassvalley.com",
+   "wikidata": "Q1285402",
+   "candidate_rank": 2915,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "the-little-red-haired-girl",
+   "name": "Elvis",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "the-little-red-haired-girl.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2631227",
+   "source_note": "Wikidata CC0 P856 official website: elvis.the-little-red-haired-girl.org",
+   "wikidata": "Q2631227",
+   "candidate_rank": 2948,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "tcl",
+   "name": "Expect",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "tcl.tk"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2642029",
+   "source_note": "Wikidata CC0 P856 official website: core.tcl.tk",
+   "wikidata": "Q2642029",
+   "candidate_rank": 2950,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "berkeleyvision",
+   "name": "Caffe",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "berkeleyvision.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q27643379",
+   "source_note": "Wikidata CC0 P856 official website: caffe.berkeleyvision.org",
+   "wikidata": "Q27643379",
+   "candidate_rank": 2953,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "mandriva",
+   "name": "urpmi",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "mandriva.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q285780",
+   "source_note": "Wikidata CC0 P856 official website: wiki.mandriva.com",
+   "wikidata": "Q285780",
+   "candidate_rank": 2955,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "unirioja",
+   "name": "Dialnet",
+   "category": "business-systems",
+   "subcategory": "database",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "unirioja.es"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3025975",
+   "source_note": "Wikidata CC0 P856 official website: dialnet.unirioja.es",
+   "wikidata": "Q3025975",
+   "candidate_rank": 2958,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "pdflabs",
+   "name": "PDFtk",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "pdflabs.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q307465",
+   "source_note": "Wikidata CC0 P856 official website: www.pdflabs.com",
+   "wikidata": "Q307465",
+   "candidate_rank": 2961,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "literatureandlatte",
+   "name": "Scrivener",
+   "category": "business-systems",
+   "subcategory": "office-programs",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "literatureandlatte.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3476481",
+   "source_note": "Wikidata CC0 P856 official website: www.literatureandlatte.com",
+   "wikidata": "Q3476481",
+   "candidate_rank": 2967,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "almico",
+   "name": "SpeedFan",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "almico.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q52294",
+   "source_note": "Wikidata CC0 P856 official website: www.almico.com",
+   "wikidata": "Q52294",
+   "candidate_rank": 2976,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "gentilkiwi",
+   "name": "Mimikatz",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "gentilkiwi.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q67197356",
+   "source_note": "Wikidata CC0 P856 official website: blog.gentilkiwi.com",
+   "wikidata": "Q67197356",
+   "candidate_rank": 2986,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "micheleandreoli",
+   "name": "MuLinux",
+   "category": "business-systems",
+   "subcategory": "software-development",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "micheleandreoli.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q769134",
+   "source_note": "Wikidata CC0 P856 official website: micheleandreoli.org",
+   "wikidata": "Q769134",
+   "candidate_rank": 2991,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "chiariglione",
+   "name": "MPEG-1 Audio Layer I",
+   "category": "media",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "chiariglione.org"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q919226",
+   "source_note": "Wikidata CC0 P856 official website: mpeg.chiariglione.org",
+   "wikidata": "Q919226",
+   "candidate_rank": 2995,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "uvnc",
+   "name": "UltraVNC",
+   "category": "networking",
+   "subcategory": "remote-access",
+   "entry_kind": "software_project",
+   "name_review": null,
+   "domains": [
+    "uvnc.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q952874",
+   "source_note": "Wikidata CC0 P856 official website: uvnc.com",
+   "wikidata": "Q952874",
+   "candidate_rank": 2996,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  },
+  {
+   "app_id": "globo",
+   "name": "G1",
+   "category": "general-internet",
+   "subcategory": "internet-utility",
+   "entry_kind": "service",
+   "name_review": null,
+   "domains": [
+    "globo.com"
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q5512664",
+   "source_note": "Wikidata CC0 P856 official website: g1.globo.com",
+   "wikidata": "Q5512664",
+   "candidate_rank": 3000,
+   "sitelinks": 10,
+   "gaming_publisher_domain": false
+  }
+ ]
+}
