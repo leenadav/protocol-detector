@@ -17,9 +17,9 @@ import (
 const serveUsage = "usage: protodetect serve [--port N] [--root PRESENTATION_DIR] [--python INTERPRETER]"
 
 // runServe is presentation/server.py's service: the dashboard and its API on 127.0.0.1 (contracts C14, C15).
-// --root is the presentation directory (default: the checkout's, beside go/bin); --python is the
-// interpreter that runs the reference's demo generators and catalog export (default python3 on PATH;
-// --python "" serves without them).
+// --root is the presentation directory (default: the checkout's, beside go/bin). --python is accepted and checked
+// as before but no longer used: since PRO-401 the demo capture, the decryption showcase and the catalog are the
+// service's own, and no interpreter is run.
 func runServe(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	port, root, python := 8765, "", "python3"
 	pythonSet := false
@@ -100,6 +100,9 @@ func runServeWorker(args []string, stdin io.Reader, stdout, stderr io.Writer) in
 	if len(args) == 1 && args[0] == "decrypt" {
 		return serve.DecryptWorker(stdin, stdout)
 	}
-	fmt.Fprintln(stderr, "usage: protodetect serve-worker analyze|decrypt < REQUEST")
+	if len(args) == 1 && args[0] == "decrypt-demo" {
+		return serve.DecryptDemoWorker(stdout)
+	}
+	fmt.Fprintln(stderr, "usage: protodetect serve-worker analyze|decrypt|decrypt-demo < REQUEST")
 	return 2
 }
