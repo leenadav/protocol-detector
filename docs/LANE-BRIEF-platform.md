@@ -57,6 +57,9 @@ their decisions, the policy locks, and the release controller.
   report exactly that version (`docs/RELEASING.md`). The local `5324543` was lost with its container and was
   rewritten here. **Merge order:** Engine's PR #143 (PRO-195, `var version`) first, then merge `main` into this
   branch. Until then the publish-release dry run fails, correctly, because `main` still has `const version`.
+  #143 merged; `83ad798` (PRO-478) merged `main` in. The release build then failed on two launcher tests: the
+  launchers default to the Go engine and the job never built `go/bin/protodetect`. It now runs `go_ci.py build`
+  before the gate, as `ci.yml` does; the docs test count was refreshed to 909.
 
 - `main` = `2a33183`. PRO-42, PRO-59 and PRO-31 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #37 (`0d32281`), #38 (`51b5e94`), #39 (`0ef7349`);
   #41 and #54 (PRO-73) too. #56 (the brief through PRO-103) and #66 (gitleaks allowlist for the r5 CNAME false positive, PRO-145) are merged.
