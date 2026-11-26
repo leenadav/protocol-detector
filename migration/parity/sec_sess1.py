@@ -47,6 +47,15 @@ def mask(text):
     return VOLATILE.sub("#", text)
 
 
+def openssl_line():
+    """`openssl-<major>.<minor>` of the OpenSSL that Python's ssl module runs: part of a live-decrypt case id, because
+    the generated scripts hold real OpenSSL exchanges whose lengths change every later random draw (ubuntu-24.04 CI
+    runs 3.0; other interpreters may run 3.5, which also offers the hybrid groups). An OpenSSL line with no pins fails
+    on any divergence."""
+    import ssl
+    return "openssl-{}.{}".format(*ssl.OPENSSL_VERSION_INFO[:2])
+
+
 def digest(output, status, volatile=False):
     """The SHA-256 of one side's compared result: its (normalized) output text and its exit status."""
     return hashlib.sha256(json.dumps([mask(output) if volatile else output, status]).encode("utf-8")).hexdigest()

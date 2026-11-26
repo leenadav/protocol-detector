@@ -147,6 +147,9 @@ def main(argv=None):
     rng = random.Random(args.seed * 7919 + 1)
     failures, events, kinds, approved = [], 0, {}, 0
     openssl, used = generator.openssl, []
+    # The scripts depend on the OpenSSL that Python links (the real exchanges' lengths drive later random draws; 3.5
+    # also offers hybrid groups), so a SEC-SESS-1 pin names the OpenSSL line as part of its case id.
+    environment = sec_sess1.openssl_line()
 
     def counted():                                  # a real OpenSSL exchange differs between runs (sec_sess1 `volatile`)
         used.append(True)
@@ -173,11 +176,11 @@ def main(argv=None):
                 label = "error/" + event["code"]
             kinds[label] = kinds.get(label, 0) + 1
         a, b = live_diff.normalized(actual, True), live_diff.normalized(expected, True)
-        pins.cover("script-{}".format(index))
+        case = "{}/script-{}".format(environment, index)
+        pins.cover(case)
         if (done.returncode != status or a != b) and approved_divergence(operations, done.returncode, a):
             approved += 1
-        elif (done.returncode != status or a != b) and pins.approve("script-{}".format(index), a, done.returncode, b, status,
-                                                                          volatile=volatile):
+        elif (done.returncode != status or a != b) and pins.approve(case, a, done.returncode, b, status, volatile=volatile):
             pass                                    # SEC-SESS-1 (PRO-398): this exact script, both exact results pinned
         elif done.returncode != status:
             failures.append("script {} (seed {}): exit status {} (expected {})".format(index, args.seed, done.returncode, status))

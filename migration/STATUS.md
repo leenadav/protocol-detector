@@ -776,18 +776,24 @@ harness prints):
 |---|---|---|---|
 | `parity-analyze` | 20 in 13 captures: `capture-1-61`, `-101`, `-131`, `-155`, `-182`, `-209`, `-230`, `-236`, `-284` (the `analyze` command) and `capture-1-50`, `-57`, `-85`, `-101`, `-127`, `-131`, `-155`, `-182`, `-209`, `-212`, `-230` (the presentation result) | 20 (SEC-SESS-1) | 0 |
 | `parity-live` | 6: `capture-53`, `-77`, `-92`, `-206`, `-266`, `-270` | 6 (SEC-SESS-1), 3 (PRO-189, unchanged) | 0 |
-| `parity-live-decrypt` | 15: scripts 4, 19, 47, 88, 129, 137, 154, 169, 172, 179, 182, 245, 248, 296, 297 | 15 (SEC-SESS-1), 40 (PRO-260; 41 on `main`: script 169 carries both deltas and is pinned as a whole) | 0 |
+| `parity-live-decrypt` | OpenSSL 3.0 (ubuntu-24.04 CI): 18, scripts 4, 25, 27, 31, 44, 62, 64, 74, 97, 122, 175, 187, 230, 260, 280, 293, 295, 296 (4,461 event lines). OpenSSL 3.5 (for example the cloud development container): 15, scripts 4, 19, 47, 88, 129, 137, 154, 169, 172, 179, 182, 245, 248, 296, 297 (4,120 event lines) | 18 or 15 (SEC-SESS-1); PRO-260 unchanged per line: 0 under 3.0, 40 under 3.5 (41 on `main`: script 169 carries both deltas and is pinned as a whole) | 0 |
 
 Each case is pinned in `migration/parity/sec_sess1.json` in the PRO-260 form: the exact case id, the reason
 (`SEC-SESS-1, PRO-398: ...`), what Go returns against the frozen answer (the first differing line of each, the
 counts of eviction records and `LIMIT` refusals on each side) and the SHA-256 of each side's whole compared result
 (output and exit status). `migration/parity/sec_sess1.py` approves a mismatch only when its case is pinned and both
 digests are exactly the pinned ones; a pinned case that no longer differs fails the run as stale, and
-`--record-sec-sess1 PATH` writes observed divergences for review and always fails. The five live-decrypt scripts
-that contain a real OpenSSL exchange (19, 154, 169, 179, 296; fresh keys every run, so a byte count can move by one)
-are `volatile`: the harness, not the pin, marks them, and their digests mask numbers and hex runs of 8 or more
-characters only. All other counts are unchanged from `main` (analyze 14,540 rows, 4,755 identified, 201 completed
-presentation results; live 4,616 event lines; live decrypt 4,120 event lines). `parity-decrypt`, `parity-control`
+`--record-sec-sess1 PATH` writes observed divergences for review and always fails. The live-decrypt scripts hold real
+OpenSSL exchanges made by the `ssl` module Python links, and their lengths drive every later random draw, so the
+scripts differ between OpenSSL lines (3.5 also offers the hybrid groups: `parity-decrypt` approves 26 PRO-260
+divergences under 3.5 and 0 under 3.0). A live-decrypt case id therefore names the OpenSSL line
+(`seed1/openssl-3.0/script-25`); both lines are pinned, each checked against Go from `main` (0 mismatches), and any
+other line has no pins and fails on any divergence. The 2026-11-25 count of 15 was the 3.5 environment's; CI runs
+3.0, where it is 18 (CI run 45734623801 on `cae9eb8`: 17 unapproved, 1 approved, before this split). Scripts with a
+real exchange (3.0: 31, 44, 175, 230, 295, 296; 3.5: 19, 154, 169, 179, 296) also get fresh keys every run, so a byte
+count can move by one: they are `volatile`, marked by the harness and not by the pin, and their digests mask
+numbers and hex runs of 8 or more characters only. All other counts are unchanged from `main` (analyze 14,540 rows, 4,755 identified, 201 completed
+presentation results; live 4,616 event lines; live decrypt 4,461 / 4,120 event lines under OpenSSL 3.0 / 3.5). `parity-decrypt`, `parity-control`
 and `schema-go` are unchanged (0 mismatched, 0 problems). Regression tests: `test_parity_verdicts.SecSess1PinTests`
 and `sec_sess1.py --self-test`.
 
