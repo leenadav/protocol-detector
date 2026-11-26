@@ -155,6 +155,8 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PRO-101 nightly evidence | the first scheduled `nightly-fuzz.yml` run on `main` after `cb3ac80` (its `extended Go fuzz (every fuzz target)` job picks up the four new targets); record the run id in `STATUS.md` |
 | PRO-201 decisions: buffer transient capacity (ADR 0001), unkeyed session id, signature names that collide with built-ins, 79 of 88 verified families | Hermes/Lee |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
+| PRO-119 A2/A3 P3 hardening (`c01942f`, branch `claude/confident-curie-qpv2sl`, PR into `main`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
+| PRO-119 held: records after a closing alert (`migration/held-patches/PRO-119/`) and SEC-QUIC-2 (the conflict marker's LRU eviction, present in the Python reference too) | Lee: approve each Go-only divergence (as PRO-124), or decline. Both move the parity target; the alert one is reached by `decrypt_diff.py` seed 2 case 236 |
 | SEC-SIG-2 / SEC-SIG-1 (PRO-332, branch `claude/engine-PRO-51-sig-compile-cost`; replaces PRO-160 and PRO-159) | Hermes's review, QA Reviewer (Codex), then Lee's merge. Open for Hermes: (1) approve the Go-only divergence (a direction past its signature work allowance ends `budget_exhausted`; the reference has none); (2) whether to add an absolute ceiling to the allowance (today two full evaluations: up to ~34 s per direction at `signature_bytes` 65536 with a full 100,000-instruction set, ~1 s at the default 2000); (3) the 11,110-cheapest-pattern document loads in ~99 ms, above the 50 ms target, from per-pattern fixed cost the instruction caps do not bound. Numbers: `migration/STATUS.md`, "SEC-SIG-2 and SEC-SIG-1". |
 | SEC-QUIC-3 (`fe87386`, PR into `main`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
 | PRO-291 (`5b48d91`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
@@ -191,6 +193,8 @@ documentation commit after it.
 PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the documentation commit after it, and the errcheck fix in the test after that.
 
 PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the documentation commit after it.
+
+PRO-119 (against `main` `23bbc0c`): `c01942f` (fixes and tests) and the documentation commit after it.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 

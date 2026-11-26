@@ -735,6 +735,24 @@ outside the Initial profile was a structural QUIC match; now it is malformed).
 | Regression tests | `TestConflictedConnectionAppliesTheClientDatagramMinimum`, `TestShortClientInitialWithUnsupportedFrameIsMalformed` (`quicx`) | Both fail on `d950eb8`: the 1199-byte Initial on a conflicted DCID gives `Retracts` (conflict), the 300-byte Initial with HANDSHAKE_DONE gives `initial_protection=unverified`. After the fix: both are malformed with the 1200-byte reason; the marker keeps its old idle time (expired at 10.5 after an undersized datagram at 8), a 1200-byte Initial still retracts and refreshes it, and a damaged 600-byte datagram the keys do not open still retracts. |
 | Parity | 0 case changes | Only the Go-only SEC-QUIC-3 rule changes; numbers in the lane brief and the PR. |
 
+## Security review A2 and A3 P3 hardening (PRO-47, PRO-48 and PRO-119, 2026-11-26)
+
+Go only, against `main` `23bbc0c`; fix `c01942f`. The Python reference is unchanged and no report value moves.
+
+| finding | state | fix | regression test |
+|---|---|---|---|
+| SEC-DEC-1 (A2 run 1): decrypt buffers held twice outside the 4 MiB aggregate (`decrypt/connection.go`) | fixed (the "compact and drop the double copy" option) | the framer compacts its tail after each framing pass, so it no longer keeps the consumed prefix behind the queued copies; a decoded record's queue slot is cleared and an empty queue is nil; the hello buffers are dropped once negotiated (the server random is kept for TLS 1.2) | `TestAwaitingKeysConnectionHoldsItsBytesOnce`: before, 725,350 bytes held per waiting connection for 448,845 fed; now within 1.15x + 16 KiB. `TestDecodedRecordsAreNotRetained`: before, 891,752 bytes held after every record was decoded; now under 16 KiB |
+| SEC-DEC-1 counting option | not taken | counting Connection bytes in `Tier.allocated` changes `budget.retained_bytes` and the aggregate refusals, which the decrypt differential compares with the reference, so it is a parity delta; with compaction a connection holds at most its 256 KiB per-direction profile once | - |
+| SEC-KEY-1 (A2 run 1): secrets never zeroed; `keylogcap.Analyze` never released the provider | fixed | `Analyze` defers `keys.Release()`; terminal connections wipe their directions (TLS 1.3 secrets and IVs, TLS 1.2 IVs); the KeyUpdate-replaced secret and IV and the handshake epoch's secret are zeroed when replaced; the TLS 1.2 key block is zeroed once the AEADs are built (the IVs are copies of their own); derived AEAD keys are zeroed after use. The AEAD key schedules inside `crypto/aes` and `chacha20poly1305` cannot be reached, so this narrows the window and promises no zeroization | `TestAnalyzeReleasesItsKeyProvider` (report and refusal), `TestReplacedSecretsAreZeroed`, `TestTerminalConnectionsZeroTheirRecordKeys` (TLS 1.3 complete and failed, TLS 1.2) |
+| SEC-KEY-1 (A2 run 2): `KeyProvider.Expire` deleted secrets without zeroing | fixed | zeroed before delete, as `Release` does | `TestExpireZeroesTheSecretsItDrops` |
+| SEC-DEC-1 (A2 run 2): records after an authenticated close_notify or fatal alert are still decoded | **held, needs Lee** | `migration/held-patches/PRO-119/close-alert-ends-direction.patch` | the patch adds `TestRecordsAfterAClosingAlertAreNotDecoded`. The reference also decodes them, and `decrypt_diff.py` seed 2 case 236 turns Python's `authentication_failed` into Go `decrypted`: a parity delta that random inputs reach (README beside the patch) |
+| SEC-QUIC-2 (A2 run 2): the conflict marker is evicted by LRU after 1,024 other DCIDs (`quicx/assembler.go`) | **not changed, needs Lee** | - | Python `protocol_engine/quic.py` `QuicAssembler.conflicted` likewise refreshes `last` without `move_to_end`, and `add` evicts `popitem(last=False)` with no regard for the marker; the bug is in the reference, so the fix moves the parity target (Lee's condition, as PRO-122/PRO-123) |
+| A3 (PRO-48) 1: unchecked `err.(*parsing.Error)` (`engine/datagram.go`) | fixed | `datagramFailure` checks the assertion; a foreign error type is a malformed candidate | `TestDatagramFailureToleratesAForeignErrorType` |
+| A3 (PRO-48) 2: the Dispatch prefix invariant was implicit | pinned | a comment at the Wait branch of `Inspector.Feed` | `TestSelectNeverWaitsOnAFullLookahead`: every waiting prefix of `migration/fixtures/dispatch.json` completed to 24 bytes (zero-filled and 64 random tails) and 256 random tails for each first byte |
+
+Every new test fails on `23bbc0c` (the decrypt and keylog ones were run against the old code) and passes on
+`c01942f`; the two A3 tests pin behaviour that already held. Gate numbers are in the lane brief and the PR.
+
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 
 **The finding** (Codex review PRO-12, Tier 1 window 1, `dbe20f3..50ce5c0`; `go/internal/engine/inspector.go`,

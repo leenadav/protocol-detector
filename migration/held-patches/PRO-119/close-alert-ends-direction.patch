@@ -1,0 +1,208 @@
+--- a/go/internal/decrypt/connection.go
++++ b/go/internal/decrypt/connection.go
+@@ -137,6 +137,9 @@
+ 	record(r record) ([]byte, *Error)
+ 	epoch() string
+ 	finish() *Error
++	// closed is true once the sender's authenticated close_notify or fatal alert ended its direction: later
++	// records of that sender are dropped unread (PRO-119; a Go-only divergence, the reference decodes them).
++	closed() bool
+ 	// wipe overwrites the record keys this direction holds (SEC-KEY-1).
+ 	wipe()
+ }
+@@ -150,6 +153,16 @@
+ 	}
+ }
+ 
++// closingAlert reports whether an authenticated two-byte alert ends its sender's direction. TLS 1.3 (RFC 8446
++// section 6) treats every alert except user_canceled (90) as closure or error whatever its level; TLS 1.2 (RFC
++// 5246 section 7.2) ends the direction on close_notify (0) or a fatal level (2).
++func closingAlert(alert []byte, tls13 bool) bool {
++	if tls13 {
++		return alert[1] != 90
++	}
++	return alert[1] == 0 || alert[0] == 2
++}
++
+ // tls13Direction decodes one sender's protected records with its handshake and application traffic secrets.
+ type tls13Direction struct {
+ 	digest   string
+@@ -164,6 +177,7 @@
+ 	ciphers  map[string]cipher.AEAD
+ 	ivs      map[string][]byte
+ 	plain    int
++	ended    bool
+ }
+ 
+ const (
+@@ -226,6 +240,8 @@
+ 	d.forget(phaseApplication)
+ }
+ 
++func (d *tls13Direction) closed() bool { return d.ended }
++
+ func (d *tls13Direction) epoch() string {
+ 	if d.phase == phaseHandshake {
+ 		return "handshake"
+@@ -316,6 +332,9 @@
+ 	if kind != 21 || len(content) != 2 {
+ 		return nil, fail("Unsupported TLS inner content.", UnsupportedProfile)
+ 	}
++	if closingAlert(content, true) {
++		d.ended = true
++	}
+ 	return nil, nil
+ }
+ 
+@@ -334,8 +353,11 @@
+ 	seq              uint64
+ 	count, plain     int
+ 	pending          []byte
++	ended            bool
+ }
+ 
++func (d *tls12Direction) closed() bool { return d.ended }
++
+ func (d *tls12Direction) wipe() {
+ 	zero(d.iv)
+ 	d.aead, d.iv = nil, nil
+@@ -419,6 +441,9 @@
+ 	if len(content) != 2 || len(d.pending) > 0 {
+ 		return nil, fail("Invalid TLS 1.2 alert.", UnsupportedProfile)
+ 	}
++	if closingAlert(content, false) {
++		d.ended = true
++	}
+ 	return nil, nil
+ }
+ 
+@@ -739,6 +764,9 @@
+ 			budget--
+ 			c.processed++
+ 			dir := c.dirs[side]
++			if dir.closed() {
++				continue // after its close_notify or fatal alert the sender's records are not read
++			}
+ 			content, err := dir.record(r)
+ 			if err != nil {
+ 				return nil, err
+--- a/go/internal/decrypt/hardening_test.go
++++ b/go/internal/decrypt/hardening_test.go
+@@ -11,7 +11,8 @@
+ 	"testing"
+ )
+ 
+-// PRO-119: the A2 security review's decrypt hardening (SEC-DEC-1 heap retention, SEC-KEY-1 key zeroing).
++// PRO-119: the A2 security review's decrypt hardening (SEC-DEC-1 heap retention, SEC-KEY-1 key zeroing, the
++// records after an authenticated closing alert).
+ 
+ const bulkRecord = 16000 // application bytes per record, under the 16384 plaintext limit
+ 
+@@ -260,6 +261,82 @@
+ 	}
+ }
+ 
++// PRO-119 (second A2 run): after its sender's authenticated close_notify or fatal alert a direction decodes
++// nothing more. A valid record after the alert releases no plaintext and is not counted as authenticated, and a
++// modified one does not fail the connection. TLS 1.3 user_canceled does not close. A Go-only divergence: the
++// reference (poc_decryption.engine) keeps decoding.
++func TestRecordsAfterAClosingAlertAreNotDecoded(t *testing.T) {
++	type variant struct {
++		name   string
++		alert  []byte
++		closes bool
++	}
++	for _, v := range []variant{{"close_notify", []byte{1, 0}, true}, {"fatal at warning level", []byte{1, 40}, true},
++		{"fatal", []byte{2, 20}, true}, {"user_canceled", []byte{1, 90}, false}} {
++		s := tls13Session(0x1301)
++		sw := newWriter13(0x1301, bytes.Repeat([]byte{2}, 32), bytes.Repeat([]byte{4}, 32))
++		sw.application()
++		sw.seq = 1 // the session wrote the reply at 0 ...
++		server := s.server[:len(s.server)-(5+3+16)]
++		server = append(server, sw.record(21, v.alert)...) // ... and this alert at 1
++		late := sw.record(23, []byte("after the alert"))
++		for _, tamper := range []bool{false, true} {
++			tail := append([]byte{}, late...)
++			if tamper {
++				tail[len(tail)-1] ^= 1
++			}
++			keys, _ := ReadKeys(s.keylog)
++			c := NewConnection(keys, "c", "s")
++			c.Feed("c", s.client)
++			c.Feed("s", append(append([]byte{}, server...), tail...))
++			var reply []byte
++			for c.HasWork() {
++				for _, d := range c.Advance(64) {
++					if d.Endpoint == "s" {
++						reply = append(reply, d.Data...)
++					}
++				}
++			}
++			state := c.Finish()
++			switch {
++			case v.closes && (state != StateComplete || string(reply) != string(s.reply) || c.RecordsAuthenticated != 8):
++				t.Errorf("%s tamper=%v: %s %s, reply %q, %d authenticated", v.name, tamper, state, c.Reason, reply, c.RecordsAuthenticated)
++			case !v.closes && !tamper && (state != StateComplete || string(reply) != string(s.reply)+"after the alert"):
++				t.Errorf("%s: %s, reply %q", v.name, state, reply)
++			case !v.closes && tamper && c.ReasonCode != AuthenticationFailed:
++				t.Errorf("%s tamper: %s %s", v.name, state, c.ReasonCode)
++			}
++		}
++	}
++
++	// TLS 1.2: a close_notify ends the client's direction; a warning alert other than close_notify does not.
++	for _, tc := range []struct {
++		alert  []byte
++		closes bool
++	}{{[]byte{1, 0}, true}, {[]byte{2, 10}, true}, {[]byte{1, 100}, false}} {
++		t12 := tls12SessionWith(tc.alert, []byte("after the alert"))
++		keys, _ := ReadKeys(t12.keylog)
++		c := NewConnection(keys, "c", "s")
++		c.Feed("c", t12.client)
++		c.Feed("s", t12.server)
++		var request []byte
++		for c.HasWork() {
++			for _, d := range c.Advance(64) {
++				if d.Endpoint == "c" {
++					request = append(request, d.Data...)
++				}
++			}
++		}
++		want := string(t12.request)
++		if !tc.closes {
++			want += "after the alert"
++		}
++		if c.Finish() != StateComplete || string(request) != want {
++			t.Errorf("TLS 1.2 alert %v: %s %s, request %q", tc.alert, c.State, c.Reason, request)
++		}
++	}
++}
++
+ // writer12 seals TLS 1.2 AES-128-GCM records (explicit nonce = sequence number).
+ type writer12 struct {
+ 	aead cipher.AEAD
+@@ -277,8 +354,11 @@
+ 	return plainRecord(kind, body)
+ }
+ 
+-// tls12Session builds an ECDHE-RSA AES-128-GCM (0xc02f) session.
+-func tls12Session() session {
++func tls12Session() session { return tls12SessionWith(nil, nil) }
++
++// tls12SessionWith builds an ECDHE-RSA AES-128-GCM (0xc02f) session; with alert set the client sends that alert
++// after its request and then one more application record carrying late.
++func tls12SessionWith(alert, late []byte) session {
+ 	clientRandom, serverRandom := bytes.Repeat([]byte{0x5a}, 32), bytes.Repeat([]byte{0x11}, 32)
+ 	master := bytes.Repeat([]byte{0x33}, 48)
+ 	block := prf(master, append(append([]byte("key expansion"), serverRandom...), clientRandom...), 40, "sha256")
+@@ -296,6 +376,10 @@
+ 	s.client = append(s.client, plainRecord(20, []byte{1})...)
+ 	s.client = append(s.client, cw.record(22, finished)...)
+ 	s.client = append(s.client, cw.record(23, s.request)...)
++	if alert != nil {
++		s.client = append(s.client, cw.record(21, alert)...)
++		s.client = append(s.client, cw.record(23, late)...)
++	}
+ 	s.server = append(plainRecord(22, handshake(2, sh)), plainRecord(22, handshake(14, nil))...)
+ 	s.server = append(s.server, plainRecord(20, []byte{1})...)
+ 	s.server = append(s.server, sw.record(22, finished)...)
