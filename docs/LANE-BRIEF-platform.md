@@ -194,6 +194,12 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 
 ## 7. Pitfalls learned
 
+- **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
+  `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An
+  unconditional `check_docs_counts.py --strict` turned every PR's release build red (Dependabot #151, #149).
+- **Release gate needs the Go binary (PRO-478):** since PRO-402 `protodetect.py analyze` runs only the Go binary
+  and exits 2 without it. Any job that runs `unittest discover` must first run `tools/go_ci.py build` (offline,
+  vendored), as the ci test jobs do; `publish-release.yml` did not, and two launcher tests failed `2 != 0`.
 - **gremlins needs the module cache:** `gremlins unleash` always runs `go mod download` before coverage, which fails
   under `GOPROXY=off` even with a vendored tree. Fill the cache in the isolated networked step from a RUNNER_TEMP
   copy of go/go.mod and go.sum (PRO-176).
