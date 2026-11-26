@@ -17,6 +17,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/engine"
 	"github.com/leenadav/protocol-detector/go/internal/errs"
 	"github.com/leenadav/protocol-detector/go/internal/parity"
+	"github.com/leenadav/protocol-detector/go/internal/pyjson"
 	"github.com/leenadav/protocol-detector/go/internal/session"
 	"github.com/leenadav/protocol-detector/go/internal/signatures"
 	"github.com/leenadav/protocol-detector/go/internal/transport"
@@ -127,8 +128,18 @@ func Datagram(c *parity.Case) interface{} {
 
 // SessionResult mirrors run_session.
 type SessionResultFull struct {
-	Packets []PacketResult           `json:"packets"`
-	Records []map[string]interface{} `json:"records"`
+	Packets []PacketResult `json:"packets"`
+	Records Records        `json:"records"`
+}
+
+// Records are a session's records, written the way the reference's json.dumps writes them: encoding/json
+// drops the fractional part of an integral float64 (40.0 -> 40), and compare.py is strict on the leaf type
+// (PRO-166, SEC-PAR-2), so the analyzer's int/float choice must reach the results file unchanged.
+type Records []map[string]interface{}
+
+// MarshalJSON writes the records with pyjson (Python's number forms; nil is the empty list).
+func (r Records) MarshalJSON() ([]byte, error) {
+	return []byte(pyjson.Dumps([]map[string]interface{}(r), "records", nil)), nil
 }
 
 // packPath overrides the content pack location; empty means content.json beside the cases file.

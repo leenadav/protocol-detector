@@ -132,7 +132,7 @@ Taken before M5 so that session records become comparable for every family as it
 
 | item | state | evidence |
 |---|---|---|
-| One versioned content source | implemented | `tools/export_content.py` writes `migration/fixtures/content.json` from the Python catalogs: 156 applications (host-named services included), the engine-label map, the server-name catalog tables of the current release (entries, service domains, exact web fronts), 41 flow risks, the closed vocabularies, and the content release with its digest and component digests. `make check` → `content-pack` fails when the Python content and the pack differ. |
+| One versioned content source | implemented; Go-canonical since PRO-411 | Since PRO-411 (2026-11-25) `go/internal/content/pack.json`, `history.json` and the release ledger `lock.json` are the source, edited with `tools/content_pack.py add BATCH.json` (docs/CONTENT-BATCHES.md); `tools/export_content.py` and `migration/content_history.py` are removed. Before that: `tools/export_content.py` wrote `migration/fixtures/content.json` from the Python catalogs: 156 applications (host-named services included), the engine-label map, the server-name catalog tables of the current release (entries, service domains, exact web fronts), 41 flow risks, the closed vocabularies, and the content release with its digest and component digests. `make check` → `content-pack` fails when the Python content and the pack differ. |
 | Fail-closed loading | implemented | `go/internal/content` validates like `applications._validate` and `host_apps.build_tables` (duplicate names/domains/web fronts, unknown category/technology/characteristic, port specifications, unresolved references, outcomes without entries, schema, release); `TestPackFailsClosed` covers eight corruptions plus garbage. |
 | Verdicts | implemented | `go/internal/appid`: `session_verdict` rules in order (identified direction wins, server disagreement recorded, host catalog refines ssl/quic/web-browsing from a client-asserted name with the explicit reason, ECH outer never mapped, provider web fronts affiliate only; bidirectional ambiguity intersection; unknown before invalidated before insufficient-data before incomplete), web-application refinement (CONNECT, WebDAV, RPC-over-HTTP, gRPC, DNS-over-HTTPS, IPP/OCSP/SOAP), NetBIOS and TURN refinements, port usage incl. carrier ports after a shift, D03 attribution, midstream outcomes. Custom signatures and RuleIndex mappings are absent by construction (the Go engine never sets `application`). |
 | Flow risks | implemented | `appid/risks.go` ports every `flow_risks` branch that needs no x509 helper; certificate-validity and key classification are unreachable until the certificates option is ported (M7). |
@@ -819,6 +819,66 @@ Gates on `8d3fa5f` (code `c01942f`): `make check` exit 0 (Python 896 and 86 test
 adversarial 4,041 of 4,041). Extra decrypt differentials: seeds 2, 3 and 4 at 2,000 captures each 0 mismatched
 (161, 137 and 152 PRO-260 approved); live decrypt seed 2 at 1,000 scripts 0 mismatched.
 
+**After PRO-481 (2026-11-26): `main` merged into PR #147.** `main` already carries PRO-119 through PR #150 (`afbe5e1`,
+`91960e0`) and PRO-459 (`852af38`, which ported this PR's uncovered cases), and terminal zeroing through PR #144
+(PRO-437). The merge takes main's Go code whole in the five conflicting files, so the table above describes `c01942f`,
+not this branch's code. On this branch the names map to: `datagramFailure` -> `parseFailure`
+(`TestParseFailureIsACheckedAssertion`); `TestAwaitingKeysConnectionHoldsItsBytesOnce` ->
+`TestAwaitingKeysConnectionsHoldEachByteOnce`, `TestSegmentedAwaitingKeysConnectionHoldsItsBytesOnce`;
+`TestDecodedRecordsAreNotRetained` -> `TestFullyDecodedLiveConnectionHoldsNoRecords`; `TestReplacedSecretsAreZeroed`
+-> `TestKeyUpdateZeroesTheSupersededSecret`, `TestHandshakeSecretIsZeroedWhenTheApplicationEpochStarts`;
+`TestTerminalConnectionsZeroTheirRecordKeys` -> `TestReleaseZeroesTLS13SecretsButNotTheKeyProvider`,
+`TestReleaseZeroesTLS12KeyBlockAndDiscardKeepsState`; `TestExpireZeroesTheSecretsItDrops` ->
+`TestExpireZeroesStaleSecrets`; `TestSelectNeverWaitsOnAFullLookahead` -> `TestSelectNeverWaitsOnAFullProbe`,
+`TestDispatchPrefixStaysBelowLookahead`. One behaviour of `c01942f` is not on `main` and was not re-added by the
+merge: it zeroed the TLS 1.2 key block as soon as the AEADs were built (IVs copied out); `main` keeps the block and
+zeroes it when the connection is wiped. What the PR still adds over `main`: the held alert patch
+(`migration/held-patches/PRO-119/`), the Wait-branch comment in `Inspector.Feed` and
+`TestAnalyzeReleasesItsKeyProvider` (`keylogcap`).
+
+## Security review finding SEC-QUIC-1 (budget): an over-budget merge forgot the connection (PRO-47, PRO-122, 2026-11-26)
+
+**The finding (Security Reviewer, PRO-47).** `Assembler.Add` (`go/internal/protocols/quicx/assembler.go`) removed
+a connection whose merge went over `MaxFragments` (8) or `MaxCrypto` (16,384 bytes) and answered `exhausted`. The
+next datagram of that connection started a fresh entry, so a ClientHello B contradicting the complete ClientHello A
+the connection had already assembled was taken as a first message: `complete`, no conflict, no retraction. The
+SEC-QUIC-3 name check only catches a B naming another server in a flow scope; a B with the same server name
+(another client random, ALPN or key share), or any B in the bare inspector's empty scope, went through. The Python
+reference has the same behaviour (`protocol_engine/quic.py`, `QuicAssembler.add`: the over-budget branch returns
+before `self.entries[key] = entry`).
+
+**The fix (Go only; Lee approved it on PRO-124, 21:20, relayed by Hermes on PRO-122).** The Python reference is
+unchanged and keeps forgetting the connection. In Go the entry stays as a sticky exhausted marker:
+- it keeps the bytes it held before the overflow (within the budget; the overflowing datagram's bytes are never
+  stored), so the memory bound per entry is unchanged and `MaxConnections` still bounds the store;
+- every later datagram of the connection answers `exhausted` (a budget error from `Validate`, counted in
+  `Counts["exhausted"]`) and is never merged or assembled, so nothing after the overflow becomes evidence;
+- a later datagram that contradicts the retained bytes (the PRO-201 contradiction check, which already runs before
+  the budget) turns the marker into the conflict marker, with the usual retraction and sticky invalidation;
+- it ends like every entry: `Reset(scope)`, `Clear`, idle expiry or LRU eviction.
+
+What Python does: A `complete`, overflow `exhausted` (entry gone), B `complete` (B's evidence accepted). What Go
+does now: A `complete`, overflow `exhausted` (marker kept), A again `exhausted`, B `conflict` (retracts).
+
+| item | state | evidence |
+|---|---|---|
+| Regression test | `TestCompleteThenExhaustedThenContradictionConflicts` (`quicx`) | Fails on `main` `23bbc0c` ("overflow: exhausted len 0": the connection was forgotten, and B then assembled as `complete`). After the fix: the marker is kept, A again is `exhausted`, B is `conflict` and sticky, counts are 1 conflict and 2 exhausted, `Reset` forgets it; through `Validate`, B retracts with no host name in a flow scope and in the bare inspector's scope. |
+| Updated expectations | `TestAssemblerScopesStickyConflictExpiryAndReset`, `TestContradictionOutranksExhaustion` | Their exhaustion steps asserted the entry was forgotten (`Len() == 0`); they now assert the kept marker (`Len() == 1`, not conflicted). The scanning oracle of `TestAssemblerMatchesTheScanningOracle` takes over the same rule, so the indexed assembler is still compared with it over 40 seeded sequences that include over-budget and contradicting adds. |
+| Parity | divergence recorded, 0 case changes | No committed case sends a datagram to a connection after its overflow: `make go-check` matches 7,474 of 7,474 (144 exempted, as before). The random differential (single datagrams) is unchanged: seed 1, 2,000 cases, 1,882 matched, 28 SEC-HTTP-1 and 90 SEC-QUIC-3 approved, 0 failures. |
+
+**In golden mode (PRO-458, 2026-11-26: `main` with #124 merged into PR #127).** The golden replay stays reference-free
+and its comparison is not loosened. The pins act at recording time: a `--record` run approves a mismatch only through
+`sec_sess1.Pins` exactly as above, and then stores Go's pinned answer (flagged `"sec_sess1"` in the entry, as an
+approved PRO-189/PRO-260 divergence stores its modelled answer), so a replay requires Go to give exactly that answer;
+`sec_sess1.json` stays the record of every such delta. `analyze.json.gz`, `live.json.gz` and `live-decrypt.json.gz`
+were re-recorded with Go from the merge (go1.27.4) and the reference; the other six golden files are unchanged and
+pass as recorded. Analyze and live: same inputs, only the 20 and 6 pinned answers differ after normalisation. Live
+decrypt was re-recorded under OpenSSL 3.5, the line of the previous file, so it keeps the PRO-260 coverage (40
+approved, 15 pinned; under 3.0 it would be 0 and 18); its 104 scripts with a real OpenSSL exchange have fresh bytes,
+the other 196 have the same input and, but for the 15 pinned, the same normalized answers. Replays: analyze 0
+mismatched, 20 recorded SEC-SESS-1; live 0 mismatched, 3 PRO-189, 6 SEC-SESS-1; live decrypt 0 mismatched, 40
+PRO-260, 15 SEC-SESS-1.
+
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 
 **The finding** (Codex review PRO-12, Tier 1 window 1, `dbe20f3..50ce5c0`; `go/internal/engine/inspector.go`,
@@ -935,6 +995,23 @@ reason, a correct or wrong hint, or a tight byte budget. The Go engine answers t
 | Allow-list | empty | `migration/parity/random_allow.json`: case id to reason. An entry that no longer mismatches on its seed fails the run. |
 | Self-checks | pass, in CI | `--plant` alters one reference answer to another valid status, and the run must report exactly that case. `--self-test` checks `judge()`: an allowed mismatch passes, an unlisted one fails, and a listed case that now agrees fails. Removing the stale-entry rule makes it fail. |
 | Found and fixed | 0 engine mismatches | The first trial had 8 cases Go declined ("not ported: hint http/ftp/redis"). It was a harness error: `cases.run_stream` drops a hint outside `registry.PARSERS`, so stream hints are now drawn from `PARSERS` only. |
+
+## Parity gates on frozen answers, no Python run (PRO-401, Lee 2026-11-25; Python removal 1 of 3)
+
+Lee decided on 2026-11-25 to remove the Python reference engine quickly, in three pull requests; this is the first
+(PR A): every Go gate stops running Python. Product Python is untouched (no Frozen-Python exception is needed); the
+changes are in `migration/`, `go/`, the Makefile and the CI tooling.
+
+| item | state | evidence |
+|---|---|---|
+| Committed cases | frozen, unchanged | `migration/fixtures/cases.json` holds 7,462 cases (the task said 7,474; the file has 7,462), every one with its `expected` answer. Regenerated once from the current Python (`cases.py --write --head c08773f+2026.11.9`): byte-identical, so the file is the reference's current output. `make parity` (the reference against the file): 7,462 of 7,462. `migration/parity/deltas.json` is kept as history and still applies. |
+| Differential gates | golden replay | `migration/parity/golden.py`. Each differential (`analyze`, `decrypt`, `live`, `live-decrypt`, `control`, `server`, `schema`, `adversarial`, `random`) gained `--record FILE` (the original run, which also writes the inputs and the answer Go was judged against; nothing is written after a mismatch, and an approved PRO-189/PRO-260 divergence is stored as the modelled answer) and `--golden FILE` (no generator, no reference import; the same comparison). Files: `migration/fixtures/golden/*.json.gz` (15.1 MB in all, fixed-mtime gzip; the control plane's long snapshot lines are pinned by SHA-256). Recorded seeds and counts are the gates' own: 300, 300, 300, 300, 120, 12, 200, 4,041 cases, 2,000. `make golden-record` re-records them all while the reference exists; `make golden-check` replays them. |
+| Replays | 0 mismatches | with the reference present and with `protocol_engine/` and `protocol_adapters/` removed and `cryptography` blocked: analyze 300 captures (14,540 rows), decrypt 300 (26 recorded PRO-260 divergences), live 300 (4,617 event lines, 3 PRO-189), live-decrypt 300 (4,120 lines, 41 PRO-260), control 120 runs (15,651 reads), server 424 exchanges, schema 200 captures, adversarial 4,041 cases (1 known finding F-ADV-1), random 2,000 (118 approved divergences; the planted wrong answer is caught). |
+| Boundary tests | lock | `migration/mutation/boundaries.py --check` compares the three generated `boundary_test.go` files with `migration/mutation/boundaries.lock.json` (SHA-256 each) and imports nothing of the reference; `--check-reference` re-renders them (identical today). |
+| Randomized differential | replaced | Go-only property tests `go/internal/engine/openings_property_test.go` (rapid): generated TLS ClientHellos, HTTP/1 heads, SSH identification lines and protected QUIC v1/v2 Initials whose identity is known by construction are identified as built (hostname, ALPN), split invariant and deterministic, never another identity when truncated, under a wrong hint or under a tight budget. 5,000 draws per property pass. `make property-long` (nightly, replacing the Python-oracle `parity-random-long` job) runs them with 50,000. |
+| `protodetect serve` | no interpreter | The three answers it took from Python workers are its own (`go/internal/serve/showcase.go`): the catalog frozen from `catalog_data()` into `catalog.json` (a test keeps it equal to the content pack's applications and outcomes and the engine's families), the demo capture frozen from `demo_bytes()` into `demo.pcap`, and the decryption showcase made with `crypto/tls` in memory (TLS 1.3, TLS 1.2 AES-128 and AES-256 GCM; all three decrypted, inner applications webdav, web-browsing, resp). `--python` is accepted and unused. `/api/decrypt/demo?x` is now compared by shape like the other showcase answers: Go's `crypto/tls` and OpenSSL negotiate different TLS 1.3 suites and record counts by construction. The server golden holds nothing of the recording host: an interface list equal to the replaying host's (`socket.if_nameindex()`, the reference's own expression) is a marker, any other list is compared, and the synthetic-scope probe names a non-loopback interface of the host that runs it (found on the first CI runs, `49f8e7d`, `cb1cbad`). It holds nothing of the build either (PRO-431, Hermes's decision for PRO-426/PRO-430: no re-recording): PR #123 refreshed `presentation/SOURCE.json` after the recording, and on a golden replay `commit`, `branch` and `build_digest` of `/api/health` and of `/api/catalog`'s `source` are masked on both sides (a missing, null or non-string field is not masked). A separate check (`build_identity_problems`, in replay and in reference mode) holds Go's values in both answers to the tree's `SOURCE.json`; `version`, `repository` and the rest are compared in full. On `8541b3a` (main `23bbc0c` merged): 424 exchanges, 0 mismatched; build identity 2 answers checked, 0 problems. |
+| CI | no reference in Go or CI jobs | `go-parity` no longer installs the decryption extra. `tools/content_gate.py` runs the Python content targets only while the reference's content and lock exist (half of them fails); otherwise the pack identity, the identifier scan and the Go digest recomputation run. The nightly job runs `make property-long`. Job names are unchanged (branch protection matches them). |
+| Left for PR B | the engine's own jobs | Jobs that test or package the Python engine itself still need it and go with it: `tests (python …)` (unit suite, docs counts, inventory, manifest, the `oracle` mode of `tools/go_ci.py`), `presentation with Node…`, `behaviour diff…`, `per-commit mutation smoke…`, `package build…`, bandit's engine paths in `static analysis…`, and the release build's "full gate" and wheel steps (`publish-release.yml`). `make check` keeps its Python targets until then. |
 
 ## tshark oracle on real implementations (PRO-127, 2026-11-22)
 
@@ -1199,14 +1276,18 @@ pattern search), charged before the work runs. The allowance is `max(MaxSignatur
 so a flow that arrives in one or two segments is evaluated exactly as by the reference, and the bound does not
 depend on how the peer splits its bytes. An exhausted budget ends the direction as `budget_exhausted` ("Signature
 work budget exhausted") and no later byte is evaluated; it is never a match. The reference has no such bound:
-this is a Go-only divergence for flows past the allowance, pending approval (Hermes/Lee, PRO-332).
+this is a Go-only divergence for flows past the allowance, pending approval (Hermes/Lee, PRO-332). Since PRO-370
+the allowance is capped at `MaxSignatureWorkCeiling` = 2^28 units (below), so the divergence also covers a flow whose
+two full evaluations exceed 2^28, even when it arrives in one or two segments. Hermes approved the 2^28 value on
+PRO-375 (2026-11-25); PRO-446 ported the ceiling to `main` (it had merged only into
+`claude/engine-PRO-51-sig-compile-cost` through PR #122).
 
 | item | state | evidence |
 |---|---|---|
 | Upper bound | `TestEstimateBoundsTheCompiledProgram`, `FuzzEstimateBoundsProgram` (in `GO_FUZZ_SMOKE`) | the estimate is >= `len(prog.Inst)` of the real compile for every corpus pattern, with and without IGNORECASE; 257,877 fuzz executions, no counterexample |
 | Caps | `TestPatternInstructionCap`, `TestSetInstructionCap`, `TestHostileDocumentLoadIsBounded` | the PRO-170 shape is refused; 12 patterns of 8,202 load, the 13th is refused; reference rule errors win over the cap |
 | Flow cost | `TestUnknownPayloadSignatureWorkIsBounded`, `TestExhaustedSignatureWorkNeverMatches`, `TestSignatureWorkBelowTheBudgetKeepsTheReferenceVerdict`, `TestWorkStopsBeforeTheSearchAndNeverMatches` | PRO-170 1-byte `.{0,4096}` flow: `budget_exhausted` after 80 updates within its allowance; early matches, full single segments and the test set's 1-byte flow (2.0 M units) keep the reference verdict |
-| Parity | divergence pending approval, 0 case changes | no committed case carries a signature set (gate numbers in the lane brief and the PR) |
+| Parity | divergence pending approval, including the PRO-370 ceiling (2^28 per direction, value approved by Hermes on PRO-375), 0 case changes | no committed case carries a signature set (gate numbers in the lane brief and the PR) |
 
 Load times (4 vCPU Xeon 2.3 GHz; `BenchmarkHostileDocumentLoad` in `go/internal/signatures`, 10 iterations each):
 
@@ -1225,3 +1306,37 @@ Flow cost of one direction (1-byte updates unless noted; `MaxUpdates` 1,000,000)
 | 12 PRO-170 signatures (the set cap), 2000 | ~2 min (projected: 2.0e11 units at the measured 0.65 ns per unit) | 54 ms, `budget_exhausted` at 3.9e8 units |
 | 12 signatures, one 2000-byte segment | ~0.6 s | ~0.6 s, `unknown` (unchanged: within two full evaluations) |
 | 12 signatures, `signature_bytes` 65536 (configured maximum) | ~38 h (projected, 2.1e14 units) | 11-34 s, `budget_exhausted` at 1.3e10 units (two full evaluations; see the lane brief) |
+
+**PRO-370 follow-up (Codex PRO-369, two P2 findings on `2885afa`, plus one found while fixing them).** All three are Go only, with no parity case change.
+
+1. *Length-only conditions and candidate preparation were free* (`go/internal/signatures/signatures.go`). An
+   integer or set condition was never charged, and neither was building the candidate list. A document of 4,096
+   signatures with 12 `unknown-req-tcp-payload-length` conditions each therefore did about 1 ms of uncharged work per update,
+   for up to 65,536 updates. Now every condition costs `signatures.FixedWork` (8 units: a length-only condition
+   measured about 21 ns, against about 3 ns per RE2 unit), plus its bytes when byte-valued. Preparation costs `FixedWork` per signature of
+   the family, plus the bytes the exact index hashes. All of it is charged before the work runs. `Set.WorkPerEvaluation` is this fixed part, and the allowance
+   counts it: two full evaluations are `2 x (buffer x WorkPerByte + WorkPerEvaluation)`.
+   Tests: `TestLengthOnlyConditionsAndCandidatesAreCharged`, `TestLengthOnlySignatureWorkIsBounded`.
+2. *The adaptive allowance had no ceiling* (`go/internal/engine/inspector.go`). It is now
+   `min(MaxSignatureWorkCeiling = 2^28, max(2^26, two full evaluations))`. The consequence is a wider Go-only divergence, pending the same
+   approval as SEC-SIG-1: a flow whose two full evaluations exceed 2^28 can end `budget_exhausted` even when it arrives in one
+   or two segments. At the default `signature_bytes` 2000, one full segment of the largest set the caps allow
+   (about 2.0e8 units) still gets the reference verdict. At 65536 it is refused before the search runs. Test:
+   `TestSignatureWorkAllowanceHasACeiling`. `TestUnknownPayloadSignatureWorkIsBounded` now expects the ceiling,
+   not two full evaluations, at 2000 with 12 signatures.
+3. *The contexts' copy was free* (found while fixing 1). Each evaluation copies the whole unknown buffer into its
+   contexts, so with a cheap set 1-byte updates copied up to 65,536 x 64 KiB uncharged. The inspector now charges
+   one unit per byte copied before it copies (`Work.Charge`), and the allowance counts it (`WorkPerByte + 1`).
+   The copy is also skipped when no signature reads `unknown-tcp`. Test: `TestUnknownPayloadCopyIsCharged`. The
+   test set's 1-byte flow to a full default buffer now uses 4.0 M units (2.0 M before), still under 1/16 of the
+   2^26 floor.
+
+| flow (1-byte updates unless noted) | `2885afa` | PRO-370 |
+|---|---|---|
+| 4,096 signatures x 12 length conditions, `signature_bytes` 65536 | 0 units charged: never exhausted, about 1 ms per update for up to 65,536 updates | 158 updates, 165 ms, `budget_exhausted` |
+| 1 PRO-170 signature, 65536 | about 2.8 s projected (1.1e9-unit allowance) | 246 updates, 165 ms, `budget_exhausted` at the ceiling |
+| 12 PRO-170 signatures, 65536 | 11-34 s, `budget_exhausted` at 1.3e10 units | 65 updates, 33 ms, `budget_exhausted` at the ceiling |
+| 12 PRO-170 signatures, 2000 | 54 ms at 3.9e8 units | 33 ms at the ceiling (2.7e8) |
+| 12 signatures, one 65547-byte segment at 65536 | about 17 s projected (one evaluation, 6.5e9 units) | 54 us, `budget_exhausted` before the search |
+
+At the slowest measured rate (about 2.6 ns per unit), the ceiling is about 0.7 s of CPU per direction.

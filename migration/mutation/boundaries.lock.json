@@ -1,0 +1,17 @@
+{
+ "comment": "SHA-256 of each file migration/mutation/boundaries.py generates (PRO-401)",
+ "files": {
+  "go/internal/protocols/quicx/boundary_test.go": {
+   "cases": 48,
+   "sha256": "a8f696a6f6435594c9241db0852216b0d08a7c5073a52278fe1236bdcdbe6ca8"
+  },
+  "go/internal/protocols/textroute/boundary_test.go": {
+   "cases": 105,
+   "sha256": "659f5027159128199d00ce1bae3b70fb5815cf1a41c798a7ed35d347453f50c8"
+  },
+  "go/internal/protocols/tlsx/boundary_test.go": {
+   "cases": 73,
+   "sha256": "d605b9d73bb4e72ab52706c0cc73c91ac30a1a5c8ab8d9815862be4e0bc67926"
+  }
+ }
+}

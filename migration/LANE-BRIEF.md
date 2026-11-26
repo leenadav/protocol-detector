@@ -41,7 +41,10 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
 - **Parity:** 7,474 of 7,474 cases agree (18 of them through PRO-260's pinned Go-only deltas; 12 SEC-FP-1 ALPN fingerprint cases added by PRO-394). 79 of 88 families are parity-verified since PRO-201 (`098b201`): the verifier no longer credits a replay of the positive message as foreign bytes, so ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh are `experimental` until real foreign cases are added. Server parity: 424 exchanges, 0
   differences. The adversarial suite (4,041 cases) passes.
 - **Content release:** 2026.11.9 (digest `cdaa5993077d101a`), with 544 applications and 442 host entries. Every earlier
-  release reproduces the digest it was published with (C11).
+  release reproduces the digest it was published with (C11). **Since PRO-411 the content source is Go's**
+  (`go/internal/content/pack.json`, `history.json`, ledger `lock.json`), edited only with `tools/content_pack.py add
+  BATCH.json` (docs/CONTENT-BATCHES.md); the Python export tools are gone. Open before a real batch merges: the
+  frozen answers (cases.json, golden files) and the serve catalog pin release 2026.11.9 and need Go pinned to it.
 - **Vendored dependencies:** `x/crypto` and `x/sys/cpu` live under `go/vendor`, and every Go command runs with
   `-mod=vendor`.
 - **Codex review packet:** complete in `migration/review-packet/` (frozen head `50ce5c0`, 43 chunks).
@@ -89,6 +92,10 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   `5b48d91` (PRO-291). P2 2: an undersized client Initial on a conflicted connection no longer refreshes the marker
   or retracts; the 1200-byte rule runs right after opening, before frames (also the related P3). `653b1ca` on
   `claude/engine-PRO-315-quic-conflict-size`, cut from PR #107's head `d950eb8` (PR into that branch).
+- **SEC-QUIC-1 budget (PRO-47, PRO-122):** an over-budget CRYPTO merge no longer forgets the QUIC connection; it
+  stays a sticky exhausted marker with its pre-overflow bytes, so a later contradicting ClientHello conflicts and
+  retracts instead of assembling as a first message (Go only, recorded divergence approved by Lee on PRO-124).
+  Branch `claude/engine-PRO-122-quic-exhausted-sticky`, PR #145 into `main`; details in `STATUS.md`.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 - **PRO-141 (livectl stop flake):** the stand-in worker sets its INT trap first and writes a ready file last; the
   three stop tests wait for it (`aff4d13`, branch `claude/vigilant-meitner-t7kw7h`). 200 of 200 under `-race`, also
@@ -126,7 +133,7 @@ Run everything from the repository root. Times are for the cloud container (4 vC
 |---|---|---|
 | `make go-check` | gofmt, vet, `go test -race`, 28 fuzz targets, parity-go with verify_families, every differential, bench-gate | about 8 min (488 s) |
 | `make check` | the Python suite (866 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
-| `make parity-random` (in `go-check`) | the randomized differential: `--self-test`, `--plant`, then seed 1 at 2,000 cases, with the Python reference as oracle (`migration/parity/random_diff.py`, allow-list `random_allow.json`). `make parity-random-long SEED= COUNT=` for longer runs | about 3 s |
+| `make parity-random` (in `go-check`) | the randomized differential's frozen seed-1 run (2,000 cases, `migration/fixtures/golden/random.json.gz`): `--self-test --rules-only`, `--plant` on the golden file, then the replay. Every differential of `go-check-parity` replays its golden file since PRO-401 and runs no Python reference; `make golden-record` re-records them while the reference exists. Fresh random inputs: `make property-long` (Go only, nightly) | about 3 s |
 | `make pcap-oracle` (nightly, not in `go-check`) | the tshark oracle (`go/oracle`, its own test-only module): real OpenSSL, curl and quic-go traffic on 127.0.0.1, read by gopacket, fed to the engine and compared with tshark 4.2.2 on SNI, ALPN, TLS version, HTTP Host and QUIC version. It needs the pinned tshark, OpenSSL and curl (`go/oracle/README.md`). Allow-list: `go/oracle/allow.json` | about 3 s |
 | `make mutation` (nightly, not in `go-check`) | gremlins v0.6.0 on the nine parser packages against `migration/mutation/baseline.json` (fails on a drop of more than 5 points). `go-check` runs only `boundaries.py --check` and `mutation.py --self-test`. Regenerate the boundary tests with `python3 -B migration/mutation/boundaries.py` | about 20 min |
 | `make go-vendor-check` | re-vendors into `build/go-vendor-check` and diffs it against `go/vendor` | seconds (module cache warm) |
@@ -155,16 +162,19 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PRO-101 nightly evidence | the first scheduled `nightly-fuzz.yml` run on `main` after `cb3ac80` (its `extended Go fuzz (every fuzz target)` job picks up the four new targets); record the run id in `STATUS.md` |
 | PRO-201 decisions: buffer transient capacity (ADR 0001), unkeyed session id, signature names that collide with built-ins, 79 of 88 verified families | Hermes/Lee |
 | PM-1 to PM-8 detection fixes | the merge. They are Go only, and each needs an approved parity delta. The prepared tests use `pending()`; remove that marker when the fix lands. |
-| PRO-119 A2/A3 P3 hardening (`c01942f`, branch `claude/confident-curie-qpv2sl`, PR into `main`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
+| PRO-119 duplicate PR #147 (branch `claude/confident-curie-qpv2sl`): superseded by PR #150 (PRO-459 ported its uncovered cases). PRO-481 merged `main` into it with main's Go code taken whole; it now adds only the held alert patch, the inspector Wait-branch comment and one keylog release test | Lee: merge it for those, or close it (memory: not before the port is verified) |
 | PRO-119 held: records after a closing alert (`migration/held-patches/PRO-119/`) and SEC-QUIC-2 (the conflict marker's LRU eviction, present in the Python reference too) | Lee: approve each Go-only divergence (as PRO-124), or decline. Both move the parity target; the alert one is reached by `decrypt_diff.py` seed 2 case 236 |
-| SEC-SIG-2 / SEC-SIG-1 (PRO-332, branch `claude/engine-PRO-51-sig-compile-cost`; replaces PRO-160 and PRO-159) | Hermes's review, QA Reviewer (Codex), then Lee's merge. Open for Hermes: (1) approve the Go-only divergence (a direction past its signature work allowance ends `budget_exhausted`; the reference has none); (2) whether to add an absolute ceiling to the allowance (today two full evaluations: up to ~34 s per direction at `signature_bytes` 65536 with a full 100,000-instruction set, ~1 s at the default 2000); (3) the 11,110-cheapest-pattern document loads in ~99 ms, above the 50 ms target, from per-pattern fixed cost the instruction caps do not bound. Numbers: `migration/STATUS.md`, "SEC-SIG-2 and SEC-SIG-1". |
+| SEC-SIG-2 / SEC-SIG-1 (PRO-332, branch `claude/engine-PRO-51-sig-compile-cost`; replaces PRO-160 and PRO-159) | Hermes's review, QA Reviewer (Codex), then Lee's merge. Open for Hermes: (1) approve the Go-only divergence (a direction past its signature work allowance ends `budget_exhausted`; the reference has none); (2) the absolute ceiling PRO-370 added (`MaxSignatureWorkCeiling` 2^28, about 0.7 s per direction at worst; past it even a single full segment ends `budget_exhausted`; value approved by Hermes on PRO-375, ported to `main` by PRO-446 because PR #122 merged into the PRO-51 branch, not `main`), with PRO-370's charging of length-only conditions and candidate preparation (`signatures.FixedWork`); (3) the 11,110-cheapest-pattern document loads in ~99 ms, above the 50 ms target, from per-pattern fixed cost the instruction caps do not bound. Numbers: `migration/STATUS.md`, "SEC-SIG-2 and SEC-SIG-1". |
 | SEC-QUIC-3 (`fe87386`, PR into `main`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
 | PRO-291 (`5b48d91`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
 | SEC-SESS-1 Go part (PRO-398 / PRO-432, PR #124, branch `claude/engine-PRO-398-halfopen-budget`): half-open budget, eviction, no SYN-retransmission refresh | Hermes's review, QA Reviewer (Codex), then Lee's merge. Lee's option B (2026-11-25): the 41 random-suite divergences are pinned case by case in `migration/parity/sec_sess1.json` (analyze 20, live 6, live-decrypt 18 under OpenSSL 3.0 / CI and 15 under 3.5; STATUS.md "SEC-SESS-1"). Live-decrypt case ids name the OpenSSL line: a new runner OpenSSL needs its own reviewed pins. A new case that differs is a new reviewed pin, never a wider rule. |
 | PRO-315 (`653b1ca`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
+| Python removal (Lee, 2026-11-25), PR A of 3 (PRO-401, PR #127): Go and CI gates on frozen answers, `serve` without Python | Hermes's review, then Lee's merge. PRO-431: main merged in and the server golden made build-independent (`8541b3a`); the fix then flows into #135 and #138 by merge. PR #125 (PRO-402) ports the same serve answers: whichever lands second reconciles `go/internal/serve`. PR B (the engine and its own jobs) and PR C wait for it. The demo capture, showcase and catalog are Go's own since PRO-401. |
+| SEC-QUIC-1 budget (PRO-122, branch `claude/engine-PRO-122-quic-exhausted-sticky`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
+| A2 second run (PRO-119): SEC-QUIC-2, a QUIC conflict marker refreshes its idle time but not its LRU place, so 1024 newer connections evict it; SEC-DEC-1, records after a close_notify or fatal alert are still decrypted | an approved parity delta each (Hermes/Lee, as for PRO-122/PRO-123). The Python reference behaves the same way (`quic.py` `conflicted`, `poc_decryption/engine.py` and `tls12.py`), so a Go-only fix would move parity. `migration/notes/PRO-119.md`. A prepared alert patch, against `c01942f` and not applying here, is `migration/held-patches/PRO-119/` on the dropped PR #147's branch `claude/confident-curie-qpv2sl` |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -175,6 +185,7 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 `aaa5a7e`, `93cbf2a` (with `36e2c5e`), `76e467a`, `d65d21a`, `07b216e`, `6ab434d`, `7dcabb7`, `b6ed149`, `c08773f`,
 `ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9`, `4d8aa29` and `376a204` (PRO-31), each reviewed as its own diff (`376a204` together with `6194fb9`).
 
+PRO-166 (PR #141, against `main` `23bbc0c`): `a2fd9b1` (fix and tests), `763b227` and `813de6e` (PRO-459: #139's uncovered tests ported), with the documentation commit after them.
 PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentation commit after them.
 PRO-261 (against `cb3ac80`): `7045c42`, `9121403`, `9af4388` plus the documentation commit after them.
 
@@ -187,19 +198,31 @@ PRO-141 (against `main` `21dd113`): `aff4d13` (the livectl stop tests' synchroni
 commit after it.
 
 SEC-SIG-2 and SEC-SIG-1 (PRO-332, against `main` `5005cdc`): `2885afa` (fix and tests) and the documentation commits after it (`b51698c` and this line).
+PRO-370 (Codex PRO-369 findings on `2885afa`, against `0e1cd20`, branch `claude/focused-franklin-irsjdg`): `08c93c5` (fix and tests) and `27c4a54` (this line).
+PRO-446 (the PRO-370 ceiling ported to `main` `23bbc0c`, branch `claude/engine-PRO-446-sig-work-ceiling`): `c2919bb` (cherry-pick of `08c93c5`, unchanged) and the documentation commit after it.
 
 SEC-QUIC-3 (PRO-123, against `main` `21dd113`): `fe87386` (fix, tests, the random-differential class) and the
 documentation commit after it.
+
+PRO-119 (PR #150, against `main` `23bbc0c`): `afbe5e1`, `91960e0` (fixes and tests) and `852af38` (PRO-459: #147's uncovered cases ported), with the documentation commits after them.
 
 PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the documentation commit after it, and the errcheck fix in the test after that.
 
 PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the documentation commit after it.
 
-PRO-119 (against `main` `23bbc0c`): `c01942f` (fixes and tests) and the documentation commit after it.
+PRO-119 duplicate PR #147 (against `main` `23bbc0c`): `c01942f` (fixes and tests) and the documentation commit after it.
+PRO-401 (against `main` `8945986`, PR #127): `466e197` (golden replays, property tests, serve without Python, CI), `f2cb27c` (lint fixes), `a21010a` (scanner lock), `d34aa0f` (two CodeQL errors), `49f8e7d` and `cb1cbad` (the server golden made host-independent: interface list and the synthetic-scope probe) and the documentation commits after them. PRO-431 (main `23bbc0c` merged in as `dc0e42b`): `8541b3a` (the server golden compared without the build identity, Go's held to `SOURCE.json`) and the documentation commit after it.
+SEC-KEY-1 residual (PRO-437, against `main` `23bbc0c`, branch `claude/engine-PRO-51-sec-key-1`): `68202be` (fix and tests) and the documentation commit after it (`migration/notes/PRO-437.md`).
+SEC-QUIC-1 budget (PRO-122, against `main` `23bbc0c`, PR #145): `79cf9dd58e33e36c6c8c04244797781fe87fe5ef` (fix and tests) and the
+documentation commit after it.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
 ## 7. Pitfalls learned
+
+- **The differential gates replay golden files (PRO-401).** A change that moves Go's answer fails `make go-check`
+  until the golden file is re-recorded (`make golden-record`, with the reference) or, after the reference is gone,
+  until the new answer is reviewed in. Never re-record to make a red gate green without reading the diff.
 
 - **A fresh container is a clone of `main`.** Run `git fetch origin claude/go-migration` and check out the branch
   before deciding that any SHA is "missing".
@@ -293,3 +316,7 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
   `go test -count=30 -cpu=1,2,4`.
 - **`bytes_inspected` is chunk-granular by contract** (the whole chunk in which a parser fails is counted, as in
   `engine.py`), and a parser's consumed count after a fault is discarded. Compare them against budgets, not across splits.
+- **A reslice keeps its whole backing array alive** (SEC-DEC-1, PRO-119). `buf = buf[n:]` and `q = q[1:]` keep the
+  consumed prefix reachable, even at length 0. Before you keep a tail or pop from a queue for a long-lived object,
+  copy the tail into a new buffer, clear the popped slot and drop an emptied slice. Prove the fix with a heap test
+  (`runtime.ReadMemStats` after two `runtime.GC()` calls; `go/detector/ownership_test.go`).

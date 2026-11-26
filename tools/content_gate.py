@@ -1,27 +1,33 @@
-"""Content-pack gate (the `content-pack` ci job): a research batch's content release must hold together.
+"""Content-pack gate (the `content-pack` ci job): a content release (a research batch) must hold together.
 
-The content pack is the detection content both runtimes load: the Python tables (protocol_engine/content.py,
-locked in protocol_engine/content_lock.json), exported as migration/fixtures/content.json, embedded by the Go
-backend as go/internal/content/pack.json, and the earlier releases it can roll back to
-(go/internal/content/history.json, written by migration/content_history.py). The gate checks, in order:
+Since PRO-411 the detection content is edited directly on the Go side, with tools/content_pack.py: the current
+release in go/internal/content/pack.json (byte for byte migration/fixtures/content.json, which the Go tests
+load), the earlier releases it can roll back to in go/internal/content/history.json, and the append-only ledger
+of every published release in go/internal/content/lock.json. Nothing is exported from the Python tables any more,
+and no check here imports protocol_engine. The gate checks, in order:
 
-1. `make content`: the schema, the content lock and the release history (protocol_engine.content.check:
-   every earlier release reproduces exactly the digest it was published with, the engine's C11 fix);
-2. `make content-pack`: the exported pack and the release history equal what the Python content states;
+1. `make content`: tools/check_content.py, the pack, history and lock validated and every component and release
+   digest recomputed (tools/content_pack.py check: unique ids, known categories and outcomes, valid host names,
+   every earlier release reproducing the digest it was published with, the C11 rule; numeric version order).
+   While the frozen Python reference still exists it also checks that reference's own tables against its own
+   lock, and only those: the Go pack is not compared with the Python tables;
+2. `make content-pack`: the same check through tools/content_pack.py, its self-test, and the Python-free
+   batch round trip (the example batch added in a copy of the tree without protocol_engine/ and
+   protocol_adapters/ passes every check, Go content tests included);
 3. go/internal/content/pack.json is byte for byte migration/fixtures/content.json;
 4. no duplicate or conflicting identifier, in the current pack and in every earlier release's host catalog
    (`scan_pack` below): no JSON object repeats a key; application names and aliases are unique and an
    alias names no application; host entries are unique, name catalog applications, claim each domain once,
    and the lookup tables (app_domains, suffixes, web_fronts) are exactly the ones the entries state; a web
    front belongs to one application; protocol names map to catalog applications; the history's releases
-   are keyed by their own versions and its current release is the pack's and the lock's;
-5. Python/Go parity on content: `go test ./internal/content/...`, in which the Go backend loads the same
-   pack and history, recomputes every component digest and release digest and refuses any it does not
-   reproduce (on the pinned compiler, vendored, with no download: tools/go_ci.py).
+   are keyed by their own versions and its current release is the pack's and the lock's last;
+5. the Go side: `go test ./internal/content/...`, in which the Go backend loads the same pack and history,
+   recomputes every component digest and release digest, refuses any it does not reproduce, and checks the
+   lock against both (on the pinned compiler, vendored, with no download: tools/go_ci.py).
 
-On a commit without the Go content pack (main before the migration lands: none of PACK_FILES exists) the
-job passes and says so; `make content`, the Python content gate, still runs there inside `make check`. A
-commit with only part of the pack fails. Nothing here is detection logic; the checks read data only.
+On a commit without the Go content pack (none of PACK_FILES exists) the job passes and says so. A commit with only
+part of the pack fails, and so does only part of the Python reference (the content tables without their lock, or
+the lock alone) while it is being removed. Nothing here is detection logic; the checks read data only.
 
     content_gate.py [--summary FILE]
     content_gate.py --self-test
@@ -37,10 +43,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import go_ci  # noqa: E402
 
-PACK_FILES = (Path("migration/content_history.py"), Path("go/internal/content/history.json"),
+PACK_FILES = (Path("go/internal/content/lock.json"), Path("go/internal/content/history.json"),
               Path("go/internal/content/pack.json"))
 EXPORT = Path("migration/fixtures/content.json")
-LOCK = Path("protocol_engine/content_lock.json")
+LOCK = Path("protocol_engine/content_lock.json")  # the frozen Python reference's own lock, while it exists
+REFERENCE = Path("protocol_engine/content.py")
 TARGETS = ("content", "content-pack")
 DOMAIN = re.compile(r"^(?=.{1,253}$)([a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9_])?\.)*[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$")
 
@@ -122,9 +129,10 @@ def scan_pack(pack, history, lock):
     current = (pack.get("release") or {}).get("version")
     if history.get("current") != current:
         problems.append("history: current release {} is not the pack's {}".format(history.get("current"), current))
-    if lock.get("version") != current or lock.get("digest") != (pack.get("release") or {}).get("digest"):
+    last = ((lock or {}).get("releases") or [{}])[-1] if lock is not None else None
+    if last is not None and (last.get("version") != current or last.get("digest") != (pack.get("release") or {}).get("digest")):
         problems.append("lock: release {} digest {} is not the pack's {} {}".format(
-            lock.get("version"), lock.get("digest"), current, (pack.get("release") or {}).get("digest")))
+            last.get("version"), last.get("digest"), current, (pack.get("release") or {}).get("digest")))
     for version, release in sorted((history.get("releases") or {}).items()):
         stated = (release.get("release") or {}).get("version")
         if stated != version:
@@ -139,7 +147,8 @@ def survey():
     present = [path for path in PACK_FILES if path.is_file()]
     makefile = go_ci.read("Makefile") or ""
     return {"present": present, "missing": [path for path in PACK_FILES if path not in present],
-            "targets": [target for target in TARGETS if re.search(r"^{}\s*:".format(re.escape(target)), makefile, re.M)]}
+            "targets": [target for target in TARGETS if re.search(r"^{}\s*:".format(re.escape(target)), makefile, re.M)],
+            "reference": [path for path in (REFERENCE, LOCK) if path.is_file()]}
 
 
 def decide(tree):
@@ -150,6 +159,10 @@ def decide(tree):
     if tree["missing"]:
         problems.append("the content pack is partial: {} present but {} missing".format(
             ", ".join(map(str, tree["present"])), ", ".join(map(str, tree["missing"]))))
+    reference = tree.get("reference", [REFERENCE, LOCK])
+    if len(reference) == 1:
+        problems.append("the Python content reference is partial: {} present but {} missing".format(
+            reference[0], ({REFERENCE, LOCK} - set(reference)).pop()))
     for target in TARGETS:
         if target not in tree["targets"]:
             problems.append("Makefile has no `{}` target".format(target))
@@ -172,6 +185,8 @@ def run(summary):
         code = subprocess.run(["make", target], check=False).returncode  # noqa: S603,S607
         lines.append("- `make {}`: exit {}".format(target, code))
         failed += code != 0
+    if not LOCK.is_file():
+        lines.append("- the Python content reference is removed (PRO-401): the Go content files are checked alone")
     pack_text = PACK_FILES[2].read_bytes()
     if pack_text != EXPORT.read_bytes():
         lines.append("- FAILED: {} differs from {}".format(PACK_FILES[2], EXPORT))
@@ -179,7 +194,7 @@ def run(summary):
     try:
         found = scan_pack(strict_load(pack_text.decode("utf-8"), str(PACK_FILES[2])),
                           strict_load(PACK_FILES[1].read_text(encoding="utf-8"), str(PACK_FILES[1])),
-                          strict_load(LOCK.read_text(encoding="utf-8"), str(LOCK)))
+                          strict_load(PACK_FILES[0].read_text(encoding="utf-8"), str(PACK_FILES[0])))
     except (OSError, ValueError) as error:
         found = [str(error)]
     lines += ["- FAILED: " + problem for problem in found] or ["- identifiers: no duplicate or conflicting id"]
@@ -193,7 +208,7 @@ def run(summary):
     else:
         command = ["go", "test", "-count=1", "./internal/content/..."]
         code = subprocess.run(command, cwd="go", env=go_ci.go_env(tree.get("vendored")), check=False).returncode  # noqa: S603,S607
-        lines.append("- Go content parity `{}`: exit {}".format(" ".join(command), code))
+        lines.append("- Go content tests `{}`: exit {}".format(" ".join(command), code))
         failed += code != 0
     go_ci.summarise(summary, lines)
     return 1 if failed else 0
@@ -210,7 +225,7 @@ def self_test():
     history = {"current": "2", "releases": {"1": {"release": {"version": "1"}, "host_catalog": {
         "entries": [{"name": "a", "domains": ["a.com"]}], "app_domains": {"a": ["a.com"]}, "suffixes": {"a.com": "a"},
         "web_fronts": {}}}}}
-    lock = {"version": "2", "digest": "d2"}
+    lock = {"releases": [{"version": "1", "digest": "d1"}, {"version": "2", "digest": "d2"}]}
     assert scan_pack(pack, history, lock) == [], scan_pack(pack, history, lock)
 
     def changed(path, value, base=pack):
@@ -251,7 +266,8 @@ def self_test():
                                                                                         {"name": "b", "domains": ["a.com"]}],
                                                                                        history["releases"]["1"])}},
                                     lock, "history 1: domain a.com is claimed by both"),
-        "lock differs": (pack, history, {"version": "2", "digest": "other"}, "lock: release 2 digest other"),
+        "lock differs": (pack, history, {"releases": [{"version": "2", "digest": "other"}]}, "lock: release 2 digest other"),
+        "lock behind": (pack, history, {"releases": [{"version": "1", "digest": "d1"}]}, "lock: release 1 digest d1"),
     }
     for label, (case_pack, case_history, case_lock, expected) in cases.items():
         found = scan_pack(case_pack, case_history, case_lock)
@@ -267,7 +283,13 @@ def self_test():
     assert action == "fail" and "partial" in problems[0], problems
     action, problems = decide({"present": list(PACK_FILES), "missing": [], "targets": ["content"]})
     assert action == "fail" and "`content-pack`" in problems[0], problems
-    print("content_gate self-test: ok ({} identifier refusals, duplicate keys, 4 tree decisions)".format(len(cases)))
+    # PRO-401/PRO-411: the targets are Python-free and required with or without the reference; half a reference fails.
+    assert decide({"present": list(PACK_FILES), "missing": [], "targets": list(TARGETS), "reference": []}) == ("run", [])
+    action, problems = decide({"present": list(PACK_FILES), "missing": [], "targets": list(TARGETS), "reference": [REFERENCE]})
+    assert action == "fail" and "reference is partial" in problems[0], problems
+    action, problems = decide({"present": list(PACK_FILES), "missing": [], "targets": [], "reference": []})
+    assert action == "fail" and "`content`" in problems[0], problems
+    print("content_gate self-test: ok ({} identifier refusals, duplicate keys, 7 tree decisions)".format(len(cases)))
     return 0
 
 

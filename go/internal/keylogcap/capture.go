@@ -37,9 +37,6 @@ func refusal(err error) error {
 	return err
 }
 
-// newKeyProvider is decrypt.NewKeyProvider; a test replaces it to observe the provider Analyze used.
-var newKeyProvider = decrypt.NewKeyProvider
-
 func rowOrders(r *row) pyjson.Orders {
 	base := analyze.Orders(nil)
 	return func(path string) []string {
@@ -50,6 +47,9 @@ func rowOrders(r *row) pyjson.Orders {
 	}
 }
 
+// newKeyProvider is the store Analyze indexes the key log into; a test wraps it to observe the Release.
+var newKeyProvider = decrypt.NewKeyProvider
+
 // Analyze is poc_decryption.capture.analyze_capture: the decryption report of one capture and its key log,
 // as the JSON text json.dumps writes for it (without the worker's "synthetic" flag).
 func Analyze(data []byte, keylog string, pack *content.Pack) (string, error) {
@@ -57,8 +57,8 @@ func Analyze(data []byte, keylog string, pack *content.Pack) (string, error) {
 		return "", &Refusal{"DecryptionError", "Capture exceeds 8 MiB.", decrypt.BudgetExhausted}
 	}
 	keys := newKeyProvider()
-	// SEC-KEY-1 (PRO-47 A2, PRO-119): the provider's indexed secrets are overwritten when the analysis ends,
-	// whatever the outcome; the report reads only counters and labels.
+	// SEC-KEY-1 (PRO-119): the provider's indexed secrets are overwritten on every return, success or refusal.
+	// The report is built first and holds labels and counts only, never a secret.
 	defer keys.Release()
 	if _, err := keys.Append(keylog); err != nil {
 		return "", refusal(err)

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """One entry point for the protocol detector tools.
 
-  protodetect analyze capture.pcap [analyze options]   offline PCAP inspection (analyze_pcap.py)
-  protodetect live --interface eth0 [live options]      passive live capture (live_capture.py)
+  protodetect analyze capture.pcap [analyze options]   offline PCAP inspection (the Go engine)
+  protodetect live --interface eth0 [live options]      passive live capture (the Go engine)
+  protodetect serve [--port N]                          the local demo page (the Go engine; make serve)
   protodetect protocols | apps | risks                  inventories (families, catalog, flow risks)
   protodetect demo                                      offline fixture walk-through
   protodetect policy lint FILE [--strict]               validate a policy and report warnings
@@ -11,12 +12,44 @@
   protodetect schema [NAME] [--validate FILE]           print a published output schema or validate JSON Lines
   protodetect version
 
-The subcommands delegate to the existing scripts without changing their
-options, so documentation written for them stays valid.
+analyze, live and serve run the Go engine's binary with the arguments unchanged (PRO-402: Go is the product;
+there is no Python backend to select and no fallback). The binary is PROTODETECT_GO_BINARY, then
+go/bin/protodetect of this checkout (`make go-build`), then `protodetect-go` on PATH. The other subcommands
+delegate to the existing scripts without changing their options.
 """
 import argparse
 import json
 import sys
+
+
+GO_COMMANDS = ("analyze", "live", "serve")
+
+
+def go_binary():
+    """The Go engine's binary, or None: PROTODETECT_GO_BINARY, then go/bin/protodetect, then protodetect-go."""
+    import os
+    import shutil
+    from pathlib import Path
+    named = os.environ.get("PROTODETECT_GO_BINARY")
+    if named:
+        return named if os.path.isfile(named) and os.access(named, os.X_OK) else None
+    built = Path(__file__).resolve().parent / "go" / "bin" / "protodetect"
+    if built.is_file() and os.access(str(built), os.X_OK):
+        return str(built)
+    return shutil.which("protodetect-go")
+
+
+def _go(argv):
+    """Run the Go binary with these arguments and return its exit status (2 when it is not installed)."""
+    import subprocess
+    binary = go_binary()
+    if binary is None:
+        sys.stderr.write("protodetect: the Go engine binary is not installed (make go-build, or set PROTODETECT_GO_BINARY)\n")
+        return 2
+    try:
+        return subprocess.call([binary] + list(argv))  # noqa: S603 - the Go binary, the caller's own arguments
+    except KeyboardInterrupt:
+        return 130
 
 
 def _delegate(module_name, argv):
@@ -124,15 +157,16 @@ def _content(as_json):
 
 def main(argv=None):
     arguments = sys.argv[1:] if argv is None else list(argv)
-    if arguments and arguments[0] in ("analyze", "live"):
-        # Everything after these two commands belongs to the adapter. argparse.REMAINDER does not accept an
+    if arguments and arguments[0] in GO_COMMANDS:
+        # Everything after these commands belongs to the Go binary. argparse.REMAINDER does not accept an
         # option as the first remaining argument ("live --stdin", "live --interface eth0"), so they are
-        # delegated before the parser sees them.
-        return _delegate("analyze_pcap" if arguments[0] == "analyze" else "live_capture", arguments[1:])
+        # handed over before the parser sees them.
+        return _go(arguments)
     parser = argparse.ArgumentParser(prog="protodetect", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name, help_text in (("analyze", "Offline PCAP inspection; remaining options go to analyze_pcap.py"),
-                            ("live", "Passive live capture; remaining options go to live_capture.py")):
+    for name, help_text in (("analyze", "Offline PCAP inspection; remaining options go to the Go engine"),
+                            ("live", "Passive live capture; remaining options go to the Go engine"),
+                            ("serve", "The local demo page on 127.0.0.1; remaining options go to the Go engine")):
         sub = commands.add_parser(name, help=help_text, add_help=False)
         sub.add_argument("rest", nargs=argparse.REMAINDER)
     commands.add_parser("protocols", help="List supported protocol families")
@@ -170,10 +204,8 @@ def main(argv=None):
     signature_commands = signatures.add_subparsers(dest="signature_command", required=True)
     signature_commands.add_parser("lint").add_argument("file")
     args = parser.parse_args(argv)
-    if args.command == "analyze":
-        return _delegate("analyze_pcap", args.rest)
-    if args.command == "live":
-        return _delegate("live_capture", args.rest)
+    if args.command in GO_COMMANDS:
+        return _go([args.command] + args.rest)
     if args.command == "protocols":
         return _delegate("protocol_demo", ["--list"])
     if args.command == "apps":

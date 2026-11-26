@@ -109,13 +109,16 @@ func (p *KeyProvider) Released() bool { return p.released }
 // that already started hold their own copies, so a running connection is unaffected, as in the reference).
 func (p *KeyProvider) Release() {
 	for _, secret := range p.keys {
-		zero(secret)
+		for i := range secret {
+			secret[i] = 0
+		}
 	}
 	p.keys, p.order, p.randoms, p.indexedAt = map[keyID][]byte{}, nil, map[string]bool{}, map[keyID]float64{}
 	p.released = true
 }
 
 // Expire forgets secrets older than MaxAge (a no-op without MaxAge or a time) and returns how many it dropped.
+// A forgotten secret is overwritten first; a direction that already started holds its own copy.
 // now nil reads Clock.
 func (p *KeyProvider) Expire(now *float64) int {
 	if p.MaxAge == nil {
@@ -132,7 +135,7 @@ func (p *KeyProvider) Expire(now *float64) int {
 	stale := 0
 	for _, id := range p.order {
 		if at, ok := p.indexedAt[id]; ok && *now-at > *p.MaxAge {
-			zero(p.keys[id]) // SEC-KEY-1 (PRO-119): overwritten before it is forgotten, as Release does
+			clear(p.keys[id]) // overwrite before forgetting, as Release does (SEC-KEY-1, PRO-119)
 			delete(p.keys, id)
 			delete(p.indexedAt, id)
 			stale++

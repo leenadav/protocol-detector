@@ -17,6 +17,8 @@ venv/
 !sample-mysql.pcap
 !sample-mongodb.pcap
 !sample-radius.pcap
+# The service's frozen synthetic demo capture (PRO-401: once presentation/server.py demo_bytes(), now embedded in Go)
+!go/internal/serve/demo.pcap
 # Packaging output
 build/
 dist/

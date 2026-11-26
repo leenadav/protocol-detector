@@ -29,6 +29,12 @@ their decisions, the policy locks, and the release controller.
 
 ## 2. Current state (2026-11-24, after PRO-262 and PRO-202 step 3)
 
+- **PRO-402 (Python removal 2/3, PR B):** #125, branch `claude/platform-PRO-402-demo-go-serve`, merged with `main`
+  after PR A (#127). PR A made `protodetect serve` interpreter-free; this PR removes the Python backend selection
+  that was left: `serve` has no `--python`, `presentation/launch.py` and `protodetect.py analyze|live|serve` run the
+  Go binary only (no `--backend`, no fallback), `main.py` starts the page, and `make serve` does the same.
+  `test_ui.GoServiceBrowserTests` runs the Playwright dashboard suite against the Go service with no Python engine
+  reachable. PR C (PRO-403) deletes `presentation/server.py` and the Python engine.
 - **PRO-262 (32-bit protocol tests):** `make go-check-386` and the `go-engine` step "32-bit protocol tests" (offline, vendored, `CGO_ENABLED=0`, no `-race` on 386). Proven on the old SEC-X509-1 check (`pos+size > limit`): the 386 run fails `x509x`, amd64 passes. The job name is unchanged, so required checks keep matching.
 - **PRO-202 (CI speed), step 3:** branch `claude/platform-PRO-202-ci-speed` adds the docs-only fast path:
   `tools/ci_scope.py` (fail-closed: only `pull_request`, only a two-parent merge HEAD, only `*.md` and

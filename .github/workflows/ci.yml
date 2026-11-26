@@ -107,12 +107,12 @@ jobs:
       - name: Presentation application with the optional decryption extra (Node and browser tests are required in presentation-ui)
         # Stage 1c (A01): the whole product is covered, not only the engine. The extra is installed from the
         # repository's own hash-pinned lock; the core wheel still declares no runtime dependency (package job).
-        # `unittest` passes a skipped test, so the strict runner fails on any skip but the two UI tests named
+        # `unittest` passes a skipped test, so the strict runner fails on any skip but the three UI tests named
         # here, which the presentation-ui job runs with Node and Playwright and allows no skip at all.
         run: |
           python -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt
           python -B tools/run_tests_strict.py --self-test
-          python -B tools/run_tests_strict.py --cwd presentation --start tests --summary "$GITHUB_STEP_SUMMARY" --allow-skip test_ui.StoreUnitTests.test_store_reducer_and_selectors --allow-skip test_ui.BrowserTests.test_dashboard_in_a_real_browser
+          python -B tools/run_tests_strict.py --cwd presentation --start tests --summary "$GITHUB_STEP_SUMMARY" --allow-skip test_ui.StoreUnitTests.test_store_reducer_and_selectors --allow-skip test_ui.BrowserTests.test_dashboard_in_a_real_browser --allow-skip test_ui.GoServiceBrowserTests.test_dashboard_in_a_real_browser_on_the_go_service
       - name: Offline replay of synthetic captures
         run: |
           python -B analyze_pcap.py sample-expanded.pcap --events-only --sessions > /dev/null
@@ -788,9 +788,12 @@ jobs:
 
   go-parity:
     # The parity gates of `make go-check` (`make go-check-parity`): parity-go (every committed fixture
-    # replayed through the Go engine and compared with the Python reference's answers, with a floor under
-    # the parity report), parity-analyze, parity-decrypt, parity-live, parity-live-decrypt, schema-go,
-    # parity-control, parity-server, adversarial, parity-random and bench-gate.
+    # replayed through the Go engine and compared with the Python reference's frozen answers, with a floor
+    # under the parity report), parity-analyze, parity-decrypt, parity-live, parity-live-decrypt, schema-go,
+    # parity-control, parity-server, adversarial, parity-random and bench-gate. Since PRO-401 every one of
+    # them replays a golden file (migration/fixtures/golden/, migration/parity/golden.py): no Python
+    # reference runs and nothing beyond the standard library is installed. The job keeps its name, which
+    # branch protection matches.
     name: Go parity with the Python reference (replay, analyze, decrypt, live, schema, random, bench)
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -811,8 +814,6 @@ jobs:
         with:
           go-version: "1.27.4"
           cache: false
-      - name: Install the hash-pinned decryption extra (the Python reference of `make parity-decrypt` decrypts with it)
-        run: python -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt
       - name: Parity gates (make go-check-parity) and parity report floor
         env:
           GOPROXY: "off"
